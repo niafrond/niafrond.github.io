@@ -7,7 +7,7 @@ import { TEXTS } from '../../world/text/index.js';
 import { MANIFEST } from '../../world/manifest.js';
 import { parseGrid, cellsToRects } from '../../world/mapKit.js';
 import { npcSprite } from '../../sprites/index.js';
-import { villagerSprite, villagerLook } from '../../sprites/villagers.js';
+import { villagerSprite } from '../../sprites/villagers.js';
 import { creatureKind, drawCreature, CREATURE_KINDS } from '../../sprites/creatures.js';
 import {
     createSession, tryMove, enterScreen, isTerrainBlocked, findPath, talkToNpc, openChest, markEnemyDefeated,
@@ -87,9 +87,9 @@ describe('villageois générés', () => {
         expect(a.length).toBeLessThan(9000);
         const set = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(id => villagerSprite(id)));
         expect(set.size).toBeGreaterThan(5);
-        expect(villagerLook('grandma_x')).toMatchObject({ age: 'old', hair: ['#fff', '#ccc', '#999'] });   // ancien : cheveux blancs
-        expect(villagerLook('ping').age).toBe('adult');
-        expect(villagerLook('kid_x').age).toBe('child');                                                  // enfant : plus petit, couettes
+        expect(villagerSprite('grandma_x')).toContain('#ece8e0');   // ancien : cheveux blancs
+        expect(villagerSprite('ping')).not.toContain('#ece8e0');
+        expect(villagerSprite('kid_x')).toMatch(/scale\(0\.82\)/);
     });
     test('les PNJ non humains ont un sprite de créature, les métiers animaliers restent humains', () => {
         expect(creatureKind('buffalo_dahei')).toBe('buffalo');

@@ -1,7 +1,6 @@
 // Sprites SVG (fantasy chinoise, legende de Hou Yi) : heros, PNJ de la premiere moitie du monde, coffres.
-// Heros et coffres : chibi de face dessine en vectoriel, contour #2b1b17 de 2 px, viewBox 64x64, pieds vers y = 58, sans ombre au sol
-// (les helpers ne servent qu'a factoriser ; chaque valeur exportee est une chaine SVG statique).
-// PNJ (NPC_SPRITES_A) : pixel art, memes proportions mais dessines sur une grille de 64 x 64 pixels indexes, voir le bloc plus bas.
+// Meme facture que sprites/actors.js : chibi de face, contour #2b1b17 de 2 px, viewBox 64x64, pieds vers y = 58,
+// sans ombre au sol. Les helpers ne servent qu'a factoriser ; chaque valeur exportee est une chaine SVG statique.
 
 const K = '#2b1b17';
 const O = `stroke="${K}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;
@@ -20,8 +19,13 @@ const SKIN = '#f5cba7', SKIN_D = '#e0a582';
 const eyes = (y = 25, dx = 5.2) =>
   `<circle cx="${32 - dx}" cy="${y}" r="1.6" fill="${K}"/><circle cx="${32 + dx}" cy="${y}" r="1.6" fill="${K}"/>` +
   `<circle cx="${32 - dx + 0.6}" cy="${y - 0.6}" r="0.6" fill="#fff"/><circle cx="${32 + dx + 0.6}" cy="${y - 0.6}" r="0.6" fill="#fff"/>`;
+// Yeux rieurs (arcs)
+const happyEyes = (y = 26, dx = 5.2) =>
+  `<path d="M${32 - dx - 1.8} ${y + 0.6} Q${32 - dx} ${y - 1.8} ${32 - dx + 1.8} ${y + 0.6} M${32 + dx - 1.8} ${y + 0.6} Q${32 + dx} ${y - 1.8} ${32 + dx + 1.8} ${y + 0.6}" fill="none" stroke="${K}" stroke-width="1.4" stroke-linecap="round"/>`;
 const cheeks = (y = 29.5, dx = 8.5) =>
   `<ellipse cx="${32 - dx}" cy="${y}" rx="2.4" ry="1.5" fill="#ff7f7f" opacity=".45"/><ellipse cx="${32 + dx}" cy="${y}" rx="2.4" ry="1.5" fill="#ff7f7f" opacity=".45"/>`;
+const smile = (y = 30, w = 2) => `<path d="M${32 - w} ${y} Q32 ${y + 2.4} ${32 + w} ${y}" fill="none" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>`;
+const grin = (y = 30) => `<path d="M28.6 ${y} Q32 ${y + 4.4} 35.4 ${y}Z" fill="#8e2a3a" stroke="${K}" stroke-width="1.1" stroke-linejoin="round"/>`;
 const brows = (y, dx = 5.2, w = 1.2, col = K, tilt = 0) =>
   `<path d="M${32 - dx - 2.4} ${y - tilt} L${32 - dx + 2.2} ${y - 0.4 + tilt} M${32 + dx + 2.4} ${y - tilt} L${32 + dx - 2.2} ${y - 0.4 + tilt}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`;
 const head = (skin, shade, cy = 25, rx = 13.5, ry = 11.5) => {
@@ -184,232 +188,425 @@ export const HERO_SPRITES = {
   ),
 };
 
-// PNJ : pixel art (grille de 64 x 64 pixels indexes convertie en rectangles alignes, contour #2b1b17 d'un pixel, 3 tons + reflet laque en haut a gauche).
+// ---------- Pourparlers : petits outils des PNJ des soleils 2, 3 et 5 ----------
+// Trait epais a contour (algue, bras minuscule, baguette) : dessous sombre + dessus colore.
+const cord = (d, w, fill) =>
+  `<path d="${d}" fill="none" stroke="${K}" stroke-width="${w + 3}" stroke-linecap="round" stroke-linejoin="round"/>` +
+  `<path d="${d}" fill="none" stroke="${fill}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+const pearl = (x, y, r = 1.7) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#eaf8fb" stroke="${K}" stroke-width="1"/>`;
+// Eclair en zigzag (mèche de Rongrong), pointe vers le bas.
+const bolt = (x, y, s = 1) =>
+  `<path transform="translate(${x} ${y}) scale(${s})" d="M0 0 L5 0 L3 4.2 L6 4.2 L-0.8 11.4 L1.2 6 L-1.6 6Z" fill="#ffe35c" stroke="${K}" stroke-width="${(1.5 / s).toFixed(2)}" stroke-linejoin="round"/>`;
+// Yeux alignes sur la grille de pixellisation (pixels de 2 unites) : rectangles de 2 x h unites aux colonnes impaires.
+const pxEyes = (y, h = 4, x1 = 27, x2 = 37, w = 2) =>
+  `<rect x="${x1 - w / 2}" y="${y}" width="${w}" height="${h}" rx=".5" fill="${K}"/><rect x="${x2 - w / 2}" y="${y}" width="${w}" height="${h}" rx=".5" fill="${K}"/>`;
+const spark = (x, y, c = '#ffd870') => `<path d="M${x} ${y - 3} L${x + 1} ${y - 1} L${x + 3} ${y} L${x + 1} ${y + 1} L${x} ${y + 3} L${x - 1} ${y + 1} L${x - 3} ${y} L${x - 1} ${y - 1}Z" fill="${c}"/>`;
+
 export const NPC_SPRITES_A = {
-  // Chang'e : longs cheveux noirs et chignon aux fleurs, robe claire a haute ceinture jade, plateau de gateaux de lune
-  change: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M30 3h5v54h-5M28 4h9v53h-9M27 5h2v54h-2M26 7h1v52h-1M37 11h2v48h-2M24 12h17v45h-17M22 13h21v44h-21M19 14h26v43h-26M18 15h1v40h-1M17 18h30v37h-30M16 20h1v35h-1M15 24h34v31h-34M14 29h1v24h-1M49 29h2v2h-2M13 34h38v9h-38M49 43h2v2h-2M49 52h2v1h-2M48 55h1v2h-1M23 57h3v2h-3M35 57h6v2h-6"/>' +
-    '<path fill="#336" d="M32 4h2v7h-2M31 5h5v6h-5M29 6h2v5h-2M28 8h1v3h-1M27 9h1v2h-1M32 13h8v9h-8M40 14h2v9h-2M29 15h15v7h-15M27 16h2v7h-2M25 17h2v5h-2M18 18h3v14h-3M24 18h1v4h-1M23 19h1v4h-1M17 20h1v10h-1M42 22h3v11h-3M41 23h1v2h-1M16 30h1v12h-1M17 32h1v9h-1M19 32h1v1h-1M18 33h1v7h-1M45 33h2v7h-2M15 34h5v5h-5M44 34h1v5h-1M20 35h2v3h-2M43 35h1v3h-1M22 36h1v1h-1M41 36h2v1h-2M42 37h1v1h-1M15 39h1v4h-1M46 40h1v1h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#fc9" d="M24 24h6v2h-6M34 24h2v14h-2M36 24h4v2h-4M23 25h18v1h-18M24 26h1v1h-1M27 26h10v1h-10M39 26h1v1h-1M22 27h2v8h-2M28 27h6v7h-6M40 27h1v9h-1M24 31h5v5h-5M36 31h4v5h-4M30 34h2v1h-2M33 34h1v4h-1M29 35h1v3h-1M32 35h1v3h-1M16 53h3v1h-3M44 53h3v1h-3"/>' +
-    '<path fill="#333" d="M35 5h1v1h-1M35 7h1v4h-1M34 9h1v2h-1M44 18h1v9h-1M34 19h3v4h-3M45 19h1v13h-1M22 20h2v3h-2M24 20h1v2h-1M26 20h1v2h-1M31 20h3v4h-3M37 20h1v2h-1M21 21h18v1h-18M21 22h1v5h-1M27 22h4v1h-4M20 23h1v11h-1M22 23h1v2h-1M30 23h1v1h-1M46 24h1v6h-1M48 29h1v1h-1M47 30h1v12h-1M44 31h1v2h-1M43 32h1v2h-1M46 32h1v2h-1M42 33h1v2h-1M48 34h1v9h-1M49 35h1v7h-1M14 42h1v1h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#fc3" d="M30 6h4v2h-4M19 15h2v3h-2M43 15h1v3h-1M30 45h4v5h-4M23 46h4v5h-4M29 46h1v3h-1M34 46h1v2h-1M37 46h4v5h-4M22 47h1v3h-1M28 47h1v1h-1M36 47h6v3h-6M21 48h1v1h-1M35 48h1v1h-1M16 50h3v2h-3M20 50h2v2h-2M28 50h2v3h-2M34 50h2v3h-2M42 50h1v3h-1M45 50h3v2h-3M22 51h1v2h-1M27 51h10v2h-10M23 52h1v1h-1"/>' +
-    '<path fill="#ccf" d="M27 38h1v8h-1M25 39h11v5h-11M20 40h1v8h-1M41 40h4v6h-4M19 41h1v9h-1M18 42h1v8h-1M17 43h1v7h-1M16 44h1v6h-1M25 44h5v1h-5M34 44h4v1h-4M45 44h1v6h-1M28 45h1v1h-1M35 45h2v1h-2M42 46h3v1h-3M43 47h2v1h-2M44 48h1v2h-1M21 54h1v1h-1"/>' +
-    '<path fill="#fff" d="M27 13h5v2h-5M25 14h2v3h-2M23 15h2v3h-2M27 15h2v1h-2M22 16h1v4h-1M21 17h1v4h-1M20 18h1v4h-1M23 18h1v1h-1M19 19h1v3h-1M24 28h2v3h-2M36 28h2v3h-2M24 37h1v1h-1M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M15 44h1v8h-1"/>' +
-    '<path fill="#99c" d="M39 37h1v1h-1M22 38h2v7h-2M36 38h3v6h-3M40 38h2v1h-2M21 39h1v8h-1M41 39h3v1h-3M42 40h3v1h-3M43 41h3v1h-3M44 42h3v1h-3M45 43h3v1h-3M38 44h1v1h-1M46 44h2v6h-2M22 45h1v1h-1M20 46h1v2h-1M15 51h1v1h-1M42 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#c90" d="M31 47h2v1h-2M34 47h1v1h-1M24 48h2v1h-2M27 48h1v2h-1M33 48h1v2h-1M38 48h2v1h-2M41 48h1v2h-1M42 48h1v1h-1M26 49h1v2h-1M30 49h3v1h-3M40 49h1v2h-1M23 50h3v1h-3M37 50h3v1h-3M43 50h1v2h-1M41 51h2v2h-2M21 52h2v1h-2M24 52h17v1h-17M29 53h6v1h-6"/>' +
-    '<path fill="#669" d="M30 4h1v2h-1M31 4h1v1h-1M28 5h1v3h-1M29 5h1v1h-1M27 7h1v2h-1M26 12h12v1h-12M24 13h3v1h-3M39 13h1v1h-1M22 14h3v1h-3M22 15h1v1h-1M41 24h1v1h-1M15 29h1v5h-1M14 34h1v8h-1"/>' +
-    '<path fill="#c96" d="M37 34h4v2h-4M23 35h3v1h-3M34 35h5v2h-5M25 36h9v1h-9M28 37h8v1h-8M19 53h1v2h-1M47 53h1v1h-1M44 54h1v1h-1"/>' +
-    '<path fill="#396" d="M25 38h2v1h-2M37 38h1v2h-1M38 38h1v1h-1M26 39h2v1h-2M36 39h1v5h-1M27 40h2v4h-2M35 40h1v4h-1M29 41h10v3h-10M25 42h2v2h-2"/>' +
-    '<path fill="#f99" d="M21 15h1v2h-1M42 15h1v2h-1M19 17h2v1h-2M43 17h1v1h-1M22 32h3v2h-3M39 32h3v2h-3"/>' +
-    '<path fill="#063" d="M30 40h4v2h-4M25 43h5v1h-5M34 43h5v1h-5"/>' +
-    '<path fill="#369" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2"/>' +
-    '<path fill="#6c9" d="M25 41h3v1h-3M31 41h2v2h-2M36 41h3v1h-3"/>' +
-    '</svg>',
-  // Doyen Wen : vieillard a barbe blanche, robe bordeaux a galons d'or, bonnet noir, canne
-  elder_wen: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M24 4h17v53h-17M23 5h6v54h-6M22 6h1v51h-1M21 8h22v27h-22M20 9h1v26h-1M19 11h26v22h-26M18 17h33v14h-33M17 18h2v15h-2M51 19h2v4h-2M16 20h1v11h-1M46 31h5v2h-5M43 33h2v2h-2M47 33h4v24h-4M41 35h2v22h-2M21 36h1v21h-1M20 38h25v19h-25M19 39h1v18h-1M18 40h1v15h-1M17 41h30v14h-30M16 42h1v13h-1M15 43h1v12h-1M14 44h1v9h-1M35 57h6v2h-6M50 57h1v2h-1"/>' +
-    '<path fill="#ccc" d="M18 18h1v14h-1M17 20h1v10h-1M19 22h2v10h-2M40 22h4v3h-4M23 23h5v5h-5M36 23h6v2h-6M42 25h3v6h-3M42 31h2v2h-2M23 36h7v6h-7M35 36h4v8h-4M30 37h5v11h-5M25 42h5v2h-5M27 44h3v2h-3M29 46h1v2h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#336" d="M38 5h2v16h-2M25 6h13v15h-13M24 7h1v14h-1M40 8h1v13h-1M23 9h19v12h-19M22 10h1v11h-1M21 12h1v9h-1M20 16h1v5h-1"/>' +
-    '<path fill="#fc9" d="M28 24h2v11h-2M34 24h2v11h-2M23 25h18v3h-18M22 27h2v5h-2M24 28h1v1h-1M27 28h10v1h-10M39 28h2v1h-2M25 29h2v5h-2M30 29h4v7h-4M37 29h2v5h-2M40 29h1v4h-1M24 30h16v4h-16M23 32h1v1h-1M26 34h11v1h-11M16 53h3v1h-3M44 53h3v1h-3"/>' +
-    '<path fill="#933" d="M30 9h4v4h-4M20 40h1v12h-1M19 41h1v11h-1M42 41h3v11h-3M18 42h1v10h-1M41 42h5v8h-5M17 43h1v9h-1M16 44h1v8h-1M25 45h1v8h-1M38 45h1v8h-1M24 49h7v4h-7M34 49h6v4h-6M23 50h18v3h-18M21 53h1v2h-1M22 53h1v1h-1M29 53h6v1h-6M30 54h4v1h-4"/>' +
-    '<path fill="#999" d="M45 18h1v12h-1M46 20h1v10h-1M44 21h1v6h-1M21 22h2v3h-2M23 22h1v1h-1M27 22h10v1h-10M20 23h1v10h-1M30 23h4v1h-4M21 25h1v2h-1M43 32h1v1h-1M22 33h1v2h-1M42 33h1v2h-1M23 34h1v2h-1M40 34h1v8h-1M24 35h2v1h-2M38 35h2v1h-2M27 36h3v1h-3M39 36h1v7h-1M41 36h1v2h-1M22 38h1v1h-1M38 38h1v6h-1M23 41h1v1h-1M24 42h1v1h-1M37 42h1v3h-1M25 43h1v1h-1M36 43h1v3h-1M26 44h1v1h-1M35 44h1v3h-1M27 45h1v1h-1M34 45h1v3h-1M28 46h1v1h-1M33 46h1v2h-1M29 47h2v1h-2M32 47h1v2h-1M31 48h1v1h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#fc3" d="M20 17h24v2h-24M47 18h3v2h-3M50 19h1v4h-1M48 20h2v4h-2M48 25h1v18h-1M24 47h4v2h-4M36 47h4v2h-4M16 50h6v2h-6M42 50h6v2h-6M22 52h20v1h-20M48 55h1v1h-1"/>' +
-    '<path fill="#633" d="M21 39h1v11h-1M42 39h2v2h-2M43 41h2v1h-2M22 42h1v8h-1M44 42h3v1h-3M23 43h1v3h-1M45 43h3v1h-3M46 44h3v6h-3M40 45h1v1h-1M20 46h1v4h-1M24 48h5v1h-5M35 48h5v1h-5M30 49h1v1h-1M33 49h1v1h-1M39 49h1v1h-1M41 49h1v1h-1M40 50h1v1h-1M48 50h1v2h-1M15 51h1v1h-1M41 53h2v1h-2M42 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#333" d="M41 10h1v7h-1M42 11h1v6h-1M43 12h1v5h-1M23 19h21v2h-21M20 20h3v1h-3"/>' +
-    '<path fill="#c90" d="M51 20h1v2h-1M50 21h1v2h-1M49 22h1v2h-1M48 23h1v1h-1M49 25h1v19h-1M49 52h1v4h-1"/>' +
-    '<path fill="#669" d="M24 5h14v1h-14M23 6h1v3h-1M24 6h1v1h-1M22 8h1v2h-1M21 9h1v3h-1M20 11h1v5h-1"/>' +
-    '<path fill="#c66" d="M31 10h2v2h-2M20 39h1v1h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M40 43h1v2h-1M15 44h1v7h-1M41 46h1v3h-1"/>' +
-    '<path fill="#c96" d="M40 32h1v1h-1M39 33h1v1h-1M37 34h1v1h-1M19 53h1v2h-1M47 53h1v2h-1M44 54h1v1h-1"/>' +
-    '<path fill="#fff" d="M19 21h1v1h-1M41 24h1v1h-1M22 36h1v2h-1M34 36h1v1h-1M23 39h1v2h-1"/>' +
-    '<path fill="#fe6" d="M24 46h3v1h-3M37 46h3v1h-3"/>' +
-    '</svg>',
-  // Paysan Lin : chapeau conique de paille, houe, tunique d'indigo rapiecee
-  farmer_lin: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M31 3h2v54h-2M30 4h1v53h-1M29 5h6v52h-6M28 6h1v53h-1M26 7h13v50h-13M25 8h3v51h-3M24 9h1v50h-1M22 10h21v25h-21M21 11h1v24h-1M20 12h1v23h-1M19 13h26v20h-26M17 14h30v17h-30M16 15h1v16h-1M15 16h34v9h-34M13 17h2v42h-2M49 17h2v6h-2M10 18h45v5h-45M8 19h8v8h-8M55 19h2v4h-2M7 20h1v7h-1M4 21h3v4h-3M3 22h1v3h-1M54 23h1v2h-1M5 25h2v2h-2M11 27h2v32h-2M15 27h1v2h-1M47 30h2v1h-2M17 31h2v2h-2M46 31h1v2h-1M43 34h2v1h-2M23 35h18v22h-18M41 36h2v21h-2M22 37h1v20h-1M20 38h25v19h-25M19 39h1v18h-1M18 40h1v15h-1M17 41h30v14h-30M16 42h1v15h-1M15 43h34v12h-34M10 51h1v2h-1M49 52h2v1h-2M48 55h1v2h-1M23 57h1v2h-1M35 57h6v2h-6"/>' +
-    '<path fill="#fc3" d="M32 5h1v19h-1M31 6h3v18h-3M30 7h5v17h-5M29 8h9v16h-9M27 9h2v15h-2M26 10h13v14h-13M25 11h17v13h-17M23 12h2v12h-2M22 13h21v11h-21M21 14h24v10h-24M20 15h26v9h-26M18 16h29v8h-29M17 17h32v6h-32M16 18h35v4h-35M10 19h44v3h-44M8 20h47v2h-47"/>' +
-    '<path fill="#369" d="M14 24h1v4h-1M6 25h8v1h-8M11 26h3v1h-3M12 27h2v1h-2M26 28h14v1h-14M26 29h1v1h-1M38 29h1v1h-1M24 30h2v6h-2M36 30h2v7h-2M26 31h15v4h-15M27 38h1v15h-1M25 39h14v14h-14M20 40h1v12h-1M41 40h3v10h-3M19 41h1v11h-1M18 42h1v10h-1M17 43h1v8h-1M44 43h2v9h-2M16 44h1v6h-1M24 49h16v4h-16M23 51h18v2h-18M21 53h1v2h-1M29 53h6v1h-6M30 54h4v1h-4"/>' +
-    '<path fill="#c96" d="M23 25h18v1h-18M23 26h1v9h-1M24 26h1v1h-1M27 26h10v1h-10M39 26h2v1h-2M22 27h1v7h-1M28 27h8v11h-8M40 27h1v8h-1M24 31h1v5h-1M27 31h10v6h-10M39 31h1v5h-1M25 32h15v4h-15M13 49h2v6h-2M12 50h4v4h-4M11 51h1v2h-1M17 53h2v1h-2M44 53h3v1h-3"/>' +
-    '<path fill="#c90" d="M45 19h4v4h-4M49 19h1v3h-1M27 20h21v4h-21M50 20h2v2h-2M55 20h1v2h-1M8 21h1v1h-1M21 21h6v3h-6M52 21h3v1h-3M10 22h11v1h-11M15 23h6v1h-6"/>' +
-    '<path fill="#930" d="M17 25h3v5h-3M42 25h3v6h-3M18 30h2v2h-2M42 31h1v2h-1M43 31h1v1h-1M28 33h8v2h-8M24 47h16v2h-16M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#630" d="M20 25h1v8h-1M21 25h1v2h-1M44 25h2v2h-2M45 27h1v3h-1M13 29h1v19h-1M36 33h1v4h-1M27 34h9v1h-9M30 45h4v5h-4M24 48h16v1h-16M29 55h1v1h-1M41 55h1v1h-1M13 56h1v2h-1M28 56h1v1h-1M40 56h1v1h-1M12 57h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#336" d="M39 37h1v1h-1M22 38h2v8h-2M36 38h3v3h-3M40 38h2v2h-2M21 39h2v11h-2M42 39h2v2h-2M37 41h2v1h-2M43 41h2v1h-2M44 42h2v1h-2M37 43h1v1h-1M45 43h2v1h-2M46 44h2v8h-2M40 45h1v1h-1M20 46h1v6h-1M39 49h1v1h-1M41 49h1v1h-1M40 50h1v1h-1M40 52h2v1h-2M41 53h2v1h-2M42 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#963" d="M37 34h2v3h-2M39 34h1v2h-1M40 34h1v1h-1M24 35h2v1h-2M34 35h2v3h-2M36 35h1v2h-1M25 36h9v1h-9M28 37h6v1h-6M16 51h1v2h-1M15 52h1v2h-1M14 53h1v2h-1M19 53h1v2h-1M47 53h1v1h-1M13 54h1v1h-1M16 54h1v1h-1M44 54h1v1h-1"/>' +
-    '<path fill="#c63" d="M12 29h1v20h-1M27 33h1v1h-1M24 46h6v1h-6M31 46h2v3h-2M34 46h6v1h-6M12 55h1v2h-1"/>' +
-    '<path fill="#fe6" d="M31 4h1v2h-1M30 5h1v2h-1M29 6h1v2h-1M28 7h1v2h-1M26 8h1v2h-1M27 8h1v1h-1M37 8h1v1h-1M25 9h1v2h-1M24 10h1v2h-1M22 11h1v2h-1M23 11h1v1h-1M41 11h1v1h-1M21 12h1v2h-1M20 13h1v2h-1M19 14h1v2h-1M17 15h1v2h-1M18 15h1v1h-1M16 16h1v2h-1M15 17h1v2h-1M13 18h2v1h-2"/>' +
-    '<path fill="#fc9" d="M22 32h3v2h-3M39 32h3v2h-3M17 50h5v1h-5M42 50h6v2h-6M18 51h4v1h-4"/>' +
-    '<path fill="#69c" d="M24 37h1v1h-1M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M38 42h1v4h-1M16 43h1v1h-1M15 44h1v5h-1M41 46h1v3h-1M23 50h3v1h-3M25 51h1v2h-1M22 52h1v2h-1"/>' +
-    '<path fill="#9cf" d="M6 22h2v3h-2M25 38h2v1h-2M37 38h1v2h-1M38 38h1v1h-1M26 39h2v1h-2M36 39h1v2h-1M27 40h2v1h-2M35 40h1v2h-1M28 41h2v1h-2M34 41h1v2h-1M29 42h2v1h-2M33 42h1v2h-1M30 43h3v1h-3M31 44h2v1h-2"/>' +
-    '<path fill="#999" d="M4 22h2v2h-2M6 23h4v2h-4M5 24h9v1h-9M9 25h4v1h-4"/>' +
-    '<path fill="#fff" d="M24 28h2v2h-2M36 28h2v2h-2"/>' +
-    '</svg>',
+  // Chang'e : robe claire a haute ceinture jade, epingles a cheveux, plateau de gateaux de lune
+  change: svg(
+    `<path d="M17 23 Q12.6 33 16.4 46 L24 40 L40 40 L47.6 46 Q51.4 33 47 23Z" fill="${HAIR}" ${O}/>` +
+    feet('#e8a0b8') +
+    `<path d="M16.6 57.6 Q14.6 46 22.6 35 L41.4 35 Q49.4 46 47.4 57.6 Q32 60.6 16.6 57.6Z" fill="#f6f1e8" ${O}/>` +
+    `<path d="M39 38 Q47 46 45.6 56.6 L38 58 Q42.6 46 39 38Z" fill="#d4cde6"/>` +
+    `<path d="M17.4 55.4 Q32 59 46.6 55.4" fill="none" stroke="#9fd3c7" stroke-width="2" stroke-linecap="round"/>` +
+    cloud(22, 53.4, 0.9, '#c9a8e8', 1) + cloud(36, 54.6, 0.9, '#c9a8e8', 1) +
+    `<path d="M26 35 L32 42 L38 35Z" fill="#f6f1e8" stroke="${K}" stroke-width="1.4" stroke-linejoin="round"/>` +
+    `<path d="M24 35.6 L32 43.6 L40 35.6" fill="none" stroke="#c9a8e8" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M22 41.6 Q32 44.6 42 41.6 L42 45 Q32 48 22 45Z" fill="#6fc3b0" ${O}/>` +
+    `<path d="M33 45 Q36 52 33.6 58 M30 45 Q27 52 29.4 58" fill="none" stroke="${K}" stroke-width="3.8" stroke-linecap="round"/><path d="M33 45 Q36 52 33.6 58 M30 45 Q27 52 29.4 58" fill="none" stroke="#8fe0cb" stroke-width="1.8" stroke-linecap="round"/>` +
+    // plateau de gateaux de lune
+    `<ellipse cx="32" cy="50.6" rx="15.4" ry="3.6" fill="${RED}" ${O}/><ellipse cx="32" cy="49.8" rx="12" ry="2.1" fill="${GOLD}"/>` +
+    `<circle cx="26.4" cy="46" r="4" fill="#c8863e" ${O}/><circle cx="26.4" cy="46" r="2.1" fill="none" stroke="#f0c070" stroke-width="1"/>` +
+    `<circle cx="37.6" cy="46" r="4" fill="#c8863e" ${O}/><circle cx="37.6" cy="46" r="2.1" fill="none" stroke="#f0c070" stroke-width="1"/>` +
+    `<circle cx="32" cy="42.6" r="4.2" fill="#d89a4a" ${O}/><circle cx="32" cy="42.6" r="2.3" fill="none" stroke="#f6d08a" stroke-width="1"/><circle cx="30.6" cy="41.2" r="1" fill="#fff6d8"/>` +
+    sleeve(19.4, 44.4, 4, 6.6, 8, '#d8d0f2') + `<path d="M15.6 49.4 Q19 52 22.6 50" fill="none" stroke="#b49be0" stroke-width="1.5" stroke-linecap="round"/>` + hand(18.6, 51.4) +
+    sleeve(44.6, 44.4, 4, 6.6, -8, '#bdb0e4') + `<path d="M41.4 50 Q45 52 48.4 49.4" fill="none" stroke="#9a86d4" stroke-width="1.5" stroke-linecap="round"/>` + hand(45.4, 51.4) +
+    // tete
+    `<ellipse cx="32" cy="9.4" rx="6.4" ry="4.8" fill="${HAIR}" ${O}/><ellipse cx="29" cy="8" rx="2.2" ry="1" fill="#6a6f96" opacity=".8"/>` +
+    head(SKIN, SKIN_D, 25, 13.2, 11.4) +
+    `<path d="M18.8 25.4 Q17.2 14.6 32 13.2 Q46.8 14.6 45.2 25.4 Q44.4 21 41 19.6 Q36 18.4 32 20 Q28 18.4 23 19.6 Q19.6 21 18.8 25.4Z" fill="${HAIR}" ${O}/>` +
+    `<path d="M19 25 Q18 32 20.6 36.6 L22.4 31 Q21.6 28 22 24Z M45 25 Q46 32 43.4 36.6 L41.6 31 Q42.4 28 42 24Z" fill="${HAIR}" stroke="${K}" stroke-width="1.4" stroke-linejoin="round"/>` +
+    `<path d="M22.4 15.6 Q26 13.4 30 13.2" fill="none" stroke="#6a6f96" stroke-width="1.2" stroke-linecap="round"/>` +
+    `<path d="M23.4 7.6 L41 10.4" stroke="${K}" stroke-width="4" stroke-linecap="round"/><path d="M23.4 7.6 L41 10.4" stroke="${GOLD}" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<circle cx="22.4" cy="7.4" r="1.9" fill="#f8a8c8" ${OT}/>` +
+    `` +
+    `<circle cx="37" cy="8" r="2" fill="#f8a8c8" ${OT}/><circle cx="34.4" cy="6.6" r="1.8" fill="#ff7ea6" ${OT}/>` +
+    eyes(27, 5.2) + `<path d="M24.4 24.6 Q27 23 29.6 24.6 M39.6 24.6 Q37 23 34.4 24.6" fill="none" stroke="${K}" stroke-width="1" stroke-linecap="round"/>` +
+    `<path d="M22.8 26 L24 27 M41.2 26 L40 27" stroke="${K}" stroke-width="1" stroke-linecap="round"/>` +
+    cheeks(30.6, 8.2) + `<path d="M30 31.6 Q32 33.8 34 31.6" fill="#e0607a" stroke="${K}" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>`
+  ),
+
+  // Doyen Wen : vieillard a barbe blanche, robe de mandarin bordeaux, bonnet a ailes, canne
+  elder_wen: svg(
+    `<rect x="47.6" y="32" width="3.2" height="26" rx="1.4" fill="#7a3a22" ${O}/>` +
+    `<circle cx="49.2" cy="31" r="3.2" fill="${GOLD}" ${O}/>` +
+    feet('#2a2430') +
+    `<path d="M17.6 57.6 Q15 45 22.4 35 L41.6 35 Q49 45 46.4 57.6 Q32 60.4 17.6 57.6Z" fill="#8e2a3a" ${O}/>` +
+    `<path d="M39 38 Q47 46 45.4 56.6 L38 58 Q42 46 39 38Z" fill="#661d2b"/>` +
+    `<path d="M18.4 55.6 Q32 59.2 45.6 55.6" fill="none" stroke="${GOLD}" stroke-width="2.4" stroke-linecap="round"/>` +
+    `<path d="M24 37 L32 44 L40 37" fill="none" stroke="${GOLD}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<rect x="22" y="47.4" width="20" height="4" rx="1.6" fill="#3e8e68" ${O}/><rect x="29" y="46.6" width="6" height="5.6" rx="1.2" fill="${GOLD}" ${O}/>` +
+    sleeve(19.4, 44, 4.8, 7.2, 14, '#8e2a3a') + `<circle cx="18.6" cy="43" r="1.5" fill="${GOLD}"/><circle cx="21" cy="47.6" r="1.3" fill="${GOLD}"/>` + `<path d="M14.6 49.6 Q18.6 52.6 23 50" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round"/>` + hand(18.4, 53.6) +
+    sleeve(45.2, 43, 4.8, 7, -14, '#661d2b') + `<circle cx="45.8" cy="42" r="1.5" fill="${GOLD}"/>` + `<path d="M41.4 48.6 Q46 51.6 50 48.8" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round"/>` + hand(49.4, 47.2) +
+    head('#f2c9a6', '#dca482', 26, 13.4, 11) +
+    `<path d="M20 29.4 Q18.4 42.4 32 49.4 Q45.6 42.4 44 29.4 Q39 36.4 32 35.4 Q25 36.4 20 29.4Z" fill="#f6f3ec" ${O}/>` +
+    `<path d="M38.6 38 Q42.6 42.6 36.8 47.6 Q41.6 44.4 44 29.4 Q43 36 38.6 38Z" fill="#d6d2c8"/>` +
+    `<path d="M24 36.6 Q26 41.6 29 44.4 M40 36.6 Q38 41.6 35 44.4" stroke="#cfcbc2" stroke-width="1" fill="none" stroke-linecap="round"/>` +
+    `<path d="M24.6 33 Q28.4 29.6 32 32 Q35.6 29.6 39.4 33 Q36 35.8 32 34.2 Q28 35.8 24.6 33Z" fill="#fbf8f2" ${OT}/>` +
+    happyEyes(26.8, 5.2) + `<path d="M23.4 23.6 Q26.6 21 30.4 23.2 M40.6 23.6 Q37.4 21 33.6 23.2" fill="none" stroke="#fbf8f2" stroke-width="2.8" stroke-linecap="round"/><path d="M23.4 23.6 Q26.6 21 30.4 23.2 M40.6 23.6 Q37.4 21 33.6 23.2" fill="none" stroke="#cfcbc2" stroke-width=".8" stroke-linecap="round"/>` +
+    cheeks(30.4, 8.2) +
+    // bonnet de mandarin a ailes
+    `<path d="M21.4 21 Q20.4 6.6 32 6.4 Q43.6 6.6 42.6 21 Q37 17.4 32 17.4 Q27 17.4 21.4 21Z" fill="#26202e" ${O}/>` +
+    `<path d="M21.6 18.6 Q32 14.4 42.4 18.6" fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<rect x="9.4" y="12.4" width="13" height="3.8" rx="1.9" fill="#26202e" ${O}/><rect x="41.6" y="12.4" width="13" height="3.8" rx="1.9" fill="#26202e" ${O}/>` +
+    `<circle cx="32" cy="10.6" r="2" fill="${RED}" ${OT}/><path d="M24.4 9.4 Q27 7.8 29.4 8" fill="none" stroke="#6a6f96" stroke-width="1.1" stroke-linecap="round"/>`
+  ),
+
+  // Paysan Lin : chapeau conique de paille, houe, vetements d'indigo rapieces
+  farmer_lin: svg(
+    `<rect x="11.6" y="22" width="3" height="37" rx="1.4" fill="#8a5a33" ${O}/>` +
+    `<path d="M12.6 21 L3 21.6 L4.4 28.4 L12.6 26Z" fill="#9aa5b3" ${O}/><path d="M5.6 23.4 L10 23" stroke="#fff" stroke-width="1" opacity=".7"/>` +
+    // jambes nues + sandales
+    `<rect x="23" y="49" width="6" height="7" fill="#e0a070" ${O}/><rect x="35" y="49" width="6" height="7" fill="#c4834f" ${O}/>` +
+    `<ellipse cx="26" cy="57.4" rx="5" ry="2.4" fill="#c9a448" ${O}/><ellipse cx="38" cy="57.4" rx="5" ry="2.4" fill="#c9a448" ${O}/>` +
+    `<path d="M21 54 L43 54 L43.6 50 L20.4 50Z" fill="#9c8a62" ${O}/>` +
+    // tunique indigo
+    `<path d="M19.6 53 Q18 44 23 37 L41 37 Q46 44 44.4 53 Q32 55.6 19.6 53Z" fill="#3e5f8a" ${O}/>` +
+    `<path d="M39 39.6 Q44.4 45 43 52 L37.6 53.4 Q41 46 39 39.6Z" fill="#2c4568"/>` +
+    `<path d="M26 37 L32 44 L38 37" fill="none" stroke="#b8c8e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<rect x="26" y="45.8" width="12" height="2.4" rx="1.2" fill="#d8c08a" ${OT}/>` +
+    `<rect x="22.4" y="47.4" width="5.6" height="4.6" fill="#8a6a3a" stroke="${K}" stroke-width="1.1" stroke-linejoin="round"/><path d="M22.4 47.4 L28 52" stroke="${K}" stroke-width=".8" stroke-dasharray="1 1"/>` +
+    sleeve(19.6, 42.6, 3.4, 4.6, 14, '#3e5f8a') + `<rect x="15.8" y="44.8" width="6.4" height="5.4" rx="2.2" fill="#e0a070" transform="rotate(12 19 47.5)" ${O}/>` + hand(14.6, 49.6, '#e0a070') +
+    sleeve(44.4, 42.6, 3.4, 4.6, -14, '#2c4568') + `<rect x="41.8" y="44.8" width="6.4" height="5.4" rx="2.2" fill="#c4834f" transform="rotate(-12 45 47.5)" ${O}/>` + hand(48.6, 50.4, '#c4834f') +
+    `<path d="M20 28 Q18 38 22 39.6 L26 33Z M44 28 Q46 38 42 39.6 L38 33Z" fill="#2a2430" stroke="${K}" stroke-width="1.4" stroke-linejoin="round"/>` +
+    head('#e8b88c', '#cf9a6c', 28, 13.2, 10.6) +
+    `<path d="M20.6 24.4 Q23 21.8 32 21.8 Q41 21.8 43.4 24.4 Q38 22.6 32 22.6 Q26 22.6 20.6 24.4Z" fill="#2a2430"/>` +
+    brows(26, 5.2, 1.5, K, -0.5) + eyes(29.4, 5.2) + cheeks(32.8, 8.2) + smile(34.4, 1.8) +
+    `<path d="M45.4 25 Q47 28.4 45.4 29.6 Q43.8 28.4 45.4 25Z" fill="#8fd6ff" ${OT}/>` +
+    // chapeau conique
+    `<path d="M32 2 Q40 12 55 24 Q32 31 9 24 Q24 12 32 2Z" fill="#e8c76a" ${O}/>` +
+    `<path d="M32 2 Q41 12 55 24 Q46 26 40 27 Q41 14 32 2Z" fill="#c9a448"/>` +
+    `<path d="M32 2 L32 27.6 M32 4 Q22 14 14 24.6 M32 4 Q42 14 50 24.6 M32 4 Q27 15 22 26.4 M32 4 Q37 15 42 26.4" stroke="#a88830" stroke-width=".9" fill="none" opacity=".7"/>` +
+    `<path d="M14 21 Q22 12 28 6.6" fill="none" stroke="#fff6c8" stroke-width="1.3" stroke-linecap="round" opacity=".7"/>` +
+    `<path d="M19 28 Q18.4 32 20.6 35 M45 28 Q45.6 32 43.4 35" fill="none" stroke="${RED}" stroke-width="1.4" stroke-linecap="round"/>`
+  ),
+
   // Passeur Gu : chapeau de pluie vert, cape de paille, perche de bambou
-  ferryman_gu: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M31 3h2v54h-2M30 4h1v55h-1M29 5h6v52h-6M28 6h1v53h-1M26 7h13v50h-13M25 8h3v51h-3M24 9h1v50h-1M22 10h21v47h-21M21 11h1v24h-1M50 11h3v46h-3M20 12h1v23h-1M49 12h1v45h-1M19 13h26v20h-26M17 14h30v17h-30M16 15h1v16h-1M15 16h34v9h-34M13 17h2v6h-2M10 18h45v5h-45M8 19h49v4h-49M7 20h1v3h-1M54 23h1v2h-1M47 30h2v1h-2M17 31h2v2h-2M46 31h1v2h-1M43 34h2v1h-2M21 36h3v23h-3M20 37h25v20h-25M19 39h2v20h-2M18 40h1v19h-1M17 41h30v16h-30M16 42h2v17h-2M15 43h34v14h-34M14 44h1v9h-1M33 57h8v2h-8M42 57h1v2h-1M44 57h5v2h-5M52 57h1v2h-1"/>' +
-    '<path fill="#960" d="M24 37h1v1h-1M25 38h3v15h-3M36 38h3v15h-3M28 39h8v14h-8M20 40h1v12h-1M41 40h3v10h-3M19 41h1v11h-1M18 42h1v10h-1M17 43h1v9h-1M44 43h2v9h-2M16 44h1v8h-1M24 46h16v7h-16M23 50h18v3h-18M43 50h1v2h-1M22 52h1v2h-1M41 52h1v2h-1M21 53h1v2h-1M29 53h6v1h-6M42 53h1v2h-1M30 54h4v1h-4M20 55h1v1h-1M31 55h2v1h-2M17 56h1v2h-1M19 56h1v1h-1M45 56h1v2h-1M47 56h1v2h-1"/>' +
-    '<path fill="#693" d="M32 5h1v19h-1M31 6h3v18h-3M30 7h5v17h-5M29 8h9v16h-9M27 9h2v15h-2M26 10h13v14h-13M25 11h17v13h-17M23 12h2v12h-2M22 13h21v11h-21M21 14h24v10h-24M20 15h26v9h-26M18 16h29v8h-29M17 17h32v7h-32M16 18h35v5h-35M10 19h44v3h-44M8 20h47v2h-47"/>' +
-    '<path fill="#363" d="M51 12h1v6h-1M45 19h4v5h-4M49 19h1v4h-1M27 20h18v4h-18M50 20h2v3h-2M55 20h1v2h-1M8 21h1v1h-1M21 21h6v3h-6M52 21h3v1h-3M15 22h38v1h-38M16 23h5v1h-5M51 24h1v32h-1M50 32h1v24h-1"/>' +
-    '<path fill="#c96" d="M23 25h18v1h-18M23 26h1v10h-1M24 26h1v1h-1M27 26h10v1h-10M39 26h2v1h-2M22 27h1v8h-1M28 27h8v11h-8M40 27h1v9h-1M24 31h16v5h-16M16 53h3v2h-3M44 53h3v2h-3"/>' +
-    '<path fill="#630" d="M41 36h1v1h-1M39 37h1v1h-1M42 37h1v1h-1M22 38h2v8h-2M38 38h1v1h-1M40 38h2v2h-2M21 39h2v11h-2M42 39h2v2h-2M43 41h2v1h-2M44 42h2v1h-2M45 43h2v1h-2M46 44h3v8h-3M40 45h1v1h-1M20 46h2v6h-2M41 49h1v1h-1M19 50h1v2h-1M15 51h4v1h-4M42 51h4v1h-4M43 55h1v1h-1M16 56h1v1h-1M18 56h1v1h-1M44 56h1v1h-1M46 56h1v1h-1"/>' +
-    '<path fill="#336" d="M17 25h3v5h-3M42 25h3v6h-3M18 30h2v2h-2M42 31h1v2h-1M43 31h1v1h-1M28 33h8v2h-8M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#9c6" d="M31 4h1v2h-1M30 5h1v2h-1M29 6h1v2h-1M28 7h1v2h-1M26 8h1v2h-1M27 8h1v1h-1M37 8h1v1h-1M25 9h1v2h-1M24 10h1v2h-1M22 11h1v2h-1M23 11h1v1h-1M41 11h1v1h-1M21 12h1v2h-1M50 12h1v5h-1M20 13h1v2h-1M19 14h1v2h-1M17 15h1v2h-1M18 15h1v1h-1M16 16h1v2h-1M15 17h1v2h-1M13 18h2v1h-2M50 24h1v8h-1M50 33h1v11h-1M50 45h1v11h-1"/>' +
-    '<path fill="#963" d="M37 34h4v2h-4M23 35h3v1h-3M34 35h5v2h-5M25 36h9v1h-9M28 37h8v1h-8M19 53h1v2h-1M47 53h1v2h-1M16 54h3v1h-3M44 54h3v1h-3"/>' +
-    '<path fill="#333" d="M20 25h1v8h-1M21 25h1v2h-1M44 25h2v2h-2M45 27h1v3h-1M36 33h1v2h-1M27 34h9v1h-9M42 34h1v1h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#c90" d="M22 36h1v1h-1M21 37h1v1h-1M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M15 44h1v7h-1M41 46h1v3h-1M42 50h1v1h-1"/>' +
-    '<path fill="#369" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2"/>' +
-    '<path fill="#f99" d="M22 32h3v2h-3M39 32h3v2h-3"/>' +
-    '<path fill="#fff" d="M24 28h2v2h-2M36 28h2v2h-2"/>' +
-    '<path fill="#669" d="M27 33h1v1h-1"/>' +
-    '</svg>',
-  // Tisserande Mei : robe rose, deux chignons fleuris, metier a tisser
-  weaver_mei: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M16 8h5v23h-5M44 8h3v23h-3M47 8h2v11h-2M14 9h9v10h-9M42 9h9v10h-9M13 10h1v9h-1M41 10h2v25h-2M26 11h13v46h-13M12 12h29v5h-29M51 16h2v1h-2M48 19h1v2h-1M24 22h17v35h-17M23 23h6v36h-6M22 25h23v8h-23M49 25h12v32h-12M47 26h2v5h-2M21 27h2v8h-2M61 29h2v2h-2M17 31h3v2h-3M46 31h1v2h-1M48 31h3v28h-3M20 33h1v2h-1M43 34h2v1h-2M41 36h2v21h-2M22 37h1v20h-1M20 38h25v19h-25M19 39h1v18h-1M18 40h1v15h-1M17 41h30v14h-30M16 42h32v13h-32M15 43h1v12h-1M14 44h1v9h-1M61 53h2v2h-2M35 57h6v2h-6M59 57h4v2h-4"/>' +
-    '<path fill="#336" d="M18 9h2v7h-2M46 9h2v9h-2M17 10h5v4h-5M45 10h5v7h-5M15 11h3v7h-3M43 11h2v4h-2M14 13h1v5h-1M32 13h8v9h-8M42 13h1v1h-1M13 14h1v2h-1M40 14h2v9h-2M29 15h14v7h-14M44 15h1v1h-1M27 16h17v6h-17M19 17h2v15h-2M25 17h2v5h-2M18 18h1v14h-1M24 18h1v4h-1M23 19h1v4h-1M17 20h1v10h-1M42 22h3v9h-3M41 23h1v2h-1M42 31h1v2h-1M43 31h1v1h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#fc9" d="M24 24h6v2h-6M34 24h2v14h-2M36 24h4v2h-4M23 25h18v1h-18M24 26h1v1h-1M27 26h10v1h-10M39 26h1v1h-1M22 27h2v7h-2M28 27h6v7h-6M40 27h1v8h-1M53 29h6v27h-6M24 31h5v5h-5M36 31h4v5h-4M23 34h1v1h-1M30 34h2v1h-2M33 34h1v4h-1M29 35h1v3h-1M32 35h1v3h-1M16 53h3v1h-3M44 53h3v1h-3"/>' +
-    '<path fill="#c69" d="M27 38h1v15h-1M25 39h14v14h-14M20 40h1v12h-1M41 40h3v10h-3M19 41h1v11h-1M18 42h1v10h-1M17 43h1v9h-1M44 43h2v9h-2M16 44h1v8h-1M51 48h9v5h-9M24 49h16v4h-16M23 50h18v3h-18M21 53h1v2h-1M22 53h1v1h-1M29 53h6v1h-6M30 54h4v1h-4"/>' +
-    '<path fill="#936" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2M39 37h1v1h-1M22 38h2v8h-2M36 38h3v3h-3M40 38h2v2h-2M21 39h2v11h-2M42 39h2v2h-2M37 41h2v1h-2M43 41h2v1h-2M38 42h1v3h-1M44 42h3v1h-3M37 43h1v1h-1M45 43h3v1h-3M46 44h3v8h-3M30 45h4v5h-4M40 45h1v1h-1M20 46h1v6h-1M24 48h16v1h-16M39 49h1v1h-1M41 49h1v1h-1M40 50h1v1h-1M15 51h1v1h-1M41 53h2v1h-2M42 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#fc3" d="M16 13h2v3h-2M46 13h2v5h-2M50 26h10v3h-10M25 38h2v1h-2M37 38h1v2h-1M38 38h1v1h-1M26 39h2v1h-2M36 39h1v2h-1M27 40h2v1h-2M35 40h1v2h-1M28 41h2v1h-2M34 41h1v2h-1M29 42h2v1h-2M33 42h1v2h-1M30 43h3v1h-3M31 44h2v1h-2M24 47h6v1h-6M34 47h6v1h-6M16 50h6v2h-6M42 50h6v2h-6M22 52h20v1h-20M50 54h10v2h-10"/>' +
-    '<path fill="#333" d="M21 10h1v1h-1M49 10h1v1h-1M21 12h1v2h-1M22 12h1v1h-1M49 12h1v6h-1M20 14h1v1h-1M48 15h1v3h-1M18 16h1v1h-1M46 16h2v2h-2M14 17h1v1h-1M16 17h1v2h-1M17 17h1v1h-1M44 17h1v10h-1M45 18h1v12h-1M34 19h3v4h-3M22 20h2v3h-2M24 20h1v2h-1M26 20h1v2h-1M31 20h3v4h-3M37 20h1v2h-1M21 21h18v1h-18M21 22h1v5h-1M27 22h4v1h-4M20 23h1v10h-1M22 23h1v2h-1M30 23h1v1h-1M46 26h1v4h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#f9c" d="M16 12h2v1h-2M46 12h2v1h-2M15 13h1v2h-1M18 13h1v2h-1M45 13h1v2h-1M48 13h1v2h-1M16 15h2v1h-2M46 15h2v1h-2M22 32h3v2h-3M39 32h3v2h-3M24 37h1v1h-1M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M15 44h1v7h-1M51 44h8v4h-8M41 46h1v3h-1M51 50h8v4h-8"/>' +
-    '<path fill="#fe6" d="M49 26h1v3h-1M49 30h1v14h-1M59 30h1v23h-1M24 46h6v1h-6M31 46h2v3h-2M34 46h6v1h-6M49 52h1v1h-1M49 54h1v3h-1"/>' +
-    '<path fill="#ffc" d="M51 29h2v15h-2M55 29h2v15h-2"/>' +
-    '<path fill="#fff" d="M27 13h5v2h-5M25 14h2v3h-2M23 15h2v3h-2M27 15h2v1h-2M22 16h1v4h-1M21 17h1v4h-1M20 18h1v4h-1M23 18h1v1h-1M19 19h1v3h-1M24 28h2v2h-2M36 28h2v2h-2"/>' +
-    '<path fill="#669" d="M16 9h1v2h-1M17 9h1v1h-1M44 9h1v2h-1M45 9h1v1h-1M14 10h1v3h-1M15 10h1v1h-1M42 10h1v3h-1M43 10h1v1h-1M13 12h1v2h-1M26 12h12v1h-12M41 12h1v1h-1M24 13h3v1h-3M39 13h1v1h-1M22 14h3v1h-3M21 15h1v2h-1M22 15h1v1h-1M20 16h1v1h-1M41 24h1v1h-1"/>' +
-    '<path fill="#c96" d="M37 34h2v3h-2M39 34h1v2h-1M40 34h1v1h-1M24 35h2v1h-2M34 35h2v3h-2M36 35h1v2h-1M25 36h9v1h-9M28 37h6v1h-6M19 53h1v2h-1M47 53h1v1h-1M44 54h1v1h-1"/>' +
-    '<path fill="#c90" d="M49 28h11v1h-11M50 30h1v23h-1M49 56h2v1h-2M59 56h1v1h-1"/>' +
-    '</svg>',
-  // Moine Zhen : crane rase, robe safran, kasaya rouge, mains jointes, chapelet
-  monk_zhen: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M28 13h9v44h-9M25 14h14v43h-14M23 15h18v42h-18M22 16h1v19h-1M21 17h22v18h-22M20 18h1v15h-1M19 19h26v14h-26M18 21h1v10h-1M17 23h30v6h-30M22 37h21v20h-21M20 38h25v19h-25M19 39h1v18h-1M18 40h1v15h-1M17 41h30v14h-30M16 42h1v13h-1M15 43h34v12h-34M14 44h1v9h-1M49 52h2v1h-2M48 55h1v2h-1M23 57h6v2h-6M35 57h6v2h-6"/>' +
-    '<path fill="#c96" d="M30 15h6v19h-6M36 15h3v8h-3M39 16h1v7h-1M27 17h14v6h-14M25 18h17v5h-17M24 19h19v4h-19M23 20h21v3h-21M22 21h1v13h-1M20 22h2v10h-2M28 23h2v11h-2M41 23h3v9h-3M19 24h1v7h-1M23 25h18v4h-18M23 29h1v6h-1M25 29h2v1h-2M37 29h2v1h-2M40 29h1v6h-1M24 30h1v6h-1M27 30h2v7h-2M36 30h1v7h-1M39 30h1v6h-1M25 31h14v3h-14M21 32h1v1h-1M25 34h2v3h-2M30 34h2v1h-2M33 34h3v4h-3M29 35h1v3h-1M32 35h1v3h-1M30 47h4v6h-4M28 48h7v4h-7M16 53h3v1h-3M44 53h3v1h-3"/>' +
-    '<path fill="#f90" d="M34 39h3v1h-3M20 40h1v12h-1M35 40h1v1h-1M41 40h3v10h-3M19 41h1v11h-1M18 42h1v10h-1M37 42h1v1h-1M17 43h1v9h-1M44 43h2v9h-2M16 44h1v8h-1M24 47h1v6h-1M25 48h1v5h-1M26 49h1v4h-1M23 50h1v3h-1M22 52h1v2h-1M27 52h1v1h-1M21 53h1v2h-1M29 53h1v1h-1M30 54h4v1h-4"/>' +
-    '<path fill="#c33" d="M25 38h3v9h-3M28 39h5v7h-5M33 43h3v3h-3M28 46h2v1h-2M34 46h3v1h-3M27 47h1v1h-1M36 47h2v1h-2M37 48h3v5h-3M16 50h6v2h-6M40 50h1v3h-1M42 50h6v2h-6M36 52h6v1h-6M41 53h1v1h-1"/>' +
-    '<path fill="#963" d="M43 20h1v1h-1M44 23h1v6h-1M45 24h1v4h-1M43 27h1v5h-1M42 29h1v4h-1M41 31h1v3h-1M37 34h2v3h-2M39 34h1v2h-1M40 34h1v1h-1M24 35h2v1h-2M34 35h2v3h-2M36 35h1v2h-1M25 36h9v1h-9M28 37h6v1h-6M26 40h2v2h-2M36 40h2v2h-2M28 43h2v2h-2M34 43h2v2h-2M31 45h2v1h-2M35 48h1v4h-1M28 51h1v1h-1M33 51h1v2h-1M34 51h1v1h-1M30 52h3v1h-3M19 53h1v2h-1M47 53h1v1h-1M44 54h1v1h-1"/>' +
-    '<path fill="#c60" d="M39 37h1v1h-1M22 38h2v8h-2M36 38h3v1h-3M40 38h2v2h-2M21 39h2v11h-2M37 39h2v1h-2M42 39h2v2h-2M38 40h1v4h-1M43 41h2v1h-2M44 42h2v1h-2M45 43h2v1h-2M46 44h2v6h-2M40 45h1v1h-1M20 46h1v4h-1M41 49h1v1h-1M15 51h1v1h-1M20 55h1v1h-1M31 55h2v1h-2"/>' +
-    '<path fill="#fc9" d="M28 14h8v1h-8M25 15h5v2h-5M37 15h2v1h-2M23 16h2v3h-2M22 17h1v4h-1M25 17h2v1h-2M21 18h1v4h-1M20 19h1v3h-1M23 19h1v1h-1M19 21h1v3h-1M18 23h1v6h-1M19 30h1v1h-1"/>' +
-    '<path fill="#336" d="M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#933" d="M30 39h3v1h-3M31 40h3v1h-3M32 41h3v1h-3M33 42h3v1h-3M36 43h1v3h-1M37 44h1v3h-1M38 45h1v3h-1M25 46h1v1h-1M39 46h1v3h-1M26 47h1v1h-1M34 53h1v1h-1M42 53h1v2h-1M43 55h1v1h-1"/>' +
-    '<path fill="#fc3" d="M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M15 44h1v7h-1M41 46h1v3h-1"/>' +
-    '<path fill="#f99" d="M22 32h3v2h-3M39 32h3v2h-3"/>' +
-    '<path fill="#333" d="M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '</svg>',
-  // Herboriste Xu : bandeau et tablier verts, chignon, plante en pot, gourde
-  herbalist_xu: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M30 3h5v54h-5M28 4h9v53h-9M27 5h2v54h-2M26 7h1v52h-1M37 11h2v48h-2M24 12h17v45h-17M22 13h21v22h-21M21 14h1v21h-1M20 15h1v20h-1M19 16h26v17h-26M18 17h1v16h-1M17 18h30v13h-30M16 20h1v11h-1M47 30h2v1h-2M17 31h1v2h-1M46 31h1v2h-1M43 34h2v1h-2M11 35h2v24h-2M23 35h3v24h-3M10 36h1v11h-1M41 36h2v21h-2M9 37h6v10h-6M22 37h1v20h-1M7 38h2v21h-2M20 38h25v19h-25M6 39h1v18h-1M19 39h1v18h-1M5 40h12v7h-12M18 40h1v15h-1M4 41h43v6h-43M50 42h3v15h-3M47 43h3v12h-3M53 45h2v4h-2M14 47h33v8h-33M9 48h8v11h-8M5 50h50v3h-50M54 53h1v2h-1M53 54h1v1h-1M46 55h1v2h-1M48 55h2v2h-2M35 57h6v2h-6"/>' +
-    '<path fill="#693" d="M20 17h24v5h-24M19 18h26v4h-26M11 36h1v7h-1M10 37h3v5h-3M13 38h1v3h-1M25 38h2v1h-2M37 38h2v1h-2M7 39h1v10h-1M28 39h9v14h-9M6 40h1v7h-1M9 40h2v5h-2M14 41h2v2h-2M27 41h1v12h-1M5 42h1v4h-1M13 42h1v6h-1M12 43h1v4h-1M14 43h1v1h-1M10 45h1v1h-1M26 45h1v8h-1M25 49h1v4h-1M29 53h6v1h-6"/>' +
-    '<path fill="#336" d="M32 4h2v7h-2M31 5h5v6h-5M29 6h2v5h-2M28 8h1v3h-1M27 9h1v2h-1M32 13h8v4h-8M40 14h2v3h-2M29 15h3v2h-3M27 16h16v1h-16M17 20h4v10h-4M25 20h19v2h-19M40 22h4v1h-4M41 23h3v2h-3M42 25h3v6h-3M18 30h2v2h-2M42 31h1v2h-1M43 31h1v1h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#fc9" d="M24 24h6v2h-6M34 24h2v14h-2M36 24h4v2h-4M23 25h18v1h-18M24 26h1v1h-1M27 26h10v1h-10M39 26h1v1h-1M22 27h2v7h-2M28 27h6v7h-6M40 27h1v8h-1M24 31h5v5h-5M36 31h4v5h-4M23 34h1v1h-1M30 34h2v1h-2M33 34h1v4h-1M29 35h1v3h-1M32 35h1v3h-1M49 49h1v7h-1M16 50h6v2h-6M42 50h4v2h-4M46 50h1v1h-1M48 50h1v5h-1M47 51h1v3h-1M16 53h3v1h-3M44 53h2v1h-2"/>' +
-    '<path fill="#c63" d="M25 39h1v2h-1M20 40h1v10h-1M41 40h3v10h-3M19 41h1v9h-1M18 42h1v8h-1M17 43h1v7h-1M44 43h2v7h-2M16 44h1v6h-1M7 50h7v6h-7M14 52h1v6h-1M22 52h1v1h-1M21 53h1v2h-1M9 56h5v2h-5"/>' +
-    '<path fill="#333" d="M35 5h1v1h-1M35 7h1v4h-1M34 9h1v2h-1M22 20h2v3h-2M24 20h1v2h-1M26 20h1v2h-1M31 20h6v3h-6M37 20h1v2h-1M44 20h2v7h-2M21 21h18v1h-18M21 22h1v5h-1M27 22h4v1h-4M20 23h1v10h-1M22 23h1v2h-1M30 23h4v1h-4M45 27h1v3h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#933" d="M39 37h1v1h-1M22 38h2v8h-2M40 38h2v2h-2M21 39h2v11h-2M38 39h1v2h-1M42 39h2v2h-2M43 41h2v1h-2M44 42h2v1h-2M45 43h2v1h-2M50 43h2v5h-2M46 44h1v6h-1M47 44h1v1h-1M40 45h1v1h-1M20 46h1v4h-1M41 49h1v1h-1M47 49h1v1h-1M6 51h1v1h-1M15 51h1v1h-1M41 52h1v1h-1M42 53h1v2h-1M7 55h1v1h-1M15 55h1v3h-1M20 55h1v1h-1M43 55h1v1h-1M14 56h1v2h-1M8 57h6v1h-6"/>' +
-    '<path fill="#363" d="M18 19h28v1h-28M34 39h3v2h-3M13 40h1v1h-1M35 41h3v3h-3M36 44h2v5h-2M8 45h1v2h-1M38 45h1v8h-1M7 48h1v1h-1M37 49h3v4h-3M30 54h4v1h-4"/>' +
-    '<path fill="#c96" d="M37 34h2v3h-2M39 34h1v2h-1M40 34h1v1h-1M24 35h2v1h-2M34 35h2v3h-2M36 35h1v2h-1M25 36h9v1h-9M28 37h6v1h-6M53 46h1v2h-1M52 47h1v1h-1M53 52h1v2h-1M19 53h1v2h-1M52 53h1v2h-1M16 54h1v1h-1M44 54h1v1h-1M51 54h1v2h-1M50 55h1v1h-1"/>' +
-    '<path fill="#fc3" d="M49 44h3v4h-3M48 45h1v4h-1M52 45h1v2h-1M50 49h2v5h-2M49 50h1v6h-1M52 50h1v3h-1M48 51h3v4h-3M53 51h1v1h-1M47 52h1v2h-1"/>' +
-    '<path fill="#fff" d="M27 13h5v2h-5M25 14h2v3h-2M23 15h2v2h-2M27 15h2v1h-2M22 16h1v1h-1M19 20h2v2h-2M21 20h1v1h-1M24 28h2v3h-2M36 28h2v3h-2"/>' +
-    '<path fill="#669" d="M30 4h1v2h-1M31 4h1v1h-1M28 5h1v3h-1M29 5h1v1h-1M27 7h1v2h-1M26 12h12v1h-12M24 13h3v1h-3M39 13h1v1h-1M22 14h3v1h-3M21 15h1v2h-1M22 15h1v1h-1M20 16h1v1h-1M41 24h1v1h-1"/>' +
-    '<path fill="#f96" d="M24 37h1v1h-1M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M15 44h1v7h-1M41 46h1v3h-1M6 50h1v1h-1M7 52h1v3h-1M8 56h1v1h-1"/>' +
-    '<path fill="#9c6" d="M19 17h1v1h-1M18 18h1v1h-1M9 39h1v1h-1M27 39h1v2h-1M5 41h1v1h-1M26 41h1v4h-1M25 45h1v4h-1M24 49h1v4h-1"/>' +
-    '<path fill="#396" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2"/>' +
-    '<path fill="#f99" d="M22 32h3v2h-3M39 32h3v2h-3"/>' +
-    '</svg>',
-  // Marchand Ma : robe de brocart pourpre, bonnet pointu a fourrure, barbe noire, ballot et balance
-  merchant_ma: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M30 2h3v55h-3M29 3h8v54h-8M28 4h1v55h-1M27 5h12v52h-12M26 6h2v53h-2M25 7h16v50h-16M24 8h2v51h-2M23 9h1v50h-1M22 10h21v47h-21M21 11h1v24h-1M20 14h1v21h-1M19 16h26v17h-26M18 17h29v16h-29M17 18h1v15h-1M16 20h1v11h-1M47 20h2v3h-2M47 29h12v4h-12M43 33h4v2h-4M48 33h3v22h-3M52 33h1v2h-1M58 33h1v2h-1M21 36h24v21h-24M56 36h3v5h-3M45 37h2v18h-2M54 37h7v4h-7M20 38h1v19h-1M53 38h1v3h-1M19 39h1v18h-1M18 40h1v15h-1M9 41h6v16h-6M17 41h1v14h-1M58 41h1v2h-1M7 42h41v13h-41M6 43h1v12h-1M5 44h1v11h-1M4 46h1v7h-1M48 55h1v2h-1M15 56h2v1h-2M35 57h6v2h-6"/>' +
-    '<path fill="#939" d="M31 4h5v13h-5M30 5h7v12h-7M29 6h9v11h-9M28 7h11v10h-11M27 8h13v9h-13M26 9h1v8h-1M25 10h16v7h-16M24 11h1v6h-1M23 12h1v5h-1M22 15h1v2h-1M21 16h1v1h-1M20 40h1v12h-1M19 41h1v11h-1M18 42h1v10h-1M41 42h5v8h-5M17 43h1v9h-1M16 44h1v8h-1M25 45h1v8h-1M38 45h1v8h-1M24 49h7v4h-7M34 49h6v4h-6M23 50h18v3h-18M22 52h1v2h-1M21 53h1v2h-1M29 53h6v1h-6M30 54h4v1h-4"/>' +
-    '<path fill="#336" d="M17 20h1v10h-1M18 22h1v10h-1M19 23h1v9h-1M41 23h3v2h-3M42 25h3v7h-3M42 32h2v1h-2M23 36h7v6h-7M35 36h4v8h-4M30 37h5v11h-5M25 42h5v2h-5M27 44h3v2h-3M29 46h1v2h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#fc3" d="M30 8h4v4h-4M47 30h10v2h-10M43 37h1v4h-1M56 37h2v3h-2M42 38h3v2h-3M54 38h5v2h-5M10 43h4v13h-4M14 43h1v1h-1M8 44h2v10h-2M7 45h1v9h-1M6 47h1v7h-1M24 47h4v2h-4M36 47h4v2h-4M16 50h6v2h-6M42 50h6v2h-6M5 51h1v1h-1"/>' +
-    '<path fill="#c96" d="M28 24h2v11h-2M34 24h2v11h-2M23 25h18v1h-18M23 26h1v7h-1M24 26h1v1h-1M27 26h10v1h-10M39 26h2v1h-2M22 27h1v5h-1M30 27h4v9h-4M40 27h1v6h-1M24 31h16v3h-16M26 34h11v1h-11M16 53h3v1h-3M44 53h3v1h-3"/>' +
-    '<path fill="#333" d="M46 20h1v2h-1M45 22h1v10h-1M20 23h1v10h-1M21 23h1v4h-1M22 23h1v2h-1M30 23h4v1h-4M44 23h1v4h-1M46 29h1v1h-1M44 31h1v1h-1M43 32h1v1h-1M22 33h1v2h-1M42 33h1v2h-1M23 34h1v2h-1M40 34h1v8h-1M24 35h2v1h-2M38 35h2v1h-2M27 36h3v1h-3M39 36h1v7h-1M41 36h1v2h-1M22 38h1v1h-1M38 38h1v6h-1M23 41h1v1h-1M24 42h1v1h-1M37 42h1v3h-1M25 43h1v1h-1M36 43h1v3h-1M26 44h1v1h-1M35 44h1v3h-1M27 45h1v1h-1M34 45h1v3h-1M28 46h1v1h-1M33 46h1v2h-1M29 47h2v1h-2M32 47h1v2h-1M31 48h1v1h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#636" d="M40 10h1v4h-1M41 11h1v6h-1M42 16h1v1h-1M21 39h1v11h-1M44 41h2v2h-2M22 42h1v8h-1M46 42h1v8h-1M23 43h1v3h-1M45 43h3v1h-3M47 44h1v6h-1M40 45h1v1h-1M20 46h1v4h-1M24 48h5v1h-5M35 48h5v1h-5M30 49h1v1h-1M33 49h1v1h-1M39 49h1v1h-1M41 49h1v1h-1M40 50h1v1h-1M15 51h1v1h-1M40 52h2v1h-2M41 53h2v1h-2M42 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#fff" d="M19 18h25v4h-25M24 28h2v3h-2M36 28h2v3h-2"/>' +
-    '<path fill="#c9c" d="M30 3h3v1h-3M29 4h1v2h-1M30 4h1v1h-1M34 4h2v1h-2M28 5h1v2h-1M27 6h1v2h-1M26 7h1v2h-1M25 8h1v2h-1M24 9h1v2h-1M23 10h1v2h-1M22 11h1v4h-1M21 14h1v2h-1M20 39h1v1h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M40 43h1v2h-1M15 44h1v7h-1M41 46h1v3h-1"/>' +
-    '<path fill="#fe6" d="M31 9h2v2h-2M49 34h1v20h-1M7 43h3v1h-3M6 44h1v3h-1M7 44h1v1h-1M5 46h1v5h-1M24 46h3v1h-3M37 46h3v1h-3"/>' +
-    '<path fill="#c90" d="M57 30h1v2h-1M46 32h1v1h-1M48 32h3v1h-3M45 38h1v2h-1M59 38h1v2h-1M43 39h1v2h-1M44 39h1v1h-1M54 39h1v1h-1M57 39h2v1h-2M42 40h1v1h-1M12 52h3v3h-3M10 53h4v3h-4M9 54h1v1h-1"/>' +
-    '<path fill="#ccc" d="M44 18h1v4h-1M19 21h25v1h-25"/>' +
-    '<path fill="#630" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2"/>' +
-    '<path fill="#963" d="M40 32h1v1h-1M39 33h1v1h-1M37 34h1v1h-1M19 53h1v2h-1M47 53h1v1h-1M44 54h1v1h-1"/>' +
-    '<path fill="#669" d="M41 24h1v1h-1M22 36h1v2h-1M34 36h1v1h-1M23 39h1v2h-1"/>' +
-    '</svg>',
-  // Guide Dawa : turban creme a bandeau turquoise, tunique de sable, baton a fanion
-  guide_dawa: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M26 10h13v47h-13M24 11h17v46h-17M22 12h21v23h-21M21 13h1v22h-1M20 14h1v19h-1M19 15h26v18h-26M18 16h1v15h-1M17 17h34v12h-34M16 19h37v4h-37M15 21h1v2h-1M53 23h4v6h-4M57 24h2v3h-2M59 26h2v3h-2M52 28h1v3h-1M47 29h4v28h-4M51 29h1v2h-1M23 35h6v24h-6M22 37h21v20h-21M20 38h25v19h-25M19 39h1v18h-1M18 40h1v15h-1M17 41h30v14h-30M16 42h1v13h-1M15 43h1v12h-1M14 44h1v9h-1M35 57h6v2h-6M50 57h1v2h-1"/>' +
-    '<path fill="#c96" d="M20 23h3v9h-3M28 23h8v11h-8M41 23h3v9h-3M19 24h1v7h-1M23 25h18v1h-18M23 26h1v9h-1M24 26h1v1h-1M27 26h10v1h-10M39 26h2v1h-2M40 27h1v8h-1M24 31h5v5h-5M36 31h4v5h-4M21 32h1v1h-1M30 34h2v1h-2M33 34h3v4h-3M29 35h1v3h-1M32 35h1v3h-1M20 40h1v12h-1M41 40h3v10h-3M19 41h1v11h-1M18 42h1v10h-1M17 43h1v9h-1M25 43h14v3h-14M44 43h2v9h-2M16 44h1v8h-1M23 51h18v2h-18M22 52h1v2h-1M16 53h3v1h-3M21 53h1v2h-1M29 53h6v1h-6M44 53h3v1h-3M30 54h4v1h-4"/>' +
-    '<path fill="#399" d="M17 20h30v2h-30M51 23h2v5h-2M53 24h3v4h-3M56 25h1v2h-1M57 25h1v1h-1M51 28h1v1h-1M25 38h3v4h-3M36 38h3v4h-3M28 39h11v3h-11M24 47h16v3h-16"/>' +
-    '<path fill="#963" d="M44 23h2v5h-2M43 27h1v5h-1M44 28h1v1h-1M42 29h1v4h-1M41 31h1v3h-1M37 34h2v3h-2M39 34h1v2h-1M40 34h1v1h-1M24 35h2v1h-2M34 35h2v3h-2M36 35h1v2h-1M25 36h9v1h-9M28 37h6v1h-6M22 38h2v8h-2M40 38h2v2h-2M21 39h2v11h-2M42 39h2v2h-2M43 41h2v1h-2M44 42h3v1h-3M38 43h1v2h-1M45 43h3v1h-3M46 44h3v8h-3M40 45h1v1h-1M20 46h1v6h-1M41 49h1v1h-1M15 51h1v1h-1M40 52h2v1h-2M19 53h1v2h-1M41 53h2v1h-2M47 53h1v2h-1M42 54h1v1h-1M44 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#ffc" d="M32 12h8v8h-8M28 13h14v7h-14M26 14h2v6h-2M24 15h19v5h-19M23 16h21v4h-21M18 17h27v3h-27"/>' +
-    '<path fill="#fc9" d="M44 17h1v1h-1M45 18h1v2h-1M16 21h1v1h-1M47 21h1v1h-1M18 23h1v6h-1M19 23h1v1h-1M19 30h1v1h-1M20 39h1v1h-1M40 39h1v6h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M15 44h1v7h-1M41 46h1v3h-1M16 50h6v2h-6M42 50h6v2h-6"/>' +
-    '<path fill="#fff" d="M26 11h6v2h-6M32 11h6v1h-6M24 12h2v3h-2M39 12h1v1h-1M22 13h2v3h-2M26 13h2v1h-2M21 14h1v4h-1M20 15h1v5h-1M19 16h4v1h-4M19 18h1v3h-1M18 20h1v2h-1M24 28h2v3h-2M36 28h2v3h-2"/>' +
-    '<path fill="#6cc" d="M17 19h2v1h-2M20 19h27v1h-27M26 42h12v2h-12"/>' +
-    '<path fill="#fc3" d="M30 17h4v4h-4M47 18h3v1h-3M48 19h3v2h-3M49 21h1v3h-1M48 22h1v2h-1M48 25h1v18h-1M48 55h1v1h-1"/>' +
-    '<path fill="#336" d="M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#c90" d="M51 20h1v2h-1M50 21h1v2h-1M49 22h1v2h-1M47 23h2v1h-2M49 25h1v19h-1M49 52h1v4h-1"/>' +
-    '<path fill="#396" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2"/>' +
-    '<path fill="#f99" d="M22 32h3v2h-3M39 32h3v2h-3"/>' +
-    '<path fill="#333" d="M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#fe6" d="M31 18h2v2h-2"/>' +
-    '</svg>',
-  // Forgeron Tie : bras nus, tablier de cuir, marteau et fleche rouge
-  smith_tie: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M29 5h6v52h-6M28 6h1v53h-1M27 10h10v47h-10M26 11h13v46h-13M24 12h17v45h-17M22 13h21v22h-21M21 14h1v21h-1M12 15h3v44h-3M20 15h1v20h-1M11 16h1v9h-1M19 16h26v17h-26M18 17h1v16h-1M10 18h1v7h-1M17 18h30v13h-30M15 20h2v5h-2M9 21h48v4h-48M8 23h1v2h-1M16 25h41v6h-41M11 26h1v33h-1M57 30h2v1h-2M17 31h1v2h-1M46 31h5v2h-5M47 33h4v24h-4M43 34h2v1h-2M23 35h5v24h-5M41 36h2v1h-2M21 38h22v19h-22M19 39h26v18h-26M18 40h1v17h-1M17 41h30v16h-30M16 42h1v15h-1M15 43h1v12h-1M21 57h2v2h-2M30 57h1v2h-1M33 57h8v2h-8M42 57h1v2h-1M50 57h1v2h-1"/>' +
-    '<path fill="#963" d="M24 24h2v2h-2M29 24h1v10h-1M34 24h1v14h-1M38 24h2v2h-2M23 25h18v1h-18M23 26h1v9h-1M24 26h1v1h-1M27 26h10v1h-10M39 26h2v1h-2M22 27h1v7h-1M28 27h8v7h-8M40 27h1v8h-1M24 31h5v5h-5M36 31h4v5h-4M33 34h3v4h-3M27 36h3v1h-3M32 36h1v2h-1M20 40h1v11h-1M41 40h3v8h-3M19 41h1v11h-1M18 42h1v11h-1M17 43h1v10h-1M44 43h3v9h-3M16 44h1v9h-1M15 45h1v8h-1M43 48h1v3h-1M44 53h1v2h-1"/>' +
-    '<path fill="#336" d="M31 6h3v5h-3M30 7h1v4h-1M29 9h1v2h-1M28 10h1v1h-1M32 13h8v9h-8M40 14h2v8h-2M29 15h3v8h-3M27 16h16v6h-16M17 20h4v10h-4M25 20h19v2h-19M41 22h3v3h-3M52 22h4v8h-4M48 23h4v7h-4M42 25h3v6h-3M18 30h2v2h-2M42 31h1v2h-1M43 31h1v1h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#930" d="M24 38h2v1h-2M26 39h12v14h-12M25 41h14v12h-14M24 44h1v9h-1M23 48h1v5h-1M21 51h1v1h-1M22 52h1v2h-1M29 53h6v1h-6M30 54h4v1h-4M31 55h2v1h-2"/>' +
-    '<path fill="#630" d="M49 31h1v25h-1M40 34h1v1h-1M38 35h1v2h-1M39 35h1v1h-1M25 36h2v1h-2M35 36h3v1h-3M28 37h8v1h-8M39 37h1v2h-1M38 38h1v1h-1M21 39h2v9h-2M23 39h1v4h-1M35 39h3v2h-3M40 39h3v1h-3M42 40h2v1h-2M36 41h3v3h-3M43 41h2v1h-2M40 42h1v1h-1M44 42h3v1h-3M20 43h1v8h-1M45 43h2v1h-2M37 44h3v4h-3M46 44h1v1h-1M41 47h1v1h-1M19 48h1v4h-1M21 48h1v1h-1M38 48h3v4h-3M42 48h1v1h-1M18 49h1v4h-1M43 50h1v1h-1M17 51h1v2h-1M42 51h1v1h-1M44 51h1v1h-1M14 52h3v1h-3M39 52h3v1h-3M45 52h2v1h-2M19 53h1v2h-1M41 53h1v1h-1M16 54h3v1h-3M44 54h3v1h-3"/>' +
-    '<path fill="#333" d="M34 10h1v1h-1M22 20h3v2h-3M26 20h1v2h-1M31 20h6v3h-6M37 20h1v2h-1M44 20h2v7h-2M21 21h2v4h-2M25 21h14v1h-14M46 21h1v9h-1M27 22h4v1h-4M20 23h1v10h-1M30 23h4v1h-4M21 25h1v2h-1M55 25h1v5h-1M45 27h1v3h-1M48 28h7v2h-7M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#c33" d="M20 17h24v3h-24M19 18h26v2h-26M18 19h28v1h-28M13 26h1v19h-1M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2M13 53h1v5h-1M12 57h1v1h-1"/>' +
-    '<path fill="#c63" d="M48 31h1v25h-1M22 32h3v2h-3M39 32h3v2h-3M24 37h1v1h-1"/>' +
-    '<path fill="#fff" d="M27 13h5v2h-5M25 14h2v3h-2M23 15h2v2h-2M27 15h2v1h-2M22 16h1v1h-1M19 20h2v2h-2M21 20h1v1h-1M24 28h2v2h-2M36 28h2v2h-2"/>' +
-    '<path fill="#f66" d="M19 17h1v1h-1M18 18h1v1h-1M12 26h1v31h-1M30 35h2v1h-2"/>' +
-    '<path fill="#669" d="M29 6h1v3h-1M30 6h1v1h-1M26 12h12v1h-12M24 13h3v1h-3M39 13h1v1h-1M22 14h3v1h-3M21 15h1v2h-1M22 15h1v1h-1M20 16h1v1h-1M48 22h4v1h-4M41 24h1v1h-1"/>' +
-    '<path fill="#fc3" d="M12 16h2v8h-2M11 19h1v5h-1M14 20h1v4h-1M10 21h1v3h-1"/>' +
-    '<path fill="#c96" d="M19 40h1v1h-1M40 40h1v2h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M41 43h1v4h-1M15 44h1v1h-1M14 45h1v7h-1M43 49h1v1h-1"/>' +
-    '<path fill="#c90" d="M13 16h1v1h-1M15 21h1v3h-1M14 22h1v2h-1M9 23h5v1h-5"/>' +
-    '<path fill="#fe6" d="M11 18h1v1h-1"/>' +
-    '</svg>',
-  // Ermite Lei : crinieres et barbe grises, robe bleu orage, eclairs
-  hermit_lei: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M27 3h2v56h-2M36 3h1v56h-1M26 4h1v55h-1M35 4h1v55h-1M37 4h2v3h-2M18 6h1v5h-1M34 6h1v51h-1M45 6h2v3h-2M17 7h4v2h-4M44 7h1v28h-1M29 8h2v49h-2M33 8h1v49h-1M43 8h1v27h-1M21 9h2v26h-2M41 9h2v48h-2M31 10h2v47h-2M40 10h1v49h-1M19 11h21v2h-21M13 13h2v4h-2M20 13h20v22h-20M49 13h2v4h-2M5 14h4v3h-4M12 14h7v1h-7M46 14h3v19h-3M4 15h3v8h-3M18 15h28v16h-28M3 16h1v3h-1M2 17h1v4h-1M15 17h3v2h-3M7 18h2v3h-2M16 19h4v14h-4M11 20h42v3h-42M59 20h4v3h-4M10 21h1v4h-1M58 21h3v8h-3M3 22h2v5h-2M9 22h46v1h-46M57 22h1v3h-1M6 23h1v2h-1M12 23h39v2h-39M53 23h2v2h-2M56 23h1v4h-1M2 24h1v3h-1M51 24h2v1h-2M61 24h2v3h-2M15 25h1v6h-1M13 27h38v4h-38M11 28h42v3h-42M57 28h2v5h-2M9 29h2v4h-2M53 29h2v4h-2M60 29h1v2h-1M8 30h49v1h-49M56 31h1v2h-1M22 35h18v22h-18M21 36h1v21h-1M7 38h4v3h-4M20 38h25v19h-25M6 39h3v8h-3M19 39h1v18h-1M5 40h1v3h-1M18 40h1v15h-1M4 41h1v4h-1M17 41h30v14h-30M9 42h2v3h-2M16 42h1v13h-1M15 43h34v12h-34M14 44h1v9h-1M5 46h2v5h-2M8 47h1v2h-1M4 48h1v3h-1M49 52h2v1h-2M48 55h1v2h-1M23 57h3v2h-3M37 58h3v1h-3"/>' +
-    '<path fill="#ccc" d="M27 5h1v6h-1M35 6h1v5h-1M19 8h1v3h-1M28 8h1v3h-1M34 8h1v3h-1M20 9h1v4h-1M29 9h1v2h-1M43 9h1v4h-1M21 10h1v4h-1M33 10h1v1h-1M41 10h2v3h-2M22 11h1v2h-1M40 11h1v2h-1M23 12h1v1h-1M32 13h8v9h-8M40 14h2v11h-2M14 15h4v1h-4M29 15h14v7h-14M46 15h2v3h-2M48 15h1v2h-1M15 16h4v1h-4M27 16h17v6h-17M45 16h1v1h-1M16 17h1v2h-1M17 17h1v1h-1M19 17h2v15h-2M25 17h2v5h-2M18 18h1v14h-1M24 18h1v4h-1M23 19h1v14h-1M17 20h1v10h-1M11 21h5v1h-5M48 21h3v2h-3M51 21h1v1h-1M12 22h4v1h-4M42 22h3v9h-3M14 23h2v1h-2M24 23h4v5h-4M36 23h6v2h-6M15 27h1v3h-1M48 27h1v3h-1M13 28h2v2h-2M49 28h2v2h-2M11 29h2v1h-2M51 29h2v1h-2M42 31h2v2h-2M23 36h7v6h-7M35 36h4v8h-4M30 37h5v11h-5M25 42h5v2h-5M27 44h3v2h-3M29 46h1v2h-1M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#fc9" d="M28 24h2v11h-2M34 24h2v11h-2M23 25h18v3h-18M22 27h2v5h-2M24 28h1v1h-1M27 28h10v1h-10M39 28h2v1h-2M25 29h2v5h-2M30 29h4v7h-4M37 29h2v5h-2M40 29h1v4h-1M24 30h16v4h-16M23 32h1v1h-1M26 34h11v1h-11M24 47h4v6h-4M36 47h4v6h-4M16 50h6v2h-6M42 50h6v2h-6M16 53h3v1h-3M44 53h3v1h-3"/>' +
-    '<path fill="#999" d="M27 4h1v1h-1M36 4h1v2h-1M45 7h1v1h-1M44 8h1v1h-1M30 10h1v1h-1M43 10h1v3h-1M42 12h1v2h-1M49 14h1v2h-1M48 16h1v1h-1M44 17h1v10h-1M47 17h1v2h-1M45 18h1v12h-1M34 19h3v4h-3M22 20h2v3h-2M24 20h1v2h-1M26 20h1v2h-1M31 20h3v4h-3M37 20h1v2h-1M46 20h1v10h-1M21 21h18v1h-18M10 22h1v1h-1M21 22h1v5h-1M27 22h4v1h-4M13 23h1v1h-1M20 23h1v10h-1M22 23h1v2h-1M30 23h1v1h-1M48 23h1v2h-1M49 23h1v1h-1M15 24h1v1h-1M48 29h3v1h-3M9 30h2v1h-2M16 30h1v1h-1M47 30h1v1h-1M53 30h2v1h-2M43 32h1v1h-1M22 33h1v2h-1M42 33h1v2h-1M23 34h1v2h-1M40 34h1v8h-1M24 35h2v1h-2M38 35h2v1h-2M27 36h3v1h-3M39 36h1v7h-1M41 36h1v2h-1M22 38h1v1h-1M38 38h1v6h-1M23 41h1v1h-1M24 42h1v1h-1M37 42h1v3h-1M25 43h1v1h-1M36 43h1v3h-1M26 44h1v1h-1M35 44h1v3h-1M27 45h1v1h-1M34 45h1v3h-1M28 46h1v1h-1M33 46h1v2h-1M29 47h2v1h-2M32 47h1v2h-1M31 48h1v1h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#369" d="M20 40h1v10h-1M19 41h1v9h-1M42 41h3v9h-3M18 42h1v8h-1M41 42h5v8h-5M17 43h1v7h-1M16 44h1v6h-1M25 45h1v2h-1M38 45h1v2h-1M24 49h7v4h-7M34 49h6v4h-6M23 50h18v3h-18M22 52h1v2h-1M21 53h1v2h-1M29 53h6v1h-6M30 54h4v1h-4"/>' +
-    '<path fill="#fff" d="M18 7h1v1h-1M19 9h1v2h-1M26 12h6v3h-6M32 12h6v1h-6M24 13h3v4h-3M39 13h1v1h-1M13 14h2v1h-2M22 14h2v5h-2M21 15h1v6h-1M27 15h2v1h-2M20 16h1v1h-1M24 17h1v1h-1M20 18h1v4h-1M19 19h1v3h-1M22 19h1v1h-1M41 24h1v1h-1M22 36h1v2h-1M34 36h1v1h-1M23 39h1v2h-1"/>' +
-    '<path fill="#336" d="M21 39h1v11h-1M42 39h2v2h-2M43 41h2v1h-2M22 42h1v8h-1M44 42h2v1h-2M23 43h1v3h-1M45 43h2v1h-2M46 44h2v6h-2M40 45h1v1h-1M20 46h1v4h-1M24 48h5v1h-5M35 48h5v1h-5M30 49h1v1h-1M33 49h1v1h-1M39 49h1v1h-1M41 49h1v1h-1M40 50h1v1h-1M15 51h1v1h-1M40 52h2v1h-2M41 53h2v1h-2M42 54h1v1h-1M20 55h1v1h-1M31 55h2v1h-2M43 55h1v1h-1"/>' +
-    '<path fill="#fe6" d="M5 15h1v7h-1M6 15h1v1h-1M4 16h1v3h-1M3 17h1v1h-1M6 18h1v2h-1M59 21h1v7h-1M60 21h1v1h-1M4 22h1v1h-1M58 22h1v3h-1M57 23h1v1h-1M3 24h1v1h-1M60 24h1v2h-1M58 28h1v1h-1M57 30h1v1h-1M7 39h1v7h-1M8 39h1v1h-1M6 40h1v3h-1M5 41h1v1h-1M8 42h1v2h-1M6 46h1v1h-1M5 48h1v1h-1"/>' +
-    '<path fill="#69c" d="M20 39h1v1h-1M19 40h1v1h-1M18 41h1v1h-1M17 42h1v1h-1M16 43h1v1h-1M40 43h1v2h-1M15 44h1v7h-1M41 46h1v3h-1"/>' +
-    '<path fill="#c96" d="M40 32h1v1h-1M39 33h1v1h-1M37 34h1v1h-1M19 53h1v2h-1M47 53h1v1h-1M44 54h1v1h-1"/>' +
-    '<path fill="#ffc" d="M24 46h3v1h-3M37 46h3v1h-3"/>' +
-    '</svg>',
-  // Yuan, doyen des noyes (parley_sun2) : vieux noye venerable, peau bleutee, chevelure et barbe de joncs, perles d'eau
-  parley_sun2: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M26 11h13v46h-13M24 12h17v45h-17M22 13h21v44h-21M21 14h1v21h-1M20 15h1v20h-1M19 16h26v17h-26M18 17h1v40h-1M17 18h30v15h-30M16 20h2v37h-2M15 28h34v5h-34M14 29h1v24h-1M49 29h2v2h-2M43 33h6v2h-6M45 35h4v22h-4M21 36h1v21h-1M20 38h25v19h-25M19 39h1v18h-1M13 40h38v3h-38M15 53h1v2h-1M23 57h6v2h-6M35 57h6v2h-6"/>' +
-    '<path fill="#693" d="M32 13h8v9h-8M40 14h2v11h-2M29 15h3v8h-3M27 16h16v6h-16M19 17h25v5h-25M18 18h3v14h-3M17 20h1v10h-1M42 22h3v10h-3M15 29h1v24h-1M16 30h1v24h-1M47 30h1v24h-1M42 32h2v1h-2M46 32h1v22h-1M23 36h7v6h-7M35 36h4v8h-4M30 37h5v11h-5M14 40h1v2h-1M20 40h1v12h-1M48 40h1v2h-1M19 41h1v10h-1M42 41h3v10h-3M25 42h5v2h-5M41 42h1v8h-1M27 44h3v2h-3M25 45h1v8h-1M38 45h1v8h-1M24 46h3v7h-3M29 46h1v2h-1M37 46h3v7h-3M27 47h1v6h-1M36 47h1v6h-1M28 48h1v5h-1M35 48h1v5h-1M29 49h2v5h-2M33 49h2v5h-2M17 50h1v4h-1M23 50h18v3h-18M45 51h1v2h-1M22 52h1v2h-1M21 53h1v2h-1M23 54h6v3h-6M31 54h3v1h-3M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#363" d="M44 18h1v9h-1M34 19h3v4h-3M45 19h1v13h-1M22 20h2v5h-2M24 20h1v2h-1M26 20h1v2h-1M31 20h3v4h-3M37 20h1v2h-1M21 21h18v1h-18M21 22h1v5h-1M27 22h4v1h-4M20 23h1v10h-1M24 23h4v3h-4M30 23h1v1h-1M36 23h5v3h-5M46 28h1v2h-1M48 29h1v1h-1M44 31h1v1h-1M17 32h1v18h-1M43 32h1v1h-1M22 33h1v2h-1M42 33h1v2h-1M23 34h1v2h-1M40 34h1v8h-1M24 35h2v1h-2M38 35h2v1h-2M27 36h3v1h-3M39 36h1v7h-1M41 36h1v2h-1M22 38h1v1h-1M38 38h1v6h-1M21 39h1v13h-1M42 39h2v2h-2M44 40h1v3h-1M23 41h1v1h-1M43 41h1v1h-1M48 41h1v1h-1M22 42h1v8h-1M24 42h1v1h-1M37 42h1v3h-1M23 43h1v3h-1M25 43h1v1h-1M36 43h1v3h-1M26 44h1v1h-1M35 44h1v3h-1M27 45h1v1h-1M34 45h1v3h-1M40 45h1v1h-1M20 46h1v6h-1M28 46h1v1h-1M33 46h1v2h-1M38 46h2v1h-2M29 47h2v1h-2M32 47h1v2h-1M39 47h1v3h-1M31 48h1v1h-1M41 49h1v1h-1M40 50h1v1h-1M18 51h1v2h-1M17 52h1v2h-1M40 52h2v1h-2M47 52h1v2h-1M16 53h1v1h-1M41 53h2v1h-2M46 53h1v1h-1M29 55h1v1h-1M31 55h1v1h-1M41 55h1v1h-1M43 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#9cc" d="M28 24h2v11h-2M34 24h2v11h-2M23 25h18v1h-18M23 26h1v7h-1M24 26h1v1h-1M27 26h10v1h-10M39 26h2v1h-2M22 27h1v5h-1M30 27h4v9h-4M40 27h1v6h-1M24 31h16v3h-16M26 34h11v1h-11M44 53h1v2h-1"/>' +
-    '<path fill="#cff" d="M27 13h5v2h-5M25 14h2v3h-2M23 15h2v3h-2M27 15h2v1h-2M22 16h1v4h-1M21 17h1v4h-1M20 18h1v4h-1M23 18h1v1h-1M19 19h1v3h-1"/>' +
-    '<path fill="#9c6" d="M26 12h12v1h-12M24 13h3v1h-3M39 13h1v1h-1M22 14h3v1h-3M21 15h1v2h-1M22 15h1v1h-1M20 16h1v1h-1M41 24h1v1h-1M22 36h1v2h-1M34 36h1v1h-1M20 39h1v1h-1M23 39h1v2h-1M19 40h1v1h-1M40 43h1v2h-1M41 46h1v3h-1"/>' +
-    '<path fill="#fff" d="M24 28h2v3h-2M36 28h2v3h-2M38 48h2v2h-2M31 52h2v2h-2"/>' +
-    '<path fill="#963" d="M19 50h3v1h-3M42 50h2v2h-2M44 50h1v1h-1M20 51h2v1h-2M30 54h1v1h-1M32 54h1v2h-1M42 54h1v1h-1M20 55h1v1h-1"/>' +
-    '<path fill="#369" d="M26 28h1v2h-1M27 28h1v1h-1M38 28h1v2h-1M39 28h1v1h-1M24 30h2v1h-2M36 30h2v1h-2M25 31h2v1h-2M37 31h2v1h-2"/>' +
-    '<path fill="#699" d="M40 32h1v1h-1M39 33h1v1h-1M37 34h1v1h-1M19 53h1v2h-1M18 54h1v1h-1M44 54h2v1h-2"/>' +
-    '</svg>',
-  // Tintement, ame de la cloche felee (parley_sun3) : cloche de bronze patine, anse en chignon, fissure lumineuse, visage timide
-  parley_sun3: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M30 3h3v12h-3M33 3h2v10h-2M28 4h9v9h-9M27 5h1v8h-1M26 7h1v4h-1M36 13h1v2h-1M33 14h2v1h-2M28 17h9v38h-9M25 18h6v41h-6M37 18h2v41h-2M24 19h1v40h-1M22 20h21v35h-21M44 20h1v35h-1M45 20h2v3h-2M21 21h3v38h-3M20 22h24v33h-24M19 24h1v31h-1M18 25h1v30h-1M17 33h30v22h-30M16 37h1v18h-1M10 41h39v8h-39M50 41h3v14h-3M53 41h2v6h-2M9 42h41v5h-41M8 43h1v4h-1M49 47h1v8h-1M53 48h2v1h-2M12 49h37v6h-37M11 50h1v5h-1M33 55h10v4h-10M52 55h1v2h-1"/>' +
-    '<path fill="#699" d="M32 4h2v8h-2M31 5h4v7h-4M29 6h2v6h-2M28 8h1v4h-1M27 9h1v2h-1M29 19h9v8h-9M38 20h1v7h-1M39 21h3v6h-3M28 22h2v27h-2M27 23h16v4h-16M25 24h2v3h-2M24 25h1v2h-1M20 27h3v22h-3M19 34h7v15h-7M42 37h4v12h-4M18 38h10v11h-10M40 40h2v9h-2M39 41h1v8h-1M17 42h22v7h-22M15 46h2v3h-2M22 56h7v2h-7M34 56h7v2h-7"/>' +
-    '<path fill="#ffc" d="M28 26h8v14h-8M36 26h3v1h-3M25 28h16v2h-16M24 29h1v2h-1M23 30h1v10h-1M27 30h10v1h-10M39 30h2v1h-2M40 31h1v9h-1M22 32h4v8h-4M27 35h13v5h-13M26 36h4v6h-4M24 40h2v1h-2M31 40h2v1h-2M34 40h1v3h-1M10 42h4v5h-4M50 42h4v4h-4M9 43h1v3h-1M49 43h1v2h-1M50 46h3v1h-3"/>' +
-    '<path fill="#fc3" d="M34 6h2v2h-2M13 50h38v4h-38"/>' +
-    '<path fill="#366" d="M35 5h1v1h-1M35 8h1v4h-1M34 9h1v3h-1M32 11h1v2h-1M33 11h1v1h-1M30 12h2v1h-2M31 13h1v1h-1M41 21h1v1h-1M42 22h1v1h-1M41 23h1v1h-1M40 24h1v1h-1M41 25h3v12h-3M40 26h1v1h-1M44 33h1v8h-1M45 34h1v12h-1M43 37h1v1h-1M43 39h1v1h-1M46 41h1v8h-1M44 42h4v1h-4M47 43h1v6h-1M48 45h1v4h-1M24 46h1v3h-1M26 46h1v3h-1M28 46h1v3h-1M30 46h1v3h-1M32 46h1v3h-1M34 46h1v3h-1M36 46h1v3h-1M38 46h1v3h-1M40 46h1v3h-1M42 46h1v3h-1M44 46h1v3h-1M21 47h1v2h-1M23 47h23v2h-23M18 48h1v1h-1M20 48h3v1h-3M29 56h1v1h-1M41 56h1v1h-1M28 57h1v1h-1M40 57h1v1h-1"/>' +
-    '<path fill="#fff" d="M26 20h2v3h-2M28 20h1v2h-1M25 21h2v3h-2M23 22h2v3h-2M22 23h2v4h-2M21 25h1v2h-1M27 25h10v1h-10M20 26h1v1h-1M25 26h3v1h-3M23 28h1v2h-1M24 28h1v1h-1M22 29h1v3h-1M21 31h1v6h-1M24 32h2v3h-2M36 32h2v3h-2"/>' +
-    '<path fill="#9cc" d="M30 4h1v2h-1M31 4h1v1h-1M28 5h1v3h-1M29 5h1v1h-1M27 7h1v2h-1M28 18h8v1h-8M25 19h4v1h-4M37 19h1v1h-1M24 20h1v2h-1M25 20h1v1h-1M22 21h1v2h-1M23 21h1v1h-1M21 22h1v3h-1M20 24h1v2h-1M19 25h1v9h-1M18 33h1v5h-1M17 37h1v5h-1M16 41h1v5h-1M15 45h1v1h-1"/>' +
-    '<path fill="#fc9" d="M41 29h1v11h-1M42 31h1v6h-1M40 35h1v5h-1M39 37h1v4h-1M38 38h1v4h-1M37 39h1v3h-1M35 40h2v3h-2M25 41h6v1h-6M33 41h2v2h-2M27 42h6v1h-6M14 43h1v2h-1M13 46h1v2h-1M11 47h2v1h-2M50 47h2v1h-2"/>' +
-    '<path fill="#fe6" d="M45 21h1v1h-1M44 22h1v1h-1M43 23h1v5h-1M42 24h1v2h-1M43 30h1v6h-1M42 32h1v2h-1M44 34h1v4h-1M45 36h1v2h-1M12 50h1v4h-1"/>' +
-    '<path fill="#c90" d="M51 50h1v4h-1M21 54h10v1h-10M33 54h10v1h-10"/>' +
-    '<path fill="#c63" d="M26 32h1v2h-1M27 32h1v1h-1M38 32h1v2h-1M39 32h1v1h-1M24 34h2v1h-2M36 34h2v1h-2M25 35h2v1h-2M37 35h2v1h-2"/>' +
-    '<path fill="#f99" d="M22 38h3v2h-3M39 38h3v2h-3"/>' +
-    '</svg>',
-  // Rongrong, petite voix du tonnerre (parley_sun5) : enfant-esprit a nuage d'orage pour chapeau, meches en eclairs, tambour et baguettes
-  parley_sun5: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges"><path fill="#2b1b17" d="M29 6h6v51h-6M27 7h10v50h-10M26 8h3v51h-3M25 9h14v48h-14M24 10h2v49h-2M19 11h26v32h-26M17 12h30v9h-30M16 13h1v8h-1M15 14h34v5h-34M14 15h1v26h-1M11 16h2v9h-2M51 16h2v7h-2M10 17h41v2h-41M10 19h1v2h-1M47 19h3v2h-3M18 21h1v2h-1M46 21h1v2h-1M49 21h2v16h-2M52 23h1v2h-1M18 24h1v19h-1M48 24h1v19h-1M12 25h2v10h-2M17 25h1v16h-1M47 25h1v16h-1M15 26h32v15h-32M51 28h2v9h-2M53 29h2v2h-2M11 30h1v3h-1M13 35h1v6h-1M53 36h2v3h-2M50 37h1v2h-1M12 38h1v1h-1M55 38h2v1h-2M54 39h1v2h-1M49 40h2v1h-2M20 43h23v2h-23M21 45h22v12h-22M20 48h1v9h-1M16 49h31v2h-31M19 51h26v6h-26M18 52h1v3h-1M17 53h1v2h-1M45 54h2v1h-2M45 56h2v1h-2M23 57h1v2h-1M35 57h6v2h-6"/>' +
-    '<path fill="#99c" d="M30 8h6v6h-6M28 9h7v6h-7M36 9h1v4h-1M27 10h1v5h-1M37 10h1v2h-1M26 11h1v4h-1M25 12h1v3h-1M44 12h1v5h-1M20 13h3v3h-3M40 13h6v2h-6M18 14h2v4h-2M24 14h1v1h-1M38 14h9v1h-9M17 15h1v5h-1M31 15h3v1h-3M42 15h5v1h-5M16 16h3v3h-3M20 16h1v1h-1M29 16h2v2h-2M40 16h2v8h-2M45 16h2v2h-2M15 17h1v1h-1M24 17h5v7h-5M35 17h9v6h-9M22 18h2v5h-2M29 18h1v1h-1M34 18h1v6h-1M44 18h1v3h-1M19 19h3v2h-3M33 19h1v1h-1M20 21h2v1h-2M44 26h1v8h-1M45 27h1v5h-1M43 30h1v6h-1M51 30h1v1h-1M16 31h1v2h-1M50 31h1v1h-1M15 32h1v2h-1M42 32h1v5h-1M49 32h1v2h-1M14 33h1v1h-1M48 33h1v1h-1M13 34h1v1h-1M41 34h1v4h-1M14 36h1v2h-1M37 37h4v2h-4M23 38h3v1h-3M34 38h5v2h-5M25 39h5v1h-5M32 39h4v2h-4M28 40h4v1h-4M22 47h2v1h-2M21 48h1v7h-1M20 51h1v5h-1M19 52h1v3h-1M18 53h1v1h-1"/>' +
-    '<path fill="#ccf" d="M29 7h6v1h-6M27 8h3v1h-3M26 9h1v2h-1M27 9h1v1h-1M25 10h1v2h-1M24 11h1v3h-1M19 12h4v1h-4M39 12h5v1h-5M17 13h3v1h-3M37 13h3v1h-3M16 14h1v2h-1M17 14h1v1h-1M36 14h2v1h-2M15 15h1v2h-1M23 16h6v1h-6M34 16h6v1h-6M21 17h3v1h-3M34 17h1v1h-1M20 18h2v1h-2M21 24h2v13h-2M31 24h3v13h-3M42 24h2v6h-2M20 25h22v1h-22M20 26h1v10h-1M28 26h8v11h-8M41 26h1v8h-1M19 27h1v7h-1M23 28h18v1h-18M23 29h1v9h-1M24 29h1v1h-1M27 29h10v1h-10M39 29h2v1h-2M12 30h1v2h-1M40 30h1v7h-1M42 30h1v2h-1M13 31h1v2h-1M47 31h1v2h-1M14 32h1v1h-1M48 32h1v1h-1M24 34h16v3h-16M22 37h7v1h-7M33 37h4v1h-4M26 38h3v1h-3M33 38h1v1h-1"/>' +
-    '<path fill="#669" d="M38 11h1v1h-1M47 15h1v4h-1M46 17h1v2h-1M48 17h1v1h-1M43 19h1v4h-1M44 19h1v2h-1M45 19h1v1h-1M42 20h1v3h-1M29 21h1v3h-1M40 21h2v3h-2M21 22h10v1h-10M33 22h7v1h-7M23 23h8v1h-8M34 23h6v1h-6M46 33h1v7h-1M16 34h2v6h-2M47 34h1v6h-1M14 35h2v1h-2M45 35h1v5h-1M48 35h1v2h-1M15 36h4v4h-4M19 37h1v5h-1M44 37h1v4h-1M20 38h1v5h-1M43 38h1v4h-1M21 39h1v6h-1M42 39h1v4h-1M18 40h5v1h-5M41 40h1v6h-1M22 41h3v5h-3M26 41h2v1h-2M39 41h2v5h-2M27 42h9v3h-9M38 42h1v4h-1M23 47h1v1h-1M22 48h1v6h-1M21 51h1v4h-1M20 52h1v4h-1M19 53h1v2h-1"/>' +
-    '<path fill="#fc3" d="M11 17h2v4h-2M51 17h1v5h-1M50 19h1v4h-1M12 21h2v3h-2M13 24h1v5h-1M49 24h1v7h-1M14 26h1v5h-1M48 27h1v4h-1M26 31h1v2h-1M27 31h1v1h-1M38 31h1v2h-1M39 31h1v1h-1M24 33h2v1h-2M36 33h2v1h-2M25 34h2v1h-2M37 34h2v1h-2M51 35h1v1h-1M27 43h1v2h-1M36 43h1v2h-1M28 44h1v1h-1M35 44h1v1h-1M20 49h2v2h-2M42 49h1v6h-1M19 50h1v1h-1M43 50h2v1h-2M23 54h6v3h-6M35 54h6v3h-6M22 55h1v1h-1M34 55h1v1h-1"/>' +
-    '<path fill="#c33" d="M35 46h2v7h-2M29 47h10v6h-10M26 48h14v5h-14M25 49h1v4h-1M24 52h1v1h-1M29 53h6v1h-6M30 54h4v1h-4M31 55h2v1h-2"/>' +
-    '<path fill="#ffc" d="M28 47h1v6h-1M35 47h1v6h-1M24 50h16v2h-16"/>' +
-    '<path fill="#336" d="M17 33h1v1h-1M50 34h1v1h-1M18 35h1v1h-1M49 35h1v1h-1M47 39h1v1h-1M36 41h1v2h-1M37 41h1v1h-1M25 42h1v4h-1M41 44h1v2h-1M22 45h3v1h-3M38 45h3v1h-3M40 47h2v1h-2M41 48h1v6h-1M42 51h2v4h-2M44 54h1v1h-1M20 55h1v1h-1M43 55h1v1h-1"/>' +
-    '<path fill="#c90" d="M12 17h1v1h-1M13 19h1v4h-1M51 20h1v2h-1M15 27h1v4h-1M49 28h1v3h-1M50 28h1v1h-1M52 29h1v1h-1M14 30h1v1h-1M48 30h1v1h-1M13 38h1v1h-1M54 38h1v1h-1M29 55h1v1h-1M41 55h1v1h-1M28 56h1v1h-1M40 56h1v1h-1M24 57h4v1h-4M36 57h4v1h-4"/>' +
-    '<path fill="#f66" d="M30 38h2v1h-2M27 46h8v1h-8M25 47h3v1h-3M24 48h1v2h-1M25 48h1v1h-1"/>' +
-    '<path fill="#eef" d="M20 23h1v2h-1M19 24h1v3h-1M18 26h1v6h-1M19 33h1v1h-1"/>' +
-    '<path fill="#c9c" d="M22 35h3v2h-3M39 35h3v2h-3"/>' +
-    '<path fill="#fff" d="M24 31h2v2h-2M36 31h2v2h-2"/>' +
-    '<path fill="#fe6" d="M32 18h1v4h-1M33 18h1v1h-1M31 19h1v1h-1"/>' +
-    '</svg>'
+  ferryman_gu: svg(
+    `<rect x="50.4" y="1.6" width="3.6" height="58" rx="1.6" fill="#6fa64a" ${O}/>` +
+    `<path d="M50.4 12 L54 12 M50.4 26 L54 26 M50.4 40 L54 40 M50.4 52 L54 52" stroke="#3f6a2a" stroke-width="1.6"/><path d="M51.6 3 L51.6 58" stroke="#b9e08a" stroke-width=".9" opacity=".8"/>` +
+    // jambes retroussees
+    `<rect x="23" y="48" width="6.4" height="8" fill="#e0a070" ${O}/><rect x="34.6" y="48" width="6.4" height="8" fill="#c4834f" ${O}/>` +
+    `<ellipse cx="26.2" cy="57.4" rx="4.8" ry="2.4" fill="#e0a070" ${O}/><ellipse cx="37.8" cy="57.4" rx="4.8" ry="2.4" fill="#c4834f" ${O}/>` +
+    `<path d="M21 52 L43 52 L43.6 47 L20.4 47Z" fill="#2f8f94" ${O}/>` +
+    // chemise + cape de paille
+    `<path d="M20 50 Q18 41 23 36 L41 36 Q46 41 44 50 Q32 52.4 20 50Z" fill="#3aa0a4" ${O}/>` +
+    sleeve(18.4, 42, 3.4, 5.6, 16, '#3aa0a4') + hand(14, 48.4, '#e0a070') +
+    sleeve(46, 41.6, 3.4, 5.6, -12, '#2b7f84') + hand(50.2, 41.4, '#c4834f') +
+    `<path d="M16 38 Q22 32.6 32 33 Q42 32.6 48 38 L49.4 50 L47 49 L47.6 56 L44.4 52 L42 57 L39 51.4 L36 56.4 L33 51 L29.6 57 L27 51.6 L23.6 56 L21 50.6 L18 55 L17.6 49 L14.6 50Z" fill="#a8743c" ${O}/>` +
+    `<path d="M40 36 Q46.6 38.6 48.4 49 L47 49 L47.6 56 L44.4 52 L42 57 L39 51.4Z" fill="#8e5e2f"/>` +
+    `<path d="M21 38 L19 52 M26 36 L25 52 M31 36 L31 52 M36 36 L36.6 52 M41 37 L42 52" stroke="#d6a868" stroke-width="1" stroke-linecap="round" opacity=".8"/>` +
+    head('#e8b88c', '#cf9a6c', 25, 13, 10.4) +
+    `<path d="M19.2 25 Q18 30 20.4 33 L22.2 29 Q21.6 27 22 24.6Z M44.8 25 Q46 30 43.6 33 L41.8 29 Q42.4 27 42 24.6Z" fill="${HAIR}" stroke="${K}" stroke-width="1.2" stroke-linejoin="round"/>` +
+    brows(23.4, 5.2, 1.4) + eyes(26.4, 5.2) + cheeks(30, 8.2) + smile(31, 2.2) +
+    `<path d="M29.8 33.4 Q32 36.4 34.2 33.4 Q32 34.6 29.8 33.4Z" fill="${HAIR}" stroke="${K}" stroke-width="1"/>` +
+    // chapeau de pluie
+    `<ellipse cx="32" cy="17.4" rx="23" ry="6.6" fill="#5e8c4a" ${O}/>` +
+    `<path d="M9.4 18 Q12 23.8 32 24 Q52 23.8 54.6 18 Q50 22 32 22 Q14 22 9.4 18Z" fill="#3f6a2a"/>` +
+    `<path d="M20.4 15.4 Q20.4 3.6 32 3.6 Q43.6 3.6 43.6 15.4 Q32 19.4 20.4 15.4Z" fill="#79a85e" ${O}/>` +
+    `<path d="M32 3.6 L32 18.4 M26.6 4.8 L25 17.4 M37.4 4.8 L39 17.4" stroke="#4a7a36" stroke-width=".9" fill="none"/>` +
+    `<path d="M24 8 Q26 5.6 29.6 5" fill="none" stroke="#d6f0b0" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>` +
+    `<path d="M16 21.4 Q15.6 29.4 20.4 34 M48 21.4 Q48.4 29.4 43.6 34" fill="none" stroke="${RED}" stroke-width="1.5" stroke-linecap="round"/>`
+  ),
+
+  // Tisserande Mei : robe rose a fleurs, deux chignons fleuris, metier a tisser
+  weaver_mei: svg(
+    // metier a tisser
+    `<rect x="45" y="19" width="14" height="34" rx="1.4" fill="none" stroke="${K}" stroke-width="5"/><rect x="45" y="19" width="14" height="34" rx="1.4" fill="none" stroke="#a8683a" stroke-width="2.6"/>` +
+    `<path d="M48.6 22 L48.6 50 M52 22 L52 50 M55.4 22 L55.4 50" stroke="#f4ecd8" stroke-width="1"/>` +
+    `<rect x="47" y="40" width="10" height="8.6" fill="#e0405f"/><path d="M47 43 L57 43 M47 46 L57 46" stroke="${GOLD}" stroke-width="1.3"/><path d="M47 40 L57 40" stroke="${K}" stroke-width="1"/>` +
+    `<path d="M46 56 L46 59 M58 56 L58 59" stroke="${K}" stroke-width="3" stroke-linecap="round"/>` +
+    feet('#e0405f') +
+    `<path d="M16.6 57.6 Q14.4 45 22.6 35 L41.4 35 Q49.6 45 47.4 57.6 Q32 60.6 16.6 57.6Z" fill="#d4538a" ${O}/>` +
+    `<path d="M39 38 Q47 46 45.6 56.6 L38 58 Q42.6 46 39 38Z" fill="#a83a68"/>` +
+    // fleurs
+    `<g fill="#fff0f4"><circle cx="23.4" cy="50" r="1.5"/><circle cx="23.4" cy="46.8" r="1.5"/><circle cx="20.6" cy="48.4" r="1.5"/><circle cx="26.2" cy="48.4" r="1.5"/>` +
+    `<circle cx="39" cy="53" r="1.5"/><circle cx="39" cy="49.8" r="1.5"/><circle cx="36.2" cy="51.4" r="1.5"/><circle cx="41.8" cy="51.4" r="1.5"/>` +
+    `<circle cx="29" cy="55" r="1.4"/><circle cx="29" cy="52" r="1.4"/><circle cx="26.4" cy="53.5" r="1.4"/><circle cx="31.6" cy="53.5" r="1.4"/></g>` +
+    `<g fill="${GOLD}"><circle cx="23.4" cy="48.4" r="1"/><circle cx="39" cy="51.4" r="1"/><circle cx="29" cy="53.5" r="1"/></g>` +
+    `<path d="M26 35 L32 43 L38 35" fill="#fff0f4" stroke="${K}" stroke-width="1.4" stroke-linejoin="round"/>` +
+    `<path d="M23.4 35.4 L32 45.4 L40.6 35.4" fill="none" stroke="#fff0f4" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M22 42.4 Q32 45.8 42 42.4 L42 46.4 Q32 49.8 22 46.4Z" fill="#2f9a9a" ${O}/>` +
+    sleeve(20.4, 44, 4.2, 6.4, 16, '#e87aa6') + `<path d="M16.6 48.6 Q20 51 23.6 49.4" fill="none" stroke="#fff0f4" stroke-width="1.6" stroke-linecap="round"/>` + hand(24.4, 50.2) +
+    sleeve(43.6, 44, 4.2, 6.4, -16, '#c0447c') + `<path d="M40.4 49.4 Q44 51 47.4 48.6" fill="none" stroke="#fff0f4" stroke-width="1.6" stroke-linecap="round"/>` + hand(46.8, 50.2) +
+    // petite navette doree entre les mains
+    `<rect x="26.6" y="53" width="10.8" height="3" rx="1.5" fill="${GOLD}" ${OT}/>` +
+    // chignons fleuris
+    `<circle cx="15.6" cy="17.6" r="5.4" fill="${HAIR}" ${O}/><circle cx="48.4" cy="17.6" r="5.4" fill="${HAIR}" ${O}/>` +
+    head(SKIN, SKIN_D, 25, 13.2, 11.4) +
+    `<path d="M18.8 25.6 Q17.2 13.4 32 13 Q46.8 13.4 45.2 25.6 Q44.6 20.4 40 19.4 L24 19.4 Q19.4 20.4 18.8 25.6Z" fill="${HAIR}" ${O}/>` +
+    `<path d="M24 19.4 Q32 24 40 19.4 L40 17 L24 17Z" fill="${HAIR}"/>` +
+    `<path d="M19 25.6 Q18.4 30 20.4 33.6 L22 29 Q21.4 27 21.8 24.6Z M45 25.6 Q45.6 30 43.6 33.6 L42 29 Q42.6 27 42.2 24.6Z" fill="${HAIR}" stroke="${K}" stroke-width="1.3" stroke-linejoin="round"/>` +
+    `<path d="M23 15.8 Q27 14 31 14" fill="none" stroke="#6a6f96" stroke-width="1.2" stroke-linecap="round"/>` +
+    `<g><circle cx="15.6" cy="12.4" r="2.2" fill="#ff7ea6" ${OT}/><circle cx="12.6" cy="14.6" r="2.2" fill="#ff9ec0" ${OT}/><circle cx="18.6" cy="14.6" r="2.2" fill="#ff9ec0" ${OT}/><circle cx="15.6" cy="14.4" r="1.2" fill="${GOLD}"/>` +
+    `<circle cx="48.4" cy="12.4" r="2.2" fill="#ff7ea6" ${OT}/><circle cx="45.4" cy="14.6" r="2.2" fill="#ff9ec0" ${OT}/><circle cx="51.4" cy="14.6" r="2.2" fill="#ff9ec0" ${OT}/><circle cx="48.4" cy="14.4" r="1.2" fill="${GOLD}"/></g>` +
+    eyes(27, 5.2) + `<path d="M24.6 24.4 Q27 23 29.6 24.4 M39.4 24.4 Q37 23 34.4 24.4" fill="none" stroke="${K}" stroke-width="1" stroke-linecap="round"/>` +
+    cheeks(30.6, 8.4) + smile(31.2, 2)
+  ),
+
+  // Moine Zhen : crane rase, robe safran, kasaya, mains jointes, chapelet
+  monk_zhen: svg(
+    `<ellipse cx="26.4" cy="57" rx="4.6" ry="2.6" fill="#6e6a64" ${O}/><ellipse cx="37.6" cy="57" rx="4.6" ry="2.6" fill="#6e6a64" ${O}/>` +
+    `<path d="M15.6 57.6 Q12.6 45 21.4 35 L42.6 35 Q51.4 45 48.4 57.6 Q32 60.8 15.6 57.6Z" fill="#f2a61e" ${O}/>` +
+    `<path d="M41 38 Q50 46 47.4 56.8 L40 58.6 Q45 46 41 38Z" fill="#c97a12"/>` +
+    // kasaya en diagonale (patchwork)
+    `<path d="M21.4 35 L30.4 35 L47 47.4 Q49.4 53 48.4 57.6 Q32 60.8 15.6 57.6 Q12.6 45 21.4 35Z" fill="#d9461a" ${O}/>` +
+    `<path d="M24 37 L44 54 M20 44 L36 58 M30 36 L18 50 M36 40 L24 58 M42 46 L32 59" stroke="#9a2e0c" stroke-width="1" fill="none" opacity=".7"/>` +
+    `<circle cx="26" cy="38.4" r="2.2" fill="${GOLD}" ${OT}/>` +
+    // chapelet
+    `<path d="M24.4 36 Q32 55 39.6 36" fill="none" stroke="${K}" stroke-width="4.6" stroke-linecap="round" stroke-dasharray="0 3.4"/><path d="M24.4 36 Q32 55 39.6 36" fill="none" stroke="#b0703a" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="0 3.4"/>` +
+    `<circle cx="32" cy="46.6" r="2.3" fill="${RED}" ${OT}/>` +
+    sleeve(21.6, 46.4, 4.2, 5.8, -42, '#ffc247') + sleeve(42.4, 46.4, 4.2, 5.8, 42, '#e0941a') + hand(30.8, 49.4) + hand(33.4, 49.4) +
+    // tete rasee
+    `<ellipse cx="18.2" cy="26.6" rx="2.4" ry="4" fill="#f5cba7" ${O}/><ellipse cx="45.8" cy="26.6" rx="2.4" ry="4" fill="#e0a582" ${O}/>` +
+    head(SKIN, SKIN_D, 25, 13.2, 11.6) +
+    `<g fill="#8a5a4a"><circle cx="29.2" cy="16.4" r=".9"/><circle cx="32" cy="15.6" r=".9"/><circle cx="34.8" cy="16.4" r=".9"/></g>` +
+    `<path d="M25 23.2 Q27.4 21.8 30 22.8 M39 23.2 Q36.6 21.8 34 22.8" fill="none" stroke="${K}" stroke-width="1.1" stroke-linecap="round"/>` +
+    happyEyes(26.6, 5.2) + cheeks(30.4, 8.4) + smile(30.8, 2.4)
+  ),
+
+  // Herboriste Xu : foulard et tablier verts, chignon, panier d'herbes, fiole
+  herbalist_xu: svg(
+    // panier + herbes
+    `<path d="M9 42 Q15 29 21 42" fill="none" stroke="${K}" stroke-width="4.4" stroke-linecap="round"/><path d="M9 42 Q15 29 21 42" fill="none" stroke="#b8863f" stroke-width="2.2" stroke-linecap="round"/>` +
+    `<path d="M10.4 40 Q8 32 11.6 28.6 Q13.6 33 12.6 40Z M14 40 Q14.6 30 18.4 27.6 Q18.6 34 16.6 40Z M17 40 Q22.4 34 25.6 36 Q23.6 40 19 41Z" fill="#4fae5a" stroke="${K}" stroke-width="1.3" stroke-linejoin="round"/>` +
+    `<circle cx="13.6" cy="39" r="1.7" fill="#e0405f" stroke="${K}" stroke-width="1"/>` +
+    `<path d="M6.4 41.6 L22.6 41.6 L20.4 56 Q15 58 9.6 56Z" fill="#c8964a" ${O}/>` +
+    `<path d="M7.4 46 L21.6 46 M8.6 51 L20.6 51 M12 42 L11.4 56 M16 42 L16 57 M20 42 L20.4 56" stroke="#8a5e2a" stroke-width="1" fill="none"/>` +
+    feet('#6b4226') +
+    `<path d="M18.6 57 Q16.6 45 22.4 36 L41.6 36 Q47.4 45 45.4 57 Q32 59.8 18.6 57Z" fill="#efe3c0" ${O}/>` +
+    `<path d="M22.4 40 L41.6 40 L43.6 56.6 Q32 59.4 20.4 56.6Z" fill="#4fa05a" ${O}/>` +
+    `<path d="M39 42 Q43 48 42.4 56.6 L37 58Z" fill="#357a40"/>` +
+    `<path d="M26 40 L26 36 M38 40 L38 36" stroke="${K}" stroke-width="3.8" stroke-linecap="round"/><path d="M26 40 L26 36 M38 40 L38 36" stroke="#4fa05a" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<rect x="27" y="47.6" width="10" height="6.4" rx="1.6" fill="#6cc078" ${OT}/><path d="M32 50.6 L32 46 M32 49 Q29.6 47 28.6 45.4 M32 49 Q34.4 47 35.6 45.4" stroke="#357a40" stroke-width="1.3" fill="none" stroke-linecap="round"/>` +
+    sleeve(19.8, 43.6, 4, 5.6, 18, '#efe3c0') + hand(15.8, 49.4) +
+    sleeve(44.2, 43.6, 4, 5.6, -22, '#d9ccaa') + hand(47.6, 48.4) +
+    // fiole
+    `<rect x="48.6" y="38" width="3.2" height="4" fill="#d9e8ee" ${OT}/><circle cx="50.2" cy="45.6" r="4.6" fill="#d9e8ee" ${O}/><path d="M45.8 46 Q50.2 44 54.6 46 Q54.4 50 50.2 50.2 Q46 50 45.8 46Z" fill="#a85ed8"/><rect x="48.2" y="35.6" width="4" height="3" rx="1" fill="#a8683a" ${OT}/><circle cx="48.4" cy="44.2" r="1.1" fill="#fff"/>` + hand(47.4, 48.2) +
+    // chignon + tete
+    `<ellipse cx="32" cy="10.6" rx="5.4" ry="4.4" fill="${HAIR}" ${O}/>` +
+    head(SKIN, SKIN_D, 25, 13.2, 11.4) +
+    `<path d="M18.8 25 Q17.4 13.6 32 13 Q46.6 13.6 45.2 25 Q44 20.6 39 19.8 L25 19.8 Q20 20.6 18.8 25Z" fill="${HAIR}" ${O}/>` +
+    `<path d="M18.2 20.6 Q32 14.6 45.8 20.6 L45.4 24 Q32 19 18.6 24Z" fill="#4fae5a" ${O}/>` +
+    `<path d="M45.6 22 Q50 21.4 52 24.4 Q48 24.6 46 26Z" fill="#4fae5a" ${OT}/>` +
+    `<path d="M22 21 Q26 19 30 19" fill="none" stroke="#b8f0b8" stroke-width="1.1" stroke-linecap="round" opacity=".8"/>` +
+    brows(24.6, 5.2, 1.1, K, -0.2) + eyes(27.2, 5.2) + cheeks(30.8, 8.4) + smile(31.4, 2.2)
+  ),
+
+  // Marchand Ma : robe de brocart pourpre, bonnet pointu a fourrure, balance, ballot
+  merchant_ma: svg(
+    // ballot
+    `<path d="M8.4 57 Q3 47 8.6 40 Q14.6 35.6 19.4 40.6 Q22 46 21.4 57Z" fill="#cfae7c" ${O}/>` +
+    `<path d="M16.4 43 Q20.4 48 19.4 56 L21.4 57 Q22 46 19.4 40.6Z" fill="#a8864f"/>` +
+    `<path d="M9.4 43 Q14 46 19 42" fill="none" stroke="${RED}" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="38.4" r="2" fill="${RED}" ${OT}/>` +
+    feet('#2a2430') +
+    `<path d="M14.6 57.6 Q12 44 20.4 35 L43.6 35 Q52 44 49.4 57.6 Q32 60.8 14.6 57.6Z" fill="#7a3fa0" ${O}/>` +
+    `<path d="M41 38 Q50 46 48.4 56.6 L40 58.4 Q45 46 41 38Z" fill="#552a74"/>` +
+    `<g fill="none" stroke="${GOLD}" stroke-width="1.2"><circle cx="23" cy="43" r="2.6"/><circle cx="41" cy="43" r="2.6"/><circle cx="32" cy="53" r="2.6"/><circle cx="21.6" cy="52.4" r="2.2"/><circle cx="42.4" cy="52.4" r="2.2"/></g>` +
+    `<path d="M15.6 55.4 Q32 59.8 48.4 55.4" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round"/>` +
+    `<path d="M25 35 L32 44 L39 35" fill="none" stroke="${GOLD}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<rect x="19.6" y="45.6" width="24.8" height="4.4" rx="1.8" fill="${RED}" ${O}/><rect x="29" y="44.8" width="6" height="6" rx="1.4" fill="${GOLD}" ${O}/>` +
+    sleeve(19.8, 43.4, 4.6, 6.8, 16, '#7a3fa0') + `<path d="M15.2 49 Q19.4 52.2 23.6 49.6" fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-linecap="round"/>` + hand(17.6, 53.2) +
+    // balance a la main droite
+    `<path d="M40 40 L58 40" stroke="${K}" stroke-width="3.4" stroke-linecap="round"/><path d="M40 40 L58 40" stroke="#d6b04a" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M40 40 L37.6 50 M40 40 L44.4 50 M58 40 L55.6 50 M58 40 L60.4 50" stroke="${K}" stroke-width="1" fill="none"/>` +
+    `<path d="M36.2 50 Q41 54 45.6 50Z" fill="${GOLD}" ${OT}/><path d="M54.6 50 Q58 54 61.6 50Z" fill="${GOLD}" ${OT}/>` +
+    `<circle cx="41" cy="48.4" r="1.7" fill="#ffe27a" ${OT}/><circle cx="58" cy="48.6" r="1.7" fill="#ffe27a" ${OT}/>` +
+    sleeve(44, 41.6, 4.6, 6.4, -30, '#552a74') + `<path d="M41 46.4 Q45 49.6 49 45.6" fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-linecap="round"/>` + hand(49.6, 41.4) +
+    // tete ronde
+    head('#f4cba0', '#dca07a', 26, 14.2, 11.6) +
+    `<path d="M25 33.6 Q32 35.6 39 33.6" fill="none" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>` +
+    `<path d="M25.4 31.6 Q28 29.6 31.4 31.4 Q28 33.8 25.4 31.6Z M38.6 31.6 Q36 29.6 32.6 31.4 Q36 33.8 38.6 31.6Z" fill="${HAIR}" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>` +
+    `<path d="M26 31.8 Q22.6 31.6 22.4 35 M38 31.8 Q41.4 31.6 41.6 35" fill="none" stroke="${K}" stroke-width="1.3" stroke-linecap="round"/>` +
+    `<path d="M30.4 34 Q32 37.2 33.6 34Z" fill="${HAIR}" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>` +
+    brows(23.4, 5.4, 1.2, K, -0.3) + happyEyes(26.4, 5.4) + cheeks(30.2, 9.4) +
+    // bonnet pointu a fourrure
+    `<path d="M18.6 20.4 Q18 6.6 33 5 Q42 4.6 48.6 9.4 Q41 8.6 42.4 14.6 Q45.8 17 45.4 20.4 Q32 15.8 18.6 20.4Z" fill="${RED}" ${O}/>` +
+    `<path d="M38.4 8 Q43 11.6 42.4 15 Q45.4 17 45.4 20.4 Q41.6 19 38.6 18.4Z" fill="#8e2a22"/>` +
+    `<path d="M17.4 21.2 Q32 14.6 46.6 21.2 Q47 24 44.6 24 Q32 19.6 19.4 24 Q16.8 24 17.4 21.2Z" fill="#f2efe6" ${O}/>` +
+    `<circle cx="32" cy="16.4" r="2.6" fill="#3ec0a0" ${O}/><circle cx="31" cy="15.4" r=".9" fill="#fff"/>` +
+    `<path d="M23 11.6 Q26 8.6 30 8" fill="none" stroke="#ff8a76" stroke-width="1.2" stroke-linecap="round"/>`
+  ),
+
+  // Guide Dawa : turban et voile, manteau de sable a capuche, baton
+  guide_dawa: svg(
+    // baton avec fanion
+    `<path d="M50.4 4 Q50.4 1.6 53.6 2.4 Q55.6 3.6 54.4 6" fill="none" stroke="${K}" stroke-width="5" stroke-linecap="round"/><path d="M50.4 4 Q50.4 1.6 53.6 2.4 Q55.6 3.6 54.4 6" fill="none" stroke="#8a5a33" stroke-width="2.4" stroke-linecap="round"/>` +
+    `<rect x="49" y="4.6" width="3.2" height="54" rx="1.4" fill="#8a5a33" ${O}/>` +
+    `<path d="M52.2 12 Q58 12.6 58.4 19.6 Q54 17.6 52.2 18Z" fill="#1f9a9a" ${OT}/>` +
+    feet('#6b4226') +
+    // manteau
+    `<path d="M15.4 57.6 Q12.4 44 20.6 35 L43.4 35 Q51.6 44 48.6 57.6 Q32 60.8 15.4 57.6Z" fill="#d9ad5c" ${O}/>` +
+    `<path d="M41 38 Q50 46 48 56.6 L40 58.4 Q45 46 41 38Z" fill="#b3873c"/>` +
+    `<path d="M26 38 L38 38 L38.6 56.6 Q32 58 25.4 56.6Z" fill="#7a5632" ${O}/>` +
+    `<path d="M26 38 L26.4 57 M38 38 L37.6 57" stroke="#e8c47a" stroke-width="1.3" opacity=".9"/>` +
+    `<rect x="24.6" y="46" width="14.8" height="3.4" rx="1.4" fill="#1f9a9a" ${O}/>` +
+    // outre a eau
+    `<path d="M36 50 Q42 49 42.8 54 Q41 58 36.6 56.6Z" fill="#8a5a33" ${O}/><rect x="37.6" y="47.6" width="2.8" height="3" fill="#6b4226" ${OT}/>` +
+    sleeve(19.2, 43.4, 4.6, 6.8, 16, '#d9ad5c') + `<path d="M14.8 49 Q19 52 23.2 49.6" fill="none" stroke="#b3873c" stroke-width="1.6" stroke-linecap="round"/>` + hand(17.4, 53, '#d9a070') +
+    sleeve(44.4, 42.6, 4.6, 6.6, -14, '#b3873c') + hand(50, 46.6, '#d9a070') +
+    // capuchon derriere la tete
+    `<path d="M17 24 Q14.4 36 19.4 40.4 L26 36 L38 36 L44.6 40.4 Q49.6 36 47 24Z" fill="#e8c47a" ${O}/>` +
+    head('#e2b080', '#c98f5e', 26, 13.2, 11.2) +
+    `<path d="M20 36.4 Q32 42.4 44 36.4 L45.2 41 Q32 47.6 18.8 41Z" fill="#1f9a9a" ${O}/><path d="M24 40.4 Q32 44.6 40 40.4" fill="none" stroke="#7fe0d8" stroke-width="1" opacity=".8"/>` +
+    `<path d="M24 29.6 Q32 34.4 40 29.6" fill="none" stroke="#536250" stroke-width=".8" stroke-dasharray="1 1.4"/>` +
+    brows(23.6, 5.2, 1.3, '#4a3a2a', 0.2) + happyEyes(26.6, 5.2) + cheeks(30.4, 8.6) + grin(30.6) +
+    // turban
+    `<path d="M18 22.6 Q16.6 8 32 7 Q47.4 8 46 22.6 Q40 17.4 32 17.4 Q24 17.4 18 22.6Z" fill="#f6efd8" ${O}/>` +
+    `<path d="M19 19.4 Q32 12.2 45 19.4 L45.8 22 Q32 15 18.2 22Z" fill="#1f9a9a" ${O}/>` +
+    `<path d="M22 11.4 Q32 6.4 42 11.4 M20.4 15 Q32 9.4 43.6 15" fill="none" stroke="#d6c9a0" stroke-width="1.1"/>` +
+    `<path d="M40 8 Q46 11 46 22 Q42 19 38.6 18Z" fill="#d9cda4"/>` +
+    `<circle cx="32" cy="16.4" r="2" fill="#e0405f" ${OT}/><circle cx="31.2" cy="15.6" r=".7" fill="#fff"/>` +
+    `<path d="M22.6 11 Q26 8.6 29.6 8.4" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".9"/>`
+  ),
+
+  // Forgeron Tie : muscle, tablier de cuir, marteau et fleche rouge
+  smith_tie: svg(
+    // marteau
+    `<rect x="50" y="20" width="3.2" height="40" rx="1.4" fill="#7a4a26" ${O}/>` +
+    `<rect x="43.4" y="9" width="16.4" height="11.6" rx="2.2" fill="#8e98a6" ${O}/><path d="M53 10 L58.6 10 L58.6 19.6 L53 19.6Z" fill="#6a7482"/><path d="M45.4 11.6 L51 11.6" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>` +
+    // fleche rouge
+    `<rect x="11.4" y="22" width="2.8" height="30" rx="1.2" fill="#d8402a" ${O}/>` +
+    `<path d="M12.8 12 L17 23 L8.6 23Z" fill="#ff8a3a" ${O}/><path d="M12.8 15 L12.8 22" stroke="#ffe27a" stroke-width="1.2" stroke-linecap="round"/>` +
+    `<path d="M12.8 52 L8.4 56.6 L12.8 55 L17.2 56.6Z" fill="#2a2430" ${OT}/>` +
+    `<g fill="#ffd84a"><path d="M5 14 l1 2 2 1 -2 1 -1 2 -1-2 -2-1 2-1z"/><path d="M19.6 9 l.8 1.6 1.6.8 -1.6.8 -.8 1.6 -.8-1.6 -1.6-.8 1.6-.8z"/></g>` +
+    // bottes
+    `<ellipse cx="26" cy="57" rx="5" ry="2.8" fill="#2a2430" ${O}/><ellipse cx="38" cy="57" rx="5" ry="2.8" fill="#2a2430" ${O}/>` +
+    `<path d="M20.6 56.6 Q19.6 48 22 41 L42 41 Q44.4 48 43.4 56.6 Q32 58.6 20.6 56.6Z" fill="#3a3440" ${O}/>` +
+    // torse large
+    `<path d="M16.4 45 Q14.6 36 21 34 L43 34 Q49.4 36 47.6 45 Q32 47 16.4 45Z" fill="#c98f62" ${O}/>` +
+    `<path d="M39 36 Q47 38 46.6 45 L40 46Z" fill="#a8704a"/>` +
+    // tablier de cuir
+    `<path d="M22.6 36 L41.4 36 L43 56 Q32 58.4 21 56Z" fill="#8a5a30" ${O}/>` +
+    `<path d="M38.4 38 L41.4 37 L42.8 55.4 L36.6 56.6Z" fill="#6a4020"/>` +
+    `<path d="M24.6 40 L24.6 36 M39.4 40 L39.4 36" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><path d="M24.6 40 L24.6 36 M39.4 40 L39.4 36" stroke="#8a5a30" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M24 41 L40 41 M25 54.4 L39 54.4" stroke="#c89860" stroke-width=".9" stroke-dasharray="1.6 1.4"/>` +
+    `<rect x="26.6" y="45" width="10.8" height="6" rx="1.6" fill="#a8703c" ${OT}/><circle cx="29.6" cy="48" r="1" fill="#f6d08a"/><path d="M31.8 46.4 L35.6 49.6" stroke="#4a2a14" stroke-width="1.2" stroke-linecap="round"/>` +
+    // bras muscles
+    `<ellipse cx="16" cy="42" rx="5.2" ry="6.8" transform="rotate(10 16 42)" fill="#c98f62" ${O}/><path d="M13.4 38.4 Q16 36.4 19 38.4" fill="none" stroke="#a8704a" stroke-width="1.2" stroke-linecap="round"/><rect x="11.6" y="44.6" width="8.2" height="3.6" rx="1.4" fill="#4a3a30" ${O}/>` + hand(14.6, 51.6, '#c98f62') +
+    `<ellipse cx="48" cy="40.6" rx="5.2" ry="6.8" transform="rotate(-10 48 40.6)" fill="#a8704a" ${O}/><path d="M45.4 37.4 Q48 35.4 51 37.4" fill="none" stroke="#8a5a34" stroke-width="1.2" stroke-linecap="round"/><rect x="43.8" y="43.6" width="8.2" height="3.6" rx="1.4" fill="#4a3a30" ${O}/>` + hand(51.6, 49, '#a8704a') +
+    // tete
+    head('#d9a074', '#bf8258', 24, 13.6, 11.2) +
+    `<path d="M18.6 22 Q17.6 11.4 32 10.8 Q46.4 11.4 45.4 22 Q43 17.4 38.6 18.4 L36 15.6 L33 18.4 L30 15.4 L27 18.4 Q21.6 17.4 18.6 22Z" fill="${HAIR}" ${O}/>` +
+    `<path d="M17.8 18.6 Q32 12.4 46.2 18.6 L46.2 22.4 Q32 16.6 17.8 22.4Z" fill="#c0392b" ${O}/>` +
+    `<path d="M45.6 20 Q50.4 20.6 52 25 Q47.6 23.6 45.4 23.6Z" fill="#c0392b" ${OT}/>` +
+    `<path d="M20.4 28 Q22 36.4 32 37 Q42 36.4 43.6 28 Q40 33 32 33 Q24 33 20.4 28Z" fill="${HAIR}" ${O}/>` +
+    brows(22.4, 5.2, 2, K, 0.5) + eyes(25.6, 5.2) + cheeks(29.2, 8.8) + `<path d="M28 30.6 Q32 35.2 36 30.6Z" fill="#fff" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>` +
+    `<circle cx="23.4" cy="30" r=".8" fill="#4a3a30" opacity=".6"/><circle cx="40.6" cy="31.4" r=".8" fill="#4a3a30" opacity=".6"/>`
+  ),
+
+  // Ermite Lei : barbe grise ebouriffee, robe bleu orage, eclairs
+  hermit_lei: svg(
+    // eclairs
+    `<path d="M10 2 L4.6 14 L9.2 14 L5.4 25 L14.4 10.6 L9.6 10.6 L13.6 2Z" fill="#ffe44d" ${OT}/>` +
+    `<path d="M52 2 L46.4 15 L51.2 15 L47.6 27 L57.6 11.4 L52.6 11.4 L56.8 2Z" fill="#ffe44d" ${OT}/>` +
+    `<path d="M58 30 L55 36 L58 36 L56 42 L61.4 33.6 L58.6 33.6 L61 30Z" fill="#fff08a" stroke="${K}" stroke-width="1.2" stroke-linejoin="round"/>` +
+    `<path d="M8 28 L5.4 33 L8 33 L6.4 38 L11 31 L8.6 31 L10.6 28Z" fill="#fff08a" stroke="${K}" stroke-width="1.2" stroke-linejoin="round"/>` +
+    feet('#4a3a2a') +
+    // robe d'orage
+    `<path d="M17.6 57.6 Q15 45 22.4 35 L41.6 35 Q49 45 46.4 57.6 L43 56 L41 58.6 L37 56.6 L33 59 L29 56.6 L25 58.6 L22 56Z" fill="#3e5f9e" ${O}/>` +
+    `<path d="M39 38 Q47 46 45.4 56.6 L41 58.6 L37 56.6Z" fill="#2a4580"/>` +
+    `<path d="M22.6 47 l5 3 -3 4 M38.4 42 l-4 3 3 3" stroke="#7aa0dc" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M26 35 L32 43 L38 35" fill="none" stroke="#a8c0ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M22 46.6 Q32 49.6 42 46.6" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><path d="M22 46.6 Q32 49.6 42 46.6" fill="none" stroke="#d9c08a" stroke-width="1.8" stroke-linecap="round"/>` +
+    // gourde
+    `<ellipse cx="40.6" cy="53.4" rx="3.8" ry="2.8" fill="#d8a838" ${O}/><ellipse cx="40.6" cy="49.6" rx="2.4" ry="2.2" fill="#d8a838" ${O}/><path d="M40.6 47.6 L41.6 45.6" stroke="${K}" stroke-width="1.6" stroke-linecap="round"/>` +
+    sleeve(19.6, 44, 4.6, 6.6, 16, '#3e5f9e') + hand(16.4, 50.2, '#f0d4b8') +
+    // bras leve vers le ciel
+    sleeve(46.4, 38, 4.4, 6.8, -34, '#2a4580') + `<path d="M43 43 Q47 44 49.4 41" fill="none" stroke="#a8c0ea" stroke-width="1.5" stroke-linecap="round"/>` + hand(51.2, 31.4, '#f0d4b8') +
+    `<path d="M53.6 28.4 L55.6 26 M54.6 31.6 L57.4 31.4 M53 34.6 L55.4 36" stroke="#ffe44d" stroke-width="1.4" stroke-linecap="round"/>` +
+    // cheveux ebouriffes
+    `<path d="M32 2 L35.6 9 L41.6 4.4 L41.4 12 L48.4 10 L44.6 17 L50.6 20 L45.2 24 L48 31 L42 29 L44 36 L38 32 L32 37 L26 32 L20 36 L22 29 L16 31 L18.8 24 L13.4 20 L19.4 17 L15.6 10 L22.6 12 L22.4 4.4 L28.4 9Z" fill="#b8bcc8" ${O}/>` +
+    `<path d="M32 2 L35.6 9 L41.6 4.4 L41.4 12 L48.4 10 L44.6 17 L50.6 20 L45.2 24 L48 31 L42 29 L44 36 L38 32Z" fill="#9ba0af"/>` +
+    head('#f0d4b8', '#dab294', 25.6, 12.6, 10.8) +
+    `<path d="M22 20 Q27 17 32 19.4 Q37 17 42 20 Q37 18.8 32 21.6 Q27 18.8 22 20Z" fill="#b8bcc8" stroke="${K}" stroke-width="1.2" stroke-linejoin="round"/>` +
+    // barbe ebouriffee
+    `<path d="M20.4 29 L17.6 36 L22 35.4 L21 43 L26.4 40 L28 47 L32 41 L36 47 L37.6 40 L43 43 L42 35.4 L46.4 36 L43.6 29 Q38 35.6 32 34.6 Q26 35.6 20.4 29Z" fill="#c8ccd6" ${O}/>` +
+    `<path d="M38.4 36 L37.6 40 L43 43 L42 35.4 L46.4 36 L43.6 29 Q41 33 38.4 36Z" fill="#9aa0b0"/>` +
+    `<path d="M26 37.6 L27 42 M38 37.6 L37 42 M32 39 L32 43.6" stroke="#9aa0b0" stroke-width="1" stroke-linecap="round"/>` +
+    `<path d="M22.8 24.4 Q26.4 19.8 30.6 23 Q27 24.4 22.8 24.4Z M41.2 24.4 Q37.6 19.8 33.4 23 Q37 24.4 41.2 24.4Z" fill="#e4e6ec" ${OT}/>` +
+    eyes(26.8, 5.2) + cheeks(30.2, 8.2) + `<path d="M29 31.6 Q32 35 35 31.6Z" fill="#8e2a3a" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>`
+  ),
+
+  // ---------- Pourparlers (fleuve boueux, bambous cendres, tonnerre) ----------
+  // Yuan, doyen des noyes (parley_sun2) : vieux noye venerable, peau bleutee, robe detrempee ourlee de boue,
+  // algues et perles d'eau, longue barbe de joncs, regard doux.
+  parley_sun2: svg(
+    `<ellipse cx="32" cy="22" rx="14.8" ry="12.6" fill="#dfe7e9" ${O}/><ellipse cx="32" cy="9.6" rx="4.6" ry="4.4" fill="#dfe7e9" ${O}/>` +
+    `<path d="M18 55 Q14.6 45 22.4 35 L41.6 35 Q49.4 45 46 55 L44.4 59 L41.4 56.6 L38.6 59.6 L35.6 56.8 L32 60 L28.4 56.8 L25.4 59.6 L22.6 56.6 L19.6 59Z" fill="#4d7683" ${O}/>` +
+    `<path d="M39 38 Q47 46 45.4 54.6 L40.4 55.6 Q43.4 46 39 38Z" fill="#38596a"/>` +
+    `<path d="M18.2 51.4 Q32 56.2 45.8 51.4 L45.4 54.4 Q32 59 18.6 54.4Z" fill="#a67c3a"/>` +
+    `<path d="M24 36.4 L32 44 L40 36.4" fill="none" stroke="#a67c3a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+    cord('M23.6 37.4 Q30 40.6 27.4 46 Q24.4 50.6 30.6 52.6 Q36.4 54.2 40.4 50.6', 2.8, '#3f8a4c') +
+    pearl(24.4, 52.2) + pearl(39.6, 46.6) + pearl(35.6, 56.2, 1.5) + pearl(21.4, 47.6, 1.5) +
+    sleeve(19.4, 44.6, 4.6, 7, 12, '#4d7683') + hand(17.8, 51.8, '#a6cddb') +
+    sleeve(44.6, 44.6, 4.6, 7, -12, '#38596a') + hand(46.2, 51.8, '#a6cddb') +
+    head('#a6cddb', '#7eaabd', 25, 13.2, 11.4) +
+    `<path d="M19.4 22 Q19 14 32 13.4 Q45 14 44.6 22 Q41 18.8 36 19 Q32 17.8 28 19 Q23 18.8 19.4 22Z" fill="#dfe7e9"/>` +
+    `<path d="M22.4 23 Q26 21 30.2 23.4 M41.6 23 Q38 21 33.8 23.4" fill="none" stroke="#f4f8f8" stroke-width="2.2" stroke-linecap="round"/>` +
+    pxEyes(28, 2, 28, 36, 4) +
+    `<path d="M20.4 30 L18.6 40 L23 37.6 L22.4 48 L27 41.6 L28.6 52 L32 44 L35.4 52 L37 41.6 L41.6 48 L41 37.6 L45.4 40 L43.6 30 Q38.4 35.6 32 34.6 Q25.6 35.6 20.4 30Z" fill="#a3a95a" ${O}/>` +
+    `<path d="M37 41.6 L41.6 48 L41 37.6 L45.4 40 L43.6 30 Q41 33 38 34.4Z" fill="#767d3a"/>` +
+    `<path d="M24.6 36 L24.6 41 M28.6 38 L28.6 46 M32 38.6 L32 43 M35.6 38 L35.6 46" fill="none" stroke="#767d3a" stroke-width="1.1" stroke-linecap="round"/>` +
+    `<path d="M29.6 32.6 Q32 34 34.4 32.6" fill="none" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>` +
+    cord('M22.4 13.6 Q14.6 14 15.4 22.4 Q16.4 29 13.6 34.4', 2.6, '#3f8a4c') +
+    `<ellipse cx="38.4" cy="8.4" rx="3.4" ry="1.7" transform="rotate(-24 38.4 8.4)" fill="#3f8a4c" ${OT}/>`
+  ),
+
+  // Tintement, ame de la cloche felee (parley_sun3) : petit esprit en cloche de bronze patine, anse en chignon
+  // piquee d'une epingle, fissure lumineuse, lueur chaude au visage, bras minuscules, air timide.
+  parley_sun3: svg(
+    `<ellipse cx="22.6" cy="58" rx="4.2" ry="2.2" fill="#8a5a22" ${O}/><ellipse cx="41.4" cy="58" rx="4.2" ry="2.2" fill="#8a5a22" ${O}/>` +
+    `<path fill-rule="evenodd" d="M25 8.6 a7 5.4 0 1 0 14 0 a7 5.4 0 1 0 -14 0Z M28.6 8.8 a3.4 2.6 0 1 0 6.8 0 a3.4 2.6 0 1 0 -6.8 0Z" fill="#c98a3a" ${O}/>` +
+    `<path d="M24 17 Q32 12.4 40 17 Q43.4 28 46.6 38 Q49.6 46 53 51 Q32 54.6 11 51 Q14.4 46 17.4 38 Q20.6 28 24 17Z" fill="#c98a3a" ${O}/>` +
+    `<path d="M24.8 19.6 Q22.6 30 19 40 Q17.2 45 15.4 48 L20.6 47 Q23 41 26 30Z" fill="#e9b45e"/>` +
+    `<ellipse cx="30" cy="36" rx="11.6" ry="11.4" fill="#f0bf68"/><ellipse cx="29.6" cy="35.6" rx="8.8" ry="8.6" fill="#ffdf94"/>` +
+    `<path d="M23.6 19.6 Q32 15.6 40.4 19.6" fill="none" stroke="#8a5a22" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<path d="M10.8 49.6 Q9 58 16 58 L48 58 Q55 58 53.2 49.6 Q32 54 10.8 49.6Z" fill="#6f9a86" ${O}/>` +
+    `<path d="M14 53.2 Q20 55.4 27 55.4" fill="none" stroke="#a9cdb8" stroke-width="1.4" stroke-linecap="round"/>` +
+    `<path d="M41.5 15.6 L38.4 22.4 L41.6 27.6 L38.2 33 L41.4 38.6 L37.8 44.6 L39.8 51" fill="none" stroke="${K}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M41.5 15.6 L38.4 22.4 L41.6 27.6 L38.2 33 L41.4 38.6 L37.8 44.6 L39.8 51" fill="none" stroke="#fff3b8" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M21.6 6.2 L42.4 4" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><path d="M21.6 6.2 L42.4 4" stroke="${GOLD}" stroke-width="1.6" stroke-linecap="round"/>` +
+    // yeux ronds baisses, sourcils inquiets, joues rouges, petite bouche tremblante
+    `${pxEyes(32, 4, 25, 35)}` +
+    `<ellipse cx="21.6" cy="39.4" rx="2.6" ry="1.6" fill="#ff7f6a" opacity=".7"/><ellipse cx="36.8" cy="39.4" rx="2.4" ry="1.5" fill="#ff7f6a" opacity=".7"/>` +
+    `<path d="M27.4 41.6 Q28.8 40.4 30 41.6 Q31.2 42.8 32.6 41.4" fill="none" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>` +
+    cord('M17.4 40.4 L27 46.6', 3.2, '#c98a3a') + cord('M44.6 40.4 L33.4 46.8', 3.2, '#b9772e') +
+    `<circle cx="28" cy="47.4" r="2.5" fill="#f6cf86" ${O}/><circle cx="33" cy="47.6" r="2.5" fill="#f6cf86" ${O}/>` +
+    spark(8.4, 22) + spark(56.2, 30, '#ffe9a0') + spark(9.4, 44, '#ffe9a0')
+  ),
+
+  // Rongrong, petite voix du tonnerre (parley_sun5) : enfant-esprit a nuage d'orage pour chapeau, meches en eclairs,
+  // petit tambour au ventre et baguettes levees, sourire espiegle ; violet-gris de l'orage.
+  parley_sun5: svg(
+    cord('M18 47.4 L7.4 36.4', 2, '#e0b070') + `<circle cx="6.4" cy="35.2" r="2.5" fill="#ffe35c" ${OT}/>` +
+    cord('M46 47.4 L56.6 36.4', 2, '#e0b070') + `<circle cx="57.6" cy="35.2" r="2.5" fill="#ffe35c" ${OT}/>` +
+    feet('#3a2f55', 57.4, 4.4) +
+    `<path d="M22 57 Q20 47 24.6 39 L39.4 39 Q44 47 42 57 Q32 59.6 22 57Z" fill="#5b4f8c" ${O}/>` +
+    `<path d="M37.4 41 Q43 48 41.2 56 L37.6 56.6 Q40 48 37.4 41Z" fill="#43386a"/>` +
+    `<path d="M22.4 54 L25 56 L27.6 54 L30.2 56.2 L32.8 54 L35.4 56.2 L38 54 L40.6 56 L41.6 54" fill="none" stroke="#ffe35c" stroke-width="1.5" stroke-linejoin="round"/>` +
+    `<rect x="24" y="44.4" width="16" height="9" rx="3" fill="#a8683a" ${O}/><ellipse cx="32" cy="44.6" rx="8" ry="2.6" fill="#ecd7a8" ${O}/>` +
+    `<circle cx="27.4" cy="50" r=".9" fill="#ffe35c" stroke="none"/><circle cx="32" cy="50.6" r=".9" fill="#ffe35c" stroke="none"/><circle cx="36.6" cy="50" r=".9" fill="#ffe35c" stroke="none"/>` +
+    sleeve(20.4, 44.6, 3.8, 6, 14, '#5b4f8c') + hand(18, 47.8) +
+    sleeve(43.6, 44.6, 3.8, 6, -14, '#43386a') + hand(46, 47.8) +
+    head(SKIN, SKIN_D, 27.6, 13.4, 11.4) +
+    pxEyes(30, 4, 27, 37) + cheeks(34, 8.4) + grin(34.6) +
+    `<path d="M16.4 24.6 Q9.6 20.4 15.4 14.6 Q14 7 22.4 7.4 Q26 1.4 33.4 4 Q40 0.4 44.6 7.8 Q53.4 7 51.4 15.4 Q57.4 21 50.6 25 Q46 21.8 41.6 23.4 Q37 20.8 32 22.8 Q27 20.8 22.4 23.4 Q19 21.8 16.4 24.6Z" fill="#7a7399" ${O}/>` +
+    `<path d="M17.6 22.8 Q22 21 24.6 23.4 Q28 21 32 22.8 Q36 21 40 23.4 Q43 21.4 50 23.2 Q53.6 20 52 17.6 Q48 21.4 40 21 Q28 20 17.6 22.8Z" fill="#524b78"/>` +
+    `<ellipse cx="24.6" cy="11" rx="5" ry="2.4" fill="#a49dc2"/><ellipse cx="40.4" cy="9.4" rx="4.2" ry="2" fill="#a49dc2"/><ellipse cx="47.6" cy="16" rx="2.8" ry="1.8" fill="#a49dc2"/>` +
+    bolt(12.6, 21.4, 1.05) + bolt(45.4, 21.4, 1.05)
+  ),
 };
 
 // ---------- Coffres ----------

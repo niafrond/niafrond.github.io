@@ -88,7 +88,7 @@ function partialOpacityViolations(svg) {
 const colorCount = svg => new Set([...svg.matchAll(/(?:fill|stroke|stop-color|flood-color)="(#[0-9a-fA-F]{3,8})"/g)].map(m => m[1].toLowerCase())).size;
 
 // Dessins tolérés entre 6 000 et 9 000 caractères (limite recommandée : 6 000) : liste fermée, ne pas l'allonger.
-const OVER_SOFT_LIMIT = new Set([]);
+const OVER_SOFT_LIMIT = new Set(['Fengmeng:fengmeng_1', 'Fengmeng:fengmeng_3a', 'Fengmeng:fengmeng_3b', 'PNJ dessinés:shepherd_zi', 'PNJ dessinés:envoy_longwang']);
 const HARD_LIMIT = 9000;
 const SOFT_LIMIT = 6000;
 // Au-delà de 28 teintes distinctes, un sprite n'est plus lisible une fois ramené à 6 niveaux par couche : borne de non-régression

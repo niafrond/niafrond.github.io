@@ -1,517 +1,93 @@
-// Villageois génériques en pixel art : sprite chibi (viewBox 64x64, pieds vers y = 58, contour #2b1b17 d'un pixel, sans ombre au
-// sol) composé à partir de l'identifiant du PNJ (peau, robe, coiffure, couvre-chef, barbe, accessoire) pour que chaque habitant du
-// Grand Monde ait un dessin propre sans sprite écrit à la main. Déterministe : même id → même personnage. L'identifiant oriente aussi
-// l'âge (OLD_IDS : cheveux blancs, barbe ; CHILD_ID / CHILD_IDS : plus petit, couettes), le sexe (FEMALE_IDS : épingles, cils) et l'habit
-// (moines : crâne rasé, robe safran). Les PNJ non humains (animaux, esprits, épouvantail…) sont dessinés par creatures.js.
-//
-// Direction artistique (agents/animation-pixel-art.md, « pixel art soigné et brillant ») : le dessin est une grille de 64 x 64 pixels
-// indexés par couleur (classe Pix) convertie en SVG de rectangles alignés sur la grille (shape-rendering="crispEdges", ni dégradé,
-// ni filtre, ni opacité). Chaque pièce (tête, robe, cheveux, chapeau…) est peinte avec un contour d'un pixel, une rampe de 3 à 4 tons,
-// un liseré clair en haut à gauche et une ombre en bas à droite ; les cheveux portent un reflet laqué. Toutes les couleurs sont sur le
-// réseau à 6 niveaux de la pixellisation du jeu (sprites/index.js) : elles s'affichent exactement comme dessinées aux grilles 32 et 64.
-// La silhouette est alignée (stabilize) pour que le vote de chaque bloc 2 x 2 de la grille 32 garde un contour continu.
+// Villageois génériques : sprite SVG chibi (viewBox 64x64, contour #2b1b17, pieds vers y = 58) composé à partir de
+// l'identifiant du PNJ (couleurs de robe, coiffure, couvre-chef, accessoire) pour que chaque habitant du Grand Monde
+// ait un dessin propre sans sprite écrit à la main. Déterministe : même id → même personnage. L'identifiant oriente
+// aussi l'âge (OLD_IDS : cheveux blancs, barbe ; CHILD_ID / CHILD_IDS : plus petit, couettes) et l'habit (moines).
+// Les PNJ non humains (animaux, esprits, épouvantail…) sont dessinés par creatures.js.
 
 import { creatureSprite } from './creatures.js';
 
-export const N = 64;
-export const OUTLINE = '#2b1b17';
+const K = '#2b1b17';
+const O = `stroke="${K}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;
 
-const mk = () => new Uint8Array(N * N);
-export const ell = (cx, cy, rx, ry) => {
-    const m = mk();
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-        const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
-        if (dx * dx + dy * dy <= 1) m[y * N + x] = 1;
-    }
-    return m;
-};
-export const box = (x0, y0, x1, y1) => {
-    x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
-    const m = mk();
-    for (let y = Math.max(0, y0); y < Math.min(N, y1); y++) for (let x = Math.max(0, x0); x < Math.min(N, x1); x++) m[y * N + x] = 1;
-    return m;
-};
-export const poly = pts => {
-    const m = mk();
-    for (let y = 0; y < N; y++) {
-        const yc = y + 0.5, xs = [];
-        for (let i = 0; i < pts.length; i++) {
-            const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length];
-            if (y1 === y2) continue;
-            if (yc >= Math.min(y1, y2) && yc < Math.max(y1, y2)) xs.push(x1 + (yc - y1) * (x2 - x1) / (y2 - y1));
-        }
-        xs.sort((a, b) => a - b);
-        for (let i = 0; i + 1 < xs.length; i += 2) {
-            for (let x = 0; x < N; x++) if (x + 0.5 >= xs[i] && x + 0.5 < xs[i + 1]) m[y * N + x] = 1;
-        }
-    }
-    return m;
-};
-export const union = (...ms) => { const m = mk(); ms.forEach(a => { for (let i = 0; i < N * N; i++) if (a[i]) m[i] = 1; }); return m; };
-export const minus = (a, b) => { const m = mk(); for (let i = 0; i < N * N; i++) m[i] = a[i] && !b[i] ? 1 : 0; return m; };
-export const inter = (a, b) => { const m = mk(); for (let i = 0; i < N * N; i++) m[i] = a[i] && b[i] ? 1 : 0; return m; };
-export const shift = (a, dx, dy) => {
-    const m = mk();
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (a[y * N + x]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < N && ny < N) m[ny * N + nx] = 1; }
-    return m;
-};
-export const flipX = a => { const m = mk(); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (a[y * N + x]) m[y * N + (N - 1 - x)] = 1; return m; };
-
-const at = (m, x, y) => (x >= 0 && y >= 0 && x < N && y < N ? m[y * N + x] : 0);
-
-export class Pix {
-    constructor() { this.c = new Array(N * N).fill(null); this.f = new Array(N * N).fill(undefined); }
-    set(x, y, col) { if (x >= 0 && y >= 0 && x < N && y < N) this.c[y * N + x] = col; }
-    get(x, y) { return x >= 0 && y >= 0 && x < N && y < N ? this.c[y * N + x] : null; }
-    fill(mask, col) { for (let i = 0; i < N * N; i++) if (mask[i]) this.c[i] = col; }
-    // Rect plein (x0,y0 inclus ; x1,y1 exclus).
-    rect(x0, y0, x1, y1, col) { this.fill(box(x0, y0, x1, y1), col); }
-    // Art ASCII : rows = tableau de chaines, legend = { lettre: couleur } ('.' ou ' ' = ne rien poser).
-    stamp(x0, y0, rows, legend, mirror = false, feature = false) {
-        rows.forEach((row, j) => [...row].forEach((ch, i) => {
-            const col = legend[ch];
-            if (!col) return;
-            const x = mirror ? x0 + row.length - 1 - i : x0 + i, y = y0 + j;
-            if (feature && x >= 0 && y >= 0 && x < N && y < N && this.f[y * N + x] === undefined) this.f[y * N + x] = this.c[y * N + x];   // couleur dessous
-            this.set(x, y, col);
-        }));
-    }
-    // Contour d'un pixel (voisinage 4) puis remplissage par rampe [hi, base, sh, deep].
-    paint(mask, ramp, o = {}) {
-        const { out = OUTLINE, mode = 'round', band = 3, deep = false, dither = false, rim = true } = o;
-        if (out) {
-            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-                if (mask[y * N + x]) continue;
-                if (at(mask, x - 1, y) || at(mask, x + 1, y) || at(mask, x, y - 1) || at(mask, x, y + 1)) this.set(x, y, out);
-            }
-        }
-        const [hi, base, sh, dp] = ramp;
-        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-            if (!mask[y * N + x]) continue;
-            let tl = 1; while (at(mask, x - tl, y - tl)) tl++;
-            let br = 1; while (at(mask, x + br, y + br)) br++;
-            let col = base;
-            if (mode === 'round') {
-                const chord = tl + br - 1;
-                const w = Math.min(band, Math.max(1, Math.round(chord / 3)));
-                if (br <= w) col = (deep && br === 1 && w >= 2 && dp) ? dp : sh;
-                else if (dither && br === w + 1 && ((x + y) & 1) === 0) col = sh;
-                else if (rim && tl === 1 && chord >= 6) col = hi;
-            } else if (mode === 'flat') {
-                let r = 1; while (at(mask, x + r, y)) r++;
-                let b = 1; while (at(mask, x, y + b)) b++;
-                let l = 1; while (at(mask, x - l, y)) l++;
-                if (r <= band || b <= 1) col = (deep && (r === 1 || b === 1) && dp) ? dp : sh;
-                else if (dither && r === band + 1 && ((x + y) & 1) === 0) col = sh;
-                else if (rim && l === 1) col = hi;
-            }
-            this.c[y * N + x] = col;
-        }
-    }
-    // Croissant de reflet laque en haut a gauche (pixels de profondeur 2-3 depuis le bord haut-gauche, secteur haut-gauche).
-    gloss(mask, col, { cx, cy, a0 = 195, a1 = 270, d0 = 2, d1 = 3, rmin = 0 } = {}) {
-        let sx = 0, sy = 0, n = 0;
-        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (mask[y * N + x]) { sx += x; sy += y; n++; }
-        const ccx = cx ?? sx / n, ccy = cy ?? sy / n;
-        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-            if (!mask[y * N + x]) continue;
-            let tl = 1; while (at(mask, x - tl, y - tl)) tl++;
-            if (tl < d0 || tl > d1) continue;
-            const a = (Math.atan2(y + 0.5 - ccy, x + 0.5 - ccx) * 180 / Math.PI + 360) % 360;
-            const r = Math.hypot(x + 0.5 - ccx, y + 0.5 - ccy);
-            if (a >= a0 && a <= a1 && r >= rmin) this.c[y * N + x] = col;
-        }
-    }
-    // Ramene la palette a `max` couleurs : la couleur la moins employee (hors contour et blanc) est fondue dans la plus proche.
-    limitColors(max = 16) {
-        const rgb = h => { const t = h.length === 4 ? [...h.slice(1)].map(c => parseInt(c + c, 16)) : [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return t; };
-        for (;;) {
-            const cnt = new Map();
-            this.c.forEach(c => { if (c) cnt.set(c, (cnt.get(c) || 0) + 1); });
-            if (cnt.size <= max) return this;
-            const [victim] = [...cnt.entries()].filter(([c]) => c !== OUTLINE && c !== '#fff').sort((a, b) => a[1] - b[1])[0];
-            const rv = rgb(victim);
-            let best = null, bd = 1e9;
-            for (const c of cnt.keys()) {
-                if (c === victim) continue;
-                const rc = rgb(c); const d = Math.abs(rc[0] - rv[0]) + Math.abs(rc[1] - rv[1]) + Math.abs(rc[2] - rv[2]);
-                if (d < bd) { bd = d; best = c; }
-            }
-            this.c = this.c.map(c => (c === victim ? best : c));
-            this.f = this.f.map(c => (c === victim ? best : c));
-        }
-    }
-    solid(x, y) { return this.get(x, y) !== null; }
-    // Aligne la silhouette pour que la pixellisation 32 x 32 du jeu garde un contour continu : un pixel de contour
-    // en bordure droite/basse doit tomber sur une coordonnee paire (sinon il perd le vote de son bloc 2 x 2).
-    stabilize() {
-        const thick = (x, y, dx, dy) => this.solid(x - dx, y - dy) && this.c[(y - dy) * N + x - dx] !== OUTLINE && this.solid(x - 2 * dx, y - 2 * dy) && this.c[(y - 2 * dy) * N + x - 2 * dx] !== OUTLINE;
-        for (let it = 0; it < 8; it++) {
-            const rm = [], add = [];
-            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-                if (!this.solid(x, y)) continue;
-                if ((x & 1) && !this.solid(x + 1, y)) { if (thick(x, y, 1, 0)) rm.push(y * N + x); else add.push([x + 1, y]); }
-                if ((y & 1) && !this.solid(x, y + 1)) { if (thick(x, y, 0, 1)) rm.push(y * N + x); else add.push([x, y + 1]); }
-            }
-            if (!rm.length && !add.length) break;
-            rm.forEach(i => { this.c[i] = null; });
-            add.forEach(([x, y]) => { if (!this.solid(x, y)) this.set(x, y, OUTLINE); });
-            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-                if (this.solid(x, y) && (!this.solid(x - 1, y) || !this.solid(x + 1, y) || !this.solid(x, y - 1) || !this.solid(x, y + 1))) this.c[y * N + x] = OUTLINE;
-            }
-        }
-        // pixels orphelins (aucun voisin 4 plein) : supprimes
-        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-            if (this.solid(x, y) && !this.solid(x - 1, y) && !this.solid(x + 1, y) && !this.solid(x, y - 1) && !this.solid(x, y + 1)) this.c[y * N + x] = null;
-        }
-        return this;
-    }
-    // SVG de rectangles alignes sur la grille, un <path> par couleur. Les couleurs sont posees dans l'ordre du peintre
-    // (contour d'abord) : un rectangle peut recouvrir des pixels des couleurs POSEES APRES, ce qui divise le nombre de rectangles.
-    svg(opts = {}) {
-        // Option features : les traits du visage (yeux, sourcils, bouche, joues) sont emis en <path> separes et petits, apres le corps,
-        // pour que side.js puisse les decaler (profil) ou les retirer (dos) ; le corps recouvre alors la couleur de dessous.
-        const keep = this.c;
-        const feats = [];
-        if (opts.features) {
-            this.c = this.c.slice();
-            this.f.forEach((under, i) => { if (under !== undefined) { feats.push([i % N, Math.floor(i / N), keep[i]]); this.c[i] = under; } });
-        }
-        const cols = [...new Set(this.c.filter(Boolean))];
-        const count = new Map(cols.map(c => [c, 0]));
-        this.c.forEach(c => { if (c) count.set(c, count.get(c) + 1); });
-        cols.sort((a, b) => (a === OUTLINE ? -1 : b === OUTLINE ? 1 : count.get(b) - count.get(a)));
-        const rank = new Map(cols.map((c, i) => [c, i]));
-        let body = '';
-        cols.forEach((col, i) => {
-            const own = (x, y) => this.c[y * N + x] === col;
-            const ok = (x, y) => { const c = this.c[y * N + x]; return c !== null && rank.get(c) >= i; };
-            const done = new Uint8Array(N * N);
-            let d = '';
-            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-                if (!own(x, y) || done[y * N + x]) continue;
-                let wmax = 0; while (x + wmax < N && ok(x + wmax, y)) wmax++;
-                let best = { w: 1, h: 1, a: 0 };
-                for (let w = 1; w <= wmax; w++) {
-                    let h = 1;
-                    while (y + h < N) { let all = true; for (let k = 0; k < w; k++) if (!ok(x + k, y + h)) { all = false; break; } if (!all) break; h++; }
-                    let fresh = 0; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (own(x + xx, y + yy) && !done[(y + yy) * N + x + xx]) fresh++;
-                    if (fresh > best.a || (fresh === best.a && w * h < best.w * best.h)) best = { w, h, a: fresh };
-                }
-                for (let yy = 0; yy < best.h; yy++) for (let xx = 0; xx < best.w; xx++) if (own(x + xx, y + yy)) done[(y + yy) * N + x + xx] = 1;
-                d += `M${x} ${y}h${best.w}v${best.h}h-${best.w}`;
-            }
-            body += `<path fill="${col}" d="${d}"/>`;
-        });
-        this.c = keep;
-        if (feats.length) {
-            // groupes de traits : composantes connexes (8 voisins), un <path> par couleur et par groupe
-            const idx = new Map(feats.map(([x, y, c], i) => [y * N + x, i]));
-            const seen = new Set();
-            feats.forEach(([x, y], i0) => {
-                if (seen.has(i0)) return;
-                const group = [], stack = [i0]; seen.add(i0);
-                while (stack.length) {
-                    const i = stack.pop(); group.push(feats[i]);
-                    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-                        const j = idx.get((feats[i][1] + dy) * N + feats[i][0] + dx);
-                        if (j !== undefined && !seen.has(j)) { seen.add(j); stack.push(j); }
-                    }
-                }
-                const byCol = new Map();
-                group.forEach(([gx, gy, c]) => { if (!byCol.has(c)) byCol.set(c, []); byCol.get(c).push([gx, gy]); });
-                byCol.forEach((pts, c) => {
-                    const set = new Set(pts.map(([px, py]) => py * N + px));
-                    let d = '';
-                    [...pts].sort((a, b) => a[1] - b[1] || a[0] - b[0]).forEach(([px, py]) => {
-                        if (!set.has(py * N + px)) return;
-                        let w = 1; while (set.has(py * N + px + w)) w++;
-                        let h = 1; for (;;) { let all = true; for (let k = 0; k < w; k++) if (!set.has((py + h) * N + px + k)) { all = false; break; } if (!all) break; h++; }
-                        for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) set.delete((py + yy) * N + px + xx);
-                        d += `M${px} ${py}h${w}v${h}h-${w}`;
-                    });
-                    body += `<path fill="${c}" d="${d}"/>`;
-                });
-            });
-        }
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">${body}</svg>`;
-    }
-    ascii() {
-        const cols = [...new Set(this.c.filter(Boolean))];
-        const sym = '0123456789abcdefghijklmnop';
-        const rows = [];
-        for (let y = 0; y < N; y++) { let r = ''; for (let x = 0; x < N; x++) { const c = this.c[y * N + x]; r += c ? sym[cols.indexOf(c)] : '.'; } rows.push(r); }
-        return { rows, legend: Object.fromEntries(cols.map((c, i) => [sym[i], c])) };
-    }
-}
-
-
-// ── Palettes (couleurs sur le reseau a 6 niveaux de la pixellisation du jeu : aucune teinte n'est deformee) ─────────────────
-export const SKINS = [
-    { hi: '#ffc', b: '#fc9', s: '#c96' },
-    { hi: '#fc9', b: '#c96', s: '#963' },
-    { hi: '#c96', b: '#963', s: '#630' }
+const SKINS = [['#f5cba7', '#e0a582'], ['#e8b58a', '#cf9468'], ['#d9a273', '#bd8456'], ['#f2c59e', '#dca07a']];
+const ROBES = [
+    ['#2f6f73', '#1f4f54', '#f2c14e'], ['#8e2a3a', '#661d2b', '#f2c14e'], ['#b8742a', '#8a5420', '#fbe7b0'],
+    ['#4a6fa5', '#34507a', '#fbf1d8'], ['#5d8a4a', '#3f6434', '#fbf1d8'], ['#7a4a8a', '#563466', '#f2c14e'],
+    ['#c9a448', '#9c7d2e', '#7a1f24'], ['#6b6f7a', '#4a4e58', '#f2c14e'], ['#c45a4a', '#963f33', '#fbf1d8']
 ];
-export const HAIRS = {
-    black: ['#669', '#336', '#333'],
-    brown: ['#c63', '#930', '#630'],
-    umber: ['#963', '#633', '#333'],
-    white: ['#fff', '#ccc', '#999']
-};
-// Garnitures : deux tons seulement (or ou creme), pour tenir dans les 16 couleurs d'un sprite.
-export const GOLD = ['#fe6', '#fc3', '#c90'];
-const TRIM_GOLD = ['#fe6', '#fc3'], TRIM_CREAM = ['#ffc', '#fc9'], TRIM_RED = ['#f66', '#c33'];
-export const ROBES = [
-    { r: ['#6c9', '#396', '#063'], trim: TRIM_GOLD },        // jade
-    { r: ['#f66', '#c33', '#933'], trim: TRIM_GOLD },        // rouge laque
-    { r: ['#f96', '#c63', '#933'], trim: TRIM_CREAM },       // rouille
-    { r: ['#69c', '#369', '#336'], trim: TRIM_CREAM },       // bleu
-    { r: ['#9c6', '#693', '#363'], trim: TRIM_CREAM },       // vert
-    { r: ['#c9c', '#939', '#636'], trim: TRIM_GOLD },        // pourpre
-    { r: ['#fc6', '#c90', '#960'], trim: TRIM_RED },         // moutarde
-    { r: ['#ccc', '#999', '#666'], trim: TRIM_GOLD }         // gris
-];
-export const SAFFRON = { r: ['#fc3', '#f90', '#c60'], trim: TRIM_RED };
-const WOOD = ['#fc3', '#c90', '#c90'];
-const STRAW = ['#fe6', '#fc3', '#c90', '#c90'];
-export const IRIS = ['#c63', '#630', '#369', '#396'];
-
-// Sourcils : motifs de 6 x 3 pixels du sourcil gauche (le droit en est le miroir).
-const BROWS = { angry: ['KK....', '.KKK..', '...KKK'], sad: ['...KKK', '.KKK..', 'KK....'] };
-
-export function compose(o) {
-    o = { hair: HAIRS.black, ...o };
-    const p = new Pix();
-    const H = o.hooks || {};
-    const age = o.age || 'adult';
-    const child = age === 'child';
-    const hy = child ? 3 : 0;               // la tete descend chez l'enfant (corps plus court)
-    const hdy = o.headDy || 0;
-    const fy = hy + hdy;
-    const sk = o.skin, R = o.robe;
-    const skinR = [sk.hi, sk.b, sk.s, sk.s];
-    const robeR = [R.r[0], R.r[1], R.r[2], R.r[2]];
-    const trimR = [R.trim[0], R.trim[1], R.trim[1]];
-    const hairHat = ['straw', 'scholar', 'scarf'].includes(o.hat) || typeof o.hat === 'function' || o.hatCovers;
-    const top = child ? 41 : 37;
-    const ctx = { p, hy, fy, top, skinR, robeR, trimR, o, child };
-
-    // 1. objet tenu, derriere le corps
-    if (o.item === 'staff') {
-        p.paint(box(48, 22, 50, 57), WOOD, { mode: 'flat', band: 1 });
-        p.paint(ell(49, 21, 3.4, 3.4), GOLD, { band: 2 });
-    }
-    H.behind?.(ctx);
-
-    // 2. cheveux longs derriere les epaules
-    if (o.style === 'long') {
-        p.paint(poly([[17, 22 + fy], [14, 36 + fy], [15, 49], [23, 47], [41, 47], [49, 49], [50, 36 + fy], [47, 22 + fy]]), o.hair, { mode: 'flat', band: 3 });
-    }
-
-    // 3. robe, ceinture, col croise
-    const robe = o.robeMask || poly([[24, top], [40, top], [44, top + 11], [46, 54], [45, 56], [19, 56], [18, 54], [20, top + 11]]);
-    p.paint(robe, robeR, { mode: 'flat', band: 4, dither: o.dither !== false });
-    const beltY = o.beltY ?? (child ? 47 : 46);
-    const bl = o.belt || trimR;
-    if (!o.noBelt) {
-        p.rect(21, beltY, 43, beltY + 3, bl[1]);
-        p.rect(21, beltY, 43, beltY + 1, bl[0]);
-        p.rect(21, beltY + 2, 43, beltY + 3, o.belt ? bl[2] : R.r[2]);
-        p.rect(30, beltY - 1, 34, beltY + 4, o.belt ? bl[2] : R.r[2]);
-        p.rect(31, beltY, 33, beltY + 3, bl[0]);
-    }
-    if (o.hem) p.rect(20, 52, 44, 53, trimR[1]);
-    const lap = child ? 4 : 7;
-    const cl = o.collar === undefined ? trimR[1] : o.collar;
-    if (cl) for (let i = 0; i < lap; i++) {
-        p.set(25 + i, top + 1 + i, cl); p.set(26 + i, top + 1 + i, cl);
-        p.set(38 - i, top + 1 + i, cl); p.set(37 - i, top + 1 + i, cl);
-    }
-    H.afterRobe?.(ctx);
-
-    // 4. manches et mains
-    const sl = child ? 9 : 14;
-    const sleeve = o.sleeveMask || poly([[24, top + 1], [20, top + 2], [15, top + 8], [15, top + sl + 1], [22, top + sl + 1], [24, top + 7]]);
-    const sleeveR = o.bareArms ? skinR : robeR;
-    if (!o.noHands) {
-        p.paint(ell(18, top + sl + 2, 2.5, 2.2), skinR, { band: 1 });
-        p.paint(ell(46, top + sl + 2, 2.5, 2.2), skinR, { band: 1 });
-    }
-    p.paint(sleeve, sleeveR, { mode: 'flat', band: 3 });
-    p.paint(flipX(sleeve), sleeveR, { mode: 'flat', band: 3 });
-    if (!o.bareArms && !o.noCuff) {
-        p.rect(16, top + sl - 1, 22, top + sl + 1, trimR[1]);
-        p.rect(42, top + sl - 1, 48, top + sl + 1, trimR[1]);
-    }
-    H.afterSleeves?.(ctx);
-
-    // 5. objet tenu, devant
-    if (o.item === 'basket') {
-        const fc = GOLD;
-        p.paint(box(46, 43, 48, 51), fc, { mode: 'flat', band: 1 });
-        p.paint(box(52, 43, 54, 51), fc, { mode: 'flat', band: 1 });
-        p.paint(poly([[43, 50], [57, 50], [55, 57], [45, 57]]), fc, { mode: 'flat', band: 2 });
-    } else if (o.item === 'lantern') {
-        p.paint(ell(52, 50, 4.5, 5.5), ['#f66', '#c33', '#c33'], { band: 3 });
-        p.rect(49, 44, 56, 46, trimR[1]); p.rect(49, 54, 56, 56, trimR[1]);
-    } else if (o.item === 'scroll') {
-        p.paint(box(47, 41, 51, 53), ['#fff', '#fff', '#ccc'], { mode: 'flat', band: 1 });
-        p.paint(ell(49, 41, 3, 1.6), GOLD, { band: 1 });
-        p.paint(ell(49, 53, 3, 1.6), GOLD, { band: 1 });
-        p.rect(47, 46, 51, 48, trimR[1]);
-    } else if (o.item === 'gourd') {
-        p.paint(ell(51, 47, 3, 3), GOLD, { band: 2 });
-        p.paint(ell(51, 53, 4, 4), GOLD, { band: 3 });
-        p.rect(50, 42, 52, 44, R.r[2]);
-    }
-    H.front?.(ctx);
-
-    // 6. chaussons
-    const shoe = o.shoe || [o.hair[1], o.hair[1], o.hair[2]];
-    if (!o.noShoes) {
-        p.paint(ell(26, 56, 4.5, 2), shoe, { band: 1 });
-        p.paint(ell(38, 56, 4.5, 2), shoe, { band: 1 });
-    }
-    H.afterShoes?.(ctx);
-
-    // 7. tete
-    const headM = ell(32, 26 + fy, 14, 12);
-    p.paint(headM, skinR, { band: sk === SKINS[2] ? 1 : 2 });
-    H.afterHead?.(ctx);
-
-    // 8. barbe / moustache
-    if (o.facial === 'beard') {
-        const b = poly([[21, 31 + fy], [24, 35 + fy], [32, 37 + fy], [40, 35 + fy], [43, 31 + fy], [41, 41 + fy], [36, 47 + fy], [32, 49 + fy], [28, 47 + fy], [23, 41 + fy]]);
-        p.paint(inter(b, union(headM, box(0, 36 + fy, 64, 64))), o.beardCol, { mode: 'flat', band: 3 });
-    }
-
-    H.beforeHair?.(ctx);
-    // 9. cheveux
-    if (o.style !== 'bald' && o.style !== 'none') {
-        const cap = ell(32, 25 + fy, 15.5, 13.5);
-        const win = poly([[21.5, 40 + fy], [21.5, 27 + fy], [24, 21.5 + fy], [29, 23 + fy], [32, 24.5 + fy], [35, 23 + fy], [40, 21.5 + fy], [42.5, 27 + fy], [42.5, 40 + fy]]);
-        const hm = minus(cap, win);
-        if (!hairHat) {
-            if (o.style === 'bun') p.paint(ell(32, 9 + fy, 5, 5), o.hair, { band: 2 });
-            if (o.style === 'topknot') p.paint(poly([[28, 14 + fy], [29, 6 + fy], [35, 6 + fy], [36, 14 + fy]]), o.hair, { band: 2 });
-            if (o.style === 'tufts' || o.style === 'twin') {
-                const r = o.style === 'twin' ? 5 : 4;
-                p.paint(ell(18, 14 + fy, r, r), o.hair, { band: 2 });
-                p.paint(ell(46, 14 + fy, r, r), o.hair, { band: 2 });
-            }
-        }
-        p.paint(hm, o.hair, { band: 3 });
-        p.gloss(hm, o.hair[0] === '#fff' ? '#fff' : (o.glossCol || '#fff'), { cy: 25 + fy });
-        if (o.pin && !hairHat) {
-            if (o.style === 'bun') p.rect(34, 9 + fy, 38, 11 + fy, '#fc3');
-            else p.rect(40, 14 + fy, 43, 16 + fy, '#fc3');
-        }
-    } else if (o.style === 'bald') {
-        p.gloss(headM, sk.hi, { a0: 200, a1: 260, d0: 2, d1: 2 });
-    }
-    H.afterHair?.(ctx);
-
-    // 10. visage
-    const ec = o.iris || R.r[1];
-    const mood = o.eyes || 'open';
-    const eyeLeg = { K: OUTLINE, W: '#fff', I: ec, P: OUTLINE, G: o.glow || '#fff' };
-    const rowsOf = { open: ['.KK.', 'KKKK', 'WWII', 'WWIP', 'IIPP', '.II.'], glow: ['.KK.', 'KKKK', 'WWGG', 'WGGG', 'GGGG', '.GG.'], happy: ['.KK.', 'K..K'], closed: ['K..K', '.KK.'] };
-    const eyeRows = rowsOf[mood] || rowsOf.open;
-    const ey = mood === 'happy' ? 28 : mood === 'closed' ? 29 : 26;
-    if (mood !== 'none') [24, 36].forEach(x => p.stamp(x, ey + fy, eyeRows, eyeLeg, false, true));
-    if (o.female && (mood === 'open' || mood === 'glow')) { p.stamp(23, 26 + fy, ['K'], { K: OUTLINE }, false, true); p.stamp(40, 26 + fy, ['K'], { K: OUTLINE }, false, true); }
-    // sourcils
-    const bc = o.brow || OUTLINE;
-    if (o.brows && BROWS[o.brows]) {
-        p.stamp(23, 22 + fy, BROWS[o.brows], { K: bc }, false, true);
-        p.stamp(35, 22 + fy, BROWS[o.brows], { K: bc }, true, true);
-    } else {
-        const thick = o.female ? 1 : 2;
-        for (const [bx, by] of [[23, 23], [36, 23]]) p.stamp(bx, by + fy, Array(thick).fill('KKKKK'), { K: bc }, false, true);
-    }
-    // joues
-    const blush = o.blush === undefined ? '#f99' : o.blush;
-    if (blush && o.facial !== 'beard') { p.stamp(22, 32 + fy, ['BBB', 'BBB'], { B: blush }, false, true); p.stamp(39, 32 + fy, ['BBB', 'BBB'], { B: blush }, false, true); }
-    // bouche
-    if (o.facial === 'beard' || o.mouth === 'none') { /* cachee */ }
-    else if (o.facial === 'mustache') p.paint(box(27, 33 + fy, 37, 35 + fy), o.beardCol, { mode: 'flat', band: 1, out: false });
-    else if (o.mouth === 'open') p.stamp(29, 34 + fy, ['KKKK', 'KRRK', '.KK.'], { K: OUTLINE, R: '#f66' }, false, true);
-    else if (o.mouth === 'sad') p.stamp(29, 34 + fy, ['.KK.', 'K..K'], { K: OUTLINE }, false, true);
-    else if (o.mouth === 'grin') p.stamp(28, 34 + fy, ['KKKKKK', '.KWWK.', '..KK..'], { K: OUTLINE, W: '#fff' }, false, true);
-    else p.stamp(29, 34 + fy, ['K..K', '.KK.'], { K: OUTLINE }, false, true);
-    H.afterFace?.(ctx);
-
-    // 11. couvre-chef
-    if (typeof o.hat === 'function') o.hat(ctx);
-    else if (o.hat === 'straw') {
-        p.paint(union(poly([[9, 22 + fy], [32, 4 + fy], [55, 22 + fy]]), ell(32, 21 + fy, 24, 3.5)), o.hatCol || STRAW, { band: 4 });
-    } else if (o.hat === 'scholar') {
-        p.paint(poly([[20, 21 + fy], [20, 12 + fy], [25, 5 + fy], [39, 5 + fy], [44, 12 + fy], [44, 21 + fy]]), HAIRS.black, { band: 3 });
-        p.rect(20, 17 + fy, 44, 19 + fy, GOLD[1]);
-    } else if (o.hat === 'scarf') {
-        // foulard noue : couvre le haut du crane, noeud sur le cote droit
-        const wrap = inter(ell(32, 25 + fy, 15.5, 13.5), box(0, 0, 64, 21 + fy));
-        p.paint(poly([[43, 14 + fy], [52, 15 + fy], [53, 22 + fy], [48, 20 + fy]]), robeR, { mode: 'flat', band: 2 });
-        p.paint(wrap, robeR, { band: 2 });
-        p.rect(18, 19 + fy, 46, 21 + fy, trimR[1]);
-        p.gloss(wrap, robeR[0], { cy: 25 + fy, d0: 2, d1: 2 });
-    }
-    H.top?.(ctx);
-    return p;
-}
-
+const HAIRS = ['#1d1a24', '#2d2220', '#4a3326', '#1d1a24'];
+const OLD_HAIR = '#ece8e0';
 
 function hashOf(id) {
     let h = 2166136261;
     for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
-    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
     return h >>> 0;
 }
 const pick = (list, h, shift) => list[(h >>> shift) % list.length];
+
 const OLD_IDS = new Set(['aunt_liu', 'grandma_tao', 'ke_paper', 'bath_old_wang', 'grandma_altan', 'old_nomad_bayan']);
 const OLD_ID = /(^|_)(old|grandma|grandpa|elder)(_|$)/;
 const CHILD_IDS = new Set(['xiaobao', 'star_child_xing', 'cricket_boy_hao', 'eagle_boy_temur']);
 const CHILD_ID = /(^|_)(kid|kids|boy|girl|child|orphan|twins|apprentice)(_|$)/;
+// Moines et nonnes : crâne rasé, robe safran.
 const MONK_ID = /(^|_)(monk|nun)(_|$)/;
-const FEMALE_IDS = new Set(['ping', 'aunt_liu', 'matchmaker_hong', 'orphan_xiaoyu', 'apprentice_zhu', 'keeper_nur', 'kids_leimei', 'widow_cai', 'cook_dada',
-    'cheese_sa', 'pearl_diver_xi', 'lighthouse_ming', 'priestess_mazu', 'singer_hailing', 'child_yuer', 'astronomer_xing', 'keeper_lunar', 'spinner_yue',
-    'weaver_zhinu', 'shaman_ula', 'rug_seller_zeynep', 'hermit_nu', 'incense_lanxiang', 'moon_child_lan']);
-const FEMALE_ID = /(^|_)(lady|girl|nun|grandma|fairy|hua)(_|$)/;
 
-// Description du personnage tire de l'identifiant (age, sexe, habit, coiffure...) : sert au dessin et aux tests.
-export function villagerOptions(id) {
+export function villagerSprite(id) {
+    const creature = creatureSprite(id);
+    if (creature) return creature;
     const h = hashOf(id);
     const old = OLD_IDS.has(id) || OLD_ID.test(id);
     const child = !old && (CHILD_IDS.has(id) || CHILD_ID.test(id));
     const monk = MONK_ID.test(id);
-    const female = FEMALE_IDS.has(id) || FEMALE_ID.test(id);
-    const o = { age: old ? 'old' : child ? 'child' : 'adult', female };
-    o.skin = SKINS[[0, 1, 0, 2, 1][(h >>> 3) % 5]];
-    o.robe = monk ? SAFFRON : pick(ROBES, h, 6);
-    o.hair = HAIRS[old ? 'white' : pick(['black', 'black', 'brown', 'umber'], h, 11)];
-    if (monk) { o.style = 'bald'; o.hat = 'none'; }
-    else if (child) { o.style = female ? 'twin' : 'tufts'; o.hat = 'none'; }
-    else {
-        o.style = female ? pick(['bun', 'long', 'twin', 'bun', 'long'], h, 18) : pick(['topknot', 'bun', 'topknot', 'long', 'topknot'], h, 18);
-        o.hat = old ? pick(['none', female ? 'scarf' : 'scholar', 'straw'], h, 14)
-            : female ? pick(['none', 'straw', 'scarf', 'none', 'scarf'], h, 14) : pick(['none', 'straw', 'scholar', 'scarf', 'none'], h, 14);
-    }
-    o.item = pick(['none', 'staff', 'basket', 'lantern', 'scroll', 'gourd', 'none'], h, 22);
-    if (!female && !child && !monk) {
-        o.facial = old ? 'beard' : pick(['none', 'none', 'mustache', 'beard', 'none'], h, 25);
-        o.beardCol = o.hair;
-    }
-    o.iris = pick(IRIS, h, 28);
-    o.eyes = old || (!child && (h & 7) === 0) ? 'happy' : 'open';
-    o.mouth = child && ((h >>> 9) & 1) ? 'open' : 'smile';
-    o.pin = female && ((h >>> 13) & 1) === 1;
-    o.hem = ((h >>> 5) & 1) === 1;
-    if (old) o.brow = '#ccc';
-    return o;
+    const [skin, skinD] = pick(SKINS, h, 3);
+    const [robe, robeD, trim] = monk ? ['#e0902a', '#b06a1c', '#8e2a3a'] : pick(ROBES, h, 6);
+    const hair = monk ? skin : old ? OLD_HAIR : pick(HAIRS, h, 11);
+    const hat = monk ? 'none' : old ? ['none', 'scholar', 'straw'][(h >>> 14) % 3] : child ? 'none' : ['none', 'straw', 'scholar', 'scarf', 'none'][(h >>> 14) % 5];
+    const style = monk ? 'bald' : child ? 'tufts' : ['bun', 'topknot', 'long', 'bun'][(h >>> 18) % 4];
+    const item = ['none', 'staff', 'basket', 'lantern', 'scroll', 'none'][(h >>> 22) % 6];
+    const scale = child ? 0.82 : 1;
+    const ty = child ? (1 - scale) * 58 : 0;
+
+    const feet = `<ellipse cx="26.5" cy="57" rx="4.4" ry="2.6" fill="#3a2a24"/><ellipse cx="37.5" cy="57" rx="4.4" ry="2.6" fill="#3a2a24"/>`;
+    const body =
+        `<path d="M18 57.6 Q15.6 45 22.4 35 L41.6 35 Q48.4 45 46 57.6 Q32 60.4 18 57.6Z" fill="${robe}"/>` +
+        `<path d="M39 38 Q47 46 45.4 56.6 L38 58 Q42 46 39 38Z" fill="${robeD}" stroke="none"/>` +
+        `<path d="M24 36.4 L32 44.6 L40 36.4" fill="none" stroke="${trim}" stroke-width="2.2"/>` +
+        `<rect x="22" y="47" width="20" height="4" rx="1.6" fill="${robeD}"/><rect x="29.4" y="46.2" width="5.2" height="5.6" rx="1.2" fill="${trim}"/>` +
+        `<ellipse cx="19" cy="44.6" rx="4.4" ry="7" transform="rotate(12 19 44.6)" fill="${robe}"/><circle cx="17.6" cy="50.4" r="2.6" fill="${skin}"/>` +
+        `<ellipse cx="45" cy="44.6" rx="4.4" ry="7" transform="rotate(-12 45 44.6)" fill="${robeD}"/><circle cx="46.4" cy="50.4" r="2.6" fill="${skin}"/>`;
+
+    let itemSvg = '';
+    if (item === 'staff') itemSvg = `<rect x="48.4" y="26" width="3" height="32" rx="1.4" fill="#8a5a33"/><circle cx="50" cy="25" r="2.8" fill="${trim}"/>`;
+    else if (item === 'basket') itemSvg = `<path d="M44 49 L55 49 L53.4 57 L45.6 57Z" fill="#c9a448"/><path d="M45.6 49 Q49.5 41 53.4 49" fill="none"/>`;
+    else if (item === 'lantern') itemSvg = `<path d="M50 40 L50 45" fill="none"/><ellipse cx="50" cy="50" rx="4.4" ry="5.4" fill="#e8553a"/><rect x="47.6" y="44" width="4.8" height="2" fill="${trim}"/><rect x="47.6" y="54" width="4.8" height="2" fill="${trim}"/>`;
+    else if (item === 'scroll') itemSvg = `<rect x="44.6" y="46" width="11" height="4.6" rx="2.2" fill="#f4ecd8"/><circle cx="44.8" cy="48.3" r="2" fill="#a8683a"/><circle cx="55.4" cy="48.3" r="2" fill="#a8683a"/>`;
+
+    const beard = old ? `<path d="M23 31 Q23 41 32 44 Q41 41 41 31 Q37 36 32 35 Q27 36 23 31Z" fill="${OLD_HAIR}"/>` : '';
+    const backHair = style === 'long' ? `<path d="M17 24 Q13 36 17.4 47 L25 42 L39 42 L46.6 47 Q51 36 47 24Z" fill="${hair}"/>` : '';
+    const hairBack = `<ellipse cx="32" cy="22" rx="14.6" ry="12.6" fill="${hair}"/>`;
+    const bun = style === 'bun' ? `<circle cx="32" cy="8.8" r="5" fill="${hair}"/>` :
+        style === 'topknot' ? `<path d="M29 11 Q32 3 35 11Z" fill="${hair}"/>` :
+            style === 'tufts' ? `<circle cx="20" cy="12.6" r="3.8" fill="${hair}"/><circle cx="44" cy="12.6" r="3.8" fill="${hair}"/>` : '';
+    const face =
+        `<ellipse cx="32" cy="25" rx="13" ry="11.2" fill="${skin}"/>` +
+        `<path d="M40 31 Q44 27 44.6 23 Q44 33 36 35.4Z" fill="${skinD}" stroke="none"/>` +
+        `<ellipse cx="32" cy="25" rx="13" ry="11.2" fill="none"/>`;
+    const fringe = monk ? '' : `<path d="M19 23.6 Q18 14 32 13.4 Q46 14 45 23.6 Q42 19 37 19.6 Q34 19 32 21 Q30 19 27 19.6 Q22 19 19 23.6Z" fill="${hair}"/>`;
+    const brow = old ? '#ece8e0' : K;
+    const eyes = old
+        ? `<path d="M24.8 26.6 Q27 24.4 29.2 26.6 M34.8 26.6 Q37 24.4 39.2 26.6" fill="none" stroke="${K}" stroke-width="1.4"/>`
+        : `<circle cx="27" cy="26.4" r="1.6" fill="${K}" stroke="none"/><circle cx="37" cy="26.4" r="1.6" fill="${K}" stroke="none"/><circle cx="27.6" cy="25.8" r=".6" fill="#fff" stroke="none"/><circle cx="37.6" cy="25.8" r=".6" fill="#fff" stroke="none"/>`;
+    const brows = `<path d="M23.6 23.2 L29.6 22.6 M40.4 23.2 L34.4 22.6" stroke="${brow}" stroke-width="1.6" fill="none"/>`;
+    const cheeks = `<ellipse cx="24" cy="30" rx="2.4" ry="1.5" fill="#ff7f7f" opacity=".45" stroke="none"/><ellipse cx="40" cy="30" rx="2.4" ry="1.5" fill="#ff7f7f" opacity=".45" stroke="none"/>`;
+    const mouth = `<path d="M29.8 31.2 Q32 33.4 34.2 31.2" fill="none" stroke="${K}" stroke-width="1.2"/>`;
+
+    let hatSvg = '';
+    if (hat === 'straw') hatSvg = `<path d="M10 20 L32 3 L54 20 Q32 25 10 20Z" fill="#e0c068"/><path d="M16 19 Q32 22.4 48 19" fill="none" stroke="#b8923a" stroke-width="1.4"/>`;
+    else if (hat === 'scholar') hatSvg = `<path d="M21.4 21 Q20.6 7 32 6.6 Q43.4 7 42.6 21 Q37 17.6 32 17.6 Q27 17.6 21.4 21Z" fill="#26202e"/><path d="M21.6 18.8 Q32 14.6 42.4 18.8" fill="none" stroke="${trim}" stroke-width="1.6"/>`;
+    else if (hat === 'scarf') hatSvg = `<path d="M18.6 22 Q18 10 32 10 Q46 10 45.4 22 Q39 15.6 32 16.2 Q25 15.6 18.6 22Z" fill="${robe}"/><path d="M42 17 Q50 18 49 27 Q46 22 41 21Z" fill="${robeD}"/>`;
+
+    // L'accessoire tenu en main passe devant le corps mais derrière la tête.
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g ${O} transform="translate(${((1 - scale) * 32).toFixed(1)} ${ty.toFixed(1)}) scale(${scale})">` +
+        feet + backHair + body + itemSvg + hairBack + bun + face + beard + fringe + brows + eyes + cheeks + mouth + hatSvg + `</g></svg>`;
 }
-export function villagerSprite(id) {
-    const creature = creatureSprite(id);
-    if (creature) return creature;
-    return compose(villagerOptions(id)).stabilize().limitColors(16).svg();
-}
-export const villagerLook = villagerOptions;
