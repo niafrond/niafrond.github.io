@@ -5,7 +5,7 @@ import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
-import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
+import { heroSprite, enemySprite, spriteUri, preparePixelSprite } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
@@ -1188,8 +1188,14 @@ function updateFighterPortraits(){
         const el = document.getElementById(id);
         if(!el) return;
         const view = svg || null;
-        if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
-        else el.style.removeProperty('--portrait');
+        el._portraitSvg = view;
+        if(view){
+            el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
+            // le PNG net n'est pas toujours prêt : on remplace alors la version de repli (filtre SVG) dès la fin de la conversion
+            preparePixelSprite(view).then(() => {
+                if(el._portraitSvg === view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
+            });
+        } else el.style.removeProperty('--portrait');
     };
     set('player-stats', heroSprite(player.class) || heroSprite('assassin'));
     set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId, enemy.biome));

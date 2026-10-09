@@ -38,7 +38,21 @@ function mount(extraClass = '') {
     skip.textContent = 'Toucher pour passer ►';
     overlay.append(canvas, skip);
     document.body.appendChild(overlay);
+    fitIntegerScale(overlay, canvas);
     return { overlay, canvas, ctx: canvas.getContext('2d') };
+}
+
+// Zoom ENTIER de la scène : le canvas (160 × 90 ou 90 × 160 pixels logiques) est affiché à k × sa taille, k = plus grand entier qui tient dans la
+// fenêtre (jamais de pixels de largeur inégale ; les bandes noires de l'overlay comblent le reste). Se recale quand la fenêtre change.
+function fitIntegerScale(overlay, canvas) {
+    const fit = () => {
+        if (!overlay.isConnected) { window.removeEventListener('resize', fit); return; }
+        const k = Math.max(1, Math.floor(Math.min((window.innerWidth || canvas.width) / canvas.width, (window.innerHeight || canvas.height) / canvas.height)));
+        canvas.style.width = `${canvas.width * k}px`;
+        canvas.style.height = `${canvas.height * k}px`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
 }
 
 // Boucle d'animation commune : draw(ctx, t en secondes) jusqu'à `duration`, puis attend un toucher.
@@ -1130,14 +1144,20 @@ export function playTitleScreen() {
         let H = 0;
         let portraitMode = false;
 
+        // Écran-titre : zoom entier k (1 pixel du dessin = k pixels d'écran) ; le canvas déborde de moins de k pixels, l'overlay le rogne.
         const resize = () => {
             const vw = window.innerWidth || 1;
             const vh = window.innerHeight || 1;
             portraitMode = vw < vh;
-            if (portraitMode) { W = 100; H = Math.max(150, Math.round(100 * vh / vw)); }
-            else { H = 130; W = Math.max(150, Math.round(130 * vw / vh)); }
+            const k = Math.max(1, Math.round(portraitMode ? vw / 100 : vh / 130));
+            W = Math.ceil(vw / k);
+            H = Math.ceil(vh / k);
+            if (portraitMode) H = Math.max(150, H);
+            else W = Math.max(150, W);
             canvas.width = W;
             canvas.height = H;
+            canvas.style.width = `${W * k}px`;
+            canvas.style.height = `${H * k}px`;
             ctx.imageSmoothingEnabled = false;
         };
         resize();

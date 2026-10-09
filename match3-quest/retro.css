@@ -404,22 +404,25 @@ body.rt .tile.red, body.rt .tile.blue, body.rt .tile.green, body.rt .tile.yellow
     background-color: transparent;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 100% 100%;
+    /* PNG pixellisé à la taille exacte de la case (sprites/tilePixels.js : --tile-<nom>, --tile-bg-size) ; repli : SVG vectoriel */
+    background-size: var(--tile-bg-size, 100% 100%);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
-body.rt .tile.red { background-image: url('sprites/tiles/tile-red.svg'); }
-body.rt .tile.blue { background-image: url('sprites/tiles/tile-blue.svg'); }
-body.rt .tile.green { background-image: url('sprites/tiles/tile-green.svg'); }
-body.rt .tile.yellow { background-image: url('sprites/tiles/tile-yellow.svg'); }
-body.rt .tile.purple { background-image: url('sprites/tiles/tile-purple.svg'); }
-body.rt .tile.combat { background-image: url('sprites/tiles/tile-combat.svg'); }
+body.rt .tile.red { background-image: var(--tile-red, url('sprites/tiles/tile-red.svg')); }
+body.rt .tile.blue { background-image: var(--tile-blue, url('sprites/tiles/tile-blue.svg')); }
+body.rt .tile.green { background-image: var(--tile-green, url('sprites/tiles/tile-green.svg')); }
+body.rt .tile.yellow { background-image: var(--tile-yellow, url('sprites/tiles/tile-yellow.svg')); }
+body.rt .tile.purple { background-image: var(--tile-purple, url('sprites/tiles/tile-purple.svg')); }
+body.rt .tile.combat { background-image: var(--tile-combat, url('sprites/tiles/tile-combat.svg')); }
 body.rt .tile.skull {
-    background-image: url('sprites/tiles/tile-skull.svg');
+    background-image: var(--tile-skull, url('sprites/tiles/tile-skull.svg'));
     filter: none;
     color: inherit;
     text-shadow: none;
 }
 body.rt .tile.joker {
-    background-image: url('sprites/tiles/tile-joker.svg');
+    background-image: var(--tile-joker, url('sprites/tiles/tile-joker.svg'));
 }
 
 /* Pièges de zone de Fengmeng (duel.js) : case piégée cerclée de rouge, qui pulse. */
