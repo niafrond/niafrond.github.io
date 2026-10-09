@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { SCREENS } from '../../story.js';
 import { playerClasses } from '../../classes.js';
 import {
-    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri,
+    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri, pixelate,
     loadAllSprites
 } from '../../sprites/index.js';
 
@@ -149,7 +149,24 @@ describe('qualité technique des SVG', () => {
         const svg = heroSprite('sorcerer');
         const uri = spriteUri(svg);
         expect(uri.startsWith('data:image/svg+xml;charset=utf-8,')).toBe(true);
-        expect(decodeURIComponent(uri.split(',').slice(1).join(','))).toBe(svg);
+        expect(decodeURIComponent(uri.split(',').slice(1).join(','))).toBe(pixelate(svg));
         expect(spriteUri(null)).toBe('');
+    });
+
+    test('spriteUri accepte une grille : la définition 64 a sa propre version de repli', () => {
+        const svg = heroSprite('sorcerer');
+        expect(spriteUri(svg, 64)).toBe(`${spriteUri(svg)}#g64`);
+        expect(spriteUri(svg, 32)).toBe(spriteUri(svg));
+        expect(spriteUri(svg, 999)).toBe(spriteUri(svg));
+    });
+
+    test('pixelate enveloppe le dessin vectoriel dans le filtre pixel art sans le modifier', () => {
+        const svg = heroSprite('sorcerer');
+        const px = pixelate(svg);
+        const inner = svg.slice(svg.indexOf('>', svg.indexOf('<svg')) + 1, svg.lastIndexOf('</svg>'));
+        expect(px).toContain('<filter id="m3px"');
+        expect(px).toContain(`<g filter="url(#m3px)">${inner}</g></svg>`);
+        expect(pixelate(px.replace('viewBox="0 0 64 64"', 'viewBox="0 0 10 10"'))).toContain('viewBox="0 0 10 10"');
+        expect(pixelate(null)).toBe(null);
     });
 });

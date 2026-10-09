@@ -5,14 +5,26 @@ const FLIGHT_MS = 650;
 import { getOption, maxManaParticles } from './gameOptions.js';
 
 const COLORS = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1c40f', purple: '#9b59b6' };
+// Matchs non colorés : flèches (points d'action) et crânes (dégâts).
+const TYPE_COLORS = { combat: '#e67e22', skull: '#ecf0f1' };
 
-export function flyManaToCounter(tileIndices, color, { isPlayer = true } = {}) {
+// Élément DOM visé : compteur de mana (couleur), compteur de PA (flèches) ou zone de stats (crânes) du camp concerné.
+function findTarget(side, type, color) {
+    if (type === 'combat') return document.querySelector(`#${side}-stats .pa-stat`) || document.getElementById(`${side}-stats`);
+    if (type === 'skull') return document.getElementById(`${side}-stats`);
+    return document.getElementById(`${side}-mana-${color}`);
+}
+
+// type : 'color' (défaut, `color` = couleur de mana), 'combat' (flèches/épées) ou 'skull' (crânes).
+// isPlayer=false : particules vers le compteur de l'ennemi.
+export function flyManaToCounter(tileIndices, color, { isPlayer = true, type = 'color' } = {}) {
     try {
-        if (!isPlayer || !COLORS[color] || !getOption('manaFlight')) return;
+        const dotColor = type === 'color' ? COLORS[color] : TYPE_COLORS[type];
+        if (!dotColor || !getOption('manaFlight')) return;
         if (typeof document === 'undefined' || typeof Element === 'undefined' || !Element.prototype.animate) return;
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
         const board = document.getElementById('board');
-        const target = document.getElementById(`player-mana-${color}`);
+        const target = findTarget(isPlayer ? 'player' : 'enemy', type, color);
         if (!board || !target) return;
         const to = target.getBoundingClientRect();
         if (!to.width && !to.height) return;
@@ -28,7 +40,7 @@ export function flyManaToCounter(tileIndices, color, { isPlayer = true } = {}) {
             if (!from.width) continue;
             const dot = document.createElement('div');
             dot.className = 'mana-fly-dot';
-            dot.style.background = COLORS[color];
+            dot.style.background = dotColor;
             dot.style.left = `${from.left + from.width / 2 - 6}px`;
             dot.style.top = `${from.top + from.height / 2 - 6}px`;
             document.body.appendChild(dot);

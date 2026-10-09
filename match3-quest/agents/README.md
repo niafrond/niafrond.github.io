@@ -32,6 +32,10 @@ lance un sous-agent sur une tâche de ce domaine.
 9. **Périmètre** : ne pas modifier les fichiers d'un autre agent sans le dire ; en cas de besoin croisé, le signaler dans le
    compte rendu plutôt que de contourner.
 
+10. **Style graphique** : exploration inspirée de Pokémon GBA (tuiles 16 unités, contour sombre unique, pourtour d'arbres, maisons à
+    grand toit, rochers de salle) avec l'univers chinois conservé. Chaque agent concerné applique la section « Direction Pokémon GBA » de
+    `animation-pixel-art.md` ; le code de rendu des tuiles est dans `tilePainter.js` (propriétaire : Animation pixel art).
+
 ## Qui touche à quoi (matrice rapide)
 
 | Fichiers | Propriétaire principal | Consulté par |

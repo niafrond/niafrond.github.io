@@ -1,7 +1,8 @@
 /**
  * actionGuard.js — Anti-« bourrinage » des actions du joueur en combat (module pur, sans DOM : testable).
  *
- * Deux règles :
+ * Trois règles :
+ *  0. Dès que le joueur ne joue plus (fin de son tour, annonce de début de combat), tout est refusé (setTurnLocked).
  *  1. Après une action sur le plateau (échange, chaîne de combos), armes / objets / sorts restent bloqués tant que le
  *     plateau se résout, puis encore BOARD_SETTLE_MS ms (un clic d'arme juste après un échange ne doit pas passer).
  *  2. Après une action du joueur (arme, objet, sort), un délai de ACTION_COOLDOWN_MS ms interdit tout nouveau clic :
@@ -15,6 +16,7 @@ export function createActionGuard(now = () => Date.now()) {
     let boardBusySince = null;
     let lastBoardActionAt = -Infinity;
     let lastPlayerActionAt = -Infinity;
+    let turnLocked = false;
 
     const isBoardBusy = () => {
         if (boardBusySince === null) return false;
@@ -30,14 +32,18 @@ export function createActionGuard(now = () => Date.now()) {
         /** Le joueur vient d'utiliser une arme, un objet ou un sort. */
         markPlayerAction() { lastPlayerActionAt = now(); },
         isBoardBusy,
-        /** @returns {null|'board'|'settling'|'cooldown'} raison du blocage, null si l'action est permise */
+        /** Le joueur ne joue plus (tour adverse, annonce de début de combat) : tous ses boutons sont refusés. */
+        setTurnLocked(locked) { turnLocked = Boolean(locked); },
+        isTurnLocked() { return turnLocked; },
+        /** @returns {null|'turn'|'board'|'settling'|'cooldown'} raison du blocage, null si l'action est permise */
         blockReason() {
+            if (turnLocked) return 'turn';
             if (isBoardBusy()) return 'board';
             if (now() - lastBoardActionAt < BOARD_SETTLE_MS) return 'settling';
             if (now() - lastPlayerActionAt < ACTION_COOLDOWN_MS) return 'cooldown';
             return null;
         },
-        reset() { boardBusySince = null; lastBoardActionAt = -Infinity; lastPlayerActionAt = -Infinity; }
+        reset() { turnLocked = false; boardBusySince = null; lastBoardActionAt = -Infinity; lastPlayerActionAt = -Infinity; }
     };
 }
 

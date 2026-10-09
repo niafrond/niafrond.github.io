@@ -20,6 +20,31 @@ plateau, effets de sorts, cinématiques. Il produit des animations lisibles à p
   même visage reconnaissable pour les quatre Hou Yi (cheveux noirs, chignon, sourcils marqués).
 - **Pas de sous-pixel** : aucune rotation ni anti-aliasing sur les sprites ; les rotations se redessinent à la main.
 
+## Direction « Pokémon GBA » (exploration)
+L'exploration vise le rendu des jeux Pokémon sur Game Boy Advance (vue du dessus, tuiles lisibles, pourtour d'arbres, salles
+d'arène à rochers), **sans changer l'univers chinois** des sprites ni les ids. Implémentation : `tilePainter.js` (sans état, sans DOM),
+appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `block`).
+- **Tuile = 16 unités logiques**, rendue à l'échelle entière de la tuile d'écran, coordonnées arrondies au pixel, `imageSmoothingEnabled = false`.
+- **Sol** : herbe à touffes en V (2 tons) et rares fleurs, damier à peine visible ; chemins en terre avec gravillons, bord sombre
+  + liseré clair là où ils rencontrent l'herbe ; eau à reflets, écume claire sur les rives ; salles (intérieurs, arène) en dalles biseautées.
+- **Décors** : sapins serrés sur tout le pourtour des cartes extérieures ; rochers ronds gris à contour sombre (décor `rock`) ;
+  murs d'intérieur en planches ; maisons à grand toit à rangs de tuiles, murs crépis, fenêtres à croisillon, porte à marche.
+- **Pas de plat ni de rectiligne** : bruit continu entre tuiles (jamais un motif répété case par case), coins de chemins et d'étangs arrondis, bords irréguliers, ombres portées douces vers le bas-droite, trois tons par matière, variation de taille et de teinte des arbres ; interdit : damier visible, bordures droites au cordeau, aplats sans ombre ni reflet.
+- **Époque très ancienne (Chine mythique) : aucun anachronisme.** Interdits dans les décors et bâtiments : vitres et fenêtres à croisillon,
+  volets, cheminées, portes à auvent ou à poignée moderne, tuiles « européennes », clôtures et lampadaires modernes, couleurs de toit vives.
+  Autorisés : terre damée, poteaux et poutres de bois, chaume ou ardoise brute, ouvertures à barreaux de bois, portes de planches
+  cloutées de bronze, pierre brute, lanternes de papier rouge, bambou, jade, bronze.
+- **Un style par biome** (`tilePainter.js`) : végétation de bordure (`BORDER_KIND` : feuillus, roseaux, bambous, cactus, arbres morts,
+  aiguilles volcaniques, acacias, palmiers, arbres dorés, cristaux, stalagmites) et sol propre (sable rippé, cendres à braises, roche
+  de tempête, poussière lunaire, pétales, litière, gravats ; lave au volcan). Tout nouveau biome déclare sa végétation et son sol.
+- **Personnages** : tous les sprites (héros, PNJ, ennemis, soleils, coffres, décors) sont pixellisés par `sprites/index.js` : `pixelSprite(svg)` (canvas) et
+  `spriteUri(svg)` (balises img). Le SVG est rastérisé à 128 px puis échantillonné sur une grille de 32 × 32 (couleur moyenne des points opaques
+  du bloc, alpha net, 8 niveaux par couche), puis agrandi ×4 sans lissage. À l'écran : `imageSmoothingEnabled = false` et destination arrondie
+  au pixel (`blitPixels`), ou `image-rendering: pixelated` (règle `img[src^="data:image/png"]`). Les SVG source restent vectoriels ; ne jamais
+  dessiner un sprite avec `spriteImage` directement (flou) ni contourner `spriteUri`.
+- **Couleurs** : feuillage- **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
+- Tout nouvel élément de décor d'exploration passe par `tilePainter.js` (fonction `draw…` pure) plutôt que par un dessin libre dans la vue.
+
 ## Cycles d'animation à fournir
 | Entité | Cycles (images) | Cadence |
 |---|---|---|

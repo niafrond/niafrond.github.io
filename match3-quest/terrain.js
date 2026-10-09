@@ -8,12 +8,14 @@
 // 2. BIOMES : chaque biome du monde impose une règle au plateau de match-3 (bambous, volcan, marais, sanctuaire,
 //    mer, neige). Les cases spéciales sont un état par indice de case, avancé à chaque tour du joueur.
 
+import { elementName } from './elements.js';
+
 export const FACE_FRONT = 'front';
 export const FACE_BEHIND = 'behind';
 export const FACE_SIDE = 'side';
 
 export const OBSERVE_MS = 3000;          // temps d'immobilité pour percer un ennemi
-export const OBSERVE_EXTRA_RANGE = 4;    // portée d'observation au-delà de la zone de vigilance
+export const OBSERVE_RANGE = 1;          // observer une faiblesse exige d'être à une case de l'ennemi (diagonales comprises)
 export const AMBUSH_BONUS_PA = 1;
 export const WEAKNESS_DAMAGE_BONUS = 0.25;
 export const OUTLOOK_TILES = 5;
@@ -22,6 +24,8 @@ export const SPOT_KINDS = ['tallGrass', 'trap', 'outlook'];
 
 const COLOR_NAMES = { red: 'rouge', blue: 'bleu', green: 'vert', yellow: 'jaune', purple: 'violet' };
 export const colorName = color => COLOR_NAMES[color] || color;
+// « Eau (bleu) » : élément + couleur, pour les libellés de faiblesse.
+export const weaknessLabel = color => elementName(color) ? `${elementName(color)} (${colorName(color)})` : colorName(color);
 
 const sign = n => (n > 0) - (n < 0);
 
@@ -49,20 +53,20 @@ export function weakestColor(resistances) {
     return best ? best.c : null;
 }
 
-// Suivi de l'observation : le héros reste immobile `stillMs`, un ennemi vivant dans la portée est « lu ».
+// Suivi de l'observation : le héros reste immobile `stillMs` À UNE CASE d'un ennemi vivant (OBSERVE_RANGE) pour le « lire ».
 // Retourne l'id de l'ennemi observé (le plus proche non encore observé) ou null.
-export function observationTarget(stillMs, playerPos, enemies, observed = {}, extraRange = OBSERVE_EXTRA_RANGE) {
+export function observationTarget(stillMs, playerPos, enemies, observed = {}, range = OBSERVE_RANGE) {
     if (stillMs < OBSERVE_MS) return null;
     let best = null;
     for (const e of enemies) {
         if (observed[e.id] || e.shielded || e.illusion) continue;
         const d = Math.max(Math.abs(e.x - playerPos.x), Math.abs(e.y - playerPos.y));
-        if (d <= (e.aggro || 1) + extraRange && (!best || d < best.d)) best = { id: e.id, d };
+        if (d <= range && (!best || d < best.d)) best = { id: e.id, d };
     }
     return best ? best.id : null;
 }
 
-// Préparation d'un combat. ctx : { approach, enemyOnTrap, enemyOnGrass, observed, onOutlook }.
+// Préparation d'un combat. ctx : { weakColor (optionnel, pour les libellés), approach, enemyOnTrap, enemyOnGrass, observed, onOutlook }.
 export function buildPrep(ctx = {}) {
     const prep = {
         tags: [], lines: [],
@@ -81,7 +85,8 @@ export function buildPrep(ctx = {}) {
     }
     if (ctx.observed) {
         prep.weaknessRevealed = true;
-        add('observed', 'Faiblesse repérée : ses dégâts de cette couleur sont accrus.');
+        const w = ctx.weakColor ? weaknessLabel(ctx.weakColor) : null;
+        add('observed', w ? `Faiblesse repérée : ${w}. Ses dégâts de cette couleur sont accrus.` : 'Faiblesse repérée : ses dégâts de cette couleur sont accrus.');
     }
     if (ctx.enemyOnTrap) {
         prep.enemyStatus = { poisoned: 3 };
@@ -92,7 +97,7 @@ export function buildPrep(ctx = {}) {
     }
     if (ctx.onOutlook) {
         prep.boardBoost = { count: OUTLOOK_TILES };
-        add('outlook', `Position dominante : le plateau démarre avec ${OUTLOOK_TILES} tuiles de la couleur faible de l'ennemi.`);
+        add('outlook', `Position dominante : le plateau démarre avec ${OUTLOOK_TILES} tuiles de la couleur faible de l'ennemi${ctx.weakColor ? ` : ${weaknessLabel(ctx.weakColor)}` : ''}.`);
     }
     return prep;
 }

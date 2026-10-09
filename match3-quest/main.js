@@ -4,7 +4,7 @@ import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailab
 import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
-import { colorName } from "./terrain.js";
+import { weaknessLabel } from "./terrain.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
@@ -142,7 +142,7 @@ function init() {
         setSaved: data => { player.exploration = data; },
         getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch) }),
         getPlayerLevel: () => player.level,
-        getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? colorName(c) : null; },
+        getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
         onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),

@@ -1,3 +1,9 @@
+## [2.61.0](https://github.com/niafrond/niafrond.github.io/compare/v2.60.0...v2.61.0) (2026-10-09)
+
+### Features
+
+* **match3-quest:** évolutions de combat, faiblesses élémentaires et sprites nets ([#445](https://github.com/niafrond/niafrond.github.io/issues/445)) ([58e3e85](https://github.com/niafrond/niafrond.github.io/commit/58e3e85cb9288997cc4563afb6823bce7563dd33))
+
 ## [2.60.0](https://github.com/niafrond/niafrond.github.io/compare/v2.59.1...v2.60.0) (2026-10-05)
 
 ### Features

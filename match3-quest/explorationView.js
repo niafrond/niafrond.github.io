@@ -17,12 +17,13 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
+import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -178,18 +179,24 @@ export function createExplorationView(cfg) {
     const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
+    // Biome de l'écran où se tient un ennemi (teinte de son dessin).
+    const enemyBiome = enemyId => {
+        const entry = session?.rt.enemyIndex[enemyId];
+        return (entry && session.screens[entry.screenId]?.biome) || undefined;
+    };
+
     // PNJ et ennemis d'une région (tous ses écrans), y compris les locuteurs des scènes de victoire.
     function regionEntities(region) {
         const screens = Object.values(session.screens).filter(sc => sc.region === region);
         const npcs = screens.flatMap(sc => sc.npcs).map(n => n.id);
-        const enemies = screens.flatMap(sc => sc.enemies).map(e => [e.spriteKey || e.id, e.templateId]);
+        const enemies = screens.flatMap(sc => sc.enemies.map(e => [e.spriteKey || e.id, e.templateId, sc.biome]));
         screens.flatMap(sc => sc.enemies).forEach(e => {
             [e.defeatScene, ...(e.afterScenes || [])].forEach(scene => {
                 const sp = scene?.speaker;
                 if (sp?.npc) npcs.push(sp.npc);
                 if (sp?.enemy) {
                     const def = session.rt.enemyIndex[sp.enemy]?.def;
-                    enemies.push([def?.spriteKey || sp.enemy, def?.templateId]);
+                    enemies.push([def?.spriteKey || sp.enemy, def?.templateId, enemyBiome(sp.enemy)]);
                 }
             });
         });
@@ -203,7 +210,7 @@ export function createExplorationView(cfg) {
             heroSprite(cfg.getHero().classId), chestSprite(false), chestSprite(true),
             ...DECOR_NAMES.map(decorSprite),
             ...npcs.map(id => npcSprite(id)),
-            ...enemies.map(([key, templateId]) => enemySprite(key, templateId))
+            ...enemies.map(([key, templateId, biome]) => enemySprite(key, templateId, biome))
         ].filter(Boolean))];
     }
 
@@ -291,7 +298,7 @@ export function createExplorationView(cfg) {
             ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
             : null;
         const enemyDef = sp.enemy ? session.rt.enemyIndex[sp.enemy]?.def : null;
-        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId) : null;
+        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId, enemyBiome(sp.enemy)) : null;
         return {
             name: sp.name || NARRATOR.name,
             title: sp.title,
@@ -577,14 +584,15 @@ export function createExplorationView(cfg) {
         removeBattleTransition();
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const overlay = document.createElement('div');
+        const encSprite = enemySprite(enc.spriteKey || enc.enemyId, enc.templateId, enc.biome || enemyBiome(enc.enemyId));
         overlay.className = `battle-transition${reduced ? ' reduced' : ''}`;
         overlay.innerHTML = `
             <div class="bt-strips">${Array.from({ length: BATTLE_STRIPS }, (_, i) =>
                 `<div class="bt-strip ${i % 2 ? 'from-right' : 'from-left'}" style="--i:${i}"></div>`).join('')}</div>
             <div class="bt-flash"></div>
             <div class="bt-title">
-                <div class="bt-emoji">${enemySprite(enc.spriteKey || enc.enemyId, enc.templateId)
-                    ? `<img class="bt-sprite" alt="" src="${spriteUri(enemySprite(enc.spriteKey || enc.enemyId, enc.templateId))}">`
+                <div class="bt-emoji">${encSprite
+                    ? `<img class="bt-sprite" alt="" src="${spriteUri(encSprite, PX_GRID_BIG)}" data-small="${spriteUri(encSprite)}">`
                     : icon('sword')}</div>
                 <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
                 <div class="bt-level">${enc.boss ? `${icon('crown')} Boss · ` : ''}Niveau ${enc.level}</div>
@@ -596,7 +604,8 @@ export function createExplorationView(cfg) {
             battleTransitionTimer = null;
             if (!enc.boss) { done(); return; }
             // Boss : échange de répliques avant le combat
-            const spriteHtml = overlay.querySelector('.bt-emoji')?.innerHTML || icon('crown');
+            const big = overlay.querySelector('.bt-sprite');   // portrait de 52 px : la définition 32, pas le grand plan (64) réduit
+            const spriteHtml = big ? `<img class="bt-sprite" alt="" src="${big.dataset.small || big.getAttribute('src')}">` : icon('crown');
             overlay.classList.add('with-dialog');
             playBossDialogue(overlay, enc, spriteHtml).then(() => { if (battleTransitionEl === overlay) done(); });
         }, reduced ? 500 : BATTLE_TRANSITION_MS);
@@ -867,58 +876,17 @@ export function createExplorationView(cfg) {
     const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
     let groundCache = null;
 
-    // Sol façon Pokémon (GBA) : tuiles de 16 unités pixel (arrondies à l'entier), touffes d'herbe, fleurs, chemins
-    // bordés et liquides à vaguelettes. Entièrement déterministe (hash des coordonnées) et mis en cache dans le calque de fond.
+    // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
     function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
-        const u = tile / 16;
-        const R = v => Math.round(v * u);
-        const rect = (x, y, fx, fy, fw, fh, color) => {
-            g.fillStyle = color;
-            g.fillRect(ox + x * tile + R(fx), oy + y * tile + R(fy), Math.max(1, R(fw)), Math.max(1, R(fh)));
-        };
-        const grassDark = shade(biome.a, -26), grassLight = shade(biome.a, 22);
-        const pathDark = shade(biome.path, -30), pathLight = shade(biome.path, 18);
-        const liquidDark = shade(biome.liquid, -34), liquidLight = shade(biome.liquid, 46);
-        const FLOWERS = ['#f4f1e6', '#e8503a', '#f6d84a'];
-        const isLiquid = (x, y) => inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y));
-        const isPath = (x, y) => !isLiquid(x, y) && inRects(screen.paths, x, y);
+        const inMap = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h;
+        // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
+        const isLiquid = (x, y) => inMap(x, y) && (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y)));
+        const isPath = (x, y) => !inMap(x, y) || (inRects(screen.paths, x, y) && !isLiquid(x, y));
+        const tiled = !!(screen.interior || screen.kind === 'arena');
+        g.imageSmoothingEnabled = false;
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                const h1 = hash(x, y), h2 = hash(y + 7, x + 3);
-                const ix = Math.floor(h1 * 8) * 1, iy = Math.floor(h2 * 8);
-                if (isLiquid(x, y)) {
-                    rect(x, y, 0, 0, 16, 16, biome.liquid);
-                    rect(x, y, 0, 13, 16, 3, liquidDark);
-                    rect(x, y, 2 + ix, 3 + iy % 4, 4, 1, liquidLight);
-                    rect(x, y, 8 + (ix % 5), 9 + (iy % 3), 3, 1, liquidLight);
-                    if (!isLiquid(x, y - 1)) rect(x, y, 0, 0, 16, 1, liquidDark);
-                } else if (isPath(x, y)) {
-                    rect(x, y, 0, 0, 16, 16, biome.path);
-                    rect(x, y, 2 + ix, 2 + iy, 1, 1, pathDark);
-                    rect(x, y, 10 - (ix % 6), 11 - (iy % 5), 1, 1, pathDark);
-                    rect(x, y, 4 + (iy % 6), 5 + (ix % 6), 2, 1, pathLight);
-                    if (!isPath(x, y - 1) && !isLiquid(x, y - 1)) rect(x, y, 0, 0, 16, 2, pathDark);
-                    if (!isPath(x, y + 1) && !isLiquid(x, y + 1)) rect(x, y, 0, 14, 16, 2, pathDark);
-                    if (!isPath(x - 1, y) && !isLiquid(x - 1, y)) rect(x, y, 0, 0, 1, 16, pathDark);
-                    if (!isPath(x + 1, y) && !isLiquid(x + 1, y)) rect(x, y, 15, 0, 1, 16, pathDark);
-                } else {
-                    rect(x, y, 0, 0, 16, 16, (x + y) % 2 ? biome.a : biome.b);
-                    if (h1 > 0.35) {
-                        // touffe d'herbe en « V »
-                        const tx = 2 + ix, ty = 3 + iy;
-                        rect(x, y, tx, ty, 1, 3, grassDark);
-                        rect(x, y, tx + 2, ty, 1, 3, grassDark);
-                        rect(x, y, tx + 1, ty + 2, 1, 1, grassDark);
-                        rect(x, y, tx + 1, ty, 1, 1, grassLight);
-                    }
-                    if (h2 > 0.82) {
-                        // petite fleur
-                        const fx = 3 + (ix % 9), fy = 4 + (iy % 8);
-                        const col = FLOWERS[Math.floor(hash(x + 11, y + 5) * FLOWERS.length)];
-                        rect(x, y, fx, fy, 2, 2, col);
-                        rect(x, y, fx, fy + 2, 1, 1, grassDark);
-                    }
-                }
+                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome });
             }
         }
     }
@@ -962,7 +930,6 @@ export function createExplorationView(cfg) {
             canvas.height = Math.round(vh * dpr);
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.imageSmoothingEnabled = false;   // pixel art : jamais de lissage
 
         // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran
         ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
@@ -1206,13 +1173,24 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'block': {
+                    const px = c.x - tile / 2, py = c.y - tile / 2;
                     if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
-                        cell(it.x, it.y, shade(biome.cliff, it.y === 0 ? -6 : 8));
-                        cell(it.x, it.y, 'rgba(0,0,0,0.18)', tile * 0.46);
+                        drawCachedObject(`wall:${screen.biome}:${it.y === 0}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0));
                         break;
                     }
-                    cell(it.x, it.y, shade(biome.cliff, 10));
+                    const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
+                    if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
+                        // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
+                        const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);
+                        drawCachedObject(`tree:${screen.biome}:${kind}:${seed}`, px, py, tile, tile, [tile * 0.6, tile * 1.1, tile * 0.6, tile * 0.3],
+                            (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
+                        break;
+                    }
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
+                    if (decor === 'rock') {
+                        drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
+                        break;
+                    }
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
                     drawDecor(decor, c.x, c.y + tile * 0.36, tile * 0.85);
                     break;
@@ -1259,7 +1237,7 @@ export function createExplorationView(cfg) {
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
                     if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
-                    const baseSprite = enemySprite(def.spriteKey || def.id, def.templateId);
+                    const baseSprite = enemySprite(def.spriteKey || def.id, def.templateId, screen.biome);
                     drawSprite(viewSprite(baseSprite, viewDir(it.e.face)), c.x, feet + bob, size, baseSprite);
                     ctx.restore();
                     if (shielded) {
@@ -1384,87 +1362,44 @@ export function createExplorationView(cfg) {
         }
     }
 
-    const ROOFS = ['#b23a30', '#2f6f73', '#8a5a2b', '#6b4a8a', '#c98a2b', '#3f7d4e', '#a8483a', '#4a6fa5'];
+    const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
 
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
-    // Maison façon Pokémon : toit plat à bandes de tuiles et débord ombré, façade crépie, fenêtres à croisillon,
-    // porte à marche, contour foncé de 1 unité pixel (tout aligné sur la grille de 16 unités par tuile).
-    function drawBuilding(b, p, tile, labelSize) {
-        const u = Math.max(1, Math.round(tile / 16));
-        const snap = v => Math.round(v / u) * u;
-        const w = snap(b.w * tile);
-        const h = snap(b.h * tile);
-        const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
-        const roofH = snap(Math.max(tile * 0.9, h * 0.5));
-        const wallY = p.y + roofH;
-        const wallH = h - roofH;
-        const OUT = '#2b1b17';
-        const x0 = Math.round(p.x), y0 = Math.round(p.y);
-        const wy = Math.round(wallY);
-        ctx.save();
-        // façade : crépi clair, ombre à droite, soubassement
-        ctx.fillStyle = '#f2e6c8';
-        ctx.fillRect(x0 + u, wy, w - 2 * u, wallH);
-        ctx.fillStyle = '#d9c7a0';
-        ctx.fillRect(x0 + w - snap(w * 0.18), wy, snap(w * 0.18) - u, wallH);
-        ctx.fillStyle = '#a8957a';
-        ctx.fillRect(x0 + u, wy + wallH - 2 * u, w - 2 * u, 2 * u);
-        ctx.fillStyle = OUT;
-        ctx.fillRect(x0, wy, u, wallH);
-        ctx.fillRect(x0 + w - u, wy, u, wallH);
-        ctx.fillRect(x0, wy + wallH - u, w, u);
-        // fenêtres : cadre, vitre bleue, croisillon, reflet
-        const doorCx = p.x + (b.door.x - b.x + 0.5) * tile;
-        const ww = 5 * u, wh = 5 * u;
-        const winY = Math.round(wy + (wallH - tile * 0.12) * 0.28);
-        [0.2, 0.7].forEach(fx => {
-            const wx = Math.round(p.x + w * fx);
-            if (Math.abs(wx + ww / 2 - doorCx) < tile * 0.55 || wx + ww > x0 + w - 2 * u) return;
-            ctx.fillStyle = OUT;
-            ctx.fillRect(wx - u, winY - u, ww + 2 * u, wh + 2 * u);
-            ctx.fillStyle = '#7ab8e0';
-            ctx.fillRect(wx, winY, ww, wh);
-            ctx.fillStyle = '#d8f0ff';
-            ctx.fillRect(wx, winY, 2 * u, u);
-            ctx.fillStyle = OUT;
-            ctx.fillRect(wx + 2 * u, winY, u, wh);
-            ctx.fillRect(wx, winY + 2 * u, ww, u);
-        });
-        // porte : bois, contour, poignée dorée, marche
-        const dx = Math.round(p.x + (b.door.x - b.x) * tile);
-        const dy = Math.round(p.y + (b.door.y - b.y) * tile);
-        const dw = 10 * u;
-        const dX = dx + 3 * u;
-        const dTop = dy + 3 * u;
-        ctx.fillStyle = OUT;
-        ctx.fillRect(dX - u, dTop - u, dw + 2 * u, tile - 2 * u + u);
-        ctx.fillStyle = '#7a4a26';
-        ctx.fillRect(dX, dTop, dw, tile - 3 * u);
-        ctx.fillStyle = '#9a6234';
-        ctx.fillRect(dX, dTop, u, tile - 3 * u);
-        ctx.fillStyle = '#f2c14e';
-        ctx.fillRect(dX + dw - 3 * u, dTop + 6 * u, u, u);
-        ctx.fillStyle = '#b8b2a4';
-        ctx.fillRect(dX - u, dy + tile - 2 * u, dw + 2 * u, 2 * u);
-        // toit : bandes de tuiles, ligne de crête claire, débord ombré
-        const over = 2 * u;
-        const rx = x0 - over, rw = w + 2 * over;
-        const bands = Math.max(3, Math.round(roofH / (4 * u)));
-        const bandH = Math.floor(roofH / bands);
-        ctx.fillStyle = OUT;
-        ctx.fillRect(rx - u, y0 - u, rw + 2 * u, roofH + 2 * u);
-        for (let i = 0; i < bands; i++) {
-            ctx.fillStyle = i % 2 ? shade(roof, -22) : roof;
-            ctx.fillRect(rx, y0 + i * bandH, rw, bandH - (i === bands - 1 ? 0 : u));
+    // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
+    // puis recopiés d'un seul appel par image (au lieu de dizaines de fillRect par objet et par image).
+    const objCache = new Map();
+    function drawCachedObject(key, x, y, w, h, pad, paint) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const [pl, pt, pr, pb] = pad;
+        const k = `${key}|${Math.round(w)}x${Math.round(h)}|${dpr}`;
+        let cv = objCache.get(k);
+        if (!cv) {
+            if (typeof document === 'undefined') { paint(ctx, x, y); return; }
+            if (objCache.size > 300) objCache.clear();
+            cv = document.createElement('canvas');
+            cv.width = Math.ceil((w + pl + pr) * dpr);
+            cv.height = Math.ceil((h + pt + pb) * dpr);
+            const g = cv.getContext('2d');
+            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            g.imageSmoothingEnabled = false;
+            paint(g, pl, pt);
+            objCache.set(k, cv);
         }
-        ctx.fillStyle = shade(roof, 46);
-        ctx.fillRect(rx, y0, rw, u);
-        ctx.fillStyle = shade(roof, -50);
-        ctx.fillRect(rx, y0 + roofH - u, rw, u);
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
-        ctx.fillRect(rx + u, y0 + roofH + u, rw - 2 * u, u * 2);
-        ctx.restore();
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.55, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
+        const was = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(cv, Math.round((x - pl) * dpr) / dpr, Math.round((y - pt) * dpr) / dpr, cv.width / dpr, cv.height / dpr);
+        ctx.imageSmoothingEnabled = was;
+    }
+
+    function drawBuilding(b, p, tile, labelSize) {
+        const w = b.w * tile;
+        const h = b.h * tile;
+        const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
+        const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
+        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}`, p.x, p.y, w, h,
+            [tile * 0.5, tile * 0.4, tile * 0.9, tile * 0.5],
+            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }));
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
@@ -1472,14 +1407,24 @@ export function createExplorationView(cfg) {
     // `fallback` : dessin de face montré le temps que la vue de côté / de dos (dérivée) se décode.
     function drawSprite(svg, cx, feetY, size, fallback = null) {
         if (!svg) return false;
-        let img = spriteImage(svg);
-        if (!img.complete || !img.naturalWidth) {
-            if (!fallback || fallback === svg) return true; // en cours de chargement : rien à dessiner
-            img = spriteImage(fallback);
-            if (!img.complete || !img.naturalWidth) return true;
+        let px = pixelSprite(svg);
+        if (!px) {
+            if (!fallback || fallback === svg) return true; // en cours de conversion : rien à dessiner (jamais de version floue)
+            px = pixelSprite(fallback);
+            if (!px) return true;
         }
-        ctx.drawImage(img, cx - size / 2, feetY - size * 0.92, size, size);
+        blitPixels(px, cx - size / 2, feetY - size * 0.92, size);
         return true;
+    }
+
+    // Copie nette d'un sprite pixellisé : pas de lissage, destination arrondie au pixel de l'écran.
+    function blitPixels(px, x, y, size) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const snap = v => Math.round(v * dpr) / dpr;
+        const was = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(px, snap(x), snap(y), Math.max(1 / dpr, snap(size)), Math.max(1 / dpr, snap(size)));
+        ctx.imageSmoothingEnabled = was;
     }
 
     // Pastille de quête au-dessus d'un PNJ : « ! » (quête à prendre) ou « ? » (à rendre).
@@ -1554,8 +1499,8 @@ export function createExplorationView(cfg) {
     function drawDecor(name, x, baseY, size) {
         const svg = decorSprite(name);
         if (!svg) return;
-        const img = spriteImage(svg);
-        if (img.complete && img.naturalWidth) ctx.drawImage(img, x - size / 2, baseY - size * 0.92, size, size);
+        const px = pixelSprite(svg);
+        if (px) blitPixels(px, x - size / 2, baseY - size * 0.92, size);
     }
 
     function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {
