@@ -69,7 +69,7 @@ export const NPC_SPRITES_B = {
     `<ellipse cx="44.5" cy="42" rx="3.6" ry="6" transform="rotate(-18 44.5 42)" fill="#6b5d4b" ${O}/>` + hand(48.8, 46, '#5a4a40') +
     head('#d2a98a', '#b58865', 26.5, 13.5, 11) +
     `<ellipse cx="24" cy="31.4" rx="4.6" ry="2.8" fill="#2b2420" opacity=".55"/><ellipse cx="40" cy="31.4" rx="4.6" ry="2.8" fill="#2b2420" opacity=".55"/>` +
-    `<path d="M31 27 L31.4 30.6 L33.2 30.6 L33 27Z" fill="#2b2420" opacity=".5"/>` +
+    `<path d="M31 27 L31.4 30.6 L33.2 30.6 L33 27Z" fill="#4b4136"/>` +
     `<ellipse cx="26.6" cy="27.4" rx="2.7" ry="3" fill="#fff" stroke="${K}" stroke-width="1"/><ellipse cx="37.4" cy="27.4" rx="2.7" ry="3" fill="#fff" stroke="${K}" stroke-width="1"/>` +
     `<circle cx="27" cy="27.8" r="1.5" fill="${K}"/><circle cx="37" cy="27.8" r="1.5" fill="${K}"/><circle cx="27.5" cy="27.2" r=".55" fill="#fff"/><circle cx="37.5" cy="27.2" r=".55" fill="#fff"/>` +
     `<path d="M23.4 23.6 L29.4 24.4 M40.6 23.6 L34.6 24.4" stroke="#2b2420" stroke-width="2" stroke-linecap="round"/>` +
@@ -84,7 +84,7 @@ export const NPC_SPRITES_B = {
 
   // Pretresse du feu repentie : robe rouge sombre, eventail charbonneux, braises eteintes, air triste.
   priestess_yan: svg(
-    `<defs><radialGradient id="priestess_yan-g1" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#d9cfc6"/><stop offset=".7" stop-color="#a99d96"/><stop offset="1" stop-color="#7d726d"/></radialGradient></defs>` +
+    `` +
     `<ellipse cx="13" cy="56" rx="3.6" ry="2.8" fill="#3a3236" ${O}/><path d="M11 53.8 Q13 52.6 15 54" fill="none" stroke="#9a908c" stroke-width="1.6" stroke-linecap="round"/><path d="M12 56.6 L13.8 55" stroke="#9c5a3a" stroke-width="1" stroke-linecap="round"/>` +
     `<ellipse cx="51.5" cy="57.4" rx="2.4" ry="1.8" fill="#3a3236" ${O}/>` +
     `<ellipse cx="32" cy="29" rx="16" ry="14" fill="#2a2438" ${O}/>` +
@@ -97,7 +97,7 @@ export const NPC_SPRITES_B = {
     `<ellipse cx="18.5" cy="45" rx="5" ry="8" transform="rotate(8 18.5 45)" fill="#7a1f2b" ${O}/><path d="M13.4 50.6 Q18 54.4 22.6 51" fill="none" stroke="#e8d8b8" stroke-width="2.4" stroke-linecap="round"/>` +
     `<path d="M14.4 53.6 L15 56.6 M18 54.6 L18.4 58" stroke="#9a908c" stroke-width="1" stroke-linecap="round" opacity=".8"/>` +
     `<rect x="48.2" y="43" width="2.6" height="14" rx="1.2" fill="#6b4226" ${O}/>` +
-    `<circle cx="50.5" cy="35.4" r="10" fill="url(#priestess_yan-g1)" ${O}/><circle cx="50.5" cy="35.4" r="7.8" fill="none" stroke="#8e2a30" stroke-width="1.2"/>` +
+    `<circle cx="50.5" cy="35.4" r="10" fill="#a99d96" ${O}/><circle cx="50.5" cy="35.4" r="7.8" fill="none" stroke="#8e2a30" stroke-width="1.2"/>` +
     `<path d="M50.5 42 Q44.4 38.8 47 33 Q48 35.6 49.6 35 Q48.6 31 51.4 28.2 Q51.4 32.4 53.8 33.6 Q55 31.6 54.8 30 Q57.2 35 54.6 39.8Z" fill="#6c6360"/>` +
     `<path d="M43.6 31 Q45 29 47.4 28" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" opacity=".7"/>` +
     `<ellipse cx="45" cy="44" rx="4.8" ry="7.4" transform="rotate(-8 45 44)" fill="#531420" ${O}/><path d="M40.4 49.4 Q45 53.6 49.6 50.4" fill="none" stroke="#e8d8b8" stroke-width="2.4" stroke-linecap="round"/>` + hand(49.4, 46.4, '#f3d3bb') +
@@ -203,8 +203,8 @@ export const NPC_SPRITES_B = {
 
   // Envoye du Roi-Dragon : ecailles turquoise aux joues, robe marine a vagues, perle lumineuse.
   envoy_longwang: svg(
-    `<defs><radialGradient id="envoy_longwang-g1" cx=".38" cy=".36" r=".7"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#d6f6ff"/><stop offset="1" stop-color="#7fd6ea"/></radialGradient>` +
-    `<radialGradient id="envoy_longwang-g2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#bff5ff" stop-opacity=".85"/><stop offset="1" stop-color="#bff5ff" stop-opacity="0"/></radialGradient></defs>` +
+    `<defs>` +
+    `</defs>` +
     feet('#142244') +
     `<path d="M18 57 Q14 43 21.4 35 L42.6 35 Q50 43 46 57 Q32 60 18 57Z" fill="#1d3a6b" ${O}/>` +
     `<path d="M40 37.6 Q49 45 45 56 L39.6 56.8 Q44 46 40 37.6Z" fill="#132a52"/>` +
@@ -214,7 +214,7 @@ export const NPC_SPRITES_B = {
     `<ellipse cx="18.6" cy="45" rx="5" ry="8" transform="rotate(8 18.6 45)" fill="#1d3a6b" ${O}/><path d="M13.4 50.4 Q18.6 54.6 24 50.6" fill="none" stroke="#bff3f0" stroke-width="2.4" stroke-linecap="round"/>` +
     `<path d="M15 44 a2.6 2.6 0 0 1 5.2 0 M16.4 44 a1.4 1.4 0 0 1 2.4 0" fill="none" stroke="#6fb0e8" stroke-width=".8"/>` +
     `<ellipse cx="45" cy="42.4" rx="4.2" ry="7" transform="rotate(-20 45 42.4)" fill="#132a52" ${O}/><path d="M42.4 47 Q47 49 50.4 45.6" fill="none" stroke="#bff3f0" stroke-width="2.4" stroke-linecap="round"/>` + hand(49.8, 45.6, '#f2d5be') +
-    `<circle cx="49.8" cy="39.4" r="8.4" fill="url(#envoy_longwang-g2)"/><circle cx="49.8" cy="39.6" r="4.6" fill="url(#envoy_longwang-g1)" ${OW(1.6)}/><circle cx="48.2" cy="37.8" r="1.3" fill="#fff"/>` +
+    `<circle cx="49.8" cy="39.4" r="8.4" fill="#bff5ff" fill-opacity="0.26" class="glow"/><circle cx="49.8" cy="39.6" r="4.6" fill="#d6f6ff" ${OW(1.6)}/><circle cx="48.2" cy="37.8" r="1.3" fill="#fff"/>` +
     `<path d="M20.4 36.6 Q32 32.4 43.6 36.6 Q42 41.6 36.6 40.6 Q32 45 27.4 40.6 Q22 41.6 20.4 36.6Z" fill="#2fc5c0" ${O}/>` +
     `<path d="M23.4 37 Q25 35.4 26.6 36.6 M37.4 36.6 Q39 35.4 40.6 37" fill="none" stroke="#e6fffb" stroke-width="1" stroke-linecap="round"/><circle cx="32" cy="39.4" r="1.4" fill="#e6b84a"/>` +
     `<circle cx="32" cy="9.4" r="5.2" fill="#1b1b2e" ${O}/>` +
@@ -233,12 +233,10 @@ export const NPC_SPRITES_B = {
 
   // Grue messagere de la Reine Mere de l'Occident : ailes deployees, couronne rouge, rouleau a cordon rouge.
   crane_envoy: svg(
-    `<defs><linearGradient id="crane_envoy-g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d3deea"/></linearGradient>` +
-    `<linearGradient id="crane_envoy-g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef3f9"/><stop offset="1" stop-color="#b9c8da"/></linearGradient></defs>` +
     `<path d="M25.4 46 L38.6 46 L41.6 55 Q32 51.6 22.4 55Z" fill="#3a3f4a" ${O}/>` +
     `<path d="M28.6 50 L27 57.6 M27 57.6 L23.4 59 M27 57.6 L27.8 59.4" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M28.6 50 L27 57.6 M27 57.6 L23.4 59 M27 57.6 L27.8 59.4" fill="none" stroke="#e9a0a0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` +
     `<path d="M35.4 50 L37 57.6 M37 57.6 L40.6 59 M37 57.6 L36.2 59.4" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M35.4 50 L37 57.6 M37 57.6 L40.6 59 M37 57.6 L36.2 59.4" fill="none" stroke="#e9a0a0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` +
-    [['url(#crane_envoy-g1)', ''], ['url(#crane_envoy-g2)', ' transform="translate(64 0) scale(-1 1)"']].map(([g, t]) =>
+    [['#e9eff6', ''], ['#d3dde9', ' transform="translate(64 0) scale(-1 1)"']].map(([g, t]) =>
       `<g${t}><path d="M26 32 Q14 22 2.4 21 Q5 25.6 3.4 29.6 Q6.4 32.4 5.4 36.6 Q8.6 38.6 8.6 43 Q18 45 27 43.4Z" fill="${g}" ${O}/>` +
       `<path d="M2.4 21 Q5 25.6 3.4 29.6 Q6.4 32.4 5.4 36.6 Q8.6 38.6 8.6 43 Q18 45 27 43.4 L27 38.6 Q18 40 12.6 35 Q10 31 8.6 25.4Z" fill="#363b47"/>` +
       `<path d="M8.6 25.4 Q11 31 12.6 35 M13 36.4 L10.4 42 M18 38.4 L16.4 44 M23 39 L22 44" fill="none" stroke="#6a7080" stroke-width=".9" stroke-linecap="round"/>` +
@@ -260,15 +258,15 @@ export const NPC_SPRITES_B = {
 
   // Dixieme Soleil : petite boule de lumiere terrifiee, flammeches qui tremblent, grands yeux humides.
   sun_ten: svg(
-    `<defs><radialGradient id="sun_ten-g1" cx=".4" cy=".35" r=".78"><stop offset="0" stop-color="#fffbd0"/><stop offset=".55" stop-color="#ffd95a"/><stop offset="1" stop-color="#f7a928"/></radialGradient>` +
-    `<radialGradient id="sun_ten-g2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff3a0" stop-opacity=".8"/><stop offset="1" stop-color="#fff3a0" stop-opacity="0"/></radialGradient></defs>` +
-    `<circle cx="32" cy="35" r="30" fill="url(#sun_ten-g2)"/>` +
+    `<defs>` +
+    `</defs>` +
+    `<circle cx="32" cy="35" r="30" fill="#fff3a0" fill-opacity="0.24" class="glow"/>` +
     [[0, 1.1], [-38, .85], [38, .85], [-72, .72], [72, .72], [-108, .6], [108, .6]].map(([a, s]) =>
       `<g transform="translate(32 36) rotate(${a}) scale(${s})"><path d="M-6 -14 Q-9 -21 -3.4 -26.4 Q-3.6 -21.6 -0.6 -20.2 Q1.2 -26 6.4 -30.6 Q8.4 -22 6 -14Z" fill="#ffb62e" stroke="${K}" stroke-width="${(1.8 / s).toFixed(2)}" stroke-linejoin="round"/>` +
       `<path d="M-1.6 -16 Q-3 -20 -0.4 -22.6 Q1.6 -19 3 -16Z" fill="#ffe27a"/></g>`).join('') +
     `<ellipse cx="27" cy="55.6" rx="3.4" ry="2.2" fill="#f2a030" ${O}/><ellipse cx="37" cy="55.6" rx="3.4" ry="2.2" fill="#f2a030" ${O}/>` +
-    `<circle cx="32" cy="36" r="18" fill="url(#sun_ten-g1)" ${O}/>` +
-    `<path d="M44.4 26 Q51 36 43 47.6 Q38 52.6 30 53.6 Q43 50 44.4 26Z" fill="#f2a030" opacity=".55"/>` +
+    `<circle cx="32" cy="36" r="18" fill="#ffd95a" ${O}/>` +
+    `<path class="glow" d="M44.4 26 Q51 36 43 47.6 Q38 52.6 30 53.6 Q43 50 44.4 26Z" fill="#f2a030" opacity=".55"/>` +
     `<ellipse cx="23.4" cy="25.4" rx="3.6" ry="1.9" fill="#fff" opacity=".7" transform="rotate(-30 23.4 25.4)"/>` +
     `<ellipse cx="25.2" cy="37" rx="4.4" ry="5.2" fill="#4a2a16"/><ellipse cx="38.8" cy="37" rx="4.4" ry="5.2" fill="#4a2a16"/>` +
     `<circle cx="23.8" cy="34.8" r="1.9" fill="#fff"/><circle cx="37.4" cy="34.8" r="1.9" fill="#fff"/><circle cx="26.6" cy="39.4" r=".9" fill="#fff"/><circle cx="40.2" cy="39.4" r=".9" fill="#fff"/>` +
@@ -283,15 +281,15 @@ export const NPC_SPRITES_B = {
 
   // Chang'e a la Lune : robe-lumiere nacree, manches flottantes, croissant dans les cheveux, lapin de jade, aura lunaire.
   change_moon: svg(
-    `<defs><radialGradient id="change_moon-g1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#eaf7ff" stop-opacity=".95"/><stop offset=".62" stop-color="#bfe0ff" stop-opacity=".5"/><stop offset="1" stop-color="#bfe0ff" stop-opacity="0"/></radialGradient>` +
-    `<linearGradient id="change_moon-g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#d9e9fb"/><stop offset="1" stop-color="#a9c6ee"/></linearGradient></defs>` +
-    `<circle cx="32" cy="32" r="31.5" fill="url(#change_moon-g1)"/><circle cx="32" cy="32" r="28.6" fill="none" stroke="#f2fbff" stroke-width="1" opacity=".7" stroke-dasharray="2 3"/>` +
+    `<defs>` +
+    `</defs>` +
+    `<circle cx="32" cy="32" r="31.5" fill="#eaf7ff" fill-opacity="0.29" class="glow"/><circle cx="32" cy="32" r="28.6" fill="none" stroke="#f6ecc9" stroke-width="1" stroke-dasharray="2 3"/>` +
     `<path d="M20.6 37 Q5 33 4.6 46 Q4.8 52 10 52.4" fill="none" stroke="${K}" stroke-width="5.4" stroke-linecap="round"/><path d="M20.6 37 Q5 33 4.6 46 Q4.8 52 10 52.4" fill="none" stroke="#bfe0ff" stroke-width="2.4" stroke-linecap="round"/>` +
     `<path d="M43.4 37 Q59 33 59.4 46 Q59.2 52 54 52.4" fill="none" stroke="${K}" stroke-width="5.4" stroke-linecap="round"/><path d="M43.4 37 Q59 33 59.4 46 Q59.2 52 54 52.4" fill="none" stroke="#a9c6ee" stroke-width="2.4" stroke-linecap="round"/>` +
     `<ellipse cx="26.5" cy="57.4" rx="4.4" ry="2.4" fill="#dfe9f8" ${O}/><ellipse cx="37.5" cy="57.4" rx="4.4" ry="2.4" fill="#dfe9f8" ${O}/>` +
-    `<path d="M17 57.4 Q13 43 21.4 35 L42.6 35 Q51 43 47 57.4 Q32 60.4 17 57.4Z" fill="url(#change_moon-g2)" ${O}/>` +
-    `<path d="M40 37.4 Q49 45 45.4 56.6 L40 57.4 Q44 47 40 37.4Z" fill="#a9c6ee" opacity=".7"/>` +
-    `<path d="M25 50 Q32 53 39 50 L40.4 57.6 Q32 59.4 23.6 57.6Z" fill="#fff" opacity=".7"/><path d="M28 53.4 Q32 55.6 36 53.4" fill="none" stroke="#a9c6ee" stroke-width="1" stroke-linecap="round"/>` +
+    `<path d="M17 57.4 Q13 43 21.4 35 L42.6 35 Q51 43 47 57.4 Q32 60.4 17 57.4Z" fill="#d9e9fb" ${O}/>` +
+    `<path d="M40 37.4 Q49 45 45.4 56.6 L40 57.4 Q44 47 40 37.4Z" fill="#b7d1f2"/>` +
+    `<path d="M25 50 Q32 53 39 50 L40.4 57.6 Q32 59.4 23.6 57.6Z" fill="#e9f1fb"/><path d="M28 53.4 Q32 55.6 36 53.4" fill="none" stroke="#a9c6ee" stroke-width="1" stroke-linecap="round"/>` +
     `<path d="M22 43.6 Q32 47 42 43.6 L42 48 Q32 51.4 22 48Z" fill="#8fb0e0" ${O}/><circle cx="32" cy="47.4" r="2.6" fill="#f8fbff" ${OW(1.4)}/><path d="M31 46.6 Q32 45.8 33 46.6" fill="none" stroke="#8fb0e0" stroke-width=".8"/>` +
     `<path d="M24.4 35.4 L32 45 L39.6 35.4 L37 35 L32 41 L27 35Z" fill="#f2f8ff" ${O}/>` +
     `<path d="M22 37.6 Q8 40.4 5.8 52.4 Q11.6 57 16.6 51.4 Q20.4 46.6 24.4 46Z" fill="#f4f9ff" ${O}/><path d="M6 52 Q11.6 57 16.4 51.6" fill="none" stroke="#8fb0e0" stroke-width="2" stroke-linecap="round"/>` +
@@ -434,14 +432,14 @@ export const FENGMENG_SPRITES = {
 
   // Rencontre 2 : l'embuscade, cape sombre a capuchon, arc noir bande, carquois garni, posture d'affut.
   fengmeng_2: svg(
-    `<defs><linearGradient id="fengmeng_2-g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26374a"/><stop offset="1" stop-color="#121c26"/></linearGradient></defs>` +
+    `` +
     `<rect x="46" y="16" width="6.6" height="24" rx="2.2" fill="#3a2a2a" ${O} transform="rotate(16 49.3 28)"/>` +
     `<path d="M47 17 L46.2 9 M49.6 16.4 L50.4 8 M52.2 17.6 L54.6 10.6" fill="none" stroke="${K}" stroke-width="3" stroke-linecap="round"/><path d="M47 17 L46.2 9 M49.6 16.4 L50.4 8 M52.2 17.6 L54.6 10.6" fill="none" stroke="#dfe9ee" stroke-width="1.2" stroke-linecap="round"/>` +
     `<path d="M46.2 9 L44.6 5.4 L48 7.6Z M50.4 8 L49.6 4 L52.4 6.6Z M54.6 10.6 L54 6.6 L57 9Z" fill="#4fd1c5" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>` +
     `<path d="M14.4 18 Q2.6 38 14.4 58" fill="none" stroke="${K}" stroke-width="5.2" stroke-linecap="round"/><path d="M14.4 18 Q2.6 38 14.4 58" fill="none" stroke="#2c3350" stroke-width="2.6" stroke-linecap="round"/><path d="M7.6 26 Q5.8 34 7.4 42" fill="none" stroke="#8f9fd0" stroke-width="1" stroke-linecap="round"/>` +
     `<ellipse cx="25" cy="57.4" rx="5" ry="2.6" fill="#10181f" ${O}/><ellipse cx="39" cy="57.4" rx="5" ry="2.6" fill="#10181f" ${O}/>` +
-    `<path d="M13 58.4 Q8.6 42 19 34 L45 34 Q55 42 51 58.4 Q32 61.6 13 58.4Z" fill="url(#fengmeng_2-g1)" ${O}/>` +
-    `<path d="M26 38 L32 58.6 L22 58.4Z" fill="#2f9a9a" opacity=".85"/><path d="M26 38 L32 58.6 M38 38 L33 58.6" fill="none" stroke="${K}" stroke-width="1.4"/><path d="M38 38 L33 58.6 L42 58.4Z" fill="#1f7676" opacity=".85"/>` +
+    `<path d="M13 58.4 Q8.6 42 19 34 L45 34 Q55 42 51 58.4 Q32 61.6 13 58.4Z" fill="#1a2734" ${O}/>` +
+    `<path d="M26 38 L32 58.6 L22 58.4Z" fill="#2c898b"/><path d="M26 38 L32 58.6 M38 38 L33 58.6" fill="none" stroke="${K}" stroke-width="1.4"/><path d="M38 38 L33 58.6 L42 58.4Z" fill="#217979"/>` +
     `<path d="M17 52 Q15.6 44 20 38 M47 52 Q48.4 44 44 38" fill="none" stroke="#3d566e" stroke-width="1" stroke-linecap="round"/>` +
     `<rect x="26" y="45.6" width="12" height="3.2" rx="1.2" fill="#17232a" ${OW(1.6)}/><circle cx="32" cy="47.2" r="1.8" fill="#7fe6d6" ${OW(1.2)}/>` +
     `<path d="M14.4 18 L31 39.6 L14.4 58" fill="none" stroke="#e9f1f4" stroke-width="1" stroke-linejoin="round" opacity=".9"/>` +
@@ -453,7 +451,7 @@ export const FENGMENG_SPRITES = {
     `<path d="M40 8.6 Q50 12 49 26 Q48 33 42 36 Q46 28 44.6 20 Q43.4 13 40 8.6Z" fill="#121c26"/>` +
     `<path d="M20 12 Q24 8 30 7.4" fill="none" stroke="#4d6a88" stroke-width="1.3" stroke-linecap="round"/>` +
     `<path d="M19.2 28 Q18.6 17 32 16.4 Q45.4 17 44.8 28 Q44 35 32 37.6 Q20 35 19.2 28Z" fill="${FM_SKIN}" ${O}/>` +
-    `<path d="M19.2 28 Q18.6 17 32 16.4 Q45.4 17 44.8 28 L44.2 24.2 Q32 21.4 19.8 24.2Z" fill="#12202c" opacity=".7"/>` +
+    `<path d="M19.2 28 Q18.6 17 32 16.4 Q45.4 17 44.8 28 L44.2 24.2 Q32 21.4 19.8 24.2Z" fill="#121f2a"/>` +
     `<path d="M39 30 Q43 29 44 28.4 Q44 35 32 37.6 Q38 35 39 30Z" fill="${FM_SKIN_D}"/>` +
     `<path d="M22.6 27 Q25.8 24 29.4 26.6 Q26 28.6 22.6 27Z M41.4 27 Q38.2 24 34.6 26.6 Q38 28.6 41.4 27Z" fill="#c9fbf4" stroke="${K}" stroke-width=".8"/>` +
     `<circle cx="27.4" cy="26.6" r="1.1" fill="#2a7f86"/><circle cx="36.6" cy="26.6" r="1.1" fill="#2a7f86"/>` +
@@ -464,12 +462,12 @@ export const FENGMENG_SPRITES = {
 
   // Boss final, phase 1 : l'Archer Miroir. Motifs de Hou Yi en negatif (tunique sombre, rayons cyan, arc rouge sombre).
   fengmeng_3a: svg(
-    `<defs><linearGradient id="fengmeng_3a-g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f3a47"/><stop offset="1" stop-color="#0b141a"/></linearGradient>` +
-    `<radialGradient id="fengmeng_3a-g2" cx=".5" cy=".5" r=".5"><stop offset=".55" stop-color="#3fc6d4" stop-opacity=".28"/><stop offset="1" stop-color="#3fc6d4" stop-opacity="0"/></radialGradient></defs>` +
-    `<circle cx="32" cy="33" r="31.5" fill="url(#fengmeng_3a-g2)"/>` +
+    `<defs>` +
+    `</defs>` +
+    `<circle cx="32" cy="33" r="31.5" fill="#3fc6d4" fill-opacity="0.2" class="glow"/>` +
     `<rect x="46" y="14" width="6.6" height="25" rx="2.2" fill="#3a2a2a" ${O} transform="rotate(14 49.3 26)"/><path d="M47.4 15 L46.4 7.6 M50 14.4 L50.6 6.4 M52.6 15.6 L55 9" fill="none" stroke="${K}" stroke-width="3" stroke-linecap="round"/><path d="M47.4 15 L46.4 7.6 M50 14.4 L50.6 6.4 M52.6 15.6 L55 9" fill="none" stroke="#cfe3ea" stroke-width="1.2" stroke-linecap="round"/>` +
     `<path d="M46.4 7.6 L45 4 L48.2 6Z M50.6 6.4 L50 2.6 L52.6 5Z M55 9 L54.6 5 L57.4 7.6Z" fill="#a01f34" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>` +
-    `<path d="M10.6 58.6 Q5.6 38 19 31 L45 31 Q58.4 38 53.4 58.6 Q32 62.6 10.6 58.6Z" fill="url(#fengmeng_3a-g1)" ${O}/>` +
+    `<path d="M10.6 58.6 Q5.6 38 19 31 L45 31 Q58.4 38 53.4 58.6 Q32 62.6 10.6 58.6Z" fill="#13232c" ${O}/>` +
     `` +
     `<path d="M16.6 16 Q10.6 20.4 14 30 Q12.4 42 16.6 52 Q21 42 22 30Z" fill="${FM_HAIR}" ${O}/><path d="M47.4 16 Q53.4 20.4 50 30 Q51.6 42 47.4 52 Q43 42 42 30Z" fill="${FM_HAIR}" ${O}/>` +
     `<ellipse cx="25" cy="57.4" rx="5" ry="2.6" fill="#10181f" ${O}/><ellipse cx="39" cy="57.4" rx="5" ry="2.6" fill="#10181f" ${O}/><path d="M21 56.6 Q25 54.6 29 56.6 M35 56.6 Q39 54.6 43 56.6" fill="none" stroke="#cfe3ea" stroke-width="1.2" stroke-linecap="round"/>` +
@@ -501,12 +499,12 @@ export const FENGMENG_SPRITES = {
 
   // Boss final, phase 2 : Rage et Desespoir. Haillons, cheveux defaits, aura rouge sang, yeux brillants, flechees multiples.
   fengmeng_3b: svg(
-    `<defs><radialGradient id="fengmeng_3b-g1" cx=".5" cy=".5" r=".5"><stop offset=".3" stop-color="#ff3a30" stop-opacity=".8"/><stop offset=".72" stop-color="#e01828" stop-opacity=".45"/><stop offset="1" stop-color="#d81e2a" stop-opacity="0"/></radialGradient>` +
-    `<linearGradient id="fengmeng_3b-g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2a3a"/><stop offset="1" stop-color="#1d0f18"/></linearGradient></defs>` +
-    `<path d="M32.0 7.0 L37.9 0.5 L41.2 8.6 L49.0 4.6 L49.4 13.3 L58.0 12.1 L55.4 20.5 L63.9 22.4 L58.6 29.3 L66.0 34.0 L58.6 38.7 L63.9 45.6 L55.4 47.5 L58.0 55.9 L49.4 54.7 L49.0 63.4 L41.2 59.4 L37.9 67.5 L32.0 61.0 L26.1 67.5 L22.8 59.4 L15.0 63.4 L14.6 54.7 L6.0 55.9 L8.6 47.5 L0.1 45.6 L5.4 38.7 L-2.0 34.0 L5.4 29.3 L0.1 22.4 L8.6 20.5 L6.0 12.1 L14.6 13.3 L15.0 4.6 L22.8 8.6 L26.1 0.5Z" fill="#ff3a3a" opacity=".5"/><circle cx="32" cy="34" r="32" fill="url(#fengmeng_3b-g1)"/>` +
+    `<defs>` +
+    `</defs>` +
+    `<path d="M32.0 7.0 L37.9 0.5 L41.2 8.6 L49.0 4.6 L49.4 13.3 L58.0 12.1 L55.4 20.5 L63.9 22.4 L58.6 29.3 L66.0 34.0 L58.6 38.7 L63.9 45.6 L55.4 47.5 L58.0 55.9 L49.4 54.7 L49.0 63.4 L41.2 59.4 L37.9 67.5 L32.0 61.0 L26.1 67.5 L22.8 59.4 L15.0 63.4 L14.6 54.7 L6.0 55.9 L8.6 47.5 L0.1 45.6 L5.4 38.7 L-2.0 34.0 L5.4 29.3 L0.1 22.4 L8.6 20.5 L6.0 12.1 L14.6 13.3 L15.0 4.6 L22.8 8.6 L26.1 0.5Z" fill="#9f8d94"/><circle cx="32" cy="34" r="32" fill="#ff3a30" fill-opacity="0.25" class="glow"/>` +
     `<rect x="46" y="14" width="7.4" height="25" rx="2.2" fill="#4a2a3a" ${O} transform="rotate(16 49.7 26)"/><path d="M47 15 L45.6 7 M50 14.4 L50.6 5.6 M53 15.8 L56 8.6" fill="none" stroke="${K}" stroke-width="3" stroke-linecap="round"/><path d="M47 15 L45.6 7 M50 14.4 L50.6 5.6 M53 15.8 L56 8.6" fill="none" stroke="#e8d8d8" stroke-width="1.2" stroke-linecap="round"/>` +
     `<path d="M45.6 7 L44 3.2 L47.6 5.4Z M50.6 5.6 L50 1.6 L52.8 4.4Z M56 8.6 L55.6 4.6 L58.6 7.4Z" fill="#e0202c" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>` +
-    `<path d="M9 58 L5 50 L9 47 L4.6 40 L13 33.6 L19 31 L45 31 L51 33.6 L59.4 40 L55 47 L59 50 L55 58 L50 55 L46 60 L41 56 L36 61 L32 56.6 L28 61 L23 56 L18 60 L14 55Z" fill="url(#fengmeng_3b-g2)" ${O}/>` +
+    `<path d="M9 58 L5 50 L9 47 L4.6 40 L13 33.6 L19 31 L45 31 L51 33.6 L59.4 40 L55 47 L59 50 L55 58 L50 55 L46 60 L41 56 L36 61 L32 56.6 L28 61 L23 56 L18 60 L14 55Z" fill="#2f1a26" ${O}/>` +
     `` +
     `<path d="M14 24 Q4 32 8 46 Q10 54 14 58 Q13 48 15 40 Q15 32 20 28Z" fill="#2e3046" ${O}/><path d="M50 24 Q60 32 56 46 Q54 54 50 58 Q51 48 49 40 Q49 32 44 28Z" fill="#2e3046" ${O}/>` +
     `<ellipse cx="24" cy="57.4" rx="5.2" ry="2.6" fill="#10181f" ${O}/><ellipse cx="40" cy="57.4" rx="5.2" ry="2.6" fill="#10181f" ${O}/>` +

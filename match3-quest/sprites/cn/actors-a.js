@@ -90,7 +90,7 @@ export const HERO_SPRITES = {
 
   // Hou Yi le Maitre taoiste : robe bleu nuit a nuages dores, baton a talisman, orbe de qi
   sorcerer: svg(
-    `<defs><radialGradient id="sorcerer-g1" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#f4ffff"/><stop offset=".5" stop-color="#6fe0f4"/><stop offset="1" stop-color="#2a82c8"/></radialGradient></defs>` +
+    `` +
     // baton + talisman
     `<rect x="48.4" y="10" width="3.2" height="48" rx="1.6" fill="#7a3a22" ${O}/>` +
     `<circle cx="50" cy="8" r="3.8" fill="none" stroke="${K}" stroke-width="4.6"/><circle cx="50" cy="8" r="3.8" fill="none" stroke="${GOLD}" stroke-width="2.4"/>` +
@@ -105,8 +105,8 @@ export const HERO_SPRITES = {
     // manche gauche + orbe de qi
     sleeve(18.4, 44, 4.8, 7.4, 14, '#2f46a0') + `<path d="M14.4 49.4 Q18 52.4 22.4 50" fill="none" stroke="${GOLD}" stroke-width="1.6" stroke-linecap="round"/>` +
     hand(16.6, 52.4) +
-    `<circle cx="13" cy="39" r="8.4" fill="#8be8ff" opacity=".28"/>` +
-    `<circle cx="13" cy="42" r="5.2" fill="url(#sorcerer-g1)" ${O}/><circle cx="11.2" cy="40.2" r="1.3" fill="#fff"/>` +
+    `<circle class="glow" cx="13" cy="39" r="8.4" fill="#8be8ff" opacity=".28"/>` +
+    `<circle cx="13" cy="42" r="5.2" fill="#6fe0f4" ${O}/><circle cx="11.2" cy="40.2" r="1.3" fill="#fff"/>` +
     `<path d="M5.4 41 Q6 33 14 32.4" fill="none" stroke="#8be8ff" stroke-width="1.4" stroke-linecap="round"/>` +
     // manche droite sur le baton
     sleeve(44.8, 43, 4.8, 7, -14, '#17255a') + `<path d="M41.6 48.4 Q46 51.4 50 48" fill="none" stroke="${GOLD}" stroke-width="1.6" stroke-linecap="round"/>` + hand(49.6, 47.6) +
@@ -119,8 +119,7 @@ export const HERO_SPRITES = {
 
   // Hou Yi le Garde imperial : armure lamellaire laquee, bouclier rond, lance
   templar: svg(
-    `<defs><pattern id="templar-p" width="6" height="5" patternUnits="userSpaceOnUse"><rect width="6" height="5" fill="#9a2e24"/><path d="M0 5 Q3 1.2 6 5" fill="none" stroke="${GOLD}" stroke-width="1.1"/></pattern></defs>` +
-    // lance
+        // lance
     `<rect x="49" y="12" width="3" height="46" rx="1.4" fill="#7a3a22" ${O}/>` +
     `<path d="M50.5 1.4 Q54.6 6.4 53.4 12.6 L50.5 14.4 L47.6 12.6 Q46.4 6.4 50.5 1.4Z" fill="#e4ebf2" ${O}/><path d="M50.5 3.4 L50.5 12" stroke="#fff" stroke-width=".9"/>` +
     `<path d="M50.5 14.4 L46 24 M50.5 14.4 L55 24 M50.5 14.4 L50.5 25" stroke="${K}" stroke-width="4.2" stroke-linecap="round"/><path d="M50.5 14.4 L46 24 M50.5 14.4 L55 24 M50.5 14.4 L50.5 25" stroke="${RED}" stroke-width="2.2" stroke-linecap="round"/>` +
@@ -130,8 +129,9 @@ export const HERO_SPRITES = {
     `<path d="M26 52 L32 53 L38 52 M32 47 L32 53" stroke="${GOLD}" stroke-width="1.2" fill="none"/>` +
     // cuirasse
     `<path d="M21.4 48.4 Q20.4 41 23 35 L41 35 Q43.6 41 42.6 48.4 Q32 50.6 21.4 48.4Z" fill="#8e2a22" ${O}/>` +
-    `<path d="M21.4 48.4 Q20.4 41 23 35 L41 35 Q43.6 41 42.6 48.4 Q32 50.6 21.4 48.4Z" fill="url(#templar-p)" stroke="none"/>` +
-    `<path d="M38.4 36 Q43 41 41.6 48 L36 49.4Z" fill="#4a1410" opacity=".4"/>` +
+    `<path d="M21.4 48.4 Q20.4 41 23 35 L41 35 Q43.6 41 42.6 48.4 Q32 50.6 21.4 48.4Z" fill="#9a2e24" stroke="none"/>` +
+    `<path d="M22 40 L42 40 M23 44.4 L41 44.4" fill="none" stroke="${GOLD}" stroke-width="1"/>` +
+    `<path d="M38.4 36 Q43 41 41.6 48 L36 49.4Z" fill="#73211b"/>` +
     `<path d="M26 35 Q32 41.4 38 35" fill="none" stroke="${GOLD}" stroke-width="2.2" stroke-linecap="round"/>` +
     `<rect x="21.4" y="44.6" width="21.2" height="4" rx="1.4" fill="#2a2430" ${O}/><circle cx="32" cy="46.6" r="2.8" fill="${GOLD}" ${O}/>` +
     // epaulieres + bras
@@ -140,7 +140,7 @@ export const HERO_SPRITES = {
     // bouclier rond + epauliere gauche
     `<ellipse cx="21.2" cy="37.6" rx="5" ry="4.2" fill="#2a2d4e" ${O}/><path d="M17 38 Q21.2 41.6 25.4 38" fill="none" stroke="${GOLD}" stroke-width="1.4"/>` +
     `<circle cx="14" cy="47.6" r="10.6" fill="#c0392b" ${O}/>` +
-    `<path d="M21.4 40 Q24.6 47 19 56 Q22.6 47.4 21.4 40Z" fill="#8e2a22" opacity=".8"/>` +
+    `<path d="M21.4 40 Q24.6 47 19 56 Q22.6 47.4 21.4 40Z" fill="#982d24"/>` +
     `<circle cx="14" cy="47.6" r="8.2" fill="none" stroke="${GOLD}" stroke-width="1.8"/>` +
     `<circle cx="14" cy="47.6" r="3.6" fill="${GOLD}" ${O}/><circle cx="12.8" cy="46.4" r="1.1" fill="#fff6c8"/>` +
     `<circle cx="14" cy="41" r="1.1" fill="${GOLD}"/><circle cx="14" cy="54.2" r="1.1" fill="${GOLD}"/><circle cx="7.4" cy="47.6" r="1.1" fill="${GOLD}"/><circle cx="20.6" cy="47.6" r="1.1" fill="${GOLD}"/>` +
@@ -157,10 +157,10 @@ export const HERO_SPRITES = {
 
   // Hou Yi le Guerrier des steppes : fourrures, torse tatoue, grande hache
   barbarian: svg(
-    `<defs><linearGradient id="barbarian-g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f0f4f8"/><stop offset="1" stop-color="#8a97a6"/></linearGradient></defs>` +
+    `` +
     // hache
     `<rect x="50" y="16" width="3.2" height="43" rx="1.4" fill="#7a4a26" ${O}/>` +
-    `<path d="M51.6 6 Q63 9 62 20 Q61.4 30 51.6 33 Q56 20 51.6 6Z" fill="url(#barbarian-g1)" ${O}/>` +
+    `<path d="M51.6 6 Q63 9 62 20 Q61.4 30 51.6 33 Q56 20 51.6 6Z" fill="#b3bcc7" ${O}/>` +
     `<path d="M54.4 10.4 Q58.4 13 58.6 18" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/>` +
     `<path d="M51.6 33 L51.6 40 M51.6 36 L47 42" stroke="${K}" stroke-width="4" stroke-linecap="round"/><path d="M51.6 33 L51.6 40 M51.6 36 L47 42" stroke="${RED}" stroke-width="2" stroke-linecap="round"/>` +
     // bottes de fourrure
@@ -216,7 +216,7 @@ export const NPC_SPRITES_A = {
     `<path d="M22 41.6 Q32 44.6 42 41.6 L42 45 Q32 48 22 45Z" fill="#6fc3b0" ${O}/>` +
     `<path d="M33 45 Q36 52 33.6 58 M30 45 Q27 52 29.4 58" fill="none" stroke="${K}" stroke-width="3.8" stroke-linecap="round"/><path d="M33 45 Q36 52 33.6 58 M30 45 Q27 52 29.4 58" fill="none" stroke="#8fe0cb" stroke-width="1.8" stroke-linecap="round"/>` +
     // plateau de gateaux de lune
-    `<ellipse cx="32" cy="50.6" rx="15.4" ry="3.6" fill="${RED}" ${O}/><ellipse cx="32" cy="49.8" rx="12" ry="2.1" fill="${GOLD}" opacity=".9"/>` +
+    `<ellipse cx="32" cy="50.6" rx="15.4" ry="3.6" fill="${RED}" ${O}/><ellipse cx="32" cy="49.8" rx="12" ry="2.1" fill="${GOLD}"/>` +
     `<circle cx="26.4" cy="46" r="4" fill="#c8863e" ${O}/><circle cx="26.4" cy="46" r="2.1" fill="none" stroke="#f0c070" stroke-width="1"/>` +
     `<circle cx="37.6" cy="46" r="4" fill="#c8863e" ${O}/><circle cx="37.6" cy="46" r="2.1" fill="none" stroke="#f0c070" stroke-width="1"/>` +
     `<circle cx="32" cy="42.6" r="4.2" fill="#d89a4a" ${O}/><circle cx="32" cy="42.6" r="2.3" fill="none" stroke="#f6d08a" stroke-width="1"/><circle cx="30.6" cy="41.2" r="1" fill="#fff6d8"/>` +
@@ -305,7 +305,7 @@ export const NPC_SPRITES_A = {
     sleeve(18.4, 42, 3.4, 5.6, 16, '#3aa0a4') + hand(14, 48.4, '#e0a070') +
     sleeve(46, 41.6, 3.4, 5.6, -12, '#2b7f84') + hand(50.2, 41.4, '#c4834f') +
     `<path d="M16 38 Q22 32.6 32 33 Q42 32.6 48 38 L49.4 50 L47 49 L47.6 56 L44.4 52 L42 57 L39 51.4 L36 56.4 L33 51 L29.6 57 L27 51.6 L23.6 56 L21 50.6 L18 55 L17.6 49 L14.6 50Z" fill="#a8743c" ${O}/>` +
-    `<path d="M40 36 Q46.6 38.6 48.4 49 L47 49 L47.6 56 L44.4 52 L42 57 L39 51.4Z" fill="#7c5026" opacity=".6"/>` +
+    `<path d="M40 36 Q46.6 38.6 48.4 49 L47 49 L47.6 56 L44.4 52 L42 57 L39 51.4Z" fill="#8e5e2f"/>` +
     `<path d="M21 38 L19 52 M26 36 L25 52 M31 36 L31 52 M36 36 L36.6 52 M41 37 L42 52" stroke="#d6a868" stroke-width="1" stroke-linecap="round" opacity=".8"/>` +
     head('#e8b88c', '#cf9a6c', 25, 13, 10.4) +
     `<path d="M19.2 25 Q18 30 20.4 33 L22.2 29 Q21.6 27 22 24.6Z M44.8 25 Q46 30 43.6 33 L41.8 29 Q42.4 27 42 24.6Z" fill="${HAIR}" stroke="${K}" stroke-width="1.2" stroke-linejoin="round"/>` +
@@ -460,7 +460,7 @@ export const NPC_SPRITES_A = {
     `<path d="M17 24 Q14.4 36 19.4 40.4 L26 36 L38 36 L44.6 40.4 Q49.6 36 47 24Z" fill="#e8c47a" ${O}/>` +
     head('#e2b080', '#c98f5e', 26, 13.2, 11.2) +
     `<path d="M20 36.4 Q32 42.4 44 36.4 L45.2 41 Q32 47.6 18.8 41Z" fill="#1f9a9a" ${O}/><path d="M24 40.4 Q32 44.6 40 40.4" fill="none" stroke="#7fe0d8" stroke-width="1" opacity=".8"/>` +
-    `<path d="M24 29.6 Q32 34.4 40 29.6" fill="none" stroke="#6a4a30" stroke-width=".8" stroke-dasharray="1 1.4" opacity=".7"/>` +
+    `<path d="M24 29.6 Q32 34.4 40 29.6" fill="none" stroke="#536250" stroke-width=".8" stroke-dasharray="1 1.4"/>` +
     brows(23.6, 5.2, 1.3, '#4a3a2a', 0.2) + happyEyes(26.6, 5.2) + cheeks(30.4, 8.6) + grin(30.6) +
     // turban
     `<path d="M18 22.6 Q16.6 8 32 7 Q47.4 8 46 22.6 Q40 17.4 32 17.4 Q24 17.4 18 22.6Z" fill="#f6efd8" ${O}/>` +
@@ -528,7 +528,7 @@ export const NPC_SPRITES_A = {
     `<path d="M53.6 28.4 L55.6 26 M54.6 31.6 L57.4 31.4 M53 34.6 L55.4 36" stroke="#ffe44d" stroke-width="1.4" stroke-linecap="round"/>` +
     // cheveux ebouriffes
     `<path d="M32 2 L35.6 9 L41.6 4.4 L41.4 12 L48.4 10 L44.6 17 L50.6 20 L45.2 24 L48 31 L42 29 L44 36 L38 32 L32 37 L26 32 L20 36 L22 29 L16 31 L18.8 24 L13.4 20 L19.4 17 L15.6 10 L22.6 12 L22.4 4.4 L28.4 9Z" fill="#b8bcc8" ${O}/>` +
-    `<path d="M32 2 L35.6 9 L41.6 4.4 L41.4 12 L48.4 10 L44.6 17 L50.6 20 L45.2 24 L48 31 L42 29 L44 36 L38 32Z" fill="#8e94a4" opacity=".7"/>` +
+    `<path d="M32 2 L35.6 9 L41.6 4.4 L41.4 12 L48.4 10 L44.6 17 L50.6 20 L45.2 24 L48 31 L42 29 L44 36 L38 32Z" fill="#9ba0af"/>` +
     head('#f0d4b8', '#dab294', 25.6, 12.6, 10.8) +
     `<path d="M22 20 Q27 17 32 19.4 Q37 17 42 20 Q37 18.8 32 21.6 Q27 18.8 22 20Z" fill="#b8bcc8" stroke="${K}" stroke-width="1.2" stroke-linejoin="round"/>` +
     // barbe ebouriffee
@@ -636,12 +636,12 @@ export const CHEST_SPRITES = {
 
   // Coffre ouvert : lueur doree, lingots yuanbao, pieces et jade
   open: svg(
-    `<defs><radialGradient id="open-g1" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#fffbd0"/><stop offset=".55" stop-color="#ffd84a"/><stop offset="1" stop-color="#e59a1a"/></radialGradient></defs>` +
-    `<path d="M32 33 L16 2 L48 2Z" fill="#fff3a0" opacity=".45"/><path d="M32 33 L4 14 L10 6Z M32 33 L60 14 L54 6Z" fill="#fff3a0" opacity=".3"/>` +
+    `` +
+    `<path class="glow" d="M32 33 L16 2 L48 2Z" fill="#fff3a0" opacity=".45"/><path class="glow" d="M32 33 L4 14 L10 6Z M32 33 L60 14 L54 6Z" fill="#fff3a0" opacity=".3"/>` +
     `<path d="M10 37 L13.6 14 Q32 8 50.4 14 L54 37Z" fill="#7a1f1a" ${O}/>` +
     `<path d="M14.6 18 Q32 12.6 49.4 18 L50.4 32 Q32 27 13.6 32Z" fill="#9a2a22"/>` +
     `<rect x="12" y="13.6" width="6" height="22" fill="${GOLD_D}" transform="rotate(-6 15 25)" ${bandO}/><rect x="46" y="13.6" width="6" height="22" fill="#a8761c" transform="rotate(6 49 25)" ${bandO}/>` +
-    `<ellipse cx="32" cy="36" rx="22.4" ry="6.4" fill="url(#open-g1)" ${O}/>` +
+    `<ellipse cx="32" cy="36" rx="22.4" ry="6.4" fill="#ffd84a" ${O}/>` +
     // lingots et pieces
     ingot(20, 33.4, 1.05, '#ffd23a') + ingot(44, 33, 1.05, '#ffc21f') + ingot(32, 29.4, 1.25) +
     coin(24.6, 33.2, 3.1) + coin(40.4, 33.6, 3.1) + `<ellipse cx="32" cy="35.6" rx="3" ry="2" fill="#4fd0a0" ${OT}/>` +

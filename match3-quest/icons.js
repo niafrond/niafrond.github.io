@@ -7,14 +7,19 @@ const S = `stroke="${K}" stroke-width="1.2" stroke-linejoin="round" stroke-linec
 
 export const MANA_HEX = { red: '#e8452e', blue: '#3a7ad8', green: '#4fa34a', yellow: '#f2c14e', purple: '#9a5ac8' };
 
-const orb = c => `<circle cx="8" cy="8" r="6" fill="${c}" ${S}/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/>`;
+// Reflet : aplat opaque (mélange précalculé avec le blanc), jamais d'opacité partielle : les icônes restent en tons francs.
+const lighten = (hex, t) => {
+    const n = parseInt(hex.slice(1), 16);
+    return '#' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => Math.round(v + (255 - v) * t).toString(16).padStart(2, '0')).join('');
+};
+const orb = c => `<circle cx="8" cy="8" r="6" fill="${c}" ${S}/><circle cx="6" cy="6" r="1.8" fill="${lighten(c, 0.55)}"/>`;
 
 const PATHS = {
     // Combat et ressources
     skull: `<path d="M3 7.4 Q3 2 8 2 Q13 2 13 7.4 Q13 10 11 10.6 L11 13.4 L5 13.4 L5 10.6 Q3 10 3 7.4Z" fill="#f4ecd8" ${S}/><circle cx="6" cy="7.4" r="1.4" fill="${K}"/><circle cx="10" cy="7.4" r="1.4" fill="${K}"/><path d="M7 13.4 L7 11.8 M9 13.4 L9 11.8" fill="none" ${S}/>`,
     arrow: `<path d="M2.6 13.4 L12 4" fill="none" stroke="${K}" stroke-width="2.6" stroke-linecap="round"/><path d="M2.6 13.4 L12 4" fill="none" stroke="#c9a448" stroke-width="1.2" stroke-linecap="round"/><path d="M13.8 2.2 L9.6 3.6 L12.4 6.4Z" fill="#cfd6de" ${S}/><path d="M2 11 L4.2 11.8 L5 14 M3.6 9.6 L5.6 10.4 L6.4 12.4" fill="none" stroke="#d9452e" stroke-width="1.2"/>`,
     coin: `<circle cx="8" cy="8" r="6" fill="#f2c14e" ${S}/><rect x="6.4" y="6.4" width="3.2" height="3.2" fill="#b8862a" ${S}/>`,
-    heart: `<path d="M8 13.6 Q2 9.6 2 5.8 Q2 2.8 5 2.8 Q7 2.8 8 4.8 Q9 2.8 11 2.8 Q14 2.8 14 5.8 Q14 9.6 8 13.6Z" fill="#e8452e" ${S}/><circle cx="5.2" cy="5.6" r="1.1" fill="#fff" opacity=".6"/>`,
+    heart: `<path d="M8 13.6 Q2 9.6 2 5.8 Q2 2.8 5 2.8 Q7 2.8 8 4.8 Q9 2.8 11 2.8 Q14 2.8 14 5.8 Q14 9.6 8 13.6Z" fill="#e8452e" ${S}/><circle cx="5.2" cy="5.6" r="1.1" fill="#f4a89c"/>`,
     star: `<path d="M8 1.6 L9.9 5.8 L14.4 6.2 L11 9.2 L12 13.8 L8 11.4 L4 13.8 L5 9.2 L1.6 6.2 L6.1 5.8Z" fill="#f2c14e" ${S}/>`,
     spark: `<path d="M8 1.4 L9.3 6.7 L14.6 8 L9.3 9.3 L8 14.6 L6.7 9.3 L1.4 8 L6.7 6.7Z" fill="#fbe08a" ${S}/>`,
     shield: `<path d="M8 1.8 L13.4 3.8 Q13.4 10.4 8 14.2 Q2.6 10.4 2.6 3.8Z" fill="#7aa0c8" ${S}/><path d="M8 3.6 L8 12.4" fill="none" stroke="#dbe8f4" stroke-width="1.2"/>`,
@@ -75,7 +80,7 @@ const PATHS = {
     dice: `<rect x="2.4" y="2.4" width="11.2" height="11.2" rx="2" fill="#fff" ${S}/><circle cx="5.4" cy="5.4" r="1" fill="${K}"/><circle cx="8" cy="8" r="1" fill="${K}"/><circle cx="10.6" cy="10.6" r="1" fill="${K}"/>`,
     hourglass: `<path d="M3.4 1.8 L12.6 1.8 M3.4 14.2 L12.6 14.2 M4.4 1.8 Q4.4 6 8 8 Q4.4 10 4.4 14.2 L11.6 14.2 Q11.6 10 8 8 Q11.6 6 11.6 1.8Z" fill="#f4e2b0" ${S}/><path d="M6 13 Q8 10.4 10 13Z" fill="#c9a448"/>`,
     poison: `<circle cx="8" cy="9.4" r="5" fill="#7aba4a" ${S}/><path d="M6.4 1.8 L9.6 1.8 L9.6 4.4 L6.4 4.4Z" fill="#a8b0bc" ${S}/><circle cx="6.4" cy="9" r="1" fill="${K}"/><circle cx="9.6" cy="9" r="1" fill="${K}"/>`,
-    blood: `<path d="M8 1.8 Q13 8 13 10.2 Q13 14.2 8 14.2 Q3 14.2 3 10.2 Q3 8 8 1.8Z" fill="#c42a2a" ${S}/><circle cx="6.2" cy="10.4" r="1.1" fill="#fff" opacity=".55"/>`,
+    blood: `<path d="M8 1.8 Q13 8 13 10.2 Q13 14.2 8 14.2 Q3 14.2 3 10.2 Q3 8 8 1.8Z" fill="#c42a2a" ${S}/><circle cx="6.2" cy="10.4" r="1.1" fill="#e6a0a0"/>`,
     snow: `<path d="M8 1.6 L8 14.4 M2.4 4.8 L13.6 11.2 M13.6 4.8 L2.4 11.2" fill="none" stroke="#7fc8e0" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="8" r="1.6" fill="#dbf0fa" ${S}/>`,
     swirl: `<circle cx="8" cy="8" r="6.4" fill="#cfe6f6" ${S}/><path d="M8 8 Q8 6 10 6.4 Q12 7.6 11 10 Q9.4 12.4 6.4 11.4 Q3.6 10 4 7 Q4.8 3.6 8.4 3.4" fill="none" stroke="#3a7ad8" stroke-width="1.3" stroke-linecap="round"/>`,
     mirror: `<ellipse cx="8" cy="6.6" rx="4.6" ry="5" fill="#c9a448" ${S}/><ellipse cx="8" cy="6.6" rx="3" ry="3.4" fill="#e8f0f6"/><path d="M8 11.6 L8 14.6 M5.6 14.6 L10.4 14.6" fill="none" ${S}/>`,
