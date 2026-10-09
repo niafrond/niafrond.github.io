@@ -17,7 +17,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
@@ -592,7 +592,7 @@ export function createExplorationView(cfg) {
             <div class="bt-flash"></div>
             <div class="bt-title">
                 <div class="bt-emoji">${encSprite
-                    ? `<img class="bt-sprite" alt="" src="${spriteUri(encSprite)}">`
+                    ? `<img class="bt-sprite" alt="" src="${spriteUri(encSprite, PX_GRID_BIG)}" data-small="${spriteUri(encSprite)}">`
                     : icon('sword')}</div>
                 <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
                 <div class="bt-level">${enc.boss ? `${icon('crown')} Boss · ` : ''}Niveau ${enc.level}</div>
@@ -604,7 +604,8 @@ export function createExplorationView(cfg) {
             battleTransitionTimer = null;
             if (!enc.boss) { done(); return; }
             // Boss : échange de répliques avant le combat
-            const spriteHtml = overlay.querySelector('.bt-emoji')?.innerHTML || icon('crown');
+            const big = overlay.querySelector('.bt-sprite');   // portrait de 52 px : la définition 32, pas le grand plan (64) réduit
+            const spriteHtml = big ? `<img class="bt-sprite" alt="" src="${big.dataset.small || big.getAttribute('src')}">` : icon('crown');
             overlay.classList.add('with-dialog');
             playBossDialogue(overlay, enc, spriteHtml).then(() => { if (battleTransitionEl === overlay) done(); });
         }, reduced ? 500 : BATTLE_TRANSITION_MS);

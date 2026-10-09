@@ -6,7 +6,6 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
-import { viewSprite, HERO_VIEW_OPTS } from "./sprites/side.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
@@ -1184,15 +1183,16 @@ function _animateCounter(id, from, to) {
 // Dessins des combattants (héros à gauche tourné vers la droite, ennemi à droite tourné vers la gauche) : posés en variable CSS
 // `--portrait` des panneaux de stats (pseudo-élément ::after), donc sans clignotement quand le panneau est reconstruit.
 function updateFighterPortraits(){
-    const set = (id, svg, dir, opts) => {
+    // Vue de face : la vue de profil dérivée (corps et visage resserrés) écrasait les personnages en largeur à cette taille.
+    const set = (id, svg) => {
         const el = document.getElementById(id);
         if(!el) return;
-        const view = svg ? viewSprite(svg, dir, opts) : null;
+        const view = svg || null;
         if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
         else el.style.removeProperty('--portrait');
     };
-    set('player-stats', heroSprite(player.class) || heroSprite('assassin'), 'right', HERO_VIEW_OPTS);
-    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId, enemy.biome), 'left');
+    set('player-stats', heroSprite(player.class) || heroSprite('assassin'));
+    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId, enemy.biome));
 }
 
 export function updateStats(){

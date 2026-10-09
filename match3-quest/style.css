@@ -1741,7 +1741,7 @@ progress.enemy-bar::-webkit-progress-value {
 }
 
 .bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.5s ease-out 1.15s both; }
-.bt-sprite { display: block; width: min(220px, 40vw); height: min(220px, 40vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
+.bt-sprite { display: block; width: min(256px, 45vw); height: min(256px, 45vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
 .bt-name { font-size: 1.6em; font-weight: bold; }
 .bt-level { font-size: 1em; opacity: 0.85; }
 
@@ -3018,16 +3018,17 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 #player-stats, #enemy-stats { position: relative; }
 #player-stats::after, #enemy-stats::after {
     content: '';
-    position: absolute; right: 4px; top: 4px; width: 46px; height: 46px;
+    position: absolute; right: 4px; top: 2px; width: 64px; height: 64px;
     background: var(--portrait, none) center bottom / contain no-repeat;
+    image-rendering: pixelated;
     pointer-events: none;
 }
 #player-stats[style*="--portrait"] .stat:nth-child(-n+2),
-#enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 46px; }
+#enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 64px; }
 @media (max-width: 820px) {
-    #player-stats::after, #enemy-stats::after { width: 38px; height: 38px; }
+    #player-stats::after, #enemy-stats::after { width: 52px; height: 52px; }
     #player-stats[style*="--portrait"] .stat:nth-child(-n+2),
-    #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 38px; }
+    #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 52px; }
 }
 
 /* Sorts multi-mana : barre dégradée aux deux couleurs sous le bouton, « + » discret entre les coûts */

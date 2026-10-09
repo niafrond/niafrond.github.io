@@ -138,81 +138,108 @@ export function pixelate(svg) {
 const rawUri = svg => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 
 // ── Pixellisation nette (canvas) ───────────────────────────────────────────
-// Le dessin vectoriel est rastérisé à 128 px puis échantillonné sur une grille de 32 × 32 « pixels » : chaque pixel prend la couleur
-// moyenne des points opaques de son bloc de 4 × 4 (couverture ≥ 50 % → opaque, sinon transparent : bords nets, sans anti-crénelage),
-// quantifiée à 8 niveaux par couche. Le résultat est agrandi ×4 SANS lissage (128 × 128) ; à l'écran il se dessine avec
-// `imageSmoothingEnabled = false` (canvas) ou `image-rendering: pixelated` (balises img), donc jamais flou.
-// Tant que la conversion n'est pas prête (asynchrone), spriteUri renvoie la version filtrée SVG, remplacée ensuite dans les <img>.
-const PX_GRID = 32, PX_BIG = 128, PX_LEVELS = 8;
-const pixelDone = new Map();      // svg → { canvas, uri }
-const pixelPending = new Map();   // svg → Promise
+// Le dessin vectoriel est rastérisé à 4 × la grille puis échantillonné : chaque « pixel » de la grille prend la couleur DOMINANTE de
+// son bloc de 4 × 4 (et non la moyenne : pas de teintes boueuses ni de bruit sur les aplats), à condition que la couverture soit ≥ 50 %
+// (sinon transparent : bords nets, sans anti-crénelage), quantifiée à 6 niveaux par couche ; les pixels très sombres retombent sur
+// la couleur du contour. Deux définitions, comme sur GBA :
+//   - grille 32 (défaut) : sprites de carte et vignettes, contour de 1 pixel ;
+//   - grille 64 : grands plans (écran de rencontre), contour du dessin affiné pour garder un trait d'un pixel.
+// Le résultat est agrandi ×4 SANS lissage ; à l'écran il se dessine avec `imageSmoothingEnabled = false` (canvas) ou
+// `image-rendering: pixelated` (balises img), donc jamais flou. Tant que la conversion n'est pas prête (asynchrone), spriteUri renvoie la
+// version filtrée SVG, remplacée ensuite dans les <img>.
+export const PX_GRID_BIG = 64;
+const PX_GRID = 32, PX_LEVELS = 6, PX_SAMPLE = 4;
+const OUTLINE_RGB = [43, 27, 23];
+const pixelDone = new Map();      // `${grille}|${svg}` → { canvas, uri }
+const pixelPending = new Map();   // idem → Promise
 const q = v => Math.round(Math.round(v / 255 * (PX_LEVELS - 1)) * 255 / (PX_LEVELS - 1));
+const pxKey = (svg, grid) => `${grid}|${svg}`;
+const normGrid = grid => (grid === PX_GRID_BIG ? PX_GRID_BIG : PX_GRID);
+// Trait d'un pixel quelle que soit la grille : le contour (2 sur 64) est affiné pour la grille 64.
+const thinStrokes = svg => svg.replace(/stroke-width="([\d.]+)"/g, (m, w) => `stroke-width="${(w * 0.6).toFixed(2)}"`);
 
-function buildPixelCanvas(img) {
+function buildPixelCanvas(img, grid) {
+    const S = grid * PX_SAMPLE;
     const big = document.createElement('canvas');
-    big.width = big.height = PX_BIG;
+    big.width = big.height = S;
     const bg = big.getContext('2d', { willReadFrequently: true });
-    bg.drawImage(img, 0, 0, PX_BIG, PX_BIG);
-    const src = bg.getImageData(0, 0, PX_BIG, PX_BIG).data;
+    bg.drawImage(img, 0, 0, S, S);
+    const src = bg.getImageData(0, 0, S, S).data;
     const small = document.createElement('canvas');
-    small.width = small.height = PX_GRID;
+    small.width = small.height = grid;
     const sg = small.getContext('2d');
-    const out = sg.createImageData(PX_GRID, PX_GRID);
-    const B = PX_BIG / PX_GRID;
-    for (let cy = 0; cy < PX_GRID; cy++) for (let cx = 0; cx < PX_GRID; cx++) {
-        let r = 0, g = 0, b = 0, w = 0;
+    const out = sg.createImageData(grid, grid);
+    const B = PX_SAMPLE;
+    for (let cy = 0; cy < grid; cy++) for (let cx = 0; cx < grid; cx++) {
+        let n = 0;
+        const buckets = new Map();
         for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
-            const i = ((cy * B + y) * PX_BIG + cx * B + x) * 4, a = src[i + 3];
-            if (a < 8) continue;
-            r += src[i] * a; g += src[i + 1] * a; b += src[i + 2] * a; w += a;
+            const i = ((cy * B + y) * S + cx * B + x) * 4;
+            if (src[i + 3] < 96) continue;
+            n++;
+            const key = (src[i] >> 5) << 6 | (src[i + 1] >> 5) << 3 | (src[i + 2] >> 5);
+            let e = buckets.get(key);
+            if (!e) { e = { n: 0, r: 0, g: 0, b: 0 }; buckets.set(key, e); }
+            e.n++; e.r += src[i]; e.g += src[i + 1]; e.b += src[i + 2];
         }
-        const o = (cy * PX_GRID + cx) * 4;
-        if (w / (B * B * 255) >= 0.5) {
-            out.data[o] = q(r / w); out.data[o + 1] = q(g / w); out.data[o + 2] = q(b / w); out.data[o + 3] = 255;
-        }
+        if (n < B * B * 0.5) continue;
+        let best = null;
+        for (const e of buckets.values()) if (!best || e.n > best.n) best = e;
+        let r = best.r / best.n, g = best.g / best.n, b = best.b / best.n;
+        const o = (cy * grid + cx) * 4;
+        if (Math.abs(r - 43) + Math.abs(g - 27) + Math.abs(b - 23) < 60) [r, g, b] = OUTLINE_RGB;   // contour : couleur exacte (la quantification la verdirait)
+        else { r = q(r); g = q(g); b = q(b); }
+        out.data[o] = r; out.data[o + 1] = g; out.data[o + 2] = b; out.data[o + 3] = 255;
     }
     sg.putImageData(out, 0, 0);
     const up = document.createElement('canvas');
-    up.width = up.height = PX_BIG;
+    up.width = up.height = grid * 4;
     const ug = up.getContext('2d');
     ug.imageSmoothingEnabled = false;
-    ug.drawImage(small, 0, 0, PX_BIG, PX_BIG);
+    ug.drawImage(small, 0, 0, up.width, up.height);
     return up;
 }
 
-// Canvas pixellisé du sprite (128 × 128) s'il est prêt, sinon null et la conversion démarre.
-export function pixelSprite(svg) {
+// Canvas pixellisé du sprite (4 × la grille) s'il est prêt, sinon null et la conversion démarre.
+export function pixelSprite(svg, grid = PX_GRID) {
     if (!svg || typeof document === 'undefined') return null;
-    const done = pixelDone.get(svg);
+    const g = normGrid(grid);
+    const done = pixelDone.get(pxKey(svg, g));
     if (done) return done.canvas;
-    preparePixelSprite(svg);
+    preparePixelSprite(svg, g);
     return null;
 }
 
-export function preparePixelSprite(svg) {
+export function preparePixelSprite(svg, grid = PX_GRID) {
     if (!svg || typeof document === 'undefined' || !/^\s*<svg[\s>]/.test(svg)) return Promise.resolve();
-    if (pixelDone.has(svg)) return Promise.resolve();
-    if (!pixelPending.has(svg)) {
-        pixelPending.set(svg, (async () => {
-            const img = spriteImage(svg);
+    const g = normGrid(grid);
+    const key = pxKey(svg, g);
+    if (pixelDone.has(key)) return Promise.resolve();
+    if (!pixelPending.has(key)) {
+        pixelPending.set(key, (async () => {
+            const img = g === PX_GRID ? spriteImage(svg) : Object.assign(new Image(), { src: rawUri(thinStrokes(svg)) });
             if (!(img.complete && img.naturalWidth)) await (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }));
-            const canvas = buildPixelCanvas(img);
+            const canvas = buildPixelCanvas(img, g);
             const uri = canvas.toDataURL('image/png');
-            pixelDone.set(svg, { canvas, uri });
+            pixelDone.set(key, { canvas, uri });
             // les <img> qui affichaient la version de repli passent à la version nette
-            const fallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pixelate(svg))}`;
+            const fallback = fallbackUri(svg, g);
             document.querySelectorAll?.('img').forEach(el => { if (el.getAttribute('src') === fallback) el.setAttribute('src', uri); });
-        })().catch(() => {}).finally(() => pixelPending.delete(svg)));
+        })().catch(() => {}).finally(() => pixelPending.delete(key)));
     }
-    return pixelPending.get(svg);
+    return pixelPending.get(key);
 }
 
-export function spriteUri(svg) {
+// Version de repli (filtre SVG) : le fragment distingue les grilles pour que chaque <img> reçoive la bonne version nette.
+const fallbackUri = (svg, grid) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pixelate(svg))}${grid === PX_GRID ? '' : `#g${grid}`}`;
+
+export function spriteUri(svg, grid = PX_GRID) {
     if (!svg) return '';
-    const done = pixelDone.get(svg);
+    const g = normGrid(grid);
+    const done = pixelDone.get(pxKey(svg, g));
     if (done) return done.uri;
-    preparePixelSprite(svg);
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pixelate(svg))}`;
+    preparePixelSprite(svg, g);
+    return fallbackUri(svg, g);
 }
 
 const imageCache = new Map();
@@ -246,7 +273,8 @@ export function retainSprites(svgs) {
         if (keep.has(svg)) continue;
         img.removeAttribute('src');
         imageCache.delete(svg);
-        pixelDone.delete(svg);
+        pixelDone.delete(pxKey(svg, PX_GRID));
+        pixelDone.delete(pxKey(svg, PX_GRID_BIG));
     }
 }
 
