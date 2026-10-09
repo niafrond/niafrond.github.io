@@ -27,18 +27,20 @@ Une région = **un écran** (14×10) contenant un coin village (PNJ, quêtes) et
 | # | id (écran = région) | Nom | Niveau d'accès | Biome (voir §6) | Soleil-Boss (id d'ennemi) | Particularité |
 |---|---|---|---|---|---|---|
 | 1 | `rizieres` | Rizières Desséchées | 1 | `paddy` | `sun_1` Soleil Ardent | Tutoriel. Maison de Hou Yi et Chang'e. **Fengmeng, rencontre 1** (duel d'entraînement) |
-| 2 | `fleuve` | Lit du Fleuve Jaune | 2 | `riverbed` | `sun_2` Soleil des Eaux Taries | Fleuve asséché, passeur |
-| 3 | `bambous` | Forêt de Bambous Calcinée | 3 | `bamboo` | `sun_3` Soleil de Cendres | Moine, herboriste |
-| 4 | `gobi` | Désert de Gobi | 5 | `gobi` | `sun_4` Soleil des Mirages | **Illusions** : le vrai soleil parmi des doubles |
-| 5 | `tonnerre` | Monts du Tonnerre | 7 | `storm` | `sun_5` Soleil des Orages | Forgeron, ermite |
-| 6 | `volcan` | Gorges du Volcan | 9 | `volcano` | `sun_6` Soleil de Magma | **Fengmeng, rencontre 2** (embuscade, duel d'archers) sur la route du 6ᵉ soleil |
-| 7 | `fauves` | Plaine des Fauves | 11 | `savanna` | `sun_7` Soleil des Bêtes Folles | Meutes embrasées : le soleil est **protégé** tant que la meute n'est pas abattue |
-| 8 | `mer` | Rivage de la Mer Orientale | 13 | `coast` | `sun_8` Soleil des Marées | Pêcheurs, envoyé du Roi-Dragon |
-| 9 | `fusang` | Cime du Fusang | 15 | `fusang` | `sun_9` Soleil Lâche | Il utilise le 10ᵉ soleil (PNJ `sun_ten`) comme bouclier : tir de précision, **ne pas toucher le dernier soleil** |
-| 10 | `lune` | Pic de la Lune | 16 | `moon` | — | Finale : Chang'e, **Fengmeng, boss final en 2 phases**, autel des gâteaux de lune, épilogue, NG+ |
+| 2 | `fleuve` | Lit du Fleuve Jaune | 4 | `riverbed` | `sun_2` Soleil des Eaux Taries | Fleuve asséché, passeur |
+| 3 | `bambous` | Forêt de Bambous Calcinée | 6 | `bamboo` | `sun_3` Soleil de Cendres | Moine, herboriste |
+| 4 | `gobi` | Désert de Gobi | 11 | `gobi` | `sun_4` Soleil des Mirages | **Illusions** : le vrai soleil parmi des doubles |
+| 5 | `tonnerre` | Monts du Tonnerre | 17 | `storm` | `sun_5` Soleil des Orages | Forgeron, ermite |
+| 6 | `volcan` | Gorges du Volcan | 22 | `volcano` | `sun_6` Soleil de Magma | **Fengmeng, rencontre 2** (embuscade, duel d'archers) sur la route du 6ᵉ soleil |
+| 7 | `fauves` | Plaine des Fauves | 27 | `savanna` | `sun_7` Soleil des Bêtes Folles | Meutes embrasées : le soleil est **protégé** tant que la meute n'est pas abattue |
+| 8 | `mer` | Rivage de la Mer Orientale | 32 | `coast` | `sun_8` Soleil des Marées | Pêcheurs, envoyé du Roi-Dragon |
+| 9 | `fusang` | Cime du Fusang | 37 | `fusang` | `sun_9` Soleil Lâche | Il utilise le 10ᵉ soleil (PNJ `sun_ten`) comme bouclier : tir de précision, **ne pas toucher le dernier soleil** |
+| 10 | `lune` | Pic de la Lune | 40 | `moon` | — | Finale : Chang'e, **Fengmeng, boss final en 2 phases**, autel des gâteaux de lune, épilogue, NG+ |
 
-Niveaux des soleils (`boss.level`, en pratique ≥ niveau du joueur) : `sun_1` 3, `sun_2` 4, `sun_3` 5, `sun_4` 7, `sun_5` 9,
-`sun_6` 11, `sun_7` 13, `sun_8` 15, `sun_9` 17.
+Niveaux des soleils (`boss.level`, niveau de base ; `weakenedBy` en retire jusqu'à 2) : `sun_1` 6, `sun_2` 9, `sun_3` 14, `sun_4` 19, `sun_5` 24,
+`sun_6` 30, `sun_7` 35, `sun_8` 40, `sun_9` 45 ; Fengmeng : 4, 24, 45 puis 48 (niveau maximal du joueur : 70). Échelle : l'aventure couvre
+désormais les niveaux 1 à 48 (ancienne échelle × 2,6) ; gardes de sanctuaire = niveau de la région + 2, ennemis nommés de zone sauvage et
+souterrains en proportion.
 
 ### Fengmeng (rival, ids d'ennemis FIXES)
 - `fengmeng_1` : rencontre 1, duel d'entraînement à `rizieres` (le disciple agressif, jaloux).

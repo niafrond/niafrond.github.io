@@ -103,7 +103,7 @@ export default {
             { id: 'bandit_stash', at: 'm', gold: 180 }
         ],
         enemies: [
-            { id: 'gobi_dune_warlord', at: '1', templateId: 'orc_warmaster', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 5 } },
+            { id: 'gobi_dune_warlord', at: '1', templateId: 'orc_warmaster', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 11 } },
             { id: 'gobi_golem_a', at: '2', templateId: 'sand_colossus', name: 'Golem des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
             { id: 'gobi_golem_b', at: '3', templateId: 'sand_colossus', name: 'Golem des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
             { id: 'gobi_w_bandit', at: '4', templateId: 'iron_gladiator', name: 'Brigand des dunes', kind: 'patrol', patrol: ['4', '5'], offset: 0 },

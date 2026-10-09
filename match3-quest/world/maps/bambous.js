@@ -101,7 +101,7 @@ export default {
             { id: 'ash_urn', at: 'm', gold: 135 }
         ],
         enemies: [
-            { id: 'bambous_seal_keeper', at: '1', templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 3 } },
+            { id: 'bambous_seal_keeper', at: '1', templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 6 } },
             { id: 'bambous_ember_wisp', at: '2', templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_ember_wisp_b', at: '3', templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_w_shade', at: '4', templateId: 'shadow_assassin', name: 'Ombre de cendre', kind: 'patrol', patrol: ['4', '5'], offset: 0 },

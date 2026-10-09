@@ -103,7 +103,7 @@ export default {
             { id: 'reed_stash', at: 'm', gold: 60 }
         ],
         enemies: [
-            { id: 'fleuve_sluice_golem', at: '1', templateId: 'iron_gladiator', name: 'Golem de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Golem de l\'écluse', level: 2 } },
+            { id: 'fleuve_sluice_golem', at: '1', templateId: 'iron_gladiator', name: 'Golem de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Golem de l\'écluse', level: 4 } },
             { id: 'fleuve_salt_thief', at: '2', templateId: 'shadow_assassin', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fleuve_w_doctor', at: '3', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },
             { id: 'fleuve_w_serpent', at: '4', templateId: 'deep_sea_serpent', name: 'Serpent de vase', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
