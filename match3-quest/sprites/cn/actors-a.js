@@ -188,20 +188,6 @@ export const HERO_SPRITES = {
   ),
 };
 
-// ---------- Pourparlers : petits outils des PNJ des soleils 2, 3 et 5 ----------
-// Trait epais a contour (algue, bras minuscule, baguette) : dessous sombre + dessus colore.
-const cord = (d, w, fill) =>
-  `<path d="${d}" fill="none" stroke="${K}" stroke-width="${w + 3}" stroke-linecap="round" stroke-linejoin="round"/>` +
-  `<path d="${d}" fill="none" stroke="${fill}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-const pearl = (x, y, r = 1.7) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#eaf8fb" stroke="${K}" stroke-width="1"/>`;
-// Eclair en zigzag (mèche de Rongrong), pointe vers le bas.
-const bolt = (x, y, s = 1) =>
-  `<path transform="translate(${x} ${y}) scale(${s})" d="M0 0 L5 0 L3 4.2 L6 4.2 L-0.8 11.4 L1.2 6 L-1.6 6Z" fill="#ffe35c" stroke="${K}" stroke-width="${(1.5 / s).toFixed(2)}" stroke-linejoin="round"/>`;
-// Yeux alignes sur la grille de pixellisation (pixels de 2 unites) : rectangles de 2 x h unites aux colonnes impaires.
-const pxEyes = (y, h = 4, x1 = 27, x2 = 37, w = 2) =>
-  `<rect x="${x1 - w / 2}" y="${y}" width="${w}" height="${h}" rx=".5" fill="${K}"/><rect x="${x2 - w / 2}" y="${y}" width="${w}" height="${h}" rx=".5" fill="${K}"/>`;
-const spark = (x, y, c = '#ffd870') => `<path d="M${x} ${y - 3} L${x + 1} ${y - 1} L${x + 3} ${y} L${x + 1} ${y + 1} L${x} ${y + 3} L${x - 1} ${y + 1} L${x - 3} ${y} L${x - 1} ${y - 1}Z" fill="${c}"/>`;
-
 export const NPC_SPRITES_A = {
   // Chang'e : robe claire a haute ceinture jade, epingles a cheveux, plateau de gateaux de lune
   change: svg(
@@ -537,75 +523,6 @@ export const NPC_SPRITES_A = {
     `<path d="M26 37.6 L27 42 M38 37.6 L37 42 M32 39 L32 43.6" stroke="#9aa0b0" stroke-width="1" stroke-linecap="round"/>` +
     `<path d="M22.8 24.4 Q26.4 19.8 30.6 23 Q27 24.4 22.8 24.4Z M41.2 24.4 Q37.6 19.8 33.4 23 Q37 24.4 41.2 24.4Z" fill="#e4e6ec" ${OT}/>` +
     eyes(26.8, 5.2) + cheeks(30.2, 8.2) + `<path d="M29 31.6 Q32 35 35 31.6Z" fill="#8e2a3a" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>`
-  ),
-
-  // ---------- Pourparlers (fleuve boueux, bambous cendres, tonnerre) ----------
-  // Yuan, doyen des noyes (parley_sun2) : vieux noye venerable, peau bleutee, robe detrempee ourlee de boue,
-  // algues et perles d'eau, longue barbe de joncs, regard doux.
-  parley_sun2: svg(
-    `<ellipse cx="32" cy="22" rx="14.8" ry="12.6" fill="#dfe7e9" ${O}/><ellipse cx="32" cy="9.6" rx="4.6" ry="4.4" fill="#dfe7e9" ${O}/>` +
-    `<path d="M18 55 Q14.6 45 22.4 35 L41.6 35 Q49.4 45 46 55 L44.4 59 L41.4 56.6 L38.6 59.6 L35.6 56.8 L32 60 L28.4 56.8 L25.4 59.6 L22.6 56.6 L19.6 59Z" fill="#4d7683" ${O}/>` +
-    `<path d="M39 38 Q47 46 45.4 54.6 L40.4 55.6 Q43.4 46 39 38Z" fill="#38596a"/>` +
-    `<path d="M18.2 51.4 Q32 56.2 45.8 51.4 L45.4 54.4 Q32 59 18.6 54.4Z" fill="#a67c3a"/>` +
-    `<path d="M24 36.4 L32 44 L40 36.4" fill="none" stroke="#a67c3a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
-    cord('M23.6 37.4 Q30 40.6 27.4 46 Q24.4 50.6 30.6 52.6 Q36.4 54.2 40.4 50.6', 2.8, '#3f8a4c') +
-    pearl(24.4, 52.2) + pearl(39.6, 46.6) + pearl(35.6, 56.2, 1.5) + pearl(21.4, 47.6, 1.5) +
-    sleeve(19.4, 44.6, 4.6, 7, 12, '#4d7683') + hand(17.8, 51.8, '#a6cddb') +
-    sleeve(44.6, 44.6, 4.6, 7, -12, '#38596a') + hand(46.2, 51.8, '#a6cddb') +
-    head('#a6cddb', '#7eaabd', 25, 13.2, 11.4) +
-    `<path d="M19.4 22 Q19 14 32 13.4 Q45 14 44.6 22 Q41 18.8 36 19 Q32 17.8 28 19 Q23 18.8 19.4 22Z" fill="#dfe7e9"/>` +
-    `<path d="M22.4 23 Q26 21 30.2 23.4 M41.6 23 Q38 21 33.8 23.4" fill="none" stroke="#f4f8f8" stroke-width="2.2" stroke-linecap="round"/>` +
-    pxEyes(28, 2, 28, 36, 4) +
-    `<path d="M20.4 30 L18.6 40 L23 37.6 L22.4 48 L27 41.6 L28.6 52 L32 44 L35.4 52 L37 41.6 L41.6 48 L41 37.6 L45.4 40 L43.6 30 Q38.4 35.6 32 34.6 Q25.6 35.6 20.4 30Z" fill="#a3a95a" ${O}/>` +
-    `<path d="M37 41.6 L41.6 48 L41 37.6 L45.4 40 L43.6 30 Q41 33 38 34.4Z" fill="#767d3a"/>` +
-    `<path d="M24.6 36 L24.6 41 M28.6 38 L28.6 46 M32 38.6 L32 43 M35.6 38 L35.6 46" fill="none" stroke="#767d3a" stroke-width="1.1" stroke-linecap="round"/>` +
-    `<path d="M29.6 32.6 Q32 34 34.4 32.6" fill="none" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>` +
-    cord('M22.4 13.6 Q14.6 14 15.4 22.4 Q16.4 29 13.6 34.4', 2.6, '#3f8a4c') +
-    `<ellipse cx="38.4" cy="8.4" rx="3.4" ry="1.7" transform="rotate(-24 38.4 8.4)" fill="#3f8a4c" ${OT}/>`
-  ),
-
-  // Tintement, ame de la cloche felee (parley_sun3) : petit esprit en cloche de bronze patine, anse en chignon
-  // piquee d'une epingle, fissure lumineuse, lueur chaude au visage, bras minuscules, air timide.
-  parley_sun3: svg(
-    `<ellipse cx="22.6" cy="58" rx="4.2" ry="2.2" fill="#8a5a22" ${O}/><ellipse cx="41.4" cy="58" rx="4.2" ry="2.2" fill="#8a5a22" ${O}/>` +
-    `<path fill-rule="evenodd" d="M25 8.6 a7 5.4 0 1 0 14 0 a7 5.4 0 1 0 -14 0Z M28.6 8.8 a3.4 2.6 0 1 0 6.8 0 a3.4 2.6 0 1 0 -6.8 0Z" fill="#c98a3a" ${O}/>` +
-    `<path d="M24 17 Q32 12.4 40 17 Q43.4 28 46.6 38 Q49.6 46 53 51 Q32 54.6 11 51 Q14.4 46 17.4 38 Q20.6 28 24 17Z" fill="#c98a3a" ${O}/>` +
-    `<path d="M24.8 19.6 Q22.6 30 19 40 Q17.2 45 15.4 48 L20.6 47 Q23 41 26 30Z" fill="#e9b45e"/>` +
-    `<ellipse cx="30" cy="36" rx="11.6" ry="11.4" fill="#f0bf68"/><ellipse cx="29.6" cy="35.6" rx="8.8" ry="8.6" fill="#ffdf94"/>` +
-    `<path d="M23.6 19.6 Q32 15.6 40.4 19.6" fill="none" stroke="#8a5a22" stroke-width="1.6" stroke-linecap="round"/>` +
-    `<path d="M10.8 49.6 Q9 58 16 58 L48 58 Q55 58 53.2 49.6 Q32 54 10.8 49.6Z" fill="#6f9a86" ${O}/>` +
-    `<path d="M14 53.2 Q20 55.4 27 55.4" fill="none" stroke="#a9cdb8" stroke-width="1.4" stroke-linecap="round"/>` +
-    `<path d="M41.5 15.6 L38.4 22.4 L41.6 27.6 L38.2 33 L41.4 38.6 L37.8 44.6 L39.8 51" fill="none" stroke="${K}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>` +
-    `<path d="M41.5 15.6 L38.4 22.4 L41.6 27.6 L38.2 33 L41.4 38.6 L37.8 44.6 L39.8 51" fill="none" stroke="#fff3b8" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"/>` +
-    `<path d="M21.6 6.2 L42.4 4" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><path d="M21.6 6.2 L42.4 4" stroke="${GOLD}" stroke-width="1.6" stroke-linecap="round"/>` +
-    // yeux ronds baisses, sourcils inquiets, joues rouges, petite bouche tremblante
-    `${pxEyes(32, 4, 25, 35)}` +
-    `<ellipse cx="21.6" cy="39.4" rx="2.6" ry="1.6" fill="#ff7f6a" opacity=".7"/><ellipse cx="36.8" cy="39.4" rx="2.4" ry="1.5" fill="#ff7f6a" opacity=".7"/>` +
-    `<path d="M27.4 41.6 Q28.8 40.4 30 41.6 Q31.2 42.8 32.6 41.4" fill="none" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>` +
-    cord('M17.4 40.4 L27 46.6', 3.2, '#c98a3a') + cord('M44.6 40.4 L33.4 46.8', 3.2, '#b9772e') +
-    `<circle cx="28" cy="47.4" r="2.5" fill="#f6cf86" ${O}/><circle cx="33" cy="47.6" r="2.5" fill="#f6cf86" ${O}/>` +
-    spark(8.4, 22) + spark(56.2, 30, '#ffe9a0') + spark(9.4, 44, '#ffe9a0')
-  ),
-
-  // Rongrong, petite voix du tonnerre (parley_sun5) : enfant-esprit a nuage d'orage pour chapeau, meches en eclairs,
-  // petit tambour au ventre et baguettes levees, sourire espiegle ; violet-gris de l'orage.
-  parley_sun5: svg(
-    cord('M18 47.4 L7.4 36.4', 2, '#e0b070') + `<circle cx="6.4" cy="35.2" r="2.5" fill="#ffe35c" ${OT}/>` +
-    cord('M46 47.4 L56.6 36.4', 2, '#e0b070') + `<circle cx="57.6" cy="35.2" r="2.5" fill="#ffe35c" ${OT}/>` +
-    feet('#3a2f55', 57.4, 4.4) +
-    `<path d="M22 57 Q20 47 24.6 39 L39.4 39 Q44 47 42 57 Q32 59.6 22 57Z" fill="#5b4f8c" ${O}/>` +
-    `<path d="M37.4 41 Q43 48 41.2 56 L37.6 56.6 Q40 48 37.4 41Z" fill="#43386a"/>` +
-    `<path d="M22.4 54 L25 56 L27.6 54 L30.2 56.2 L32.8 54 L35.4 56.2 L38 54 L40.6 56 L41.6 54" fill="none" stroke="#ffe35c" stroke-width="1.5" stroke-linejoin="round"/>` +
-    `<rect x="24" y="44.4" width="16" height="9" rx="3" fill="#a8683a" ${O}/><ellipse cx="32" cy="44.6" rx="8" ry="2.6" fill="#ecd7a8" ${O}/>` +
-    `<circle cx="27.4" cy="50" r=".9" fill="#ffe35c" stroke="none"/><circle cx="32" cy="50.6" r=".9" fill="#ffe35c" stroke="none"/><circle cx="36.6" cy="50" r=".9" fill="#ffe35c" stroke="none"/>` +
-    sleeve(20.4, 44.6, 3.8, 6, 14, '#5b4f8c') + hand(18, 47.8) +
-    sleeve(43.6, 44.6, 3.8, 6, -14, '#43386a') + hand(46, 47.8) +
-    head(SKIN, SKIN_D, 27.6, 13.4, 11.4) +
-    pxEyes(30, 4, 27, 37) + cheeks(34, 8.4) + grin(34.6) +
-    `<path d="M16.4 24.6 Q9.6 20.4 15.4 14.6 Q14 7 22.4 7.4 Q26 1.4 33.4 4 Q40 0.4 44.6 7.8 Q53.4 7 51.4 15.4 Q57.4 21 50.6 25 Q46 21.8 41.6 23.4 Q37 20.8 32 22.8 Q27 20.8 22.4 23.4 Q19 21.8 16.4 24.6Z" fill="#7a7399" ${O}/>` +
-    `<path d="M17.6 22.8 Q22 21 24.6 23.4 Q28 21 32 22.8 Q36 21 40 23.4 Q43 21.4 50 23.2 Q53.6 20 52 17.6 Q48 21.4 40 21 Q28 20 17.6 22.8Z" fill="#524b78"/>` +
-    `<ellipse cx="24.6" cy="11" rx="5" ry="2.4" fill="#a49dc2"/><ellipse cx="40.4" cy="9.4" rx="4.2" ry="2" fill="#a49dc2"/><ellipse cx="47.6" cy="16" rx="2.8" ry="1.8" fill="#a49dc2"/>` +
-    bolt(12.6, 21.4, 1.05) + bolt(45.4, 21.4, 1.05)
   ),
 };
 

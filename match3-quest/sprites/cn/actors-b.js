@@ -44,9 +44,6 @@ const sharpEyes = (y, iris = K, look = 1, sclera = '#fff') => {
   return e(25.6) + e(38.4);
 };
 
-// Yeux alignes sur la grille de pixellisation (pixels de 2 unites) : rectangles de 2 x h unites aux colonnes impaires.
-const pxEyes = (y, h = 4, x1 = 27, x2 = 37, w = 2) =>
-  `<rect x="${x1 - w / 2}" y="${y}" width="${w}" height="${h}" rx=".5" fill="${K}"/><rect x="${x2 - w / 2}" y="${y}" width="${w}" height="${h}" rx=".5" fill="${K}"/>`;
 const SKIN = '#f5cba7', SKIN_D = '#e0a582';
 
 // ---------------------------------------------------------------- PNJ
@@ -310,96 +307,6 @@ export const NPC_SPRITES_B = {
     `<circle cx="50.4" cy="50.6" r="3.8" fill="#fff" ${OW(1.6)}/><path d="M48.2 45.6 L48.2 47.6 M52.6 45.6 L52.6 47.6" stroke="#f5b6c4" stroke-width="1" stroke-linecap="round"/>` +
     `<circle cx="49" cy="50.2" r=".7" fill="${K}"/><circle cx="52" cy="50.2" r=".7" fill="${K}"/><circle cx="50.5" cy="52.4" r="1.5" fill="#5fd0a0" ${OW(1)}/>` +
     `<path d="M8 11 l.8 2.2 2.2.8 -2.2.8 -.8 2.2 -.8-2.2 -2.2-.8 2.2-.8z M56 8 l.6 1.8 1.8.6 -1.8.6 -.6 1.8 -.6-1.8 -1.8-.6 1.8-.6z M55 24 l.5 1.5 1.5.5 -1.5.5 -.5 1.5 -.5-1.5 -1.5-.5 1.5-.5z" fill="#fff"/>`
-  ),
-
-  // ---------- Pourparlers (volcan, mer, fusang) ----------
-  // Chi, vieil attiseur du temple du feu (parley_sun6) : vieil homme voute, robe rouge brulee, tablier de cendre,
-  // soufflet de forge a la main, braise au front.
-  parley_sun6: svg(
-    `<ellipse cx="21.6" cy="30" rx="10.6" ry="10" fill="#7c2a1a" ${O}/>` +
-    feet('#3d2018') +
-    `<path d="M18.6 57.6 Q14.4 46 20 38 Q24 35.6 29 35.6 L37 35.6 Q44 36 46.4 44 Q47.6 51 45.4 57.6 Q32 60.4 18.6 57.6Z" fill="#a83a22" ${O}/>` +
-    `<path d="M18.8 54.4 Q32 58.4 45.2 54.4 L45.4 57.6 Q32 60.4 18.6 57.6Z" fill="#3d2018"/>` +
-    `<path d="M24.6 38 L39.4 38 L41.6 56.4 Q32 58.6 22.4 56.4Z" fill="#9a948e" ${O}/>` +
-    `<path d="M37.6 38.6 L39.4 38 L41.6 56 L38.6 56.5Z" fill="#7d7771"/>` +
-    `<ellipse cx="28.4" cy="46.4" rx="3.6" ry="2.4" fill="#4a4440" opacity=".55"/><ellipse cx="35.4" cy="52" rx="3" ry="2" fill="#4a4440" opacity=".55"/>` +
-    `<rect x="27.4" y="48.2" width="9" height="5.2" rx="1" fill="#b8b2aa" ${OW(1.4)}/>` +
-    `<path d="M21 44.4 Q32 47.6 43 44.4" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><path d="M21 44.4 Q32 47.6 43 44.4" fill="none" stroke="#c08a4a" stroke-width="1.8" stroke-linecap="round"/>` +
-    // soufflet : buse de fer, cuir plisse, deux planches, poignee
-    `<g transform="translate(49 48) rotate(-35) scale(.8)">` +
-    `<rect x="-16" y="-1.8" width="8.6" height="3.6" fill="#4a4440" ${O}/>` +
-    `<path d="M-8 -2.6 L10 -8.4 L10 8.4 L-8 2.6Z" fill="#b8743f" ${O}/>` +
-    `<path d="M-3 -4 L-3 4 M2 -5.6 L2 5.6 M6.4 -7 L6.4 7" fill="none" stroke="#3d2018" stroke-width="1.3"/>` +
-    `<rect x="10" y="-10" width="3.6" height="20" rx="1.2" fill="#d9a25a" ${O}/><rect x="13.6" y="-2" width="5" height="4" rx="1.4" fill="#c08a4a" ${O}/></g>` +
-    `<circle cx="38.2" cy="55.4" r="2.2" fill="#ff8a24"/><circle cx="38.2" cy="55.4" r="1" fill="#ffd24a"/><rect x="34" y="57.6" width="1.6" height="1.6" fill="#ff8a24"/>` +
-    `<ellipse cx="19" cy="46" rx="4.2" ry="7" transform="rotate(14 19 46)" fill="#a83a22" ${O}/>` + hand(17.4, 52.6, '#d9a173') +
-    arm('M43 40.6 Q51 39 56 41.4', 5, '#a83a22') + hand(58.4, 41.2, '#d9a173') +
-    `<g transform="translate(2 0)">` +
-    `<circle cx="32" cy="15.8" r="3.8" fill="#e4ded2" ${O}/>` +
-    head('#d9a173', '#bd8456', 30, 13.4, 11) +
-    `<ellipse cx="19.4" cy="31" rx="2.6" ry="4.4" fill="#e4ded2" ${OW(1.4)}/><ellipse cx="44.6" cy="31" rx="2.6" ry="4.4" fill="#e4ded2" ${OW(1.4)}/>` +
-    `<ellipse cx="22.6" cy="35.4" rx="3.2" ry="2" fill="#4a4440" opacity=".4"/>` +
-    `<path d="M32 19.4 Q36 22.8 32 26.4 Q28 22.8 32 19.4Z" fill="#ff8a24"/><path d="M32 22 Q33.4 23.6 32 25 Q30.6 23.6 32 22Z" fill="#ffd24a"/>` +
-    `<path d="M22.2 29.4 Q26 27 30.2 29.2 M33.8 29.2 Q38 27 41.8 29.4" fill="none" stroke="#e4ded2" stroke-width="2.4" stroke-linecap="round"/>` +
-    pxEyes(32, 2, 27, 37, 4) +
-    `<ellipse cx="32" cy="35" rx="2.2" ry="1.6" fill="#bd8456"/>` +
-    `<path d="M24.4 37.6 Q26 45.4 32 47 Q38 45.4 39.6 37.6 Q36 40.4 32 39.6 Q28 40.4 24.4 37.6Z" fill="#e4ded2" ${O}/>` +
-    `<path d="M26.4 37.4 Q29.2 35.2 32 37.2 Q34.8 35.2 37.6 37.4 Q35 39.6 32 38.6 Q29 39.6 26.4 37.4Z" fill="#e4ded2" ${OW(1.3)}/></g>`
-  ),
-
-  // Amiral Xie, amiral de l'escadre du Roi-Dragon (parley_sun8) : crabe-amiral a armure d'ecailles bleu-vert,
-  // casque a crete de corail, grande pince levee, epee a pommeau de perle blanche, dignite raide.
-  parley_sun8: svg(
-    `<path d="M52 5.4 L55.2 10.6 L55.2 38.6 L48.8 38.6 L48.8 10.6Z" fill="#cfe4ee" ${O}/><path d="M52 11 L52 36" fill="none" stroke="#8fb0c4" stroke-width="1.2"/>` +
-    `<rect x="45.4" y="38.4" width="13.2" height="3.6" rx="1.4" fill="#d9b04a" ${O}/><rect x="50.4" y="42" width="3.2" height="7" fill="#7a3a2a" ${O}/>` +
-    `<circle cx="52" cy="52" r="3.2" fill="#fff" ${O}/><circle cx="51" cy="51" r="1" fill="#cfe0e8"/>` +
-    `<ellipse cx="20.6" cy="57.4" rx="3.6" ry="2.2" fill="#b74a38" ${O}/><ellipse cx="27" cy="58.4" rx="3.6" ry="2.2" fill="#b74a38" ${O}/>` +
-    `<ellipse cx="37" cy="58.4" rx="3.6" ry="2.2" fill="#b74a38" ${O}/><ellipse cx="43.4" cy="57.4" rx="3.6" ry="2.2" fill="#b74a38" ${O}/>` +
-    arm('M20 42 L12.6 39.4', 4.6, '#e0674c') +
-    `<path d="M5 38 Q3 30 5.4 22 Q8 25 10.4 29 Q12.4 25 15.6 22.4 Q18 30 16.4 38 Q11 42 5 38Z" fill="#e0674c" ${O}/>` +
-    `<path d="M7.4 35 Q6.4 30 7.8 26.4" fill="none" stroke="#f59a80" stroke-width="1.3" stroke-linecap="round"/>` +
-    `<path d="M19 57 Q15.6 46 21 36 L43 36 Q48.4 46 45 57 Q32 59.6 19 57Z" fill="#2c9a94" ${O}/>` +
-    `<path d="M40 38 Q46.6 46 43.6 56 L39.4 56.6 Q43 46 40 38Z" fill="#1e6f72"/>` +
-    `<path d="M20.6 41.4 q2.8 3 5.6 0 q2.8 3 5.6 0 q2.8 3 5.6 0 q2.8 3 5.6 0 M23.4 45 q2.8 3 5.6 0 q2.8 3 5.6 0 q2.8 3 5.6 0 M21 54.6 q2.8 3 5.6 0 q2.8 3 5.6 0 q2.8 3 5.6 0 q2.8 3 5.6 0" fill="none" stroke="#1e6f72" stroke-width="1.1" stroke-linecap="round"/>` +
-    `<rect x="19.6" y="47.6" width="24.8" height="3.4" fill="#d9b04a" ${OW(1.4)}/><circle cx="32" cy="49.3" r="2.4" fill="#fff" ${OW(1.2)}/>` +
-    `<ellipse cx="19.6" cy="38.6" rx="5" ry="3.6" fill="#1e6f72" ${O}/><ellipse cx="44.4" cy="38.6" rx="5" ry="3.6" fill="#1e6f72" ${O}/>` +
-    arm('M44 41.4 L50.4 44', 4.6, '#e0674c') + `<ellipse cx="52" cy="44.4" rx="4.2" ry="3.4" fill="#e0674c" ${O}/><path d="M52 41.6 L52 47.2" fill="none" stroke="${K}" stroke-width="1.2"/>` +
-    // crete de corail
-    `<path d="M24.6 14 Q18.4 8.6 22.4 2.6 Q25.4 6.2 28.6 5.4 Q28.4 1 32 0.8 Q35.6 1 35.4 5.4 Q38.6 6.2 41.6 2.6 Q45.6 8.6 39.4 14Z" fill="#ff9a82" ${O}/>` +
-    `<path d="M32 12 L32 4 M28 11 L25 6.4 M36 11 L39 6.4" fill="none" stroke="#f6c2b4" stroke-width="1.2" stroke-linecap="round"/><circle cx="22.8" cy="3.6" r="1.4" fill="#ffd1c4"/><circle cx="41.2" cy="3.6" r="1.4" fill="#ffd1c4"/><circle cx="32" cy="2.2" r="1.4" fill="#ffd1c4"/>` +
-    head('#e0674c', '#b74a38', 25, 13.4, 10.6) +
-    `<path d="M18.6 24 Q17.4 11.8 32 11.2 Q46.6 11.8 45.4 24 Q40 18.8 32 18.8 Q24 18.8 18.6 24Z" fill="#2c9a94" ${O}/>` +
-    `<path d="M19.8 21.6 Q32 16.4 44.2 21.6" fill="none" stroke="#d9b04a" stroke-width="1.6" stroke-linecap="round"/><circle cx="32" cy="15.4" r="2.1" fill="#fff" ${OW(1.2)}/>` +
-    `<path d="M23 22.6 L29.4 24 M41 22.6 L34.6 24" fill="none" stroke="${K}" stroke-width="2" stroke-linecap="round"/>` +
-    pxEyes(26, 4, 27, 37) +
-    `<path d="M29 32 L35 32 M30.6 32.8 L31 34.6 M33.4 32.8 L33 34.6" fill="none" stroke="${K}" stroke-width="1.3" stroke-linecap="round"/>`
-  ),
-
-  // Hegui, la grue au nid retrouve (parley_sun9) : grue blanche a col fin en S, calotte rouge, plumes d'argent,
-  // bout des ailes sombre, petit nid d'or garde dans les ailes (deux oeufs), expression apaisee.
-  parley_sun9: svg(
-    arm('M28.4 52 L26.4 57.6', 1.8, '#5a5560') + arm('M36.4 52 L37.6 57.6', 1.8, '#5a5560') +
-    `<ellipse cx="24.6" cy="58.4" rx="3.4" ry="1.5" fill="#5a5560" ${OW(1.5)}/><ellipse cx="39.4" cy="58.4" rx="3.4" ry="1.5" fill="#5a5560" ${OW(1.5)}/>` +
-    `<path d="M34 16.4 Q38.4 22 32.4 26 Q27 30 31.4 35" fill="none" stroke="${K}" stroke-width="9.4" stroke-linecap="round"/><path d="M34 16.4 Q38.4 22 32.4 26 Q27 30 31.4 35" fill="none" stroke="#f4f2ea" stroke-width="6.2" stroke-linecap="round"/>` +
-    `<ellipse cx="32" cy="41" rx="14.4" ry="11.6" fill="#f4f2ea" ${O}/>` +
-    `<path d="M41 33 Q47.6 41 42 49.4 Q37 52.6 30 52 Q40 49 41 33Z" fill="#cfd6dc"/>` +
-    `<path d="M26 35 q2 2 4 0 M33 37.4 q2 2 4 0 M25 40 q2 2 4 0" fill="none" stroke="#b9c4d0" stroke-width="1.1" stroke-linecap="round"/>` +
-    // nid d'or et oeufs
-    `<ellipse cx="32" cy="43.6" rx="10.8" ry="3.2" fill="#7a5220" ${O}/>` +
-    `<ellipse cx="28.2" cy="41.6" rx="3.3" ry="3.9" fill="#ffd966" ${OW(1.5)}/><ellipse cx="35.8" cy="41.8" rx="3.1" ry="3.7" fill="#fff6dc" ${OW(1.5)}/><circle cx="27" cy="40" r=".9" fill="#fff1a8"/>` +
-    `<path d="M21.2 43.6 Q22 52.4 32 52.8 Q42 52.4 42.8 43.6 Q32 47.6 21.2 43.6Z" fill="#b7863a" ${O}/>` +
-    `<path d="M24 46.4 L30 49.4 M40 46.4 L34 49.4 M27 50.8 L37 50.2" fill="none" stroke="#7a5220" stroke-width="1.2" stroke-linecap="round"/>` +
-    // ailes repliees qui bercent le nid
-    `<path d="M23 33.6 Q10.6 36 10.6 46 Q11 53 19.6 56.4 Q22.4 51 23.2 45Z" fill="#f4f2ea" ${O}/>` +
-    `<path d="M41 33.6 Q53.4 36 53.4 46 Q53 53 44.4 56.4 Q41.6 51 40.8 45Z" fill="#e6e9ec" ${O}/>` +
-    `<path d="M11 48 Q11.8 53.4 19.6 56.4 Q15.4 53.6 14.6 49.6Z M53 48 Q52.2 53.4 44.4 56.4 Q48.6 53.6 49.4 49.6Z" fill="#3a3744"/>` +
-    `<path d="M14.4 40.4 Q16 47 20 52 M18.4 37.4 Q19.4 43.4 21.4 47.4 M49.6 40.4 Q48 47 44 52 M45.6 37.4 Q44.6 43.4 42.6 47.4" fill="none" stroke="#b9c4d0" stroke-width="1.1" stroke-linecap="round"/>` +
-    // tete : calotte rouge, plumes d'argent, bec d'or, oeil clos
-    `<path d="M38.6 9.2 Q47 5.6 52.4 11 Q45.6 10.6 40.4 13Z" fill="#b9c4d0" ${OW(1.4)}/><path d="M39 13 Q47.6 12.4 51 18 Q44.4 15.4 39.4 15.6Z" fill="#e8ecf0" ${OW(1.4)}/>` +
-    `<path d="M27 8.4 L9.6 13 L27.4 16.2Z" fill="#f2c14e" ${OW(1.5)}/>` +
-    `<ellipse cx="33.4" cy="11.6" rx="8" ry="7" fill="#f4f2ea" ${O}/>` +
-    `<path d="M26.6 8.6 Q32 1.6 40.4 8.2 Q34 6.4 26.6 8.6Z" fill="#d7382c" ${OW(1.5)}/><ellipse cx="33.6" cy="6.6" rx="4.4" ry="2.4" fill="#d7382c"/>` +
-    `<path d="M28.6 11.4 Q30.8 13.8 33 11.4" fill="none" stroke="${K}" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="30.4" cy="15" rx="2" ry="1.1" fill="#f4a39a" opacity=".7"/>`
   ),
 };
 
