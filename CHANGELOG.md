@@ -1,3 +1,20 @@
+## [2.62.1](https://github.com/niafrond/niafrond.github.io/compare/v2.62.0...v2.62.1) (2026-10-09)
+
+### Reverts
+
+* Revert "docs(match3-quest): mémoriser la direction artistique de référence des personnages" ([1a039de](https://github.com/niafrond/niafrond.github.io/commit/1a039dea12f015a5a701217e9f44cb2b277c1dae))
+* Revert "feat(match3-quest): ajouter chemins relationnels, compagnons et dialogues contextuels" ([24163ac](https://github.com/niafrond/niafrond.github.io/commit/24163ac9cf1a08591ac66218513dea61caa5e98d))
+* Revert "feat(match3-quest): ajouter gardes de sanctuaire et affaiblissement des soleils par l'exploration" ([e428860](https://github.com/niafrond/niafrond.github.io/commit/e4288606c748e4b3517c0e3a3b13149c211cc89f))
+* Revert "feat(match3-quest): ajouter pourparlers, dialogues de compagnons et règles de profondeur de l'agent scénario" ([41e570d](https://github.com/niafrond/niafrond.github.io/commit/41e570de535b708d31d36e6f5ef829285eba2547))
+* Revert "feat(match3-quest): dessiner les portraits pixel art des PNJ de pourparlers" ([999cb42](https://github.com/niafrond/niafrond.github.io/commit/999cb42584a80251c7a68da8c29c2c447cd7f619))
+* Revert "feat(match3-quest): finaliser les soleils selon la DA de référence et documenter la refonte" ([4072e67](https://github.com/niafrond/niafrond.github.io/commit/4072e6781d92504b4557372f9a0ef2075bda0454))
+* Revert "feat(match3-quest): redessiner les ennemis et le générateur de créatures selon la DA de référence" ([36b7365](https://github.com/niafrond/niafrond.github.io/commit/36b73654eaf2a0026855354ac4f755fa0adf1416))
+* Revert "feat(match3-quest): redessiner les PNJ, Fengmeng et le générateur de villageois selon la DA de référence" ([258b19f](https://github.com/niafrond/niafrond.github.io/commit/258b19f0bcca1c2695792f204f84843ea592ef60))
+* Revert "feat(match3-quest): redessiner les soleils selon la DA de référence (version intermédiaire)" ([e943b15](https://github.com/niafrond/niafrond.github.io/commit/e943b15bf727fa86e84ac3353b8af286c6c7cbe6))
+* Revert "feat(match3-quest): relever les niveaux des boss, gardes et régions sur l'échelle 1 à 48" ([dfb2a23](https://github.com/niafrond/niafrond.github.io/commit/dfb2a23a38aa95bf0e7d6397c263a479693ddc31))
+* Revert "fix(match3-quest): aligner les niveaux de la carte du monde sur ceux des régions" ([0ffa29e](https://github.com/niafrond/niafrond.github.io/commit/0ffa29e4c48bc3897e54d3027a5280a81da893b1))
+* Revert "fix(match3-quest): rendre tous les sprites en pixel art net et ajouter un test garde-fou" ([c20ea56](https://github.com/niafrond/niafrond.github.io/commit/c20ea5640328e30b53fe0c5b7a877f47d5b3416a))
+
 ## [2.62.0](https://github.com/niafrond/niafrond.github.io/compare/v2.61.0...v2.62.0) (2026-10-09)
 
 ### Features
