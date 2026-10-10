@@ -180,7 +180,14 @@
     const queueListEl = document.getElementById('queue-list');
     const queueEmptyEl = document.getElementById('queue-empty');
 
-    const sessionId = new URLSearchParams(location.search).get('session') || '';
+    // L'id de session arrive dans le FRAGMENT (#session=...), pas dans la
+    // query string : un scan réel au téléphone perd systématiquement la query
+    // string en route (nettoyage d'URL côté appli scanner/aperçu de lien),
+    // alors que le fragment n'est jamais touché — voir index.html. On garde
+    // `?session=` en repli pour les liens tapés/collés à la main.
+    const sessionId = new URLSearchParams(location.hash.replace(/^#/, '')).get('session')
+      || new URLSearchParams(location.search).get('session')
+      || '';
 
     function setStatus(message, isError = false) {
       statusEl.textContent = message;

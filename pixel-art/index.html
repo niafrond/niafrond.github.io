@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Generator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0f0f1a;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --border: #2d2d4e;
+            --accent: #7c5cbf;
+            --accent-hover: #9370db;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --success: #48bb78;
+            --error: #fc8181;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 4px;
+            text-shadow: 0 0 20px rgba(124, 92, 191, 0.6);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        textarea, select {
+            width: 100%;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            padding: 10px;
+            border-radius: 2px;
+            resize: vertical;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+
+        textarea:focus, select:focus { border-color: var(--accent); }
+        textarea { min-height: 80px; }
+
+        .form-group { margin-bottom: 16px; }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            color: var(--text-muted);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            padding: 8px 4px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.15s;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+        .toggle-btn.active {
+            border-color: var(--accent);
+            background: rgba(124,92,191,0.2);
+            color: var(--text);
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: var(--accent);
+            border: 2px solid var(--accent);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            padding: 14px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
+            margin-top: 8px;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+            transform: translate(-1px, -1px);
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.4);
+        }
+
+        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface2);
+            border: 2px dashed var(--border);
+            border-radius: 2px;
+            min-height: 280px;
+            padding: 16px;
+        }
+
+        #output-img {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            max-height: 400px;
+            display: none;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
+        }
+
+        .placeholder {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .placeholder-icon { font-size: 3rem; display: block; margin-bottom: 10px; }
+
+        .spinner {
+            display: none;
+            text-align: center;
+            color: var(--accent);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        .spinner::before {
+            content: '';
+            display: block;
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .status {
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            padding: 8px 10px;
+            border-radius: 2px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status.error { background: rgba(252,129,129,0.1); border: 1px solid var(--error); color: var(--error); }
+        .status.success { background: rgba(72,187,120,0.1); border: 1px solid var(--success); color: var(--success); }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            color: var(--text-muted);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 2px;
+            text-transform: uppercase;
+            transition: all 0.15s;
+            display: none;
+        }
+
+        .action-btn:hover { border-color: var(--accent); color: var(--text); }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .history-thumb {
+            aspect-ratio: 1;
+            image-rendering: pixelated;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            object-fit: contain;
+            background: var(--surface2);
+            transition: border-color 0.15s;
+            width: 100%;
+        }
+
+        .history-thumb:hover { border-color: var(--accent); }
+
+        .no-config-banner {
+            background: rgba(252,129,129,0.1);
+            border: 2px solid var(--error);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 2px;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            display: none;
+        }
+
+        .credits-row {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 24px;
+            letter-spacing: 1px;
+        }
+
+        .credits-row a { color: var(--accent); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>[ PIXEL.LAB ]</h1>
+    <p class="subtitle">Generateur de pixel art par IA</p>
+
+    <div class="no-config-banner" id="no-config-banner">
+        config.js introuvable — copiez config.example.js en config.js et ajoutez votre cle API pixel.lab.
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <div class="panel-title">Parametres</div>
+
+            <div class="form-group">
+                <label>Prompt</label>
+                <textarea id="prompt" placeholder="un chevalier dans une foret enchantee, style GBA..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Prompt negatif</label>
+                <textarea id="negative-prompt" style="min-height:50px" placeholder="flou, anti-aliasing, photo-realiste..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Taille</label>
+                <div class="btn-grid">
+                    <button class="toggle-btn" data-size="32x32">32 x 32</button>
+                    <button class="toggle-btn" data-size="48x48">48 x 48</button>
+                    <button class="toggle-btn active" data-size="64x64">64 x 64</button>
+                    <button class="toggle-btn" data-size="128x128">128 x 128</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Style</label>
+                <div class="btn-grid">
+                    <button class="toggle-btn style active" data-style="">Libre</button>
+                    <button class="toggle-btn style" data-style="Game Boy style, 4 colors, retro">Game Boy</button>
+                    <button class="toggle-btn style" data-style="RPG pixel art, SNES style">SNES RPG</button>
+                    <button class="toggle-btn style" data-style="NES 8-bit style, limited palette">NES 8-bit</button>
+                    <button class="toggle-btn style" data-style="GBA sprite, 32x32, chibi">GBA Sprite</button>
+                    <button class="toggle-btn style" data-style="isometric pixel art, top-down">Isometrique</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Nombre d'images</label>
+                <select id="count">
+                    <option value="1">1 image</option>
+                    <option value="2">2 images</option>
+                    <option value="4">4 images</option>
+                </select>
+            </div>
+
+            <button class="generate-btn" id="generate-btn">Generer</button>
+        </div>
+
+        <div class="panel output-panel">
+            <div class="panel-title">Resultat</div>
+
+            <div class="canvas-wrapper" id="canvas-wrapper">
+                <div class="placeholder" id="placeholder">
+                    <span class="placeholder-icon">🎨</span>
+                    Choisissez vos parametres<br>et cliquez sur Generer
+                </div>
+                <div class="spinner" id="spinner">GENERATION EN COURS</div>
+                <img id="output-img" alt="Pixel art genere" />
+            </div>
+
+            <div class="status" id="status"></div>
+
+            <div class="action-row">
+                <button class="action-btn" id="download-btn">Telecharger</button>
+                <button class="action-btn" id="copy-btn">Copier</button>
+            </div>
+
+            <div id="history-section" style="display:none">
+                <div class="panel-title" style="margin-top:16px">Historique</div>
+                <div class="history-grid" id="history-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="credits-row">
+        Propulse par <a href="https://pixellab.ai" target="_blank">pixel.lab</a>
+    </div>
+
+    <script type="module">
+        let API_KEY = '';
+
+        try {
+            const { PIXELLAB_API_KEY } = await import('./config.js');
+            API_KEY = PIXELLAB_API_KEY;
+        } catch {
+            document.getElementById('no-config-banner').style.display = 'block';
+            document.getElementById('generate-btn').disabled = true;
+        }
+
+        const API_URL = 'https://api.pixellab.ai/v1/generate-image';
+
+        let selectedW = 64, selectedH = 64;
+        let selectedStyle = '';
+        let lastImageUrl = null;
+        const history = [];
+
+        document.querySelectorAll('.toggle-btn:not(.style)').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.toggle-btn:not(.style)').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const [w, h] = btn.dataset.size.split('x').map(Number);
+                selectedW = w; selectedH = h;
+            });
+        });
+
+        document.querySelectorAll('.toggle-btn.style').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.toggle-btn.style').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedStyle = chip.dataset.style;
+            });
+        });
+
+        function setLoading(on) {
+            document.getElementById('generate-btn').disabled = on;
+            document.getElementById('spinner').style.display = on ? 'block' : 'none';
+            if (on) {
+                document.getElementById('placeholder').style.display = 'none';
+                document.getElementById('output-img').style.display = 'none';
+            }
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + type;
+            el.style.display = 'block';
+        }
+
+        function showImage(dataUrl) {
+            const img = document.getElementById('output-img');
+            img.src = dataUrl;
+            img.style.display = 'block';
+            document.getElementById('placeholder').style.display = 'none';
+            lastImageUrl = dataUrl;
+            document.getElementById('download-btn').style.display = 'block';
+            document.getElementById('copy-btn').style.display = 'block';
+            history.unshift(dataUrl);
+            if (history.length > 8) history.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const section = document.getElementById('history-section');
+            const grid = document.getElementById('history-grid');
+            if (history.length <= 1) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            grid.innerHTML = '';
+            history.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'history-thumb';
+                img.addEventListener('click', () => showImage(url));
+                grid.appendChild(img);
+            });
+        }
+
+        async function generate() {
+            const rawPrompt = document.getElementById('prompt').value.trim();
+            if (!rawPrompt) { showStatus('Entrez un prompt pour generer.', 'error'); return; }
+
+            const prompt = selectedStyle ? `${rawPrompt}, ${selectedStyle}` : rawPrompt;
+            const negativePrompt = document.getElementById('negative-prompt').value.trim();
+            const count = parseInt(document.getElementById('count').value);
+
+            setLoading(true);
+            document.getElementById('status').style.display = 'none';
+
+            const makeRequest = () => fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt,
+                    negative_prompt: negativePrompt || undefined,
+                    width: selectedW,
+                    height: selectedH,
+                    image_size: { width: selectedW, height: selectedH }
+                })
+            }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)));
+
+            try {
+                const results = await Promise.all(Array.from({ length: count }, makeRequest));
+                setLoading(false);
+
+                for (const result of results) {
+                    const b64 = result.image ?? result.b64_json ?? result.data?.[0]?.b64_json;
+                    const url = result.url ?? result.data?.[0]?.url;
+                    if (b64) {
+                        showImage(b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`);
+                    } else if (url) {
+                        showImage(url);
+                    } else {
+                        console.error('API response format inattendu:', result);
+                        showStatus('Format de reponse API inconnu — voir la console.', 'error');
+                    }
+                }
+
+                showStatus(count === 1 ? 'Image generee !' : `${count} images generees !`, 'success');
+            } catch (err) {
+                setLoading(false);
+                const msg = err?.message ?? err?.error?.message ?? JSON.stringify(err);
+                showStatus(`Erreur API : ${msg}`, 'error');
+                console.error('pixel.lab error:', err);
+                document.getElementById('placeholder').style.display = 'block';
+            }
+        }
+
+        document.getElementById('generate-btn').addEventListener('click', generate);
+        document.getElementById('prompt').addEventListener('keydown', e => {
+            if (e.ctrlKey && e.key === 'Enter') generate();
+        });
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            if (!lastImageUrl) return;
+            const a = document.createElement('a');
+            a.href = lastImageUrl;
+            a.download = `pixel-art-${Date.now()}.png`;
+            a.click();
+        });
+
+        document.getElementById('copy-btn').addEventListener('click', async () => {
+            if (!lastImageUrl) return;
+            try {
+                const blob = await (await fetch(lastImageUrl)).blob();
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                showStatus('Image copiee !', 'success');
+            } catch {
+                showStatus('Copie non supportee par ce navigateur.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

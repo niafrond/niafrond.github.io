@@ -64,8 +64,7 @@
     }
     #qr-code { background: #fff; padding: 8px; border-radius: 8px; line-height: 0; }
     #qr-code img, #qr-code canvas { display: block; width: 120px; height: 120px; }
-    #qr-panel p { margin: 8px 0 0; max-width: 140px; }
-    #qr-session-id { margin-top: 6px; font-size: 0.65rem; color: #9ca3af; word-break: break-all; user-select: all; }
+    #qr-url { margin-top: 8px; font-size: 0.65rem; color: #9ca3af; word-break: break-all; max-width: 140px; user-select: all; }
 
     /* ── Réglages (URL/token serveur) : discret, coin opposé au QR ─────── */
     #settings-btn {
@@ -137,8 +136,7 @@
 
   <div id="qr-panel" hidden>
     <div id="qr-code"></div>
-    <p>Scanne pour ajouter une chanson</p>
-    <div id="qr-session-id"></div>
+    <div id="qr-url"></div>
   </div>
 
   <button id="settings-btn" type="button" aria-label="Réglages serveur">⚙️</button>
@@ -287,9 +285,16 @@
     // QR code invités : encode l'URL de l'écran invité pour la session en
     // cours. Affiché seulement si "qrcodejs" a bien chargé (CDN externe) —
     // un échec de chargement ne doit pas casser le lecteur.
+    //
+    // L'id de session est encodé dans le FRAGMENT (#session=...), pas dans la
+    // query string (?session=...) : constaté en conditions réelles qu'un scan
+    // au téléphone perd systématiquement la query string en route (nettoyage
+    // d'URL côté appli scanner/aperçu de lien avant ouverture). Le fragment
+    // n'est jamais envoyé au serveur ni touché par ce genre de réécriture, il
+    // survit toujours jusqu'au navigateur.
     if (typeof QRCode !== 'undefined') {
       const qrPanel = document.getElementById('qr-panel');
-      const guestUrl = `${location.origin}/karaoke-playlist/guest.html?session=${encodeURIComponent(sessionId)}`;
+      const guestUrl = `${location.origin}/karaoke-playlist/guest.html#session=${encodeURIComponent(sessionId)}`;
       new QRCode(document.getElementById('qr-code'), {
         text: guestUrl,
         width: 120,
@@ -297,7 +302,7 @@
         colorDark: '#000000',
         colorLight: '#ffffff',
       });
-      document.getElementById('qr-session-id').textContent = sessionId;
+      document.getElementById('qr-url').textContent = guestUrl;
       qrPanel.hidden = false;
     }
 

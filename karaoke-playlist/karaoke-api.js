@@ -13,6 +13,12 @@ const FUNCTIONS_BASE = 'https://us-central1-karaoke-506217.cloudfunctions.net';
 // ces fonctions à intervalle régulier à la place.
 const QUEUE_POLL_MS = 3000;
 const REQUEST_POLL_MS = 1500;
+// Une recherche ('/api/video/search' derrière karaokeRequestsWatcher.js) doit
+// répondre en quelques secondes si le watcher tourne — 45 s laisse une large
+// marge avant de conclure à un blocage (watcher désactivé, session mismatch,
+// panne réseau...) et de le signaler à l'invité plutôt que de le laisser
+// indéfiniment sur "Recherche en cours…" (voir SPECS.md).
+const SEARCH_TIMEOUT_MS = 45000;
 
 function functionUrl(name) {
   return `${FUNCTIONS_BASE}/${name}`;
@@ -39,11 +45,24 @@ async function callFunction(name, data) {
 // `stopIf(result)` renvoie true (ex: statut 'done'/'failed', plus la peine
 // de continuer à interroger). Un échec ponctuel de poll est ignoré : on
 // retente au prochain tick plutôt que d'abandonner le suivi.
-function poll(fetchOnce, intervalMs, onChange, stopIf) {
+//
+// `timeoutMs` (optionnel) : au-delà de ce délai depuis le premier tick, on
+// synthétise un `onChange({ status: 'failed', ... })` et on arrête — sans ça,
+// un backend qui ne répond jamais (watcher désactivé, panne réseau...)
+// laisse l'appelant dans un 'pending' silencieux pour toujours, puisque les
+// erreurs de fetch sont avalées ci-dessous. Omis (undefined) pour les suivis
+// qui doivent rester illimités (ex: téléchargement en cours, voir
+// watchAddRequest) — le comportement existant y est inchangé.
+function poll(fetchOnce, intervalMs, onChange, stopIf, timeoutMs) {
   let stopped = false;
   let timer = null;
+  const startedAt = Date.now();
 
   async function tick() {
+    if (timeoutMs && Date.now() - startedAt >= timeoutMs) {
+      if (!stopped) onChange({ status: 'failed', message: 'Le serveur ne répond pas.' });
+      return;
+    }
     try {
       const result = await fetchOnce();
       if (stopped) return;
@@ -91,7 +110,8 @@ export function watchSearchQuery(sessionId, requestId, onChange) {
     () => callFunction('getSearchQuery', { sessionId, requestId }),
     REQUEST_POLL_MS,
     onChange,
-    (data) => data.status === 'done' || data.status === 'failed'
+    (data) => data.status === 'done' || data.status === 'failed',
+    SEARCH_TIMEOUT_MS
   );
 }
 

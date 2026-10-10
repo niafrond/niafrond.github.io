@@ -144,3 +144,6 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 test-results/
+
+# Pixel art generator - local API key
+pixel-art/config.js
