@@ -10,8 +10,6 @@
 export const OUTLINE = '#2b1b17';
 export const TILE_GRID = 16;
 
-import { drawTileTexture } from './tileTextures.js';
-
 const clamp = v => Math.max(0, Math.min(255, v));
 const rgbOf = hex => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
 export function shade(hex, amt) {
@@ -82,17 +80,14 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
     const grass = () => paintGrass(R, biome, x, y, biomeId);
 
     if (isLiquid(x, y)) {
-        if (biomeId && drawTileTexture(g, biomeId, 'liquid', px, py, tile, 1)) return;
         paintWater(R, biome, x, y, isLiquid, biomeId);
         return;
     }
     if (isPath(x, y)) {
-        if (biomeId && !tiled && drawTileTexture(g, biomeId, 'path', px, py, tile, 1)) return;
         paintDirt(R, biome, x, y, isPath, grass);
         return;
     }
     if (tiled) { paintFlagstone(R, biome, x, y); return; }
-    if (biomeId && drawTileTexture(g, biomeId, 'ground', px, py, tile, 1)) return;
     grass();
     // coins concaves : l'herbe s'arrondit autour d'un chemin ou d'un étang qui la longe sur deux côtés
     const rim = (test, inside, edge) => {
@@ -455,82 +450,6 @@ export function drawWallTile(g, biome, tile, px, py, top) {
 }
 
 // ── Bâtiments ──────────────────────────────────────────────────────────────
-
-// 牌坊 (pailou) – porte cérémonielle de la Chine mythique : piliers laqués rouge, poutres de bois doré, toit à
-// double auvent relevé aux coins, lanternes suspendues. Lisible à toute taille de tuile.
-// w × h en pixels (emprise du bâtiment), tile : taille d'une case en pixels.
-export function drawGate(g, px, py, w, h, tile) {
-    const fill = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(ww)), Math.max(1, Math.round(hh))); };
-    const u = tile / TILE_GRID;
-    const red = '#c01820', redLight = '#e03030', redDark = '#7a0e12';
-    const gold = '#d6a83a', goldLight = '#f0cc5a';
-    const wood = '#5a3c1e', woodLight = '#7a5230';
-    const stone = '#7a6e60', stoneLight = '#9a8e80';
-
-    softShadow(g, px + w * 0.5, py + h + u * 0.5, w * 0.52, u * 1.6, 0.20);
-
-    const pW = Math.round(Math.max(u * 2.2, 4));
-    const baseH = Math.round(u * 2.5);
-    const roofH = Math.round(h * 0.40);
-    const pillarH = h - roofH - baseH;
-    const beamH = Math.round(u * 2.2);
-    const pillarY = py + roofH;
-    const baseY = py + h - baseH;
-
-    // piliers : 2 extérieurs, + 2 intérieurs si ≥ 3 tuiles de large
-    const wtiles = Math.round(w / tile);
-    const pillars = [px + u, px + w - u - pW];
-    if (wtiles >= 3) { const t = w / 3; pillars.push(px + t - pW / 2, px + t * 2 - pW / 2); }
-    pillars.forEach(plx => {
-        fill(plx - 1, baseY, pW + 2, baseH + 1, OUTLINE);
-        fill(plx, baseY, pW, baseH, stone); fill(plx, baseY, pW, 1, stoneLight);
-        fill(plx - 1, pillarY, pW + 2, pillarH + 1, OUTLINE);
-        fill(plx, pillarY, pW, pillarH, red); fill(plx, pillarY, 1, pillarH, redLight); fill(plx + pW - 1, pillarY, 1, pillarH, redDark);
-    });
-
-    // deux poutres horizontales (reliées aux piliers extérieurs)
-    const beam1Y = pillarY + Math.round(pillarH * 0.28);
-    const beam2Y = pillarY + Math.round(pillarH * 0.68);
-    [beam1Y, beam2Y].forEach(by => {
-        fill(px + u, by, w - u * 2, beamH + 1, OUTLINE);
-        fill(px + u + 1, by + 1, w - u * 2 - 2, beamH - 1, wood);
-        fill(px + u + 1, by + 1, w - u * 2 - 2, 1, woodLight);
-        fill(px + u + 1, by + beamH - 1, w - u * 2 - 2, 1, gold);
-    });
-
-    // lanternes suspendues sous la poutre haute
-    const lanternPositions = wtiles >= 3 ? [0.25, 0.5, 0.75] : [0.5];
-    lanternPositions.forEach(frac => {
-        const lx = px + w * frac, ly = beam1Y + beamH;
-        const lh = Math.round(u * 2.8), lw = Math.round(u * 1.6);
-        fill(lx, ly, 1, Math.round(u), wood);
-        fill(lx - lw / 2, ly + Math.round(u), lw + 1, lh + 1, OUTLINE);
-        fill(lx - lw / 2 + 1, ly + Math.round(u) + 1, lw - 1, lh - 1, '#d62020');
-        fill(lx - lw / 2 + 1, ly + Math.round(u) + 1, 1, lh - 1, '#ff4040');
-        fill(lx, ly + Math.round(u) + lh, 1, Math.round(u * 1.2), gold);
-    });
-
-    // toit : corps principal laqué rouge, faîte doré, rangées d'imbrices, avant-toits relevés
-    const roofBodyH = roofH - Math.round(u * 1.8);
-    fill(px - u * 1.5, py, w + u * 3, roofH, OUTLINE);
-    fill(px - u * 1.5 + 1, py + 1, w + u * 3 - 2, roofBodyH - 1, red);
-    fill(px - u * 1.5 + 1, py + 1, w + u * 3 - 2, Math.round(u * 1.5), redDark);
-    // ornements de faîte
-    fill(px - u * 0.5, py + 1, Math.round(u * 2), Math.round(u * 1.5), gold);
-    fill(px + w - u * 1.5, py + 1, Math.round(u * 2), Math.round(u * 1.5), gold);
-    fill(px + w / 2 - u, py + 1, Math.round(u * 2), Math.round(u * 1.8), goldLight);
-    // rangées d'imbrices
-    for (let row = Math.round(u * 3); row < roofBodyH - 1; row += Math.max(2, Math.round(u * 1.4))) {
-        fill(px - u * 1.5 + 1, py + row, w + u * 3 - 2, 1, redDark);
-    }
-    fill(px - u * 1.5 + 1, py + roofBodyH - 1, w + u * 3 - 2, 1, shade(red, 28)); // frange lumineuse
-    // avant-toits relevés (coins)
-    const cW = Math.round(u * 3.5), cH = Math.round(u * 3);
-    fill(px - u * 1.5 - cW + 1, py + roofBodyH - cH, cW, cH, OUTLINE);
-    fill(px - u * 1.5 - cW + 2, py + roofBodyH - cH + 1, cW - 2, cH - 1, red);
-    fill(px + w + u * 1.5, py + roofBodyH - cH, cW, cH, OUTLINE);
-    fill(px + w + u * 1.5 + 1, py + roofBodyH - cH + 1, cW - 2, cH - 1, red);
-}
 
 // Habitation de la Chine mythique (aucun élément anachronique : ni verre, ni volets, ni cheminée, ni tuiles à l'européenne) :
 // murs en terre damée sur soubassement de pierre, poteaux et poutre de bois, fenêtre à barreaux de bois sur fond d'ombre,
