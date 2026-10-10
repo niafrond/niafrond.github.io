@@ -1,3 +1,16 @@
+## [2.63.0](https://github.com/niafrond/niafrond.github.io/compare/v2.62.1...v2.63.0) (2026-10-10)
+
+### Features
+
+* **match3-quest:** ajouter chemins relationnels, compagnons et dialogues contextuels ([cc8ff1a](https://github.com/niafrond/niafrond.github.io/commit/cc8ff1a27bb1d9ae9c1fbccda94c51d90283e6af))
+* **match3-quest:** ajouter gardes de sanctuaire et affaiblissement des soleils par l'exploration ([44d90a7](https://github.com/niafrond/niafrond.github.io/commit/44d90a7b6846c34c30fefbcb570fbefaf0317b47))
+* **match3-quest:** ajouter pourparlers, dialogues de compagnons et règles de profondeur de l'agent scénario ([0cb3039](https://github.com/niafrond/niafrond.github.io/commit/0cb3039e36ee7c3935388dfd65113935a6d9262f))
+* **match3-quest:** relever les niveaux des boss, gardes et régions sur l'échelle 1 à 48 ([411820f](https://github.com/niafrond/niafrond.github.io/commit/411820f44e5a81a70a2a5a8274fd0adc8733e34c))
+
+### Bug Fixes
+
+* **match3-quest:** aligner les niveaux de la carte du monde sur ceux des régions ([bee6426](https://github.com/niafrond/niafrond.github.io/commit/bee6426e73f89fe45ca29eae0e8acc953466034e))
+
 ## [2.62.1](https://github.com/niafrond/niafrond.github.io/compare/v2.62.0...v2.62.1) (2026-10-09)
 
 ### Reverts
