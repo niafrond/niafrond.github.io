@@ -19,6 +19,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { createRequire } from 'module';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '../..');
@@ -166,6 +167,76 @@ function writeGenerated(sprites) {
   writeFileSync(GENERATED_PATH, lines.join('\n') + '\n', 'utf8');
 }
 
+// ─── Preview HTML ────────────────────────────────────────────────────────────
+
+const PREVIEW_PATH = join(__dirname, 'sprite-preview.html');
+
+function writePreview(sprites) {
+  const categories = { heroes: [], npcs: [], enemies: [] };
+  for (const [key] of Object.entries(sprites)) {
+    if (SPRITE_MANIFEST.heroes[key]) categories.heroes.push(key);
+    else if (SPRITE_MANIFEST.npcs[key]) categories.npcs.push(key);
+    else if (SPRITE_MANIFEST.enemies[key]) categories.enemies.push(key);
+    else categories.heroes.push(key); // fallback
+  }
+
+  const renderGroup = (title, keys) => {
+    if (!keys.length) return '';
+    const cards = keys.map(key => {
+      const dirs = sprites[key] || {};
+      const thumbs = ['front', 'back', 'left', 'right'].map(dir => {
+        const uri = dirs[dir];
+        if (!uri) return `<div class="thumb missing"><span>${dir}</span></div>`;
+        return `<div class="thumb"><img src="${uri}" width="64" height="64" style="image-rendering:pixelated"><span>${dir}</span></div>`;
+      }).join('');
+      return `<div class="card"><div class="card-name">${key}</div><div class="thumbs">${thumbs}</div></div>`;
+    }).join('');
+    return `<section><h2>${title}</h2><div class="grid">${cards}</div></section>`;
+  };
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Preview — match3-quest GBA</title>
+<style>
+  body { background: #1a1a2e; color: #eee; font-family: monospace; margin: 0; padding: 16px; }
+  h1 { color: #e94560; margin: 0 0 24px; }
+  h2 { color: #a8dadc; border-bottom: 1px solid #333; padding-bottom: 6px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+  .card { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 10px; min-width: 180px; }
+  .card-name { font-size: 11px; color: #e94560; margin-bottom: 8px; font-weight: bold; }
+  .thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .thumb img { background: #0f3460; border: 1px solid #333; border-radius: 3px; }
+  .thumb.missing { width: 64px; height: 64px; background: #111; border: 1px dashed #444; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
+  .thumb span { font-size: 9px; color: #888; }
+  .stats { color: #aaa; font-size: 12px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<h1>Sprites GBA — match3-quest</h1>
+<p class="stats">Généré le ${new Date().toLocaleString('fr-FR')} — ${Object.keys(sprites).length} personnages</p>
+${renderGroup('Héros', categories.heroes)}
+${renderGroup('PNJ', categories.npcs)}
+${renderGroup('Ennemis', categories.enemies)}
+</body>
+</html>`;
+
+  writeFileSync(PREVIEW_PATH, html, 'utf8');
+  return PREVIEW_PATH;
+}
+
+function openInBrowser(filePath) {
+  try {
+    // WSL → convertit le chemin Linux en chemin Windows puis ouvre avec cmd.exe
+    const winPath = execSync(`wslpath -w "${filePath}"`).toString().trim();
+    execSync(`cmd.exe /c start "" "${winPath}"`, { stdio: 'ignore' });
+  } catch {
+    try { execSync(`xdg-open "${filePath}"`, { stdio: 'ignore' }); } catch { /* ignore */ }
+  }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -198,9 +269,13 @@ async function main() {
   console.log(`Génération : ${tasks.length} sprites (${categories.join(', ')}, dirs: ${DIRS.join('/')})`);
   if (DRY_RUN) {
     for (const t of tasks) {
-      const prompt = `pixel art character sprite, ${t.desc}, ${DIR_PROMPTS[t.dir]}, ${STYLE_SUFFIX}`;
-      console.log(`\n[${t.key}/${t.dir}]\n  ${prompt}`);
+      const prompt = `pixel art character sprite, ${t.desc}, ${STYLE_SUFFIX}`;
+      console.log(`\n[${t.key}/${t.dir}] direction=${DIR_TO_PIXELLAB[t.dir]}\n  ${prompt}`);
     }
+    const existing = loadExisting();
+    const previewPath = writePreview(existing);
+    console.log(`\nPreview (sprites existants) : ${previewPath}`);
+    openInBrowser(previewPath);
     return;
   }
 
@@ -230,6 +305,10 @@ async function main() {
   await runWithConcurrency(apiFns, CONCURRENCY);
 
   console.log(`\nTerminé : ${done} générés, ${failed} échecs → ${GENERATED_PATH}`);
+
+  const previewPath = writePreview(existing);
+  console.log(`Preview : ${previewPath}`);
+  openInBrowser(previewPath);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
