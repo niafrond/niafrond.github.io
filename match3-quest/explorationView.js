@@ -17,7 +17,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
@@ -1208,7 +1208,7 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    drawSprite(npcSprite(it.n.id), c.x, feet + bob, tile * 1.02);
+                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * 1.02);
                     const marker = X.npcMarker(session, it.n.id);
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
@@ -1246,8 +1246,12 @@ export function createExplorationView(cfg) {
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
                     if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
-                    const baseSprite = enemySprite(def.spriteKey || def.id, def.templateId, screen.biome);
-                    drawSprite(viewSprite(baseSprite, viewDir(it.e.face)), c.x, feet + bob, size, baseSprite);
+                    const eKey = def.spriteKey || def.id;
+                    const eDir = viewDir(it.e.face);
+                    const baseSprite = enemySprite(eKey, def.templateId, screen.biome);
+                    const eSprite = gbaSprite(eKey, eDir) || gbaSprite(def.templateId, eDir)
+                        || viewSprite(baseSprite, eDir);
+                    drawSprite(eSprite, c.x, feet + bob, size, baseSprite);
                     ctx.restore();
                     if (shielded) {
                         // bouclier de flammes tant que la meute n'est pas abattue
@@ -1294,7 +1298,9 @@ export function createExplorationView(cfg) {
                     }
                     const hero = cfg.getHero();
                     const heroBase = heroSprite(hero.classId);
-                    const heroView = viewSprite(heroBase, viewDir(session.rt.facing), HERO_VIEW_OPTS);
+                    const heroDir = viewDir(session.rt.facing);
+                    const heroView = gbaSprite(hero.classId, heroDir)
+                        || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
                     if (riding()) {
                         // à cheval : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
