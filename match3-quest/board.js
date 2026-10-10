@@ -1266,3 +1266,75 @@ export function enemyMakeRandomMove(){
     }, 800);
 }
 
+// Xiao Gui joue un coup au hasard pendant le tour du joueur (currentTurn reste 'player').
+export function foxMakeRandomMove(){
+    clearSuggestionTimer();
+    clearSuggestion();
+
+    const possibleMoves = getSortedPossibleMoves();
+    if(possibleMoves.length === 0) return;
+
+    const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    setTimeout(() => {
+        animateFoxSwap(move.from, move.to, () => {
+            swapTiles(move.from, move.to);
+        });
+    }, 600);
+}
+
+function animateFoxSwap(from, to, onComplete){
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv){ onComplete(); return; }
+
+    const tiles = boardDiv.children;
+    const fromTile = tiles[from];
+    const toTile = tiles[to];
+    if(!fromTile || !toTile){ onComplete(); return; }
+
+    const fromRect = fromTile.getBoundingClientRect();
+    const toRect = toTile.getBoundingClientRect();
+    const deltaX = toRect.left - fromRect.left;
+    const deltaY = toRect.top - fromRect.top;
+
+    function createGhost(sourceTile, rect){
+        const ghost = sourceTile.cloneNode(true);
+        ghost.style.position = 'fixed';
+        ghost.style.left = `${rect.left}px`;
+        ghost.style.top = `${rect.top}px`;
+        ghost.style.width = `${rect.width}px`;
+        ghost.style.height = `${rect.height}px`;
+        ghost.style.margin = '0';
+        ghost.style.zIndex = '40';
+        ghost.style.pointerEvents = 'none';
+        ghost.style.transition = 'transform 0.28s ease, box-shadow 0.28s ease';
+        ghost.style.boxShadow = '0 0 14px rgba(224, 122, 46, 0.9)';
+        return ghost;
+    }
+
+    const fromGhost = createGhost(fromTile, fromRect);
+    const toGhost = createGhost(toTile, toRect);
+
+    fromTile.style.visibility = 'hidden';
+    toTile.style.visibility = 'hidden';
+    document.body.appendChild(fromGhost);
+    document.body.appendChild(toGhost);
+
+    requestAnimationFrame(() => {
+        fromGhost.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        toGhost.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
+    });
+
+    setTimeout(() => {
+        fromGhost.remove();
+        toGhost.remove();
+        fromTile.style.visibility = '';
+        toTile.style.visibility = '';
+        onComplete();
+    }, 300);
+}
+
+export function applyBoard(arr) {
+    board.splice(0, board.length, ...arr);
+    renderBoard();
+}
+

@@ -1301,6 +1301,14 @@ export function createExplorationView(cfg) {
                     const heroDir = viewDir(session.rt.facing);
                     const heroView = gbaSprite(hero.classId, heroDir)
                         || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
+
+                    // Xiao Gui (renard compagnon) : visible derrière le héros quand il a rejoint le groupe.
+                    const companions = X.companionsOf(session);
+                    if (companions.some(c => c.id === 'xiao_gui')) {
+                        const foxHop = moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
+                        drawSprite(npcSprite('huli_xia'), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
+                    }
+
                     if (riding()) {
                         // à cheval : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
@@ -1663,6 +1671,11 @@ export function createExplorationView(cfg) {
             if (!session || !active || root.style.display === 'none' || inCombat) return null;
             const screen = X.currentScreen(session);
             return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome: screen.biome, region: screen.region };
+        },
+
+        getActiveCompanionIds() {
+            ensureSession();
+            return X.companionsOf(session).map(c => c.id);
         },
 
         isBusy: () => isBlocked(),

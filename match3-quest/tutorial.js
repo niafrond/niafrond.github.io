@@ -23,6 +23,21 @@ const TOTAL_STEPS = 5;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 
+// Plateau pré-généré garanti sans match initial, avec 8+ coups possibles dont :
+//   – 1 coup crâne : échanger index 35 (4,3)=skull ↔ index 43 (5,3)=blue → 4 crânes alignés en ligne 5
+//   – plusieurs coups couleur disponibles dès le départ
+// prettier-ignore
+const TUTORIAL_BOARD = [
+    'red',   'red',    'green',  'blue',   'blue',   'yellow', 'purple', 'purple',  // ligne 0
+    'green', 'blue',   'red',    'red',    'green',  'purple', 'blue',   'blue',    // ligne 1
+    'blue',  'green',  'blue',   'green',  'yellow', 'red',    'green',  'red',     // ligne 2
+    'yellow','purple', 'yellow', 'purple', 'red',    'blue',   'red',    'yellow',  // ligne 3
+    'purple','yellow', 'green',  'skull',  'blue',   'green',  'yellow', 'purple',  // ligne 4 : skull idx 35
+    'green', 'skull',  'skull',  'blue',   'skull',  'red',    'yellow', 'blue',    // ligne 5 : skulls idx 41,42,44
+    'red',   'blue',   'yellow', 'green',  'purple', 'yellow', 'blue',   'red',     // ligne 6
+    'blue',  'red',    'purple', 'yellow', 'green',  'blue',   'purple', 'green',   // ligne 7
+];
+
 const TUTORIAL_SPELL = {
     id: TUTO_SPELL_ID,
     name: 'Flèche d\'entraînement',
@@ -267,7 +282,7 @@ function _startTutorialCombat() {
 
         import('./board.js').then(boardModule => {
             boardModule.generateBoard();
-            boardModule.renderBoard();
+            boardModule.applyBoard(TUTORIAL_BOARD);
             updateStats();
             createSpellButtons();
             log('Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
@@ -432,8 +447,12 @@ function _highlightBoardForStep(step) {
                         break;
                     }
                 }
-                // Fallback : n'importe quel move
-                if (!target) target = moves[0];
+                // Fallback : aucun coup du bon type disponible → réinitialiser le plateau tutoriel
+                if (!target) {
+                    bm.applyBoard(TUTORIAL_BOARD);
+                    setTimeout(() => _highlightBoardForStep(step), 400);
+                    return;
+                }
             } else {
                 target = moves[0];
             }

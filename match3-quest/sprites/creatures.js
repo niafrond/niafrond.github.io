@@ -39,7 +39,7 @@ export const CREATURE_BY_ID = {
     lizard_zao: { kind: 'salamander' },
     forge_spirit: { kind: 'flame' },
     mare_chagan: { kind: 'horse' },
-    horse_mount: { kind: 'horse' },   // monture du héros (marchand des Bambous)
+    horse_mount: { kind: 'horse', mount: true },   // monture du héros (marchand des Bambous)
     wolf_pup_baatar: { kind: 'wolf', ember: true },
     ghost_rider_tolui: { kind: 'ghost', hat: 'rider' },
     horse_tian: { kind: 'horse', celestial: true },
@@ -132,11 +132,21 @@ function buffalo() {
 
 function horse(v) {
     const fur = v.celestial ? '#f4e6b8' : '#f1ece2', furD = v.celestial ? '#d9c486' : '#cfc6b6', mane = v.celestial ? '#7aa7d8' : '#8a6a4a';
+    const saddle = '#8a3e1e', saddleD = '#5e2a10', saddleL = '#c46a38';
     return beast({
         fur, furD, belly: v.celestial ? '#fbf3d8' : '#e2d7c6', limb: furD, ears: 'pointy', earIn: '#f2b8b0', snout: 'long', headRy: 12.6, headY: 23,
-        back: TAIL(mane, 'M42 54 Q57 52 54 36 Q50 40 41 47Z'),
-        top: `<path d="M24 14 Q28 6 34 9 Q40 7 41 13 Q36 11 33 14 Q30 12 27 16 Q26 13 24 14Z" fill="${mane}"/>` +
+        back: TAIL(mane, 'M42 54 Q58 52 55 36 Q51 30 48 34 Q52 44 41 48Z') +
+            `<path d="M55.4 36 Q54 29 48.4 33 Q51.6 34.4 52.6 38Z" fill="${mane}"/>`,
+        top: `<path d="M23 15 Q26 6 32 8 Q38 6 41 13 Q38 11 34 12 Q30 11 27 15 Q25 11 23 15Z" fill="${mane}"/>` +
+            `<path d="M21 17 Q24 10 26 15 Q24 13 21 17Z" fill="${mane}"/>` +
+            `<path d="M41 13 Q45 14 46 18 Q44 18 44 22 Q44 16 42 15Z" fill="${mane}"/>` +
             `<path d="M46 18 Q51 26 47 34 Q47 26 44 21Z" fill="${mane}"/>` +
+            (v.mount ?
+                `<path d="M20 42 Q26 44 32 44 Q38 44 44 42 Q43 46 32 47 Q21 46 20 42Z" fill="${saddle}"/>` +
+                `<path d="M38 42 Q44 44 43.4 46 Q40 47 38 42Z" fill="${saddleD}" ${N}/>` +
+                `<path d="M20 42 Q21 44 22 42" fill="none" stroke="${saddleL}" stroke-width="1.2"/>` +
+                `<path d="M24 24 Q22 18 26 17 Q24 22 27 24Z" fill="${mane}"/>` +
+                `<circle cx="28" cy="18.6" r="1.4" fill="${saddle}" ${N}/>` : '') +
             (v.celestial ? `<path d="M10 52 Q10 47 15 48 Q17 44 21 47 Q25 46 24 51 Q22 55 15 54 Q10 55 10 52Z" fill="#fff"/>` + sparkle(12, 30) + sparkle(54, 14) : '')
     });
 }
