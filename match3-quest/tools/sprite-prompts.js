@@ -5,16 +5,16 @@
 export const SPRITE_MANIFEST = {
   heroes: {
     assassin: {
-      desc: 'young Chinese woman assassin, fitted dark purple silk changpao robe with silver trim, two silver throwing daggers tucked in sash, black hair in tight bun secured with a jade pin, red and black fabric bracers on forearms, determined expression',
+      desc: 'Hou Yi as a young 25-year-old Chinese shadow assassin, lithe athletic build, dark navy silk changpao with silver cloud trim, twin jade-handled short blades at belt, black hair in a tight warrior knot, sharp focused eyes, jade archer pendant at chest',
     },
     sorcerer: {
-      desc: 'elderly Chinese male Taoist sage, long flowing ochre and dark brown daoist robe with red cloud embroidery, tall black ceremonial guan hat, clean-shaven wrinkled face, holding a gnarled wooden staff topped with a glowing amber jade orb, calm wise expression',
+      desc: 'Hou Yi as a young 25-year-old Chinese celestial mage, lean athletic build, flowing crimson hanfu robe with gold sun and arrow embroidery, black hair in a high guan knot with a gold pin, holding a short lacquered wooden staff with a glowing solar jade orb, intense determined expression',
     },
     archer: {
-      desc: 'Hou Yi the divine archer hero, red lamellar xia armor with gold shoulder guards, black hair in a warrior top-knot, wooden recurve bow across back with a quiver of red-fletched arrows, jade pendant at chest, heroic confident expression',
+      desc: 'Hou Yi the divine archer, young 25-year-old Chinese hero, lean muscular build, red and gold lamellar xia armor, black hair in a warrior top-knot, large wooden recurve bow in hand with a quiver of red-fletched arrows at back, jade sun pendant at chest, heroic confident expression',
     },
     warrior: {
-      desc: 'Chinese female warrior, red and gold plate armor with jade pauldrons, black hair in an elaborate warrior bun with gold pin, one-handed bronze dao sword at hip and round lacquered shield on arm, fierce determined expression',
+      desc: 'Hou Yi as a young 25-year-old Chinese warrior, strong athletic build, red lamellar chest armor with gold sun motif and jade pauldrons, black hair in a warrior bun with a gold pin, bronze dao sword at hip and round lacquered shield on arm, fierce determined expression',
     },
   },
 
