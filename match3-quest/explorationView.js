@@ -23,7 +23,7 @@ import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
-import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
+import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawGate, darkHex } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -1385,7 +1385,7 @@ export function createExplorationView(cfg) {
         }
     }
 
-    const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
+
 
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
     // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
@@ -1417,12 +1417,11 @@ export function createExplorationView(cfg) {
     function drawBuilding(b, p, tile, labelSize) {
         const w = b.w * tile;
         const h = b.h * tile;
-        const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
-        const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
-        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}`, p.x, p.y, w, h,
-            [tile * 0.5, tile * 0.4, tile * 0.9, tile * 0.5],
-            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }));
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
+        const gateH = Math.round(h * 0.40);
+        drawCachedObject(`gate:${b.id}:${b.w}x${b.h}`, p.x, p.y, w, h,
+            [tile * 0.6, tile * 0.2, tile * 0.6, tile * 0.3],
+            (g, ox, oy) => drawGate(g, ox, oy, w, h, tile));
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + gateH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
