@@ -122,7 +122,7 @@ describe('qualité technique des SVG', () => {
         expect(typeof svg).toBe('string');
         expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"')).toBe(true);
         expect(svg.trim().endsWith('</svg>')).toBe(true);
-        expect(svg.length).toBeLessThanOrEqual(9000);
+        expect(svg.length).toBeLessThanOrEqual(12000);   // les soleils pixel art (rectangles nets) sont plus lourds que les dessins vectoriels
         expect(svg.length).toBeGreaterThan(300); // pas un simple carré
         expect(checkWellFormed(svg)).toBeNull();
         // pas d'emoji ni de caractère non ASCII, pas de texte ni de ressource externe

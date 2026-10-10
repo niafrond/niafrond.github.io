@@ -4,7 +4,7 @@
 //  - cn/actors-a.js  : les 4 styles de Hou Yi (clés = ids de classes), PNJ des régions 1 à 5, coffres
 //  - cn/actors-b.js  : PNJ des régions 6 à 10, Fengmeng (4 rencontres)
 //  - cn/enemies-1.js / cn/enemies-2.js : ennemis, clés = identifiants de gabarits du catalogue
-//  - cn/suns.js      : les neuf Soleils-Boss (clés sun_1…sun_9) et trois bêtes
+//  - cn/suns.js      : les neuf Soleils-Boss en pixel art (clés sun_1…sun_9), générés par gen-suns.mjs ; cn/beasts.js : trois bêtes
 // Une clé d'ennemi nommé (boss, rival) prime sur celle de son gabarit.
 //
 // Chargement à la demande : chaque fichier de cn/ est un « paquet » importé dynamiquement (loadSpritePacks) quand une
