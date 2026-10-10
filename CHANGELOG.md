@@ -1,3 +1,9 @@
+## [2.65.0](https://github.com/niafrond/niafrond.github.io/compare/v2.64.0...v2.65.0) (2026-10-10)
+
+### Features
+
+* **match3-quest:** tuiles de terrain GBA pixel art via pixel.lab Bitforge ([1ea4c3f](https://github.com/niafrond/niafrond.github.io/commit/1ea4c3fd529ad6e48ba9832004420a609e299560))
+
 ## [2.64.0](https://github.com/niafrond/niafrond.github.io/compare/v2.63.0...v2.64.0) (2026-10-10)
 
 ### Features
