@@ -20,9 +20,6 @@ const D = {
         `<path d="M26 16 Q22 30 26 44 M38 16 Q42 30 38 44" fill="none" stroke="#a8281e" stroke-width="1.4"/>` +
         `<ellipse cx="32" cy="30" rx="7" ry="10" fill="#f6b24a" opacity=".4" ${N}/>` +
         `<rect x="25" y="44" width="14" height="4" rx="1.2" fill="#c9a448"/><path d="M29 48 L28 56 M32 48 L32 58 M35 48 L36 56" fill="none" stroke="#f2c14e" stroke-width="1.8"/>`,
-    hut: () => `<rect x="14" y="32" width="36" height="25" fill="#c9a06a"/><rect x="28" y="40" width="9" height="17" fill="#6a4226"/>` +
-        `<path d="M6 34 Q32 4 58 34 Q32 30 6 34Z" fill="#d8b860"/><path d="M14 30 L16 26 M22 25 L24 21 M40 21 L42 25 M48 26 L50 30 M31 18 L33 14" fill="none" stroke="#a8862a" stroke-width="1.4"/>` +
-        `<rect x="17" y="38" width="7" height="6" fill="#f6e2a8"/>`,
     rock: () => `<path d="M8 56 L12 38 L24 26 L40 28 L52 40 L56 56Z" fill="#9a9a94"/>` +
         `<path d="M40 28 L52 40 L56 56 L44 56 L42 40Z" fill="#7a7a74" ${N}/><path d="M8 56 L12 38 L24 26 L40 28 L52 40 L56 56Z" fill="none"/>` +
         `<path d="M24 26 L28 40 L42 40 M28 40 L20 56" fill="none" stroke-width="1.4"/><path d="M14 46 Q20 42 26 46" fill="none" stroke="#7a9a4a" stroke-width="2.4"/>`,
