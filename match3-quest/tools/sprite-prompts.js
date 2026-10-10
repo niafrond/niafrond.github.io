@@ -8,7 +8,7 @@ export const SPRITE_MANIFEST = {
       desc: 'young Chinese woman assassin, fitted dark purple silk changpao robe with silver trim, two silver throwing daggers tucked in sash, black hair in tight bun secured with a jade pin, red and black fabric bracers on forearms, determined expression',
     },
     sorcerer: {
-      desc: 'elderly Chinese male sorcerer, long flowing deep indigo daoist robe with gold cloud embroidery, tall ceremonial hat, long white beard and mustache, holding a gnarled wooden staff topped with a glowing blue pearl, wise stern expression',
+      desc: 'elderly Chinese male Taoist sage, long flowing ochre and dark brown daoist robe with red cloud embroidery, tall black ceremonial guan hat, clean-shaven wrinkled face, holding a gnarled wooden staff topped with a glowing amber jade orb, calm wise expression',
     },
     archer: {
       desc: 'Hou Yi the divine archer hero, red lamellar xia armor with gold shoulder guards, black hair in a warrior top-knot, wooden recurve bow across back with a quiver of red-fletched arrows, jade pendant at chest, heroic confident expression',
