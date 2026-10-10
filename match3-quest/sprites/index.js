@@ -272,6 +272,13 @@ const fallbackUri = (svg, grid) => `data:image/svg+xml;charset=utf-8,${encodeURI
 
 export function spriteUri(svg, grid = PX_GRID) {
     if (!svg) return '';
+    if (svg.startsWith('data:image/png')) {
+        const key = pxKey(svg, normGrid(grid));
+        const done = pixelDone.get(key);
+        if (done?.uri) return done.uri;
+        if (!pixelDone.has(key)) preparePngSprite(svg, normGrid(grid));
+        return svg;
+    }
     const g = normGrid(grid);
     const done = pixelDone.get(pxKey(svg, g));
     if (done) return done.uri;

@@ -5,7 +5,7 @@ import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
-import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
+import { heroSprite, enemySprite, spriteUri, gbaSprite } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
@@ -1199,8 +1199,10 @@ function updateFighterPortraits(){
         if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
         else el.style.removeProperty('--portrait');
     };
-    set('player-stats', heroSprite(player.class) || heroSprite('assassin'));
-    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId, enemy.biome));
+    set('player-stats', gbaSprite(player.class, 'front') || heroSprite(player.class) || heroSprite('assassin'));
+    const eKey = enemy.spriteKey || enemy.id;
+    const terrainSprite = gbaSprite(eKey, 'front') || gbaSprite(enemy.templateId, 'front');
+    set('enemy-stats', terrainSprite || enemySprite(eKey, enemy.templateId, enemy.biome));
 }
 
 export function updateStats(){
