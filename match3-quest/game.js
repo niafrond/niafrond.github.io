@@ -6,7 +6,7 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
-import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS } from "./combatFlow.js";
@@ -545,6 +545,13 @@ export function grantChestLoot({ loot = [] } = {}){
 // tour actuel
 export let currentTurn = 'player';
 
+// Compagnons actifs transmis par l'exploration (ids comme 'xiao_gui', 'zhi', 'dawa').
+let activeCompanionIds = new Set();
+export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || []); }
+
+// Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
+let foxActedThisTurn = false;
+
 // état du combat (objet pour pouvoir modifier la propriété)
 export const gameState = { 
     combatState: 'ready' // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
@@ -834,6 +841,7 @@ export let enemy = { name:"Xiao Gui", hp:50, maxHp:50, attack:10, resistances:{}
 export function restartCombat(){
     actionGuard.reset();
     introToken++;
+    foxActedThisTurn = false;
     dismissCombatIntro();
     if(pendingPlayerDeathTimeout) {
         clearTimeout(pendingPlayerDeathTimeout);
@@ -1896,6 +1904,14 @@ export function finishPlayerTurn(){
         saveUpdate();
         return;
     }
+    // Xiao Gui (compagnon renard) : 30 % de chance de jouer un coup aléatoire supplémentaire.
+    if (!foxActedThisTurn && activeCompanionIds.has('xiao_gui') && Math.random() < 0.30) {
+        foxActedThisTurn = true;
+        log('Xiao Gui bondit ! Hi hi — un coup de renard !');
+        foxMakeRandomMove();
+        return; // le plateau rappelle finishPlayerTurn() après résolution
+    }
+
     // Laisse finir l'animation de l'action du joueur (attaque, sort, soin, objet) avant la réplique de l'adversaire.
     currentTurn = 'enemy'; // bloque le plateau pendant l'animation
     updateStats();
@@ -2223,6 +2239,7 @@ export function finishEnemyTurn(){
         // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
         tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
+        foxActedThisTurn = false;
         currentTurn = 'player';
         updateStats();
         saveUpdate();
