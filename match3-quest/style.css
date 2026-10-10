@@ -1742,6 +1742,7 @@ progress.enemy-bar::-webkit-progress-value {
 
 .bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.5s ease-out 1.15s both; }
 .bt-sprite { display: block; width: min(256px, 45vw); height: min(256px, 45vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
+.bt-sprite.pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; }
 .bt-name { font-size: 1.6em; font-weight: bold; }
 .bt-level { font-size: 1em; opacity: 0.85; }
 

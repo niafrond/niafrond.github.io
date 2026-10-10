@@ -31,7 +31,7 @@ const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
 const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
-const BATTLE_TRANSITION_MS = 1700;   // durée de l'animation d'entrée en combat
+const BATTLE_TRANSITION_MS = 2200;   // durée de l'animation d'entrée en combat (≥ 2 s)
 const BATTLE_STRIPS = 10;
 
 const DIRECTIONS = {
@@ -592,16 +592,20 @@ export function createExplorationView(cfg) {
         removeBattleTransition();
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const overlay = document.createElement('div');
-        const encSprite = enemySprite(enc.spriteKey || enc.enemyId, enc.templateId, enc.biome || enemyBiome(enc.enemyId));
+        const eKey = enc.spriteKey || enc.enemyId;
+        const encGbaSprite = gbaSprite(eKey, 'front') || gbaSprite(enc.templateId, 'front');
+        const encSvgSprite = encGbaSprite ? null : enemySprite(eKey, enc.templateId, enc.biome || enemyBiome(enc.enemyId));
         overlay.className = `battle-transition${reduced ? ' reduced' : ''}`;
         overlay.innerHTML = `
             <div class="bt-strips">${Array.from({ length: BATTLE_STRIPS }, (_, i) =>
                 `<div class="bt-strip ${i % 2 ? 'from-right' : 'from-left'}" style="--i:${i}"></div>`).join('')}</div>
             <div class="bt-flash"></div>
             <div class="bt-title">
-                <div class="bt-emoji">${encSprite
-                    ? `<img class="bt-sprite" alt="" src="${spriteUri(encSprite, PX_GRID_BIG)}" data-small="${spriteUri(encSprite)}">`
-                    : icon('sword')}</div>
+                <div class="bt-emoji">${encGbaSprite
+                    ? `<img class="bt-sprite pixel-art" alt="" src="${encGbaSprite}">`
+                    : encSvgSprite
+                        ? `<img class="bt-sprite" alt="" src="${spriteUri(encSvgSprite, PX_GRID_BIG)}" data-small="${spriteUri(encSvgSprite)}">`
+                        : icon('sword')}</div>
                 <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
                 <div class="bt-level">${enc.boss ? `${icon('crown')} Boss · ` : ''}Niveau ${enc.level}</div>
             </div>`;
