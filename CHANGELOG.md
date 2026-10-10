@@ -1,3 +1,11 @@
+## [2.64.0](https://github.com/niafrond/niafrond.github.io/compare/v2.63.0...v2.64.0) (2026-10-10)
+
+### Features
+
+* **match3-quest:** génère PNJ + ennemis via PixFlux front + /rotate ([6095249](https://github.com/niafrond/niafrond.github.io/commit/6095249d5caf83d8c3cc68b0730fe315b92a114d))
+* **match3-quest:** génère une preview HTML des sprites après chaque run ([582ef54](https://github.com/niafrond/niafrond.github.io/commit/582ef5477435a22dc2ab486d030655492f693771))
+* **match3-quest:** remplacer les sprites d'exploration par du pixel art GBA via pixel.lab ([795b6dc](https://github.com/niafrond/niafrond.github.io/commit/795b6dc511196debd21c458c0005129563cd8881))
+
 ## [2.63.0](https://github.com/niafrond/niafrond.github.io/compare/v2.62.1...v2.63.0) (2026-10-10)
 
 ### Features
