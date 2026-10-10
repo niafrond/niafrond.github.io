@@ -121,7 +121,7 @@ async function callRotate(apiKey, frontUri, toDir, size) {
     from_view: 'low top-down',
     to_view: 'low top-down',
     image_size: { width: size, height: size },
-    image_guidance_scale: 5,
+    image_guidance_scale: 7,
   };
   const data = await fetchWithRetry(ROTATE_URL, {
     method: 'POST',
