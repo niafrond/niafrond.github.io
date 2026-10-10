@@ -82,17 +82,17 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
     const grass = () => paintGrass(R, biome, x, y, biomeId);
 
     if (isLiquid(x, y)) {
+        if (biomeId && drawTileTexture(g, biomeId, 'liquid', px, py, tile, 1)) return;
         paintWater(R, biome, x, y, isLiquid, biomeId);
-        // Overlay texture pixel.lab sur le liquide (40% opacity pour conserver les animations)
-        if (biomeId) drawTileTexture(g, biomeId, 'liquid', px, py, tile, 0.40);
         return;
     }
     if (isPath(x, y)) {
+        if (biomeId && !tiled && drawTileTexture(g, biomeId, 'path', px, py, tile, 1)) return;
         paintDirt(R, biome, x, y, isPath, grass);
-        if (biomeId && !tiled) drawTileTexture(g, biomeId, 'path', px, py, tile, 0.38);
         return;
     }
     if (tiled) { paintFlagstone(R, biome, x, y); return; }
+    if (biomeId && drawTileTexture(g, biomeId, 'ground', px, py, tile, 1)) return;
     grass();
     // coins concaves : l'herbe s'arrondit autour d'un chemin ou d'un étang qui la longe sur deux côtés
     const rim = (test, inside, edge) => {
@@ -112,8 +112,6 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
         if (isLiquid(x - 1, y)) for (let i = 0; i < 16; i++) if (cellHash(x, y * 16 + i, 52) < 0.7) R(0, i, 2, 1, sand);
         if (isLiquid(x + 1, y)) for (let i = 0; i < 16; i++) if (cellHash(x, y * 16 + i, 53) < 0.7) R(14, i, 2, 1, sand);
     }
-    // Overlay texture pixel.lab sur l'herbe (35% opacity pour enrichir sans écraser les détails procéduraux)
-    if (biomeId) drawTileTexture(g, biomeId, 'ground', px, py, tile, 0.35);
 }
 
 // Herbe : fond + nappes claires et sombres issues d'un bruit continu (blocs de 2 unités), touffes en V, fleurs rares.
