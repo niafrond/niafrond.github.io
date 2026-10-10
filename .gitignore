@@ -144,3 +144,9 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 test-results/
+
+# Clé API pixel.lab (locale, ne jamais committer)
+pixel-art/config.js
+
+# Preview auto-générée par gen-sprites.mjs
+match3-quest/tools/sprite-preview.html

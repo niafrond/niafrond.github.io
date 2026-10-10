@@ -17,6 +17,16 @@ import { NPC_PACK, ENEMY_PACK } from './packs.js';
 import { villagerSprite } from './villagers.js';
 import { tintSvg, isTintable } from './biomeTint.js';
 export { BIOME_TINTS, tintSvg } from './biomeTint.js';
+import { GBA_SPRITES } from './generated.js';
+
+// Sprite GBA pré-généré pour la clé donnée (direction : 'front'|'back'|'left'|'right').
+// Retourne null si aucun sprite généré n'existe pour cette clé.
+export const hasGbaSprite = key => key in GBA_SPRITES;
+export function gbaSprite(key, dir = 'front') {
+    const s = GBA_SPRITES[key];
+    if (!s) return null;
+    return s[dir] || s.front || null;
+}
 
 export const SPRITE_PACKS = Object.keys(SPRITE_PACK_FILES);
 // Héros et coffres : toujours présents à l'écran (et sur la carte du monde).
@@ -200,9 +210,36 @@ function buildPixelCanvas(img, grid) {
     return up;
 }
 
+// PNG pré-généré (pixel.lab) : upscale 4× sans filtre de pixellisation.
+function preparePngSprite(uri, grid) {
+    const key = pxKey(uri, grid);
+    if (pixelDone.has(key)) return;
+    pixelDone.set(key, null); // marque "en cours" pour ne pas lancer plusieurs fois
+    const img = new Image();
+    img.onload = () => {
+        const size = normGrid(grid) * PX_SAMPLE;
+        const up = document.createElement('canvas');
+        up.width = up.height = size;
+        const c = up.getContext('2d');
+        c.imageSmoothingEnabled = false;
+        c.drawImage(img, 0, 0, size, size);
+        pixelDone.set(key, { canvas: up, uri: up.toDataURL('image/png') });
+    };
+    img.onerror = () => pixelDone.delete(key);
+    img.src = uri;
+}
+
 // Canvas pixellisé du sprite (4 × la grille) s'il est prêt, sinon null et la conversion démarre.
+// Accepte aussi bien un SVG string qu'un PNG data URI (généré par pixel.lab).
 export function pixelSprite(svg, grid = PX_GRID) {
     if (!svg || typeof document === 'undefined') return null;
+    if (svg.startsWith('data:image/png')) {
+        const key = pxKey(svg, normGrid(grid));
+        const done = pixelDone.get(key);
+        if (done) return done.canvas; // prêt
+        if (!pixelDone.has(key)) preparePngSprite(svg, grid); // null = en cours, absent = pas encore lancé
+        return null;
+    }
     const g = normGrid(grid);
     const done = pixelDone.get(pxKey(svg, g));
     if (done) return done.canvas;
