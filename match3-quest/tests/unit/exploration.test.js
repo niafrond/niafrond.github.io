@@ -300,7 +300,7 @@ describe('cartes (story.js)', () => {
             expect(target).toBeDefined();
             expect(isTerrainBlocked(target, ex.arrive.x, ex.arrive.y)).toBe(false);
             // sortie de retour symétrique, adjacente à l'arrivée, et on n'arrive pas SUR la tuile de sortie (pas de ping-pong)
-            const back = exitsOf(target, SCREENS).find(e => e.to === s.id && Math.abs(e.x - ex.arrive.x) + Math.abs(e.y - ex.arrive.y) === (ex.connection ? 0 : 1));
+            const back = exitsOf(target, SCREENS).find(e => e.to === s.id && Math.abs(e.x - ex.arrive.x) + Math.abs(e.y - ex.arrive.y) === 1);
             expect(back).toBeDefined();
             expect(target.exits.some(e => e.x === ex.arrive.x && e.y === ex.arrive.y)).toBe(false);
         });
@@ -344,9 +344,9 @@ describe('cartes (story.js)', () => {
             exitsOf(sanctuary, SCREENS).forEach(e => expect(ORDER.includes(e.to)).toBe(false));
 
             // arrivées : à côté de la sortie voisine ; le spawn d'un sanctuaire est l'arrivée venant de la zone sauvage
-            expect(west.arrive.x).toBe(wild.w - 1);   // on arrive sur la bordure opposée (connexion de bordure)
-            if (east) expect(east.arrive.x).toBe(0);
-            if (i > 0) expect(sanctuary.spawn).toEqual({ x: exitTo(wild, id).arrive.x + 1, y: exitTo(wild, id).arrive.y });   // l'apparition est un pas à l'intérieur de l'arrivée
+            expect(west.arrive.x).toBe(wild.w - 2);   // on arrive un pas à l'intérieur du bord opposé
+            if (east) expect(east.arrive.x).toBe(1);
+            if (i > 0) expect(sanctuary.spawn).toEqual(exitTo(wild, id).arrive);
         });
         // toutes les sorties de tous les écrans (portes comprises) ont une sortie de retour adjacente à leur arrivée
         screens.forEach(s => exitsOf(s, SCREENS).forEach(e => {
@@ -354,7 +354,7 @@ describe('cartes (story.js)', () => {
             expect([s.id, e.to, Boolean(target)]).toEqual([s.id, e.to, true]);
             expect(isTerrainBlocked(target, e.arrive.x, e.arrive.y)).toBe(false);
             const back = exitsOf(target, SCREENS).filter(x => x.to === s.id);
-            expect(back.some(x => Math.abs(x.x - e.arrive.x) + Math.abs(x.y - e.arrive.y) === (e.connection ? 0 : 1))).toBe(true);
+            expect(back.some(x => Math.abs(x.x - e.arrive.x) + Math.abs(x.y - e.arrive.y) === 1)).toBe(true);
             expect(target.exits.some(x => x.x === e.arrive.x && x.y === e.arrive.y)).toBe(false);
         }));
     });
@@ -397,7 +397,7 @@ describe('cartes (story.js)', () => {
         // fermé tant que le gate n'est pas rempli
         travel(s, `${id}_wild`);
         const wildArrive = exitsOf(SCREENS[`${id}_village`], SCREENS).find(e => e.to === `${id}_wild`).arrive;
-        expect([s.data.screenId, s.data.x, s.data.y]).toEqual([`${id}_wild`, wildArrive.x, wildArrive.y]);
+        expect([s.data.screenId, s.data.x, Math.abs(s.data.y - wildArrive.y) <= 1]).toEqual([`${id}_wild`, wildArrive.x, true]);   // le passage fait 3 cases : on peut le franchir sur l'une des trois
         expect(isExitLocked(s, gate)).toBe(true);
         // juste devant la sortie (grâce de 2 pas : aucun combat), elle refuse le passage
         enterScreen(s, `${id}_wild`, { x: gate.x, y: gate.y });   // sur la bordure, un pas de plus sort de la carte
@@ -408,7 +408,7 @@ describe('cartes (story.js)', () => {
         expect(isExitLocked(s, gate)).toBe(false);
         const { transitions } = travel(s, id);
         expect(transitions.at(-1)).toMatchObject({ type: 'transition', from: `${id}_wild`, to: id });
-        expect([s.data.screenId, s.data.x, s.data.y]).toEqual([id, gate.arrive.x, gate.arrive.y]);
+        expect([s.data.screenId, s.data.x, Math.abs(s.data.y - gate.arrive.y) <= 1]).toEqual([id, gate.arrive.x, true]);
     });
 
     test('le héros traverse tout le monde, de la première maison au Pic de la Lune, soleil après soleil', () => {
@@ -798,12 +798,12 @@ describe('déplacement et zones de vigilance', () => {
         expect(tryMove(s, dx, dy, { playerLevel: 2 })).toMatchObject({ type: 'transition', from: 'rizieres', to: 'fleuve_village', firstVisit: true, door: false });
         expect(s.data.screenId).toBe('fleuve_village');
         expect([s.data.x, s.data.y]).toEqual([ex.arrive.x, ex.arrive.y]);
-        expect([s.data.x, s.data.y]).toEqual([0, 6]);   // arrivée sur la bordure ouest, rangée alignée
+        expect([s.data.x, s.data.y]).toEqual([1, 6]);   // un pas à l'intérieur de la bordure ouest, rangée alignée
         // retour à l'ouest : on ressort en face, sur la case alignée avec le passage est des rizières
         const back = atGate('fleuve_village', 'rizieres');
         expect(tryMove(back.s, back.dx, back.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', to: 'rizieres' });
         expect([back.s.data.x, back.s.data.y]).toEqual([back.ex.arrive.x, back.ex.arrive.y]);
-        expect(back.s.data.x).toBe(SCREENS.rizieres.w - 1);
+        expect(back.s.data.x).toBe(SCREENS.rizieres.w - 2);
         // village → zone sauvage → sanctuaire (gate rempli)
         const vg = atGate('rizieres_village', 'rizieres_wild');
         const v = vg.s;
@@ -1973,8 +1973,7 @@ describe('déplacement au clic (findPath)', () => {
         const s = atClick('rizieres_village', 18, 5);
         const toExit = findPath(s, 19, 6);
         expect(toExit[toExit.length - 1]).toEqual({ x: 19, y: 6 });
-        expect(walk(s, toExit).type).toBe('moved');   // la bordure est un terrain ordinaire : on sort en faisant un pas de plus
-        expect(tryMove(s, 1, 0)).toMatchObject({ type: 'transition', to: 'rizieres_wild' });
+        expect(walk(s, toExit)).toMatchObject({ type: 'transition', to: 'rizieres_wild' });   // la dernière case du passage suffit
         // aller à côté de la sortie ne fait pas changer d'écran
         const s2 = atClick('rizieres_village', 18, 5);
         walk(s2, findPath(s2, 18, 7));

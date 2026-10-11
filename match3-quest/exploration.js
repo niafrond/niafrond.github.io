@@ -32,7 +32,7 @@ import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
-import { crossBorder, connectionMarkers } from './mapConnections.js';
+import { crossBorder, connectionMarkers, onSide, dirOfStep } from './mapConnections.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -456,8 +456,8 @@ function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
 
 // Sortie de carte par la bordure : connexion (world/connections.js) ou mur. La direction du regard est conservée
 // (`rt.facing`) et la case d'arrivée est toujours libre et dans la carte : aucune boucle de transition possible.
-function crossMapBorder(session, screen, dx, dy, playerLevel) {
-    const hit = crossBorder(session.screens, screen, session.data.x, session.data.y, dx, dy,
+function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.data) {
+    const hit = crossBorder(session.screens, screen, from.x, from.y, dx, dy,
         (s, x, y) => isTerrainBlocked(s, x, y, canWalkOnWater(session)));
     if (!hit || hit.x === null) return { type: 'blocked' };
     const target = session.screens[hit.to];
@@ -503,6 +503,13 @@ export function tryMove(session, dx, dy, ctx = {}) {
             };
         }
         return transitionTo(session, screen, exit.to, exit.arrive, playerLevel, { door: Boolean(exit.door) });
+    }
+
+    // Dernière case d'un passage de bord : poser le pied dessus déclenche la transition (pas besoin de sortir de la carte).
+    const dir = screen.connections && dirOfStep(dx, dy);
+    if (dir && screen.connections[dir] && onSide(screen, dir, nx, ny)) {
+        const res = crossMapBorder(session, screen, dx, dy, playerLevel, { x: nx, y: ny });
+        if (res.type !== 'blocked') return res;   // sans case d'arrivée possible, la bordure reste une case ordinaire
     }
 
     session.data.x = nx;

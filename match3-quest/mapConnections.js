@@ -97,14 +97,14 @@ export function occupiedCells(screen) {
     return cells;
 }
 
-// Case d'arrivée : sur la bordure d'entrée, à la même position relative ; si elle est bloquée, la plus proche case libre
-// de la bordure (dans le recouvrement), puis les rangées `depth` plus à l'intérieur.
+// Case d'arrivée : un pas à l'intérieur de la bordure d'entrée, à la même position relative ; si elle est bloquée, la plus proche case libre
+// de cette rangée, puis les rangées `depth` plus à l'intérieur.
 export function arrivalCell(conn, from, to, x, y, isBlocked, depth = 2) {
     const d = DIRS[conn.dir];
     const along = (d.axis === 'x' ? x : y) - offsetOf(conn, from, to);
     const len = lengthAlong(to, conn.dir);
     const taken = occupiedCells(to);
-    for (let inward = 0; inward <= depth; inward++) {
+    for (let inward = 1; inward <= depth + 1; inward++) {   // un pas à l'intérieur : jamais sur une case de bordure ouverte (pas de rebond)
         for (let shift = 0; shift < len; shift++) {
             for (const a of shift ? [along - shift, along + shift] : [along]) {
                 if (a < 0 || a >= len) continue;
@@ -199,10 +199,13 @@ export function connectionRows(screens, screen) {
         const rows = [];
         for (let a = range[0]; a <= range[1]; a++) {
             const { x, y } = borderCell(screen, dir, a);
-            const cell = arrivalCell(c, screen, to, x, y, (m, cx, cy) => cx < 0 || cy < 0 || cx >= m.w || cy >= m.h, 0);
+            const cell = arrivalCell(c, screen, to, x, y, (m, cx, cy) => cx < 0 || cy < 0 || cx >= m.w || cy >= m.h, 0);   // arrivée théorique (sans collisions)
             rows.push({ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, edge: dir,
                 span: a - mid, arrive: cell, connection: true });
         }
         return rows.sort((p, q) => Math.abs(p.span) - Math.abs(q.span));
     });
 }
+
+// Vrai si (x, y) est une case de la bordure du côté `dir`.
+export const onSide = (screen, dir, x, y) => (dir === 'north' ? y === 0 : dir === 'south' ? y === screen.h - 1 : dir === 'west' ? x === 0 : x === screen.w - 1);

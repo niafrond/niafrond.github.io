@@ -51,7 +51,7 @@ describe('cartes extérieures : grandes et reliées', () => {
             // on arrive juste à l'intérieur du bord opposé, sur la rangée alignée
             const back = exitsOf(target, SCREENS).filter(b => b.to === s.id && b.edge === OPPOSITE[e.edge]);
             expect(back.length).toBeGreaterThan(0);
-            expect(back.some(b => Math.abs(b.x - e.arrive.x) + Math.abs(b.y - e.arrive.y) === (e.connection ? 0 : 1))).toBe(true);
+            expect(back.some(b => Math.abs(b.x - e.arrive.x) + Math.abs(b.y - e.arrive.y) === 1)).toBe(true);
         });
         // chaque passage a une case centrale
         const centers = edgeExits.filter(e => e.span === 0);
