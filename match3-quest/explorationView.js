@@ -122,6 +122,17 @@ export function createExplorationView(cfg) {
     let battleTransitionEl = null;
     let battleTransitionTimer = null;
     const vis = { px: 0, py: 0, enemies: {}, bob: 0 };
+    // Défilement d'une carte à l'autre (connexion de bordure) : l'image de la carte quittée glisse hors du cadre pendant que
+    // la nouvelle entre, dans le sens de la marche. { dir, snap, t0 (null = au prochain dessin) }
+    const SLIDE_MS = 260;
+    let slide = null;
+    const slideProgress = now => {
+        if (!slide) return 1;
+        if (slide.t0 === null) slide.t0 = now;
+        const p = Math.min(1, (now - slide.t0) / SLIDE_MS);
+        if (p >= 1) slide = null;
+        return p;
+    };
     let preparedRegion = null;   // région dont les dessins sont chargés et décodés
     let preparing = null;        // { region, promise } : chargement en cours
 
@@ -694,6 +705,7 @@ export function createExplorationView(cfg) {
                 break;
             case 'transition': {
                 const screen = X.currentScreen(session);
+                startSlide(res);
                 cfg.onRegionVisited?.(screen.region);
                 vis.enemies = {};
                 syncVisual(true);
@@ -717,6 +729,17 @@ export function createExplorationView(cfg) {
             default:
                 break;
         }
+    }
+
+    // Copie de la dernière image affichée (carte quittée) pour le défilement ; aucun défilement pour une porte ou avec « mouvement réduit ».
+    function startSlide(res) {
+        slide = null;
+        if (!res.border || !canvas.width || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        const snap = document.createElement('canvas');
+        snap.width = canvas.width;
+        snap.height = canvas.height;
+        snap.getContext('2d').drawImage(canvas, 0, 0);
+        slide = { dir: res.dir, snap, t0: null };
     }
 
     function doMove(dirName) {
@@ -857,8 +880,9 @@ export function createExplorationView(cfg) {
             return;
         }
 
-        if (held && !isBlocked() && now - lastMoveAt >= moveDelay()) doMove(held);
-        else if (walk && !isBlocked() && now - lastMoveAt >= moveDelay()) walkStep();
+        const sliding = Boolean(slide);
+        if (held && !sliding && !isBlocked() && now - lastMoveAt >= moveDelay()) doMove(held);
+        else if (walk && !sliding && !isBlocked() && now - lastMoveAt >= moveDelay()) walkStep();
         if (walk && isBlocked()) walk = null;
         if (!isBlocked()) {
             const events = X.tick(session, dt);
@@ -943,6 +967,14 @@ export function createExplorationView(cfg) {
             canvas.height = Math.round(vh * dpr);
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Défilement entre deux cartes : ancienne image qui sort, nouvelle carte qui entre (poussée dans le sens de la marche).
+        const sp = slideProgress(now);
+        if (slide) {
+            const d = DIRECTIONS[slide.dir === 'north' ? 'up' : slide.dir === 'south' ? 'down' : slide.dir === 'west' ? 'left' : 'right'] || { dx: 0, dy: 0 };
+            const ease = 1 - (1 - sp) * (1 - sp);
+            ctx.drawImage(slide.snap, -d.dx * vw * ease, -d.dy * vh * ease, vw, vh);
+            ctx.translate(d.dx * vw * (1 - ease), d.dy * vh * (1 - ease));
+        }
 
         // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran
         ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
