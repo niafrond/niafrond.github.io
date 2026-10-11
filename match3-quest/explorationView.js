@@ -698,7 +698,7 @@ export function createExplorationView(cfg) {
                 vis.enemies = {};
                 syncVisual(true);
                 refreshHud();
-                toast(screen.dark && !cfg.getHero().torch ? `${screen.name} : il fait noir, une torche (en vente chez les marchands) aiderait.` : screen.name, screen.dark ? 4200 : 2200);
+                if (!res.border || screen.dark) toast(screen.dark && !cfg.getHero().torch ? `${screen.name} : il fait noir, une torche (en vente chez les marchands) aiderait.` : screen.name, screen.dark ? 4200 : 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
                 // Jamais de texte du Narrateur en entrant dans une maison.
                 // Première entrée dans une région : cinématique, puis le texte d'ambiance.

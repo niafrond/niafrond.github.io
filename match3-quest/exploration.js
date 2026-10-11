@@ -32,6 +32,7 @@ import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
+import { crossBorder } from './mapConnections.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -436,13 +437,46 @@ function checkAura(session) {
 // Une sortie est verrouillée tant que sa condition `requires` n'est pas remplie.
 export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires);
 
+// Transition vers une autre carte (sortie explicite ou connexion de bordure) : alerte de niveau, texte d'arrivée, quêtes.
+function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
+    const target = session.screens[toId];
+    const minLevel = REGION_UNLOCK_LEVEL[target.region] || 1;
+    // Le niveau recommandé ne bloque jamais : le joueur est seulement prévenu (`warning`).
+    const warning = playerLevel < minLevel && target.region !== screen.region
+        ? { minLevel, regionName: target.name } : null;
+    const from = screen.id;
+    const firstVisit = !session.data.visitedScreens.includes(toId);
+    enterScreen(session, toId, pos);
+    const res = { type: 'transition', from, to: toId, firstVisit, door: false, events: checkAutoQuests(session), ...extra };
+    // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
+    if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
+    if (warning) res.warning = warning;
+    return res;
+}
+
+// Sortie de carte par la bordure : connexion (world/connections.js) ou mur. La direction du regard est conservée
+// (`rt.facing`) et la case d'arrivée est toujours libre et dans la carte : aucune boucle de transition possible.
+function crossMapBorder(session, screen, dx, dy, playerLevel) {
+    const hit = crossBorder(session.screens, screen, session.data.x, session.data.y, dx, dy,
+        (s, x, y) => isTerrainBlocked(s, x, y, canWalkOnWater(session)));
+    if (!hit || hit.x === null) return { type: 'blocked' };
+    const target = session.screens[hit.to];
+    if (isExitLocked(session, hit.conn)) {
+        return {
+            type: 'exitBlocked', reason: 'quest', label: hit.conn.label, regionName: target.name,
+            message: hit.conn.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
+        };
+    }
+    return transitionTo(session, screen, hit.to, { x: hit.x, y: hit.y }, playerLevel, { border: true, dir: hit.dir });
+}
+
 export function tryMove(session, dx, dy, ctx = {}) {
     const playerLevel = Math.max(1, Math.floor(ctx.playerLevel || 1));
     const screen = currentScreen(session);
     session.rt.facing = { dx, dy };
     const nx = session.data.x + dx;
     const ny = session.data.y + dy;
-    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return { type: 'blocked' };
+    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return crossMapBorder(session, screen, dx, dy, playerLevel);
 
     const ent = entityAt(session, nx, ny);
     if (ent) {
@@ -468,18 +502,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
                 message: exit.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
             };
         }
-        const minLevel = REGION_UNLOCK_LEVEL[target.region] || 1;
-        // Le niveau recommandé ne bloque jamais : le joueur est seulement prévenu (`warning`).
-        const warning = playerLevel < minLevel && target.region !== screen.region
-            ? { minLevel, regionName: target.name } : null;
-        const from = screen.id;
-        const firstVisit = !session.data.visitedScreens.includes(exit.to);
-        enterScreen(session, exit.to, exit.arrive);
-        const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
-        // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
-        if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
-        if (warning) res.warning = warning;
-        return res;
+        return transitionTo(session, screen, exit.to, exit.arrive, playerLevel, { door: Boolean(exit.door) });
     }
 
     session.data.x = nx;

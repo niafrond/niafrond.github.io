@@ -12,6 +12,8 @@ import { applyJunctions, applyLevelGuards } from './junctions.js';
 import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { applyUnderground } from './underground.js';
+import { applyConnections } from '../mapConnections.js';
+import { CONNECTIONS } from './connections.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
@@ -157,6 +159,9 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)
 
     }
+
+    // Connexions de bordure (données : world/connections.js) ; les cartes sans connexion gardent des bords infranchissables.
+    applyConnections(screens, options.legacy ? [] : CONNECTIONS);
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });
