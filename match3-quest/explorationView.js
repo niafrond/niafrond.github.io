@@ -1057,6 +1057,8 @@ export function createExplorationView(cfg) {
                 drawLabel(p.x + tile / 2, p.y - tile * 0.35, 'Sortie', '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
                 return;
             }
+            // Passage de bord : aucune porte ni flèche, le terrain se prolonge sur la carte voisine (les gardes et piliers dessinent le barrage).
+            if (ex.edge) return;
             const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
             const locked = X.isExitLocked(session, ex);
             const gated = locked || (level < minLevel && session.screens[ex.to].region !== screen.region);
@@ -1080,8 +1082,10 @@ export function createExplorationView(cfg) {
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
         const items = [];
         const inBuilding = (x, y) => (screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
+        const pillarCells = new Set((screen.pillars || []).map(([px, py]) => `${px},${py}`));
         for (let x = 0; x < screen.w; x++) {
             for (let y = 0; y < screen.h; y++) {
+                if (pillarCells.has(`${x},${y}`)) { items.push({ depth: y, kind: 'pillar', x, y }); continue; }
                 if (inRects(screen.obstacles, x, y) && !inBuilding(x, y)) items.push({ depth: y, kind: 'block', x, y });
             }
         }
@@ -1185,6 +1189,10 @@ export function createExplorationView(cfg) {
                     drawDecor('swirl', c.x, c.y - tile * 0.05 + tile * 0.17, tile * 0.34);
                     break;
                 }
+                case 'pillar':
+                    drawShadow(c.x, c.y + tile * 0.34, tile * 0.34, tile * 0.11);
+                    drawDecor('pillar', c.x, c.y + tile * 0.4, tile * 0.95);
+                    break;
                 case 'block': {
                     const px = c.x - tile / 2, py = c.y - tile / 2;
                     if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {

@@ -85,6 +85,9 @@ const D = {
         `<ellipse cx="42" cy="31" rx="7" ry="4" fill="#d9963a"/><ellipse cx="42" cy="29" rx="7" ry="3.4" fill="#f2c14e"/>` +
         `<path d="M32 2 L32 8" fill="none"/><path d="M24 18 Q24 8 32 8 Q40 8 40 18 Q40 28 32 28 Q24 28 24 18Z" fill="#d9302e"/>` +
         `<ellipse cx="32" cy="18" rx="4" ry="6" fill="#f6b24a" opacity=".6" ${N}/>`,
+    // Pilier de pierre : encadre un passage gardé (world/junctions.js)
+    pillar: () => `<rect x="14" y="52" width="36" height="7" rx="1.6" fill="#b8b4a8"/><rect x="19" y="14" width="26" height="40" rx="1.6" fill="#d8d6cc"/>` +
+        `<rect x="14" y="7" width="36" height="9" rx="1.8" fill="#ece8e0"/><path d="M26 18 L26 52 M32 18 L32 52 M38 18 L38 52" fill="none" stroke="#a8a49a" stroke-width="1.4"/>`,
     // Pierre de voyage (spirale gravée)
     swirl: () => `<circle cx="32" cy="32" r="26" fill="#cfe6f6"/><path d="M32 32 Q32 24 40 25.6 Q48 30.4 44 40 Q37.6 49.6 25.6 45.6 Q14.4 40 16 28 Q19.2 14.4 33.6 13.6" fill="none" stroke="#3a7ad8" stroke-width="4"/>`
 };
