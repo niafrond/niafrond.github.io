@@ -1,5 +1,5 @@
-import { applyConnections, validateConnections, offsetOf, overlapOf, crossBorder, warpOf } from '../../mapConnections.js';
-import { createSession, tryMove, currentScreen } from '../../exploration.js';
+import { applyConnections, validateConnections, offsetOf, overlapOf, crossBorder, warpOf, DIRS } from '../../mapConnections.js';
+import { createSession, tryMove, currentScreen, isTerrainBlocked } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 import { CONNECTIONS } from '../../world/connections.js';
 
@@ -121,5 +121,30 @@ describe('connexions de bordure', () => {
         expect(validateConnections(SCREENS, CONNECTIONS)).toEqual([]);
         Object.values(SCREENS).filter(sc => !sc.arena).forEach(sc => expect(sc.connections).toBeDefined());
         expect(currentScreen(createSession(null)).connections).toBeDefined();
+    });
+
+    test('monde réel : chaque case ouverte de chaque connexion mène à une case libre, sans boucle', () => {
+        let crossings = 0;
+        for (const sc of Object.values(SCREENS)) {
+            for (const [dir, c] of Object.entries(sc.connections || {})) {
+                if (c.requires) continue;
+                const to = SCREENS[c.to];
+                const [min, max] = overlapOf(c, sc, to);
+                const d = DIRS[dir];
+                for (let a = min; a <= max; a++) {
+                    const x = d.axis === 'x' ? a : d.dx > 0 ? sc.w - 1 : 0, y = d.axis === 'y' ? a : d.dy > 0 ? sc.h - 1 : 0;
+                    if (isTerrainBlocked(sc, x, y)) continue;
+                    const s = createSession({ screenId: sc.id, x, y }, SCREENS, []);
+                    s.data.x = x; s.data.y = y; s.rt.grace = 0;
+                    const res = tryMove(s, d.dx, d.dy, { playerLevel: 70 });
+                    crossings++;
+                    expect({ at: `${sc.id}:${x},${y}`, type: res.type, to: res.to }).toEqual({ at: `${sc.id}:${x},${y}`, type: 'transition', to: c.to });
+                    expect(isTerrainBlocked(to, s.data.x, s.data.y)).toBe(false);
+                    expect(s.rt.facing).toEqual({ dx: d.dx, dy: d.dy });
+                    expect(tryMove(s, d.dx, d.dy, { playerLevel: 70 }).to).not.toBe(sc.id);   // pas de transition immédiate en retour
+                }
+            }
+        }
+        expect(crossings).toBeGreaterThan(20);
     });
 });
