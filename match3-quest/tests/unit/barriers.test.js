@@ -37,11 +37,15 @@ describe('barrières de bordure', () => {
         expect(isTerrainBlocked(screens.a, 0, 3)).toBe(false);   // fermer cette case couperait l'accès au coffre
     });
 
-    test('intérieurs et cartes de mer ignorés', () => {
-        const screens = { h: mk('h', 'gobi', { interior: true }), m: mk('m', 'coast', { aquatic: true }) };
-        run(screens, []);
+    test('intérieurs ignorés ; carte de mer : bordure rendue à l\'eau hors passage', () => {
+        const screens = { h: mk('h', 'gobi', { interior: true }), m: mk('m', 'coast', { aquatic: true }), n: mk('n', 'coast', { aquatic: true }) };
+        applyConnections(screens, [{ from: 'm', dir: 'east', to: 'n', range: [3, 5] }]);
+        addBorderBarriers(screens);
         expect(screens.h.obstacles).toEqual([]);
-        expect(screens.m.liquids).toEqual([]);
+        const inL = (m, x, y) => m.liquids.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+        expect(inL(screens.m, 0, 3)).toBe(true);     // bordure fermée par l'eau
+        expect(inL(screens.m, 9, 4)).toBe(false);    // passage ouvert
+        expect(inL(screens.m, 9, 1)).toBe(true);
     });
 
     test('openRim : cases ouvertes des deux côtés d\'une connexion', () => {

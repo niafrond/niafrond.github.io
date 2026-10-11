@@ -20,7 +20,7 @@ describe('connexions de bordure', () => {
         const s = session(screens, 9, 5);
         const res = tryMove(s, 1, 0);
         expect(res).toMatchObject({ type: 'transition', to: 'b', border: true, dir: 'east' });
-        expect(s.data).toMatchObject({ screenId: 'b', x: 0, y: 3 });
+        expect(s.data).toMatchObject({ screenId: 'b', x: 1, y: 3 });
         expect(s.rt.facing).toEqual({ dx: 1, dy: 0 });
     });
 
@@ -30,9 +30,29 @@ describe('connexions de bordure', () => {
         const s = session(screens, 9, 5);
         tryMove(s, 1, 0);
         expect(tryMove(s, -1, 0)).toMatchObject({ type: 'transition', to: 'a', dir: 'west' });
-        expect(s.data).toMatchObject({ screenId: 'a', x: 9, y: 5 });
+        expect(s.data).toMatchObject({ screenId: 'a', x: 8, y: 5 });
         // Sur la bordure, un pas vers l'intérieur ne déclenche rien.
         expect(tryMove(s, 0, 1).type).toBe('moved');
+    });
+
+    test('poser le pied sur la dernière case d\'un passage déclenche la transition (sans sortir de la carte)', () => {
+        const screens = world();
+        applyConnections(screens, [{ from: 'a', dir: 'east', to: 'b', offset: 2, range: [3, 5] }]);
+        const s = session(screens, 7, 5);
+        expect(tryMove(s, 1, 0).type).toBe('moved');                       // (8, 5) : encore dans la carte
+        expect(tryMove(s, 1, 0)).toMatchObject({ type: 'transition', to: 'b', border: true });   // (9, 5) : dernière case
+        expect(s.data).toMatchObject({ screenId: 'b', x: 1, y: 3 });
+        // hors du passage (y = 1), la dernière case est une case ordinaire
+        const t = session(screens, 8, 1);
+        expect(tryMove(t, 1, 0).type).toBe('moved');
+        expect(t.data).toMatchObject({ screenId: 'a', x: 9, y: 1 });
+        // longer la bordure ne déclenche rien, et le retour ne rebondit pas
+        const u = session(screens, 9, 2);
+        expect(tryMove(u, 0, 1).type).toBe('moved');
+        const v = session(screens, 7, 4);
+        tryMove(v, 1, 0); tryMove(v, 1, 0);
+        expect(v.data.screenId).toBe('b');
+        expect(tryMove(v, 0, 1).type).toBe('moved');
     });
 
     test('sans connexion ou hors recouvrement : on ne sort pas', () => {
@@ -51,30 +71,30 @@ describe('connexions de bordure', () => {
         expect(offsetOf(screens.a.connections.south, screens.a, screens.b)).toBe(2);
         const s = session(screens, 4, 0);
         tryMove(s, 0, -1);
-        expect(s.data).toMatchObject({ screenId: 'c', x: 4, y: 7 });
+        expect(s.data).toMatchObject({ screenId: 'c', x: 4, y: 6 });
         const t = session(screens, 4, 7);
         tryMove(t, 0, 1);
-        expect(t.data).toMatchObject({ screenId: 'b', x: 2, y: 0 });
+        expect(t.data).toMatchObject({ screenId: 'b', x: 2, y: 1 });
     });
 
     test('case d\'arrivée bloquée : la plus proche case libre de la bordure', () => {
         const screens = world();
-        screens.b.obstacles = [[0, 3, 1, 1]];
-        screens.b.npcs = [{ id: 'n', x: 0, y: 4 }];
+        screens.b.obstacles = [[1, 3, 1, 1]];
+        screens.b.npcs = [{ id: 'n', x: 1, y: 4 }];
         applyConnections(screens, [{ from: 'a', dir: 'east', to: 'b', offset: 2 }]);
-        const s = session(screens, 9, 5);   // arriverait en (0, 3) : mur ; (0, 4) occupé
+        const s = session(screens, 9, 5);   // arriverait en (1, 3) : mur ; (1, 4) occupé
         tryMove(s, 1, 0);
-        expect(s.data).toMatchObject({ screenId: 'b', x: 0, y: 2 });
+        expect(s.data).toMatchObject({ screenId: 'b', x: 1, y: 2 });
     });
 
     test('bordure d\'arrivée entièrement murée : repli vers l\'intérieur, sinon refus', () => {
         const screens = world();
-        screens.b.obstacles = [[0, 0, 1, 12]];
+        screens.b.obstacles = [[1, 0, 1, 12]];
         applyConnections(screens, [{ from: 'a', dir: 'east', to: 'b', offset: 2 }]);
         const s = session(screens, 9, 5);
         tryMove(s, 1, 0);
-        expect(s.data).toMatchObject({ screenId: 'b', x: 1 });
-        screens.b.obstacles = [[0, 0, 3, 12]];
+        expect(s.data).toMatchObject({ screenId: 'b', x: 2 });
+        screens.b.obstacles = [[0, 0, 4, 12]];
         const t = session(screens, 9, 5);
         expect(tryMove(t, 1, 0).type).toBe('blocked');
         expect(t.data.screenId).toBe('a');
@@ -102,7 +122,7 @@ describe('connexions de bordure', () => {
     test('crossBorder pur et WarpTrigger', () => {
         const screens = world();
         applyConnections(screens, [{ from: 'a', dir: 'east', to: 'b' }]);
-        expect(crossBorder(screens, screens.a, 9, 3, 1, 0, () => false)).toMatchObject({ to: 'b', x: 0, y: 3 });
+        expect(crossBorder(screens, screens.a, 9, 3, 1, 0, () => false)).toMatchObject({ to: 'b', x: 1, y: 3 });
         expect(crossBorder(screens, screens.a, 5, 3, 1, 0, () => false)).toMatchObject({ to: 'b' });
         expect(warpOf({ to: 'h', arrive: { x: 2, y: 3 }, door: true })).toEqual({ to: 'h', x: 2, y: 3, door: true });
         expect(warpOf({})).toBeNull();
