@@ -1007,6 +1007,16 @@ export function setTrackedQuest(session, questId) {
     return session.data.tracked;
 }
 
+// Quêtes en cours (ou à rendre) avec leur prochain objectif, pour le rappel « Ça fait longtemps ».
+export function activeQuestSummaries(session) {
+    return session.quests.map(q => ({ q, status: questStatus(session, q) }))
+        .filter(({ status }) => status === 'active' || status === 'ready')
+        .map(({ q, status }) => {
+            const obj = q.objectives.find(o => !objectiveDone(session, o));
+            return { title: q.title, objective: status === 'ready' ? 'Objectif accompli, à rendre' : (obj?.text || ''), ready: status === 'ready' };
+        });
+}
+
 // Quête suivie (épinglée par le joueur) tant qu'elle est en cours ou à rendre.
 export function trackedQuest(session) {
     const quest = session.data.tracked && questById(session, session.data.tracked);

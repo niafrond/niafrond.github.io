@@ -21,6 +21,7 @@ import { REGION_ENTRY_SCREEN } from "./story.js";
 import { ARENA_NAME, ARENA_REGION } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
+import { readLastPlayed, touchLastPlayed, isLongAbsence, buildRecap, absenceDays, showWelcomeBack } from "./welcomeBack.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -427,7 +428,14 @@ function init() {
         showClassSelection();
         if(player.class) {
             enterExploration();
+            // « Ça fait longtemps » : rappel après au moins 2 jours d'absence.
+            const lastPlayed = readLastPlayed();
+            if(isLongAbsence(lastPlayed)) showWelcomeBack(buildRecap(player, exploration.getActiveQuestSummaries?.() || []), absenceDays(lastPlayed));
         }
+        touchLastPlayed();
+        setInterval(touchLastPlayed, 60000);
+        document.addEventListener('visibilitychange', touchLastPlayed);
+        window.addEventListener('pagehide', touchLastPlayed);
     });
     
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
