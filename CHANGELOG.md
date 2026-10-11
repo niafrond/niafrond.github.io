@@ -1,3 +1,11 @@
+## [2.68.0](https://github.com/niafrond/niafrond.github.io/compare/v2.67.0...v2.68.0) (2026-10-11)
+
+### Features
+
+* **match3-quest:** ajouter les connexions de bordure entre cartes ([6cfba69](https://github.com/niafrond/niafrond.github.io/commit/6cfba6917c549a1e86076556afeb0d436122221c))
+* **match3-quest:** faire défiler la caméra entre les cartes connectées ([027ddfa](https://github.com/niafrond/niafrond.github.io/commit/027ddfaa5c80e75296fb8a7971892ce2827efa58))
+* **match3-quest:** migrer les passages de bord vers les connexions et fermer les bordures par des barrières ([f1b7695](https://github.com/niafrond/niafrond.github.io/commit/f1b769552d75221dddb64e58dee82464105ec3ee))
+
 ## [2.67.0](https://github.com/niafrond/niafrond.github.io/compare/v2.66.0...v2.67.0) (2026-10-11)
 
 ### Features
