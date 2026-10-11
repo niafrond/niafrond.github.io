@@ -6,17 +6,18 @@ import { aggroOf } from '../../exploration.js';
 import {
     createSession, tryMove, isExitLocked, talkToNpc, openChest, markEnemyDefeated, questStatus, isTerrainBlocked
 } from '../../exploration.js';
+import { exitsOf } from './fixtures/gates.js';
 
 const items = JUNCTIONS.filter(j => j.type === 'item');
 const kills = JUNCTIONS.filter(j => j.type === 'kill');
-const gateExits = j => SCREENS[j.from].exits.filter(e => e.to === j.to && e.edge);
+const gateExits = j => exitsOf(SCREENS[j.from], SCREENS).filter(e => e.to === j.to && e.edge);
 const centerOf = j => gateExits(j).find(e => e.span === 0);
 
 // Place le héros juste avant le passage `exit` de `screenId` et retourne [session, dx, dy].
 function atGate(j, patch = {}) {
     const sc = SCREENS[j.from], e = centerOf(j);
     const dx = e.x === 0 ? -1 : e.x === sc.w - 1 ? 1 : 0, dy = e.y === 0 ? -1 : e.y === sc.h - 1 ? 1 : 0;
-    const s = createSession({ screenId: j.from, x: e.x - dx, y: e.y - dy, ...patch });
+    const s = createSession({ screenId: j.from, x: e.x, y: e.y, ...patch });
     s.rt.grace = 0;
     return { s, dx, dy };
 }
@@ -34,7 +35,7 @@ describe('jonctions gardées', () => {
         expect(exits.map(e => e.span).sort()).toEqual([-1, 0, 1]);
         const requires = j.type === 'item' ? j.quest.id : j.enemy.id;
         exits.forEach(e => { expect(e.requires).toBe(requires); expect(e.lockedMessage).toBe(j.lockedMessage); });
-        SCREENS[j.to].exits.filter(e => e.to === j.from).forEach(e => expect(e.requires).toBeUndefined());
+        exitsOf(SCREENS[j.to], SCREENS).filter(e => e.to === j.from).forEach(e => expect(e.requires).toBeUndefined());
     });
 
     test.each(items.map(j => [j.id, j]))('%s : garde, coffre et quête bien posés', (_id, j) => {
@@ -52,7 +53,7 @@ describe('jonctions gardées', () => {
         expect(isTerrainBlocked(guardScreen, guard.x, guard.y)).toBe(false);
         expect(isTerrainBlocked(holder, chest.x, chest.y)).toBe(false);
         expect(chest.x >= holder.w * 0.5 && chest.y >= holder.h * 0.45).toBe(true);   // cachés au sud-est de la carte
-        const taken = new Set([...guardScreen.exits.map(e => `${e.x},${e.y}`), `${guardScreen.spawn.x},${guardScreen.spawn.y}`]);
+        const taken = new Set([...exitsOf(guardScreen, SCREENS).map(e => `${e.x},${e.y}`), `${guardScreen.spawn.x},${guardScreen.spawn.y}`]);
         expect(taken.has(`${guard.x},${guard.y}`)).toBe(false);
         // la carte porteuse précède la jonction dans le monde (on la traverse avant d'arriver au garde)
         const ids = Object.keys(SCREENS);
@@ -103,7 +104,7 @@ describe('jonctions gardées', () => {
 
 describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => {
     const all = Object.values(SCREENS);
-    const doors = all.flatMap(s => s.exits
+    const doors = all.flatMap(s => exitsOf(s, SCREENS)
         .filter(e => e.edge && e.span === 0 && s.enemies.some(en => en.id === e.requires))
         .map(e => ({ s, e, boss: s.enemies.find(en => en.id === e.requires) })));
 
@@ -114,7 +115,7 @@ describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => 
     test.each(doors.map(d => [`${d.s.id} → ${d.e.to}`, d]))('%s : le boss garde la porte et sa vigilance couvre les 3 cases', (_n, { e, s, boss }) => {
         expect(boss.guardsDoor).toBe(true);
         expect(aggroOf(boss)).toBe(0);   // un boss n'a pas de zone de vigilance : il faut aller le chercher
-        s.exits.filter(x => x.to === e.to && x.edge).forEach(x => {
+        exitsOf(s, SCREENS).filter(x => x.to === e.to && x.edge).forEach(x => {
             expect(x.requires).toBe(boss.id);
             expect(Math.max(Math.abs(x.x - boss.x), Math.abs(x.y - boss.y))).toBeLessThanOrEqual(2);
         });
@@ -127,7 +128,7 @@ describe('barrage devant un passage fermé', () => {
         expect(withPillars.length).toBeGreaterThanOrEqual(10);
         withPillars.forEach(s => {
             s.pillars.forEach(([x, y]) => expect(isTerrainBlocked(s, x, y)).toBe(true));
-            const doors = s.exits.filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
+            const doors = exitsOf(s, SCREENS).filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
             const inFront = d => {
                 const [ix, iy] = d.edge === 'west' ? [1, 0] : d.edge === 'east' ? [-1, 0] : d.edge === 'north' ? [0, 1] : [0, -1];
                 return [...s.enemies, ...s.npcs].find(e => e.x === d.x + 2 * ix && e.y === d.y + 2 * iy);

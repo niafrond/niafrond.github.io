@@ -6,6 +6,7 @@ import {
     isRiding, isOnLiquid, autoDismount, toggleMount
 } from '../../exploration.js';
 import { YUBU_QUEST_ID, ARCHIPEL_ID, ISLE_ID } from '../../world/aquatic.js';
+import { exitsOf } from './fixtures/gates.js';
 
 const inRects = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
 
@@ -43,7 +44,7 @@ describe('Pas de Yu : marcher sur l\'eau', () => {
             const c = holder.chests.find(x => x.id === o.target);
             expect(c.x >= holder.w * 0.5 && c.y >= holder.h * 0.45).toBe(true);   // au sud-est de la carte
         });
-        const gate = SCREENS.mer_hamlet.exits.find(e => e.to === ARCHIPEL_ID && e.span === 0);
+        const gate = exitsOf(SCREENS.mer_hamlet, SCREENS).find(e => e.to === ARCHIPEL_ID && e.span === 0);
         const gui = SCREENS.fleuve_h_tortue.npcs.find(n => n.id === 'gui_turtle');
         const s = createSession({ screenId: 'fleuve_h_tortue', x: gui.x, y: gui.y + 1 });
         expect(isExitLocked(s, gate)).toBe(true);
@@ -70,12 +71,12 @@ describe('Monde aquatique', () => {
             const waterTile = [s.liquids[0][0], s.liquids[0][1]];
             expect(isTerrainBlocked(s, waterTile[0], waterTile[1])).toBe(false);   // on n'y entre qu'avec le Pas de Yu
         });
-        const gates = SCREENS.mer_hamlet.exits.filter(e => e.to === ARCHIPEL_ID);
+        const gates = exitsOf(SCREENS.mer_hamlet, SCREENS).filter(e => e.to === ARCHIPEL_ID);
         expect(gates.map(e => e.span).sort()).toEqual([-1, 0, 1]);
         gates.forEach(e => expect(e.requires).toBe(YUBU_QUEST_ID));
-        archipel.exits.filter(e => e.to === 'mer_hamlet').forEach(e => expect(e.requires).toBeUndefined());
-        expect(archipel.exits.some(e => e.to === ISLE_ID)).toBe(true);
-        expect(isle.exits.some(e => e.to === ARCHIPEL_ID)).toBe(true);
+        exitsOf(archipel, SCREENS).filter(e => e.to === 'mer_hamlet').forEach(e => expect(e.requires).toBeUndefined());
+        expect(exitsOf(archipel, SCREENS).some(e => e.to === ISLE_ID)).toBe(true);
+        expect(exitsOf(isle, SCREENS).some(e => e.to === ARCHIPEL_ID)).toBe(true);
     });
 
     test('entités sur des cases libres, îles atteignables à pied sur l\'eau, trésor et gardien sur l\'île', () => {
@@ -94,7 +95,7 @@ describe('Monde aquatique', () => {
     test('depuis l\'entrée, on atteint toutes les îles à pied (l\'eau est franchissable)', () => {
         const s = createSession({ screenId: ARCHIPEL_ID, x: archipel.spawn.x, y: archipel.spawn.y, quests: { [YUBU_QUEST]: 'done' } });
         archipel.chests.forEach(c => expect(findPath(s, c.x, c.y)).not.toBeNull());
-        archipel.exits.forEach(e => expect(findPath(s, e.x, e.y)).not.toBeNull());
+        exitsOf(archipel, SCREENS).forEach(e => expect(findPath(s, e.x, e.y)).not.toBeNull());
     });
 });
 

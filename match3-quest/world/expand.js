@@ -30,12 +30,12 @@ function mulberry32(seed) {
     };
 }
 
-const toSet = rects => {
+export const toSet = rects => {
     const s = new Set();
     (rects || []).forEach(([rx, ry, rw, rh]) => { for (let x = rx; x < rx + rw; x++) for (let y = ry; y < ry + rh; y++) s.add(key(x, y)); });
     return s;
 };
-const toRects = set => cellsToRects([...set].map(k => k.split(',').map(Number)));
+export const toRects = set => cellsToRects([...set].map(k => k.split(',').map(Number)));
 
 // Case la plus proche du bord `edge`, au rang `along` (position le long du bord) et à `depth` pas vers l'intérieur.
 function edgeCell(edge, along, depth, w, h) {
@@ -60,7 +60,7 @@ function borderExits(screen) {
 }
 
 // Les cases de bâtiment ne se touchent jamais.
-const buildingCells = screen => {
+export const buildingCells = screen => {
     const s = new Set();
     (screen.buildings || []).forEach(b => { for (let x = b.x; x < b.x + b.w; x++) for (let y = b.y; y < b.y + b.h; y++) s.add(key(x, y)); });
     return s;
@@ -95,7 +95,7 @@ function clearMouth(screen, gate, obst, liq, protectedCells, taken) {
     gate.kmax = kmax;
 }
 
-const entityCells = screen => new Set([
+export const entityCells = screen => new Set([
     ...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []),
     ...(screen.waypoint ? [screen.waypoint] : []), ...(screen.spawn ? [screen.spawn] : [])
 ].map(e => key(e.x, e.y)));
@@ -287,7 +287,7 @@ export function openPerimeter(screen) {
 }
 
 // Trajet d'un patrouilleur : segments axe par axe entre les points de passage (même tracé que exploration.js `buildRoute`).
-function routeCells(waypoints) {
+export function routeCells(waypoints) {
     const route = [];
     for (let i = 0; i < waypoints.length; i++) {
         const [tx, ty] = waypoints[i];

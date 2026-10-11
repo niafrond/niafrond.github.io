@@ -14,6 +14,7 @@ import {
     questStatus, checkAutoQuests, activateWaypoint, waypointList, fastTravel, setTrackedQuest, trackedQuest,
     trackedMarkers, currentObjectiveText, journalEntries, regionProgress, npcMarker, progressReached, aliveEnemies
 } from '../../exploration.js';
+import { exitsOf } from './fixtures/gates.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
@@ -42,7 +43,7 @@ const entitiesOf = s => [
 ];
 // Une entité (PNJ, coffre, ennemi, pierre) bloque le passage : on l'atteint depuis une tuile voisine libre.
 const adjacentReached = (seen, e) => DIRS.some(([dx, dy]) => seen.has(`${e.x + dx},${e.y + dy}`));
-const exitPos = s => new Set(s.exits.map(e => `${e.x},${e.y}`));
+const exitPos = s => new Set(exitsOf(s, SCREENS).map(e => `${e.x},${e.y}`));
 
 describe('mapKit', () => {
     test('parseGrid : obstacles, liquides, chemins, ancres, bâtiments', () => {
@@ -127,7 +128,7 @@ describe('Grand Monde : cartes', () => {
             // villages : taille d'origine ; hameaux et zones sauvages : agrandis (world/expand.js)
             if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [26, 20] : s.region === 'lune' ? [16, 22] : [20, 24]);
             if (s.kind === 'wild' && !s.aquatic && !s.underground) expect([s.w, s.h]).toEqual([28, 22]);   // le monde aquatique a ses propres cartes de mer
-            if (s.id.endsWith('_hamlet')) expect(s.exits.some(e => e.to === `${s.region}_wild`)).toBe(true);
+            if (s.id.endsWith('_hamlet')) expect(exitsOf(s, SCREENS).some(e => e.to === `${s.region}_wild`)).toBe(true);
             if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }
         });
     });
@@ -135,7 +136,7 @@ describe('Grand Monde : cartes', () => {
     test('entités sur des tuiles libres et distinctes', () => {
         screens.forEach(s => {
             const seen = new Set();
-            [...entitiesOf(s), ...s.exits.map(e => ({ kind: 'exit', id: e.to, x: e.x, y: e.y }))].forEach(e => {
+            [...entitiesOf(s), ...exitsOf(s, SCREENS).map(e => ({ kind: 'exit', id: e.to, x: e.x, y: e.y }))].forEach(e => {
                 const key = `${e.x},${e.y}`;
                 expect(`${s.id} ${e.kind}:${e.id} ${isTerrainBlocked(s, e.x, e.y)}`).toBe(`${s.id} ${e.kind}:${e.id} false`);
                 expect(`${s.id} ${key} ${seen.has(key)}`).toBe(`${s.id} ${key} false`);
@@ -150,15 +151,15 @@ describe('Grand Monde : cartes', () => {
             const solid = new Set(entitiesOf(s).filter(e => !e.guardsDoor).map(e => `${e.x},${e.y}`));
             const seen = reach(s, s.spawn, (x, y) => solid.has(`${x},${y}`) || exitPos(s).has(`${x},${y}`));
             entitiesOf(s).forEach(e => expect(`${s.id} ${e.kind}:${e.id} ${adjacentReached(seen, e)}`).toBe(`${s.id} ${e.kind}:${e.id} true`));
-            s.exits.forEach(e => expect(`${s.id} exit:${e.to} ${adjacentReached(seen, e)}`).toBe(`${s.id} exit:${e.to} true`));
+            exitsOf(s, SCREENS).forEach(e => expect(`${s.id} exit:${e.to} ${adjacentReached(seen, e)}`).toBe(`${s.id} exit:${e.to} true`));
         });
     });
 
     test('sorties appariées et tuiles d\'arrivée libres', () => {
-        screens.forEach(s => s.exits.forEach(e => {
+        screens.forEach(s => exitsOf(s, SCREENS).forEach(e => {
             const target = SCREENS[e.to];
             expect(target).toBeTruthy();
-            expect(target.exits.some(back => back.to === s.id)).toBe(true);
+            expect(exitsOf(target, SCREENS).some(back => back.to === s.id)).toBe(true);
             expect(e.arrive).toBeTruthy();
             expect(isTerrainBlocked(target, e.arrive.x, e.arrive.y)).toBe(false);
             expect(entitiesOf(target).some(ent => ent.x === e.arrive.x && ent.y === e.arrive.y)).toBe(false);
@@ -169,13 +170,13 @@ describe('Grand Monde : cartes', () => {
     test('chaîne du monde : sanctuaire précédent → village → wild → sanctuaire', () => {
         REGION_ORDER.forEach((region, i) => {
             const village = SCREENS[`${region}_village`], wild = SCREENS[`${region}_wild`], sanct = SCREENS[region];
-            expect(village.exits.some(e => e.to === wild.id)).toBe(true);
-            expect(wild.exits.some(e => e.to === village.id)).toBe(true);
-            expect(wild.exits.some(e => e.to === region)).toBe(true);
-            expect(sanct.exits.some(e => e.to === wild.id)).toBe(true);
+            expect(exitsOf(village, SCREENS).some(e => e.to === wild.id)).toBe(true);
+            expect(exitsOf(wild, SCREENS).some(e => e.to === village.id)).toBe(true);
+            expect(exitsOf(wild, SCREENS).some(e => e.to === region)).toBe(true);
+            expect(exitsOf(sanct, SCREENS).some(e => e.to === wild.id)).toBe(true);
             if (i > 0) {
-                expect(village.exits.some(e => e.to === REGION_ORDER[i - 1])).toBe(true);
-                expect(SCREENS[REGION_ORDER[i - 1]].exits.some(e => e.to === village.id)).toBe(true);
+                expect(exitsOf(village, SCREENS).some(e => e.to === REGION_ORDER[i - 1])).toBe(true);
+                expect(exitsOf(SCREENS[REGION_ORDER[i - 1]], SCREENS).some(e => e.to === village.id)).toBe(true);
             }
             // pas d'ennemi dans les villages et maisons
             screens.filter(s => s.region === region && (s.kind === 'village' || s.interior)).forEach(s => expect(s.enemies).toHaveLength(0));
@@ -191,7 +192,7 @@ describe('Grand Monde : cartes', () => {
             wild.enemies.forEach(e => {
                 expect(templateIds.has(e.templateId)).toBe(true);
                 if (e.guardsDoor) return;   // le gardien de la porte se tient devant elle
-                const near = wild.exits.filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(wild.spawn.x - e.x), Math.abs(wild.spawn.y - e.y)) < 3;
+                const near = exitsOf(wild, SCREENS).filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(wild.spawn.x - e.x), Math.abs(wild.spawn.y - e.y)) < 3;
                 expect(`${e.id} ${near}`).toBe(`${e.id} false`);
             });
         });
@@ -200,7 +201,7 @@ describe('Grand Monde : cartes', () => {
     test('le gate de la wild est franchissable avant le sanctuaire', () => {
         REGION_ORDER.forEach(region => {
             const wild = SCREENS[`${region}_wild`];
-            const exit = wild.exits.find(e => e.to === region);
+            const exit = exitsOf(wild, SCREENS).find(e => e.to === region);
             expect(exit.requires).toBeTruthy();
             const id = exit.requires;
             const isEnemy = screens.some(s => s.enemies.some(e => e.id === id));
@@ -334,7 +335,7 @@ describe('Grand Monde : jeu', () => {
     test('entrer dans une maison par sa porte et en ressortir', () => {
         const session = fresh();
         const village = SCREENS.rizieres_village;
-        const door = village.exits.find(e => e.door);
+        const door = exitsOf(village, SCREENS).find(e => e.door);
         expect(door).toBeTruthy();
         const house = SCREENS[door.to];
         expect(house.interior).toBe(true);
@@ -346,7 +347,7 @@ describe('Grand Monde : jeu', () => {
         expect(res.type).toBe('transition');
         expect(res.door).toBe(true);
         expect(session.data.screenId).toBe(house.id);
-        const out = house.exits[0];
+        const out = exitsOf(house, SCREENS)[0];
         const back = findPath(session, out.x, out.y);
         for (const step of back) res = tryMove(session, step.x - session.data.x, step.y - session.data.y);
         expect(session.data.screenId).toBe(village.id);
