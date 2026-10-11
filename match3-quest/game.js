@@ -549,13 +549,6 @@ export let currentTurn = 'player';
 let activeCompanionIds = new Set();
 export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || []); }
 
-// Tant que Xiao Gui n'a pas rejoint le groupe, son nom ne doit pas apparaître en combat (ennemis de gabarit « Xiao Gui »).
-function hideUnmetCompanionName(e){
-    if(!e || activeCompanionIds.has('xiao_gui')) return;
-    if(typeof e.name === 'string') e.name = e.name.replace(/Xiao Gui/g, 'Petit démon');
-    if(typeof e.title === 'string') e.title = e.title.replace(/Démon-Renard/gi, 'Démon');
-}
-
 // Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
 let foxActedThisTurn = false;
 
@@ -842,7 +835,7 @@ export const combatCost = 5;             // points nécessaires pour une attaque
 export const skullDamage = 1;           // dégâts infligés par soleil lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
-export let enemy = { name:"Xiao Gui", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
+export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
@@ -3077,7 +3070,6 @@ export function setCombatBackdrop(biome){
 
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
-    hideUnmetCompanionName(enemy);
 
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level, enemy);

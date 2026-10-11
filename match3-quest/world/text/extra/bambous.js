@@ -264,7 +264,7 @@ export default {
         "Maintenant que j'ai du papier, mes lampions disparaissent ! C'est un petit démon-renard, j'en jurerais. Chassez-le, archer."
       ],
       hint: [
-        "Le Xiao Gui rôde sur le sentier, derrière la clairière. Il aime les lueurs."
+        "Le petit démon rôde sur le sentier, derrière la clairière. Il aime les lueurs."
       ],
       complete: [
         "Mes lampions sont revenus, quelques-uns roussis. Le démon a laissé un mot : « Excusez-moi, c'était joli. »"

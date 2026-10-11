@@ -109,7 +109,7 @@ export default {
             { id: 'bambous_w_pilgrim', at: 'y', templateId: 'bone_reaver', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
             { id: 'bambous_ash_shadow_a', at: 'n', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
             { id: 'bambous_ash_shadow_b', at: 'o', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_lantern_thief', at: 'p', templateId: 'goblin_saboteur', name: 'Xiao Gui voleur de lampions', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'bambous_lantern_thief', at: 'p', templateId: 'goblin_saboteur', name: 'Démon voleur de lampions', kind: 'sentinel', offset: 0, permanent: true }
         ],
         gate: {
             requires: 'sq_sentier_sceaux',

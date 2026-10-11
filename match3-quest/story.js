@@ -385,11 +385,11 @@ const BASE_SCREENS = {
                       "Allez abattre votre soleil. Je vous suivrai de loin. Après tout, il faut bien que quelqu'un vous couvre."
                   ]
               } },
-            { id: 'rizieres_goblin', templateId: 'goblin_saboteur', name: 'Xiao Gui farceur', kind: 'sentinel', x: 5, y: 8, offset: -1 },
+            { id: 'rizieres_goblin', templateId: 'goblin_saboteur', name: 'Démon-renard farceur', kind: 'sentinel', x: 5, y: 8, offset: -1 },
             { id: 'rizieres_shroom', templateId: 'fungal_horror', name: 'Lingzhi maudit', kind: 'sentinel', x: 9, y: 7, offset: 0 },
             { id: 'rizieres_guardian', templateId: 'forest_guardian', name: 'Esprit des digues', kind: 'patrol', x: 8, y: 9, patrol: [[8, 9], [12, 9]], offset: 0 },
             // Chapardeur nommé (quête secondaire), côté est de la digue.
-            { id: 'rice_thief', templateId: 'goblin_saboteur', name: 'Xiao Gui, le chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
+            { id: 'rice_thief', templateId: 'goblin_saboteur', name: 'Le démon chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
             { id: 'sun_1', templateId: 'goblin_saboteur', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
               permanent: true, boss: { name: 'Soleil Ardent', level: 6 },
               afterScenes: MIRROR_TALKS.sun_1 }
@@ -1493,12 +1493,12 @@ const BASE_QUESTS = [
         title: 'Le chapardeur des rizières',
         chapter: '✦ Quête secondaire — Rizières Desséchées',
         giver: 'farmer_lin', turnIn: 'farmer_lin', requires: [],
-        objectives: [{ type: 'kill', target: 'rice_thief', text: 'Chasser Xiao Gui, le chapardeur (champs de l\'est, au sud, au-delà de la digue)' }],
+        objectives: [{ type: 'kill', target: 'rice_thief', text: 'Chasser le démon chapardeur (champs de l\'est, au sud, au-delà de la digue)' }],
         offer: [
-            "Seigneur archer… Un petit démon-renard, Xiao Gui, vole mes derniers sacs de riz, la nuit. Il a même emporté la jarre d'eau sacrée de mes ancêtres, la seule qui ne soit pas encore vide.",
+            "Seigneur archer… Un petit démon-renard vole mes derniers sacs de riz, la nuit. Il a même emporté la jarre d'eau sacrée de mes ancêtres, la seule qui ne soit pas encore vide.",
             "Il se cache dans les champs de l'est, de l'autre côté de la digue, près de la clôture. Il est petit, mais rusé : méfiez-vous des pièges."
         ],
-        hint: ["Xiao Gui rôde dans les champs de l'est, au sud, près de la clôture. Il aime les pièges."],
+        hint: ["Le petit démon rôde dans les champs de l'est, au sud, près de la clôture. Il aime les pièges."],
         complete: [
             "Ma jarre ! Elle est fêlée au col, mais elle contient encore une larme de l'eau sacrée de mes ancêtres.",
             "Prenez-la, seigneur : pour la pointe de vos flèches. Et ces pièces, c'est tout ce qui me reste du dernier marché."

@@ -812,7 +812,7 @@ export const MANIFEST2 = {
       },
       {
         id: "bambous_lantern_thief",
-        name: "Xiao Gui voleur de lampions",
+        name: "Démon voleur de lampions",
         templateHint: "goblin_saboteur",
         role: "quest",
         where: "wild"
@@ -839,7 +839,7 @@ export const MANIFEST2 = {
         giver: "lanternier_fa",
         turnIn: "lanternier_fa",
         chain: "sq_bam_lampions_1",
-        summary: "Un Xiao Gui chaparde les lampions finis. Retrouvez-le sur le sentier cendré.",
+        summary: "Un petit démon chaparde les lampions finis. Retrouvez-le sur le sentier cendré.",
         objectives: [
           {
             type: "kill",
@@ -1826,7 +1826,7 @@ export const MANIFEST2 = {
         giver: "cook_dada",
         turnIn: "cook_dada",
         chain: null,
-        summary: "Un Xiao Gui des cendres vole les bols de la cantine. Faites-lui regretter son appétit.",
+        summary: "Un Démon des cendres vole les bols de la cantine. Faites-lui regretter son appétit.",
         objectives: [
           {
             type: "kill",

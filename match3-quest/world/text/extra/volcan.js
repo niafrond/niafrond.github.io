@@ -325,14 +325,14 @@ export default {
         {
           type: "kill",
           target: "volcan_ember_imp",
-          text: "Chasser le Xiao Gui des cendres (coulées rougeoyantes)"
+          text: "Chasser le Démon des cendres (coulées rougeoyantes)"
         }
       ],
       offer: [
         "Un petit démon vole mes bols de nouilles ! Il laisse une trace de cendres. Chassez-le, ou nous finirons tous au pain sec."
       ],
       hint: [
-        "Le Xiao Gui des cendres rôde dans les coulées. Il adore les bols fumants."
+        "Le Démon des cendres rôde dans les coulées. Il adore les bols fumants."
       ],
       complete: [
         "Mes bols sont revenus ! Il a même laissé un mot : « Bonnes nouilles ». Tenez, une cuillère de braise."
