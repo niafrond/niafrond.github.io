@@ -1,3 +1,14 @@
+## [2.66.0](https://github.com/niafrond/niafrond.github.io/compare/v2.65.0...v2.66.0) (2026-10-11)
+
+### Features
+
+* **match3-quest:** masquer Xiao Gui avant son arrivée et ajouter le rappel « ça fait longtemps » ([f52da90](https://github.com/niafrond/niafrond.github.io/commit/f52da90b980799ab2dc8a8afd456deeb5fb52299))
+
+### Bug Fixes
+
+* **match3-quest:** corriger les tests noEmoji et import map anti-cache ([14fa0ee](https://github.com/niafrond/niafrond.github.io/commit/14fa0ee7c31a1b3139d068fff315b144479712a9))
+* **match3-quest:** réserver le nom Xiao Gui au renard compagnon ([1032cb2](https://github.com/niafrond/niafrond.github.io/commit/1032cb297173dc57b0ed41a4f9c59fbc2355156c))
+
 ## [2.65.0](https://github.com/niafrond/niafrond.github.io/compare/v2.64.0...v2.65.0) (2026-10-10)
 
 ### Features
