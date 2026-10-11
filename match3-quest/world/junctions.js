@@ -149,6 +149,66 @@ export function occupancy(screen, screens) {
 const inward = exit => (exit.edge === 'west' ? [1, 0] : exit.edge === 'east' ? [-1, 0] : exit.edge === 'north' ? [0, 1] : [0, -1]);
 const along = exit => (exit.edge === 'west' || exit.edge === 'east' ? [0, 1] : [1, 0]);
 
+
+// Case d'un passage de bord : `depth` pas vers l'intérieur depuis la porte, `lateral` cases le long du bord.
+const cellAt = (door, depth, lateral) => {
+    const [ix, iy] = inward(door), [ax, ay] = along(door);
+    return { x: door.x + ix * depth + ax * lateral, y: door.y + iy * depth + ay * lateral };
+};
+
+// Place le gardien « juste devant » le passage (2 cases à l'intérieur, au centre) si la case est libre, sinon à la meilleure case proche.
+function guardCellFor(screen, door, occ, fallbackDepths, fallbackLaterals) {
+    const c = cellAt(door, 2, 0);
+    if (occ.free(c.x, c.y)) return c;
+    return placeNearGate(screen, door, occ, fallbackDepths, fallbackLaterals);
+}
+
+/**
+ * Piliers de part et d'autre d'un gardien posé juste devant un passage fermé (2 cases à l'intérieur, au centre) : l'entrée forme un
+ * entonnoir de 3 cases dont le gardien occupe le milieu. Option `sealed` : la rangée entière est fermée (non utilisée, le gardien pouvant
+ * rester en vie quand la porte s'ouvre par pourparlers). Un pilier n'est posé que s'il ne coupe aucun chemin ni n'isole une entité.
+ * Les piliers sont des obstacles (`obstacles`) listés dans `screen.pillars` pour être dessinés comme tels.
+ */
+export function addPillarsAroundGuard(screen, door, guard, sealed = false) {
+    const c = cellAt(door, 2, 0);
+    if (guard.x !== c.x || guard.y !== c.y) return false;
+    const cells = (sealed ? [[2, -1], [2, 1], [2, -2], [2, 2], [1, -2], [1, 2]] : [[2, -2], [2, 2], [1, -2], [1, 2]]).map(([d, l]) => cellAt(door, d, l));
+    const entities = [...screen.npcs, ...screen.chests, ...screen.enemies, ...screen.exits, screen.spawn, screen.waypoint].filter(Boolean);
+    const alcove = [[0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]].map(([d, l]) => cellAt(door, d, l));
+    const clash = cells.some(p => entities.some(e => e.x === p.x && e.y === p.y))
+        || alcove.some(p => entities.some(e => e.x === p.x && e.y === p.y && !(screen.exits.includes(e))));
+    if (clash) return false;
+    screen.pillars = screen.pillars || [];
+    // un pilier ne doit jamais couper un chemin : on ne le pose que si tout ce qui était atteignable à pied le reste (le gardien ne bloque pas ce calcul)
+    const solid = new Set([...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => e !== guard), ...screen.exits, ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
+    const reachCount = () => {
+        const seen = new Set([key(screen.spawn.x, screen.spawn.y)]), queue = [screen.spawn];
+        while (queue.length) {
+            const p = queue.shift();
+            [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+                const nx = p.x + dx, ny = p.y + dy;
+                if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || seen.has(key(nx, ny)) || solid.has(key(nx, ny))) return;
+                if (inRects(screen.obstacles, nx, ny) || inRects(screen.liquids, nx, ny)) return;
+                seen.add(key(nx, ny)); queue.push({ x: nx, y: ny });
+            });
+        }
+        return seen;
+    };
+    const targets = [...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => e !== guard), ...screen.exits, ...(screen.waypoint ? [screen.waypoint] : [])];
+    const touched = seen => targets.filter(t => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(t.x + dx, t.y + dy)))).length;
+    cells.forEach(p => {
+        if (p.x < 0 || p.y < 0 || p.x >= screen.w || p.y >= screen.h) return;
+        if (inRects(screen.obstacles, p.x, p.y)) return;
+        const before = reachCount(), touchedBefore = touched(before);
+        screen.obstacles.push([p.x, p.y, 1, 1]);
+        // la case du pilier n'est plus atteignable (−1) ; au-delà, ou si une entité devient inaccessible, un chemin a été coupé : on retire le pilier
+        const after = reachCount();
+        if (after.size < before.size - 1 || touched(after) < touchedBefore) { screen.obstacles.pop(); return; }
+        screen.pillars.push([p.x, p.y]);
+    });
+    return true;
+}
+
 // Première case libre près d'un passage : à côté de la bouche du passage (écart latéral ≥ 2), 1 à 3 pas à l'intérieur.
 function placeNearGate(screen, gate, occ, depths, laterals) {
     const [ix, iy] = inward(gate), [ax, ay] = along(gate);
@@ -194,7 +254,7 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
         if (j.type === 'item') {
             const holder = screens[j.item.screen];
             const chestPos = holder && placeInLand(holder, occupancy(holder, screens), j.item.chest);
-            const guardPos = placeNearGate(from, gate, occupancy(from, screens), [1, 2, 3], [2, -2, 3, -3, 4, -4]);
+            const guardPos = guardCellFor(from, gate, occupancy(from, screens), [1, 2, 3], [2, -2, 3, -3, 4, -4]);
             if (!chestPos || !guardPos) throw new Error(`jonction ${j.id} : pas de place pour ${!chestPos ? 'le coffre' : 'le garde'}`);
             const R = Math.max(1, Math.round(regionLevel[j.region] || 1));
             holder.chests.push({ id: j.item.chest, label: j.item.label, openText: j.item.openText, gold: 15 * R, x: chestPos.x, y: chestPos.y });
@@ -203,6 +263,7 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
                 id: g.id, name: g.name, title: g.title, idle: g.idle, x: guardPos.x, y: guardPos.y,
                 talk: [{ whenDone: j.quest.id, lines: g.after }]
             });
+            addPillarsAroundGuard(from, gate, guardPos);
             quests.push({
                 id: j.quest.id, title: j.quest.title, chapter: `✦ Quête secondaire — ${regionName}`,
                 giver: g.id, turnIn: g.id, requires: [], side: true,
@@ -213,11 +274,12 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
             requires = j.quest.id;
         } else {
             const occ = occupancy(from, screens);
-            const pos = placeNearGate(from, gate, occ, [4, 5, 6, 3], [0, 1, -1, 2, -2]);
+            const pos = guardCellFor(from, gate, occ, [3, 4, 5, 6], [0, 1, -1, 2, -2]);
             if (!pos) throw new Error(`jonction ${j.id} : pas de place pour le gardien`);
             from.enemies.push({
                 id: j.enemy.id, templateId: j.enemy.templateId, name: j.enemy.name, kind: 'sentinel', offset: 2, permanent: true, aggro: 2, x: pos.x, y: pos.y
             });
+            addPillarsAroundGuard(from, gate, pos);
             requires = j.enemy.id;
         }
         // le verrou couvre toutes les cases du passage ; le chemin de retour reste libre
@@ -242,12 +304,48 @@ export function guardLockedGates(screens) {
             const [ix, iy] = inward(door);
             const depth = Math.abs(enemy.x - door.x) * Math.abs(ix) + Math.abs(enemy.y - door.y) * Math.abs(iy);
             const lateral = Math.abs(enemy.x - door.x) * Math.abs(iy) + Math.abs(enemy.y - door.y) * Math.abs(ix);
-            if (depth <= 2 && lateral <= 1) return;
-            // on retire l'ennemi de la carte, puis on cherche la case libre la plus proche de la bouche du passage
+            // on retire l'ennemi de la carte, puis on le pose juste devant le passage (2 cases, au centre) ou à la case libre la plus proche
             const rest = { ...screen, enemies: screen.enemies.filter(en => en !== enemy) };
             const occ = occupancy(rest, screens);
-            const pos = placeNearGate(screen, door, occ, [2, 3, 1], [0, 1, -1, 2, -2]);
-            if (pos) { enemy.x = pos.x; enemy.y = pos.y; }
+            const here = cellAt(door, 2, 0);
+            if (!(enemy.x === here.x && enemy.y === here.y)) {
+                if (depth <= 2 && lateral <= 1 && !occ.free(here.x, here.y)) { /* déjà devant la porte */ }
+                else {
+                    const pos = guardCellFor(rest, door, occ, [2, 3, 1], [0, 1, -1, 2, -2]);
+                    if (pos) { enemy.x = pos.x; enemy.y = pos.y; }
+                }
+            }
+            addPillarsAroundGuard(screen, door, enemy);
         });
     });
+}
+
+/**
+ * Garde de la frontière : à chaque passage vers une région au niveau conseillé plus élevé (sanctuaire → village suivant), une sentinelle
+ * se poste devant le passage, du côté de l'approche, et dit le niveau conseillé. Elle ne bloque pas la route (le niveau n'est qu'un
+ * avertissement) : elle est posée au centre, 4 cases à l'intérieur, avec des piliers de chaque côté. Si le boss du sanctuaire garde déjà la
+ * porte, la sentinelle se tient derrière lui (plus loin du passage).
+ */
+export function applyLevelGuards(screens, regionLevel = {}) {
+    Object.values(screens).forEach(from => {
+        if (from.interior || from.arena) return;
+        from.exits.filter(e => e.edge && e.span === 0 && !e.door).forEach(gate => {
+            const to = screens[gate.to];
+            const need = regionLevel[to?.region] || 1;
+            if (!to || to.region === from.region || need <= (regionLevel[from.region] || 1)) return;
+            const pos = placeNearGate(from, gate, occupancy(from, screens), [4, 5, 6, 3], [0, 1, -1, 2, -2]);
+            if (!pos) return;
+            const id = `level_guard_${from.id}`;
+            from.npcs.push({
+                id, name: 'Sentinelle de la brume', title: `Frontière de ${to.name}`,
+                idle: [
+                    `Au-delà de ce passage s'étend ${to.name}. Les créatures y sont redoutables : on y est attendu à partir du niveau ${need}.`,
+                    `Je ne retiens personne, voyageur. Mais sous le niveau ${need}, la brume vous le fera regretter. Passé ce niveau, la route est à vous.`
+                ],
+                x: pos.x, y: pos.y
+            });
+            addPillarsAroundGuard(from, gate, pos);
+        });
+    });
+    return screens;
 }

@@ -8,7 +8,7 @@ import { merchantNpc } from '../merchants.js';
 import { getXPCostForLevel } from '../experience.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
 import { EXPANDED_SIZES, scaleScreen, widenGates, linkGates, openPerimeter, addWaterBorder } from './expand.js';
-import { applyJunctions } from './junctions.js';
+import { applyJunctions, applyLevelGuards } from './junctions.js';
 import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { applyUnderground } from './underground.js';
@@ -151,6 +151,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         Object.values(screens).forEach(addWaterBorder);  // ... mais de l'eau tout autour des terrains (franchissable avec le Pas de Yu)
         // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
         applyJunctions(screens, quests, REGION_LEVEL);
+        applyLevelGuards(screens, REGION_LEVEL);   // sentinelle qui annonce le niveau conseillé devant chaque passage vers une région plus difficile
         applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
         Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
         applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)

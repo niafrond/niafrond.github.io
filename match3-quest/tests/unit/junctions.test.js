@@ -120,3 +120,28 @@ describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => 
         });
     });
 });
+
+describe('barrage devant un passage fermé', () => {
+    test('un gardien de porte se tient à 2 cases du passage, au centre, flanqué de piliers qui sont des obstacles', () => {
+        const withPillars = Object.values(SCREENS).filter(s => s.pillars?.length);
+        expect(withPillars.length).toBeGreaterThanOrEqual(10);
+        withPillars.forEach(s => {
+            s.pillars.forEach(([x, y]) => expect(isTerrainBlocked(s, x, y)).toBe(true));
+            const doors = s.exits.filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
+            const inFront = d => {
+                const [ix, iy] = d.edge === 'west' ? [1, 0] : d.edge === 'east' ? [-1, 0] : d.edge === 'north' ? [0, 1] : [0, -1];
+                return [...s.enemies, ...s.npcs].find(e => e.x === d.x + 2 * ix && e.y === d.y + 2 * iy);
+            };
+            const guard = doors.map(inFront).find(Boolean);
+            expect(guard).toBeDefined();
+        });
+    });
+});
+
+describe('sentinelles de niveau', () => {
+    test('chaque passage vers une région plus difficile a sa sentinelle qui annonce le niveau conseillé', () => {
+        const guards = Object.values(SCREENS).flatMap(s => s.npcs.filter(n => n.id.startsWith('level_guard_')));
+        expect(guards.length).toBe(9);
+        guards.forEach(g => expect(g.idle.join(' ')).toMatch(/niveau \d+/));
+    });
+});
