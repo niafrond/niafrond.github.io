@@ -1,3 +1,13 @@
+## [2.69.0](https://github.com/niafrond/niafrond.github.io/compare/v2.68.0...v2.69.0) (2026-10-11)
+
+### Features
+
+* **match3-quest:** déclencher la transition dès la dernière case d'un passage de bord ([cd002ac](https://github.com/niafrond/niafrond.github.io/commit/cd002acfc53915bccc1468fefdd7b83eb78134ac))
+
+### Bug Fixes
+
+* **match3-quest:** fermer les bordures, dégager les passages et tester chaque carte ([318d8c3](https://github.com/niafrond/niafrond.github.io/commit/318d8c38fff01debec07eb4b8eb2043a41198b39))
+
 ## [2.68.0](https://github.com/niafrond/niafrond.github.io/compare/v2.67.0...v2.68.0) (2026-10-11)
 
 ### Features
