@@ -319,3 +319,33 @@ export function guardLockedGates(screens) {
         });
     });
 }
+
+/**
+ * Garde de la frontière : à chaque passage vers une région au niveau conseillé plus élevé (sanctuaire → village suivant), une sentinelle
+ * se poste devant le passage, du côté de l'approche, et dit le niveau conseillé. Elle ne bloque pas la route (le niveau n'est qu'un
+ * avertissement) : elle est posée au centre, 4 cases à l'intérieur, avec des piliers de chaque côté. Si le boss du sanctuaire garde déjà la
+ * porte, la sentinelle se tient derrière lui (plus loin du passage).
+ */
+export function applyLevelGuards(screens, regionLevel = {}) {
+    Object.values(screens).forEach(from => {
+        if (from.interior || from.arena) return;
+        from.exits.filter(e => e.edge && e.span === 0 && !e.door).forEach(gate => {
+            const to = screens[gate.to];
+            const need = regionLevel[to?.region] || 1;
+            if (!to || to.region === from.region || need <= (regionLevel[from.region] || 1)) return;
+            const pos = placeNearGate(from, gate, occupancy(from, screens), [4, 5, 6, 3], [0, 1, -1, 2, -2]);
+            if (!pos) return;
+            const id = `level_guard_${from.id}`;
+            from.npcs.push({
+                id, name: 'Sentinelle de la brume', title: `Frontière de ${to.name}`,
+                idle: [
+                    `Au-delà de ce passage s'étend ${to.name}. Les créatures y sont redoutables : on y est attendu à partir du niveau ${need}.`,
+                    `Je ne retiens personne, voyageur. Mais sous le niveau ${need}, la brume vous le fera regretter. Passé ce niveau, la route est à vous.`
+                ],
+                x: pos.x, y: pos.y
+            });
+            addPillarsAroundGuard(from, gate, pos);
+        });
+    });
+    return screens;
+}

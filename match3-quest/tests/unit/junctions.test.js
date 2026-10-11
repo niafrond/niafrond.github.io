@@ -137,3 +137,11 @@ describe('barrage devant un passage fermé', () => {
         });
     });
 });
+
+describe('sentinelles de niveau', () => {
+    test('chaque passage vers une région plus difficile a sa sentinelle qui annonce le niveau conseillé', () => {
+        const guards = Object.values(SCREENS).flatMap(s => s.npcs.filter(n => n.id.startsWith('level_guard_')));
+        expect(guards.length).toBe(9);
+        guards.forEach(g => expect(g.idle.join(' ')).toMatch(/niveau \d+/));
+    });
+});
