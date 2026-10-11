@@ -4,6 +4,8 @@ import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
 import { isTerrainBlocked, aggroOf } from '../../exploration.js';
 import { scaleScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
+import { openRim, WATER_BIOMES } from '../../world/barriers.js';
+import { exitsOf } from './fixtures/gates.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const outdoors = Object.values(SCREENS).filter(s => !s.interior && !s.arena && s.kind !== 'house' && !s.underground);
@@ -39,7 +41,7 @@ describe('cartes extérieures : grandes et reliées', () => {
     });
 
     test.each(outdoors.map(s => [s.id, s]))('%s : passages de bord = 3 cases alignées, arrivée en face et libre', (_id, s) => {
-        const edgeExits = s.exits.filter(e => e.edge);
+        const edgeExits = exitsOf(s, SCREENS).filter(e => e.edge);
         edgeExits.forEach(e => {
             expect(edgeOf(s, e)).toBe(e.edge);
             expect(isTerrainBlocked(s, e.x, e.y)).toBe(false);
@@ -47,9 +49,9 @@ describe('cartes extérieures : grandes et reliées', () => {
             const target = SCREENS[e.to];
             expect(isTerrainBlocked(target, e.arrive.x, e.arrive.y)).toBe(false);
             // on arrive juste à l'intérieur du bord opposé, sur la rangée alignée
-            const back = target.exits.filter(b => b.to === s.id && b.edge === OPPOSITE[e.edge]);
+            const back = exitsOf(target, SCREENS).filter(b => b.to === s.id && b.edge === OPPOSITE[e.edge]);
             expect(back.length).toBeGreaterThan(0);
-            expect(back.some(b => Math.abs(b.x - e.arrive.x) + Math.abs(b.y - e.arrive.y) === 1)).toBe(true);
+            expect(back.some(b => Math.abs(b.x - e.arrive.x) + Math.abs(b.y - e.arrive.y) === (e.connection ? 0 : 1))).toBe(true);
         });
         // chaque passage a une case centrale
         const centers = edgeExits.filter(e => e.span === 0);
@@ -58,7 +60,7 @@ describe('cartes extérieures : grandes et reliées', () => {
 
     test.each(outdoors.map(s => [s.id, s]))('%s : tout le terrain libre est atteignable depuis l\'apparition', (_id, s) => {
         const seen = reach(s, s.spawn);
-        s.exits.filter(e => !e.door).forEach(e => expect(seen.has(`${e.x},${e.y}`)).toBe(true));
+        exitsOf(s, SCREENS).filter(e => !e.door).forEach(e => expect(seen.has(`${e.x},${e.y}`)).toBe(true));
         // pas de grande poche inaccessible (les anciennes salles peuvent garder leurs recoins d'origine)
         let free = 0;
         for (let x = 0; x < s.w; x++) for (let y = 0; y < s.h; y++) if (!isTerrainBlocked(s, x, y)) free++;
@@ -69,7 +71,7 @@ describe('cartes extérieures : grandes et reliées', () => {
         const start = 'rizieres_village';
         const seen = new Set([start]);
         const queue = [start];
-        while (queue.length) SCREENS[queue.shift()].exits.forEach(e => { if (!seen.has(e.to)) { seen.add(e.to); queue.push(e.to); } });
+        while (queue.length) exitsOf(SCREENS[queue.shift()], SCREENS).forEach(e => { if (!seen.has(e.to)) { seen.add(e.to); queue.push(e.to); } });
         outdoors.forEach(s => expect(seen.has(s.id)).toBe(true));
     });
 });
@@ -83,15 +85,15 @@ describe('plus de délimitation factice, de l\'eau en bordure (openPerimeter, ad
         return cells;
     };
 
-    test('villages, zones sauvages, hameaux : couronne sans mur factice, faite d\'eau (hors passages de bord)', () => {
+    test('villages, zones sauvages, hameaux : bordure fermée par une barrière du biome (eau ou décor), hors passages de bord', () => {
         outdoors.filter(s => !s.aquatic).forEach(s => {
-            const cells = ring(s);
-            const rocks = cells.filter(([x, y]) => inRects(s.obstacles, x, y));
-            // seuls des blocs de décor posés au bord d'un sanctuaire (goulets) peuvent subsister
-            if (s.kind !== undefined) expect({ id: s.id, rocks: rocks.length }).toEqual({ id: s.id, rocks: 0 });
-            const water = cells.filter(([x, y]) => inRects(s.liquids, x, y)).length;
-            expect(water / cells.length).toBeGreaterThan(0.4);
-            s.exits.filter(e => e.edge).forEach(e => expect(inRects(s.liquids, e.x, e.y)).toBe(false));   // les passages restent de la terre
+            const open = openRim(SCREENS, s);
+            const rim = ring(s).filter(([x, y]) => (x === 0 || y === 0 || x === s.w - 1 || y === s.h - 1) && !open.has(`${x},${y}`));
+            const shut = rim.filter(([x, y]) => inRects(s.liquids, x, y) || inRects(s.obstacles, x, y));
+            expect({ id: s.id, shut: shut.length / rim.length > 0.85 }).toEqual({ id: s.id, shut: true });
+            // biomes d'eau : l'eau domine la bordure ; les passages restent de la terre
+            if (WATER_BIOMES.has(s.biome)) expect(rim.filter(([x, y]) => inRects(s.liquids, x, y)).length / rim.length).toBeGreaterThan(0.4);
+            open.forEach(k => { const [x, y] = k.split(',').map(Number); expect(inRects(s.liquids, x, y)).toBe(false); });
         });
     });
 
@@ -137,7 +139,7 @@ describe('redisposition : le contenu des cartes agrandies occupe toute la surfac
                 expect(b.w).toBeLessThanOrEqual(6);
                 expect(isTerrainBlocked(h, b.door.x, b.door.y)).toBe(false);
                 expect(isTerrainBlocked(h, b.door.x, b.door.y + 1)).toBe(false);
-                const exit = h.exits.find(e => e.door && e.x === b.door.x && e.y === b.door.y);
+                const exit = exitsOf(h, SCREENS).find(e => e.door && e.x === b.door.x && e.y === b.door.y);
                 expect({ id: h.id, door: Boolean(exit) }).toEqual({ id: h.id, door: true });
             });
         });
@@ -185,7 +187,7 @@ describe('scaleScreen / widenGates (écran synthétique)', () => {
         expect(b.door).toEqual({ x: b.x + 0, y: b.y + 1 });
         expect(isTerrainBlocked(s, b.door.x, b.door.y)).toBe(false);
         expect(isTerrainBlocked(s, b.door.x, b.door.y + 1)).toBe(false);   // la ruelle devant la porte
-        expect(s.exits.find(e => e.door)).toMatchObject({ x: b.door.x, y: b.door.y, to: 'maison' });
+        expect(exitsOf(s, SCREENS).find(e => e.door)).toMatchObject({ x: b.door.x, y: b.door.y, to: 'maison' });
         expect(isTerrainBlocked(s, b.x + 1, b.y)).toBe(true);              // le reste du bâtiment bloque
     });
 
@@ -195,7 +197,7 @@ describe('scaleScreen / widenGates (écran synthétique)', () => {
             exits: [{ x: 0, y: 4, to: 'test_zone' }] };
         widenGates(b);
         linkGates({ test_zone: a, b });
-        const ex = a.exits.filter(e => e.to === 'b');
+        const ex = exitsOf(a, SCREENS).filter(e => e.to === 'b');
         expect(ex.map(e => e.span).sort()).toEqual([-1, 0, 1]);
         ex.forEach(e => expect(e.requires).toBe('x'));
         const center = ex.find(e => e.span === 0);

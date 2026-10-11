@@ -32,7 +32,7 @@ import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
-import { crossBorder } from './mapConnections.js';
+import { crossBorder, connectionMarkers } from './mapConnections.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -1177,7 +1177,8 @@ function nextExitToward(session, fromId, toId) {
         while (queue.length) {
             const id = queue.shift();
             if (id === toId) break;
-            for (const ex of session.screens[id].exits) {
+            // sorties (portes, escaliers) et passages de bord (repère au milieu du passage)
+            for (const ex of [...session.screens[id].exits, ...connectionMarkers(session.screens, session.screens[id])]) {
                 if (seen.has(ex.to) || !session.screens[ex.to]) continue;
                 if (!allowLocked && isExitLocked(session, ex)) continue;
                 seen.set(ex.to, { from: id, exit: ex });

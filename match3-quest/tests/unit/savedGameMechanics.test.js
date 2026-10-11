@@ -42,6 +42,8 @@ import {
 import { BOSS_LOSS_THRESHOLD, recordBossLoss, recordVictory, isStreakTipDue, pickBossTip, applicableTips } from '../../bossTips.js';
 import { createMapEnemy, weakColorOfTemplate } from '../../enemies.js';
 import { boardSize } from '../../constants.js';
+import { exitsOf } from './fixtures/gates.js';
+import { DIRS } from '../../mapConnections.js';
 
 // ── Utilitaires ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 const ids = list => (list || []).map(x => x.id);
@@ -1433,7 +1435,7 @@ describe('arène : accès et état d\'un héros sauvegardé', () => {
     });
 
     test('portes : cercles 1 à 3 ouverts pour le vétéran, cercle 4 fermé ; le héros neuf ne peut entrer qu\'au cercle 1', async () => {
-        const door = (s, tier) => currentScreen(s).exits.find(e => e.to === arenaRoomId(tier));
+        const door = (s, tier) => exitsOf(currentScreen(s), SCREENS).find(e => e.to === arenaRoomId(tier));
         const { session: vet } = await reloadSession(forgeArenaVeteran());
         expect(enterArena(vet)).toBe(true);
         [1, 2, 3].forEach(t => expect(isExitLocked(vet, door(vet, t))).toBe(false));
@@ -1760,7 +1762,7 @@ describe('boss : mirages (illusions) du désert de Gobi', () => {
 
 describe('boss : Dixième Soleil et sentier du Pic de la Lune', () => {
     const fusang = () => SCREENS.fusang;
-    const lunePath = () => fusang().exits.filter(e => e.requires === 'sun_9');   // le sentier du Pic de la Lune (plusieurs cases d'entrée)
+    const lunePath = () => exitsOf(fusang(), SCREENS).filter(e => e.requires === 'sun_9');   // le sentier du Pic de la Lune (plusieurs cases d'entrée)
     const sessionAt = (patch = {}) => createSession({ screenId: 'fusang', x: fusang().spawn.x, y: fusang().spawn.y, ...patch });
 
     test('le Dixième Soleil est un personnage, pas un ennemi : jamais de combat contre lui', () => {
@@ -1781,11 +1783,11 @@ describe('boss : Dixième Soleil et sentier du Pic de la Lune', () => {
         const exit = lunePath()[0];
         expect(exit.requires).toBe('sun_9');
         expect(isExitLocked(s, exit)).toBe(true);
-        s.data.x = exit.x - 1; s.data.y = exit.y; s.rt.grace = 5;
+        s.data.x = exit.x; s.data.y = exit.y; s.rt.grace = 5;
         expect(tryMove(s, 1, 0, { playerLevel: 70 })).toMatchObject({ type: 'exitBlocked', reason: 'quest' });
         markEnemyDefeated(s, 'sun_9');
         expect(isExitLocked(s, exit)).toBe(false);
-        s.data.x = exit.x - 1; s.data.y = exit.y;
+        s.data.x = exit.x; s.data.y = exit.y;
         expect(tryMove(s, 1, 0, { playerLevel: 70 })).toMatchObject({ type: 'transition', to: exit.to });
     });
 
@@ -1871,15 +1873,17 @@ describe('monde : un héros sauvegardé se recharge à l\'endroit voulu', () => 
     });
 
     test('le niveau recommandé d\'une région ne bloque jamais : le héros neuf est seulement prévenu', () => {
-        const crossing = Object.values(SCREENS).filter(sc => !sc.arena).flatMap(sc => sc.exits
+        const crossing = Object.values(SCREENS).filter(sc => !sc.arena).flatMap(sc => exitsOf(sc, SCREENS)
             .filter(e => SCREENS[e.to] && SCREENS[e.to].region !== sc.region && !e.requires && (REGION_UNLOCK_LEVEL[SCREENS[e.to].region] || 1) > 1)
             .map(e => ({ sc, e })))[0];
         expect(crossing).toBeTruthy();
         const { sc, e } = crossing;
         const s = createSession({ ...forgeNewGame().exploration, screenId: sc.id, x: sc.spawn.x, y: sc.spawn.y });
-        const from = { x: e.x === 0 ? 1 : e.x === sc.w - 1 ? e.x - 1 : e.x, y: e.y === 0 ? 1 : e.y === sc.h - 1 ? e.y - 1 : e.y };
+        // porte : un pas vers la sortie ; passage de bord (connexion) : depuis la case de bordure, un pas hors de la carte
+        const from = e.connection ? { x: e.x, y: e.y } : { x: e.x === 0 ? 1 : e.x === sc.w - 1 ? e.x - 1 : e.x, y: e.y === 0 ? 1 : e.y === sc.h - 1 ? e.y - 1 : e.y };
         s.data.x = from.x; s.data.y = from.y; s.rt.grace = 5;
-        const res = tryMove(s, e.x - from.x, e.y - from.y, { playerLevel: 1 });
+        const step = e.connection ? DIRS[e.edge] : { dx: e.x - from.x, dy: e.y - from.y };
+        const res = tryMove(s, step.dx, step.dy, { playerLevel: 1 });
         expect(res).toMatchObject({ type: 'transition', to: e.to });
         expect(res.warning).toMatchObject({ minLevel: REGION_UNLOCK_LEVEL[SCREENS[e.to].region] });
     });

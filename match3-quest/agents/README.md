@@ -12,6 +12,7 @@ lance un sous-agent sur une tâche de ce domaine.
 | Effets sonores | [sound-design.md](sound-design.md) | Clips `sfx`, correspondance événement → son |
 | Animation pixel art | [animation-pixel-art.md](animation-pixel-art.md) | Sprites, cycles d'animation, effets visuels |
 | Level design | [level-design.md](level-design.md) | Cartes, villages, zones sauvages, coffres, énigmes |
+| Terrain | [terrain.md](terrain.md) | Connexions de bordure, barrières de bord (eau, rochers, arbres) selon le biome |
 | Équilibrage | [equilibrage.md](equilibrage.md) | Courbes de niveau, dégâts, mana, économie, difficulté IA |
 | UI / UX | [ui-ux.md](ui-ux.md) | Interface, mobile, accessibilité, tutoriel, textes d'interface |
 | QA / Tests | [qa-tests.md](qa-tests.md) | Tests Jest, Playwright, non-régression, performance |

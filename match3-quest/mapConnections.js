@@ -8,6 +8,8 @@
 //                         volontairement distincts des connexions de bordure ; `warpOf` les normalise ;
 //  - PlayerController   : `tryMove` / `doMove` (exploration.js, explorationView.js).
 //
+// `range: [min, max]` (facultatif, repère de la carte de départ) restreint le passage à une portion de la bordure
+// (passage de 3 cases au milieu d'un rivage, par exemple) ; sans lui, tout le recouvrement des deux cartes est franchissable.
 // Décalage (`offset`, en tuiles) : position de l'origine de la carte de destination dans le repère de la carte de départ, le long
 // de la bordure (colonne pour le nord / sud, ligne pour l'est / ouest). Un joueur qui sort en x = 7 par le nord d'une carte
 // dont la voisine est décalée de 3 arrive en x = 7 − 3 = 4. `align` ('start' | 'center' | 'end') le calcule à partir des tailles
@@ -35,15 +37,18 @@ export function offsetOf(conn, from, to) {
 // Intervalle (le long de la bordure, repère de la carte de départ) où l'on peut passer : [min, max] inclus, ou null.
 export function overlapOf(conn, from, to) {
     const off = offsetOf(conn, from, to);
-    const min = Math.max(0, off);
-    const max = Math.min(lengthAlong(from, conn.dir), off + lengthAlong(to, conn.dir)) - 1;
+    const min = Math.max(0, off, conn.range ? conn.range[0] : 0);
+    const max = Math.min(lengthAlong(from, conn.dir), off + lengthAlong(to, conn.dir), conn.range ? conn.range[1] + 1 : Infinity) - 1;
     return min <= max ? [min, max] : null;
 }
 
 // Connexion inverse (même passage vu depuis l'autre carte) : décalage opposé.
 export function reverseOf(conn, from, to) {
     const { requires, lockedMessage, label } = conn;
-    return { from: conn.to, dir: DIRS[conn.dir].opposite, to: conn.from, offset: -offsetOf(conn, from, to), requires, lockedMessage, label, derived: true };
+    const off = offsetOf(conn, from, to);
+    const rev = { from: conn.to, dir: DIRS[conn.dir].opposite, to: conn.from, offset: -off, requires, lockedMessage, label, derived: true };
+    if (conn.range) rev.range = [conn.range[0] - off, conn.range[1] - off];
+    return rev;
 }
 
 // Erreurs de configuration d'une liste de connexions (tableau de messages ; vide = valide).
@@ -132,3 +137,72 @@ export function crossBorder(screens, screen, x, y, dx, dy, isBlocked) {
 
 // WarpTrigger : destination et case d'arrivée explicites d'une sortie (porte, escalier, entrée de grotte).
 export const warpOf = exit => (exit && exit.to ? { to: exit.to, x: exit.arrive?.x, y: exit.arrive?.y, door: Boolean(exit.door) } : null);
+
+const borderCell = (screen, dir, along) => (dir === 'north' ? { x: along, y: 0 } : dir === 'south' ? { x: along, y: screen.h - 1 }
+    : dir === 'west' ? { x: 0, y: along } : { x: screen.w - 1, y: along });
+
+// Les connexions d'une carte sous forme de « sorties » repères { to, x, y, label, requires, lockedMessage, edge, connection } :
+// case de bordure au milieu du passage (guidage de quête, flèche d'affichage). Elles ne sont pas franchissables comme des `exits`.
+export function connectionMarkers(screens, screen) {
+    return Object.entries(screen.connections || {}).flatMap(([dir, c]) => {
+        const to = screens[c.to];
+        const range = to && overlapOf(c, screen, to);
+        if (!range) return [];
+        const { x, y } = borderCell(screen, dir, Math.floor((range[0] + range[1]) / 2));
+        return [{ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, edge: dir, connection: true }];
+    });
+}
+
+/**
+ * Migration des passages de bord (rangées de sorties `edge` / `span` de world/expand.js) vers des connexions : retire ces sorties
+ * des cartes et retourne les connexions équivalentes (même portion de bordure, même alignement, mêmes verrous). Les portes,
+ * escaliers et grottes (sorties sans `edge`) ne sont pas touchés.
+ */
+export function migrateEdgeExits(screens) {
+    const list = [];
+    for (const s of Object.values(screens)) {
+        const groups = new Map();
+        for (const e of s.exits) if (e.edge !== undefined && !e.door && !e.leaveArena) {
+            const k = `${e.edge}/${e.to}`;
+            (groups.get(k) || groups.set(k, []).get(k)).push(e);
+        }
+        for (const rows of groups.values()) {
+            const centre = rows.find(e => e.span === 0) || rows[0];
+            const target = screens[centre.to];
+            if (!target || !centre.arrive) continue;
+            const axis = DIRS[centre.edge].axis;
+            const alongs = rows.map(e => e[axis]);
+            const conn = {
+                from: s.id, dir: centre.edge, to: centre.to,
+                offset: centre[axis] - centre.arrive[axis],
+                range: [Math.min(...alongs), Math.max(...alongs)]
+            };
+            for (const f of ['label', 'requires', 'lockedMessage']) if (centre[f] !== undefined) conn[f] = centre[f];
+            list.push(conn);
+        }
+        s.exits = s.exits.filter(e => e.edge === undefined || e.door || e.leaveArena);
+    }
+    return list;
+}
+
+/**
+ * Vue « sorties » des connexions d'une carte (une par case de bordure du passage, `span` -1/0/1 autour du centre) avec
+ * `arrive` = case d'arrivée libre sur la carte voisine : sert aux outils et aux tests qui raisonnent en cases de sortie.
+ * Ces entrées sont des repères : le franchissement réel passe par `crossBorder`.
+ */
+export function connectionRows(screens, screen) {
+    return Object.entries(screen.connections || {}).flatMap(([dir, c]) => {
+        const to = screens[c.to];
+        const range = to && overlapOf(c, screen, to);
+        if (!range) return [];
+        const mid = Math.floor((range[0] + range[1]) / 2);
+        const rows = [];
+        for (let a = range[0]; a <= range[1]; a++) {
+            const { x, y } = borderCell(screen, dir, a);
+            const cell = arrivalCell(c, screen, to, x, y, (m, cx, cy) => cx < 0 || cy < 0 || cx >= m.w || cy >= m.h, 0);
+            rows.push({ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, edge: dir,
+                span: a - mid, arrive: cell, connection: true });
+        }
+        return rows.sort((p, q) => Math.abs(p.span) - Math.abs(q.span));
+    });
+}

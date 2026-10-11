@@ -6,6 +6,7 @@ import { SCREENS, QUESTS, STORY_ENDING, REGION_ENTRY_SCREEN, REGION_UNLOCK_LEVEL
 import * as X from '../../exploration.js';
 import { OBSERVE_MS, OBSERVE_RANGE } from '../../terrain.js';
 import { forge, damagedSaves, REGIONS, REGION_BOSSES, REGION_QUEST, regionIndex } from './fixtures/savesForge.js';
+import { exitsOf } from './fixtures/gates.js';
 
 const load = save => X.createSession(JSON.parse(JSON.stringify(save)));   // comme après un rechargement : sérialisé puis relu
 const questOf = id => QUESTS.find(q => q.id === id);
@@ -13,7 +14,7 @@ const mainQuestOf = region => REGION_QUEST[region];
 // Sortie du sanctuaire / de la zone de la région `region` qui mène à la région suivante.
 const exitToNext = region => {
     const target = REGION_ENTRY_SCREEN[REGIONS[regionIndex(region) + 1]];
-    return Object.values(SCREENS).flatMap(s => s.exits.map(e => ({ screen: s, exit: e }))).find(({ exit }) => exit.to === target && exit.requires);
+    return Object.values(SCREENS).flatMap(s => exitsOf(s, SCREENS).map(e => ({ screen: s, exit: e }))).find(({ exit }) => exit.to === target && exit.requires);
 };
 
 const MOMENTS = [
@@ -274,7 +275,7 @@ describe('arène des Mille Flèches sur une sauvegarde', () => {
     });
     it('la porte du cercle N est fermée tant que le cercle N-1 n\'est pas terminé', () => {
         const hall = SCREENS.arena_hall;
-        const gate = n => hall.exits.find(e => e.to === `arena_c${n}`);
+        const gate = n => exitsOf(hall, SCREENS).find(e => e.to === `arena_c${n}`);
         const closed = arena([]), open = arena([1, 2]);
         expect(X.isExitLocked(closed, gate(1))).toBe(false);
         expect(X.isExitLocked(closed, gate(2))).toBe(true);

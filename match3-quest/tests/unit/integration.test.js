@@ -4,6 +4,7 @@ import {
     progressReached, checkAutoQuests, aliveEnemies, findPath, isExitLocked,
     isEntityVisible, visibleNpcs, visibleChests, START_SCREEN, journalEntries
 } from '../../exploration.js';
+import { exitsOf, crossExit } from './fixtures/gates.js';
 
 const WORLD_LEVEL = 30;
 const screens = Object.values(SCREENS).filter(s => !s.arena);
@@ -47,7 +48,7 @@ function nextExit(s, from, to) {
     const queue = [from];
     while (queue.length && !prev.has(to)) {
         const id = queue.shift();
-        s.screens[id].exits.forEach(e => {
+        exitsOf(s.screens[id], SCREENS).forEach(e => {
             if (!prev.has(e.to)) {
                 prev.set(e.to, { id, exit: e });
                 queue.push(e.to);
@@ -68,7 +69,7 @@ function travel(s, target) {
             satisfy(s, exit.requires);
             continue;
         }
-        const res = walkTo(s, exit.x, exit.y);
+        const res = crossExit(s, exit, walkTo);
         if (res.type !== 'transition') throw new Error(`exit not crossed`);
     }
     if (s.data.screenId !== target) throw new Error(`screen ${target} not reached`);
@@ -227,7 +228,7 @@ describe('integration: full game playthrough', () => {
             testScreen(screenId);
 
             const screen = SCREENS[screenId];
-            screen.exits.forEach(exit => {
+            exitsOf(screen, SCREENS).forEach(exit => {
                 if (!visited.has(exit.to) && !isExitLocked(s, exit)) {
                     toVisit.push(exit.to);
                 }

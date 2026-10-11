@@ -12,8 +12,9 @@ import { applyJunctions, applyLevelGuards } from './junctions.js';
 import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { applyUnderground } from './underground.js';
-import { applyConnections } from '../mapConnections.js';
+import { applyConnections, migrateEdgeExits } from '../mapConnections.js';
 import { CONNECTIONS } from './connections.js';
+import { addBorderBarriers } from './barriers.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
@@ -161,7 +162,10 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
     }
 
     // Connexions de bordure (données : world/connections.js) ; les cartes sans connexion gardent des bords infranchissables.
-    applyConnections(screens, options.legacy ? [] : CONNECTIONS);
+    // Les passages de bord (rangées de sorties de world/expand.js) deviennent des connexions de bordure.
+    applyConnections(screens, options.legacy ? [] : [...migrateEdgeExits(screens), ...CONNECTIONS]);
+    // Bordures qui ne se traversent pas : barrière du biome (eau, rochers, arbres…), world/barriers.js.
+    if (!options.legacy) addBorderBarriers(screens);
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });
