@@ -307,6 +307,26 @@
   "boss-wu-gang-spectre-du-cassia-lunaire": {
    "seconds": 34,
    "sections": 2
+  },
+  "boss-tortue-des-boues-gardienne-du-terrier": {
+   "seconds": 34,
+   "sections": 2
+  },
+  "boss-wyrm-du-tonnerre-sourd": {
+   "seconds": 31.7,
+   "sections": 2
+  },
+  "boss-tigre-blanc-des-ancetres": {
+   "seconds": 30.7,
+   "sections": 2
+  },
+  "boss-serpent-des-marees-noires": {
+   "seconds": 30.7,
+   "sections": 2
+  },
+  "boss-immortel-dechu-des-branches": {
+   "seconds": 30.2,
+   "sections": 2
   }
  },
  "sfx": {
