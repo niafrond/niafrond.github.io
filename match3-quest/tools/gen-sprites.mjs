@@ -345,7 +345,7 @@ async function main() {
     // ── Étape 2 : rotations depuis la face ───────────────────────────────
     const frontUri = existing[key]?.front;
     if (!frontUri) {
-      console.log(`  [${key}] ⚠ pas de face disponible, rotation ignorée`);
+      console.log(`  [${key}] pas de face disponible, rotation ignorée`);
       return;
     }
 

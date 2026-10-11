@@ -103,7 +103,7 @@ export default {
         ],
         enemies: [
             { id: 'rizieres_warden', at: '1', templateId: 'forest_guardian', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 4 } },
-            { id: 'rizieres_marsh_imp', at: '2', templateId: 'goblin_saboteur', name: 'Xiao Gui des roseaux', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'rizieres_marsh_imp', at: '2', templateId: 'goblin_saboteur', name: 'Démon des roseaux', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'rizieres_w_toad', at: '3', templateId: 'fungal_horror', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
             { id: 'rizieres_w_lingzhi', at: '4', templateId: 'fungal_horror', name: 'Lingzhi des diguettes', kind: 'sentinel', offset: 0 },
             { id: 'rizieres_w_spirit', at: '5', templateId: 'forest_guardian', name: 'Esprit des diguettes', kind: 'patrol', patrol: ['5', '6'], offset: 0 },

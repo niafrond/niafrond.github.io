@@ -104,7 +104,7 @@ export default {
         ],
         enemies: [
             { id: 'volcan_forge_giant', at: '1', templateId: 'lava_behemoth', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 22 } },
-            { id: 'volcan_ember_imp', at: '2', templateId: 'goblin_saboteur', name: 'Xiao Gui des cendres', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'volcan_ember_imp', at: '2', templateId: 'goblin_saboteur', name: 'Démon des cendres', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'volcan_w_salamander', at: '3', templateId: 'ember_dragon', name: 'Salamandre de lave', kind: 'patrol', patrol: ['3', '4'], offset: -1 },
             { id: 'volcan_w_smith', at: '5', templateId: 'bone_reaver', name: 'Forgeron calciné', kind: 'patrol', patrol: ['5', '6'], offset: 0 },
             { id: 'volcan_w_hound', at: '7', templateId: 'ember_wolf', name: 'Chien de braise', kind: 'sentinel', offset: 0 },

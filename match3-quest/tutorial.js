@@ -24,7 +24,7 @@ const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 
 // Plateau pré-généré garanti sans match initial, avec 8+ coups possibles dont :
-//   – 1 coup crâne : échanger index 35 (4,3)=skull ↔ index 43 (5,3)=blue → 4 crânes alignés en ligne 5
+//   – 1 coup crâne : échanger index 35 (4,3)=skull et index 43 (5,3)=blue → 4 crânes alignés en ligne 5
 //   – plusieurs coups couleur disponibles dès le départ
 // prettier-ignore
 const TUTORIAL_BOARD = [

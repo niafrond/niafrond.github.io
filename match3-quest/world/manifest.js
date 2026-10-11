@@ -46,14 +46,14 @@ export const MANIFEST = {
     ],
     enemies: [
       { id: 'rizieres_warden', name: 'Gardien de la digue', templateHint: 'forest_guardian', role: 'gate' },
-      { id: 'rizieres_marsh_imp', name: 'Xiao Gui des roseaux', templateHint: 'goblin_saboteur', role: 'quest' }
+      { id: 'rizieres_marsh_imp', name: 'Démon des roseaux', templateHint: 'goblin_saboteur', role: 'quest' }
     ],
     quests: [
       { id: 'sq_cerf_volant', title: 'Le cerf-volant de Petit Bao', giver: 'xiaobao', turnIn: 'xiaobao', chain: null,
         summary: 'Le cerf-volant de Petit Bao s\'est pris dans les roseaux de la digue. Retrouvez-le avant que le marais ne le mange.',
         objectives: [{ type: 'chest', target: 'reed_kite' }] },
       { id: 'sq_cerf_volant_ficelle', title: 'La ficelle du chapardeur', giver: 'xiaobao', turnIn: 'xiaobao', chain: 'sq_cerf_volant',
-        summary: 'Le cerf-volant est retrouvé, mais sa ficelle a été volée par un petit démon des roseaux. Corrigez ce Xiao Gui sans méchanceté.',
+        summary: 'Le cerf-volant est retrouvé, mais sa ficelle a été volée par un petit démon des roseaux. Corrigez ce petit démon sans méchanceté.',
         objectives: [{ type: 'kill', target: 'rizieres_marsh_imp' }] },
       { id: 'sq_lettre_bao_1', title: 'Une lettre pour papa', giver: 'xiaobao', turnIn: 'ferryman_gu', chain: null,
         summary: 'Petit Bao a écrit à son père, marin parti vers la Mer Orientale. Confiez la lettre au passeur Gu, au Lit du Fleuve Jaune.',
@@ -334,7 +334,7 @@ export const MANIFEST = {
     ],
     enemies: [
       { id: 'volcan_forge_giant', name: 'Forgeron de lave', templateHint: 'lava_behemoth', role: 'gate' },
-      { id: 'volcan_ember_imp', name: 'Xiao Gui des cendres', templateHint: 'goblin_saboteur', role: 'quest' }
+      { id: 'volcan_ember_imp', name: 'Démon des cendres', templateHint: 'goblin_saboteur', role: 'quest' }
     ],
     quests: [
       { id: 'sq_pont_braise', title: 'Le pont de braise', giver: 'miner_shan', turnIn: 'miner_shan', chain: null,

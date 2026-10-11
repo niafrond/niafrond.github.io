@@ -835,7 +835,7 @@ export const combatCost = 5;             // points nécessaires pour une attaque
 export const skullDamage = 1;           // dégâts infligés par soleil lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
-export let enemy = { name:"Xiao Gui", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
+export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){

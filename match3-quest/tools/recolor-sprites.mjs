@@ -31,7 +31,7 @@ const CLASS_RECOLOR = {
   sorcerer: { hueShift: 150, satScale: 0.8, label: 'vert jade/or' },  // rouge → vert jade
 };
 
-// ─── Conversion RGB ↔ HSL ───────────────────────────────────────────────────
+// ─── Conversion RGB et HSL ───────────────────────────────────────────────────
 
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255;

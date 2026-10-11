@@ -1679,6 +1679,11 @@ export function createExplorationView(cfg) {
             return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome: screen.biome, region: screen.region };
         },
 
+        getActiveQuestSummaries() {
+            ensureSession();
+            return X.activeQuestSummaries(session);
+        },
+
         getActiveCompanionIds() {
             ensureSession();
             return X.companionsOf(session).map(c => c.id);
