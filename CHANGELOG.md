@@ -1,3 +1,11 @@
+## [2.67.0](https://github.com/niafrond/niafrond.github.io/compare/v2.66.0...v2.67.0) (2026-10-11)
+
+### Features
+
+* **match3-quest:** ajouter un souterrain dans chaque région ([da582b2](https://github.com/niafrond/niafrond.github.io/commit/da582b28a3221271a22cd87c05dda84a0af34165))
+* **match3-quest:** ajouter une sentinelle qui annonce le niveau conseillé aux frontières ([e37af71](https://github.com/niafrond/niafrond.github.io/commit/e37af71288046f6de9da25725c18448462c9a3f8))
+* **match3-quest:** jonctions fluides avec gardien devant le passage et piliers ([58b2efc](https://github.com/niafrond/niafrond.github.io/commit/58b2efc26f1d9653637d995dd5d43326ec2c4c55))
+
 ## [2.66.0](https://github.com/niafrond/niafrond.github.io/compare/v2.65.0...v2.66.0) (2026-10-11)
 
 ### Features
