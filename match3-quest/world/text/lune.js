@@ -6,6 +6,9 @@ export default {
       'Quelque part là-haut, quelqu\'un vous attend.'] },
     lune_wild: { name: 'Sentier d\'Argent', gateMessage: 'La porte du Pic est scellée par une serrure de lumière. Sa clé repose dans un reliquaire, quelque part sur le sentier.', arrival: [
       'Le sentier monte, d\'argent et de nuit. À chaque pas, la lune semble écouter.'] },
+    lune_road: { name: 'Sentier Lunaire', arrival: [
+      'Le sentier monte dans une clarté de lait. Les pierres y sont pâles, les ombres bleues, et le silence a le goût de la neige.',
+      'À mesure que vous marchez, la lune semble se pencher pour mieux vous voir.'] },
     lune_h_veilleuse: { name: 'Maison de la veilleuse', arrival: ['Une petite maison tiède, éclairée de mille lanternes. Elle sent la cire et la patience.'] },
     lune_h_lievres: { name: 'Terrier des lièvres de jade', arrival: ['Un terrier tapissé de mousse blanche, où des mortiers de jade pilent un élixir imaginaire. Ils font semblant, mais avec talent.'] },
     lune_h_tisseuse: { name: 'Chaumière de la tisseuse d\'argent', arrival: ['Un rouet file la lumière de lune en fils fins. La pièce est silencieuse, à l\'exception d\'un soupir de laine.'] }
@@ -30,14 +33,38 @@ export default {
       talk: [{ whenDone: 'fengmeng_3a', lines: ['Vous avez vaincu le disciple à l\'arc ? Il n\'a pas fini de pleurer, alors. Ne le haïssez pas : il a trop faim d\'être aimé.'] }] },
     osmanthus_woodcutter: { name: 'Wu Gang', title: 'Bûcheron éternel de l\'osmanthus', 
       idle: ['Je coupe cet arbre depuis mille ans. Il repousse toujours. C\'est une punition, ou une leçon, je n\'ai jamais su.', 'Un jour, l\'arbre tombera. Ou moi. Je parie sur l\'arbre : il est plus têtu.'],
-      talk: [{ whenDone: 'sq_osmanthus', lines: ['L\'ombre est partie, ma cache est vide. Je vais pouvoir couper en paix. L\'arbre repoussera, mais cette fois, j\'aurai le sourire.'] }] }
+      talk: [{ whenDone: 'sq_osmanthus', lines: ['L\'ombre est partie, ma cache est vide. Je vais pouvoir couper en paix. L\'arbre repoussera, mais cette fois, j\'aurai le sourire.'] }] },
+    moon_lamplighter_qiu: { name: 'Qiu', title: 'Allumeur de lanternes',
+      idle: ['J\'aide la veilleuse Yin. Elle allume les lanternes, moi je les relève quand le vent les renverse. Il les renverse souvent : il aime le travail bien fait.', 'Ici, on n\'allume pas pour voir : on allume pour être vu. Quelqu\'un, là-haut, compte sur nous.'],
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['Une lanterne s\'est éteinte toute seule, là-haut, pendant le combat. Je l\'ai rallumée. Elle brille un peu plus fort, comme par défi.'] }] },
+    moon_dew_gatherer_lu: { name: 'Lu', title: 'Cueilleuse de rosée d\'argent',
+      idle: ['La rosée de lune se récolte avant l\'aube, avant que la lune ne la reprenne. Il faut être plus rapide qu\'elle.', 'On dit que trois gouttes guérissent un cœur lourd. J\'en ai bu dix. Je suis très légère, depuis.'],
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['Cette nuit, la rosée était amère. Quelque chose pleure sur le pic, et la lune n\'ose pas le dire.'] }] },
+    moon_stargazer_ming: { name: 'Ming', title: 'Compteur d\'étoiles',
+      idle: ['J\'en suis à quatre mille douze. Elles bougent, alors je recommence. C\'est le principe, je crois.', 'Parfois une étoile file et je note : une de moins. Puis elle revient, honteuse, et je note : une de plus.'],
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['Une étoile vient de s\'éteindre au-dessus du pic, puis de se rallumer. Je note : une, à demi. C\'est du jamais-vu.'] }] },
+    moon_taster_bao: { name: 'Bao', title: 'Goûteur de gâteaux',
+      idle: ['C\'est moi qui goûte tous les gâteaux de Gui ! Pour le contrôle de la qualité. Je suis très, très consciencieux.', 'Les gâteaux de lune, ça ne se mange pas, ça se contemple. Après, on les mange.'],
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['Le gâteau d\'hier avait un drôle de goût de larmes. Je l\'ai fini quand même : on ne gaspille pas.'] }] },
+    jade_step_keeper_lin: { name: 'Lin', title: 'Gardienne des marches de jade',
+      idle: ['Je compte les marches de jade chaque matin. Il en manque une, de temps en temps : la lune la reprend pour s\'y asseoir.', 'Montez à votre rythme. Le sentier ne s\'impatiente jamais : il a l\'éternité.'],
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['Quelque chose a bougé sur le pic, tout à l\'heure. Les marches ont tremblé, puis se sont tues. Elles savent garder un secret.'] }] },
+    moon_fisher_tong: { name: 'Tong', title: 'Pêcheur du lac de lune',
+      idle: ['Je pêche les reflets. Ils mordent mal, mais ils ne sentent pas le poisson.', 'Un jour, j\'ai remonté la lune au bout de ma ligne. Je l\'ai rendue : elle était trop lourde pour ma barque.'],
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['Le lac s\'est ridé tout à l\'heure, comme si quelqu\'un y avait jeté un caillou depuis le ciel. Ça a duré longtemps.'] }] }
   },
   chests: {
     veilleuse_chest: { label: 'Coffre de la veilleuse', openText: 'Un coffre rempli de pièces d\'argent pâle : les offrandes de ceux qui montent vers la Lune.' },
     moon_thread_box: { label: 'Boîte à fils d\'argent', openText: 'Des bobines de fil d\'argent et, tout au fond, quelques pièces de lumière froide.' },
     frost_cache: { label: 'Cache sous le givre', openText: 'Sous le givre bleuté, la dernière cache de bois de Wu Gang, et quelques pièces pâles par-dessus le marché.' },
     moon_key_chest: { label: 'Reliquaire à clé de lumière', openText: 'Une clé de lumière pure scintille dans le reliquaire. La porte du Pic devrait s\'ouvrir !' },
-    osmanthus_hoard: { label: 'Trésor de l\'osmanthus', openText: 'Parmi les racines de l\'osmanthus, un trésor oublié depuis mille ans : de l\'argent lunaire et des fleurs séchées.' }
+    osmanthus_hoard: { label: 'Trésor de l\'osmanthus', openText: 'Parmi les racines de l\'osmanthus, un trésor oublié depuis mille ans : de l\'argent lunaire et des fleurs séchées.' },
+    lune_village_hollow: { label: 'Creux du mur de givre', openText: 'Dans un creux du mur, derrière le terrier des lièvres, un coffret recouvert de givre : quelques pièces d\'argent pâle.' },
+    lune_road_lanterns: { label: 'Besace du porteur de lanternes', openText: 'Une besace posée contre un rocher : des bougies, des mèches, et des pièces d\'argent pour payer la lumière.' },
+    lune_road_stone: { label: 'Coffre de la pierre blanche', openText: 'Sous une pierre blanche qui n\'a pas bougé depuis mille ans, un coffre fatigué et quelques pièces froides.' },
+    lune_road_hidden: { label: 'Cachette du sentier', openText: 'Au fond d\'une encoche du rocher, la cache d\'un pèlerin : des pièces d\'argent lunaire, enveloppées dans un mouchoir de soie.' },
+    lune_wild_steps_box: { label: 'Coffret des marches', openText: 'Calé entre deux marches de jade, un coffret que la lune a laissé là : poudre d\'argent et pièces claires.' },
+    lune_wild_moonwell: { label: 'Puits de lune', openText: 'Dans un puits minuscule, au creux d\'une encoche, brille un reflet de pièces. C\'en est : on les y a jetées pour faire un vœu.' }
   },
   quests: [
     { id: 'sq_osmanthus', title: 'L\'osmanthus qui repousse', chapter: '✦ Quête secondaire — Pic de la Lune', giver: 'osmanthus_woodcutter', turnIn: 'osmanthus_woodcutter', requires: [], side: true,

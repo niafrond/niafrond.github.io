@@ -6,6 +6,9 @@ export default {
       'Des clochettes de chameaux tintent comme de la monnaie qui rêve.'] },
     gobi_wild: { name: 'Dunes des Voix Sablées', gateMessage: 'Le chef de dune, Bras-de-Sable, tient le col et réclame un péage : impossible de passer tant qu\'il est debout.', arrival: [
       'Le sable chante ici, d\'une voix grave et patiente. Fiez-vous à vos pas plus qu\'à vos yeux : les mirages ont de l\'humour, et pas toujours bon.'] },
+    gobi_road: { name: 'Piste des Caravanes', arrival: [
+      'Une piste battue par mille sabots traverse les dunes, doublée par les ornières de ceux qui n\'ont jamais attendu le guide. Çà et là, un os de chameau sert de borne.',
+      'On dit que la piste est sûre. On dit beaucoup de choses, au Gobi, quand on n\'a pas encore croisé le scorpion.'] },
     gobi_h_ma: { name: 'Entrepôt du marchand Ma', arrival: ['Ballots de soie, jarres de thé, balances partout. Chaque pièce y est pesée deux fois, et chaque sourire trois.'] },
     gobi_h_dawa: { name: 'Tente de Dawa', arrival: ['Des étoiles brodées au feutre et une odeur de thé à la cardamome. Dawa lit le ciel comme d\'autres lisent leurs comptes.'] },
     gobi_h_bains: { name: 'Maison des eaux', arrival: ['La citerne du caravansérail : fraîche, sombre, presque sacrée. On y parle bas, par respect pour l\'eau.'] },
@@ -33,7 +36,25 @@ export default {
       talk: [{ whenDone: 'sun_4', lines: ['Dawa dit que vous avez trouvé le vrai soleil parmi les doubles ! Moi, j\'aurais flanché. Vous m\'apprenez à viser, un jour ?'] }] },
     mirage_djinn: { name: 'Sablier', title: 'Esprit des mirages repenti', 
       idle: ['Autrefois, je montrais aux voyageurs des oasis qui n\'existaient pas. Aujourd\'hui, je ne leur montre que des vérités fatigantes.', 'Les mirages sont des mensonges qui ont perdu leur chemin. Je les aide à rentrer.'],
-      talk: [{ whenDone: 'sq_carte_vraie', lines: ['Votre cartographe a de la chance : sa carte est presque exacte. J\'y ai glissé un mirage, pour le principe.'] }] }
+      talk: [{ whenDone: 'sq_carte_vraie', lines: ['Votre cartographe a de la chance : sa carte est presque exacte. J\'y ai glissé un mirage, pour le principe.'] }] },
+    gobi_village_water_seller: { name: 'Samir', title: 'Marchand d\'eau',
+      idle: ['De l\'eau fraîche ! Fraîche comme un mensonge de mirage, mais celle-ci, on peut la boire.', 'Une outre pour la route, une pour le retour. Ceux qui ne prennent qu\'une outre prennent l\'autre en rêve.'],
+      talk: [{ whenDone: 'sun_4', lines: ['Un soleil de moins et mes outres se vident moins vite. Mon commerce y perd, mon palais y gagne.'] }] },
+    gobi_village_kid_guide: { name: 'Petit Zak', title: 'Apprenti guide',
+      idle: ['Je connais la piste jusqu\'au premier cairn ! Après, je fais confiance à mon chameau, qui ne me fait pas confiance.', 'Dawa dit que le vrai guide se perd en premier, pour que les autres sachent où ne pas aller.'],
+      talk: [{ whenDone: 'sun_4', lines: ['Le vrai soleil est tombé ! J\'ai dit à tout le monde que je l\'avais deviné. Personne ne me croit, mais j\'insiste.'] }] },
+    gobi_village_old_weaver: { name: 'Mère Anar', title: 'Tisserande de feutre',
+      idle: ['Je feutre la laine des chameaux depuis soixante hivers. Un tapis, c\'est du temps qu\'on a décidé de garder.', 'Un jeune archer m\'a demandé un manteau « qui ne ressemble à rien ». Je lui ai donné un manteau de feutre gris. Il a pleuré, je ne sais pas pourquoi.'],
+      talk: [{ whenDone: 'sun_4', lines: ['Les couleurs reviennent dans la laine. Un rouge plus rouge, un bleu plus bleu. Je n\'avais pas retrouvé ce bleu depuis ma jeunesse.'] }] },
+    gobi_hamlet_old_dyer: { name: 'Vieux Hamed', title: 'Teinturier de l\'oasis',
+      idle: ['Mes cuves sentent la grenade et le henné. Les chameaux m\'ont déjà reproché mon bleu : il est trop beau pour la poussière.', 'On dit qu\'on teint la laine, mais c\'est elle qui nous teint les doigts. Voyez mes mains : j\'ai vécu.'],
+      talk: [{ whenDone: 'sun_4', lines: ['Le quatrième soleil est tombé, et les teintures sèchent plus doucement. Même les couleurs ont droit au repos.'] }] },
+    gobi_road_old_drover: { name: 'Vieux Chamelier Bek', title: 'Convoyeur à la retraite',
+      idle: ['Quarante ans sur cette piste. J\'ai vu des caravanes de cent bêtes, et une seule qui savait où elle allait. Le chameau de tête.', 'Si vous voyez de l\'herbe sèche au bord de la piste, n\'y mettez pas le pied sans y penser : elle cache plus de bêtes qu\'une écurie.'],
+      talk: [{ whenDone: 'sun_4', lines: ['Je ne dirais pas que la piste est paisible. Je dirais qu\'elle a cessé de crier. C\'est déjà un progrès.'] }] },
+    gobi_wild_old_caravaneer: { name: 'Vieux Qaïs', title: 'Caravanier égaré',
+      idle: ['Je ne suis pas perdu : je suis à l\'endroit où ma caravane a eu une meilleure idée que moi.', 'Le col est tenu par un chef à bras de sable. Il n\'est pas méchant, il est cher. Ce n\'est pas la même chose, mais ça revient au même.'],
+      talk: [{ whenDone: 'gobi_dune_warlord', lines: ['Le chef de dune est tombé ! Je pourrais enfin rentrer. Mais il paraît que ma caravane a déménagé. Je vais attendre qu\'elle revienne.'] }] }
   },
   chests: {
     ma_strongbox: { label: 'Coffre-fort de Ma', openText: 'Le coffre-fort de Ma est si bien gardé que même lui hésite à l\'ouvrir. Un joli bénéfice vous attend.' },
@@ -41,7 +62,14 @@ export default {
     saddle_bag: { label: 'Sacoche de selle', openText: 'Une sacoche oubliée par un caravanier : pièces, dattes et un mot griffonné « à retrouver ».' },
     dune_cache: { label: 'Cache sous la dune', openText: 'Sous le sable, une cassette de pillard enterrée à la hâte. Un peu de monnaie rouillée.' },
     mirage_chest: { label: 'Coffre mirage (le vrai !)', openText: 'Parmi tous les coffres illusoires, celui-ci est bien réel. Une jolie bourse, et un miroir de poche pour se consoler des autres.' },
-    warlord_loot: { label: 'Butin du chef de dune', openText: 'Les péages du chef de dune, soigneusement entassés. Il en prenait beaucoup, pour une dune.' }
+    warlord_loot: { label: 'Butin du chef de dune', openText: 'Les péages du chef de dune, soigneusement entassés. Il en prenait beaucoup, pour une dune.' },
+    gobi_wild_oasis_jar: { label: 'Jarre de l\'oasis', openText: 'Une jarre enfoncée dans la vase fraîche, au bord de l\'eau : des pièces, et une datte que vous laissez aux oiseaux.' },
+    gobi_wild_cliff_chest: { label: 'Coffret de la falaise', openText: 'Au pied d\'une falaise creusée par les vents, un coffret de pillard : pièces, clous et un mot « à ne pas ouvrir ». Vous l\'avez ouvert.' },
+    gobi_hamlet_palm_jar: { label: 'Jarre du palmier', openText: 'Au pied d\'un palmier, une jarre pleine de noyaux de datte et de quelques pièces : ici, on compte en récoltes.' },
+    gobi_hamlet_well_chest: { label: 'Coffre du puits', openText: 'Une niche dans la margelle du puits. Quelqu\'un y cachait ses économies à la fraîcheur, ce qui est assez fin.' },
+    gobi_road_saddle_pack: { label: 'Sacoche abandonnée', openText: 'Une sacoche de chameau, délaissée au creux d\'une dune : du sel, des clous et quelques pièces.' },
+    gobi_road_niche: { label: 'Niche des convoyeurs', openText: 'Dans une niche creusée dans la roche, les convoyeurs laissent une part de leurs gains pour la prochaine caravane. Vous êtes la prochaine.' },
+    gobi_road_well_urn: { label: 'Urne du vieux puits', openText: 'Une urne scellée au bord du puits asséché : des pièces d\'argent, et un caillou en forme de goutte.' }
   },
   quests: [
     { id: 'sq_lettre_bao_3', title: 'La lettre prend le large', chapter: '✦ Quête secondaire — Désert de Gobi', giver: 'hua_gobi', turnIn: 'sailor_bao', requires: ['sq_lettre_bao_2'], side: true,

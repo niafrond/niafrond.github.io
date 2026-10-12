@@ -159,3 +159,56 @@ l'ordre des rencontres sont conservés, les zones de vigilance passent à 2 case
 Les ancres de sortie `<` `>` `^` `v` posées sur un bord deviennent des passages de 3 cases (sorties `edge` / `span`). Dans `exploration.js`,
 `exits.find(e => e.to === …)` renvoie la case centrale du passage (span 0) en premier. Plus de mur d'enceinte : une couronne d'eau.
 Tests de mécanique : `buildLegacyWorld()` (story.js) rend le monde à l'ancienne, aux coordonnées d'origine.
+
+## 9. Format v2 : cartes natives, routes d'accès, hautes herbes (world/DESIGN-V2.md)
+
+Tout ce qui suit est **optionnel** : une carte qui n'utilise rien de cette section se comporte exactement comme avant (monde assemblé identique).
+
+### 9.1 `native: true` : carte jamais étirée
+Sur `village`, `wild`, `hamlet`, `road` et `sanctuary`. La grille est la carte finale : `scaleScreen` n'est pas appliqué, seuls les passages de bord
+sont élargis à 3 cases (`widenGates`). `screen.native === true` sur l'écran assemblé. Garde-fous (erreur claire à l'assemblage) : `w·h ≤ 1500` et
+`w, h ≤ 64`. Une carte non native garde les anciennes tailles minimales (`EXPANDED_SIZES` : wild et road 28×22, sanctuaire et hameau 26×20).
+La couronne de bordure (eau, barrières du biome, couloirs de passage) est recalculée sur toutes les cartes de plein air, natives comprises.
+
+### 9.2 `road` : route d'accès
+```js
+road: { id: '<R>_road', biome, native: true, grid, npcs, chests, enemies, grass }   // kind « wild », textes dans text.screens['<R>_road']
+```
+Chaînage d'une région qui a une `road` : **sanctuaire précédent ──E──► road ──E──► village ──E──► wild ──E──► sanctuaire**. Ancres obligatoires :
+`<` (ouest, vers le sanctuaire précédent ; inutile pour la 1re région) et `>` (est, vers le village), posées sur le bord avec une tuile libre à
+l'intérieur. Sorties automatiques (ne pas les déclarer) ; l'étiquette de sortie du sanctuaire précédent et celle du `<` du village prennent le nom
+de la route. `REGION_ENTRY_SCREEN` reste le village. `addPrepSpots` traite aussi `_road`. L'identifiant doit être exactement `<R>_road`.
+Une région sans `road` garde le chaînage sanctuaire ──► village.
+
+### 9.3 `sanctuary` en grille native
+```js
+sanctuary: { id: 'fleuve', waypoint: { x: 2, y: 5 }, grid: [...], native: true, grass: { table: [...] },
+             places: { monk_f: '1', chest_f: '2', patrol_f: { at: '4', patrol: ['4', [6, 7]] }, sun_f: [14, 7],
+                       spawn: 'S', waypoint: 'W', 'exit:fleuve_road': '>' } }
+```
+La géométrie (obstacles, liquides, chemins, bâtiments, hautes herbes) vient de la grille ; les entités définies dans `story.js` (PNJ, coffres,
+ennemis dont le Soleil-Boss) sont **conservées avec tous leurs champs** et seulement repositionnées par `places` : valeur = ancre (`'3'`),
+`[x, y]` ou `{ at | x, y }` ; un ennemi qui patrouille se place par `{ at, patrol: [ancre | [x, y], …] }`. Clés spéciales :
+`spawn` (défaut : `S`, sinon un pas à l'intérieur de `<`), `waypoint` (défaut : `W` de la grille ; une `waypoint` déclarée sans place est une
+erreur), `exit:<to>` (défaut : la sortie vers `<R>_wild` sur l'ancre `<`, l'autre sortie sur `>` ; alias `exit:<région>` pour `<région>_road`
+ou `<région>_village`). Les PNJ relogés dans le village / la route / le hameau sont ignorés. Toute entité sans place, place inconnue, entité
+sur un obstacle ou deux entités sur la même case : erreur explicite. Des maisons de sanctuaire sont possibles (`interiors[].in: 'sanctuary'`).
+Le monde « à l'ancienne » (`buildLegacyWorld`) ignore la grille et garde la géométrie d'origine du sanctuaire.
+
+### 9.4 Positions explicites
+Dans `npcs`, `chests`, `enemies`, `exits` : `{ id, x: 12, y: 7 }` au lieu de `at` (jamais les deux ; entiers dans la grille, sinon erreur).
+Dans `patrol` : ancres et couples `[x, y]` se mélangent (`patrol: ['5', [12, 7]]`). Utile : il n'y a que 30 ancres. Une sortie déclarée dans
+`exits` (par `at` ou `x`/`y`) remplace la sortie automatique de même destination. Un hameau peut déclarer lui-même sa sortie vers la mer
+(`exits: [{ x: w - 1, y, to: 'mer_archipel' }]`, verrou du Pas de Yu complété par `aquatic.js`).
+
+### 9.5 `"` : hautes herbes
+Le glyphe `"` est de l'herbe haute : franchissable, case libre pour tout le reste (entités, ancres…). `buildZone` produit
+`screen.grass = { cells: [[x, y, w, h], …], rate, safeSteps, table }` en fusionnant les défauts (`rate: 0.12`, `safeSteps: 3`) avec `spec.grass`
+(`{ rate?, safeSteps?, table: [{ templateId, name, weight, offset }, …] }`). Pas de `screen.grass` sans case `"`. Erreurs : `"` dans un village,
+un hameau, un intérieur ou une arène ; cases `"` sans table ; table vide ; poids ≤ 0 ; `rate` hors ]0, 1] ; `safeSteps` non entier. Les cases
+recouvertes plus tard par du décor, de l'eau ou un bâtiment sont retirées de `cells` (`pruneGrass`) ; `scaleScreen` étire les herbes avec la carte.
+Le moteur de rencontre (exploration.js) est indépendant de ce format.
+
+### 9.6 Outil d'aperçu
+`node match3-quest/tools/map-preview.mjs <screenId>` : carte assemblée en ASCII (règles de coordonnées), statistiques, entités et éléments
+inatteignables à pied depuis l'apparition (avertissement). `--all` : résumé de tous les écrans de plein air ; `--json` ; `--routes` ; `--no-entities`.

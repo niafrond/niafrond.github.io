@@ -1,6 +1,9 @@
 // Textes — Gorges du Volcan (Hameau des Braises Sages, coulées rougeoyantes).
 export default {
   screens: {
+    volcan_road: { name: 'Galerie de Basalte', arrival: [
+      'Une longue galerie de basalte noir, creusée par la lave puis abandonnée à ses colonnes. Des filets de braise courent entre les dalles, comme des veines qui ne dorment jamais tout à fait.',
+      'Plus loin, l\'air sent la suie et la soupe : le village des mineurs n\'est pas très loin.'] },
     volcan_village: { name: 'Hameau des Braises Sages', arrival: [
       'Aux Braises Sages, on fait cuire le riz dans une fissure et l\'on salue le volcan chaque matin, avec la prudence que l\'on doit à un voisin irascible.',
       'Les cheminées fument. Les gens, eux, essaient de ne pas en faire autant.'] },
@@ -13,6 +16,30 @@ export default {
     volcan_h_cantine: { name: 'Cantine des mineurs', arrival: ['Une longue table, des bols fumants et des plaisanteries sur le dos des cailloux.'] }
   },
   npcs: {
+    volcan_road_prospector: { name: 'Lü le Prospecteur', title: 'Chercheur de veines',
+      idle: ['Je cherche une veine de jade dans le basalte. J\'ai trouvé du basalte. Je continue : le basalte, ça a du jade dedans, forcément.', 'Écoutez les colonnes : quand elles tintent, la lave dort. Quand elles se taisent, courez, ou priez, selon votre tempérament.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Les colonnes ne tintent plus du tout. Je ne sais pas si la lave dort ou si elle est partie. Je creuse quand même.'] }] },
+    volcan_village_bellows_man: { name: 'Lao Pi', title: 'Souffleur de soufflet',
+      idle: ['Je souffle dans le soufflet toute la journée. Le forgeron dit que c\'est un métier de poumons. Moi je dis que c\'est un métier de patience.', 'Le soufflet respire pour la forge, la forge respire pour le fer, et moi je respire pour trois. C\'est mal payé, mais ça fait grandir.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Un soleil de moins : un peu moins à souffler. Mes poumons demandent un congé. Mon patron dit « on verra ».'] }] },
+    volcan_village_surveyor: { name: 'Ancien Kuo', title: 'Cartographe des galeries',
+      idle: ['Je dessine les galeries à mesure qu\'elles s\'effondrent. Ma carte est fidèle, mais elle ne le reste pas longtemps.', 'Une galerie sur trois mène quelque part. Une sur trois mène chez moi. Je ne dirai pas laquelle mène à la troisième.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Les parois ne bougent plus. Je vais pouvoir terminer ma carte. Il me faudra juste un autre papier : celui-ci est déjà plein de rature.'] }] },
+    volcan_village_washer: { name: 'Meiling', title: 'Lavandière des sources',
+      idle: ['Le linge sèche tout seul ici, sur les pierres chaudes. Le seul inconvénient, c\'est qu\'il cuit aussi, si l\'on est distraite.', 'Je lave les chemises des mineurs. Elles ne sont jamais blanches, mais elles sont fières d\'avoir été propres.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Mon linge est enfin tiède sans brûler. Je pense que les gorges ont retrouvé leurs bonnes manières.'] }] },
+    volcan_village_lantern_maker: { name: 'Tante Zhu', title: 'Faiseuse de lanternes de basalte',
+      idle: ['Mes lanternes ne s\'éteignent jamais : elles gardent la chaleur de la roche. Les clients se plaignent qu\'elles ne dorment pas. Je leur réponds qu\'on ne dort pas mieux avec une chandelle.', 'Une lanterne de basalte, c\'est une pierre qui a décidé de briller. Il suffit de la convaincre en douceur.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Je vais faire des lanternes plus claires, maintenant que le grand feu est parti. Elles seront moins chaudes, plus gaies.'] }] },
+    volcan_village_ember_boy: { name: 'Petit Huo', title: 'Ramasseur d\'étincelles',
+      idle: ['Je ramasse les étincelles qui tombent de la forge. Maman dit que je me brûle. Moi je dis que j\'apprends.', 'Si tu t\'assois près de la forge, tu entends les étincelles rire. Elles rient très fort, pour des petites choses.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Il y a moins d\'étincelles, mais elles sont plus belles. Elles dansent au lieu de mordre. Je les ramasse quand même.'] }] },
+    volcan_hamlet_steam_keeper: { name: 'Vieux Mang', title: 'Gardien de la vapeur',
+      idle: ['La vapeur monte, la vapeur descend. Mon travail, c\'est de lui dire où aller. Elle n\'écoute pas, mais elle apprécie qu\'on le fasse.', 'Quand les sources chantent, tout va bien. Quand elles sifflent, on s\'éloigne. Quand elles se taisent, on appelle le doyen.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Les sources chantent doucement, ce soir. Je les écoute comme on écoute une vieille chanson dont on a presque oublié les paroles.'] }] },
+    volcan_wild_ash_sweeper: { name: 'Sao', title: 'Balayeur de cendres',
+      idle: ['Je balaie les cendres des passerelles pour qu\'on ne glisse pas. Il en retombe autant que j\'en enlève. Mon travail est parfait, il ne finit jamais.', 'Un conseil : ne marchez pas au bord. La lave ne mord pas, mais elle ne rend jamais ce qu\'elle a pris.'],
+      talk: [{ whenDone: 'sun_6', lines: ['Moins de cendres, ce matin. Je me suis demandé à quoi servait mon balai. Puis j\'ai balayé quand même, par amitié.'] }] },
     potter_rui: { name: 'Rui', title: 'Potier de lave', 
       idle: ['Mes vases sont cuits par la montagne elle-même. Je ne fais que les ramasser au bon moment, avec des gants.', 'Un vase raté, c\'est un vase qui a une personnalité. Les miens ont beaucoup de personnalité.'],
       talk: [{ whenDone: 'sun_6', lines: ['Le sixième soleil est tombé. Le sol est tiède, il n\'est plus brûlant. Mes vases sortent moins noirs, plus roses. C\'est sans doute le soulagement.'] }] },
@@ -36,6 +63,13 @@ export default {
       talk: [{ whenDone: 'sq_cendrillon', lines: ['Dites au vieux Fei que son bain est trop chaud pour mes souvenirs. Le disciple est parti vers l\'ouest, rageur. Il a dit qu\'il reviendrait « pour l\'élixir ». Je n\'ai rien compris, moi, je suis une braise.'] }] }
   },
   chests: {
+    volcan_road_slag_pot: { label: 'Pot de scories', openText: 'Un pot de scories posé contre une colonne, comme un oubli : au fond, quelques pièces noircies par la braise.' },
+    volcan_road_alcove_chest: { label: 'Coffre de l\'alcôve', openText: 'Au fond d\'une alcôve que la lave avait murée, un coffre de fer rougi. Le métal est encore tiède.' },
+    volcan_road_cooling_box: { label: 'Boîte de refroidissement', openText: 'Une boîte de forgeron où l\'on laissait refroidir les pièces. Elle n\'a jamais été vidée.' },
+    volcan_village_slag_jar: { label: 'Jarre sous le toit de Shan', openText: 'Sur l\'étroit rebord qui longe le toit de la maison de Shan, une jarre de scories : l\'épargne d\'un enfant qui grimpait trop haut.' },
+    volcan_hamlet_steam_box: { label: 'Boîte du gardien de vapeur', openText: 'Une boîte à tabac de cuivre cachée entre deux tuyaux tièdes. Mang l\'a oubliée, ou fait semblant.' },
+    volcan_wild_slag_box: { label: 'Caisse de scories', openText: 'Une caisse de scories abandonnée au pied de la passerelle : des pièces, un peu de charbon et une botte brûlée.' },
+    volcan_wild_ash_urn: { label: 'Urne des cendres hautes', openText: 'Une urne de basalte coiffée de cendres, dans un recoin des cimes. Elle contient de l\'or fin et une plume d\'oiseau de feu.' },
     shan_ore_box: { label: 'Caisse de minerais', openText: 'Des minerais étiquetés, et une bourse de mineur au fond. Shan appelle ça « le filon personnel ».' },
     lava_vase: { label: 'Vase de lave scellé', openText: 'Un vase sombre aux reflets rouges, rempli de pièces patinées par la chaleur.' },
     cantine_stash: { label: 'Réserve de la cantine', openText: 'Sous les sacs de nouilles : un petit pécule que Dada garde pour les jours de grande faim.' },

@@ -1,4 +1,4 @@
-// Points de préparation du terrain (voir terrain.js) posés sur les zones sauvages qui abritent des ennemis :
+// Points de préparation du terrain (voir terrain.js) posés sur les zones sauvages (`<R>_wild`) et routes d'accès (`<R>_road`) qui abritent des ennemis :
 //  - `trap` / `tallGrass` sur des points de passage des patrouilleurs (l'ennemi qui s'y trouve au contact commence altéré) ;
 //  - `outlook` (belvédère) un peu plus loin : un combat lancé de là démarre avec un plateau favorable.
 // Déterministe (aucun hasard) : les mêmes cartes donnent toujours les mêmes spots.
@@ -8,7 +8,7 @@ const cheb = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
 export function addPrepSpots(screen) {
     screen.spots = [];
-    if (!screen.id.endsWith('_wild')) return;
+    if (!screen.id.endsWith('_wild') && !screen.id.endsWith('_road')) return;   // zone sauvage ou route d'accès
     const enemies = (screen.enemies || []).filter(e => !e.boss && !e.illusion && !e.shieldedBy && !e.arena);
     if (!enemies.length) return;
     const taken = new Set([

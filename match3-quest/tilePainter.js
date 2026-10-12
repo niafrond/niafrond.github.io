@@ -74,10 +74,12 @@ function roundCorner(R, corner, r, outside, edge) {
 
 // `isPath(x, y)` / `isLiquid(x, y)` : appartenance d'une case (hors carte = faux pour l'eau, vrai pour les chemins).
 // `tiled` : sol de salle (intérieur, arène) en dalles biseautées plutôt qu'en herbe.
-export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid, tiled = false, biomeId = '' }) {
+// `isTall(x, y)` : case de hautes herbes (rencontres aléatoires, exploration.js > grassOf), dessinée en touffes sombres par-dessus le sol.
+export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid, tiled = false, biomeId = '', isTall = null }) {
     const u = tile / TILE_GRID;
     const R = (ux, uy, uw, uh, fill) => unitRect(g, px, py, u, ux, uy, uw, uh, fill);
     const grass = () => paintGrass(R, biome, x, y, biomeId);
+    const tall = isTall && !tiled && !isLiquid(x, y) && isTall(x, y);
 
     if (isLiquid(x, y)) {
         paintWater(R, biome, x, y, isLiquid, biomeId);
@@ -85,10 +87,12 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
     }
     if (isPath(x, y)) {
         paintDirt(R, biome, x, y, isPath, grass);
+        if (tall) paintTallGrass(R, biome, x, y, isTall);
         return;
     }
     if (tiled) { paintFlagstone(R, biome, x, y); return; }
     grass();
+    if (tall) paintTallGrass(R, biome, x, y, isTall);
     // coins concaves : l'herbe s'arrondit autour d'un chemin ou d'un étang qui la longe sur deux côtés
     const rim = (test, inside, edge) => {
         const N = test(x, y - 1), S = test(x, y + 1), W = test(x - 1, y), E = test(x + 1, y);
@@ -145,6 +149,64 @@ function paintGrass(R, biome, x, y, biomeId = '') {
     }
 }
 
+// Hautes herbes : nappe plus sombre que l'herbe normale (même teinte de biome), touffes de brins hauts à pointes claires, bord de
+// nappe irrégulier (1 à 2 unités) là où la case voisine n'est pas en hautes herbes ; peinte par-dessus l'herbe de base.
+function paintTallGrass(R, biome, x, y, isTall) {
+    const base = biome.a;
+    const bg = shade(base, -30), mid = shade(base, -54), deep = shade(base, -78), tip = shade(base, 16);
+    const N = isTall(x, y - 1), S = isTall(x, y + 1), W = isTall(x - 1, y), E = isTall(x + 1, y);
+    // fond : une colonne par unité, raccourcie en haut / en bas aux bords de la nappe ; colonnes de bord éclaircies au hasard
+    for (let i = 0; i < 16; i++) {
+        if (i === 0 && !W || i === 15 && !E) {
+            for (let j = 1; j < 15; j++) if (cellHash(x * 16 + i, y * 16 + j, 401) < 0.6) R(i, j, 1, 1, bg);
+            continue;
+        }
+        const top = !N ? 1 + (cellHash(x * 16 + i, y, 400) < 0.45 ? 1 : 0) : 0;
+        const bottom = !S ? 15 - (cellHash(x * 16 + i, y, 402) < 0.45 ? 1 : 0) : 16;
+        R(i, top, 1, bottom - top, bg);
+    }
+    // touffes : 2 rangées de 3, décalées d'une rangée à l'autre ; chacune = brin haut central + deux brins latéraux
+    for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+            const cx = 3 + col * 5 + (row ? 2 : 0) + Math.floor(cellHash(x * 3 + col, y * 2 + row, 410) * 2) - 1;
+            const by = 7 + row * 6 + Math.floor(cellHash(x * 3 + col, y * 2 + row, 411) * 2);
+            const cxx = Math.min(12, Math.max(3, cx));
+            R(cxx - 2, by + 1, 5, 1, deep);                                    // pied de la touffe
+            R(cxx, by - 4, 1, 5, mid); R(cxx, by - 5, 1, 1, tip);              // brin central
+            R(cxx - 2, by - 2, 1, 3, deep); R(cxx - 3, by - 3, 1, 1, mid);     // brin gauche
+            R(cxx + 2, by - 2, 1, 3, deep); R(cxx + 3, by - 3, 1, 1, mid);     // brin droit
+            R(cxx - 1, by - 3, 1, 3, tip);                                     // reflet
+        }
+    }
+    if (!S) R(1, 14, 14, 1, deep);                                             // ombre au pied de la nappe
+}
+
+// Frémissement : brins posés devant le héros qui se tient dans les hautes herbes (au premier plan, ils lui cachent les pieds).
+// (px, py) : coin haut-gauche de la case en pixels ; `now` : temps en ms pour l'oscillation ; `moving` : amplitude plus forte.
+export function drawGrassFront(g, tile, px, py, biome, now = 0, moving = false) {
+    const u = tile / TILE_GRID;
+    const base = biome.a;
+    const mid = shade(base, -54), deep = shade(base, -78), tip = shade(base, 16);
+    g.save();
+    g.imageSmoothingEnabled = false;
+    g.fillStyle = shade(base, -30);
+    g.fillRect(Math.round(px + u), Math.round(py + 13.5 * u), Math.round(14 * u), Math.max(1, Math.round(2.5 * u)));
+    for (let i = 0; i < 7; i++) {
+        const sway = Math.sin(now / 150 + i * 1.7) * u * (moving ? 1.6 : 0.7);
+        const bx = px + (1 + i * 2.1) * u;
+        const top = py + (9.5 + (i % 3) * 1.2) * u;
+        const low = py + 15 * u;
+        const mi = (low + top) / 2;
+        const w = Math.max(2, Math.round(u * 1.3));
+        g.fillStyle = deep;
+        g.fillRect(Math.round(bx), Math.round(mi), w, Math.max(1, Math.round(low - mi)));
+        g.fillStyle = mid;
+        g.fillRect(Math.round(bx + sway), Math.round(top), w, Math.max(1, Math.round(mi - top)));
+        g.fillStyle = tip;
+        g.fillRect(Math.round(bx + sway), Math.round(top), w, Math.max(1, Math.round(u * 1.2)));
+    }
+    g.restore();
+}
 
 // Détails de sol propres à chaque région (retourne vrai si le biome dessine son propre sol, sinon l'herbe à touffes s'applique).
 function paintTerrainDetail(R, base, x, y, biomeId) {

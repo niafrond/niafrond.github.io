@@ -6,6 +6,9 @@ export default {
       'Quelque part dans la plaine, des meutes de feu rôdent encore. Mais ici, il y a du thé.'] },
     fauves_wild: { name: 'Hautes Herbes de Cendre', gateMessage: 'Griffe-de-Feu, le tigre alpha, rôde dans les hautes herbes : tant qu\'il est là, la route du sanctuaire reste fermée.', arrival: [
       'L\'herbe haute ondule en vagues dorées. Un grondement lointain vous rappelle que la plaine ne dort jamais vraiment.'] },
+    fauves_road: { name: 'Piste des Troupeaux', arrival: [
+      'Des milliers de sabots ont tracé cette piste dans l\'herbe sèche, et le vent y remue encore leur poussière dorée. Elle serpente entre des crêtes basses, puis s\'oublie à l\'est, vers la fumée d\'un enclos.',
+      'On y croise des meutes plus souvent que des bergers. Marchez au milieu de la piste : l\'herbe haute, elle, garde ses secrets.'] },
     fauves_h_wu: { name: 'Pavillon du chasseur Wu', arrival: ['Des trophées de cornes, un râtelier d\'arcs. On y raconte beaucoup, on y prouve moins.'] },
     fauves_h_zi: { name: 'Yourte de Zi', arrival: ['Une yourte de feutre claire, où le thé au lait chauffe toute la journée sur un petit poêle.'] },
     fauves_h_chevaux: { name: 'Écurie des chevaux célestes', arrival: ['Des chevaux lents mais fiers, qui dédaignent les carottes et jugent votre posture.'] },
@@ -13,6 +16,21 @@ export default {
     fauves_h_fromage: { name: 'Fromagerie de Dame Sa', arrival: ['Des meules, des odeurs puissantes, un fumet à faire reculer les loups eux-mêmes.'] }
   },
   npcs: {
+    fauves_road_herder_oyun: { name: 'Oyun', title: 'Convoyeuse de troupeaux',
+      idle: ['Je ramène trois cents brebis à Caoyuan, et il m\'en manque deux. Je suis certaine qu\'elles se cachent exprès : elles ont horreur des comptes.', 'Un conseil, archer : la piste est plus longue que l\'herbe, mais l\'herbe est plus longue que la patience du loup. Gardez la piste.', 'Il y a une combe, à l\'ouest, où le vent ne souffle jamais. Les bergers y laissent des offrandes. Les loups, eux, y laissent des empreintes.'],
+      talk: [{ whenDone: 'sun_7', lines: ['Plus de meute au soleil, plus de brebis égarées. Elles étaient dans la combe, bien sûr, à brouter mes offrandes.'] }] },
+    fauves_village_naran: { name: 'Naran', title: 'Chaudronnier ambulant',
+      idle: ['Je rafistole les marmites. Une marmite trouée, c\'est un repas qui s\'enfuit : on ne peut pas le rattraper à la course.', 'On me paie en lait caillé, en promesses ou en cailloux. Les cailloux font de très bons poids, pour peser les promesses.'],
+      talk: [{ whenDone: 'sun_7', lines: ['Septième soleil tombé : mes marmites chauffent moins vite, mes clients bavardent davantage. Je ne sais pas ce que je préfère.'] }] },
+    fauves_village_khulan: { name: 'Khulan', title: 'Jeune archère du clan',
+      idle: ['Je tire sur des sacs de paille. Un jour, sur un loup. Pas ce soir, d\'accord ? Ce soir j\'ai les doigts gelés.', 'On dit que vous ne ratez jamais votre cible. Moi, je rate de moins en moins. C\'est un début, non ?'],
+      talk: [{ whenDone: 'sun_7', lines: ['Vous avez abattu le soleil des bêtes ! Je tiens ma corde à deux mains pour ne pas applaudir : un archer ne bat pas des mains, il vise.'] }] },
+    fauves_village_erdene: { name: 'Erdene', title: 'Juge des pâtures',
+      idle: ['Un pâturage appartient à celui qui le laisse repousser. Tout le reste n\'est que dispute, et je vis très bien des disputes.', 'Hier, deux voisins se sont querellés pour une touffe d\'herbe. J\'ai tranché : la touffe est à la vache. Personne n\'a osé la contredire.'],
+      talk: [{ whenDone: 'sun_7', lines: ['Plus de feu dans la plaine, les pâtures reverdissent. Je prévois trois procès avant l\'automne : tout le monde veut sa part de l\'herbe neuve.'] }] },
+    fauves_village_tsetseg: { name: 'Tsetseg', title: 'Marchande de lait fermenté',
+      idle: ['Mon lait fermenté est jeune, fort et têtu. Comme vos flèches, j\'imagine. Goûtez : il ne mord que les menteurs.', 'Le secret, c\'est le temps, et un vieux sac de peau que personne ne lave. Ne répétez pas cette dernière partie.'],
+      talk: [{ whenDone: 'sun_7', lines: ['Septième soleil tombé, et mes ventes de lait montent : les gens ont de nouveau le cœur à boire et à raconter. C\'est ça, la paix.'] }] },
     horse_tian: { name: 'Tian', title: 'Cheval céleste retraité', 
       idle: ['Hennis. Autrefois, je galopais d\'un bout du ciel à l\'autre. Maintenant, je mâche de l\'herbe et je contemple.', 'Un cheval céleste n\'est jamais en retard : il arrive quand il faut. Même si c\'est le lendemain.'],
       talk: [{ whenDone: 'sun_7', lines: ['Le septième soleil est tombé. Le vent a changé. Je sens l\'envie de galoper, mais mes genoux disent non. Je galoperai en pensée.'] }] },
@@ -41,7 +59,15 @@ export default {
     shaman_drum_box: { label: 'Boîte à tambours', openText: 'Sous les peaux de tambour, des offrandes de voyageurs : pièces, plumes et un vœu écrit sur un os.' },
     grass_cache: { label: 'Cache dans les herbes', openText: 'Une cache de chasseur, enfouie dans les herbes : quelques pièces et un bout de fromage dur.' },
     lost_lamb_pen: { label: 'Enclos oublié', openText: 'Dans l\'enclos oublié, un petit agneau tout ébouriffé qui vous regarde, soulagé. Une bourse est restée sur la paille.' },
-    alpha_den: { label: 'Tanière de l\'alpha', openText: 'La tanière de Griffe-de-Feu. Des pièces arrachées à des voyageurs, et des os de mouton qu\'on ne détaillera pas.' }
+    alpha_den: { label: 'Tanière de l\'alpha', openText: 'La tanière de Griffe-de-Feu. Des pièces arrachées à des voyageurs, et des os de mouton qu\'on ne détaillera pas.' },
+    fauves_road_trough_chest: { label: 'Coffre de l\'abreuvoir', openText: 'Sous la planche d\'un abreuvoir, un coffre étanche que des bouviers y cachent depuis des générations : quelques pièces, et un mot sur l\'état des puits.' },
+    fauves_road_camp_chest: { label: 'Cache du bivouac', openText: 'Près d\'un foyer froid, une cache de caravaniers : des pièces dans un sac de feutre, et un peigne d\'os que quelqu\'un cherche sûrement.' },
+    fauves_road_cairn_chest: { label: 'Coffre du cairn de la combe', openText: 'Dans la combe sans vent, au pied d\'un cairn, un coffre d\'offrandes. Les bergers y laissent des pièces pour que la meute détourne les yeux.' },
+    fauves_village_pier_chest: { label: 'Coffre du ponton', openText: 'Au bout du ponton de bois, une jarre accrochée sous les planches : le trésor d\'un pêcheur de poissons-chats, qui n\'a jamais compris ce que valait de l\'or.' },
+    fauves_hamlet_corral_chest: { label: 'Coffre de l\'enclos des juments', openText: 'Sous la mangeoire de l\'enclos, un coffre de bois : la dot d\'une jument, disent les enfants, qui prétendent aussi qu\'elle parle.' },
+    fauves_hamlet_reed_chest: { label: 'Cache aux roseaux', openText: 'Sous une souche, au bord de la mare, une cache de pêcheur d\'ombre : quelques pièces et une ficelle qui, elle, ne sert plus à rien.' },
+    fauves_wild_islet_chest: { label: 'Coffre de l\'îlot', openText: 'Sur un îlot minuscule, au milieu du lac, un coffre que seul un pont étroit permet d\'atteindre : des pièces, et la sensation d\'être très observé par les grenouilles.' },
+    fauves_wild_hollow_chest: { label: 'Coffre du creux d\'herbe', openText: 'Au fond d\'un creux, loin de la piste, un coffre d\'éleveur : le fonds de commerce d\'un marchand de chevaux qui, un soir, a pris le mauvais sentier.' }
   },
   quests: [
     { id: 'sq_agneau_perdu', title: 'L\'agneau des jumeaux', chapter: '✦ Quête secondaire — Plaine des Fauves', giver: 'twins_mu', turnIn: 'twins_mu', requires: [], side: true,

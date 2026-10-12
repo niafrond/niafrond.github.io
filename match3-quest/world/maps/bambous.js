@@ -1,40 +1,50 @@
-// Région 3 — Forêt de Bambous Calcinée : Village des Cent Tiges, Sentier des Tiges Cendrées, cinq maisons.
-// Légende : # tiges de bambou/murs · ~ mare à thé · = ruelle · A-E bâtiments (porte minuscule) · W pierre de voyage.
+// Région 3 — Forêt de Bambous Calcinée (cartes natives, format v2) : Village des Cent Tiges, Clairière des Lampions,
+// Sentier des Tiges Cendrées (forêt-labyrinthe), route d'accès « Sentier des Moines », sanctuaire du Soleil de Cendres, cinq maisons.
+// Légende : # tiges de bambou / murs · ~ mare, ruisseau · = ruelle, passerelle · " hautes herbes · A-E bâtiments (porte minuscule) · W pierre de voyage.
 
 export default {
     village: {
-        id: 'bambous_village', biome: 'bamboo',
+        id: 'bambous_village', biome: 'bamboo', native: true,
         grid: [
-            '####################',
-            '#.AAAA#.BBBB..CCCC.#',
-            '#.AAAA#.BBBB.#CCCC.#',
-            '#.AaAA..BbBB..CcCC.#',
-            '#..=..0..=.....=...#',
-            '##.==============#.#',
-            '<..=..W..~~~.S.=...>',
-            '#..=.1.#.~~~...=...#',
-            '#.DDDD........EEEE.#',
-            '#.DDDD......#.EEEE.#',
-            '#.DdDD.2.#....EeEE##',
-            '#9#=============...#',
-            '#............p.....#',
-            '#.###....==....###.#',
-            '#.#j.....==.....k#.#',
-            '#.###.~~.==.~~.###.#',
-            '#.....~~.==.~~.....#',
-            '#..=============...#',
-            '#..=..#.....#..=...#',
-            '#..=..#.m.n.#..=...#',
-            '#..=..#.....#..=...#',
-            '#..=..###.###..=...#',
-            '#..=============...#',
-            '####################'
+            '~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~############.==#############~~',
+            '~~####.........==..........###~~',
+            '~~##AAAAA.BBBB.==.CCCCCC....#9~~',
+            '~~##AAAAA.BBBB.==.CCCCCC.DDDD.~~',
+            '~~#.AAAAA.BBBB.==.CCCCCC.DDDD.~~',
+            '~~#.AAaAA.BbBB.==.CCCCCC.DDDD.~~',
+            '~~#.#.=....=...==.CCcCCC.DdDD.~~',
+            '~~##..===========...=...#.=...~~',
+            '~~##k....0.==========.....=...~~',
+            '~~##.......==1=============...~~',
+            '~~.........==..==W.==.6.....#.~~',
+            '<~===========..==..===========~>',
+            '~~===========..==..===========~~',
+            '~~##.....7.==S=====5=.......##~~',
+            '~~#.#..=====================.#~~',
+            '~~#..EEEEE.....===...........#~~',
+            '~~#..EEEEE#####===.##....##..#~~',
+            '~~#..EEEEE#.j.#===....p..3...#~~',
+            '~~#..EEeEE#...#===...........#~~',
+            '~~#....=..#4..#===....##.....#~~',
+            '~~#.~~~~..##.##===.m......n..#~~',
+            '~~#~~~~~~.2....==...........##~~',
+            '~~#~~~~~~...#..==#.#......####~~',
+            '~~############.==#############~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~v~~~~~~~~~~~~~~~~'
         ],
         npcs: [
             { id: 'merchant_bambous', at: 'p' },
             { id: 'huli_xia', at: '1' },
             { id: 'young_monk_zhi', at: '0' },
-            { id: 'scholar_dong', at: '2' }
+            { id: 'scholar_dong', at: '2' },
+            { id: 'bambous_village_fan_seller', at: '3' },
+            { id: 'bambous_village_old_gardener', at: '4' },
+            { id: 'bambous_village_kid_runner', at: '5' },
+            { id: 'bambous_village_tea_porter', at: '6' },
+            { id: 'bambous_village_scribe_wei', at: '7' }
         ],
         chests: [
             { id: 'tea_hideout', at: '9', gold: 45, label: 'Cachette de thé', openText: 'Sous une natte brûlée, un pot de thé fêlé… et quelques sous que quelqu\'un avait cachés là.' },
@@ -46,75 +56,160 @@ export default {
     },
 
     hamlet: {
-        id: 'bambous_hamlet', biome: 'bamboo',
+        id: 'bambous_hamlet', biome: 'bamboo', native: true,
         grid: [
-            '########^#######',
-            '##......=.....##',
-            '#.AAAA..=.BBBB.#',
-            '#.AAAA..=.BBBB.#',
-            '#.AaAA2.=.BbBB.#',
-            '#..=========...#',
-            '#.......S......#',
-            '#4........0.~~.#',
-            '#..1...#....~W.#',
-            '##...#....3.#..#',
-            '################'
+            '~~~~~~~~~~~~~~^~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~##########..=..#########~~',
+            '~~#########...=....#######~~',
+            '~~#######.....=.....######~~',
+            '~~###AAAAA....=...BBBBB###~~',
+            '~~###AAAAA....S...BBBBB###~~',
+            '~~##.AAAAA....=...BBBBB...~~',
+            '~~#..AAaAA....5...BBbBB.#.~~',
+            '~~##...=......=.....=.....~~',
+            '~~#....==============.....~~',
+            '~~#...........=........##.~~',
+            '~~#.#.....2...=..3........~~',
+            '~~#.##.......0....6......#~~',
+            '~~#................~~~~~~#~~',
+            '~~##...1...##......~~~~~~#~~',
+            '~~##.4............7~~~~~~#~~',
+            '~~###...........##.......#~~',
+            '~~####...#.........W....##~~',
+            '~~#####................###~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         npcs: [
             { id: 'panda_baobao', at: '0' },
             { id: 'beekeeper_ju', at: '1' },
             { id: 'archer_huo', at: '2' },
-            { id: 'cricket_boy_hao', at: '3' }
+            { id: 'cricket_boy_hao', at: '3' },
+            { id: 'bambous_hamlet_old_lamplighter', at: '5' }
         ],
         chests: [
-            { id: 'honey_hive', at: '4', gold: 45 }
+            { id: 'honey_hive', at: '4', gold: 45 },
+            { id: 'bambous_hamlet_lantern_cache', at: '6', gold: 45 },
+            { id: 'bambous_hamlet_pond_urn', at: '7', gold: 90 }
         ]
     },
 
     wild: {
-        id: 'bambous_wild', biome: 'bamboo',
+        id: 'bambous_wild', biome: 'bamboo', native: true,
         grid: [
-            '##################',
-            '#9......4...5.#0.#',
-            '####.l#...p...##.>',
-            '#k#...#.2##......#',
-            '#..8..#..##.o.1..#',
-            '#...........#....#',
-            '#.n.W...i......j.#',
-            '#.....#..###m...##',
-            '#..##.#.3###..y..#',
-            '<.....#..........#',
-            '#.......6...7...z#',
-            '###v##############'
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~###############.############################~~',
+            '~~##############......"""""...#.##############~~',
+            '~~#############......"""""""..#...############~~',
+            '~~###.#######........."""""...#.....#####.....~>',
+            '~~##...####..........................####.....~~',
+            '~~###..###............................#.....##~~',
+            '~~###..##..........#...######..............###~~',
+            '~~###..##........####......#####......#.....##~~',
+            '~~###..........######........#####....#"""...#~~',
+            '~~###.........#######.........#####..."""""..#~~',
+            '~~##.........#########..####.#####~~..."""...#~~',
+            '~~##.........#########..##########~~.........#~~',
+            '~~.....W.....#######......####....~~........##~~',
+            '~~...........###............#.....==........#.~~',
+            '~~..........###.............#.....==..........~~',
+            '~~........##......................==.........#~~',
+            '<~.."""""..#................"""...~~##......##~~',
+            '~~.""""""".............##.""""""##~~######..##~~',
+            '~~##"""""..........######..###############...#~~',
+            '~~##..............######...################.##~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~v~~~~~~~~~~~~~~~~~~~~~~'
         ],
+        grass: {
+            rate: 0.09,
+            table: [
+                { templateId: 'fungal_horror', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
+                { templateId: 'goblin_saboteur', name: 'Petit démon des tiges', weight: 4, offset: 0 },
+                { templateId: 'shadow_assassin', name: 'Ombre rampante', weight: 2, offset: 0 },
+                { templateId: 'forest_guardian', name: 'Jeune esprit du bambou', weight: 1, offset: 1 }
+            ]
+        },
         npcs: [
-            { id: 'lantern_old', at: '8' },
-            { id: 'stem_sprite', at: 'i' },
-            { id: 'snake_qing', at: 'j' }
+            { id: 'lantern_old', x: 4, y: 16 },
+            { id: 'stem_sprite', x: 8, y: 10 },
+            { id: 'snake_qing', x: 33, y: 14 },
+            { id: 'bambous_wild_old_woodcutter', x: 23, y: 7 }
         ],
         chests: [
-            { id: 'ash_cache', at: '0', gold: 45 },
-            { id: 'hollow_stem', at: '9', gold: 90 },
-            { id: 'monk_hoard', at: 'z', gold: 135 },
-            { id: 'journal_page_bam', at: 'k', gold: 45 },
-            { id: 'hidden_grove_chest', at: 'l', gold: 90 },
-            { id: 'ash_urn', at: 'm', gold: 135 }
+            { id: 'hidden_grove_chest', x: 5, y: 5, gold: 90 },
+            { id: 'hollow_stem', x: 28, y: 11, gold: 90 },
+            { id: 'monk_hoard', x: 43, y: 20, gold: 135 },
+            { id: 'journal_page_bam', x: 5, y: 21, gold: 45 },
+            { id: 'ash_urn', x: 17, y: 3, gold: 135 },
+            { id: 'ash_cache', x: 32, y: 4, gold: 45 },
+            { id: 'bambous_wild_reed_box', x: 16, y: 21, gold: 45 },
+            { id: 'bambous_wild_incense_chest', x: 44, y: 12, gold: 90 }
         ],
         enemies: [
-            { id: 'bambous_seal_keeper', at: '1', templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 6 } },
-            { id: 'bambous_ember_wisp', at: '2', templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_ember_wisp_b', at: '3', templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_w_shade', at: '4', templateId: 'shadow_assassin', name: 'Ombre de cendre', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
-            { id: 'bambous_w_spirit', at: '6', templateId: 'forest_guardian', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
-            { id: 'bambous_w_pilgrim', at: 'y', templateId: 'bone_reaver', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
-            { id: 'bambous_ash_shadow_a', at: 'n', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_ash_shadow_b', at: 'o', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_lantern_thief', at: 'p', templateId: 'goblin_saboteur', name: 'Démon voleur de lampions', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 6 } },
+            { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'shadow_assassin', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },
+            { id: 'bambous_w_spirit', x: 13, y: 17, templateId: 'forest_guardian', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: [[13, 17], [21, 17]], offset: -1 },
+            { id: 'bambous_w_pilgrim', x: 37, y: 12, templateId: 'bone_reaver', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_ash_shadow_a', x: 22, y: 12, templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
+            { id: 'bambous_ash_shadow_b', x: 26, y: 10, templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
+            { id: 'bambous_lantern_thief', x: 31, y: 5, templateId: 'goblin_saboteur', name: 'Démon voleur de lampions', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'bambous_wild_ghost_monk', x: 31, y: 14, templateId: 'bone_reaver', name: 'Moine errant calciné', kind: 'patrol', patrol: [[31, 14], [31, 17]], offset: 0 },
+            { id: 'bambous_wild_pine_spirit', x: 41, y: 16, templateId: 'forest_guardian', name: 'Pin de cendre', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_wild_lamp_priestess', x: 19, y: 4, templateId: 'moon_priestess', name: 'Prêtresse des lampions éteints', kind: 'sentinel', offset: -1 }
         ],
         gate: {
             requires: 'sq_sentier_sceaux',
             lockedMessage: 'Les sceaux du moine Zhen ne tiennent plus : un gardien de cendres retient le sentier du temple. Il faut le dompter, puis rapporter la nouvelle au moine.'
         }
+    },
+
+    road: {
+        id: 'bambous_road', biome: 'bamboo', native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~.......#####..##......~~..........###..#~~',
+            '~~........###...........~~............#...~~',
+            '~~...."""""......"""....==...........###..~~',
+            '~~..."""""##...."""""...==................~~',
+            '~~....""#######.."""....==................~~',
+            '~~......######..........~~.....#####......~~',
+            '~~.......######.........~~.....#####......~~',
+            '~~......................~~.....#####......~~',
+            '~~...............#......~~................~~',
+            '<~......###############.~~###."####.......~>',
+            '~~.....#################~~##########......~~',
+            '~~######################~~###########.....~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        grass: {
+            rate: 0.08,
+            table: [
+                { templateId: 'fungal_horror', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
+                { templateId: 'goblin_saboteur', name: 'Petit démon des tiges', weight: 4, offset: 0 },
+                { templateId: 'forest_guardian', name: 'Jeune esprit du bambou', weight: 1, offset: 1 }
+            ]
+        },
+        npcs: [
+            { id: 'bambous_road_old_pilgrim', x: 5, y: 9 }
+        ],
+        chests: [
+            { id: 'bambous_road_offering', x: 3, y: 4, gold: 45 },
+            { id: 'bambous_road_niche', x: 14, y: 2, gold: 90 },
+            { id: 'bambous_road_bank_urn', x: 40, y: 13, gold: 45 }
+        ],
+        enemies: [
+            { id: 'bambous_road_lingzhi', x: 14, y: 9, templateId: 'fungal_horror', name: 'Lingzhi pèlerin', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_road_shade', x: 14, y: 3, templateId: 'shadow_assassin', name: 'Ombre du sentier', kind: 'patrol', patrol: [[14, 3], [22, 3]], offset: -1 },
+            { id: 'bambous_road_stone_lion', x: 28, y: 6, templateId: 'temple_warden', name: 'Lion de pierre éveillé', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_road_thief', x: 37, y: 9, templateId: 'goblin_saboteur', name: 'Petit démon voleur d\'offrandes', kind: 'sentinel', offset: 0 }
+        ]
     },
 
     interiors: [
@@ -247,5 +342,51 @@ export default {
         }
     ],
 
-    sanctuary: { id: 'bambous', waypoint: { x: 2, y: 4 } }
+    sanctuary: {
+        id: 'bambous', waypoint: { x: 4, y: 12 }, native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~##############...#######.#~~',
+            '~~##############...######...~~',
+            '~~######.......#......###..#~~',
+            '~~######...................#~~',
+            '~~#####...............##...#~~',
+            '~~####....##..#............#~~',
+            '~~####...##...#............#~~',
+            '~~###....#........##.......#~~',
+            '~~......##..................~~',
+            '<~S....###.#................~>',
+            '~~..W...####................~~',
+            '~~###....##.......##........~~',
+            '~~####"""###..#............#~~',
+            '~~####""""##..#...........##~~',
+            '~~#####""........."...##..##~~',
+            '~~######......."""""""...###~~',
+            '~~######.......###".....####~~',
+            '~~#######..#################~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        grass: {
+            rate: 0.07,
+            table: [
+                { templateId: 'fungal_horror', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
+                { templateId: 'shadow_assassin', name: 'Ombre rampante', weight: 3, offset: 0 },
+                { templateId: 'forest_guardian', name: 'Jeune esprit du bambou', weight: 1, offset: 1 }
+            ]
+        },
+        places: {
+            parley_sun3: [17, 4],
+            bambous_assassin: [16, 9],
+            bambous_fungus: [12, 17],
+            bambous_priestess: [20, 7],
+            old_pine: [9, 19],
+            sun3_wardens_a: [24, 8],
+            sun3_wardens_b: [24, 14],
+            sun_3: [27, 11],
+            temple_bell: [17, 2],
+            bambous_chest: [26, 3]
+        }
+    }
 };

@@ -24,7 +24,10 @@
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés) ;
 //  - arène (arena.js) : écrans `kind: 'arena'`, `data.arena` = { cleared, best, wins, returnTo } ; entrée par
 //    enterArena (point de retour mémorisé), sortie à tout moment par leaveArena (bouton du HUD, sortie
-//    `leaveArena` d'une salle), défaite = expulsion ; revenir au parvis remet les gardiens en place.
+//    `leaveArena` d'une salle), défaite = expulsion ; revenir au parvis remet les gardiens en place ;
+//  - hautes herbes (`screen.grass` = { cells: [[x,y,w,h]…], rate, safeSteps, table: [{ templateId, name, weight, offset }] }) :
+//    marcher dessus peut déclencher un combat aléatoire non persistant (ennemi synthétique `wild:<écran>:<n>`, jamais dans
+//    `data.defeated` ni dans la sauvegarde ; état volatil dans `session.rt`) ; voir grassOf / tryMove / encounterFor.
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { COMPANIONS, BANTER } from './companions.js';
@@ -32,7 +35,7 @@ import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
-import { crossBorder, connectionMarkers, onSide, dirOfStep } from './mapConnections.js';
+import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -46,6 +49,52 @@ export const START_SCREEN = SCREENS.rizieres_village ? 'rizieres_village' : 'riz
 export const GRACE_MOVES = 2;
 
 const inRect = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+
+// ── Hautes herbes : rencontres aléatoires (voir world/DESIGN-V2.md §5) ───────────────────────────
+export const GRASS_RATE = 0.12;          // probabilité de rencontre par pas sur l'herbe, une fois les pas de grâce passés
+export const GRASS_SAFE_STEPS = 3;       // pas d'herbe sans rencontre après l'arrivée sur la carte ou un combat
+export const WILD_PREFIX = 'wild:';      // identifiant synthétique d'une créature d'herbe : wild:<écran>:<n>
+export const WILD_INTRO = 'Des créatures se cachent dans les hautes herbes.';
+const WILD_KEEP = 4;                     // définitions synthétiques gardées en mémoire (la rencontre en cours + quelques-unes)
+export const isWildId = id => typeof id === 'string' && id.startsWith(WILD_PREFIX);
+
+// Hautes herbes d'une carte, normalisées : { cells, rate, safeSteps, table } ou null (aucune herbe, ou carte sans rencontre :
+// zone sûre, intérieur, arène). La table ne garde que les entrées valides (templateId, poids > 0, décalage entier).
+export function grassOf(screen) {
+    const g = screen?.grass;
+    if (!g || screen.safe || screen.interior || screen.arena || screen.kind === 'arena') return null;
+    const cells = Array.isArray(g.cells) ? g.cells.filter(r => Array.isArray(r) && r.length >= 4) : [];
+    if (cells.length === 0) return null;
+    const rate = Number.isFinite(g.rate) ? Math.min(1, Math.max(0, g.rate)) : GRASS_RATE;
+    const safeSteps = Number.isInteger(g.safeSteps) && g.safeSteps >= 0 ? g.safeSteps : GRASS_SAFE_STEPS;
+    const table = (Array.isArray(g.table) ? g.table : [])
+        .filter(t => t && typeof t.templateId === 'string' && t.templateId)
+        .map(t => ({
+            templateId: t.templateId,
+            name: typeof t.name === 'string' && t.name ? t.name : t.templateId,
+            weight: Number.isFinite(t.weight) && t.weight > 0 ? t.weight : 1,
+            offset: Number.isInteger(t.offset) ? t.offset : 0
+        }));
+    return { cells, rate, safeSteps, table };
+}
+
+// La case (x, y) de la carte est-elle une case de hautes herbes ?
+export function isGrassCell(screen, x, y) {
+    const g = grassOf(screen);
+    return Boolean(g) && inRect(g.cells, x, y);
+}
+
+// Le compteur de pas dans l'herbe repart de zéro (changement de carte, fin de combat).
+export function resetGrassSteps(session) {
+    session.rt.grassSteps = 0;
+}
+
+// Message d'explication, une seule fois par session, à la première rencontre d'herbe (null ensuite).
+export function takeWildIntro(session) {
+    if (!session.rt.wildIntroPending) return null;
+    session.rt.wildIntroPending = false;
+    return WILD_INTRO;
+}
 
 // Quête qui enseigne le « Pas de Yu » (yubu) : une fois terminée, le héros marche sur les eaux.
 export const YUBU_QUEST = 'sq_pas_de_yu';
@@ -149,7 +198,11 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
         data,
         screens,
         quests,
-        rt: { enemies: {}, patrolTimer: 0, grace: GRACE_MOVES, facing: { dx: 0, dy: 1 }, enemyIndex }
+        // grassSteps / wildSeq / wildDefs / wildIntro* : hautes herbes (volatil, jamais sauvegardé)
+        rt: {
+            enemies: {}, patrolTimer: 0, grace: GRACE_MOVES, facing: { dx: 0, dy: 1 }, enemyIndex,
+            grassSteps: 0, wildSeq: 0, wildDefs: {}, wildIntroDone: false, wildIntroPending: false
+        }
     };
 
     let screen = screens[data.screenId];
@@ -178,6 +231,7 @@ function initScreenRuntime(session) {
     session.rt.enemies = {};
     session.rt.patrolTimer = 0;
     session.rt.stillMs = 0;
+    resetGrassSteps(session);   // nouvelle carte : les pas d'herbe repartent de zéro
     screen.enemies.forEach(def => {
         const route = def.kind === 'patrol' && def.patrol ? buildRoute(def.patrol) : null;
         const face = def.facing && (def.facing.dx || def.facing.dy) ? { ...def.facing } : { dx: 0, dy: 1 };
@@ -516,7 +570,38 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.y = ny;
     session.rt.stillMs = 0;
     if (session.rt.grace > 0) session.rt.grace--;
-    return checkAura(session) || { type: 'moved' };
+    // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
+    const onGrass = isGrassCell(screen, nx, ny);
+    if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
+    return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved' };
+}
+
+// Tirage de rencontre après un pas sur l'herbe : null (rien) ou { type: 'combat', enemyId: 'wild:<écran>:<n>', wild: true }.
+// Pas de rencontre pendant la grâce ni dans les `safeSteps` premiers pas ; ensuite probabilité `rate` par pas. Tirage pondéré
+// dans la table. Deux appels à `ctx.random` (RNG injectable, défaut Math.random) : succès du pas, puis choix dans la table.
+function rollWildEncounter(session, ctx = {}) {
+    const screen = currentScreen(session);
+    const g = grassOf(screen);
+    if (!g || g.table.length === 0) return null;
+    if (session.rt.grace > 0 || session.rt.grassSteps <= g.safeSteps) return null;
+    const random = typeof ctx.random === 'function' ? ctx.random : Math.random;
+    if (random() >= g.rate) return null;
+    const total = g.table.reduce((sum, t) => sum + t.weight, 0);
+    let pick = random() * total;
+    const entry = g.table.find(t => (pick -= t.weight) < 0) || g.table[g.table.length - 1];
+
+    const rt = session.rt;
+    const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
+    // Définition d'ennemi construite à la volée (même forme qu'un ennemi de carte, sans position) : mémorisée dans la session
+    // uniquement, jamais dans la sauvegarde ni dans l'index des ennemis de carte.
+    rt.wildDefs[id] = {
+        screenId: screen.id,
+        def: { id, templateId: entry.templateId, name: entry.name, kind: 'wild', offset: entry.offset, wild: true }
+    };
+    Object.keys(rt.wildDefs).slice(0, -WILD_KEEP).forEach(k => { delete rt.wildDefs[k]; });
+    resetGrassSteps(session);
+    if (!rt.wildIntroDone) { rt.wildIntroDone = true; rt.wildIntroPending = true; }
+    return { type: 'combat', enemyId: id, wild: true };
 }
 
 // Avance les patrouilleurs. Retourne la liste des événements (au plus un combat).
@@ -596,6 +681,18 @@ export function findPath(session, tx, ty) {
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
+    // Passages de bord (connexions) : y poser le pied dans le sens de sortie déclenche la transition, donc jamais un point de passage
+    // (sinon, sur l'eau, le plus court chemin longerait la couronne par une case de passage et changerait de carte en route).
+    Object.entries(screen.connections || {}).forEach(([dir, c]) => {
+        const to = session.screens[c.to];
+        const range = to && overlapOf(c, screen, to);
+        if (!range) return;
+        for (let a = range[0]; a <= range[1]; a++) {
+            const x = dir === 'west' ? 0 : dir === 'east' ? screen.w - 1 : a;
+            const y = dir === 'north' ? 0 : dir === 'south' ? screen.h - 1 : a;
+            exits.add(key(x, y));
+        }
+    });
     const startKey = key(start.x, start.y);
     const target = key(tx, ty);
 
@@ -673,7 +770,7 @@ export function levelFor(session, def) {
 
 // Niveau de région de l'écran qui porte l'ennemi `enemyId`.
 export function enemyRegionLevel(session, enemyId) {
-    const screenId = session.rt.enemyIndex[enemyId]?.screenId;
+    const screenId = session.rt.enemyIndex[enemyId]?.screenId ?? session.rt.wildDefs?.[enemyId]?.screenId;
     return REGION_LEVEL[session.screens[screenId]?.region] || 1;
 }
 
@@ -693,7 +790,31 @@ export function prepFor(session, def) {
     });
 }
 
+// Rencontre d'herbe : mêmes champs qu'un ennemi normal. Niveau = niveau de la région de la carte + décalage de la table
+// (plancher 1) + Nouvelle Partie + (comme enemyLevel) ; jamais de boss ni de duel ; préparation du terrain neutre.
+// Le dessin est celui du gabarit (spriteKey = templateId, résolu dans sprites/ comme pour tout ennemi de carte).
+function wildEncounter(session, { def, screenId }) {
+    const screen = session.screens[screenId];
+    const level = levelFor(session, def);
+    return {
+        prep: buildPrep(),
+        biome: screen?.biome || null,
+        enemyId: def.id,
+        spriteKey: def.templateId,
+        templateId: def.templateId,
+        name: def.name,
+        level,
+        boss: null,
+        duel: null,
+        wild: true
+    };
+}
+
 export function encounterFor(session, enemyId, playerLevel) {
+    if (isWildId(enemyId)) {
+        const wild = session.rt.wildDefs?.[enemyId];
+        return wild ? wildEncounter(session, wild) : null;
+    }
     const entry = session.rt.enemyIndex[enemyId];
     if (!entry) return null;
     const { def } = entry;
@@ -801,6 +922,9 @@ export function regionVisitCount(session, region) {
 }
 
 export function markEnemyDefeated(session, enemyId) {
+    resetGrassSteps(session);   // après un combat, les pas d'herbe repartent de zéro
+    // Créature d'herbe : combat non persistant (rien dans `defeated`, ni scène, ni quête) ; l'or et l'XP viennent du combat.
+    if (isWildId(enemyId)) return [];
     const events = [];
     let after = [];
     if (!session.data.defeated.includes(enemyId)) {
@@ -837,6 +961,7 @@ export function startNewGamePlus(session) {
 }
 
 export function resetAfterDefeat(session) {
+    resetGrassSteps(session);
     // Défaite dans l'arène : on en est expulsé (retour au point d'entrée).
     if (inArena(session)) {
         leaveArena(session);

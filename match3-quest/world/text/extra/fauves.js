@@ -38,6 +38,38 @@ export default {
         }
       ]
     },
+    fauves_hamlet_sarnai: {
+      name: "Sarnai",
+      title: "Tisseuse de sangles",
+      idle: [
+        "Une sangle bien tressée tient un cheval, un enfant et un secret. Les trois pèsent à peu près pareil.",
+        "Je tisse en comptant les étoiles. Il m'en manque toujours une, mais personne ne s'en plaint."
+      ],
+      talk: [
+        {
+          whenDone: "sun_7",
+          lines: [
+            "Le septième soleil est tombé : mes fils tiennent mieux, ou alors je tisse avec plus de joie. Dans les deux cas, c'est un progrès."
+          ]
+        }
+      ]
+    },
+    fauves_hamlet_ganbat: {
+      name: "Ganbat",
+      title: "Joueur de morin khuur",
+      idle: [
+        "Mon instrument a deux cordes et une tête de cheval. Il chante le galop, je m'occupe du reste.",
+        "Quand je joue pour les juments, elles m'écoutent. Pour les gens, c'est plus incertain."
+      ],
+      talk: [
+        {
+          whenDone: "sun_7",
+          lines: [
+            "J'ai composé un air pour la plaine apaisée. Il commence très lentement et ne finit jamais, comme un bon voyage."
+          ]
+        }
+      ]
+    },
     farrier_batu: {
       name: "Batu",
       title: "Maréchal-ferrant",

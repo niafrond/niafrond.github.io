@@ -1,6 +1,9 @@
 // Textes — Monts du Tonnerre (Village des Forges-Éclairs, crêtes foudroyées).
 export default {
   screens: {
+    tonnerre_road: { name: 'Escalier des Crêtes', arrival: [
+      'Des marches taillées à même la roche montent vers les crêtes, une volée après l\'autre. Chacune garde l\'empreinte d\'un pied qui a hésité, puis continué.',
+      'Plus haut, des fumées de forge se mêlent aux nuages : le village n\'est plus très loin.'] },
     tonnerre_village: { name: 'Village des Forges-Éclairs', arrival: [
       'Aux Forges-Éclairs, on ne dit pas « il pleut » mais « le ciel fait ses comptes ». Le fer chante sur les toits.',
       'Les gamins courent entre les tiges de cuivre en parlant tout bas, au cas où le tonnerre écouterait.'] },
@@ -13,6 +16,30 @@ export default {
     tonnerre_h_montagne: { name: 'Chapelle du Dieu des monts', arrival: ['Une petite chapelle fraîche, où l\'on dépose de la monnaie contre une bonne météo. Le dieu a parfois d\'autres projets.'] }
   },
   npcs: {
+    tonnerre_road_pilgrim: { name: 'Maître Sheng', title: 'Pèlerin des cent marches',
+      idle: ['Cent marches, cent soupirs. À la quatre-vingt-dix-neuvième, je m\'assois : la centième est pour les vaniteux.', 'On dit que le tonnerre aime ceux qui montent lentement. Il ne foudroie que les pressés, et les distraits, et parfois les deux.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Le ciel est calmé, là-haut. Je ferai la centième marche demain, par politesse.'] }] },
+    tonnerre_village_roper: { name: 'Xiulan', title: 'Tresseuse de cordes de pont',
+      idle: ['Une corde de pont se tresse à trois brins : un pour la charge, un pour la peur, un pour la chance. Celui du milieu s\'use le premier.', 'Ne regardez pas en bas en traversant. Regardez la corde : elle, elle ne regarde jamais en bas.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Les ponts ne tanguent plus que par habitude. Je tresse de la corde neuve quand même : l\'orage a bonne mémoire.'] }] },
+    tonnerre_village_counter: { name: 'Vieux Bao', title: 'Compteur d\'éclairs',
+      idle: ['Quatre cent douze éclairs ce mois-ci. J\'en ai raté deux : j\'avais cligné des yeux.', 'Je les note tous dans mon carnet. Le ciel me doit au moins une préface.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Zéro éclair depuis hier. Mon carnet est tout blanc. Je ne sais pas quoi faire de mes doigts.'] }] },
+    tonnerre_village_apprentice: { name: 'Mo', title: 'Apprenti de Tie',
+      idle: ['Maître Tie dit que le fer doit chanter avant de plier. Moi, il me suffit qu\'il ne me morde pas.', 'J\'ai trempé ma première pointe hier. Elle a flotté. Maître Tie a dit que c\'était « original ».'],
+      talk: [{ whenDone: 'sun_5', lines: ['On m\'a confié une pointe pour votre carquois, archer ! Elle ne flotte plus. Enfin, je crois.'] }] },
+    tonnerre_village_baker: { name: 'Dame Lian', title: 'Pâtissière de gâteaux au gingembre',
+      idle: ['Mes gâteaux au gingembre réchauffent les doigts de loin. Il faut tenir bon contre l\'orage, pas contre la pâte.', 'Les porteurs de la route en emportent par sacs entiers. Ils disent que le gingembre ramène de la peur.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Un soleil de moins, c\'est un four de moins à surveiller. Prenez un gâteau, archer : il est tiède, il ne mord pas.'] }] },
+    tonnerre_village_watchman: { name: 'Guetteur Hu', title: 'Veilleur du clocher de cuivre',
+      idle: ['Je guette le premier éclair du matin. S\'il ne vient pas, je sonne : on dort mal quand le ciel est trop sage.', 'Du clocher, on voit loin : les crêtes, le col, et parfois un jeune archer pressé qui court après quelqu\'un.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Plus d\'éclair au réveil. J\'ai sonné quand même. Le village a râlé, mais il a souri.'] }] },
+    tonnerre_wild_rope_keeper: { name: 'Vieux Gan', title: 'Gardien du pont de corde',
+      idle: ['Je graisse les cordes au suif de yak. Elles grincent, mais elles tiennent : un pont silencieux est un pont qui va rompre.', 'Si le pont tangue, ne courez pas. Tanguez avec lui. Il n\'aime pas les gens raides.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Le pont ne grince plus tout à fait comme avant. On dirait qu\'il chante, maintenant. Je n\'ose pas le lui dire.'] }] },
+    tonnerre_hamlet_lichen_gatherer: { name: 'Dame Qiu', title: 'Cueilleuse de lichens',
+      idle: ['Le lichen des cairns soigne les toux et les chagrins. Pour les chagrins, il faut le cueillir de nuit.', 'Chaque pierre a son lichen, chaque lichen sa rancune. Je les salue tous avant de les cueillir.'],
+      talk: [{ whenDone: 'sun_5', lines: ['Les lichens ont changé de couleur depuis la chute du soleil. Plus doux, plus verts. Les cairns n\'ont rien dit, mais ils ont l\'air contents.'] }] },
     rodman_gang: { name: 'Gang', title: 'Gardien des paratonnerres', 
       idle: ['J\'ai été foudroyé sept fois. La septième, j\'ai compris que les tiges de cuivre sont plus sages que moi.', 'Mon travail : empêcher la foudre de frapper le village. Mon problème : elle préfère mon chapeau.'],
       talk: [{ whenDone: 'sun_5', lines: ['Le cinquième soleil, abattu. Les tiges de cuivre ne grésillent plus. Je ne sais pas si je dois me réjouir ou m\'inquiéter pour mon emploi.'] }] },
@@ -36,6 +63,12 @@ export default {
       talk: [{ whenDone: 'sq_etincelles', lines: ['Le pot qui tenait est parti danser chez la petite Leimei, archer. Ma cache est plus légère, et moi aussi.'] }] }
   },
   chests: {
+    tonnerre_road_sack: { label: 'Besace d\'un porteur', openText: 'Une besace posée sur une marche : un porteur l\'a laissée pour souffler, puis s\'est perdu dans son souffle. Quelques pièces au fond.' },
+    tonnerre_road_niche: { label: 'Niche des marches', openText: 'Derrière un éboulis, une niche taillée à la main : quelqu\'un y a caché ses économies au pied d\'une idole grande comme un pouce.' },
+    tonnerre_road_ledge: { label: 'Corniche fendue', openText: 'Sur une corniche à peine plus large qu\'un pied, une boîte de laque fendue par la foudre mais bien pleine.' },
+    tonnerre_village_niche: { label: 'Pot derrière les rochers', openText: 'Au bout d\'une ruelle que l\'on prend pour une impasse, un pot de grès scellé à la cire. Les gamins du village le gardaient pour un jour de grande pluie.' },
+    tonnerre_wild_rope_box: { label: 'Caisse du pont de corde', openText: 'Une caisse de suif, de chanvre et de clous, oubliée au pied du pont. Le gardien y cachait aussi quelques pièces, « pour la corde de secours ».' },
+    tonnerre_hamlet_cairn_box: { label: 'Offrandes du troisième cairn', openText: 'Sous le plus petit des trois cairns, des offrandes de voyageurs : des pièces, un bouton de cuivre et un mot : « Merci pour la météo. »' },
     tie_anvil_box: { label: 'Boîte sous l\'enclume', openText: 'Sous l\'enclume, Tie cachait sa paie des dix dernières années. Il est sentimental, pas économe.' },
     copper_chest: { label: 'Coffre de cuivre', openText: 'Un coffre vert-de-gris, plein de pièces de cuivre et d\'une odeur d\'orage.' },
     offering_box: { label: 'Tronc de la chapelle', openText: 'Les offrandes de la chapelle : de petites pièces et un mot : « Pour la bonne météo. »' },
