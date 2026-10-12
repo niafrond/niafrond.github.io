@@ -1,120 +1,214 @@
-// Région 8 — Rivage de la Mer Orientale : Port aux Perles de Haiyan, Falaises et Criques du Dragon, cinq maisons.
-// Légende : # falaises/coques/murs · ~ mer · = quai/jetée · A-E bâtiments (porte minuscule) · W pierre de voyage.
+// Région 8 — Rivage de la Mer Orientale : Port aux Perles de Haiyan (village 32×28), jetée (route 44×16), Falaises et Criques du Dragon
+// (côte 48×24 : criques, bancs de sable, ponton vers le hameau), Anse des Coquillages (hameau 28×22, sortie vers l'archipel), sanctuaire du Soleil des Marées (30×22).
+// Légende : # falaises/coques/rochers · ~ mer · = quai/jetée · " herbes de dune · A-E bâtiments (porte minuscule) · W pierre de voyage.
+// Cartes natives (jamais étirées) : voir world/DESIGN-V2.md et world/FORMAT.md §9.
 
 export default {
     village: {
-        id: 'mer_village', biome: 'coast',
+        id: 'mer_village', biome: 'coast', native: true,
         grid: [
-            '####################',
-            '#.AAAA..BBBB..CCCC.#',
-            '#.AAAA..BBBB..CCCC.#',
-            '#.AaAA..BbBB..CcCC.#',
-            '#=================.#',
-            '#.0.5..4=1..#.EEE..#',
-            '##.DDDD#=.W...EEE..#',
-            '#..DDDD.=...3.EEE.##',
-            '#.2DdDD.=.S..#EeE..#',
-            '<==================>',
-            '#~~~~~~~~==~~~~~~~~#',
-            '#~~~##~~~==~~~###~~#',
-            '#..................#',
-            '#.###....==p...###.#',
-            '#.#j.....==.....k#.#',
-            '#.###.~~.==.~~.###.#',
-            '#.....~~.==.~~.....#',
-            '#..=============...#',
-            '#..=..#.....#..=...#',
-            '#..=..#.m.n.#..=...#',
-            '#..=..#.....#..=...#',
-            '#..=..###.###..=...#',
-            '#..=============...#',
-            '####################'
+            '~~~~~~~~~~~~~~.^.~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~.==~~~~~~~~~~~~~~~',
+            '~~##########...==....###....##~~',
+            '~~#########....==.....##.EEEEE~~',
+            '~~#AAAAAABBBBB.==.CCCCCC.EEEEE~~',
+            '~~.AAAAAABBBBB.==.CCCCCC.EEEEE~~',
+            '~~.AAAAAABBBBB.==.CCCCCC.EEEEE~~',
+            '~~.AAaAAABBbBB.==.CCCcCC.EEeEE~~',
+            '~~.==========================.~~',
+            '~~.==========================.~~',
+            '~~...........=====.2......5...~~',
+            '~~#DDDDD....========.........#~~',
+            '~~#DDDDD...W===~~====.1.......~~',
+            '~~#DDDDD...====~~====.........~~',
+            '..#DDdDD....========............',
+            '<.============================.>',
+            '..============================..',
+            '~~........3....=S...0...4.....~~',
+            '~~.##..##==============.......~~',
+            '~~.#....#..==..==..==...##..##~~',
+            '~~.#.6..#..==~~==~~==...##..##~~',
+            '~~.#....#..==~~==~~==~....p...~~',
+            '~~.#...7#.~==~~==~~==~~.8..#9.~~',
+            '~~.#....#.~==~~=======~.##..##~~',
+            '~~#######..~~##==~~#~~..##..##~~',
+            '~~###........~~==~##........##~~',
+            '~~~~~~~~~~~~~~..=~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~'
         ],
         npcs: [
             { id: 'merchant_mer', at: 'p' },
-            { id: 'hua_mer', at: '1' },
-            { id: 'crab_old_gong', at: '2' },
-            { id: 'girl_net_mi', at: '3' },
-            { id: 'sailor_tai', at: '0' },
-            { id: 'priestess_mazu', at: '4' },
-            { id: 'singer_hailing', at: '5' }
+            { id: 'hua_mer', x: 13, y: 10 },
+            { id: 'crab_old_gong', x: 10, y: 18 },
+            { id: 'girl_net_mi', at: '0' },
+            { id: 'sailor_tai', at: '1' },
+            { id: 'priestess_mazu', at: '2' },
+            { id: 'singer_hailing', x: 12, y: 9 },
+            { id: 'mer_village_meiling', at: '3' },
+            { id: 'mer_village_awen', at: '4' },
+            { id: 'mer_village_rong', x: 22, y: 9 },
+            { id: 'mer_village_yue', at: '5' }
         ],
         chests: [
-            { id: 'mer_garden_a', at: 'j', gold: 195, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'mer_garden_b', at: 'k', gold: 195, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'mer_market_a', at: 'm', gold: 390, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'mer_market_b', at: 'n', gold: 390, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'mer_garden_a', at: '6', gold: 195, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'mer_garden_b', at: '7', gold: 195, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'mer_market_a', at: '8', gold: 390, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'mer_market_b', at: '9', gold: 390, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
+            { id: 'mer_village_stub_chest', x: 21, y: 23, gold: 240 }
         ]
     },
 
     hamlet: {
-        id: 'mer_hamlet', biome: 'coast',
+        id: 'mer_hamlet', biome: 'coast', native: true,
         grid: [
-            '#######^########',
-            '#~~~...=......##',
-            '#......S.......#',
-            '#......=..1..W.#',
-            '#.....2=.......#',
-            '#3AAAA.=..BBBB.#',
-            '#.AAAA.=..BBBB.#',
-            '#.AaAA.=.0BbBB.#',
-            '#..=========...#',
-            '#.............##',
-            '################'
+            '~~~~~~~~~~~~.^.~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~...~~~~~~~~~~~~~',
+            '~~#########..=...#########~~',
+            '~~########...=....########~~',
+            '~~...AAAAAA..=...BBBBBB...~~',
+            '~~...AAAAAA..=...BBBBBB...~~',
+            '~~...AAAAAA..S...BBBBBB...~~',
+            '~~...AAaAAA..=...BBBbBB...~~',
+            '~~.0...=.....=......=....~~~',
+            '~~.....==============..~~~~~',
+            '~~..........====W...2~~~~~~~',
+            '~~.......1.====#####..~~~~~~',
+            '~~.============#####~~~~~~=.',
+            '~~.=~~==~~=.====...========.',
+            '~~.=~~==~~=...#....========.',
+            '~~.========...#....=======~~',
+            '~~.=~~==~~=...3.......~~~~~~',
+            '~~.========.#........~~~~~~~',
+            '~~##.......5#........4~~~~~~',
+            '~~####..................#~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         npcs: [
             { id: 'gull_pip', at: '0' },
             { id: 'kid_ahu', at: '1' },
-            { id: 'salt_jun', at: '2' }
+            { id: 'salt_jun', x: 6, y: 15 },
+            { id: 'mer_hamlet_lanfang', at: '2' },
+            { id: 'mer_hamlet_dao', at: '3' }
         ],
         chests: [
-            { id: 'salt_pan', at: '3', gold: 120 }
+            { id: 'salt_pan', x: 4, y: 17, gold: 120 },
+            { id: 'mer_hamlet_net_chest', at: '4', gold: 120 },
+            { id: 'mer_hamlet_shell_chest', at: '5', gold: 240 }
+        ],
+        exits: [
+            { x: 27, y: 13, to: 'mer_archipel' }
         ]
     },
 
     wild: {
-        id: 'mer_wild', biome: 'coast',
+        id: 'mer_wild', biome: 'coast', native: true,
         grid: [
-            '##################',
-            '#.####0.......#z.#',
-            '#.####..#####.#..#',
-            '#.####.k###.5.l#.#',
-            '<.......###......#',
-            '#...W....i.3..4..#',
-            '#.#...2.....6..#.#',
-            '#..n.8...1...#j..>',
-            '#o..~~~~...~~~...#',
-            '#..y~~~~.9.~~~7.m#',
-            '#..~~~~~~~~~~~~~~#',
-            '#v################'
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~#######################################....#~~',
+            '~~########################.##############..6.#~~',
+            '~~.3......##.##.......#......###......###....#~~',
+            '.........k##....#..."""""..p...."".q...###..##~~',
+            '<.===========..##....#""..##...""""""..###t.#.~~',
+            '..####.####.=========#........."=========.....~~',
+            '~~###..##........o..=======.....=l.....m=.....~~',
+            '~~..........~~~~~~~.....=.=.~~~~~~~..##.===...~~',
+            '~~.5#...0..~~~~~~~~~....=.=.~~~~~~~~.##...=...~~',
+            '~~..##.....~~~~~~~~~..===.=~~~~~~~~~~.....=...~~',
+            '~~....W.....~~~~~~~~..=...=.=~~~~~~~~1....=...~~',
+            '~~..."".#.i...~~~~..===...=.=~~~~~~...2.##=j..~~',
+            '~~..""""#....""""".#=.....=.=.~.~.........=...~~',
+            '~~..n"".....""""""".=========....##.....""="..~~',
+            '~~....=.....##r.....=.s...=......=#.....""="....',
+            '~~....=~.~.....~~~~.=.....=.~.~..=~~~~....====.>',
+            '~~~~~#=~~~##~~~~~~~~=#~~~.=.~##~~=~~~~......#...',
+            '~~~~~~=~~~~~~~~~~~~~=~~~~.=.~~#~~=~~~~........~~',
+            '~~~~..=""".~~~~~~~..=.~~~.=.~~~~.=..#.......9.~~',
+            '~~~~.4.""".~~~##~~..7..##...~~~.u.8...........~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~~~~~~'
         ],
+        grass: { rate: 0.1, safeSteps: 3, table: [
+            { templateId: 'iron_gladiator', name: 'Crabe des sables', weight: 5, offset: -1 },
+            { templateId: 'shadow_assassin', name: 'Rôdeur des dunes', weight: 4, offset: 0 },
+            { templateId: 'deep_sea_serpent', name: 'Anguille de la grève', weight: 3, offset: 0 },
+            { templateId: 'ice_witch', name: 'Naïade d\'écume', weight: 1, offset: 1 }
+        ] },
         npcs: [
-            { id: 'mermaid_jiaoren', at: '8' },
-            { id: 'jelly_shui', at: 'i' },
-            { id: 'octo_ba', at: 'j' }
+            { id: 'mermaid_jiaoren', at: '0' },
+            { id: 'jelly_shui', at: '1' },
+            { id: 'octo_ba', at: '2' }
         ],
         chests: [
-            { id: 'cove_cache', at: '0', gold: 120 },
-            { id: 'tide_key_chest', at: '9', gold: 240 },
-            { id: 'tear_pearl_chest', at: 'y', gold: 240 },
-            { id: 'dragon_grotto', at: 'z', gold: 360 },
-            { id: 'journal_page_mer', at: 'k', gold: 120 },
-            { id: 'reef_cache', at: 'l', gold: 240 },
-            { id: 'wreck_treasure', at: 'm', gold: 360 }
+            { id: 'cove_cache', at: '3', gold: 120 },
+            { id: 'tide_key_chest', at: '4', gold: 240 },
+            { id: 'tear_pearl_chest', at: '5', gold: 240 },
+            { id: 'dragon_grotto', at: '6', gold: 360 },
+            { id: 'journal_page_mer', at: '7', gold: 120 },
+            { id: 'reef_cache', at: '8', gold: 240 },
+            { id: 'wreck_treasure', at: '9', gold: 360 },
+            { id: 'mer_wild_dune_chest', at: 'i', gold: 240 }
         ],
         enemies: [
-            { id: 'mer_tide_serpent', at: '1', templateId: 'deep_sea_serpent', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 32 } },
-            { id: 'mer_kelp_witch', at: '2', templateId: 'ice_witch', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'mer_w_crab', at: '3', templateId: 'war_troll', name: 'Crabe-roi des falaises', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
-            { id: 'mer_w_wraith', at: '5', templateId: 'plague_doctor', name: 'Spectre de la marée', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'mer_w_cutter', at: '7', templateId: 'shadow_assassin', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
-            { id: 'mer_crab_a', at: 'n', templateId: 'iron_gladiator', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
-            { id: 'mer_crab_b', at: 'o', templateId: 'iron_gladiator', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' }
+            { id: 'mer_tide_serpent', at: 'j', templateId: 'deep_sea_serpent', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 32 } },
+            { id: 'mer_kelp_witch', at: 'k', templateId: 'ice_witch', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'mer_w_crab', at: 'l', templateId: 'war_troll', name: 'Crabe-roi des falaises', kind: 'patrol', offset: 0, patrol: ['l', 'm'] },
+            { id: 'mer_w_wraith', at: 'n', templateId: 'plague_doctor', name: 'Spectre de la marée', kind: 'patrol', offset: -1, patrol: ['n', [12, 15]] },
+            { id: 'mer_w_cutter', at: 'o', templateId: 'shadow_assassin', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
+            { id: 'mer_crab_a', at: 'p', templateId: 'iron_gladiator', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
+            { id: 'mer_crab_b', at: 'q', templateId: 'iron_gladiator', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
+            { id: 'mer_wild_pier_patrol', x: 26, y: 16, templateId: 'deep_sea_serpent', name: 'Anguille de la jetée', kind: 'patrol', offset: 0, patrol: [[26, 16], [26, 19]] },
+            { id: 'mer_wild_dune_patrol', at: 'r', templateId: 'iron_gladiator', name: 'Crabe-lame des bancs', kind: 'patrol', offset: -1, patrol: ['r', 's'] },
+            { id: 'mer_wild_grotto_guard', at: 't', templateId: 'deep_sea_serpent', name: 'Gardien de la grotte du dragon', kind: 'sentinel', offset: 1 },
+            { id: 'mer_wild_reef_sentinel', at: 'u', templateId: 'plague_doctor', name: 'Naufragé fiévreux du récif', kind: 'sentinel', offset: 0 }
         ],
         gate: {
             requires: 'tide_key_chest',
             lockedMessage: 'La grotte qui mène au sanctuaire est fermée par une porte de corail : sa clé de marée dort au fond d\'une crique.'
         }
+    },
+
+    road: {
+        id: 'mer_road', biome: 'coast', native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~.###################################....~~',
+            '~~.2.#################################....~~',
+            '...."""""........1.###"".......#..""""....~~',
+            '<.==========...#...""""..#....7."""""""...~~',
+            '....""""##.=.0.#.........#.....###."".##..~~',
+            '~~......##.==.........6....======...8.##..~~',
+            '~~..........================....=========.~~',
+            '~~.............~~~~~~~~~...=.....~~~....=...',
+            '~~...........~~~~~~~~~~~...=...~~~~~~...==.>',
+            '~~............~~~~~~~~~~...=...~~~~~~~..##..',
+            '~~..~~~~~......~~~~~~~.....=....~~~~~...##~~',
+            '~~..~~~~~~....4.......5..............9..3.~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        grass: { rate: 0.09, safeSteps: 3, table: [
+            { templateId: 'iron_gladiator', name: 'Petit crabe des galets', weight: 5, offset: -1 },
+            { templateId: 'deep_sea_serpent', name: 'Anguille de rivage', weight: 3, offset: -1 },
+            { templateId: 'plague_doctor', name: 'Spectre d\'écume', weight: 1, offset: 1 }
+        ] },
+        npcs: [
+            { id: 'mer_road_ferryman_zhong', at: '0' }
+        ],
+        chests: [
+            { id: 'mer_road_driftwood_chest', at: '1', gold: 120 },
+            { id: 'mer_road_cliff_chest', at: '2', gold: 240 },
+            { id: 'mer_road_beach_chest', at: '3', gold: 360 }
+        ],
+        enemies: [
+            { id: 'mer_road_beach_patrol', at: '4', templateId: 'iron_gladiator', name: 'Crabe-lame des galets', kind: 'patrol', offset: -1, patrol: ['4', '5'] },
+            { id: 'mer_road_jetty_serpent', at: '6', templateId: 'deep_sea_serpent', name: 'Anguille de la jetée', kind: 'sentinel', offset: 0 },
+            { id: 'mer_road_spray_witch', at: '7', templateId: 'ice_witch', name: 'Dame des embruns', kind: 'sentinel', offset: 0 },
+            { id: 'mer_road_tide_patrol', x: 32, y: 7, templateId: 'plague_doctor', name: 'Spectre du reflux', kind: 'patrol', offset: -1, patrol: [[32, 7], '8'] },
+            { id: 'mer_road_reef_wraith', at: '9', templateId: 'shadow_assassin', name: 'Rôdeur des galets', kind: 'sentinel', offset: 0 }
+        ]
     },
 
     interiors: [
@@ -243,5 +337,48 @@ export default {
         }
     ],
 
-    sanctuary: { id: 'mer', waypoint: { x: 2, y: 5 } }
+    sanctuary: {
+        id: 'mer', waypoint: { x: 4, y: 9 }, native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~###................#....8.~~',
+            '~~#####.......1......#......~~',
+            '~~######.......~....##.2=.3.~~',
+            '~~..####....~~~~~~~======...~~',
+            '~~............~~~~=..#~~=~~~~~',
+            '~~....##..........=...~~~~~~~~',
+            '~~.........###....=..~~~~~~~~~',
+            '~~..W.......#.....=#5~~~~~~~~~',
+            '........~~~.=======...........',
+            '<.=S====~~~==.....==========.>',
+            '....."""~~~...................',
+            '~~..."""".........##6.~~~~~~~~',
+            '~~....""....##.....#.~~~~~~~~~',
+            '~~...##.....##.....0.~~~~~~~~~',
+            '~~####.....4.~~~~~...~~~~~~~~~',
+            '~~######.....~~~~~..........~~',
+            '~~######.###..."""""".......~~',
+            '~~####.7......."."""........~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        grass: { rate: 0.09, safeSteps: 4, table: [
+            { templateId: 'iron_gladiator', name: 'Crabe-soldat égaré', weight: 5, offset: 0 },
+            { templateId: 'deep_sea_serpent', name: 'Anguille des marées', weight: 3, offset: 0 },
+            { templateId: 'ice_witch', name: 'Dame d\'embruns', weight: 1, offset: 1 }
+        ] },
+        places: {
+            parley_sun8: '0',
+            mer_witch: '1',
+            net_cutter_a: '2',
+            net_cutter_b: '3',
+            mer_doctor: '4',
+            sun8_wardens_a: '5',
+            sun8_wardens_b: '6',
+            sun_8: [27, 11],
+            dragon_pearl: '7',
+            mer_chest: '8'
+        }
+    }
 };

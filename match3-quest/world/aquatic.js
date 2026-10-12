@@ -102,11 +102,18 @@ export function buildAquaticWorld(screens) {
         exits: [{ at: '<', to: ARCHIPEL_ID, label: 'Mer des Mille Îlots' }]
     });
     // Le passage de l'Anse vers la mer : fermé tant que le Pas de Yu n'est pas appris.
-    const row = 2;   // rangée de la salle d'origine du hameau où le mur est s'ouvre
-    hamlet.exits.push({
-        x: hamlet.w - 1, y: row, to: ARCHIPEL_ID, label: 'Mer des Mille Îlots', requires: YUBU_QUEST_ID,
+    const seaExit = {
+        label: 'Mer des Mille Îlots', requires: YUBU_QUEST_ID,
         lockedMessage: 'La mer s\'étend jusqu\'à l\'horizon, sans pont ni barque : seul celui qui connaît le Pas de Yu peut y marcher. Gui la tortue noire, à Port-à-Sec de Hekou, en connaît l\'histoire.'
-    });
+    };
+    // Un hameau dessiné en grande carte (format v2) peut déclarer lui-même la position de cette sortie (`exits: [{ at | x, y,
+    // to: 'mer_archipel' }]`, sur son bord est) : on la complète (verrou, libellé) au lieu d'en poser une seconde.
+    const declared = hamlet.exits.find(e => e.to === ARCHIPEL_ID);
+    if (declared) Object.entries(seaExit).forEach(([k, v]) => { if (declared[k] === undefined) declared[k] = v; });
+    else {
+        const row = 2;   // rangée de la salle d'origine du hameau où le mur est s'ouvre
+        hamlet.exits.push({ x: hamlet.w - 1, y: row, to: ARCHIPEL_ID, ...seaExit });
+    }
     screens[ARCHIPEL_ID] = archipel;
     screens[ISLE_ID] = isle;
     widenGates(archipel);

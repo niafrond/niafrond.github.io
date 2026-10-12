@@ -28,14 +28,21 @@ const OPPOSITE = { west: 'east', east: 'west', north: 'south', south: 'north' };
 
 describe('cartes extérieures : grandes et reliées', () => {
     test('toutes les cartes extérieures sont grandes (≥ 350 cases) ; seuls les intérieurs restent petits', () => {
-        expect(outdoors.length).toBe(41);   // 10 sanctuaires + 10 zones sauvages + 9 hameaux + 10 villages + 2 cartes de mer
+        // 10 sanctuaires + 10 zones sauvages + 9 hameaux + 10 villages + 2 cartes de mer (+ une route d'accès `_road` par région qui en a une)
+        const roads = outdoors.filter(s => s.id.endsWith('_road'));
+        expect(roads.length).toBeLessThanOrEqual(9);   // rizieres, le point d'apparition, n'a pas de route
+        expect(outdoors.length).toBe(41 + roads.length);
         outdoors.forEach(s => expect({ id: s.id, area: s.w * s.h >= 350 }).toEqual({ id: s.id, area: true }));
         Object.values(SCREENS).filter(s => s.interior || s.kind === 'house').forEach(s => expect(s.w * s.h).toBeLessThan(120));
     });
 
-    test('sanctuaires, zones sauvages et hameaux ont la taille agrandie', () => {
+    test('sanctuaires, zones sauvages, routes et hameaux ont la taille agrandie (minimum) ; les cartes natives gardent leur grille (≤ 64x64, 1500 cases)', () => {
         outdoors.filter(s => !s.aquatic).forEach(s => {
-            const kind = s.id.endsWith('_wild') ? 'wild' : s.id.endsWith('_hamlet') ? 'hamlet' : s.kind === undefined ? 'sanctuary' : null;
+            if (s.native) {
+                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= 1500 }).toEqual({ id: s.id, ok: true });
+                return;
+            }
+            const kind = s.id.endsWith('_wild') || s.id.endsWith('_road') ? 'wild' : s.id.endsWith('_hamlet') ? 'hamlet' : s.kind === undefined ? 'sanctuary' : null;
             if (kind) expect([s.w, s.h]).toEqual(EXPANDED_SIZES[kind]);
         });
     });

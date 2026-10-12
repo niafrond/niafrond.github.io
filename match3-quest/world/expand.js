@@ -3,13 +3,17 @@
 //  - scaleScreen(screen, W, H)  : agrandit une zone en étirant toute sa carte (au plus proche voisin) : ennemis, PNJ, coffres, pierre
 //    de voyage, maisons et décors sont REDISPOSÉS sur toute la surface, la topologie (chemins, goulets, ordre des rencontres) est conservée ;
 //  - widenGates(screen)         : élargit en passages de 3 cases les sorties posées sur un bord (villages…) ;
+//  - fitScreen(screen, size)    : carte native (`screen.native`) → widenGates seul ; sinon scaleScreen à `size` ;
 //  - linkGates(screens)         : transforme chaque passage en une rangée de sorties (`edge`, `span` -1/0/1) et calcule la case
 //    d'arrivée alignée de l'autre côté (on ressort en face, comme aux jonctions des routes Pokémon) ;
 //  - openPerimeter / addWaterBorder : plus de mur d'enceinte factice, une couronne d'eau (franchissable avec le Pas de Yu) à la place.
+//  - pruneGrass(screen)         : retire des hautes herbes les cases devenues infranchissables (bordure, eau, bâtiment).
 
 import { cellsToRects } from './mapKit.js';
 
-// Tailles des cartes agrandies (colonnes × lignes) : zones sauvages, sanctuaires, hameaux.
+// Tailles des cartes agrandies (colonnes × lignes) : zones sauvages, sanctuaires, hameaux. C'est le MINIMUM des cartes non natives
+// (une route d'accès `<R>_road` non native prend la taille d'une zone sauvage) ; une carte déclarée `native: true` garde sa grille
+// telle quelle (au plus 64×64 et 1500 cases, voir mapKit.js).
 export const EXPANDED_SIZES = { wild: [28, 22], sanctuary: [26, 20], hamlet: [26, 20] };
 
 const key = (x, y) => `${x},${y}`;
@@ -124,6 +128,12 @@ export function widenGates(screen) {
     return screen;
 }
 
+// Adapte une carte à sa taille d'affichage : une carte native (`screen.native`) n'est jamais étirée (seuls ses passages de bord sont
+// élargis), les autres sont agrandies à `size` = [W, H].
+export function fitScreen(screen, size) {
+    return screen.native ? widenGates(screen) : scaleScreen(screen, size[0], size[1]);
+}
+
 // Agrandit `screen` à W × H en REDISPOSANT tout son contenu : la carte entière est étirée (chaque case d'origine devient un bloc de
 // cases, au plus proche voisin), de sorte que ennemis, PNJ, coffres, pierre de voyage, maisons et décors se répartissent sur toute la
 // surface au lieu de rester entassés dans un coin. La topologie est conservée (chemins, goulets, passages, ordre des rencontres) ; les
@@ -147,14 +157,16 @@ export function scaleScreen(screen, W, H) {
     const obst0 = toSet(screen.obstacles);
     const liq0 = toSet(screen.liquids);
     const paths0 = toSet(screen.paths);
+    const grass0 = screen.grass ? toSet(screen.grass.cells) : null;   // hautes herbes : étirées comme le reste du terrain
     const bcells = buildingCells(screen);
     bcells.forEach(k => obst0.delete(k));
-    const obst = new Set(), liq = new Set(), paths = new Set();
+    const obst = new Set(), liq = new Set(), paths = new Set(), grass = new Set();
     for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
         const k = key(srcX(X), srcY(Y)), dk = key(X, Y);
         if (obst0.has(k)) obst.add(dk);
         else if (liq0.has(k)) liq.add(dk);
         if (paths0.has(k)) paths.add(dk);
+        if (grass0 && grass0.has(k)) grass.add(dk);
     }
 
     // 2. Bâtiments : même taille, recentrés dans leur emplacement étiré, bas du bâtiment collé au bas de l'emplacement.
@@ -165,12 +177,12 @@ export function scaleScreen(screen, W, H) {
         const door = { x: X0 + (b.door.x - b.x), y: Y0 + b.h - 1 };
         doorMap.set(key(b.door.x, b.door.y), door);
         for (let X = X0; X < X0 + b.w; X++) for (let Y = Y0; Y < Y0 + b.h; Y++) {
-            liq.delete(key(X, Y)); paths.delete(key(X, Y));
+            liq.delete(key(X, Y)); paths.delete(key(X, Y)); grass.delete(key(X, Y));
             if (!(X === door.x && Y === door.y)) obst.add(key(X, Y)); else obst.delete(key(X, Y));
         }
         // la case devant la porte reste praticable (et une ruelle y mène)
         const front = key(door.x, Math.min(H - 1, door.y + 1));
-        obst.delete(front); liq.delete(front); paths.add(front);
+        obst.delete(front); liq.delete(front); paths.add(front); grass.delete(front);
         return { ...b, x: X0, y: Y0, door };
     });
 
@@ -210,6 +222,11 @@ export function scaleScreen(screen, W, H) {
     screen.obstacles = toRects(obst);
     screen.liquids = toRects(liq);
     screen.paths = toRects(paths);
+    if (screen.grass) {
+        obst.forEach(k => grass.delete(k)); liq.forEach(k => grass.delete(k));
+        if (grass.size) screen.grass = { ...screen.grass, cells: toRects(grass) };
+        else delete screen.grass;
+    }
 
     // 5. Bouches des passages de bord (3 cases de large, 2 de profondeur), comme pour les cartes non agrandies.
     const prot = buildingCells(screen);
@@ -366,5 +383,20 @@ export function addWaterBorder(screen) {
     });
     screen.obstacles = toRects(obst);
     screen.liquids = toRects(liq);
+    return screen;
+}
+
+// Les hautes herbes (`screen.grass.cells`) ne couvrent que des cases franchissables : retire celles que le décor de bordure, l'eau
+// d'une couronne ou un bâtiment ont recouvertes (dans un écran aquatique, l'eau se parcourt). Sans case restante, `grass` disparaît.
+export function pruneGrass(screen) {
+    if (!screen.grass) return screen;
+    const blocked = toSet(screen.obstacles);
+    if (!screen.aquatic) toSet(screen.liquids).forEach(k => blocked.add(k));
+    const cells = toSet(screen.grass.cells);
+    let removed = false;
+    cells.forEach(k => { if (blocked.has(k)) { cells.delete(k); removed = true; } });
+    if (!removed) return screen;
+    if (cells.size) screen.grass = { ...screen.grass, cells: toRects(cells) };
+    else delete screen.grass;
     return screen;
 }

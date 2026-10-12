@@ -6,6 +6,9 @@ export default {
       'Le Dixième Soleil n\'est pas loin : l\'air sent le miel tiède.'] },
     fusang_wild: { name: 'Racines et Branches Dorées', gateMessage: 'Le sceau de la Reine Mère est brisé. Il faut en retrouver les trois éclats avant de monter à la cime.', arrival: [
       'Les racines du Fusang forment une cathédrale sans toit. Un vent doré porte des murmures de grue et des promesses de lumière.'] },
+    fusang_road: { name: 'Chemin des Racines Géantes', arrival: [
+      'Les racines du Fusang sortent de terre en arches hautes comme des remparts, et le chemin passe dessous comme un enfant sous la table des grands.',
+      'Un vent tiède porte une odeur de miel : la cime n\'est plus très loin.'] },
     fusang_h_grue: { name: 'Nid de la messagère', arrival: ['Un nid géant tressé de plumes blanches. La Grue y garde les messages de la Reine Mère, et ses opinions.'] },
     fusang_h_cueilleur: { name: 'Maison du cueilleur de pêches', arrival: ['Une cabane sucrée qui sent la pêche mûre. On y cueille encore, une par siècle, des fruits d\'immortalité.'] },
     fusang_h_astronome: { name: 'Observatoire de Mère Xing', arrival: ['Des instruments de laiton pointés vers un ciel qui ne se laisse pas mesurer. Mère Xing a renoncé à la précision, elle observe.'] },
@@ -36,7 +39,28 @@ export default {
       talk: [{ whenDone: 'sun_9', lines: ['Piou ! Le soleil est moins chaud ! Je peux sortir toute la journée ! Merci, archer, je vous donne une plume (non, pas la mienne, j\'en ai besoin).'] }] },
     root_elder: { name: 'Racine-Ancienne', title: 'Esprit de l\'arbre', 
       idle: ['Je suis l\'arbre où les soleils ont dormi. J\'ai bercé dix frères ; huit sont tombés, deux me restent.', 'Les racines se souviennent de tout. Même des soleils qui ont brillé trop fort.'],
-      talk: [{ whenDone: 'sq_sceau_racines', lines: ['Le sceau est reformé. La cime est ouverte. Montez, archer, mais avec douceur : un soleil dort là-haut, et il rêve de vous.'] }] }
+      talk: [{ whenDone: 'sq_sceau_racines', lines: ['Le sceau est reformé. La cime est ouverte. Montez, archer, mais avec douceur : un soleil dort là-haut, et il rêve de vous.'] }] },
+    honey_keeper_mi: { name: 'Mi', title: 'Apicultrice des terrasses',
+      idle: ['Mes abeilles sont dorées parce qu\'elles butinent les fleurs de l\'arbre-monde. Elles piquent, mais avec une certaine dignité.', 'Le miel de Fusang ne se vend pas : il s\'offre aux grues, qui paient en plumes.'],
+      talk: [{ whenDone: 'sun_9', lines: ['Neuf soleils sont tombés, et mes ruches bourdonnent plus doux. Même les abeilles ont compris que la chaleur n\'est pas une compétition.'] }] },
+    cloud_sweeper_yun: { name: 'Yun', title: 'Balayeur de nuages',
+      idle: ['Les nuages bas s\'accrochent aux marches. Je les balaie vers le bas, où ils font de la pluie. C\'est utile, paraît-il.', 'Un balai de bambou, un seau de rosée, un métier sans fin. J\'adore.'],
+      talk: [{ whenDone: 'sun_9', lines: ['Le ciel est plus net depuis la chute du neuvième soleil. Je crois que je suis au chômage. Je balaierai quand même, par politesse.'] }] },
+    stair_mason_shi: { name: 'Shi', title: 'Maçon des escaliers',
+      idle: ['Chaque marche de Fusang-le-Bas, je l\'ai posée de mes mains. Ou mon grand-père. Ou son grand-père. La famille est dure à la tâche.', 'Un escalier bien fait ne se remarque pas : on monte, on ne pense à rien. Quand on y pense, c\'est qu\'il est raté.'],
+      talk: [{ whenDone: 'sq_sceau_racines', lines: ['Le sceau est reformé ? Alors la grande porte de la cime tient de nouveau. Je viendrai vérifier ses gonds, par déformation professionnelle.'] }] },
+    kite_boy_feng: { name: 'Feng', title: 'Fabricant de cerfs-volants',
+      idle: ['Mon cerf-volant monte jusqu\'aux nuages bas ! Il lui arrive de ne pas redescendre. Alors je lui en fais un autre.', 'Les grues se moquent de lui, mais en secret elles l\'admirent.'],
+      talk: [{ whenDone: 'sun_9', lines: ['Maintenant que le ciel est plus calme, mon cerf-volant peut monter plus haut. Il dit qu\'il veut voir la lune.'] }] },
+    crane_apprentice_ling: { name: 'Ling', title: 'Apprenti des grues messagères',
+      idle: ['Je serai messager, comme les grues ! Pour l\'instant, je porte surtout les miettes du déjeuner.', 'Hegu dit qu\'on apprend à porter une lettre en commençant par ne pas la lire. C\'est le plus dur.'],
+      talk: [{ whenDone: 'sun_9', lines: ['Hegu dit que le ciel n\'a presque plus de soleils. Je suis content : il n\'y a plus de nuits trop chaudes pour dormir.'] }] },
+    wind_piper_fei: { name: 'Fei', title: 'Joueuse de flûte du vent',
+      idle: ['Je joue pour les racines. Elles n\'applaudissent pas, mais elles se penchent un peu : c\'est leur façon.', 'Un air ancien, celui des dix frères. Je n\'en connais que la moitié. L\'autre moitié, c\'est le vent qui la sait.'],
+      talk: [{ whenDone: 'sun_9', lines: ['La mélodie s\'est calmée. Je la jouais pour retenir les soleils ; je la joue maintenant pour qu\'on les pleure doucement.'] }] },
+    root_surveyor_gen: { name: 'Gen', title: 'Arpenteur des racines',
+      idle: ['Je mesure les racines depuis trente ans. Elles grandissent plus vite que mes cartes : j\'en tire de la modestie.', 'Si vous voyez une racine bouger, ne dites rien. Elle est susceptible.'],
+      talk: [{ whenDone: 'sun_9', lines: ['Vous revenez de la cime ? Alors ma carte est à refaire : les racines ont tout déplacé pour vous voir passer.'] }] }
   },
   chests: {
     crane_feather_box: { label: 'Coffre de plumes', openText: 'Des plumes de grue d\'une blancheur de neige, et sous elles quelques pièces d\'argent, cadeau de la Reine Mère.' },
@@ -44,7 +68,14 @@ export default {
     teapot_chest: { label: 'Coffre de la théière', openText: 'Dans la théière, quelques pièces glissées par des voyageurs reconnaissants, et une feuille de thé qui sent le miel.' },
     seal_shard_a: { label: 'Premier éclat du sceau', openText: 'Un premier éclat du sceau de la Reine Mère brille dans votre main, tiède comme une lune d\'été.' },
     seal_shard_b: { label: 'Deuxième éclat du sceau', openText: 'Un deuxième éclat du sceau, plus lourd que le premier. Il chante tout bas.' },
-    seal_shard_c: { label: 'Troisième éclat du sceau', openText: 'Le troisième et dernier éclat du sceau. Ensemble, ils forment une étoile de jade. Un peu d\'or l\'accompagne.' }
+    seal_shard_c: { label: 'Troisième éclat du sceau', openText: 'Le troisième et dernier éclat du sceau. Ensemble, ils forment une étoile de jade. Un peu d\'or l\'accompagne.' },
+    fusang_village_nook: { label: 'Niche des abeilles', openText: 'Au fond d\'un couloir de haies, une niche bourdonnante : les abeilles gardaient quelques pièces avec leur miel.' },
+    fusang_hamlet_pier: { label: 'Coffre du ponton', openText: 'Au bout d\'un ponton de lianes, au-dessus des nuages bas, un coffre : le vent y a glissé quelques pièces et une plume.' },
+    fusang_wild_roots: { label: 'Coffre sous la racine', openText: 'Dans un creux étroit entre deux terrasses, un coffre que seules les racines connaissaient : de l\'or fin et de la sève séchée.' },
+    fusang_wild_hive: { label: 'Ruche des terrasses', openText: 'Une ruche dorée, abandonnée sur la terrasse haute : sous les rayons de cire, des pièces collées de miel.' },
+    fusang_road_chest_a: { label: 'Panier du voyageur', openText: 'Un panier d\'osier calé sous une arche de racines : quelqu\'un y a oublié son déjeuner et quelques pièces.' },
+    fusang_road_chest_b: { label: 'Coffret de la berge', openText: 'Au bord du ruisseau de sève, un coffret scellé de cire dorée : la cire a fondu, les pièces sont restées.' },
+    fusang_road_hidden: { label: 'Cachette sous les racines', openText: 'Dans une niche de racines que le chemin ne montre pas, la cache d\'un voyageur prudent : un joli tas de pièces d\'or.' }
   },
   quests: [
     { id: 'sq_sceau_racines', title: 'Le sceau des racines', chapter: '✦ Quête secondaire — Cime du Fusang', giver: 'astronomer_xing', turnIn: 'astronomer_xing', requires: [], side: true,

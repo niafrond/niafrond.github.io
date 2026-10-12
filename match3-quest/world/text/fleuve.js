@@ -4,6 +4,9 @@ export default {
     fleuve_village: { name: 'Port-à-Sec de Hekou', arrival: [
       'Les quais de Hekou donnent sur du vide : des barques couchées dans la boue, des amarres tendues vers rien.',
       'Les habitants vous regardent avec cet espoir poli que l\'on réserve aux marchands de pluie.'] },
+    fleuve_road: { name: 'Berge des Barques Échouées', arrival: [
+      'Au sortir du sanctuaire, la route descend vers le lit du fleuve : des barques couchées sur le flanc, des passerelles qui enjambent un chenal où il n\'y a plus rien à enjamber.',
+      'Quelqu\'un a tendu des cordes entre les piquets, par habitude. L\'eau, elle, a oublié de revenir.'] },
     fleuve_wild: { name: 'Méandres de Boue et d\'Écluses', gateMessage: 'La grande écluse est verrouillée. Sa clé repose dans un coffre, quelque part dans les méandres.', arrival: [
       'Le fleuve s\'est retiré comme un roi vexé, laissant derrière lui ses meubles. Quelque part, une vieille écluse garde encore son secret.'] },
     fleuve_h_gu: { name: 'Cabane du passeur Gu', arrival: ['Des rames de rechange, un poisson séché porte-bonheur et une odeur de goudron : la cabane d\'un homme sans bateau mais pas sans fierté.'] },
@@ -33,7 +36,28 @@ export default {
       talk: [{ whenDone: 'sun_2', lines: ['Je file vers le Gobi avec la caravane. Si vous avez des lettres à faire voyager, je suis votre colporteuse.'] }] },
     carp_jin: { name: 'Jin', title: 'Carpe dorée dans sa flaque', 
       idle: ['Blub. Je suis la dernière carpe du coin et la plus mal logée. Mais ma flaque est dorée, et elle me reste.', 'On dit que les carpes qui franchissent la Porte du Dragon deviennent des dragons. Moi, je vise déjà une vraie mare.'],
-      talk: [{ whenDone: 'sq_perle_carpe', lines: ['Merci pour la perle, archer. Ma flaque est plus légère, et moi aussi.'] }] }
+      talk: [{ whenDone: 'sq_perle_carpe', lines: ['Merci pour la perle, archer. Ma flaque est plus légère, et moi aussi.'] }] },
+    fleuve_village_kid_ming: { name: 'Ming', title: 'Gamin des quais',
+      idle: ['Je chasse les crabes de boue sur le quai. Ils ne mordent pas, ils boudent.', 'Mon père dit que le fleuve est parti chercher du travail ailleurs. Moi, je dis qu\'il reviendra quand on arrêtera de le regarder.'],
+      talk: [{ whenDone: 'sun_2', lines: ['Il y a une flaque qui bouge, là-bas ! Elle n\'est pas à moi, mais je la surveille.'] }] },
+    fleuve_village_old_caulker: { name: 'Vieux Rao', title: 'Calfat sans coque',
+      idle: ['Quarante ans à boucher des fentes de bois. Maintenant, c\'est le fleuve qui a une fente, et personne n\'a assez d\'étoupe.', 'Une coque qui sèche se fend. Un homme aussi, ma foi. Heureusement, je suis en chêne.'],
+      talk: [{ whenDone: 'sun_2', lines: ['Le bois a repris du ventre cette nuit. On entend les coques travailler : elles croient à l\'eau.'] }] },
+    fleuve_village_dock_clerk: { name: 'Maître Qi', title: 'Greffier du port',
+      idle: ['Je tiens le registre des arrivées. Aucun bateau depuis trois lunes : je note « néant » en belle calligraphie, pour ne pas perdre la main.', 'Si l\'on me demande ce que je fais ici, je réponds que je garde le port. Contre quoi ? Contre l\'oubli, archer, contre l\'oubli.'],
+      talk: [{ whenDone: 'sun_2', lines: ['J\'ai inscrit une ligne nouvelle : « Pluie, une goutte ». Mon pinceau tremble. Mon registre aussi.'] }] },
+    fleuve_village_rope_maker: { name: 'Dame Cho', title: 'Cordière',
+      idle: ['Je file des cordes pour des amarres qui ne retiennent plus rien. Une corde sans bateau, c\'est un serpent qui a perdu son rôle.', 'Tordre trois fils, c\'est fabriquer de la patience. Je n\'en manque pas : c\'est la seule chose qui ne sèche pas.'],
+      talk: [{ whenDone: 'sun_2', lines: ['Mes cordes sont plus souples, ce soir, comme après une rosée. Je file plus vite.'] }] },
+    fleuve_hamlet_kid_dun: { name: 'Dun', title: 'Gardien d\'oies par intérim',
+      idle: ['Je garde les oies pendant que Dagong monte la garde. Elle dit que c\'est moi qui suis gardé. Je n\'ai pas compris.', 'Si tu entends « Hon » trois fois, ce n\'est pas moi : c\'est elle qui t\'a trouvé louche.'],
+      talk: [{ whenDone: 'sun_2', lines: ['Les oies ont dansé, pas moi : je gardais. Ce n\'est pas un métier de fête.'] }] },
+    fleuve_road_toll_keeper: { name: 'Péager Wu', title: 'Péager du pont sans eau',
+      idle: ['Une sapèque pour traverser le pont ! Oui, je sais : il n\'y a plus d\'eau dessous. Mais il reste le pont, et il reste moi.', 'Le gué, plus au sud, est gratuit, bien sûr. C\'est un détour, mais l\'honneur du péage est sauf.'],
+      talk: [{ whenDone: 'sun_2', lines: ['L\'eau repasse sous le pont ? Alors mon péage est enfin justifié. Je vous le fais à moitié prix, pour la gloire.'] }] },
+    fleuve_wild_old_surveyor: { name: 'Vieux Ke', title: 'Arpenteur des crues',
+      idle: ['J\'ai tracé la hauteur des crues sur cette berge pendant trente ans. Regardez les encoches : la dernière est plus haute que ma tête. L\'eau était de bonne humeur.', 'Si vous cherchez la clé de l\'écluse, regardez du côté de l\'ancien lac de retenue, au nord-est. Les éclusiers y laissaient tout ce qui ne devait pas se perdre.'],
+      talk: [{ whenDone: 'sun_2', lines: ['Je vais devoir retracer mes encoches. C\'est un honneur de remesurer une eau qui revient.'] }] }
   },
   chests: {
     ferry_lockbox: { label: 'Cassette du passeur', openText: 'La cassette de Gu contient des pièces de passage, soigneusement comptées « au cas où l\'eau reviendrait ».' },
@@ -42,7 +66,14 @@ export default {
     mud_cache: { label: 'Cache dans la vase', openText: 'Dans la boue séchée, une cassette de batelier avec quelques pièces. Elle sent la vase et le souvenir.' },
     carp_pearl: { label: 'Perle de la flaque dorée', openText: 'Au fond de la flaque, une perle dorée et des pièces. La carpe Jin la gardait depuis longtemps.' },
     sluice_key_chest: { label: 'Coffre-clé de l\'écluse', openText: 'Une lourde clé de bronze repose dans le coffre, avec quelques pièces. La grande écluse devrait s\'ouvrir !' },
-    wreck_hoard: { label: 'Cale d\'une épave', openText: 'La cale de l\'épave recèle le fret d\'un marchand malchanceux : un joli butin.' }
+    wreck_hoard: { label: 'Cale d\'une épave', openText: 'La cale de l\'épave recèle le fret d\'un marchand malchanceux : un joli butin.' },
+    fleuve_village_cache: { label: 'Cache sous la coque', openText: 'Sous une barque renversée, une cache de calfat : un pot de poix, un maillet, et une bourse que personne n\'est venu réclamer.' },
+    fleuve_hamlet_sluice_barrel: { label: 'Tonneau de l\'écluse', openText: 'Dans un tonneau de chêne cerclé de fer, des pièces de péage de l\'ancienne écluse, noires de vase.' },
+    fleuve_road_chest_bank: { label: 'Besace sur la berge', openText: 'Une besace laissée sur la berge par un voyageur pressé : quelques pièces et un mouchoir brodé d\'une carpe.' },
+    fleuve_road_chest_ford: { label: 'Coffre du gué', openText: 'Planté dans la vase du gué, un petit coffre à demi enfoui. Les pièces tintent comme des galets.' },
+    fleuve_road_chest_niche: { label: 'Niche du banc de sable', openText: 'Au creux d\'un banc de sable, à l\'abri du vent, un coffret de passeur : des pièces et une rame miniature en guise de porte-bonheur.' },
+    fleuve_wild_chest_trench: { label: 'Dépôt sous le pont', openText: 'Sous les planches du pont, au fond de la fosse sèche, un dépôt d\'éclusier : des pièces de cuivre rangées par taille.' },
+    fleuve_wild_chest_hidden: { label: 'Offrande du lac de retenue', openText: 'Sur un îlot de vase du lac de retenue, une offrande enterrée : de l\'or terni, jeté là pour apaiser le fleuve.' }
   },
   quests: [
     { id: 'sq_lettre_bao_2', title: 'La lettre fait escale', chapter: '✦ Quête secondaire — Lit du Fleuve Jaune', giver: 'ferryman_gu', turnIn: 'hua_gobi', requires: ['sq_lettre_bao_1'], side: true,

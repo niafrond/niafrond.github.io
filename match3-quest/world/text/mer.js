@@ -6,6 +6,9 @@ export default {
       'On y raconte que le Roi-Dragon écoute aux portes.'] },
     mer_wild: { name: 'Falaises et Criques du Dragon', gateMessage: 'La grotte du sanctuaire est fermée par une porte de corail. Sa clé de marée dort dans un coffre, au fond d\'une crique.', arrival: [
       'Les falaises dominent une mer qui a perdu sa patience. Dans l\'écume, des écailles brillent : le Roi-Dragon n\'est jamais très loin.'] },
+    mer_road: { name: 'Jetée des Écumeurs', arrival: [
+      'Une longue jetée de planches goudronnées court le long de la falaise, au-dessus d\'une mer qui s\'est retirée mais n\'a pas dit son dernier mot. Le vent y sent le sel, la corde mouillée et le poisson séché.',
+      'Au bout de la jetée, les toits de Haiyan fument doucement. En chemin, méfiez-vous des galets : ils bougent quand on ne les regarde pas.'] },
     mer_h_hai: { name: 'Cabane du pêcheur Hai', arrival: ['Des filets réparés mille fois pendent aux poutres, et un portrait de sa barque, plus ressemblant que la barque elle-même.'] },
     mer_h_longwang: { name: 'Pavillon de l\'envoyé', arrival: ['Un pavillon laqué de bleu : l\'envoyé du Roi-Dragon y reçoit avec une courtoisie humide.'] },
     mer_h_perles: { name: 'Atelier des perles', arrival: ['Des perles de toutes tailles, triées dans des coupelles de nacre. Elles brillent comme des lunes minuscules.'] },
@@ -13,6 +16,27 @@ export default {
     mer_h_phare: { name: 'Phare de Haiyan', arrival: ['Un phare tout de blanc, où veille une gardienne taciturne. De là-haut, la mer ressemble à une promesse.'] }
   },
   npcs: {
+    mer_road_ferryman_zhong: { name: 'Zhong', title: 'Passeur de la jetée',
+      idle: ['Je compte les planches de la jetée depuis quarante ans. Il y en a trois cent douze, plus une que je n\'ai jamais retrouvée.', 'La marée est partie loin, mais elle laisse des anguilles dans les flaques. Marchez sur les planches : les flaques, elles, ont des dents.', 'Au bout de la plage, vers l\'est, il y a une cache que les contrebandiers ne reprennent plus. Elle est tranquille : personne n\'ose passer devant le spectre du reflux.'],
+      talk: [{ whenDone: 'sun_8', lines: ['Le huitième soleil est tombé, et la mer revient. Elle remonte la jetée planche après planche, comme une vieille amie qui frappe à la porte.'] }] },
+    mer_village_meiling: { name: 'Meiling', title: 'Vendeuse de beignets de crevette',
+      idle: ['Beignets de crevette, tout chauds ! Les crevettes, d\'ordinaire, sont plus petites, mais la mer s\'est retirée et elles se sont ennuyées.', 'Je les frits dans une huile qui a vu trois dynasties. Elle est de bonne famille.'],
+      talk: [{ whenDone: 'sun_8', lines: ['Huit soleils sont tombés et mes beignets se vendent mieux : les gens ont le cœur à manger sur le quai. La paix, ça creuse.'] }] },
+    mer_village_awen: { name: 'Ah Wen', title: 'Petit passeur de barques',
+      idle: ['Je rame mieux que mon père, mais il ne veut pas l\'avouer. Alors je rame plus fort et je dis rien.', 'Les barques de Haiyan dorment sur le sable, maintenant. Moi, je leur raconte des histoires pour qu\'elles n\'oublient pas l\'eau.'],
+      talk: [{ whenDone: 'sun_8', lines: ['L\'eau revient ! Les barques se réveillent ! Je crois que la plus vieille m\'a fait un clin d\'œil.'] }] },
+    mer_village_rong: { name: 'Capitaine Rong', title: 'Vieux capitaine d\'une jonque échouée',
+      idle: ['Ma jonque est posée là, sur la vase, avec ses trois mâts. Elle ne vogue plus, mais elle a gardé son caractère, ce qui est le principal.', 'Un capitaine ne quitte pas son navire, même sec. Surtout sec. C\'est là qu\'on voit les vrais amis.'],
+      talk: [{ whenDone: 'sun_8', lines: ['Je sens sous mes semelles la jonque qui frémit. Elle va flotter, archer, et je lui dirai que c\'est grâce à vous. Elle fera semblant de ne pas pleurer.'] }] },
+    mer_village_yue: { name: 'Yue', title: 'Apprentie de la prêtresse de Mazu',
+      idle: ['Je range les offrandes de riz sur l\'autel. Dame Mo dit qu\'elles ne s\'envolent pas toutes seules : c\'est la mouette qui s\'appelle Pip, mais je ne dois pas le dire.', 'Quand je serai prêtresse, je ferai bénir les filets avant les chansons. Les poissons aiment qu\'on les prévienne.'],
+      talk: [{ whenDone: 'sun_8', lines: ['Mazu a souri, et c\'était contagieux. Dame Mo me demande de ne pas gambader pendant les offrandes. Je gambade avec dignité.'] }] },
+    mer_hamlet_lanfang: { name: 'Lan Fang', title: 'Fumeuse de poisson',
+      idle: ['Je fume le poisson sur des algues sèches. Ça lui donne un goût de rivage, de souvenir, et un peu de brûlé.', 'Mon fumoir est ouvert à tous, sauf aux mouettes. Elles le savent, elles n\'en ont cure.'],
+      talk: [{ whenDone: 'sun_8', lines: ['Un soleil de moins : mon poisson fume plus doucement, il garde son parfum. Les clients disent que c\'est la mer qui revient.'] }] },
+    mer_hamlet_dao: { name: 'Petit Dao', title: 'Apprenti calfat',
+      idle: ['Je tends l\'étoupe dans les joints du navire de Bing. C\'est pas un métier, c\'est de la patience qui sent le goudron.', 'Bing dit qu\'un bateau se tient debout grâce à ce qu\'on ne voit pas. Moi, je vois surtout mes doigts noirs.'],
+      talk: [{ whenDone: 'sun_8', lines: ['Bing dit que le navire flottera à la prochaine grande marée. Moi, j\'ai déjà préparé les cordes pour le baptême.'] }] },
     pearl_diver_xi: { name: 'Xi', title: 'Plongeuse de perles', 
       idle: ['Je plonge sans masque ni cordon, avec un seul souffle et beaucoup d\'obstination. Les perles me connaissent.', 'Les perles les plus belles sont les plus tristes. Chaque larme de sirène en fait une.'],
       talk: [{ whenDone: 'sun_8', lines: ['Le huitième soleil est tombé. Les marées retrouvent leur rythme, et mes perles sont plus claires. Comme si la mer respirait enfin.'] }] },
@@ -42,7 +66,14 @@ export default {
     cove_cache: { label: 'Cache dans la crique', openText: 'Dans une anfractuosité de la crique, une cache de contrebandier : un peu d\'or et un mot illisible.' },
     tide_key_chest: { label: 'Coffre-clé de marée', openText: 'La clé de marée, en corail poli, repose sur un lit d\'algues. La porte de corail devrait s\'ouvrir !' },
     tear_pearl_chest: { label: 'Coffre aux larmes de perle', openText: 'Les larmes de Jiaoren, devenues perles, brillent doucement dans leur coffre. Elles pèsent peu, mais valent beaucoup.' },
-    dragon_grotto: { label: 'Coffre de la grotte du dragon', openText: 'La grotte du dragon garde un trésor ancien : or, jade et un parfum de mer lointaine.' }
+    dragon_grotto: { label: 'Coffre de la grotte du dragon', openText: 'La grotte du dragon garde un trésor ancien : or, jade et un parfum de mer lointaine.' },
+    mer_road_driftwood_chest: { label: 'Coffre de bois flotté', openText: 'Un coffre fait de planches de naufrage, calé entre deux rochers : quelques pièces, et une chanson de marin gravée au couteau sur le couvercle.' },
+    mer_road_cliff_chest: { label: 'Coffre de la faille', openText: 'Au creux d\'une faille de la falaise, hors d\'atteinte des vagues, un coffre de contrebandier : des pièces salées et un mot d\'excuse à la douane.' },
+    mer_road_beach_chest: { label: 'Coffre de la plage cachée', openText: 'Au bout de la longue plage, sous un tas de varech, un coffre enterré à marée basse. Un contrebandier y a laissé de quoi acheter plusieurs barques.' },
+    mer_village_stub_chest: { label: 'Coffre du ponton caché', openText: 'Au bout d\'un ponton que personne n\'utilise, une caisse accrochée sous les planches : le magot d\'un pêcheur qui n\'avait confiance qu\'en l\'eau.' },
+    mer_hamlet_net_chest: { label: 'Caisse des filets', openText: 'Parmi des filets raccommodés mille fois, une caisse de bois : des pièces et un bouchon de liège portant bonheur.' },
+    mer_hamlet_shell_chest: { label: 'Coffre aux coquillages', openText: 'Une cassette tapissée de coquillages. Dedans, des pièces d\'argent et une coquille qui, si l\'on tend l\'oreille, murmure le nom du propriétaire.' },
+    mer_wild_dune_chest: { label: 'Coffre des dunes', openText: 'Derrière un rocher, dans le creux d\'une dune, un coffre ensablé : des pièces et un éclat de nacre. On dirait que la mer l\'a oublié là en repartant.' }
   },
   quests: [
     { id: 'sq_larmes_perle', title: 'Les larmes de Jiaoren', chapter: '✦ Quête secondaire — Rivage de la Mer Orientale', giver: 'pearl_diver_xi', turnIn: 'pearl_diver_xi', requires: [], side: true,

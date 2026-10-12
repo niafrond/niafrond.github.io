@@ -1,116 +1,168 @@
 // Région 1 — Rizières Desséchées : Hameau de Dongqiao, Hameau des Lucioles, Digue et Marais Craquelés, sept maisons.
-// Légende : # roseaux/murs · ~ mare craquelée · = ruelle · A-E bâtiments (porte minuscule) · W pierre de voyage · 0-9 i-z ^ v ancres.
+// Cartes natives (format v2, world/DESIGN-V2.md) : village 32×28, hameau 28×22, route principale 48×24, sanctuaire 30×22.
+// Légende : # roseaux/murs · ~ mare craquelée · = ruelle ou digue · " hautes herbes · A-E bâtiments (porte minuscule) · W pierre de voyage ·
+// S apparition · < > ^ v bords de carte. Entités posées par x/y (voir world/FORMAT.md §9).
 
 export default {
     village: {
-        id: 'rizieres_village', biome: 'paddy',
+        id: 'rizieres_village', biome: 'paddy', native: true,
         grid: [
-            '####################',
-            '#.AAAA..BBBB..CCCC.#',
-            '#.AAAA.#BBBB..CCCC.#',
-            '#.AaAA..BbBB..CcCC.#',
-            '#..S..0..=.....=..3#',
-            '#..===============.#',
-            '#..=..W.~~~~1..=...>',
-            '#..=.2..~~~~...=...#',
-            '#.DDDD........EEEE.#',
-            '#.DDDD.p.#....EEEE.#',
-            '#.DdDD.....4..EeEE.#',
-            '#..=============...#',
-            '#..................#',
-            '#.###....==....###.#',
-            '#.#j.....==.....k#.#',
-            '#.###.~~.==.~~.###.#',
-            '#.....~~.==.~~.....#',
-            '#..=============...#',
-            '#..=..#.....#..=...#',
-            '#..=..#.m.n.#..=...#',
-            '#..=..#.....#..=...#',
-            '#..=..###.###..=...#',
-            '#..=============...#',
-            '####################'
+            '~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~',
+            '~##############.###############~',
+            '~##############.###############~',
+            '~####.....................#####~',
+            '~#####AAAA.##.BBBB.##.CCCC#####~',
+            '~####.AAAA.##.BBBB.##.CCCC.####~',
+            '~##...AaAA....BbBB....CcCC...##~',
+            '~##....S.......=.......=.....##~',
+            '~##..=======================.##~',
+            '~##.#..........=.............##~',
+            '~##.........========...~~~~.###~',
+            '~##....~~~.==========..~~~~.###~',
+            '~##...~~~~~====#======.....#...~',
+            '~##..~~~~~~~===================>',
+            '~##...~~~~~==========..........~',
+            '~##....~~~..========.......#.##~',
+            '~##...DDDDD..=.......EEEE....##~',
+            '~##..WDDDDD..=.......EEEE....##~',
+            '~####.DDdDD..=.......EeEE....##~',
+            '~###....=....=........=......##~',
+            '~###.======================.###~',
+            '~###.........=====..........###~',
+            '~#######.####....####.#########~',
+            '~#####......#............######~',
+            '~#####......###.#........######~',
+            '~##############.###############~',
+            '~##############.###############~',
+            '~~~~~~~~~~~~~~~v~~~~~~~~~~~~~~~~'
         ],
         npcs: [
-            { id: 'merchant_rizieres', at: 'p' },
-            { id: 'xiaobao', at: '1' },
-            { id: 'hua_riz', at: '2' },
-            { id: 'scarecrow_cao', at: '3' },
-            { id: 'matchmaker_hong', at: '0' },
-            { id: 'lao_shuo_riz', at: '4' }
+            { id: 'merchant_rizieres', x: 19, y: 10 },
+            { id: 'xiaobao', x: 24, y: 12 },
+            { id: 'hua_riz', x: 11, y: 10 },
+            { id: 'scarecrow_cao', x: 27, y: 9 },
+            { id: 'matchmaker_hong', x: 10, y: 9 },
+            { id: 'lao_shuo_riz', x: 15, y: 15 },
+            { id: 'rizieres_village_potter', x: 20, y: 15 },
+            { id: 'rizieres_village_kid_lan', x: 11, y: 14 },
+            { id: 'rizieres_village_old_watch', x: 26, y: 15 },
+            { id: 'rizieres_village_porter', x: 12, y: 19 }
         ],
         chests: [
-            { id: 'rizieres_garden_a', at: 'j', gold: 15, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'rizieres_garden_b', at: 'k', gold: 15, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'rizieres_market_a', at: 'm', gold: 30, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'rizieres_market_b', at: 'n', gold: 30, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'rizieres_garden_a', x: 6, y: 23, gold: 15, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'rizieres_garden_b', x: 28, y: 6, gold: 15, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'rizieres_market_a', x: 19, y: 23, gold: 30, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'rizieres_market_b', x: 23, y: 23, gold: 30, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
+            { id: 'rizieres_village_cache', x: 3, y: 15, gold: 30 }
         ]
     },
 
     hamlet: {
-        id: 'rizieres_hamlet', biome: 'paddy',
+        id: 'rizieres_hamlet', biome: 'paddy', native: true,
         grid: [
-            '########^#######',
-            '##......=.....##',
-            '#.AAAA.5=.BBBB.#',
-            '#.AAAA..=1BBBB.#',
-            '#.AaAA2.=.BbBB.#',
-            '#..=========...#',
-            '#..3....S....0.#',
-            '#.~~~~.....4...#',
-            '#.~~~~.#.....W.#',
-            '##..........#..#',
-            '################'
+            '~~~~~~~~~~~~~~^~~~~~~~~~~~~~',
+            '~############...###########~',
+            '~############...###########~',
+            '~####.........=........####~',
+            '~###......##..=.#.......###~',
+            '~##..BBBB.....=....AAAA..##~',
+            '~##..BBBB.....=....AAAA..##~',
+            '~##..BbBB.....=....AaAA..##~',
+            '~##..================....##~',
+            '~##.......====S====......##~',
+            '~##.......===#=====......##~',
+            '~##...........=..........##~',
+            '~##..W.~~~~...=....~~~...##~',
+            '~##..~~~~~~~~.=....~~~...##~',
+            '~##..~~~~~~~~.=..........##~',
+            '~##..~~~~~~~~.=..........##~',
+            '~##..~~~~~~~==========...##~',
+            '~####..~~~~............####~',
+            '~####.................#####~',
+            '~##########################~',
+            '~##########################~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         npcs: [
-            { id: 'duck_fu', at: '0' },
-            { id: 'kid_dandan', at: '1' },
-            { id: 'pigeon_zhao', at: '2' },
-            { id: 'monk_kong', at: '3' }
+            { id: 'duck_fu', x: 13, y: 15 },
+            { id: 'kid_dandan', x: 16, y: 11 },
+            { id: 'pigeon_zhao', x: 23, y: 10 },
+            { id: 'monk_kong', x: 11, y: 6 },
+            { id: 'rizieres_hamlet_weaver_zhu', x: 5, y: 10 }
         ],
         chests: [
-            { id: 'duck_pond_cache', at: '4', gold: 15 },
-            { id: 'hamlet_well_box', at: '5', gold: 30 }
+            { id: 'duck_pond_cache', x: 5, y: 17, gold: 15 },
+            { id: 'hamlet_well_box', x: 15, y: 11, gold: 30 },
+            { id: 'rizieres_hamlet_reed_basket', x: 24, y: 16, gold: 30 }
         ]
     },
 
     wild: {
-        id: 'rizieres_wild', biome: 'paddy',
+        id: 'rizieres_wild', biome: 'paddy', native: true,
         grid: [
-            '##################',
-            '#..........k#.0.z#',
-            '#.##n..#.j..#....#',
-            '#.##..9.....####.#',
-            '#........~~......#',
-            '#....i.l~~~...1..>',
-            '<.......~~~.7....#',
-            '#..#..o.~~~...m..#',
-            '#...W...#.4......#',
-            '#.##..3..##.8.2..#',
-            '#.......5...6...y#',
-            '###v##############'
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~##############################################~',
+            '~##############################################~',
+            '~####....#.....##~~##...#........##############~',
+            '~###.....#.~~~..#~~#~~..#.~~....~~#######..####~',
+            '~##......#.......~~.~~..#.~~==..~~.#####....###~',
+            '~##..""..##......~~.....#...==.....####..##..##~',
+            '~##""""".#.......~~.....#..#==.....####..##..##~',
+            '~##""""".#.=====.~~..##.##.#=====#.####......##~',
+            '~##.""".##.=.#.=.~~.....#..=..#..#.####.#....##~',
+            '~........#.=.#.=.~~.....#..=..#..=.####.#......~',
+            '<=======.#.=.#.========##..=..#..=.............~',
+            '~......=.#.=.#...==...=.#."=".##.==============>',
+            '~##W...=...=.##..~~...=.#."=".#................~',
+            '~##....=...=.#...~~...=....=..#....####......##~',
+            '~##.~~~~====.#...~~...======.##....####.##...##~',
+            '~##.~~~~.....#.##~~.~~....=...#.~~.####.##...##~',
+            '~##.........##.##~~.~~....~~..#.~~.####..""".##~',
+            '~##..""""....#...~~.......~~""#....####..""#.##~',
+            '~###.""""....#..#~~#......="""#...######...####~',
+            '~####........#.##~~##.....=...#..########..####~',
+            '~#######################..=..##################~',
+            '~########################...###################~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~v~~~~~~~~~~~~~~~~~~~~~'
         ],
+        grass: {
+            rate: 0.1, safeSteps: 4,
+            table: [
+                { templateId: 'fungal_horror', name: 'Crapaud de boue', weight: 5, offset: -1 },
+                { templateId: 'goblin_saboteur', name: 'Renardeau des roseaux', weight: 4, offset: 0 },
+                { templateId: 'bone_reaver', name: 'Épouvantail raide', weight: 2, offset: 0 },
+                { templateId: 'forest_guardian', name: 'Esprit des diguettes', weight: 1, offset: 1 }
+            ]
+        },
         npcs: [
-            { id: 'huang_xian', at: '9' },
-            { id: 'crow_wing', at: 'i' },
-            { id: 'toad_chan', at: 'j' }
+            { id: 'huang_xian', x: 31, y: 10 },
+            { id: 'crow_wing', x: 29, y: 4 },
+            { id: 'toad_chan', x: 5, y: 14 },
+            { id: 'rizieres_wild_old_dikekeeper', x: 33, y: 14 }
         ],
         chests: [
-            { id: 'dike_cache', at: '0', gold: 15 },
-            { id: 'reed_kite', at: 'y', gold: 30 },
-            { id: 'warden_hoard', at: 'z', gold: 45 },
-            { id: 'journal_page_riz', at: 'k', gold: 15 },
-            { id: 'rice_idol', at: 'l', gold: 30 }
+            { id: 'dike_cache', x: 10, y: 10, gold: 15 },
+            { id: 'reed_kite', x: 16, y: 6, gold: 30 },
+            { id: 'warden_hoard', x: 44, y: 8, gold: 45 },
+            { id: 'journal_page_riz', x: 32, y: 3, gold: 15 },
+            { id: 'rice_idol', x: 5, y: 20, gold: 30 },
+            { id: 'rizieres_wild_chest_jar', x: 14, y: 3, gold: 15 },
+            { id: 'rizieres_wild_chest_dike', x: 22, y: 18, gold: 30 },
+            { id: 'rizieres_wild_chest_shrine', x: 42, y: 20, gold: 45 }
         ],
         enemies: [
-            { id: 'rizieres_warden', at: '1', templateId: 'forest_guardian', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 4 } },
-            { id: 'rizieres_marsh_imp', at: '2', templateId: 'goblin_saboteur', name: 'Démon des roseaux', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'rizieres_w_toad', at: '3', templateId: 'fungal_horror', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
-            { id: 'rizieres_w_lingzhi', at: '4', templateId: 'fungal_horror', name: 'Lingzhi des diguettes', kind: 'sentinel', offset: 0 },
-            { id: 'rizieres_w_spirit', at: '5', templateId: 'forest_guardian', name: 'Esprit des diguettes', kind: 'patrol', patrol: ['5', '6'], offset: 0 },
-            { id: 'rizieres_w_waterthief', at: '7', templateId: 'goblin_saboteur', name: 'Voleur d\'eau', kind: 'patrol', patrol: ['7', '8'], offset: 0 },
-            { id: 'crow_a', at: 'm', templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
-            { id: 'crow_b', at: 'n', templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
-            { id: 'rizieres_mill_ghost', at: 'o', templateId: 'bone_reaver', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'rizieres_warden', x: 45, y: 12, templateId: 'forest_guardian', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 4 } },
+            { id: 'rizieres_marsh_imp', x: 28, y: 18, templateId: 'goblin_saboteur', name: 'Démon des roseaux', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'rizieres_w_toad', x: 8, y: 7, templateId: 'fungal_horror', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
+            { id: 'rizieres_w_lingzhi', x: 23, y: 9, templateId: 'fungal_horror', name: 'Lingzhi des diguettes', kind: 'sentinel', offset: 0 },
+            { id: 'rizieres_w_spirit', x: 21, y: 12, templateId: 'forest_guardian', name: 'Esprit des diguettes', kind: 'patrol', patrol: [[21, 12], [21, 15]], offset: 0 },
+            { id: 'rizieres_w_waterthief', x: 5, y: 18, templateId: 'goblin_saboteur', name: 'Voleur d\'eau', kind: 'patrol', patrol: [[5, 18], [12, 18]], offset: 0 },
+            { id: 'crow_a', x: 25, y: 6, templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
+            { id: 'crow_b', x: 31, y: 6, templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
+            { id: 'rizieres_mill_ghost', x: 34, y: 7, templateId: 'bone_reaver', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'rizieres_wild_patrol_toads', x: 42, y: 8, templateId: 'fungal_horror', name: 'Crapauds en file', kind: 'patrol', patrol: [[42, 8], [42, 16]], offset: -1 },
+            { id: 'rizieres_wild_patrol_imp', x: 10, y: 5, templateId: 'goblin_saboteur', name: 'Farfadet des diguettes', kind: 'patrol', patrol: [[10, 5], [16, 5]], offset: 0 },
+            { id: 'rizieres_wild_scarecrow', x: 44, y: 17, templateId: 'forest_guardian', name: 'Épouvantail possédé', kind: 'sentinel', offset: 0 }
         ],
         gate: {
             requires: 'rizieres_warden',
@@ -246,5 +298,48 @@ export default {
         }
     ],
 
-    sanctuary: { id: 'rizieres', waypoint: { x: 2, y: 5 } }
+    sanctuary: {
+        id: 'rizieres', waypoint: { x: 5, y: 7 }, native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~############################~',
+            '~############################~',
+            '~####.......########.....####~',
+            '~###..##.....######..."...###~',
+            '~##........#..####.."""""#.##~',
+            '~##........#..####.."""""..##~',
+            '~##..W........####...##....##~',
+            '~###..........~~~~...##....##~',
+            '~##...........~~~~.........##~',
+            '~............................~',
+            '<===S======================..>',
+            '~..............##............~',
+            '~##...........~~~~.........##~',
+            '~##...........~~~~.....##..##~',
+            '~##..~~~~.....####.#...##..##~',
+            '~##..~~~~.....####.#.""""..##~',
+            '~###......##.######.""""""###~',
+            '~####.......########.."".####~',
+            '~############################~',
+            '~############################~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        grass: {
+            rate: 0.1, safeSteps: 4,
+            table: [
+                { templateId: 'fungal_horror', name: 'Crapaud de boue', weight: 5, offset: -1 },
+                { templateId: 'goblin_saboteur', name: 'Renardeau des roseaux', weight: 4, offset: 0 },
+                { templateId: 'forest_guardian', name: 'Esprit des diguettes', weight: 1, offset: 1 }
+            ]
+        },
+        places: {
+            lotus_cache: [5, 17],
+            fengmeng_1: [15, 11],
+            rizieres_goblin: [20, 14],
+            rizieres_shroom: [26, 16],
+            rizieres_guardian: { x: 20, y: 6, patrol: [[20, 6], [20, 15]] },
+            rice_thief: [25, 8],
+            sun_1: [27, 11]
+        }
+    }
 };

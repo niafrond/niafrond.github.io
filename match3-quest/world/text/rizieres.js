@@ -33,7 +33,25 @@ export default {
       talk: [{ whenDone: 'sun_1', lines: ['Un nuage ! Mon chapeau de paille a frémi. C\'est ma façon de pleurer de joie.'] }] },
     huang_xian: { name: 'Huang Xian', title: 'Belette jaune de la digue', 
       idle: ['Chut. Je ne suis pas là. Je suis une branche. Une branche qui parle, soit, mais discrète.', 'Je vois tout depuis la digue. Même un petit démon-renard qui vole des ficelles dans les roseaux.'],
-      talk: [{ whenDone: 'rizieres_warden', lines: ['Le gardien est tombé ! La digue peut respirer. Moi aussi : on le prenait pour un grand-oncle mal luné, mais il l\'était vraiment.'] }] }
+      talk: [{ whenDone: 'rizieres_warden', lines: ['Le gardien est tombé ! La digue peut respirer. Moi aussi : on le prenait pour un grand-oncle mal luné, mais il l\'était vraiment.'] }] },
+    rizieres_village_potter: { name: 'Yun', title: 'Potière aux jarres vides',
+      idle: ['Je cuis des jarres pour une eau qui ne vient plus. On finit par les remplir de rêves : c\'est moins lourd à porter.', 'Tapez sur ce cruchon : entendez-vous ? Ça sonne creux. C\'est la meilleure qualité de poterie, par les temps qui courent.'],
+      talk: [{ whenDone: 'sun_1', lines: ['Un nuage, vous dites ? Mes jarres vont enfin servir à autre chose qu\'à faire de l\'écho.'] }] },
+    rizieres_village_kid_lan: { name: 'Lan', title: 'Petite sœur de la digue',
+      idle: ['Je compte les craquelures de la mare. Il y en a quarante-sept. Hier, il y en avait quarante-six. Elle grandit.', 'Cao l\'épouvantail me raconte des histoires, mais il ne dit jamais la fin. Je crois qu\'il l\'a oubliée.'],
+      talk: [{ whenDone: 'sun_1', lines: ['Il y a de l\'ombre sur la mare ! Je vais compter les craquelures à l\'envers : peut-être qu\'elles vont se refermer.'] }] },
+    rizieres_village_old_watch: { name: 'Vieux Fang', title: 'Veilleur de la porte est',
+      idle: ['Depuis la porte est, on voit venir la poussière avant les gens. Les gens, on les reconnaît à leur façon de tousser.', 'Au-delà de la porte, la digue serpente dans le marais. Gardez le chemin de terre, et regardez où vous posez le pied : les herbes hautes ne sont jamais vraiment vides.'],
+      talk: [{ whenDone: 'sun_1', lines: ['Le marais respire mieux depuis hier. Même les herbes hautes ont l\'air moins méchantes. Je les surveille quand même, on ne sait jamais.'] }] },
+    rizieres_village_porter: { name: 'Bang', title: 'Porteur de seaux vides',
+      idle: ['Je porte des seaux vides du puits à la mare, et de la mare au puits. Avec ça, personne ne peut dire que je suis sans emploi.', 'Un seau, c\'est comme l\'espoir : léger quand il est vide, et on le porte quand même.'],
+      talk: [{ whenDone: 'sun_1', lines: ['Mon seau est humide ! Un doigt d\'eau, au fond. Je n\'ose pas le vider, de peur qu\'il s\'envole.'] }] },
+    rizieres_hamlet_weaver_zhu: { name: 'Zhu', title: 'Tresseuse de nattes de roseau',
+      idle: ['Je tresse des nattes avec les roseaux du marais. Ils sont secs, mais ils se souviennent d\'avoir été souples.', 'Une natte pour dormir, une natte pour prier, une natte pour la mariée. Je n\'ai jamais tressé de natte pour la tristesse : elle se couche sans.'],
+      talk: [{ whenDone: 'sun_1', lines: ['Les roseaux ont un peu plus de souplesse, ce soir. Mes doigts vont plus vite : c\'est bon signe.'] }] },
+    rizieres_wild_old_dikekeeper: { name: 'Vieux Pao', title: 'Ancien gardien de digue',
+      idle: ['J\'ai tenu cette digue quarante ans. Le gardien qui la barre, là-bas, est un vieil esprit de la digue : la chaleur lui a tourné la tête, pas le cœur.', 'Suivez la digue en terre et évitez les mares : elles semblent peu profondes, mais le fond est un menteur.'],
+      talk: [{ whenDone: 'rizieres_warden', lines: ['Il est tombé ? Alors il va enfin dormir : il n\'avait pas fermé l\'œil depuis trois lunes. Merci, archer.'] }] }
   },
   chests: {
     houyi_trunk: { label: 'Coffre de voyage de Hou Yi', openText: 'Dans le coffre, une pochette de pièces que Chang\'e a glissée « au cas où ». Elle pense à tout.' },
@@ -41,7 +59,12 @@ export default {
     granary_sack: { label: 'Dernier sac du grenier', openText: 'Le fond du sac cache des pièces de cuivre : le doyen les gardait pour la fête de la pluie.' },
     dike_cache: { label: 'Cache sous la digue', openText: 'Une cachette de contrebande de paysans : quelques pièces et un mot « pour le prochain qui aura soif ».' },
     reed_kite: { label: 'Cerf-volant dans les roseaux', openText: 'Le cerf-volant de Petit Bao, un peu froissé mais intact, et quelques pièces tombées d\'on ne sait où.' },
-    warden_hoard: { label: 'Trésor du gardien de la digue', openText: 'Le gardien amassait les offrandes des voyageurs depuis des années. Vous soupesez un joli pécule.' }
+    warden_hoard: { label: 'Trésor du gardien de la digue', openText: 'Le gardien amassait les offrandes des voyageurs depuis des années. Vous soupesez un joli pécule.' },
+    rizieres_village_cache: { label: 'Cache derrière le puits', openText: 'Une planche descellée, un linge de chanvre, et dans le linge quelques pièces : l\'épargne d\'un villageois qui n\'a jamais fait confiance ni aux coffres ni aux voisins.' },
+    rizieres_hamlet_reed_basket: { label: 'Corbeille de nattes', openText: 'Sous une pile de nattes inachevées, une corbeille de roseau tressé et quelques pièces serrées dans un nœud de jonc.' },
+    rizieres_wild_chest_jar: { label: 'Jarre enterrée', openText: 'Une jarre scellée à la cire, enfoncée jusqu\'au col au pied d\'un roseau. Quelqu\'un comptait revenir à la saison des pluies.' },
+    rizieres_wild_chest_dike: { label: 'Coffret de la digue', openText: 'Calé entre deux pierres de la digue, un coffret de bambou : des pièces, et un mot « pour celui qui marchera droit ».' },
+    rizieres_wild_chest_shrine: { label: 'Offrande du petit sanctuaire', openText: 'Au fond d\'un autel de pierre mangé de mousse, des offrandes de paysans : quelques pièces et un bol de riz, sec comme du papier.' }
   },
   quests: [
     { id: 'sq_cerf_volant', title: 'Le cerf-volant de Petit Bao', chapter: '✦ Quête secondaire — Rizières Desséchées', giver: 'xiaobao', turnIn: 'xiaobao', requires: [], side: true,

@@ -23,7 +23,7 @@ import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
-import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
+import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -201,6 +201,8 @@ export function createExplorationView(cfg) {
         const screens = Object.values(session.screens).filter(sc => sc.region === region);
         const npcs = screens.flatMap(sc => sc.npcs).map(n => n.id);
         const enemies = screens.flatMap(sc => sc.enemies.map(e => [e.spriteKey || e.id, e.templateId, sc.biome]));
+        // créatures des hautes herbes : dessin du gabarit (spriteKey = templateId), à charger avec la région
+        screens.forEach(sc => (X.grassOf(sc)?.table || []).forEach(t => enemies.push([t.templateId, t.templateId, sc.biome])));
         screens.flatMap(sc => sc.enemies).forEach(e => {
             [e.defeatScene, ...(e.afterScenes || [])].forEach(scene => {
                 const sp = scene?.speaker;
@@ -920,10 +922,13 @@ export function createExplorationView(cfg) {
         const isLiquid = (x, y) => inMap(x, y) && (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y)));
         const isPath = (x, y) => !inMap(x, y) || (inRects(screen.paths, x, y) && !isLiquid(x, y));
         const tiled = !!(screen.interior || screen.kind === 'arena');
+        // hautes herbes (rencontres aléatoires) : touffes sombres peintes dans le calque de sol
+        const grassCells = X.grassOf(screen)?.cells || [];
+        const isTall = grassCells.length ? (x, y) => inMap(x, y) && inRects(grassCells, x, y) : null;
         g.imageSmoothingEnabled = false;
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome });
+                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome, isTall });
             }
         }
     }
@@ -1360,6 +1365,10 @@ export function createExplorationView(cfg) {
                     } else {
                         drawSprite(heroView, c.x, feet + hop, tile * 1.06, heroBase);
                     }
+                    // hautes herbes : des brins devant ses pieds, qui frémissent (davantage en marchant)
+                    if (X.isGrassCell(screen, Math.round(vis.px), Math.round(vis.py))) {
+                        drawGrassFront(ctx, tile, c.x - tile / 2, c.y - tile / 2, biome, now, moving);
+                    }
                     break;
                 }
                 default:
@@ -1636,6 +1645,9 @@ export function createExplorationView(cfg) {
                 cfg.onSave();
             }
             applyQueuedEvents();
+            // Première créature d'herbe de la partie : une seule explication, au retour sur la carte.
+            const wildIntro = X.takeWildIntro(session);
+            if (wildIntro) toast(wildIntro, 4500);
         },
 
         hide() {
@@ -1674,6 +1686,7 @@ export function createExplorationView(cfg) {
             ensureSession();
             if (!isVictory && session.rt.pendingEnemyId) X.resetAfterDefeat(session);   // dans l'arène : expulsion
             session.rt.pendingEnemyId = null;
+            X.resetGrassSteps(session);   // après un combat (créature d'herbe comprise), 3 pas d'herbe sans rencontre
             vis.enemies = {};
             syncVisual(true);
             refreshHud();

@@ -264,6 +264,7 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
         enemyEntity.bossTier = level;
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
+    if(encounter?.wild && encounter.name) enemyEntity.name = encounter.name;   // créature des hautes herbes : le nom de la table de la carte
     enemyEntity.mapEnemyId = encounter?.enemyId || null;
     enemyEntity.spriteKey = encounter?.spriteKey || encounter?.enemyId || template.id;   // dessin affiché sur l'écran de combat
     // Préparation du terrain (terrain.js) : embuscade, faiblesse repérée, piège, alerte… appliquée par game.js.

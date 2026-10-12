@@ -123,11 +123,17 @@ describe('Grand Monde : cartes', () => {
         });
     });
 
-    test('villages portrait plein écran 9:16 (20x24, lune 16x22), hameaux 16x11, wild 18x12, intérieurs petits', () => {
+    test('villages portrait plein écran 9:16 (20x24, lune 16x22), hameaux 16x11, wild 18x12, intérieurs petits ; cartes natives ≤ 64x64 et 1500 cases', () => {
         screens.forEach(s => {
+            // cartes natives (`native: true`, format v2) : jamais étirées, bornées par le calque de sol (DESIGN-V2 §3)
+            if (s.native) {
+                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= 1500 }).toEqual({ id: s.id, ok: true });
+                expect(s.interior).toBeFalsy();
+            }
             // villages : taille d'origine ; hameaux et zones sauvages : agrandis (world/expand.js)
-            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [26, 20] : s.region === 'lune' ? [16, 22] : [20, 24]);
-            if (s.kind === 'wild' && !s.aquatic && !s.underground) expect([s.w, s.h]).toEqual([28, 22]);   // le monde aquatique a ses propres cartes de mer
+            if (s.kind === 'village' && !s.native) expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [26, 20] : s.region === 'lune' ? [16, 22] : [20, 24]);
+            // zones sauvages et routes d'accès non natives : minimum agrandi ; le monde aquatique a ses propres cartes de mer
+            if (s.kind === 'wild' && !s.aquatic && !s.underground && !s.native) expect([s.w, s.h]).toEqual([28, 22]);
             if (s.id.endsWith('_hamlet')) expect(exitsOf(s, SCREENS).some(e => e.to === `${s.region}_wild`)).toBe(true);
             if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }
         });
@@ -167,34 +173,95 @@ describe('Grand Monde : cartes', () => {
         }));
     });
 
-    test('chaîne du monde : sanctuaire précédent → village → wild → sanctuaire', () => {
+    test('chaîne du monde : sanctuaire précédent → [route d\'accès →] village → wild → sanctuaire', () => {
         REGION_ORDER.forEach((region, i) => {
             const village = SCREENS[`${region}_village`], wild = SCREENS[`${region}_wild`], sanct = SCREENS[region];
+            const road = SCREENS[`${region}_road`];   // format v2 : route d'accès intercalée (absente de rizieres)
             expect(exitsOf(village, SCREENS).some(e => e.to === wild.id)).toBe(true);
             expect(exitsOf(wild, SCREENS).some(e => e.to === village.id)).toBe(true);
             expect(exitsOf(wild, SCREENS).some(e => e.to === region)).toBe(true);
             expect(exitsOf(sanct, SCREENS).some(e => e.to === wild.id)).toBe(true);
             if (i > 0) {
-                expect(exitsOf(village, SCREENS).some(e => e.to === REGION_ORDER[i - 1])).toBe(true);
-                expect(exitsOf(SCREENS[REGION_ORDER[i - 1]], SCREENS).some(e => e.to === village.id)).toBe(true);
+                const prev = REGION_ORDER[i - 1];
+                const entry = road || village;   // première carte de la région en venant de l'ouest
+                expect(exitsOf(entry, SCREENS).some(e => e.to === prev)).toBe(true);
+                expect(exitsOf(SCREENS[prev], SCREENS).some(e => e.to === entry.id)).toBe(true);
+                if (road) {
+                    expect(exitsOf(road, SCREENS).some(e => e.to === village.id)).toBe(true);
+                    expect(exitsOf(village, SCREENS).some(e => e.to === road.id)).toBe(true);
+                    expect(exitsOf(village, SCREENS).some(e => e.to === prev)).toBe(false);
+                    expect(exitsOf(SCREENS[prev], SCREENS).some(e => e.to === village.id)).toBe(false);
+                }
             }
             // pas d'ennemi dans les villages et maisons
             screens.filter(s => s.region === region && (s.kind === 'village' || s.interior)).forEach(s => expect(s.enemies).toHaveLength(0));
         });
     });
 
-    test('wild : 5 à 9 ennemis (≥ 2 patrouilleurs), gabarits connus, pas près de l\'entrée', () => {
+    // Équilibrage (DESIGN-V2 §3) : l'ancien format garde 5 à 10 ennemis dont ≥ 2 patrouilleurs ; une wild native en a 8 à 14 dont
+    // ≥ 3 patrouilleurs ; une route d'accès (`_road`) 3 à 6 dont ≥ 1 patrouilleur. Le compte est celui de la carte assemblée.
+    const noEnemyNearEntry = zone => zone.enemies.forEach(e => {
+        expect(templateIds.has(e.templateId)).toBe(true);
+        if (e.guardsDoor) return;   // le gardien de la porte se tient devant elle
+        const near = exitsOf(zone, SCREENS).filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(zone.spawn.x - e.x), Math.abs(zone.spawn.y - e.y)) < 3;
+        expect(`${e.id} ${near}`).toBe(`${e.id} false`);
+    });
+
+    test('wild : 5 à 9 ennemis (≥ 2 patrouilleurs ; natif : 8 à 14, ≥ 3), gabarits connus, pas près de l\'entrée', () => {
         REGION_ORDER.forEach(region => {
             const wild = SCREENS[`${region}_wild`];
-            expect(wild.enemies.length).toBeGreaterThanOrEqual(5);
-            expect(wild.enemies.length).toBeLessThanOrEqual(10);
-            expect(wild.enemies.filter(e => e.kind === 'patrol').length).toBeGreaterThanOrEqual(2);
-            wild.enemies.forEach(e => {
-                expect(templateIds.has(e.templateId)).toBe(true);
-                if (e.guardsDoor) return;   // le gardien de la porte se tient devant elle
-                const near = exitsOf(wild, SCREENS).filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(wild.spawn.x - e.x), Math.abs(wild.spawn.y - e.y)) < 3;
-                expect(`${e.id} ${near}`).toBe(`${e.id} false`);
+            const [min, max, patrols] = wild.native ? [8, 14, 3] : [5, 10, 2];
+            expect({ id: wild.id, n: wild.enemies.length >= min && wild.enemies.length <= max }).toEqual({ id: wild.id, n: true });
+            expect({ id: wild.id, patrols: wild.enemies.filter(e => e.kind === 'patrol').length >= patrols }).toEqual({ id: wild.id, patrols: true });
+            noEnemyNearEntry(wild);
+        });
+    });
+
+    test('route d\'accès (road) : 3 à 6 ennemis (≥ 1 patrouilleur), gabarits connus, pas près de l\'entrée', () => {
+        const roads = REGION_ORDER.map(region => SCREENS[`${region}_road`]).filter(Boolean);
+        roads.forEach(road => {
+            expect(road.kind).toBe('wild');
+            expect(road.id).toBe(`${road.region}_road`);
+            expect({ id: road.id, n: road.enemies.length >= 3 && road.enemies.length <= 6 }).toEqual({ id: road.id, n: true });
+            expect({ id: road.id, patrols: road.enemies.filter(e => e.kind === 'patrol').length >= 1 }).toEqual({ id: road.id, patrols: true });
+            noEnemyNearEntry(road);
+        });
+    });
+
+    test('hautes herbes : table valide (gabarits connus, poids > 0) ; wild et road natives : au moins une nappe ≥ 12 cases', () => {
+        screens.filter(s => s.grass).forEach(s => {
+            expect(s.interior || s.kind === 'village').toBeFalsy();
+            expect(s.grass.table.length).toBeGreaterThan(0);
+            s.grass.table.forEach(e => { expect(templateIds.has(e.templateId)).toBe(true); expect(e.weight).toBeGreaterThan(0); });
+            expect(s.grass.rate).toBeGreaterThan(0);
+            expect(s.grass.rate).toBeLessThanOrEqual(1);
+            expect(Number.isInteger(s.grass.safeSteps)).toBe(true);
+            s.grass.cells.forEach(([x, y, w, h]) => {
+                for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) expect(`${s.id} ${x + i},${y + j} ${isTerrainBlocked(s, x + i, y + j)}`).toBe(`${s.id} ${x + i},${y + j} false`);
             });
+        });
+        screens.filter(s => s.native && /_(wild|road)$/.test(s.id)).forEach(s => {
+            expect({ id: s.id, grass: Boolean(s.grass) }).toEqual({ id: s.id, grass: true });
+            const cells = new Set();
+            s.grass.cells.forEach(([x, y, w, h]) => { for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) cells.add(`${x + i},${y + j}`); });
+            const seen = reach(s, s.spawn);
+            // plus grande nappe d'herbe connexe, atteignable à pied depuis l'apparition
+            let best = 0;
+            const done = new Set();
+            cells.forEach(k => {
+                if (done.has(k)) return;
+                const stack = [k]; done.add(k);
+                let size = 0, reached = false;
+                while (stack.length) {
+                    const cur = stack.pop();
+                    size++;
+                    if (seen.has(cur)) reached = true;
+                    const [cx, cy] = cur.split(',').map(Number);
+                    DIRS.forEach(([dx, dy]) => { const nk = `${cx + dx},${cy + dy}`; if (cells.has(nk) && !done.has(nk)) { done.add(nk); stack.push(nk); } });
+                }
+                if (reached) best = Math.max(best, size);
+            });
+            expect({ id: s.id, nappe: best >= 12 }).toEqual({ id: s.id, nappe: true });
         });
     });
 

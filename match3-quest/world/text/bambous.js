@@ -6,6 +6,9 @@ export default {
       'Quelqu\'un, quelque part, essaie encore de jouer un air.'] },
     bambous_wild: { name: 'Sentier des Tiges Cendrées', gateMessage: 'Les sceaux du moine Zhen ne tiennent plus : le gardien des cendres barre le sentier du temple.', arrival: [
       'La forêt brûlée respire à peine. Des sceaux de papier pendent aux tiges : le moine Zhen a tenté de contenir quelque chose.'] },
+    bambous_road: { name: 'Sentier des Moines', arrival: [
+      'Un sentier de pèlerins serpente entre les tiges roussies, d\'un ruisseau à l\'autre. Des bols d\'offrande, vides pour la plupart, jalonnent la berge.',
+      'On dit que les moines le parcouraient en silence. Les lingzhi, eux, ne respectent pas les règles.'] },
     bambous_h_zhen: { name: 'Cellule du moine Zhen', arrival: ['Une natte, un gong fêlé, des sceaux de papier prêts à servir. La sobriété pousse ici comme le bambou.'] },
     bambous_h_xu: { name: 'Officine de Xu', arrival: ['Des centaines de bocaux d\'herbes, étiquetés d\'une écriture minuscule. La forêt entière semble s\'y être rangée.'] },
     bambous_h_the: { name: 'Maison de thé de Dame Lan', arrival: ['Le thé fume, les voix se font basses. Il y a un panda qui lit dans un coin, et personne n\'y trouve rien à redire.'] },
@@ -33,7 +36,31 @@ export default {
       talk: [{ whenDone: 'sun_3', lines: ['Ah, l\'archer ! J\'ai senti le parfum de la victoire sur vos vêtements. Cendres, suie, et un soupçon de triomphe. Mon préféré.'] }] },
     lantern_old: { name: 'Vieux Lanternier', title: 'Esprit des sentiers', 
       idle: ['Je suis une lanterne qui a perdu sa mèche mais pas son sens de l\'orientation. Avancez, je vous guide… par principe.', 'Les gardiens des cendres sont des esprits en colère. Ne leur en voulez pas : ils ont perdu leur forêt.'],
-      talk: [{ whenDone: 'bambous_seal_keeper', lines: ['Le gardien est calmé. Le sentier est libre, et ma flamme a repris un peu de couleur. Je dirais même que je rougis.'] }] }
+      talk: [{ whenDone: 'bambous_seal_keeper', lines: ['Le gardien est calmé. Le sentier est libre, et ma flamme a repris un peu de couleur. Je dirais même que je rougis.'] }] },
+    bambous_village_fan_seller: { name: 'Shan', title: 'Vendeuse d\'éventails',
+      idle: ['Un éventail en bambou brûlé garde la fraîcheur du feu. Ne me demandez pas comment : c\'est un secret de famille.', 'Je vends du vent à la pièce. Les affaires vont mieux quand il fait chaud, ce qui est une satisfaction triste.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Le Soleil de Cendres est tombé et je vends encore des éventails. La preuve : la fraîcheur ne se démode pas.'] }] },
+    bambous_village_old_gardener: { name: 'Vieux Gen', title: 'Jardinier de la haie',
+      idle: ['Je taille la haie de mes aïeux, brin par brin. Elle a survécu au feu, pas à mon sécateur.', 'Une jarre dort quelque part dans mon jardin clos. Je ne dis pas où : on ne dit jamais où.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Un brin de vert a poussé le long de ma haie. Je ne l\'ai pas taillé. Je l\'ai salué.'] }] },
+    bambous_village_kid_runner: { name: 'Petit Bo', title: 'Gamin coursier',
+      idle: ['Je porte les messages d\'une maison à l\'autre, plus vite que le feu !', 'On m\'a dit de ne pas courir près des flûtes. Les flûtes ne m\'ont rien dit, elles.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Il paraît que vous avez éteint un soleil ! Je le dirai à tout le village. Enfin, je le dirai en courant.'] }] },
+    bambous_village_tea_porter: { name: 'Lei', title: 'Porteur de thé',
+      idle: ['Deux seaux, trois tasses, une histoire par client. Le thé des Cent Tiges se boit avec les oreilles.', 'Le meilleur thé pousse dans les cendres, dit-on. Le pire aussi. Je ne tranche pas.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Le thé a meilleur goût depuis hier. Ou bien c\'est moi qui ai moins soif de pardon. Je ne tranche toujours pas.'] }] },
+    bambous_village_scribe_wei: { name: 'Wei', title: 'Écrivain public',
+      idle: ['Une lettre, un poème, une plainte ? Je rédige tout, au même tarif et avec la même ardeur.', 'Un jeune archer m\'a dicté une lettre, il y a quelques jours. Il l\'a déchirée avant de signer. Il a payé quand même.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Trois soleils de moins, et la file devant ma table s\'allonge : les gens ont recommencé à avoir des choses à dire.'] }] },
+    bambous_hamlet_old_lamplighter: { name: 'Tante Song', title: 'Allumeuse de lampions',
+      idle: ['Chaque soir, j\'allume les lampions de la clairière. Personne ne me l\'a demandé, personne ne m\'a dit d\'arrêter.', 'Une lanterne ne chasse pas la nuit. Elle lui montre où poser les pieds.'],
+      talk: [{ whenDone: 'sun_3', lines: ['La clairière brille plus longtemps, ces soirs-ci. Je crois que même les lucioles ont repris du service.'] }] },
+    bambous_road_old_pilgrim: { name: 'Ancien Dao', title: 'Pèlerin au long cours',
+      idle: ['Je fais le tour de la forêt depuis quarante ans. À chaque passage, il y a moins de tiges et plus de souvenirs.', 'Méfiez-vous des hautes herbes, archer : elles sont pleines de petits ennuis qui ne demandent qu\'à se présenter.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Je viens de faire un tour de plus. Le sentier sent presque le bambou frais. Je ne vais pas m\'arrêter, mais je vais marcher plus lentement.'] }] },
+    bambous_wild_old_woodcutter: { name: 'Vieux Sang', title: 'Bûcheron sans forêt',
+      idle: ['Je ne coupe plus rien. Ce qui reste a trop souffert. Je me contente de compter les tiges : il y en a trois cent douze.', 'Les lingzhi aiment les clairières. Les ombres, les couloirs. Choisissez votre mauvaise rencontre, archer.'],
+      talk: [{ whenDone: 'sun_3', lines: ['Trois cent treize. Une nouvelle a poussé pendant la nuit. Je n\'ai rien dit, de peur qu\'elle ne s\'en aille.'] }] }
   },
   chests: {
     zhen_alms_box: { label: 'Tronc des offrandes', openText: 'Le tronc contient quelques pièces de pèlerins, et un petit mot : « Pour le prochain feu ».' },
@@ -41,7 +68,14 @@ export default {
     paper_roll_box: { label: 'Caisse de papier précieux', openText: 'Des feuilles fines comme l\'aile d\'une libellule, et quelques pièces que Ke avait mises « dans le papier ».' },
     ash_cache: { label: 'Cache sous la cendre', openText: 'Sous une couche de cendre tiède, une cassette de pèlerin avec quelques pièces noircies.' },
     hollow_stem: { label: 'Tige creuse scellée', openText: 'Dans la tige, une tige-flûte intacte et quelques pièces : quelqu\'un a voulu les sauver du feu.' },
-    monk_hoard: { label: 'Réserve oubliée du temple', openText: 'La réserve des moines, scellée avant l\'incendie. Quelques pièces d\'argent, et un parfum d\'encens figé.' }
+    monk_hoard: { label: 'Réserve oubliée du temple', openText: 'La réserve des moines, scellée avant l\'incendie. Quelques pièces d\'argent, et un parfum d\'encens figé.' },
+    bambous_wild_reed_box: { label: 'Boîte de roseaux', openText: 'Une boîte tressée, glissée au pied d\'une tige : quelques pièces de pèlerin et un brin de ficelle rouge, porte-bonheur.' },
+    bambous_wild_incense_chest: { label: 'Coffret d\'encens', openText: 'Un coffret qui sent encore l\'encens des moines. Dedans, des pièces enveloppées dans un papier de prière.' },
+    bambous_hamlet_lantern_cache: { label: 'Réserve de lampions', openText: 'Sous un tas de lampions pliés, une bourse que la lanternière avait fini par oublier.' },
+    bambous_hamlet_pond_urn: { label: 'Urne de la mare', openText: 'Une urne scellée par la vase de la mare. Les grenouilles ont l\'air de s\'en offusquer.' },
+    bambous_road_offering: { label: 'Bol d\'offrandes', openText: 'Un bol d\'offrandes de pèlerins, resté plein par oubli ou par superstition. Vous le videz avec respect.' },
+    bambous_road_niche: { label: 'Niche du moine muet', openText: 'Au fond d\'un cul-de-sac, une niche : un moine y a laissé ses économies et un mot, « pour qui trouvera ».' },
+    bambous_road_bank_urn: { label: 'Urne de la berge', openText: 'Une urne ensablée au bord du ruisseau, pleine de pièces et de coquillages que l\'eau n\'a pas voulus.' }
   },
   quests: [
     { id: 'sq_flute_1', title: 'La flûte fêlée', chapter: '✦ Quête secondaire — Forêt de Bambous Calcinée', giver: 'flutist_chuan', turnIn: 'flutist_chuan', requires: [], side: true,

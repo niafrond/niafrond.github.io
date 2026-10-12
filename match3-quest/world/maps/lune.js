@@ -1,32 +1,35 @@
-// Région 10 — Pic de la Lune : Hameau sous la Lune (16×11, allégé), Sentier d'Argent, trois maisons.
-// Légende : # roc/murs · ~ glace ou mare lunaire · = ruelle · A-C bâtiments (porte minuscule) · W pierre de voyage.
+// Région 10 — Pic de la Lune : Hameau sous la Lune (26×24, allégé), Sentier Lunaire, Sentier d'Argent, trois maisons.
+// Cartes natives (format v2, world/DESIGN-V2.md) : village 26×24, route 40×16, sentier 40×22, sanctuaire 30×22. Pas de hameau.
+// Légende : # roc/cristaux · ~ lac de lune, rivière d'argent · = ruelle/marches de jade · " herbes argentées · A-C bâtiments (porte minuscule) · W pierre de voyage.
 
 export default {
     village: {
-        id: 'lune_village', biome: 'moon',
+        id: 'lune_village', biome: 'moon', native: true,
         grid: [
-            '################',
-            '#.AAAA....BBBB.#',
-            '#.AAAA..#.BBBB.#',
-            '##AaAA.0.4BbBB##',
-            '#..=========.2.#',
-            '<=======S======>',
-            '#.3.1.CCCC.....#',
-            '#.~~~.CCCC..W.##',
-            '#.~~~.CcCC.#.#.#',
-            '#5.....===.....#',
-            '#......p.......#',
-            '#.###..==..###.#',
-            '#.#j...==...k#.#',
-            '#.###.~==~.###.#',
-            '#.....~==~.....#',
-            '#.=========....#',
-            '#.=..#....#.=..#',
-            '#.=..#.mn.#.=..#',
-            '#.=..###.##.=..#',
-            '#.===========..#',
-            '#..............#',
-            '################'
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~######################~~',
+            '~~#........#...#......o#~~',
+            '~~#.AAAAA.........BBBBB#~~',
+            '~~#.AAAAA.6..~....BBBBB#~~',
+            '~~#.AAaAA.~~~~~~~8BBbBB#~~',
+            '~~#...=..~~~~~~~~~..=..#~~',
+            '~~#.......~~~=~~~...####~~',
+            '~~##...1....3=......#k##~~',
+            '####....#i======2...#=#.##',
+            '###.......=0=====.......##',
+            '<.======================.>',
+            '##============S=======#=##',
+            '##.......#======p==4#...##',
+            '~~##CCCCC.=========....#~~',
+            '~~#.CCCCC...W..##==#####~~',
+            '~~#.CCcCC.7..9.#.....#.#~~',
+            '~~#..==....##..#.m.n.#.#~~',
+            '~~###=####.....#.....#.#~~',
+            '~~##..j..#.....#########~~',
+            '~~######################~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         npcs: [
             { id: 'merchant_lune', at: 'p' },
@@ -34,52 +37,126 @@ export default {
             { id: 'moon_cook_gui', at: '0' },
             { id: 'moon_rabbit_yutu', at: '2' },
             { id: 'moon_ferryman_yin', at: '3' },
-            { id: 'moon_child_lan', at: '4' }
+            { id: 'moon_child_lan', at: '4' },
+            { id: 'moon_lamplighter_qiu', at: '6' },
+            { id: 'moon_dew_gatherer_lu', at: '7' },
+            { id: 'moon_stargazer_ming', at: '8' },
+            { id: 'moon_taster_bao', at: '9' }
         ],
         chests: [
-            { id: 'moon_cake_tin', at: '5', gold: 150 },
+            { id: 'moon_cake_tin', at: 'i', gold: 150 },
             { id: 'lune_garden_a', at: 'j', gold: 240, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
             { id: 'lune_garden_b', at: 'k', gold: 240, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'lune_market_a', at: 'm', gold: 480, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'lune_market_b', at: 'n', gold: 480, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'lune_market_b', at: 'n', gold: 480, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
+            { id: 'lune_village_hollow', at: 'o', gold: 300 }
+        ]
+    },
+
+    road: {
+        id: 'lune_road', biome: 'moon', native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '###################################k##~~',
+            '.....#############.##....#j####......#~~',
+            '<..........######......................#',
+            '....##..4..#####.................5......',
+            '##.........##.........~......3##.......>',
+            '~.#........##...1...~~~~~...#.##........',
+            '..#......."##....===========..##........',
+            '..#....""""##".2...~~~~~~~....##.....#..',
+            '~.#....""""""".......~~~......##.....#.~',
+            '~.#.......".................####..##.#~~',
+            '~~##..i.......####.#.......######...##~~',
+            '~~####################################~~',
+            '~~~~~~....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        grass: {
+            rate: 0.08,
+            table: [
+                { templateId: 'ice_witch', name: 'Fée de rosée', weight: 5, offset: -1 },
+                { templateId: 'shadow_assassin', name: 'Ombre du sentier', weight: 4, offset: 0 },
+                { templateId: 'void_vampire', name: 'Jiangshi des herbes argentées', weight: 2, offset: 0 },
+                { templateId: 'moon_priestess', name: 'Veilleuse égarée', weight: 1, offset: 1 }
+            ]
+        },
+        npcs: [
+            { id: 'jade_step_keeper_lin', at: '1' }
+        ],
+        chests: [
+            { id: 'lune_road_lanterns', at: 'i', gold: 150 },
+            { id: 'lune_road_stone', at: 'j', gold: 300 },
+            { id: 'lune_road_hidden', at: 'k', gold: 450 }
+        ],
+        enemies: [
+            { id: 'lune_road_witch', at: '2', templateId: 'ice_witch', name: 'Dame des neiges égarée', kind: 'sentinel', offset: 0 },
+            { id: 'lune_road_shade', at: '3', templateId: 'shadow_assassin', name: 'Ombre du sentier', kind: 'sentinel', offset: 0 },
+            { id: 'lune_road_hopper', at: '4', templateId: 'void_vampire', name: 'Jiangshi du givre', kind: 'patrol', patrol: ['4', [8, 11]], offset: 0 },
+            { id: 'lune_road_veil', at: '5', templateId: 'moon_priestess', name: 'Veilleuse égarée', kind: 'patrol', patrol: ['5', [33, 10]], offset: 0 }
         ]
     },
 
     wild: {
-        id: 'lune_wild', biome: 'moon',
+        id: 'lune_wild', biome: 'moon', native: true,
         grid: [
-            '##################',
-            '#0#....m#9#....#z#',
-            '#.#.........5..#.#',
-            '#..#..2..1...8...#',
-            '#......~~~~j.....>',
-            '#...W..~~~~..#.i.#',
-            '<.....#~~~~.6....#',
-            '#.....l~~~~..##..#',
-            '#.#.7.....k.###..#',
-            '#....###.....##..#',
-            '#......3....4....#',
-            '##################'
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~####################################~~',
+            '~~####..6..#####.......#############....',
+            '~~###i#.....#...#........#######........',
+            '~~##.......#.....~~~~~~~...####...l...=>',
+            '~~##............~~~~~~~~~.p.##.....##.=.',
+            '~~##.....1...t..~~~~~~~~~...##s.......=.',
+            '~~##..............~~~~~....##..""""".#=.',
+            '~~###..........3.........7###..""""".#..',
+            '~~###...m.~#............#####...."...#..',
+            '~~#.......~..............####.9......#..',
+            '##..##.q..~....#""""""""n##....#...#5#.~',
+            '#.........~.W....""#"""....==========#.~',
+            '<==========..##......======.o........#~~',
+            '...#......==2========.......##.......#~~',
+            '........#.~.r.................u..#####~~',
+            '~~#..##"""~.......##...#.........#####~~',
+            '~~#4.."""8~..##.............##########~~',
+            '~~########~###########################~~',
+            '~~~~~~~.~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
+        grass: {
+            table: [
+                { templateId: 'shadow_assassin', name: 'Ombre des herbes argentées', weight: 4, offset: -1 },
+                { templateId: 'ice_witch', name: 'Fée de givre', weight: 4, offset: 0 },
+                { templateId: 'void_vampire', name: 'Jiangshi lunaire', weight: 3, offset: 0 },
+                { templateId: 'frost_dragon', name: 'Dragonneau de givre égaré', weight: 1, offset: 1 }
+            ]
+        },
         npcs: [
-            { id: 'osmanthus_woodcutter', at: '8' },
-            { id: 'moon_crow_wu', at: 'i' }
+            { id: 'osmanthus_woodcutter', at: '1' },
+            { id: 'moon_crow_wu', at: '2' },
+            { id: 'moon_fisher_tong', at: '3' }
         ],
         chests: [
-            { id: 'frost_cache', at: '0', gold: 300 },
-            { id: 'moon_key_chest', at: '9', gold: 300 },
-            { id: 'osmanthus_hoard', at: 'z', gold: 450 },
-            { id: 'journal_page_lune', at: 'j', gold: 150 },
-            { id: 'silver_river_cache', at: 'k', gold: 300 }
+            { id: 'frost_cache', at: '4', gold: 300 },
+            { id: 'moon_key_chest', at: '5', gold: 300 },
+            { id: 'osmanthus_hoard', at: '6', gold: 450 },
+            { id: 'journal_page_lune', at: '7', gold: 150 },
+            { id: 'silver_river_cache', at: '8', gold: 300 },
+            { id: 'lune_wild_steps_box', at: '9', gold: 300 },
+            { id: 'lune_wild_moonwell', at: 'i', gold: 450 }
         ],
         enemies: [
-            { id: 'lune_frost_priestess', at: '1', templateId: 'moon_priestess', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 43 } },
-            { id: 'lune_mirror_shade', at: '2', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'lune_w_hare', at: '3', templateId: 'ice_witch', name: 'Fée de givre', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
-            { id: 'lune_w_jiangshi', at: '5', templateId: 'void_vampire', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'lune_w_frostdragon', at: '7', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', offset: 0 },
-            { id: 'lune_shade_a', at: 'l', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
-            { id: 'lune_shade_b', at: 'm', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' }
+            { id: 'lune_frost_priestess', at: 'l', templateId: 'moon_priestess', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 43 } },
+            { id: 'lune_mirror_shade', at: 'm', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'lune_w_hare', at: 'q', templateId: 'ice_witch', name: 'Fée de givre', kind: 'patrol', patrol: ['q', [7, 16]], offset: 0 },
+            { id: 'lune_w_jiangshi', at: 'r', templateId: 'void_vampire', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['r', [25, 16]], offset: -1 },
+            { id: 'lune_w_frostdragon', at: 'p', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', offset: 0 },
+            { id: 'lune_shade_a', at: 'n', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
+            { id: 'lune_shade_b', at: 'o', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
+            { id: 'lune_w_owl', at: 's', templateId: 'shadow_assassin', name: 'Hibou d’ombre', kind: 'patrol', patrol: ['s', [37, 7]], offset: 0 },
+            { id: 'lune_w_wisp', at: 't', templateId: 'ice_witch', name: 'Esprit de rosée', kind: 'patrol', patrol: ['t', [13, 10]], offset: 0 },
+            { id: 'lune_w_crystal', at: 'u', templateId: 'crystal_sage', name: 'Veilleur de cristal', kind: 'sentinel', offset: 0 }
         ],
         gate: {
             requires: 'moon_key_chest',
@@ -146,5 +223,41 @@ export default {
         }
     ],
 
-    sanctuary: { id: 'lune', waypoint: { x: 2, y: 5 } }
+    sanctuary: {
+        id: 'lune', waypoint: { x: 3, y: 14 }, native: true,
+        grid: [
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~##########################~~',
+            '~~###########.....##########~~',
+            '~~########...#........######~~',
+            '~~####~~~~~~~~...3......####~~',
+            '~~####~~~~~~~~...........###~~',
+            '~~####~~~~~~~~.........6...#..',
+            '~~###...~~~~....##.........#..',
+            '~~###....1......##.....5...7..',
+            '~~##.#.....................#..',
+            '~~##......====.............#..',
+            '~~###....=====......#......#..',
+            '~~##i...======.............#~~',
+            '~~#W...=====..2..........###~~',
+            '##.....====..........##..###~~',
+            '.......===.......#......####~~',
+            '<.S......##...........######~~',
+            '........4.###......#########~~',
+            '############################~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ],
+        places: {
+            change_moon: '1',
+            moon_cakes_cache: 'i',
+            lune_priestess: { at: '2', patrol: ['2', [23, 14]] },
+            lune_vampire: '3',
+            lune_assassin: '4',
+            fengmeng_3a: '5',
+            fengmeng_3b: '6',
+            moon_altar: '7'
+        }
+    }
 };

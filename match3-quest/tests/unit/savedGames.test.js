@@ -11,9 +11,11 @@ import { exitsOf } from './fixtures/gates.js';
 const load = save => X.createSession(JSON.parse(JSON.stringify(save)));   // comme après un rechargement : sérialisé puis relu
 const questOf = id => QUESTS.find(q => q.id === id);
 const mainQuestOf = region => REGION_QUEST[region];
-// Sortie du sanctuaire / de la zone de la région `region` qui mène à la région suivante.
+// Sortie du sanctuaire / de la zone de la région `region` qui mène à la région suivante : on y entre par sa route d'accès
+// (`<R>_road`, qui débouche sur le village `REGION_ENTRY_SCREEN`), ou directement par son village quand elle n'a pas de route.
+const entryOf = region => (SCREENS[`${region}_road`] ? `${region}_road` : REGION_ENTRY_SCREEN[region]);
 const exitToNext = region => {
-    const target = REGION_ENTRY_SCREEN[REGIONS[regionIndex(region) + 1]];
+    const target = entryOf(REGIONS[regionIndex(region) + 1]);
     return Object.values(SCREENS).flatMap(s => exitsOf(s, SCREENS).map(e => ({ screen: s, exit: e }))).find(({ exit }) => exit.to === target && exit.requires);
 };
 
