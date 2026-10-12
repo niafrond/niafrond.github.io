@@ -1,3 +1,9 @@
+## [2.70.0](https://github.com/niafrond/niafrond.github.io/compare/v2.69.0...v2.70.0) (2026-10-12)
+
+### Features
+
+* **match3-quest:** refondre les cartes du monde à la Kanto et ajouter les hautes herbes ([45b981c](https://github.com/niafrond/niafrond.github.io/commit/45b981cae4dfcdb16e42b02a399f65a6a7211f56))
+
 ## [2.69.0](https://github.com/niafrond/niafrond.github.io/compare/v2.68.0...v2.69.0) (2026-10-11)
 
 ### Features
