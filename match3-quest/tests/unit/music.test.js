@@ -6,7 +6,7 @@ import { sectionCountFor } from '../../tools/audio/synth.js';
 import {
     setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, __internals
 } from '../../music.js';
-import { trackCandidates, trackUrl, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
+import { trackCandidates, trackUrl, withVariants, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
 import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl } from '../../sfxCatalog.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { SCREENS } from '../../story.js';
@@ -210,7 +210,7 @@ const flush = async () => { for (let i = 0; i < 6; i++) await Promise.resolve();
 function setup(ctx, existing = new Set(['title', 'menu', 'combat-0', 'boss-a0', 'boss-soleil-ardent', 'village-paddy']), extra = {}) {
     const state = { volume: 1, muted: false };
     const fetchFn = makeFetch(existing);
-    setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, fetch: fetchFn, baseUrl: 'http://x/match3-quest/', timer: noopTimer, ...extra });
+    setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, fetch: fetchFn, baseUrl: 'http://x/match3-quest/', timer: noopTimer, random: () => 0, ...extra });
     return { state, fetchFn };
 }
 
@@ -262,6 +262,13 @@ describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
         expect(missing).toEqual([]);
         expectedTracks().forEach((k) => expect(readFileSync(new URL(`../../${trackUrl(k)}`, import.meta.url)).length).toBeGreaterThan(20000));
     });
+    test('chaque piste a sa variante -b, de même durée (boucle d\'au moins 1 min 30)', () => {
+        const manifest = JSON.parse(readFileSync(new URL('../../audio/manifest.json', import.meta.url), 'utf8'));
+        expectedTracks().forEach((k) => {
+            expect(exists(trackUrl(k + '-b'))).toBe(true);
+            expect(manifest.music[k].seconds).toBeGreaterThanOrEqual(90);
+        });
+    });
     test('tous les effets sonores existent', () => {
         const missing = sfxVariants().filter((v) => !exists(sfxUrl(v.key))).map((v) => v.key);
         expect(missing).toEqual([]);
@@ -308,6 +315,18 @@ describe('lecteur de musique', () => {
         expect(ctx.decoded).toBe(2);
     });
 
+    test('deux variantes par piste : le hasard choisit laquelle jouer, l\'autre sert de repli si elle manque', async () => {
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['title', 'title-b', 'menu']), { random: () => 0.9 });
+        setMusicScene('title'); await flush();
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['title-b']);
+        expect(withVariants(['a', 'b'], () => 0.1)).toEqual(['a', 'a-b', 'b', 'b-b']);
+        expect(withVariants(['a', 'b'], () => 0.9)).toEqual(['a-b', 'a', 'b-b', 'b']);
+        fetchFn.calls.length = 0;
+        setMusicScene('menu'); await flush();     // random 0.9 : 'menu-b' d'abord, absente -> repli sur 'menu'
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['menu-b', 'menu']);
+        expect(isMusicPlaying()).toBe(true);
+    });
+
     test('fondu enchaîné : l\'ancienne piste s\'arrête, une seule piste reste active', async () => {
         const ctx = makeCtx(); setup(ctx);
         setMusicScene('title'); await flush();
@@ -327,7 +346,7 @@ describe('lecteur de musique', () => {
         const ctx2 = makeCtx(); const s2 = setup(ctx2, new Set(['boss-a0', 'boss-a1', 'boss-a2', 'boss-a3', 'boss-a4', 'boss-a5', 'boss-a6', 'boss-a7']));
         setMusicScene('boss', { boss: 'Boss Inconnu' }); await flush();
         const keys = s2.fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1]);
-        expect(keys).toEqual(['boss-boss-inconnu', `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
+        expect(keys).toEqual(['boss-boss-inconnu', 'boss-boss-inconnu-b', `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
         expect(ctx2.nodes.some((n) => n.kind === 'source' && n.started)).toBe(true);
     });
 
@@ -336,7 +355,7 @@ describe('lecteur de musique', () => {
         setMusicScene('menu'); await flush();
         expect(isMusicPlaying()).toBe(false);
         expect(ctx.nodes.some((n) => n.kind === 'source')).toBe(false);
-        expect(fetchFn.calls).toHaveLength(1);
+        expect(fetchFn.calls).toHaveLength(2);   // la piste puis sa variante, avant d'abandonner
     });
 
     test('changement de scène pendant le téléchargement : seule la dernière scène est jouée', async () => {
