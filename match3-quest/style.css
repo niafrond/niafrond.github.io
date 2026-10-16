@@ -3120,3 +3120,18 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 #player-spells.turn-locked { pointer-events: none; }
 #player-spells.turn-locked .enemy-spell-item { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; }
 #abandon-combat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Aperçu des lignes/colonnes visées par un sort avant leur destruction (classSpellEffects.js) */
+@keyframes spellPreviewPulse {
+    0%, 100% { filter: brightness(1); transform: scale(1); }
+    50% { filter: brightness(1.7); transform: scale(0.92); }
+}
+.tile.spell-preview {
+    outline: 2px dashed rgba(255, 255, 255, 0.85);
+    outline-offset: -2px;
+    animation: spellPreviewPulse 0.45s ease-in-out infinite;
+}
+.tile.spell-preview-hit {
+    outline: 3px solid #ffd54a;
+    box-shadow: 0 0 12px 4px rgba(255, 213, 74, 0.9);
+}

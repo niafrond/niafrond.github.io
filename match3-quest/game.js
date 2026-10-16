@@ -1812,8 +1812,8 @@ export function castSpell(spellId){
     if(spell.effect) {
         logActiveAction(`lance le sort ${spell.name} (effet special)`);
         // Import dynamique pour éviter les dépendances circulaires
-        import('./classSpellEffects.js').then(module => {
-            if(module.applyClassSpellEffect(spell)) {
+        import('./classSpellEffects.js').then(async module => {
+            if(await module.applyClassSpellEffect(spell)) {
                 saveUpdate();
                 tutorialCallbacks.onSpellCast?.();
                 finishPlayerTurn();
@@ -1869,7 +1869,7 @@ export async function castSpellForCheat(spellId, options = {}){
     if(spell.effect){
         try {
             const module = await import('./classSpellEffects.js');
-            const applied = module.applyClassSpellEffect(spell);
+            const applied = await module.applyClassSpellEffect(spell);
             if(!applied){
                 saveUpdate();
                 return false;

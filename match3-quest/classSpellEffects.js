@@ -807,19 +807,51 @@ function applyBloodlust(spell) {
 
 const MANA_COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
 
-// Détruit les cases `indices` : récupère le mana des gemmes de couleur et inflige `dmgPerTile` par case détruite.
+// Couleurs « en accord » avec le sort : seules les cases de ces couleurs infligent des dégâts.
+function spellDamageColors(spell) {
+    if(Array.isArray(spell.colors) && spell.colors.length > 0) return spell.colors;
+    if(spell.color) return [spell.color];
+    return Object.keys(spell.cost || {});
+}
+
+const PREVIEW_MS = 900;
+
+// Montre au joueur les cases qui vont disparaître (pulsation), les cases de la couleur du sort ressortent.
+// Les clics sur le plateau sont ignorés pendant l'aperçu.
+function previewIndices(spell, indices) {
+    const tiles = document.getElementById('board')?.children;
+    const unique = [...new Set(indices)];
+    if(!tiles || unique.length === 0) return Promise.resolve();
+    const hitColors = spellDamageColors(spell);
+    setBoardTargetingMode({ highlightPredicate: () => false, onTileClick: () => true });
+    unique.forEach(i => {
+        if(!tiles[i]) return;
+        tiles[i].classList.add('spell-preview');
+        if(hitColors.includes(board[i])) tiles[i].classList.add('spell-preview-hit');
+    });
+    return new Promise(resolve => setTimeout(() => {
+        unique.forEach(i => tiles[i]?.classList.remove('spell-preview', 'spell-preview-hit'));
+        setBoardTargetingMode(null);
+        resolve();
+    }, PREVIEW_MS));
+}
+
+// Détruit les cases `indices` : récupère le mana des gemmes de couleur et inflige `dmgPerTile` par case détruite
+// dont la couleur est l'une de celles du sort (les autres cases sont détruites sans dégâts).
 function destroyIndices(spell, indices, title, label) {
     const caster = getCurrentCaster();
     const unique = [...new Set(indices)].filter(i => board[i] !== null && board[i] !== undefined);
     const destroyedTiles = unique.map(i => board[i]);
     unique.forEach(i => { board[i] = null; });
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
-    const dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * unique.length;
+    const hitColors = spellDamageColors(spell);
+    const hits = destroyedTiles.filter(t => hitColors.includes(t)).length;
+    const dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
     if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : label, target: `${label} • +${manaCollected.total} mana` }, true);
-    log(`${spell.name} : ${label}, ${dmg} dégâts, +${manaCollected.total} mana récupéré.`);
-    return { count: unique.length, dmg, mana: manaCollected.total };
+    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} mana` }, true);
+    log(`${spell.name} : ${label}, ${hits} case(s) de la couleur du sort, ${dmg} dégâts, +${manaCollected.total} mana récupéré.`);
+    return { count: unique.length, hits, dmg, mana: manaCollected.total };
 }
 
 const rowIndices = row => Array.from({ length: boardSize }, (_, c) => row * boardSize + c);
@@ -833,9 +865,11 @@ function applySweepLines(spell, shape) {
             const col = index % boardSize;
             const indices = shape === 'cross' ? [...rowIndices(row), ...colIndices(col)] : rowIndices(row);
             setBoardTargetingMode(null);
-            destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : 'Ligne détruite');
-            saveUpdate();
-            checkMatches(true);
+            previewIndices(spell, indices).then(() => {
+                destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : 'Ligne détruite');
+                saveUpdate();
+                checkMatches(true);
+            });
             return true;
         }
     });
@@ -888,10 +922,11 @@ function applySecondWind(spell) {
     return true;
 }
 
-function applyStarRain(spell) {
+async function applyStarRain(spell) {
     const rows = [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(1, spell.rows || 2));
     const cols = [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(1, spell.columns || 2));
     const indices = [...rows.flatMap(rowIndices), ...cols.flatMap(colIndices)];
+    await previewIndices(spell, indices);
     destroyIndices(spell, indices, spell.name.toUpperCase(), `${rows.length} lignes et ${cols.length} colonnes détruites`);
     saveUpdate();
     checkMatches(true);
@@ -910,18 +945,21 @@ function applyHarmony(spell) {
     return true;
 }
 
-function applySummonTempest(spell) {
+async function applySummonTempest(spell) {
     const caster = getCurrentCaster();
     const colsToDestroy = Math.max(1, Math.min(boardSize, Math.floor(spell.columns || 1)));
     const availableCols = Array.from({ length: boardSize }, (_, i) => i);
     const pickedCols = [];
-    const destroyedTiles = [];
 
     for(let i = 0; i < colsToDestroy && availableCols.length > 0; i++) {
         const randomIndex = Math.floor(Math.random() * availableCols.length);
         pickedCols.push(availableCols.splice(randomIndex, 1)[0]);
     }
 
+    // Les colonnes visées sont montrées avant d'être détruites.
+    await previewIndices(spell, pickedCols.flatMap(colIndices));
+
+    const destroyedTiles = [];
     pickedCols.forEach(col => {
         for(let row = 0; row < boardSize; row++) {
             destroyedTiles.push(board[row * boardSize + col]);
@@ -930,11 +968,15 @@ function applySummonTempest(spell) {
     });
 
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
-    if(spell.dmgPerTile) applyDamage(enemy, Math.floor(spell.dmgPerTile) * destroyedTiles.length, { sourceSpell: spell });
+    // Seules les cases des couleurs du sort infligent des dégâts (sorts sans couleur propre : toutes les cases comptent).
+    let hits = destroyedTiles.length;
+    if(spell.colors?.length || spell.color) hits = destroyedTiles.filter(t => spellDamageColors(spell).includes(t)).length;
+    const dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
+    if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
 
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: `${pickedCols.length} colonnes détruites`, target: `+${manaCollected.total} mana récupéré` }, true);
-    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s) et ${caster.name} récupère ${manaCollected.total} mana.`);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} mana récupéré` }, true);
+    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${caster.name} récupère ${manaCollected.total} mana.`);
     return true;
 }
 
