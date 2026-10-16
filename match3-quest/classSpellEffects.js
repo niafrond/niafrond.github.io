@@ -128,8 +128,12 @@ export function applyClassSpellEffect(spell) {
         // Sorts avancés multi-mana (3 à 5 couleurs), génériques
         case 'sweepRow': // Lame des Quatre Vents
             return applySweepLines(spell, 'row');
+        case 'sweepCol': // Fente de Givre, Entaille du Vent…
+            return applySweepLines(spell, 'col');
         case 'sweepCross': // Croix du Dragon
             return applySweepLines(spell, 'cross');
+        case 'clearColor': // Purges : toutes les gemmes des couleurs du sort
+            return applyClearColor(spell);
         case 'skullsFromColors': // Brasier des Sceaux
             return applySkullsFromColors(spell);
         case 'cageEnemy': // Prison du Tonnerre Glacé
@@ -910,17 +914,33 @@ function applySweepLines(spell, shape) {
         onTileClick: (index) => {
             const row = Math.floor(index / boardSize);
             const col = index % boardSize;
-            const indices = shape === 'cross' ? [...rowIndices(row), ...colIndices(col)] : rowIndices(row);
+            const indices = shape === 'cross' ? [...rowIndices(row), ...colIndices(col)] : shape === 'col' ? colIndices(col) : rowIndices(row);
             setBoardTargetingMode(null);
             previewIndices(spell, indices).then(() => {
-                destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : 'Ligne détruite');
+                destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : shape === 'col' ? 'Colonne détruite' : 'Ligne détruite');
                 saveUpdate();
                 checkMatches(true);
             });
             return true;
         }
     });
-    log(`${spell.name} : choisissez ${shape === 'cross' ? 'le centre de la croix' : 'la ligne à détruire'}.`);
+    log(`${spell.name} : choisissez ${shape === 'cross' ? 'le centre de la croix' : shape === 'col' ? 'la colonne à détruire' : 'la ligne à détruire'}.`);
+    return false;
+}
+
+// Détruit toutes les gemmes des couleurs du sort (aperçu des cases visées, puis mana récupéré et dégâts par gemme).
+async function applyClearColor(spell) {
+    const hitColors = spellDamageColors(spell);
+    const indices = [];
+    board.forEach((tile, i) => { if(hitColors.includes(tile)) indices.push(i); });
+    if(indices.length === 0) {
+        log(`${spell.name} : aucune gemme de cette couleur sur le plateau.`);
+        return false;
+    }
+    await previewIndices(spell, indices);
+    destroyIndices(spell, indices, spell.name.toUpperCase(), `${indices.length} gemmes détruites`);
+    saveUpdate();
+    checkMatches(true);
     return false;
 }
 

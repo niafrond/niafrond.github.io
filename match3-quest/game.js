@@ -2610,7 +2610,7 @@ function buildUnlockedSpellsList(spells, level) {
 
     // Les sorts de haut niveau (multimana, niveau > 15) et les sorts avancés (3 à 5 couleurs, dès le niveau 8) sont débloqués dès leur
     // niveau, hors plafond du nombre de sorts : sinon, triés après les sorts de niveau inférieur, ils restaient hors de portée jusqu'au niveau 38+.
-    const isFreeUnlock = s => s.type === 'advanced' || (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL;
+    const isFreeUnlock = s => s.type === 'advanced' || s.type === 'board' || (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL;
     const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, unlockCap);
     const free = uniqueById.filter(isFreeUnlock);
     return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
