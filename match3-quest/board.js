@@ -418,39 +418,51 @@ function generateRandomTile(options = {}){
     return rollTileWithJoker(boardDropProbabilities, colors, options);
 }
 
+// Compacte la colonne vers le bas et comble les trous par de nouvelles tuiles ; renvoie les tuiles qui glissent
+// (indice d'arrivée → nombre de rangées parcourues) et le nombre de nouvelles tuiles en haut.
 function fillColumnByGravity(col){
     const kept = [];
     for(let row = boardSize - 1; row >= 0; row--){
         const idx = row * boardSize + col;
         const tile = board[idx];
         if(tile !== null && tile !== undefined){
-            kept.push(tile);
+            kept.push({ tile, row });
         }
     }
 
+    const moved = new Map();
     let writeRow = boardSize - 1;
-    for(const tile of kept){
+    for(const { tile, row } of kept){
         const writeIdx = writeRow * boardSize + col;
         board[writeIdx] = tile;
+        if(writeRow !== row) moved.set(writeIdx, writeRow - row);
         writeRow--;
     }
 
+    const newCount = writeRow + 1;
     while(writeRow >= 0){
         const writeIdx = writeRow * boardSize + col;
         board[writeIdx] = generateRandomTile();
         writeRow--;
     }
+    return { moved, newCount };
 }
 
+// Applique la gravité sur tout le plateau et renvoie de quoi animer la chute (vide si aucun trou).
 function normalizeBoardHoles(){
     if(trappedCells.size && currentTurn === 'player'){
         for(const idx of [...trappedCells]){
             if(board[idx] === null || board[idx] === undefined) trappedCells.delete(idx);
         }
     }
+    const movedTileOffsets = new Map();
+    const newTilesPerCol = new Map();
     for(let col = 0; col < boardSize; col++){
-        fillColumnByGravity(col);
+        const { moved, newCount } = fillColumnByGravity(col);
+        moved.forEach((delta, idx) => movedTileOffsets.set(idx, delta));
+        if(newCount > 0) newTilesPerCol.set(col, newCount);
     }
+    return { movedTileOffsets, newTilesPerCol };
 }
 
 export function generateBoard(){
@@ -638,7 +650,7 @@ export function renderBoard(skipCleanup = false){
         return;
     }
     syncBoardTileSize();
-    normalizeBoardHoles();
+    const gravity = normalizeBoardHoles();
     const tiles=boardDiv.children;
     for(let i=0;i<board.length;i++){
         let t=board[i];
@@ -659,6 +671,28 @@ export function renderBoard(skipCleanup = false){
         if(cell) tiles[i].dataset.cell = cell.kind; else delete tiles[i].dataset.cell;
     }
     refreshTargetingHighlights();
+    animateSpellGravity(tiles, gravity);
+}
+
+// Des tuiles ont été retirées hors combo (sort de ligne, de colonne, de couleur…) : les tuiles restantes glissent
+// et les nouvelles tombent du haut, comme après un alignement. Le plateau reste « en animation » jusqu'à la fin.
+function animateSpellGravity(tiles, { movedTileOffsets, newTilesPerCol }){
+    if(movedTileOffsets.size === 0 && newTilesPerCol.size === 0) return;
+    beginComboAnimation();
+    animateGravityGlide(tiles, movedTileOffsets);
+    const fallen = [];
+    newTilesPerCol.forEach((count, col) => {
+        for(let row = 0; row < count; row++){
+            const tile = tiles[row * boardSize + col];
+            if(!tile) continue;
+            fallen.push(tile);
+            setTimeout(() => tile.classList.add('fall'), row * 50);
+        }
+    });
+    setTimeout(() => {
+        fallen.forEach(tile => tile.classList.remove('fall'));
+        endComboAnimation();
+    }, 700 + (boardSize * 50));
 }
 
 // Vérifie uniquement si des matchs existent (sans les traiter)
