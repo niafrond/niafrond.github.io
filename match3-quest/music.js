@@ -10,13 +10,13 @@
  *       getContext() -> AudioContext|null   (ne doit pas lever ; null/suspendu = on réessaie plus tard)
  *       getVolume()  -> 0..1                (volume musique utilisateur, réévalué à chaque tick)
  *       isMuted()    -> boolean             (idem)
- *       fetch/baseUrl/timer : optionnels (tests)
+ *       fetch/baseUrl/timer/random : optionnels (tests)
  *   setMusicScene(sceneId, { biome?, boss?, variant? }) -> boolean
  *       Démarre/enchaîne (fondu enchaîné ~1,2 s) la piste de la scène (voir musicTracks.js). No-op si c'est déjà la
  *       bonne piste. Retourne false si la scène est inconnue. Ne lève jamais.
  *   stopMusic({ fadeMs })  pauseMusic() / resumeMusic()  isMusicPlaying()  getSceneList()
  */
-import { SCENE_IDS, BIOMES, trackCandidates, trackUrl } from './musicTracks.js';
+import { SCENE_IDS, BIOMES, trackCandidates, trackUrl, withVariants } from './musicTracks.js';
 
 export { SCENE_IDS, BIOMES };
 
@@ -42,7 +42,7 @@ const defaultTimer = {
 };
 
 const S = {
-    env: { getContext: () => null, getVolume: () => 0.6, isMuted: () => false, fetch: null, baseUrl: null, timer: defaultTimer },
+    env: { getContext: () => null, getVolume: () => 0.6, isMuted: () => false, fetch: null, baseUrl: null, random: Math.random, timer: defaultTimer },
     desired: null,        // { key, candidates, state: 'idle'|'loading'|'playing'|'failed', retryAt }
     current: null,        // { key, source, gain, ctx }
     master: null, masterCtx: null,
@@ -53,7 +53,7 @@ const S = {
 };
 
 export function setMusicEnvironment(env = {}) {
-    for (const k of ['getContext', 'getVolume', 'isMuted', 'fetch', 'baseUrl']) if (env[k] !== undefined) S.env[k] = env[k];
+    for (const k of ['getContext', 'getVolume', 'isMuted', 'fetch', 'baseUrl', 'random']) if (env[k] !== undefined) S.env[k] = env[k];
     if (env.timer && typeof env.timer.set === 'function') S.env.timer = env.timer;
 }
 
@@ -196,7 +196,8 @@ export function setMusicScene(sceneId, options = {}) {
     if (!candidates.length) return false;
     const key = candidates.join('|');
     if (S.desired && S.desired.key === key) return true;
-    S.desired = { key, candidates, state: 'idle', retryAt: 0 };
+    // deux variantes par piste (`<clé>` et `<clé>-b`) : une au hasard à chaque nouvelle scène, l'autre en repli si elle manque
+    S.desired = { key, candidates: withVariants(candidates, S.env.random), state: 'idle', retryAt: 0 };
     ensureTimer();
     tick();
     return true;

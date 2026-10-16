@@ -1,0 +1,29 @@
+{
+  "key": "victory",
+  "version": "v003",
+  "date": "2026-10-16T22:37:01.558Z",
+  "seed": "3234086011",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, short triumphant fanfare of a sun fallen, agile breathy dizi (living world, wind, hope) and expressive erhu lead (Hou Yi, courage and loneliness) stating the Hou Yi motif, relief and warmth, bright but humble, gentle drums",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 120,
+    "batch_size": 2,
+    "thinking": false,
+    "bpm": 92,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": "/mnt/c/Users/Niafrond/dev/niafrond.github.io/match3-quest/tools/audio/acestep/refs/houyi.wav",
+  "metas": {
+    "bpm": 92,
+    "duration": 120,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, short triumphant fanfare of a sun fallen, agile breathy dizi (living world, wind, hope) and expressive erhu lead (Hou Yi, courage and loneliness) stating the Hou Yi motif, relief and warmth, bright but humble, gentle drums",
+    "lyrics": "[Instrumental]"
+  }
+}

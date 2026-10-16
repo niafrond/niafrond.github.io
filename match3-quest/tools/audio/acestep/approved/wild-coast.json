@@ -1,0 +1,29 @@
+{
+  "key": "wild-coast",
+  "version": "v003",
+  "date": "2026-10-16T22:43:27.713Z",
+  "seed": "3704908489",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Eastern Sea shore, exploration theme, scattered phrases, gentle tension, flowing guzheng (rivers, passing time) arpeggios, soft xiao (solitude, destiny, twilight), sea wind, spacious, lonely journey of Hou Yi",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 120,
+    "batch_size": 2,
+    "thinking": false,
+    "bpm": 64,
+    "key_scale": "F major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 64,
+    "duration": 120,
+    "genres": "N/A",
+    "keyscale": "F major",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Eastern Sea shore, exploration theme, scattered phrases, gentle tension, flowing guzheng (rivers, passing time) arpeggios, soft xiao (solitude, destiny, twilight), sea wind, spacious, lonely journey of Hou Yi",
+    "lyrics": "[Instrumental]"
+  }
+}

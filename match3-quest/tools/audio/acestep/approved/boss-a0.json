@@ -1,0 +1,29 @@
+{
+  "key": "boss-a0",
+  "version": "v003",
+  "date": "2026-10-16T22:31:18.451Z",
+  "seed": "153720491",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, boss battle archetype, brute, heavy stomping drums and low erhu, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, strong melody, short loop",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 120,
+    "batch_size": 2,
+    "thinking": false,
+    "bpm": 108,
+    "key_scale": "D minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 108,
+    "duration": 120,
+    "genres": "N/A",
+    "keyscale": "D minor",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, boss battle archetype, brute, heavy stomping drums and low erhu, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, strong melody, short loop",
+    "lyrics": "[Instrumental]"
+  }
+}

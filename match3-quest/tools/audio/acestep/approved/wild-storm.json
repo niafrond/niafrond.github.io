@@ -1,0 +1,29 @@
+{
+  "key": "wild-storm",
+  "version": "v003",
+  "date": "2026-10-16T22:41:12.814Z",
+  "seed": "294971470",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Thunder Mountains, exploration theme, scattered phrases, gentle tension, sustained sheng pads (celestial presence), distant thunder drums, agile plucked pipa ostinato (martial tension, arrows), spacious, lonely journey of Hou Yi",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 120,
+    "batch_size": 2,
+    "thinking": false,
+    "bpm": 76,
+    "key_scale": "F# minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 76,
+    "duration": 120,
+    "genres": "N/A",
+    "keyscale": "F# minor",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Thunder Mountains, exploration theme, scattered phrases, gentle tension, sustained sheng pads (celestial presence), distant thunder drums, agile plucked pipa ostinato (martial tension, arrows), spacious, lonely journey of Hou Yi",
+    "lyrics": "[Instrumental]"
+  }
+}

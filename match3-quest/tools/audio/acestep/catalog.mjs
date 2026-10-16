@@ -85,6 +85,10 @@ for (const [b, d] of Object.entries(BIOMES)) {
     ['relentless fight, urgent pipa and square-wave ostinato, brass-like pulse stabs, bold erhu line', 144]
 ].forEach(([s, bpm], i) => T(`combat-${i}`, `battle theme, ${s}, readable melody, short loop`, { bpm, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 45, motif: i >= 3 ? 'houyi' : null }));
 
+/* Ambiance commune à tous les boss : la menace doit s'entendre dès la première mesure. */
+const BOSS_PERC = 'aggressive war drums, hard woodblocks, crashing cymbals';
+const BOSS_MOOD = 'menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse';
+
 /* ───────────── Boss : dix soleils (motif céleste qui se délite) ───────────── */
 const SUN = (name, detail, bpm, keyScale, rank) => ({ name, detail, bpm, keyScale, rank });
 const SUNS = {
@@ -100,18 +104,18 @@ const SUNS = {
 };
 for (const [k, s] of Object.entries(SUNS)) {
     const fade = ['full strength', 'slightly weakened', 'weakening', 'fragmenting', 'fragmenting', 'losing dominance', 'losing dominance', 'nearly gone', 'almost silent'][s.rank];
-    T(`boss-${k}`, `boss battle against the ${s.name}, ten suns celestial motif ${fade}, ${s.detail}, ${I.pipa}, ${I.perc}, Hou Yi erhu phrase answering, controlled dissonance, not a final boss`,
+    T(`boss-${k}`, `boss battle against the ${s.name}, ten suns celestial motif ${fade}, ${s.detail}, ${I.pipa}, ${BOSS_PERC}, Hou Yi erhu phrase answering, ${BOSS_MOOD}, deadly boss battle`,
         { bpm: s.bpm, keyScale: s.keyScale, dur: 55, motif: 'suns' });
 }
 
 /* ───────────── Boss : Feng Meng (le thème se déforme au fil des rencontres) ───────────── */
-T('boss-fengmeng-le-disciple', `duel with Feng Meng the disciple, admiration and ambition, controlled low pipa figures reaching toward the heroic motif but never resolving, discipline, restrained, almost friendly rivalry`,
+T('boss-fengmeng-le-disciple', `duel with Feng Meng the disciple, dangerous rival, aggressive low pipa figures, ${BOSS_MOOD}, the heroic motif twisted into a threat`,
     { bpm: 100, keyScale: 'D minor', dur: 50, motif: 'fengmeng' });
-T('boss-fengmeng-l-archer-presse', `ambush duel of archers, Feng Meng impatient, insistent repeated pipa rhythm, chromatic tension, unstable bass, interrupted melodic phrases, fragments of Hou Yi's motif distorted`,
+T('boss-fengmeng-l-archer-presse', `ambush duel of archers, Feng Meng vicious and impatient, ${BOSS_MOOD}, insistent repeated pipa rhythm, chromatic tension, unstable bass, interrupted melodic phrases, fragments of Hou Yi's motif distorted`,
     { bpm: 122, keyScale: 'D minor', dur: 50, motif: 'fengmeng' });
-T('boss-fengmeng-l-archer-miroir', `final boss phase one, The Mirror Archer, Feng Meng's motif collides with and interrupts Hou Yi's heroic motif, mirrored melodic lines on erhu and pipa, ambiguous harmony, personal betrayal, not villainous`,
+T('boss-fengmeng-l-archer-miroir', `final boss phase one, The Mirror Archer, Feng Meng's motif collides with and crushes Hou Yi's heroic motif, mirrored melodic lines on erhu and pipa, ${BOSS_MOOD}, personal betrayal`,
     { bpm: 132, keyScale: 'D minor', dur: 60, motif: 'fengmeng' });
-T('boss-fengmeng-rage-et-desespoir', `final boss phase two, Rage and Despair, tight minor mode, fast broken pipa tremolo, Feng Meng motif displacing Hou Yi motif, unresolved suspensions, silence as drama, heartbreak, grief`,
+T('boss-fengmeng-rage-et-desespoir', `final boss phase two, Rage and Despair, ${BOSS_MOOD}, fast broken pipa tremolo, Feng Meng motif displacing Hou Yi motif, unresolved suspensions, sudden silence before the strike, despair`,
     { bpm: 146, keyScale: 'D minor', dur: 60, motif: 'fengmeng' });
 
 /* ───────────── Boss : gardiens et maîtres (couleur propre à la région) ───────────── */
@@ -145,14 +149,14 @@ const GUARDS = {
     'serpent-des-marees-noires': ['serpent of the black tides, dark guzheng glissandi, oily slow menace', 110, 'F minor'],
     'immortel-dechu-des-branches': ['fallen immortal of the branches, broken celestial sheng, sad erhu', 100, 'D minor']
 };
-for (const [k, [s, bpm, key]] of Object.entries(GUARDS)) T(`boss-${k}`, `mini-boss battle, ${s}, ${I.pipa}, ${I.perc}, readable melody, not a final boss`, { bpm, keyScale: key, dur: 50 });
+for (const [k, [s, bpm, key]] of Object.entries(GUARDS)) T(`boss-${k}`, `dangerous boss battle, ${s}, ${BOSS_MOOD}, ${I.pipa}, ${BOSS_PERC}, readable melody`, { bpm, keyScale: key, dur: 50 });
 
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [
     'brute, heavy stomping drums and low erhu', 'swift hunter, fast pipa runs and dizi', 'mystic, sheng pads and guqin with eerie xiao',
     'armored warrior, brass-like square waves and big gong', 'beast, savage drum patterns and pipa slides', 'water spirit, guzheng arpeggios and flowing erhu',
     'fire spirit, crackling woodblock and pulse waves', 'ancient guardian, slow ritual drums and sheng chords'
-].forEach((s, i) => T(`boss-a${i}`, `boss battle archetype, ${s}, strong melody, tension, short loop`, { bpm: 108 + i * 3, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'C minor', 'F major', 'C minor', 'D minor'][i], dur: 50 }));
+].forEach((s, i) => T(`boss-a${i}`, `boss battle archetype, ${s}, ${BOSS_MOOD}, strong melody, short loop`, { bpm: 108 + i * 3, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'C minor', 'F major', 'C minor', 'D minor'][i], dur: 50 }));
 
 export const CATALOG = TRACKS;
 export const MOTIF_NAMES = ['houyi', 'fengmeng', 'suns'];

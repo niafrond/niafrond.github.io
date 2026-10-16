@@ -11,7 +11,7 @@ const ALLOWED = new Set(['★']);
 
 function sources(dir, out = []) {
     for (const f of fs.readdirSync(dir)) {
-        if (['node_modules', 'tests', 'fonts', '.git'].includes(f)) continue;
+        if (['node_modules', 'tests', 'fonts', '.git', 'ACE-Step-1.5'].includes(f)) continue;
         const p = path.join(dir, f);
         if (fs.statSync(p).isDirectory()) sources(p, out);
         else if (/\.(js|mjs|html|css|json|svg)$/.test(f)) out.push(p);

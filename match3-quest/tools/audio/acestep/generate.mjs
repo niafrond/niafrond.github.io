@@ -6,8 +6,9 @@
  *   node generate.mjs motifs                       (re)crée refs/*.wav|.mid depuis leitmotifs.json
  *   node generate.mjs generate <clés…> [options]   génère de nouvelles versions (out/<clé>/v001.mp3, v001.json…)
  *   node generate.mjs status                       tableau : versions générées / version approuvée par piste
- *   node generate.mjs approve <clé> <vNNN>         marque une version comme retenue (copie dans approved/)
+ *   node generate.mjs approve <clé> <vNNN> [<vNNN>]  marque une version retenue (+ une 2e variante, `<clé>-b`) dans approved/
  *   node generate.mjs install [clés…]              approved/ → ../../../audio/music/<clé>.mp3 (mono 48 kbps, ffmpeg)
+ *   node generate.mjs export [--dest DIR]          copie approved/ dans DIR/v<AAAA-MM-JJ_HHMM>/ (défaut : /mnt/d/GoogleDriveCFO/musicMatchQuest)
  *
  * Prérequis : serveur ACE-Step lancé en local (`acestep-api`, port 8001 par défaut) et Node ≥ 18.
  * Les <clés> acceptent les jokers : `boss-soleil-*`, `village-*`, `all`. Ordre conseillé (cohérence des leitmotivs) :
@@ -36,8 +37,16 @@ import { renderMotifs, motifPath } from './motifs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, 'out'), APPROVED = path.join(HERE, 'approved');
-const GAME_MUSIC = path.resolve(HERE, '../../audio/music'), GAME_MANIFEST = path.resolve(HERE, '../../audio/manifest.json');
+const GAME_MUSIC = path.resolve(HERE, '../../../audio/music'), GAME_MANIFEST = path.resolve(HERE, '../../../audio/manifest.json');
 const APPROVED_DB = path.join(APPROVED, 'approved.json');
+/** Dossier de copie versionnée (chemin WSL du lecteur D:, car le script tourne dans WSL). */
+const DEFAULT_EXPORT_DIR = '/mnt/d/GoogleDriveCFO/musicMatchQuest';
+/** Durée minimale de chaque piste générée (secondes) : les pistes du jeu bouclent, 2 min évitent les boucles trop courtes. */
+const MIN_DURATION = 120;
+/** Suffixe de la 2e variante d'une piste (`<clé>-b.mp3`) : le jeu en tire une au hasard à chaque scène. */
+const ALT_SUFFIX = '-b';
+/** Durée (s) du raccord fondu fin -> début qui rend la boucle continue, et débit des MP3 du jeu (2 min mono ≈ 480 Ko). */
+const LOOP_FADE_S = 2, MUSIC_BITRATE = '32k';
 
 /* ───────────── arguments ───────────── */
 function parseArgs(argv) {
@@ -85,8 +94,17 @@ function api(opts) {
     return {
         base,
         health: () => call('/health').then(r => r.json()),
-        submit: async body => {
-            const j = await (await call('/release_task', { method: 'POST', body: JSON.stringify(body) })).json();
+        // `upload` ({ field, file }) : le serveur refuse les chemins absolus hors /tmp, le fichier est donc envoyé en multipart.
+        submit: async (body, upload) => {
+            let init = { method: 'POST', body: JSON.stringify(body) };
+            if (upload) {
+                const form = new FormData();
+                for (const [k, v] of Object.entries(body)) form.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+                form.append(upload.field, new Blob([fs.readFileSync(upload.file)]), path.basename(upload.file));
+                const { 'Content-Type': _ct, ...h } = headers;
+                init = { method: 'POST', body: form, headers: h };
+            }
+            const j = await (await call('/release_task', init)).json();
             const id = j?.data?.task_id ?? j?.task_id;
             if (!id) throw new Error(`Réponse inattendue : ${JSON.stringify(j).slice(0, 300)}`);
             return id;
@@ -135,19 +153,21 @@ async function cmdGenerate(opts) {
         const t = CATALOG[key];
         const body = {
             prompt: buildCaption(t, opts.extra), lyrics: '[Instrumental]', vocal_language: 'unknown', audio_format: 'mp3',
-            audio_duration: Number(opts.duration ?? t.dur), batch_size: variants, thinking: !!opts.thinking,
+            audio_duration: Math.max(MIN_DURATION, Number(opts.duration ?? t.dur)), batch_size: variants, thinking: !!opts.thinking,
             ...(t.bpm ? { bpm: t.bpm } : {}), ...(t.keyScale ? { key_scale: t.keyScale } : {}), time_signature: '4',
             ...(opts.seed !== undefined ? { use_random_seed: false, seed: Number(opts.seed) } : { use_random_seed: true }),
             ...(opts.steps ? { inference_steps: Number(opts.steps) } : {})
         };
+        let upload = null;
         if (t.motif && motifs[t.motif]) {
-            if (opts.cover) { body.task_type = 'cover'; body.src_audio_path = motifs[t.motif]; } else body.reference_audio_path = motifs[t.motif];
+            if (opts.cover) body.task_type = 'cover';
+            upload = { field: opts.cover ? 'ctx_audio' : 'ref_audio', file: motifs[t.motif] };
         }
         Object.assign(body, opts.param);
         console.log(`\n[${n}/${todo.length}] ${key}${t.motif && motifs[t.motif] ? `  (motif: ${t.motif})` : ''}`);
         if (opts['dry-run']) { console.log(JSON.stringify(body, null, 2)); continue; }
         try {
-            const id = await A.submit(body);
+            const id = await A.submit(body, upload);
             const t0 = Date.now();
             const results = await A.poll(id, () => process.stdout.write(`\r  … ${Math.round((Date.now() - t0) / 1000)} s`));
             process.stdout.write('\r');
@@ -160,7 +180,7 @@ async function cmdGenerate(opts) {
                 fs.writeFileSync(file, await A.download(r.file));
                 fs.writeFileSync(path.join(dir, `v${pad(v)}.json`), JSON.stringify({
                     key, version: `v${pad(v)}`, date: new Date().toISOString(), seed: seeds[i] ?? seeds[0] ?? null,
-                    request: body, motifFile: body.reference_audio_path || body.src_audio_path || null, metas: r.metas ?? null
+                    request: body, motifFile: upload?.file ?? null, metas: r.metas ?? null
                 }, null, 2));
                 console.log(`  ✓ ${path.relative(HERE, file)}  (seed ${seeds[i] ?? seeds[0] ?? '?'})`);
             }
@@ -189,18 +209,21 @@ function cmdStatus() {
 }
 
 function cmdApprove(opts) {
-    const [, key, ver] = opts._;
-    if (!CATALOG[key] || !/^v\d+$/.test(ver || '')) die('Usage : approve <clé> <vNNN>   (ex. approve title v002)');
-    const src = path.join(OUT, key, `${ver}.mp3`);
+    const [, key, ver, alt] = opts._;
+    if (!CATALOG[key] || !/^v\d+$/.test(ver || '') || (alt && !/^v\d+$/.test(alt))) die('Usage : approve <clé> <vNNN> [<vNNN variante>]   (ex. approve title v007 v008)');
+    const src = path.join(OUT, key, `${ver}.mp3`), altSrc = alt && path.join(OUT, key, `${alt}.mp3`);
     if (!fs.existsSync(src)) die(`Introuvable : ${src}`);
+    if (altSrc && !fs.existsSync(altSrc)) die(`Introuvable : ${altSrc}`);
     fs.mkdirSync(APPROVED, { recursive: true });
     fs.copyFileSync(src, path.join(APPROVED, `${key}.mp3`));
+    if (altSrc) fs.copyFileSync(altSrc, path.join(APPROVED, `${key}${ALT_SUFFIX}.mp3`));
+    else fs.rmSync(path.join(APPROVED, `${key}${ALT_SUFFIX}.mp3`), { force: true });
     const meta = readJson(path.join(OUT, key, `${ver}.json`), {});
     fs.copyFileSync(path.join(OUT, key, `${ver}.json`), path.join(APPROVED, `${key}.json`));
     const db = readJson(APPROVED_DB, {});
-    db[key] = { version: ver, seed: meta.seed ?? null, date: new Date().toISOString(), prompt: meta.request?.prompt ?? '' };
+    db[key] = { version: ver, ...(alt ? { alt } : {}), seed: meta.seed ?? null, date: new Date().toISOString(), prompt: meta.request?.prompt ?? '' };
     fs.writeFileSync(APPROVED_DB, JSON.stringify(db, null, 2));
-    console.log(`OK ${key} ← ${ver} (seed ${meta.seed}). Fichier + paramètres conservés dans approved/.`);
+    console.log(`OK ${key} ← ${ver}${alt ? ` + variante ${alt}` : ''} (seed ${meta.seed}). Fichier + paramètres conservés dans approved/.`);
 }
 
 function cmdInstall(opts) {
@@ -209,25 +232,47 @@ function cmdInstall(opts) {
     if (spawnSync('ffmpeg', ['-version']).error) die('ffmpeg introuvable dans le PATH.');
     const manifest = readJson(GAME_MANIFEST, { music: {}, sfx: {} });
     for (const k of keys) {
-        const src = path.join(APPROVED, `${k}.mp3`);
-        if (!fs.existsSync(src)) { console.warn(`· ${k} : pas de version approuvée, ignoré`); continue; }
-        const dst = path.join(GAME_MUSIC, `${k}.mp3`);
-        // mono 48 kbps comme le reste du jeu ; fondus courts pour éviter les clics au raccord de boucle
-        const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], { encoding: 'utf8' });
-        const sec = parseFloat(probe.stdout) || 0;
-        const r = spawnSync('ffmpeg', ['-y', '-v', 'error', '-i', src, '-ac', '1', '-ar', '32000', '-b:a', '48k',
-            '-af', `afade=t=in:d=0.15,afade=t=out:st=${Math.max(0, sec - 0.4).toFixed(2)}:d=0.4`, dst]);
-        if (r.status !== 0) { console.error(`✗ ${k} : ${r.stderr}`); continue; }
-        const kb = Math.round(fs.statSync(dst).size / 1024);
-        manifest.music[k] = { seconds: Math.round(sec * 10) / 10, sections: manifest.music[k]?.sections ?? 1 };
-        console.log(`OK ${k} → audio/music/${k}.mp3 (${kb} Ko${kb > 500 ? ' ATTENTION : > 500 Ko, raccourcir via --duration' : ''})`);
+        const parts = [k, `${k}${ALT_SUFFIX}`].filter(n => fs.existsSync(path.join(APPROVED, `${n}.mp3`)));
+        if (!parts.length) { console.warn(`· ${k} : pas de version approuvée, ignoré`); continue; }
+        // la variante n'existe plus si elle a été retirée de approved/ : on supprime l'ancien fichier du jeu
+        if (!parts.includes(`${k}${ALT_SUFFIX}`)) fs.rmSync(path.join(GAME_MUSIC, `${k}${ALT_SUFFIX}.mp3`), { force: true });
+        for (const name of parts) {
+            const src = path.join(APPROVED, `${name}.mp3`), dst = path.join(GAME_MUSIC, `${name}.mp3`);
+            const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], { encoding: 'utf8' });
+            const total = parseFloat(probe.stdout) || 0;
+            // mono comme le reste du jeu ; boucle sans coupure : la fin est fondue (sinus carré) dans le début, puis le fichier
+            // reprend après ce début, donc le saut fin -> début du lecteur (`source.loop`) est continu et sans clic
+            const c = Math.min(LOOP_FADE_S, total / 4), body = total - c;
+            const graph = total > 0
+                ? `[0:a]atrim=0:${c},asetpts=PTS-STARTPTS[h];[0:a]atrim=${c}:${body},asetpts=PTS-STARTPTS[m];[0:a]atrim=${body}:${total},asetpts=PTS-STARTPTS[t];[t][h]acrossfade=d=${c}:c1=qsin:c2=qsin[x];[m][x]concat=n=2:v=0:a=1[o]`
+                : '[0:a]anull[o]';
+            const r = spawnSync('ffmpeg', ['-y', '-v', 'error', '-i', src, '-filter_complex', graph, '-map', '[o]', '-ac', '1', '-ar', '32000', '-b:a', MUSIC_BITRATE, dst]);
+            if (r.status !== 0) { console.error(`✗ ${name} : ${r.stderr}`); continue; }
+            const kb = Math.round(fs.statSync(dst).size / 1024);
+            if (name === k) manifest.music[k] = { seconds: Math.round((total - c) * 10) / 10, sections: manifest.music[k]?.sections ?? 1 };
+            console.log(`OK ${name} → audio/music/${name}.mp3 (${kb} Ko${kb > 600 ? ' ATTENTION : > 600 Ko, raccourcir via --duration' : ''})`);
+        }
     }
     fs.writeFileSync(GAME_MANIFEST, JSON.stringify(manifest, null, 1) + '\n');
 }
 
+/** Copie versionnée de approved/ (mp3 + paramètres + approved.json) vers un dossier horodaté : rien n'est écrasé. */
+function cmdExport(opts) {
+    if (!fs.existsSync(APPROVED_DB)) die('Rien à exporter : aucune piste approuvée (voir : node generate.mjs status).');
+    const dest = path.resolve(opts.dest || DEFAULT_EXPORT_DIR);
+    const d = new Date(), p2 = n => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}`;
+    const target = path.join(dest, `v${stamp}`);
+    if (fs.existsSync(target)) die(`Dossier déjà existant : ${target} (attendre une minute).`);
+    fs.mkdirSync(target, { recursive: true });
+    const files = fs.readdirSync(APPROVED).filter(f => /\.(mp3|json)$/.test(f));
+    for (const f of files) fs.copyFileSync(path.join(APPROVED, f), path.join(target, f));
+    console.log(`OK ${files.length} fichier(s) → ${target}`);
+}
+
 const opts = parseArgs(process.argv.slice(2));
 const cmd = opts._[0];
-const main = { list: cmdList, status: cmdStatus, approve: cmdApprove, install: cmdInstall, generate: cmdGenerate,
+const main = { list: cmdList, status: cmdStatus, approve: cmdApprove, install: cmdInstall, export: cmdExport, generate: cmdGenerate,
     motifs: () => { for (const [n, p] of Object.entries(renderMotifs())) console.log(`OK ${n} → ${p} (+ .mid)`); } }[cmd];
 if (!main) { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('*/')[0].replace(/^#!.*\n/, '').replace(/^\/\*\*\n|^ \* ?/gm, '')); process.exit(cmd ? 1 : 0); }
 Promise.resolve(main(opts)).catch(e => die(e.message));
