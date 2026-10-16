@@ -154,3 +154,13 @@ describe('plateau : les matchs de l\'ennemi sont toujours résolus', () => {
         expect(board).toMatch(/if\(!gameStarted && !forceFullBoard\)\{[\s\S]*?hasMatchesOnBoard\(board\)\) generateNewBoard\(\)/);
     });
 });
+
+describe('compagnon renard', () => {
+    test('l\'annonce s\'affiche avant le mouvement de Xiao Gui', () => {
+        const i = game.indexOf("activeCompanionIds.has('xiao_gui')");
+        const block = game.slice(i, i + 900);
+        expect(block.indexOf('showCombatAnimation')).toBeGreaterThan(-1);
+        expect(block.indexOf('showCombatAnimation')).toBeLessThan(block.indexOf('foxMakeRandomMove()'));
+        expect(block).toMatch(/onContinue:[^\n]*foxMakeRandomMove\(\)/);
+    });
+});
