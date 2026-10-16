@@ -1,3 +1,9 @@
+## [2.73.1](https://github.com/niafrond/niafrond.github.io/compare/v2.73.0...v2.73.1) (2026-10-16)
+
+### Bug Fixes
+
+* **match3-quest:** renard patient, chute des tuiles après sorts et tests de sorts ([#470](https://github.com/niafrond/niafrond.github.io/issues/470)) ([dc7c470](https://github.com/niafrond/niafrond.github.io/commit/dc7c470732b4690612a413919347ff1f98415826))
+
 ## [2.73.0](https://github.com/niafrond/niafrond.github.io/compare/v2.72.0...v2.73.0) (2026-10-16)
 
 ### Features
