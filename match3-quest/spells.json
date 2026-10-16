@@ -314,7 +314,7 @@
       "effect": "sweepRow",
       "minLevel": 8,
       "dmgPerTile": 4,
-      "description": "Choisissez une ligne : elle est détruite, vous récupérez son mana et l'ennemi subit 4 dégâts par case"
+      "description": "Choisissez une ligne : elle est détruite, vous récupérez son mana et l'ennemi subit 4 dégâts par case des couleurs du sort"
     },
     {
       "id": "brasierSeals",
@@ -358,7 +358,7 @@
       "minLevel": 10,
       "columns": 3,
       "dmgPerTile": 3,
-      "description": "Détruit 3 colonnes au hasard, récupère leur mana et inflige 3 dégâts par case"
+      "description": "Choisissez 3 colonnes à détruire (aperçu avant destruction), récupère leur mana et inflige 3 dégâts par case bleue, jaune ou verte détruite"
     },
     {
       "id": "dragonCross",
@@ -380,7 +380,7 @@
       "effect": "sweepCross",
       "minLevel": 11,
       "dmgPerTile": 4,
-      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (mana récupéré, 4 dégâts par case)"
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (mana récupéré, 4 dégâts par case des couleurs du sort)"
     },
     {
       "id": "thunderPrison",
@@ -449,7 +449,7 @@
       "rows": 2,
       "columns": 2,
       "dmgPerTile": 3,
-      "description": "Détruit 2 lignes et 2 colonnes au hasard : mana récupéré et 3 dégâts par case"
+      "description": "Choisissez 2 lignes puis 2 colonnes à détruire : mana récupéré et 3 dégâts par case des couleurs du sort"
     },
     {
       "id": "fiveHarmony",
@@ -684,6 +684,222 @@
       "minLevel": 60,
       "playerOnly": true,
       "description": "Restaure 294 points de vie"
+    },
+    {
+      "id": "emberScythe",
+      "name": "Faux de Braise",
+      "color": "red",
+      "colors": [
+        "red"
+      ],
+      "type": "board",
+      "cost": 8,
+      "effect": "sweepRow",
+      "minLevel": 2,
+      "dmgPerTile": 2,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 2 dégâts par case rouge"
+    },
+    {
+      "id": "frostCleave",
+      "name": "Fente de Givre",
+      "color": "blue",
+      "colors": [
+        "blue"
+      ],
+      "type": "board",
+      "cost": 8,
+      "effect": "sweepCol",
+      "minLevel": 2,
+      "dmgPerTile": 2,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 2 dégâts par case bleue"
+    },
+    {
+      "id": "galeSlash",
+      "name": "Entaille du Vent",
+      "color": "yellow",
+      "colors": [
+        "yellow"
+      ],
+      "type": "board",
+      "cost": 10,
+      "effect": "sweepCol",
+      "minLevel": 4,
+      "dmgPerTile": 3,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 3 dégâts par case jaune"
+    },
+    {
+      "id": "voidRift",
+      "name": "Faille du Néant",
+      "color": "purple",
+      "colors": [
+        "purple"
+      ],
+      "type": "board",
+      "cost": 12,
+      "effect": "sweepRow",
+      "minLevel": 6,
+      "dmgPerTile": 3,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 3 dégâts par case violette"
+    },
+    {
+      "id": "crimsonPurge",
+      "name": "Purge Écarlate",
+      "color": "red",
+      "colors": [
+        "red"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 5,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes rouges du plateau : mana récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "tidalPurge",
+      "name": "Purge des Marées",
+      "color": "blue",
+      "colors": [
+        "blue"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 5,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes bleues du plateau : mana récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "jadePurge",
+      "name": "Purge de Jade",
+      "color": "green",
+      "colors": [
+        "green"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 5,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes vertes du plateau : mana récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "stormPurge",
+      "name": "Purge d'Orage",
+      "color": "yellow",
+      "colors": [
+        "yellow"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 6,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes jaunes du plateau : mana récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "shadowPurge",
+      "name": "Purge d'Ombre",
+      "color": "purple",
+      "colors": [
+        "purple"
+      ],
+      "type": "board",
+      "cost": 16,
+      "effect": "clearColor",
+      "minLevel": 7,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes violettes du plateau : mana récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "emberGoldCross",
+      "name": "Croix de Braise Dorée",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow"
+      ],
+      "type": "board",
+      "cost": {
+        "red": 9,
+        "yellow": 9
+      },
+      "effect": "sweepCross",
+      "minLevel": 9,
+      "dmgPerTile": 3,
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites, mana récupéré, 3 dégâts par case rouge ou jaune"
+    },
+    {
+      "id": "jadeCurtain",
+      "name": "Rideau de Jade et d'Eau",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue"
+      ],
+      "type": "board",
+      "cost": {
+        "green": 8,
+        "blue": 8
+      },
+      "effect": "sweepCol",
+      "minLevel": 8,
+      "dmgPerTile": 4,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 4 dégâts par case verte ou bleue"
+    },
+    {
+      "id": "purpleRazor",
+      "name": "Rasoir d'Orage Pourpre",
+      "color": "yellow",
+      "colors": [
+        "yellow",
+        "purple"
+      ],
+      "type": "board",
+      "cost": {
+        "yellow": 9,
+        "purple": 9
+      },
+      "effect": "sweepRow",
+      "minLevel": 10,
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 4 dégâts par case jaune ou violette"
+    },
+    {
+      "id": "burningTide",
+      "name": "Marée Ardente",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue"
+      ],
+      "type": "board",
+      "cost": {
+        "red": 12,
+        "blue": 12
+      },
+      "effect": "clearColor",
+      "minLevel": 12,
+      "dmgPerTile": 3,
+      "description": "Détruit toutes les gemmes rouges et bleues du plateau : mana récupéré, 3 dégâts par gemme détruite"
+    },
+    {
+      "id": "seasonsPurge",
+      "name": "Purge des Quatre Saisons",
+      "color": "green",
+      "colors": [
+        "green",
+        "yellow"
+      ],
+      "type": "board",
+      "cost": {
+        "green": 14,
+        "yellow": 14
+      },
+      "effect": "clearColor",
+      "minLevel": 14,
+      "dmgPerTile": 3,
+      "description": "Détruit toutes les gemmes vertes et jaunes du plateau : mana récupéré, 3 dégâts par gemme détruite"
     }
   ],
   "sorcererSpells": [
@@ -1239,7 +1455,7 @@
       "minLevel": 8,
       "effect": "destroyColumns",
       "columns": 2,
-      "description": "Détruit 2 colonnes aléatoires"
+      "description": "Choisissez 2 colonnes : elles sont détruites"
     },
     {
       "id": "berserkerRage",
@@ -1801,7 +2017,7 @@
       "minLevel": 8,
       "effect": "destroyColumns",
       "columns": 2,
-      "description": "Détruit 2 colonnes aléatoires"
+      "description": "Choisissez 2 colonnes : elles sont détruites"
     },
     {
       "id": "berserkerRage",

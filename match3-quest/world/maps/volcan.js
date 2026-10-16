@@ -212,8 +212,8 @@ export default {
             ]
         },
         gate: {
-            requires: 'sq_pont_braise',
-            lockedMessage: 'Le pont de basalte vers le sanctuaire est rompu : un forgeron de lave frappe son enclume dessus. Les mineurs ne le réparent pas tant qu\'il n\'est pas calmé.'
+            requires: 'volcan_forge_giant',
+            lockedMessage: 'Le pont de basalte vers le sanctuaire est rompu : un forgeron de lave frappe son enclume dessus. Il faut le calmer pour que le passage s\'ouvre.'
         }
     },
 
