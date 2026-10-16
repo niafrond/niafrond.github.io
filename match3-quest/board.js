@@ -642,16 +642,13 @@ export function swapTiles(i,j){
     checkMatches();
 }
 
-export function renderBoard(skipCleanup = false){
-    startSuggestionTimer();
-    const boardDiv=document.getElementById('board');
-    if(!boardDiv){
-        console.error('Board element not found in renderBoard!');
-        return;
-    }
-    syncBoardTileSize();
-    const gravity = normalizeBoardHoles();
-    const tiles=boardDiv.children;
+// Les cases détruites par un sort restent vides tant que l'annonce du sort (« SORT — x dégâts ») masque le plateau,
+// puis encore un court instant une fois révélées, avant que la chute ne les comble.
+const SPELL_HOLES_REVEAL_MS = 350;
+const SPELL_HOLES_MAX_WAIT_MS = 20000;   // filet de sécurité si une annonce n'est jamais fermée
+let renderBoardToken = 0;
+
+function paintBoard(tiles, skipCleanup){
     for(let i=0;i<board.length;i++){
         let t=board[i];
         if(!t) continue;
@@ -671,13 +668,53 @@ export function renderBoard(skipCleanup = false){
         if(cell) tiles[i].dataset.cell = cell.kind; else delete tiles[i].dataset.cell;
     }
     refreshTargetingHighlights();
-    animateSpellGravity(tiles, gravity);
 }
 
-// Des tuiles ont été retirées hors combo (sort de ligne, de colonne, de couleur…) : les tuiles restantes glissent
-// et les nouvelles tombent du haut, comme après un alignement. Le plateau reste « en animation » jusqu'à la fin.
+export function renderBoard(skipCleanup = false){
+    startSuggestionTimer();
+    const boardDiv=document.getElementById('board');
+    if(!boardDiv){
+        console.error('Board element not found in renderBoard!');
+        return;
+    }
+    syncBoardTileSize();
+    const holes = [];
+    board.forEach((t, i) => { if(t === null || t === undefined) holes.push(i); });
+    const gravity = normalizeBoardHoles();
+    const tiles=boardDiv.children;
+    const token = ++renderBoardToken;
+    if(holes.length === 0 || (gravity.movedTileOffsets.size === 0 && gravity.newTilesPerCol.size === 0)){
+        paintBoard(tiles, skipCleanup);
+        return;
+    }
+    // Des tuiles ont été retirées hors combo (sort de ligne, de colonne, de couleur…). Le tableau est déjà à jour (la logique
+    // du jeu ne voit jamais de trous), mais à l'écran on montre d'abord les cases vides, puis la chute qui les comble.
+    holes.forEach(i => {
+        tiles[i].className = 'tile';
+        tiles[i].textContent = '';
+    });
+    beginComboAnimation();
+    const startedAt = Date.now();
+    const fall = () => {
+        // Un autre rendu est passé entre-temps : il a déjà peint l'état final, inutile d'animer une seconde fois.
+        if(token === renderBoardToken){
+            paintBoard(tiles, skipCleanup);
+            animateSpellGravity(tiles, gravity);
+        }
+        endComboAnimation();
+    };
+    // L'annonce du sort est affichée juste après ce rendu : on attend sa disparition (clic éventuel compris).
+    const waitAnnouncement = () => {
+        if(token !== renderBoardToken || Date.now() - startedAt > SPELL_HOLES_MAX_WAIT_MS){ fall(); return; }
+        if(boardDiv.querySelector('.attack-overlay')) setTimeout(waitAnnouncement, 100);
+        else setTimeout(fall, SPELL_HOLES_REVEAL_MS);
+    };
+    setTimeout(waitAnnouncement, 50);
+}
+
+// Les tuiles restantes glissent et les nouvelles tombent du haut, comme après un alignement.
+// Le plateau reste « en animation » jusqu'à la fin de la chute.
 function animateSpellGravity(tiles, { movedTileOffsets, newTilesPerCol }){
-    if(movedTileOffsets.size === 0 && newTilesPerCol.size === 0) return;
     beginComboAnimation();
     animateGravityGlide(tiles, movedTileOffsets);
     const fallen = [];
@@ -774,7 +811,8 @@ export function checkMatches(forceFullBoard = false){
             // Notifier le tutoriel d'un match de crânes du joueur
             if(currentTurn === 'player') tutorialCallbacks.onMatch?.('skull', null, info.len);
             const attacker = currentTurn === 'player' ? player : enemy;
-            flyManaToCounter(indices, null, { isPlayer: attacker === player, type: 'skull' });
+            // Les crânes sont des dégâts, pas un gain : la pastille vole vers l'adversaire, pas vers celui qui attaque.
+            flyManaToCounter(indices, null, { isPlayer: attacker !== player, type: 'skull' });
             const opponent = currentTurn === 'player' ? enemy : player;
             // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
             const attackBonus = skullStrengthBonus(attacker);
