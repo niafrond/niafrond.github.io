@@ -267,9 +267,26 @@ function applyEnemyColorAffinityModifier(target, damage, sourceColor){
     };
 }
 
+// Résultat { damage, crit, block } du dernier sort de dégâts résolu par applyDamage (pour l'animation et le journal).
+let lastSpellStrike = null;
+
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+
+    // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
+    lastSpellStrike = null;
+    if(options.sourceSpell && normalizedDamage > 0 && (target === player || target === enemy)) {
+        const caster = target === player ? enemy : player;
+        const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
+        const strike = resolveStrike(normalizedDamage, caster, target, { weakened });
+        normalizedDamage = caster === enemy ? clampEnemyAttackDamage(strike.damage, enemy) : strike.damage;
+        strike.damage = normalizedDamage;
+        lastSpellStrike = strike;
+        if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
+        if(strike.block === 'total') log(`${target.name} bloque entièrement ${options.sourceSpell.name}.`);
+        else if(strike.block === 'partial') log(`${target.name} bloque en partie ${options.sourceSpell.name}.`);
+    }
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
@@ -411,6 +428,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
 
     if(spell.dmg){
+        let spellFlags = '';
         const spellColors = spellColorsOf(spell);
         const targetResistance = spellColors.length
             ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-mana : résistance moyenne
@@ -426,14 +444,18 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
             dmg = clampEnemyAttackDamage(dmg, caster);
         }
         applyDamage(target, dmg, { sourceSpell: spell });
+        if(lastSpellStrike) {
+            dmg = lastSpellStrike.damage;
+            spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}${blockLabel(lastSpellStrike.block) ? ` ${blockLabel(lastSpellStrike.block)}` : ''}`;
+        }
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, target: `→ ${target.name}` }, true);
             log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, source: caster.name, target: '→ Vous' }, false);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
             log(`${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
