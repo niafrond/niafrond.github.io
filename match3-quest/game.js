@@ -9,7 +9,7 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite } from "./sprites/index.j
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
-import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS } from "./combatFlow.js";
+import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming, CRIT_BLOCK_ANNOUNCE_MS } from "./combatFlow.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
@@ -1182,9 +1182,10 @@ function _animateHpBar(id, from, to, progressEl = null) {
     }
     if (isNaN(from) || from === to) return;
     let current = from;
-    const step = to > from ? 1 : -1;
     const delta = Math.abs(to - from);
-    const intervalMs = Math.max(50, Math.min(150, Math.round(1500 / delta)));
+    // Toute animation de PV (affichage initial, dégâts, soins) dure moins de 4 s : au-delà, le compteur avance par paliers.
+    const { intervalMs, unit } = hpBarTiming(delta);
+    const step = (to > from ? 1 : -1) * unit;
 
     function applyValue(val) {
         const el = document.getElementById(id);
@@ -1194,7 +1195,7 @@ function _animateHpBar(id, from, to, progressEl = null) {
 
     applyValue(current);
     _activeCounters[id] = setInterval(() => {
-        current += step;
+        current = step > 0 ? Math.min(to, current + step) : Math.max(to, current + step);
         applyValue(current);
         if (current === to) {
             clearInterval(_activeCounters[id]);
@@ -1602,6 +1603,8 @@ export function updatePlayerStatsTab(){
 // Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
+    // Les annonces de critique / blocage / parade restent plus longtemps pour être lues.
+    if(options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, autoHideMs: CRIT_BLOCK_ANNOUNCE_MS * animationFactor() };
     let html = `<div class="attack-icon">${svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
@@ -1924,7 +1927,11 @@ export function finishPlayerTurn(){
     if (!foxActedThisTurn && activeCompanionIds.has('xiao_gui') && Math.random() < 0.30) {
         foxActedThisTurn = true;
         log('Xiao Gui bondit ! Hi hi — un coup de renard !');
-        foxMakeRandomMove();
+        // On annonce que le renard joue, puis seulement il fait son mouvement.
+        showCombatAnimation({ icon: 'star', title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
+            autoHideMs: 1200 * animationFactor(),
+            onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
+        });
         return; // le plateau rappelle finishPlayerTurn() après résolution
     }
 

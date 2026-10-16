@@ -78,3 +78,15 @@ export function isHpBarEmpty({ shownValue, animating }) {
     if (shownValue === null || shownValue === undefined || Number.isNaN(shownValue)) return true;   // pas de barre à l'écran
     return shownValue <= 0;
 }
+
+export const HP_BAR_MAX_ANIMATION_MS = 3500;   // l'affichage initial, une prise de dégâts ou un soin durent moins de 4 s quel que soit le nombre de PV
+
+/** Cadence du compteur de PV pour un écart `delta` : { intervalMs, unit } (unit = PV avancés par tick), durée totale ≤ HP_BAR_MAX_ANIMATION_MS. */
+export function hpBarTiming(delta) {
+    const d = Math.max(1, Math.floor(Math.abs(delta) || 0));
+    const intervalMs = Math.max(50, Math.min(150, Math.round(1500 / d)));
+    const unit = Math.max(1, Math.ceil(d * intervalMs / HP_BAR_MAX_ANIMATION_MS));
+    return { intervalMs, unit };
+}
+
+export const CRIT_BLOCK_ANNOUNCE_MS = 1800;   // durée des annonces de critique / blocage / parade (× vitesse des animations)

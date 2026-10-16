@@ -573,10 +573,8 @@ export function selectTile(index){
 }
 
 export function swapTiles(i,j){
-    // Marquer le jeu comme commencé si c'est le tour du joueur
-    if(currentTurn === 'player'){
-        gameStarted = true;
-    }
+    // Le jeu est commencé dès le premier échange, joueur OU ennemi (sinon les matchs d'un ennemi qui ouvre le combat étaient ignorés).
+    gameStarted = true;
 
     turnDistinctMatches = 0;
     comboMasteryTriggered = false;
@@ -678,6 +676,8 @@ export function checkMatches(forceFullBoard = false){
 
     // Ne traiter les matchs que si le jeu a vraiment commencé
     if(!gameStarted && !forceFullBoard){
+        // Un plateau de départ ne doit jamais contenir d'alignement non résolu : on le retire silencieusement.
+        if(hasMatchesOnBoard(board)) generateNewBoard();
         renderBoard(); // Seulement redessiner sans traiter les matchs
         return;
     }
