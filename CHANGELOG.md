@@ -1,3 +1,9 @@
+## [2.74.1](https://github.com/niafrond/niafrond.github.io/compare/v2.74.0...v2.74.1) (2026-10-16)
+
+### Bug Fixes
+
+* **match3-quest:** chute après l'annonce du sort, pastille des crânes vers l'adversaire ([#472](https://github.com/niafrond/niafrond.github.io/issues/472)) ([eaeb39d](https://github.com/niafrond/niafrond.github.io/commit/eaeb39d301be2750ff4bca4ab462c357215ea561))
+
 ## [2.74.0](https://github.com/niafrond/niafrond.github.io/compare/v2.73.1...v2.74.0) (2026-10-16)
 
 ### Features
