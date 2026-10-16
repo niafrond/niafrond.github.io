@@ -3135,3 +3135,9 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
     outline: 3px solid #ffd54a;
     box-shadow: 0 0 12px 4px rgba(255, 213, 74, 0.9);
 }
+.tile.spell-selected { outline: 3px solid #fff; outline-offset: -3px; filter: brightness(1.4); }
+.spell-pick-hint {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000;
+    padding: 8px 16px; border-radius: 8px; background: rgba(0, 0, 0, 0.85); color: #ffd54a;
+    font-weight: bold; text-align: center; pointer-events: none; max-width: 90vw;
+}

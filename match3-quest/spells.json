@@ -358,7 +358,7 @@
       "minLevel": 10,
       "columns": 3,
       "dmgPerTile": 3,
-      "description": "Détruit 3 colonnes au hasard (aperçu avant destruction), récupère leur mana et inflige 3 dégâts par case bleue, jaune ou verte détruite"
+      "description": "Choisissez 3 colonnes à détruire (aperçu avant destruction), récupère leur mana et inflige 3 dégâts par case bleue, jaune ou verte détruite"
     },
     {
       "id": "dragonCross",
@@ -449,7 +449,7 @@
       "rows": 2,
       "columns": 2,
       "dmgPerTile": 3,
-      "description": "Détruit 2 lignes et 2 colonnes au hasard : mana récupéré et 3 dégâts par case des couleurs du sort"
+      "description": "Choisissez 2 lignes puis 2 colonnes à détruire : mana récupéré et 3 dégâts par case des couleurs du sort"
     },
     {
       "id": "fiveHarmony",
@@ -1239,7 +1239,7 @@
       "minLevel": 8,
       "effect": "destroyColumns",
       "columns": 2,
-      "description": "Détruit 2 colonnes aléatoires"
+      "description": "Choisissez 2 colonnes : elles sont détruites"
     },
     {
       "id": "berserkerRage",
@@ -1801,7 +1801,7 @@
       "minLevel": 8,
       "effect": "destroyColumns",
       "columns": 2,
-      "description": "Détruit 2 colonnes aléatoires"
+      "description": "Choisissez 2 colonnes : elles sont détruites"
     },
     {
       "id": "berserkerRage",

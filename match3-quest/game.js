@@ -9,7 +9,7 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite } from "./sprites/index.j
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
-import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming, CRIT_BLOCK_ANNOUNCE_MS } from "./combatFlow.js";
+import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
@@ -1603,8 +1603,8 @@ export function updatePlayerStatsTab(){
 // Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
-    // Les annonces de critique / blocage / parade restent plus longtemps pour être lues.
-    if(options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, autoHideMs: CRIT_BLOCK_ANNOUNCE_MS * animationFactor() };
+    // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
+    if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     let html = `<div class="attack-icon">${svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;

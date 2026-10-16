@@ -857,6 +857,53 @@ function destroyIndices(spell, indices, title, label) {
 const rowIndices = row => Array.from({ length: boardSize }, (_, c) => row * boardSize + c);
 const colIndices = col => Array.from({ length: boardSize }, (_, r) => r * boardSize + col);
 
+function randomPicks(kind, count) {
+    return [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(0, count)).map(n => ({ kind, n }));
+}
+
+// Le joueur choisit lui-même ses lignes/colonnes : un clic sur une case désigne sa ligne ou sa colonne (selon l'étape),
+// les lignes déjà choisies restent marquées. Renvoie les lignes/colonnes `{ kind: 'row'|'col', n }`.
+// L'adversaire (ou un plateau absent) tire au hasard.
+function pickLines(spell, plan) {
+    const rowsWanted = plan.filter(k => k === 'row').length;
+    const colsWanted = plan.filter(k => k === 'col').length;
+    if(currentTurn === 'enemy' || !document.getElementById('board')) {
+        return Promise.resolve([...randomPicks('row', rowsWanted), ...randomPicks('col', colsWanted)]);
+    }
+    return new Promise(resolve => {
+        const picks = [];
+        const tiles = document.getElementById('board').children;
+        const hint = document.createElement('div');
+        hint.className = 'spell-pick-hint';
+        document.body.appendChild(hint);
+        const updateHint = () => {
+            const kind = plan[picks.length];
+            const left = plan.length - picks.length;
+            hint.textContent = `${spell.name} : choisissez ${kind === 'row' ? 'une ligne' : 'une colonne'} (${left} restante${left > 1 ? 's' : ''})`;
+        };
+        updateHint();
+        log(`${spell.name} : choisissez ${rowsWanted ? `${rowsWanted} ligne(s)` : ''}${rowsWanted && colsWanted ? ' puis ' : ''}${colsWanted ? `${colsWanted} colonne(s)` : ''}.`);
+        setBoardTargetingMode({
+            highlightPredicate: () => true,
+            onTileClick: (index) => {
+                const kind = plan[picks.length];
+                const n = kind === 'row' ? Math.floor(index / boardSize) : index % boardSize;
+                if(picks.some(p => p.kind === kind && p.n === n)) return true;   // déjà choisie
+                picks.push({ kind, n });
+                (kind === 'row' ? rowIndices(n) : colIndices(n)).forEach(i => tiles[i]?.classList.add('spell-selected'));
+                if(picks.length < plan.length) { updateHint(); return true; }
+                picks.forEach(p => (p.kind === 'row' ? rowIndices(p.n) : colIndices(p.n)).forEach(i => tiles[i]?.classList.remove('spell-selected')));
+                hint.remove();
+                setBoardTargetingMode(null);
+                resolve(picks);
+                return true;
+            }
+        });
+    });
+}
+
+const picksToIndices = picks => picks.flatMap(p => (p.kind === 'row' ? rowIndices(p.n) : colIndices(p.n)));
+
 function applySweepLines(spell, shape) {
     setBoardTargetingMode({
         highlightPredicate: () => true,
@@ -923,11 +970,12 @@ function applySecondWind(spell) {
 }
 
 async function applyStarRain(spell) {
-    const rows = [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(1, spell.rows || 2));
-    const cols = [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(1, spell.columns || 2));
-    const indices = [...rows.flatMap(rowIndices), ...cols.flatMap(colIndices)];
+    const rows = Math.max(1, spell.rows || 2);
+    const cols = Math.max(1, spell.columns || 2);
+    const picks = await pickLines(spell, [...Array(rows).fill('row'), ...Array(cols).fill('col')]);
+    const indices = picksToIndices(picks);
     await previewIndices(spell, indices);
-    destroyIndices(spell, indices, spell.name.toUpperCase(), `${rows.length} lignes et ${cols.length} colonnes détruites`);
+    destroyIndices(spell, indices, spell.name.toUpperCase(), `${rows} lignes et ${cols} colonnes détruites`);
     saveUpdate();
     checkMatches(true);
     return false;
@@ -948,13 +996,10 @@ function applyHarmony(spell) {
 async function applySummonTempest(spell) {
     const caster = getCurrentCaster();
     const colsToDestroy = Math.max(1, Math.min(boardSize, Math.floor(spell.columns || 1)));
-    const availableCols = Array.from({ length: boardSize }, (_, i) => i);
-    const pickedCols = [];
 
-    for(let i = 0; i < colsToDestroy && availableCols.length > 0; i++) {
-        const randomIndex = Math.floor(Math.random() * availableCols.length);
-        pickedCols.push(availableCols.splice(randomIndex, 1)[0]);
-    }
+    // Le joueur choisit ses colonnes (tirage au hasard pour l'adversaire).
+    const picks = await pickLines(spell, Array(colsToDestroy).fill('col'));
+    const pickedCols = picks.map(p => p.n);
 
     // Les colonnes visées sont montrées avant d'être détruites.
     await previewIndices(spell, pickedCols.flatMap(colIndices));
