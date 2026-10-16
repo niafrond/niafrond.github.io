@@ -88,7 +88,7 @@ export default {
     },
     fairy_yun: {
       name: "Yunxi",
-      title: "Fée des nuages",
+      title: "Xianzi des nuages",
       idle: [
         "Je suis un nuage qui a pris forme humaine. Le matin, je me dissipe, le soir, je m'épaissis.",
         "Les orages sont mes cousins mal élevés. Je leur ai demandé de baisser le ton."
@@ -327,7 +327,7 @@ export default {
         {
           type: "talk",
           target: "fairy_yun",
-          text: "Interroger la fée Yunxi (Crêtes foudroyées)",
+          text: "Interroger la xianzi Yunxi (Crêtes foudroyées)",
           lines: [
             "De la pluie ? Mes cousins les nuages en ont. Mais ils sont timides. Dites à Pu de les inviter à dîner."
           ]
@@ -342,7 +342,7 @@ export default {
         }
       ],
       offer: [
-        "Je vends de la pluie en bouteille, mais elle est factice ! J'aimerais de la vraie. Interrogez les experts : l'ermite, la fée et la petite."
+        "Je vends de la pluie en bouteille, mais elle est factice ! J'aimerais de la vraie. Interrogez les experts : l'ermite, la xianzi et la petite."
       ],
       hint: [
         "Lei est dans sa grotte, Yunxi sur les crêtes, Leimei sur la place."

@@ -125,7 +125,7 @@ export default {
         ],
         enemies: [
             { id: 'tonnerre_road_stair_guard', x: 16, y: 9, templateId: 'iron_gladiator', name: 'Statue des marches', kind: 'sentinel', offset: 0 },
-            { id: 'tonnerre_road_spark_imp', x: 28, y: 5, templateId: 'goblin_saboteur', name: 'Lutin d\'étincelles', kind: 'sentinel', offset: -1 },
+            { id: 'tonnerre_road_spark_imp', x: 28, y: 5, templateId: 'goblin_saboteur', name: 'Jing d\'étincelles', kind: 'sentinel', offset: -1 },
             { id: 'tonnerre_road_stair_wyrm', x: 6, y: 13, templateId: 'storm_wyrm', name: 'Serpenteau des marches', kind: 'patrol', patrol: [[6, 13], [14, 13]], offset: 0 },
             { id: 'tonnerre_road_gust_rider', x: 27, y: 9, templateId: 'shadow_assassin', name: 'Rôdeur de bourrasque', kind: 'patrol', patrol: [[27, 9], [35, 9]], offset: 0 },
             { id: 'tonnerre_road_lingzhi', x: 38, y: 7, templateId: 'fungal_horror', name: 'Lingzhi foudroyé', kind: 'sentinel', offset: 0 }
@@ -133,7 +133,7 @@ export default {
         grass: {
             rate: 0.1, safeSteps: 4,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Lutin des marches', weight: 5, offset: -1 },
+                { templateId: 'goblin_saboteur', name: 'Jing des marches', weight: 5, offset: -1 },
                 { templateId: 'fungal_horror', name: 'Lingzhi des corniches', weight: 3, offset: 0 },
                 { templateId: 'storm_wyrm', name: 'Serpenteau de bruine', weight: 2, offset: 0 },
                 { templateId: 'storm_knight', name: 'Éclaireur de l\'orage', weight: 1, offset: 1 }
@@ -193,7 +193,7 @@ export default {
             { id: 'tonnerre_wyrm_calf', x: 7, y: 11, templateId: 'storm_wyrm', name: 'Serpenteau d\'orage', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'tonnerre_rider_a', x: 34, y: 6, templateId: 'storm_knight', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' },
             { id: 'tonnerre_rider_b', x: 36, y: 5, templateId: 'storm_knight', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' },
-            { id: 'tonnerre_wild_gust_imp', x: 12, y: 3, templateId: 'goblin_saboteur', name: 'Lutin des bourrasques', kind: 'patrol', patrol: [[12, 3], [18, 3]], offset: -1 },
+            { id: 'tonnerre_wild_gust_imp', x: 12, y: 3, templateId: 'goblin_saboteur', name: 'Jing des bourrasques', kind: 'patrol', patrol: [[12, 3], [18, 3]], offset: -1 },
             { id: 'tonnerre_wild_bridge_sentry', x: 30, y: 13, templateId: 'iron_gladiator', name: 'Sentinelle du pont de corde', kind: 'patrol', patrol: [[30, 13], [34, 13]], offset: 0 },
             { id: 'tonnerre_wild_moss_horror', x: 6, y: 6, templateId: 'fungal_horror', name: 'Champignon des corniches', kind: 'sentinel', offset: 0 },
             { id: 'tonnerre_wild_ridge_assassin', x: 43, y: 19, templateId: 'shadow_assassin', name: 'Rôdeur des corniches', kind: 'sentinel', offset: 0 }
@@ -201,7 +201,7 @@ export default {
         grass: {
             rate: 0.12, safeSteps: 3,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Lutin des bourrasques', weight: 5, offset: -1 },
+                { templateId: 'goblin_saboteur', name: 'Jing des bourrasques', weight: 5, offset: -1 },
                 { templateId: 'storm_wyrm', name: 'Serpenteau d\'étincelles', weight: 4, offset: -1 },
                 { templateId: 'fungal_horror', name: 'Champignon à foudre', weight: 3, offset: 0 },
                 { templateId: 'war_troll', name: 'Ogre des corniches', weight: 2, offset: 0 },

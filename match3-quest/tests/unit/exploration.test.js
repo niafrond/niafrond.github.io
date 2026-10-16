@@ -782,7 +782,7 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('distance 1 = combat, distance 2 = pas de combat', () => {
-        // Golem de sable en (6,1)
+        // Colosse de sable en (6,1)
         const s = atL('gobi', 6, 4);
         expect(tryMove(s, 0, -1)).toEqual({ type: 'moved' });                              // (6,3) : distance 2
         expect(tryMove(s, 0, -1)).toEqual({ type: 'combat', enemyId: 'gobi_colossus' });   // (6,2) : distance 1
@@ -795,7 +795,7 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('la période de grâce ignore les zones de vigilance puis expire', () => {
-        const s = atL('gobi', 6, 3);   // monde « à l'ancienne » : Golem de sable en (6,1), aura d'1 case
+        const s = atL('gobi', 6, 3);   // monde « à l'ancienne » : Colosse de sable en (6,1), aura d'1 case
         s.rt.grace = GRACE_MOVES;
         expect(tryMove(s, 0, -1)).toEqual({ type: 'moved' });  // (6,2) est dans l'aura, mais la grâce court
         expect(s.rt.grace).toBe(GRACE_MOVES - 1);

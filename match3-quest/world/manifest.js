@@ -103,7 +103,7 @@ export const MANIFEST = {
       { id: 'wreck_hoard', where: 'wild', tier: 3, label: 'Cale d\'une épave' }
     ],
     enemies: [
-      { id: 'fleuve_sluice_golem', name: 'Golem de l\'écluse', templateHint: 'iron_gladiator', role: 'elite' },
+      { id: 'fleuve_sluice_golem', name: 'Colosse de l\'écluse', templateHint: 'iron_gladiator', role: 'elite' },
       { id: 'fleuve_salt_thief', name: 'Voleur de sel masqué', templateHint: 'shadow_assassin', role: 'quest' }
     ],
     quests: [
@@ -219,8 +219,8 @@ export const MANIFEST = {
     ],
     enemies: [
       { id: 'gobi_dune_warlord', name: 'Chef de dune, Bras-de-Sable', templateHint: 'orc_warmaster', role: 'gate' },
-      { id: 'gobi_golem_a', name: 'Golem des dunes', templateHint: 'sand_colossus', role: 'quest', group: 'dune_golems' },
-      { id: 'gobi_golem_b', name: 'Golem des dunes', templateHint: 'sand_colossus', role: 'quest', group: 'dune_golems' }
+      { id: 'gobi_golem_a', name: 'Colosse des dunes', templateHint: 'sand_colossus', role: 'quest', group: 'dune_golems' },
+      { id: 'gobi_golem_b', name: 'Colosse des dunes', templateHint: 'sand_colossus', role: 'quest', group: 'dune_golems' }
     ],
     quests: [
       { id: 'sq_lettre_bao_3', title: 'La lettre prend le large', giver: 'hua_gobi', turnIn: 'sailor_bao', chain: 'sq_lettre_bao_2',
@@ -229,8 +229,8 @@ export const MANIFEST = {
       { id: 'sq_carte_vraie', title: 'La carte qui ne ment pas', giver: 'mapmaker_ali', turnIn: 'mapmaker_ali', chain: null,
         summary: 'Ali veut dessiner une carte exacte des dunes, mais le mirage Sablier lui brouille la vue. Allez écouter le djinn, puis trouvez le coffre qu\'il désigne.',
         objectives: [{ type: 'talk', target: 'mirage_djinn' }, { type: 'chest', target: 'mirage_chest' }] },
-      { id: 'sq_golems_puits', title: 'Les golems du puits', giver: 'keeper_nur', turnIn: 'keeper_nur', chain: null,
-        summary: 'Deux golems de sable boivent l\'eau du puits à chaque nuit sans lune. Abattez-les pour sauver la citerne.',
+      { id: 'sq_golems_puits', title: 'Les colosses du puits', giver: 'keeper_nur', turnIn: 'keeper_nur', chain: null,
+        summary: 'Deux colosses de sable boivent l\'eau du puits à chaque nuit sans lune. Abattez-les pour sauver la citerne.',
         objectives: [{ type: 'killGroup', target: 'dune_golems' }] }
     ]
   },
@@ -319,7 +319,7 @@ export const MANIFEST = {
       { id: 'potter_rui', name: 'Rui', title: 'Potier de lave', where: 'house:volcan_h_potier', role: 'donneur' },
       { id: 'bather_fei', name: 'Grand-père Fei', title: 'Baigneur invétéré', where: 'house:volcan_h_bains', role: 'indice' },
       { id: 'cook_dada', name: 'Dada', title: 'Cuisinière des mineurs', where: 'house:volcan_h_cantine', role: 'ambiance' },
-      { id: 'lizard_zao', name: 'Zao', title: 'Salamandre bavarde', where: 'place', role: 'ambiance' },
+      { id: 'lizard_zao', name: 'Zao', title: 'Lézard-dragon bavard', where: 'place', role: 'ambiance' },
       { id: 'hua_volcan', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'young_miner_bo', name: 'Bo', title: 'Jeune mineur curieux', where: 'place', role: 'indice' },
       { id: 'forge_spirit', name: 'Cendrillon', title: 'Esprit de la forge de lave', where: 'wild', role: 'indice' }

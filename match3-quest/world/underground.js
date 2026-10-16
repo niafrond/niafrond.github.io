@@ -64,7 +64,7 @@ export const UNDERGROUND = [
         entrance: 'Faille des Cavernes de Basalte',
         arrival: ['Une faille noire fume au pied de la paroi. Derrière elle, des galeries de basalte que la lave a creusées puis abandonnées.', 'La roche y avale la lumière : sans torche, vous ne verrez presque rien.'],
         chests: [['volcan_cave_geode', 'Géode de braise', 'Une géode fendue laisse couler de l\'or fondu, figé en perles rousses.', 3], ['volcan_cave_forge', 'Forge oubliée', 'Une forge de mineurs, froide depuis des siècles, et un coffret de fer qu\'aucun feu n\'a pu ouvrir.', 2]],
-        enemies: [['volcan_cave_behemoth', '1', 'lava_behemoth', 'Gardien de la Forge Noire', 'sentinel', 1, null, true], ['volcan_cave_loup', '2', 'ember_wolf', 'Loup des cavernes', 'sentinel', 0], ['volcan_cave_salamandre', '5', 'ember_dragon', 'Salamandre aveugle', 'patrol', 0, ['5', '6']]]
+        enemies: [['volcan_cave_behemoth', '1', 'lava_behemoth', 'Gardien de la Forge Noire', 'sentinel', 1, null, true], ['volcan_cave_loup', '2', 'ember_wolf', 'Loup des cavernes', 'sentinel', 0], ['volcan_cave_salamandre', '5', 'ember_dragon', 'Lézard-dragon aveugle', 'patrol', 0, ['5', '6']]]
     },
     {
         id: 'lune_crypt', parent: 'lune_wild', region: 'lune', level: 40, layout: 'crypt', name: 'Crypte du Lièvre de Jade',
@@ -85,7 +85,7 @@ export const UNDERGROUND = [
         entrance: 'Faille des Galeries du Tonnerre',
         arrival: ['Au creux d\'une paroi balayée par l\'orage, une faille avale la lumière. Dedans, le tonnerre résonne sourdement, comme un cœur qui bat sous la pierre.', 'Il y fait noir : sans torche, vous avancerez à tâtons.'],
         chests: [['tonnerre_cave_foudre', 'Pierre de foudre', 'Une pierre vitrifiée par la foudre : à l\'intérieur, de l\'or fondu en perles bleutées.', 3],['tonnerre_cave_tambour', 'Tambour fendu', 'Un tambour de guerre éventré, dont la peau cachait une bourse de pièces.', 2]],
-        enemies: [['tonnerre_cave_wyrm', '1', 'storm_wyrm', 'Wyrm du Tonnerre Sourd', 'sentinel', 1, null, true],['tonnerre_cave_chevalier', '2', 'storm_knight', 'Chevalier sans orage', 'sentinel', 0, null],['tonnerre_cave_champignon', '5', 'fungal_horror', 'Horreur des galeries', 'patrol', 0, ['5', '6']]]
+        enemies: [['tonnerre_cave_wyrm', '1', 'storm_wyrm', 'Long du Tonnerre Sourd', 'sentinel', 1, null, true],['tonnerre_cave_chevalier', '2', 'storm_knight', 'Chevalier sans orage', 'sentinel', 0, null],['tonnerre_cave_champignon', '5', 'fungal_horror', 'Horreur des galeries', 'patrol', 0, ['5', '6']]]
     },
     {
         id: 'fauves_crypt', parent: 'fauves_wild', region: 'fauves', level: 27, layout: 'crypt', name: 'Crypte des Griffes Blanches',

@@ -413,7 +413,7 @@ export const MANIFEST2 = {
       {
         id: "mud_imp_pit",
         name: "Pit",
-        title: "Diablotin de vase",
+        title: "Petit gui de vase",
         where: "wild",
         role: "ambiance"
       },
@@ -482,7 +482,7 @@ export const MANIFEST2 = {
       },
       {
         id: "mud_imp_a",
-        name: "Diablotin de vase",
+        name: "Petit gui de vase",
         templateHint: "goblin_saboteur",
         role: "quest",
         where: "wild",
@@ -490,7 +490,7 @@ export const MANIFEST2 = {
       },
       {
         id: "mud_imp_b",
-        name: "Diablotin de vase",
+        name: "Petit gui de vase",
         templateHint: "goblin_saboteur",
         role: "quest",
         where: "wild",
@@ -604,11 +604,11 @@ export const MANIFEST2 = {
       },
       {
         id: "sq_fle_boue",
-        title: "Les diablotins de la vase",
+        title: "Les petits gui de la vase",
         giver: "net_mender_wei",
         turnIn: "net_mender_wei",
         chain: null,
-        summary: "Des diablotins de vase dévorent les filets de Dame Wei. Dispersez-les.",
+        summary: "Des petits gui de vase dévorent les filets de Dame Wei. Dispersez-les.",
         objectives: [
           {
             type: "killGroup",
@@ -618,14 +618,14 @@ export const MANIFEST2 = {
       },
       {
         id: "sq_fle_golem",
-        title: "Le golem de l'écluse",
+        title: "Le colosse de l'écluse",
         giver: "sluicekeeper_rong",
         turnIn: "sluicekeeper_rong",
         chain: null,
         requires: [
           "q_sun_2"
         ],
-        summary: "Un golem de fer rouillé bloque la grande vanne de l'écluse. Débarrassez-en le fleuve.",
+        summary: "Un colosse de fer rouillé bloque la grande vanne de l'écluse. Débarrassez-en le fleuve.",
         objectives: [
           {
             type: "kill",
@@ -1357,7 +1357,7 @@ export const MANIFEST2 = {
       {
         id: "fairy_yun",
         name: "Yunxi",
-        title: "Fée des nuages",
+        title: "Xianzi des nuages",
         where: "wild",
         role: "indice"
       },
@@ -1509,7 +1509,7 @@ export const MANIFEST2 = {
         giver: "rain_pu",
         turnIn: "rain_pu",
         chain: null,
-        summary: "Le marchand de pluie voudrait de la vraie pluie. Interrogez l'ermite, la fée des nuages et la petite Leimei.",
+        summary: "Le marchand de pluie voudrait de la vraie pluie. Interrogez l'ermite, la xianzi des nuages et la petite Leimei.",
         objectives: [
           {
             type: "talk",

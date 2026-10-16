@@ -161,7 +161,7 @@ export default {
             { id: 'crow_b', x: 31, y: 6, templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
             { id: 'rizieres_mill_ghost', x: 34, y: 7, templateId: 'bone_reaver', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'rizieres_wild_patrol_toads', x: 42, y: 8, templateId: 'fungal_horror', name: 'Crapauds en file', kind: 'patrol', patrol: [[42, 8], [42, 16]], offset: -1 },
-            { id: 'rizieres_wild_patrol_imp', x: 10, y: 5, templateId: 'goblin_saboteur', name: 'Farfadet des diguettes', kind: 'patrol', patrol: [[10, 5], [16, 5]], offset: 0 },
+            { id: 'rizieres_wild_patrol_imp', x: 10, y: 5, templateId: 'goblin_saboteur', name: 'Petit jing des diguettes', kind: 'patrol', patrol: [[10, 5], [16, 5]], offset: 0 },
             { id: 'rizieres_wild_scarecrow', x: 44, y: 17, templateId: 'forest_guardian', name: 'Épouvantail possédé', kind: 'sentinel', offset: 0 }
         ],
         gate: {

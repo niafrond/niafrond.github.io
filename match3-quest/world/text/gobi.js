@@ -86,10 +86,10 @@ export default {
       hint: ['Sablier rôde dans les dunes des Voix Sablées. Le coffre vrai est celui qui projette une ombre.'],
       complete: ['Un compas qui ne dérive pas ! Ma carte sera enfin juste. Gardez ce grain de sable étoilé : il vient du centre du désert.'],
       reward: { gold: 100, fragment: 'Sable étoilé', xp: 170 } },
-    { id: 'sq_golems_puits', title: 'Les golems du puits', chapter: '✦ Quête secondaire — Désert de Gobi', giver: 'keeper_nur', turnIn: 'keeper_nur', requires: [], side: true,
-      objectives: [{ type: 'killGroup', target: 'dune_golems', text: 'Abattre les deux golems de sable qui boivent l\'eau de la citerne (dunes des Voix Sablées)' }],
-      offer: ['Deux golems de sable rôdent près de la citerne. Chaque nuit sans lune, ils boivent à même ma jarre, et ils ne sont pas élégants.', 'Débarrassez-nous-en, seigneur archer, avant qu\'il ne reste plus une goutte dans le désert.'],
-      hint: ['Les deux golems de sable rôdent dans les dunes des Voix Sablées. Ils sont lents, mais têtus.'],
+    { id: 'sq_golems_puits', title: 'Les colosses du puits', chapter: '✦ Quête secondaire — Désert de Gobi', giver: 'keeper_nur', turnIn: 'keeper_nur', requires: [], side: true,
+      objectives: [{ type: 'killGroup', target: 'dune_golems', text: 'Abattre les deux colosses de sable qui boivent l\'eau de la citerne (dunes des Voix Sablées)' }],
+      offer: ['Deux colosses de sable rôdent près de la citerne. Chaque nuit sans lune, ils boivent à même ma jarre, et ils ne sont pas élégants.', 'Débarrassez-nous-en, seigneur archer, avant qu\'il ne reste plus une goutte dans le désert.'],
+      hint: ['Les deux colosses de sable rôdent dans les dunes des Voix Sablées. Ils sont lents, mais têtus.'],
       complete: ['L\'eau est sauve ! Prenez ceci : une larme de la citerne, cristallisée. Elle brille plus fort qu\'un diamant, et se boit plus vite.'],
       reward: { gold: 110, fragment: 'Larme de citerne', xp: 180 } }
   ]

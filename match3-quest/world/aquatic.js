@@ -85,8 +85,8 @@ export function buildAquaticWorld(screens) {
         npcs: [{ id: 'hermit_nu', at: '1' }],
         chests: [chest('mer_arch_reliquaire', '2', 2), chest('mer_arch_epave', '3', 2), chest('mer_arch_tortue', '4', 3)],
         enemies: [
-            { id: 'mer_arch_wyrm', at: '5', templateId: 'storm_wyrm', name: 'Wyrm des hauts-fonds', kind: 'sentinel', offset: 1, permanent: true },
-            { id: 'mer_arch_witch', at: '6', templateId: 'ice_witch', name: 'Sorcière des marées', kind: 'sentinel', offset: 1, permanent: true }
+            { id: 'mer_arch_wyrm', at: '5', templateId: 'storm_wyrm', name: 'Long des hauts-fonds', kind: 'sentinel', offset: 1, permanent: true },
+            { id: 'mer_arch_witch', at: '6', templateId: 'ice_witch', name: 'Shamane des marées', kind: 'sentinel', offset: 1, permanent: true }
         ],
         exits: [{ at: '<', to: 'mer_hamlet', label: 'Anse des Coquillages' }, { at: '>', to: ISLE_ID, label: 'Île de la Tortue-Dragon' }]
     });

@@ -109,7 +109,7 @@
   },
   {
     "id": "crypt_lich",
-    "name": "Sorcier-Squelette",
+    "name": "Prêtre-Squelette",
     "race": "Mort-vivant",
 
     "title": "Taoïste de la Flamme Verte",
@@ -145,7 +145,7 @@
   },
    {
     "id": "sand_colossus",
-    "name": "Golem d'Argile",
+    "name": "Colosse d'Argile",
     "race": "Elementaire",
 
     "title": "Titan du Gobi",

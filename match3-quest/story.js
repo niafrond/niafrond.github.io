@@ -475,7 +475,7 @@ const BASE_SCREENS = {
             // Vieux serpent nommé (quête secondaire de Gu), coin nord-est.
             { id: 'river_serpent', templateId: 'deep_sea_serpent', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             { id: 'fleuve_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
-            { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
+            { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Taoïste-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable, sauf pourparlers (parley_sun2 : ils s'écartent, `hideWhen`).
             { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
             { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
@@ -637,7 +637,7 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'gobi_colossus', templateId: 'sand_colossus', name: 'Golem de sable', kind: 'sentinel', x: 6, y: 1, offset: 0 },
+            { id: 'gobi_colossus', templateId: 'sand_colossus', name: 'Colosse de sable', kind: 'sentinel', x: 6, y: 1, offset: 0 },
             // Mirages du Soleil des Mirages : même sprite que `sun_4`, sans ombre ni niveau, ils scintillent.
             { id: 'mirage_1', spriteKey: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 1,
               permanent: true, illusion: true,
@@ -843,7 +843,7 @@ const BASE_SCREENS = {
                       "Prenez votre sixième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
                   ]
               } },
-            { id: 'volcan_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette des braises', kind: 'sentinel', x: 1, y: 8, offset: 0 },
+            { id: 'volcan_lich', templateId: 'crypt_lich', name: 'Taoïste-squelette des braises', kind: 'sentinel', x: 1, y: 8, offset: 0 },
             // Pixiu gardiens de la veine (quête secondaire de Shan), nord-est.
             { id: 'ore_guard_a', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 9, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'ore_guard_b', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },

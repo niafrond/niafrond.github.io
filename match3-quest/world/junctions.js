@@ -100,7 +100,7 @@ export const JUNCTIONS = [
     },
     {
         id: 'hameau_tonnerre', type: 'kill', region: 'tonnerre', from: 'tonnerre_wild', to: 'tonnerre_hamlet',
-        enemy: { id: 'tonnerre_hamlet_guardian', name: 'Chevalier de l\'orage égaré', templateId: 'storm_knight' },
+        enemy: { id: 'tonnerre_hamlet_guardian', name: 'Cavalier de l\'orage égaré', templateId: 'storm_knight' },
         lockedMessage: 'Un chevalier d\'orage, foudre au poing, garde le chemin du hameau : il faut le vaincre pour passer.'
     },
     {

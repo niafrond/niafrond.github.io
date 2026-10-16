@@ -49,7 +49,7 @@ export default {
     cook_dada: { name: 'Dada', title: 'Cuisinière des mineurs', 
       idle: ['Mes mineurs mangent trois bols de nouilles par jour et se plaignent quand même. Les gens sont ingrats, mais prévisibles.', 'La soupe cuit toute seule sur une fissure chaude. Je lui parle, elle mijote mieux.'],
       talk: [{ whenDone: 'sun_6', lines: ['Un sixième soleil de moins, c\'est une casserole de moins à surveiller. Tenez, une brioche à la braise : elle est chaude, mais elle ne mord pas.'] }] },
-    lizard_zao: { name: 'Zao', title: 'Salamandre bavarde', 
+    lizard_zao: { name: 'Zao', title: 'Lézard-dragon bavard', 
       idle: ['Je vis dans les braises. Elles sont moelleuses, je vous assure, quand on a le cuir qu\'il faut.', 'Les salamandres sont nées du feu, dit-on. Moi, je dis que je suis née dans un lit, comme tout le monde. Mais le feu est plus flatteur.'],
       talk: [{ whenDone: 'sun_6', lines: ['Un soleil de moins, c\'est un volcan qui se calme. Je suis un peu triste : mes amis les flammes dansent plus doucement.'] }] },
     hua_volcan: { name: 'Hua', title: 'Colporteuse aux mille babioles', 

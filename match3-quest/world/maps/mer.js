@@ -133,7 +133,7 @@ export default {
             { templateId: 'iron_gladiator', name: 'Crabe des sables', weight: 5, offset: -1 },
             { templateId: 'shadow_assassin', name: 'Rôdeur des dunes', weight: 4, offset: 0 },
             { templateId: 'deep_sea_serpent', name: 'Anguille de la grève', weight: 3, offset: 0 },
-            { templateId: 'ice_witch', name: 'Naïade d\'écume', weight: 1, offset: 1 }
+            { templateId: 'ice_witch', name: 'Dame d\'écume', weight: 1, offset: 1 }
         ] },
         npcs: [
             { id: 'mermaid_jiaoren', at: '0' },
