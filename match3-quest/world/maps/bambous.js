@@ -163,8 +163,8 @@ export default {
             { id: 'bambous_wild_lamp_priestess', x: 19, y: 4, templateId: 'moon_priestess', name: 'Prêtresse des lampions éteints', kind: 'sentinel', offset: -1 }
         ],
         gate: {
-            requires: 'sq_sentier_sceaux',
-            lockedMessage: 'Les sceaux du moine Zhen ne tiennent plus : un gardien de cendres retient le sentier du temple. Il faut le dompter, puis rapporter la nouvelle au moine.'
+            requires: 'bambous_seal_keeper',
+            lockedMessage: 'Les sceaux du moine Zhen ne tiennent plus : un gardien de cendres retient le sentier du temple. Il faut le dompter pour passer.'
         }
     },
 
