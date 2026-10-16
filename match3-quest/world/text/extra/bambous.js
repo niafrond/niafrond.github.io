@@ -135,7 +135,7 @@ export default {
       ]
     },
     stem_sprite: {
-      name: "Tigelle",
+      name: "Xiaogeng",
       title: "Esprit de tige",
       idle: [
         "Je suis la dernière tige verte du sentier. Je suis entourée de fantômes, mais je tiens bon.",

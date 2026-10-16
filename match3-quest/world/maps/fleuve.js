@@ -27,8 +27,8 @@ export default {
         grass: {
             rate: 0.1, safeSteps: 4,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Diablotin des flaques', weight: 5, offset: -1 },
-                { templateId: 'plague_doctor', name: 'Sorcier des vases', weight: 3, offset: 0 },
+                { templateId: 'goblin_saboteur', name: 'Petit gui des flaques', weight: 5, offset: -1 },
+                { templateId: 'plague_doctor', name: 'Shaman des vases', weight: 3, offset: 0 },
                 { templateId: 'deep_sea_serpent', name: 'Anguille de vase', weight: 3, offset: 0 },
                 { templateId: 'iron_gladiator', name: 'Sentinelle d\'argile', weight: 1, offset: 1 }
             ]
@@ -42,7 +42,7 @@ export default {
             { id: 'fleuve_road_chest_niche', x: 40, y: 3, gold: 60 }
         ],
         enemies: [
-            { id: 'fleuve_road_mud_imp', x: 9, y: 13, templateId: 'goblin_saboteur', name: 'Diablotin des flaques', kind: 'sentinel', offset: -1 },
+            { id: 'fleuve_road_mud_imp', x: 9, y: 13, templateId: 'goblin_saboteur', name: 'Petit gui des flaques', kind: 'sentinel', offset: -1 },
             { id: 'fleuve_road_plank_drowned', x: 19, y: 8, templateId: 'bone_reaver', name: 'Noyé de la passerelle', kind: 'patrol', patrol: [[19, 8], [23, 8]], offset: 0 },
             { id: 'fleuve_road_serpent', x: 24, y: 13, templateId: 'deep_sea_serpent', name: 'Anguille de vase', kind: 'sentinel', offset: 0 },
             { id: 'fleuve_road_doctor', x: 38, y: 9, templateId: 'plague_doctor', name: 'Docteur-démon des berges', kind: 'sentinel', offset: 0 },
@@ -173,8 +173,8 @@ export default {
         grass: {
             rate: 0.12, safeSteps: 3,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Diablotin des flaques', weight: 5, offset: -1 },
-                { templateId: 'plague_doctor', name: 'Sorcier des vases', weight: 3, offset: 0 },
+                { templateId: 'goblin_saboteur', name: 'Petit gui des flaques', weight: 5, offset: -1 },
+                { templateId: 'plague_doctor', name: 'Shaman des vases', weight: 3, offset: 0 },
                 { templateId: 'deep_sea_serpent', name: 'Anguille de vase', weight: 3, offset: 0 },
                 { templateId: 'bone_reaver', name: 'Noyé errant', weight: 2, offset: 0 },
                 { templateId: 'iron_gladiator', name: 'Sentinelle d\'argile', weight: 1, offset: 1 }
@@ -198,15 +198,15 @@ export default {
             { id: 'fleuve_wild_chest_hidden', x: 37, y: 4, gold: 90 }
         ],
         enemies: [
-            { id: 'fleuve_sluice_golem', x: 43, y: 19, templateId: 'iron_gladiator', name: 'Golem de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Golem de l\'écluse', level: 4 } },
+            { id: 'fleuve_sluice_golem', x: 43, y: 19, templateId: 'iron_gladiator', name: 'Colosse de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Colosse de l\'écluse', level: 4 } },
             { id: 'fleuve_salt_thief', x: 26, y: 5, templateId: 'shadow_assassin', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fleuve_w_doctor', x: 20, y: 4, templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },
             { id: 'fleuve_w_serpent', x: 28, y: 4, templateId: 'deep_sea_serpent', name: 'Serpent de vase', kind: 'patrol', patrol: [[28, 4], [28, 13]], offset: 0 },
             { id: 'fleuve_w_drowned', x: 6, y: 12, templateId: 'bone_reaver', name: 'Noyé sans barque', kind: 'patrol', patrol: [[6, 12], [6, 16]], offset: 0 },
             { id: 'barge_ghost_a', x: 19, y: 15, templateId: 'bone_reaver', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
             { id: 'barge_ghost_b', x: 23, y: 15, templateId: 'bone_reaver', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
-            { id: 'mud_imp_a', x: 13, y: 20, templateId: 'goblin_saboteur', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
-            { id: 'mud_imp_b', x: 41, y: 11, templateId: 'goblin_saboteur', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
+            { id: 'mud_imp_a', x: 13, y: 20, templateId: 'goblin_saboteur', name: 'Petit gui de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
+            { id: 'mud_imp_b', x: 41, y: 11, templateId: 'goblin_saboteur', name: 'Petit gui de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
             { id: 'fleuve_wild_patrol_crab', x: 30, y: 19, templateId: 'goblin_saboteur', name: 'Crabe de vase', kind: 'patrol', patrol: [[30, 19], [34, 19]], offset: 0 },
             { id: 'fleuve_wild_patrol_eel', x: 6, y: 6, templateId: 'deep_sea_serpent', name: 'Anguille des chenaux', kind: 'patrol', patrol: [[6, 6], [10, 6]], offset: -1 },
             { id: 'fleuve_wild_lock_guard', x: 43, y: 17, templateId: 'iron_gladiator', name: 'Garde-vanne rouillé', kind: 'sentinel', offset: 0 }
@@ -374,8 +374,8 @@ export default {
         grass: {
             rate: 0.1, safeSteps: 4,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Diablotin des flaques', weight: 5, offset: -1 },
-                { templateId: 'plague_doctor', name: 'Sorcier des vases', weight: 3, offset: 0 },
+                { templateId: 'goblin_saboteur', name: 'Petit gui des flaques', weight: 5, offset: -1 },
+                { templateId: 'plague_doctor', name: 'Shaman des vases', weight: 3, offset: 0 },
                 { templateId: 'deep_sea_serpent', name: 'Anguille de vase', weight: 3, offset: 0 }
             ]
         },

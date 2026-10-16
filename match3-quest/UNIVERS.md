@@ -138,7 +138,7 @@ Les ids de gabarits du catalogue restent inchangés (statistiques) ; seuls les n
 | `fungal_horror` | Champignon lingzhi maudit (chapeau rouge à spores) |
 | `forest_guardian` | Esprit-arbre ancien (vieux pin/saule noueux) |
 | `bone_reaver` | Guerrier-squelette à sabre rouillé |
-| `crypt_lich` | Sorcier-squelette taoïste (bonnet de lettré, flamme verte) |
+| `crypt_lich` | Taoïste-squelette (bonnet de lettré, flamme verte) |
 | `temple_warden` | Lion-gardien de pierre (shishi) |
 | `arcane_scholar` | Lettré-sorcier (robe de mandarin, rouleau, pinceau-baguette) |
 | `iron_gladiator` | Soldat de terre cuite en armure de fer |
@@ -148,7 +148,7 @@ Les ids de gabarits du catalogue restent inchangés (statistiques) ; seuls les n
 | `storm_wyrm` | Serpent-dragon du tonnerre (long, jaune/bleu, éclairs) |
 | `orc_warmaster` | Général ogre-démon (peau rouge-verte, hache à lune) |
 | `war_troll` | Ogre de guerre massif au gourdin clouté |
-| `sand_colossus` | Golem d'argile du désert (fissures, yeux ambre) |
+| `sand_colossus` | Colosse d'argile du désert (fissures, yeux ambre) |
 | `lava_behemoth` | Pixiu de magma (bête-chimère noire aux veines de feu) |
 | `ice_witch` | Dame des neiges (robe de givre, éventail de glace) |
 | `frost_dragon` | Long de givre (dragon chinois bleu glacé, longue barbe) |

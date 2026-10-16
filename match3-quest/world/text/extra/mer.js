@@ -9,9 +9,9 @@ export default {
       ]
     },
     mer_h2_ecaillere: {
-      name: "Maison de Dame Coque",
+      name: "Maison de Dame Bei",
       arrival: [
-        "Des coquilles s'empilent en montagnes blanches. Dame Coque ouvre une huître et la regarde avec tendresse."
+        "Des coquilles s'empilent en montagnes blanches. Dame Bei ouvre une huître et la regarde avec tendresse."
       ]
     },
     mer_h2_chantier: {
@@ -23,7 +23,7 @@ export default {
   },
   npcs: {
     oyster_coque: {
-      name: "Dame Coque",
+      name: "Dame Bei",
       title: "Écaillère",
       idle: [
         "Une huître est un coffre-fort qui s'ignore. Moi, je suis le cambrioleur gentil.",
@@ -55,7 +55,7 @@ export default {
       ]
     },
     gull_pip: {
-      name: "Pip",
+      name: "Ouou",
       title: "Mouette bavarde",
       idle: [
         "Criii ! Du pain ! Non ? Un beignet ? Non plus ? Vous êtes nul.",
@@ -306,7 +306,7 @@ export default {
     },
     {
       id: "sq_mer_coquille",
-      title: "La perle de Dame Coque",
+      title: "La perle de Dame Bei",
       chapter: "✦ Quête secondaire — Rivage de la Mer Orientale",
       giver: "oyster_coque",
       turnIn: "oyster_coque",
@@ -479,7 +479,7 @@ export default {
         {
           type: "visit",
           target: "mer_h2_ecaillere",
-          text: "Visiter la maison de Dame Coque (Anse des Coquillages)"
+          text: "Visiter la maison de Dame Bei (Anse des Coquillages)"
         },
         {
           type: "chest",
@@ -488,10 +488,10 @@ export default {
         }
       ],
       offer: [
-        "Archer, aide-moi : j'ai perdu ma coquille qui chante. Je l'ai peut-être laissée chez Dame Coque, ou près des salines. Cherche avec moi !"
+        "Archer, aide-moi : j'ai perdu ma coquille qui chante. Je l'ai peut-être laissée chez Dame Bei, ou près des salines. Cherche avec moi !"
       ],
       hint: [
-        "La maison de Dame Coque et la saline sont toutes deux au hameau de l'Anse."
+        "La maison de Dame Bei et la saline sont toutes deux au hameau de l'Anse."
       ],
       complete: [
         "Ma coquille ! Elle chante encore ! Je te la prête quand tu seras triste. Elle dit « chhhh » et tout va mieux."

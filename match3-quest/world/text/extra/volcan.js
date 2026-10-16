@@ -56,7 +56,7 @@ export default {
     },
     geologist_zhou: {
       name: "Zhou",
-      title: "Géologue des gorges",
+      title: "Sage des roches des gorges",
       idle: [
         "Chaque roche est une phrase. Celle-ci dit : « Éloigne-toi, imbécile ».",
         "Je cherche d'où vient la chaleur. On me répond : « de la terre ». C'est vague."

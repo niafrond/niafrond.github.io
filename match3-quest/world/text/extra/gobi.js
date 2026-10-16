@@ -9,21 +9,21 @@ export default {
       ]
     },
     gobi_h2_puits: {
-      name: "Maison du puisatier Omar",
+      name: "Maison du puisatier Wen",
       arrival: [
         "La fraîcheur est immédiate. L'eau profonde murmure au fond du puits comme un secret bien gardé."
       ]
     },
     gobi_h2_tapis: {
-      name: "Boutique de tapis de Zeynep",
+      name: "Boutique de tapis de Meihua",
       arrival: [
-        "Des tapis rouges, bleus, ocre. L'un d'eux, dit-on, vole. Zeynep ne confirme ni ne dément."
+        "Des tapis rouges, bleus, ocre. L'un d'eux, dit-on, vole. Meihua ne confirme ni ne dément."
       ]
     }
   },
   npcs: {
     well_digger_omar: {
-      name: "Omar",
+      name: "Wen",
       title: "Puisatier",
       idle: [
         "Je creuse depuis quarante ans. L'eau est un trésor qu'on trouve à reculons.",
@@ -39,7 +39,7 @@ export default {
       ]
     },
     rug_seller_zeynep: {
-      name: "Zeynep",
+      name: "Meihua",
       title: "Marchande de tapis",
       idle: [
         "Ce tapis a traversé trois déserts et deux divorces. Il vaut le prix.",
@@ -55,7 +55,7 @@ export default {
       ]
     },
     date_farmer_ismail: {
-      name: "Ismail",
+      name: "Zhen",
       title: "Cultivateur de dattes",
       idle: [
         "Mes palmiers pleurent de la datte. Je ne suis pas pressé de leur dire de s'arrêter.",
@@ -71,7 +71,7 @@ export default {
       ]
     },
     girl_noor: {
-      name: "Noor",
+      name: "Xiaosha",
       title: "Fillette aux yeux de sable",
       idle: [
         "Le sable chante quand on le caresse. Écoute… il dit « bonsoir ».",
@@ -103,7 +103,7 @@ export default {
       ]
     },
     falconer_arslan: {
-      name: "Arslan",
+      name: "Lie",
       title: "Fauconnier",
       idle: [
         "Mon faucon voit tout. Même les mirages qui n'existent pas.",
@@ -119,7 +119,7 @@ export default {
       ]
     },
     oracle_ahmad: {
-      name: "Ahmad",
+      name: "Bu",
       title: "Devin de la source",
       idle: [
         "Je lis dans le sable. Aujourd'hui, il dit : « Du vent. »",
@@ -222,17 +222,17 @@ export default {
         {
           type: "talk",
           target: "camel_baba",
-          text: "Interroger Baba (écurie des chameaux)",
+          text: "Interroger Tuotuo (écurie des chameaux)",
           lines: [
             "Pfff. Quelqu'un l'a emmené dans la nuit. Un homme à l'odeur de ténèbres. Cherchez du côté des dunes."
           ]
         }
       ],
       offer: [
-        "Mon meilleur chameau s'est envolé ! Je m'en doute : un voleur. Mais qui ? Interrogez Baba, il voit tout."
+        "Mon meilleur chameau s'est envolé ! Je m'en doute : un voleur. Mais qui ? Interrogez Tuotuo, il voit tout."
       ],
       hint: [
-        "Baba est à l'écurie, au caravansérail. Il aime qu'on l'écoute."
+        "Tuotuo est à l'écurie, au caravansérail. Il aime qu'on l'écoute."
       ],
       complete: [
         "Un voleur… Quel monde ! Il faut le retrouver, archer. Il y va de ma réputation."
@@ -261,7 +261,7 @@ export default {
         }
       ],
       offer: [
-        "Le voleur est dans les dunes, d'après Baba. Rapportez-moi mon chameau, et mettez-lui un coup de pied si vous voulez."
+        "Le voleur est dans les dunes, d'après Tuotuo. Rapportez-moi mon chameau, et mettez-lui un coup de pied si vous voulez."
       ],
       hint: [
         "Le voleur rôde dans les dunes, loin du caravansérail. Il laisse des traces en tête d'épingle."
@@ -319,23 +319,23 @@ export default {
         {
           type: "talk",
           target: "keeper_nur",
-          text: "Interroger Nur la gardienne (Maison des eaux)",
+          text: "Interroger Quan la gardienne (Maison des eaux)",
           lines: [
-            "Moi, boire l'eau du puits ? Jamais ! Je la bénis. Interrogez plutôt Tarik, il en puise."
+            "Moi, boire l'eau du puits ? Jamais ! Je la bénis. Interrogez plutôt Ahe, il en puise."
           ]
         },
         {
           type: "talk",
           target: "boy_tarik",
-          text: "Interroger Tarik (place du caravansérail)",
+          text: "Interroger Ahe (place du caravansérail)",
           lines: [
-            "Moi ? Je ne prends que deux gorgées ! Mais Baba, lui… il boit beaucoup."
+            "Moi ? Je ne prends que deux gorgées ! Mais Tuotuo, lui… il boit beaucoup."
           ]
         },
         {
           type: "talk",
           target: "camel_baba",
-          text: "Interroger Baba (écurie des chameaux)",
+          text: "Interroger Tuotuo (écurie des chameaux)",
           lines: [
             "Pfff. Un chameau boit quand il a soif. C'est la loi du désert. Qu'on me laisse tranquille."
           ]
@@ -345,10 +345,10 @@ export default {
         "Mon puits baisse depuis dix jours. Quelqu'un en boit trop, et pas qu'un peu. Interrogez la gardienne, le petit puiseur et l'écurie, voulez-vous ?"
       ],
       hint: [
-        "Nur est à la citerne, Tarik sur la place, Baba à l'écurie."
+        "Quan est à la citerne, Ahe sur la place, Tuotuo à l'écurie."
       ],
       complete: [
-        "Le coupable est Baba ! Un chameau boit pour une semaine. Je le pardonne. Voilà pour vous : un maillon d'eau, ma plus belle poulie."
+        "Le coupable est Tuotuo ! Un chameau boit pour une semaine. Je le pardonne. Voilà pour vous : un maillon d'eau, ma plus belle poulie."
       ],
       reward: {
         gold: 100,
@@ -358,7 +358,7 @@ export default {
     },
     {
       id: "sq_gob_tapis",
-      title: "Le tapis volant de Zeynep",
+      title: "Le tapis volant de Meihua",
       chapter: "✦ Quête secondaire — Désert de Gobi",
       giver: "rug_seller_zeynep",
       turnIn: "rug_seller_zeynep",
@@ -368,7 +368,7 @@ export default {
         {
           type: "chest",
           target: "rug_chest",
-          text: "Ouvrir le coffre sous les tapis (boutique de Zeynep)"
+          text: "Ouvrir le coffre sous les tapis (boutique de Meihua)"
         },
         {
           type: "talk",
@@ -484,7 +484,7 @@ export default {
         {
           type: "talk",
           target: "boy_tarik",
-          text: "Demander de l'eau fraîche à Tarik (place du caravansérail)",
+          text: "Demander de l'eau fraîche à Ahe (place du caravansérail)",
           lines: [
             "De l'eau pour la soupe de Lu ? Évidemment ! Mais seulement si j'ai une cuillère."
           ]
@@ -494,7 +494,7 @@ export default {
         "Pour la soupe de fête, il me faut des dattes de l'oasis et de l'eau fraîche. Mes jambes ne me portent plus assez loin, archer."
       ],
       hint: [
-        "Les dattes sont à l'oasis de Yuquan. Tarik porte l'eau à la citerne."
+        "Les dattes sont à l'oasis de Yuquan. Ahe porte l'eau à la citerne."
       ],
       complete: [
         "La soupe est un triomphe ! Les convives en redemandent. Voici une gousse de piment sacré, la meilleure du Gobi."
@@ -529,7 +529,7 @@ export default {
         "La page est ensablée à moitié dans les dunes. Cherchez un coin de papier qui dépasse."
       ],
       complete: [
-        "« J'ai acheté une carte de la route jusqu'au Kunlun. Je saurai m'en servir. » Ali blêmit. Il griffonne : « Retiens-le, archer. »"
+        "« J'ai acheté une carte de la route jusqu'au Kunlun. Je saurai m'en servir. » Yuan blêmit. Il griffonne : « Retiens-le, archer. »"
       ],
       reward: {
         gold: 90,
@@ -552,7 +552,7 @@ export default {
                 {
                       "type": "talk",
                       "target": "mapmaker_ali",
-                      "text": "Faire tracer par Ali le trajet de Hua sur sa carte (campement des cartographes)",
+                      "text": "Faire tracer par Yuan le trajet de Hua sur sa carte (campement des cartographes)",
                       "lines": [
                             "Je trace les pas de Hua depuis trois jours, et c'est curieux : elle ne suit pas les routes. Elle suit votre route, archer, avec une lune de retard.",
                             "Chaque soleil que vous éteignez, elle arrive ensuite au village voisin. Jamais avant. Jamais très longtemps après."
@@ -570,10 +570,10 @@ export default {
           ],
           "offer": [
                 "Je raconte des histoires de caravane, mais la plus étrange est sous mes yeux : une colporteuse qui suit un archer comme une ombre suit son maître.",
-                "Ali dessine des cartes : demandez-lui de tracer son chemin. Puis allez trouver Hua et regardez comment elle répond."
+                "Yuan dessine des cartes : demandez-lui de tracer son chemin. Puis allez trouver Hua et regardez comment elle répond."
           ],
           "hint": [
-                "Ali est dans le campement des cartographes. Hua se tient près de l'oasis."
+                "Yuan est dans le campement des cartographes. Hua se tient près de l'oasis."
           ],
           "complete": [
                 "« Quelqu'un doit être là quand la lumière s'éteint. » Je ne la raconterai pas, celle-là, archer. Certaines histoires ne se racontent qu'à voix basse, et tant qu'elles ne sont pas finies."

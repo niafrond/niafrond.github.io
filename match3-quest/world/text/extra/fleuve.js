@@ -151,8 +151,8 @@ export default {
       ]
     },
     mud_imp_pit: {
-      name: "Pit",
-      title: "Diablotin de vase",
+      name: "Ni",
+      title: "Petit gui de vase",
       idle: [
         "Chuuut ! Je suis invisible. Ne le répétez pas.",
         "Je joue dans la boue. Je ne fais rien de mal. Presque rien."
@@ -161,7 +161,7 @@ export default {
         {
           whenDone: "sun_2",
           lines: [
-            "Pit s'est vexé de vous avoir croisé. Il n'a pas répondu."
+            "Ni s'est vexé de vous avoir croisé. Il n'a pas répondu."
           ]
         }
       ]
@@ -445,7 +445,7 @@ export default {
     },
     {
       id: "sq_fle_boue",
-      title: "Les diablotins de la vase",
+      title: "Les petits gui de la vase",
       chapter: "✦ Quête secondaire — Lit du Fleuve Jaune",
       giver: "net_mender_wei",
       turnIn: "net_mender_wei",
@@ -455,14 +455,14 @@ export default {
         {
           type: "killGroup",
           target: "mud_imps",
-          text: "Disperser les diablotins de vase (méandres de boue)"
+          text: "Disperser les petits gui de vase (méandres de boue)"
         }
       ],
       offer: [
         "Ces petites pestes me rongent les filets ! Je ne leur en veux pas, ils s'ennuient. Mais mes mailles, si."
       ],
       hint: [
-        "Deux diablotins de vase rôdent dans les méandres. Ils aiment les filets et les farces."
+        "Deux petits gui de vase rôdent dans les méandres. Ils aiment les filets et les farces."
       ],
       complete: [
         "Mes filets sont sauvés. Tenez, un peu de ma meilleure maille : elle retient l'eau et les flèches."
@@ -475,7 +475,7 @@ export default {
     },
     {
       id: "sq_fle_golem",
-      title: "Le golem de l'écluse",
+      title: "Le colosse de l'écluse",
       chapter: "✦ Quête secondaire — Lit du Fleuve Jaune",
       giver: "sluicekeeper_rong",
       turnIn: "sluicekeeper_rong",
@@ -487,14 +487,14 @@ export default {
         {
           type: "kill",
           target: "fleuve_sluice_golem",
-          text: "Abattre le golem de l'écluse (méandres de boue)"
+          text: "Abattre le colosse de l'écluse (méandres de boue)"
         }
       ],
       offer: [
-        "Un golem de fer s'est planté devant ma vanne. Il me regarde comme un reproche. Je ne peux plus faire mon travail."
+        "Un colosse de fer s'est planté devant ma vanne. Il me regarde comme un reproche. Je ne peux plus faire mon travail."
       ],
       hint: [
-        "Le golem de l'écluse se tient au milieu des méandres, près de la grande vanne."
+        "Le colosse de l'écluse se tient au milieu des méandres, près de la grande vanne."
       ],
       complete: [
         "La vanne est libre ! J'ai même osé la caresser. Prenez ce boulon d'écluse : il tient tout ce qu'on lui demande."

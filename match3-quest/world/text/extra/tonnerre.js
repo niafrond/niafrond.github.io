@@ -72,7 +72,7 @@ export default {
     },
     climber_dai: {
       name: "Dai",
-      title: "Alpiniste solitaire",
+      title: "Grimpeur solitaire",
       idle: [
         "Je grimpe pour trouver. Je ne sais pas quoi. Mon frère le savait.",
         "Les cimes ne parlent pas. Elles écoutent, c'est pire."
@@ -88,7 +88,7 @@ export default {
     },
     fairy_yun: {
       name: "Yunxi",
-      title: "Fée des nuages",
+      title: "Xianzi des nuages",
       idle: [
         "Je suis un nuage qui a pris forme humaine. Le matin, je me dissipe, le soir, je m'épaissis.",
         "Les orages sont mes cousins mal élevés. Je leur ai demandé de baisser le ton."
@@ -104,7 +104,7 @@ export default {
     },
     bard_xiang: {
       name: "Xiang",
-      title: "Barde du vent",
+      title: "Chanteur du vent",
       idle: [
         "Je chante les orages. Ils me répondent. Une fois, un éclair m'a demandé de rejouer.",
         "Ma lyre est faite de câbles de cuivre. Elle joue avec les nuages."
@@ -327,7 +327,7 @@ export default {
         {
           type: "talk",
           target: "fairy_yun",
-          text: "Interroger la fée Yunxi (Crêtes foudroyées)",
+          text: "Interroger la xianzi Yunxi (Crêtes foudroyées)",
           lines: [
             "De la pluie ? Mes cousins les nuages en ont. Mais ils sont timides. Dites à Pu de les inviter à dîner."
           ]
@@ -342,7 +342,7 @@ export default {
         }
       ],
       offer: [
-        "Je vends de la pluie en bouteille, mais elle est factice ! J'aimerais de la vraie. Interrogez les experts : l'ermite, la fée et la petite."
+        "Je vends de la pluie en bouteille, mais elle est factice ! J'aimerais de la vraie. Interrogez les experts : l'ermite, la xianzi et la petite."
       ],
       hint: [
         "Lei est dans sa grotte, Yunxi sur les crêtes, Leimei sur la place."
