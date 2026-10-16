@@ -1,3 +1,11 @@
+## [2.71.0](https://github.com/niafrond/niafrond.github.io/compare/v2.70.0...v2.71.0) (2026-10-16)
+
+### Features
+
+* **match3-quest:** atk/déf en probabilités de critique et de blocage, boss pré-générés, sorts de bonus temporaires ([b7b9a20](https://github.com/niafrond/niafrond.github.io/commit/b7b9a20719e7a1bc6e018b83b8bdd15eb160ca9b))
+* **match3-quest:** rééquilibrer ennemis et boss, supprimer le plafond de dégâts, renommer le blocage partiel en paré ([f4ed75a](https://github.com/niafrond/niafrond.github.io/commit/f4ed75a534c96a5425a6168e0646f0993782e5b1))
+* **match3-quest:** rendre les sorts de dégâts critiques et bloquables ([4fd1a0d](https://github.com/niafrond/niafrond.github.io/commit/4fd1a0dff572e371673ea46123f130c3609bcbc1))
+
 ## [2.70.0](https://github.com/niafrond/niafrond.github.io/compare/v2.69.0...v2.70.0) (2026-10-12)
 
 ### Features
