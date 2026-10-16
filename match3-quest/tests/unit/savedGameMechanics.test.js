@@ -558,12 +558,12 @@ describe('progression des joueurs sauvegardés', () => {
 });
 
 describe('déblocage des sorts selon le niveau et la classe', () => {
-    test('niveau 1 : aucun sort ; niveau n : n - 1 sorts ordinaires (les sorts avancés viennent en plus, dès leur niveau)', () => {
+    test('niveau 1 : aucun sort ; niveau n : n - 1 sorts ordinaires (les sorts avancés et de plateau viennent en plus, dès leur niveau)', () => {
         CLASS_IDS.forEach(c => {
             expect(unlockedSpells(c, 1)).toEqual([]);
             for (let L = 2; L <= HIGH_SPELL_FROM_LEVEL; L++) {
                 const list = unlockedSpells(c, L);
-                const ordinary = list.filter(s => s.type !== 'advanced');
+                const ordinary = list.filter(s => s.type !== 'advanced' && s.type !== 'board');
                 expect(ordinary.length).toBe(L - 1);
                 list.forEach(s => expect(s.minLevel).toBeLessThanOrEqual(HIGH_SPELL_FROM_LEVEL));
             }
@@ -643,7 +643,7 @@ describe('déblocage des sorts selon le niveau et la classe', () => {
         CLASS_IDS.forEach(c => {
             const list = unlockedSpells(c, 8);
             expect(ids(list)).toContain('bladeWinds');
-            expect(list.filter(s => s.type !== 'advanced')).toHaveLength(7);
+            expect(list.filter(s => s.type !== 'advanced' && s.type !== 'board')).toHaveLength(7);
         });
     });
 
