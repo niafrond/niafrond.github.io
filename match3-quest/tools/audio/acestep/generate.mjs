@@ -172,7 +172,7 @@ async function cmdGenerate(opts) {
 function cmdList(opts) {
     const f = opts._[1];
     const keys = f ? selectKeysLoose(f) : Object.keys(CATALOG);
-    for (const k of keys) { const t = CATALOG[k]; console.log(`${k.padEnd(58)} ${String(t.bpm ?? '').padStart(3)} bpm  ${t.keyScale.padEnd(9)} ${String(t.dur).padStart(3)} s  ${t.motif ? '♪' + t.motif : ''}`); }
+    for (const k of keys) { const t = CATALOG[k]; console.log(`${k.padEnd(58)} ${String(t.bpm ?? '').padStart(3)} bpm  ${t.keyScale.padEnd(9)} ${String(t.dur).padStart(3)} s  ${t.motif ? '[musique] ' + t.motif : ''}`); }
     console.log(`${keys.length} piste(s)`);
 }
 function selectKeysLoose(f) { return Object.keys(CATALOG).filter(k => (f.includes('*') ? new RegExp(`^${f.replace(/\*/g, '.*')}$`).test(k) : k.includes(f))); }
@@ -183,7 +183,7 @@ function cmdStatus() {
     for (const k of Object.keys(CATALOG)) {
         const d = path.join(OUT, k), vs = fs.existsSync(d) ? fs.readdirSync(d).filter(f => f.endsWith('.mp3')).length : 0;
         if (approved[k]) ok++;
-        console.log(`${(approved[k] ? '✔' : vs ? '·' : ' ')} ${k.padEnd(58)} ${String(vs).padStart(2)} version(s)  ${approved[k] ? `approuvée : ${approved[k].version} (seed ${approved[k].seed})` : ''}`);
+        console.log(`${(approved[k] ? 'OK' : vs ? '·' : ' ')} ${k.padEnd(58)} ${String(vs).padStart(2)} version(s)  ${approved[k] ? `approuvée : ${approved[k].version} (seed ${approved[k].seed})` : ''}`);
     }
     console.log(`\n${ok}/${Object.keys(CATALOG).length} approuvées`);
 }
@@ -200,7 +200,7 @@ function cmdApprove(opts) {
     const db = readJson(APPROVED_DB, {});
     db[key] = { version: ver, seed: meta.seed ?? null, date: new Date().toISOString(), prompt: meta.request?.prompt ?? '' };
     fs.writeFileSync(APPROVED_DB, JSON.stringify(db, null, 2));
-    console.log(`✔ ${key} ← ${ver} (seed ${meta.seed}). Fichier + paramètres conservés dans approved/.`);
+    console.log(`OK ${key} ← ${ver} (seed ${meta.seed}). Fichier + paramètres conservés dans approved/.`);
 }
 
 function cmdInstall(opts) {
@@ -220,7 +220,7 @@ function cmdInstall(opts) {
         if (r.status !== 0) { console.error(`✗ ${k} : ${r.stderr}`); continue; }
         const kb = Math.round(fs.statSync(dst).size / 1024);
         manifest.music[k] = { seconds: Math.round(sec * 10) / 10, sections: manifest.music[k]?.sections ?? 1 };
-        console.log(`✔ ${k} → audio/music/${k}.mp3 (${kb} Ko${kb > 500 ? ' ⚠ > 500 Ko, raccourcir via --duration' : ''})`);
+        console.log(`OK ${k} → audio/music/${k}.mp3 (${kb} Ko${kb > 500 ? ' ATTENTION : > 500 Ko, raccourcir via --duration' : ''})`);
     }
     fs.writeFileSync(GAME_MANIFEST, JSON.stringify(manifest, null, 1) + '\n');
 }
@@ -228,6 +228,6 @@ function cmdInstall(opts) {
 const opts = parseArgs(process.argv.slice(2));
 const cmd = opts._[0];
 const main = { list: cmdList, status: cmdStatus, approve: cmdApprove, install: cmdInstall, generate: cmdGenerate,
-    motifs: () => { for (const [n, p] of Object.entries(renderMotifs())) console.log(`✔ ${n} → ${p} (+ .mid)`); } }[cmd];
+    motifs: () => { for (const [n, p] of Object.entries(renderMotifs())) console.log(`OK ${n} → ${p} (+ .mid)`); } }[cmd];
 if (!main) { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('*/')[0].replace(/^#!.*\n/, '').replace(/^\/\*\*\n|^ \* ?/gm, '')); process.exit(cmd ? 1 : 0); }
 Promise.resolve(main(opts)).catch(e => die(e.message));
