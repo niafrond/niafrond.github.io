@@ -1,3 +1,9 @@
+## [2.73.0](https://github.com/niafrond/niafrond.github.io/compare/v2.72.0...v2.73.0) (2026-10-16)
+
+### Features
+
+* **match3-quest:** sorts de plateau au choix, annonces à clic et correctif des portes de gardien ([#468](https://github.com/niafrond/niafrond.github.io/issues/468)) ([c7c518b](https://github.com/niafrond/niafrond.github.io/commit/c7c518bca40e456fafae2f4266d0ab94811dc685))
+
 ## [2.72.0](https://github.com/niafrond/niafrond.github.io/compare/v2.71.0...v2.72.0) (2026-10-16)
 
 ### Features
