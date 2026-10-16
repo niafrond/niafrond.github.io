@@ -1,3 +1,13 @@
+## [2.72.0](https://github.com/niafrond/niafrond.github.io/compare/v2.71.0...v2.72.0) (2026-10-16)
+
+### Features
+
+* **match3-quest:** annoncer le coup du renard compagnon avant son mouvement ([6ad3a96](https://github.com/niafrond/niafrond.github.io/commit/6ad3a96186d1a076255f0da8882ea714cd3cbde1))
+
+### Bug Fixes
+
+* **match3-quest:** résoudre les matchs de l'ennemi, accélérer les barres de PV et allonger les annonces de critique ([b3f1ff4](https://github.com/niafrond/niafrond.github.io/commit/b3f1ff4590cdab4f5a584104a0604a20a9927c51))
+
 ## [2.71.0](https://github.com/niafrond/niafrond.github.io/compare/v2.70.0...v2.71.0) (2026-10-16)
 
 ### Features
