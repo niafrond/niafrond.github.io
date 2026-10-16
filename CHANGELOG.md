@@ -1,3 +1,9 @@
+## [2.75.0](https://github.com/niafrond/niafrond.github.io/compare/v2.74.1...v2.75.0) (2026-10-16)
+
+### Features
+
+* **match3-quest:** intégrer la BO générée avec ACE-Step, deux variantes en boucle continue ([#473](https://github.com/niafrond/niafrond.github.io/issues/473)) ([1843bb6](https://github.com/niafrond/niafrond.github.io/commit/1843bb68a6b0b204cba1a206b3f78c2811740fa9))
+
 ## [2.74.1](https://github.com/niafrond/niafrond.github.io/compare/v2.74.0...v2.74.1) (2026-10-16)
 
 ### Bug Fixes
