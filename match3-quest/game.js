@@ -1926,11 +1926,19 @@ export function finishPlayerTurn(){
     // Xiao Gui (compagnon renard) : 30 % de chance de jouer un coup aléatoire supplémentaire.
     if (!foxActedThisTurn && activeCompanionIds.has('xiao_gui') && Math.random() < 0.30) {
         foxActedThisTurn = true;
-        log('Xiao Gui bondit ! Hi hi — un coup de renard !');
-        // On annonce que le renard joue, puis seulement il fait son mouvement.
-        showCombatAnimation({ icon: 'star', title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
-            autoHideMs: 1200 * animationFactor(),
-            onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
+        // Le renard attend la fin de l'événement en cours (attaque qui s'abat, annonce à valider par un clic…) avant d'agir.
+        currentTurn = 'enemy'; // bloque le plateau pendant l'attente
+        updateStats();
+        afterPlayerAnimations(() => {
+            if(gameState.combatState !== 'active') return;
+            currentTurn = 'player'; // le coup du renard se joue pendant le tour du joueur
+            updateStats();
+            log('Xiao Gui bondit ! Hi hi — un coup de renard !');
+            // On annonce que le renard joue, puis seulement il fait son mouvement.
+            showCombatAnimation({ icon: 'star', title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
+                autoHideMs: 1200 * animationFactor(),
+                onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
+            });
         });
         return; // le plateau rappelle finishPlayerTurn() après résolution
     }
