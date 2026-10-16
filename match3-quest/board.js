@@ -23,6 +23,7 @@ import {
     rollTileWithJoker
 } from "./joker.js";
 import { actionGuard } from "./actionGuard.js";
+import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
 
 // grille et sélection
 export let board = [];
@@ -122,8 +123,6 @@ function paintTileGlyph(el, tile){
     el.title = TILE_LABELS[isJokerTile(tile) ? 'joker' : tile] || '';
 }
 
-const SKULL_ATTACK_BONUS_DIVISOR = 10;
-const SKULL_ATTACK_BONUS_CAP = 6;
 const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
 
@@ -743,22 +742,20 @@ export function checkMatches(forceFullBoard = false){
             const attacker = currentTurn === 'player' ? player : enemy;
             flyManaToCounter(indices, null, { isPlayer: attacker === player, type: 'skull' });
             const opponent = currentTurn === 'player' ? enemy : player;
-            // Diminution des pics de degats des cranes a haut niveau.
-            const attackBonus = Math.min(
-                SKULL_ATTACK_BONUS_CAP,
-                Math.floor((attacker.attack || 0) / SKULL_ATTACK_BONUS_DIVISOR)
-            );
+            // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
+            const attackBonus = skullStrengthBonus(attacker);
             const rawDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
-            const defReduction = Math.floor((opponent.defense || 0) / 2);
-            let dmg = Math.max(1, rawDmg - defReduction);
-            if(opponent === player && player.damageReduction > 0) {
+            const weakened = attacker === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
+            const strike = resolveStrike(rawDmg, attacker, opponent, { weakened });
+            let dmg = strike.damage;
+            if(dmg > 0 && opponent === player && player.damageReduction > 0) {
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
             if(attacker === enemy) {
                 dmg = clampEnemyAttackDamage(dmg, enemy);
             }
             applyDamage(opponent, dmg);
-            log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
+            log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (bloqué en partie)' : ''}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);

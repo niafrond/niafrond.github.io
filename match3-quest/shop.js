@@ -29,7 +29,7 @@ function offerRow(offer, gold) {
         : offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
         : offer.kind === 'weapon'
         ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}`
-        : obj.type === 'shield' ? `Déf. +${obj.defense}`
+        : obj.type === 'shield' ? `Déf. +${obj.defense} %`
             : obj.type === 'reusable' ? `${obj.actionPoints || 2} ${svgIcon('arrow')} • ${obj.chargesPerCycle} charge${obj.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${obj.rechargeTurns || 4} tours`
                 : 'Relique passive';
     return `
@@ -51,7 +51,7 @@ function sellRow(entry) {
     const obj = entry.obj;
     const color = getRarityColor(entry.rarity);
     const icon = entry.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(entry.rarity);
-    const stats = entry.kind === 'weapon' ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}` : (obj.type === 'shield' ? `Déf. +${obj.defense}` : obj.type === 'artifact' ? 'Relique' : 'Objet');
+    const stats = entry.kind === 'weapon' ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}` : (obj.type === 'shield' ? `Déf. +${obj.defense} %` : obj.type === 'artifact' ? 'Relique' : 'Objet');
     return `
         <div class="weapon-item shop-weapon merchant-offer${entry.locked ? ' is-locked' : ''}" style="border-left:3px solid ${color}">
             <span class="weapon-icon">${icon}</span>

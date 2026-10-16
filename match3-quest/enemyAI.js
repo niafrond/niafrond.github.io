@@ -2,6 +2,7 @@
 // Gère les décisions stratégiques et le comportement des ennemis en combat
 
 import { player, enemy, canEntityCastSpell, getEnemyAttackDamageCap } from "./game.js";
+import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
 
 // ========================================
 // CONFIGURATION DES NIVEAUX D'IA
@@ -304,7 +305,7 @@ export function evaluateWeapon() {
     let reason = "";
 
     // Dégâts de l'arme
-    const weaponDamage = Math.min(enemy.weapon.damage + (enemy.attack || 0), getEnemyAttackDamageCap(enemy));
+    const weaponDamage = Math.min(Math.floor(enemy.weapon.damage * (1 + (critChance(enemy) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(player) / 100) * 0.7)), getEnemyAttackDamageCap(enemy));   // dégâts espérés (critique, blocage)
 
     // Priorité si ça peut tuer le joueur
     if (weaponDamage >= player.hp) {

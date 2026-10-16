@@ -1,0 +1,154 @@
+// Attaque = chance de critique, défense = chance de blocage (plafonnées à 98 %), bonus d'équipement et de sorts,
+// force sur les crânes, agilité des ennemis et boss pré-générés.
+import { describe, test, expect } from '@jest/globals';
+import './fixtures/xhrFromDisk.js';
+import {
+    STAT_CHANCE_CAP, critChance, blockChance, rawAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
+    skullStrengthBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
+} from '../../combatStats.js';
+import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
+import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
+import { allItems } from '../../items.js';
+import spellsJson from '../../spells.json' with { type: 'json' };
+
+const seq = (...values) => { let i = 0; return () => values[Math.min(i++, values.length - 1)]; };
+
+describe('plafond à 98 %', () => {
+    test('affichage brut au-delà de 100, chance réelle plafonnée', () => {
+        const e = { attack: 150, defense: 120 };
+        expect(rawAttack(e)).toBe(150);
+        expect(rawDefense(e)).toBe(120);
+        expect(critChance(e)).toBe(STAT_CHANCE_CAP);
+        expect(blockChance(e)).toBe(STAT_CHANCE_CAP);
+        expect(STAT_CHANCE_CAP).toBe(98);
+    });
+
+    test('jamais de coup garanti : 99,5 % de jet ne passe pas à 98 %', () => {
+        expect(rollBlock({ defense: 500 }, seq(0.99, 0))).toBe('none');
+    });
+});
+
+describe('blocage', () => {
+    test('total ou partiel', () => {
+        expect(rollBlock({ defense: 50 }, seq(0.1, 0.1))).toBe('total');
+        expect(rollBlock({ defense: 50 }, seq(0.1, 0.9))).toBe('partial');
+        expect(rollBlock({ defense: 50 }, seq(0.9, 0.1))).toBe('none');
+        expect(applyBlock(10, 'total')).toBe(0);
+        expect(applyBlock(10, 'partial')).toBe(5);
+        expect(applyBlock(10, 'none')).toBe(10);
+    });
+
+    test('resolveStrike : critique ×1,5 puis blocage', () => {
+        const attacker = { attack: 100 };
+        const target = { defense: 0 };
+        expect(resolveStrike(10, attacker, target, { rng: () => 0.5 })).toEqual({ damage: 15, crit: true, block: 'none' });
+        expect(resolveStrike(10, { attack: 0 }, { defense: 100 }, { rng: seq(0.5, 0.1, 0.1) }).damage).toBe(0);
+    });
+
+    test('l\'affaiblissement retire des points d\'attaque', () => {
+        expect(critChance({ attack: 30 }, 12)).toBe(18);
+    });
+});
+
+describe('équipement et sorts', () => {
+    test('les bonus d\'armes et de boucliers s\'ajoutent', () => {
+        const bow = getWeaponById('arc_du_juge_celeste');
+        expect(bow.atkBonus).toBeGreaterThan(0);
+        const shield = allItems.find(i => i.id === 'legendary_shield');
+        const hero = { attack: 10, defense: 30, equippedWeapon: bow, equipment: { leftHand: shield } };
+        expect(gearBonus(hero, 'attack')).toBe(bow.atkBonus + shield.atkBonus);
+        expect(rawAttack(hero)).toBe(10 + bow.atkBonus + shield.atkBonus);
+        expect(rawDefense(hero)).toBe(30 + bow.defBonus);
+    });
+
+    test('chaque bonus d\'arme désigne une arme existante', () => {
+        Object.keys(WEAPON_STAT_BONUSES).forEach(id => expect(allWeapons.some(w => w.id === id)).toBe(true));
+    });
+
+    test('bonus de sort temporaire : sans cumul, expire après N tours', () => {
+        const e = { attack: 5, defense: 5 };
+        addStatBuff(e, { attack: 20, defense: 10, turns: 2 });
+        addStatBuff(e, { attack: 10, turns: 3 });
+        expect(rawAttack(e)).toBe(25);
+        expect(rawDefense(e)).toBe(15);
+        expect(tickStatBuffs(e)).toEqual([]);
+        expect(tickStatBuffs(e)).toEqual(['defense']);
+        expect(statBuffAmount(e, 'defense')).toBe(0);
+        expect(tickStatBuffs(e)).toEqual(['attack']);
+        expect(rawAttack(e)).toBe(5);
+    });
+
+    test('nouveaux sorts de bonus temporaire', () => {
+        const buffs = spellsJson.allClassSpells.filter(s => s.effect === 'statBuff');
+        expect(buffs.length).toBeGreaterThanOrEqual(4);
+        buffs.forEach(s => {
+            expect((s.atkBuff || 0) + (s.defBuff || 0)).toBeGreaterThan(0);
+            expect(s.duration).toBeGreaterThanOrEqual(1);
+        });
+        expect(buffs.some(s => s.atkBuff)).toBe(true);
+        expect(buffs.some(s => s.defBuff)).toBe(true);
+        const inClassList = ['sorcererSpells', 'assassinSpells', 'templarSpells', 'barbarianSpells'].flatMap(k => spellsJson[k]).filter(s => s.effect === 'statBuff');
+        expect(inClassList.length).toBe(buffs.length);
+    });
+});
+
+describe('force et crânes', () => {
+    test('la force augmente les dégâts des crânes (plafonné)', () => {
+        expect(skullStrengthBonus({ attributes: { strength: 0 } })).toBe(0);
+        expect(skullStrengthBonus({ attributes: { strength: 6 } })).toBe(3);
+        expect(skullStrengthBonus({ attributes: { strength: 999 } })).toBe(6);
+        expect(skullStrengthBonus({})).toBe(0);
+    });
+});
+
+describe('ennemis', () => {
+    const enc = (level, extra = {}) => ({ templateId: 'orc_warmaster', level, ...extra });
+
+    test('agilité proportionnelle au niveau, très rarement nulle', () => {
+        let zeros = 0;
+        const N = 300;
+        for (let i = 0; i < N; i++) {
+            const e = createMapEnemy(enc(10));
+            if (e.attributes.agility === 0) zeros++;
+            expect(e.attributes.agility).toBeLessThanOrEqual(10);
+        }
+        expect(zeros).toBeLessThan(N * 0.15);
+        const avg = lvl => Array.from({ length: 100 }, () => createMapEnemy(enc(lvl)).attributes.agility).reduce((a, b) => a + b, 0) / 100;
+        expect(avg(30)).toBeGreaterThan(avg(5) * 3);
+    });
+
+    test('attaque et défense sont des pourcentages croissant avec le niveau', () => {
+        const low = createMapEnemy(enc(3));
+        const high = createMapEnemy(enc(30));
+        expect(high.attack).toBeGreaterThan(low.attack);
+        expect(low.attack).toBeLessThan(40);
+        expect(high.attributes.strength).toBeGreaterThan(low.attributes.strength);
+    });
+
+    test('un boss est identique à chaque rencontre (arme, sorts, objet, stats)', () => {
+        const boss = () => createMapEnemy(enc(12, { enemyId: 'boss-bambous', boss: { name: 'Boss test' } }));
+        const first = boss();
+        for (let i = 0; i < 10; i++) {
+            const again = boss();
+            expect(again.weapon?.id).toBe(first.weapon?.id);
+            expect(again.spells.map(s => s.id)).toEqual(first.spells.map(s => s.id));
+            expect(again.inventoryItem?.id).toBe(first.inventoryItem?.id);
+            expect(again.abilities).toEqual(first.abilities);
+            expect(again.attributes).toEqual(first.attributes);
+            expect([again.attack, again.defense, again.maxHp]).toEqual([first.attack, first.defense, first.maxHp]);
+        }
+    });
+
+    test('la génération de boss de palier est déterministe et ne perturbe pas Math.random', () => {
+        const before = Math.random;
+        const a = createBossEnemyForTier(10);
+        const b = createBossEnemyForTier(10);
+        expect(Math.random).toBe(before);
+        expect([a.templateId, a.weapon?.id, a.spells.map(s => s.id)]).toEqual([b.templateId, b.weapon?.id, b.spells.map(s => s.id)]);
+    });
+
+    test('un ennemi normal reste aléatoire', () => {
+        const ids = new Set(Array.from({ length: 40 }, () => createMapEnemy(enc(15)).weapon?.id));
+        expect(ids.size).toBeGreaterThan(1);
+    });
+});

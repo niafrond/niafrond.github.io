@@ -46,6 +46,40 @@ function loadEnemyCatalogSync(){
     return enemyCatalog;
 }
 
+
+// Graine déterministe : les boss (et leur équipement, sorts, objet) sont pré-générés une fois pour toutes à partir d'une clé stable,
+// ils ne changent donc pas quand on revient les voir. Math.random est remplacé le temps de la construction (synchrone).
+function hashSeed(key){
+    let h = 2166136261;
+    const text = String(key);
+    for(let i = 0; i < text.length; i++){
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+}
+
+function mulberry32(seed){
+    let a = seed >>> 0;
+    return function(){
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+export function withSeededRandom(key, build){
+    const original = Math.random;
+    Math.random = mulberry32(hashSeed(key));
+    try {
+        return build();
+    } finally {
+        Math.random = original;
+    }
+}
+
 function clamp(num, min, max){
     return Math.max(min, Math.min(max, num));
 }
@@ -159,13 +193,17 @@ function pickBossTemplate(preferredTemplateId = null){
 function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons){
     const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
     const baseHp = 40 + enemyLevel * 10;
-    const baseAtk = 5 + enemyLevel * 4;
     const baseDef = enemyDefenseForLevel(enemyLevel);
 
     const hp = Math.floor(baseHp * (stats.hpMult || 1));
-    const maxAttackFromHp = Math.max(1, Math.floor(hp / 4));
-    const atk = Math.min(Math.floor(baseAtk * (stats.atkMult || 1)), maxAttackFromHp);
-    const def = Math.max(0, Math.floor(baseDef * (stats.defMult || 1)));
+    // Force et agilité proportionnelles au niveau (l'agilité n'est que très rarement nulle).
+    const strength = Math.max(0, Math.round(enemyLevel * (0.3 + Math.random() * 0.5) * (stats.atkMult || 1)));
+    const agility = Math.random() < 0.04 ? 0 : Math.max(1, Math.round(enemyLevel * (0.3 + Math.random() * 0.6) * (stats.defMult || 1)));
+    // Attaque = chance de critique, défense = chance de blocage (en %, plafonnées à 98 % à l'usage : voir combatStats.js).
+    const atk = Math.max(0, Math.round((3 + enemyLevel * 1.5) * (stats.atkMult || 1)));
+    const def = Math.max(0, Math.floor(baseDef * 0.5 * (stats.defMult || 1))) + agility;
+    // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
+    const power = Math.min(Math.floor((5 + enemyLevel * 4) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
 
     let enemyWeapon = null;
     if(template.hasWeapon !== false){
@@ -203,6 +241,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         maxHp: hp,
         attack: atk,
         defense: def,
+        power,
+        attributes: { strength, agility, intelligence: 0, stamina: 0, morale: 0 },
         resistances: buildResistances(template, enemyLevel),
         combatPoints: 0,
         mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
@@ -240,15 +280,17 @@ function applyBossScaling(boss, template){
 
 export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, preferredTemplateId = null){
     const safeTier = Math.max(5, Math.floor(tierLevel || 5));
-    const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
-    const bossLevel = safeTier + 2;
-    const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg);
+    return withSeededRandom(`boss|${safeTier}|${preferredTemplateId || ''}`, () => {
+        const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
+        const bossLevel = safeTier + 2;
+        const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg);
 
-    applyBossScaling(boss, template);
-    boss.bossTier = safeTier;
-    boss.name = `Boss ${boss.name}`;
+        applyBossScaling(boss, template);
+        boss.bossTier = safeTier;
+        boss.name = `Boss ${boss.name}`;
 
-    return boss;
+        return boss;
+    });
 }
 
 // Ennemi rencontré sur la carte d'exploration (voir exploration.js > encounterFor) :
@@ -257,7 +299,11 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     const catalog = loadEnemyCatalogSync();
     const template = catalog.find(t => t.id === encounter?.templateId) || pickRandom(catalog);
     const level = Math.max(1, Math.floor(encounter?.level || 1));
-    const enemyEntity = buildEnemyFromTemplate(template, level, allWeaponsArg);
+    // Boss : équipement, sorts et objet pré-générés d'après son identité (ils ne bougent pas quand on revient le voir).
+    const bossKey = encounter?.boss ? `map-boss|${encounter.enemyId || ''}|${template.id}|${level}` : null;
+    const enemyEntity = bossKey
+        ? withSeededRandom(bossKey, () => buildEnemyFromTemplate(template, level, allWeaponsArg))
+        : buildEnemyFromTemplate(template, level, allWeaponsArg);
 
     if(encounter?.boss){
         applyBossScaling(enemyEntity, template);

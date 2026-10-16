@@ -37,11 +37,11 @@ export const ATTRIBUTE_LABELS = {
 const STAT_TEXT = {
     strength: (n) => ({
         title: "Attaque",
-        line: `+${n} attaque : chaque attaque (arme, points d'action) inflige ${n} dégât de plus.`
+        line: `+${n} attaque : ${n} % de chances de coup critique en plus (arme, crânes) ; la force augmente aussi les dégâts des crânes (+1 par crâne tous les 2 points).`
     }),
     agility: (n) => ({
         title: "Défense",
-        line: `+${n} défense : chaque attaque physique subie fait ${n} dégât de moins (jamais moins de 1), et les crânes vous blessent un peu moins.`
+        line: `+${n} défense : ${n} % de chances de bloquer en tout ou partie une attaque armée ou de crânes.`
     }),
     intelligence: (n) => ({
         title: "Puissance magique",
@@ -53,7 +53,7 @@ const STAT_TEXT = {
     }),
     morale: (n) => ({
         title: "Attaque morale",
-        line: `+${n} attaque : chaque attaque inflige ${n} dégât de plus.`
+        line: `+${n} attaque : ${n} % de chances de coup critique en plus (arme, crânes).`
     })
 };
 

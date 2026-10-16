@@ -7,13 +7,13 @@ import { canEquip, equip, unequip } from './equipment.js';
 export const allItems = [
     // === BOUCLIERS ===
     {id:"jade_shield", name:"Bouclier de Jade", type:"shield", minLevel:5, rarity:"uncommon",
-     description:"Un bouclier poli en jade, renforce la défense de 8", defense:8},
+     description:"Un bouclier poli en jade, renforce la défense (blocage) de 8 %", defense:8},
     {id:"dragon_shield", name:"Bouclier du Dragon Blanc", type:"shield", minLevel:10, rarity:"rare",
-     description:"Un bouclier gravé du dragon blanc, défense +15", defense:15},
+     description:"Un bouclier gravé du dragon blanc, défense +15, critique +3 %", defense:15, atkBonus:3},
     {id:"ancestral_shield", name:"Rondache Ancestrale", type:"shield", minLevel:15, rarity:"rare",
      description:"Un bouclier ancien renforcé par le temps, défense +20, absorbe 50 dégâts par combat", defense:20, absorbDamage:50},
     {id:"legendary_shield", name:"Bouclier de l'Empereur Jaune", type:"shield", minLevel:18, rarity:"legendary",
-     description:"Le bouclier mythique de l'Empereur Jaune, défense +30, absorbe 100 dégâts", defense:30, absorbDamage:100},
+     description:"Le bouclier mythique de l'Empereur Jaune, défense +30, critique +8 %, absorbe 100 dégâts", defense:30, atkBonus:8, absorbDamage:100},
 
     // === OBJETS RECHARGEABLES ===
     {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:2, rechargeTurns:8,
