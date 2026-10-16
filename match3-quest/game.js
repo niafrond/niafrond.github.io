@@ -438,11 +438,11 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, target: `→ ${target.name}` }, true);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: strikeText(Math.floor(dmg), spellFlags, lastSpellStrike?.block), target: `→ ${target.name}` }, true);
             log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: strikeText(Math.floor(dmg), spellFlags, lastSpellStrike?.block), source: caster.name, target: '→ Vous' }, false);
             log(`${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
@@ -1600,6 +1600,11 @@ export function updatePlayerStatsTab(){
     });
 }
 
+// Texte de dégâts de l'animation : « BLOQUÉ ! » seul si le coup est entièrement bloqué (jamais de « -0 dégâts »).
+function strikeText(dmg, flags, block) {
+    return block === 'total' ? blockLabel('total') : `-${dmg} dégâts${flags}`;
+}
+
 // Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
@@ -1781,7 +1786,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     const icon = getWeaponIcon(weapon.type);
 
     const critSuffix = `${isCrit ? ' CRITIQUE !' : ''}${blockText ? ` ${blockText}` : ''}`;
-    showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
+    showCombatAnimation({ icon, title: weapon.name, damage: strikeText(dmg, critSuffix, strike.block), target: `→ ${enemy.name}` }, true);
     log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 
@@ -2104,7 +2109,7 @@ export function enemyTurn(){
             applyDamage(player, dmg);
             playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
-            showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
+            showCombatAnimation({ icon, title: enemy.weapon.name, damage: strikeText(dmg, `${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, strike.block), source: enemy.name, target: '→ Vous' }, false);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
             
             // Vérifier l'état après l'action
