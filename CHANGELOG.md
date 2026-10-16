@@ -1,3 +1,9 @@
+## [2.74.0](https://github.com/niafrond/niafrond.github.io/compare/v2.73.1...v2.74.0) (2026-10-16)
+
+### Features
+
+* **match3-quest:** ajouter le script de génération de la BO avec ACE-Step ([#471](https://github.com/niafrond/niafrond.github.io/issues/471)) ([0a2a6ca](https://github.com/niafrond/niafrond.github.io/commit/0a2a6cabe775e8b2345147efe96afc2ad3777fca))
+
 ## [2.73.1](https://github.com/niafrond/niafrond.github.io/compare/v2.73.0...v2.73.1) (2026-10-16)
 
 ### Bug Fixes
