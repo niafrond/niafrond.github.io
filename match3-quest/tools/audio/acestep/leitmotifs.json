@@ -1,0 +1,21 @@
+{
+  "_doc": "Trace écrite EXACTE des leitmotivs (la cohérence ne peut pas venir du texte seul). Notes = [hauteur, durée en temps] ; 'R' = silence. Rendus en WAV/MIDI de référence par `node generate.mjs motifs` (dossier refs/). Modifier ici puis relancer `motifs` pour changer une référence.",
+  "houyi": {
+    "name": "Hou Yi — l'arc qui se tend",
+    "bpm": 72, "repeat": 2,
+    "contour": "montée par degrés (tension de la corde) → note tenue (immobilité avant le tir) → saut d'octave descendant (la flèche part) → retombée mélancolique sur la tonique",
+    "notes": [["A3",1],["D4",1],["E4",1],["F#4",2],["A4",3],["R",1],["D5",0.5],["B4",0.5],["A4",1],["F#4",1],["E4",2],["D4",4]]
+  },
+  "fengmeng": {
+    "name": "Feng Meng — le disciple dans l'ombre",
+    "bpm": 84, "repeat": 2,
+    "contour": "répétitions insistantes qui tendent vers le motif de Hou Yi (A3-D4) sans jamais s'y résoudre ; note chromatique (G#) et phrase interrompue qui finit sur un silence",
+    "notes": [["D4",0.5],["E4",0.5],["D4",0.5],["E4",0.5],["F#4",1],["A4",1.5],["G#4",0.5],["A4",1],["R",1],["B4",1],["A4",1],["G#4",2],["R",2]]
+  },
+  "suns": {
+    "name": "Les Dix Soleils — chaleur insoutenable",
+    "bpm": 132, "repeat": 3,
+    "contour": "arpège pentatonique ascendant en registre aigu, répété un demi-ton plus haut (ordre cosmique déréglé), tenu sur un triton (G#) qui n'est jamais résolu",
+    "notes": [["D5",0.25],["E5",0.25],["F#5",0.25],["A5",0.25],["B5",0.25],["D6",0.25],["E6",0.25],["G#6",1.25],["Eb5",0.25],["F5",0.25],["G5",0.25],["Bb5",0.25],["C6",0.25],["Eb6",0.25],["F6",0.25],["A6",1.25]]
+  }
+}
