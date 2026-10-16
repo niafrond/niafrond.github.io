@@ -133,3 +133,24 @@ describe('écran de résultat : trois sections', () => {
         expect(css).toMatch(/100dvh/);
     });
 });
+
+describe('compteur de PV : moins de 4 s quel que soit l\'écart', () => {
+    test.each([1, 10, 100, 400, 1000, 5000])('écart %i', async delta => {
+        const { hpBarTiming, HP_BAR_MAX_ANIMATION_MS } = await import('../../combatFlow.js');
+        const { intervalMs, unit } = hpBarTiming(delta);
+        expect(Math.ceil(delta / unit) * intervalMs).toBeLessThanOrEqual(HP_BAR_MAX_ANIMATION_MS + intervalMs);
+        expect(Math.ceil(delta / unit) * intervalMs).toBeLessThan(4000);
+    });
+});
+
+describe('plateau : les matchs de l\'ennemi sont toujours résolus', () => {
+    const board = readFileSync(new URL('../../board.js', import.meta.url), 'utf8');
+    test('le premier échange, joueur ou ennemi, démarre la partie', () => {
+        const swap = board.slice(board.indexOf('export function swapTiles'), board.indexOf('export function renderBoard'));
+        expect(swap).toMatch(/\n    gameStarted = true;/);
+        expect(swap).not.toMatch(/if\(currentTurn === 'player'\)\{\s*gameStarted = true;/);
+    });
+    test('un plateau de départ ne garde pas d\'alignement non résolu', () => {
+        expect(board).toMatch(/if\(!gameStarted && !forceFullBoard\)\{[\s\S]*?hasMatchesOnBoard\(board\)\) generateNewBoard\(\)/);
+    });
+});
