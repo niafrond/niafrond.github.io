@@ -158,16 +158,6 @@ export function addBonusTurn(entity, amount = 1){
     return entity.bonusTurn;
 }
 
-export function getEnemyAttackDamageCap(enemyEntity = enemy){
-    const hpReference = Math.max(1, Math.floor(enemyEntity?.maxHp || enemyEntity?.hp || 1));
-    return Math.max(1, Math.floor(hpReference / 4));
-}
-
-export function clampEnemyAttackDamage(rawDamage, enemyEntity = enemy){
-    const normalizedDamage = Math.max(0, Math.floor(rawDamage || 0));
-    return Math.min(normalizedDamage, getEnemyAttackDamageCap(enemyEntity));
-}
-
 // Couleurs de mana d'un sort : une (coût simple) ou plusieurs (coût multi-mana).
 export function spellColorsOf(spell){
     if(!spell) return [];
@@ -280,12 +270,12 @@ export function applyDamage(target, damage, options = {}){
         const caster = target === player ? enemy : player;
         const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
         const strike = resolveStrike(normalizedDamage, caster, target, { weakened });
-        normalizedDamage = caster === enemy ? clampEnemyAttackDamage(strike.damage, enemy) : strike.damage;
+        normalizedDamage = strike.damage;
         strike.damage = normalizedDamage;
         lastSpellStrike = strike;
         if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
         if(strike.block === 'total') log(`${target.name} bloque entièrement ${options.sourceSpell.name}.`);
-        else if(strike.block === 'partial') log(`${target.name} bloque en partie ${options.sourceSpell.name}.`);
+        else if(strike.block === 'partial') log(`${target.name} pare ${options.sourceSpell.name}.`);
     }
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
@@ -439,9 +429,6 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         }
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
-        }
-        if(!isPlayerCaster) {
-            dmg = clampEnemyAttackDamage(dmg, caster);
         }
         applyDamage(target, dmg, { sourceSpell: spell });
         if(lastSpellStrike) {
@@ -1792,7 +1779,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
     const critSuffix = `${isCrit ? ' CRITIQUE !' : ''}${blockText ? ` ${blockText}` : ''}`;
     showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
-    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'bloque en partie'}.` : ''}`);
+    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 
 
@@ -2094,17 +2081,16 @@ export function enemyTurn(){
             enemy.combatPoints -= enemy.weapon.actionPoints;
             const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
             // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
-            const strike = resolveStrike(enemy.weapon.damage, enemy, player, { weakened: weakenedAmount });
+            const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
             let dmg = strike.damage;
             if(dmg > 0 && player.damageReduction > 0) {
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
-            dmg = clampEnemyAttackDamage(dmg, enemy);
             applyDamage(player, dmg);
             playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
-            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous bloquez en partie le coup.' : ''}`);
+            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
             
             // Vérifier l'état après l'action
             finishEnemyTurn();

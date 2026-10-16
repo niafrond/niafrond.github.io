@@ -147,6 +147,23 @@ describe('ennemis', () => {
         expect([a.templateId, a.weapon?.id, a.spells.map(s => s.id)]).toEqual([b.templateId, b.weapon?.id, b.spells.map(s => s.id)]);
     });
 
+    test('rééquilibrage : critique/blocage raisonnables, coups d\'arme proches du plafond, boss plus forts', () => {
+        for (const level of [5, 20, 40]) {
+            const normals = Array.from({ length: 60 }, () => createMapEnemy(enc(level)));
+            const avg = f => normals.reduce((sum, e) => sum + f(e), 0) / normals.length;
+            expect(avg(e => e.attack)).toBeLessThan(level * 1.4 + 5);
+            expect(avg(e => e.defense)).toBeLessThan(level * 1.1 + 5);
+            const cap = avg(e => e.maxHp) / 4;
+            const hit = avg(e => (e.weapon?.damage || 0) + (e.weaponPower || 0));
+            expect(hit).toBeGreaterThan(cap * 0.5);
+            expect(hit).toBeLessThanOrEqual(cap * 1.3);
+            const boss = createMapEnemy(enc(level, { enemyId: 'b', boss: { name: 'B' } }));
+            expect(boss.maxHp).toBeGreaterThan(avg(e => e.maxHp) * 1.5);
+            expect(boss.attack).toBeGreaterThan(avg(e => e.attack));
+            expect(boss.spells.length).toBe(Math.floor(level / 5) + 1 > boss.spells.length ? boss.spells.length : Math.floor(level / 5) + 1);
+        }
+    });
+
     test('un ennemi normal reste aléatoire', () => {
         const ids = new Set(Array.from({ length: 40 }, () => createMapEnemy(enc(15)).weapon?.id));
         expect(ids.size).toBeGreaterThan(1);

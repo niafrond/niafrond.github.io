@@ -131,13 +131,13 @@ function buildResistances(template, level){
     return applyWeaknessToResistances(resistances, resolveWeakColor(resolvePreferredColor(template)));
 }
 
-function buildSpellLoadout(template, enemyLevel){
+function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
     const genericSpells = getAllSpells().filter(sp => !sp.class && !sp.effect && !sp.playerOnly && sp.minLevel <= enemyLevel);   // sorts avancés (effets de plateau) : réservés au joueur
 
     const preferredColors = template.spellProfile?.preferredColors || [];
     const maxSpells = Math.floor(enemyLevel / 5) + 1;
-    const targetSpellCount = Math.ceil(Math.random() * maxSpells);
+    const targetSpellCount = fullLoadout ? maxSpells : Math.ceil(Math.random() * maxSpells);   // un boss a toujours son grimoire complet
     const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
 
     const preferredGeneric = genericSpells.filter(sp => (sp.colors || [sp.color]).some(c => preferredColors.includes(c)));
@@ -190,7 +190,7 @@ function pickBossTemplate(preferredTemplateId = null){
     return pickRandom(topPool);
 }
 
-function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons){
+function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons, { boss = false } = {}){
     const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
     const baseHp = 40 + enemyLevel * 10;
     const baseDef = enemyDefenseForLevel(enemyLevel);
@@ -198,20 +198,25 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const hp = Math.floor(baseHp * (stats.hpMult || 1));
     // Force et agilité proportionnelles au niveau (l'agilité n'est que très rarement nulle).
     const strength = Math.max(0, Math.round(enemyLevel * (0.3 + Math.random() * 0.5) * (stats.atkMult || 1)));
-    const agility = Math.random() < 0.04 ? 0 : Math.max(1, Math.round(enemyLevel * (0.3 + Math.random() * 0.6) * (stats.defMult || 1)));
+    const agility = Math.random() < 0.04 ? 0 : Math.max(1, Math.round(enemyLevel * (0.25 + Math.random() * 0.4) * (stats.defMult || 1)));
     // Attaque = chance de critique, défense = chance de blocage (en %, plafonnées à 98 % à l'usage : voir combatStats.js).
-    const atk = Math.max(0, Math.round((3 + enemyLevel * 1.5) * (stats.atkMult || 1)));
-    const def = Math.max(0, Math.floor(baseDef * 0.5 * (stats.defMult || 1))) + agility;
+    const atk = Math.max(0, Math.round((3 + enemyLevel * 0.9) * (stats.atkMult || 1)));
+    const def = Math.max(0, Math.floor(baseDef * 0.3 * (stats.defMult || 1))) + agility;
     // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
     const power = Math.min(Math.floor((5 + enemyLevel * 4) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
 
+    // Les armes de l'ennemi : tirées parmi la moitié la plus puissante de celles de son niveau (un boss : les deux plus puissantes).
     let enemyWeapon = null;
     if(template.hasWeapon !== false){
-        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel && !w.playerOnly);
+        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel && !w.playerOnly)
+            .sort((a, b) => b.damage - a.damage);
         if(availableWeapons.length > 0){
-            enemyWeapon = pickRandom(availableWeapons);
+            const poolSize = boss ? Math.min(2, availableWeapons.length) : Math.max(1, Math.ceil(availableWeapons.length / 2));
+            enemyWeapon = pickRandom(availableWeapons.slice(0, poolSize));
         }
     }
+    // Dégâts ajoutés à chaque coup d'arme (la force de l'ennemi, en quelque sorte) : 30 % de la puissance brute.
+    const weaponPower = enemyWeapon ? Math.floor(power * 0.3) : 0;
 
     const enemyAbilities = [];
     if(Math.random() < 0.15) enemyAbilities.push('fireAffinity');
@@ -242,11 +247,12 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         attack: atk,
         defense: def,
         power,
+        weaponPower,
         attributes: { strength, agility, intelligence: 0, stamina: 0, morale: 0 },
         resistances: buildResistances(template, enemyLevel),
         combatPoints: 0,
         mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
-        spells: buildSpellLoadout(template, enemyLevel),
+        spells: buildSpellLoadout(template, enemyLevel, { fullLoadout: boss }),
         weapon: enemyWeapon,
         level: enemyLevel,
         abilities: enemyAbilities,
@@ -267,6 +273,11 @@ function applyBossScaling(boss, template){
     boss.hp = boss.maxHp;
     boss.attack = Math.max(1, Math.floor(boss.attack * 1.35));
     boss.defense = Math.max(0, Math.floor(boss.defense * 1.25));
+    boss.weaponPower = Math.floor((boss.weaponPower || 0) * 1.35);
+    if(boss.attributes){
+        boss.attributes.strength = Math.ceil(boss.attributes.strength * 1.3);
+        boss.attributes.agility = Math.ceil(boss.attributes.agility * 1.2);
+    }
     boss.isOverleveledChoice = true;
 
     boss.dropProfile = {
@@ -283,7 +294,7 @@ export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, pr
     return withSeededRandom(`boss|${safeTier}|${preferredTemplateId || ''}`, () => {
         const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
         const bossLevel = safeTier + 2;
-        const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg);
+        const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg, { boss: true });
 
         applyBossScaling(boss, template);
         boss.bossTier = safeTier;
@@ -302,7 +313,7 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     // Boss : équipement, sorts et objet pré-générés d'après son identité (ils ne bougent pas quand on revient le voir).
     const bossKey = encounter?.boss ? `map-boss|${encounter.enemyId || ''}|${template.id}|${level}` : null;
     const enemyEntity = bossKey
-        ? withSeededRandom(bossKey, () => buildEnemyFromTemplate(template, level, allWeaponsArg))
+        ? withSeededRandom(bossKey, () => buildEnemyFromTemplate(template, level, allWeaponsArg, { boss: true }))
         : buildEnemyFromTemplate(template, level, allWeaponsArg);
 
     if(encounter?.boss){

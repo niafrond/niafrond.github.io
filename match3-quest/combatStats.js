@@ -128,5 +128,5 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
 
 // Libellé d'un blocage pour le journal / l'animation.
 export function blockLabel(block) {
-    return block === 'total' ? 'BLOQUÉ !' : block === 'partial' ? 'bloqué en partie' : '';
+    return block === 'total' ? 'BLOQUÉ !' : block === 'partial' ? 'paré' : '';
 }
