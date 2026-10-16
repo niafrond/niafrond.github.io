@@ -9,13 +9,13 @@ export default {
       ]
     },
     fauves_h2_feutre: {
-      name: "Yourte d'Uyun la feutrière",
+      name: "Yourte d'Zhan la feutrière",
       arrival: [
         "Le feutre étouffe tous les bruits. Dehors, la plaine rugit ; ici, elle murmure."
       ]
     },
     fauves_h2_marechal: {
-      name: "Forge du maréchal Batu",
+      name: "Forge du maréchal Mafu",
       arrival: [
         "Un soufflet souffle, un fer chauffe. Les chevaux attendent en file, avec la patience des nobles."
       ]
@@ -23,7 +23,7 @@ export default {
   },
   npcs: {
     felt_maker_uyun: {
-      name: "Uyun",
+      name: "Zhan",
       title: "Feutrière",
       idle: [
         "Mon feutre garde le chaud, l'humide et les secrets. Surtout les secrets.",
@@ -39,7 +39,7 @@ export default {
       ]
     },
     fauves_hamlet_sarnai: {
-      name: "Sarnai",
+      name: "Susu",
       title: "Tisseuse de sangles",
       idle: [
         "Une sangle bien tressée tient un cheval, un enfant et un secret. Les trois pèsent à peu près pareil.",
@@ -55,8 +55,8 @@ export default {
       ]
     },
     fauves_hamlet_ganbat: {
-      name: "Ganbat",
-      title: "Joueur de morin khuur",
+      name: "Qin",
+      title: "Joueur d'erhu",
       idle: [
         "Mon instrument a deux cordes et une tête de cheval. Il chante le galop, je m'occupe du reste.",
         "Quand je joue pour les juments, elles m'écoutent. Pour les gens, c'est plus incertain."
@@ -71,7 +71,7 @@ export default {
       ]
     },
     farrier_batu: {
-      name: "Batu",
+      name: "Mafu",
       title: "Maréchal-ferrant",
       idle: [
         "Un cheval bien ferré va loin. Un cheval mal ferré va chez moi.",
@@ -87,7 +87,7 @@ export default {
       ]
     },
     eagle_boy_temur: {
-      name: "Temur",
+      name: "Xiaoying",
       title: "Petit dresseur d'aigle",
       idle: [
         "Mon aigle s'appelle Ciel. Il ne me répond jamais, mais il revient toujours.",
@@ -103,7 +103,7 @@ export default {
       ]
     },
     grandma_altan: {
-      name: "Grand-mère Altan",
+      name: "Grand-mère Jinhua",
       title: "Chanteuse des berceuses",
       idle: [
         "Je chante les chansons de ma mère, qui chantait celles de la sienne. Aucune ne parle de héros, toutes parlent de lune.",
@@ -119,7 +119,7 @@ export default {
       ]
     },
     mare_chagan: {
-      name: "Chagan",
+      name: "Baima",
       title: "Jument blanche bavarde",
       idle: [
         "Hennissement poli. Je suis la doyenne des juments du camp, donc la plus sage.",
@@ -135,7 +135,7 @@ export default {
       ]
     },
     bandit_gerel: {
-      name: "Gerel",
+      name: "Guang",
       title: "Ancien bandit repenti",
       idle: [
         "J'étais bandit. Je suis devenu berger. Les moutons, eux, ne me demandent jamais de comptes.",
@@ -151,7 +151,7 @@ export default {
       ]
     },
     drover_boldo: {
-      name: "Boldo",
+      name: "Muyang",
       title: "Conducteur de troupeaux",
       idle: [
         "Je conduis mille bêtes sur mille lis. Mon chien me conduit, lui, mais il ne le dira à personne.",
@@ -183,7 +183,7 @@ export default {
       ]
     },
     wolf_pup_baatar: {
-      name: "Baatar",
+      name: "Xiaolang",
       title: "Louveteau de braise",
       idle: [
         "Awou ! Je suis un loup féroce ! (Il glousse.)",
@@ -199,7 +199,7 @@ export default {
       ]
     },
     ghost_rider_tolui: {
-      name: "Tolui",
+      name: "Jiang",
       title: "Fantôme d'un cavalier",
       idle: [
         "Je cours dans les herbes. Je ne sais plus après quoi.",
@@ -321,7 +321,7 @@ export default {
         {
           type: "talk",
           target: "ghost_rider_tolui",
-          text: "Écouter Tolui (hautes herbes de cendre)",
+          text: "Écouter Jiang (hautes herbes de cendre)",
           lines: [
             "Mon cheval et moi dormons sous le même tertre. Ouvrez-le, qu'on soit réunis, et que le monde nous oublie en paix."
           ]
@@ -333,13 +333,13 @@ export default {
         }
       ],
       offer: [
-        "Mon vieux compagnon de marteau, le fantôme Tolui, cherche son cheval. Il est enterré dans un tumulus. Allez l'y rejoindre."
+        "Mon vieux compagnon de marteau, le fantôme Jiang, cherche son cheval. Il est enterré dans un tumulus. Allez l'y rejoindre."
       ],
       hint: [
-        "Tolui se tient dans les hautes herbes, près d'un tertre. Le tumulus est tout proche."
+        "Jiang se tient dans les hautes herbes, près d'un tertre. Le tumulus est tout proche."
       ],
       complete: [
-        "Ils sont réunis. Le vent a soufflé trois notes de morin khuur. Voici un fragment de bride, qu'il vous offre."
+        "Ils sont réunis. Le vent a soufflé trois notes d'erhu. Voici un fragment de bride, qu'il vous offre."
       ],
       reward: {
         gold: 200,
@@ -369,7 +369,7 @@ export default {
           target: "cheese_sa",
           text: "Livrer le feutre à Dame Sa (Fromagerie de Dame Sa)",
           lines: [
-            "Du feutre pour mes meules ? Excellent : elles garderont leur parfum. Merci à Uyun."
+            "Du feutre pour mes meules ? Excellent : elles garderont leur parfum. Merci à Zhan."
           ]
         }
       ],
@@ -380,7 +380,7 @@ export default {
         "Zi est dans sa yourte, Sa dans sa fromagerie, à Caoyuan."
       ],
       complete: [
-        "Elles sont ravies ! Uyun vous offre un morceau de feutre argenté. Il garde tout, même les mauvais souvenirs."
+        "Elles sont ravies ! Zhan vous offre un morceau de feutre argenté. Il garde tout, même les mauvais souvenirs."
       ],
       reward: {
         gold: 155,
@@ -415,7 +415,7 @@ export default {
         "Le perchoir est au hameau, dans les branches. Vous pouvez aussi surveiller le ciel."
       ],
       complete: [
-        "Ciel est revenu, la bague à la patte. Temur le serre contre son cœur. Voici une plume d'aigle, la plus belle."
+        "Ciel est revenu, la bague à la patte. Xiaoying le serre contre son cœur. Voici une plume d'aigle, la plus belle."
       ],
       reward: {
         gold: 170,
@@ -435,7 +435,7 @@ export default {
         {
           type: "talk",
           target: "wolf_pup_baatar",
-          text: "Écouter le louveteau Baatar (hautes herbes de cendre)",
+          text: "Écouter le louveteau Xiaolang (hautes herbes de cendre)",
           lines: [
             "Un gros taureau rouge m'a fait peur. Maman est partie le chasser et n'est pas revenue. Je l'attends."
           ]
@@ -463,7 +463,7 @@ export default {
     },
     {
       id: "sq_fau_excuses",
-      title: "Les excuses de Gerel",
+      title: "Les excuses de Guang",
       chapter: "✦ Quête secondaire — Plaine des Fauves",
       giver: "bandit_gerel",
       turnIn: "bandit_gerel",
@@ -473,23 +473,23 @@ export default {
         {
           type: "talk",
           target: "hunter_wu",
-          text: "Présenter les excuses de Gerel à Wu (Pavillon du chasseur Wu)",
+          text: "Présenter les excuses de Guang à Wu (Pavillon du chasseur Wu)",
           lines: [
-            "Gerel s'excuse ? Il a toujours eu bon cœur sous le masque. Je lui pardonne, dites-lui."
+            "Guang s'excuse ? Il a toujours eu bon cœur sous le masque. Je lui pardonne, dites-lui."
           ]
         },
         {
           type: "talk",
           target: "shepherd_zi",
-          text: "Présenter les excuses de Gerel à Zi (Yourte de Zi)",
+          text: "Présenter les excuses de Guang à Zi (Yourte de Zi)",
           lines: [
-            "Gerel, mon voleur de brebis ? Dites-lui que je lui pardonne, mais qu'il me doit deux brebis."
+            "Guang, mon voleur de brebis ? Dites-lui que je lui pardonne, mais qu'il me doit deux brebis."
           ]
         },
         {
           type: "talk",
           target: "cheese_sa",
-          text: "Présenter les excuses de Gerel à Dame Sa (Fromagerie de Dame Sa)",
+          text: "Présenter les excuses de Guang à Dame Sa (Fromagerie de Dame Sa)",
           lines: [
             "Mon fromage manqué ? Qu'il revienne en acheter, je lui en offrirai un."
           ]
@@ -502,7 +502,7 @@ export default {
         "Wu, Zi et Sa vivent tous à Caoyuan. Écoutez bien leurs réponses."
       ],
       complete: [
-        "Ils lui pardonnent ! Gerel pleure comme un enfant. Il vous remet un bijou volé qu'il avait gardé comme remords."
+        "Ils lui pardonnent ! Guang pleure comme un enfant. Il vous remet un bijou volé qu'il avait gardé comme remords."
       ],
       reward: {
         gold: 185,
@@ -522,7 +522,7 @@ export default {
         {
           type: "talk",
           target: "old_nomad_bayan",
-          text: "Interroger Bayan (place de Caoyuan)",
+          text: "Interroger Bai (place de Caoyuan)",
           lines: [
             "Une berceuse de la Lune ? Elle commençait par « Dors, petit, la nuit te tient la main ». Le reste, j'ai oublié."
           ]
@@ -537,10 +537,10 @@ export default {
         }
       ],
       offer: [
-        "Une berceuse, archer, que Chang'e fredonnait paraît-il à son lièvre. J'en ai perdu les paroles. Interrogez Bayan et le lièvre Tuzi."
+        "Une berceuse, archer, que Chang'e fredonnait paraît-il à son lièvre. J'en ai perdu les paroles. Interrogez Bai et le lièvre Tuzi."
       ],
       hint: [
-        "Bayan est sur la place, Tuzi dans les hautes herbes."
+        "Bai est sur la place, Tuzi dans les hautes herbes."
       ],
       complete: [
         "Je la chantais, hier, pour mes petits-enfants. Elle me rappelle que même loin, on peut tenir quelqu'un par la main. Voici une plume de berceuse."
@@ -575,7 +575,7 @@ export default {
         "La page est accrochée à une herbe, dans les hautes herbes de cendre."
       ],
       complete: [
-        "« Je les ai suivis jusqu'à la plaine. Il tirait comme un dieu. Je tirerai mieux. » Ula hoche la tête : « L'envie est la plus vieille des flèches. »"
+        "« Je les ai suivis jusqu'à la plaine. Il tirait comme un dieu. Je tirerai mieux. » Fengpo hoche la tête : « L'envie est la plus vieille des flèches. »"
       ],
       reward: {
         gold: 155,

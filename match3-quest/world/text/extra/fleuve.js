@@ -151,7 +151,7 @@ export default {
       ]
     },
     mud_imp_pit: {
-      name: "Pit",
+      name: "Ni",
       title: "Petit gui de vase",
       idle: [
         "Chuuut ! Je suis invisible. Ne le répétez pas.",
@@ -161,7 +161,7 @@ export default {
         {
           whenDone: "sun_2",
           lines: [
-            "Pit s'est vexé de vous avoir croisé. Il n'a pas répondu."
+            "Ni s'est vexé de vous avoir croisé. Il n'a pas répondu."
           ]
         }
       ]

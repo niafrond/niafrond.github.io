@@ -72,7 +72,7 @@ export default {
     },
     climber_dai: {
       name: "Dai",
-      title: "Alpiniste solitaire",
+      title: "Grimpeur solitaire",
       idle: [
         "Je grimpe pour trouver. Je ne sais pas quoi. Mon frère le savait.",
         "Les cimes ne parlent pas. Elles écoutent, c'est pire."
@@ -104,7 +104,7 @@ export default {
     },
     bard_xiang: {
       name: "Xiang",
-      title: "Barde du vent",
+      title: "Chanteur du vent",
       idle: [
         "Je chante les orages. Ils me répondent. Une fois, un éclair m'a demandé de rejouer.",
         "Ma lyre est faite de câbles de cuivre. Elle joue avec les nuages."

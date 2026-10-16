@@ -29,7 +29,7 @@ export default {
       idle: ['Ma jonque est posée là, sur la vase, avec ses trois mâts. Elle ne vogue plus, mais elle a gardé son caractère, ce qui est le principal.', 'Un capitaine ne quitte pas son navire, même sec. Surtout sec. C\'est là qu\'on voit les vrais amis.'],
       talk: [{ whenDone: 'sun_8', lines: ['Je sens sous mes semelles la jonque qui frémit. Elle va flotter, archer, et je lui dirai que c\'est grâce à vous. Elle fera semblant de ne pas pleurer.'] }] },
     mer_village_yue: { name: 'Yue', title: 'Apprentie de la prêtresse de Mazu',
-      idle: ['Je range les offrandes de riz sur l\'autel. Dame Mo dit qu\'elles ne s\'envolent pas toutes seules : c\'est la mouette qui s\'appelle Pip, mais je ne dois pas le dire.', 'Quand je serai prêtresse, je ferai bénir les filets avant les chansons. Les poissons aiment qu\'on les prévienne.'],
+      idle: ['Je range les offrandes de riz sur l\'autel. Dame Mo dit qu\'elles ne s\'envolent pas toutes seules : c\'est la mouette qui s\'appelle Ouou, mais je ne dois pas le dire.', 'Quand je serai prêtresse, je ferai bénir les filets avant les chansons. Les poissons aiment qu\'on les prévienne.'],
       talk: [{ whenDone: 'sun_8', lines: ['Mazu a souri, et c\'était contagieux. Dame Mo me demande de ne pas gambader pendant les offrandes. Je gambade avec dignité.'] }] },
     mer_hamlet_lanfang: { name: 'Lan Fang', title: 'Fumeuse de poisson',
       idle: ['Je fume le poisson sur des algues sèches. Ça lui donne un goût de rivage, de souvenir, et un peu de brûlé.', 'Mon fumoir est ouvert à tous, sauf aux mouettes. Elles le savent, elles n\'en ont cure.'],

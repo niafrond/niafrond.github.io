@@ -201,13 +201,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'merchant_ma', where: 'house:gobi_h_ma' },
       { id: 'guide_dawa', where: 'house:gobi_h_dawa' },
-      { id: 'keeper_nur', name: 'Nur', title: 'Gardienne de la citerne', where: 'house:gobi_h_bains', role: 'ambiance' },
-      { id: 'mapmaker_ali', name: 'Ali', title: 'Cartographe optimiste', where: 'house:gobi_h_cartes', role: 'donneur' },
-      { id: 'camel_baba', name: 'Baba', title: 'Chameau diplomate', where: 'house:gobi_h_chameaux', role: 'ambiance' },
+      { id: 'keeper_nur', name: 'Quan', title: 'Gardienne de la citerne', where: 'house:gobi_h_bains', role: 'ambiance' },
+      { id: 'mapmaker_ali', name: 'Yuan', title: 'Cartographe optimiste', where: 'house:gobi_h_cartes', role: 'donneur' },
+      { id: 'camel_baba', name: 'Tuotuo', title: 'Chameau diplomate', where: 'house:gobi_h_chameaux', role: 'ambiance' },
       { id: 'hua_gobi', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'storyteller_yun', name: 'Yun', title: 'Conteur de caravane', where: 'place', role: 'indice' },
-      { id: 'boy_tarik', name: 'Tarik', title: 'Garçon passeur d\'eau', where: 'place', role: 'ambiance' },
-      { id: 'mirage_djinn', name: 'Sablier', title: 'Esprit des mirages repenti', where: 'wild', role: 'donneur' }
+      { id: 'boy_tarik', name: 'Ahe', title: 'Garçon passeur d\'eau', where: 'place', role: 'ambiance' },
+      { id: 'mirage_djinn', name: 'Haishi', title: 'Esprit des mirages repenti', where: 'wild', role: 'donneur' }
     ],
     chests: [
       { id: 'ma_strongbox', where: 'house:gobi_h_ma', tier: 2, label: 'Coffre-fort de Ma' },
@@ -227,7 +227,7 @@ export const MANIFEST = {
         summary: 'Hua n\'ira pas jusqu\'à la mer avant l\'hiver, mais vous, si. Portez la lettre au marin Bao, sur le rivage de la Mer Orientale.',
         objectives: [{ type: 'talk', target: 'sailor_bao' }] },
       { id: 'sq_carte_vraie', title: 'La carte qui ne ment pas', giver: 'mapmaker_ali', turnIn: 'mapmaker_ali', chain: null,
-        summary: 'Ali veut dessiner une carte exacte des dunes, mais le mirage Sablier lui brouille la vue. Allez écouter le djinn, puis trouvez le coffre qu\'il désigne.',
+        summary: 'Yuan veut dessiner une carte exacte des dunes, mais le mirage Haishi lui brouille la vue. Allez écouter le djinn, puis trouvez le coffre qu\'il désigne.',
         objectives: [{ type: 'talk', target: 'mirage_djinn' }, { type: 'chest', target: 'mirage_chest' }] },
       { id: 'sq_golems_puits', title: 'Les colosses du puits', giver: 'keeper_nur', turnIn: 'keeper_nur', chain: null,
         summary: 'Deux colosses de sable boivent l\'eau du puits à chaque nuit sans lune. Abattez-les pour sauver la citerne.',
@@ -259,13 +259,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'smith_tie', where: 'house:tonnerre_h_tie' },
       { id: 'hermit_lei', where: 'house:tonnerre_h_lei' },
-      { id: 'rodman_gang', name: 'Gang', title: 'Gardien des paratonnerres', where: 'house:tonnerre_h_tour', role: 'donneur' },
+      { id: 'rodman_gang', name: 'Gang', title: 'Gardien des pointes de bronze', where: 'house:tonnerre_h_tour', role: 'donneur' },
       { id: 'innkeeper_pao', name: 'Pao', title: 'Aubergiste', where: 'house:tonnerre_h_auberge', role: 'indice' },
       { id: 'monkey_sun', name: 'Houzi', title: 'Singe filou de l\'auberge', where: 'house:tonnerre_h_auberge', role: 'ambiance' },
-      { id: 'nun_ying', name: 'Sœur Ying', title: 'Gardienne de la chapelle', where: 'house:tonnerre_h_montagne', role: 'ambiance' },
+      { id: 'nun_ying', name: 'Dame Ying', title: 'Gardienne du petit temple', where: 'house:tonnerre_h_montagne', role: 'ambiance' },
       { id: 'kids_leimei', name: 'Leimei', title: 'Petite chasseuse d\'étincelles', where: 'place', role: 'ambiance' },
       { id: 'hua_tonnerre', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
-      { id: 'cairn_spirit', name: 'Vieux Cairn', title: 'Esprit des pierres empilées', where: 'wild', role: 'indice' }
+      { id: 'cairn_spirit', name: 'Vieux Shidui', title: 'Esprit des pierres empilées', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'tie_anvil_box', where: 'house:tonnerre_h_tie', tier: 2, label: 'Boîte sous l\'enclume' },
@@ -281,13 +281,13 @@ export const MANIFEST = {
     ],
     quests: [
       { id: 'sq_etincelles', title: 'Les étincelles de Leimei', giver: 'kids_leimei', turnIn: 'kids_leimei', chain: null,
-        summary: 'Leimei collectionne les étincelles dans des pots, mais elles s\'échappent toujours. Montez parler au Vieux Cairn : il connaît un pot qui tient.',
+        summary: 'Leimei collectionne les étincelles dans des pots, mais elles s\'échappent toujours. Montez parler au Vieux Shidui : il connaît un pot qui tient.',
         objectives: [{ type: 'talk', target: 'cairn_spirit' }, { type: 'chest', target: 'crest_cache' }] },
       { id: 'sq_paratonnerre', title: 'Le paratonnerre de la crête', giver: 'rodman_gang', turnIn: 'rodman_gang', chain: null,
         summary: 'La tige de cuivre de la crête ne fonctionne plus depuis qu\'un général du tonnerre s\'y perche. Délogez-le, puis allez la vérifier.',
         objectives: [{ type: 'kill', target: 'tonnerre_crest_general' }, { type: 'visit', target: 'tonnerre_wild' }] },
       { id: 'sq_singe_soupe', title: 'Le singe et la soupe', giver: 'innkeeper_pao', turnIn: 'innkeeper_pao', chain: null,
-        summary: 'Houzi le singe a emporté la louche d\'argent de Pao. Il prétend l\'avoir « prêtée » au Vieux Cairn. Allez vérifier.',
+        summary: 'Houzi le singe a emporté la louche d\'argent de Pao. Il prétend l\'avoir « prêtée » au Vieux Shidui. Allez vérifier.',
         objectives: [{ type: 'talk', target: 'monkey_sun' }, { type: 'talk', target: 'cairn_spirit' }] }
     ]
   },
@@ -322,7 +322,7 @@ export const MANIFEST = {
       { id: 'lizard_zao', name: 'Zao', title: 'Lézard-dragon bavard', where: 'place', role: 'ambiance' },
       { id: 'hua_volcan', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'young_miner_bo', name: 'Bo', title: 'Jeune mineur curieux', where: 'place', role: 'indice' },
-      { id: 'forge_spirit', name: 'Cendrillon', title: 'Esprit de la forge de lave', where: 'wild', role: 'indice' }
+      { id: 'forge_spirit', name: 'Huohui', title: 'Esprit de la forge de lave', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'shan_ore_box', where: 'house:volcan_h_shan', tier: 1, label: 'Caisse de minerais' },
@@ -374,12 +374,12 @@ export const MANIFEST = {
       { id: 'hunter_wu', where: 'house:fauves_h_wu' },
       { id: 'shepherd_zi', where: 'house:fauves_h_zi' },
       { id: 'horse_tian', name: 'Tian', title: 'Cheval céleste retraité', where: 'house:fauves_h_chevaux', role: 'ambiance' },
-      { id: 'shaman_ula', name: 'Ula', title: 'Chamane des vents', where: 'house:fauves_h_chaman', role: 'indice' },
-      { id: 'cheese_sa', name: 'Dame Sa', title: 'Fromagère', where: 'house:fauves_h_fromage', role: 'marchand' },
+      { id: 'shaman_ula', name: 'Fengpo', title: 'Chamane des vents', where: 'house:fauves_h_chaman', role: 'indice' },
+      { id: 'cheese_sa', name: 'Dame Sa', title: 'Marchande de lait caillé', where: 'house:fauves_h_fromage', role: 'marchand' },
       { id: 'twins_mu', name: 'Les jumeaux Mu', title: 'Enfants-bergers', where: 'place', role: 'donneur' },
       { id: 'hua_fauves', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'hare_tuzi', name: 'Tuzi', title: 'Lièvre du Palais lunaire', where: 'wild', role: 'indice' },
-      { id: 'old_nomad_bayan', name: 'Bayan', title: 'Vieux nomade', where: 'place', role: 'indice' }
+      { id: 'old_nomad_bayan', name: 'Bai', title: 'Vieux nomade', where: 'place', role: 'indice' }
     ],
     chests: [
       { id: 'wu_quiver_box', where: 'house:fauves_h_wu', tier: 1, label: 'Coffre à carquois' },
@@ -399,7 +399,7 @@ export const MANIFEST = {
         summary: 'Un agneau a fui dans les hautes herbes ; un loup de braise le suit. Libérez l\'enclos où il s\'est réfugié.',
         objectives: [{ type: 'kill', target: 'fauves_lamb_wolf' }, { type: 'chest', target: 'lost_lamb_pen' }] },
       { id: 'sq_lievre_lune', title: 'Le lièvre de la Lune', giver: 'shaman_ula', turnIn: 'shaman_ula', chain: null,
-        summary: 'Ula soupçonne que le lièvre Tuzi vient du Palais lunaire et connaît Chang\'e. Allez lui parler dans les hautes herbes.',
+        summary: 'Fengpo soupçonne que le lièvre Tuzi vient du Palais lunaire et connaît Chang\'e. Allez lui parler dans les hautes herbes.',
         objectives: [{ type: 'talk', target: 'hare_tuzi' }] },
       { id: 'sq_hure', title: 'La colère de Hure', giver: 'cheese_sa', turnIn: 'cheese_sa', chain: 'sq_lievre_lune',
         summary: 'Le sanglier Hure saccage les pâturages à l\'aube. Une fois le lièvre entendu, chassez-le des herbes hautes.',

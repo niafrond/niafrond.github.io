@@ -412,7 +412,7 @@ export const MANIFEST2 = {
       },
       {
         id: "mud_imp_pit",
-        name: "Pit",
+        name: "Ni",
         title: "Petit gui de vase",
         where: "wild",
         role: "ambiance"
@@ -735,7 +735,7 @@ export const MANIFEST2 = {
       },
       {
         id: "stem_sprite",
-        name: "Tigelle",
+        name: "Xiaogeng",
         title: "Esprit de tige",
         where: "wild",
         role: "ambiance"
@@ -982,7 +982,7 @@ export const MANIFEST2 = {
       houses: [
         {
           id: "gobi_h2_puits",
-          name: "Maison du puisatier Omar",
+          name: "Maison du puisatier Wen",
           desc: "Une maison fraîche aux murs épais, construite autour d'un puits à poulie.",
           residents: [
             "well_digger_omar"
@@ -993,7 +993,7 @@ export const MANIFEST2 = {
         },
         {
           id: "gobi_h2_tapis",
-          name: "Boutique de tapis de Zeynep",
+          name: "Boutique de tapis de Meihua",
           desc: "Une boutique où les tapis s'empilent jusqu'au plafond, chacun avec sa légende.",
           residents: [
             "rug_seller_zeynep"
@@ -1007,28 +1007,28 @@ export const MANIFEST2 = {
     npcs: [
       {
         id: "well_digger_omar",
-        name: "Omar",
+        name: "Wen",
         title: "Puisatier",
         where: "hamlet-house:gobi_h2_puits",
         role: "donneur"
       },
       {
         id: "rug_seller_zeynep",
-        name: "Zeynep",
+        name: "Meihua",
         title: "Marchande de tapis",
         where: "hamlet-house:gobi_h2_tapis",
         role: "donneur"
       },
       {
         id: "date_farmer_ismail",
-        name: "Ismail",
+        name: "Zhen",
         title: "Cultivateur de dattes",
         where: "hamlet",
         role: "ambiance"
       },
       {
         id: "girl_noor",
-        name: "Noor",
+        name: "Xiaosha",
         title: "Fillette aux yeux de sable",
         where: "hamlet",
         role: "ambiance"
@@ -1042,14 +1042,14 @@ export const MANIFEST2 = {
       },
       {
         id: "falconer_arslan",
-        name: "Arslan",
+        name: "Lie",
         title: "Fauconnier",
         where: "place",
         role: "ambiance"
       },
       {
         id: "oracle_ahmad",
-        name: "Ahmad",
+        name: "Bu",
         title: "Devin de la source",
         where: "hamlet",
         role: "indice"
@@ -1146,7 +1146,7 @@ export const MANIFEST2 = {
         giver: "merchant_ma",
         turnIn: "merchant_ma",
         chain: null,
-        summary: "Le chameau le plus cher de Ma a disparu. Interrogez Baba, le chameau diplomate, qui sait toujours tout.",
+        summary: "Le chameau le plus cher de Ma a disparu. Interrogez Tuotuo, le chameau diplomate, qui sait toujours tout.",
         objectives: [
           {
             type: "talk",
@@ -1206,11 +1206,11 @@ export const MANIFEST2 = {
       },
       {
         id: "sq_gob_tapis",
-        title: "Le tapis volant de Zeynep",
+        title: "Le tapis volant de Meihua",
         giver: "rug_seller_zeynep",
         turnIn: "rug_seller_zeynep",
         chain: null,
-        summary: "Zeynep veut vendre son tapis volant à Ma, mais il faut d'abord le sortir du coffre.",
+        summary: "Meihua veut vendre son tapis volant à Ma, mais il faut d'abord le sortir du coffre.",
         objectives: [
           {
             type: "chest",
@@ -1281,7 +1281,7 @@ export const MANIFEST2 = {
         giver: "mapmaker_ali",
         turnIn: "mapmaker_ali",
         chain: "sq_journal_3",
-        summary: "Ali se souvient d'un jeune archer qui lui a acheté une carte de la route du Kunlun. Une page du carnet traîne dans le sable.",
+        summary: "Yuan se souvient d'un jeune archer qui lui a acheté une carte de la route du Kunlun. Une page du carnet traîne dans le sable.",
         objectives: [
           {
             type: "chest",
@@ -1350,7 +1350,7 @@ export const MANIFEST2 = {
       {
         id: "climber_dai",
         name: "Dai",
-        title: "Alpiniste solitaire",
+        title: "Grimpeur solitaire",
         where: "hamlet",
         role: "donneur"
       },
@@ -1364,7 +1364,7 @@ export const MANIFEST2 = {
       {
         id: "bard_xiang",
         name: "Xiang",
-        title: "Barde du vent",
+        title: "Chanteur du vent",
         where: "place",
         role: "ambiance"
       },
@@ -1660,7 +1660,7 @@ export const MANIFEST2 = {
       {
         id: "geologist_zhou",
         name: "Zhou",
-        title: "Géologue des gorges",
+        title: "Sage des roches des gorges",
         where: "place",
         role: "donneur"
       },
@@ -1937,7 +1937,7 @@ export const MANIFEST2 = {
       houses: [
         {
           id: "fauves_h2_feutre",
-          name: "Yourte d'Uyun la feutrière",
+          name: "Yourte d'Zhan la feutrière",
           desc: "Une yourte tendue de feutres de toutes les couleurs, qui sent la laine mouillée et la patience.",
           residents: [
             "felt_maker_uyun"
@@ -1948,7 +1948,7 @@ export const MANIFEST2 = {
         },
         {
           id: "fauves_h2_marechal",
-          name: "Forge du maréchal Batu",
+          name: "Forge du maréchal Mafu",
           desc: "Une forge de nomades, montée sur chariot, qui sent le fer chaud et le crottin.",
           residents: [
             "farrier_batu"
@@ -1962,49 +1962,49 @@ export const MANIFEST2 = {
     npcs: [
       {
         id: "felt_maker_uyun",
-        name: "Uyun",
+        name: "Zhan",
         title: "Feutrière",
         where: "hamlet-house:fauves_h2_feutre",
         role: "donneur"
       },
       {
         id: "farrier_batu",
-        name: "Batu",
+        name: "Mafu",
         title: "Maréchal-ferrant",
         where: "hamlet-house:fauves_h2_marechal",
         role: "donneur"
       },
       {
         id: "eagle_boy_temur",
-        name: "Temur",
+        name: "Xiaoying",
         title: "Petit dresseur d'aigle",
         where: "hamlet",
         role: "donneur"
       },
       {
         id: "grandma_altan",
-        name: "Grand-mère Altan",
+        name: "Grand-mère Jinhua",
         title: "Chanteuse des berceuses",
         where: "hamlet",
         role: "donneur"
       },
       {
         id: "mare_chagan",
-        name: "Chagan",
+        name: "Baima",
         title: "Jument blanche bavarde",
         where: "hamlet",
         role: "ambiance"
       },
       {
         id: "bandit_gerel",
-        name: "Gerel",
+        name: "Guang",
         title: "Ancien bandit repenti",
         where: "place",
         role: "donneur"
       },
       {
         id: "drover_boldo",
-        name: "Boldo",
+        name: "Muyang",
         title: "Conducteur de troupeaux",
         where: "place",
         role: "ambiance"
@@ -2018,14 +2018,14 @@ export const MANIFEST2 = {
       },
       {
         id: "wolf_pup_baatar",
-        name: "Baatar",
+        name: "Xiaolang",
         title: "Louveteau de braise",
         where: "wild",
         role: "ambiance"
       },
       {
         id: "ghost_rider_tolui",
-        name: "Tolui",
+        name: "Jiang",
         title: "Fantôme d'un cavalier",
         where: "wild",
         role: "donneur"
@@ -2147,7 +2147,7 @@ export const MANIFEST2 = {
         giver: "felt_maker_uyun",
         turnIn: "felt_maker_uyun",
         chain: null,
-        summary: "Uyun a fait du feutre pour la bergère Zi et la fromagère Sa. Portez-leur chacune sa part.",
+        summary: "Zhan a fait du feutre pour la bergère Zi et la fromagère Sa. Portez-leur chacune sa part.",
         objectives: [
           {
             type: "talk",
@@ -2165,7 +2165,7 @@ export const MANIFEST2 = {
         giver: "eagle_boy_temur",
         turnIn: "eagle_boy_temur",
         chain: null,
-        summary: "L'aigle de Temur est parti et a laissé sa bague au perchoir du campement. Allez la chercher.",
+        summary: "L'aigle de Xiaoying est parti et a laissé sa bague au perchoir du campement. Allez la chercher.",
         objectives: [
           {
             type: "visit",
@@ -2197,11 +2197,11 @@ export const MANIFEST2 = {
       },
       {
         id: "sq_fau_excuses",
-        title: "Les excuses de Gerel",
+        title: "Les excuses de Guang",
         giver: "bandit_gerel",
         turnIn: "bandit_gerel",
         chain: null,
-        summary: "Gerel, ancien bandit, veut présenter ses excuses à ceux qu'il a volés. Accompagnez-le chez eux.",
+        summary: "Guang, ancien bandit, veut présenter ses excuses à ceux qu'il a volés. Accompagnez-le chez eux.",
         objectives: [
           {
             type: "talk",
@@ -2223,7 +2223,7 @@ export const MANIFEST2 = {
         giver: "grandma_altan",
         turnIn: "grandma_altan",
         chain: null,
-        summary: "Grand-mère Altan veut retrouver les paroles d'une berceuse que Chang'e fredonnait. Interrogez le vieux nomade et le lièvre.",
+        summary: "Grand-mère Jinhua veut retrouver les paroles d'une berceuse que Chang'e fredonnait. Interrogez le vieux nomade et le lièvre.",
         objectives: [
           {
             type: "talk",
@@ -2263,7 +2263,7 @@ export const MANIFEST2 = {
       houses: [
         {
           id: "mer_h2_ecaillere",
-          name: "Maison de Dame Coque",
+          name: "Maison de Dame Bei",
           desc: "Une maison de pierre où l'on ouvre les huîtres à la chaîne, avec un sourire en prime.",
           residents: [
             "oyster_coque"
@@ -2288,7 +2288,7 @@ export const MANIFEST2 = {
     npcs: [
       {
         id: "oyster_coque",
-        name: "Dame Coque",
+        name: "Dame Bei",
         title: "Écaillère",
         where: "hamlet-house:mer_h2_ecaillere",
         role: "donneur"
@@ -2302,7 +2302,7 @@ export const MANIFEST2 = {
       },
       {
         id: "gull_pip",
-        name: "Pip",
+        name: "Ouou",
         title: "Mouette bavarde",
         where: "hamlet",
         role: "ambiance"
@@ -2458,11 +2458,11 @@ export const MANIFEST2 = {
       },
       {
         id: "sq_mer_coquille",
-        title: "La perle de Dame Coque",
+        title: "La perle de Dame Bei",
         giver: "oyster_coque",
         turnIn: "oyster_coque",
         chain: null,
-        summary: "Une perle noire a roulé hors de la caisse de Dame Coque. Le poulpe cuisinier et la méduse l'ont peut-être vue.",
+        summary: "Une perle noire a roulé hors de la caisse de Dame Bei. Le poulpe cuisinier et la méduse l'ont peut-être vue.",
         objectives: [
           {
             type: "talk",
@@ -2537,7 +2537,7 @@ export const MANIFEST2 = {
         giver: "kid_ahu",
         turnIn: "kid_ahu",
         chain: null,
-        summary: "Ahu cherche une coquille qui chante, cachée dans la maison de Dame Coque et au bord d'une saline.",
+        summary: "Ahu cherche une coquille qui chante, cachée dans la maison de Dame Bei et au bord d'une saline.",
         objectives: [
           {
             type: "visit",
