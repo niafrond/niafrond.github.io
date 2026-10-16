@@ -3,6 +3,7 @@
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
+import { addStatBuff, describeStatBuff } from "./combatStats.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
 
 function getManaCap(color) {
@@ -58,6 +59,8 @@ export function applyClassSpellEffect(spell) {
             return applyFingerOfDeath(spell);
         case 'destroyArea': // Abîme
             return applyChasm(spell);
+        case 'statBuff': // Œil du Tigre, Pas de l'Ombre, Flèche Affûtée, Aura de Commandement, Cri de Guerre
+            return applyStatBuffSpell(spell);
         case 'increaseDefense': // Peau de Jade
             return applyStoneskin(spell);
         case 'increasePhysical': // Force
@@ -429,6 +432,15 @@ function applyFireballArea(spell) {
     return false;
 }
 
+// Bonus temporaire d'attaque (critique) et/ou de défense (blocage) en %, voir combatStats.js.
+function applyStatBuffSpell(spell) {
+    const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
+    addStatBuff(player, buff);
+    showCombatAnimation({ icon: buff.attack > 0 ? 'sword' : 'shield', title: spell.name.toUpperCase(), heal: describeStatBuff(buff), target: '→ Vous' }, true);
+    log(`${spell.name} : ${describeStatBuff(buff)}.`);
+    return true;
+}
+
 function applyStoneskin(spell) {
     const bonus = Math.max(0, Math.floor(spell.defenseBonus || 0));
     const turns = Math.max(1, Math.floor(spell.duration || 1));
@@ -562,7 +574,7 @@ function applyDualShot(spell) {
     }
 
     const sorted = [...weapons].sort((a, b) => (b.damage || 0) - (a.damage || 0));
-    const totalDmg = Math.max(1, Math.floor((sorted[0].damage || 0) + (sorted[1].damage || 0) + (player.attack || 0)));
+    const totalDmg = Math.max(1, Math.floor((sorted[0].damage || 0) + (sorted[1].damage || 0)));
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: 'target', title: "FLÈCHES JUMELLES", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Flèches Jumelles inflige ${totalDmg} dégâts (2 meilleures armes + attaque).`);

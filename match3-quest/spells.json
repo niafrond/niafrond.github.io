@@ -892,6 +892,19 @@
       "minLevel": 15,
       "dmg": 150,
       "description": "Grande attaque des cinq éléments consommant beaucoup de mana"
+    },
+    {
+      "id": "tigerEye",
+      "name": "Œil du Tigre",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 9,
+      "effect": "statBuff",
+      "atkBuff": 20,
+      "duration": 3,
+      "description": "Augmente l'attaque (chance de critique) de 20 % pendant 3 tours"
     }
   ],
   "assassinSpells": [
@@ -981,6 +994,33 @@
       "minLevel": 15,
       "effect": "dualWeaponAttack",
       "description": "Inflige des dégâts égaux à l'attaque combinée des deux armes"
+    },
+    {
+      "id": "shadowStep",
+      "name": "Pas de l'Ombre",
+      "class": "assassin",
+      "cost": {
+        "yellow": 5
+      },
+      "minLevel": 4,
+      "effect": "statBuff",
+      "defBuff": 20,
+      "duration": 3,
+      "description": "Augmente la défense (chance de blocage) de 20 % pendant 3 tours"
+    },
+    {
+      "id": "sharpenedBlade",
+      "name": "Flèche Affûtée",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6,
+        "red": 4
+      },
+      "minLevel": 8,
+      "effect": "statBuff",
+      "atkBuff": 25,
+      "duration": 3,
+      "description": "Augmente l'attaque (chance de critique) de 25 % pendant 3 tours"
     }
   ],
   "templarSpells": [
@@ -1116,6 +1156,21 @@
       "effect": "explodeActionGems",
       "dmgPerGem": 8,
       "description": "Explosion de toutes les flèches d'action infligeant 8 dégâts par flèche"
+    },
+    {
+      "id": "commandAura",
+      "name": "Aura de Commandement",
+      "class": "templar",
+      "cost": {
+        "purple": 6,
+        "green": 4
+      },
+      "minLevel": 6,
+      "effect": "statBuff",
+      "atkBuff": 15,
+      "defBuff": 15,
+      "duration": 3,
+      "description": "Augmente l'attaque et la défense de 15 % pendant 3 tours"
     }
   ],
   "barbarianSpells": [
@@ -1238,6 +1293,20 @@
       "minLevel": 15,
       "effect": "doubleBattle",
       "description": "Double les points d'action (flèches) pour le combat"
+    },
+    {
+      "id": "warCry",
+      "name": "Cri de Guerre",
+      "class": "barbarian",
+      "cost": {
+        "red": 5
+      },
+      "minLevel": 4,
+      "effect": "statBuff",
+      "atkBuff": 20,
+      "defBuff": 10,
+      "duration": 3,
+      "description": "Augmente l'attaque de 20 % et la défense de 10 % pendant 3 tours"
     }
   ],
   "allClassSpells": [
@@ -1786,6 +1855,75 @@
       "minLevel": 15,
       "effect": "doubleBattle",
       "description": "Double les points d'action (flèches) pour le combat"
+    },
+    {
+      "id": "tigerEye",
+      "name": "Œil du Tigre",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 9,
+      "effect": "statBuff",
+      "atkBuff": 20,
+      "duration": 3,
+      "description": "Augmente l'attaque (chance de critique) de 20 % pendant 3 tours"
+    },
+    {
+      "id": "shadowStep",
+      "name": "Pas de l'Ombre",
+      "class": "assassin",
+      "cost": {
+        "yellow": 5
+      },
+      "minLevel": 4,
+      "effect": "statBuff",
+      "defBuff": 20,
+      "duration": 3,
+      "description": "Augmente la défense (chance de blocage) de 20 % pendant 3 tours"
+    },
+    {
+      "id": "sharpenedBlade",
+      "name": "Flèche Affûtée",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6,
+        "red": 4
+      },
+      "minLevel": 8,
+      "effect": "statBuff",
+      "atkBuff": 25,
+      "duration": 3,
+      "description": "Augmente l'attaque (chance de critique) de 25 % pendant 3 tours"
+    },
+    {
+      "id": "commandAura",
+      "name": "Aura de Commandement",
+      "class": "templar",
+      "cost": {
+        "purple": 6,
+        "green": 4
+      },
+      "minLevel": 6,
+      "effect": "statBuff",
+      "atkBuff": 15,
+      "defBuff": 15,
+      "duration": 3,
+      "description": "Augmente l'attaque et la défense de 15 % pendant 3 tours"
+    },
+    {
+      "id": "warCry",
+      "name": "Cri de Guerre",
+      "class": "barbarian",
+      "cost": {
+        "red": 5
+      },
+      "minLevel": 4,
+      "effect": "statBuff",
+      "atkBuff": 20,
+      "defBuff": 10,
+      "duration": 3,
+      "description": "Augmente l'attaque de 20 % et la défense de 10 % pendant 3 tours"
     }
   ]
 }

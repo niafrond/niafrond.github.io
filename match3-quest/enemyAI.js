@@ -1,7 +1,8 @@
 // Bibliothèque d'intelligence artificielle pour les ennemis
 // Gère les décisions stratégiques et le comportement des ennemis en combat
 
-import { player, enemy, canEntityCastSpell, getEnemyAttackDamageCap } from "./game.js";
+import { player, enemy, canEntityCastSpell } from "./game.js";
+import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
 
 // ========================================
 // CONFIGURATION DES NIVEAUX D'IA
@@ -227,8 +228,7 @@ export function evaluateSpells() {
 
         // SORTS DE DÉGÂTS - Priorité si le joueur est vulnérable
         if (spell.dmg) {
-            const cappedSpellDamage = Math.min(spell.dmg, getEnemyAttackDamageCap(enemy));
-            const potentialDamage = cappedSpellDamage * (1 - (player.resistances && player.resistances[spell.color] || 0));
+            const potentialDamage = spell.dmg * (1 - (player.resistances && player.resistances[spell.color] || 0));
             
             if (context.isPlayerVulnerable) {
                 score += 80; // Augmenter les dégâts si le joueur est faible
@@ -304,7 +304,7 @@ export function evaluateWeapon() {
     let reason = "";
 
     // Dégâts de l'arme
-    const weaponDamage = Math.min(enemy.weapon.damage + (enemy.attack || 0), getEnemyAttackDamageCap(enemy));
+    const weaponDamage = Math.floor((enemy.weapon.damage + (enemy.weaponPower || 0)) * (1 + (critChance(enemy) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(player) / 100) * 0.7));   // dégâts espérés (critique, blocage)
 
     // Priorité si ça peut tuer le joueur
     if (weaponDamage >= player.hp) {

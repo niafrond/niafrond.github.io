@@ -447,6 +447,40 @@ export const LEGACY_WEAPON_IDS = {
     staff_of_power: 'arc_de_l_immortel',
 };
 
+// Bonus d'Attaque (atkBonus : % de critique) et de Défense (defBonus : % de blocage) apportés par certaines armes tant qu'elles
+// sont en main (voir combatStats.js) ; les boucliers portent les leurs dans items.js.
+export const WEAPON_STAT_BONUSES = {
+    arc_de_precision: { atkBonus: 5 },
+    arc_de_feu: { atkBonus: 8 },
+    arc_des_dix_soleils: { atkBonus: 12 },
+    arc_lourd: { defBonus: 5 },
+    arc_de_jade: { defBonus: 8 },
+    arc_du_juge_celeste: { atkBonus: 6, defBonus: 6 },
+    arc_du_dragon_de_jade: { atkBonus: 8, defBonus: 4 },
+    arc_du_mont_tai: { defBonus: 12 },
+    arc_de_la_foudre_celeste: { atkBonus: 15 },
+    arc_des_marees_de_l_est: { atkBonus: 10, defBonus: 10 },
+    arc_de_la_forge_de_zhurong: { atkBonus: 18 },
+    arc_des_neuf_fleuves: { atkBonus: 8, defBonus: 18 },
+    arc_du_grand_leviathan: { atkBonus: 15, defBonus: 15 },
+    arc_fendeur_de_ciel: { atkBonus: 20, defBonus: 10 },
+    arc_venimeux: { atkBonus: 4 },
+    arc_du_voile_noir: { atkBonus: 7 },
+    arc_a_pointes: { defBonus: 3 },
+    arc_de_forge: { defBonus: 6 },
+    arc_de_lei_gong: { atkBonus: 8 },
+    arc_composite_de_corne: { atkBonus: 5 },
+    arc_rouge_celeste: { atkBonus: 9 },
+    arc_a_talisman: { defBonus: 3 },
+    arc_du_maitre_taoiste: { defBonus: 6 },
+    arc_de_l_immortel: { atkBonus: 7, defBonus: 7 }
+};
+
+// Texte court des bonus d'une arme ou d'un bouclier (« Atk +5 % • Déf +3 % »), vide s'il n'en a pas.
+export function describeStatBonuses(piece) {
+    return [piece?.atkBonus ? `Atk +${piece.atkBonus} %` : '', piece?.defBonus ? `Déf +${piece.defBonus} %` : ''].filter(Boolean).join(' • ');
+}
+
 /**
  * Ajoute les attributs par défaut aux armes (pour rétro-compatibilité)
  * @param {Object} weapon - L'arme à normaliser
@@ -457,6 +491,7 @@ export function normalizeWeapon(weapon) {
 
     return {
         ...weapon,
+        ...(WEAPON_STAT_BONUSES[weapon.id] || {}),
         rarity: weapon.rarity || WeaponRarity.COMMON,
         twoHanded: weapon.twoHanded !== undefined ? weapon.twoHanded : false
     };

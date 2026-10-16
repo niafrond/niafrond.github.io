@@ -3,7 +3,7 @@
 import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
-import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
+import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
@@ -22,6 +22,7 @@ import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPTo
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { applyGrowth } from "./progression.js";
+import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
@@ -157,16 +158,6 @@ export function addBonusTurn(entity, amount = 1){
     return entity.bonusTurn;
 }
 
-export function getEnemyAttackDamageCap(enemyEntity = enemy){
-    const hpReference = Math.max(1, Math.floor(enemyEntity?.maxHp || enemyEntity?.hp || 1));
-    return Math.max(1, Math.floor(hpReference / 4));
-}
-
-export function clampEnemyAttackDamage(rawDamage, enemyEntity = enemy){
-    const normalizedDamage = Math.max(0, Math.floor(rawDamage || 0));
-    return Math.min(normalizedDamage, getEnemyAttackDamageCap(enemyEntity));
-}
-
 // Couleurs de mana d'un sort : une (coût simple) ou plusieurs (coût multi-mana).
 export function spellColorsOf(spell){
     if(!spell) return [];
@@ -266,9 +257,26 @@ function applyEnemyColorAffinityModifier(target, damage, sourceColor){
     };
 }
 
+// Résultat { damage, crit, block } du dernier sort de dégâts résolu par applyDamage (pour l'animation et le journal).
+let lastSpellStrike = null;
+
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+
+    // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
+    lastSpellStrike = null;
+    if(options.sourceSpell && normalizedDamage > 0 && (target === player || target === enemy)) {
+        const caster = target === player ? enemy : player;
+        const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
+        const strike = resolveStrike(normalizedDamage, caster, target, { weakened });
+        normalizedDamage = strike.damage;
+        strike.damage = normalizedDamage;
+        lastSpellStrike = strike;
+        if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
+        if(strike.block === 'total') log(`${target.name} bloque entièrement ${options.sourceSpell.name}.`);
+        else if(strike.block === 'partial') log(`${target.name} pare ${options.sourceSpell.name}.`);
+    }
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
@@ -400,9 +408,17 @@ export function consumeSpellMana(entity, spell){
 }
 
 function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
+    if(spell.effect === 'statBuff' && !isPlayerCaster){
+        const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
+        addStatBuff(caster, buff);
+        showCombatAnimation({ icon: buff.attack > 0 ? 'sword' : 'shield', title: spell.name, heal: describeStatBuff(buff), source: caster.name, target: `→ ${caster.name}` }, false);
+        log(`${caster.name} lance ${spell.name} : ${describeStatBuff(buff)}.`);
+        return;
+    }
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
 
     if(spell.dmg){
+        let spellFlags = '';
         const spellColors = spellColorsOf(spell);
         const targetResistance = spellColors.length
             ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-mana : résistance moyenne
@@ -414,18 +430,19 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
-        if(!isPlayerCaster) {
-            dmg = clampEnemyAttackDamage(dmg, caster);
-        }
         applyDamage(target, dmg, { sourceSpell: spell });
+        if(lastSpellStrike) {
+            dmg = lastSpellStrike.damage;
+            spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}${blockLabel(lastSpellStrike.block) ? ` ${blockLabel(lastSpellStrike.block)}` : ''}`;
+        }
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, target: `→ ${target.name}` }, true);
             log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, source: caster.name, target: '→ Vous' }, false);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
             log(`${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
@@ -876,6 +893,8 @@ export function restartCombat(){
     player.manaMultiplier = null;
     player.damageReduction = 0;
     player.tempCritChance = 0;
+    clearStatBuffs(player);
+    clearStatBuffs(enemy);
     // Réinitialiser le statut du jeu
     setGameStarted(false);
     // Appliquer les aptitudes de début de combat
@@ -1246,7 +1265,7 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat"><strong>Atk:</strong> ${player.attack} <strong>Def:</strong> ${player.defense || 0} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat"><strong>Atk:</strong> ${rawAttack(player)}% <strong>Def:</strong> ${rawDefense(player)}% <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span class="mana-dot mana-red" title="${targetPlayerMana.red}"></span><span id="player-mana-red">${targetPlayerMana.red}</span>
@@ -1287,7 +1306,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${enemy.attack} <strong>Def:</strong> ${enemy.defense || 0} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat"><strong>Atk:</strong> ${rawAttack(enemy)}% <strong>Def:</strong> ${rawDefense(enemy)}% <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span class="mana-dot mana-red" title="${targetEnemyMana.red}"></span><span id="enemy-mana-red">${targetEnemyMana.red}</span>
@@ -1537,12 +1556,12 @@ export function updatePlayerStatsTab(){
         <div class="stats-section">
             <h3>Statistiques de combat</h3>
             <div class="stat-line">
-                <span class="stat-label">${svgIcon('sword')} Attaque:</span>
-                <span class="stat-value">${player.attack}</span>
+                <span class="stat-label" title="Chance de coup critique (arme, crânes) — plafonnée à 98 %">${svgIcon('sword')} Attaque (critique):</span>
+                <span class="stat-value">${rawAttack(player)}%</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">${svgIcon('shield')} Défense:</span>
-                <span class="stat-value">${player.defense || 0}</span>
+                <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
+                <span class="stat-value">${rawDefense(player)}%</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">${svgIcon('heart')} HP Maximum:</span>
@@ -1726,7 +1745,7 @@ export function useWeapon(hand = 'right'){
 
 // Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
 function strikeWithWeapon(weapon, { free = false } = {}){
-    let dmg = weapon.damage + (player.attack || 0);
+    let dmg = weapon.damage;
     const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
     if(biomeBonus > 0) {
         dmg += biomeBonus;
@@ -1740,16 +1759,11 @@ function strikeWithWeapon(weapon, { free = false } = {}){
         log(`Lame de Feu Pourpre ajoute ${flameBonus} dégâts au coup d'arme.`);
     }
 
-    // Critique
-    const totalCritChance = (player.critChance || 0) + (player.tempCritChance || 0);
-    let isCrit = false;
-    if(totalCritChance > 0 && Math.random() * 100 < totalCritChance) {
-        dmg = Math.floor(dmg * 1.5);
-        isCrit = true;
-    }
-
-    // Défense de l'ennemi
-    dmg = Math.max(1, dmg - (enemy.defense || 0));
+    // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
+    const strike = resolveStrike(dmg, player, enemy);
+    const isCrit = strike.crit;
+    const blockText = blockLabel(strike.block);
+    dmg = strike.damage;
 
     applyDamage(enemy, dmg);
     playSfx('weaponHit', { isPlayer: true });
@@ -1763,9 +1777,9 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
     const icon = getWeaponIcon(weapon.type);
 
-    const critSuffix = isCrit ? ' CRITIQUE !' : '';
+    const critSuffix = `${isCrit ? ' CRITIQUE !' : ''}${blockText ? ` ${blockText}` : ''}`;
     showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
-    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}`);
+    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 
 
@@ -1946,7 +1960,7 @@ function applyDuelRulesBeforeEnemyTurn(){
     enemy.duelTurns = (enemy.duelTurns || 0) + 1;
     const plan = duelTurnPlan(duel, enemy.duelTurns, getTrappedCells().length);
     if(plan.detonate > 0){
-        const dmg = applyDamage(player, trapDamage(plan.detonate, enemy.attack));
+        const dmg = applyDamage(player, trapDamage(plan.detonate, enemy.power ?? enemy.attack));
         log(`Les pièges de ${enemy.name} se déclenchent : ${plan.detonate} case(s) encore piégée(s), ${dmg} dégâts !`);
         playSfx('weaponHit');
     } else if(getTrappedCells().length === 0 && enemy.duelTrapLaid){
@@ -2066,19 +2080,17 @@ export function enemyTurn(){
             logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
             enemy.combatPoints -= enemy.weapon.actionPoints;
             const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
-            const effectiveAttack = Math.max(0, (enemy.attack || 0) - weakenedAmount);
-            let dmg = enemy.weapon.damage + effectiveAttack;
-            // Défense du joueur
-            dmg = Math.max(1, dmg - (player.defense || 0));
-            if(player.damageReduction > 0) {
+            // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
+            const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
+            let dmg = strike.damage;
+            if(dmg > 0 && player.damageReduction > 0) {
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
-            dmg = clampEnemyAttackDamage(dmg, enemy);
             applyDamage(player, dmg);
             playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
-            showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts`, source: enemy.name, target: '→ Vous' }, false);
-            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.`);
+            showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
+            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
             
             // Vérifier l'état après l'action
             finishEnemyTurn();
@@ -2135,6 +2147,7 @@ export function finishEnemyTurn(){
                 log(`L'affaiblissement de ${enemy.name} prend fin.`);
             }
         }
+        tickStatBuffs(enemy).forEach(stat => log(`Le bonus ${stat === 'attack' ? 'd\'attaque' : 'de défense'} de ${enemy.name} se dissipe.`));
         if((enemy.statusEffects?.itemBlocked || 0) > 0) {
             enemy.statusEffects.itemBlocked--;
             if(enemy.statusEffects.itemBlocked <= 0) {
@@ -2144,6 +2157,7 @@ export function finishEnemyTurn(){
         }
 
         // Tick des effets de durée du joueur
+        tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
             log(`Régénération : +${player.regenEffect.hp} HP.`);
@@ -3415,7 +3429,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name} <em>(${hand === 'left' ? 'main gauche' : 'main droite'}${weapon.twoHanded ? ', deux mains' : ''})</em></span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${describeStatBonuses(weapon) ? ` • ${describeStatBonuses(weapon)}` : ''}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>
@@ -3456,7 +3470,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${describeStatBonuses(weapon) ? ` • ${describeStatBonuses(weapon)}` : ''}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <div class="weapon-hand-actions">
@@ -3497,7 +3511,7 @@ function renderGearList(container){
             <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         section.appendChild(div);
     };
-    const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
+    const shieldStats = it => [it.defense ? `Déf. +${it.defense} %` : '', it.atkBonus ? `Atk +${it.atkBonus} %` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
     if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);

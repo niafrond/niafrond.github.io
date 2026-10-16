@@ -1,0 +1,132 @@
+// Attaque / Défense : ce sont des probabilités, pas des dégâts.
+//  - Attaque = chance de COUP CRITIQUE (×1,5) d'une attaque armée ou d'un match de crânes ;
+//  - Défense = chance de BLOQUER une attaque armée ou un match de crânes subi : le blocage est total (aucun dégât)
+//    ou partiel (dégâts divisés par 2).
+// Les valeurs peuvent dépasser 100 à l'écran (cumul d'objets, de sorts, de niveaux) mais la chance réelle reste
+// plafonnée à STAT_CHANCE_CAP (98 %). Les sorts ne sont ni bloqués ni critiques. Module pur, sans DOM.
+
+import { getAttributePoints } from "./attributes.js";
+
+export const STAT_CHANCE_CAP = 98;
+export const CRIT_MULTIPLIER = 1.5;
+export const PARTIAL_BLOCK_FACTOR = 0.5;   // dégâts restants après un blocage partiel
+export const TOTAL_BLOCK_SHARE = 0.4;      // part des blocages qui sont totaux (le reste est partiel)
+export const SKULL_STRENGTH_DIVISOR = 2;   // 1 dégât de plus par crâne tous les 2 points de force
+export const SKULL_STRENGTH_BONUS_CAP = 6;
+
+const clampChance = value => Math.max(0, Math.min(STAT_CHANCE_CAP, Math.floor(Number(value) || 0)));
+
+// Bonus d'Atk/Déf apportés par l'arme en main droite/gauche et le bouclier (champs `atkBonus` / `defBonus`).
+// Les `defense` historiques des boucliers sont déjà ajoutées à entity.defense à l'équipement : on ne les recompte pas.
+export function gearBonus(entity, stat) {
+    const key = stat === 'attack' ? 'atkBonus' : 'defBonus';
+    const gear = [entity?.equippedWeapon, entity?.weapon, entity?.equipment?.leftHand, entity?.equipment?.item];
+    const seen = new Set();
+    return gear.reduce((sum, piece) => {
+        if (!piece || seen.has(piece)) return sum;
+        seen.add(piece);
+        return sum + Math.max(0, Math.floor(piece[key] || 0));
+    }, 0);
+}
+
+// Bonus temporaires (sorts, `entity.statBuffs = { attack: { amount, turns }, defense: { amount, turns } }`) : ils ne modifient pas
+// entity.attack / entity.defense, expirent d'eux-mêmes (tickStatBuffs, une fois par tour du porteur) et disparaissent en fin de combat.
+export function statBuffAmount(entity, stat) {
+    const buff = entity?.statBuffs?.[stat];
+    return buff && buff.turns > 0 ? Math.max(0, Math.floor(buff.amount || 0)) : 0;
+}
+
+// Pose un bonus temporaire d'Atk et/ou de Déf pour `turns` tours (pas de cumul : on garde le meilleur bonus et la plus longue durée).
+export function addStatBuff(entity, { attack = 0, defense = 0, turns = 1 } = {}) {
+    if (!entity.statBuffs) entity.statBuffs = {};
+    const duration = Math.max(1, Math.floor(turns || 1));
+    for (const [stat, amount] of [['attack', attack], ['defense', defense]]) {
+        const value = Math.max(0, Math.floor(amount || 0));
+        if (value <= 0) continue;
+        const current = entity.statBuffs[stat];
+        entity.statBuffs[stat] = current && current.turns > 0
+            ? { amount: Math.max(current.amount, value), turns: Math.max(current.turns, duration) }
+            : { amount: value, turns: duration };
+    }
+    return entity.statBuffs;
+}
+
+// Décompte d'un tour : renvoie les stats ('attack' | 'defense') dont le bonus vient de se terminer.
+export function tickStatBuffs(entity) {
+    const expired = [];
+    for (const stat of ['attack', 'defense']) {
+        const buff = entity?.statBuffs?.[stat];
+        if (!buff) continue;
+        buff.turns -= 1;
+        if (buff.turns <= 0) { delete entity.statBuffs[stat]; expired.push(stat); }
+    }
+    return expired;
+}
+
+export function clearStatBuffs(entity) {
+    if (entity) entity.statBuffs = {};
+}
+
+// « +20 % d'attaque et +10 % de défense pendant 3 tours » (journal / animation).
+export function describeStatBuff({ attack = 0, defense = 0, turns = 1 } = {}) {
+    const parts = [attack > 0 ? `+${attack} % d'attaque` : '', defense > 0 ? `+${defense} % de défense` : ''].filter(Boolean);
+    return `${parts.join(' et ')} pendant ${turns} tour${turns > 1 ? 's' : ''}`;
+}
+
+// Valeurs affichées (non plafonnées).
+export function rawAttack(entity) {
+    return Math.max(0, Math.floor(entity?.attack || 0)) + gearBonus(entity, 'attack') + statBuffAmount(entity, 'attack')
+        + Math.max(0, Math.floor(entity?.critChance || 0)) + Math.max(0, Math.floor(entity?.tempCritChance || 0));
+}
+export function rawDefense(entity) {
+    return Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense');
+}
+
+// Chances réelles (plafonnées à 98 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
+export function critChance(entity, weakened = 0) {
+    return clampChance(rawAttack(entity) - Math.max(0, Math.floor(weakened || 0)));
+}
+export function blockChance(entity) {
+    return clampChance(rawDefense(entity));
+}
+
+export function rollCrit(entity, rng = Math.random, weakened = 0) {
+    return rng() * 100 < critChance(entity, weakened);
+}
+
+// 'none' | 'partial' | 'total'
+export function rollBlock(entity, rng = Math.random) {
+    if (!(rng() * 100 < blockChance(entity))) return 'none';
+    return rng() < TOTAL_BLOCK_SHARE ? 'total' : 'partial';
+}
+
+export function applyBlock(damage, outcome) {
+    const dmg = Math.max(0, Math.floor(damage || 0));
+    if (outcome === 'total') return 0;
+    if (outcome === 'partial') return Math.max(1, Math.floor(dmg * PARTIAL_BLOCK_FACTOR));
+    return dmg;
+}
+
+export function applyCrit(damage) {
+    return Math.floor(Math.max(0, damage || 0) * CRIT_MULTIPLIER);
+}
+
+// Dégâts supplémentaires par crâne dus à la force (points d'attribut « Battle »).
+export function skullStrengthBonus(entity) {
+    return Math.min(SKULL_STRENGTH_BONUS_CAP, Math.floor(getAttributePoints(entity, 'strength') / SKULL_STRENGTH_DIVISOR));
+}
+
+// Attaque (arme ou crânes) complète : critique puis blocage de la cible. Renvoie { damage, crit, block }.
+export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, weakened = 0 } = {}) {
+    let damage = Math.max(0, Math.floor(rawDamage || 0));
+    const crit = rollCrit(attacker, rng, weakened);
+    if (crit) damage = applyCrit(damage);
+    const block = rollBlock(target, rng);
+    damage = applyBlock(damage, block);
+    return { damage, crit, block };
+}
+
+// Libellé d'un blocage pour le journal / l'animation.
+export function blockLabel(block) {
+    return block === 'total' ? 'BLOQUÉ !' : block === 'partial' ? 'paré' : '';
+}
