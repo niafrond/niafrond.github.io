@@ -1,6 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { colors, boardSize } from "./constants.js";
+import { colors, boardSize, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
@@ -18,6 +18,7 @@ import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
+import { npcSprite, spriteUri } from "./sprites/index.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
@@ -569,6 +570,8 @@ export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || [
 
 // Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
 let foxActedThisTurn = false;
+let foxPlaying = false;   // le coup de Xiao Gui est en cours : le joueur ne peut ni jouer le plateau ni utiliser armes, objets, sorts
+export const isFoxPlaying = () => foxPlaying;
 
 // état du combat (objet pour pouvoir modifier la propriété)
 export const gameState = { 
@@ -860,6 +863,7 @@ export function restartCombat(){
     actionGuard.reset();
     introToken++;
     foxActedThisTurn = false;
+    foxPlaying = false;
     dismissCombatIntro();
     if(pendingPlayerDeathTimeout) {
         clearTimeout(pendingPlayerDeathTimeout);
@@ -1605,6 +1609,12 @@ export function updatePlayerStatsTab(){
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
 preloadSpellFx();
 
+// Portrait pixel art de Xiao Gui (le renard compagnon) pour l'annonce de son coup.
+function foxIconHtml(){
+    const uri = spriteUri(npcSprite('xiao_gui'));
+    return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
+}
+
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
@@ -1698,14 +1708,14 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
-    return currentTurn !== 'player' || isBoardResolving() || actionGuard.blockReason() !== null;
+    return currentTurn !== 'player' || foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
 // armes, objets, sorts (colonne #player-spells rendue inerte : ni clic ni focus) et abandon ; l'actionGuard refuse aussi
 // tout clic. Réactivés dès que le tour revient au joueur. Appelé à chaque updateStats().
 export function syncPlayerControlsLock(){
-    const locked = gameState.combatState === 'active' && currentTurn !== 'player';
+    const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || foxPlaying);
     actionGuard.setTurnLocked(locked);
     if(typeof document === 'undefined') return locked;
     const column = document.getElementById('player-spells');
@@ -1802,6 +1812,7 @@ export function castSpell(spellId){
     }
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
+    if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
     if(!canEntityCastSpell(player, spell)){
@@ -1913,6 +1924,7 @@ export function forcePlayerTurnForCheat(){
 }
 
 export function finishPlayerTurn(){
+    foxPlaying = false;
     if(gameState.combatState !== 'active'){
         return;
     }
@@ -1940,10 +1952,11 @@ export function finishPlayerTurn(){
         afterPlayerAnimations(() => {
             if(gameState.combatState !== 'active') return;
             currentTurn = 'player'; // le coup du renard se joue pendant le tour du joueur
-            updateStats();
+            foxPlaying = true;      // ... mais les commandes du joueur restent bloquées
+            updateStats();   // verrouille les boutons
             log('Xiao Gui bondit ! Hi hi — un coup de renard !');
             // On annonce que le renard joue, puis seulement il fait son mouvement.
-            showCombatAnimation({ icon: 'star', title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
+            showCombatAnimation({ icon: foxIconHtml(), title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
                 autoHideMs: 1200 * animationFactor(),
                 onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
             });
@@ -2607,7 +2620,6 @@ function getUnlockedSpellCap(level) {
 
 function buildUnlockedSpellsList(spells, level) {
     const unlockCap = getUnlockedSpellCap(level);
-    if(unlockCap <= 0) return [];
 
     const uniqueById = [];
     const seenIds = new Set();
@@ -2617,7 +2629,12 @@ function buildUnlockedSpellsList(spells, level) {
         uniqueById.push(spell);
     }
 
+    // Sort offensif de départ : dès le niveau 1, le joueur a au moins un sort de dégâts (le moins coûteux), toujours en tête de liste.
+    const isOffensive = s => s.type === 'damage' && s.dmg > 0 && !s.effect && (s.minLevel || 1) <= Math.max(1, Math.floor(level || 1));
+    const starter = uniqueById.filter(isOffensive).sort((a, b) => (a.cost || 0) - (b.cost || 0) || String(a.id).localeCompare(String(b.id)))[0];
+
     uniqueById.sort((a, b) => {
+        if(starter && (a === starter) !== (b === starter)) return a === starter ? -1 : 1;
         const levelA = Math.max(1, Math.floor(a?.minLevel || 1));
         const levelB = Math.max(1, Math.floor(b?.minLevel || 1));
         if(levelA !== levelB) return levelA - levelB;
@@ -2627,7 +2644,7 @@ function buildUnlockedSpellsList(spells, level) {
     // Les sorts de haut niveau (multimana, niveau > 15) et les sorts avancés (3 à 5 couleurs, dès le niveau 8) sont débloqués dès leur
     // niveau, hors plafond du nombre de sorts : sinon, triés après les sorts de niveau inférieur, ils restaient hors de portée jusqu'au niveau 38+.
     const isFreeUnlock = s => s.type === 'advanced' || s.type === 'board' || (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL;
-    const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, unlockCap);
+    const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, Math.max(unlockCap, starter ? 1 : 0));
     const free = uniqueById.filter(isFreeUnlock);
     return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
 }
@@ -2655,11 +2672,11 @@ function updateActiveSpells() {
         player.availableSpells.some(avail => avail.id === sp.id)
     );
     // si moins de 4 sorts actifs, en ajouter automatiquement
-    if(player.activeSpells.length < 4){
+    if(player.activeSpells.length < MAX_ACTIVE_SPELLS){
         for(const sp of player.availableSpells){
             if(!player.activeSpells.some(active => active.id === sp.id)){
                 player.activeSpells.push(sp);
-                if(player.activeSpells.length >= 4) break;
+                if(player.activeSpells.length >= MAX_ACTIVE_SPELLS) break;
             }
         }
     }
@@ -2979,7 +2996,7 @@ export function updateSpellsTab(){
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
             markMultiManaSpell(div, sp);
-            const canEquip = player.activeSpells.length < 4;
+            const canEquip = player.activeSpells.length < MAX_ACTIVE_SPELLS;
             const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
             const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
@@ -3004,7 +3021,7 @@ export function equipSpell(spellId){
         log('Vous ne pouvez pas modifier vos sorts pendant le combat !');
         return;
     }
-    if(player.activeSpells.length >= 4){
+    if(player.activeSpells.length >= MAX_ACTIVE_SPELLS){
         log('Maximum 4 sorts actifs atteint.');
         return;
     }
@@ -3107,6 +3124,9 @@ export function setCombatBackdrop(biome){
 
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
+    // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
+    enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
+    if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
 
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level, enemy);

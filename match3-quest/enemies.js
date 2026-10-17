@@ -1,6 +1,7 @@
 // Système d'ennemis piloté par un catalogue JSON
 
 import { allWeapons } from "./weapons.js";
+import { MAX_ACTIVE_SPELLS } from "./constants.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
@@ -136,7 +137,7 @@ function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     const genericSpells = getAllSpells().filter(sp => !sp.class && !sp.effect && !sp.playerOnly && sp.minLevel <= enemyLevel);   // sorts avancés (effets de plateau) : réservés au joueur
 
     const preferredColors = template.spellProfile?.preferredColors || [];
-    const maxSpells = Math.floor(enemyLevel / 5) + 1;
+    const maxSpells = Math.min(MAX_ACTIVE_SPELLS, Math.floor(enemyLevel / 5) + 1);   // même plafond que le joueur
     const targetSpellCount = fullLoadout ? maxSpells : Math.ceil(Math.random() * maxSpells);   // un boss a toujours son grimoire complet
     const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
 

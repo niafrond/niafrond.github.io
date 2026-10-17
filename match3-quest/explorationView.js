@@ -313,9 +313,11 @@ export function createExplorationView(cfg) {
             ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
             : null;
         const enemyDef = sp.enemy ? session.rt.enemyIndex[sp.enemy]?.def : null;
-        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId, enemyBiome(sp.enemy)) : null;
+        // Xiao Gui (compagnon) parle sous sa forme de renard, pas sous celle de la renarde Xia dont il emprunte l'identifiant.
+        const spriteNpc = sp.npc === 'huli_xia' && sp.name === 'Xiao Gui' ? 'xiao_gui' : sp.npc;
+        const sprite = spriteNpc ? npcSprite(spriteNpc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId, enemyBiome(sp.enemy)) : null;
         // Même dessin que sur la carte : le sprite GBA du PNJ / de l'ennemi, sinon le sprite vectoriel de repli.
-        const gba = sp.npc ? gbaSprite(sp.npc)
+        const gba = spriteNpc ? gbaSprite(spriteNpc)
             : sp.enemy ? (gbaSprite(enemyDef?.spriteKey || sp.enemy) || gbaSprite(enemyDef?.templateId))
             : null;
         return {
@@ -1362,7 +1364,7 @@ export function createExplorationView(cfg) {
                     const companions = X.companionsOf(session);
                     if (companions.some(c => c.id === 'xiao_gui')) {
                         const foxHop = moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
-                        drawSprite(npcSprite('huli_xia'), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
+                        drawSprite(npcSprite('xiao_gui'), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
                     }
 
                     if (riding()) {

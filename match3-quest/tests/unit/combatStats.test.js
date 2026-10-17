@@ -169,3 +169,11 @@ describe('ennemis', () => {
         expect(ids.size).toBeGreaterThan(1);
     });
 });
+
+describe('mêmes limites que le joueur : sorts et armes', () => {
+    test.each([5, 20, 40, 60])('un boss de palier %i a au plus 4 sorts et une seule arme', tier => {
+        const boss = createBossEnemyForTier(tier);
+        expect(boss.spells.length).toBeLessThanOrEqual(4);
+        expect(Array.isArray(boss.weapon)).toBe(false);
+    });
+});

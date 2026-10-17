@@ -28,6 +28,8 @@
 //  - hautes herbes (`screen.grass` = { cells: [[x,y,w,h]…], rate, safeSteps, table: [{ templateId, name, weight, offset }] }) :
 //    marcher dessus peut déclencher un combat aléatoire non persistant (ennemi synthétique `wild:<écran>:<n>`, jamais dans
 //    `data.defeated` ni dans la sauvegarde ; état volatil dans `session.rt`) ; voir grassOf / tryMove / encounterFor.
+//    L'eau et la lave (`screen.liquids`, franchissables avec le Pas de Yu ou en écran aquatique) agissent comme des buissons :
+//    mêmes tirages, table des herbes de la carte ou, à défaut, de la carte sauvage de la région (encounterOf / isEncounterCell).
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { COMPANIONS, BANTER } from './companions.js';
@@ -54,7 +56,7 @@ const inRect = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < 
 export const GRASS_RATE = 0.12;          // probabilité de rencontre par pas sur l'herbe, une fois les pas de grâce passés
 export const GRASS_SAFE_STEPS = 3;       // pas d'herbe sans rencontre après l'arrivée sur la carte ou un combat
 export const WILD_PREFIX = 'wild:';      // identifiant synthétique d'une créature d'herbe : wild:<écran>:<n>
-export const WILD_INTRO = 'Des créatures se cachent dans les hautes herbes.';
+export const WILD_INTRO = 'Des créatures se cachent dans les hautes herbes, l\'eau et la lave.';
 const WILD_KEEP = 4;                     // définitions synthétiques gardées en mémoire (la rencontre en cours + quelques-unes)
 export const isWildId = id => typeof id === 'string' && id.startsWith(WILD_PREFIX);
 
@@ -76,6 +78,24 @@ export function grassOf(screen) {
             offset: Number.isInteger(t.offset) ? t.offset : 0
         }));
     return { cells, rate, safeSteps, table };
+}
+
+// Rencontres aléatoires d'une carte : les hautes herbes, plus l'eau et la lave (`screen.liquids`, franchissables avec le Pas de Yu
+// ou dans un écran aquatique) qui agissent comme des buissons. Table et taux : ceux des herbes de la carte, à défaut ceux de la
+// carte sauvage de la région. Null sur une zone sûre, un intérieur, une arène ou sans table.
+export function encounterOf(screen) {
+    const own = grassOf(screen);
+    if (own) return own;
+    if (!screen || screen.safe || screen.interior || screen.arena || screen.kind === 'arena') return null;
+    if (!(screen.liquids || []).length) return null;
+    const wild = grassOf(SCREENS[`${screen.region}_wild`]);
+    return wild && wild.table.length ? { cells: [], rate: wild.rate, safeSteps: wild.safeSteps, table: wild.table } : null;
+}
+
+// La case (x, y) déclenche-t-elle des rencontres : hautes herbes, eau ou lave ?
+export function isEncounterCell(screen, x, y) {
+    const g = encounterOf(screen);
+    return Boolean(g) && (inRect(g.cells, x, y) || inRect(screen.liquids || [], x, y));
 }
 
 // La case (x, y) de la carte est-elle une case de hautes herbes ?
@@ -571,7 +591,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.rt.stillMs = 0;
     if (session.rt.grace > 0) session.rt.grace--;
     // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
-    const onGrass = isGrassCell(screen, nx, ny);
+    const onGrass = isEncounterCell(screen, nx, ny);
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
     return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved' };
 }
@@ -581,7 +601,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
 // dans la table. Deux appels à `ctx.random` (RNG injectable, défaut Math.random) : succès du pas, puis choix dans la table.
 function rollWildEncounter(session, ctx = {}) {
     const screen = currentScreen(session);
-    const g = grassOf(screen);
+    const g = encounterOf(screen);
     if (!g || g.table.length === 0) return null;
     if (session.rt.grace > 0 || session.rt.grassSteps <= g.safeSteps) return null;
     const random = typeof ctx.random === 'function' ? ctx.random : Math.random;

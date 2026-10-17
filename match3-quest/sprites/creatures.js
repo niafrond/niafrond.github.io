@@ -25,6 +25,7 @@ export const CREATURE_BY_ID = {
     snake_qing: { kind: 'snake', scholar: true },
     panda_mimi: { kind: 'panda', scroll: true },
     huli_xia: { kind: 'fox' },
+    xiao_gui: { kind: 'fox' },   // le compagnon de Xiao Gui : un simple renard pixel art (pas la renarde huli_xia)
     lantern_old: { kind: 'lantern' },
     fennec_lili: { kind: 'fennec' },
     camel_baba: { kind: 'camel' },

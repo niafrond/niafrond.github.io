@@ -100,15 +100,15 @@ describe('forge de joueurs : cohérence des jalons', () => {
         });
     });
 
-    test('début de partie : héros neuf, arme de départ de sa classe, aucun sort débloqué, village de départ seulement', () => {
+    test('début de partie : héros neuf, arme de départ de sa classe, un seul sort offensif, village de départ seulement', () => {
         CLASS_IDS.forEach(c => {
             const p = forgeNewGame(c);
             expect(p.level).toBe(1);
             expect(p.xp).toBe(0);
             expect(p.equippedWeapon.id).toBe(playerClasses[c].startingWeaponId);
             expect(p.weapons).toHaveLength(1);
-            expect(p.activeSpells).toEqual([]);
-            expect(p.availableSpells).toEqual([]);
+            expect(ids(p.activeSpells)).toEqual(['fireball']);
+            expect(ids(p.availableSpells)).toEqual(['fireball']);
             expect(p.maxHp).toBe(NEW_PLAYER_HP);
             expect(p.attack).toBe(NEW_PLAYER_ATTACK);
             expect(p.unspentLevelPoints).toBe(0);
@@ -256,7 +256,7 @@ describe('sauvegarde : aller-retour fichier à chaque jalon', () => {
         expect(data.player.gold).toBeUndefined();
         expect(data.player.abilities).toBeUndefined();
         expect(data.player.inventory).toBeUndefined();
-        expect(data.player.activeSpells).toBeUndefined();
+        expect(data.player.activeSpells).toEqual(['fireball']);   // le sort offensif de départ
         expect(data.player.attributes).toEqual(playerClasses.assassin.startingStats);
     });
 
@@ -558,9 +558,12 @@ describe('progression des joueurs sauvegardés', () => {
 });
 
 describe('déblocage des sorts selon le niveau et la classe', () => {
-    test('niveau 1 : aucun sort ; niveau n : n - 1 sorts ordinaires (les sorts avancés et de plateau viennent en plus, dès leur niveau)', () => {
+    test('niveau 1 : un seul sort, offensif ; niveau n : n - 1 sorts ordinaires (les sorts avancés et de plateau viennent en plus, dès leur niveau)', () => {
         CLASS_IDS.forEach(c => {
-            expect(unlockedSpells(c, 1)).toEqual([]);
+            const start = unlockedSpells(c, 1);
+            expect(start).toHaveLength(1);
+            expect(start[0].type).toBe('damage');
+            expect(start[0].dmg).toBeGreaterThan(0);
             for (let L = 2; L <= HIGH_SPELL_FROM_LEVEL; L++) {
                 const list = unlockedSpells(c, L);
                 const ordinary = list.filter(s => s.type !== 'advanced' && s.type !== 'board');
@@ -1278,14 +1281,21 @@ describe('duel : règles appliquées au héros sauvegardé', () => {
         });
     });
 
-    test('héros sans sort équipé (début de partie) : le miroir prend les sorts de classe connus, quatre au plus', () => {
+    test('héros sans sort équipé : le miroir prend les sorts de classe connus, quatre au plus', () => {
         CLASS_IDS.forEach(c => {
-            const hero = forgeNewGame(c);
+            const hero = { ...forgeNewGame(c), activeSpells: [] };
             const copy = mirrorLoadout(hero, getClassSpells(c, 99));
             expect(copy.spells.length).toBeGreaterThan(0);
             expect(copy.spells.length).toBeLessThanOrEqual(4);
             copy.spells.forEach(s => expect(s.class).toBe(c));
             expect(copy.weapon.id).toBe(playerClasses[c].startingWeaponId);
+        });
+    });
+
+    test('héros de début de partie : le miroir copie son sort offensif de départ', () => {
+        CLASS_IDS.forEach(c => {
+            const copy = mirrorLoadout(forgeNewGame(c), getClassSpells(c, 99));
+            expect(ids(copy.spells)).toEqual(['fireball']);
         });
     });
 

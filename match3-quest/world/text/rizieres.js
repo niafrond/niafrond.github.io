@@ -21,7 +21,7 @@ export default {
       talk: [{ whenDone: 'sun_1', lines: ['Il y a un nuage ! Il a la forme d\'une tortue ! Je vais lui écrire une lettre pour qu\'il revienne.'] }] },
     grandma_tao: { name: 'Grand-mère Tao', title: 'Doyenne des commères', 
       idle: ['Je sais tout sur tout le monde. Je sais aussi que le doyen Wen cache des bonbons au gingembre dans son rouleau de comptes.', 'Un jeune disciple est passé l\'autre jour, des yeux de lame. Il regardait l\'autel des ancêtres de Chang\'e, celui où repose la fiole précieuse. On ne regarde pas ainsi une fiole : on le respecte ou on le laisse.'],
-      talk: [{ whenDone: 'fengmeng_1', lines: ['Ce garçon, Fengmeng, a perdu son duel et gagné une rancune. À mon âge, on connaît la recette : jalousie, orgueil, et un peu de sel pour finir la marmite.'] }] },
+      talk: [{ whenDone: 'fengmeng_1', lines: ['Ce garçon, Fengmeng, s\'est battu avec son Maître comme on joue avec un frère. À mon âge, on connaît la recette : un peu d\'orgueil, beaucoup d\'affection, et du sel pour finir la marmite.'] }] },
     buffalo_dahei: { name: 'Dahei', title: 'Buffle d\'eau philosophe', 
       idle: ['Meuh. Autrement dit : la terre est sèche, mais la patience est humide.', 'J\'ai vu neuf soleils se lever dans mes rêves. Au dixième, je me suis réveillé. Je préfère rester sur celui-là.'],
       talk: [{ whenDone: 'sun_1', lines: ['Meuh, archer. J\'ai senti l\'humidité dans le vent ce matin. Si tu continues, je pourrai bientôt me rouler dans une vraie mare.'] }] },

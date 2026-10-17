@@ -233,7 +233,7 @@ export function forgePlayer(o = {}) {
 }
 
 // ── Jalons ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-/** Début de partie : niveau 1, arme de départ de la classe, aucun sort débloqué, village de départ seulement. */
+/** Début de partie : niveau 1, arme de départ de la classe, un seul sort offensif, village de départ seulement. */
 export const forgeNewGame = (classId = 'templar') => forgePlayer({ classId, level: 1, gold: 0 });
 
 /** Niveau 5 : premiers hybrides, un objet rechargeable, un peu d'or, une aptitude. */

@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
+import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, applyBoardBoost } from "./terrain.js";
 import { flyManaToCounter } from "./manaFlight.js";
@@ -525,8 +525,8 @@ export function selectTile(index){
         }
     }
 
-    // Empêcher le joueur de jouer si ce n'est pas son tour
-    if(currentTurn !== 'player'){
+    // Empêcher le joueur de jouer si ce n'est pas son tour (ou pendant le coup de Xiao Gui)
+    if(currentTurn !== 'player' || isFoxPlaying()){
         log('Ce n\'est pas votre tour !');
         return;
     }
@@ -574,6 +574,14 @@ export function selectTile(index){
         playSfx('invalid');
         tiles[selected].classList.remove('selected');
         selected=null;
+        return;
+    }
+    // Tutoriel : seul l'échange demandé est accepté (le module peut remettre le plateau d'entraînement en place).
+    if(tutorialCallbacks.allowSwap && !tutorialCallbacks.allowSwap(selected, index, board)){
+        playSfx('invalid');
+        tiles[selected].classList.remove('selected');
+        selected=null;
+        renderBoard();
         return;
     }
     tiles[selected].classList.remove('selected');
@@ -1338,7 +1346,7 @@ export function foxMakeRandomMove(){
     clearSuggestion();
 
     const possibleMoves = getSortedPossibleMoves();
-    if(possibleMoves.length === 0) return;
+    if(possibleMoves.length === 0){ finishPlayerTurn(); return; }
 
     const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     setTimeout(() => {
