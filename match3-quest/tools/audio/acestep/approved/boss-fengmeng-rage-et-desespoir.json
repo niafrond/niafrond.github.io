@@ -1,10 +1,10 @@
 {
   "key": "boss-fengmeng-rage-et-desespoir",
-  "version": "v003",
-  "date": "2026-10-16T22:20:28.353Z",
-  "seed": "3689060607",
+  "version": "v005",
+  "date": "2026-10-17T19:40:19.744Z",
+  "seed": "9451854",
   "request": {
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, final boss phase two, Rage and Despair, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, fast broken pipa tremolo, Feng Meng motif displacing Hou Yi motif, unresolved suspensions, sudden silence before the strike, despair",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, final boss phase two, Rage and Despair, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, fast broken pipa tremolo, Feng Meng motif displacing Hou Yi motif, unresolved suspensions, sudden silence before the strike, despair",
     "lyrics": "[Instrumental]",
     "vocal_language": "unknown",
     "audio_format": "mp3",
@@ -23,7 +23,7 @@
     "genres": "N/A",
     "keyscale": "D minor",
     "timesignature": "4",
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, final boss phase two, Rage and Despair, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, fast broken pipa tremolo, Feng Meng motif displacing Hou Yi motif, unresolved suspensions, sudden silence before the strike, despair",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, final boss phase two, Rage and Despair, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, fast broken pipa tremolo, Feng Meng motif displacing Hou Yi motif, unresolved suspensions, sudden silence before the strike, despair",
     "lyrics": "[Instrumental]"
   }
 }

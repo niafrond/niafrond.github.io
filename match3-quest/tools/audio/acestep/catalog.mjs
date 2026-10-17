@@ -76,6 +76,9 @@ for (const [b, d] of Object.entries(BIOMES)) {
     T(`wild-${b}`, `${d.place}, exploration theme, scattered phrases, gentle tension, ${d.wild}, spacious, lonely journey of Hou Yi`, { bpm: d.bpm - 8, keyScale: d.key, dur: 50, motif: b === 'moon' ? null : null });
 }
 
+/* Ton épique commun aux combats et aux boss : grand ensemble, taiko, mélodie héroïque, montées dynamiques. */
+const EPIC = 'epic cinematic orchestral battle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant';
+
 /* ───────────── Combats (5 styles, progression sans jamais sonner « boss final ») ───────────── */
 [
     ['light skirmish, playful pipa ostinato, quick dizi, light woodblock', 112],
@@ -83,11 +86,11 @@ for (const [b, d] of Object.entries(BIOMES)) {
     ['tense fight, rapid pipa arrows, snare-like woodblocks, rising dizi figure', 128],
     ['fierce fight, pulse-wave arpeggios, powerful Chinese drums, erhu lead with the Hou Yi motif fragment', 136],
     ['relentless fight, urgent pipa and square-wave ostinato, brass-like pulse stabs, bold erhu line', 144]
-].forEach(([s, bpm], i) => T(`combat-${i}`, `battle theme, ${s}, readable melody, short loop`, { bpm, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 45, motif: i >= 3 ? 'houyi' : null }));
+].forEach(([s, bpm], i) => T(`combat-${i}`, `epic battle theme, ${EPIC}, ${s}, readable memorable melody, short loop`, { bpm: bpm + 8, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 45, motif: i >= 3 ? 'houyi' : null }));
 
 /* Ambiance commune à tous les boss : la menace doit s'entendre dès la première mesure. */
 const BOSS_PERC = 'aggressive war drums, hard woodblocks, crashing cymbals';
-const BOSS_MOOD = 'menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse';
+const BOSS_MOOD = `epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos`;
 
 /* ───────────── Boss : dix soleils (motif céleste qui se délite) ───────────── */
 const SUN = (name, detail, bpm, keyScale, rank) => ({ name, detail, bpm, keyScale, rank });
@@ -162,6 +165,10 @@ export const CATALOG = TRACKS;
 export const MOTIF_NAMES = ['houyi', 'fengmeng', 'suns'];
 
 /** Description textuelle complète envoyée à ACE-Step (caption). `extra` = retouche libre pour une régénération. */
+/** Combats et boss : le brief « pas de bombast, arrangement compact » est levé pour laisser place à l'épique. */
+const isEpic = (track) => /^(combat|boss)-/.test(track.key);
+const EPIC_STYLE = GLOBAL_STYLE.replace('no cinematic orchestral bombast', 'big cinematic orchestral power').replace('compact arrangement with limited polyphony', 'rich layered arrangement, full ensemble');
+
 export function buildCaption(track, extra = '') {
-    return [GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
+    return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
 }

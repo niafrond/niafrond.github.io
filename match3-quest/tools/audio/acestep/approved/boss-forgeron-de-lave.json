@@ -1,10 +1,10 @@
 {
   "key": "boss-forgeron-de-lave",
-  "version": "v003",
-  "date": "2026-10-16T22:22:43.601Z",
-  "seed": "1962742854",
+  "version": "v005",
+  "date": "2026-10-17T19:42:39.784Z",
+  "seed": "2736841135",
   "request": {
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, dangerous boss battle, lava blacksmith, anvil woodblock rhythm, molten low pipa, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, agile plucked pipa ostinato (martial tension, arrows), aggressive war drums, hard woodblocks, crashing cymbals, readable melody",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, dangerous boss battle, lava blacksmith, anvil woodblock rhythm, molten low pipa, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, agile plucked pipa ostinato (martial tension, arrows), aggressive war drums, hard woodblocks, crashing cymbals, readable melody",
     "lyrics": "[Instrumental]",
     "vocal_language": "unknown",
     "audio_format": "mp3",
@@ -23,7 +23,7 @@
     "genres": "N/A",
     "keyscale": "C minor",
     "timesignature": "4",
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, dangerous boss battle, lava blacksmith, anvil woodblock rhythm, molten low pipa, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, agile plucked pipa ostinato (martial tension, arrows), aggressive war drums, hard woodblocks, crashing cymbals, readable melody",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, dangerous boss battle, lava blacksmith, anvil woodblock rhythm, molten low pipa, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, agile plucked pipa ostinato (martial tension, arrows), aggressive war drums, hard woodblocks, crashing cymbals, readable melody",
     "lyrics": "[Instrumental]"
   }
 }
