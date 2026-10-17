@@ -597,6 +597,21 @@ const SUN_REPLIES = [
     "Mes flèches n'ont jamais manqué leur but. Pas aujourd'hui : elle m'attend.",
     "Rends-nous la nuit. J'ai promis la fête de la lune à Chang'e."
 ];
+// Gardes, gardiens et chefs de zone : ils protègent un passage ou un soleil, ils ne sont pas des soleils.
+const GUARD_TAUNTS = [
+    'Halte, archer ! On ne passe pas ici sans me passer sur le corps.',
+    'Ma consigne est de tenir cette place. Je la tiendrai jusqu\'au bout.',
+    'Tu as de bons yeux, mais pas de laissez-passer. Recule, ou tire.',
+    'Beaucoup ont essayé avant toi. Aucun n\'a fini la route.',
+    'Je ne te hais pas, étranger. Mais ce que je garde ne se prête pas.'
+];
+const GUARD_REPLIES = [
+    "Je n'en veux pas à ta consigne, seulement à ce qu'elle protège. Écarte-toi.",
+    "Je dois passer, gardien. Le monde brûle derrière toi.",
+    "Tiens ta place, je tiendrai ma flèche : voyons qui cède le premier.",
+    "Je ne cherche pas la bagarre, mais je ne reculerai pas.",
+    "Alors défends-toi bien. Je ne tire pas pour tuer, mais pour passer."
+];
 const FENGMENG_TAUNTS = [
     'Maître… vous avez tout : le renom, l\'élixir, Chang\'e. Moi, que me reste-t-il ?',
     'Je ne serai pas toujours votre disciple. Aujourd\'hui, c\'est moi qui tends l\'arc !',
@@ -694,8 +709,9 @@ export function bossIntroLines(enc) {
     const duelLines = FENGMENG_DUEL_LINES[enc?.enemyId];
     if (duelLines) return [{ who: 'boss', text: duelLines[0] }, { who: 'hero', text: duelLines[1] }];
     const isRival = /fengmeng/i.test(name);
-    const taunts = isRival ? FENGMENG_TAUNTS : SUN_TAUNTS;
-    const replies = isRival ? FENGMENG_REPLIES : SUN_REPLIES;
+    const isSun = /^(sun_|mirage_)/.test(enc?.enemyId || '') || /soleil/i.test(name) || !enc?.boss && !enc?.enemyId;
+    const taunts = isRival ? FENGMENG_TAUNTS : isSun ? SUN_TAUNTS : GUARD_TAUNTS;
+    const replies = isRival ? FENGMENG_REPLIES : isSun ? SUN_REPLIES : GUARD_REPLIES;
     return [
         { who: 'boss', text: pick(taunts, name) },
         { who: 'hero', text: pick(replies, name + enc.level) }

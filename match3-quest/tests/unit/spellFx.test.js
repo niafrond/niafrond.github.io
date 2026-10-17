@@ -27,12 +27,12 @@ describe('spellFx', () => {
         expect(spellFxHtml('fireball')).toContain('spellfx');
     });
 
-    test('l\'animation est jouée une fois et sa durée est connue', () => {
+    test('l\'animation tourne en boucle et sa durée (d\'un cycle) est connue', () => {
         expect(spellFxDurationMs('SOUFFLE DU DRAGON DE FEU')).toBe(Math.round(index.fireball.frames / index.fireball.fps * 1000));
         expect(spellFxDurationMs("COUP D'ÉPÉE")).toBe(0);
         const css = readFileSync(new URL('../../style.css', import.meta.url), 'utf8');
-        expect(css).toMatch(/\.spellfx \{[^}]*forwards;/);
-        expect(css).not.toMatch(/\.spellfx \{[^}]*infinite/);
+        expect(css).toMatch(/\.spellfx \{[^}]*infinite;/);
+        expect(css).not.toMatch(/\.spellfx \{[^}]*forwards/);
     });
 
     test('renvoie null pour un titre inconnu (l\'annonce garde son icône)', () => {

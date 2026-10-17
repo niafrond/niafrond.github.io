@@ -2,7 +2,7 @@
  * spellFx.js — Mini-animations pixel art des sorts (planches `sprites/spellfx/<id>.png`, générées par
  * `tools/gen-spellfx.mjs`). Plus le sort coûte cher, plus l'animation est grande et détaillée.
  *
- * Le lecteur est purement CSS (planche + `steps()`), sans canvas ni timer. L'animation se joue UNE fois puis reste sur sa dernière image. L'index est chargé en tâche de fond ;
+ * Le lecteur est purement CSS (planche + `steps()`), sans canvas ni timer. L'animation tourne en boucle tant que l'annonce est affichée. L'index est chargé en tâche de fond ;
  * tant qu'il n'est pas là (ou si une planche manque), `spellFxHtml` renvoie null et l'annonce garde son icône.
  */
 const INDEX_URL = './sprites/spellfx/index.json';
@@ -47,6 +47,6 @@ export function spellFxHtml(idOrTitle) {
     const px = e.size * scale;
     const url = typeof import.meta !== 'undefined' ? new URL(`./sprites/spellfx/${id}.png`, import.meta.url).href : `./sprites/spellfx/${id}.png`;
     const dur = (e.frames / (e.fps || 10)).toFixed(2);
-    const style = `--steps:${e.frames - 1};--px:${px}px;--dur:${dur}s;width:${px}px;height:${px}px;background-image:url(${url});background-size:${px * e.frames}px ${px}px`;
+    const style = `--frames:${e.frames};--px:${px}px;--dur:${dur}s;width:${px}px;height:${px}px;background-image:url(${url});background-size:${px * e.frames}px ${px}px`;
     return `<div class="spellfx" data-spell="${id}" aria-hidden="true" style="${style}"></div>`;
 }
