@@ -1,3 +1,9 @@
+## [2.76.1](https://github.com/niafrond/niafrond.github.io/compare/v2.76.0...v2.76.1) (2026-10-17)
+
+### Bug Fixes
+
+* **match3-quest:** régénérer six sprites PNJ ratés ([#475](https://github.com/niafrond/niafrond.github.io/issues/475)) ([a11f8bb](https://github.com/niafrond/niafrond.github.io/commit/a11f8bb1aefff898220cc9998bb213db45670158))
+
 ## [2.76.0](https://github.com/niafrond/niafrond.github.io/compare/v2.75.0...v2.76.0) (2026-10-17)
 
 ### Features
