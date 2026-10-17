@@ -1,3 +1,9 @@
+## [2.80.0](https://github.com/niafrond/niafrond.github.io/compare/v2.79.1...v2.80.0) (2026-10-17)
+
+### Features
+
+* **match3-quest:** utiliser les sprites du héros fournis, recolorés par classe, avec cycle de marche ([#482](https://github.com/niafrond/niafrond.github.io/issues/482)) ([9e63b19](https://github.com/niafrond/niafrond.github.io/commit/9e63b195dcd5300dd15b7de935fb55a815868e3c))
+
 ## [2.79.1](https://github.com/niafrond/niafrond.github.io/compare/v2.79.0...v2.79.1) (2026-10-17)
 
 ### Bug Fixes
