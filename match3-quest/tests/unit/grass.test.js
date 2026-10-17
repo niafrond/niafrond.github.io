@@ -7,7 +7,7 @@ import { SCREENS } from '../../story.js';
 import { REGION_LEVEL } from '../../world/index.js';
 import {
     createSession, tryMove, encounterFor, markEnemyDefeated, resetAfterDefeat, enterScreen, aliveEnemies,
-    grassOf, isGrassCell, isWildId, takeWildIntro, resetGrassSteps, WILD_INTRO, GRASS_RATE, GRASS_SAFE_STEPS
+    grassOf, isGrassCell, encounterOf, isEncounterCell, isWildId, takeWildIntro, resetGrassSteps, WILD_INTRO, GRASS_RATE, GRASS_SAFE_STEPS
 } from '../../exploration.js';
 import { paintGroundTile, drawGrassFront, shade } from '../../tilePainter.js';
 
@@ -347,7 +347,7 @@ describe('message d\'explication', () => {
         s.data.x = 0;
         tryMove(s, 1, 0, { random: always });                 // deuxième rencontre : plus de message
         expect(takeWildIntro(s)).toBeNull();
-        expect(WILD_INTRO).toBe('Des créatures se cachent dans les hautes herbes.');
+        expect(WILD_INTRO).toBe('Des créatures se cachent dans les hautes herbes, l\'eau et la lave.');
     });
 });
 
@@ -431,5 +431,29 @@ describe('rendu des touffes (tilePainter)', () => {
         const at = now => { const g = fakeCtx(); drawGrassFront(g, 48, 10, 10, biome, now, true); return g.calls.map(c => c.x).join(','); };
         expect(at(0)).not.toBe(at(300));
         expect(at(0)).toBe(at(0));
+    });
+});
+
+describe('eau et lave : agissent comme des buissons', () => {
+    test('une case liquide est une case de rencontre, avec la table des herbes de la carte', () => {
+        const sc = screenOf({ liquids: [[5, 0, 1, 1]], aquatic: true }).t;
+        expect(isEncounterCell(sc, 5, 0)).toBe(true);
+        expect(isEncounterCell(sc, 1, 2)).toBe(true);
+        expect(isEncounterCell(sc, 0, 4)).toBe(false);
+        expect(encounterOf(sc).table).toHaveLength(3);
+    });
+    test('marcher dans un écran aquatique déclenche des rencontres', () => {
+        const s = sessionOf({ liquids: [[1, 2, 10, 1]], aquatic: true }, { cells: [[0, 4, 1, 1]], safeSteps: 0 });
+        const res = walk(s, 3, { random: always });
+        expect(res.some(r => r.type === 'combat' && r.wild)).toBe(true);
+    });
+    test('sans herbe sur la carte, la table de la carte sauvage de la région sert de repli', () => {
+        const sc = { id: 'x', region: 'volcan', liquids: [[0, 0, 1, 1]], obstacles: [] };
+        expect(encounterOf(sc).table.length).toBeGreaterThan(0);
+        expect(isEncounterCell(sc, 0, 0)).toBe(true);
+    });
+    test('aucune rencontre sur l\'eau d\'une zone sûre ou d\'un intérieur', () => {
+        expect(encounterOf({ id: 'x', region: 'volcan', safe: true, liquids: [[0, 0, 1, 1]] })).toBeNull();
+        expect(encounterOf({ id: 'x', region: 'volcan', interior: true, liquids: [[0, 0, 1, 1]] })).toBeNull();
     });
 });
