@@ -1,3 +1,9 @@
+## [2.77.0](https://github.com/niafrond/niafrond.github.io/compare/v2.76.1...v2.77.0) (2026-10-17)
+
+### Features
+
+* **match3-quest:** ordonner les régions du plus chaud au plus verdoyant ([#476](https://github.com/niafrond/niafrond.github.io/issues/476)) ([2631e0a](https://github.com/niafrond/niafrond.github.io/commit/2631e0a29f07a2a2e4bf7af586dee5f63e979e27))
+
 ## [2.76.1](https://github.com/niafrond/niafrond.github.io/compare/v2.76.0...v2.76.1) (2026-10-17)
 
 ### Bug Fixes
