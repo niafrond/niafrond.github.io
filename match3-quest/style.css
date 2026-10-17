@@ -1660,6 +1660,7 @@ progress.enemy-bar::-webkit-progress-value {
     flex-shrink: 0;
 }
 
+.explore-dialog-portrait img.pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; object-fit: contain; }
 .explore-dialog-portrait img {
     display: block;
     width: 72px;

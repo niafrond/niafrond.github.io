@@ -10,7 +10,7 @@ const D = {
     rice: () => {
         let s = '';
         [[20, 58, 14, 12], [32, 58, 32, 8], [44, 58, 50, 12], [26, 58, 22, 18], [38, 58, 42, 16]].forEach(([x0, y0, x1, y1]) => {
-            s += `<path d="M${x0} ${y0} Q${(x0 + x1) / 2} ${(y0 + y1) / 2 + 6} ${x1} ${y1}" fill="none" stroke="#7a9a3a" stroke-width="2.4"/>`;
+            s += `<path d="M${x0} ${y0} Q${(x0 + x1) / 2} ${(y0 + y1) / 2 + 6} ${x1} ${y1}" fill="none" stroke="#a88a3a" stroke-width="2.4"/>`;
             s += `<ellipse cx="${x1}" cy="${y1 + 4}" rx="3.4" ry="7" transform="rotate(${(x1 - 32) * 1.4} ${x1} ${y1 + 4})" fill="#e8c860"/>`;
         });
         return s;
