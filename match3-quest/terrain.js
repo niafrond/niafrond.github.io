@@ -153,7 +153,7 @@ export const ruleForBiome = biome => BIOME_RULE_OF[biome] || null;
 export const BIOME_RULES = {
     bamboo: { kind: 'bamboo', label: 'Bambous', text: 'Des bambous poussent : au bout de 3 tours, une case se bloque.', every: 3, spawn: 1, blocks: true, ttl: 0 },
     volcano: { kind: 'lava', label: 'Volcan', text: 'Des cases deviennent brûlantes : un match dessus inflige des dégâts à l\'ennemi, une case brûlante non utilisée blesse le héros.', every: 2, spawn: 1, ttl: 3, matchDamage: 6, burnDamage: 3 },
-    swamp: { kind: 'mud', label: 'Marais', text: 'Des cases se transforment en boue : un match dessus donne 1 mana de moins.', every: 2, spawn: 1, ttl: 4, manaPenalty: 1 },
+    swamp: { kind: 'jackpot', label: 'Marais', text: 'Des cases dorées apparaissent : un match dessus donne 10 fois plus de mana.', every: 2, spawn: 1, ttl: 4, manaMultiplier: 10 },
     sanctuary: { kind: 'sacred', label: 'Sanctuaire', text: 'Des cases sacrées : un match dessus donne +2 mana.', every: 2, spawn: 1, ttl: 4, manaBonus: 2 },
     sea: { kind: 'drift', label: 'Mer', text: 'Certaines cases dérivent : chaque tour, une rangée glisse d\'une case.', every: 1, spawn: 0, ttl: 0, drift: true },
     snow: { kind: 'frost', label: 'Neige', text: 'Des cases gèlent : elles sont indisponibles 2 tours.', every: 2, spawn: 1, ttl: 2, blocks: true }
@@ -189,13 +189,14 @@ export function advanceBiome(state, rule, size, rng = Math.random) {
 
 // Effet d'un match de joueur qui traverse des cases spéciales : { manaDelta, damage, cleared: [indices] }.
 export function resolveBiomeMatch(state, rule, indices) {
-    const res = { manaDelta: 0, damage: 0, cleared: [] };
+    const res = { manaDelta: 0, manaMultiplier: 1, damage: 0, cleared: [] };
     if (!state || !rule) return res;
     for (const i of indices) {
         const c = state.cells[i];
         if (!c || c.kind !== rule.kind) continue;
         if (rule.manaBonus) res.manaDelta += rule.manaBonus;
         if (rule.manaPenalty) res.manaDelta -= rule.manaPenalty;
+        if (rule.manaMultiplier) res.manaMultiplier = Math.max(res.manaMultiplier, rule.manaMultiplier);
         if (rule.matchDamage) res.damage += rule.matchDamage;
         if (!rule.blocks) { delete state.cells[i]; res.cleared.push(i); }
     }

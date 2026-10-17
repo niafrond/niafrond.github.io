@@ -220,3 +220,5 @@ Spécifications et journal de session de `match3-quest/`.
 - Leitmotivs notés dans `leitmotifs.json` (Hou Yi, Feng Meng, Dix Soleils) → références WAV/MIDI envoyées à ACE-Step (upload multipart `ref_audio`, ou `ctx_audio` avec `--cover`).
 - Versions dans `out/` (ignoré), pistes approuvées + paramètres/graines dans `approved/` (MP3 ignorés), installation vers `audio/music/` (mono 32 kbps, boucle fondue, variante `-b`) et `manifest.json`.
 - Détails et commandes de régénération : `tools/audio/acestep/README.md`.
+
+- 2026-10-17 (rond autour d'une tuile = case de biome) : à la demande de l'utilisateur. **Cause** : le rond brun était une case de biome « boue » (`data-cell="mud"`, règle Marais de `terrain.js`, −1 mana au match), posée au hasard en fin de tour et non expliquée au joueur — ce n'était pas un bug d'affichage. **Changement** : la règle Marais devient la **case dorée** (`kind: 'jackpot'`, `manaMultiplier: 10`) : un match de couleur passant dessus donne 10× le mana de base (`resolveBiomeMatch` renvoie `manaMultiplier`, `board.js` ajoute `base × 9` sans bonus de gain), la case est consommée ; halo doré dans `style.css`. Test `terrain.test.js` mis à jour.
