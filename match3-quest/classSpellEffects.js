@@ -34,6 +34,21 @@ function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
     return { total, byColor };
 }
 
+// Photo du plateau avant un sort : sert à savoir si le sort l'a modifié (voir endPlayerSpellTurn).
+export function snapshotBoard() {
+    return board.slice();
+}
+
+// Fin du tour après un sort de classe qui a réussi. Si le sort a modifié le plateau (cases détruites ou transformées, avec
+// régénération partielle ou complète), on NE passe PAS la main tout de suite : on attend la fin de la régénération, puis les
+// combinaisons déclenchées par la chute se résolvent encore pendant le tour de celui qui a lancé le sort (mana, dégâts, tours
+// bonus lui reviennent). `checkMatches` termine le tour du joueur quand plus rien ne bouge.
+export function endPlayerSpellTurn(before) {
+    const changed = Array.isArray(before) && board.some((tile, i) => tile !== before[i]);
+    if(changed) checkMatches(true);
+    else finishPlayerTurn();
+}
+
 // Applique l'effet d'un sort de classe
 export function applyClassSpellEffect(spell) {
     switch(spell.effect) {
