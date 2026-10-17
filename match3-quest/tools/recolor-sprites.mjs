@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Dérive les sprites des classes assassin/sorcerer/warrior
+ * Dérive les sprites des classes (templar, barbarian, assassin, sorcerer)
  * depuis les sprites archer par rotation de teinte HSL.
  *
  * Usage : node match3-quest/tools/recolor-sprites.mjs
@@ -26,9 +26,11 @@ const PNG_DIR = join(__dirname, '..', 'sprites', 'png');
 // satScale : multiplicateur de saturation (1 = inchangé)
 const CLASS_RECOLOR = {
   // archer : source, inchangé
-  warrior: { hueShift: 210, satScale: 0.9, label: 'bleu/or' },   // rouge → bleu roi
-  assassin: { hueShift: 270, satScale: 0.85, label: 'violet/argent' }, // rouge → violet
-  sorcerer: { hueShift: 150, satScale: 0.8, label: 'vert jade/or' },  // rouge → vert jade
+  templar: { hueShift: 210, satScale: 0.9, label: 'bleu/or' },
+  warrior: { hueShift: 210, satScale: 0.9, label: 'bleu/or' },
+  assassin: { hueShift: 270, satScale: 0.85, label: 'violet/argent' },
+  sorcerer: { hueShift: 165, satScale: 0.85, label: 'vert jade/or' },
+  barbarian: { hueShift: 95, satScale: 0.8, label: 'vert forêt' },
 };
 
 // ─── Conversion RGB et HSL ───────────────────────────────────────────────────
@@ -92,8 +94,13 @@ function recolorSprite(b64, hueShift, satScale) {
 
     // Ne pas recolorer les pixels quasi-noirs (contours) ni quasi-blancs
     if (l < 0.08 || l > 0.92) continue;
-    // Ne pas recolorer les pixels très peu saturés (gris/peau neutre)
+    // Ne pas recolorer les pixels très peu saturés (gris/blanc cassé)
     if (s < 0.08) continue;
+    // Seuls les vêtements changent de couleur : on garde la peau (teinte chaude claire) et les cheveux (très sombres)
+    if (l < 0.2 && s < 0.5) continue;
+    const headRow = Math.floor(i / width) < 15;   // visage : peau protégée même dans l'ombre
+    if (headRow && s < 0.4) continue;
+    if (h >= 8 && h <= 45 && s < 0.65 && (l >= 0.5 || (headRow && l >= 0.15))) continue;
 
     h = (h + hueShift) % 360;
     s = Math.min(1, s * satScale);
@@ -120,7 +127,7 @@ console.log('Source : archer');
 for (const [cls, { hueShift, satScale, label }] of Object.entries(CLASS_RECOLOR)) {
   console.log(`\n  [${cls}] hueShift=${hueShift}° satScale=${satScale} → ${label}`);
   sprites[cls] = {};
-  for (const dir of ['front', 'back', 'left', 'right']) {
+  for (const dir of Object.keys(archerSprites)) {
     const srcB64 = archerSprites[dir].replace('data:image/png;base64,', '');
     const outB64 = recolorSprite(srcB64, hueShift, satScale);
     sprites[cls][dir] = `data:image/png;base64,${outB64}`;
