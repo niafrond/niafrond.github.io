@@ -1,3 +1,9 @@
+## [2.77.1](https://github.com/niafrond/niafrond.github.io/compare/v2.77.0...v2.77.1) (2026-10-17)
+
+### Bug Fixes
+
+* **match3-quest:** attendre la régénération du plateau après un sort avant de passer la main ([#477](https://github.com/niafrond/niafrond.github.io/issues/477)) ([738a587](https://github.com/niafrond/niafrond.github.io/commit/738a5879e5d4a7bb6ab20a618c7e6ee6d864f5d7))
+
 ## [2.77.0](https://github.com/niafrond/niafrond.github.io/compare/v2.76.1...v2.77.0) (2026-10-17)
 
 ### Features
