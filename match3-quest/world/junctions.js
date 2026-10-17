@@ -39,13 +39,13 @@ export const JUNCTIONS = [
             ],
             after: ['Votre gourde est pleine, la mienne aussi. Les dunes vous attendent. Elles sont patientes, mais pas hospitalières.']
         },
-        item: { chest: 'bambous_sealed_gourd', screen: 'bambous_wild', fragment: 'Cuir de gourde', label: 'Gourde de la source scellée', name: 'gourde de source scellée',
-            openText: 'Dans une niche de pierre, au bord d\'une source de bambou, une gourde de cuir scellée à la cire. Son eau est fraîche comme au premier jour : elle servira de viatique.' },
+        item: { chest: 'volcan_sealed_gourd', screen: 'volcan_wild', fragment: 'Cuir de gourde', label: 'Gourde de la source scellée', name: 'gourde de source scellée',
+            openText: 'Dans une niche de basalte, au bord d\'une source encore tiède, une gourde de cuir scellée à la cire. Son eau est fraîche comme au premier jour : elle servira de viatique.' },
         quest: {
             id: 'jq_dernier_puits', title: 'Une gourde pour les dunes',
-            objective: 'Rapporter une gourde de source scellée (Sentier des Tiges Cendrées, dans les terres au sud-est)',
-            offer: ['Les moines des bambous scellent des gourdes à la source, pour les voyageurs du désert. Rapportez-m\'en une et je vous ouvre la route des dunes.', 'Elles sont cachées au bord d\'une source, sur le sentier des tiges cendrées, du côté du sud-est. Une niche de pierre, m\'a-t-on dit.'],
-            hint: ['Cherchez la source des moines, sur le sentier des tiges cendrées, vers le sud-est. La gourde est dans une niche de pierre.'],
+            objective: 'Rapporter une gourde de source scellée (Gorges du Volcan, dans les terres au sud-est)',
+            offer: ['Les mineurs du volcan scellent des gourdes à la seule source encore fraîche, pour les voyageurs du désert. Rapportez-m\'en une et je vous ouvre la route des dunes.', 'Elles sont cachées au bord d\'une source, dans les gorges, du côté du sud-est. Une niche de basalte, m\'a-t-on dit.'],
+            hint: ['Cherchez la source des mineurs, dans les gorges du volcan, vers le sud-est. La gourde est dans une niche de basalte.'],
             complete: ['Scellée, pleine, parfaite. Vous avez l\'œil, archer : le désert pardonne rarement aux distraits.', 'Allez. Et si vous croisez un mirage qui vous offre à boire, dites-lui que j\'ai déjà un puits.']
         },
         lockedMessage: 'Le Capitaine Yaer barre la piste des dunes : pas de gourde de source scellée, pas de passage.'
@@ -60,13 +60,13 @@ export const JUNCTIONS = [
             ],
             after: ['Votre plaquette est en règle. Gardez-la sur vous : si on vous retrouve sans, on vous prendra pour un voleur de braise.']
         },
-        item: { chest: 'tonnerre_basalt_pass', screen: 'tonnerre_wild', fragment: 'Éclat de basalte', label: 'Coffret de la crête', name: 'laissez-passer de basalte',
-            openText: 'Au creux d\'une faille balayée par l\'orage, un coffret de pierre noire : à l\'intérieur, une plaquette de basalte gravée au sceau du forgeron-chef. Votre laissez-passer.' },
+        item: { chest: 'rizieres_basalt_pass', screen: 'rizieres_wild', fragment: 'Éclat de basalte', label: 'Coffret de la digue', name: 'laissez-passer de basalte',
+            openText: 'Sous une dalle fendue de la digue, un coffret de pierre noire : à l\'intérieur, une plaquette de basalte gravée au sceau du forgeron-chef. Votre laissez-passer.' },
         quest: {
             id: 'jq_galeries_volcan', title: 'Le laissez-passer de basalte',
-            objective: 'Récupérer un laissez-passer de basalte (Crêtes Foudroyées, dans les terres au sud-est)',
-            offer: ['Un laissez-passer de basalte, gravé au sceau du forgeron-chef : sans lui, je ne vous ouvre pas les galeries.', 'Les anciens en cachaient dans une faille des crêtes foudroyées, du côté du sud-est. Allez voir.'],
-            hint: ['La faille aux coffrets de pierre noire se trouve sur les crêtes foudroyées, vers le sud-est.'],
+            objective: 'Récupérer un laissez-passer de basalte (Digue et Marais Craquelés, dans les terres au sud-est)',
+            offer: ['Un laissez-passer de basalte, gravé au sceau du forgeron-chef : sans lui, je ne vous ouvre pas les galeries.', 'Les anciens en cachaient sous les dalles fendues de la digue des rizières, du côté du sud-est. Allez voir.'],
+            hint: ['Le coffret de pierre noire est enfoui sous une dalle fendue de la digue, vers le sud-est.'],
             complete: ['La plaquette est authentique, je reconnais l\'entaille du forgeron. Vous êtes bien plus débrouillard que mes apprentis.', 'Les galeries sont à vous, archer. Évitez les murs qui chantent : ils vont s\'effondrer.']
         },
         lockedMessage: 'Le Contremaître Han interdit les galeries : il faut un laissez-passer de basalte.'

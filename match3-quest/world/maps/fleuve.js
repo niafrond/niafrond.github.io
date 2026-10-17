@@ -198,7 +198,7 @@ export default {
             { id: 'fleuve_wild_chest_hidden', x: 37, y: 4, gold: 90 }
         ],
         enemies: [
-            { id: 'fleuve_sluice_golem', x: 43, y: 19, templateId: 'iron_gladiator', name: 'Colosse de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Colosse de l\'écluse', level: 4 } },
+            { id: 'fleuve_sluice_golem', x: 43, y: 19, templateId: 'iron_gladiator', name: 'Colosse de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Colosse de l\'écluse', level: 11 } },
             { id: 'fleuve_salt_thief', x: 26, y: 5, templateId: 'shadow_assassin', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fleuve_w_doctor', x: 20, y: 4, templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },
             { id: 'fleuve_w_serpent', x: 28, y: 4, templateId: 'deep_sea_serpent', name: 'Serpent de vase', kind: 'patrol', patrol: [[28, 4], [28, 13]], offset: 0 },

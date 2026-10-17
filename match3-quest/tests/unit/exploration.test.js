@@ -14,14 +14,16 @@ import { exitsOf, crossExit } from './fixtures/gates.js';
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
 // Les tests de structure historiques portent sur les 10 sanctuaires (14x10) ; le Grand Monde a ses tests dans world.test.js.
-const ORDER_IDS = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+const ORDER_IDS = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
 // Le monde de la légende (l'Arène des Mille Flèches, hors chaîne des régions, a ses propres tests : arena.test.js).
 const screens = Object.values(SCREENS).filter(s => !s.arena);
 const sanctuaries = ORDER_IDS.map(id => SCREENS[id]);
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // Ordre linéaire du monde : chaque écran est relié au précédent (ouest) et au suivant (est).
-const ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+const ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
+// Soleil de chaque région, dans l'ordre de progression (du plus chaud au plus verdoyant) ; les ids de soleils ne suivent plus l'ordre.
+const SUN_ID = ['sun_1', 'sun_6', 'sun_4', 'sun_2', 'sun_3', 'sun_5', 'sun_7', 'sun_8', 'sun_9'];
 // Écrans où Fengmeng barre un défilé de 3 tuiles (duel obligatoire) : pas de chemin hors vigilance.
 const FORCED = ['rizieres', 'volcan'];
 const BIOME_OF = {
@@ -339,7 +341,7 @@ describe('cartes (story.js)', () => {
     });
 
     test('le monde est une chaîne : sanctuaire précédent → route d\'accès → village → zone sauvage → sanctuaire, sorties symétriques', () => {
-        expect(Object.keys(SCREENS).slice(0, 10)).toEqual(ORDER);   // les sanctuaires gardent leur ordre d'origine
+        expect(Object.keys(SCREENS).slice(0, 10)).toEqual(['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune']);   // les sanctuaires gardent leur ordre d'origine
         expect(START_SCREEN).toBe('rizieres_village');
         ORDER.forEach((id, i) => {
             const sanctuary = SCREENS[id];
@@ -462,7 +464,7 @@ describe('cartes (story.js)', () => {
             if (i < 9) {
                 const east = exitsOf(SCREENS[id], SCREENS).find(e => e.x === SCREENS[id].w - 1);
                 expect(isExitLocked(s, east)).toBe(true);        // le soleil de la région ferme toujours la sortie est
-                markEnemyDefeated(s, `sun_${i + 1}`);
+                markEnemyDefeated(s, SUN_ID[i]);
             }
         });
         ORDER.forEach(id => {
@@ -480,7 +482,7 @@ describe('cartes (story.js)', () => {
     test('chaque région a un village pour écran d\'entrée et le niveau requis prévu', () => {
         expect(REGION_ENTRY_SCREEN).toEqual(Object.fromEntries(ORDER.map(id => [id, `${id}_village`])));
         expect(REGION_UNLOCK_LEVEL).toEqual({
-            rizieres: 1, fleuve: 4, bambous: 6, gobi: 11, tonnerre: 17, volcan: 22, fauves: 27, mer: 32, fusang: 37, lune: 40
+            rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40
         });
         Object.entries(REGION_ENTRY_SCREEN).forEach(([region, id]) => { expect(SCREENS[id].region).toBe(region); expect(SCREENS[id].kind).toBe('village'); });
         screens.forEach(s => expect(REGION_UNLOCK_LEVEL[s.region]).toBeDefined());
@@ -534,7 +536,7 @@ describe('cartes (story.js)', () => {
             villagers.forEach(n => { expect(n.emoji).toBeUndefined(); expect(n.name).toBeTruthy(); expect(n.title).toBeTruthy(); });
         });
         for (let i = 0; i < 9; i++) {
-            const sun = SCREENS[ORDER[i]].enemies.find(e => e.id === `sun_${i + 1}`);
+            const sun = SCREENS[ORDER[i]].enemies.find(e => e.id === SUN_ID[i]);
             expect(sun).toBeDefined();
             expect(sun.x).toBeGreaterThanOrEqual(8);
             expect(sun.boss.level).toBe(SUN_LEVELS[i]);
@@ -547,7 +549,7 @@ describe('cartes (story.js)', () => {
     test('la sortie est de chaque sanctuaire est fermée par son soleil (le niveau de la région suivante n\'ouvre ni ne ferme rien)', () => {
         ORDER.slice(0, -1).forEach((id, i) => {
             const east = gateOf(id, `${ORDER[i + 1]}_road`);
-            expect(east.requires).toBe(`sun_${i + 1}`);
+            expect(east.requires).toBe(SUN_ID[i]);
             expect(east.lockedMessage.length).toBeGreaterThan(10);
             expect(SCREENS[id].enemies.some(e => e.id === east.requires)).toBe(true);
             // toutes les cases du passage portent le même verrou ; aucun autre passage n'est verrouillé
@@ -640,13 +642,11 @@ describe('quêtes (story.js)', () => {
 
     test('l\'histoire principale : 9 soleils, Fengmeng, épilogue ; la dernière quête est la seule finale', () => {
         const main = QUESTS.filter(q => !q.side);
-        expect(main.map(q => q.id)).toEqual([
-            'q_sun_1', 'q_sun_2', 'q_sun_3', 'q_sun_4', 'q_sun_5', 'q_sun_6', 'q_sun_7', 'q_sun_8', 'q_sun_9', 'q_fengmeng', 'q_epilogue'
-        ]);
-        for (let i = 1; i <= 9; i++) {
-            expect(quest(`q_sun_${i}`).objectives).toEqual([expect.objectContaining({ type: 'kill', target: `sun_${i}` })]);
-            if (i > 1) expect(quest(`q_sun_${i}`).requires).toEqual([`q_sun_${i - 1}`]);
-        }
+        expect(main.map(q => q.id)).toEqual([...SUN_ID.map(id => `q_${id}`), 'q_fengmeng', 'q_epilogue']);
+        SUN_ID.forEach((sun, i) => {
+            expect(quest(`q_${sun}`).objectives).toEqual([expect.objectContaining({ type: 'kill', target: sun })]);
+            if (i > 0) expect(quest(`q_${sun}`).requires).toEqual([`q_${SUN_ID[i - 1]}`]);
+        });
         expect(quest('q_fengmeng').requires).toEqual(['q_sun_9']);
         expect(quest('q_fengmeng').objectives[0]).toMatchObject({ type: 'kill', target: 'fengmeng_3b' });
         expect(quest('q_epilogue').requires).toEqual(['q_fengmeng']);
@@ -843,21 +843,21 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('une sortie change d\'écran et arrive à la tuile prévue (quand son soleil est abattu)', () => {
-        const { s, dx, dy, ex } = atGate('rizieres', 'fleuve_road');
+        const { s, dx, dy, ex } = atGate('rizieres', 'volcan_road');
         markEnemyDefeated(s, 'sun_1');
-        expect(tryMove(s, dx, dy, { playerLevel: 2 })).toMatchObject({ type: 'transition', from: 'rizieres', to: 'fleuve_road', firstVisit: true, door: false });
-        expect(s.data.screenId).toBe('fleuve_road');
+        expect(tryMove(s, dx, dy, { playerLevel: 2 })).toMatchObject({ type: 'transition', from: 'rizieres', to: 'volcan_road', firstVisit: true, door: false });
+        expect(s.data.screenId).toBe('volcan_road');
         expect([s.data.x, s.data.y]).toEqual([ex.arrive.x, ex.arrive.y]);
         expect(s.data.x).toBe(1);   // un pas à l'intérieur de la bordure ouest
-        expect(s.data.y).toBe(gateOf('fleuve_road', 'rizieres').y);   // rangée alignée sur le passage ouest de la route
+        expect(s.data.y).toBe(gateOf('volcan_road', 'rizieres').y);   // rangée alignée sur le passage ouest de la route
         // retour à l'ouest : on ressort en face, sur la case alignée avec le passage est des rizières
-        const back = atGate('fleuve_road', 'rizieres');
+        const back = atGate('volcan_road', 'rizieres');
         expect(tryMove(back.s, back.dx, back.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', to: 'rizieres' });
         expect([back.s.data.x, back.s.data.y]).toEqual([back.ex.arrive.x, back.ex.arrive.y]);
         expect(back.s.data.x).toBe(SCREENS.rizieres.w - 2);
         // route d'accès → village → zone sauvage → sanctuaire (gate rempli)
-        const rg = atGate('fleuve_road', 'fleuve_village');
-        expect(tryMove(rg.s, rg.dx, rg.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'fleuve_road', to: 'fleuve_village', firstVisit: true });
+        const rg = atGate('volcan_road', 'volcan_village');
+        expect(tryMove(rg.s, rg.dx, rg.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'volcan_road', to: 'volcan_village', firstVisit: true });
         expect([rg.s.data.x, rg.s.data.y]).toEqual([rg.ex.arrive.x, rg.ex.arrive.y]);
         const vg = atGate('rizieres_village', 'rizieres_wild');
         const v = vg.s;
@@ -895,13 +895,13 @@ describe('déplacement et zones de vigilance', () => {
         const { s, dx, dy } = atGate('fleuve', 'bambous_road');
         markEnemyDefeated(s, 'sun_2');
         const res = tryMove(s, dx, dy, { playerLevel: 2 });
-        expect(res).toMatchObject({ type: 'transition', to: 'bambous_road', warning: { minLevel: 6, regionName: SCREENS.bambous_road.name } });
+        expect(res).toMatchObject({ type: 'transition', to: 'bambous_road', warning: { minLevel: 17, regionName: SCREENS.bambous_road.name } });
         expect(res.type).not.toBe('exitBlocked');
         expect(s.data.screenId).toBe('bambous_road');   // le héros est bien passé
         // niveau suffisant : pas d'avertissement
         const ok = atGate('fleuve', 'bambous_road');
         markEnemyDefeated(ok.s, 'sun_2');
-        expect(tryMove(ok.s, ok.dx, ok.dy, { playerLevel: 6 }).warning).toBeUndefined();
+        expect(tryMove(ok.s, ok.dx, ok.dy, { playerLevel: 17 }).warning).toBeUndefined();
         // à l'intérieur d'une région, jamais d'avertissement (même niveau 1 dans une zone de niveau supérieur)
         const village = SCREENS.bambous_village;
         const spot = (() => {
@@ -914,9 +914,9 @@ describe('déplacement et zones de vigilance', () => {
         })();
         const inside = at('bambous_village', spot.x, spot.y);
         expect(tryMove(inside, 1, 0, { playerLevel: 1 }).warning).toBeUndefined();
-        // le niveau recommandé est celui de la région d'arrivée : revenir au Lit du Fleuve (niveau 2) à 3 est sans avertissement
+        // le niveau recommandé est celui de la région d'arrivée : revenir au Lit du Fleuve (niveau 11) à 11 est sans avertissement
         const back = atGate('bambous_road', 'fleuve');
-        expect(tryMove(back.s, back.dx, back.dy, { playerLevel: 6 }).warning).toBeUndefined();
+        expect(tryMove(back.s, back.dx, back.dy, { playerLevel: 11 }).warning).toBeUndefined();
     });
 
     test('la pierre de voyage bloque le passage et s\'active au contact', () => {
@@ -1075,25 +1075,25 @@ describe('histoire complète', () => {
         expect(events[0]).toMatchObject({ gold: 80, ended: false });
         expect(events[0].xp).toBe(quest('q_sun_1').reward.xp);
         expect(events[0].xp).toBeGreaterThan(0);
-        expect(events[events.length - 1].quest.id).toBe('q_sun_2');
+        expect(events[events.length - 1].quest.id).toBe('q_sun_6');
 
         const golds = [80];
         for (let n = 2; n <= 9; n++) {
             travel(s, ORDER[n - 1]);   // village, zone sauvage (gate rempli au passage) puis sanctuaire de la région
             expect(s.data.screenId).toBe(ORDER[n - 1]);
-            if (n === 6) {
+            if (n === 2) {
                 const scene = markEnemyDefeated(s, 'fengmeng_2');
                 expect(scene.map(e => e.type)).toEqual(['scene']);
             }
-            expect(s.data.quests[`q_sun_${n}`]).toBe('active');
-            expect(currentObjectiveText(s)).toContain(quest(`q_sun_${n}`).title);
-            events = markEnemyDefeated(s, `sun_${n}`);
+            expect(s.data.quests[`q_${SUN_ID[n - 1]}`]).toBe('active');
+            expect(currentObjectiveText(s)).toContain(quest(`q_${SUN_ID[n - 1]}`).title);
+            events = markEnemyDefeated(s, SUN_ID[n - 1]);
             expect(events[0]).toMatchObject({ type: 'questCompleted' });
-            expect(events[0].quest.id).toBe(`q_sun_${n}`);
+            expect(events[0].quest.id).toBe(`q_${SUN_ID[n - 1]}`);
             golds.push(events[0].gold);
             const started = events.find(e => e.type === 'questStarted');
             expect(events.indexOf(started)).toBe(events.length - 1);   // après l'interlude avec Chang'e
-            expect(started.quest.id).toBe(n < 9 ? `q_sun_${n + 1}` : 'q_fengmeng');
+            expect(started.quest.id).toBe(n < 9 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);
 
@@ -1126,7 +1126,7 @@ describe('histoire complète', () => {
         const talk = talkTo(s, 'elder_wen');
         expect(talk.events.map(e => e.type)).toEqual(['questStarted', 'questCompleted', 'questStarted']);
         expect(s.data.quests.q_sun_1).toBe('done');
-        expect(s.data.quests.q_sun_2).toBe('active');
+        expect(s.data.quests.q_sun_6).toBe('active');
     });
 
     test('un PNJ sans quête raconte son dialogue habituel', () => {
@@ -1144,7 +1144,7 @@ describe('histoire complète', () => {
         // une quête non activée (pas encore parlé à son donneur) est masquée du journal
         expect(journalEntries(s).some(e => e.quest.id === 'q_sun_1')).toBe(false);
         expect(questStatus(s, s.quests.find(q => q.id === 'q_sun_1'))).toBe('available');
-        expect(journalEntries(s).some(e => e.quest.id === 'q_sun_2')).toBe(false);   // verrouillée
+        expect(journalEntries(s).some(e => e.quest.id === 'q_sun_6')).toBe(false);   // verrouillée
     });
 
     test('Chang\'e quitte la maison une fois le neuvième soleil abattu (hideWhen)', () => {
@@ -1319,14 +1319,14 @@ describe('quêtes secondaires', () => {
         expect(talk.events).toEqual([]);
         expect(s.data.quests.sq_drowned).toBeUndefined();
         expect(talk.lines).toEqual(house.npcs.find(n => n.id === 'weaver_mei').idle);
-        s.data.quests.q_sun_1 = 'done';
+        s.data.quests.q_sun_4 = 'done';
         expect(talkToNpc(s, 'weaver_mei').events[0]).toMatchObject({ type: 'questStarted' });
     });
 
     test('quête de groupe secondaire : les noyés de Mei', () => {
         const house = SCREENS.fleuve_h_mei;
         const s = createSession({ screenId: house.id, x: house.spawn.x, y: house.spawn.y });
-        s.data.quests.q_sun_1 = 'done';
+        s.data.quests.q_sun_4 = 'done';
         expect(talkToNpc(s, 'weaver_mei').events[0]).toMatchObject({ type: 'questStarted' });
         markEnemyDefeated(s, 'drowned_a');
         expect(s.data.quests.sq_drowned).toBe('active');
@@ -1425,10 +1425,10 @@ describe('dialogues d\'ambiance conditionnels', () => {
         expect(afterDuel).not.toEqual(change.idle);
         markEnemyDefeated(s, 'sun_1');
         expect(npcAmbientLines(s, change)).not.toEqual(afterDuel);
+        markEnemyDefeated(s, 'fengmeng_2');   // l'embuscade des Gorges du Volcan vient juste après le premier soleil
+        expect(npcAmbientLines(s, change).join(' ')).toMatch(/sourire|souri/);
         markEnemyDefeated(s, 'sun_3');
         expect(npcAmbientLines(s, change).join(' ')).toMatch(/élixir/);
-        markEnemyDefeated(s, 'fengmeng_2');
-        expect(npcAmbientLines(s, change).join(' ')).toMatch(/sourire|souri/);
     });
 
     test('Chang\'e à la Lune garde le reflet de son envol, puis celui de l\'épilogue', () => {
@@ -1729,11 +1729,11 @@ describe('scènes de fin de duel (defeatScene)', () => {
 
 describe('sorties verrouillées (exit.requires)', () => {
     test('une sortie reste fermée tant que le soleil de la région n\'est pas abattu', () => {
-        const { s, ex: exit, dx, dy, x, y } = atGate('rizieres', 'fleuve_road');
+        const { s, ex: exit, dx, dy, x, y } = atGate('rizieres', 'volcan_road');
         expect(isExitLocked(s, exit)).toBe(true);
         const res = tryMove(s, dx, dy, { playerLevel: 50 });
         expect(res).toEqual({
-            type: 'exitBlocked', reason: 'quest', label: SCREENS.fleuve_road.name, regionName: SCREENS.fleuve_road.name, message: exit.lockedMessage
+            type: 'exitBlocked', reason: 'quest', label: SCREENS.volcan_road.name, regionName: SCREENS.volcan_road.name, message: exit.lockedMessage
         });
         expect([s.data.screenId, s.data.x, s.data.y]).toEqual(['rizieres', x, y]);
         markEnemyDefeated(s, 'sun_1');
@@ -1784,7 +1784,7 @@ describe('sorties verrouillées (exit.requires)', () => {
         ORDER.slice(0, 9).forEach((id, i) => {
             const east = gateOf(id, `${ORDER[i + 1]}_road`);
             expect(isExitLocked(s, east)).toBe(true);
-            markEnemyDefeated(s, `sun_${i + 1}`);
+            markEnemyDefeated(s, SUN_ID[i]);
             expect(isExitLocked(s, east)).toBe(false);
         });
     });
@@ -1820,7 +1820,7 @@ describe('Nouvelle Partie +', () => {
         expect(questStatus(s, quest('q_sun_1'))).toBe('available');
         expect(currentObjectiveText(s)).toContain('Doyen Wen');
         // les verrous de l'histoire sont revenus : sanctuaire (soleil) et zone sauvage (gate)
-        expect(isExitLocked(s, gateOf('rizieres', 'fleuve_road'))).toBe(true);
+        expect(isExitLocked(s, gateOf('rizieres', 'volcan_road'))).toBe(true);
         expect(isExitLocked(s, exitsOf(SCREENS.rizieres_wild, SCREENS).find(e => e.to === 'rizieres'))).toBe(true);
         // les ennemis d'histoire sont de retour, et l'autel est de nouveau caché
         teleportToScreen(s, 'rizieres');
@@ -1838,12 +1838,12 @@ describe('Nouvelle Partie +', () => {
         const wild = tryMove(at(START_SCREEN, vg.x, vg.y), vg.dx, vg.dy, { playerLevel: 5 });
         expect(wild).toMatchObject({ type: 'transition', to: 'rizieres_wild', firstVisit: true });
         expect(wild.arrival).toEqual(SCREENS.rizieres_wild.arrival);
-        const g = beforeGate('rizieres', 'fleuve_road');
+        const g = beforeGate('rizieres', 'volcan_road');
         const t = createSession({ ...s.data, screenId: 'rizieres', x: g.x, y: g.y });
         markEnemyDefeated(t, 'sun_1');
         const res = tryMove(t, g.dx, g.dy, { playerLevel: 5 });
-        expect(res).toMatchObject({ type: 'transition', to: 'fleuve_road', firstVisit: true });
-        expect(res.arrival).toEqual(SCREENS.fleuve_road.arrival);
+        expect(res).toMatchObject({ type: 'transition', to: 'volcan_road', firstVisit: true });
+        expect(res.arrival).toEqual(SCREENS.volcan_road.arrival);
         expect(res.arrival.length).toBeGreaterThan(0);
     });
 
@@ -1879,16 +1879,16 @@ describe('Nouvelle Partie +', () => {
 
 describe('texte d\'arrivée', () => {
     test('renvoyé une seule fois, à la première visite de l\'écran', () => {
-        const { s, x, y, dx, dy } = atGate('rizieres', 'fleuve_road');
+        const { s, x, y, dx, dy } = atGate('rizieres', 'volcan_road');
         markEnemyDefeated(s, 'sun_1');
         const first = tryMove(s, dx, dy, { playerLevel: 5 });
-        expect(first).toMatchObject({ type: 'transition', to: 'fleuve_road', firstVisit: true });
-        expect(first.arrival).toEqual(SCREENS.fleuve_road.arrival);
+        expect(first).toMatchObject({ type: 'transition', to: 'volcan_road', firstVisit: true });
+        expect(first.arrival).toEqual(SCREENS.volcan_road.arrival);
         expect(first.arrival.length).toBeGreaterThan(0);
         // retour aux rizières puis nouvelle entrée à la route d'accès du fleuve : plus de texte
         enterScreen(s, 'rizieres', { x, y });
         const again = tryMove(s, dx, dy, { playerLevel: 5 });
-        expect(again).toMatchObject({ type: 'transition', to: 'fleuve_road', firstVisit: false });
+        expect(again).toMatchObject({ type: 'transition', to: 'volcan_road', firstVisit: false });
         expect(again.arrival).toBeUndefined();
     });
 
@@ -1901,10 +1901,10 @@ describe('texte d\'arrivée', () => {
     });
 
     test('une sauvegarde qui a déjà visité l\'écran ne rejoue pas le texte', () => {
-        const g = beforeGate('rizieres', 'fleuve_road');
-        const s = createSession({ screenId: 'rizieres', x: g.x, y: g.y, visitedScreens: ['rizieres', 'fleuve_road'], defeated: ['sun_1'] });
+        const g = beforeGate('rizieres', 'volcan_road');
+        const s = createSession({ screenId: 'rizieres', x: g.x, y: g.y, visitedScreens: ['rizieres', 'volcan_road'], defeated: ['sun_1'] });
         const res = tryMove(s, g.dx, g.dy, { playerLevel: 5 });
-        expect(res).toMatchObject({ type: 'transition', to: 'fleuve_road', firstVisit: false });
+        expect(res).toMatchObject({ type: 'transition', to: 'volcan_road', firstVisit: false });
         expect(res.arrival).toBeUndefined();
     });
 
@@ -2072,23 +2072,23 @@ describe('déplacement au clic (findPath)', () => {
         expect([s2.data.x, s2.data.y]).toEqual([b.x, b.y]);
         expect(s2.data.screenId).toBe('rizieres_village');
         // sanctuaire : la sortie est (fermée par le soleil) est franchissable une fois le soleil abattu
-        const g3 = gateGeometry('rizieres', 'fleuve_road');
+        const g3 = gateGeometry('rizieres', 'volcan_road');
         const c = startAt(g3, -1);
         const s3 = atClick('rizieres', c.x, c.y);
         markEnemyDefeated(s3, 'sun_1');
         const last = walk(s3, findPath(s3, g3.ex.x, g3.ex.y));
-        expect(last.type === 'transition' ? last : tryMove(s3, g3.dx, g3.dy)).toMatchObject({ type: 'transition', to: 'fleuve_road' });
+        expect(last.type === 'transition' ? last : tryMove(s3, g3.dx, g3.dy)).toMatchObject({ type: 'transition', to: 'volcan_road' });
     });
 
     test('la sortie fermée (soleil vivant) ne fait pas changer d\'écran ; le niveau, lui, ne bloque jamais', () => {
-        const g = beforeGate('rizieres', 'fleuve_road');
+        const g = beforeGate('rizieres', 'volcan_road');
         const s = atClick('rizieres', g.x, g.y);
         const path = findPath(s, g.ex.x, g.ex.y);
         expect(path).toEqual([]);   // déjà sur la bordure : le pas suivant sort de la carte
         expect(tryMove(s, g.dx, g.dy, { playerLevel: 20 })).toMatchObject({ type: 'exitBlocked', reason: 'quest' });
         markEnemyDefeated(s, 'sun_1');
-        expect(tryMove(s, g.dx, g.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', warning: { minLevel: REGION_UNLOCK_LEVEL.fleuve } });   // prévenu, pas bloqué
-        expect(s.data.screenId).toBe('fleuve_road');
+        expect(tryMove(s, g.dx, g.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', warning: { minLevel: REGION_UNLOCK_LEVEL.volcan } });   // prévenu, pas bloqué
+        expect(s.data.screenId).toBe('volcan_road');
     });
 });
 
@@ -2234,7 +2234,7 @@ describe('soleils : gardes du sanctuaire et affaiblissement par l\'exploration',
 
     test('weakenedBy : chaque quête annexe réglée retire 1 niveau au soleil, 2 au plus, jamais sous 1', () => {
         const s = createSession({});
-        const base = SUN_LEVELS[1];
+        const base = SUN_LEVELS[3];   // le Soleil des Eaux Taries est le 4e soleil
         expect(encounterFor(s, 'sun_2', 1).boss.level).toBe(base);
         markEnemyDefeated(s, 'river_serpent');
         s.data.quests.sq_river_serpent = 'done';

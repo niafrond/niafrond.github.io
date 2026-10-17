@@ -36,4 +36,13 @@ describe('découverte de région', () => {
         expect(regionVisitCount(s, 'rizieres')).toBeGreaterThanOrEqual(1);
         expect(regionVisitCount(s, 'lune')).toBe(0);
     });
+
+    it('un garde ou gardien de zone ne parle pas comme un soleil', () => {
+        const sunWords = /soleil|Di Jun|ciel est à nous|Brûle avec/i;
+        ['Gardien de la digue', 'Forgeron de lave', 'Tigre alpha, Griffe-de-Feu'].forEach(name => {
+            const lines = bossIntroLines({ enemyId: 'rizieres_warden', name, boss: { name, level: 4 }, level: 4 });
+            expect(lines).toHaveLength(2);
+            lines.forEach(l => expect(l.text).not.toMatch(sunWords));
+        });
+    });
 });

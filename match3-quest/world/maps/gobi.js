@@ -149,7 +149,7 @@ export default {
             { id: 'gobi_wild_cliff_chest', x: 43, y: 20, gold: 120 }
         ],
         enemies: [
-            { id: 'gobi_dune_warlord', x: 45, y: 15, templateId: 'orc_warmaster', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 11 } },
+            { id: 'gobi_dune_warlord', x: 45, y: 15, templateId: 'orc_warmaster', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 6 } },
             { id: 'gobi_golem_a', x: 18, y: 14, templateId: 'sand_colossus', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
             { id: 'gobi_golem_b', x: 27, y: 15, templateId: 'sand_colossus', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
             { id: 'gobi_w_bandit', x: 14, y: 5, templateId: 'iron_gladiator', name: 'Brigand des dunes', kind: 'patrol', patrol: [[14, 5], [21, 5]], offset: 0 },

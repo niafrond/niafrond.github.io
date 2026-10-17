@@ -558,7 +558,7 @@ export default {
       giver: "shaman_ula",
       turnIn: "shaman_ula",
       requires: [
-        "sq_journal_6"
+        "sq_journal_5"
       ],
       side: true,
       objectives: [

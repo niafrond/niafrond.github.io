@@ -18,7 +18,7 @@ export default {
   npcs: {
     salt_hu: { name: 'Hu', title: 'Marchand de sel', 
       idle: ['Sans eau, le sel ne manque pas ! C\'est la seule chose qui prospère ici. On appelle ça une consolation salée.', 'Goûtez ce sel gris : il vient du fond du fleuve, il a goût de regrets et de vieux poisson.'],
-      talk: [{ whenDone: 'sun_2', lines: ['Le deuxième soleil est tombé, et j\'ai senti un peu d\'humidité dans mes tonneaux. Du jamais vu depuis trois lunes. Je vous offre une pincée de bonheur en poudre.'] }] },
+      talk: [{ whenDone: 'sun_2', lines: ['Le quatrième soleil est tombé, et j\'ai senti un peu d\'humidité dans mes tonneaux. Du jamais vu depuis trois lunes. Je vous offre une pincée de bonheur en poudre.'] }] },
     scribe_ou: { name: 'Maître Ou', title: 'Écrivain public', 
       idle: ['J\'écris des lettres pour ceux qui ne savent pas, et je lis celles qui n\'étaient pas pour moi. Déformation professionnelle.', 'Un jeune archer est passé me demander un papier à entête impériale. Il avait le regard d\'un homme qui veut quelque chose qu\'on ne lui a pas donné.'],
       talk: [{ whenDone: 'fengmeng_1', lines: ['Votre disciple Fengmeng a écrit une lettre qu\'il n\'a pas envoyée. Je l\'ai lue, bien sûr. Elle disait : « Maître, regardez-moi enfin. » Il n\'a pas signé. Les orgueilleux ne signent pas ce qui les trahit.'] }] },

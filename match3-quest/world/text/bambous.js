@@ -18,7 +18,7 @@ export default {
   npcs: {
     lady_lan: { name: 'Dame Lan', title: 'Tenancière de la maison de thé', 
       idle: ['Un thé ? Il est brûlé, mais il l\'était déjà avant le feu, alors on s\'y habitue.', 'Les clients parlent beaucoup, ici. Un disciple jaloux, un archer vertueux, un élixir tentant… Je ne retiens rien, je ressers.'],
-      talk: [{ whenDone: 'sun_3', lines: ['Le troisième soleil est tombé. Les clients disent que l\'air sent moins la cendre. Pour moi, il sent toujours le thé, c\'est déjà ça.'] }] },
+      talk: [{ whenDone: 'sun_3', lines: ['Le cinquième soleil est tombé. Les clients disent que l\'air sent moins la cendre. Pour moi, il sent toujours le thé, c\'est déjà ça.'] }] },
     panda_mimi: { name: 'Mimi', title: 'Jeune panda lettré', 
       idle: ['Chut, je lis. C\'est un poème sur le bambou. Il dit « grandis, grandis ». Moi, je mange et je grandis.', 'On dit que les pandas portent chance. Je préfère dire que nous portons du bambou, et que c\'est déjà beaucoup.'],
       talk: [{ whenDone: 'sun_3', lines: ['Le feu s\'éloigne. J\'ai trouvé une tige verte, la première depuis des semaines. Je ne l\'ai pas mangée. Je l\'ai regardée. C\'est mon plus grand sacrifice.'] }] },
@@ -51,7 +51,7 @@ export default {
       talk: [{ whenDone: 'sun_3', lines: ['Le thé a meilleur goût depuis hier. Ou bien c\'est moi qui ai moins soif de pardon. Je ne tranche toujours pas.'] }] },
     bambous_village_scribe_wei: { name: 'Wei', title: 'Écrivain public',
       idle: ['Une lettre, un poème, une plainte ? Je rédige tout, au même tarif et avec la même ardeur.', 'Un jeune archer m\'a dicté une lettre, il y a quelques jours. Il l\'a déchirée avant de signer. Il a payé quand même.'],
-      talk: [{ whenDone: 'sun_3', lines: ['Trois soleils de moins, et la file devant ma table s\'allonge : les gens ont recommencé à avoir des choses à dire.'] }] },
+      talk: [{ whenDone: 'sun_3', lines: ['Cinq soleils de moins, et la file devant ma table s\'allonge : les gens ont recommencé à avoir des choses à dire.'] }] },
     bambous_hamlet_old_lamplighter: { name: 'Tante Song', title: 'Allumeuse de lampions',
       idle: ['Chaque soir, j\'allume les lampions de la clairière. Personne ne me l\'a demandé, personne ne m\'a dit d\'arrêter.', 'Une lanterne ne chasse pas la nuit. Elle lui montre où poser les pieds.'],
       talk: [{ whenDone: 'sun_3', lines: ['La clairière brille plus longtemps, ces soirs-ci. Je crois que même les lucioles ont repris du service.'] }] },

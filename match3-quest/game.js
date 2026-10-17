@@ -1609,7 +1609,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     const fx = spellFxHtml(title);   // mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
-    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) + 500) };   // laisse finir l'animation
+    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}">${fx || svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;

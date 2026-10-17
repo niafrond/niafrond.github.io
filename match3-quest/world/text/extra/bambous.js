@@ -97,7 +97,7 @@ export default {
         {
           whenDone: "sun_3",
           lines: [
-            "Le troisième soleil est tombé. Mon vieux bras tremble, mais mon vieux cœur applaudit."
+            "Le cinquième soleil est tombé. Mon vieux bras tremble, mais mon vieux cœur applaudit."
           ]
         }
       ]

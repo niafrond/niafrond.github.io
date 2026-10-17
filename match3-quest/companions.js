@@ -194,7 +194,7 @@ export const BANTER = [
     ] },
     { id: 'gui_tonnerre_soleil', companion: 'xiao_gui', screen: 'tonnerre', whenDone: 'sun_5', scenes: [
         say(GUI, "Mes poils retombent ! J'avais l'air d'un hérisson depuis trois jours."),
-        say(HERO, "Cinq soleils, Xiao Gui."),
+        say(HERO, "Six soleils, Xiao Gui."),
         say(GUI, "Cinq ! Il en reste quatre, tu comptes bien. Moi, je compte mes queues : toujours trois, mais je sens que ça vient.")
     ] },
 
@@ -232,7 +232,7 @@ export const BANTER = [
         say(ZHI, "Maître Zhen le dit en moins de mots : « Le balai ne combat pas la poussière. Il lui montre la porte. »")
     ] },
     { id: 'dawa_volcan_soleil', companion: 'dawa', screen: 'volcan', whenDone: 'sun_6', scenes: [
-        say(DAWA, "La roche refroidit comme un chameau qui se couche : lentement, avec des grognements. Six soleils, seigneur."),
+        say(DAWA, "La roche refroidit comme un chameau qui se couche : lentement, avec des grognements. Deux soleils, seigneur."),
         say(HERO, "Tu penses encore au désert ?"),
         say(DAWA, "Toujours. Mais ici, la pierre me parle moins fort que le sable. C'est moins bavard, un volcan.")
     ] },

@@ -512,7 +512,7 @@ export default {
       giver: "mapmaker_ali",
       turnIn: "mapmaker_ali",
       requires: [
-        "sq_journal_3"
+        "sq_journal_6"
       ],
       side: true,
       objectives: [

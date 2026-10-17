@@ -13,7 +13,7 @@
 import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 
-export const REGION_LEVEL = { rizieres: 1, fleuve: 4, bambous: 6, gobi: 11, tonnerre: 17, volcan: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
+export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
 
 // Bonus d'enchères : plus c'est rare, plus c'est cher.
 export const PRICE_MULT = { common: 2, uncommon: 2.5, rare: 4, legendary: 8 };
@@ -25,16 +25,16 @@ export const baseItemPrice = item => Math.floor(item.minLevel * (ITEM_RARITY_PRI
 export const MERCHANTS = [
     { id: 'merchant_rizieres', region: 'rizieres', name: 'Fu le Colporteur', title: 'Marchand ambulant',
       idle: ['Du riz sec, des nattes, et sous la natte… autre chose. Regarde mais ne marchande pas trop fort : mes prix sont gravés.', 'Les rizières sont vides, mais mon étal, lui, ne l\'est jamais.'] },
+    { id: 'merchant_volcan', region: 'volcan', name: 'Yan le Braisier', title: 'Marchand de braises',
+      idle: ['Mes reliques sortent à peine de la forge. Elles sont chaudes, et mes prix aussi.', 'Pas de crédit : la lave ne fait pas crédit, moi non plus.'] },
+    { id: 'merchant_gobi', region: 'gobi', name: 'Ma le Caravanier', title: 'Marchand du désert',
+      idle: ['J\'ai traversé trois mirages pour ces marchandises. Chaque pièce a une histoire, et chaque histoire un tarif.', 'L\'eau est rare dans le Gobi, les belles lames aussi. Devine ce qui coûte le plus cher.'] },
     { id: 'merchant_fleuve', region: 'fleuve', name: 'Dame Lian', title: 'Marchande de la berge',
       idle: ['Tout ce que le fleuve a rendu, je l\'ai nettoyé, fait briller et revendu. Avec un petit supplément pour la peine.', 'Le courant apporte, le courant reprend. Moi, je garde le meilleur.'] },
     { id: 'merchant_bambous', region: 'bambous', name: 'Maître Zhu', title: 'Marchand de la forêt',
       idle: ['Des élixirs distillés dans le creux des bambous. Les moines en font un secret, moi un commerce.', 'La qualité a un prix, voyageur. Et le prix a un parfum de thé.'] },
-    { id: 'merchant_gobi', region: 'gobi', name: 'Ma le Caravanier', title: 'Marchand du désert',
-      idle: ['J\'ai traversé trois mirages pour ces marchandises. Chaque pièce a une histoire, et chaque histoire un tarif.', 'L\'eau est rare dans le Gobi, les belles lames aussi. Devine ce qui coûte le plus cher.'] },
     { id: 'merchant_tonnerre', region: 'tonnerre', name: 'Tie le Fondeur', title: 'Marchand de métaux',
       idle: ['Fer d\'orage, bronze de foudre. Ça ne se marchande pas, ça se mérite.', 'Une lame forgée un jour de tonnerre vaut dix lames forgées par beau temps.'] },
-    { id: 'merchant_volcan', region: 'volcan', name: 'Yan le Braisier', title: 'Marchand de braises',
-      idle: ['Mes reliques sortent à peine de la forge. Elles sont chaudes, et mes prix aussi.', 'Pas de crédit : la lave ne fait pas crédit, moi non plus.'] },
     { id: 'merchant_fauves', region: 'fauves', name: 'Wu l\'Éleveur', title: 'Marchand de la plaine',
       idle: ['Croc de tigre, plume de rapace, et quelques merveilles que les chasseurs ne vendent qu\'à moi.', 'Les bêtes sont folles, mais mon commerce est sage : tout a un prix.'] },
     { id: 'merchant_mer', region: 'mer', name: 'Hai la Perlière', title: 'Marchande de perles',

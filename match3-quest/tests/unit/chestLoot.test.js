@@ -26,10 +26,10 @@ describe('chestLoot', () => {
         expect(chestTier({ gold: 30 }, { region: 'rizieres', kind: 'wild' })).toBe(3);
         expect(chestTier({ gold: 45 }, { region: 'rizieres', kind: 'wild' })).toBe(4);
         // même or, région plus avancée : coffre ordinaire là-bas
-        expect(chestTier({ gold: 45 }, { region: 'fleuve', kind: 'village' })).toBe(2);
-        expect(chestTier({ gold: 90 }, { region: 'fleuve', kind: 'village' })).toBe(3);
+        expect(chestTier({ gold: 45 }, { region: 'volcan', kind: 'village' })).toBe(2);
+        expect(chestTier({ gold: 90 }, { region: 'volcan', kind: 'village' })).toBe(3);
         // sanctuaire (au-delà du gardien) : bonus d'emplacement
-        expect(chestTier({ gold: 60 }, { region: 'fleuve' })).toBe(3);
+        expect(chestTier({ gold: 60 }, { region: 'volcan' })).toBe(3);
     });
 
     test('pas de butin sans or, ou si désactivé ; palier forcé possible', () => {

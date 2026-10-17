@@ -7,7 +7,7 @@
 import { SCREENS, QUESTS, REGION_ENTRY_SCREEN, REGION_UNLOCK_LEVEL } from '../../../story.js';
 import { createSession, questRegion, START_SCREEN } from '../../../exploration.js';
 
-export const REGIONS = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+export const REGIONS = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
 // Boss principal de chaque région (le soleil, ou les deux phases de Fengmeng sur la Lune).
 export const REGION_BOSSES = {
     rizieres: ['sun_1'], fleuve: ['sun_2'], bambous: ['sun_3'], gobi: ['sun_4'], tonnerre: ['sun_5'],
@@ -63,8 +63,20 @@ function placeHero(save, screenId, where = 'spawn') {
     return save;
 }
 
+// Une quête dont une prérequise n'est pas faite ne peut être ni commencée ni terminée (chaînes qui reviennent sur une région déjà
+// traversée, p. ex. la lettre de Petit Bao : Gobi → Fleuve Jaune → Mer) : on la retire, jusqu'à stabilité.
+const pruneUnmet = save => {
+    for (let changed = true; changed;) {
+        changed = false;
+        Object.keys(save.quests).forEach(id => {
+            const q = QUESTS.find(x => x.id === id);
+            if ((q?.requires || []).some(r => save.quests[r] !== 'done')) { delete save.quests[id]; changed = true; }
+        });
+    }
+};
 const dedupe = save => {
     ['defeated', 'openedChests', 'visitedScreens', 'talked', 'waypoints'].forEach(k => { save[k] = [...new Set(save[k])]; });
+    pruneUnmet(save);
     return save;
 };
 
@@ -128,7 +140,7 @@ export const forge = {
     },
 
     // Dans l'arène : cercles déjà terminés, héros au parvis (point de retour = pierre du terrain d'où l'on vient).
-    inArena(cleared = [], fromRegion = 'bambous') {
+    inArena(cleared = [], fromRegion = 'gobi') {
         const save = this.afterBoss(fromRegion);
         save.arena = { cleared: [...cleared], best: 0, wins: 0, returnTo: { screenId: save.screenId, x: save.x, y: save.y } };
         return placeHero(save, 'arena_hall');

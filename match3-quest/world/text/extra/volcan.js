@@ -507,7 +507,7 @@ export default {
       giver: "bather_fei",
       turnIn: "bather_fei",
       requires: [
-        "sq_journal_5"
+        "sq_journal_1"
       ],
       side: true,
       objectives: [

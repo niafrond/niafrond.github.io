@@ -16,8 +16,8 @@
 // gère l'entrée / la sortie / la progression, enemies.js le renfort, game.js la prime.
 
 // L'arène est atteignable dès qu'on a mis le pied dans le 3e terrain (les Bambous) : ses cercles montent jusqu'au niveau 70.
-export const ARENA_UNLOCK_REGION = 'bambous';
-const ARENA_REGIONS = ['bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+export const ARENA_UNLOCK_REGION = 'gobi';
+const ARENA_REGIONS = ['gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
 export const ARENA_NAME = 'Arène des Mille Flèches';
 export const ARENA_REGION = 'arena';
 export const ARENA_HALL = 'arena_hall';
