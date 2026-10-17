@@ -1,6 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { colors, boardSize } from "./constants.js";
+import { colors, boardSize, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
@@ -569,6 +569,8 @@ export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || [
 
 // Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
 let foxActedThisTurn = false;
+let foxPlaying = false;   // le coup de Xiao Gui est en cours : le joueur ne peut ni jouer le plateau ni utiliser armes, objets, sorts
+export const isFoxPlaying = () => foxPlaying;
 
 // état du combat (objet pour pouvoir modifier la propriété)
 export const gameState = { 
@@ -860,6 +862,7 @@ export function restartCombat(){
     actionGuard.reset();
     introToken++;
     foxActedThisTurn = false;
+    foxPlaying = false;
     dismissCombatIntro();
     if(pendingPlayerDeathTimeout) {
         clearTimeout(pendingPlayerDeathTimeout);
@@ -1698,14 +1701,14 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
-    return currentTurn !== 'player' || isBoardResolving() || actionGuard.blockReason() !== null;
+    return currentTurn !== 'player' || foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
 // armes, objets, sorts (colonne #player-spells rendue inerte : ni clic ni focus) et abandon ; l'actionGuard refuse aussi
 // tout clic. Réactivés dès que le tour revient au joueur. Appelé à chaque updateStats().
 export function syncPlayerControlsLock(){
-    const locked = gameState.combatState === 'active' && currentTurn !== 'player';
+    const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || foxPlaying);
     actionGuard.setTurnLocked(locked);
     if(typeof document === 'undefined') return locked;
     const column = document.getElementById('player-spells');
@@ -1914,6 +1917,7 @@ export function forcePlayerTurnForCheat(){
 }
 
 export function finishPlayerTurn(){
+    foxPlaying = false;
     if(gameState.combatState !== 'active'){
         return;
     }
@@ -1941,7 +1945,8 @@ export function finishPlayerTurn(){
         afterPlayerAnimations(() => {
             if(gameState.combatState !== 'active') return;
             currentTurn = 'player'; // le coup du renard se joue pendant le tour du joueur
-            updateStats();
+            foxPlaying = true;      // ... mais les commandes du joueur restent bloquées
+            updateStats();   // verrouille les boutons
             log('Xiao Gui bondit ! Hi hi — un coup de renard !');
             // On annonce que le renard joue, puis seulement il fait son mouvement.
             showCombatAnimation({ icon: 'star', title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
@@ -2660,11 +2665,11 @@ function updateActiveSpells() {
         player.availableSpells.some(avail => avail.id === sp.id)
     );
     // si moins de 4 sorts actifs, en ajouter automatiquement
-    if(player.activeSpells.length < 4){
+    if(player.activeSpells.length < MAX_ACTIVE_SPELLS){
         for(const sp of player.availableSpells){
             if(!player.activeSpells.some(active => active.id === sp.id)){
                 player.activeSpells.push(sp);
-                if(player.activeSpells.length >= 4) break;
+                if(player.activeSpells.length >= MAX_ACTIVE_SPELLS) break;
             }
         }
     }
@@ -2984,7 +2989,7 @@ export function updateSpellsTab(){
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
             markMultiManaSpell(div, sp);
-            const canEquip = player.activeSpells.length < 4;
+            const canEquip = player.activeSpells.length < MAX_ACTIVE_SPELLS;
             const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
             const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
@@ -3009,7 +3014,7 @@ export function equipSpell(spellId){
         log('Vous ne pouvez pas modifier vos sorts pendant le combat !');
         return;
     }
-    if(player.activeSpells.length >= 4){
+    if(player.activeSpells.length >= MAX_ACTIVE_SPELLS){
         log('Maximum 4 sorts actifs atteint.');
         return;
     }
@@ -3112,6 +3117,9 @@ export function setCombatBackdrop(biome){
 
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
+    // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
+    enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
+    if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
 
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level, enemy);

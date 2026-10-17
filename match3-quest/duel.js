@@ -1,3 +1,4 @@
+import { MAX_ACTIVE_SPELLS } from "./constants.js";
 // Règles de duel des combats contre Fengmeng (champ `duel` d'un ennemi de story.js, recopié sur l'ennemi
 // de combat par createMapEnemy). Fonctions pures, testables sans DOM ; game.js les applique.
 //  - mirror      : l'Archer Miroir copie les techniques du héros (sorts équipés, arme, classe) ;
@@ -30,7 +31,7 @@ export function trapDamage(remainingCells, enemyAttack) {
 // Techniques du héros recopiées par l'Archer Miroir : sorts équipés (sinon sorts de classe connus), arme équipée.
 export function mirrorLoadout(hero, fallbackClassSpells = []) {
     const equipped = Array.isArray(hero?.activeSpells) ? hero.activeSpells : [];
-    const source = equipped.length ? equipped : fallbackClassSpells.slice(0, 4);
+    const source = (equipped.length ? equipped : fallbackClassSpells).slice(0, MAX_ACTIVE_SPELLS);
     return {
         spells: source.map(sp => ({ ...sp })),
         weapon: hero?.equippedWeapon ? { ...hero.equippedWeapon } : null,
