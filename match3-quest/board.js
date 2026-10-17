@@ -57,7 +57,7 @@ const isBlocked = index => isBlockedCell(biomeState, index, biomeRule);
 export function advanceBiomeTurn(){
     if(!biomeRule) return 0;
     const res = advanceBiome(biomeState, biomeRule, boardSize);
-    if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'mud' ? 'boueuse(s)' : 'sacrée(s)'}.`);
+    if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'jackpot' ? 'dorée(s) (mana ×10)' : 'sacrée(s)'}.`);
     if(res.expired.length) log(`${biomeRule.label} : ${res.expired.length} case(s) se libèrent.`);
     if(res.drifted !== null){
         const before = [...board];
@@ -84,6 +84,10 @@ function applyPlayerMatchExtras(indices, info){
         if(res.manaDelta > 0 && info.color) addManaForColor(player, info.color, res.manaDelta);
         if(res.manaDelta < 0 && info.color) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
         if(res.damage){ applyDamage(enemy, res.damage); log(`Case brûlante : -${res.damage} PV pour l'ennemi.`); }
+        if(res.manaMultiplier > 1 && info.color){
+            addManaForColor(player, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
+            log(`${biomeRule.label} : tuile dorée, mana ×${res.manaMultiplier} !`);
+        }
         if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} mana.`);
     }
 }
