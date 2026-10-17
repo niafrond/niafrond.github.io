@@ -1729,7 +1729,9 @@ export function createExplorationView(cfg) {
         getSceneInfo() {
             if (!session || !active || root.style.display === 'none' || inCombat) return null;
             const screen = X.currentScreen(session);
-            return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome: screen.biome, region: screen.region };
+            // Souterrains (biome « cave ») : musique du biome de leur région (celui de sa zone sauvage).
+            const biome = screen.underground ? (session.screens[`${screen.region}_wild`]?.biome || screen.biome) : screen.biome;
+            return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome, region: screen.region };
         },
 
         getActiveQuestSummaries() {

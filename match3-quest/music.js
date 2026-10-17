@@ -17,6 +17,7 @@
  *   stopMusic({ fadeMs })  pauseMusic() / resumeMusic()  isMusicPlaying()  getSceneList()
  */
 import { SCENE_IDS, BIOMES, trackCandidates, trackUrl, withVariants } from './musicTracks.js';
+import { getMatch3Version } from './version.js';
 
 export { SCENE_IDS, BIOMES };
 
@@ -87,7 +88,8 @@ async function loadTrack(ctx, key) {
     if (!doFetch) return null;
     const promise = (async () => {
         try {
-            const res = await doFetch(resolveUrl(trackUrl(key)));
+            // `?v=<version>` : à chaque release le navigateur retélécharge la piste, jamais une ancienne copie en cache
+            const res = await doFetch(`${resolveUrl(trackUrl(key))}?v=${getMatch3Version()}`);
             if (!res || !res.ok) throw new Error(`HTTP ${res && res.status}`);
             const buf = await decode(ctx, await res.arrayBuffer());
             S.cache.set(key, buf);

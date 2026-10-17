@@ -180,14 +180,16 @@ function init() {
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
-        const fight = getCombatMusicScene();
+        // En exploration (carte visible, pas de rencontre en cours), seule la musique d'exploration joue : un état de combat resté
+        // « actif » (combat quitté sans passer par l'écran de résultat) ne doit pas garder la musique de combat.
+        const info = exploration.getSceneInfo();
+        const fight = info ? null : getCombatMusicScene();
         if(fight) return Date.now() < combatIntroUntil ? null : [fight, getCombatMusicOptions()];   // jingle d'entrée d'abord, puis la musique
         if(document.getElementById('battle-result-screen')?.classList.contains('active')) return [lastCombatVictory ? 'victory' : 'defeat'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
         if(tab && tab !== 'tab-combat') return ['menu'];
         if(document.getElementById('worldmap-modal')?.classList.contains('active') || document.querySelector('.explore-journal')) return ['menu'];
-        const info = exploration.getSceneInfo();
         if(!info) return null;
         if(info.kind === 'house') return ['house'];
         if(info.kind === 'village' || info.kind === 'wild') return [info.kind, { biome: info.biome }];

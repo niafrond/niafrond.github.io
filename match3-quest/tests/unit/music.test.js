@@ -6,6 +6,7 @@ import { sectionCountFor } from '../../tools/audio/synth.js';
 import {
     setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, __internals
 } from '../../music.js';
+import { getMatch3Version } from '../../version.js';
 import { trackCandidates, trackUrl, withVariants, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
 import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl } from '../../sfxCatalog.js';
 import { readFileSync, existsSync } from 'node:fs';
@@ -302,7 +303,7 @@ describe('lecteur de musique', () => {
         const ctx = makeCtx(); const { fetchFn } = setup(ctx);
         setMusicScene('title');
         await flush();
-        expect(fetchFn.calls).toEqual(['http://x/match3-quest/audio/music/title.mp3']);
+        expect(fetchFn.calls).toEqual([`http://x/match3-quest/audio/music/title.mp3?v=${getMatch3Version()}`]);   // ?v : pas de copie périmée en cache
         const src = ctx.nodes.find((n) => n.kind === 'source');
         expect(src.started).toBe(true);
         expect(src.loop).toBe(true);
@@ -311,7 +312,7 @@ describe('lecteur de musique', () => {
         expect(fetchFn.calls).toHaveLength(1);
         setMusicScene('menu'); await flush();
         setMusicScene('title'); await flush();                        // piste en cache : pas de nouveau téléchargement
-        expect(fetchFn.calls.filter((u) => u.endsWith('title.mp3'))).toHaveLength(1);
+        expect(fetchFn.calls.filter((u) => /title\.mp3/.test(u))).toHaveLength(1);
         expect(ctx.decoded).toBe(2);
     });
 

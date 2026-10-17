@@ -270,7 +270,7 @@ function loadSfx(ctx, key) {
     if (typeof fetch !== 'function') return Promise.resolve(null);
     const promise = (async () => {
         try {
-            const res = await fetch(new URL(sfxUrl(key), import.meta.url).href);
+            const res = await fetch(`${new URL(sfxUrl(key), import.meta.url).href}?v=${getMatch3Version()}`);   // ?v : jamais d'ancienne copie en cache après une release
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.arrayBuffer();
             const buf = await new Promise((resolve, reject) => {
