@@ -374,7 +374,7 @@ export function drawPine(g, tile, px, py, { leaf = '#2f7a3a', trunk = '#6b3d22',
 // ── Végétation de bordure par biome ────────────────────────────────────────
 
 export const BORDER_KIND = {
-    paddy: 'broadleaf', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
+    paddy: 'reed', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
     savanna: 'acacia', coast: 'palm', fusang: 'goldtree', moon: 'crystal', cave: 'stalagmite'
 };
 export const borderKindOf = biomeId => BORDER_KIND[biomeId] || 'pine';

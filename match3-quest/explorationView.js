@@ -51,7 +51,7 @@ const KEY_TO_DIR = {
 // Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles.
 // Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
-    paddy: { a: '#a8d672', b: '#9ecb68', path: '#e6d29a', cliff: '#8a6a3a', liquid: '#6ab7c9', sky: ['#bfe3f5', '#f4f9e8'], decor: ['rice', 'lantern', 'rice'] },
+    paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: ['rice', 'lantern', 'rice'] },
     riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: ['rock', 'rice', 'rock'] },
     bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['bamboo', 'campfire', 'bamboo'] },
     gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: ['cactus', 'rock', 'cactus'] },
@@ -264,7 +264,9 @@ export function createExplorationView(cfg) {
         const last = dialogIndex >= entry.lines.length - 1 && dialogQueue.length === 1;
         const speaker = entry.speaker || {};
         box.innerHTML = `
-            <div class="explore-dialog-portrait">${speaker.sprite
+            <div class="explore-dialog-portrait">${speaker.gba
+                ? `<img class="pixel-art" alt="" src="${speaker.gba}">`
+                : speaker.sprite
                 ? `<img alt="" src="${spriteUri(speaker.sprite)}">`
                 : icon(speaker.icon || 'scroll')}</div>
             <div class="explore-dialog-body">
@@ -305,17 +307,22 @@ export function createExplorationView(cfg) {
     function sceneSpeaker(sp = {}) {
         if (sp.hero) {
             const hero = cfg.getHero();
-            return { name: sp.name || hero.name, title: sp.title, sprite: heroSprite(hero.classId), icon: NARRATOR.icon };
+            return { name: sp.name || hero.name, title: sp.title, sprite: heroSprite(hero.classId), gba: gbaSprite(hero.classId), icon: NARRATOR.icon };
         }
         const npcDef = sp.npc
             ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
             : null;
         const enemyDef = sp.enemy ? session.rt.enemyIndex[sp.enemy]?.def : null;
         const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId, enemyBiome(sp.enemy)) : null;
+        // Même dessin que sur la carte : le sprite GBA du PNJ / de l'ennemi, sinon le sprite vectoriel de repli.
+        const gba = sp.npc ? gbaSprite(sp.npc)
+            : sp.enemy ? (gbaSprite(enemyDef?.spriteKey || sp.enemy) || gbaSprite(enemyDef?.templateId))
+            : null;
         return {
             name: sp.name || NARRATOR.name,
             title: sp.title,
             sprite,
+            gba,
             icon: NARRATOR.icon
         };
     }
@@ -667,7 +674,7 @@ export function createExplorationView(cfg) {
                 const talk = X.talkToNpc(session, res.npcId);
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
-                openDialog({ sprite: npcSprite(talk.npc.id), name: talk.npc.name, title: talk.npc.title }, talk.lines,
+                openDialog({ sprite: npcSprite(talk.npc.id), gba: gbaSprite(talk.npc.id), name: talk.npc.name, title: talk.npc.title }, talk.lines,
                     () => { processEvents(talk.events, spoken); if (talk.npc.merchant) openMerchant(talk.npc); });
                 break;
             }

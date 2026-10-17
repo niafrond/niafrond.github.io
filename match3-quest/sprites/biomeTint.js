@@ -6,7 +6,7 @@
 // hue : teinte cible (0-360) ; spread : part de l'écart de teinte d'origine conservée (0 = teinte unique) ;
 // bias : décale la coupure du tour de teinte (évite qu'un bleu bascule vers le magenta plutôt que vers le jaune) ; sat / light : multiplicateurs ; addL : décalage de luminosité (-1..1).
 export const BIOME_TINTS = {
-    paddy:    { hue: 100, spread: 0.30, sat: 0.95, light: 1.00, addL: 0 },       // rizières : verts
+    paddy:    { hue: 42,  spread: 0.25, sat: 0.70, light: 0.96, addL: 0 },       // rizières desséchées : paille brûlée, ocre
     riverbed: { hue: 30,  bias: 40, spread: 0.20, sat: 0.60, light: 0.88, addL: -0.02 },    // vase, marais : bruns boueux
     bamboo:   { hue: 140, spread: 0.30, sat: 0.65, light: 0.92, addL: 0 },       // forêt de bambous : verts
     gobi:     { hue: 38,  spread: 0.20, sat: 0.80, light: 1.05, addL: 0.03 },     // désert : sable, ocre
