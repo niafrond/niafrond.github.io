@@ -1,3 +1,9 @@
+## [2.79.0](https://github.com/niafrond/niafrond.github.io/compare/v2.78.0...v2.79.0) (2026-10-17)
+
+### Features
+
+* **match3-quest:** rendre les musiques de combat et de boss plus épiques ([#480](https://github.com/niafrond/niafrond.github.io/issues/480)) ([64fa313](https://github.com/niafrond/niafrond.github.io/commit/64fa313baee3fda5549a838416d0ef04e2aea192))
+
 ## [2.78.0](https://github.com/niafrond/niafrond.github.io/compare/v2.77.2...v2.78.0) (2026-10-17)
 
 ### Features
