@@ -1,3 +1,9 @@
+## [2.81.0](https://github.com/niafrond/niafrond.github.io/compare/v2.80.0...v2.81.0) (2026-10-17)
+
+### Features
+
+* **match3-quest:** transformer les cases de boue en cases dorées à mana x10 ([#483](https://github.com/niafrond/niafrond.github.io/issues/483)) ([272f848](https://github.com/niafrond/niafrond.github.io/commit/272f8484bc8d16fcb1f520e7037b0b7775a47fa7))
+
 ## [2.80.0](https://github.com/niafrond/niafrond.github.io/compare/v2.79.1...v2.80.0) (2026-10-17)
 
 ### Features
