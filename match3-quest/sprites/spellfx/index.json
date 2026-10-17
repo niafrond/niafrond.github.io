@@ -1,0 +1,772 @@
+{
+  "threeDragons": {
+    "name": "Tempête des Trois Dragons",
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 2
+  },
+  "fireball": {
+    "name": "Souffle du Dragon de Feu",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "nineSunsFall": {
+    "name": "Chute des Neuf Soleils",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "inferno": {
+    "name": "Brasier du Fourneau Céleste",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "meteor": {
+    "name": "Étoile Filante",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "flameStrike": {
+    "name": "Frappe du Phénix",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "ice": {
+    "name": "Éclats de Givre",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "blizzard": {
+    "name": "Tempête de Neige du Nord",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "frostNova": {
+    "name": "Vague du Roi-Dragon",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "heal": {
+    "name": "Talisman de Jade",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "iceAge": {
+    "name": "Grand Gel du Kunlun",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "greatHeal": {
+    "name": "Rosée Céleste",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "revitalize": {
+    "name": "Circulation du Qi",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "bolt": {
+    "name": "Éclair de Lei Gong",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "miracle": {
+    "name": "Bénédiction de la Lune",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "thunderBolt": {
+    "name": "Foudre des Monts du Tonnerre",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "lightningStorm": {
+    "name": "Orage des Cent Éclairs",
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 3
+  },
+  "stormOfGods": {
+    "name": "Tribulation Céleste",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "vaporBurst": {
+    "name": "Vapeur du Chaudron Céleste",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "goldenDew": {
+    "name": "Rosée Dorée",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "lotusPoison": {
+    "name": "Poison du Lotus Noir",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "springRain": {
+    "name": "Pluie du Printemps",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "emberStorm": {
+    "name": "Foudre Ardente de Zhurong",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "shadowFlame": {
+    "name": "Flamme des Ombres",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "frostLightning": {
+    "name": "Orage Glacé des Hauts Monts",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "bladeWinds": {
+    "name": "Lame des Quatre Vents",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "voidChill": {
+    "name": "Souffle du Vide Glacé",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "brasierSeals": {
+    "name": "Brasier des Sceaux",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "thunderPrison": {
+    "name": "Prison du Tonnerre Glacé",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "jadeBreath": {
+    "name": "Souffle de Jade Céleste",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "starRain": {
+    "name": "Pluie des Mille Étoiles",
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 3
+  },
+  "dragonCross": {
+    "name": "Croix du Dragon",
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 3
+  },
+  "fiveHarmony": {
+    "name": "Harmonie des Cinq Éléments",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "twinDragonsStrike": {
+    "name": "Frappe des Deux Dragons",
+    "frames": 13,
+    "size": 128,
+    "fps": 12,
+    "tier": 4
+  },
+  "vermilionBirdDive": {
+    "name": "Plongeon de l'Oiseau Vermillon",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "azureDragonRoar": {
+    "name": "Rugissement du Dragon Azur",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "whiteTigerClaw": {
+    "name": "Griffe du Tigre Blanc",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "thunderDukeWrath": {
+    "name": "Colère du Duc du Tonnerre",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "fiveElementsSeal": {
+    "name": "Sceau des Cinq Phases",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "kunlunMountainFall": {
+    "name": "Chute du Mont Kunlun",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "heavenlyRiverFlood": {
+    "name": "Crue du Fleuve Céleste",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "pangusAxe": {
+    "name": "Hache de Pangu",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "jadeEmperorDecree": {
+    "name": "Décret de l'Empereur de Jade",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "immortalPeach": {
+    "name": "Pêche d'Immortalité",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "jadeSpringBlessing": {
+    "name": "Bénédiction de la Source de Jade",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "heavenTribulationEnd": {
+    "name": "Fin de la Tribulation",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "emberScythe": {
+    "name": "Faux de Braise",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "frostCleave": {
+    "name": "Fente de Givre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "galeSlash": {
+    "name": "Entaille du Vent",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "queenMotherElixir": {
+    "name": "Élixir de la Reine Mère d'Occident",
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "voidRift": {
+    "name": "Faille du Néant",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "crimsonPurge": {
+    "name": "Purge Écarlate",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "tidalPurge": {
+    "name": "Purge des Marées",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "jadePurge": {
+    "name": "Purge de Jade",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "stormPurge": {
+    "name": "Purge d'Orage",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "shadowPurge": {
+    "name": "Purge d'Ombre",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "emberGoldCross": {
+    "name": "Croix de Braise Dorée",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "purpleRazor": {
+    "name": "Rasoir d'Orage Pourpre",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "jadeCurtain": {
+    "name": "Rideau de Jade et d'Eau",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "burningTide": {
+    "name": "Marée Ardente",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "mageStrike": {
+    "name": "Frappe du Maître Taoïste",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "wildMana": {
+    "name": "Qi Sauvage",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "seasonsPurge": {
+    "name": "Purge des Quatre Saisons",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "shadowCurse": {
+    "name": "Talisman de Scellement",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "darkChannels": {
+    "name": "Méridiens Obscurs",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "flameBolts": {
+    "name": "Talismans Enflammés",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "weakness": {
+    "name": "Sceau d'Affaiblissement",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "iceShield": {
+    "name": "Barrière de Givre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "flameblade": {
+    "name": "Lame de Feu Pourpre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "fingerOfDeath": {
+    "name": "Doigt Solaire",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "handOfIce": {
+    "name": "Paume de Givre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "chasm": {
+    "name": "Fissure du Fleuve Jaune",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "stoneskin": {
+    "name": "Peau de Jade",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "strength": {
+    "name": "Force du Tigre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "flameSphere": {
+    "name": "Sphère de Flammes",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "mirrorShield": {
+    "name": "Miroir de Bronze",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "manaSiphon": {
+    "name": "Aspiration du Qi",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "tigerEye": {
+    "name": "Œil du Tigre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "manaBlast": {
+    "name": "Explosion des Cinq Éléments",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "sneakAttack": {
+    "name": "Tir Furtif",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "swiftStrike": {
+    "name": "Tir Rapide",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "confuse": {
+    "name": "Flèche de Brume",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "stealth": {
+    "name": "Voile de Brume",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "poisonBlade": {
+    "name": "Flèche Empoisonnée",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "dualShot": {
+    "name": "Flèches Jumelles",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "shadowStrike": {
+    "name": "Flèche d'Ombre",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "shadowStep": {
+    "name": "Pas de l'Ombre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "defensiveWall": {
+    "name": "Muraille Impériale",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "sharpenedBlade": {
+    "name": "Flèche Affûtée",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "shieldBash": {
+    "name": "Coup de Bouclier Rond",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "focus": {
+    "name": "Concentration du Qi",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "intimidate": {
+    "name": "Regard Impérial",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "rush": {
+    "name": "Charge de Cavalerie",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "reinforce": {
+    "name": "Renfort des Troupes",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "barrier": {
+    "name": "Rempart de Jade",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "counterAttack": {
+    "name": "Riposte du Garde",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "divinePower": {
+    "name": "Mandat du Ciel",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "holdTheLine": {
+    "name": "Formation de la Tortue",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "heavensWrath": {
+    "name": "Courroux du Ciel",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "commandAura": {
+    "name": "Aura de Commandement",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "enrage": {
+    "name": "Fureur des Steppes",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "cleave": {
+    "name": "Entaille de la Horde",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "throwAxe": {
+    "name": "Lancer de Hache",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "bloodlust": {
+    "name": "Soif de Bataille",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "summonTempest": {
+    "name": "Appel du Vent Céleste",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "berserkerRage": {
+    "name": "Fureur du Loup des Steppes",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "singingBlades": {
+    "name": "Flèches Sifflantes",
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "deathbringer": {
+    "name": "Porte-Soleil",
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "revenant": {
+    "name": "Esprit des Ancêtres",
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "warCry": {
+    "name": "Cri de Guerre",
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  }
+}
