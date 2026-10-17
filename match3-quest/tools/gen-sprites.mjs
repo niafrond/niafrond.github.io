@@ -315,6 +315,8 @@ async function main() {
   }
 
   const existing = loadExisting();
+  // --redo=a,b : oublie ces sprites pour les régénérer (prompt corrigé)
+  for (const k of String(args.redo || '').split(',').filter(Boolean)) delete existing[k];
   let done = 0;
   let failed = 0;
   let callIdx = 0; // compteur global pour le délai entre appels

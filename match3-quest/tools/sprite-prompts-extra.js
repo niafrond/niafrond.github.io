@@ -120,7 +120,7 @@ export const EXTRA_MANIFEST = {
     bambous_village_tea_porter: { desc: 'Chinese tea porter Lei, brown tunic, large bamboo backpack stacked with tea crates' },
     bambous_village_scribe_wei: { desc: 'young Chinese scribe Wei, beige robe, black cap, holding a writing brush and paper scroll' },
     lantern_old: { desc: 'old lantern maker in a red robe, white beard, holding a bright red paper lantern on a stick' },
-    stem_sprite: { desc: 'Xiaogeng, a small bamboo shoot spirit, green body with leaf hat, tiny arms, cheerful face' },
+    stem_sprite: { desc: 'Xiaogeng, a small bamboo shoot spirit, pale green pointed bamboo shoot body with segments, tiny cute face, two small leaf arms and little feet' },
     snake_qing: { desc: 'Lady Qing, a snake spirit woman, emerald green dress, green snake scale patterns on skin, slit pupils, elegant' },
     bambous_wild_old_woodcutter: { desc: 'old Chinese woodcutter Sang, short brown tunic, axe, bundle of bamboo on the back, white beard' },
     bambous_road_old_pilgrim: { desc: 'old Chinese pilgrim Dao, grey travel robe, wide straw hat, walking staff with a gourd, calm face' },
@@ -147,7 +147,7 @@ export const EXTRA_MANIFEST = {
     gobi_village_kid_guide: { desc: 'small desert child guide Zhe, bright scarf, short robe, pointing finger, big smile' },
     gobi_village_old_weaver: { desc: 'old desert woman weaver Mian, long colorful shawl, spindle with wool in her hand' },
     captain_yaer: { desc: 'Silk road guard captain Yaer, steel helmet with a red plume, scale armor, curved sabre, red cloak' },
-    mirage_djinn: { desc: 'mirage djinn Haishi, translucent blue shimmering body, turban, tail made of swirling sand, glowing eyes, arms crossed' },
+    mirage_djinn: { desc: 'a genie spirit, muscular blue translucent humanoid upper body wearing a turban, thick beard, arms crossed, lower body a tail of swirling sand and smoke' },
     lost_pilgrim_ren: { desc: 'lost pilgrim Ren, ragged grey travel robe, tired face, empty water gourd, cracked staff' },
     fennec_lili: { desc: 'a cute fennec fox with huge ears, cream fur, standing on hind legs' },
     gobi_wild_old_caravaneer: { desc: 'old caravaneer Gu, long dusty robe, wrapped turban, wrinkled face, walking stick' },
@@ -155,7 +155,7 @@ export const EXTRA_MANIFEST = {
     keeper_nur: { desc: 'oasis keeper Quan, green robe and cap, holding an old key and a lantern, calm face' },
     mapmaker_ali: { desc: 'map maker Yuan, brown robe with ink stains, big rolled maps under the arm, compass in hand, round glasses' },
     camel_baba: { desc: 'a friendly camel with a colorful saddle blanket, standing' },
-    well_digger_omar: { desc: 'well digger Wen, bare shoulders covered with sand, rope belt, short shovel, sturdy build' },
+    well_digger_omar: { desc: 'strong well digger standing upright, bare muscular chest, rope belt, headband, holding a short shovel, full body on plain ground' },
     rug_seller_zeynep: { desc: 'rug seller Meihua, colorful headscarf, striped dress, holding a rolled carpet, warm smile' },
 
     // Tonnerre
@@ -175,7 +175,7 @@ export const EXTRA_MANIFEST = {
     tonnerre_village_watchman: { desc: 'watchman Hu, thick fur-lined coat, helmet cap, spear and lantern, alert eyes' },
     cairn_spirit: { desc: 'ancient cairn spirit Shidui, pile of balanced grey stones forming a body, small glowing eyes, moss on top' },
     fairy_yun: { desc: 'cloud fairy Yunxi, light pink and white flowing dress, small translucent wings, cloud wisp trailing, graceful' },
-    pup_tuan: { desc: 'a round fluffy white mountain puppy with a blue scarf, sitting' },
+    pup_tuan: { desc: 'a cute small puppy dog on four legs, white and cream fur, floppy ears, black nose, curled tail, blue collar, side view standing' },
     tonnerre_wild_rope_keeper: { desc: 'old rope keeper Gan, hooded wool coat, coil of rope, climbing hook, white stubble' },
     tonnerre_road_pilgrim: { desc: 'pilgrim Master Sheng, red-brown wool robe, prayer beads, tall staff, kind face' },
     rodman_gang: { desc: 'rodman Gang, leather jacket, long metal lightning rod on shoulder, goggles, grin' },
@@ -294,7 +294,7 @@ export const EXTRA_MANIFEST = {
     incense_lanxiang: { desc: 'Lanxiang the incense maker, lavender robe, incense sticks in a bundle, smoke curling' },
 
     // Lune
-    merchant_lune: { desc: 'Yutu the hare merchant, white rabbit in a silver merchant robe, long ears, jade pendant, basket of moon goods' },
+    merchant_lune: { desc: 'a white rabbit person merchant, human-sized standing on two legs, long upright rabbit ears, silver merchant robe, jade pendant, carrying a basket of moon goods' },
     moon_child: { desc: 'moon child, small child in a silver-white robe, crescent moon on forehead, soft glow' },
     moon_cook_gui: { desc: 'moon cook Gui, white chef hat, pale blue apron, large pot, round cheerful face' },
     moon_rabbit_yutu: { desc: 'Yutu, a white jade moon rabbit pounding an elixir in a mortar, standing on hind legs' },
@@ -309,7 +309,7 @@ export const EXTRA_MANIFEST = {
     moon_fisher_tong: { desc: 'moon fisher Tong, silver straw hat, pale robe, fishing rod with a glowing fish' },
     jade_step_keeper_lin: { desc: 'jade steps keeper Lin, jade green robe, long staff, calm face, jade ornaments' },
     keeper_lunar: { desc: 'lunar watcher Yin, white robe with silver patterns, owl on shoulder, lantern, wise face' },
-    jade_hare: { desc: 'Lièvre de jade, a carved green jade hare with glowing eyes, standing on hind legs' },
+    jade_hare: { desc: 'a small white-green jade rabbit, cute bunny with two long upright ears, round body, glowing eyes, standing on two legs, definitely a rabbit' },
     spinner_yue: { desc: 'spinner Yue, pale lilac dress, silver thread spinning wheel, long hair, serene smile' },
 
     // Mer (suite)
