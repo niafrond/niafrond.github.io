@@ -1,3 +1,9 @@
+## [2.77.2](https://github.com/niafrond/niafrond.github.io/compare/v2.77.1...v2.77.2) (2026-10-17)
+
+### Bug Fixes
+
+* **match3-quest:** musique d'exploration seule, rizières desséchées et portraits GBA dans les dialogues ([#478](https://github.com/niafrond/niafrond.github.io/issues/478)) ([31cdbcd](https://github.com/niafrond/niafrond.github.io/commit/31cdbcd0185919c88f11c72cd9fc9739e2242a89))
+
 ## [2.77.1](https://github.com/niafrond/niafrond.github.io/compare/v2.77.0...v2.77.1) (2026-10-17)
 
 ### Bug Fixes
