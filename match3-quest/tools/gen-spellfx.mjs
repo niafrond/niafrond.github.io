@@ -10,6 +10,7 @@
  *
  * Usage :
  *   node tools/gen-spellfx.mjs [--only=id1,id2] [--tier=1..5] [--force] [--dry-run] [--concurrency=2]
+ *   node tools/gen-spellfx.mjs --clean   Retire les fonds blancs opaques des planches existantes et ajoute les noms à index.json
  *   Clé : --key=… ou PIXELLAB_API_KEY ou pixel-art/config.js (comme gen-sprites.mjs).
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
@@ -117,9 +118,25 @@ async function animate(key, spell, frame, motion) {
   throw new Error('animation: délai dépassé');
 }
 
+/** Rend transparent le fond blanc/quasi blanc relié aux bords de la frame (le modèle laisse parfois un fond opaque). */
+export function clearWhiteBackground(png) {
+  const { width: w, height: h, data } = png;
+  const isBg = (i) => data[i + 3] > 0 && data[i] >= 235 && data[i + 1] >= 235 && data[i + 2] >= 235;
+  const seen = new Uint8Array(w * h), stack = [];
+  const push = (x, y) => { const k = y * w + x; if (!seen[k] && isBg(k * 4)) { seen[k] = 1; stack.push(k); } };
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+  while (stack.length) {
+    const k = stack.pop(), x = k % w, y = (k - x) / w;
+    data[k * 4 + 3] = 0;
+    if (x > 0) push(x - 1, y); if (x < w - 1) push(x + 1, y); if (y > 0) push(x, y - 1); if (y < h - 1) push(x, y + 1);
+  }
+  return png;
+}
+
 /** Assemble les frames (PNG base64) en planche horizontale, chaque frame centrée dans une case size×size. */
 export function buildStrip(framesB64, size) {
-  const pngs = framesB64.map(b => PNG.sync.read(Buffer.from(b, 'base64')));
+  const pngs = framesB64.map(b => clearWhiteBackground(PNG.sync.read(Buffer.from(b, 'base64'))));
   const strip = new PNG({ width: size * pngs.length, height: size });
   pngs.forEach((p, i) => {
     const ox = i * size + Math.floor((size - p.width) / 2), oy = Math.floor((size - p.height) / 2);
@@ -128,9 +145,30 @@ export function buildStrip(framesB64, size) {
   return PNG.sync.write(strip);
 }
 
+function cleanExisting(index) {
+  const names = new Map(loadSpells().map(s => [s.id, s.name]));
+  for (const [id, e] of Object.entries(index)) {
+    e.name = names.get(id) ?? e.name;
+    const file = join(OUT, `${id}.png`);
+    const sheet = PNG.sync.read(readFileSync(file));
+    const size = e.size;
+    for (let f = 0; f < e.frames; f++) {
+      const frame = new PNG({ width: size, height: size });
+      PNG.bitblt(sheet, frame, f * size, 0, size, size, 0, 0);
+      clearWhiteBackground(frame);
+      PNG.bitblt(frame, sheet, 0, 0, size, size, f * size, 0);   // bitblt copie aussi les pixels transparents
+    }
+    writeFileSync(file, PNG.sync.write(sheet));
+  }
+  const ordered = Object.fromEntries(Object.entries(index).map(([id, e]) => [id, { name: e.name, frames: e.frames, size: e.size, fps: e.fps, tier: e.tier }]));
+  writeFileSync(INDEX, JSON.stringify(ordered, null, 2) + '\n');
+  console.log(`${Object.keys(index).length} planches nettoyées`);
+}
+
 async function main() {
   mkdirSync(OUT, { recursive: true });
   const index = existsSync(INDEX) ? JSON.parse(readFileSync(INDEX, 'utf8')) : {};
+  if (args.clean) return cleanExisting(index);
   let spells = loadSpells();
   const missing = spells.filter(s => !MOTIFS[s.id]).map(s => s.id);
   if (missing.length) console.warn(`Sans motif (ignorés) : ${missing.join(', ')}`);
@@ -150,7 +188,7 @@ async function main() {
         const first = await keyFrame(key, s, motif);
         const frames = await animate(key, s, first, motion);
         writeFileSync(join(OUT, `${s.id}.png`), buildStrip(frames, s.size));
-        index[s.id] = { frames: frames.length, size: s.size, fps: s.fps, tier: s.tier };
+        index[s.id] = { name: s.name, frames: frames.length, size: s.size, fps: s.fps, tier: s.tier };
         writeFileSync(INDEX, JSON.stringify(index, null, 2) + '\n');
         done++; console.log(`OK  ${s.id} (T${s.tier}, ${frames.length} frames) [${done}/${spells.length}]`);
       } catch (e) {
