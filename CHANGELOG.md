@@ -1,3 +1,9 @@
+## [2.78.0](https://github.com/niafrond/niafrond.github.io/compare/v2.77.2...v2.78.0) (2026-10-17)
+
+### Features
+
+* **match3-quest:** sort de départ, tutoriel contraint, rencontres eau/lave, Xiao Gui ([#479](https://github.com/niafrond/niafrond.github.io/issues/479)) ([0646753](https://github.com/niafrond/niafrond.github.io/commit/0646753b2750718e21e55b220df23f097a3215ae))
+
 ## [2.77.2](https://github.com/niafrond/niafrond.github.io/compare/v2.77.1...v2.77.2) (2026-10-17)
 
 ### Bug Fixes
