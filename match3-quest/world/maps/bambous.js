@@ -149,7 +149,7 @@ export default {
             { id: 'bambous_wild_incense_chest', x: 44, y: 12, gold: 90 }
         ],
         enemies: [
-            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 6 } },
+            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 17 } },
             { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'shadow_assassin', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },

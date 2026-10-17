@@ -65,7 +65,7 @@ export default {
         {
           whenDone: "sun_2",
           lines: [
-            "Hon. Le deuxième soleil est tombé. Les oies ont dansé, ce qui est rare et pas très gracieux."
+            "Hon. Le quatrième soleil est tombé. Les oies ont dansé, ce qui est rare et pas très gracieux."
           ]
         }
       ]
@@ -512,7 +512,7 @@ export default {
       giver: "scribe_ou",
       turnIn: "scribe_ou",
       requires: [
-        "sq_journal_1"
+        "sq_journal_4"
       ],
       side: true,
       objectives: [

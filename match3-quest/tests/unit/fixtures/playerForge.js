@@ -249,11 +249,11 @@ export const forgeMidGame = (classId = 'templar') => forgePlayer({
     weaponIds: [bestWeapon(10, w => !w.twoHanded && !w.playerOnly).id]
 });
 
-/** Niveau 15, 3e terrain (Bambous) atteint : l'arène est ouverte. Arme à deux mains, objets réutilisables entamés. */
+/** Niveau 15, 3e terrain (Gobi) atteint : l'arène est ouverte. Arme à deux mains, objets réutilisables entamés. */
 export const forgeArenaUnlock = (classId = 'templar') => {
     const heavy = bestWeapon(15, w => w.twoHanded);
     const p = forgePlayer({
-        classId, level: 15, gold: 2400, regions: REGION_ORDER.indexOf('bambous') + 1,
+        classId, level: 15, gold: 2400, regions: REGION_ORDER.indexOf('gobi') + 1,
         weaponIds: [bestWeapon(15, w => !w.twoHanded && !w.playerOnly).id, heavy.id],
         equippedWeaponId: heavy.id, abilities: ['elementalist', 'fireMastery'],
         inventoryIds: ['healthPotion', 'power_talisman', 'honey_vial'], unspent: 2

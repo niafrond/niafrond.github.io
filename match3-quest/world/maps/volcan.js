@@ -188,7 +188,7 @@ export default {
             { id: 'volcan_wild_ash_urn', x: 45, y: 5, gold: 180 }
         ],
         enemies: [
-            { id: 'volcan_forge_giant', x: 41, y: 11, templateId: 'lava_behemoth', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 22 } },
+            { id: 'volcan_forge_giant', x: 41, y: 11, templateId: 'lava_behemoth', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 4 } },
             { id: 'volcan_ember_imp', x: 19, y: 8, templateId: 'goblin_saboteur', name: 'Démon des cendres', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'volcan_w_salamander', x: 19, y: 10, templateId: 'ember_dragon', name: 'Lézard-dragon de lave', kind: 'patrol', patrol: [[19, 10], [19, 16]], offset: -1 },
             { id: 'volcan_w_smith', x: 31, y: 12, templateId: 'bone_reaver', name: 'Forgeron calciné', kind: 'patrol', patrol: [[31, 12], [36, 12]], offset: 0 },

@@ -708,11 +708,11 @@ export function bossIntroLines(enc) {
 // gagne en clarté et un compteur de neuf soleils s'éteint peu à peu.
 export const SUN_FALL_CAPTIONS = [
     "Le premier soleil s'éteint sur les rizières. Un soir, enfin, descend sur la terre.",
-    "Le deuxième soleil s'abîme dans la vase du fleuve. L'eau, au loin, murmure de nouveau.",
-    "Le troisième soleil se défait en cendres. Dans la forêt, une première goutte de pluie tombe.",
-    "Le quatrième soleil se dissipe comme un mirage. Le désert, pour une fois, se tait.",
-    "Le cinquième soleil se tait dans un dernier éclair. Les nuages respirent.",
-    "Le sixième soleil refroidit dans la roche. Le volcan s'endort sous les étoiles.",
+    "Le deuxième soleil refroidit dans la roche. Le volcan s'endort sous les étoiles.",
+    "Le troisième soleil se dissipe comme un mirage. Le désert, pour une fois, se tait.",
+    "Le quatrième soleil s'abîme dans la vase du fleuve. L'eau, au loin, murmure de nouveau.",
+    "Le cinquième soleil se défait en cendres. Dans la forêt, une première goutte de pluie tombe.",
+    "Le sixième soleil se tait dans un dernier éclair. Les nuages respirent.",
     "Le septième soleil retombe sur les herbes. Les loups hurlent à la lune, comme avant.",
     "Le huitième soleil plonge dans la mer. L'écume, enfin, redevient fraîche.",
     "Le dernier soleil de la Terre tombe, et il ne reste qu'un seul astre : celui qui éclaire les hommes."

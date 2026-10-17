@@ -28,12 +28,12 @@ function walkThrough(s, exit) {
 const exitTo = (s, pred) => s.screens[s.data.screenId].exits.find(pred);
 
 describe('Arène des Mille Flèches : cercles', () => {
-    test('atteignable dès le 3e terrain (Bambous), quel que soit le niveau', () => {
-        expect(ARENA_UNLOCK_REGION).toBe('bambous');
+    test('atteignable dès le 3e terrain (Gobi), quel que soit le niveau', () => {
+        expect(ARENA_UNLOCK_REGION).toBe('gobi');
         expect(isArenaUnlocked([])).toBe(false);
-        expect(isArenaUnlocked(['rizieres_village', 'fleuve_wild', 'fleuve'])).toBe(false);
-        expect(isArenaUnlocked(['rizieres_village', 'bambous_village'])).toBe(true);
-        expect(isArenaUnlocked(['gobi'])).toBe(true);   // un terrain plus avancé compte aussi
+        expect(isArenaUnlocked(['rizieres_village', 'volcan_wild', 'volcan'])).toBe(false);
+        expect(isArenaUnlocked(['rizieres_village', 'gobi_village'])).toBe(true);
+        expect(isArenaUnlocked(['fleuve'])).toBe(true);   // un terrain plus avancé compte aussi
         expect(isArenaUnlocked(undefined)).toBe(false);
     });
 

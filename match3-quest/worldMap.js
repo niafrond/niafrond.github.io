@@ -15,49 +15,49 @@ export const worldZones = [
         description: "Chez Hou Yi : les rizières brûlent sous le Soleil Ardent. C'est ici que l'aventure commence."
     },
     {
-        id: 'fleuve',
+        id: 'volcan',
         map: { x: 260, y: 505 },
+        name: 'Gorges du Volcan',
+        shortName: 'Volcan',
+        decor: 'volcano',
+        unlockLevel: 4,
+        description: "La roche fond dans les gorges du Soleil de Magma. Fengmeng vous y attend peut-être."
+    },
+    {
+        id: 'gobi',
+        map: { x: 420, y: 490 },
+        name: 'Désert de Gobi',
+        shortName: 'Gobi',
+        decor: 'cactus',
+        unlockLevel: 6,
+        description: "Mirages et dunes : le Soleil des Mirages se cache parmi ses doubles."
+    },
+    {
+        id: 'fleuve',
+        map: { x: 580, y: 505 },
         name: 'Lit du Fleuve Jaune',
         shortName: 'Fleuve Jaune',
         decor: 'drop',
-        unlockLevel: 4,
+        unlockLevel: 11,
         description: "Le grand fleuve s'est tari : le Soleil des Eaux Taries a laissé un lit de boue craquelée."
     },
     {
         id: 'bambous',
-        map: { x: 420, y: 490 },
+        map: { x: 725, y: 395 },
         name: 'Forêt de Bambous Calcinée',
         shortName: 'Bambous',
         decor: 'bamboo',
-        unlockLevel: 6,
+        unlockLevel: 17,
         description: "Les bambous sont en cendres. Le Soleil de Cendres règne sur les ruines du temple."
     },
     {
-        id: 'gobi',
-        map: { x: 580, y: 505 },
-        name: 'Désert de Gobi',
-        shortName: 'Gobi',
-        decor: 'cactus',
-        unlockLevel: 11,
-        description: "Mirages et dunes : le Soleil des Mirages se cache parmi ses doubles."
-    },
-    {
         id: 'tonnerre',
-        map: { x: 725, y: 395 },
+        map: { x: 585, y: 290 },
         name: 'Monts du Tonnerre',
         shortName: 'Tonnerre',
         decor: 'storm',
-        unlockLevel: 17,
-        description: "Des pics noirs que les orages fouettent sans cesse, domaine du Soleil des Orages."
-    },
-    {
-        id: 'volcan',
-        map: { x: 585, y: 290 },
-        name: 'Gorges du Volcan',
-        shortName: 'Volcan',
-        decor: 'volcano',
         unlockLevel: 22,
-        description: "La roche fond dans les gorges du Soleil de Magma. Fengmeng vous y attend peut-être."
+        description: "Des pics noirs que les orages fouettent sans cesse, domaine du Soleil des Orages."
     },
     {
         id: 'fauves',

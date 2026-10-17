@@ -28,10 +28,13 @@ import { addBorderBarriers } from './barriers.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
-export const REGION_ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+// Ordre de progression : du plus chaud et chaotique (les dix soleils sont allumés) au plus verdoyant (les soleils sont tombés).
+export const REGION_ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
+// Chaîne d'origine des écrans de story.js (chaque sanctuaire y mène à la région suivante de CET ordre) : sert à rebrancher les sorties.
+const BASE_CHAIN = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
 
 // Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
-export const REGION_LEVEL = { rizieres: 1, fleuve: 4, bambous: 6, gobi: 11, tonnerre: 17, volcan: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
+export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
 const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (experience.js : getXPCostForLevel)
 
 // Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
@@ -56,6 +59,22 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
     const sanctuaryOf = new Set();
     const nativeSanctuaries = [];   // sanctuaires dessinés en grille ASCII (`sanctuary.grid`)
 
+    // Les sanctuaires de story.js suivent la chaîne d'origine : on rebranche leurs sorties sur les voisins de REGION_ORDER.
+    BASE_CHAIN.forEach((region, index) => {
+        const sanct = screens[region];
+        if (!sanct) return;
+        const oldPrev = BASE_CHAIN[index - 1], oldNext = BASE_CHAIN[index + 1];
+        const newIndex = REGION_ORDER.indexOf(region);
+        const newPrev = REGION_ORDER[newIndex - 1], newNext = REGION_ORDER[newIndex + 1];
+        sanct.exits.forEach(exit => {
+            const target = exit.to === oldNext ? newNext : exit.to === oldPrev ? newPrev : null;
+            if (!target || !screens[target]) return;
+            if (exit.to === target) return;
+            exit.to = target;
+            exit.label = screens[target].name;
+        });
+    });
+
     REGION_ORDER.forEach((region, index) => {
         const map = maps[region];
         if (!map) return;
@@ -72,7 +91,8 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),
             screenText: id => text.screens?.[id] || {}
         };
-        const prev = REGION_ORDER[index - 1];
+        const prev = REGION_ORDER.slice(0, index).reverse().find(id => maps[id]);   // région précédente qui a une carte
+        const regionRank = id => REGION_ORDER.indexOf(id);
         const sanctuary = screens[region];
         sanctuaryOf.add(region);
 
@@ -144,7 +164,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         const placedNpcs = [village, wild, ...(road ? [road] : []), ...(hamlet ? [hamlet] : []), ...(map.interiors || []).map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
         placedNpcs.forEach(id => relocated.add(id));
         sanctuary.exits.forEach(exit => {
-            if (prev && exit.to === prev) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }
+            if (prev && regionRank(exit.to) >= 0 && regionRank(exit.to) < index) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }
         });
         // première région : le sanctuaire n'avait pas de sortie ouest, on en crée une vers la zone sauvage
         if (!prev && !sanctuary.exits.some(e => e.to === wild.id)) {
@@ -154,7 +174,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         if (prev) {
             const entry = road || village;
             screens[prev].exits.forEach(exit => {
-                if (exit.to === region) { exit.to = entry.id; exit.label = entry.name; delete exit.arrive; }
+                if (regionRank(exit.to) > regionRank(prev)) { exit.to = entry.id; exit.label = entry.name; delete exit.arrive; }
             });
         }
         if (map.sanctuary?.waypoint) {

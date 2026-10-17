@@ -33,7 +33,7 @@ export default {
         {
           whenDone: "sun_5",
           lines: [
-            "Le cinquième soleil, tombé ! Mon registre en tremble. J'inscris « victoire » en rouge."
+            "Le sixième soleil, tombé ! Mon registre en tremble. J'inscris « victoire » en rouge."
           ]
         }
       ]
@@ -498,7 +498,7 @@ export default {
       giver: "innkeeper_pao",
       turnIn: "innkeeper_pao",
       requires: [
-        "sq_journal_4"
+        "sq_journal_3"
       ],
       side: true,
       objectives: [

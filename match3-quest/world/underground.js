@@ -39,28 +39,28 @@ const GRIDS = {
 
 export const UNDERGROUND = [
     {
-        id: 'fleuve_cave', parent: 'fleuve_wild', region: 'fleuve', level: 4, layout: 'cave', name: 'Grotte des Limons',
+        id: 'fleuve_cave', parent: 'fleuve_wild', region: 'fleuve', level: 11, layout: 'cave', name: 'Grotte des Limons',
         entrance: 'Entrée de la Grotte des Limons',
         arrival: ['Sous la berge, une bouche de boue séchée s\'enfonce dans la terre. L\'air y sent la vase et le temps arrêté.', 'Sans lumière, vous n\'y verrez presque rien. Une torche aiderait.'],
         chests: [['fleuve_cave_urne', 'Urne des limons', 'Au fond d\'une niche, une urne scellée de vase durcie : des pièces de cuivre, grises comme le fleuve.', 3], ['fleuve_cave_bac', 'Bac du passeur noyé', 'Un coffre de passeur, rongé par l\'humidité, a gardé sa cargaison : de l\'or que personne n\'est venu réclamer.', 2]],
         enemies: [['fleuve_cave_gardien', '1', 'bone_reaver', 'Hebo, Seigneur du Fleuve Noyé', 'sentinel', 1, null, true], ['fleuve_cave_ombre', '2', 'shadow_assassin', 'Ombre de la grotte', 'sentinel', 0], ['fleuve_cave_serpent', '5', 'deep_sea_serpent', 'Serpent des galeries', 'patrol', 0, ['5', '6']]]
     },
     {
-        id: 'bambous_crypt', parent: 'bambous_wild', region: 'bambous', level: 6, layout: 'crypt', name: 'Crypte des Moines Cendrés',
+        id: 'bambous_crypt', parent: 'bambous_wild', region: 'bambous', level: 17, layout: 'crypt', name: 'Crypte des Moines Cendrés',
         entrance: 'Escalier de la Crypte des Moines',
         arrival: ['Une dalle fendue révèle un escalier de pierre noircie. Les moines ont enterré ici ce que le feu n\'a pas pu détruire.', 'Il y fait nuit noire. Sans torche, vous avancerez à tâtons.'],
         chests: [['bambous_crypt_ossuaire', 'Ossuaire des moines', 'Parmi les urnes funéraires, un reliquaire de bois noirci : des offrandes que nul pèlerin n\'est venu reprendre.', 3], ['bambous_crypt_niche', 'Niche du sutra', 'Une niche creusée dans le mur abrite des pièces d\'offrande, serrées dans un linge de soie brûlé.', 2]],
         enemies: [['bambous_crypt_abbe', '1', 'temple_warden', 'Lion Cendré, Gardien du Sutra', 'sentinel', 1, null, true], ['bambous_crypt_ombre', '2', 'shadow_assassin', 'Ombre des cryptes', 'sentinel', 0], ['bambous_crypt_moine', '5', 'bone_reaver', 'Moine sans visage', 'patrol', 0, ['5', '6']]]
     },
     {
-        id: 'gobi_crypt', parent: 'gobi_wild', region: 'gobi', level: 11, layout: 'crypt', name: 'Crypte Ensablée',
+        id: 'gobi_crypt', parent: 'gobi_wild', region: 'gobi', level: 6, layout: 'crypt', name: 'Crypte Ensablée',
         entrance: 'Trappe de la Crypte Ensablée',
         arrival: ['Entre deux dunes, le vent a dégagé une trappe de pierre. En dessous, l\'ombre d\'un tombeau de caravaniers que le sable a oublié.', 'Sans torche, vous ne distinguerez que vos propres pas.'],
         chests: [['gobi_crypt_sarcophage', 'Sarcophage du marchand', 'Un sarcophage de bois peint, déjà entrouvert : le marchand a emporté peu de chose, mais assez pour vous.', 3], ['gobi_crypt_amphore', 'Amphore des caravanes', 'Une amphore scellée à la poix, pleine de pièces d\'argent venues de très loin.', 2]],
         enemies: [['gobi_crypt_gardien', '1', 'sand_colossus', 'Colosse des Caravanes Ensevelies', 'sentinel', 1, null, true], ['gobi_crypt_voleur', '2', 'shadow_assassin', 'Pilleur de tombes', 'sentinel', 0], ['gobi_crypt_momie', '5', 'bone_reaver', 'Caravanier momifié', 'patrol', 0, ['5', '6']]]
     },
     {
-        id: 'volcan_cave', parent: 'volcan_wild', region: 'volcan', level: 22, layout: 'cave', name: 'Cavernes de Basalte',
+        id: 'volcan_cave', parent: 'volcan_wild', region: 'volcan', level: 4, layout: 'cave', name: 'Cavernes de Basalte',
         entrance: 'Faille des Cavernes de Basalte',
         arrival: ['Une faille noire fume au pied de la paroi. Derrière elle, des galeries de basalte que la lave a creusées puis abandonnées.', 'La roche y avale la lumière : sans torche, vous ne verrez presque rien.'],
         chests: [['volcan_cave_geode', 'Géode de braise', 'Une géode fendue laisse couler de l\'or fondu, figé en perles rousses.', 3], ['volcan_cave_forge', 'Forge oubliée', 'Une forge de mineurs, froide depuis des siècles, et un coffret de fer qu\'aucun feu n\'a pu ouvrir.', 2]],
@@ -81,7 +81,7 @@ export const UNDERGROUND = [
         enemies: [['rizieres_cave_gardien', '1', 'forest_guardian', 'Tortue des Boues, Gardienne du Terrier', 'sentinel', 1, null, true],['rizieres_cave_ombre', '2', 'shadow_assassin', 'Ombre du terrier', 'sentinel', 0, null],['rizieres_cave_diablotin', '5', 'goblin_saboteur', 'Petit démon des galeries', 'patrol', 0, ['5', '6']]]
     },
     {
-        id: 'tonnerre_cave', parent: 'tonnerre_wild', region: 'tonnerre', level: 17, layout: 'cave', name: 'Galeries du Tonnerre Sourd',
+        id: 'tonnerre_cave', parent: 'tonnerre_wild', region: 'tonnerre', level: 22, layout: 'cave', name: 'Galeries du Tonnerre Sourd',
         entrance: 'Faille des Galeries du Tonnerre',
         arrival: ['Au creux d\'une paroi balayée par l\'orage, une faille avale la lumière. Dedans, le tonnerre résonne sourdement, comme un cœur qui bat sous la pierre.', 'Il y fait noir : sans torche, vous avancerez à tâtons.'],
         chests: [['tonnerre_cave_foudre', 'Pierre de foudre', 'Une pierre vitrifiée par la foudre : à l\'intérieur, de l\'or fondu en perles bleutées.', 3],['tonnerre_cave_tambour', 'Tambour fendu', 'Un tambour de guerre éventré, dont la peau cachait une bourse de pièces.', 2]],

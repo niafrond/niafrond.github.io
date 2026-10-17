@@ -304,8 +304,20 @@ const BASE_SCREENS = {
                       "Et toi, montre tes doigts. La corde t'a encore entaillé. Donne : un peu de baume, un nœud de lin, et tu pourras aller décrocher tes soleils."
                   ] },
                   { whenDone: 'sun_1', lines: [
-                      "Tu disais que tu n'aurais plus le courage de repartir, si tu passais la porte ? Te voilà pourtant. Prends ce gâteau et file au Lit du Fleuve Jaune : l'eau y manque autant que le courage.",
+                      "Tu disais que tu n'aurais plus le courage de repartir, si tu passais la porte ? Te voilà pourtant. Prends ce gâteau et file aux Gorges du Volcan : la fraîcheur y manque autant que le courage.",
                       "Je prie la Lune chaque soir pour qu'elle te ramène. Elle écoute, tu sais : la preuve, elle nous prête sa lumière pour nous parler."
+                  ] },
+                  { whenDone: 'fengmeng_2', lines: [
+                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire.",
+                      "Ne fais pas cette tête. Je ne te le dis pas pour que tu rebrousses chemin : finis ce que tu as commencé. J'ai pétri assez de pâte dans ma vie pour avoir des bras."
+                  ] },
+                  { whenDone: 'sun_6', lines: [
+                      "Deux soleils… Mon archer, ta main tremble sur ton arc, même quand tu dors. Rentre vite.",
+                      "J'ai gardé la fiole contre ma poitrine, cette nuit, comme on garde un enfant. Et ma moitié de miroir sous l'oreiller, pour que la lune me trouve."
+                  ] },
+                  { whenDone: 'sun_4', lines: [
+                      "Penche-toi : tu as du sable jusque dans le chignon. Là… Voilà mon mari, et pas un mirage.",
+                      "Ne ris pas : certains soirs, je t'entends rentrer, et ce n'est que le vent qui pousse la porte. Assieds-toi. Ton bol est chaud, pour une fois."
                   ] },
                   { whenDone: 'sun_2', lines: [
                       "Tu sens la vase et les saules. Assieds-toi, que je t'ôte ces bottes : on dirait que tu as traversé le fleuve à pied, et pas en barque.",
@@ -315,21 +327,9 @@ const BASE_SCREENS = {
                       "Tu as les yeux rougis par la fumée. Mange ce gâteau, il est au thé vert, comme tu les aimes. Et ne dis pas « parfait » s'il ne l'est pas.",
                       "Je regarde parfois la fiole d'élixir sur l'autel des ancêtres. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel. Nous la garderons pour nos vieux jours, et nous la boirons à deux : une gorgée chacun, pas davantage."
                   ] },
-                  { whenDone: 'sun_4', lines: [
-                      "Penche-toi : tu as du sable jusque dans le chignon. Là… Voilà mon mari, et pas un mirage.",
-                      "Ne ris pas : certains soirs, je t'entends rentrer, et ce n'est que le vent qui pousse la porte. Assieds-toi. Ton bol est chaud, pour une fois."
-                  ] },
                   { whenDone: 'sun_5', lines: [
                       "Tu sens la pluie. Donne-moi ce poignet… Voilà : un fil rouge. L'autre bout est noué au mien. Les vieilles disent que le fil des époux ne casse jamais ; il s'étire, c'est tout.",
                       "Ne l'enlève pas, même pour tirer. S'il te gêne, c'est que tu penses à moi : tant mieux."
-                  ] },
-                  { whenDone: 'fengmeng_2', lines: [
-                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire.",
-                      "Ne fais pas cette tête. Je ne te le dis pas pour que tu rebrousses chemin : finis ce que tu as commencé. J'ai pétri assez de pâte dans ma vie pour avoir des bras."
-                  ] },
-                  { whenDone: 'sun_6', lines: [
-                      "Six soleils… Mon archer, ta main tremble sur ton arc, même quand tu dors. Rentre vite.",
-                      "J'ai gardé la fiole contre ma poitrine, cette nuit, comme on garde un enfant. Et ma moitié de miroir sous l'oreiller, pour que la lune me trouve."
                   ] },
                   { whenDone: 'sun_7', lines: [
                       "Montre tes mains. Griffures, brûlures… Tu en rapportes, des cicatrices, pour un monde que tu ne voulais même pas conquérir.",
@@ -405,7 +405,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 4 },
         arrival: [
             "Le Fleuve Jaune n'est plus qu'un lit de boue craquelée où gisent des barques échouées et des poissons de pierre. Au bord, un vieux passeur regarde un horizon sans eau.",
-            "Quelque part à l'est, dans le sanctuaire des rochers fendus, le deuxième soleil a bu le fleuve jusqu'à la dernière goutte."
+            "Quelque part à l'est, dans le sanctuaire des rochers fendus, le quatrième soleil a bu le fleuve jusqu'à la dernière goutte."
         ],
         obstacles: [[3, 1, 2, 2], [2, 7, 3, 1], [6, 0, 1, 3], [6, 7, 1, 3], [9, 3, 1, 1], [9, 6, 1, 1]],
         liquids: [[1, 8, 2, 2]],
@@ -446,7 +446,7 @@ const BASE_SCREENS = {
                       "L'eau est revenue ce matin, par la rive est. Vous avez entendu ? Elle chante comme une vieille amie. Les poissons de pierre n'étaient que des poissons endormis."
                   ] }
               ] },
-            // Chemin relationnel du soleil 2 : après la quête de Mei, le doyen des noyés parlemente et rappelle ses gardes (`unsealedBy`).
+            // Chemin relationnel du soleil 4 : après la quête de Mei, le doyen des noyés parlemente et rappelle ses gardes (`unsealedBy`).
             { id: 'parley_sun2', x: 10, y: 8, name: 'Yuan', title: 'Doyen des noyés', showWhen: 'sq_drowned', hideWhen: ['sun2_wardens_a', 'sun2_wardens_b'],
               parley: { lines: [
                   "Posez votre arc, seigneur archer. Je suis Yuan, le plus ancien des noyés de ce fleuve, et je ne suis pas venu pour me battre.",
@@ -480,7 +480,7 @@ const BASE_SCREENS = {
             { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
             { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
             { id: 'sun_2', templateId: 'iron_gladiator', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun2_wardens', unsealedBy: ['parley_sun2'], weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 9 },
+              permanent: true, shieldedBy: 'sun2_wardens', unsealedBy: ['parley_sun2'], weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 19 },
               afterScenes: MIRROR_TALKS.sun_2,
               shieldLines: [
                   "Le Soleil des Eaux Taries est tapi derrière un cercle de roches fendues, et deux noyés-gardes lui font un rempart de boue durcie.",
@@ -500,7 +500,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 5 },
         arrival: [
             "Des bambous noircis dressent leurs fûts creux comme des cierges éteints. Il flotte une odeur de cendre douce, et quelque part, une cloche fêlée tinte sans que personne ne la touche.",
-            "Le troisième soleil a incendié la forêt et s'est installé à l'est, près des ruines d'un temple."
+            "Le cinquième soleil a incendié la forêt et s'est installé à l'est, près des ruines d'un temple."
         ],
         obstacles: [[3, 0, 3, 2], [6, 0, 1, 3], [6, 7, 1, 3], [4, 8, 2, 2], [9, 0, 2, 1], [12, 6, 1, 2]],
         liquids: [],
@@ -573,7 +573,7 @@ const BASE_SCREENS = {
             { id: 'sun3_wardens_a', templateId: 'temple_warden', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
             { id: 'sun3_wardens_b', templateId: 'shadow_assassin', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
             { id: 'sun_3', templateId: 'fungal_horror', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
-              permanent: true, shieldedBy: 'sun3_wardens', unsealedBy: ['parley_sun3'], weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 14 },
+              permanent: true, shieldedBy: 'sun3_wardens', unsealedBy: ['parley_sun3'], weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 24 },
               afterScenes: MIRROR_TALKS.sun_3,
               shieldLines: [
                   "Le Soleil de Cendres couve sous la cloche fêlée, et deux esprits du temple brûlé tournent autour de lui comme des cierges.",
@@ -594,7 +594,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 4 },
         arrival: [
             "Le Gobi vibre sous un ciel blanc. Le soleil a l'air d'être partout à la fois. L'horizon ondule, et l'on ne sait plus si les dunes sont des dunes.",
-            "Le quatrième soleil s'est multiplié en mirages. Un seul est réel : celui qui pèse sur le sable."
+            "Le troisième soleil s'est multiplié en mirages. Un seul est réel : celui qui pèse sur le sable."
         ],
         obstacles: [[4, 1, 2, 2], [7, 0, 1, 2], [7, 8, 1, 1], [9, 3, 1, 1], [9, 6, 1, 1], [12, 7, 1, 1]],
         liquids: [[0, 8, 2, 2]],
@@ -661,7 +661,7 @@ const BASE_SCREENS = {
             { id: 'bandit_a', templateId: 'iron_gladiator', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'bandit_b', templateId: 'shadow_assassin', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 19 },
+              permanent: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 14 },
               afterScenes: MIRROR_TALKS.sun_4 }
         ],
         chests: [
@@ -676,7 +676,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 5 },
         arrival: [
             "Les Monts du Tonnerre grondent. Les éclairs frappent la même arête, encore et encore, comme un forgeron céleste qui n'aurait pas fini son ouvrage.",
-            "Le cinquième soleil a fait de la montagne son enclume : il règne à l'est, au milieu des orages."
+            "Le sixième soleil a fait de la montagne son enclume : il règne à l'est, au milieu des orages."
         ],
         obstacles: [[4, 0, 2, 2], [4, 7, 2, 2], [6, 0, 1, 2], [6, 8, 1, 2], [9, 2, 1, 1], [9, 6, 1, 1], [12, 6, 1, 2]],
         liquids: [],
@@ -747,7 +747,7 @@ const BASE_SCREENS = {
             { id: 'sun5_wardens_a', templateId: 'storm_knight', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
             { id: 'sun5_wardens_b', templateId: 'temple_warden', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
             { id: 'sun_5', templateId: 'storm_knight', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 24 },
+              permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 30 },
               afterScenes: MIRROR_TALKS.sun_5,
               shieldLines: [
                   "Une cage d'éclairs ceint le Soleil des Orages : deux gardes de foudre la tiennent tendue, d'un pylône à l'autre.",
@@ -768,7 +768,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 3 },
         arrival: [
             "Les Gorges du Volcan crachent un air épais. Des ruisseaux de magma découpent la roche noire ; le long des parois, on a taillé des marches pour une époque où l'on y vivait.",
-            "Au milieu du défilé, une silhouette connue attend, l'arc déjà tendu : Fengmeng. Au-delà, le sixième soleil."
+            "Au milieu du défilé, une silhouette connue attend, l'arc déjà tendu : Fengmeng. Au-delà, le deuxième soleil."
         ],
         obstacles: [[1, 0, 3, 2], [6, 0, 2, 3], [6, 6, 2, 4], [4, 7, 2, 2], [9, 6, 1, 1], [12, 6, 1, 1]],
         liquids: [[9, 0, 3, 1], [8, 9, 3, 1], [0, 9, 2, 1]],
@@ -833,14 +833,14 @@ const BASE_SCREENS = {
         enemies: [
             // Embuscade : Fengmeng tient le défilé (corridor de 3 tuiles), seul passage vers l'est.
             { id: 'fengmeng_2', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
-              permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 24 },
+              permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 8 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
                   lines: [
-                      "J'étais parti deux jours avant vous, Maître. Je voulais que ce sixième soleil tombe sous ma flèche, et que pour une fois les villages chantent « Fengmeng ». Mais vous arrivez toujours à temps, n'est-ce pas ?",
+                      "J'étais parti deux jours avant vous, Maître. Je voulais que ce deuxième soleil tombe sous ma flèche, et que pour une fois les villages chantent « Fengmeng ». Mais vous arrivez toujours à temps, n'est-ce pas ?",
                       "Encore ! Même à armes égales ! Qu'avez-vous de plus que moi, Maître ? La patience ? La faveur du Ciel ? La Reine Mère de l'Occident m'a dit la même chose : « Ce n'est pas à toi. »",
                       "Oui, j'y suis allé. J'ai gravi les marches du Kunlun pour lui demander un élixir, un seul. Elle a ri avec douceur, la vieille. On ne rit pas de moi avec douceur.",
-                      "Prenez votre sixième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
+                      "Prenez votre deuxième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
                   ]
               } },
             { id: 'volcan_lich', templateId: 'crypt_lich', name: 'Taoïste-squelette des braises', kind: 'sentinel', x: 1, y: 8, offset: 0 },
@@ -852,7 +852,7 @@ const BASE_SCREENS = {
             { id: 'sun6_wardens_a', templateId: 'lava_behemoth', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
             { id: 'sun6_wardens_b', templateId: 'iron_gladiator', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
             { id: 'sun_6', templateId: 'lava_behemoth', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun6_wardens', unsealedBy: ['parley_sun6'], weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 30 },
+              permanent: true, shieldedBy: 'sun6_wardens', unsealedBy: ['parley_sun6'], weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 9 },
               afterScenes: MIRROR_TALKS.sun_6,
               shieldLines: [
                   "Deux forgerons de magma attisent le Soleil de Magma comme une fournaise : tant qu'ils soufflent, il se rallume de lui-même.",
@@ -1205,11 +1205,11 @@ const BASE_SCREENS = {
 // Niveau minimal du joueur pour ENTRER dans un écran de la région (brume magique sinon).
 export const REGION_UNLOCK_LEVEL = {
     rizieres: 1,
-    fleuve: 4,
-    bambous: 6,
-    gobi: 11,
-    tonnerre: 17,
-    volcan: 22,
+    volcan: 4,
+    gobi: 6,
+    fleuve: 11,
+    bambous: 17,
+    tonnerre: 22,
     fauves: 27,
     mer: 32,
     fusang: 37,
@@ -1250,115 +1250,18 @@ const BASE_QUESTS = [
         complete: [
             "Le Soleil Ardent s'effondre en pluie de braise et, pour la première fois depuis trois lunes, un souffle de vent frais traverse les rizières. Les villageois sortent de leurs huttes et tombent à genoux. Certains pleurent.",
             "Du corps du soleil, il ne reste qu'un disque de cendre tiède et une plume de feu que vous glissez dans votre carquois. Huit autres soleils vous attendent.",
-            "À l'est, la digue s'ouvre sur le chemin du Fleuve Jaune. Chang'e vous a laissé un paquet de gâteaux de lune sur le muret : il est encore chaud."
+            "À l'est, la digue s'ouvre sur les Gorges du Volcan, où la roche fond encore. Chang'e vous a laissé un paquet de gâteaux de lune sur le muret : il est encore chaud."
         ],
         reward: { gold: 80, fragment: 'Éclat du Soleil Ardent' }
     },
     {
-        id: 'q_sun_2',
-        title: 'Le Soleil des Eaux Taries',
-        chapter: 'Chapitre II — Le Lit du Fleuve Jaune',
-        giver: 'ferryman_gu', autoStart: true, turnIn: null, requires: ['q_sun_1'],
-        objectives: [{ type: 'kill', target: 'sun_2', text: 'Abattre le Soleil des Eaux Taries (sanctuaire du Lit du Fleuve Jaune, au sud-est)' }],
-        offer: [
-            "Deuxième soleil : celui des Eaux Taries a bu le Fleuve Jaune jusqu'au dernier filet. Son sanctuaire, un banc de rochers fendus, se dresse au sud-est du lit asséché. (Niveau 9 conseillé)",
-            "Le passeur Gu et la tisserande Mei connaissent ces rives mieux que quiconque."
-        ],
-        hint: [
-            "Le Soleil des Eaux Taries se tient au sud-est du lit du fleuve, parmi les rochers fendus. Vous voyez ses gardes de loin : les noyés ne dorment plus.",
-            "Quand l'eau reviendra, ma barque sera la première à flotter. Je compte sur vous, seigneur archer.",
-            "Trois chemins mènent au soleil. Risque : abattez les deux noyés-gardes, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : apaisez les noyés de Mei, et leur doyen parlera aux gardes au pied des roches. Ils s'écartent sans combat.",
-            "Découverte : le serpent du gué et les noyés de Mei affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des gardes renvoyés à la boue ou rendus au courant, un doyen allié, un soleil moins ardent."
-        ],
-        complete: [
-            "Le Soleil des Eaux Taries pousse un soupir humide et se dissout en brume. Un grondement monte du sol : très loin, en amont, l'eau revient.",
-            "Elle avance d'abord comme un murmure, puis comme une main qui lisse la boue. Le passeur Gu enfonce sa perche dans la vase et crie de joie : sa barque se remet à flotter.",
-            "Deux soleils abattus. L'est vous attend : la Forêt de Bambous Calcinée."
-        ],
-        reward: { gold: 110, fragment: 'Éclat du Soleil des Eaux Taries' }
-    },
-    {
-        id: 'q_sun_3',
-        title: 'Le Soleil de Cendres',
-        chapter: 'Chapitre III — La Forêt de Bambous Calcinée',
-        giver: 'monk_zhen', autoStart: true, turnIn: null, requires: ['q_sun_2'],
-        objectives: [{ type: 'kill', target: 'sun_3', text: 'Abattre le Soleil de Cendres (sanctuaire de la Forêt de Bambous Calcinée, au nord-est)' }],
-        offer: [
-            "Troisième soleil : celui de Cendres a transformé une forêt entière en cierges noirs. Il se tient à l'est, près du temple brûlé, là où la cloche sonne encore toute seule. (Niveau 11 conseillé)",
-            "Le moine Zhen veille sur ce qu'il reste du sanctuaire ; l'herboriste Xu cherche encore des plantes vivantes."
-        ],
-        hint: [
-            "Le Soleil de Cendres est au nord-est de la forêt, au-delà des bambous noircis. Évitez les cercles rouges : les esprits y sont nerveux.",
-            "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
-            "Trois chemins mènent au soleil. Risque : éteignez les deux esprits de la cloche, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rapportez la cloche à Zhen, et son âme parlera aux esprits. Ils se rendorment dans le bronze, sans combat.",
-            "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des esprits éteints ou rendormis, une cloche qui parle, un soleil moins ardent."
-        ],
-        complete: [
-            "Le Soleil de Cendres s'éteint comme une braise sous l'eau : sans bruit, avec une volute grise. Alors, très doucement, la cloche du temple sonne, et personne ne la touche.",
-            "Le moine Zhen joint les mains. Dans la cendre, un premier brin de bambou vert perce, pas plus grand qu'une aiguille. La forêt n'est pas morte : elle attendait.",
-            "Trois soleils sont tombés. Le Gobi vous attend, à l'est, avec ses mirages."
-        ],
-        reward: { gold: 140, fragment: 'Éclat du Soleil de Cendres' }
-    },
-    {
-        id: 'q_sun_4',
-        title: 'Le Soleil des Mirages',
-        chapter: 'Chapitre IV — Le Désert de Gobi',
-        giver: 'guide_dawa', autoStart: true, turnIn: null, requires: ['q_sun_3'],
-        objectives: [{ type: 'kill', target: 'sun_4', text: 'Trouver et abattre le vrai Soleil des Mirages parmi ses doubles (Désert de Gobi)' }],
-        offer: [
-            "Quatrième soleil : celui des Mirages. Il s'est dédoublé, triplé, partout à la fois, et les caravanes marchent en rond jusqu'à mourir de soif. Le vrai est caché parmi ses doubles. (Niveau 17 conseillé)",
-            "Le guide Dawa saura vous dire comment faire la différence."
-        ],
-        hint: [
-            "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Cherchez celui qui projette une ombre au sol et porte un niveau au-dessus de sa tête.",
-            "Un mirage scintille, comme l'air chaud : il n'a ni ombre, ni nom. Si vous hésitez, touchez-le : au pire, il se défait entre vos doigts.",
-            "Régler la caravane de l'oasis et trouver la carte qui ne ment pas affaiblira le vrai soleil."
-        ],
-        complete: [
-            "Le vrai soleil s'effondre ; autour de lui, tous les mirages s'évanouissent d'un coup, comme des bulles de savon. Le désert redevient simplement le désert : immense, honnête, silencieux.",
-            "Dawa ôte son turban et le tend vers le ciel, enfin bleu. « On dit que celui qui sait voir le vrai du faux dans le Gobi n'a plus rien à craindre dans la vie », murmure-t-il.",
-            "Quatre soleils sont tombés. Les Monts du Tonnerre grondent à l'est."
-        ],
-        reward: { gold: 180, fragment: 'Éclat du Soleil des Mirages' }
-    },
-    {
-        id: 'q_sun_5',
-        title: 'Le Soleil des Orages',
-        chapter: 'Chapitre V — Les Monts du Tonnerre',
-        giver: 'hermit_lei', autoStart: true, turnIn: null, requires: ['q_sun_4'],
-        objectives: [{ type: 'kill', target: 'sun_5', text: 'Abattre le Soleil des Orages (sanctuaire des Monts du Tonnerre, au sud-est)' }],
-        offer: [
-            "Cinquième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs. (Niveau 22 conseillé)",
-            "Le forgeron Tie ajustera vos flèches ; l'ermite Lei sait où frappe l'éclair."
-        ],
-        hint: [
-            "Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.",
-            "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
-            "Trois chemins mènent au soleil. Risque : abattez les deux gardes de foudre, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera à ses frères de lâcher la cage, sans combat.",
-            "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent."
-        ],
-        complete: [
-            "Le Soleil des Orages éclate en un dernier coup de tonnerre, si fort que les montagnes en tremblent. Puis le silence, d'une pureté stupéfiante, et une pluie fine, tiède, qui sent le fer et la terre.",
-            "Au loin, le forgeron Tie lève son marteau vers le ciel clair. L'ermite Lei, qui parlait au tonnerre depuis trente ans, hoche simplement la tête : le tonnerre a fini de répondre.",
-            "Cinq soleils abattus. À l'est, les Gorges du Volcan fument, et quelqu'un vous y attend."
-        ],
-        reward: { gold: 230, fragment: 'Éclat du Soleil des Orages' }
-    },
-    {
         id: 'q_sun_6',
         title: 'Le Soleil de Magma',
-        chapter: 'Chapitre VI — Les Gorges du Volcan',
-        giver: 'priestess_yan', autoStart: true, turnIn: null, requires: ['q_sun_5'],
+        chapter: 'Chapitre II — Les Gorges du Volcan',
+        giver: 'priestess_yan', autoStart: true, turnIn: null, requires: ['q_sun_1'],
         objectives: [{ type: 'kill', target: 'sun_6', text: 'Abattre le Soleil de Magma (sanctuaire des Gorges du Volcan, au-delà du défilé)' }],
         offer: [
-            "Sixième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé. (Niveau 27 conseillé)",
+            "Deuxième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé. (Niveau 9 conseillé)",
             "Une silhouette connue vous attend à l'entrée des gorges, l'arc déjà tendu…"
         ],
         hint: [
@@ -1372,15 +1275,112 @@ const BASE_QUESTS = [
         complete: [
             "Le Soleil de Magma se fige, noircit, se fend comme une coulée refroidie, puis s'effondre en gravats encore chauds. Les rivières de feu ralentissent et s'éteignent une à une, laissant une roche luisante comme du verre.",
             "La prêtresse Yan s'agenouille, le front contre la pierre : elle priait les soleils comme des dieux, autrefois. « Pardonnez-moi, murmure-t-elle, de les avoir aimés. »",
-            "Six soleils sont tombés. Reste à franchir les plaines, où les fauves sont devenus fous de chaleur."
+            "Deux soleils sont tombés. À l'est, les dunes du Gobi miroitent, et le sable y a viré au verre."
         ],
-        reward: { gold: 290, fragment: 'Éclat du Soleil de Magma' }
+        reward: { gold: 110, fragment: 'Éclat du Soleil de Magma' }
+    },
+    {
+        id: 'q_sun_4',
+        title: 'Le Soleil des Mirages',
+        chapter: 'Chapitre III — Le Désert de Gobi',
+        giver: 'guide_dawa', autoStart: true, turnIn: null, requires: ['q_sun_6'],
+        objectives: [{ type: 'kill', target: 'sun_4', text: 'Trouver et abattre le vrai Soleil des Mirages parmi ses doubles (Désert de Gobi)' }],
+        offer: [
+            "Troisième soleil : celui des Mirages. Il s'est dédoublé, triplé, partout à la fois, et les caravanes marchent en rond jusqu'à mourir de soif. Le vrai est caché parmi ses doubles. (Niveau 11 conseillé)",
+            "Le guide Dawa saura vous dire comment faire la différence."
+        ],
+        hint: [
+            "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Cherchez celui qui projette une ombre au sol et porte un niveau au-dessus de sa tête.",
+            "Un mirage scintille, comme l'air chaud : il n'a ni ombre, ni nom. Si vous hésitez, touchez-le : au pire, il se défait entre vos doigts.",
+            "Régler la caravane de l'oasis et trouver la carte qui ne ment pas affaiblira le vrai soleil."
+        ],
+        complete: [
+            "Le vrai soleil s'effondre ; autour de lui, tous les mirages s'évanouissent d'un coup, comme des bulles de savon. Le désert redevient simplement le désert : immense, honnête, silencieux.",
+            "Dawa ôte son turban et le tend vers le ciel, enfin bleu. « On dit que celui qui sait voir le vrai du faux dans le Gobi n'a plus rien à craindre dans la vie », murmure-t-il.",
+            "Trois soleils sont tombés. À l'est, le Lit du Fleuve Jaune attend, craquelé et sans eau."
+        ],
+        reward: { gold: 140, fragment: 'Éclat du Soleil des Mirages' }
+    },
+    {
+        id: 'q_sun_2',
+        title: 'Le Soleil des Eaux Taries',
+        chapter: 'Chapitre IV — Le Lit du Fleuve Jaune',
+        giver: 'ferryman_gu', autoStart: true, turnIn: null, requires: ['q_sun_4'],
+        objectives: [{ type: 'kill', target: 'sun_2', text: 'Abattre le Soleil des Eaux Taries (sanctuaire du Lit du Fleuve Jaune, au sud-est)' }],
+        offer: [
+            "Quatrième soleil : celui des Eaux Taries a bu le Fleuve Jaune jusqu'au dernier filet. Son sanctuaire, un banc de rochers fendus, se dresse au sud-est du lit asséché. (Niveau 17 conseillé)",
+            "Le passeur Gu et la tisserande Mei connaissent ces rives mieux que quiconque."
+        ],
+        hint: [
+            "Le Soleil des Eaux Taries se tient au sud-est du lit du fleuve, parmi les rochers fendus. Vous voyez ses gardes de loin : les noyés ne dorment plus.",
+            "Quand l'eau reviendra, ma barque sera la première à flotter. Je compte sur vous, seigneur archer.",
+            "Trois chemins mènent au soleil. Risque : abattez les deux noyés-gardes, au prix d'un combat, pour leur expérience et un soleil entier.",
+            "Relation : apaisez les noyés de Mei, et leur doyen parlera aux gardes au pied des roches. Ils s'écartent sans combat.",
+            "Découverte : le serpent du gué et les noyés de Mei affaiblissent le soleil d'un niveau chacun.",
+            "Chaque chemin laisse sa trace : des gardes renvoyés à la boue ou rendus au courant, un doyen allié, un soleil moins ardent."
+        ],
+        complete: [
+            "Le Soleil des Eaux Taries pousse un soupir humide et se dissout en brume. Un grondement monte du sol : très loin, en amont, l'eau revient.",
+            "Elle avance d'abord comme un murmure, puis comme une main qui lisse la boue. Le passeur Gu enfonce sa perche dans la vase et crie de joie : sa barque se remet à flotter.",
+            "Quatre soleils abattus. L'est vous attend : la Forêt de Bambous Calcinée."
+        ],
+        reward: { gold: 180, fragment: 'Éclat du Soleil des Eaux Taries' }
+    },
+    {
+        id: 'q_sun_3',
+        title: 'Le Soleil de Cendres',
+        chapter: 'Chapitre V — La Forêt de Bambous Calcinée',
+        giver: 'monk_zhen', autoStart: true, turnIn: null, requires: ['q_sun_2'],
+        objectives: [{ type: 'kill', target: 'sun_3', text: 'Abattre le Soleil de Cendres (sanctuaire de la Forêt de Bambous Calcinée, au nord-est)' }],
+        offer: [
+            "Cinquième soleil : celui de Cendres a transformé une forêt entière en cierges noirs. Il se tient à l'est, près du temple brûlé, là où la cloche sonne encore toute seule. (Niveau 22 conseillé)",
+            "Le moine Zhen veille sur ce qu'il reste du sanctuaire ; l'herboriste Xu cherche encore des plantes vivantes."
+        ],
+        hint: [
+            "Le Soleil de Cendres est au nord-est de la forêt, au-delà des bambous noircis. Évitez les cercles rouges : les esprits y sont nerveux.",
+            "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
+            "Trois chemins mènent au soleil. Risque : éteignez les deux esprits de la cloche, au prix d'un combat, pour leur expérience et un soleil entier.",
+            "Relation : rapportez la cloche à Zhen, et son âme parlera aux esprits. Ils se rendorment dans le bronze, sans combat.",
+            "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil d'un niveau chacun.",
+            "Chaque chemin laisse sa trace : des esprits éteints ou rendormis, une cloche qui parle, un soleil moins ardent."
+        ],
+        complete: [
+            "Le Soleil de Cendres s'éteint comme une braise sous l'eau : sans bruit, avec une volute grise. Alors, très doucement, la cloche du temple sonne, et personne ne la touche.",
+            "Le moine Zhen joint les mains. Dans la cendre, un premier brin de bambou vert perce, pas plus grand qu'une aiguille. La forêt n'est pas morte : elle attendait.",
+            "Cinq soleils sont tombés. Les Monts du Tonnerre grondent à l'est."
+        ],
+        reward: { gold: 230, fragment: 'Éclat du Soleil de Cendres' }
+    },
+    {
+        id: 'q_sun_5',
+        title: 'Le Soleil des Orages',
+        chapter: 'Chapitre VI — Les Monts du Tonnerre',
+        giver: 'hermit_lei', autoStart: true, turnIn: null, requires: ['q_sun_3'],
+        objectives: [{ type: 'kill', target: 'sun_5', text: 'Abattre le Soleil des Orages (sanctuaire des Monts du Tonnerre, au sud-est)' }],
+        offer: [
+            "Sixième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs. (Niveau 27 conseillé)",
+            "Le forgeron Tie ajustera vos flèches ; l'ermite Lei sait où frappe l'éclair."
+        ],
+        hint: [
+            "Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.",
+            "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
+            "Trois chemins mènent au soleil. Risque : abattez les deux gardes de foudre, au prix d'un combat, pour leur expérience et un soleil entier.",
+            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera à ses frères de lâcher la cage, sans combat.",
+            "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil d'un niveau chacun.",
+            "Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent."
+        ],
+        complete: [
+            "Le Soleil des Orages éclate en un dernier coup de tonnerre, si fort que les montagnes en tremblent. Puis le silence, d'une pureté stupéfiante, et une pluie fine, tiède, qui sent le fer et la terre.",
+            "Au loin, le forgeron Tie lève son marteau vers le ciel clair. L'ermite Lei, qui parlait au tonnerre depuis trente ans, hoche simplement la tête : le tonnerre a fini de répondre.",
+            "Six soleils abattus. À l'est, la Plaine des Fauves ondule encore de chaleur."
+        ],
+        reward: { gold: 290, fragment: 'Éclat du Soleil des Orages' }
     },
     {
         id: 'q_sun_7',
         title: 'Le Soleil des Bêtes Folles',
         chapter: 'Chapitre VII — La Plaine des Fauves',
-        giver: 'hunter_wu', autoStart: true, turnIn: null, requires: ['q_sun_6'],
+        giver: 'hunter_wu', autoStart: true, turnIn: null, requires: ['q_sun_5'],
         objectives: [{ type: 'kill', target: 'sun_7', text: 'Abattre la meute embrasée puis le Soleil des Bêtes Folles (sanctuaire de la Plaine des Fauves, au sud-est)' }],
         offer: [
             "Septième soleil : celui des Bêtes Folles. Il a rendu fous tigres, sangliers et loups, qui ravagent la plaine en meutes embrasées. Le soleil se tient au milieu d'elles, protégé comme une reine. (Niveau 32 conseillé)",
@@ -1509,7 +1509,7 @@ const BASE_QUESTS = [
         id: 'sq_river_serpent', side: true,
         title: 'Le serpent du gué',
         chapter: '✦ Quête secondaire — Lit du Fleuve Jaune',
-        giver: 'ferryman_gu', turnIn: 'ferryman_gu', requires: ['q_sun_1'],
+        giver: 'ferryman_gu', turnIn: 'ferryman_gu', requires: ['q_sun_4'],
         objectives: [{ type: 'kill', target: 'river_serpent', text: 'Chasser le Serpent du Fleuve Jaune (coin nord-est du lit, près des rochers)' }],
         offer: [
             "Seigneur archer, vous qui chassez les soleils, auriez-vous un moment pour un serpent ? Un vieux serpent de rivière s'est niché dans une fosse de boue, au nord-est. Depuis que l'eau s'est retirée, il attaque les voyageurs.",
@@ -1527,7 +1527,7 @@ const BASE_QUESTS = [
         id: 'sq_drowned', side: true,
         title: 'Le métier de Mei',
         chapter: '✦ Quête secondaire — Lit du Fleuve Jaune',
-        giver: 'weaver_mei', turnIn: 'weaver_mei', requires: ['q_sun_1'],
+        giver: 'weaver_mei', turnIn: 'weaver_mei', requires: ['q_sun_4'],
         objectives: [{ type: 'killGroup', target: 'drowned', text: 'Renvoyer dormir les 2 noyés revenants (nord du lit du fleuve)' }],
         offer: [
             "Seigneur archer… Je suis Mei, tisserande. Mon métier à tisser est resté sur la rive nord, avec les fils de soie que je gardais pour la mariée du village. Mais deux noyés sont remontés de la boue, et ils s'y sont installés comme chez eux.",
@@ -1579,7 +1579,7 @@ const BASE_QUESTS = [
         id: 'sq_oasis', side: true,
         title: "La cache de l'oasis",
         chapter: '✦ Quête secondaire — Désert de Gobi',
-        giver: 'guide_dawa', turnIn: 'guide_dawa', requires: ['q_sun_3'],
+        giver: 'guide_dawa', turnIn: 'guide_dawa', requires: ['q_sun_6'],
         objectives: [{ type: 'chest', target: 'oasis_cache', text: "Retrouver la cache de l'oasis (coin nord-ouest du Gobi, près des tentes)" }],
         offer: [
             "Un guide du Gobi ne se perd jamais, seigneur. Mais il laisse parfois des choses derrière lui. J'ai enterré, il y a longtemps, une cache de rosée d'oasis dans le coin nord-ouest, sous une dalle rouge.",
@@ -1596,7 +1596,7 @@ const BASE_QUESTS = [
         id: 'sq_bandits', side: true,
         title: 'La caravane de Ma',
         chapter: '✦ Quête secondaire — Désert de Gobi',
-        giver: 'merchant_ma', turnIn: 'merchant_ma', requires: ['q_sun_3'],
+        giver: 'merchant_ma', turnIn: 'merchant_ma', requires: ['q_sun_6'],
         objectives: [{ type: 'killGroup', target: 'sand_bandits', text: 'Chasser les 2 brigands du Gobi (sud-ouest du désert, sur la piste des caravanes)' }],
         offer: [
             "Seigneur, un mot ? Je suis Ma, marchand. Deux brigands attaquent ma caravane chaque semaine, au sud-ouest, là où la piste tourne. Ils ne volent pas seulement : ils cassent tout ce qu'ils n'emportent pas.",
@@ -1614,7 +1614,7 @@ const BASE_QUESTS = [
         id: 'sq_thunder_wyrm', side: true,
         title: 'Le dragon-serpent du tonnerre',
         chapter: '✦ Quête secondaire — Monts du Tonnerre',
-        giver: 'smith_tie', turnIn: 'smith_tie', requires: ['q_sun_4'],
+        giver: 'smith_tie', turnIn: 'smith_tie', requires: ['q_sun_3'],
         objectives: [{ type: 'kill', target: 'thunder_wyrm', text: 'Terrasser le dragon-serpent du tonnerre (coin nord-est des monts, sur la crête)' }],
         offer: [
             "Alors c'est vous, l'archer ? Bien. Je suis Tie, forgeron de flèches. Un dragon-serpent du tonnerre a niché dans le coin nord-est des monts, sur la crête où frappe l'éclair. Il en fait des perles de foudre, que je ne peux plus récolter.",
@@ -1631,7 +1631,7 @@ const BASE_QUESTS = [
         id: 'sq_lei_drum', side: true,
         title: 'Le tambour du tonnerre',
         chapter: '✦ Quête secondaire — Monts du Tonnerre',
-        giver: 'hermit_lei', turnIn: 'hermit_lei', requires: ['q_sun_4'],
+        giver: 'hermit_lei', turnIn: 'hermit_lei', requires: ['q_sun_3'],
         objectives: [{ type: 'chest', target: 'lei_drum', text: 'Retrouver le tambour du tonnerre (coin nord-ouest des Monts du Tonnerre)' }],
         offer: [
             "Je parle au tonnerre depuis trente ans, archer. Un jour, il m'a répondu, et il m'a demandé un tambour. J'en ai fabriqué un avec une peau de nuage, mais le vent l'a emporté dans le coin nord-ouest de la montagne.",
@@ -1649,7 +1649,7 @@ const BASE_QUESTS = [
         id: 'sq_ore', side: true,
         title: 'La veine de cinabre',
         chapter: '✦ Quête secondaire — Gorges du Volcan',
-        giver: 'miner_shan', turnIn: 'miner_shan', requires: ['q_sun_5'],
+        giver: 'miner_shan', turnIn: 'miner_shan', requires: ['q_sun_1'],
         objectives: [{ type: 'killGroup', target: 'ore_guards', text: 'Chasser les 2 pixiu de magma (nord-est des gorges, au-delà du défilé)' }],
         offer: [
             "Seigneur archer ! Je suis Shan, mineur. Deux pixiu de magma gardent la veine de cinabre, au nord-est de la gorge, derrière la barrière de lave. Impossible d'en tirer un grain de minerai sans se faire charger.",
@@ -1667,7 +1667,7 @@ const BASE_QUESTS = [
         id: 'sq_ember', side: true,
         title: 'La braise du phénix',
         chapter: '✦ Quête secondaire — Gorges du Volcan',
-        giver: 'priestess_yan', turnIn: 'priestess_yan', requires: ['q_sun_5'],
+        giver: 'priestess_yan', turnIn: 'priestess_yan', requires: ['q_sun_1'],
         objectives: [{ type: 'chest', target: 'phoenix_brazier', text: 'Rapporter la cendre du brasero du phénix (coin nord-ouest, derrière le sanctuaire)' }],
         offer: [
             "Autrefois, je servais les soleils. J'ai rallumé chaque aube un brasero de cendre de phénix, près du sanctuaire, au nord-ouest. Depuis que les soleils sont devenus fous, ce brasero est abandonné.",
@@ -1685,7 +1685,7 @@ const BASE_QUESTS = [
         id: 'sq_scarred_tiger', side: true,
         title: 'Balafré',
         chapter: '✦ Quête secondaire — Plaine des Fauves',
-        giver: 'hunter_wu', turnIn: 'hunter_wu', requires: ['q_sun_6'],
+        giver: 'hunter_wu', turnIn: 'hunter_wu', requires: ['q_sun_5'],
         objectives: [{ type: 'kill', target: 'scarred_tiger', text: 'Abattre Balafré, le tigre embrasé (coin nord-est de la plaine)' }],
         offer: [
             "Seigneur archer, je vous attendais. Je suis Wu, chasseur. Balafré, un tigre embrasé, rôde dans le coin nord-est de la plaine : il m'a laissé cette cicatrice, et il a tué mon meilleur chien.",
@@ -1702,7 +1702,7 @@ const BASE_QUESTS = [
         id: 'sq_zi_bell', side: true,
         title: 'La clochette du bélier',
         chapter: '✦ Quête secondaire — Plaine des Fauves',
-        giver: 'shepherd_zi', turnIn: 'shepherd_zi', requires: ['q_sun_6'],
+        giver: 'shepherd_zi', turnIn: 'shepherd_zi', requires: ['q_sun_5'],
         objectives: [{ type: 'chest', target: 'zi_bell', text: "Retrouver la clochette du troupeau (sud-ouest de la plaine, derrière l'enclos)" }],
         offer: [
             "Seigneur, je suis Zi. Mon troupeau s'est enfui à cause des flammes, mais la clochette de mon bélier-guide est restée derrière l'enclos, au sud-ouest. Sans elle, les bêtes ne reviendront pas.",
@@ -1780,6 +1780,6 @@ export const buildLegacyWorld = () => assembleWorld(BASE_SCREENS, BASE_QUESTS, u
 
 // Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.
 export const REGION_ENTRY_SCREEN = Object.fromEntries(
-    ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune']
+    ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune']
         .map(region => [region, SCREENS[`${region}_village`] ? `${region}_village` : region])
 );
