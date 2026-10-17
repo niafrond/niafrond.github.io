@@ -1,0 +1,662 @@
+{
+  "threeDragons": {
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 2
+  },
+  "fireball": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "nineSunsFall": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "inferno": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "meteor": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "flameStrike": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "ice": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "blizzard": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "frostNova": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "heal": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "iceAge": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "greatHeal": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "revitalize": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "bolt": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "miracle": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "thunderBolt": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "lightningStorm": {
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 3
+  },
+  "stormOfGods": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "vaporBurst": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "goldenDew": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "lotusPoison": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "springRain": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "emberStorm": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "shadowFlame": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "frostLightning": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "bladeWinds": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "voidChill": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "brasierSeals": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "thunderPrison": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "jadeBreath": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "starRain": {
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 3
+  },
+  "dragonCross": {
+    "frames": 9,
+    "size": 96,
+    "fps": 10,
+    "tier": 3
+  },
+  "fiveHarmony": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "twinDragonsStrike": {
+    "frames": 13,
+    "size": 128,
+    "fps": 12,
+    "tier": 4
+  },
+  "vermilionBirdDive": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "azureDragonRoar": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "whiteTigerClaw": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "thunderDukeWrath": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "fiveElementsSeal": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "kunlunMountainFall": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "heavenlyRiverFlood": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "pangusAxe": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "jadeEmperorDecree": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "immortalPeach": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "jadeSpringBlessing": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "heavenTribulationEnd": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "emberScythe": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "frostCleave": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "galeSlash": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "queenMotherElixir": {
+    "frames": 17,
+    "size": 128,
+    "fps": 12,
+    "tier": 5
+  },
+  "voidRift": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "crimsonPurge": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "tidalPurge": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "jadePurge": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "stormPurge": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "shadowPurge": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "emberGoldCross": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "purpleRazor": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "jadeCurtain": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "burningTide": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "mageStrike": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "wildMana": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "seasonsPurge": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "shadowCurse": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "darkChannels": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "flameBolts": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "weakness": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "iceShield": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "flameblade": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "fingerOfDeath": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "handOfIce": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "chasm": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "stoneskin": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "strength": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "flameSphere": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "mirrorShield": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "manaSiphon": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "tigerEye": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "manaBlast": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "sneakAttack": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "swiftStrike": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "confuse": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "stealth": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "poisonBlade": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "dualShot": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "shadowStrike": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "shadowStep": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "defensiveWall": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "sharpenedBlade": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "shieldBash": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "focus": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "intimidate": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "rush": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "reinforce": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "barrier": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "counterAttack": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "divinePower": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "holdTheLine": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "heavensWrath": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "commandAura": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "enrage": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  },
+  "cleave": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "throwAxe": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "bloodlust": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "summonTempest": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "berserkerRage": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "singingBlades": {
+    "frames": 9,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "deathbringer": {
+    "frames": 9,
+    "size": 64,
+    "fps": 10,
+    "tier": 3
+  },
+  "revenant": {
+    "frames": 13,
+    "size": 96,
+    "fps": 12,
+    "tier": 4
+  },
+  "warCry": {
+    "frames": 5,
+    "size": 32,
+    "fps": 8,
+    "tier": 1
+  }
+}
