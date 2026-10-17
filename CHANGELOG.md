@@ -1,3 +1,9 @@
+## [2.79.1](https://github.com/niafrond/niafrond.github.io/compare/v2.79.0...v2.79.1) (2026-10-17)
+
+### Bug Fixes
+
+* **match3-quest:** corriger l'import dupliqué qui empêchait le lancement du jeu ([#481](https://github.com/niafrond/niafrond.github.io/issues/481)) ([9a3afe5](https://github.com/niafrond/niafrond.github.io/commit/9a3afe56f5bb3ba1f3f7843067b686a62ff428d2))
+
 ## [2.79.0](https://github.com/niafrond/niafrond.github.io/compare/v2.78.0...v2.79.0) (2026-10-17)
 
 ### Features
