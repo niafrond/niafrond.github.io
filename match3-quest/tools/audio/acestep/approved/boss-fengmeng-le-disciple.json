@@ -1,10 +1,10 @@
 {
   "key": "boss-fengmeng-le-disciple",
-  "version": "v003",
-  "date": "2026-10-16T22:19:15.490Z",
-  "seed": "1399117370",
+  "version": "v005",
+  "date": "2026-10-17T19:39:09.845Z",
+  "seed": "3284948199",
   "request": {
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, duel with Feng Meng the disciple, dangerous rival, aggressive low pipa figures, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, the heroic motif twisted into a threat",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, duel with Feng Meng the disciple, dangerous rival, aggressive low pipa figures, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, the heroic motif twisted into a threat",
     "lyrics": "[Instrumental]",
     "vocal_language": "unknown",
     "audio_format": "mp3",
@@ -23,7 +23,7 @@
     "genres": "N/A",
     "keyscale": "D minor",
     "timesignature": "4",
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, duel with Feng Meng the disciple, dangerous rival, aggressive low pipa figures, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, the heroic motif twisted into a threat",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, duel with Feng Meng the disciple, dangerous rival, aggressive low pipa figures, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, the heroic motif twisted into a threat",
     "lyrics": "[Instrumental]"
   }
 }
