@@ -576,6 +576,14 @@ export function selectTile(index){
         selected=null;
         return;
     }
+    // Tutoriel : seul l'échange demandé est accepté (le module peut remettre le plateau d'entraînement en place).
+    if(tutorialCallbacks.allowSwap && !tutorialCallbacks.allowSwap(selected, index, board)){
+        playSfx('invalid');
+        tiles[selected].classList.remove('selected');
+        selected=null;
+        renderBoard();
+        return;
+    }
     tiles[selected].classList.remove('selected');
     swapTiles(selected,index);
     selected=null;

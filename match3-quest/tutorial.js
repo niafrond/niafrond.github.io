@@ -16,12 +16,16 @@ export const tutorialCallbacks = {
     onSpellCast: null,     // () → void
     onEnemyDefeated: null, // () → void
     useDumbAI: false,      // board.js lit ce flag dans enemyMakeMove
+    allowSwap: null,       // (i, j, board) → bool : refuse tout échange autre que celui demandé (board.js, selectTile)
+    allowSpell: null,      // (spell) → bool : refuse tout sort autre que celui demandé (game.js, castSpell)
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
 const TOTAL_STEPS = 5;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
+const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : un dernier coup suffit à conclure
+const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les premiers coups ne l'achèvent pas
 
 // Plateau pré-généré garanti sans match initial, avec 8+ coups possibles dont :
 //   – 1 coup crâne : échanger index 35 (4,3)=skull et index 43 (5,3)=blue → 4 crânes alignés en ligne 5
@@ -42,6 +46,7 @@ const TUTORIAL_SPELL = {
     id: TUTO_SPELL_ID,
     name: 'Flèche d\'entraînement',
     color: 'red',
+    type: 'damage',
     cost: 6,
     dmg: 6,
     minLevel: 1,
@@ -77,39 +82,44 @@ const STEPS = [
         step: 1,
         icon: 'refresh',
         title: 'Déplacer une tuile',
-        desc: 'Bienvenue à l\'école de Hou Yi ! Cliquez sur une tuile, puis sur une tuile <strong>adjacente</strong> pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus.',
+        desc: 'Bienvenue à l\'école de Hou Yi ! Cliquez sur l\'une des deux <strong>tuiles en surbrillance</strong>, puis sur l\'autre pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus : seul ce mouvement est autorisé pour l\'instant.',
     },
     {
         step: 2,
         icon: 'skull',
         title: 'Frapper les crânes',
-        desc: `Alignez <strong>3 crânes ${icon('skull')} ou plus</strong> pour infliger des dégâts au mannequin ! Les tuiles en surbrillance indiquent un échange qui frappera des soleils.`,
+        desc: `Alignez <strong>3 crânes ${icon('skull')} ou plus</strong> pour infliger des dégâts à votre adversaire ! Faites <strong>l\'échange en surbrillance</strong> : il frappera des crânes.`,
     },
     {
         step: 3,
         icon: 'spark',
         title: 'Générer du mana',
-        desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du mana. Le mana est nécessaire pour lancer des sorts puissants !',
+        desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du mana. Faites <strong>l\'échange en surbrillance</strong> : le mana est nécessaire pour lancer des sorts puissants !',
     },
     {
         step: 4,
         icon: 'mana_red',
         title: 'Lancer un sort',
-        desc: `Vous avez du mana rouge ${icon('mana_red')} ! Cliquez sur le bouton du sort <strong>"Flèche d'entraînement"</strong> en bas pour décocher votre flèche et infliger des dégâts au mannequin.`,
+        desc: 'Cliquez sur le bouton de votre sort en bas pour le lancer et infliger des dégâts à votre adversaire.',
     },
     {
         step: 5,
         icon: 'bow',
         title: 'Terminer le combat',
-        desc: `Réduisez les <strong>PV du mannequin à 0</strong> pour remporter la victoire ! Frappez les crânes ${icon('skull')}, gagnez des flèches ${icon('arrow')}, alignez des gâteaux de lune et lancez vos sorts.`,
+        desc: `Il ne reste plus que quelques PV à votre adversaire : <strong>un dernier coup</strong> suffit pour remporter la victoire ! Frappez les crânes ${icon('skull')}, gagnez des flèches ${icon('arrow')}, alignez des gâteaux de lune et lancez vos sorts.`,
     },
 ];
 
 // ─── État interne ──────────────────────────────────────────────────────────
 let _active = false;
 let _step = 0;
-let _hadSpellBefore = false;
+let _spellInjected = false;
+let _tutoSpell = null;       // sort offensif utilisé à l'étape 4 (sort du joueur, ou sort d'entraînement injecté)
 let _highlightedElements = [];
+let _highlightTimer = null;
+let _game = null;
+let _bm = null;
+let _mm = null;
 
 // ─── API publique ──────────────────────────────────────────────────────────
 
@@ -191,6 +201,7 @@ export function startTutorial(opts = {}) {
  */
 export function quitTutorial() {
     if (!_active) return;
+    _stopHighlightLoop();
     _cleanupHighlights();
     _hideOverlay();
     _clearHooks();
@@ -238,22 +249,27 @@ export function initTutorialUI() {
 
 // ─── Mise en place du combat tutoriel ─────────────────────────────────────
 
+function _findOffensiveSpell(player) {
+    return (player.activeSpells || []).find(sp => sp && sp.type === 'damage' && sp.dmg > 0 && !sp.effect && sp.color && sp.cost);
+}
+
 async function _injectTutorialSpell() {
     const m = await import('./game.js');
-    _hadSpellBefore = (m.player.activeSpells || []).length > 0;
-    // Donner un sort tutoriel de base si le joueur n'a aucun sort actif
-    if (!_hadSpellBefore) {
-        const alreadyHas = (m.player.spells || []).some(s => s.id === TUTO_SPELL_ID);
-        if (!alreadyHas) {
-            m.player.spells = [TUTORIAL_SPELL, ...(m.player.spells || [])];
-            m.player.availableSpells = [TUTORIAL_SPELL, ...(m.player.availableSpells || [])];
-        }
-        m.player.activeSpells = [TUTORIAL_SPELL];
+    _spellInjected = false;
+    _tutoSpell = _findOffensiveSpell(m.player);
+    // Le joueur a normalement déjà un sort offensif ; sinon on lui prête le sort d'entraînement.
+    if (!_tutoSpell) {
+        _spellInjected = true;
+        _tutoSpell = TUTORIAL_SPELL;
+        m.player.spells = [TUTORIAL_SPELL, ...(m.player.spells || []).filter(s => s.id !== TUTO_SPELL_ID)];
+        m.player.availableSpells = [TUTORIAL_SPELL, ...(m.player.availableSpells || []).filter(s => s.id !== TUTO_SPELL_ID)];
+        m.player.activeSpells = [TUTORIAL_SPELL, ...(m.player.activeSpells || []).filter(s => s.id !== TUTO_SPELL_ID)].slice(0, 4);
     }
 }
 
 async function _removeTutorialSpell() {
-    if (_hadSpellBefore) return; // le joueur avait déjà ses sorts, ne rien toucher
+    if (!_spellInjected) return; // le joueur avait déjà son sort offensif, ne rien toucher
+    _spellInjected = false;
     try {
         const m = await import('./game.js');
         m.player.spells = (m.player.spells || []).filter(s => s.id !== TUTO_SPELL_ID);
@@ -264,10 +280,12 @@ async function _removeTutorialSpell() {
 }
 
 function _startTutorialCombat() {
-    import('./game.js').then(gameModule => {
+    Promise.all([import('./game.js'), import('./board.js'), import('./matchMechanics.js')]).then(([g, b, mm]) => {
+        _game = g; _bm = b; _mm = mm;
+    }).then(() => import('./game.js')).then(gameModule => {
         const { startNewCombat, updateStats, createSpellButtons, log } = gameModule;
 
-        // Démarrer le combat contre le mannequin
+        // Démarrer le combat d'entraînement
         let enemy = TUTORIAL_ENEMY;
         if (_duelEnemy) {
             // Duel contre un vrai adversaire (Fengmeng) : on garde son identité mais on l'adoucit pour apprendre.
@@ -310,24 +328,52 @@ function _startTutorialCombat() {
 function _activateStep(step) {
     _step = step;
     _cleanupHighlights();
-    _updateOverlay(step);
+    _stopHighlightLoop();
+    _adjustEnemyHp(step);
     _installHooks(step);
 
-    // Déclenchement des surbrillances avec léger délai (laisse le board se stabiliser)
-    if (step === 1 || step === 2 || step === 3 || step === 5) {
-        setTimeout(() => _highlightBoardForStep(step), 700);
-    } else if (step === 4) {
-        // S'assurer que le joueur a assez de mana rouge pour le sort tutoriel
-        import('./game.js').then(m => {
-            if ((m.player.mana.red || 0) < 6) {
-                m.player.mana.red = 10;
+    if (step === 4) {
+        // Le joueur doit avoir assez de mana pour lancer le sort demandé
+        const spell = _tutoSpell;
+        let extra = '';
+        if (spell) {
+            const m = _game;
+            if ((m.player.mana[spell.color] || 0) < spell.cost) {
+                m.player.mana[spell.color] = spell.cost;
                 m.updateStats();
-                m.log('Tutoriel : 10 mana rouge offert par votre maître pour décocher votre flèche !');
+                m.log(`Tutoriel : votre maître vous offre le mana ${spell.color} nécessaire pour lancer ${spell.name} !`);
             }
             m.createSpellButtons(); // Mettre à jour l'affichage (bouton actif)
-        });
+            extra = `Vous avez du mana ${icon('mana_' + spell.color)} ! Cliquez sur le bouton du sort <strong>"${spell.name}"</strong> en bas pour le lancer et infliger des dégâts à votre adversaire. Les échanges de tuiles sont suspendus.`;
+        }
+        _updateOverlay(step, extra);
         setTimeout(() => _highlightSpellButtons(), 400);
+    } else {
+        _updateOverlay(step);
+        _startHighlightLoop();
     }
+}
+
+/**
+ * Règle les PV de l'adversaire pour qu'il tienne juste assez longtemps : assez pour encaisser les premiers coups,
+ * puis, à l'étape du sort, exactement les dégâts du sort + ENEMY_FINISH_HP (le dernier coup l'achève).
+ */
+function _adjustEnemyHp(step) {
+    const m = _game;
+    const foe = m?.enemy;
+    if (!foe) return;
+    if (step === 2 || step === 3) {
+        foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
+        foe.maxHp = Math.max(foe.maxHp, foe.hp);
+    } else if (step === 4 && _tutoSpell) {
+        foe.hp = (_tutoSpell.dmg || 0) + ENEMY_FINISH_HP;
+        foe.maxHp = Math.max(foe.maxHp, foe.hp);
+    } else if (step === 5) {
+        foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
+    } else {
+        return;
+    }
+    m.updateStats();
 }
 
 function _advanceStep() {
@@ -350,6 +396,7 @@ function _advanceStep() {
 }
 
 function _completeTutorial() {
+    _stopHighlightLoop();
     _clearHooks();
     _cleanupHighlights();
     _hideOverlay();
@@ -383,6 +430,16 @@ const _feedbackMessages = {
 function _installHooks(step) {
     _clearHooks();
 
+    // Victoire à n'importe quel moment : le tutoriel est terminé (l'adversaire est réglé pour tomber à la fin)
+    tutorialCallbacks.onEnemyDefeated = () => {
+        // Petit délai pour laisser l'animation de victoire commencer
+        setTimeout(() => _completeTutorial(), 200);
+    };
+
+    // Contrainte : seul le mouvement / le sort demandé est accepté
+    tutorialCallbacks.allowSwap = _allowSwap;
+    tutorialCallbacks.allowSpell = _allowSpell;
+
     if (step === 1) {
         tutorialCallbacks.onTileSwap = (i, j, hadMatch) => {
             if (hadMatch) _advanceStep();
@@ -402,12 +459,6 @@ function _installHooks(step) {
         tutorialCallbacks.onSpellCast = () => {
             _advanceStep();
         };
-
-    } else if (step === 5) {
-        tutorialCallbacks.onEnemyDefeated = () => {
-            // Petit délai pour laisser l'animation de victoire commencer
-            setTimeout(() => _completeTutorial(), 200);
-        };
     }
 }
 
@@ -416,60 +467,96 @@ function _clearHooks() {
     tutorialCallbacks.onMatch = null;
     tutorialCallbacks.onSpellCast = null;
     tutorialCallbacks.onEnemyDefeated = null;
+    tutorialCallbacks.allowSwap = null;
+    tutorialCallbacks.allowSpell = null;
+}
+
+function _warn(message) {
+    _game?.log(message);
+}
+
+/**
+ * Échange demandé par l'étape en cours : vérifie que le plateau le permet, sinon remet le plateau d'entraînement.
+ * Étapes 1 à 3 : un seul échange accepté ; étape 4 : aucun échange (il faut lancer le sort) ; étape 5 : libre.
+ */
+function _allowSwap(i, j, board) {
+    if (_step === 4) {
+        _warn(`Lancez d'abord le sort "${_tutoSpell?.name || ''}" en bas de l'écran.`);
+        return false;
+    }
+    if (_step < 1 || _step > 3) return true;
+    const target = _pickTarget(_step, board);
+    if (!target) {
+        // Le plateau actuel ne permet pas le coup demandé : on remet le plateau d'entraînement en place.
+        _bm?.applyBoard(TUTORIAL_BOARD);
+        _warn('Le plateau a été remis en place pour pouvoir faire le mouvement demandé.');
+        return false;
+    }
+    if ((i === target.from && j === target.to) || (i === target.to && j === target.from)) return true;
+    _warn('Faites l\'échange des deux tuiles en surbrillance.');
+    return false;
+}
+
+function _allowSpell(spell) {
+    if (_step === 4 && _tutoSpell && spell.id !== _tutoSpell.id) {
+        _warn(`Lancez le sort "${_tutoSpell.name}".`);
+        return false;
+    }
+    return true;
 }
 
 // ─── Surbrillances ────────────────────────────────────────────────────────
 
 /**
- * Calcule la paire de tuiles à mettre en surbrillance selon l'étape.
- * – step 2 : cherche un échange qui crée un match de crânes (tuile 'skull')
- * – step 3 : cherche un échange qui crée un match de couleur
- * – sinon  : meilleur move disponible (quel que soit le type)
+ * Calcule l'échange attendu selon l'étape (null si le plateau ne le permet pas).
+ * – step 2 : un échange qui crée un match de crânes
+ * – step 3 : un échange qui crée un match de couleur
+ * – step 5 : de préférence un échange qui frappe des crânes
+ * – sinon  : le premier échange valide
  */
-function _highlightBoardForStep(step) {
-    import('./board.js').then(bm => {
-        const board = bm.board; // live binding suffisant ici (board est stable)
-        import('./matchMechanics.js').then(mm => {
-            const moves = mm.findPossibleMatches(board);
-            if (!moves || moves.length === 0) return;
+function _pickTarget(step, board) {
+    if (!_mm || !board || board.some(t => !t)) return null;
+    const moves = _mm.findPossibleMatches(board);
+    if (!moves || moves.length === 0) return null;
+    const makes = (mv, wantType) => {
+        const testBoard = [...board];
+        [testBoard[mv.from], testBoard[mv.to]] = [testBoard[mv.to], testBoard[mv.from]];
+        return _mm.collectMatches(testBoard).some(m => m.info.type === wantType);
+    };
+    if (step === 2 || step === 3) {
+        const wantType = step === 2 ? 'skull' : 'color';
+        return moves.find(mv => makes(mv, wantType)) || null;
+    }
+    if (step === 5) return moves.find(mv => makes(mv, 'skull')) || moves[0];
+    return moves[0];
+}
 
-            let target = null;
+function _stopHighlightLoop() {
+    if (_highlightTimer) clearInterval(_highlightTimer);
+    _highlightTimer = null;
+}
 
-            if (step === 2 || step === 3) {
-                const wantType = step === 2 ? 'skull' : 'color';
-                for (const mv of moves) {
-                    // Simuler le swap pour voir quels matchs il génère
-                    const testBoard = [...board];
-                    [testBoard[mv.from], testBoard[mv.to]] = [testBoard[mv.to], testBoard[mv.from]];
-                    const matches = mm.collectMatches(testBoard);
-                    if (matches.some(m => m.info.type === wantType)) {
-                        target = mv;
-                        break;
-                    }
-                }
-                // Fallback : aucun coup du bon type disponible → réinitialiser le plateau tutoriel
-                if (!target) {
-                    bm.applyBoard(TUTORIAL_BOARD);
-                    setTimeout(() => _highlightBoardForStep(step), 400);
-                    return;
-                }
-            } else {
-                target = moves[0];
-            }
+// Garde la surbrillance alignée sur l'échange attendu (le plateau change entre les tours, renderBoard réécrit les classes).
+function _startHighlightLoop() {
+    _stopHighlightLoop();
+    _highlightTimer = setInterval(_refreshHighlight, 400);
+    setTimeout(_refreshHighlight, 700);
+}
 
-            if (!target) return;
-            const boardDiv = document.getElementById('board');
-            if (!boardDiv) return;
-            const tiles = boardDiv.children;
-
-            [target.from, target.to].forEach(idx => {
-                const tile = tiles[idx];
-                if (tile) {
-                    tile.classList.add('tutorial-highlight');
-                    _highlightedElements.push(tile);
-                }
-            });
-        });
+function _refreshHighlight() {
+    if (!_active || !_bm || _step === 4) return;
+    const tiles = document.getElementById('board')?.children;
+    if (!tiles) return;
+    const target = _pickTarget(_step, _bm.board);
+    const wanted = target ? [tiles[target.from], tiles[target.to]].filter(Boolean) : [];
+    _highlightedElements = _highlightedElements.filter(el => {
+        if (wanted.includes(el)) return true;
+        el.classList.remove('tutorial-highlight');
+        return false;
+    });
+    wanted.forEach(el => {
+        el.classList.add('tutorial-highlight');
+        if (!_highlightedElements.includes(el)) _highlightedElements.push(el);
     });
 }
 
@@ -510,7 +597,7 @@ function _hideOverlay() {
     if (overlay) overlay.classList.add('hidden');
 }
 
-function _updateOverlay(step) {
+function _updateOverlay(step, descOverride) {
     const stepData = STEPS.find(s => s.step === step);
     if (!stepData) return;
 
@@ -521,7 +608,7 @@ function _updateOverlay(step) {
 
     if (elIcon) elIcon.innerHTML = icon(stepData.icon);
     if (elTitle) elTitle.textContent = stepData.title;
-    if (elDesc) elDesc.innerHTML = stepData.desc;
+    if (elDesc) elDesc.innerHTML = descOverride || stepData.desc;
     if (elCurrent) elCurrent.textContent = step;
 
     const overlay = document.getElementById('tutorial-overlay');

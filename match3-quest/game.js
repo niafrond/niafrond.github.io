@@ -1802,6 +1802,7 @@ export function castSpell(spellId){
     }
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
+    if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
     if(!canEntityCastSpell(player, spell)){
@@ -2607,7 +2608,6 @@ function getUnlockedSpellCap(level) {
 
 function buildUnlockedSpellsList(spells, level) {
     const unlockCap = getUnlockedSpellCap(level);
-    if(unlockCap <= 0) return [];
 
     const uniqueById = [];
     const seenIds = new Set();
@@ -2617,7 +2617,12 @@ function buildUnlockedSpellsList(spells, level) {
         uniqueById.push(spell);
     }
 
+    // Sort offensif de départ : dès le niveau 1, le joueur a au moins un sort de dégâts (le moins coûteux), toujours en tête de liste.
+    const isOffensive = s => s.type === 'damage' && s.dmg > 0 && !s.effect && (s.minLevel || 1) <= Math.max(1, Math.floor(level || 1));
+    const starter = uniqueById.filter(isOffensive).sort((a, b) => (a.cost || 0) - (b.cost || 0) || String(a.id).localeCompare(String(b.id)))[0];
+
     uniqueById.sort((a, b) => {
+        if(starter && (a === starter) !== (b === starter)) return a === starter ? -1 : 1;
         const levelA = Math.max(1, Math.floor(a?.minLevel || 1));
         const levelB = Math.max(1, Math.floor(b?.minLevel || 1));
         if(levelA !== levelB) return levelA - levelB;
@@ -2627,7 +2632,7 @@ function buildUnlockedSpellsList(spells, level) {
     // Les sorts de haut niveau (multimana, niveau > 15) et les sorts avancés (3 à 5 couleurs, dès le niveau 8) sont débloqués dès leur
     // niveau, hors plafond du nombre de sorts : sinon, triés après les sorts de niveau inférieur, ils restaient hors de portée jusqu'au niveau 38+.
     const isFreeUnlock = s => s.type === 'advanced' || s.type === 'board' || (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL;
-    const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, unlockCap);
+    const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, Math.max(unlockCap, starter ? 1 : 0));
     const free = uniqueById.filter(isFreeUnlock);
     return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
 }

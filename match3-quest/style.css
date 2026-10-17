@@ -2287,10 +2287,10 @@ body.dark-mode .modal {
    TUTORIAL – overlay, carte, bandeaux, surbrillances
    ═══════════════════════════════════════════════════ */
 
-/* Overlay flottant compact (coin haut-droit), repliable : ne masque pas les boutons du jeu */
+/* Overlay flottant compact (coin bas-droit, au-dessus de la colonne de l'ennemi), repliable : ne masque ni les PV de l'adversaire ni les boutons du joueur */
 .tutorial-overlay {
     position: fixed;
-    top: 8px;
+    bottom: 8px;
     right: 8px;
     z-index: 500;
     pointer-events: none;

@@ -300,7 +300,7 @@ const BASE_SCREENS = {
               ],
               talk: [
                   { whenDone: 'fengmeng_1', lines: [
-                      "Fengmeng est rentré sans me dire un mot, la lèvre fendue, les yeux brûlants. Sois bon avec lui, Hou Yi. Il n'a que toi au monde, et cela lui fait mal.",
+                      "Fengmeng est rentré en riant, la poussière de la digue plein les manches. Il a même demandé une seconde part de gâteau. Vous vous êtes bien battus tous les deux, et sans vous faire de mal : c'est tout ce que je demande à un entraînement.",
                       "Et toi, montre tes doigts. La corde t'a encore entaillé. Donne : un peu de baume, un nœud de lin, et tu pourras aller décrocher tes soleils."
                   ] },
                   { whenDone: 'sun_1', lines: [
@@ -380,8 +380,8 @@ const BASE_SCREENS = {
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_1'),
                   lines: [
-                      "…Un coup de chance, Maître. Ce n'est pas la première fois qu'on me bat à l'entraînement, mais c'est la première fois que cela me brûle.",
-                      "Je vous suis depuis dix ans. Dix ans à tendre l'arc derrière vous, à ramasser vos flèches. Les gens disent « Hou Yi » et jamais « Fengmeng ». Un jour, ils diront mon nom.",
+                      "Touché, Maître ! Vous n'avez pas faibli d'un pouce. Ce n'était qu'un entraînement, et j'en sors plus fort : mon bras tremble de plaisir, pas de honte.",
+                      "Dix ans que je tends l'arc derrière vous, et j'apprends encore à chaque duel. Un jour, je viserai aussi juste que mon Maître.",
                       "Allez abattre votre soleil. Je vous suivrai de loin. Après tout, il faut bien que quelqu'un vous couvre."
                   ]
               } },
