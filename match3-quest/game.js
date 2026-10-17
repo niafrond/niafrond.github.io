@@ -18,6 +18,7 @@ import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
+import { npcSprite, spriteUri } from "./sprites/index.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
@@ -1608,6 +1609,12 @@ export function updatePlayerStatsTab(){
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
 preloadSpellFx();
 
+// Portrait pixel art de Xiao Gui (le renard compagnon) pour l'annonce de son coup.
+function foxIconHtml(){
+    const uri = spriteUri(npcSprite('xiao_gui'));
+    return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
+}
+
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
@@ -1949,7 +1956,7 @@ export function finishPlayerTurn(){
             updateStats();   // verrouille les boutons
             log('Xiao Gui bondit ! Hi hi — un coup de renard !');
             // On annonce que le renard joue, puis seulement il fait son mouvement.
-            showCombatAnimation({ icon: 'star', title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
+            showCombatAnimation({ icon: foxIconHtml(), title: 'Xiao Gui', damage: 'Un coup de renard !', target: 'Le renard joue sur le plateau…' }, true, {
                 autoHideMs: 1200 * animationFactor(),
                 onContinue: () => { if(gameState.combatState === 'active') foxMakeRandomMove(); }
             });
