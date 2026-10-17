@@ -41,6 +41,7 @@ const ONLY_TIER = args.tier ? Number(args.tier) : null;
 const FORCE = !!args.force;
 const DRY = !!args['dry-run'];
 const CONCURRENCY = Number(args.concurrency || 2);
+const ENGINE = args.engine || 'minimax';   // minimax (PixMiniMax, mouvement ample) | v3 (animate-with-text-v3)
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -97,13 +98,16 @@ async function keyFrame(key, spell, motif) {
 }
 
 async function animate(key, spell, frame, motion) {
-  const job = await api('https://api.pixellab.ai/v2/animate-with-text-v3', key, {
-    method: 'POST',
-    body: JSON.stringify({
-      first_frame: { type: 'base64', base64: frame, format: 'png' },
-      action: `${motion}, looping magic effect`, frame_count: spell.frames, no_background: true
+  const dyn = `${motion}, big dynamic energetic movement across the whole frame`;
+  const job = ENGINE === 'v3'
+    ? await api('https://api.pixellab.ai/v2/animate-with-text-v3', key, {
+      method: 'POST',
+      body: JSON.stringify({ first_frame: { type: 'base64', base64: frame, format: 'png' }, action: `${dyn}, looping magic effect`, frame_count: spell.frames, no_background: true, enhance_prompt: true })
     })
-  });
+    : await api('https://api.pixellab.ai/v2/animate-pixminimax', key, {
+      method: 'POST',
+      body: JSON.stringify({ first_frame: { type: 'base64', base64: frame, format: 'png' }, description: dyn, frame_count: spell.frames, no_background: true, enhance_prompt: true, subject_description: 'a magic spell visual effect' })
+    });
   const id = job.background_job_id;
   for (let i = 0; i < 120; i++) {
     await sleep(4000);

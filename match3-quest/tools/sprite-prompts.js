@@ -118,6 +118,9 @@ export const SPRITE_MANIFEST = {
   },
 };
 
+import { EXTRA_MANIFEST } from './sprite-prompts-extra.js';
+for (const [cat, entries] of Object.entries(EXTRA_MANIFEST)) Object.assign(SPRITE_MANIFEST[cat], entries);
+
 // Style commun à tous les sprites — ne pas mettre de direction ici
 export const STYLE_SUFFIX =
   'GBA pixel art RPG sprite, ancient Chinese mythological world, ' +

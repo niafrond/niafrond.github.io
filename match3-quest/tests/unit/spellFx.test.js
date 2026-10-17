@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { setSpellFxIndex, spellFxHtml, spellFxIdForTitle } from '../../spellFx.js';
+import { setSpellFxIndex, spellFxHtml, spellFxIdForTitle, spellFxDurationMs } from '../../spellFx.js';
 
 const index = JSON.parse(readFileSync(new URL('../../sprites/spellfx/index.json', import.meta.url), 'utf8'));
 const spells = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));
@@ -25,6 +25,14 @@ describe('spellFx', () => {
         expect(spellFxIdForTitle('SOUFFLE DU DRAGON DE FEU')).toBe('fireball');
         expect(spellFxHtml('SOUFFLE DU DRAGON DE FEU')).toContain('data-spell="fireball"');
         expect(spellFxHtml('fireball')).toContain('spellfx');
+    });
+
+    test('l\'animation est jouée une fois et sa durée est connue', () => {
+        expect(spellFxDurationMs('SOUFFLE DU DRAGON DE FEU')).toBe(Math.round(index.fireball.frames / index.fireball.fps * 1000));
+        expect(spellFxDurationMs("COUP D'ÉPÉE")).toBe(0);
+        const css = readFileSync(new URL('../../style.css', import.meta.url), 'utf8');
+        expect(css).toMatch(/\.spellfx \{[^}]*forwards;/);
+        expect(css).not.toMatch(/\.spellfx \{[^}]*infinite/);
     });
 
     test('renvoie null pour un titre inconnu (l\'annonce garde son icône)', () => {

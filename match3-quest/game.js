@@ -9,7 +9,7 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite } from "./sprites/index.j
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
-import { spellFxHtml, preloadSpellFx } from "./spellFx.js";
+import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
@@ -1609,6 +1609,7 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     const fx = spellFxHtml(title);   // mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
+    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) + 500) };   // laisse finir l'animation
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}">${fx || svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
