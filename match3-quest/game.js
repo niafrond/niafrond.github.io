@@ -18,7 +18,7 @@ import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
-import { npcSprite, spriteUri } from "./sprites/index.js";
+import { npcSprite } from "./sprites/index.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
