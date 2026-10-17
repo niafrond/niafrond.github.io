@@ -1,3 +1,9 @@
+## [2.76.0](https://github.com/niafrond/niafrond.github.io/compare/v2.75.0...v2.76.0) (2026-10-17)
+
+### Features
+
+* **match3-quest:** animations pixel art des sorts et sprites Pixel Lab complets ([#474](https://github.com/niafrond/niafrond.github.io/issues/474)) ([2a7ec81](https://github.com/niafrond/niafrond.github.io/commit/2a7ec810043d34526bcd470f8626157b40642fb6))
+
 ## [2.75.0](https://github.com/niafrond/niafrond.github.io/compare/v2.74.1...v2.75.0) (2026-10-16)
 
 ### Features
