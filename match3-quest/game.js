@@ -1818,10 +1818,12 @@ export function castSpell(spellId){
         logActiveAction(`lance le sort ${spell.name} (effet special)`);
         // Import dynamique pour éviter les dépendances circulaires
         import('./classSpellEffects.js').then(async module => {
+            const boardBefore = module.snapshotBoard();
             if(await module.applyClassSpellEffect(spell)) {
                 saveUpdate();
                 tutorialCallbacks.onSpellCast?.();
-                finishPlayerTurn();
+                // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
+                module.endPlayerSpellTurn(boardBefore);
             } else {
                 saveUpdate();
             }
@@ -1874,6 +1876,7 @@ export async function castSpellForCheat(spellId, options = {}){
     if(spell.effect){
         try {
             const module = await import('./classSpellEffects.js');
+            const boardBefore = module.snapshotBoard();
             const applied = await module.applyClassSpellEffect(spell);
             if(!applied){
                 saveUpdate();
@@ -1881,7 +1884,7 @@ export async function castSpellForCheat(spellId, options = {}){
             }
             saveUpdate();
             if(consumeTurn){
-                finishPlayerTurn();
+                module.endPlayerSpellTurn(boardBefore);
             } else {
                 updateStats();
             }
