@@ -17,7 +17,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, hasGbaSprite } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
@@ -1357,7 +1357,8 @@ export function createExplorationView(cfg) {
                     const hero = cfg.getHero();
                     const heroBase = heroSprite(hero.classId);
                     const heroDir = viewDir(session.rt.facing);
-                    const heroView = gbaSprite(hero.classId, heroDir)
+                    const heroView = (moving && gbaWalkSprite(hero.classId, heroDir, now / 110))
+                        || gbaSprite(hero.classId, heroDir)
                         || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
 
                     // Xiao Gui (renard compagnon) : visible derrière le héros quand il a rejoint le groupe.

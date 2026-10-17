@@ -32,6 +32,18 @@ export function gbaSprite(key, dir = 'front') {
     return s[dir] || s.front || null;
 }
 
+// Image du cycle de marche (« walk_<dir>_<n> ») : n tourne sur les images disponibles (aller-retour si 3 images).
+// Retourne null s'il n'existe pas d'animation de marche pour cette clé/direction.
+export function gbaWalkSprite(key, dir, tick) {
+    const s = GBA_SPRITES[gbaKey(key)];
+    if (!s) return null;
+    let n = 0;
+    while (s[`walk_${dir}_${n}`]) n++;
+    if (!n) return null;
+    const seq = n === 3 ? [0, 1, 2, 1] : Array.from({ length: n }, (_, i) => i);
+    return s[`walk_${dir}_${seq[Math.abs(Math.floor(tick)) % seq.length]}`];
+}
+
 export const SPRITE_PACKS = Object.keys(SPRITE_PACK_FILES);
 // Héros et coffres : toujours présents à l'écran (et sur la carte du monde).
 export const CORE_PACK = 'actors-a';
