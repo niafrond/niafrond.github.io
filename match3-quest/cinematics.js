@@ -755,15 +755,51 @@ export const SUN_FALL_CAPTIONS = [
     "Le dernier soleil de la Terre tombe, et il ne reste qu'un seul astre : celui qui éclaire les hommes."
 ];
 
-export function playSunFallAnimation({ count = 1, name = 'Soleil' } = {}) {
-    const n = Math.max(1, Math.min(9, count));
+// Rang de chaque soleil dans l'ordre des régions (les ids ne le suivent pas) : légende et tableau Pixel Lab propres à chaque
+// soleil, quel que soit l'ordre dans lequel ils tombent.
+export const SUN_RANK = { sun_1: 1, sun_6: 2, sun_4: 3, sun_2: 4, sun_3: 5, sun_5: 6, sun_7: 7, sun_8: 8, sun_9: 9 };
+
+// Tableaux animés de la chute (tools/gen-prologue.mjs --set=sunfall), gardés en mémoire une fois chargés ; null si absents.
+const sunArtCache = new Map();
+function loadSunArt(rank, portrait) {
+    const key = `${rank}-${portrait ? 'port' : 'land'}`;
+    if (!sunArtCache.has(key)) {
+        sunArtCache.set(key, loadSceneArt('sunfall', 9, portrait, [rank]).then(a => {
+            if (!a) sunArtCache.delete(key);
+            return a ? a[0] : null;
+        }));
+    }
+    return sunArtCache.get(key);
+}
+
+// `id` : identifiant du soleil abattu (rang, légende, tableau) ; à défaut, `count` = nombre de soleils déjà tombés.
+export async function playSunFallAnimation({ count = 1, name = 'Soleil', id } = {}) {
+    const n = SUN_RANK[id] || Math.max(1, Math.min(9, count));
     const DURATION = 7;
     const caption = SUN_FALL_CAPTIONS[n - 1];
+    const art = await loadSunArt(n, window.innerHeight > window.innerWidth);
+    const ART_FPS = 3;   // 13 images ≈ 4,3 s, puis la dernière image est tenue
+    const FALLEN_AT = art ? Math.min(DURATION - 1, art.frames / ART_FPS) : 5.0;
+    // Compteur de neuf soleils : les tombés sont éteints, le soleil en train de tomber s'éteint à la fin de sa chute.
+    const drawCounter = (ctx, t, width) => {
+        const gap = 9;
+        const cx0 = Math.round(width / 2 - (8 * gap) / 2);
+        for (let i = 0; i < 9; i++) {
+            const fallen = i < n - 1 || (i === n - 1 && t >= FALLEN_AT);
+            disc(ctx, fallen ? '#2a2a50' : PAL.sun, cx0 + i * gap, 6, 2);
+            if (!fallen) px(ctx, PAL.sunHi, cx0 + i * gap - 1, 5, 1, 1);
+        }
+    };
     return runScene({
         extraClass: 'cine-sunfall',
         duration: DURATION,
         startSfx: 'bossStart',
         onMount(overlay) {
+            if (art) {
+                const c = overlay.querySelector('canvas');
+                c.width = art.size[0];
+                c.height = art.size[1];
+            }
             const box = document.createElement('div');
             box.className = 'cine-sunfall-text';
             const title = document.createElement('div');
@@ -776,6 +812,15 @@ export function playSunFallAnimation({ count = 1, name = 'Soleil' } = {}) {
             overlay.append(box);
         },
         draw(ctx, t) {
+            if (art) {
+                // le canvas a été redimensionné après le premier réglage : le lissage est à remettre à chaque image
+                ctx.imageSmoothingEnabled = false;
+                const [aw, ah] = art.size;
+                const fi = Math.min(art.frames - 1, Math.floor(t * ART_FPS));
+                ctx.drawImage(art.img, fi * aw, 0, aw, ah, 0, 0, aw, ah);
+                drawCounter(ctx, t, aw);
+                return;
+            }
             const darkK = n / 9;
             const horizon = Math.round(H * 0.78);
             // ciel : crépuscule doré → nuit selon le nombre de soleils tombés
@@ -839,14 +884,7 @@ export function playSunFallAnimation({ count = 1, name = 'Soleil' } = {}) {
                 px(ctx, PAL.ground, sx - 30, horizon + 3, 60, H - horizon);
             }
             archer(ctx, ax, ay, t < 2.8 ? 1 : 0, t);
-            // compteur : neuf soleils, les tombés sont éteints
-            const gap = 9;
-            const cx0 = Math.round(W / 2 - (8 * gap) / 2);
-            for (let i = 0; i < 9; i++) {
-                const fallen = i < n - 1 || (i === n - 1 && t >= 5.0);
-                disc(ctx, fallen ? '#2a2a50' : PAL.sun, cx0 + i * gap, 6, 2);
-                if (!fallen) px(ctx, PAL.sunHi, cx0 + i * gap - 1, 5, 1, 1);
-            }
+            drawCounter(ctx, t, W);
             // assombrissement progressif
             ctx.globalAlpha = 0.35 * darkK;
             px(ctx, PAL.ink, 0, 0, W, H);
@@ -1538,18 +1576,20 @@ const PRO_SCENES = [
 
 // Tableaux animés générés avec Pixel Lab (tools/gen-prologue.mjs) : boucles, une planche par tableau et orientation, dans
 // sprites/<dossier>/. Chargement tolérant : si l'index ou une planche manque, la scène dessinée en code reste le repli.
-async function loadSceneArt(dir, count, portrait) {
+// `only` : numéros de tableaux (à partir de 1) à charger seuls, au lieu des `count` premiers.
+async function loadSceneArt(dir, count, portrait, only = null) {
     try {
         const base = new URL(`./sprites/${dir}/`, import.meta.url);
         const index = await (await fetch(new URL('index.json', base))).json();
         const o = portrait ? 'port' : 'land';
-        const scenes = await Promise.all(Array.from({ length: count }, (_, i) => new Promise(res => {
-            const meta = index[`${i + 1}-${o}`];
+        const numbers = only || Array.from({ length: count }, (_, i) => i + 1);
+        const scenes = await Promise.all(numbers.map(n => new Promise(res => {
+            const meta = index[`${n}-${o}`];
             if (!meta) return res(null);
             const img = new Image();
             img.onload = () => res({ img, ...meta });
             img.onerror = () => res(null);
-            img.src = new URL(`${i + 1}-${o}.png`, base).href;
+            img.src = new URL(`${n}-${o}.png`, base).href;
         })));
         return scenes.every(Boolean) ? scenes : null;
     } catch (e) {

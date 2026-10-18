@@ -63,7 +63,22 @@ const LAUNCHER = [
     sceneLand: 'epic wide title screen key art: the divine archer Hou Yi, a handsome determined Chinese hero with black hair in a topknot, teal robe with gold trim, golden bow and quiver on his back, standing fully visible on the right third of the frame, three quarter view facing left, the left half of the image is empty misty teal bamboo forest and soft golden light for the title text, warm golden sunbeams from the top right, floating golden pollen and falling leaves, teal and gold palette',
     motion: 'seamless loop: his robe and hair sway gently in the breeze, he breathes slowly, golden sunbeams drift, leaves and golden pollen float softly, mist moves; the camera stays still' }
 ];
-const SETS = { prologue: PROLOGUE, ending: ENDING, fengmeng: FENGMENG, launcher: LAUNCHER };
+// Chute des neuf soleils (une scène par soleil, dans l'ordre des régions : 1 rizières, 2 volcan, 3 gobi, 4 fleuve, 5 bambous,
+// 6 tonnerre, 7 fauves, 8 mer, 9 fusang). Le ciel s'assombrit de scène en scène ; Hou Yi tire depuis la gauche.
+const SUN_HERO = 'the divine archer Hou Yi seen from behind in the lower left drawing a golden bow with a red scarf blowing in the wind, aiming up at the giant sun';
+const SUN_MOTION = 'Hou Yi releases the golden arrow, the arrow streaks across the sky and strikes the sun, the sun cracks and bursts, turns into red embers and falls down behind the horizon leaving a trail of sparks, the sky darkens';
+const SUNFALL = [
+  { n: 1, scene: `${SUN_HERO}; the Burning Sun above scorched flooded rice paddies and dried yellow rice, huge blazing orange sun, golden-red dusk sky` },
+  { n: 2, scene: `${SUN_HERO}; the Magma Sun above a volcano with glowing lava rivers, a sun made of molten magma, deep red-orange sky beginning to darken` },
+  { n: 3, scene: `${SUN_HERO}; the Mirage Sun above desert dunes with shimmering heat haze, a pale sun with ghostly duplicate suns, amber and violet dusk sky` },
+  { n: 4, scene: `${SUN_HERO}; the Dried-Water Sun above a cracked dry riverbed with dead fish, a pale yellow sun, purple dusk sky` },
+  { n: 5, scene: `${SUN_HERO}; the Ash Sun above a burnt bamboo forest with falling grey ash, a smoky grey-orange sun, dim twilight sky` },
+  { n: 6, scene: `${SUN_HERO}; the Storm Sun among dark purple thunderclouds and lightning above a rocky plateau, a crackling electric sun, dark stormy twilight` },
+  { n: 7, scene: `${SUN_HERO}; the Mad Beasts Sun above a savanna with burning grass and wolf silhouettes, an amber sun, deep blue dusk with first stars` },
+  { n: 8, scene: `${SUN_HERO}; the Tides Sun low above a boiling coastal sea with rising steam, a red sun reflected on the water, dark blue night sky with stars` },
+  { n: 9, scene: `${SUN_HERO}; the last frightened Coward Sun trembling behind the branches of the giant sacred Fusang tree, a small pale sun, deep night sky full of stars and a large bright moon` }
+].map(s => ({ ...s, motion: SUN_MOTION }));
+const SETS = { prologue: PROLOGUE, ending: ENDING, fengmeng: FENGMENG, launcher: LAUNCHER, sunfall: SUNFALL };
 const SET = String(args.set || 'prologue');
 const SCENES = SETS[SET];
 const OUT = join(GAME, 'sprites', SET);
