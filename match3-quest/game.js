@@ -1220,6 +1220,27 @@ function _animateCounter(id, from, to) {
 // Animation d'attaque jouée sur le portrait : les images défilent puis le portrait de face revient.
 const attackPlaying = new Set();
 export const ATTACK_FRAME_MS = 90;
+// Flèche qui vole du portrait de Hou Yi à celui de l'ennemi (élément posé sur la page, retiré à l'arrivée).
+function shootArrow(fromEl, toEl){
+    if(!fromEl || !toEl) return;
+    const center = el => { const r = el.getBoundingClientRect(); const w = r.width ? Math.min(64, r.width) : 64; return { x: r.right - 4 - w / 2, y: r.top + 2 + w * 0.5 }; };
+    const a = center(fromEl), b = center(toEl);
+    const arrow = document.createElement('div');
+    arrow.className = 'hero-arrow';
+    arrow.style.left = `${a.x}px`;
+    arrow.style.top = `${a.y}px`;
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    arrow.style.setProperty('--angle', `${angle}rad`);
+    document.body.appendChild(arrow);
+    const dx = b.x - a.x, dy = b.y - a.y, dur = 360 * animationFactor();
+    const anim = arrow.animate ? arrow.animate([
+        { transform: `translate(0px, 0px) rotate(${angle}rad)`, opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(${angle}rad)`, opacity: 1 }
+    ], { duration: dur, easing: 'ease-in', fill: 'forwards' }) : null;
+    setTimeout(() => arrow.remove(), dur + 60);
+    if(anim) anim.onfinish = () => arrow.remove();
+}
+
 export function playFighterAttack(isPlayer){
     if(document.body.classList.contains('fx-low')) return;
     const id = isPlayer ? 'player-stats' : 'enemy-stats';
@@ -1230,11 +1251,13 @@ export function playFighterAttack(isPlayer){
     attackPlaying.add(id);
     const ms = (isPlayer ? 130 : ATTACK_FRAME_MS) * animationFactor();
     frames.forEach((uri, i) => setTimeout(() => el.style.setProperty('--portrait', `url("${uri}")`), i * ms));
+    if(isPlayer) setTimeout(() => shootArrow(el, document.getElementById('enemy-stats')), (frames.length - 1) * ms);   // la flèche part quand la corde est lâchée
     setTimeout(() => { attackPlaying.delete(id); updateFighterPortraits(); }, frames.length * ms);
 }
 
 function updateFighterPortraits(){
-    // Vue de face : la vue de profil dérivée (corps et visage resserrés) écrasait les personnages en largeur à cette taille.
+    // Hou Yi est tourné vers la droite (vers l'ennemi) ; l'ennemi est tourné vers la gauche : la vue de profil dérivée des sprites
+    // vectoriels écrasait les personnages en largeur, mais les sprites GBA ont de vraies vues de profil.
     const set = (id, svg) => {
         const el = document.getElementById(id);
         if(!el || attackPlaying.has(id)) return;
@@ -1242,9 +1265,9 @@ function updateFighterPortraits(){
         if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
         else el.style.removeProperty('--portrait');
     };
-    set('player-stats', gbaSprite(player.class, 'front') || heroSprite(player.class) || heroSprite('assassin'));
+    set('player-stats', gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin'));
     const eKey = enemy.spriteKey || enemy.id;
-    const terrainSprite = gbaSprite(eKey, 'front') || gbaSprite(enemy.templateId, 'front');
+    const terrainSprite = gbaSprite(eKey, 'left') || gbaSprite(enemy.templateId, 'left');   // l'ennemi regarde vers Hou Yi (à gauche)
     set('enemy-stats', terrainSprite || enemySprite(eKey, enemy.templateId, enemy.biome));
 }
 
@@ -1636,6 +1659,8 @@ function foxIconHtml(){
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
+    // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
+    if(damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
     const fx = spellFxHtml(title);   // mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}">${fx || svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;

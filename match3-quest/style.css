@@ -3066,6 +3066,15 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
     #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 52px; }
 }
 
+/* Flèche de Hou Yi vers l'ennemi (game.js : shootArrow) : pixel art 20×5 */
+.hero-arrow {
+    position: fixed; z-index: 3000; width: 40px; height: 10px; margin: -5px 0 0 -20px; pointer-events: none;
+    image-rendering: pixelated; transform-origin: 50% 50%; transform: rotate(var(--angle, 0rad));
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 5' shape-rendering='crispEdges'%3E%3Crect x='3' y='2' width='13' height='1' fill='%238a5a2b'/%3E%3Crect x='0' y='0' width='3' height='1' fill='%23ffffff'/%3E%3Crect x='1' y='1' width='3' height='1' fill='%23e8e0cc'/%3E%3Crect x='0' y='4' width='3' height='1' fill='%23ffffff'/%3E%3Crect x='1' y='3' width='3' height='1' fill='%23e8e0cc'/%3E%3Crect x='16' y='1' width='2' height='3' fill='%23ffd24a'/%3E%3Crect x='18' y='2' width='2' height='1' fill='%23ffd24a'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    filter: drop-shadow(0 0 3px rgba(255, 210, 74, 0.8));
+}
+body.fx-low .hero-arrow { display: none; }
+
 /* Sorts multi-mana : barre dégradée aux deux couleurs sous le bouton, « + » discret entre les coûts */
 .spell-multi { position: relative; }
 .spell-multi::after {

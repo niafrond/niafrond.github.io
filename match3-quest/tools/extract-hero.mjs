@@ -4,7 +4,7 @@
  * (planche dessinée par l'utilisateur) et les écrit dans sprites/generated.js (clé « archer »).
  * Les classes s'en déduisent ensuite par changement de couleur : node tools/recolor-sprites.mjs
  *
- * Les 3 images de tir à l'arc deviennent `attack_0..2` (jouées sur le portrait de combat).
+ * Les 4 images de tir à l'arc (de profil, vers la droite) deviennent `attack_0..3` (jouées sur le portrait de combat).
  *
  * Usage : node tools/extract-hero.mjs [--height=30]
  */
@@ -51,10 +51,10 @@ function analyse([x0, x1], Y0, Y1) {
 }
 
 /** Réduit une image analysée à 32×32 avec l'échelle donnée (pieds en bas, centrée sur la boîte). */
-function render(a, scale) {
+function render(a, scale, ox0 = null) {
   const { x0, Y0, w, lab, best, minx, miny, bw, bh } = a;
   const ow = Math.round(bw * scale), oh = Math.round(bh * scale), out = new PNG({ width: SIZE, height: SIZE });
-  const ox = Math.floor((SIZE - ow) / 2), oy = SIZE - 1 - oh;
+  const ox = ox0 ?? Math.floor((SIZE - ow) / 2), oy = SIZE - 1 - oh;
   // Réduction par moyenne de boîte ; pixel opaque si > 40 % de la boîte appartient au sprite
   for (let y = 0; y < oh; y++) for (let x = 0; x < ow; x++) {
     const sx0 = minx + x / scale, sx1 = minx + (x + 1) / scale, sy0 = miny + y / scale, sy1 = miny + (y + 1) / scale;
@@ -83,10 +83,15 @@ const WALK = {
   left: [[694, 763], [772, 834], [844, 905]],
   right: [[991, 1051], [1064, 1125], [1142, 1207]]
 };
-// Tir à l'arc (de face, 3 images ; la flèche isolée sous la colonne est ignorée) : même échelle pour les 3 images
+// Tir à l'arc (de profil, tourné vers la droite : c'est le sens du combat), 4 images : encoche, bandé, plein bandé, lâché.
+// La flèche isolée de la dernière image est ignorée (plus petite composante) : elle est animée en CSS jusqu'à l'ennemi.
+// Même échelle et même ancrage horizontal pour les 4 images (l'arc qui s'étend ne fait pas bouger le corps).
 {
-  const an = [[614, 714], [718, 806], [812, 906]].map(([a, b]) => analyse([150, 310], a, b)), scale = H / Math.max(...an.map(a => a.bh));
-  an.forEach((a, i) => put(`attack_${i}`, render(a, scale)));
+  const an = [[614, 700], [700, 786], [794, 880], [880, 966]].map(([a, b]) => analyse([1010, 1180], a, b));
+  const scale = Math.min(H / Math.max(...an.map(a => a.bh)), (SIZE - 2) / (Math.max(...an.map(a => a.minx + a.bw)) - Math.min(...an.map(a => a.minx))));
+  const left = Math.min(...an.map(a => a.minx)), width = (Math.max(...an.map(a => a.minx + a.bw)) - left) * scale;
+  const base = Math.floor((SIZE - width) / 2);
+  an.forEach((a, i) => put(`attack_${i}`, render(a, scale, base + Math.round((a.minx - left) * scale))));
 }
 for (const [dir, cells] of Object.entries(WALK)) {
   const an = cells.map(c => analyse(c, WY0, WY1)), scale = H / Math.max(...an.map(a => a.bh));
