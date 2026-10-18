@@ -324,6 +324,24 @@
     "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
   },
   {
+    "id": "mud_toad",
+    "name": "Crapaud de Boue",
+    "race": "Bête",
+
+    "title": "Chanteur des Marais",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.15, "defMult": 1.2 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["green", "blue", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.08, "green": 0.35, "yellow": 0.08, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
     "id": "ice_witch",
     "name": "Dame des Neiges",
     "race": "Esprit",

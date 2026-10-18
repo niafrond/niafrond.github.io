@@ -128,7 +128,7 @@ export default {
         grass: {
             rate: 0.1, safeSteps: 4,
             table: [
-                { templateId: 'fungal_horror', name: 'Crapaud de boue', weight: 5, offset: -1 },
+                { templateId: 'mud_toad', name: 'Crapaud de boue', weight: 5, offset: -1 },
                 { templateId: 'goblin_saboteur', name: 'Renardeau des roseaux', weight: 4, offset: 0 },
                 { templateId: 'bone_reaver', name: 'Épouvantail raide', weight: 2, offset: 0 },
                 { templateId: 'forest_guardian', name: 'Esprit des diguettes', weight: 1, offset: 1 }
@@ -153,14 +153,14 @@ export default {
         enemies: [
             { id: 'rizieres_warden', x: 45, y: 12, templateId: 'forest_guardian', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 4 } },
             { id: 'rizieres_marsh_imp', x: 28, y: 18, templateId: 'goblin_saboteur', name: 'Démon des roseaux', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'rizieres_w_toad', x: 8, y: 7, templateId: 'fungal_horror', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
+            { id: 'rizieres_w_toad', x: 8, y: 7, templateId: 'mud_toad', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
             { id: 'rizieres_w_lingzhi', x: 23, y: 9, templateId: 'fungal_horror', name: 'Lingzhi des diguettes', kind: 'sentinel', offset: 0 },
             { id: 'rizieres_w_spirit', x: 21, y: 12, templateId: 'forest_guardian', name: 'Esprit des diguettes', kind: 'patrol', patrol: [[21, 12], [21, 15]], offset: 0 },
             { id: 'rizieres_w_waterthief', x: 5, y: 18, templateId: 'goblin_saboteur', name: 'Voleur d\'eau', kind: 'patrol', patrol: [[5, 18], [12, 18]], offset: 0 },
             { id: 'crow_a', x: 25, y: 6, templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
             { id: 'crow_b', x: 31, y: 6, templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
             { id: 'rizieres_mill_ghost', x: 34, y: 7, templateId: 'bone_reaver', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'rizieres_wild_patrol_toads', x: 42, y: 8, templateId: 'fungal_horror', name: 'Crapauds en file', kind: 'patrol', patrol: [[42, 8], [42, 16]], offset: -1 },
+            { id: 'rizieres_wild_patrol_toads', x: 42, y: 8, templateId: 'mud_toad', name: 'Crapauds en file', kind: 'patrol', patrol: [[42, 8], [42, 16]], offset: -1 },
             { id: 'rizieres_wild_patrol_imp', x: 10, y: 5, templateId: 'goblin_saboteur', name: 'Petit jing des diguettes', kind: 'patrol', patrol: [[10, 5], [16, 5]], offset: 0 },
             { id: 'rizieres_wild_scarecrow', x: 44, y: 17, templateId: 'forest_guardian', name: 'Épouvantail possédé', kind: 'sentinel', offset: 0 }
         ],
@@ -327,7 +327,7 @@ export default {
         grass: {
             rate: 0.1, safeSteps: 4,
             table: [
-                { templateId: 'fungal_horror', name: 'Crapaud de boue', weight: 5, offset: -1 },
+                { templateId: 'mud_toad', name: 'Crapaud de boue', weight: 5, offset: -1 },
                 { templateId: 'goblin_saboteur', name: 'Renardeau des roseaux', weight: 4, offset: 0 },
                 { templateId: 'forest_guardian', name: 'Esprit des diguettes', weight: 1, offset: 1 }
             ]
