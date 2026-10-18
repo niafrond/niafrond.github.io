@@ -3226,6 +3226,12 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .rage-bar-container.ultimate-ready { cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; }
 .rage-bar-container.ultimate-ready .rage-text { letter-spacing: 0.15em; color: #fff3c4; }
 .rage-bar-container.ultimate-ready:hover, .rage-bar-container.ultimate-ready:focus-visible { filter: brightness(1.2); }
+/* Mini-barre de mana de l'ultime, collée sous la jauge : un tronçon par couleur requise (vide = couleur manquante). */
+.ult-mana-bar { display: flex; gap: 2px; height: 5px; margin-top: 1px; pointer-events: none; }
+.ult-mana-seg { position: relative; min-width: 8px; border-radius: 2px; background: rgba(255,255,255,0.12); outline: 1px dashed var(--seg-c); outline-offset: -1px; overflow: hidden; }
+.ult-mana-seg::before { content: ''; position: absolute; inset: 0; width: var(--seg-fill); background: var(--seg-c); }
+.ult-mana-seg.ok { outline: none; }
+.spell-tooltip-line .ult-cost.missing { color: #ff8a7a; font-weight: bold; }
 /* Mobile / tactile : la barre devient une vraie cible tactile (≥ 44 px), sans zoom au double-tap ni surbrillance native. */
 .rage-bar-container.ultimate-ready { touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 .rage-bar-container.ultimate-ready:active { transform: scale(0.97); }
