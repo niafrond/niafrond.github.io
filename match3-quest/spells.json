@@ -913,8 +913,8 @@
       },
       "minLevel": 1,
       "effect": "scaleWithBlue",
-      "baseDmg": 5,
-      "description": "Inflige 5 dégâts +1 pour chaque 3 mana bleu possédés"
+      "baseDmg": 10,
+      "description": "Inflige 10 dégâts +1 pour chaque 3 mana bleu possédés"
     },
     {
       "id": "wildMana",
@@ -1067,8 +1067,8 @@
       },
       "minLevel": 8,
       "effect": "fireballArea",
-      "dmg": 15,
-      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 15 dégâts"
+      "dmg": 20,
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 20 dégâts"
     },
     {
       "id": "mirrorShield",
@@ -1132,9 +1132,9 @@
         "blue": 5
       },
       "minLevel": 1,
-      "dmg": 3,
+      "dmg": 6,
       "effect": "noEndTurn",
-      "description": "3 dégâts et ne termine pas le tour"
+      "description": "6 dégâts et ne termine pas le tour"
     },
     {
       "id": "swiftStrike",
@@ -1146,7 +1146,7 @@
       },
       "minLevel": 3,
       "effect": "yellowToPurple",
-      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 1 dégât par gâteau converti"
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 2 dégâts par gâteau converti"
     },
     {
       "id": "confuse",
@@ -1261,8 +1261,8 @@
       },
       "minLevel": 3,
       "effect": "defenseAttack",
-      "baseDmg": 1,
-      "description": "1 dégât +1 par 5 points de défense. Retire les statuts négatifs"
+      "baseDmg": 5,
+      "description": "5 dégâts +1 par 3 points de défense. Retire les statuts négatifs"
     },
     {
       "id": "focus",
@@ -1414,7 +1414,7 @@
       },
       "minLevel": 3,
       "effect": "yellowDamage",
-      "description": "Inflige 1 dégât par gâteau de lune jaune, puis détruit les jaunes"
+      "description": "Inflige 2 dégâts par gâteau de lune jaune, puis détruit les jaunes"
     },
     {
       "id": "throwAxe",
@@ -1426,8 +1426,8 @@
       },
       "minLevel": 5,
       "effect": "skullBonus",
-      "baseDmg": 4,
-      "description": "4 dégâts +1 par soleil présent"
+      "baseDmg": 12,
+      "description": "12 dégâts +2 par soleil présent"
     },
     {
       "id": "bloodlust",
@@ -1536,8 +1536,8 @@
       },
       "minLevel": 1,
       "effect": "scaleWithBlue",
-      "baseDmg": 5,
-      "description": "Inflige 5 dégâts +1 pour chaque 3 mana bleu possédés"
+      "baseDmg": 10,
+      "description": "Inflige 10 dégâts +1 pour chaque 3 mana bleu possédés"
     },
     {
       "id": "wildMana",
@@ -1690,8 +1690,8 @@
       },
       "minLevel": 8,
       "effect": "fireballArea",
-      "dmg": 15,
-      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 15 dégâts"
+      "dmg": 20,
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 20 dégâts"
     },
     {
       "id": "mirrorShield",
@@ -1740,9 +1740,9 @@
         "blue": 5
       },
       "minLevel": 1,
-      "dmg": 3,
+      "dmg": 6,
       "effect": "noEndTurn",
-      "description": "3 dégâts et ne termine pas le tour"
+      "description": "6 dégâts et ne termine pas le tour"
     },
     {
       "id": "swiftStrike",
@@ -1754,7 +1754,7 @@
       },
       "minLevel": 3,
       "effect": "yellowToPurple",
-      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 1 dégât par gâteau converti"
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 2 dégâts par gâteau converti"
     },
     {
       "id": "confuse",
@@ -1840,8 +1840,8 @@
       },
       "minLevel": 3,
       "effect": "defenseAttack",
-      "baseDmg": 1,
-      "description": "1 dégât +1 par 5 points de défense. Retire les statuts négatifs"
+      "baseDmg": 5,
+      "description": "5 dégâts +1 par 3 points de défense. Retire les statuts négatifs"
     },
     {
       "id": "focus",
@@ -1976,7 +1976,7 @@
       },
       "minLevel": 3,
       "effect": "yellowDamage",
-      "description": "Inflige 1 dégât par gâteau de lune jaune, puis détruit les jaunes"
+      "description": "Inflige 2 dégâts par gâteau de lune jaune, puis détruit les jaunes"
     },
     {
       "id": "throwAxe",
@@ -1988,8 +1988,8 @@
       },
       "minLevel": 5,
       "effect": "skullBonus",
-      "baseDmg": 4,
-      "description": "4 dégâts +1 par soleil présent"
+      "baseDmg": 12,
+      "description": "12 dégâts +2 par soleil présent"
     },
     {
       "id": "bloodlust",

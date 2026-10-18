@@ -563,7 +563,7 @@ function applySwiftStrike(spell) {
             count++;
         }
     }
-    const dmg = count;
+    const dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: "TIR RAPIDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
@@ -652,7 +652,7 @@ function applyDefensiveWall(spell) {
 
 function applyShieldBash(spell) {
     const defense = player.defense || 0;
-    const bonusDmg = Math.floor(defense / 5);
+    const bonusDmg = Math.floor(defense / 3);
     const totalDmg = spell.baseDmg + bonusDmg;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     // Retirer les statuts négatifs
@@ -824,7 +824,7 @@ function applyCleave(spell) {
         }
     }
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
-    const dmg = count;
+    const dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: 'axe', title: "ENTAILLE DE LA HORDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
@@ -839,10 +839,10 @@ function applyThrowAxe(spell) {
             skullCount++;
         }
     }
-    const totalDmg = spell.baseDmg + skullCount;
+    const totalDmg = spell.baseDmg + skullCount * 2;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: 'axe', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} crânes) !`);
+    log(`Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + 2 × ${skullCount} crânes) !`);
     return true;
 }
 
