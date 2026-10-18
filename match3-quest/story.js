@@ -625,7 +625,7 @@ const BASE_SCREENS = {
               idle: [
                   "Au Gobi, on apprend vite à douter de ses yeux. Un mirage vous fait des signes, vous sourit, vous promet de l'eau. Il ment comme les plus beaux.",
                   "Les anciens disent : « le vrai soleil ne projette pas d'ombre ». Les anciens se trompent, ou ils parlent du ciel. Ici, sur terre, c'est l'inverse : tout ce qui est vrai pèse sur le sable, donc a une ombre.",
-                  "Un mirage, lui, flotte : il scintille, sans ombre ni nom. Cherchez le soleil qui projette une ombre à ses pieds et porte un niveau au-dessus de sa tête : c'est le vrai."
+                  "Un mirage, lui, flotte : il scintille, sans ombre ni nom. Cherchez le soleil qui projette une ombre à ses pieds et porte un nom au-dessus de sa tête : c'est le vrai."
               ],
               talk: [
                   { whenDone: 'sq_oasis', lines: [
@@ -1241,7 +1241,7 @@ const BASE_QUESTS = [
             "Hou Yi ! Que les ancêtres soient loués. Vous savez l'état du monde : dix soleils, fils de Di Jun, brûlent le ciel depuis trois lunes. Ma vieille tête ne se souvient d'aucun été pareil.",
             "L'empereur Yao m'envoie son décret, scellé de jade : « Que l'archer Hou Yi abatte neuf soleils, et qu'il en épargne un seul, afin que la Terre garde un jour. » Il vous le demande, il ne vous l'ordonne pas.",
             "Le premier se tient sur le tertre du temple des moissons, à l'est, au bout de nos rizières. Mais prenez garde : votre disciple Fengmeng rôde sur la digue, et il a dans les yeux quelque chose que je n'aime pas. Il veut vous éprouver.",
-            "Entraînez-vous sur les maraudeurs de nos champs si vous le jugez nécessaire. (Niveau 6 conseillé)"
+            "Entraînez-vous sur les maraudeurs de nos champs si vous le jugez nécessaire."
         ],
         hint: [
             "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
@@ -1261,7 +1261,7 @@ const BASE_QUESTS = [
         giver: 'priestess_yan', autoStart: true, turnIn: null, requires: ['q_sun_1'],
         objectives: [{ type: 'kill', target: 'sun_6', text: 'Abattre le Soleil de Magma (sanctuaire des Gorges du Volcan, au-delà du défilé)' }],
         offer: [
-            "Deuxième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé. (Niveau 9 conseillé)",
+            "Deuxième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé.",
             "Une silhouette connue vous attend à l'entrée des gorges, l'arc déjà tendu…"
         ],
         hint: [
@@ -1269,7 +1269,7 @@ const BASE_QUESTS = [
             "Les pixiu de magma gardent les veines de cinabre : prudence, ils chargent la tête baissée.",
             "Trois chemins mènent au soleil. Risque : faites taire les deux forgerons de magma, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : sauvez la cendre du phénix pour Yan, et le vieil attiseur du temple du feu ordonnera aux forgerons de poser leurs soufflets.",
-            "Découverte : les veines de cinabre et la braise d'Ember affaiblissent le soleil d'un niveau chacune.",
+            "Découverte : les veines de cinabre et la braise d'Ember affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des forgerons éteints ou endormis, un attiseur allié, un soleil moins ardent."
         ],
         complete: [
@@ -1286,11 +1286,11 @@ const BASE_QUESTS = [
         giver: 'guide_dawa', autoStart: true, turnIn: null, requires: ['q_sun_6'],
         objectives: [{ type: 'kill', target: 'sun_4', text: 'Trouver et abattre le vrai Soleil des Mirages parmi ses doubles (Désert de Gobi)' }],
         offer: [
-            "Troisième soleil : celui des Mirages. Il s'est dédoublé, triplé, partout à la fois, et les caravanes marchent en rond jusqu'à mourir de soif. Le vrai est caché parmi ses doubles. (Niveau 11 conseillé)",
+            "Troisième soleil : celui des Mirages. Il s'est dédoublé, triplé, partout à la fois, et les caravanes marchent en rond jusqu'à mourir de soif. Le vrai est caché parmi ses doubles.",
             "Le guide Dawa saura vous dire comment faire la différence."
         ],
         hint: [
-            "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Cherchez celui qui projette une ombre au sol et porte un niveau au-dessus de sa tête.",
+            "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Cherchez celui qui projette une ombre au sol et porte un nom au-dessus de sa tête.",
             "Un mirage scintille, comme l'air chaud : il n'a ni ombre, ni nom. Si vous hésitez, touchez-le : au pire, il se défait entre vos doigts.",
             "Régler la caravane de l'oasis et trouver la carte qui ne ment pas affaiblira le vrai soleil."
         ],
@@ -1308,7 +1308,7 @@ const BASE_QUESTS = [
         giver: 'ferryman_gu', autoStart: true, turnIn: null, requires: ['q_sun_4'],
         objectives: [{ type: 'kill', target: 'sun_2', text: 'Abattre le Soleil des Eaux Taries (sanctuaire du Lit du Fleuve Jaune, au sud-est)' }],
         offer: [
-            "Quatrième soleil : celui des Eaux Taries a bu le Fleuve Jaune jusqu'au dernier filet. Son sanctuaire, un banc de rochers fendus, se dresse au sud-est du lit asséché. (Niveau 17 conseillé)",
+            "Quatrième soleil : celui des Eaux Taries a bu le Fleuve Jaune jusqu'au dernier filet. Son sanctuaire, un banc de rochers fendus, se dresse au sud-est du lit asséché.",
             "Le passeur Gu et la tisserande Mei connaissent ces rives mieux que quiconque."
         ],
         hint: [
@@ -1316,7 +1316,7 @@ const BASE_QUESTS = [
             "Quand l'eau reviendra, ma barque sera la première à flotter. Je compte sur vous, seigneur archer.",
             "Trois chemins mènent au soleil. Risque : abattez les deux noyés-gardes, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : apaisez les noyés de Mei, et leur doyen parlera aux gardes au pied des roches. Ils s'écartent sans combat.",
-            "Découverte : le serpent du gué et les noyés de Mei affaiblissent le soleil d'un niveau chacun.",
+            "Découverte : le serpent du gué et les noyés de Mei affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des gardes renvoyés à la boue ou rendus au courant, un doyen allié, un soleil moins ardent."
         ],
         complete: [
@@ -1333,7 +1333,7 @@ const BASE_QUESTS = [
         giver: 'monk_zhen', autoStart: true, turnIn: null, requires: ['q_sun_2'],
         objectives: [{ type: 'kill', target: 'sun_3', text: 'Abattre le Soleil de Cendres (sanctuaire de la Forêt de Bambous Calcinée, au nord-est)' }],
         offer: [
-            "Cinquième soleil : celui de Cendres a transformé une forêt entière en cierges noirs. Il se tient à l'est, près du temple brûlé, là où la cloche sonne encore toute seule. (Niveau 22 conseillé)",
+            "Cinquième soleil : celui de Cendres a transformé une forêt entière en cierges noirs. Il se tient à l'est, près du temple brûlé, là où la cloche sonne encore toute seule.",
             "Le moine Zhen veille sur ce qu'il reste du sanctuaire ; l'herboriste Xu cherche encore des plantes vivantes."
         ],
         hint: [
@@ -1341,7 +1341,7 @@ const BASE_QUESTS = [
             "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
             "Trois chemins mènent au soleil. Risque : éteignez les deux esprits de la cloche, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : rapportez la cloche à Zhen, et son âme parlera aux esprits. Ils se rendorment dans le bronze, sans combat.",
-            "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil d'un niveau chacun.",
+            "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des esprits éteints ou rendormis, une cloche qui parle, un soleil moins ardent."
         ],
         complete: [
@@ -1358,7 +1358,7 @@ const BASE_QUESTS = [
         giver: 'hermit_lei', autoStart: true, turnIn: null, requires: ['q_sun_3'],
         objectives: [{ type: 'kill', target: 'sun_5', text: 'Abattre le Soleil des Orages (sanctuaire des Monts du Tonnerre, au sud-est)' }],
         offer: [
-            "Sixième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs. (Niveau 27 conseillé)",
+            "Sixième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs.",
             "Le forgeron Tie ajustera vos flèches ; l'ermite Lei sait où frappe l'éclair."
         ],
         hint: [
@@ -1366,7 +1366,7 @@ const BASE_QUESTS = [
             "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
             "Trois chemins mènent au soleil. Risque : abattez les deux gardes de foudre, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera à ses frères de lâcher la cage, sans combat.",
-            "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil d'un niveau chacun.",
+            "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent."
         ],
         complete: [
@@ -1383,7 +1383,7 @@ const BASE_QUESTS = [
         giver: 'hunter_wu', autoStart: true, turnIn: null, requires: ['q_sun_5'],
         objectives: [{ type: 'kill', target: 'sun_7', text: 'Abattre la meute embrasée puis le Soleil des Bêtes Folles (sanctuaire de la Plaine des Fauves, au sud-est)' }],
         offer: [
-            "Septième soleil : celui des Bêtes Folles. Il a rendu fous tigres, sangliers et loups, qui ravagent la plaine en meutes embrasées. Le soleil se tient au milieu d'elles, protégé comme une reine. (Niveau 32 conseillé)",
+            "Septième soleil : celui des Bêtes Folles. Il a rendu fous tigres, sangliers et loups, qui ravagent la plaine en meutes embrasées. Le soleil se tient au milieu d'elles, protégé comme une reine.",
             "Le chasseur Wu connaît leurs habitudes."
         ],
         hint: [
@@ -1405,7 +1405,7 @@ const BASE_QUESTS = [
         giver: 'envoy_longwang', autoStart: true, turnIn: null, requires: ['q_sun_7'],
         objectives: [{ type: 'kill', target: 'sun_8', text: 'Abattre le Soleil des Marées (sanctuaire du Rivage de la Mer Orientale, au sud-est)' }],
         offer: [
-            "Huitième soleil : celui des Marées. Il a aspiré la mer et la tient en suspens au-dessus de la grève, comme une cloche d'eau prête à retomber. Il siège sur les rochers de l'est. (Niveau 37 conseillé)",
+            "Huitième soleil : celui des Marées. Il a aspiré la mer et la tient en suspens au-dessus de la grève, comme une cloche d'eau prête à retomber. Il siège sur les rochers de l'est.",
             "Un envoyé du Roi-Dragon attend de pouvoir vous remercier."
         ],
         hint: [
@@ -1413,7 +1413,7 @@ const BASE_QUESTS = [
             "Ses serpents de mer ont perdu leur eau et leur raison : méfiez-vous des cercles rouges.",
             "Trois chemins mènent au soleil. Risque : faites taire les deux gardes-marée, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : rendez sa perle au Roi-Dragon, et l'amiral Xie lèvera la consigne des gardes-marée, sans combat.",
-            "Découverte : les filets rendus et la perle du Roi-Dragon affaiblissent le soleil d'un niveau chacun.",
+            "Découverte : les filets rendus et la perle du Roi-Dragon affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des gardes abattus ou rentrés aux récifs, un amiral reconnaissant, un soleil moins ardent."
         ],
         complete: [
@@ -1430,7 +1430,7 @@ const BASE_QUESTS = [
         giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_8'],
         objectives: [{ type: 'kill', target: 'sun_9', text: 'Abattre le Soleil Lâche sans toucher au Dixième Soleil (sanctuaire de la Cime du Fusang, au nord-est)' }],
         offer: [
-            "Neuvième soleil : celui qu'on appelle le Lâche. Il s'est réfugié au pied du Fusang, à l'abri derrière son plus jeune frère, le Dixième, qui tremble de tout son corps. (Niveau 43 conseillé)",
+            "Neuvième soleil : celui qu'on appelle le Lâche. Il s'est réfugié au pied du Fusang, à l'abri derrière son plus jeune frère, le Dixième, qui tremble de tout son corps.",
             "Vous devez abattre le Neuvième sans toucher au Dixième : un seul tir mal placé, et la Terre n'aurait plus de jour."
         ],
         hint: [
@@ -1438,7 +1438,7 @@ const BASE_QUESTS = [
             "Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort.",
             "Trois chemins mènent au soleil. Risque : écartez les deux grues-lige, sans toucher au Dixième, pour leur expérience et un soleil entier.",
             "Relation : rapportez les plumes du nid, et Hegui, la sœur de la messagère, rappellera les grues-lige sans combat.",
-            "Découverte : le nid de la grue et le sceau des racines affaiblissent le soleil d'un niveau chacun.",
+            "Découverte : le nid de la grue et le sceau des racines affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des grues abattues ou posées sur la branche, une grue reconnaissante, un soleil moins ardent."
         ],
         complete: [
@@ -1456,7 +1456,7 @@ const BASE_QUESTS = [
         objectives: [{ type: 'kill', target: 'fengmeng_3b', text: 'Affronter Fengmeng au sommet du Pic de la Lune (duel en deux phases, à l\'est du Fusang)' }],
         offer: [
             "La grue blanche se pose sur la plus haute branche, un rouleau dans le bec : le sceau de la Reine Mère de l'Occident. « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir. »",
-            "« Elle vous attend au Pic de la Lune, à l'est de l'Arbre : c'est le seul endroit du monde où la Reine Mère peut encore veiller sur elle. Fengmeng la suit. Allez, archer : il ne vous reste que le temps d'un soupir. » (Niveau 40 conseillé)"
+            "« Elle vous attend au Pic de la Lune, à l'est de l'Arbre : c'est le seul endroit du monde où la Reine Mère peut encore veiller sur elle. Fengmeng la suit. Allez, archer : il ne vous reste que le temps d'un soupir. »"
         ],
         hint: [
             "Le Pic de la Lune est à l'est de l'Arbre. Fengmeng est un archer redoutable, et il connaît vos techniques par cœur : n'attendez pas de lui qu'il tire autrement que vous.",

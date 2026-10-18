@@ -22,7 +22,7 @@ describe('conseil anti try-hard (3 défaites d\'affilée contre le même boss)',
     test('niveau trop bas : conseille des ennemis plus faibles pour monter de niveau', () => {
         const tip = pickBossTip({ id: 'b', count: 3 }, { playerLevel: 3, bossLevel: 7, gold: 0 });
         expect(tip).toMatch(/ennemis plus faibles/);
-        expect(tip).toMatch(/niveau 7/);
+        expect(tip).not.toMatch(/niveau|\d/);
     });
     test('de l\'or en poche : conseille d\'acheter aux marchands ; le conseil change à chaque défaite suivante', () => {
         const ctx = { playerLevel: 10, bossLevel: 9, gold: 500, unspentPoints: 0 };
