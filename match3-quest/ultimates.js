@@ -14,6 +14,17 @@ export function getUltimateById(id){
     return ultimateSpells.find(spell => spell.id === id) || null;
 }
 
+// Ultimes que le joueur peut choisir : ceux de sa classe dont le niveau requis est atteint.
+export function getSelectableUltimates(entity){
+    return getUltimatesForClass(entity?.class).filter(spell => (entity?.level || 1) >= (spell.minLevel || 1));
+}
+
+// Le seul ultime accessible en combat : celui choisi dans l'onglet Sorts, à défaut le premier débloqué.
+export function getEquippedUltimate(entity){
+    const choices = getSelectableUltimates(entity);
+    return choices.find(spell => spell.id === entity?.equippedUltimate) || choices[0] || null;
+}
+
 // Rage gagnée pour `damage` PV perdus (au moins 1 par coup reçu).
 export function rageFromDamage(damage, maxHp){
     const dealt = Math.max(0, Math.floor(damage || 0));

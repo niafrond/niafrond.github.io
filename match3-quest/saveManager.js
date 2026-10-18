@@ -209,6 +209,7 @@ function sanitizePlayer(player) {
         torch: player.torch,
         abilities: player.abilities,
         activeSpells: ids(player.activeSpells),
+        equippedUltimate: player.equippedUltimate,
         weapons: ids(player.weapons),
         equippedWeapon: player.equippedWeapon?.id,
         equipment: compact({ leftHand: player.equipment?.leftHand, item: player.equipment?.item }),
