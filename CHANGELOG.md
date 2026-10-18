@@ -1,3 +1,9 @@
+## [2.83.0](https://github.com/niafrond/niafrond.github.io/compare/v2.82.0...v2.83.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** pilules de mana et de soin, noms d'ennemis cohérents ([#485](https://github.com/niafrond/niafrond.github.io/issues/485)) ([5995393](https://github.com/niafrond/niafrond.github.io/commit/599539350b71cdf0f497540e544d1f59eba1b7f3))
+
 ## [2.82.0](https://github.com/niafrond/niafrond.github.io/compare/v2.81.0...v2.82.0) (2026-10-18)
 
 ### Features
