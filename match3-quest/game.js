@@ -173,6 +173,36 @@ export function spellColorsOf(spell){
 
 // Coût en HTML : pastille + montant par couleur, « + » entre deux couleurs ; le sort multi-mana est marqué `spell-multi`.
 const MANA_HEX = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1c40f', purple: '#9b59b6' };
+// Coût d'un sort en { couleur: quantité } (forme unique pour `cost` nombre ou objet).
+function spellCostEntries(sp){
+    if(typeof sp?.cost === 'number') return [[sp.color, sp.cost]];
+    if(sp?.cost && typeof sp.cost === 'object') return Object.entries(sp.cost);
+    return [];
+}
+
+// Mini-barre collée à la jauge de rage : un tronçon par couleur de mana requise, rempli selon le mana possédé
+// (tronçon vide / pointillé = couleur manquante).
+function ultimateManaBarHtml(entity, spell){
+    const parts = spellCostEntries(spell).map(([color, need]) => {
+        const have = entity?.mana?.[color] || 0;
+        const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
+        const label = `${color} ${Math.min(have, need)}/${need}`;
+        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"></span>`;
+    });
+    return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
+}
+
+// Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en mana avec le mana possédé, effet.
+function getUltimateTooltipHtml(entity, spell){
+    const cost = spellCostEntries(spell).map(([color, need]) => {
+        const have = entity?.mana?.[color] || 0;
+        return `<span class="ult-cost${have >= need ? '' : ' missing'}"><span class="mana-dot mana-${color}"></span>${Math.min(have, need)}/${need}</span>`;
+    }).join(' ');
+    return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
+        + `<div class="spell-tooltip-line">Mana : ${cost}</div>`
+        + getSpellTooltipHtml(spell);
+}
+
 export function spellCostHtml(sp){
     if(typeof sp.cost === 'number') return `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
     if(sp.cost && typeof sp.cost === 'object'){
@@ -1312,6 +1342,7 @@ export function updateStats(){
     const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
 
     const playerDiv=document.getElementById('player-stats');
+    // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
     const equippedUltimate = getEquippedUltimate(player);
     const ultimateReady = !!equippedUltimate && isRageFull(player) && gameState.combatState === 'active';
@@ -1325,12 +1356,15 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat rage-stat" title="${ultimateReady ? `Ultime : ${equippedUltimate.name} — cliquez pour le lancer` : 'Rage : se charge quand vous subissez des dégâts'}">
+            ${equippedUltimate ? `
+            <div class="stat rage-stat">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <progress class="rage-bar" value="${Math.floor(player.rage || 0)}" max="${RAGE_MAX}"></progress>
                     <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}`}</span>
                 </div>
+                ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
+            ` : ''}
             <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
@@ -1342,16 +1376,19 @@ export function updateStats(){
                 </div>
             </div>`;
         
-        if(ultimateReady){
+        if(equippedUltimate){
             const rageBar = playerDiv.querySelector('.rage-bar-container');
-            rageBar.onclick = () => castUltimate(equippedUltimate.id);
-            rageBar.onkeydown = (event) => {
-                if(event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    castUltimate(equippedUltimate.id);
-                }
-            };
-            bindTooltip(rageBar, () => showSpellTooltip(rageBar, equippedUltimate), () => hideSpellTooltip());
+            if(ultimateReady){
+                rageBar.onclick = () => castUltimate(equippedUltimate.id);
+                rageBar.onkeydown = (event) => {
+                    if(event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        castUltimate(equippedUltimate.id);
+                    }
+                };
+            }
+            // Fiche (nom, mana requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
+            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = getUltimateTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
         }
 
         // Animer les compteurs si les valeurs ont changé
