@@ -1118,9 +1118,9 @@
       },
       "minLevel": 9,
       "effect": "statBuff",
-      "atkBuff": 20,
+      "atkBuff": 30,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 20 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
     }
   ],
   "assassinSpells": [
@@ -1220,9 +1220,9 @@
       },
       "minLevel": 4,
       "effect": "statBuff",
-      "defBuff": 20,
+      "defBuff": 25,
       "duration": 3,
-      "description": "Augmente la défense (chance de blocage) de 20 % pendant 3 tours"
+      "description": "Augmente la défense (chance de blocage) de 25 % pendant 3 tours"
     },
     {
       "id": "sharpenedBlade",
@@ -1234,9 +1234,9 @@
       },
       "minLevel": 8,
       "effect": "statBuff",
-      "atkBuff": 25,
+      "atkBuff": 35,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 25 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
     }
   ],
   "templarSpells": [
@@ -1309,9 +1309,9 @@
       },
       "minLevel": 8,
       "effect": "counterOnBlock",
-      "counterDmg": 5,
+      "counterDmg": 10,
       "duration": 4,
-      "description": "Inflige 5 dégâts lorsque tu bloques pendant 4 tours"
+      "description": "Inflige 10 dégâts lorsque tu bloques pendant 4 tours"
     },
     {
       "id": "reinforce",
@@ -1334,9 +1334,9 @@
       },
       "minLevel": 10,
       "effect": "massiveDefense",
-      "defenseBonus": 20,
+      "defenseBonus": 25,
       "duration": 3,
-      "description": "Augmente fortement la défense de 20 pendant 3 tours"
+      "description": "Augmente fortement la défense de 25 pendant 3 tours"
     },
     {
       "id": "divinePower",
@@ -1383,10 +1383,10 @@
       },
       "minLevel": 6,
       "effect": "statBuff",
-      "atkBuff": 15,
-      "defBuff": 15,
+      "atkBuff": 20,
+      "defBuff": 20,
       "duration": 3,
-      "description": "Augmente l'attaque et la défense de 15 % pendant 3 tours"
+      "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
     }
   ],
   "barbarianSpells": [
@@ -1440,8 +1440,8 @@
       },
       "minLevel": 5,
       "effect": "giveRedMana",
-      "manaGain": 12,
-      "description": "Donne +12 mana rouge"
+      "manaGain": 20,
+      "description": "Donne +20 mana rouge"
     },
     {
       "id": "summonTempest",
@@ -1479,9 +1479,9 @@
       },
       "minLevel": 11,
       "effect": "drainOnHit",
-      "manaDrain": 3,
+      "manaDrain": 5,
       "duration": 5,
-      "description": "Réduit le mana ennemi de 3 quand tu infliges des dégâts pendant 5 tours"
+      "description": "Réduit le mana ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
     },
     {
       "id": "deathbringer",
@@ -1888,9 +1888,9 @@
       },
       "minLevel": 8,
       "effect": "counterOnBlock",
-      "counterDmg": 5,
+      "counterDmg": 10,
       "duration": 4,
-      "description": "Inflige 5 dégâts lorsque tu bloques pendant 4 tours"
+      "description": "Inflige 10 dégâts lorsque tu bloques pendant 4 tours"
     },
     {
       "id": "reinforce",
@@ -1913,9 +1913,9 @@
       },
       "minLevel": 10,
       "effect": "massiveDefense",
-      "defenseBonus": 20,
+      "defenseBonus": 25,
       "duration": 3,
-      "description": "Augmente fortement la défense de 20 pendant 3 tours"
+      "description": "Augmente fortement la défense de 25 pendant 3 tours"
     },
     {
       "id": "divinePower",
@@ -2002,8 +2002,8 @@
       },
       "minLevel": 5,
       "effect": "giveRedMana",
-      "manaGain": 12,
-      "description": "Donne +12 mana rouge"
+      "manaGain": 20,
+      "description": "Donne +20 mana rouge"
     },
     {
       "id": "summonTempest",
@@ -2041,9 +2041,9 @@
       },
       "minLevel": 11,
       "effect": "drainOnHit",
-      "manaDrain": 3,
+      "manaDrain": 5,
       "duration": 5,
-      "description": "Réduit le mana ennemi de 3 quand tu infliges des dégâts pendant 5 tours"
+      "description": "Réduit le mana ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
     },
     {
       "id": "deathbringer",
@@ -2081,9 +2081,9 @@
       },
       "minLevel": 9,
       "effect": "statBuff",
-      "atkBuff": 20,
+      "atkBuff": 30,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 20 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
     },
     {
       "id": "shadowStep",
@@ -2094,9 +2094,9 @@
       },
       "minLevel": 4,
       "effect": "statBuff",
-      "defBuff": 20,
+      "defBuff": 25,
       "duration": 3,
-      "description": "Augmente la défense (chance de blocage) de 20 % pendant 3 tours"
+      "description": "Augmente la défense (chance de blocage) de 25 % pendant 3 tours"
     },
     {
       "id": "sharpenedBlade",
@@ -2108,9 +2108,9 @@
       },
       "minLevel": 8,
       "effect": "statBuff",
-      "atkBuff": 25,
+      "atkBuff": 35,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 25 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
     },
     {
       "id": "commandAura",
@@ -2122,10 +2122,10 @@
       },
       "minLevel": 6,
       "effect": "statBuff",
-      "atkBuff": 15,
-      "defBuff": 15,
+      "atkBuff": 20,
+      "defBuff": 20,
       "duration": 3,
-      "description": "Augmente l'attaque et la défense de 15 % pendant 3 tours"
+      "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
     },
     {
       "id": "warCry",
