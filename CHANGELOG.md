@@ -1,3 +1,9 @@
+## [2.91.1](https://github.com/niafrond/niafrond.github.io/compare/v2.91.0...v2.91.1) (2026-10-18)
+
+### Bug Fixes
+
+* **match3-quest:** retirer toute mention de niveau des dialogues et PNJ ([#496](https://github.com/niafrond/niafrond.github.io/issues/496)) ([fe528fb](https://github.com/niafrond/niafrond.github.io/commit/fe528fb9758a0c19f657f25d37d4c438cc7ff71a))
+
 ## [2.91.0](https://github.com/niafrond/niafrond.github.io/compare/v2.90.0...v2.91.0) (2026-10-18)
 
 ### Features
