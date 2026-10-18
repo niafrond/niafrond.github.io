@@ -100,11 +100,13 @@ export function flyManaSpend(isPlayer, cost) {
     } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
 
-// Mana reçu d'un sort ou d'un objet : les pilules partent du lanceur (ou de la zone `fromBoard` du plateau) vers son compteur.
-export function flyManaGain(isPlayer, gains, { fromBoard = false } = {}) {
+// Mana reçu d'un sort ou d'un objet : les pilules partent du lanceur (ou de la zone `fromBoard` du plateau,
+// ou de l'élément `fromId` — ex. le bouton d'objet) vers son compteur.
+export function flyManaGain(isPlayer, gains, { fromBoard = false, fromId = null } = {}) {
     try {
         const side = sideOf(isPlayer);
-        const source = fromBoard ? document.getElementById('board') : document.getElementById(`${side}-stats`);
+        const source = (fromId && document.getElementById(fromId))
+            || (fromBoard ? document.getElementById('board') : document.getElementById(`${side}-stats`));
         Object.entries(gains || {}).forEach(([color, amount]) => {
             if (amount > 0) flyDots(source, document.getElementById(`${side}-mana-${color}`), color, amount, { scatter: fromBoard });
         });

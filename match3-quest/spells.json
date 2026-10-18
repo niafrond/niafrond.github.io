@@ -693,11 +693,11 @@
         "red"
       ],
       "type": "board",
-      "cost": 8,
+      "cost": 4,
       "effect": "sweepRow",
       "minLevel": 2,
-      "dmgPerTile": 2,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 2 dégâts par case rouge"
+      "dmgPerTile": 3,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 3 dégâts par case rouge"
     },
     {
       "id": "frostCleave",
@@ -707,11 +707,11 @@
         "blue"
       ],
       "type": "board",
-      "cost": 8,
+      "cost": 4,
       "effect": "sweepCol",
       "minLevel": 2,
-      "dmgPerTile": 2,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 2 dégâts par case bleue"
+      "dmgPerTile": 3,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 3 dégâts par case bleue"
     },
     {
       "id": "galeSlash",
@@ -721,11 +721,11 @@
         "yellow"
       ],
       "type": "board",
-      "cost": 10,
+      "cost": 6,
       "effect": "sweepCol",
       "minLevel": 4,
-      "dmgPerTile": 3,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 3 dégâts par case jaune"
+      "dmgPerTile": 4,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 4 dégâts par case jaune"
     },
     {
       "id": "voidRift",
@@ -735,11 +735,11 @@
         "purple"
       ],
       "type": "board",
-      "cost": 12,
+      "cost": 7,
       "effect": "sweepRow",
       "minLevel": 6,
-      "dmgPerTile": 3,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 3 dégâts par case violette"
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 4 dégâts par case violette"
     },
     {
       "id": "crimsonPurge",
@@ -913,8 +913,8 @@
       },
       "minLevel": 1,
       "effect": "scaleWithBlue",
-      "baseDmg": 5,
-      "description": "Inflige 5 dégâts +1 pour chaque 3 mana bleu possédés"
+      "baseDmg": 10,
+      "description": "Inflige 10 dégâts +1 pour chaque 3 mana bleu possédés"
     },
     {
       "id": "wildMana",
@@ -1067,8 +1067,8 @@
       },
       "minLevel": 8,
       "effect": "fireballArea",
-      "dmg": 15,
-      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 15 dégâts"
+      "dmg": 20,
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 20 dégâts"
     },
     {
       "id": "mirrorShield",
@@ -1118,9 +1118,9 @@
       },
       "minLevel": 9,
       "effect": "statBuff",
-      "atkBuff": 20,
+      "atkBuff": 30,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 20 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
     }
   ],
   "assassinSpells": [
@@ -1132,9 +1132,9 @@
         "blue": 5
       },
       "minLevel": 1,
-      "dmg": 3,
+      "dmg": 6,
       "effect": "noEndTurn",
-      "description": "3 dégâts et ne termine pas le tour"
+      "description": "6 dégâts et ne termine pas le tour"
     },
     {
       "id": "swiftStrike",
@@ -1146,7 +1146,7 @@
       },
       "minLevel": 3,
       "effect": "yellowToPurple",
-      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 1 dégât par gâteau converti"
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 2 dégâts par gâteau converti"
     },
     {
       "id": "confuse",
@@ -1220,9 +1220,9 @@
       },
       "minLevel": 4,
       "effect": "statBuff",
-      "defBuff": 20,
+      "defBuff": 25,
       "duration": 3,
-      "description": "Augmente la défense (chance de blocage) de 20 % pendant 3 tours"
+      "description": "Augmente la défense (chance de blocage) de 25 % pendant 3 tours"
     },
     {
       "id": "sharpenedBlade",
@@ -1234,9 +1234,9 @@
       },
       "minLevel": 8,
       "effect": "statBuff",
-      "atkBuff": 25,
+      "atkBuff": 35,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 25 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
     }
   ],
   "templarSpells": [
@@ -1261,8 +1261,8 @@
       },
       "minLevel": 3,
       "effect": "defenseAttack",
-      "baseDmg": 1,
-      "description": "1 dégât +1 par 5 points de défense. Retire les statuts négatifs"
+      "baseDmg": 5,
+      "description": "5 dégâts +1 par 3 points de défense. Retire les statuts négatifs"
     },
     {
       "id": "focus",
@@ -1309,9 +1309,9 @@
       },
       "minLevel": 8,
       "effect": "counterOnBlock",
-      "counterDmg": 5,
+      "counterDmg": 10,
       "duration": 4,
-      "description": "Inflige 5 dégâts lorsque tu bloques pendant 4 tours"
+      "description": "Inflige 10 dégâts lorsque tu bloques pendant 4 tours"
     },
     {
       "id": "reinforce",
@@ -1334,9 +1334,9 @@
       },
       "minLevel": 10,
       "effect": "massiveDefense",
-      "defenseBonus": 20,
+      "defenseBonus": 25,
       "duration": 3,
-      "description": "Augmente fortement la défense de 20 pendant 3 tours"
+      "description": "Augmente fortement la défense de 25 pendant 3 tours"
     },
     {
       "id": "divinePower",
@@ -1383,10 +1383,10 @@
       },
       "minLevel": 6,
       "effect": "statBuff",
-      "atkBuff": 15,
-      "defBuff": 15,
+      "atkBuff": 20,
+      "defBuff": 20,
       "duration": 3,
-      "description": "Augmente l'attaque et la défense de 15 % pendant 3 tours"
+      "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
     }
   ],
   "barbarianSpells": [
@@ -1414,7 +1414,7 @@
       },
       "minLevel": 3,
       "effect": "yellowDamage",
-      "description": "Inflige 1 dégât par gâteau de lune jaune, puis détruit les jaunes"
+      "description": "Inflige 2 dégâts par gâteau de lune jaune, puis détruit les jaunes"
     },
     {
       "id": "throwAxe",
@@ -1426,8 +1426,8 @@
       },
       "minLevel": 5,
       "effect": "skullBonus",
-      "baseDmg": 4,
-      "description": "4 dégâts +1 par soleil présent"
+      "baseDmg": 12,
+      "description": "12 dégâts +2 par soleil présent"
     },
     {
       "id": "bloodlust",
@@ -1440,8 +1440,8 @@
       },
       "minLevel": 5,
       "effect": "giveRedMana",
-      "manaGain": 12,
-      "description": "Donne +12 mana rouge"
+      "manaGain": 20,
+      "description": "Donne +20 mana rouge"
     },
     {
       "id": "summonTempest",
@@ -1479,9 +1479,9 @@
       },
       "minLevel": 11,
       "effect": "drainOnHit",
-      "manaDrain": 3,
+      "manaDrain": 5,
       "duration": 5,
-      "description": "Réduit le mana ennemi de 3 quand tu infliges des dégâts pendant 5 tours"
+      "description": "Réduit le mana ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
     },
     {
       "id": "deathbringer",
@@ -1536,8 +1536,8 @@
       },
       "minLevel": 1,
       "effect": "scaleWithBlue",
-      "baseDmg": 5,
-      "description": "Inflige 5 dégâts +1 pour chaque 3 mana bleu possédés"
+      "baseDmg": 10,
+      "description": "Inflige 10 dégâts +1 pour chaque 3 mana bleu possédés"
     },
     {
       "id": "wildMana",
@@ -1690,8 +1690,8 @@
       },
       "minLevel": 8,
       "effect": "fireballArea",
-      "dmg": 15,
-      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 15 dégâts"
+      "dmg": 20,
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 20 dégâts"
     },
     {
       "id": "mirrorShield",
@@ -1740,9 +1740,9 @@
         "blue": 5
       },
       "minLevel": 1,
-      "dmg": 3,
+      "dmg": 6,
       "effect": "noEndTurn",
-      "description": "3 dégâts et ne termine pas le tour"
+      "description": "6 dégâts et ne termine pas le tour"
     },
     {
       "id": "swiftStrike",
@@ -1754,7 +1754,7 @@
       },
       "minLevel": 3,
       "effect": "yellowToPurple",
-      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 1 dégât par gâteau converti"
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 2 dégâts par gâteau converti"
     },
     {
       "id": "confuse",
@@ -1840,8 +1840,8 @@
       },
       "minLevel": 3,
       "effect": "defenseAttack",
-      "baseDmg": 1,
-      "description": "1 dégât +1 par 5 points de défense. Retire les statuts négatifs"
+      "baseDmg": 5,
+      "description": "5 dégâts +1 par 3 points de défense. Retire les statuts négatifs"
     },
     {
       "id": "focus",
@@ -1888,9 +1888,9 @@
       },
       "minLevel": 8,
       "effect": "counterOnBlock",
-      "counterDmg": 5,
+      "counterDmg": 10,
       "duration": 4,
-      "description": "Inflige 5 dégâts lorsque tu bloques pendant 4 tours"
+      "description": "Inflige 10 dégâts lorsque tu bloques pendant 4 tours"
     },
     {
       "id": "reinforce",
@@ -1913,9 +1913,9 @@
       },
       "minLevel": 10,
       "effect": "massiveDefense",
-      "defenseBonus": 20,
+      "defenseBonus": 25,
       "duration": 3,
-      "description": "Augmente fortement la défense de 20 pendant 3 tours"
+      "description": "Augmente fortement la défense de 25 pendant 3 tours"
     },
     {
       "id": "divinePower",
@@ -1976,7 +1976,7 @@
       },
       "minLevel": 3,
       "effect": "yellowDamage",
-      "description": "Inflige 1 dégât par gâteau de lune jaune, puis détruit les jaunes"
+      "description": "Inflige 2 dégâts par gâteau de lune jaune, puis détruit les jaunes"
     },
     {
       "id": "throwAxe",
@@ -1988,8 +1988,8 @@
       },
       "minLevel": 5,
       "effect": "skullBonus",
-      "baseDmg": 4,
-      "description": "4 dégâts +1 par soleil présent"
+      "baseDmg": 12,
+      "description": "12 dégâts +2 par soleil présent"
     },
     {
       "id": "bloodlust",
@@ -2002,8 +2002,8 @@
       },
       "minLevel": 5,
       "effect": "giveRedMana",
-      "manaGain": 12,
-      "description": "Donne +12 mana rouge"
+      "manaGain": 20,
+      "description": "Donne +20 mana rouge"
     },
     {
       "id": "summonTempest",
@@ -2041,9 +2041,9 @@
       },
       "minLevel": 11,
       "effect": "drainOnHit",
-      "manaDrain": 3,
+      "manaDrain": 5,
       "duration": 5,
-      "description": "Réduit le mana ennemi de 3 quand tu infliges des dégâts pendant 5 tours"
+      "description": "Réduit le mana ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
     },
     {
       "id": "deathbringer",
@@ -2081,9 +2081,9 @@
       },
       "minLevel": 9,
       "effect": "statBuff",
-      "atkBuff": 20,
+      "atkBuff": 30,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 20 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
     },
     {
       "id": "shadowStep",
@@ -2094,9 +2094,9 @@
       },
       "minLevel": 4,
       "effect": "statBuff",
-      "defBuff": 20,
+      "defBuff": 25,
       "duration": 3,
-      "description": "Augmente la défense (chance de blocage) de 20 % pendant 3 tours"
+      "description": "Augmente la défense (chance de blocage) de 25 % pendant 3 tours"
     },
     {
       "id": "sharpenedBlade",
@@ -2108,9 +2108,9 @@
       },
       "minLevel": 8,
       "effect": "statBuff",
-      "atkBuff": 25,
+      "atkBuff": 35,
       "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 25 % pendant 3 tours"
+      "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
     },
     {
       "id": "commandAura",
@@ -2122,10 +2122,10 @@
       },
       "minLevel": 6,
       "effect": "statBuff",
-      "atkBuff": 15,
-      "defBuff": 15,
+      "atkBuff": 20,
+      "defBuff": 20,
       "duration": 3,
-      "description": "Augmente l'attaque et la défense de 15 % pendant 3 tours"
+      "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
     },
     {
       "id": "warCry",

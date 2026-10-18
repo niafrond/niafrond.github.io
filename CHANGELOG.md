@@ -1,3 +1,39 @@
+## [2.90.0](https://github.com/niafrond/niafrond.github.io/compare/v2.89.1...v2.90.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** roseaux franchissables, décors à l'échelle, rééquilibrage des sorts ([#494](https://github.com/niafrond/niafrond.github.io/issues/494)) ([81dc30d](https://github.com/niafrond/niafrond.github.io/commit/81dc30d3a8b3b58c30952ef2db6c38cd2d9c7176))
+
+## [2.89.1](https://github.com/niafrond/niafrond.github.io/compare/v2.89.0...v2.89.1) (2026-10-18)
+
+### Bug Fixes
+
+* **match3-quest:** faire partir les pilules de mana des objets depuis le bouton d'objet ([#493](https://github.com/niafrond/niafrond.github.io/issues/493)) ([b7f64cb](https://github.com/niafrond/niafrond.github.io/commit/b7f64cb1078fb7440c704bd3b054b18e201bfc4c))
+
+## [2.89.0](https://github.com/niafrond/niafrond.github.io/compare/v2.88.0...v2.89.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** récupérer flèches et crânes avec les sorts de ligne et de colonne ([#492](https://github.com/niafrond/niafrond.github.io/issues/492)) ([c665a18](https://github.com/niafrond/niafrond.github.io/commit/c665a18822b9a25596dbd7a3da58435e31de81e6))
+
+## [2.88.0](https://github.com/niafrond/niafrond.github.io/compare/v2.87.0...v2.88.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** afficher le mana requis de l'ultime sous la jauge de rage ([#491](https://github.com/niafrond/niafrond.github.io/issues/491)) ([1df0810](https://github.com/niafrond/niafrond.github.io/commit/1df0810a4617769bb6a42dbb5007edd9b0f478aa))
+
+## [2.87.0](https://github.com/niafrond/niafrond.github.io/compare/v2.86.0...v2.87.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** lancer l'ultime choisi depuis la jauge de rage ([#490](https://github.com/niafrond/niafrond.github.io/issues/490)) ([ab406a7](https://github.com/niafrond/niafrond.github.io/commit/ab406a7f48065ac7c103e89e616ed2fa6bc37359))
+
+## [2.86.0](https://github.com/niafrond/niafrond.github.io/compare/v2.85.0...v2.86.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** cinématiques plein écran des ultimes et classes en termes chinois ([#489](https://github.com/niafrond/niafrond.github.io/issues/489)) ([9aebb32](https://github.com/niafrond/niafrond.github.io/commit/9aebb3257d4186b8647119ad13fd1d808fdf4c4d))
+
 ## [2.85.0](https://github.com/niafrond/niafrond.github.io/compare/v2.84.0...v2.85.0) (2026-10-18)
 
 ### Features

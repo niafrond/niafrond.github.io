@@ -24,6 +24,7 @@ import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } fr
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon } from './icons.js';
+import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
@@ -52,18 +53,18 @@ const KEY_TO_DIR = {
 // Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles.
 // Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
-    paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: ['rice', 'deadtree', 'rice'] },
-    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: ['rock', 'rice', 'rock'] },
-    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['bamboo', 'deadtree', 'bamboo'] },
-    gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: ['cactus', 'rock', 'cactus'] },
-    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: ['mountain', 'deadtree', 'mountain'] },
-    volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: ['volcano', 'rock', 'volcano'] },
-    savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: ['rice', 'rock', 'rice'] },
-    coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['wave', 'rock', 'wave'] },
-    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['tree', 'deadtree', 'tree'] },
-    house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'] },
-    cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: ['rock', 'mountain', 'rock'] },
-    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['rock', 'deadtree', 'rock'] },
+    paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: BIOME_DECOR.paddy },
+    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: BIOME_DECOR.riverbed },
+    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: BIOME_DECOR.bamboo },
+    gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: BIOME_DECOR.gobi },
+    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: BIOME_DECOR.storm },
+    volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: BIOME_DECOR.volcano },
+    savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: BIOME_DECOR.savanna },
+    coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: BIOME_DECOR.coast },
+    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: BIOME_DECOR.fusang },
+    house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: BIOME_DECOR.house },
+    cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: BIOME_DECOR.cave },
+    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: BIOME_DECOR.moon },
     ...ARENA_BIOMES   // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 
@@ -72,7 +73,6 @@ const shade = (hex, amt) => {
     const c = v => Math.max(0, Math.min(255, v + amt));
     return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
 };
-const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1;
 
 /**
  * @param {object} cfg
@@ -1264,7 +1264,7 @@ export function createExplorationView(cfg) {
                             (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
                         break;
                     }
-                    const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
+                    const decor = pickDecor(biome.decor, it.x, it.y);
                     if (decor === 'rock') {
                         drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
                         break;
@@ -1392,7 +1392,7 @@ export function createExplorationView(cfg) {
                         drawSprite(heroView, c.x, feet + hop, tile * 1.06, heroBase);
                     }
                     // hautes herbes : des brins devant ses pieds, qui frémissent (davantage en marchant)
-                    if (X.isGrassCell(screen, Math.round(vis.px), Math.round(vis.py))) {
+                    if (X.isGrassCell(screen, Math.round(vis.px), Math.round(vis.py)) || X.isLowObstacle(screen, Math.round(vis.px), Math.round(vis.py))) {
                         drawGrassFront(ctx, tile, c.x - tile / 2, c.y - tile / 2, biome, now, moving);
                     }
                     break;

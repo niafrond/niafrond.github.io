@@ -1964,7 +1964,8 @@ describe('déplacement au clic (findPath)', () => {
 
     test('destination invalide : obstacle, liquide, hors carte ou non entière', () => {
         const s = atL('rizieres', 3, 4);
-        expect(findPath(s, 2, 2)).toBeNull();   // maison
+        const walled = synthSession({ biome: 'cave', obstacles: [[2, 2, 1, 1]] }, { x: 2, y: 4 });
+        expect(findPath(walled, 2, 2)).toBeNull();   // mur (les roseaux des rizières, eux, se traversent : decor.test.js)
         expect(findPath(s, 1, 8)).toBeNull();   // mare
         expect(findPath(s, -1, 4)).toBeNull();
         expect(findPath(s, 26, 4)).toBeNull();   // hors carte (26 × 20)
@@ -1975,6 +1976,7 @@ describe('déplacement au clic (findPath)', () => {
     test('destination isolée : null', () => {
         // PNJ muré par quatre obstacles : sa tuile est valide mais aucune case voisine n'est accessible
         const s = synthSession({
+            biome: 'cave',
             obstacles: [[3, 1, 1, 1], [3, 3, 1, 1], [2, 2, 1, 1], [4, 2, 1, 1]],
             npcs: [{ id: 'n', x: 3, y: 2, name: 'N', title: 'T', idle: ['…'] }]
         });

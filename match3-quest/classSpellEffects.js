@@ -1,10 +1,10 @@
 // Gestion des effets spéciaux des sorts de classe
 
 import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
-import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor } from "./game.js";
+import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
-import { addStatBuff, describeStatBuff } from "./combatStats.js";
+import { addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
 
 function getManaCap(color) {
@@ -36,6 +36,26 @@ function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
     flyManaGain(caster === player, gainedByColor, { fromBoard: true });
 
     return { total, byColor };
+}
+
+// Flèches (points de combat) et crânes (dégâts) détruits par un sort de lignes/colonnes : ils comptent comme lors d'un match
+// (1 point de combat par flèche, dégâts de crâne du lanceur contre son adversaire), en plus du mana des gemmes.
+function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
+    const arrows = destroyedTiles.filter(t => t === 'combat').length;
+    const skulls = destroyedTiles.filter(t => t === 'skull').length;
+    if(arrows > 0) {
+        caster.combatPoints = (caster.combatPoints || 0) + arrows;
+        log(`+${arrows} point(s) de combat (flèches détruites) pour ${caster.name}.`);
+    }
+    let skullDmg = 0;
+    if(skulls > 0) {
+        const opponent = caster === player ? enemy : player;
+        const strike = resolveStrike(skulls * (skullDamage + skullStrengthBonus(caster)), caster, opponent);
+        skullDmg = strike.damage;
+        if(skullDmg > 0) applyDamage(opponent, skullDmg);
+        log(`${skulls} crâne(s) détruit(s) : -${skullDmg} PV pour ${opponent.name}.`);
+    }
+    return { arrows, skulls, skullDmg };
 }
 
 // Photo du plateau avant un sort : sert à savoir si le sort l'a modifié (voir endPlayerSpellTurn).
@@ -543,7 +563,7 @@ function applySwiftStrike(spell) {
             count++;
         }
     }
-    const dmg = count;
+    const dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: "TIR RAPIDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
@@ -632,7 +652,7 @@ function applyDefensiveWall(spell) {
 
 function applyShieldBash(spell) {
     const defense = player.defense || 0;
-    const bonusDmg = Math.floor(defense / 5);
+    const bonusDmg = Math.floor(defense / 3);
     const totalDmg = spell.baseDmg + bonusDmg;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     // Retirer les statuts négatifs
@@ -804,7 +824,7 @@ function applyCleave(spell) {
         }
     }
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
-    const dmg = count;
+    const dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: 'axe', title: "ENTAILLE DE LA HORDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
@@ -819,10 +839,10 @@ function applyThrowAxe(spell) {
             skullCount++;
         }
     }
-    const totalDmg = spell.baseDmg + skullCount;
+    const totalDmg = spell.baseDmg + skullCount * 2;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: 'axe', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} crânes) !`);
+    log(`Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + 2 × ${skullCount} crânes) !`);
     return true;
 }
 
@@ -879,8 +899,10 @@ function destroyIndices(spell, indices, title, label) {
     const hits = destroyedTiles.filter(t => hitColors.includes(t)).length;
     const dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
     if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
+    const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} mana` }, true);
+    const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
+    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} mana${extras}` }, true);
     log(`${spell.name} : ${label}, ${hits} case(s) de la couleur du sort, ${dmg} dégâts, +${manaCollected.total} mana récupéré.`);
     return { count: unique.length, hits, dmg, mana: manaCollected.total };
 }
@@ -1067,9 +1089,10 @@ async function applySummonTempest(spell) {
     if(spell.colors?.length || spell.color) hits = destroyedTiles.filter(t => spellDamageColors(spell).includes(t)).length;
     const dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
     if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
+    const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
 
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} mana récupéré` }, true);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} mana récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
     log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${caster.name} récupère ${manaCollected.total} mana.`);
     return true;
 }

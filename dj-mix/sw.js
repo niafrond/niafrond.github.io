@@ -2,7 +2,7 @@
  * sw.js — Service Worker pour DJ Mix PWA
  */
 
-const CACHE = 'djmix-v2.85.0';
+const CACHE = 'djmix-v2.90.0';
 
 const ASSETS = [
   './',
