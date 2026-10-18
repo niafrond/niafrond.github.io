@@ -1721,7 +1721,7 @@ preloadSpellFx();
 // Portrait pixel art de Xiao Gui (le renard compagnon) pour l'annonce de son coup.
 function foxIconHtml(){
     const uri = spriteUri(npcSprite('xiao_gui'));
-    return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
+    return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
 }
 
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
