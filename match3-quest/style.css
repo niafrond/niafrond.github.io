@@ -3175,3 +3175,4 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
     padding: 8px 16px; border-radius: 8px; background: rgba(0, 0, 0, 0.85); color: #ffd54a;
     font-weight: bold; text-align: center; pointer-events: none; max-width: 90vw;
 }
+.tutorial-card p[hidden] { display: none; }

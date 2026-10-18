@@ -127,10 +127,10 @@
   },
   {
     "id": "goblin_saboteur",
-    "name": "Petit Démon",
+    "name": "Petit Démon-Renard",
     "race": "Yaoguai",
 
-    "title": "Petit Démon-Renard",
+    "title": "Chapardeur Rusé",
     "playerClass": "assassin",
     "hasWeapon": true,
     "statsModifiers": { "hpMult": 0.95, "atkMult": 1.25, "defMult": 0.9 },

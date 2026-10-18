@@ -1323,7 +1323,7 @@ export function updateStats(){
         `<span style="color: #888;"> ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
+        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
         <div class="stat">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
@@ -3574,7 +3574,7 @@ function renderGearList(container){
             <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         section.appendChild(div);
     };
-    const shieldStats = it => [it.defense ? `Déf. +${it.defense} %` : '', it.atkBonus ? `Atk +${it.atkBonus} %` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
+    const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
     if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
