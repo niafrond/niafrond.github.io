@@ -24,7 +24,7 @@ import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPTo
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
+import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -488,6 +488,7 @@ export let player = {
     attributes: { strength:0, agility:0, intelligence:0, stamina:0, morale:0 },
     spells: [],
     activeSpells: [],  // sorts équipés (max 4)
+    equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
     availableSpells: [], // sorts débloqués
     weapons: [],  // armes possédées
     equippedWeapon: null,  // arme équipée
@@ -1072,6 +1073,7 @@ export function loadGameData() {
             player.attributes = { ...player.attributes, ...(loaded.attributes || {}) };
             player.spells = loaded.spells ?? player.spells;
             player.activeSpells = loaded.activeSpells ?? player.activeSpells;
+            player.equippedUltimate = loaded.equippedUltimate ?? player.equippedUltimate;
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
@@ -1310,6 +1312,9 @@ export function updateStats(){
     const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
 
     const playerDiv=document.getElementById('player-stats');
+    // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
+    const equippedUltimate = getEquippedUltimate(player);
+    const ultimateReady = !!equippedUltimate && isRageFull(player) && gameState.combatState === 'active';
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
@@ -1320,10 +1325,10 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat rage-stat" title="Rage : se charge quand vous subissez des dégâts">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}">
+            <div class="stat rage-stat" title="${ultimateReady ? `Ultime : ${equippedUltimate.name} — cliquez pour le lancer` : 'Rage : se charge quand vous subissez des dégâts'}">
+                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <progress class="rage-bar" value="${Math.floor(player.rage || 0)}" max="${RAGE_MAX}"></progress>
-                    <span class="rage-text">RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}</span>
+                    <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}`}</span>
                 </div>
             </div>
             <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
@@ -1337,6 +1342,18 @@ export function updateStats(){
                 </div>
             </div>`;
         
+        if(ultimateReady){
+            const rageBar = playerDiv.querySelector('.rage-bar-container');
+            rageBar.onclick = () => castUltimate(equippedUltimate.id);
+            rageBar.onkeydown = (event) => {
+                if(event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    castUltimate(equippedUltimate.id);
+                }
+            };
+            bindTooltip(rageBar, () => showSpellTooltip(rageBar, equippedUltimate), () => hideSpellTooltip());
+        }
+
         // Animer les compteurs si les valeurs ont changé
         const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
         _animateHpBar('player-hp-current', initPlayerHp, targetPlayerHp, playerProgressEl);
@@ -1920,7 +1937,7 @@ export async function castUltimate(spellId){
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell = getUltimateById(spellId);
-    if(!spell || spell.class !== player.class){ log("Ultime indisponible !"); return; }
+    if(!spell || spell.class !== player.class || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
     if(!canEntityCastSpell(player, spell)){
@@ -2815,41 +2832,10 @@ export function createSpellButtons(){
 
         container.appendChild(btn);
     });
-    createUltimateButtons(container);
+    // Planches de cinématique de l'ultime choisi gardées en mémoire : son lancement n'attend aucun téléchargement.
+    const ultimate = getEquippedUltimate(player);
+    if(ultimate) preloadUltimateCinematic([ultimate]);
     updateSpellsTab();
-}
-
-// Ultimes de la classe : hors limite des 4 sorts, utilisables quand la jauge de rage est pleine et le mana suffisant.
-function createUltimateButtons(container){
-    if(!player.class) return;
-    // Planches de cinématique gardées en mémoire dès maintenant : le lancement de l'ultime n'attend aucun téléchargement.
-    preloadUltimateCinematic(getUltimatesForClass(player.class).filter(sp => player.level >= sp.minLevel));
-    getUltimatesForClass(player.class).forEach(sp => {
-        const btn = document.createElement('div');
-        btn.className = 'enemy-spell-item ultimate-spell';
-        btn.tabIndex = 0;
-        markMultiManaSpell(btn, sp);
-        btn.innerHTML = `
-            <div class="spell-name">ULTIME · ${sp.name}</div>
-            <div class="spell-cost">${spellCostHtml(sp)} - ${sp.dmg} dmg</div>
-        `;
-        const ready = player.level >= sp.minLevel && isRageFull(player) && canEntityCastSpell(player, sp);
-        if(!ready) {
-            btn.classList.add('disabled');
-            btn.tabIndex = -1;
-        } else {
-            btn.classList.add('ready');
-            btn.onclick = () => castUltimate(sp.id);
-            btn.onkeydown = (event) => {
-                if(event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    castUltimate(sp.id);
-                }
-            };
-        }
-        bindTooltip(btn, () => showSpellTooltip(btn, sp), () => hideSpellTooltip());
-        container.appendChild(btn);
-    });
 }
 
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
@@ -3109,6 +3095,8 @@ export function updateSpellsTab(){
         });
     }
     
+    updateUltimatePicker();
+
     // sorts disponibles (non équipés)
     availableList.innerHTML = '';
     const unequipped = player.availableSpells.filter(sp => 
@@ -3139,6 +3127,46 @@ export function updateSpellsTab(){
             availableList.appendChild(div);
         });
     }
+}
+
+// Choix de l'ultime : un seul, le seul lançable en combat (en cliquant sur la jauge de rage pleine).
+function updateUltimatePicker(){
+    const list = document.getElementById('ultimate-spells-list');
+    if(!list) return;
+    list.innerHTML = '<h3>Ultime (1 seul, jauge de rage)</h3>';
+    const choices = getSelectableUltimates(player);
+    if(choices.length === 0){
+        list.innerHTML += '<p><em>Aucun ultime débloqué</em></p>';
+        return;
+    }
+    const current = getEquippedUltimate(player);
+    choices.forEach(sp => {
+        const div = document.createElement('div');
+        div.className = 'spell-item ultimate-spell' + (sp.id === current.id ? ' active-spell' : '');
+        markMultiManaSpell(div, sp);
+        const chosen = sp.id === current.id;
+        div.innerHTML = `
+            <div class="spell-content">
+                <div class="spell-name">${sp.name}</div>
+                <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
+            </div>
+            <div class="spell-action ${chosen ? 'disabled' : ''}" tabindex="${chosen ? '-1' : '0'}" aria-disabled="${chosen}" ${chosen ? '' : `onclick="window.equipUltimate('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipUltimate('${sp.id}');}"`}>${chosen ? 'Choisi' : 'Choisir'}</div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+export function equipUltimate(spellId){
+    if(gameState.combatState === 'active'){
+        log("Vous ne pouvez pas changer d'ultime pendant le combat !");
+        return;
+    }
+    const spell = getSelectableUltimates(player).find(s => s.id === spellId);
+    if(!spell) return;
+    player.equippedUltimate = spell.id;
+    saveUpdate();
+    updateUltimatePicker();
+    log(`Ultime ${spell.name} choisi.`);
 }
 
 export function equipSpell(spellId){
@@ -3910,6 +3938,7 @@ export function discardInventoryItem(index){
 // Exports pour les fonctions accessibles globalement
 window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
+window.equipUltimate = equipUltimate;
 window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;
 window.equipGear = equipGear;

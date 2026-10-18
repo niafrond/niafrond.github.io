@@ -3222,5 +3222,10 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .rage-bar-container .rage-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; text-shadow: 0 0 2px #000; pointer-events: none; }
 .rage-bar-container.full .rage-bar { animation: rage-pulse 0.9s ease-in-out infinite; }
 @keyframes rage-pulse { 50% { filter: brightness(1.6); } }
+/* Jauge pleine : « ULTIME » cliquable (la barre devient un bouton doré) */
+.rage-bar-container.ultimate-ready { cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; }
+.rage-bar-container.ultimate-ready .rage-text { letter-spacing: 0.15em; color: #fff3c4; }
+.rage-bar-container.ultimate-ready:hover, .rage-bar-container.ultimate-ready:focus-visible { filter: brightness(1.2); }
+#ultimate-spells-list .ultimate-spell { border: 1px solid #d9452e; }
 #spell-buttons .ultimate-spell { border: 1px solid #d9452e; background: linear-gradient(135deg, rgba(217,69,46,0.25), rgba(242,193,78,0.2)); }
 #spell-buttons .ultimate-spell.ready { box-shadow: 0 0 8px #f2c14e; animation: rage-pulse 0.9s ease-in-out infinite; }
