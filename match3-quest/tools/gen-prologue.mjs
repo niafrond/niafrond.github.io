@@ -55,7 +55,15 @@ const FENGMENG = [
   { n: 4, scene: 'two archers facing each other across a volcanic gorge, master Hou Yi with a golden bow in red and gold and his disciple Fengmeng in dark crimson, both drawing arrows, lava glowing below, tense dramatic duel, sparks',
     motion: 'both archers draw their bows tighter, arrow tips glow, lava glows pulsing, embers and sparks fly between them, cloaks flutter' }
 ];
-const SETS = { prologue: PROLOGUE, ending: ENDING, fengmeng: FENGMENG };
+// Écran de démarrage (launcher) : portrait de Hou Yi en boucle. Le logo (haut) et l'invite (bas) sont en HTML par-dessus :
+// le haut de l'image reste donc calme (canopée, lumière), le héros occupe le tiers bas, à droite en paysage.
+const LAUNCHER = [
+  { n: 1, scene: 'epic title screen key art: the divine archer Hou Yi, a handsome determined Chinese hero with black hair in a topknot, teal robe with gold trim, golden bow and quiver on his back, bust portrait in the lower half, calm upper half of the image, a misty teal bamboo forest, warm golden sunbeams streaming from the top right, floating golden pollen and falling leaves, teal and gold palette',
+    // paysage : le logo occupe le haut-gauche, le héros doit donc être entièrement visible, dans le tiers droit
+    sceneLand: 'epic wide title screen key art: the divine archer Hou Yi, a handsome determined Chinese hero with black hair in a topknot, teal robe with gold trim, golden bow and quiver on his back, standing fully visible on the right third of the frame, three quarter view facing left, the left half of the image is empty misty teal bamboo forest and soft golden light for the title text, warm golden sunbeams from the top right, floating golden pollen and falling leaves, teal and gold palette',
+    motion: 'seamless loop: his robe and hair sway gently in the breeze, he breathes slowly, golden sunbeams drift, leaves and golden pollen float softly, mist moves; the camera stays still' }
+];
+const SETS = { prologue: PROLOGUE, ending: ENDING, fengmeng: FENGMENG, launcher: LAUNCHER };
 const SET = String(args.set || 'prologue');
 const SCENES = SETS[SET];
 const OUT = join(GAME, 'sprites', SET);
@@ -104,7 +112,7 @@ await Promise.all(Array.from({ length: CONC }, async () => {
   while (jobs.length) {
     const { s, o } = jobs.shift();
     try {
-      const first = await keyFrame(s.scene, ORI[o]);
+      const first = await keyFrame((o === 'land' && s.sceneLand) || s.scene, ORI[o]);
       const frames = await animate(first, s.motion);
       writeFileSync(join(OUT, `${s.n}-${o}.png`), strip(frames, ORI[o]));
       const cur = existsSync(INDEX) ? JSON.parse(readFileSync(INDEX, 'utf8')) : {};

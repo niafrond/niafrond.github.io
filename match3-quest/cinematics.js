@@ -1166,12 +1166,20 @@ export function playTitleScreen() {
         let W = 0;
         let H = 0;
         let portraitMode = false;
+        let art = null;      // boucle Pixel Lab { img, frames, fps, size } ou null (scène dessinée en code)
+        let artFor = null;   // orientation pour laquelle `art` est (ou sera) chargée
+        let ended = false;
 
         const resize = () => {
             const vw = window.innerWidth || 1;
             const vh = window.innerHeight || 1;
             portraitMode = vw < vh;
-            if (portraitMode) { W = 100; H = Math.max(150, Math.round(100 * vh / vw)); }
+            if (art) {
+                // résolution native de l'image (pas de mise à l'échelle fractionnaire), débordement rogné en « cover »
+                const [nw, nh] = art.size;
+                if (portraitMode) { W = nw; H = Math.max(nh, Math.round(nw * vh / vw)); }
+                else { H = nh; W = Math.max(nw, Math.round(nh * vw / vh)); }
+            } else if (portraitMode) { W = 100; H = Math.max(150, Math.round(100 * vh / vw)); }
             else { H = 130; W = Math.max(150, Math.round(130 * vw / vh)); }
             canvas.width = W;
             canvas.height = H;
@@ -1180,12 +1188,56 @@ export function playTitleScreen() {
         resize();
         window.addEventListener('resize', resize);
 
+        // Boucle Pixel Lab (tools/gen-prologue.mjs --set=launcher), une planche par orientation. Chargement tolérant : sans
+        // planche, la scène dessinée en code ci-dessous reste le repli. Relue si l'orientation change.
+        const ensureArt = () => {
+            if (artFor === portraitMode) return;
+            artFor = portraitMode;
+            art = null;
+            resize();
+            loadSceneArt('launcher', 1, portraitMode).then(a => {
+                if (artFor !== portraitMode || ended || !a) return;
+                art = a[0];
+                resize();
+            });
+        };
+        ensureArt();
+        window.addEventListener('resize', ensureArt);
+
         let raf = 0;
-        let ended = false;
         const t0 = performance.now();
+
+        // Image Pixel Lab en « cover » sur le canvas, lue en aller-retour (boucle sans saut), sans lissage.
+        const drawArt = (a, t) => {
+            const [aw, ah] = a.size;
+            const n = a.frames;
+            const period = Math.max(1, 2 * (n - 1));
+            const k = reduced ? 0 : Math.floor(t * a.fps) % period;
+            const fi = k < n ? k : period - k;
+            const s = Math.max(W / aw, H / ah);
+            const dw = aw * s;
+            const dh = ah * s;
+            ctx.drawImage(a.img, fi * aw, 0, aw, ah, Math.round((W - dw) / 2), Math.round((H - dh) / 2), Math.ceil(dw), Math.ceil(dh));
+        };
 
         const frame = now => {
             const t = reduced ? 3 : (now - t0) / 1000;
+            if (art) {
+                drawArt(art, t);
+                // pollen doré par-dessus, puis vignette basse pour la lisibilité de l'invite
+                pollen.forEach(p => {
+                    const y = ((p.y - t * p.v) % 1 + 1) % 1;
+                    ctx.globalAlpha = 0.4 + 0.4 * Math.sin(t * 2 + p.p);
+                    px(ctx, TP.goldHi, p.x * W + Math.sin(t + p.p) * 3, y * H, 1, 1);
+                });
+                for (let i = 0; i < 14; i++) {
+                    ctx.globalAlpha = 0.035 * (i + 1);
+                    px(ctx, TP.ink, 0, H - 14 + i, W, 1);
+                }
+                ctx.globalAlpha = 1;
+                if (!ended) raf = requestAnimationFrame(frame);
+                return;
+            }
             const bobBody = Math.round(Math.sin(t * 1.3) * 1.2);
             const bobHead = Math.round(Math.sin(t * 1.3 - 0.7) * 1.4);
             const camY = Math.round(Math.sin(t * 0.45) * 2);
@@ -1294,6 +1346,7 @@ export function playTitleScreen() {
             ended = true;
             cancelAnimationFrame(raf);
             window.removeEventListener('resize', resize);
+            window.removeEventListener('resize', ensureArt);
             document.removeEventListener('keydown', onKey, true);
             playSfx('introJingle');
             overlay.classList.add('closing');
