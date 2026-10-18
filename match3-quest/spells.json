@@ -2141,5 +2141,135 @@
       "duration": 3,
       "description": "Augmente l'attaque de 20 % et la défense de 10 % pendant 3 tours"
     }
+  ],
+  "ultimateSpells": [
+    {
+      "id": "ultimateFiveElements",
+      "name": "Courroux des Cinq Éléments",
+      "class": "sorcerer",
+      "ultimate": true,
+      "cost": {
+        "red": 25,
+        "blue": 25,
+        "green": 25
+      },
+      "minLevel": 8,
+      "effect": "ultimate",
+      "dmg": 220,
+      "cinematic": "ultimate-sorcerer-1",
+      "description": "Les cinq éléments s'abattent sur l'ennemi : 220 dégâts"
+    },
+    {
+      "id": "ultimateHeavenlyThunder",
+      "name": "Tribulation de la Foudre Céleste",
+      "class": "sorcerer",
+      "ultimate": true,
+      "cost": {
+        "yellow": 35,
+        "purple": 30
+      },
+      "minLevel": 15,
+      "effect": "ultimate",
+      "dmg": 160,
+      "stunTurns": 2,
+      "cinematic": "ultimate-sorcerer-2",
+      "description": "La foudre du Ciel frappe l'ennemi : 160 dégâts et étourdissement 2 tours"
+    },
+    {
+      "id": "ultimateThousandArrows",
+      "name": "Pluie des Mille Flèches",
+      "class": "assassin",
+      "ultimate": true,
+      "cost": {
+        "red": 30,
+        "yellow": 30
+      },
+      "minLevel": 8,
+      "effect": "ultimate",
+      "dmg": 200,
+      "cinematic": "ultimate-assassin-1",
+      "description": "Mille flèches s'abattent d'un coup : 200 dégâts"
+    },
+    {
+      "id": "ultimateSunPiercer",
+      "name": "Flèche qui Abat le Soleil",
+      "class": "assassin",
+      "ultimate": true,
+      "cost": {
+        "yellow": 40,
+        "purple": 30
+      },
+      "minLevel": 15,
+      "effect": "ultimate",
+      "dmg": 300,
+      "cinematic": "ultimate-assassin-2",
+      "description": "La flèche légendaire de Hou Yi : 300 dégâts"
+    },
+    {
+      "id": "ultimateImperialDragon",
+      "name": "Colère du Dragon Impérial",
+      "class": "templar",
+      "ultimate": true,
+      "cost": {
+        "green": 30,
+        "yellow": 30
+      },
+      "minLevel": 8,
+      "effect": "ultimate",
+      "dmg": 180,
+      "healPercent": 20,
+      "cinematic": "ultimate-templar-1",
+      "description": "Le dragon de l'empire rugit : 180 dégâts et soigne 20 % des PV max"
+    },
+    {
+      "id": "ultimateEternalBastion",
+      "name": "Rempart Éternel",
+      "class": "templar",
+      "ultimate": true,
+      "cost": {
+        "blue": 35,
+        "green": 35
+      },
+      "minLevel": 15,
+      "effect": "ultimate",
+      "dmg": 120,
+      "healPercent": 40,
+      "defBuff": 25,
+      "duration": 3,
+      "cinematic": "ultimate-templar-2",
+      "description": "Un rempart sacré : 120 dégâts, soigne 40 % des PV max et gagne +25 de défense pendant 3 tours"
+    },
+    {
+      "id": "ultimateThousandRiders",
+      "name": "Charge des Mille Cavaliers",
+      "class": "barbarian",
+      "ultimate": true,
+      "cost": {
+        "red": 35,
+        "yellow": 25
+      },
+      "minLevel": 8,
+      "effect": "ultimate",
+      "dmg": 230,
+      "cinematic": "ultimate-barbarian-1",
+      "description": "La horde déferle sur l'ennemi : 230 dégâts"
+    },
+    {
+      "id": "ultimateSkyWolf",
+      "name": "Hurlement du Loup Céleste",
+      "class": "barbarian",
+      "ultimate": true,
+      "cost": {
+        "red": 30,
+        "purple": 30
+      },
+      "minLevel": 15,
+      "effect": "ultimate",
+      "dmg": 150,
+      "weakenAmount": 10,
+      "duration": 3,
+      "cinematic": "ultimate-barbarian-2",
+      "description": "Un hurlement terrifiant : 150 dégâts, attaque ennemie réduite de 10 pendant 3 tours"
+    }
   ]
 }

@@ -144,6 +144,8 @@ export function applyClassSpellEffect(spell) {
             return applyDeathbringer(spell);
         case 'doubleBattle': // Esprit des Ancêtres
             return applyRevenant(spell);
+        case 'ultimate': // Sorts ultimes (jauge de rage)
+            return applyUltimate(spell);
         // Sorts avancés multi-mana (3 à 5 couleurs), génériques
         case 'sweepRow': // Lame des Quatre Vents
             return applySweepLines(spell, 'row');
@@ -1130,5 +1132,28 @@ function applyRevenant(spell) {
     player.statusEffects.revenant = true;
     showCombatAnimation({ icon: 'ghost', title: "ESPRIT DES ANCÊTRES", damage: 'PA doublés', target: '→ Vous' }, true);
     log(`Esprit des Ancêtres : Les points de combat sont maintenant doublés !`);
+    return true;
+}
+
+// Ultime : gros dégâts + effet annexe selon le sort (soin, étourdissement, bonus de défense, affaiblissement).
+function applyUltimate(spell) {
+    showCombatAnimation({ icon: 'fire', title: spell.name.toUpperCase(), damage: `ULTIME ! -${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    log(`ULTIME — ${spell.name} !`);
+    applyDamage(enemy, spell.dmg, { sourceSpell: spell });
+    if(spell.healPercent) {
+        const heal = Math.floor(player.maxHp * spell.healPercent / 100);
+        player.hp = Math.min(player.maxHp, player.hp + heal);
+        log(`${spell.name} soigne ${heal} PV.`);
+    }
+    if(spell.stunTurns) {
+        enemy.statusEffects.stunned = Math.max(enemy.statusEffects.stunned || 0, spell.stunTurns);
+        log(`${enemy.name} est étourdi pendant ${spell.stunTurns} tours.`);
+    }
+    if(spell.defBuff) addStatBuff(player, { defense: spell.defBuff, turns: spell.duration || 1 });
+    if(spell.weakenAmount) {
+        enemy.statusEffects.weakened = Math.max(1, Math.floor(spell.duration || 1));
+        enemy.statusEffects.weakenedAmount = spell.weakenAmount;
+        log(`${enemy.name} est affaibli (-${spell.weakenAmount} attaque).`);
+    }
     return true;
 }
