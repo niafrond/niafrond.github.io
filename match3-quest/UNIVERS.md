@@ -136,6 +136,7 @@ Les ids de gabarits du catalogue restent inchangés (statistiques) ; seuls les n
 |---|---|
 | `goblin_saboteur` | Xiao Gui, petit démon-renard farceur à piège |
 | `fungal_horror` | Champignon lingzhi maudit (chapeau rouge à spores) |
+| `mud_toad` | Crapaud de boue des rizières (dessin de `rizieres_w_toad`) |
 | `forest_guardian` | Esprit-arbre ancien (vieux pin/saule noueux) |
 | `bone_reaver` | Guerrier-squelette à sabre rouillé |
 | `crypt_lich` | Taoïste-squelette (bonnet de lettré, flamme verte) |

@@ -476,9 +476,9 @@ export const WEAPON_STAT_BONUSES = {
     arc_de_l_immortel: { atkBonus: 7, defBonus: 7 }
 };
 
-// Texte court des bonus d'une arme ou d'un bouclier (« Atk +5 % • Déf +3 % »), vide s'il n'en a pas.
+// Texte court des bonus d'une arme ou d'un bouclier (« Atk +5 • Déf +3 »), vide s'il n'en a pas.
 export function describeStatBonuses(piece) {
-    return [piece?.atkBonus ? `Atk +${piece.atkBonus} %` : '', piece?.defBonus ? `Déf +${piece.defBonus} %` : ''].filter(Boolean).join(' • ');
+    return [piece?.atkBonus ? `Atk +${piece.atkBonus}` : '', piece?.defBonus ? `Déf +${piece.defBonus}` : ''].filter(Boolean).join(' • ');
 }
 
 /**

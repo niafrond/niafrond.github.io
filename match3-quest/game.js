@@ -26,6 +26,7 @@ import { playSfx } from "./sound.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
+import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
 const BASE_MANA_CAP = 50;
@@ -397,16 +398,16 @@ function getMissingManaColor(entity, spell){
 export function consumeSpellMana(entity, spell){
     if(!entity || !entity.mana || !spell) return;
 
+    const paid = {};
     if(typeof spell.cost === 'number') {
-        entity.mana[spell.color] = Math.max(0, (entity.mana[spell.color] || 0) - spell.cost);
-        return;
+        paid[spell.color] = spell.cost;
+    } else if(spell.cost && typeof spell.cost === 'object') {
+        Object.assign(paid, spell.cost);
     }
-
-    if(spell.cost && typeof spell.cost === 'object') {
-        for(const [color, amount] of Object.entries(spell.cost)) {
-            entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
-        }
-    }
+    Object.entries(paid).forEach(([color, amount]) => {
+        entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
+    });
+    flyManaSpend(entity === player, paid);
 }
 
 function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
@@ -452,6 +453,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.heal){
         const healAmount = spell.heal + intelligenceBonus;
         caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
+        flyHeal(isPlayerCaster, healAmount);
         playSfx('heal', { isPlayer: isPlayerCaster });
 
         if(isPlayerCaster) {
@@ -1287,7 +1289,7 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat"><strong>Atk:</strong> ${rawAttack(player)}% <strong>Def:</strong> ${rawDefense(player)}% <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span class="mana-dot mana-red" title="${targetPlayerMana.red}"></span><span id="player-mana-red">${targetPlayerMana.red}</span>
@@ -1321,14 +1323,14 @@ export function updateStats(){
         `<span style="color: #888;"> ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
+        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
         <div class="stat">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${rawAttack(enemy)}% <strong>Def:</strong> ${rawDefense(enemy)}% <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat"><strong>Atk:</strong> ${rawAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span class="mana-dot mana-red" title="${targetEnemyMana.red}"></span><span id="enemy-mana-red">${targetEnemyMana.red}</span>
@@ -1579,11 +1581,11 @@ export function updatePlayerStatsTab(){
             <h3>Statistiques de combat</h3>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de coup critique (arme, crânes) — plafonnée à 98 %">${svgIcon('sword')} Attaque (critique):</span>
-                <span class="stat-value">${rawAttack(player)}%</span>
+                <span class="stat-value">${rawAttack(player)}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
-                <span class="stat-value">${rawDefense(player)}%</span>
+                <span class="stat-value">${rawDefense(player)}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">${svgIcon('heart')} HP Maximum:</span>
@@ -1806,6 +1808,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     if(player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
         player.hp = Math.min(player.maxHp, player.hp + heal);
+        flyHeal(true, heal);
         log(`Vol de vie : +${heal} HP.`);
     }
 
@@ -2212,6 +2215,7 @@ export function finishEnemyTurn(){
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
+            flyHeal(true, player.regenEffect.hp);
             log(`Régénération : +${player.regenEffect.hp} HP.`);
             player.regenEffect.turnsLeft--;
             if(player.regenEffect.turnsLeft <= 0) {
@@ -3570,7 +3574,7 @@ function renderGearList(container){
             <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         section.appendChild(div);
     };
-    const shieldStats = it => [it.defense ? `Déf. +${it.defense} %` : '', it.atkBonus ? `Atk +${it.atkBonus} %` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
+    const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
     if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);

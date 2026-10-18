@@ -243,3 +243,4 @@ rizieres_w_toad: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><d
 <ellipse cx="14" cy="16" rx="2.600" ry="1.400" fill="#fff" fill-opacity=".5" stroke="none" transform="rotate(-20 14 16)"/>
 </g></svg>`,
 };
+ENEMY_SPRITES_CN_1.mud_toad = ENEMY_SPRITES_CN_1.rizieres_w_toad;   // gabarit « Crapaud de Boue » (herbes des rizières)

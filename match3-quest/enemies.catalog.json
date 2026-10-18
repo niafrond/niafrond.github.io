@@ -127,10 +127,10 @@
   },
   {
     "id": "goblin_saboteur",
-    "name": "Petit Démon",
+    "name": "Petit Démon-Renard",
     "race": "Yaoguai",
 
-    "title": "Petit Démon-Renard",
+    "title": "Chapardeur Rusé",
     "playerClass": "assassin",
     "hasWeapon": true,
     "statsModifiers": { "hpMult": 0.95, "atkMult": 1.25, "defMult": 0.9 },
@@ -321,6 +321,24 @@
       "targetSpellCount": 4
     },
     "resistanceProfile": { "blue": 0.08, "red": 0.08, "green": 0.4, "yellow": 0.1, "purple": 0.2 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "mud_toad",
+    "name": "Crapaud de Boue",
+    "race": "Bête",
+
+    "title": "Chanteur des Marais",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.15, "defMult": 1.2 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["green", "blue", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.08, "green": 0.35, "yellow": 0.08, "purple": 0.1 },
     "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
   },
   {

@@ -1,3 +1,4 @@
+import { flyManaGain, flyHeal } from './manaFlight.js';
 import { manaIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 
@@ -7,13 +8,13 @@ import { canEquip, equip, unequip } from './equipment.js';
 export const allItems = [
     // === BOUCLIERS ===
     {id:"jade_shield", name:"Bouclier de Jade", type:"shield", minLevel:5, rarity:"uncommon",
-     description:"Un bouclier poli en jade, renforce la défense (blocage) de 8 %", defense:8},
+     description:"Un bouclier poli en jade, renforce la défense (blocage) de 8", defense:8},
     {id:"dragon_shield", name:"Bouclier du Dragon Blanc", type:"shield", minLevel:10, rarity:"rare",
-     description:"Un bouclier gravé du dragon blanc, défense +15, critique +3 %", defense:15, atkBonus:3},
+     description:"Un bouclier gravé du dragon blanc, défense +15, critique +3", defense:15, atkBonus:3},
     {id:"ancestral_shield", name:"Rondache Ancestrale", type:"shield", minLevel:15, rarity:"rare",
      description:"Un bouclier ancien renforcé par le temps, défense +20, absorbe 50 dégâts par combat", defense:20, absorbDamage:50},
     {id:"legendary_shield", name:"Bouclier de l'Empereur Jaune", type:"shield", minLevel:18, rarity:"legendary",
-     description:"Le bouclier mythique de l'Empereur Jaune, défense +30, critique +8 %, absorbe 100 dégâts", defense:30, atkBonus:8, absorbDamage:100},
+     description:"Le bouclier mythique de l'Empereur Jaune, défense +30, critique +8, absorbe 100 dégâts", defense:30, atkBonus:8, absorbDamage:100},
 
     // === OBJETS RECHARGEABLES ===
     {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:2, rechargeTurns:8,
@@ -195,9 +196,11 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     let message = "";
     if(item.effect.heal) {
         player.hp = Math.min(player.maxHp, player.hp + item.effect.heal);
+        flyHeal(true, item.effect.heal);
         message += `Vous récupérez ${item.effect.heal} HP. `;
     }
     if(item.effect.mana) {
+        flyManaGain(true, Object.fromEntries(Object.keys(player.mana).map(color => [color, item.effect.mana])));
         Object.keys(player.mana).forEach(color => {
             const manaCap = player.manaCaps?.[color] ?? player.maxMana;
             player.mana[color] = Math.min(manaCap, player.mana[color] + item.effect.mana);
@@ -232,6 +235,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     if(item.effect.randomMana !== undefined) {
         const manaColors = Object.keys(player.mana);
         const chosenColor = manaColors[Math.floor(Math.random() * manaColors.length)];
+        flyManaGain(true, { [chosenColor]: item.effect.randomMana });
         const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;
         player.mana[chosenColor] = Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana);
         message += `Vous gagnez ${item.effect.randomMana} mana ${chosenColor}. `;

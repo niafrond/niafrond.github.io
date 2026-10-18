@@ -608,7 +608,7 @@ function _updateOverlay(step, descOverride) {
 
     if (elIcon) elIcon.innerHTML = icon(stepData.icon);
     if (elTitle) elTitle.textContent = stepData.title;
-    if (elDesc) elDesc.innerHTML = descOverride || stepData.desc;
+    if (elDesc) { elDesc.innerHTML = descOverride || stepData.desc; elDesc.hidden = true; }   // seul le titre est affiché
     if (elCurrent) elCurrent.textContent = step;
 
     const overlay = document.getElementById('tutorial-overlay');

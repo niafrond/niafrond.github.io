@@ -1,5 +1,6 @@
 // Gestion des effets spéciaux des sorts de classe
 
+import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
@@ -25,11 +26,14 @@ function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
     });
 
     let total = 0;
+    const gainedByColor = {};
     Object.entries(byColor).forEach(([color, amount]) => {
         if(amount <= 0) return;
         const manaResult = addManaForColor(caster, color, amount, { applyGainBonus: false });
         total += manaResult.gained;
+        gainedByColor[color] = manaResult.gained;
     });
+    flyManaGain(caster === player, gainedByColor, { fromBoard: true });
 
     return { total, byColor };
 }
@@ -502,16 +506,19 @@ function applyManaSiphon(spell) {
     const manaColors = ['red', 'blue', 'green', 'yellow', 'purple'];
     const stealPerColor = Math.max(1, Math.floor(stealTotal / manaColors.length));
     let drained = 0;
+    const stolen = {};
 
     manaColors.forEach(color => {
         const amount = Math.min(stealPerColor, enemy.mana[color] || 0);
         if(amount > 0) {
+            stolen[color] = amount;
             enemy.mana[color] -= amount;
             player.mana[color] = Math.min(getManaCap(color), (player.mana[color] || 0) + amount);
             drained += amount;
         }
     });
 
+    flyManaSteal(true, stolen);
     showCombatAnimation({ icon: 'swirl', title: "ASPIRATION DU QI", damage: `-${drained} mana ennemi`, target: '→ Vous' }, true);
     log(`Aspiration du Qi absorbe ${drained} mana ennemi.`);
     return true;
@@ -710,6 +717,7 @@ function applyReinforce(spell) {
 
     const heal = count * Math.max(1, Math.floor(spell.healPerGem || 1));
     player.hp = Math.min(player.maxHp, player.hp + heal);
+    flyHeal(true, heal);
     renderBoard();
     showCombatAnimation({ icon: 'spark', title: "RENFORT DES TROUPES", heal: `+${heal} HP`, target: '→ Vous' }, true);
     log(`Renfort des Troupes détruit ${count} Action Gem(s) et soigne ${heal} HP.`);
@@ -734,6 +742,7 @@ function applyDivinePower(spell) {
     }
 
     player.mana.yellow = Math.min(getManaCap('yellow'), player.mana.yellow + yellowGain);
+    flyManaGain(true, { yellow: yellowGain });
     showCombatAnimation({ icon: 'star', title: "MANDAT DU CIEL", heal: `+${yellowGain} mana jaune`, target: '→ Vous' }, true);
     log(`Mandat du Ciel convertit la défense en +${yellowGain} mana jaune.`);
     return true;
@@ -817,6 +826,7 @@ function applyThrowAxe(spell) {
 
 function applyBloodlust(spell) {
     player.mana.red = Math.min(getManaCap('red'), player.mana.red + spell.manaGain);
+    flyManaGain(true, { red: spell.manaGain });
     showCombatAnimation({ icon: 'blood', title: "SOIF DE BATAILLE", heal: `+${spell.manaGain} mana rouge`, target: '→ Vous' }, true);
     log(`Soif de Bataille donne +${spell.manaGain} mana rouge !`);
     return true;
@@ -997,6 +1007,7 @@ function applyCageEnemy(spell) {
 function applySecondWind(spell) {
     const heal = Math.max(0, Math.floor(spell.heal || 0));
     player.hp = Math.min(player.maxHp, player.hp + heal);
+    flyHeal(true, heal);
     ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused'].forEach(k => { delete player.statusEffects[k]; });
     addBonusTurn(player);
     showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: '→ Vous • rejouez !' }, true);
@@ -1022,6 +1033,7 @@ function applyHarmony(spell) {
     const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
     applyDamage(enemy, dmg, { sourceSpell: spell });
     player.hp = Math.min(player.maxHp, player.hp + heal);
+    flyHeal(true, heal);
     MANA_COLORS.forEach(color => { enemy.mana[color] = Math.max(0, (enemy.mana[color] || 0) - drain); });
     showCombatAnimation({ icon: 'yinyang', title: spell.name.toUpperCase(), damage: `-${dmg} dégâts`, heal: `+${heal} PV`, target: `→ ${enemy.name} • -${drain} mana de chaque couleur` }, true);
     log(`${spell.name} inflige ${dmg} dégâts, vous soigne de ${heal} PV et vide ${drain} mana de chaque couleur à l'ennemi.`);
