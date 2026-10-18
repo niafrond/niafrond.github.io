@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
-    skullStrengthBonus, levelGapMultiplier, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
+    skullStrengthBonus, levelEdgeBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
@@ -179,20 +179,21 @@ describe('mêmes limites que le joueur : sorts et armes', () => {
     });
 });
 
-describe('écart de niveau : avantage caché du plus fort', () => {
-    test('aucun bonus à niveau égal ou inférieur, croissant puis plafonné', () => {
-        expect(levelGapMultiplier(5, 5)).toBe(1);
-        expect(levelGapMultiplier(3, 6)).toBe(1);
-        expect(levelGapMultiplier(6, 5)).toBeCloseTo(1.2);
-        expect(levelGapMultiplier(7, 5)).toBeCloseTo(1.6);
-        expect(levelGapMultiplier(6, 2)).toBeCloseTo(3);
-        expect(levelGapMultiplier(60, 2)).toBe(4);
+describe('écart de niveau : avantage caché du plus haut niveau', () => {
+    test('aucun bonus sans écart en sa faveur, croissant puis plafonné', () => {
+        expect(levelEdgeBonus({ levelEdge: 0 }, 12)).toBe(12);
+        expect(levelEdgeBonus({}, 12)).toBe(12);
+        expect(levelEdgeBonus({ levelEdge: 1 }, 12)).toBe(16 + 5);
+        expect(levelEdgeBonus({ levelEdge: 4 }, 10)).toBe(36 + 20);
+        expect(levelEdgeBonus({ levelEdge: 60 }, 10)).toBe(40 + 300);
     });
 
-    test('un niveau 6 tue un niveau 2 en un ou deux coups', () => {
-        const enemy = createMapEnemy({ templateId: 'orc_warmaster', level: 6 });
-        const hit = (enemy.weapon.damage + enemy.weaponPower) * levelGapMultiplier(6, 2);
-        const playerHp = 100 + 5;   // niveau 2 : 100 PV de base + 5 par niveau
-        expect(hit * 2).toBeGreaterThanOrEqual(playerHp);
+    test('il augmente les chances de critique et de blocage, sans changer les valeurs affichées', () => {
+        const strong = { attack: 12, defense: 6, levelEdge: 4 };
+        const plain = { attack: 12, defense: 6 };
+        expect(critChance(strong)).toBeGreaterThan(critChance(plain) * 3);
+        expect(blockChance(strong)).toBeGreaterThan(blockChance(plain) * 3);
+        expect(rawAttack(strong)).toBe(12);
+        expect(rawDefense(strong)).toBe(6);
     });
 });

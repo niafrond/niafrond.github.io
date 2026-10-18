@@ -16,6 +16,7 @@ import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
+import { rollOverleveledLoot } from "./victoryLoot.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
@@ -26,7 +27,7 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
-import { resolveStrike, blockLabel, levelGapMultiplier, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
+import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -295,17 +296,9 @@ function applyEnemyColorAffinityModifier(target, damage, sourceColor){
 // Résultat { damage, crit, block } du dernier sort de dégâts résolu par applyDamage (pour l'animation et le journal).
 let lastSpellStrike = null;
 
-// Multiplicateur d'écart de niveau subi par `target` (avantage caché du plus fort, voir combatStats.js).
-function levelGapFactor(target){
-    if(target === player) return levelGapMultiplier(enemy?.level, player.level);
-    if(target === enemy) return levelGapMultiplier(player.level, enemy?.level);
-    return 1;
-}
-
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
-    normalizedDamage = Math.floor(normalizedDamage * levelGapFactor(target));
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -1900,9 +1893,9 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     const strike = resolveStrike(dmg, player, enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
-    dmg = Math.floor(strike.damage * levelGapFactor(enemy));   // affichage ; applyDamage applique le même facteur
+    dmg = strike.damage;
 
-    applyDamage(enemy, strike.damage);
+    applyDamage(enemy, dmg);
     playSfx('weaponHit', { isPlayer: true });
 
     // Vol de vie
@@ -2275,7 +2268,6 @@ export function enemyTurn(){
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
             applyDamage(player, dmg);
-            dmg = Math.floor(dmg * levelGapFactor(player));   // affichage ; applyDamage a appliqué le même facteur
             playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
@@ -2457,6 +2449,7 @@ export function finishEnemyTurn(){
 // -------------------------------------
 // progression
 export function handleEnemyDefeated(){
+    const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
     player.bossLossStreak = recordVictory();
     playSfx('victory');
@@ -2554,10 +2547,30 @@ export function handleEnemyDefeated(){
                 }
             }
         }
-    } else {
+    } else if(levelGap <= 0) {
         log(`L'ennemi ne laisse rien derrière lui...`);
     }
-    
+
+    // Ennemi de niveau supérieur : butin rare garanti, du niveau du joueur (voir victoryLoot.js)
+    rollOverleveledLoot(levelGap, player).forEach(entry => {
+        const rarityEmoji = getRarityIcon(entry.rarity);
+        if(entry.kind === 'weapon') {
+            player.weapons.push(entry.weapon);
+            combatRewards.weapons.push(entry.weapon.name);
+            updateAvailableWeapons();
+            log(`${rarityEmoji} ${enemy.name} était plus fort que vous : vous obtenez ${entry.weapon.name} !`);
+        } else {
+            player.inventory.push({...entry.item, applied: false});
+            normalizeActiveInventoryIndex();
+            combatRewards.items.push(entry.item.name);
+            log(`${rarityEmoji} ${enemy.name} était plus fort que vous : vous obtenez ${entry.item.name} !`);
+            if(entry.item.type === 'artifact') {
+                applyArtifactEffects(player);
+                log(`${entry.item.description}`);
+            }
+        }
+    });
+
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.leveledUp) {
         log(`Niveau ${player.level} atteint ! +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP de recuperation.`);
@@ -3326,6 +3339,10 @@ export function newEnemy(selectedEnemy = null){
     // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
     enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
+
+    // Avantage caché du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), voir combatStats.js
+    enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
+    player.levelEdge = Math.max(0, (player.level || 0) - (enemy.level || 0));
 
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level, enemy);
