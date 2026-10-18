@@ -1,3 +1,9 @@
+## [2.88.0](https://github.com/niafrond/niafrond.github.io/compare/v2.87.0...v2.88.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** afficher le mana requis de l'ultime sous la jauge de rage ([#491](https://github.com/niafrond/niafrond.github.io/issues/491)) ([1df0810](https://github.com/niafrond/niafrond.github.io/commit/1df0810a4617769bb6a42dbb5007edd9b0f478aa))
+
 ## [2.87.0](https://github.com/niafrond/niafrond.github.io/compare/v2.86.0...v2.87.0) (2026-10-18)
 
 ### Features
