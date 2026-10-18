@@ -1,3 +1,9 @@
+## [2.89.0](https://github.com/niafrond/niafrond.github.io/compare/v2.88.0...v2.89.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** récupérer flèches et crânes avec les sorts de ligne et de colonne ([#492](https://github.com/niafrond/niafrond.github.io/issues/492)) ([c665a18](https://github.com/niafrond/niafrond.github.io/commit/c665a18822b9a25596dbd7a3da58435e31de81e6))
+
 ## [2.88.0](https://github.com/niafrond/niafrond.github.io/compare/v2.87.0...v2.88.0) (2026-10-18)
 
 ### Features
