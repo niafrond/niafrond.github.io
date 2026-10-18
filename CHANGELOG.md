@@ -1,3 +1,9 @@
+## [2.82.0](https://github.com/niafrond/niafrond.github.io/compare/v2.81.0...v2.82.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** cinématiques Pixel Lab, animations d'attaque et arbres morts ([#484](https://github.com/niafrond/niafrond.github.io/issues/484)) ([c64e1bc](https://github.com/niafrond/niafrond.github.io/commit/c64e1bcb0c6dc7dee8bf004516fa84f3354b3c75))
+
 ## [2.81.0](https://github.com/niafrond/niafrond.github.io/compare/v2.80.0...v2.81.0) (2026-10-17)
 
 ### Features
