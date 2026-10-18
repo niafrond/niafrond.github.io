@@ -1,3 +1,4 @@
+import { flyManaGain } from './manaFlight.js';
 import { manaIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 
@@ -198,6 +199,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         message += `Vous récupérez ${item.effect.heal} HP. `;
     }
     if(item.effect.mana) {
+        flyManaGain(true, Object.fromEntries(Object.keys(player.mana).map(color => [color, item.effect.mana])));
         Object.keys(player.mana).forEach(color => {
             const manaCap = player.manaCaps?.[color] ?? player.maxMana;
             player.mana[color] = Math.min(manaCap, player.mana[color] + item.effect.mana);
@@ -232,6 +234,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     if(item.effect.randomMana !== undefined) {
         const manaColors = Object.keys(player.mana);
         const chosenColor = manaColors[Math.floor(Math.random() * manaColors.length)];
+        flyManaGain(true, { [chosenColor]: item.effect.randomMana });
         const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;
         player.mana[chosenColor] = Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana);
         message += `Vous gagnez ${item.effect.randomMana} mana ${chosenColor}. `;

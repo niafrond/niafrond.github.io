@@ -26,6 +26,7 @@ import { playSfx } from "./sound.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
+import { flyManaSpend } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
 const BASE_MANA_CAP = 50;
@@ -397,16 +398,16 @@ function getMissingManaColor(entity, spell){
 export function consumeSpellMana(entity, spell){
     if(!entity || !entity.mana || !spell) return;
 
+    const paid = {};
     if(typeof spell.cost === 'number') {
-        entity.mana[spell.color] = Math.max(0, (entity.mana[spell.color] || 0) - spell.cost);
-        return;
+        paid[spell.color] = spell.cost;
+    } else if(spell.cost && typeof spell.cost === 'object') {
+        Object.assign(paid, spell.cost);
     }
-
-    if(spell.cost && typeof spell.cost === 'object') {
-        for(const [color, amount] of Object.entries(spell.cost)) {
-            entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
-        }
-    }
+    Object.entries(paid).forEach(([color, amount]) => {
+        entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
+    });
+    flyManaSpend(entity === player, paid);
 }
 
 function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){

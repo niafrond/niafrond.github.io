@@ -1,5 +1,6 @@
 // Gestion des effets spéciaux des sorts de classe
 
+import { flyManaGain, flyManaSteal } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
@@ -25,11 +26,14 @@ function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
     });
 
     let total = 0;
+    const gainedByColor = {};
     Object.entries(byColor).forEach(([color, amount]) => {
         if(amount <= 0) return;
         const manaResult = addManaForColor(caster, color, amount, { applyGainBonus: false });
         total += manaResult.gained;
+        gainedByColor[color] = manaResult.gained;
     });
+    flyManaGain(caster === player, gainedByColor, { fromBoard: true });
 
     return { total, byColor };
 }
@@ -502,16 +506,19 @@ function applyManaSiphon(spell) {
     const manaColors = ['red', 'blue', 'green', 'yellow', 'purple'];
     const stealPerColor = Math.max(1, Math.floor(stealTotal / manaColors.length));
     let drained = 0;
+    const stolen = {};
 
     manaColors.forEach(color => {
         const amount = Math.min(stealPerColor, enemy.mana[color] || 0);
         if(amount > 0) {
+            stolen[color] = amount;
             enemy.mana[color] -= amount;
             player.mana[color] = Math.min(getManaCap(color), (player.mana[color] || 0) + amount);
             drained += amount;
         }
     });
 
+    flyManaSteal(true, stolen);
     showCombatAnimation({ icon: 'swirl', title: "ASPIRATION DU QI", damage: `-${drained} mana ennemi`, target: '→ Vous' }, true);
     log(`Aspiration du Qi absorbe ${drained} mana ennemi.`);
     return true;
@@ -734,6 +741,7 @@ function applyDivinePower(spell) {
     }
 
     player.mana.yellow = Math.min(getManaCap('yellow'), player.mana.yellow + yellowGain);
+    flyManaGain(true, { yellow: yellowGain });
     showCombatAnimation({ icon: 'star', title: "MANDAT DU CIEL", heal: `+${yellowGain} mana jaune`, target: '→ Vous' }, true);
     log(`Mandat du Ciel convertit la défense en +${yellowGain} mana jaune.`);
     return true;
@@ -817,6 +825,7 @@ function applyThrowAxe(spell) {
 
 function applyBloodlust(spell) {
     player.mana.red = Math.min(getManaCap('red'), player.mana.red + spell.manaGain);
+    flyManaGain(true, { red: spell.manaGain });
     showCombatAnimation({ icon: 'blood', title: "SOIF DE BATAILLE", heal: `+${spell.manaGain} mana rouge`, target: '→ Vous' }, true);
     log(`Soif de Bataille donne +${spell.manaGain} mana rouge !`);
     return true;

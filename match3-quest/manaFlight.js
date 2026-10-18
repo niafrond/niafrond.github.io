@@ -54,3 +54,64 @@ export function flyManaToCounter(tileIndices, color, { isPlayer = true, type = '
         }
     } catch (e) { /* décoratif : jamais bloquant */ }
 }
+
+// Pilules entre deux éléments (sorts et objets) : `from`/`to` sont des éléments DOM ou des fonctions qui les renvoient.
+function flyDots(fromEl, toEl, color, count, { scatter = false } = {}) {
+    try {
+        const dotColor = COLORS[color];
+        if (!dotColor || !fromEl || !toEl || !getOption('manaFlight')) return;
+        if (typeof document === 'undefined' || typeof Element === 'undefined' || !Element.prototype.animate) return;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        const a = fromEl.getBoundingClientRect();
+        const b = toEl.getBoundingClientRect();
+        if ((!a.width && !a.height) || (!b.width && !b.height)) return;
+        const n = Math.max(1, Math.min(Math.ceil(count || 1), maxManaParticles()));
+        for (let i = 0; i < n; i++) {
+            const sx = a.left + (scatter ? Math.random() * a.width : a.width / 2);
+            const sy = a.top + (scatter ? Math.random() * a.height : a.height / 2);
+            const dx = b.left + b.width / 2 - sx;
+            const dy = b.top + b.height / 2 - sy;
+            const dot = document.createElement('div');
+            dot.className = 'mana-fly-dot';
+            dot.style.background = dotColor;
+            dot.style.left = `${sx - 6}px`;
+            dot.style.top = `${sy - 6}px`;
+            document.body.appendChild(dot);
+            const remove = () => dot.remove();
+            const anim = dot.animate([
+                { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                { transform: `translate(${dx}px, ${dy}px) scale(0.5)`, opacity: 0.8 },
+            ], { duration: FLIGHT_MS, delay: i * 60, easing: 'ease-in', fill: 'both' });
+            anim.onfinish = remove;
+            setTimeout(remove, FLIGHT_MS + i * 60 + 600);
+        }
+    } catch (e) { /* décoratif : jamais bloquant */ }
+}
+
+const sideOf = isPlayer => (isPlayer ? 'player' : 'enemy');
+
+// Sort payé : les pilules quittent le compteur de mana et sont consommées par le lanceur. `cost` = { couleur: quantité }.
+export function flyManaSpend(isPlayer, cost) {
+    const side = sideOf(isPlayer);
+    Object.entries(cost || {}).forEach(([color, amount]) => {
+        flyDots(document.getElementById(`${side}-mana-${color}`), document.getElementById(`${side}-stats`), color, amount);
+    });
+}
+
+// Mana reçu d'un sort ou d'un objet : les pilules partent du lanceur (ou de la zone `fromBoard` du plateau) vers son compteur.
+export function flyManaGain(isPlayer, gains, { fromBoard = false } = {}) {
+    const side = sideOf(isPlayer);
+    const source = fromBoard ? document.getElementById('board') : document.getElementById(`${side}-stats`);
+    Object.entries(gains || {}).forEach(([color, amount]) => {
+        if (amount > 0) flyDots(source, document.getElementById(`${side}-mana-${color}`), color, amount, { scatter: fromBoard });
+    });
+}
+
+// Mana volé : du compteur de la victime vers celui du voleur.
+export function flyManaSteal(thiefIsPlayer, gains) {
+    const thief = sideOf(thiefIsPlayer);
+    const victim = sideOf(!thiefIsPlayer);
+    Object.entries(gains || {}).forEach(([color, amount]) => {
+        if (amount > 0) flyDots(document.getElementById(`${victim}-mana-${color}`), document.getElementById(`${thief}-mana-${color}`), color, amount);
+    });
+}
