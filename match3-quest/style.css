@@ -3226,6 +3226,15 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .rage-bar-container.ultimate-ready { cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; }
 .rage-bar-container.ultimate-ready .rage-text { letter-spacing: 0.15em; color: #fff3c4; }
 .rage-bar-container.ultimate-ready:hover, .rage-bar-container.ultimate-ready:focus-visible { filter: brightness(1.2); }
+/* Mobile / tactile : la barre devient une vraie cible tactile (≥ 44 px), sans zoom au double-tap ni surbrillance native. */
+.rage-bar-container.ultimate-ready { touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.rage-bar-container.ultimate-ready:active { transform: scale(0.97); }
+@media (pointer: coarse), (max-width: 820px) {
+  .rage-bar-container.ultimate-ready { min-height: 44px; display: flex; }
+  .rage-bar-container.ultimate-ready .rage-bar { height: 44px; }
+  .rage-bar-container.ultimate-ready .rage-text { font-size: 1em; }
+}
+@media (prefers-reduced-motion: reduce) { .rage-bar-container.full .rage-bar { animation: none; } }
 #ultimate-spells-list .ultimate-spell { border: 1px solid #d9452e; }
 #spell-buttons .ultimate-spell { border: 1px solid #d9452e; background: linear-gradient(135deg, rgba(217,69,46,0.25), rgba(242,193,78,0.2)); }
 #spell-buttons .ultimate-spell.ready { box-shadow: 0 0 8px #f2c14e; animation: rage-pulse 0.9s ease-in-out infinite; }
