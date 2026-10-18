@@ -1,3 +1,9 @@
+## [2.85.0](https://github.com/niafrond/niafrond.github.io/compare/v2.84.0...v2.85.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** ajouter les sorts ultimes déclenchés par la jauge de rage ([#488](https://github.com/niafrond/niafrond.github.io/issues/488)) ([297dd91](https://github.com/niafrond/niafrond.github.io/commit/297dd9148be25f034079b834413f2ff39a8d68b2))
+
 ## [2.84.0](https://github.com/niafrond/niafrond.github.io/compare/v2.83.0...v2.84.0) (2026-10-18)
 
 ### Features
