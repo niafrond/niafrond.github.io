@@ -110,7 +110,7 @@ export function applyClassSpellEffect(spell) {
             return applyMirrorShield(spell);
         case 'drainMana': // Aspiration du Qi
             return applyManaSiphon(spell);
-        case 'noEndTurn': // Tir Furtif
+        case 'bonusTurn': // Tir Furtif
             return applySneakAttack(spell);
         case 'yellowToPurple': // Tir Rapide
             return applySwiftStrike(spell);
@@ -550,8 +550,8 @@ function applyManaSiphon(spell) {
 function applySneakAttack(spell) {
     applyDamage(enemy, spell.dmg, { sourceSpell: spell });
     addBonusTurn(player);
-    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Tir Furtif inflige ${spell.dmg} dégâts sans terminer le tour !`);
+    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${spell.dmg} dégâts · TOUR BONUS`, target: `→ ${enemy.name} · vous rejouez !` }, true);
+    log(`Tir Furtif inflige ${spell.dmg} dégâts et vous donne un tour bonus !`);
     return true;
 }
 
