@@ -132,13 +132,19 @@ function buildResistances(template, level){
     return applyWeaknessToResistances(resistances, resolveWeakColor(resolvePreferredColor(template)));
 }
 
+// Emplacements de sorts d'un ennemi : 2 dès le niveau 1, 3 au niveau 3, 4 (plafond du joueur) dès le niveau 6.
+export function enemySpellSlots(level){
+    return Math.min(MAX_ACTIVE_SPELLS, 2 + Math.floor(Math.max(1, level) / 3));
+}
+
 function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
     const genericSpells = getAllSpells().filter(sp => !sp.class && !sp.effect && !sp.playerOnly && sp.minLevel <= enemyLevel);   // sorts avancés (effets de plateau) : réservés au joueur
 
     const preferredColors = template.spellProfile?.preferredColors || [];
-    const maxSpells = Math.min(MAX_ACTIVE_SPELLS, Math.floor(enemyLevel / 5) + 1);   // même plafond que le joueur
-    const targetSpellCount = fullLoadout ? maxSpells : Math.ceil(Math.random() * maxSpells);   // un boss a toujours son grimoire complet
+    const slots = enemySpellSlots(enemyLevel);
+    const maxSpells = Math.min(slots, Math.max(2, Math.floor(toNumberOrDefault(template.spellProfile?.targetSpellCount, slots))));   // le gabarit plafonne son grimoire
+    const targetSpellCount = fullLoadout ? slots : maxSpells;   // un boss a toujours son grimoire complet
     const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
 
     const preferredGeneric = genericSpells.filter(sp => (sp.colors || [sp.color]).some(c => preferredColors.includes(c)));
@@ -163,8 +169,16 @@ function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     }
     takeFrom(otherGeneric, targetSpellCount);
 
-    const unique = uniqueById(selected);
-    return unique.slice(0, targetSpellCount);
+    const unique = uniqueById(selected).slice(0, targetSpellCount);
+    // Au moins un sort de dégâts direct : sinon l'ennemi n'aurait que des sorts de soutien.
+    if(!unique.some(sp => sp.type === 'damage' || sp.dmg || sp.baseDmg)){
+        const attack = [...preferredGeneric, ...otherGeneric, ...classSpells].find(sp => sp.type === 'damage' && !unique.includes(sp));
+        if(attack){
+            if(unique.length >= targetSpellCount) unique.pop();
+            unique.push(attack);
+        }
+    }
+    return unique;
 }
 
 function scoreTemplateForBoss(template){
@@ -201,7 +215,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const strength = Math.max(0, Math.round(enemyLevel * (0.3 + Math.random() * 0.5) * (stats.atkMult || 1)));
     const agility = Math.random() < 0.04 ? 0 : Math.max(1, Math.round(enemyLevel * (0.25 + Math.random() * 0.4) * (stats.defMult || 1)));
     // Attaque = chance de critique, défense = chance de blocage (en %, plafonnées à 98 % à l'usage : voir combatStats.js).
-    const atk = Math.max(0, Math.round((3 + enemyLevel * 0.9) * (stats.atkMult || 1)));
+    const atk = Math.max(0, Math.round((5 + enemyLevel * 1.0) * (stats.atkMult || 1)));
     const def = Math.max(0, Math.floor(baseDef * 0.3 * (stats.defMult || 1))) + agility;
     // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
     const power = Math.min(Math.floor((5 + enemyLevel * 4) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
