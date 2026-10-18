@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
-    skullStrengthBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
+    skullStrengthBonus, levelGapMultiplier, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
@@ -176,5 +176,23 @@ describe('mêmes limites que le joueur : sorts et armes', () => {
         const boss = createBossEnemyForTier(tier);
         expect(boss.spells.length).toBeLessThanOrEqual(4);
         expect(Array.isArray(boss.weapon)).toBe(false);
+    });
+});
+
+describe('écart de niveau : avantage caché du plus fort', () => {
+    test('aucun bonus à niveau égal ou inférieur, croissant puis plafonné', () => {
+        expect(levelGapMultiplier(5, 5)).toBe(1);
+        expect(levelGapMultiplier(3, 6)).toBe(1);
+        expect(levelGapMultiplier(6, 5)).toBeCloseTo(1.2);
+        expect(levelGapMultiplier(7, 5)).toBeCloseTo(1.6);
+        expect(levelGapMultiplier(6, 2)).toBeCloseTo(3);
+        expect(levelGapMultiplier(60, 2)).toBe(4);
+    });
+
+    test('un niveau 6 tue un niveau 2 en un ou deux coups', () => {
+        const enemy = createMapEnemy({ templateId: 'orc_warmaster', level: 6 });
+        const hit = (enemy.weapon.damage + enemy.weaponPower) * levelGapMultiplier(6, 2);
+        const playerHp = 100 + 5;   // niveau 2 : 100 PV de base + 5 par niveau
+        expect(hit * 2).toBeGreaterThanOrEqual(playerHp);
     });
 });

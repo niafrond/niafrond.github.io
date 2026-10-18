@@ -207,7 +207,7 @@ function pickBossTemplate(preferredTemplateId = null){
 
 function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons, { boss = false } = {}){
     const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
-    const baseHp = 40 + enemyLevel * 10;
+    const baseHp = 55 + enemyLevel * 12;
     const baseDef = enemyDefenseForLevel(enemyLevel);
 
     const hp = Math.floor(baseHp * (stats.hpMult || 1));
@@ -218,7 +218,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const atk = Math.max(0, Math.round((5 + enemyLevel * 1.0) * (stats.atkMult || 1)));
     const def = Math.max(0, Math.floor(baseDef * 0.3 * (stats.defMult || 1))) + agility;
     // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
-    const power = Math.min(Math.floor((5 + enemyLevel * 4) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
+    const power = Math.min(Math.floor((6 + enemyLevel * 5) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
 
     // Les armes de l'ennemi : tirées parmi la moitié la plus puissante de celles de son niveau (un boss : les deux plus puissantes).
     let enemyWeapon = null;
@@ -230,8 +230,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
             enemyWeapon = pickRandom(availableWeapons.slice(0, poolSize));
         }
     }
-    // Dégâts ajoutés à chaque coup d'arme (la force de l'ennemi, en quelque sorte) : 30 % de la puissance brute.
-    const weaponPower = enemyWeapon ? Math.floor(power * 0.3) : 0;
+    // Dégâts ajoutés à chaque coup d'arme (la force de l'ennemi, en quelque sorte) : 45 % de la puissance brute.
+    const weaponPower = enemyWeapon ? Math.floor(power * 0.45) : 0;
 
     const enemyAbilities = [];
     if(Math.random() < 0.15) enemyAbilities.push('fireAffinity');

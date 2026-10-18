@@ -14,6 +14,16 @@ export const TOTAL_BLOCK_SHARE = 0.4;      // part des blocages qui sont totaux 
 export const SKULL_STRENGTH_DIVISOR = 2;   // 1 dégât de plus par crâne tous les 2 points de force
 export const SKULL_STRENGTH_BONUS_CAP = 6;
 
+// Avantage caché du plus fort : à chaque niveau d'écart, les dégâts de l'attaquant sont majorés (×1,2 à 1 niveau, ×1,6 à 2,
+// ×3 à 4, ×4 au plus). Un joueur niveau 2 face à un niveau 6 est tué en un ou deux coups ; l'inverse vaut aussi pour lui.
+// Aucun malus pour le plus faible, et rien n'est affiché au joueur.
+export const LEVEL_GAP_MAX_MULT = 4;
+export function levelGapMultiplier(attackerLevel, defenderLevel) {
+    const gap = Math.floor(Number(attackerLevel) || 0) - Math.floor(Number(defenderLevel) || 0);
+    if (gap <= 0) return 1;
+    return Math.min(LEVEL_GAP_MAX_MULT, 1 + 0.1 * gap + 0.1 * gap * gap);
+}
+
 const clampChance = value => Math.max(0, Math.min(STAT_CHANCE_CAP, Math.floor(Number(value) || 0)));
 
 // Bonus d'Atk/Déf apportés par l'arme en main droite/gauche et le bouclier (champs `atkBonus` / `defBonus`).

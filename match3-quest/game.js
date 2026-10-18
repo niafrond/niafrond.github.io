@@ -26,7 +26,7 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
-import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
+import { resolveStrike, blockLabel, levelGapMultiplier, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -295,9 +295,17 @@ function applyEnemyColorAffinityModifier(target, damage, sourceColor){
 // Résultat { damage, crit, block } du dernier sort de dégâts résolu par applyDamage (pour l'animation et le journal).
 let lastSpellStrike = null;
 
+// Multiplicateur d'écart de niveau subi par `target` (avantage caché du plus fort, voir combatStats.js).
+function levelGapFactor(target){
+    if(target === player) return levelGapMultiplier(enemy?.level, player.level);
+    if(target === enemy) return levelGapMultiplier(player.level, enemy?.level);
+    return 1;
+}
+
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    normalizedDamage = Math.floor(normalizedDamage * levelGapFactor(target));
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -1892,9 +1900,9 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     const strike = resolveStrike(dmg, player, enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
-    dmg = strike.damage;
+    dmg = Math.floor(strike.damage * levelGapFactor(enemy));   // affichage ; applyDamage applique le même facteur
 
-    applyDamage(enemy, dmg);
+    applyDamage(enemy, strike.damage);
     playSfx('weaponHit', { isPlayer: true });
 
     // Vol de vie
@@ -2267,6 +2275,7 @@ export function enemyTurn(){
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
             applyDamage(player, dmg);
+            dmg = Math.floor(dmg * levelGapFactor(player));   // affichage ; applyDamage a appliqué le même facteur
             playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
