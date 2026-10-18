@@ -1,3 +1,9 @@
+## [2.90.0](https://github.com/niafrond/niafrond.github.io/compare/v2.89.1...v2.90.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** roseaux franchissables, décors à l'échelle, rééquilibrage des sorts ([#494](https://github.com/niafrond/niafrond.github.io/issues/494)) ([81dc30d](https://github.com/niafrond/niafrond.github.io/commit/81dc30d3a8b3b58c30952ef2db6c38cd2d9c7176))
+
 ## [2.89.1](https://github.com/niafrond/niafrond.github.io/compare/v2.89.0...v2.89.1) (2026-10-18)
 
 ### Bug Fixes
