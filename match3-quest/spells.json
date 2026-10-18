@@ -693,11 +693,11 @@
         "red"
       ],
       "type": "board",
-      "cost": 8,
+      "cost": 4,
       "effect": "sweepRow",
       "minLevel": 2,
-      "dmgPerTile": 2,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 2 dégâts par case rouge"
+      "dmgPerTile": 3,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 3 dégâts par case rouge"
     },
     {
       "id": "frostCleave",
@@ -707,11 +707,11 @@
         "blue"
       ],
       "type": "board",
-      "cost": 8,
+      "cost": 4,
       "effect": "sweepCol",
       "minLevel": 2,
-      "dmgPerTile": 2,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 2 dégâts par case bleue"
+      "dmgPerTile": 3,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 3 dégâts par case bleue"
     },
     {
       "id": "galeSlash",
@@ -721,11 +721,11 @@
         "yellow"
       ],
       "type": "board",
-      "cost": 10,
+      "cost": 6,
       "effect": "sweepCol",
       "minLevel": 4,
-      "dmgPerTile": 3,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 3 dégâts par case jaune"
+      "dmgPerTile": 4,
+      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 4 dégâts par case jaune"
     },
     {
       "id": "voidRift",
@@ -735,11 +735,11 @@
         "purple"
       ],
       "type": "board",
-      "cost": 12,
+      "cost": 7,
       "effect": "sweepRow",
       "minLevel": 6,
-      "dmgPerTile": 3,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 3 dégâts par case violette"
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 4 dégâts par case violette"
     },
     {
       "id": "crimsonPurge",
