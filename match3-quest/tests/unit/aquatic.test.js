@@ -1,4 +1,5 @@
 // Monde aquatique, Pas de Yu (yubu) et cheval : marcher sur l'eau, accès à la Mer des Mille Îlots.
+import { isLowObstacle } from '../../decor.js';
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS, QUESTS } from '../../story.js';
 import {
@@ -18,7 +19,10 @@ describe('Pas de Yu : marcher sur l\'eau', () => {
         const [lx, ly] = [5, 13];   // la mare du village des Rizières (la couronne d'eau des bords n'est pas un bon repère)
         expect(isTerrainBlocked(screen, lx, ly)).toBe(true);
         expect(isTerrainBlocked(screen, lx, ly, true)).toBe(false);
-        expect(isTerrainBlocked(screen, screen.obstacles[0][0], screen.obstacles[0][1], true)).toBe(true);   // un mur reste un mur
+        // les roseaux se traversent, un arbre mort ou un mur reste un mur
+        const [wx, wy] = screen.obstacles.flatMap(([rx, ry, rw, rh]) => Array.from({ length: rw * rh }, (_, i) => [rx + i % rw, ry + Math.floor(i / rw)]))
+            .find(([x, y]) => !isLowObstacle(screen, x, y));
+        expect(isTerrainBlocked(screen, wx, wy, true)).toBe(true);
         // juste à gauche de la mare : on ne peut pas y entrer sans le Pas de Yu
         const base = { screenId: screen.id, x: lx - 1, y: ly };
         const free = createSession(base);
