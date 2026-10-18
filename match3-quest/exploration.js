@@ -36,6 +36,7 @@ import { COMPANIONS, BANTER } from './companions.js';
 import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
+import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
@@ -80,14 +81,32 @@ export function grassOf(screen) {
     return { cells, rate, safeSteps, table };
 }
 
+export { isLowObstacle };
+
+// La carte a-t-elle des obstacles bas franchissables (roseaux) ? Calculé une fois par jeu d'obstacles.
+const lowObstacleCache = new WeakMap();
+function hasLowObstacles(screen) {
+    const key = screen.obstacles;
+    if (!Array.isArray(key)) return false;
+    if (!lowObstacleCache.has(key)) {
+        let found = false;
+        for (const [rx, ry, rw, rh] of key) {
+            for (let x = rx; x < rx + rw && !found; x++) for (let y = ry; y < ry + rh && !found; y++) found = isLowObstacle(screen, x, y);
+            if (found) break;
+        }
+        lowObstacleCache.set(key, found);
+    }
+    return lowObstacleCache.get(key);
+}
+
 // Rencontres aléatoires d'une carte : les hautes herbes, plus l'eau et la lave (`screen.liquids`, franchissables avec le Pas de Yu
-// ou dans un écran aquatique) qui agissent comme des buissons. Table et taux : ceux des herbes de la carte, à défaut ceux de la
+// ou dans un écran aquatique) et les obstacles bas (roseaux, decor.js) qui agissent comme des buissons. Table et taux : ceux des herbes de la carte, à défaut ceux de la
 // carte sauvage de la région. Null sur une zone sûre, un intérieur, une arène ou sans table.
 export function encounterOf(screen) {
     const own = grassOf(screen);
     if (own) return own;
     if (!screen || screen.safe || screen.interior || screen.arena || screen.kind === 'arena') return null;
-    if (!(screen.liquids || []).length) return null;
+    if (!(screen.liquids || []).length && !hasLowObstacles(screen)) return null;
     const wild = grassOf(SCREENS[`${screen.region}_wild`]);
     return wild && wild.table.length ? { cells: [], rate: wild.rate, safeSteps: wild.safeSteps, table: wild.table } : null;
 }
@@ -95,7 +114,7 @@ export function encounterOf(screen) {
 // La case (x, y) déclenche-t-elle des rencontres : hautes herbes, eau ou lave ?
 export function isEncounterCell(screen, x, y) {
     const g = encounterOf(screen);
-    return Boolean(g) && (inRect(g.cells, x, y) || inRect(screen.liquids || [], x, y));
+    return Boolean(g) && (inRect(g.cells, x, y) || inRect(screen.liquids || [], x, y) || isLowObstacle(screen, x, y));
 }
 
 // La case (x, y) de la carte est-elle une case de hautes herbes ?
@@ -149,7 +168,7 @@ export function toggleMount(session, owned) {
 // qu'avec le Pas de Yu, ses eaux sont donc toujours franchissables.
 export function isTerrainBlocked(screen, x, y, onWater = false) {
     if (x < 0 || y < 0 || x >= screen.w || y >= screen.h) return true;
-    if (inRect(screen.obstacles, x, y)) return true;
+    if (inRect(screen.obstacles, x, y) && !isLowObstacle(screen, x, y)) return true;   // les roseaux se traversent
     return !(onWater || screen.aquatic) && inRect(screen.liquids || [], x, y);
 }
 
