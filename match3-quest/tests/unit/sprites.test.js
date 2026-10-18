@@ -141,7 +141,9 @@ describe('qualité technique des SVG', () => {
     });
 
     test('tous les dessins sont différents les uns des autres', () => {
-        const svgs = all.map(([, svg]) => svg);
+        // Alias volontaires : gabarits qui réutilisent le dessin d'un autre ennemi (voir UNIVERS.md, sprites/cn/enemies-1.js).
+        const ALIAS_IDS = new Set(['ennemi mud_toad']);
+        const svgs = all.filter(([name]) => !ALIAS_IDS.has(name)).map(([, svg]) => svg);
         expect(new Set(svgs).size).toBe(svgs.length);
     });
 

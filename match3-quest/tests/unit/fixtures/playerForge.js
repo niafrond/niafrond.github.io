@@ -86,7 +86,9 @@ export function extractGameFunctions(names, preamble = '') {
 }
 export const gameRules = extractGameFunctions(
     ['getUnlockedSpellCap', 'buildUnlockedSpellsList', 'canEntityCastSpell', 'consumeSpellMana', 'spellColorsOf'],
-    `const HIGH_SPELL_FROM_LEVEL = ${HIGH_SPELL_FROM_LEVEL};`
+    // flyManaSpend / flyHeal : animations DOM de manaFlight.js (importées par game.js), sans effet sur les règles testées ;
+    // player : l'état global de game.js (consumeSpellMana compare l'entité au joueur pour orienter l'animation).
+    `const HIGH_SPELL_FROM_LEVEL = ${HIGH_SPELL_FROM_LEVEL}; const flyManaSpend = () => {}; const flyHeal = () => {}; const player = Symbol('joueur');`
 );
 
 // ── Sorts : règle de déblocage de game.js (updateAvailableSpells), appliquée avec les vrais modules ───────────────────────

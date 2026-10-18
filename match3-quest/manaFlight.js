@@ -92,28 +92,34 @@ const sideOf = isPlayer => (isPlayer ? 'player' : 'enemy');
 
 // Sort payé : les pilules quittent le compteur de mana et sont consommées par le lanceur. `cost` = { couleur: quantité }.
 export function flyManaSpend(isPlayer, cost) {
-    const side = sideOf(isPlayer);
-    Object.entries(cost || {}).forEach(([color, amount]) => {
-        flyDots(document.getElementById(`${side}-mana-${color}`), document.getElementById(`${side}-stats`), color, amount);
-    });
+    try {
+        const side = sideOf(isPlayer);
+        Object.entries(cost || {}).forEach(([color, amount]) => {
+            flyDots(document.getElementById(`${side}-mana-${color}`), document.getElementById(`${side}-stats`), color, amount);
+        });
+    } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
 
 // Mana reçu d'un sort ou d'un objet : les pilules partent du lanceur (ou de la zone `fromBoard` du plateau) vers son compteur.
 export function flyManaGain(isPlayer, gains, { fromBoard = false } = {}) {
-    const side = sideOf(isPlayer);
-    const source = fromBoard ? document.getElementById('board') : document.getElementById(`${side}-stats`);
-    Object.entries(gains || {}).forEach(([color, amount]) => {
-        if (amount > 0) flyDots(source, document.getElementById(`${side}-mana-${color}`), color, amount, { scatter: fromBoard });
-    });
+    try {
+        const side = sideOf(isPlayer);
+        const source = fromBoard ? document.getElementById('board') : document.getElementById(`${side}-stats`);
+        Object.entries(gains || {}).forEach(([color, amount]) => {
+            if (amount > 0) flyDots(source, document.getElementById(`${side}-mana-${color}`), color, amount, { scatter: fromBoard });
+        });
+    } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
 
 // Mana volé : du compteur de la victime vers celui du voleur.
 export function flyManaSteal(thiefIsPlayer, gains) {
-    const thief = sideOf(thiefIsPlayer);
-    const victim = sideOf(!thiefIsPlayer);
-    Object.entries(gains || {}).forEach(([color, amount]) => {
-        if (amount > 0) flyDots(document.getElementById(`${victim}-mana-${color}`), document.getElementById(`${thief}-mana-${color}`), color, amount);
-    });
+    try {
+        const thief = sideOf(thiefIsPlayer);
+        const victim = sideOf(!thiefIsPlayer);
+        Object.entries(gains || {}).forEach(([color, amount]) => {
+            if (amount > 0) flyDots(document.getElementById(`${victim}-mana-${color}`), document.getElementById(`${thief}-mana-${color}`), color, amount);
+        });
+    } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
 
 // Soin : petites pilules à croix verte qui partent du soigné vers sa barre de vie.
