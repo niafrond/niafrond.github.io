@@ -1342,6 +1342,7 @@ export function updateStats(){
     const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
 
     const playerDiv=document.getElementById('player-stats');
+    // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
     const equippedUltimate = getEquippedUltimate(player);
     const ultimateReady = !!equippedUltimate && isRageFull(player) && gameState.combatState === 'active';
@@ -1355,13 +1356,15 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat rage-stat"${equippedUltimate ? '' : ' title="Rage : se charge quand vous subissez des dégâts"'}>
+            ${equippedUltimate ? `
+            <div class="stat rage-stat">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <progress class="rage-bar" value="${Math.floor(player.rage || 0)}" max="${RAGE_MAX}"></progress>
                     <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}`}</span>
                 </div>
-                ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
+                ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
+            ` : ''}
             <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
