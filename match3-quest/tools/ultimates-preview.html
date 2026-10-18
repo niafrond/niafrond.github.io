@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aperçu des cinématiques d'ultimes</title>
+<style>
+  body { background: #14111f; color: #eee; font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
+  h1 { margin: 0 0 4px; font-size: 20px; }
+  p.hint { margin: 0 0 20px; color: #9a94b8; font-size: 13px; }
+  section { margin-bottom: 28px; }
+  h2 { font-size: 15px; margin: 0 0 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h2 small { color: #9a94b8; font-weight: normal; }
+  button { background: #e8b923; color: #1b1030; border: 0; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; }
+  .plans { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+  figure { margin: 0; flex: 0 0 auto; }
+  figcaption { font-size: 11px; color: #9a94b8; margin-bottom: 4px; }
+  canvas { width: 144px; height: 256px; image-rendering: pixelated; background: #000; display: block; border: 1px solid #2c2748; }
+  .missing { width: 144px; height: 256px; display: grid; place-items: center; background: #221d36; color: #ff8a8a; font-size: 12px; text-align: center; border: 1px dashed #ff8a8a; }
+</style>
+</head>
+<body>
+<h1>Cinématiques d'ultimes — aperçu</h1>
+<p class="hint">Chaque ligne montre les 4 plans d'un ultime (boucles Pixel Lab brutes). « Cinématique complète » joue la vraie scène du jeu (zoom, éclairs, tremblement, titre). Toucher pour la passer.</p>
+<div id="root"></div>
+<script type="module">
+import { playUltimateScene, ULTIMATE_PLAN_COUNT } from '../ultimateCinematics.js';
+
+const root = document.getElementById('root');
+// spells.js charge './spells.json' relativement à la page (introuvable depuis tools/) : on lit le catalogue ici.
+const ultimateSpells = await fetch('../spells.json').then(r => r.json()).then(c => c.ultimateSpells || []).catch(e => { root.textContent = `Erreur : spells.json illisible (${e.message})`; return []; });
+if (!ultimateSpells.length && !root.textContent) root.textContent = 'Aucun ultime trouvé dans spells.json.';
+const index = await fetch('../sprites/ultimates/index.json').then(r => r.json()).catch(() => ({}));
+const anims = [];
+
+for (const sp of ultimateSpells) {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${sp.name} <small>${sp.class} · ${sp.id}</small><button type="button">Cinématique complète</button></h2><div class="plans"></div>`;
+    sec.querySelector('button').onclick = () => playUltimateScene(sp);
+    const plans = sec.querySelector('.plans');
+    for (let n = 1; n <= ULTIMATE_PLAN_COUNT; n++) {
+        const meta = index[`${sp.id}-${n}`];
+        const fig = document.createElement('figure');
+        fig.innerHTML = `<figcaption>Plan ${n}${meta ? ` · ${meta.frames} images` : ''}</figcaption>`;
+        if (!meta) { fig.insertAdjacentHTML('beforeend', '<div class="missing">planche absente</div>'); plans.appendChild(fig); continue; }
+        const canvas = document.createElement('canvas');
+        [canvas.width, canvas.height] = meta.size;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        const img = new Image();
+        img.src = `../sprites/ultimates/${sp.id}-${n}.png`;
+        anims.push({ ctx, img, meta });
+        fig.appendChild(canvas);
+        plans.appendChild(fig);
+    }
+    root.appendChild(sec);
+}
+
+const t0 = performance.now();
+(function tick(now) {
+    const t = (now - t0) / 1000;
+    for (const { ctx, img, meta } of anims) {
+        if (!img.complete || !img.naturalWidth) continue;
+        const f = Math.floor(t * meta.fps) % meta.frames;
+        ctx.drawImage(img, f * meta.size[0], 0, meta.size[0], meta.size[1], 0, 0, meta.size[0], meta.size[1]);
+    }
+    requestAnimationFrame(tick);
+})(t0);
+</script>
+</body>
+</html>

@@ -1,19 +1,19 @@
 // Bibliothèque de noms de joueur aléatoires
 
 const classNamePools = {
-    // Maître taoïste
+    // Mage antique (Fāngshì)
     sorcerer: [
         "Li Wei", "Zhang Yun", "Lan Xi", "Chen Daoxi", "Wen Qing", "Su Ming", "Yun Shu", "Bai Heng"
     ],
-    // Archer céleste (le Hou Yi par défaut)
+    // Rôdeur errant (Yóuxiá, le Hou Yi par défaut)
     assassin: [
         "Hou Yi", "Feng Jian", "Mei Ling", "Yu Hao", "Lian Hua", "Tian Lang", "Xiao Yan", "Jin Rui"
     ],
-    // Garde impérial
+    // Commandant (Wǔjiàng)
     templar: [
         "Zhao Yun", "Guan Tai", "Liu Shan", "Wang Gang", "Mu Lan", "Shen Bao", "Tang Rui", "Gao Heng"
     ],
-    // Guerrier des steppes
+    // Guerrier (Wǔshì)
     barbarian: [
         "Batu", "Temujin", "Borte", "Subutai", "Qasar", "Hulan", "Arslan", "Jebe"
     ]
