@@ -1,3 +1,9 @@
+## [2.84.0](https://github.com/niafrond/niafrond.github.io/compare/v2.83.0...v2.84.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** orienter les combattants face à face, flèche de Hou Yi et animation d'attaque pour armes et sorts ([#486](https://github.com/niafrond/niafrond.github.io/issues/486)) ([42fd0ef](https://github.com/niafrond/niafrond.github.io/commit/42fd0ef6f039e60a9d8087539e47f4c8c945c0e3))
+
 ## [2.83.0](https://github.com/niafrond/niafrond.github.io/compare/v2.82.0...v2.83.0) (2026-10-18)
 
 ### Features
