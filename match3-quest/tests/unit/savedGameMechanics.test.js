@@ -1835,7 +1835,7 @@ describe('boss : conseils après des défaites répétées (héros sauvegardé)'
         const tips = applicableTips(ctx);
         expect(tips.join(' ')).toMatch(/points d'attribut/);
         expect(tips.join(' ')).toMatch(/or/);
-        expect(tips[0]).toContain('niveau 13');   // boss plus fort que le héros : le conseil le dit
+        expect(tips[0]).toMatch(/redoutable/);   // boss plus fort que le héros : le conseil le dit, sans citer de niveau
         expect(tips).toContain(pickBossTip(relu.bossLossStreak, ctx));
     });
 

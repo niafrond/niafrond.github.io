@@ -30,9 +30,9 @@ export function applicableTips(ctx = {}) {
     const level = Number(ctx.playerLevel) || 1;
     const bossLevel = Number(ctx.bossLevel) || 0;
     if (bossLevel > level) {
-        tips.push(`Ce boss est de niveau ${bossLevel}, vous n'êtes que niveau ${level} : tentez des ennemis plus faibles pour monter votre niveau avant de revenir.`);
+        tips.push('Ce boss est redoutable : tentez des ennemis plus faibles pour vous aguerrir avant de revenir.');
     } else {
-        tips.push('Tentez des ennemis plus faibles pour monter votre niveau et gagner de l\'or avant de revenir.');
+        tips.push('Tentez des ennemis plus faibles pour vous aguerrir et gagner de l\'or avant de revenir.');
     }
     if ((Number(ctx.unspentPoints) || 0) > 0) {
         tips.push('Vous avez des points d\'attribut à dépenser : ils améliorent vos statistiques et votre mana.');
