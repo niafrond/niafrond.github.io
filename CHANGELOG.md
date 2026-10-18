@@ -1,3 +1,9 @@
+## [2.86.0](https://github.com/niafrond/niafrond.github.io/compare/v2.85.0...v2.86.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** cinématiques plein écran des ultimes et classes en termes chinois ([#489](https://github.com/niafrond/niafrond.github.io/issues/489)) ([9aebb32](https://github.com/niafrond/niafrond.github.io/commit/9aebb3257d4186b8647119ad13fd1d808fdf4c4d))
+
 ## [2.85.0](https://github.com/niafrond/niafrond.github.io/compare/v2.84.0...v2.85.0) (2026-10-18)
 
 ### Features
