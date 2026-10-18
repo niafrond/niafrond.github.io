@@ -11,8 +11,8 @@ describe('fin de tour après un sort qui modifie le plateau', () => {
     const effects = read('classSpellEffects.js');
 
     test('les sorts de classe passent par endPlayerSpellTurn au lieu de finishPlayerTurn direct', () => {
-        expect((game.match(/module\.endPlayerSpellTurn\(boardBefore\)/g) || []).length).toBe(2);   // lancer normal + cheat
-        expect((game.match(/module\.snapshotBoard\(\)/g) || []).length).toBe(2);
+        expect((game.match(/module\.endPlayerSpellTurn\(boardBefore\)/g) || []).length).toBe(3);   // lancer normal + ultime + cheat
+        expect((game.match(/module\.snapshotBoard\(\)/g) || []).length).toBe(3);
         expect(game).not.toMatch(/applyClassSpellEffect\(spell\)\) \{\s*saveUpdate\(\);\s*tutorialCallbacks\.onSpellCast\?\.\(\);\s*finishPlayerTurn\(\);/);
     });
 

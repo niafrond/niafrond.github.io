@@ -35,6 +35,7 @@ function loadSpellsCatalogSync(){
         assassinSpells: [],
         templarSpells: [],
         barbarianSpells: [],
+        ultimateSpells: [],
         allClassSpells: []
     };
 }
@@ -100,6 +101,11 @@ export const templarSpells = Array.isArray(spellCatalog.templarSpells)
     : [];
 export const barbarianSpells = Array.isArray(spellCatalog.barbarianSpells)
     ? spellCatalog.barbarianSpells.map(normalizeSpellColorAttributes)
+    : [];
+
+// Sorts ultimes (jauge de rage) : hors des listes de sorts équipables et de la limite de 4 sorts.
+export const ultimateSpells = Array.isArray(spellCatalog.ultimateSpells)
+    ? spellCatalog.ultimateSpells.map(normalizeSpellColorAttributes)
     : [];
 
 export const allClassSpells = Array.isArray(spellCatalog.allClassSpells)

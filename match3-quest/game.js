@@ -23,6 +23,7 @@ import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summari
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
+import { RAGE_MAX, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -323,6 +324,11 @@ export function applyDamage(target, damage, options = {}){
     const currentHp = Math.max(0, Math.floor(target.hp || 0));
     const nextHp = Math.max(0, currentHp - normalizedDamage);
     target.hp = nextHp;
+
+    // Jauge de rage : se charge quand le joueur perd des PV en combat.
+    if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {
+        addRage(player, rageFromDamage(currentHp - nextHp, player.maxHp));
+    }
 
     if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
         const reflectTurns = Math.max(0, Math.floor(player.statusEffects?.reflectDamage || 0));
@@ -875,6 +881,7 @@ export function restartCombat(){
     player.hp = player.maxHp;
     player.combatPoints = 0;
     player.bonusTurn = 0;
+    resetRage(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
     enemy.bonusTurn = 0;
@@ -1310,6 +1317,12 @@ export function updateStats(){
                 <div class="hp-bar-container">
                     <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
+                </div>
+            </div>
+            <div class="stat rage-stat" title="Rage : se charge quand vous subissez des dégâts">
+                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}">
+                    <progress class="rage-bar" value="${Math.floor(player.rage || 0)}" max="${RAGE_MAX}"></progress>
+                    <span class="rage-text">RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}</span>
                 </div>
             </div>
             <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
@@ -1899,6 +1912,38 @@ export function castSpell(spellId){
     finishPlayerTurn();
 }
 
+// Lance un ultime : jauge de rage pleine + mana requis ; la jauge retombe à 0. La cinématique plein écran éventuelle
+// (voir `playUltimateCinematic`) se joue avant l'effet.
+export async function castUltimate(spellId){
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(rejectRushedAction()) return;
+    const spell = getUltimateById(spellId);
+    if(!spell || spell.class !== player.class){ log("Ultime indisponible !"); return; }
+    if(player.level < spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
+    if(!canEntityCastSpell(player, spell)){
+        const missingColor = getMissingManaColor(player, spell);
+        log(missingColor ? `Pas assez de mana ${missingColor} !` : "Pas assez de mana !");
+        return;
+    }
+    actionGuard.markPlayerAction();
+    consumeSpellMana(player, spell);
+    resetRage(player);
+    playSfx('spellCast', { isPlayer: true });
+    logActiveAction(`lance l'ultime ${spell.name}`);
+    updateStats();
+    await playUltimateCinematic(spell);
+    const module = await import('./classSpellEffects.js');
+    const boardBefore = module.snapshotBoard();
+    if(await module.applyClassSpellEffect(spell)) {
+        saveUpdate();
+        module.endPlayerSpellTurn(boardBefore);
+    } else {
+        saveUpdate();
+    }
+}
+
 // API de test: permet de simuler n'importe quel sort sans contraintes de niveau/mana.
 export async function castSpellForCheat(spellId, options = {}){
     const consumeTurn = options.consumeTurn === true;
@@ -1914,7 +1959,7 @@ export async function castSpellForCheat(spellId, options = {}){
     if(!spell){
         try {
             const classesModule = await import('./classes.js');
-            spell = classesModule.allClassSpells.find(s => s.id === spellId) || null;
+            spell = classesModule.allClassSpells.find(s => s.id === spellId) || getUltimateById(spellId);
         } catch {
             spell = null;
         }
@@ -2769,7 +2814,39 @@ export function createSpellButtons(){
 
         container.appendChild(btn);
     });
+    createUltimateButtons(container);
     updateSpellsTab();
+}
+
+// Ultimes de la classe : hors limite des 4 sorts, utilisables quand la jauge de rage est pleine et le mana suffisant.
+function createUltimateButtons(container){
+    if(!player.class) return;
+    getUltimatesForClass(player.class).forEach(sp => {
+        const btn = document.createElement('div');
+        btn.className = 'enemy-spell-item ultimate-spell';
+        btn.tabIndex = 0;
+        markMultiManaSpell(btn, sp);
+        btn.innerHTML = `
+            <div class="spell-name">ULTIME · ${sp.name}</div>
+            <div class="spell-cost">${spellCostHtml(sp)} - ${sp.dmg} dmg</div>
+        `;
+        const ready = player.level >= sp.minLevel && isRageFull(player) && canEntityCastSpell(player, sp);
+        if(!ready) {
+            btn.classList.add('disabled');
+            btn.tabIndex = -1;
+        } else {
+            btn.classList.add('ready');
+            btn.onclick = () => castUltimate(sp.id);
+            btn.onkeydown = (event) => {
+                if(event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    castUltimate(sp.id);
+                }
+            };
+        }
+        bindTooltip(btn, () => showSpellTooltip(btn, sp), () => hideSpellTooltip());
+        container.appendChild(btn);
+    });
 }
 
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
