@@ -40,6 +40,15 @@ const D = {
         `<path d="M38 30 L46 30 Q52 30 52 24 L52 16 Q52 12 48 12 Q44 12 44 16 L44 22 L38 22" fill="#5d9a4a"/>` +
         `<path d="M32 12 L32 54" fill="none" stroke="#3f7634" stroke-width="1.4"/><circle cx="32" cy="6" r="3" fill="#f27aa0"/>` +
         `<path d="M20 58 L44 58" fill="none" stroke="#c9a06a" stroke-width="3"/>`,
+    // Obstacles à l'échelle d'une case (les montagnes et volcans ci-dessus restent des icônes de carte du monde).
+    spire: () => `<path d="M14 58 L22 30 L28 36 L34 8 L42 34 L48 28 L52 58Z" fill="#4a3c3a"/>` +
+        `<path d="M34 8 L42 34 L40 58 L46 58 L52 58 L48 28 L42 34Z" fill="#2e2426" ${N}/>` +
+        `<path d="M34 16 L32 28 L36 26 L35 38" fill="none" stroke="#ff7a2e" stroke-width="2.4"/><circle cx="34" cy="12" r="2" fill="#ffd24a" ${N}/>`,
+    stalagmite: () => `<path d="M10 58 L16 34 L22 58Z M20 58 L30 10 L40 58Z M38 58 L46 30 L54 58Z" fill="#7a726a"/>` +
+        `<path d="M30 10 L40 58 L34 58 L32 30Z" fill="#5a534c" ${N}/><path d="M24 40 L28 34 M44 44 L47 38" fill="none" stroke="#9a9288" stroke-width="1.4"/>`,
+    crag: () => `<path d="M8 58 L14 36 L22 40 L30 20 L40 34 L46 28 L56 58Z" fill="#7a7690"/>` +
+        `<path d="M30 20 L36 30 L32 32 L28 28 L24 32Z M46 28 L50 38 L46 36 L42 38Z" fill="#f4f2ea" stroke-width="1.4"/>` +
+        `<path d="M30 20 L34 58" fill="none" stroke="#5a5670" stroke-width="1.4"/>`,
     mountain: () => `<path d="M2 58 L24 16 L36 34 L44 24 L62 58Z" fill="#7a7690"/>` +
         `<path d="M24 16 L30 28 L26 30 L22 26 L18 30 Z M44 24 L50 36 L46 34 L42 38 L38 32Z" fill="#f4f2ea" stroke-width="1.4"/>` +
         `<path d="M36 34 L44 58 M24 16 L14 58" fill="none" stroke="#5a5670" stroke-width="1.4"/>`,

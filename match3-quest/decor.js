@@ -7,13 +7,13 @@ export const BIOME_DECOR = {
     riverbed: ['rock', 'rice', 'rock'],
     bamboo: ['bamboo', 'deadtree', 'bamboo'],
     gobi: ['cactus', 'rock', 'cactus'],
-    storm: ['mountain', 'deadtree', 'mountain'],
-    volcano: ['volcano', 'rock', 'volcano'],
+    storm: ['crag', 'deadtree', 'crag'],
+    volcano: ['spire', 'rock', 'spire'],
     savanna: ['rice', 'rock', 'rice'],
     coast: ['wave', 'rock', 'wave'],
     fusang: ['tree', 'deadtree', 'tree'],
     house: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'],
-    cave: ['rock', 'mountain', 'rock'],
+    cave: ['rock', 'stalagmite', 'rock'],
     moon: ['rock', 'deadtree', 'rock']
 };
 
