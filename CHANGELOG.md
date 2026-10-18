@@ -1,3 +1,9 @@
+## [2.91.0](https://github.com/niafrond/niafrond.github.io/compare/v2.90.0...v2.91.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** animer l'écran de démarrage avec une boucle Pixel Lab ([#495](https://github.com/niafrond/niafrond.github.io/issues/495)) ([351360d](https://github.com/niafrond/niafrond.github.io/commit/351360dd5a66dec5ef31fbda6042cb39dbe1a9a2))
+
 ## [2.90.0](https://github.com/niafrond/niafrond.github.io/compare/v2.89.1...v2.90.0) (2026-10-18)
 
 ### Features
