@@ -2588,6 +2588,36 @@ body.dark-mode .tutorial-card {
     font: 12px "Pixelify Sans", monospace;
 }
 
+/* Cinématique d'ultime (ultimateCinematics.js) : bandes noires, carton-titre doré */
+.cine-ultimate-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 9%;
+    background: #000;
+    pointer-events: none;
+    animation: ult-bar 0.8s ease-out both;
+}
+.cine-ultimate-bar.top { top: 0; transform-origin: top; }
+.cine-ultimate-bar.bottom { bottom: 0; transform-origin: bottom; }
+@keyframes ult-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.cine-ultimate-title {
+    position: absolute;
+    left: 50%;
+    top: 62%;
+    transform: translateX(-50%) scale(1.25);
+    width: min(90vw, 460px);
+    text-align: center;
+    font: bold clamp(22px, 7vw, 38px) "Pixelify Sans", monospace;
+    letter-spacing: 0.04em;
+    color: #fff4c8;
+    text-shadow: 0 0 12px var(--ult-color, #ffd24a), 0 0 28px var(--ult-color, #ffd24a), 2px 2px 0 #1b1030, -2px -2px 0 #1b1030, 2px -2px 0 #1b1030, -2px 2px 0 #1b1030;
+    opacity: 0;
+    pointer-events: none;
+}
+.cine-ultimate-title.show { opacity: 1; transform: translateX(-50%) scale(1); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+@media (prefers-reduced-motion: reduce) { .cine-ultimate-bar { animation: none; } .cine-ultimate-title.show { transition: none; } }
+
 /* Chute d'un soleil / découverte de région : légende en bas de l'écran */
 .cine-sunfall-text,
 .cine-region-text {

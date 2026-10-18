@@ -17,6 +17,18 @@ describe('tableaux Pixel Lab des cinématiques', () => {
         }
     });
 
+    // Les planches sont générées à la demande (tools/gen-ultimates.mjs) : on ne vérifie que celles déjà présentes.
+    test('ultimates : toute planche indexée existe, en portrait 144×256', () => {
+        const file = new URL('index.json', dir('ultimates'));
+        if (!existsSync(file)) return;
+        const index = JSON.parse(readFileSync(file, 'utf8'));
+        for (const [name, meta] of Object.entries(index)) {
+            expect(meta.size).toEqual([144, 256]);
+            expect(meta.frames).toBeGreaterThanOrEqual(4);
+            expect(existsSync(new URL(`${name}.png`, dir('ultimates')))).toBe(true);
+        }
+    });
+
     test('le duel contre Fengmeng est raconté en quatre légendes', () => {
         expect(FENGMENG_DUEL_CAPTIONS).toHaveLength(4);
         FENGMENG_DUEL_CAPTIONS.forEach(c => expect(c.length).toBeGreaterThan(40));

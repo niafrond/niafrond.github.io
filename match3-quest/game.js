@@ -23,6 +23,7 @@ import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summari
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
+import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
@@ -2821,6 +2822,8 @@ export function createSpellButtons(){
 // Ultimes de la classe : hors limite des 4 sorts, utilisables quand la jauge de rage est pleine et le mana suffisant.
 function createUltimateButtons(container){
     if(!player.class) return;
+    // Planches de cinématique gardées en mémoire dès maintenant : le lancement de l'ultime n'attend aucun téléchargement.
+    preloadUltimateCinematic(getUltimatesForClass(player.class).filter(sp => player.level >= sp.minLevel));
     getUltimatesForClass(player.class).forEach(sp => {
         const btn = document.createElement('div');
         btn.className = 'enemy-spell-item ultimate-spell';
