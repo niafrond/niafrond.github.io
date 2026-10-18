@@ -364,20 +364,40 @@ function endChange(ctx, mx, my, r, t, alpha) {
     ctx.globalAlpha = 1;
 }
 
-export function playEndingAnimation() {
-    const DURATION = 15.5;
+const ENDING_BEATS = 4;   // tableaux Pixel Lab de la fin : crépuscule, autel, Chang'e dans la lune, lanternes
+const ENDING_BEAT_SECONDS = 3.6;
+
+export async function playEndingAnimation() {
+    const art = await loadSceneArt('ending', ENDING_BEATS, window.innerHeight > window.innerWidth);
+    const DURATION = art ? ENDING_BEATS * ENDING_BEAT_SECONDS + 1.5 : 15.5;
     const C = P ? END_LAYOUT.port : END_LAYOUT.land;
     let stars = null;
     let overlayEl = null;
     const shown = {};
     const reveal = (cls, on) => { if (on && !shown[cls] && overlayEl) { shown[cls] = true; overlayEl.classList.add(cls); } };
     let layout = null;
+    // Tableaux Pixel Lab : un fondu enchaîné entre chaque temps ; « FIN » et la légende apparaissent sur le dernier.
+    const drawEndingArt = (ctx, t) => {
+        ctx.imageSmoothingEnabled = false;
+        t = Math.max(0, t);   // la première image rAF peut précéder t0
+        const beat = Math.min(ENDING_BEATS - 1, Math.floor(t / ENDING_BEAT_SECONDS));
+        const local = t - beat * ENDING_BEAT_SECONDS;
+        const frameOf = (b, tt) => { const a = art[b]; return Math.floor(tt * a.fps) % a.frames; };
+        const blit = (b, tt) => { const a = art[b], [aw, ah] = a.size; ctx.drawImage(a.img, frameOf(b, tt) * aw, 0, aw, ah, 0, 0, aw, ah); };
+        blit(beat, local);
+        if (beat > 0 && local < 0.8) { ctx.globalAlpha = 1 - local / 0.8; blit(beat - 1, local + ENDING_BEAT_SECONDS); ctx.globalAlpha = 1; }   // fondu depuis le tableau précédent
+        reveal('show-fin', t > (ENDING_BEATS - 1) * ENDING_BEAT_SECONDS + 0.6);
+        reveal('show-legend', t > (ENDING_BEATS - 1) * ENDING_BEAT_SECONDS + 1.8);
+        reveal('show-prompt', t >= DURATION);
+    };
     return runScene({
         extraClass: 'cine-ending',
         duration: DURATION,
         startSfx: 'endingJingle',
         onMount(overlay) {
             overlayEl = overlay;
+            const cv = overlay.querySelector('canvas');
+            if (art && cv) { cv.width = art[0].size[0]; cv.height = art[0].size[1]; }
             overlay.insertAdjacentHTML('beforeend', `
                 <div class="cine-ending-text">
                     <div class="cine-ending-fin">FIN</div>
@@ -386,6 +406,7 @@ export function playEndingAnimation() {
                 <div class="cine-ending-prompt">► Toucher pour continuer</div>`);
         },
         draw(ctx, t) {
+            if (art) return drawEndingArt(ctx, t);
             if (!layout) {
                 layout = END_LAYOUT[P ? 'port' : 'land'];
                 stars = Array.from({ length: P ? 46 : 60 }, (_, i) => ({
@@ -1462,11 +1483,31 @@ const PRO_SCENES = [
     }
 ];
 
+// Tableaux animés générés avec Pixel Lab (tools/gen-prologue.mjs) : boucles, une planche par tableau et orientation, dans
+// sprites/<dossier>/. Chargement tolérant : si l'index ou une planche manque, la scène dessinée en code reste le repli.
+async function loadSceneArt(dir, count, portrait) {
+    try {
+        const base = new URL(`./sprites/${dir}/`, import.meta.url);
+        const index = await (await fetch(new URL('index.json', base))).json();
+        const o = portrait ? 'port' : 'land';
+        const scenes = await Promise.all(Array.from({ length: count }, (_, i) => new Promise(res => {
+            const meta = index[`${i + 1}-${o}`];
+            if (!meta) return res(null);
+            const img = new Image();
+            img.onload = () => res({ img, ...meta });
+            img.onerror = () => res(null);
+            img.src = new URL(`${i + 1}-${o}.png`, base).href;
+        })));
+        return scenes.every(Boolean) ? scenes : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 export function playPrologueAnimation() {
     return new Promise(resolve => {
         const { overlay, canvas, ctx } = mount('cine-prologue');
         ctx.imageSmoothingEnabled = false;
-        void canvas;
         overlay.querySelector('.cine-skip')?.remove();
         overlay.insertAdjacentHTML('beforeend', `
             <div class="cine-prologue-caption"><div class="cine-prologue-text"></div><div class="cine-prologue-next">▼</div></div>
@@ -1512,17 +1553,104 @@ export function playPrologueAnimation() {
         document.addEventListener('keydown', onKey, true);
         setScene(0);
 
+        let art = null;   // tableaux Pixel Lab (null : tableaux dessinés en code)
         const frame = now => {
             const sc = PRO_SCENES[idx];
             const t = (now - sceneT0) / 1000;
-            sc.draw(ctx, reduced ? sc.dur : t);
+            if (art) {
+                const a = art[idx], [aw, ah] = a.size;
+                const fi = reduced ? 0 : Math.floor(t * a.fps) % a.frames;
+                ctx.drawImage(a.img, fi * aw, 0, aw, ah, 0, 0, aw, ah);
+            } else sc.draw(ctx, reduced ? sc.dur : t);
             // fondu d'entrée du tableau
-            if (!reduced && t < FADE) { ctx.globalAlpha = 1 - t / FADE; px(ctx, TP.ink, 0, 0, W, H); ctx.globalAlpha = 1; }
+            if (!reduced && t < FADE) { ctx.globalAlpha = 1 - t / FADE; ctx.fillStyle = TP.ink; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; }
             const n = Math.min(fullLen(), typed());
             if (textEl.textContent.length !== n) textEl.textContent = sc.caption.slice(0, n);
             overlay.classList.toggle('caption-done', n >= fullLen());
             // enchaînement automatique après la légende + un temps de lecture
             if (!reduced && t > sc.dur + 2 && n >= fullLen()) { if (idx + 1 >= PRO_SCENES.length) { finish(); return; } setScene(idx + 1); }
+            raf = requestAnimationFrame(frame);
+        };
+        loadSceneArt('prologue', PRO_SCENES.length, P).then(a => {
+            if (done) return;
+            art = a;
+            if (a) { canvas.width = a[0].size[0]; canvas.height = a[0].size[1]; ctx.imageSmoothingEnabled = false; }
+            setScene(0);
+            raf = requestAnimationFrame(frame);
+        });
+    });
+}
+
+// ── Duel de mi-parcours contre Fengmeng (gorges du Volcan) ──────────────────
+// Quatre tableaux Pixel Lab (tools/gen-prologue.mjs --set=fengmeng) légendés, joués avant le combat contre
+// fengmeng_2. Même habillage que le prologue ; sans planches, rien n'est affiché (le combat enchaîne directement).
+export const FENGMENG_DUEL_CAPTIONS = [
+    "Fengmeng est parti deux jours avant vous. Il a gravi les marches du Kunlun pour demander un élixir, un seul, à la Reine Mère de l'Occident. Elle a ri, avec douceur.",
+    "« Ce n'est pas à toi. » Depuis ce jour, une flèche de braise brûle dans son carquois, et elle n'a plus rien d'un jeu.",
+    "Aux gorges du Volcan, il a trouvé le défilé : un corridor de basalte entre deux fleuves de lave, le seul chemin vers l'est. Il s'y est posté, et il attend son Maître.",
+    "Deux archers, une seule corde brisée entre eux. Cette fois, Fengmeng ne retiendra plus ses coups."
+];
+let fengmengDuelPlayed = false;
+export const fengmengDuelCinematicPlayed = () => fengmengDuelPlayed;
+
+export async function playFengmengDuelCinematic() {
+    const captions = FENGMENG_DUEL_CAPTIONS;
+    const art = await loadSceneArt('fengmeng', captions.length, window.innerHeight > window.innerWidth);
+    if (!art) return;
+    return new Promise(resolve => {
+        const { overlay, canvas, ctx } = mount('cine-prologue');
+        canvas.width = art[0].size[0];
+        canvas.height = art[0].size[1];
+        ctx.imageSmoothingEnabled = false;
+        overlay.querySelector('.cine-skip')?.remove();
+        overlay.insertAdjacentHTML('beforeend', `
+            <div class="cine-prologue-caption"><div class="cine-prologue-text"></div><div class="cine-prologue-next">▼</div></div>
+            <div class="cine-prologue-dots">${captions.map(() => '<i></i>').join('')}</div>
+            <button type="button" class="cine-prologue-skip">Passer ►►</button>`);
+        const textEl = overlay.querySelector('.cine-prologue-text');
+        const dots = overlay.querySelectorAll('.cine-prologue-dots i');
+        const reduced = prefersReducedMotion();
+        playSfx('introJingle');
+        const FADE = 0.5;
+        let idx = 0, sceneT0 = performance.now(), raf = 0, done = false;
+        const setScene = i => {
+            idx = i;
+            sceneT0 = performance.now();
+            dots.forEach((d, n) => d.classList.toggle('on', n === i));
+            textEl.textContent = '';
+        };
+        const finish = () => {
+            if (done) return;
+            done = true;
+            fengmengDuelPlayed = true;
+            cancelAnimationFrame(raf);
+            document.removeEventListener('keydown', onKey, true);
+            overlay.classList.add('closing');
+            setTimeout(() => { overlay.remove(); resolve(); }, 350);
+        };
+        const fullLen = () => captions[idx].length;
+        const typed = () => (reduced ? fullLen() : Math.floor((performance.now() - sceneT0) / 1000 * 32));
+        const advance = () => {
+            if (typed() < fullLen()) { sceneT0 = performance.now() - fullLen() / 32 * 1000 - 50; return; }
+            if (idx + 1 >= captions.length) finish(); else setScene(idx + 1);
+        };
+        const onKey = e => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); advance(); }
+        };
+        overlay.addEventListener('pointerdown', e => { if (!e.target.closest('.cine-prologue-skip')) advance(); });
+        overlay.querySelector('.cine-prologue-skip').addEventListener('click', finish);
+        document.addEventListener('keydown', onKey, true);
+        setScene(0);
+        const frame = now => {
+            const t = (now - sceneT0) / 1000;
+            const a = art[idx], [aw, ah] = a.size;
+            ctx.drawImage(a.img, (reduced ? 0 : Math.floor(t * a.fps) % a.frames) * aw, 0, aw, ah, 0, 0, aw, ah);
+            if (!reduced && t < FADE) { ctx.globalAlpha = 1 - t / FADE; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, aw, ah); ctx.globalAlpha = 1; }
+            const n = Math.min(fullLen(), typed());
+            if (textEl.textContent.length !== n) textEl.textContent = captions[idx].slice(0, n);
+            overlay.classList.toggle('caption-done', n >= fullLen());
+            if (!reduced && t > 8 && n >= fullLen()) { if (idx + 1 >= captions.length) { finish(); return; } setScene(idx + 1); }
             raf = requestAnimationFrame(frame);
         };
         raf = requestAnimationFrame(frame);

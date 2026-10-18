@@ -4,6 +4,8 @@
  * (planche dessinée par l'utilisateur) et les écrit dans sprites/generated.js (clé « archer »).
  * Les classes s'en déduisent ensuite par changement de couleur : node tools/recolor-sprites.mjs
  *
+ * Les 3 images de tir à l'arc deviennent `attack_0..2` (jouées sur le portrait de combat).
+ *
  * Usage : node tools/extract-hero.mjs [--height=30]
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -68,11 +70,9 @@ function render(a, scale) {
   return PNG.sync.write(out);
 }
 
-const gen = readFileSync(GENERATED, 'utf8');
-const sprites = Function(`return ${gen.match(/export const GBA_SPRITES\s*=\s*(\{[\s\S]*\});\s*$/)[1]}`)();
 mkdirSync(PNG_DIR, { recursive: true });
-sprites.archer = {};
-const put = (key, buf) => { sprites.archer[key] = `data:image/png;base64,${buf.toString('base64')}`; writeFileSync(join(PNG_DIR, `archer_${key}.png`), buf); };
+const archer = {};
+const put = (key, buf) => { archer[key] = `data:image/png;base64,${buf.toString('base64')}`; writeFileSync(join(PNG_DIR, `archer_${key}.png`), buf); };
 for (const [dir, cell] of Object.entries(CELLS)) { const a = analyse(cell, Y0, Y1); put(dir, render(a, H / a.bh)); }
 
 // Cycles de marche (rangée « Marche ») : même échelle pour toutes les images d'une direction (la plus haute = H px)
@@ -83,10 +83,19 @@ const WALK = {
   left: [[694, 763], [772, 834], [844, 905]],
   right: [[991, 1051], [1064, 1125], [1142, 1207]]
 };
+// Tir à l'arc (de face, 3 images ; la flèche isolée sous la colonne est ignorée) : même échelle pour les 3 images
+{
+  const an = [[614, 714], [718, 806], [812, 906]].map(([a, b]) => analyse([150, 310], a, b)), scale = H / Math.max(...an.map(a => a.bh));
+  an.forEach((a, i) => put(`attack_${i}`, render(a, scale)));
+}
 for (const [dir, cells] of Object.entries(WALK)) {
   const an = cells.map(c => analyse(c, WY0, WY1)), scale = H / Math.max(...an.map(a => a.bh));
   an.forEach((a, i) => put(`walk_${dir}_${i}`, render(a, scale)));
 }
+// Relit generated.js au dernier moment (d'autres outils, comme gen-attacks.mjs, y écrivent aussi)
+const gen = readFileSync(GENERATED, 'utf8');
+const sprites = Function(`return ${gen.match(/export const GBA_SPRITES\s*=\s*(\{[\s\S]*\});\s*$/)[1]}`)();
+sprites.archer = archer;
 const lines = ['// Généré par match3-quest/tools/gen-sprites.mjs — ne pas éditer à la main', `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`, '// Lancez: node match3-quest/tools/gen-sprites.mjs --only=all --dir=all', 'export const GBA_SPRITES = {'];
 for (const [k, dirs] of Object.entries(sprites)) { lines.push(`  ${JSON.stringify(k)}: {`); for (const [d, u] of Object.entries(dirs)) lines.push(`    ${d}: ${JSON.stringify(u)},`); lines.push('  },'); }
 lines.push('};');

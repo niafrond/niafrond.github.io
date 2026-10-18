@@ -1,4 +1,4 @@
-import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
+import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, applyBoardBoost } from "./terrain.js";
 import { flyManaToCounter } from "./manaFlight.js";
@@ -835,6 +835,7 @@ export function checkMatches(forceFullBoard = false){
             if(dmg > 0 && opponent === player && player.damageReduction > 0) {
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
+            playFighterAttack(attacker === player);
             applyDamage(opponent, dmg);
             log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
             // Bonus de tour pour 4+ crânes

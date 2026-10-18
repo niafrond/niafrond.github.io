@@ -16,12 +16,13 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
+import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
+import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon } from './icons.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
@@ -51,18 +52,18 @@ const KEY_TO_DIR = {
 // Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles.
 // Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
-    paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: ['rice', 'lantern', 'rice'] },
+    paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: ['rice', 'deadtree', 'rice'] },
     riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: ['rock', 'rice', 'rock'] },
-    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['bamboo', 'campfire', 'bamboo'] },
+    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['bamboo', 'deadtree', 'bamboo'] },
     gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: ['cactus', 'rock', 'cactus'] },
-    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: ['mountain', 'storm', 'mountain'] },
+    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: ['mountain', 'deadtree', 'mountain'] },
     volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: ['volcano', 'rock', 'volcano'] },
     savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: ['rice', 'rock', 'rice'] },
     coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['wave', 'rock', 'wave'] },
-    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['tree', 'lantern', 'tree'] },
+    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['tree', 'deadtree', 'tree'] },
     house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'] },
     cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: ['rock', 'mountain', 'rock'] },
-    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['moon', 'lantern', 'moon'] },
+    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['rock', 'deadtree', 'rock'] },
     ...ARENA_BIOMES   // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 
@@ -222,6 +223,7 @@ export function createExplorationView(cfg) {
         return [...new Set([
             heroSprite(cfg.getHero().classId), chestSprite(false), chestSprite(true),
             ...DECOR_NAMES.map(decorSprite),
+            ...DEAD_TREES,
             ...npcs.map(id => npcSprite(id)),
             ...enemies.map(([key, templateId, biome]) => enemySprite(key, templateId, biome))
         ].filter(Boolean))];
@@ -662,8 +664,17 @@ export function createExplorationView(cfg) {
         held = null;
         walk = null;
         inCombat = true;
-        cfg.onSave();
-        playBattleTransition(enc, () => cfg.onEncounter(enc));
+        // Duel de mi-parcours contre Fengmeng : cinématique illustrée, une seule fois par partie, avant l'écran de combat
+        const startBattle = () => playBattleTransition(enc, () => cfg.onEncounter(enc));
+        const seen = (session.data.seenCinematics ||= {});
+        if (enemyId === 'fengmeng_2' && !seen.fengmeng_2) {
+            seen.fengmeng_2 = true;
+            cfg.onSave();
+            playFengmengDuelCinematic().then(startBattle);
+        } else {
+            cfg.onSave();
+            startBattle();
+        }
     }
 
     function handleResult(res) {
@@ -1256,6 +1267,11 @@ export function createExplorationView(cfg) {
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
                     if (decor === 'rock') {
                         drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
+                        break;
+                    }
+                    if (decor === 'deadtree') {   // arbre mort (objets Pixel Lab) : une des variantes, au hasard stable selon la case
+                        drawShadow(c.x, c.y + tile * 0.3, tile * 0.36, tile * 0.12);
+                        drawSprite(DEAD_TREES[Math.floor(hash(it.y + 5, it.x + 11) * DEAD_TREES.length)], c.x, c.y + tile * 0.4, tile * 1.35);
                         break;
                     }
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);

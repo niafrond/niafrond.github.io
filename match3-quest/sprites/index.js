@@ -44,6 +44,15 @@ export function gbaWalkSprite(key, dir, tick) {
     return s[`walk_${dir}_${seq[Math.abs(Math.floor(tick)) % seq.length]}`];
 }
 
+// Images de l'animation d'attaque (« attack_<n> ») d'un combattant : tir à l'arc du héros, coup d'arme / griffes / souffle d'un ennemi.
+// Tableau vide s'il n'y en a pas (le portrait reste alors fixe).
+export function gbaAttackFrames(key) {
+    const s = GBA_SPRITES[gbaKey(key)];
+    const out = [];
+    while (s && s[`attack_${out.length}`]) out.push(s[`attack_${out.length}`]);
+    return out;
+}
+
 export const SPRITE_PACKS = Object.keys(SPRITE_PACK_FILES);
 // Héros et coffres : toujours présents à l'écran (et sur la carte du monde).
 export const CORE_PACK = 'actors-a';
