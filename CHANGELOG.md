@@ -1,3 +1,9 @@
+## [2.87.0](https://github.com/niafrond/niafrond.github.io/compare/v2.86.0...v2.87.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** lancer l'ultime choisi depuis la jauge de rage ([#490](https://github.com/niafrond/niafrond.github.io/issues/490)) ([ab406a7](https://github.com/niafrond/niafrond.github.io/commit/ab406a7f48065ac7c103e89e616ed2fa6bc37359))
+
 ## [2.86.0](https://github.com/niafrond/niafrond.github.io/compare/v2.85.0...v2.86.0) (2026-10-18)
 
 ### Features
