@@ -1,3 +1,9 @@
+## [2.89.1](https://github.com/niafrond/niafrond.github.io/compare/v2.89.0...v2.89.1) (2026-10-18)
+
+### Bug Fixes
+
+* **match3-quest:** faire partir les pilules de mana des objets depuis le bouton d'objet ([#493](https://github.com/niafrond/niafrond.github.io/issues/493)) ([b7f64cb](https://github.com/niafrond/niafrond.github.io/commit/b7f64cb1078fb7440c704bd3b054b18e201bfc4c))
+
 ## [2.89.0](https://github.com/niafrond/niafrond.github.io/compare/v2.88.0...v2.89.0) (2026-10-18)
 
 ### Features
