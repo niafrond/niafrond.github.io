@@ -11,7 +11,7 @@ import {
 export const playerClasses = {
     sorcerer: {
         id: 'sorcerer',
-        name: 'Maître taoïste',
+        name: 'Mage antique · Fāngshì',   // 方士
         icon: 'yinyang',
         description: 'Hou Yi sur la voie du Tao : talismans, qi et éléments au service de son arc',
         startingStats: { intelligence: 2, stamina: 0 },
@@ -19,7 +19,7 @@ export const playerClasses = {
     },
     assassin: {
         id: 'assassin',
-        name: 'Archer céleste',
+        name: 'Rôdeur errant · Yóuxiá',   // 游侠
         icon: 'bow',
         description: 'Hou Yi, l\'archer divin : tirs rapides, flèches précises et coups furtifs',
         startingStats: { agility: 2, strength: 1 },
@@ -27,7 +27,7 @@ export const playerClasses = {
     },
     templar: {
         id: 'templar',
-        name: 'Garde impérial',
+        name: 'Commandant · Wǔjiàng',   // 武将
         icon: 'shield',
         description: 'Hou Yi en armure laquée, rempart de l\'empire à la résilience sans faille',
         startingStats: { stamina: 2, morale: 1 },
@@ -35,7 +35,7 @@ export const playerClasses = {
     },
     barbarian: {
         id: 'barbarian',
-        name: 'Guerrier des steppes',
+        name: 'Guerrier · Wǔshì',   // 武士
         icon: 'axe',
         description: 'Hou Yi en fourrures, guerrier du Nord à la force dévastatrice',
         startingStats: { strength: 3 },
