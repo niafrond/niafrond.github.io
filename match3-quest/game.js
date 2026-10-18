@@ -5,7 +5,7 @@ import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
-import { heroSprite, enemySprite, spriteUri, gbaSprite } from "./sprites/index.js";
+import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
@@ -1215,11 +1215,27 @@ function _animateCounter(id, from, to) {
 
 // Dessins des combattants (héros à gauche tourné vers la droite, ennemi à droite tourné vers la gauche) : posés en variable CSS
 // `--portrait` des panneaux de stats (pseudo-élément ::after), donc sans clignotement quand le panneau est reconstruit.
+// Animation d'attaque jouée sur le portrait : les images défilent puis le portrait de face revient.
+const attackPlaying = new Set();
+export const ATTACK_FRAME_MS = 90;
+export function playFighterAttack(isPlayer){
+    if(document.body.classList.contains('fx-low')) return;
+    const id = isPlayer ? 'player-stats' : 'enemy-stats';
+    const el = document.getElementById(id);
+    const fighter = isPlayer ? player : enemy;
+    const frames = isPlayer ? gbaAttackFrames(player.class) : (gbaAttackFrames(fighter.spriteKey || fighter.id).length ? gbaAttackFrames(fighter.spriteKey || fighter.id) : gbaAttackFrames(fighter.templateId));
+    if(!el || !frames.length || attackPlaying.has(id)) return;
+    attackPlaying.add(id);
+    const ms = (isPlayer ? 130 : ATTACK_FRAME_MS) * animationFactor();
+    frames.forEach((uri, i) => setTimeout(() => el.style.setProperty('--portrait', `url("${uri}")`), i * ms));
+    setTimeout(() => { attackPlaying.delete(id); updateFighterPortraits(); }, frames.length * ms);
+}
+
 function updateFighterPortraits(){
     // Vue de face : la vue de profil dérivée (corps et visage resserrés) écrasait les personnages en largeur à cette taille.
     const set = (id, svg) => {
         const el = document.getElementById(id);
-        if(!el) return;
+        if(!el || attackPlaying.has(id)) return;
         const view = svg || null;
         if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
         else el.style.removeProperty('--portrait');

@@ -103,14 +103,14 @@ export const ARENA_TEMPLATES = [
 // une par cercle, plus le parvis.
 export const ARENA_BIOMES = {
     arena_hall: { a: '#b9a07a', b: '#ae9570', path: '#9b2f2a', cliff: '#4a3424', liquid: '#6ab7c9', sky: ['#2a1c14', '#5a3e2a'], decor: ['lantern', 'jar', 'lantern', 'campfire'] },
-    arena_1: { a: '#b98a5a', b: '#ad7f50', path: '#8a5a2a', cliff: '#4a2e18', liquid: '#6ab7c9', sky: ['#3a2414', '#6a4628'], decor: ['lantern', 'rock', 'jar'] },
-    arena_2: { a: '#c08a68', b: '#b47f5e', path: '#8f4a2e', cliff: '#4f2a1c', liquid: '#6ab7c9', sky: ['#3a1f17', '#6e3b28'], decor: ['campfire', 'lantern', 'jar'] },
-    arena_3: { a: '#8c9096', b: '#82868c', path: '#5a5e66', cliff: '#2e3036', liquid: '#4a5fa8', sky: ['#1f2228', '#4a4e58'], decor: ['rock', 'mountain', 'lantern'] },
-    arena_4: { a: '#c8ccd6', b: '#bec2cc', path: '#8a90a8', cliff: '#4a4e66', liquid: '#6f86d8', sky: ['#22263a', '#555a7a'], decor: ['moon', 'lantern', 'rock'] },
-    arena_5: { a: '#e8cf7a', b: '#dec46e', path: '#b8862a', cliff: '#6a4a14', liquid: '#e8b830', sky: ['#4a3410', '#8a6420'], decor: ['campfire', 'lantern', 'altarLit'] },
-    arena_6: { a: '#8fc4a0', b: '#84b995', path: '#3f8a5f', cliff: '#1f4a32', liquid: '#4fa88a', sky: ['#12301f', '#2f6a48'], decor: ['bamboo', 'tree', 'lantern'] },
-    arena_7: { a: '#d8e4f0', b: '#cedae6', path: '#9ab4d8', cliff: '#4a5f88', liquid: '#7eb4ec', sky: ['#1a2a4a', '#5a7ab0'], decor: ['storm', 'moon', 'lantern'] },
-    arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['campfire', 'rock', 'lantern'] }
+    arena_1: { a: '#b98a5a', b: '#ad7f50', path: '#8a5a2a', cliff: '#4a2e18', liquid: '#6ab7c9', sky: ['#3a2414', '#6a4628'], decor: ['deadtree', 'rock', 'deadtree'] },
+    arena_2: { a: '#c08a68', b: '#b47f5e', path: '#8f4a2e', cliff: '#4f2a1c', liquid: '#6ab7c9', sky: ['#3a1f17', '#6e3b28'], decor: ['deadtree', 'rock', 'deadtree'] },
+    arena_3: { a: '#8c9096', b: '#82868c', path: '#5a5e66', cliff: '#2e3036', liquid: '#4a5fa8', sky: ['#1f2228', '#4a4e58'], decor: ['rock', 'mountain', 'deadtree'] },
+    arena_4: { a: '#c8ccd6', b: '#bec2cc', path: '#8a90a8', cliff: '#4a4e66', liquid: '#6f86d8', sky: ['#22263a', '#555a7a'], decor: ['deadtree', 'deadtree', 'rock'] },
+    arena_5: { a: '#e8cf7a', b: '#dec46e', path: '#b8862a', cliff: '#6a4a14', liquid: '#e8b830', sky: ['#4a3410', '#8a6420'], decor: ['deadtree', 'rock', 'altarLit'] },
+    arena_6: { a: '#8fc4a0', b: '#84b995', path: '#3f8a5f', cliff: '#1f4a32', liquid: '#4fa88a', sky: ['#12301f', '#2f6a48'], decor: ['bamboo', 'tree', 'deadtree'] },
+    arena_7: { a: '#d8e4f0', b: '#cedae6', path: '#9ab4d8', cliff: '#4a5f88', liquid: '#7eb4ec', sky: ['#1a2a4a', '#5a7ab0'], decor: ['rock', 'deadtree', 'rock'] },
+    arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['deadtree', 'rock', 'deadtree'] }
 };
 
 // Vrai si l'un des écrans visités appartient au 3e terrain (Bambous) ou à un terrain plus avancé.

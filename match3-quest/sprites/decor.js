@@ -92,7 +92,8 @@ const D = {
     swirl: () => `<circle cx="32" cy="32" r="26" fill="#cfe6f6"/><path d="M32 32 Q32 24 40 25.6 Q48 30.4 44 40 Q37.6 49.6 25.6 45.6 Q14.4 40 16 28 Q19.2 14.4 33.6 13.6" fill="none" stroke="#3a7ad8" stroke-width="4"/>`
 };
 
-export const DECOR_NAMES = Object.keys(D);
+// « deadtree » n'est pas un dessin SVG : c'est l'une des variantes de sprites/deadtrees.js (dessinée par explorationView.js).
+export const DECOR_NAMES = [...Object.keys(D), 'deadtree'];
 
 const cache = new Map();
 export function decorSprite(name) {
