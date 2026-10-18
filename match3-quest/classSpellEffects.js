@@ -1,6 +1,6 @@
 // Gestion des effets spéciaux des sorts de classe
 
-import { flyManaGain, flyManaSteal } from "./manaFlight.js";
+import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
@@ -717,6 +717,7 @@ function applyReinforce(spell) {
 
     const heal = count * Math.max(1, Math.floor(spell.healPerGem || 1));
     player.hp = Math.min(player.maxHp, player.hp + heal);
+    flyHeal(true, heal);
     renderBoard();
     showCombatAnimation({ icon: 'spark', title: "RENFORT DES TROUPES", heal: `+${heal} HP`, target: '→ Vous' }, true);
     log(`Renfort des Troupes détruit ${count} Action Gem(s) et soigne ${heal} HP.`);
@@ -1006,6 +1007,7 @@ function applyCageEnemy(spell) {
 function applySecondWind(spell) {
     const heal = Math.max(0, Math.floor(spell.heal || 0));
     player.hp = Math.min(player.maxHp, player.hp + heal);
+    flyHeal(true, heal);
     ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused'].forEach(k => { delete player.statusEffects[k]; });
     addBonusTurn(player);
     showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: '→ Vous • rejouez !' }, true);
@@ -1031,6 +1033,7 @@ function applyHarmony(spell) {
     const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
     applyDamage(enemy, dmg, { sourceSpell: spell });
     player.hp = Math.min(player.maxHp, player.hp + heal);
+    flyHeal(true, heal);
     MANA_COLORS.forEach(color => { enemy.mana[color] = Math.max(0, (enemy.mana[color] || 0) - drain); });
     showCombatAnimation({ icon: 'yinyang', title: spell.name.toUpperCase(), damage: `-${dmg} dégâts`, heal: `+${heal} PV`, target: `→ ${enemy.name} • -${drain} mana de chaque couleur` }, true);
     log(`${spell.name} inflige ${dmg} dégâts, vous soigne de ${heal} PV et vide ${drain} mana de chaque couleur à l'ennemi.`);

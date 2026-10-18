@@ -115,3 +115,33 @@ export function flyManaSteal(thiefIsPlayer, gains) {
         if (amount > 0) flyDots(document.getElementById(`${victim}-mana-${color}`), document.getElementById(`${thief}-mana-${color}`), color, amount);
     });
 }
+
+// Soin : petites pilules à croix verte qui partent du soigné vers sa barre de vie.
+export function flyHeal(isPlayer, amount) {
+    try {
+        if (!(amount > 0) || !getOption('manaFlight')) return;
+        if (typeof document === 'undefined' || typeof Element === 'undefined' || !Element.prototype.animate) return;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        const side = sideOf(isPlayer);
+        const from = document.getElementById(`${side}-stats`)?.getBoundingClientRect();
+        const to = (document.querySelector(`#${side}-stats .hp-bar-container`) || document.getElementById(`${side}-hp-current`))?.getBoundingClientRect();
+        if (!from || !to || (!from.width && !from.height) || (!to.width && !to.height)) return;
+        const n = Math.max(1, Math.min(Math.ceil(amount / 10), maxManaParticles()));
+        for (let i = 0; i < n; i++) {
+            const sx = from.left + from.width / 2 + (i - (n - 1) / 2) * 14;
+            const sy = from.top + from.height / 2;
+            const dot = document.createElement('div');
+            dot.className = 'heal-fly-dot';
+            dot.style.left = `${sx - 7}px`;
+            dot.style.top = `${sy - 7}px`;
+            document.body.appendChild(dot);
+            const remove = () => dot.remove();
+            const anim = dot.animate([
+                { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                { transform: `translate(${to.left + to.width / 2 - sx}px, ${to.top + to.height / 2 - sy}px) scale(0.6)`, opacity: 0.8 },
+            ], { duration: FLIGHT_MS, delay: i * 60, easing: 'ease-in', fill: 'both' });
+            anim.onfinish = remove;
+            setTimeout(remove, FLIGHT_MS + i * 60 + 600);
+        }
+    } catch (e) { /* décoratif : jamais bloquant */ }
+}

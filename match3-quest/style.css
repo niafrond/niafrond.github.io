@@ -2993,6 +2993,31 @@ input, textarea, [contenteditable="true"] {
     z-index: 50;
 }
 
+/* Soin (manaFlight.js) : petite pilule blanche à croix verte */
+.heal-fly-dot {
+    position: fixed;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #2ecc71;
+    box-shadow: 0 0 6px #2ecc71;
+    pointer-events: none;
+    z-index: 50;
+}
+.heal-fly-dot::before,
+.heal-fly-dot::after {
+    content: "";
+    position: absolute;
+    background: #27ae60;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.heal-fly-dot::before { width: 8px; height: 2.5px; }
+.heal-fly-dot::after { width: 2.5px; height: 8px; }
+body.fx-low .heal-fly-dot { box-shadow: none; }
+
 /* Effets visuels « Économe » (options) : coupe les animations décoratives infinies, garde celles du jeu */
 body.fx-low .tile.suggested::before,
 body.fx-low .tile.suggested::after,

@@ -1,4 +1,4 @@
-import { flyManaGain } from './manaFlight.js';
+import { flyManaGain, flyHeal } from './manaFlight.js';
 import { manaIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 
@@ -196,6 +196,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     let message = "";
     if(item.effect.heal) {
         player.hp = Math.min(player.maxHp, player.hp + item.effect.heal);
+        flyHeal(true, item.effect.heal);
         message += `Vous récupérez ${item.effect.heal} HP. `;
     }
     if(item.effect.mana) {

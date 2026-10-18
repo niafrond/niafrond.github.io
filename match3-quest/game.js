@@ -26,7 +26,7 @@ import { playSfx } from "./sound.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
-import { flyManaSpend } from "./manaFlight.js";
+import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
 const BASE_MANA_CAP = 50;
@@ -453,6 +453,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.heal){
         const healAmount = spell.heal + intelligenceBonus;
         caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
+        flyHeal(isPlayerCaster, healAmount);
         playSfx('heal', { isPlayer: isPlayerCaster });
 
         if(isPlayerCaster) {
@@ -1807,6 +1808,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     if(player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
         player.hp = Math.min(player.maxHp, player.hp + heal);
+        flyHeal(true, heal);
         log(`Vol de vie : +${heal} HP.`);
     }
 
@@ -2213,6 +2215,7 @@ export function finishEnemyTurn(){
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
+            flyHeal(true, player.regenEffect.hp);
             log(`Régénération : +${player.regenEffect.hp} HP.`);
             player.regenEffect.turnsLeft--;
             if(player.regenEffect.turnsLeft <= 0) {
