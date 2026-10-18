@@ -4,7 +4,7 @@ import { FENGMENG_DUEL_CAPTIONS } from '../../cinematics.js';
 const dir = set => new URL(`../../sprites/${set}/`, import.meta.url);
 
 describe('tableaux Pixel Lab des cinématiques', () => {
-    test.each([['prologue', 5], ['ending', 4], ['fengmeng', FENGMENG_DUEL_CAPTIONS.length], ['launcher', 1]])('%s : une planche paysage et portrait par tableau', (set, count) => {
+    test.each([['prologue', 5], ['ending', 4], ['fengmeng', FENGMENG_DUEL_CAPTIONS.length], ['launcher', 1], ['sunfall', 9]])('%s : une planche paysage et portrait par tableau', (set, count) => {
         const index = JSON.parse(readFileSync(new URL('index.json', dir(set)), 'utf8'));
         for (let n = 1; n <= count; n++) {
             for (const [o, size] of [['land', [256, 144]], ['port', [144, 256]]]) {

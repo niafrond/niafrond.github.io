@@ -1697,7 +1697,7 @@ export function createExplorationView(cfg) {
             const events = X.markEnemyDefeated(session, id);
             if (firstKill && /^sun_[1-9]$/.test(id)) {
                 const def = session.rt.enemyIndex[id]?.def;
-                events.unshift({ type: 'sunFall', paid: true, count: session.data.defeated.filter(d => /^sun_[1-9]$/.test(d)).length, name: def?.boss?.name || def?.name || 'Soleil' });
+                events.unshift({ type: 'sunFall', paid: true, id, count: session.data.defeated.filter(d => /^sun_[1-9]$/.test(d)).length, name: def?.boss?.name || def?.name || 'Soleil' });
             }
             const gold = events.reduce((sum, e) => sum + (e.gold || 0), 0);
             if (gold > 0) cfg.onGold(gold);
