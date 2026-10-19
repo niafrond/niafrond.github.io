@@ -131,7 +131,14 @@ export default {
             { templateId: 'loup_braise', name: 'Louveteau de braise', weight: 5, offset: -1 },
             { templateId: 'sanglier_flammes', name: 'Marcassin de flammes', weight: 4, offset: 0 },
             { templateId: 'tigre_embrase', name: 'Tigreau des chaumes', weight: 2, offset: 0 },
-            { templateId: 'shanxiao', name: 'Ogre des herbes hautes', weight: 1, offset: 1 }
+            { templateId: 'shanxiao', name: 'Ogre des herbes hautes', weight: 1, offset: 1 },
+                { templateId: 'bai_ze', name: "Bai Ze", weight: 3, offset: 0 },
+                { templateId: 'xiezhi', name: "Xiezhi", weight: 1, offset: 1 },
+                { templateId: 'tianlu_gardien', name: "Tianlu", weight: 1, offset: 1 },
+                { templateId: 'fuxi_dragon', name: "Fuxi", weight: 5, offset: -1 },
+                { templateId: 'taotie_bronze', name: "Taotie", weight: 3, offset: 0 },
+                { templateId: 'xiangliu', name: "Xiangliu", weight: 1, offset: 1 },
+                { templateId: 'xingtian', name: "Xingtian", weight: 3, offset: 0 }
         ] },
         npcs: [
             { id: 'hare_tuzi', at: '0' },
@@ -191,7 +198,13 @@ export default {
         grass: { rate: 0.1, safeSteps: 3, table: [
             { templateId: 'loup_braise', name: 'Louveteau égaré', weight: 5, offset: -1 },
             { templateId: 'sanglier_flammes', name: 'Marcassin fouisseur', weight: 4, offset: -1 },
-            { templateId: 'tigre_embrase', name: 'Tigreau de la piste', weight: 1, offset: 1 }
+            { templateId: 'tigre_embrase', name: 'Tigreau de la piste', weight: 1, offset: 1 },
+                { templateId: 'bai_ze_savant', name: "Bai Ze", weight: 1, offset: 1 },
+                { templateId: 'bixie', name: "Bixie", weight: 3, offset: 0 },
+                { templateId: 'pixiu_tresor', name: "Pixiu", weight: 1, offset: 1 },
+                { templateId: 'chaofeng', name: "Chaofeng", weight: 5, offset: -1 },
+                { templateId: 'taotie_bete', name: "Tao Tie", weight: 1, offset: 1 },
+                { templateId: 'nian', name: "Nian", weight: 1, offset: 1 }
         ] },
         npcs: [
             { id: 'fauves_road_herder_oyun', at: '0' }
@@ -367,7 +380,13 @@ export default {
         grass: { rate: 0.1, safeSteps: 4, table: [
             { templateId: 'loup_braise', name: 'Loup des cendres', weight: 5, offset: 0 },
             { templateId: 'sanglier_flammes', name: 'Sanglier des cendres', weight: 3, offset: 0 },
-            { templateId: 'tigre_embrase', name: 'Tigresse affamée', weight: 1, offset: 1 }
+            { templateId: 'tigre_embrase', name: 'Tigresse affamée', weight: 1, offset: 1 },
+                { templateId: 'zouyu', name: "Zouyu", weight: 3, offset: 0 },
+                { templateId: 'tianlu', name: "Tianlu", weight: 3, offset: 0 },
+                { templateId: 'bian', name: "Bian", weight: 3, offset: 0 },
+                { templateId: 'longma', name: "Longma", weight: 1, offset: 1 },
+                { templateId: 'jiuweihu', name: "Jiuweihu", weight: 1, offset: 1 },
+                { templateId: 'kuafu_geant', name: "Kuafu", weight: 1, offset: 1 }
         ] },
         places: {
             fauves_boar: '0',

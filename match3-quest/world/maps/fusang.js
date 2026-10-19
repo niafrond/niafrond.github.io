@@ -122,7 +122,13 @@ export default {
                 { templateId: 'huli_jing', name: 'Renard des pétales', weight: 5, offset: -1 },
                 { templateId: 'shu_jing', name: 'Esprit des racines', weight: 4, offset: 0 },
                 { templateId: 'yinglong', name: 'Serpent de sève', weight: 2, offset: 0 },
-                { templateId: 'garde_solaire', name: 'Garde solaire égaré', weight: 1, offset: 1 }
+                { templateId: 'garde_solaire', name: 'Garde solaire égaré', weight: 1, offset: 1 },
+                { templateId: 'jinwu', name: "Jinwu", weight: 1, offset: 1 },
+                { templateId: 'fenghuang', name: "Fenghuang", weight: 1, offset: 1 },
+                { templateId: 'ruiniao', name: "Rui Niao", weight: 5, offset: -1 },
+                { templateId: 'guai_niao', name: "Guai Niao", weight: 3, offset: 0 },
+                { templateId: 'shennong', name: "Shennong", weight: 1, offset: 1 },
+                { templateId: 'zhulong_torche', name: "Zhulong", weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -175,7 +181,14 @@ export default {
                 { templateId: 'shu_jing', name: 'Esprit des mousses dorées', weight: 4, offset: 0 },
                 { templateId: 'yinglong', name: 'Serpent de sève', weight: 3, offset: 0 },
                 { templateId: 'jiangshi', name: 'Jiangshi des feuillages', weight: 2, offset: 0 },
-                { templateId: 'immortel_jade', name: 'Sage de jade des herbes', weight: 1, offset: 1 }
+                { templateId: 'immortel_jade', name: 'Sage de jade des herbes', weight: 1, offset: 1 },
+                { templateId: 'sanzu_wu', name: "Sanzu Wu", weight: 3, offset: 0 },
+                { templateId: 'qingniao', name: "Qingniao", weight: 3, offset: 0 },
+                { templateId: 'peng', name: "Peng", weight: 1, offset: 1 },
+                { templateId: 'ming_niao', name: "Ming Niao", weight: 5, offset: -1 },
+                { templateId: 'kuafu', name: "Kua Fu", weight: 1, offset: 1 },
+                { templateId: 'huangdi', name: "Huangdi", weight: 1, offset: 1 },
+                { templateId: 'yingzhao_cheval', name: "Yingzhao", weight: 3, offset: 0 }
             ]
         },
         npcs: [

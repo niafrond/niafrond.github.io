@@ -142,7 +142,8 @@ export default {
                 { templateId: 'huo_shen', name: "Huo Shen", weight: 3, offset: 0 },
                 { templateId: 'chi_niao', name: "Chi Niao", weight: 5, offset: -1 },
                 { templateId: 'zhuque', name: "Zhuque", weight: 1, offset: 1 },
-                { templateId: 'dijiang', name: "Dijiang", weight: 3, offset: 0 }
+                { templateId: 'dijiang', name: "Dijiang", weight: 3, offset: 0 },
+                { templateId: 'hanba', name: "Hanba", weight: 3, offset: 0 }
             ]
         }
     },

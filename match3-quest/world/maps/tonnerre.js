@@ -136,7 +136,15 @@ export default {
                 { templateId: 'huli_jing', name: 'Jing des marches', weight: 5, offset: -1 },
                 { templateId: 'lingzhi_maudit', name: 'Lingzhi des corniches', weight: 3, offset: 0 },
                 { templateId: 'yinglong', name: 'Serpenteau de bruine', weight: 2, offset: 0 },
-                { templateId: 'lei_gong', name: 'Éclaireur de l\'orage', weight: 1, offset: 1 }
+                { templateId: 'lei_gong', name: 'Éclaireur de l\'orage', weight: 1, offset: 1 },
+                { templateId: 'feng_bo', name: "Feng Bo", weight: 3, offset: 0 },
+                { templateId: 'dian_mu', name: "Dian Mu", weight: 1, offset: 1 },
+                { templateId: 'feng_shou', name: "Feng Shou", weight: 5, offset: -1 },
+                { templateId: 'xue_niao', name: "Xue Niao", weight: 5, offset: -1 },
+                { templateId: 'tengshe', name: "Tengshe", weight: 3, offset: 0 },
+                { templateId: 'qinglong', name: "Qinglong", weight: 1, offset: 1 },
+                { templateId: 'tianma', name: "Tianma", weight: 5, offset: -1 },
+                { templateId: 'pulao', name: "Pulao", weight: 5, offset: -1 }
             ]
         }
     },
@@ -205,7 +213,14 @@ export default {
                 { templateId: 'yinglong', name: 'Serpenteau d\'étincelles', weight: 4, offset: -1 },
                 { templateId: 'lingzhi_maudit', name: 'Champignon à foudre', weight: 3, offset: 0 },
                 { templateId: 'shanxiao', name: 'Ogre des corniches', weight: 2, offset: 0 },
-                { templateId: 'suanni', name: 'Lion de pierre éveillé', weight: 1, offset: 1 }
+                { templateId: 'suanni', name: 'Lion de pierre éveillé', weight: 1, offset: 1 },
+                { templateId: 'yu_shi', name: "Yu Shi", weight: 3, offset: 0 },
+                { templateId: 'lei_shou', name: "Lei Shou", weight: 3, offset: 0 },
+                { templateId: 'yun_shou', name: "Yun Shou", weight: 5, offset: -1 },
+                { templateId: 'feilong', name: "Feilong", weight: 1, offset: 1 },
+                { templateId: 'baihu', name: "Baihu", weight: 1, offset: 1 },
+                { templateId: 'qiongqi', name: "Qiongqi", weight: 3, offset: 0 },
+                { templateId: 'chiwen', name: "Chiwen", weight: 5, offset: -1 }
             ]
         },
         gate: {

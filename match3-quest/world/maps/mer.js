@@ -133,7 +133,11 @@ export default {
             { templateId: 'soldat_terre_cuite', name: 'Crabe des sables', weight: 5, offset: -1 },
             { templateId: 'assassin_masque', name: 'Rôdeur des dunes', weight: 4, offset: 0 },
             { templateId: 'jiaolong', name: 'Anguille de la grève', weight: 3, offset: 0 },
-            { templateId: 'dame_des_neiges', name: 'Dame d\'écume', weight: 1, offset: 1 }
+            { templateId: 'dame_des_neiges', name: 'Dame d\'écume', weight: 1, offset: 1 },
+                { templateId: 'hai_ruo', name: "Hai Ruo", weight: 1, offset: 1 },
+                { templateId: 'hai_she', name: "Hai She", weight: 3, offset: 0 },
+                { templateId: 'xuanwu', name: "Xuanwu", weight: 1, offset: 1 },
+                { templateId: 'shenlong', name: "Shenlong", weight: 1, offset: 1 }
         ] },
         npcs: [
             { id: 'mermaid_jiaoren', at: '0' },
@@ -192,7 +196,11 @@ export default {
         grass: { rate: 0.09, safeSteps: 3, table: [
             { templateId: 'soldat_terre_cuite', name: 'Petit crabe des galets', weight: 5, offset: -1 },
             { templateId: 'jiaolong', name: 'Anguille de rivage', weight: 3, offset: -1 },
-            { templateId: 'wen_shen', name: 'Spectre d\'écume', weight: 1, offset: 1 }
+            { templateId: 'wen_shen', name: 'Spectre d\'écume', weight: 1, offset: 1 },
+                { templateId: 'hai_shen', name: "Hai Shen", weight: 1, offset: 1 },
+                { templateId: 'ren_yu', name: "Ren Yu", weight: 3, offset: 0 },
+                { templateId: 'longwang', name: "Longwang", weight: 1, offset: 1 },
+                { templateId: 'long', name: "Long", weight: 1, offset: 1 }
         ] },
         npcs: [
             { id: 'mer_road_ferryman_zhong', at: '0' }
@@ -366,7 +374,10 @@ export default {
         grass: { rate: 0.09, safeSteps: 4, table: [
             { templateId: 'soldat_terre_cuite', name: 'Crabe-soldat égaré', weight: 5, offset: 0 },
             { templateId: 'jiaolong', name: 'Anguille des marées', weight: 3, offset: 0 },
-            { templateId: 'dame_des_neiges', name: 'Dame d\'embruns', weight: 1, offset: 1 }
+            { templateId: 'dame_des_neiges', name: 'Dame d\'embruns', weight: 1, offset: 1 },
+                { templateId: 'hai_gui', name: "Hai Gui", weight: 3, offset: 0 },
+                { templateId: 'kun', name: "Kun", weight: 1, offset: 1 },
+                { templateId: 'panlong', name: "Panlong", weight: 3, offset: 0 }
         ] },
         places: {
             parley_sun8: '0',

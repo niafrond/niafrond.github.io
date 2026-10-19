@@ -79,7 +79,13 @@ export default {
                 { templateId: 'dame_des_neiges', name: 'Xianzi de rosée', weight: 5, offset: -1 },
                 { templateId: 'assassin_masque', name: 'Ombre du sentier', weight: 4, offset: 0 },
                 { templateId: 'jiangshi', name: 'Jiangshi des herbes argentées', weight: 2, offset: 0 },
-                { templateId: 'pretresse_lunaire', name: 'Veilleuse égarée', weight: 1, offset: 1 }
+                { templateId: 'pretresse_lunaire', name: 'Veilleuse égarée', weight: 1, offset: 1 },
+                { templateId: 'yutu', name: "Yutu", weight: 3, offset: 0 },
+                { templateId: 'nu_gui', name: "Nü Gui", weight: 3, offset: 0 },
+                { templateId: 'yuan_gui', name: "Yuan Gui", weight: 1, offset: 1 },
+                { templateId: 'nuwa', name: "Nüwa", weight: 1, offset: 1 },
+                { templateId: 'yayu', name: "Yayu", weight: 1, offset: 1 },
+                { templateId: 'yingzhao_ailee', name: "Yingzhao", weight: 3, offset: 0 }
             ]
         },
         npcs: [
@@ -129,7 +135,13 @@ export default {
                 { templateId: 'assassin_masque', name: 'Ombre des herbes argentées', weight: 4, offset: -1 },
                 { templateId: 'dame_des_neiges', name: 'Xianzi de givre', weight: 4, offset: 0 },
                 { templateId: 'jiangshi', name: 'Jiangshi lunaire', weight: 3, offset: 0 },
-                { templateId: 'canglong', name: 'Dragonneau de givre égaré', weight: 1, offset: 1 }
+                { templateId: 'canglong', name: 'Dragonneau de givre égaré', weight: 1, offset: 1 },
+                { templateId: 'gui_po', name: "Gui Po", weight: 3, offset: 0 },
+                { templateId: 'diaosi_gui', name: "Diao Si Gui", weight: 3, offset: 0 },
+                { templateId: 'heibai_wuchang', name: "Heibai Wuchang", weight: 1, offset: 1 },
+                { templateId: 'fuxi', name: "Fuxi", weight: 1, offset: 1 },
+                { templateId: 'feiyi', name: "Feiyi", weight: 3, offset: 0 },
+                { templateId: 'tiangou_lune', name: "Tiangou", weight: 1, offset: 1 }
             ]
         },
         npcs: [

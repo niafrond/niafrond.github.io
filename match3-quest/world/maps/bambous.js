@@ -133,7 +133,8 @@ export default {
                 { templateId: 'mu_mei', name: "Mu Mei", weight: 5, offset: -1 },
                 { templateId: 'lu_jing', name: "Lu Jing", weight: 3, offset: 0 },
                 { templateId: 'he_jing', name: "He Jing", weight: 3, offset: 0 },
-                { templateId: 'shouling', name: "Shouling", weight: 5, offset: -1 }
+                { templateId: 'shouling', name: "Shouling", weight: 5, offset: -1 },
+                { templateId: 'shan_shen', name: "Shan Shen", weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -201,7 +202,8 @@ export default {
                 { templateId: 'mu_gui', name: "Mu Gui", weight: 5, offset: -1 },
                 { templateId: 'hu_jing', name: "Hu Jing", weight: 3, offset: 0 },
                 { templateId: 'lang_jing', name: "Lang Jing", weight: 5, offset: -1 },
-                { templateId: 'jing_shou', name: "Jing Shou", weight: 5, offset: -1 }
+                { templateId: 'jing_shou', name: "Jing Shou", weight: 5, offset: -1 },
+                { templateId: 'qilin', name: "Qilin", weight: 1, offset: 1 }
             ]
         },
         npcs: [
