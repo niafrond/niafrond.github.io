@@ -1,3 +1,9 @@
+## [2.93.1](https://github.com/niafrond/niafrond.github.io/compare/v2.93.0...v2.93.1) (2026-10-19)
+
+### Bug Fixes
+
+* **match3-quest:** faire de Tir Furtif un sort donnant un tour bonus ([#499](https://github.com/niafrond/niafrond.github.io/issues/499)) ([b9fb8f1](https://github.com/niafrond/niafrond.github.io/commit/b9fb8f146599cb00598677942c1fa9550572e71f))
+
 ## [2.93.0](https://github.com/niafrond/niafrond.github.io/compare/v2.92.0...v2.93.0) (2026-10-19)
 
 ### Features
