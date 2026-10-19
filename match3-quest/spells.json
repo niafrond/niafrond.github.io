@@ -1133,8 +1133,8 @@
       },
       "minLevel": 1,
       "dmg": 6,
-      "effect": "noEndTurn",
-      "description": "6 dégâts et ne termine pas le tour"
+      "effect": "bonusTurn",
+      "description": "6 dégâts et vous donne un tour bonus"
     },
     {
       "id": "swiftStrike",
@@ -1741,8 +1741,8 @@
       },
       "minLevel": 1,
       "dmg": 6,
-      "effect": "noEndTurn",
-      "description": "6 dégâts et ne termine pas le tour"
+      "effect": "bonusTurn",
+      "description": "6 dégâts et vous donne un tour bonus"
     },
     {
       "id": "swiftStrike",
