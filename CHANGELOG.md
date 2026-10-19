@@ -1,3 +1,9 @@
+## [2.95.0](https://github.com/niafrond/niafrond.github.io/compare/v2.94.0...v2.95.0) (2026-10-19)
+
+### Features
+
+* **match3-quest:** cases de biome explicites et onglet stuff avec colliers de protection ([#501](https://github.com/niafrond/niafrond.github.io/issues/501)) ([7dc37dd](https://github.com/niafrond/niafrond.github.io/commit/7dc37dde93eb8caefb040e029e754af88bb690b5))
+
 ## [2.94.0](https://github.com/niafrond/niafrond.github.io/compare/v2.93.1...v2.94.0) (2026-10-19)
 
 ### Features
