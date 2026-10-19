@@ -26,49 +26,49 @@ const STYLE = '16-bit pixel art illustration, ancient China mythology, epic Fina
 // 4 plans par ultimate : 1 incantation, 2 apparition de l'entité, 3 attaque signature, 4 impact.
 export const ULTIMATES = {
   ultimateFiveElements: [
-    ['a Chinese sorcerer in flowing robes from behind, arms raised, a huge glowing circle of five colored runes (red fire, blue water, green wood, yellow earth, white metal) spinning on the ground, dark night sky', 'the rune circle spins faster, five colored lights rise and orbit the sorcerer, robes flutter'],
+    ['a 30-year-old male Chinese archer in white and teal flowing robes seen from behind, a recurve bow in one hand and the other arm raised, a huge glowing circle of five colored runes (red fire, blue water, green wood, yellow earth, white metal) spinning on the ground, dark night sky', 'the rune circle spins faster, five colored lights rise and orbit the sorcerer, robes flutter'],
     ['five colossal elemental spirits towering in a vertical column filling the whole sky: a fire phoenix, a water serpent, a wood tree giant, an earth golem, a metal tiger, swirling cosmic clouds', 'the five spirits glow and swirl together, energy crackles, clouds churn'],
     ['five beams of red, blue, green, yellow and white light converging downward into a single blinding point of power, spiral energy, speed lines', 'the beams spiral and tighten downward, sparks fly, the light intensifies'],
     ['a gigantic elemental explosion crater viewed from above, rainbow shockwave rings, flying debris, blinding light at center', 'the shockwave expands outward, debris flies, colors flash']
   ],
   ultimateHeavenlyThunder: [
-    ['a Chinese sorcerer on a mountain peak at night pointing a jade staff at the sky, dark purple storm clouds gathering, wind whipping robes', 'clouds spiral and darken, lightning flickers, robes whip in the wind'],
+    ['a 30-year-old male Chinese archer in violet robes on a mountain peak at night, a recurve bow in his hand pointed at the sky, dark purple storm clouds gathering, wind whipping robes', 'clouds spiral and darken, lightning flickers, robes whip in the wind'],
     ['the Heavenly Tribunal in the clouds: a colossal thunder god with drum ring and lightning hammer, glowing yellow eyes, huge storm vortex filling the sky', 'the thunder god raises his hammer, the vortex rotates, lightning crackles around him'],
     ['a giant column of golden-purple lightning bolts descending from the heavens in a vertical shot, jagged forks, blinding white core', 'lightning bolts flash and fork downward, the core pulses, sparks spray'],
     ['a scorched ground struck by a massive lightning bolt, white shockwave, electric arcs, smoke and glowing cracks', 'electric arcs dance, smoke rises, cracks glow and pulse']
   ],
   ultimateThousandArrows: [
-    ['a Chinese archer assassin from behind drawing a huge bow toward a dark red sky, wind blowing his cloak, a golden glowing arrow on the string', 'the archer draws the string tighter, cloak flutters, the arrow glows brighter'],
+    ['a 30-year-old male Chinese archer in a dark red hooded cloak from behind drawing a huge bow toward a dark red sky, wind blowing his cloak, a golden glowing arrow on the string', 'the archer draws the string tighter, cloak flutters, the arrow glows brighter'],
     ['the sky split open as a thousand glowing golden arrows materialize in a massive vertical wall of arrows hanging in the air, red and gold clouds', 'the arrows shimmer and tremble in formation, light rays sweep across'],
     ['a thousand golden arrows raining down at high speed in a vertical dense storm, motion streaks, sparks', 'arrows streak downward fast, motion blur, sparks fly'],
     ['a field covered by thousands of golden arrows stuck in the ground, dust cloud, golden light shockwave', 'dust billows, golden sparks float, light pulses']
   ],
   ultimateSunPiercer: [
-    ['the divine archer Hou Yi with a legendary golden bow on a cliff at dawn, aiming up at a giant blazing sun filling the top of the sky, red scarf blowing', 'the scarf and cloak blow, the sun pulses, the arrow tip glows gold'],
+    ['the divine 30-year-old male archer Hou Yi with a legendary golden bow on a cliff at dawn, aiming up at a giant blazing sun filling the top of the sky, red scarf blowing', 'the scarf and cloak blow, the sun pulses, the arrow tip glows gold'],
     ['a colossal blazing sun with a screaming face and three-legged golden crow, scorching red-orange sky, heat distortion, filling the whole screen', 'the sun flares and pulses, flames lick outward, the crow flaps its wings'],
     ['a single enormous golden spiraling arrow of light shooting upward piercing through clouds toward the sun, shockwave rings, speed lines', 'the arrow spins and surges upward, shockwave rings expand, clouds part'],
     ['the giant sun cracking and exploding into golden shards and fire, a blinding white burst, falling feathers of light', 'the sun shatters, shards fly outward, light flashes, feathers drift']
   ],
   ultimateImperialDragon: [
-    ['an ancient Chinese imperial general (wujiang) in lacquered lamellar armor with a horsehair-plumed helmet raising a straight jian sword to the sky, a glowing golden dragon sigil circle on the ground, Chinese palace pagoda silhouette, stormy gold sky', 'the sigil circle spins, golden light rises along the sword, silk banners flutter'],
+    ['a 30-year-old male ancient Chinese imperial general-archer in lacquered lamellar armor with a horsehair-plumed helmet, a recurve bow in one hand and a straight jian sword raised to the sky in the other, a glowing golden dragon sigil circle on the ground, Chinese palace pagoda silhouette, stormy gold sky', 'the sigil circle spins, golden light rises along the sword, silk banners flutter'],
     ['a colossal golden Chinese imperial dragon coiling through clouds filling the whole vertical screen, glowing eyes, flowing whiskers, jade and gold scales, emperor palace far below', 'the dragon coils and flows through the clouds, whiskers undulate, scales shimmer'],
     ['the golden imperial dragon diving straight at the viewer with open roaring mouth full of golden fire, clouds ripped apart, speed lines', 'the dragon surges forward roaring, golden fire builds, clouds rip apart'],
     ['a huge golden fire explosion shaped like a dragon head, shockwave, burning embers, sacred golden light healing glow', 'fire and embers swirl, shockwave expands, golden light pulses']
   ],
   ultimateEternalBastion: [
-    ['an ancient Chinese imperial general (wujiang) in lacquered lamellar armor kneeling and planting a great round bronze-and-jade shield in the ground, blue-green Chinese seal-script runes glowing around him, Chinese watchtower at dusk', 'runes pulse around the general, the shield glows, his silk sash flutters'],
+    ['a 30-year-old male ancient Chinese imperial general-archer in lacquered lamellar armor, a recurve bow slung across his shoulder, kneeling and planting a great round bronze-and-jade shield in the ground, blue-green Chinese seal-script runes glowing around him, Chinese watchtower at dusk', 'runes pulse around the general, the shield glows, his silk sash flutters'],
     ['a colossal ethereal Great Wall of glowing jade and blue light rising from the earth into the sky with giant guardian statues and watchtowers, vertical view', 'the wall grows upward, the statues glow, light motes rise'],
     ['a massive translucent blue-green barrier dome shield forming with hexagonal runes and rippling energy, golden sparks deflecting', 'runes ripple across the dome, energy pulses, sparks bounce off'],
     ['a shockwave of holy jade light blasting outward from a glowing shield, rings of energy, healing sparkles floating up', 'rings expand outward, sparkles float up, light pulses']
   ],
   ultimateThousandRiders: [
-    ['an ancient Chinese northern steppe warrior chieftain (Xiongnu style) with a fur-trimmed hanfu coat, braided hair and a huge red Chinese war banner on a hilltop at sunset, raising a dao saber, dusty steppe horizon near the Great Wall, red sky', 'the banner flaps wildly, the coat whips, dust blows'],
+    ['a 30-year-old male ancient Chinese northern steppe archer chieftain (Xiongnu style) with a fur-trimmed hanfu coat, braided hair, a recurve bow in his hand and a huge red Chinese war banner on a hilltop at sunset, a dao saber at his belt, dusty steppe horizon near the Great Wall, red sky', 'the banner flaps wildly, the coat whips, dust blows'],
     ['a vast horde of a thousand ancient Chinese steppe cavalrymen in lamellar armor with red silk banners galloping over the horizon toward the viewer, a Great Wall watchtower in the distance, huge dust cloud, red setting sun, vertical depth', 'the riders gallop, banners flutter, dust billows'],
     ['a giant ghostly red warhorse with a Chinese bronze war mask leading a thunderous cavalry charge straight at the viewer, hooves striking sparks, dust and speed lines', 'hooves pound, sparks fly, dust surges, banners whip'],
     ['a trampled battlefield with an enormous shockwave of dust and red energy, flying Chinese pennants and broken halberds, blinding impact', 'the dust cloud expands, pennants fly, red energy pulses']
   ],
   ultimateSkyWolf: [
-    ['a barbarian shaman with wolf pelt and bone staff on a snowy mountain top at night, howling at a huge full moon, purple aurora', 'the pelt flutters, breath steams, the aurora ripples, the moon glows'],
+    ['a 30-year-old male barbarian archer with a wolf pelt and a recurve bow on a snowy mountain top at night, a bone staff on his back, howling at a huge full moon, purple aurora', 'the pelt flutters, breath steams, the aurora ripples, the moon glows'],
     ['a colossal celestial blue-white spirit wolf made of stars and aurora standing in the night sky, glowing eyes, constellations in its fur, filling the vertical screen', 'the star wolf breathes, constellations twinkle in its fur, aurora swirls'],
     ['the celestial wolf howling with head thrown back, shockwave rings of purple-blue sound waves spreading across the sky, stars shaking', 'sound rings expand, stars tremble, the wolf howls'],
     ['a huge purple-blue shockwave of spirit energy crashing on a snowy plain, stars falling, wolf-shaped glow, snow blown by the blast', 'the shockwave rolls out, snow blows, stars fall']
@@ -78,14 +78,14 @@ export const ULTIMATES = {
 // « Bible » visuelle de chaque ultime, ajoutée à tous ses plans : même héros, même palette, même lumière (cohérence).
 // Le plan 1 est généré en premier ; son image sert ensuite de palette imposée (`color_image`) aux plans 2 à 4.
 const BIBLES = {
-  ultimateFiveElements: 'recurring hero: the same Chinese sorcerer in white and teal robes with a jade staff; palette: deep indigo night with five accent colors red, blue, green, gold and white; mystical twilight lighting',
-  ultimateHeavenlyThunder: 'recurring hero: the same Chinese sorcerer in deep violet robes with a jade staff; palette: dark purple storm, electric gold and white lightning; stormy night lighting',
-  ultimateThousandArrows: 'recurring hero: the same Chinese assassin archer in a dark red hooded cloak with a golden bow; palette: crimson sky, black silhouettes, bright gold arrows; dusk lighting',
-  ultimateSunPiercer: 'recurring hero: the same divine archer Hou Yi with a red scarf and a golden bow; palette: blazing orange, red and gold on deep crimson; fiery dawn lighting',
-  ultimateImperialDragon: 'recurring hero: the same ancient Chinese imperial general in golden lacquered lamellar armor with a jian sword; palette: gold, jade green and deep crimson; stormy golden sky lighting',
-  ultimateEternalBastion: 'recurring hero: the same ancient Chinese imperial general in jade-green lacquered lamellar armor with a great round shield; palette: teal, jade and pale gold on deep blue; dusk lighting',
-  ultimateThousandRiders: 'recurring hero: the same ancient Chinese steppe warrior chieftain in a fur-trimmed coat with a dao saber and a red war banner; palette: red, rust orange and dust brown; sunset lighting',
-  ultimateSkyWolf: 'recurring hero: the same barbarian shaman in a wolf pelt with a bone staff; palette: deep blue, violet, ice white and starlight; cold moonlit lighting'
+  ultimateFiveElements: 'recurring hero: the same 30-year-old male Chinese archer in white and teal sorcerer robes, a recurve bow in his hand and a quiver of arrows on his back; palette: deep indigo night with five accent colors red, blue, green, gold and white; mystical twilight lighting',
+  ultimateHeavenlyThunder: 'recurring hero: the same 30-year-old male Chinese archer in deep violet sorcerer robes, a recurve bow in his hand and a quiver of arrows on his back; palette: dark purple storm, electric gold and white lightning; stormy night lighting',
+  ultimateThousandArrows: 'recurring hero: the same 30-year-old male Chinese archer in a dark red hooded cloak, a golden bow in his hand and a quiver of arrows on his back; palette: crimson sky, black silhouettes, bright gold arrows; dusk lighting',
+  ultimateSunPiercer: 'recurring hero: the same divine 30-year-old male archer Hou Yi with a red scarf, a golden bow in his hand and a quiver of arrows on his back; palette: blazing orange, red and gold on deep crimson; fiery dawn lighting',
+  ultimateImperialDragon: 'recurring hero: the same 30-year-old male ancient Chinese imperial general-archer in golden lacquered lamellar armor, a recurve bow in his hand, a jian sword at his belt and a quiver of arrows on his back; palette: gold, jade green and deep crimson; stormy golden sky lighting',
+  ultimateEternalBastion: 'recurring hero: the same 30-year-old male ancient Chinese imperial general-archer in jade-green lacquered lamellar armor, a recurve bow in his hand, a great round shield on his arm and a quiver of arrows on his back; palette: teal, jade and pale gold on deep blue; dusk lighting',
+  ultimateThousandRiders: 'recurring hero: the same 30-year-old male ancient Chinese steppe archer chieftain in a fur-trimmed coat, a recurve bow in his hand, a dao saber at his belt, a quiver of arrows and a red war banner; palette: red, rust orange and dust brown; sunset lighting',
+  ultimateSkyWolf: 'recurring hero: the same 30-year-old male barbarian archer in a wolf pelt, a recurve bow in his hand, a bone staff slung over his shoulder and a quiver of arrows on his back; palette: deep blue, violet, ice white and starlight; cold moonlit lighting'
 };
 const seedOf = id => [...id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % 1000000;
 

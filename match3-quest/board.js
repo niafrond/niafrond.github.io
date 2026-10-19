@@ -186,6 +186,13 @@ function getOuterBlockSize(element){
     return rect.height + marginTop + marginBottom;
 }
 
+// Colonnes latérales (joueur / ennemi) réservées en paysage, rail d'onglets compris
+const LANDSCAPE_SIDE_RESERVE = 460;
+
+function isLandscapeLayout(){
+    return Boolean(typeof window !== 'undefined' && window.matchMedia?.('(orientation: landscape)').matches);
+}
+
 function getMaxTileSizeFromViewport(boardDiv){
     const top = Math.max(0, boardDiv.getBoundingClientRect().top);
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -193,7 +200,8 @@ function getMaxTileSizeFromViewport(boardDiv){
 
     const spellsContainer = document.getElementById('spells-container');
     const battleResultScreen = document.getElementById('battle-result-screen');
-    const spellsHeight = getOuterBlockSize(spellsContainer);
+    // Paysage : les sorts sont dans les colonnes latérales, pas sous la grille
+    const spellsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(spellsContainer);
     const resultHeight = getOuterBlockSize(battleResultScreen) + getOuterBlockSize(document.getElementById('combat-controls'));
     const bottomSafety = 8;
 
@@ -222,9 +230,11 @@ function syncBoardTileSize(){
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
     // Mobile en portrait : la grille occupe toute la largeur (priorité sur la hauteur : la page défile au besoin).
     const fullWidth = Boolean(window.matchMedia?.('(orientation: portrait) and (max-width: 820px)').matches);
+    const landscape = !fullWidth && isLandscapeLayout();
     const widthBudget = Math.min(
         parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
         viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
+        landscape && viewportWidth > 0 ? Math.max(120, viewportWidth - LANDSCAPE_SIDE_RESERVE) : Number.POSITIVE_INFINITY,
         980
     );
 

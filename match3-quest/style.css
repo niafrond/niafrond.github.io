@@ -2538,6 +2538,34 @@ body.dark-mode .tutorial-card {
     #combat-controls button { padding: 8px 14px; font-size: clamp(13px, 3.8vw, 17px); margin: 0 3px !important; }
 }
 
+/* Paysage : 3 blocs de gauche à droite — joueur (stats + attaques/sorts/objets), grille, ennemi (stats + attaques/sorts).
+   Les conteneurs .stats-container et #spells-container sont « aplatis » (display: contents) pour que leurs enfants
+   se placent directement dans la grille de #tab-combat. board.js calcule la taille des tuiles à partir de la hauteur. */
+@media (orientation: landscape) {
+    #tab-combat.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas: "pstats board estats" "pspells board espells";
+        column-gap: 8px;
+        row-gap: 6px;
+        align-items: start;
+    }
+    #tab-combat .stats-container, #tab-combat #spells-container { display: contents !important; }
+    #tab-combat .stats-container[style*="none"], #tab-combat #spells-container[style*="none"] { display: none !important; }
+    #tab-combat > #explore-container { grid-area: auto; }
+    #player-stats { grid-area: pstats; }
+    #enemy-stats { grid-area: estats; }
+    #board { grid-area: board; margin: 0; align-self: center; }
+    #player-spells { grid-area: pspells; }
+    #enemy-spells { grid-area: espells; width: auto; }
+    #player-spells, #enemy-spells { box-sizing: border-box; max-height: 100%; overflow-y: auto; min-width: 0; }
+    #player-stats, #enemy-stats { flex: none; min-width: 0; box-sizing: border-box; }
+    #tab-combat > #battle-result-screen { grid-column: 1 / -1; }
+    #combat-controls { margin: 4px 0 !important; }
+    #combat-controls button { padding: 4px 12px; font-size: 13px; }
+}
+
 /* Tours bonus accumulés (à côté du nom du combattant) */
 .bonus-turn-badge {
     margin-left: auto;

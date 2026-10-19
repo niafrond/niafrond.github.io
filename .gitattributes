@@ -1,0 +1,4 @@
+match3-quest/inspiration/** filter=lfs diff=lfs merge=lfs -text
+pdf-batch-print/dist/*.exe filter=lfs diff=lfs merge=lfs -text
+pdf-reader-lite/dist/*.exe filter=lfs diff=lfs merge=lfs -text
+pdf-reader-lite/*.zip filter=lfs diff=lfs merge=lfs -text

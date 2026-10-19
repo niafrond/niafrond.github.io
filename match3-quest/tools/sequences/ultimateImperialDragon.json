@@ -1,0 +1,233 @@
+{
+  "id": "ultimateImperialDragon",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: the same 30-year-old male ancient Chinese imperial general-archer in golden lacquered lamellar armor, a recurve bow in his hand, a jian sword at his belt and a quiver of arrows on his back; palette: gold, jade green and deep crimson; stormy golden sky lighting",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "first": "sprites/ultimates-sdxl/ultimateImperialDragon-1.png",
+  "plate": "a Chinese palace and pagoda silhouette under a stormy golden sky, a glowing golden sigil circle on the stone ground in the lower third",
+  "style_plate": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male ancient Chinese imperial general-archer in golden lacquered lamellar armor, a recurve bow in his hand, a jian sword at his belt and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "entity": {
+      "prompt": "a colossal golden Chinese imperial dragon coiling through clouds filling the whole vertical screen, glowing eyes, flowing whiskers, jade and gold scales, emperor palace far below",
+      "w": 768,
+      "h": 768,
+      "seed": 100,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame",
+      "tries": 6
+    },
+    "hero": {
+      "prompt": "a 30-year-old male ancient Chinese imperial general-archer in golden lacquered lamellar armor, a recurve bow in his hand, a jian sword at his belt and a quiver of arrows on his back, full body, standing, three-quarter view, holding the bow",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "cyan"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "a 30-year-old male ancient Chinese imperial general-archer in lacquered lamellar armor with a horsehair-plumed helmet, a recurve bow in one hand and a straight jian sword raised to the sky in the other, a glowing golden dragon sigil circle on the ground, Chinese palace pagoda silhouette, stormy gold sky, magical energy gathering",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.1,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 150
+        }
+      ]
+    },
+    {
+      "prompt": "a colossal golden Chinese imperial dragon coiling through clouds filling the whole vertical screen, glowing eyes, flowing whiskers, jade and gold scales, emperor palace far below",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.2,
+          "w": 0.5,
+          "alpha": 0.65
+        }
+      ]
+    },
+    {
+      "prompt": "a colossal golden Chinese imperial dragon coiling through clouds filling the whole vertical screen, glowing eyes, flowing whiskers, jade and gold scales, emperor palace far below",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.92
+        }
+      ]
+    },
+    {
+      "prompt": "the golden imperial dragon diving straight at the viewer with open roaring mouth full of golden fire, clouds ripped apart, speed lines",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.92
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.25,
+          "r": [
+            0.2,
+            0.35,
+            0.5
+          ],
+          "squash": 1.0,
+          "alpha": 190,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        }
+      ]
+    },
+    {
+      "prompt": "the golden imperial dragon diving straight at the viewer with open roaring mouth full of golden fire, clouds ripped apart, speed lines",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.6
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.5,
+          "r": [
+            0.15,
+            0.3,
+            0.45
+          ],
+          "squash": 0.6,
+          "alpha": 190,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        },
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.62,
+          "r": 0.3,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 140
+        }
+      ]
+    },
+    {
+      "prompt": "a huge golden fire explosion shaped like a dragon head, shockwave, burning embers, sacred golden light healing glow",
+      "denoise": 0.5,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.3
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.78,
+          "r": [
+            0.25,
+            0.45,
+            0.7
+          ],
+          "squash": 0.3,
+          "alpha": 210,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        },
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.78,
+          "r": 0.35,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 170
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "the sigil circle spins, golden light rises along the sword, silk banners flutter"
+    },
+    {
+      "frames": 49,
+      "motion": "the dragon coils and flows through the clouds, whiskers undulate, scales shimmer"
+    },
+    {
+      "frames": 49,
+      "motion": "the dragon coils and flows through the clouds, whiskers undulate, scales shimmer, it grows colossal, the camera tilts up"
+    },
+    {
+      "frames": 49,
+      "motion": "the dragon surges forward roaring, golden fire builds, clouds rip apart"
+    },
+    {
+      "frames": 49,
+      "motion": "the dragon surges forward roaring, golden fire builds, clouds rip apart"
+    },
+    {
+      "frames": 49,
+      "motion": "fire and embers swirl, shockwave expands, golden light pulses"
+    },
+    {
+      "frames": 25,
+      "motion": "fire and embers swirl, shockwave expands, golden light pulses, the glow slowly fades"
+    }
+  ]
+}

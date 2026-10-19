@@ -5,17 +5,19 @@ Pilote l'API REST d'[ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) pou
 (lyrisme mélodique) et Pokémon GBA (mélodies vives, son compact) — `STYLE_REFERENCES` dans `catalog.mjs`.
 
 ## Prérequis
-1. Serveur ACE-Step lancé en local : `acestep-api` (port 8001). Node ≥ 18. `ffmpeg` pour `install`.
+1. Serveur ACE-Step lancé en local par **game-maker** (dans WSL) : `tools/gm up audio` (port 8001). Node ≥ 18. `ffmpeg` pour `install`.
 2. Se placer dans ce dossier : `cd match3-quest/tools/audio/acestep`. Aucune dépendance npm.
 
 ## Installation (WSL Ubuntu-22.04, GPU NVIDIA)
+ACE-Step n'est plus installé ici : il vit dans **game-maker** (`/mnt/c/Users/Niafrond/dev/game-maker`, voir son `README.md`) avec le reste de la pile IA locale.
 ```
-curl -LsSf https://astral.sh/uv/install.sh | sh && git clone https://github.com/ace-step/ACE-Step-1.5.git ~/ACE-Step-1.5 && cd ~/ACE-Step-1.5 && uv sync
-cd ~/ACE-Step-1.5 && uv run acestep-api        # serveur sur 127.0.0.1:8001 (modèles téléchargés au 1er lancement)
+/mnt/c/Users/Niafrond/dev/game-maker/gm setup     # une fois (venv uv, dépendances) ; modèles téléchargés au 1er lancement
+tools/gm up audio                                 # serveur sur 127.0.0.1:8001 ; `tools/gm down audio` pour l'arrêter, `tools/gm status`
 ```
-Accès depuis ce dossier (lien créé côté WSL, ignoré par git, utilisable depuis WSL) : `wsl ln -sfn /home/niafrond/ACE-Step-1.5 <ce dossier>/ACE-Step-1.5`.
-Le serveur est lancé avec `ACESTEP_TMPDIR=<ce dossier>/tmp` (ignoré par git) : audio générés et uploads temporaires y atterrissent (`~/run-acestep-api.sh` côté WSL).
+`ACE-Step-1.5` dans ce dossier est un lien (ignoré par git) vers `game-maker/audio/ACE-Step-1.5` ; `~/ACE-Step-1.5` (WSL) aussi, par compatibilité.
+Fichiers temporaires d'ACE-Step : `game-maker/audio/tmp` (`ACESTEP_TMPDIR`). Les générations sont téléchargées par HTTP : seuls `out/` et `approved/` de ce dossier comptent.
 Le motif est envoyé en upload multipart (le serveur refuse les chemins absolus hors `/tmp`).
+Un seul gros modèle GPU à la fois (8 Go) : `tools/gm free` / `tools/gm down pixel` avant la musique si ComfyUI tourne.
 
 ## Flux de travail (cohérence des leitmotivs d'abord)
 ```
