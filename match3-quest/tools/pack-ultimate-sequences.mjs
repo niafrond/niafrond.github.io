@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+/**
+ * pack-ultimate-sequences.mjs — Range les plans-séquences terminés des ultimes (sprites/ultimates-seq/<id>/px/fNNNN.png, 144×256)
+ * en UNE planche en grille `sprites/ultimates/<id>-seq.png` et déclare `<id>-seq` dans sprites/ultimates/index.json
+ * ({ frames, fps, size, cols }) : lue par `loadSequence` (ultimateCinematics.js), qui joue la séquence à la place des 4 plans.
+ * Ne retient que les ultimes dont la séquence est terminée (px/preview.gif présent, comme gen-all-ultimate-sequences.py).
+ *
+ * Usage (WSL, Node 22) : node tools/pack-ultimate-sequences.mjs [--only=ultimateFiveElements,…] [--fps=24] [--cols=16]
+ * Après un changement de planches : incrémenter ULTIMATE_ART_VERSION (ultimateCinematics.js).
+ */
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join, resolve } from 'path';
+import { createRequire } from 'module';
+
+const GAME = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const { PNG } = createRequire(import.meta.url)('pngjs');
+const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const [k, ...v] = a.slice(2).split('='); return [k, v.length ? v.join('=') : true]; }));
+const ONLY = args.only ? String(args.only).split(',') : null;
+const FPS = Number(args.fps || 24), COLS = Number(args.cols || 16), MAX_SIDE = 16384;
+const IDS = ['ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousandArrows', 'ultimateSunPiercer', 'ultimateImperialDragon',
+  'ultimateEternalBastion', 'ultimateThousandRiders', 'ultimateSkyWolf'];
+
+const indexPath = join(GAME, 'sprites', 'ultimates', 'index.json');
+const index = JSON.parse(readFileSync(indexPath, 'utf8'));
+let packed = 0;
+for (const id of IDS) {
+  if (ONLY && !ONLY.includes(id)) continue;
+  const dir = join(GAME, 'sprites', 'ultimates-seq', id, 'px');
+  if (!existsSync(join(dir, 'preview.gif'))) { console.log(`SKIP ${id} : séquence non terminée`); continue; }
+  const files = readdirSync(dir).filter(f => /^f\d+\.png$/.test(f)).sort();
+  if (!files.length) { console.log(`SKIP ${id} : aucune image`); continue; }
+  const first = PNG.sync.read(readFileSync(join(dir, files[0]))), W = first.width, H = first.height, rows = Math.ceil(files.length / COLS);
+  if (W * COLS > MAX_SIDE || H * rows > MAX_SIDE) throw new Error(`${id} : planche trop grande (${W * COLS}×${H * rows})`);
+  const sheet = new PNG({ width: W * COLS, height: H * rows });
+  files.forEach((f, n) => {
+    const p = PNG.sync.read(readFileSync(join(dir, f)));
+    if (p.width !== W || p.height !== H) throw new Error(`${id}/${f} : taille ${p.width}×${p.height} ≠ ${W}×${H}`);
+    PNG.bitblt(p, sheet, 0, 0, W, H, (n % COLS) * W, ((n / COLS) | 0) * H);
+  });
+  writeFileSync(join(GAME, 'sprites', 'ultimates', `${id}-seq.png`), PNG.sync.write(sheet));
+  index[`${id}-seq`] = { frames: files.length, fps: FPS, size: [W, H], cols: COLS };
+  packed++; console.log(`OK   ${id} : ${files.length} images (${(files.length / FPS).toFixed(1)} s), planche ${W * COLS}×${H * rows}`);
+}
+writeFileSync(indexPath, JSON.stringify(index, null, 2) + '\n');
+console.log(`Terminé : ${packed} séquence(s) rangée(s)`);

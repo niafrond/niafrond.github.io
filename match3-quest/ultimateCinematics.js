@@ -34,7 +34,7 @@ const plansCache = new Map();
 
 // Stockage permanent sur l'appareil (Cache Storage, sans service worker) : téléchargé une seule fois, puis servi depuis
 // le téléphone, y compris hors ligne et d'une session à l'autre. À régénérer les planches, incrémenter la version.
-export const ULTIMATE_ART_VERSION = 2;   // 2 : Dragon Impérial, Rempart Éternel et Mille Cavaliers régénérés (héros chinois)
+export const ULTIMATE_ART_VERSION = 3;   // 2 : Dragon Impérial, Rempart Éternel et Mille Cavaliers régénérés (héros chinois) ; 3 : plans-séquences `<id>-seq.png`
 const CACHE_NAME = `match3-ultimates-v${ULTIMATE_ART_VERSION}`;
 let persistAsked = false;   // demande de persistance + purge des anciennes versions : une fois par session
 
@@ -99,9 +99,30 @@ export function loadPlans(id) {
     return plansCache.get(id);
 }
 
+// Plan-séquence de l'ultime (tools/pack-ultimate-sequences.mjs) : { img, frames, fps, size, cols } — planche en grille, `cols` images par
+// ligne — ou null s'il n'existe pas (les 4 planches ou le repli procédural jouent alors). Même mémoire que les planches.
+const seqCache = new Map();
+export function loadSequence(id) {
+    if (!seqCache.has(id)) {
+        const p = (async () => {
+            const meta = (await loadIndex())?.[`${id}-seq`];
+            const img = meta && await loadImage(new URL(`${id}-seq.png`, BASE).href);
+            return img ? { img, ...meta } : null;
+        })().then(seq => { if (!seq) seqCache.delete(id); return seq; });
+        seqCache.set(id, p);
+    }
+    return seqCache.get(id);
+}
+
+// Image `i` d'un plan-séquence : rectangle source dans la planche en grille.
+export const sequenceRect = (seq, i) => {
+    const n = Math.max(0, Math.min(seq.frames - 1, Math.floor(i)));
+    return [(n % seq.cols) * seq.size[0], Math.floor(n / seq.cols) * seq.size[1], seq.size[0], seq.size[1]];
+};
+
 // Précharge en tâche de fond les planches de ces ultimes (ex. ceux de la classe du joueur).
 export function preloadUltimateCinematic(spells) {
-    for (const sp of [].concat(spells || [])) if (sp?.id) loadPlans(sp.id);
+    for (const sp of [].concat(spells || [])) if (sp?.id) { loadSequence(sp.id); loadPlans(sp.id); }
 }
 
 // Repli procédural : fond sombre teinté, cercle runique qui tourne, rayons et orbe central selon le plan.
@@ -168,7 +189,7 @@ export function playUltimateScene(spell) {
         const ctx = canvas.getContext('2d');
         if (ctx) ctx.imageSmoothingEnabled = false;
 
-        let plans = null, raf = 0, finished = false, t0 = 0, lastPlan = -1;
+        let plans = null, seq = null, raf = 0, finished = false, t0 = 0, lastPlan = -1;
         const close = () => {
             if (finished) return;
             finished = true;
@@ -185,6 +206,19 @@ export function playUltimateScene(spell) {
             if (finished) return;
             if (!ctx) { close(); return; }   // pas de canvas 2D (environnement sans rendu) : rien à montrer
             if (!t0) t0 = now;
+            if (seq) {   // plan-séquence continu : une seule prise, titre aux trois quarts, éclairs sonores au milieu et à l'impact
+                const total = seq.frames / seq.fps, t = reduced ? total - 0.01 : (now - t0) / 1000;
+                if (t >= total + 0.4 && !reduced) { close(); return; }
+                if (reduced && !title.classList.contains('show')) { title.classList.add('show'); setTimeout(close, 1800); }
+                const [w, h] = ULTIMATE_SIZE, [sx, sy, sw, sh] = sequenceRect(seq, t * seq.fps);
+                const step = Math.floor(t / total * 4);
+                if (step !== lastPlan) { lastPlan = step; if (step === 1 || step === 3) playSfx('spellCast', { isPlayer: true }); }
+                ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, w, h);
+                if (!reduced && t < 0.5) { ctx.globalAlpha = 1 - t / 0.5; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1; }
+                if (t >= total * 0.75) title.classList.add('show');
+                raf = requestAnimationFrame(frame);
+                return;
+            }
             const t = reduced ? TOTAL - 0.01 : (now - t0) / 1000;
             if (t >= TOTAL + 0.4 && !reduced) { close(); return; }
             if (reduced && !title.classList.contains('show')) { title.classList.add('show'); setTimeout(close, 1800); }
@@ -221,7 +255,7 @@ export function playUltimateScene(spell) {
             raf = requestAnimationFrame(frame);
         };
         const start = () => { if (!finished) raf = requestAnimationFrame(frame); };
-        loadPlans(id).then(p => { plans = p; start(); });
+        Promise.all([loadSequence(id), loadPlans(id)]).then(([sq, p]) => { seq = sq; plans = p; start(); });
     });
 }
 

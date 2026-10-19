@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import { playUltimateCinematic } from '../../ultimates.js';
 import { ultimateSpells } from '../../spells.js';
-import { ULTIMATE_COLORS, ULTIMATE_SIZE, loadPlans, preloadUltimateCinematic, deviceFetch } from '../../ultimateCinematics.js';
+import { ULTIMATE_COLORS, ULTIMATE_SIZE, loadPlans, loadSequence, sequenceRect, preloadUltimateCinematic, deviceFetch } from '../../ultimateCinematics.js';
 
 describe('stockage permanent sur l\'appareil', () => {
     test('premier accès : réseau puis Cache Storage ; ensuite servi sans réseau ; versions anciennes purgées', async () => {
@@ -62,5 +62,35 @@ describe('cinématiques des ultimes', () => {
             await p;
             expect(document.querySelector('.cine-ultimate')).toBeNull();
         }
+    });
+});
+
+describe('plans-séquences', () => {
+    const seq = { frames: 50, fps: 24, size: [144, 256], cols: 16 };
+
+    test('sequenceRect : image i = rectangle de la planche en grille, borné à la première et à la dernière image', () => {
+        expect(sequenceRect(seq, 0)).toEqual([0, 0, 144, 256]);
+        expect(sequenceRect(seq, 15.9)).toEqual([15 * 144, 0, 144, 256]);
+        expect(sequenceRect(seq, 16)).toEqual([0, 256, 144, 256]);
+        expect(sequenceRect(seq, 49)).toEqual([(49 % 16) * 144, 3 * 256, 144, 256]);
+        expect(sequenceRect(seq, 999)).toEqual(sequenceRect(seq, 49));
+        expect(sequenceRect(seq, -3)).toEqual(sequenceRect(seq, 0));
+    });
+
+    test('loadSequence : null sans entrée `<id>-seq` dans l\'index (les 4 planches ou le repli jouent alors)', async () => {
+        globalThis.fetch = async () => ({ json: async () => ({ 'ultimateSunPiercer-1': { frames: 13, fps: 6, size: [144, 256] } }) });
+        try { expect(await loadSequence('ultimateSunPiercer')).toBeNull(); } finally { delete globalThis.fetch; }
+    });
+
+    test('l\'index déclare les séquences rangées avec des champs cohérents', async () => {
+        const { readFileSync } = await import('fs');
+        const index = JSON.parse(readFileSync(new URL('../../sprites/ultimates/index.json', import.meta.url), 'utf8'));
+        Object.entries(index).filter(([k]) => k.endsWith('-seq')).forEach(([k, m]) => {
+            expect(ULTIMATE_COLORS[k.replace(/-seq$/, '')]).toBeTruthy();
+            expect(m.frames).toBeGreaterThan(24);
+            expect(m.cols * m.size[0]).toBeLessThanOrEqual(16384);
+            expect(Math.ceil(m.frames / m.cols) * m.size[1]).toBeLessThanOrEqual(16384);
+            expect(readFileSync(new URL(`../../sprites/ultimates/${k}.png`, import.meta.url)).length).toBeGreaterThan(1000);
+        });
     });
 });
