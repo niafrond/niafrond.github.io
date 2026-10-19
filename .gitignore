@@ -151,3 +151,11 @@ pixel-art/config.js
 # Preview auto-générée par gen-sprites.mjs
 match3-quest/tools/sprite-preview.html
 match3-quest/tools/tile-preview.html
+
+__pycache__/
+*.pyc
+pdf-reader-lite/build/
+pdf-batch-print/build/
+match3-quest/sprites/ultimates-comfy/
+match3-quest/sprites/ultimates-sdxl/
+match3-quest/sprites/ultimates-seq/

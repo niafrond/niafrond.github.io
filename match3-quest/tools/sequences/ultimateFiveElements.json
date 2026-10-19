@@ -1,0 +1,233 @@
+{
+  "id": "ultimateFiveElements",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: the same 30-year-old male Chinese archer in white and teal sorcerer robes, a recurve bow in his hand and a quiver of arrows on his back; palette: deep indigo night with five accent colors red, blue, green, gold and white; mystical twilight lighting",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "first": "sprites/ultimates-sdxl/ultimateFiveElements-1.png",
+  "plate": "a huge glowing circle of five colored runes (red, blue, green, yellow, white) in a dark indigo night sky, drifting embers, cosmic clouds, a flat rocky platform in the lower third",
+  "style_plate": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male Chinese archer in white and teal sorcerer robes, a recurve bow in his hand and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "entity": {
+      "prompt": "five colossal elemental spirits towering in a vertical column filling the whole sky: a fire phoenix, a water serpent, a wood tree giant, an earth golem, a metal tiger, swirling cosmic clouds",
+      "w": 768,
+      "h": 768,
+      "seed": 100,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame",
+      "tries": 6
+    },
+    "hero": {
+      "prompt": "a 30-year-old male Chinese archer in white and teal sorcerer robes, a recurve bow in his hand and a quiver of arrows on his back, full body, standing, three-quarter view, holding the bow",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "magenta"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "a 30-year-old male Chinese archer in white and teal flowing robes seen from behind, a recurve bow in one hand and the other arm raised, a huge glowing circle of five colored runes (red fire, blue water, green wood, yellow earth, white metal) spinning on the ground, dark night sky, magical energy gathering",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.1,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 150
+        }
+      ]
+    },
+    {
+      "prompt": "five colossal elemental spirits towering in a vertical column filling the whole sky: a fire phoenix, a water serpent, a wood tree giant, an earth golem, a metal tiger, swirling cosmic clouds",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.2,
+          "w": 0.5,
+          "alpha": 0.65
+        }
+      ]
+    },
+    {
+      "prompt": "five colossal elemental spirits towering in a vertical column filling the whole sky: a fire phoenix, a water serpent, a wood tree giant, an earth golem, a metal tiger, swirling cosmic clouds",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.92
+        }
+      ]
+    },
+    {
+      "prompt": "five beams of red, blue, green, yellow and white light converging downward into a single blinding point of power, spiral energy, speed lines",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.92
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.25,
+          "r": [
+            0.2,
+            0.35,
+            0.5
+          ],
+          "squash": 1.0,
+          "alpha": 190,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        }
+      ]
+    },
+    {
+      "prompt": "five beams of red, blue, green, yellow and white light converging downward into a single blinding point of power, spiral energy, speed lines",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.6
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.5,
+          "r": [
+            0.15,
+            0.3,
+            0.45
+          ],
+          "squash": 0.6,
+          "alpha": 190,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        },
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.62,
+          "r": 0.3,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 140
+        }
+      ]
+    },
+    {
+      "prompt": "a gigantic elemental explosion crater viewed from above, rainbow shockwave rings, flying debris, blinding light at center",
+      "denoise": 0.5,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.3
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.78,
+          "r": [
+            0.25,
+            0.45,
+            0.7
+          ],
+          "squash": 0.3,
+          "alpha": 210,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        },
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.78,
+          "r": 0.35,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 170
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "the rune circle spins faster, five colored lights rise and orbit the sorcerer, robes flutter"
+    },
+    {
+      "frames": 49,
+      "motion": "the five spirits glow and swirl together, energy crackles, clouds churn"
+    },
+    {
+      "frames": 49,
+      "motion": "the five spirits glow and swirl together, energy crackles, clouds churn, it grows colossal, the camera tilts up"
+    },
+    {
+      "frames": 49,
+      "motion": "the beams spiral and tighten downward, sparks fly, the light intensifies"
+    },
+    {
+      "frames": 49,
+      "motion": "the beams spiral and tighten downward, sparks fly, the light intensifies"
+    },
+    {
+      "frames": 49,
+      "motion": "the shockwave expands outward, debris flies, colors flash"
+    },
+    {
+      "frames": 25,
+      "motion": "the shockwave expands outward, debris flies, colors flash, the glow slowly fades"
+    }
+  ]
+}
