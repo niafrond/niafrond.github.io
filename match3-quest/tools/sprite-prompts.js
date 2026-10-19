@@ -71,16 +71,16 @@ export const SPRITE_MANIFEST = {
 
   enemies: {
     goblin_saboteur: {
-      desc: 'small mischievous goblin, sickly green warty skin, big pointed ears, wearing torn patchwork vest and shorts, holding a sizzling round black bomb, gap-toothed wicked grin, beady red eyes',
+      desc: 'Huli Jing, small mischievous fox spirit, orange fox in a tattered patchwork vest, pointed ears, sly grin, holding a sizzling round black firecracker, glowing yellow eyes',
     },
     forest_guardian: {
-      desc: 'forest nature spirit warrior, tall muscular figure, body wrapped in overlapping bark plate armor covered in living green leaves, vine-woven shield on arm, glowing amber eyes, mossy shoulders, ancient powerful appearance',
+      desc: 'Shu Jing, ancient tree spirit, gnarled old pine and willow body with bark plates and green needle leaves, face in the trunk, root legs, glowing amber eyes, moss on shoulders',
     },
     bone_reaver: {
-      desc: 'animated skeleton warrior, yellowed bare bone body, wearing cracked dark iron shoulder plates and a rusty horned helmet, wielding a jagged curved bone sword, hollow black eye sockets with faint purple glow',
+      desc: 'Gui warrior, skeleton soldier in cracked bronze lamellar armor and a rusty helmet, yellowed bare bones, rusty curved dao saber, hollow black eye sockets with faint purple glow',
     },
     storm_knight: {
-      desc: 'dark armored knight, full black iron plate armor with lightning bolt engravings, purple crackling electricity around gauntlets, menacing horned visor helmet, imposing bulky silhouette',
+      desc: 'Lei Gong, Chinese thunder god, blue-skinned bird-beaked general in blue armor, small wings, holding a mallet and chisel, crackling lightning around the hands, imposing silhouette',
     },
     shadow_assassin: {
       desc: 'shadow ninja, slender figure wrapped in dark charcoal silk, wisps of black smoke curling around the body, holding a gleaming shuriken, blank white mask face, crouching coiled ready-to-strike posture',
@@ -92,16 +92,16 @@ export const SPRITE_MANIFEST = {
       desc: 'heavy armored arena gladiator, thick riveted iron chest plate, spiked iron gauntlets, full iron helmet with visor, swinging a spiked iron chain flail, scarred muscular arms visible, arena champion stance',
     },
     sand_colossus: {
-      desc: 'massive desert sand golem, huge body made of swirling compacted sand and broken stone, two glowing amber eyes in featureless sand face, heavy stone fist arms, sand dust constantly flowing off the body',
+      desc: 'Hundun, formless primordial Chinese spirit, huge round faceless body of swirling sand and clay without eyes or mouth, six stubby legs, glowing amber cracks, dust flowing off the body',
     },
     frost_dragon: {
-      desc: 'young frost dragon, small and stocky, icy pale blue and white scales, small folded bat-like wings at back, frost breath mist around mouth, sharp curved claws, cold glinting blue eyes, horned head',
+      desc: 'Canglong, Chinese azure dragon, long wingless serpentine body of icy pale blue scales, four clawed legs, antlered horned head with long white whiskers and beard, frost mist around the mouth, cold glinting blue eyes',
     },
     ember_dragon: {
-      desc: 'young fire dragon, small and stocky, deep red and burnt orange scales, small folded wings, ember sparks flying off body, curved black horns, sharp claws, fierce bright orange glowing eyes',
+      desc: 'Chilong, Chinese red dragon, long wingless serpentine body of deep red and burnt orange scales, four clawed legs, antlered horned head with long whiskers, ember sparks and flames in a mane, fierce orange eyes',
     },
     orc_warmaster: {
-      desc: 'orc warlord, massive muscular build, grey-green thick skin, wearing black spiked iron pauldrons and chest plate, giant two-handed battle axe resting on shoulder, tribal red war paint markings on face, fierce tusked scowl',
+      desc: 'Chiyou, Chinese war god chieftain, massive muscular build, red-brown skin, bronze helmet with ox horns, bronze lamellar armor, giant crescent-moon battle axe on shoulder, fierce tusked scowl',
     },
     crystal_sage: {
       desc: 'crystal mage sorcerer, translucent cobalt blue robe seeming to be made of light, crystal-tipped wooden staff, three orbiting gem shards of different colors floating around the figure, calm serene powerful expression, faint blue inner glow',
@@ -113,7 +113,7 @@ export const SPRITE_MANIFEST = {
       desc: 'sun temple paladin, gleaming polished golden full plate armor, large radiant sun halo disc behind the head, sacred longsword raised in salute, visor open showing righteous determined face, warm golden light radiating outward',
     },
     plague_doctor: {
-      desc: 'sinister plague doctor, long hooked bird-beak porcelain mask, floor-length dark waxed oilskin coat, wide-brimmed black hat, belt covered with colorful glass vials and pouches, black leather gloves, unsettling hunched posture',
+      desc: 'Wen Shen, Chinese plague demon, pale demon in a dark robe and wide hat, long hooked beak mask, belt with gourds of poison, black gloves, hunched sinister posture',
     },
   },
 };
