@@ -6,6 +6,7 @@
 // plafonnée à STAT_CHANCE_CAP (98 %). Les sorts ne sont ni bloqués ni critiques. Module pur, sans DOM.
 
 import { getAttributePoints } from "./attributes.js";
+import { stuffTotals } from "./stuff.js";
 
 export const STAT_CHANCE_CAP = 98;
 export const CRIT_MULTIPLIER = 1.5;
@@ -35,11 +36,14 @@ export function gearBonus(entity, stat) {
     const key = stat === 'attack' ? 'atkBonus' : 'defBonus';
     const gear = [entity?.equippedWeapon, entity?.weapon, entity?.equipment?.leftHand, entity?.equipment?.item];
     const seen = new Set();
-    return gear.reduce((sum, piece) => {
+    const worn = gear.reduce((sum, piece) => {
         if (!piece || seen.has(piece)) return sum;
         seen.add(piece);
         return sum + Math.max(0, Math.floor(piece[key] || 0));
     }, 0);
+    // Casque, collier, bracelet et bague (stuff.js) : seulement pour qui en porte (le héros).
+    const totals = entity?.stuff ? stuffTotals(entity) : null;
+    return worn + (totals ? (stat === 'attack' ? totals.atk : totals.def) : 0);
 }
 
 // Bonus temporaires (sorts, `entity.statBuffs = { attack: { amount, turns }, defense: { amount, turns } }`) : ils ne modifient pas

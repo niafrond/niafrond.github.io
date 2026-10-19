@@ -12,6 +12,7 @@
  */
 import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
+import { lootableStuff, getStuffById, baseStuffPrice, grantStuff } from './stuff.js';
 
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
 
@@ -127,11 +128,17 @@ export function merchantStock(merchantId, ngPlus = 0) {
     // « prix d'or » : la pièce d'exception ne coûte jamais moins que la pièce rare la plus chère de l'étal.
     const rareMax = Math.max(0, ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity).price));
 
+    // « Parures » : deux pièces de stuff (casque, collier, bracelet ou bague) du niveau de la région.
+    const stuffOffers = sample(lootableStuff().filter(s => s.minLevel <= L + 4 && s.minLevel >= L - 14), 2, rng)
+        .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
+            price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2)) }));
+
     const mount = MOUNT_OFFERS[merchantId];
     return [
         ...(TORCH_MERCHANTS.includes(merchantId) ? [{ key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE }] : []),
         ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
+        ...stuffOffers,
         ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),
         ...exceptional.map(e => {
             const o = offerOf(e.kind, e.obj, 'exceptional', e.rarity);
@@ -144,6 +151,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
 export function offerObject(offer) {
     if (offer.kind === 'mount') return MOUNTS[offer.id] || null;
     if (offer.kind === 'torch') return TORCH;
+    if (offer.kind === 'stuff') return getStuffById(offer.id);
     return offer.kind === 'weapon' ? allWeapons.find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
 }
 
@@ -153,6 +161,7 @@ export function availableOffers(merchantId, hero, ngPlus = 0) {
     return merchantStock(merchantId, ngPlus).filter(o => {
         if (o.unique && sold.includes(o.key)) return false;
         if (o.kind === 'weapon' && (hero.weapons || []).some(w => w.id === o.id)) return false;
+        if (o.kind === 'stuff' && (hero.stuffOwned || []).includes(o.id)) return false;
         if (o.kind === 'mount' && hero.mount) return false;   // une seule monture
         if (o.kind === 'torch' && hero.torch) return false;   // une seule torche
         return true;
@@ -173,6 +182,8 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
         hero.torch = true;
     } else if (offer.kind === 'mount') {
         hero.mount = obj.id;
+    } else if (offer.kind === 'stuff') {
+        grantStuff(hero, obj.id);
     } else if (offer.kind === 'weapon') {
         if (!hero.weapons) hero.weapons = [];
         hero.weapons.push(obj);
@@ -193,12 +204,13 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
 // armes en main, objet actif du combat, reliques portées (bonus permanent déjà appliqué). Un bouclier porté n'est pas dans le sac.
 export const SELL_RATIO = 0.4;
 
-export const sellPriceOf = (kind, obj) => Math.max(1, Math.floor((kind === 'weapon' ? baseWeaponPrice(obj) : baseItemPrice(obj)) * SELL_RATIO));
+export const sellPriceOf = (kind, obj) => Math.max(1, Math.floor((kind === 'weapon' ? baseWeaponPrice(obj) : kind === 'stuff' ? baseStuffPrice(obj) : baseItemPrice(obj)) * SELL_RATIO));
 
 const equippedWeaponIds = hero => new Set([hero.equippedWeapon?.id, hero.equipment?.rightHand?.id, hero.equipment?.leftHand?.id].filter(Boolean));
 
 /** Pourquoi cette pièce ne peut pas être vendue (null si elle le peut). */
 export function sellLockReason(hero, kind, obj, inventoryIndex = null) {
+    if (kind === 'stuff') return Object.values(hero.stuff || {}).includes(obj.id) ? 'Porté' : null;
     if (kind === 'weapon') return equippedWeaponIds(hero).has(obj.id) ? 'Équipée' : null;
     if (inventoryIndex !== null && inventoryIndex === hero.activeInventoryIndex && obj.type !== 'shield') return 'Objet actif';
     if (obj.type === 'artifact' && obj.applied) return 'Relique portée';
@@ -209,7 +221,9 @@ export function sellLockReason(hero, kind, obj, inventoryIndex = null) {
 export function sellableEntries(hero) {
     const weapons = (hero.weapons || []).map(w => ({ key: `weapon:${w.id}`, kind: 'weapon', obj: w, rarity: weaponRarity(w), price: sellPriceOf('weapon', w), locked: sellLockReason(hero, 'weapon', w) }));
     const items = (hero.inventory || []).map((it, index) => ({ key: `inv:${index}`, kind: 'item', obj: it, rarity: it.rarity || 'common', price: sellPriceOf('item', it), locked: sellLockReason(hero, 'item', it, index), index }));
-    return [...weapons, ...items];
+    const stuff = (hero.stuffOwned || []).map(getStuffById).filter(s => s && !s.quest)
+        .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', obj: s, rarity: s.rarity, price: sellPriceOf('stuff', s), locked: sellLockReason(hero, 'stuff', s) }));
+    return [...weapons, ...items, ...stuff];
 }
 
 /** Vend une pièce (clé de `sellableEntries`) : retire l'objet, crédite l'or, recale l'index de l'objet actif. */
@@ -217,7 +231,9 @@ export function sellEntry(hero, key) {
     const entry = sellableEntries(hero).find(e => e.key === key);
     if (!entry) return { ok: false, message: 'Vous ne possédez plus cette pièce.' };
     if (entry.locked) return { ok: false, message: `${entry.obj.name} ne peut pas être vendu : ${entry.locked.toLowerCase()}.` };
-    if (entry.kind === 'weapon') {
+    if (entry.kind === 'stuff') {
+        hero.stuffOwned = (hero.stuffOwned || []).filter(id => id !== entry.obj.id);
+    } else if (entry.kind === 'weapon') {
         hero.weapons = hero.weapons.filter(w => w.id !== entry.obj.id);
     } else {
         hero.inventory.splice(entry.index, 1);

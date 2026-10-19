@@ -4,6 +4,7 @@
 
 import { getRarityIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
+import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry } from './merchants.js';
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
 
@@ -11,6 +12,7 @@ const SECTION_TITLES = {
     gear: 'Équipement',
     mount: 'Monture',
     stall: 'Étal',
+    stuff: 'Parures',
     rare: 'Pièces rares',
     exceptional: 'Pièce d\'exception'
 };
@@ -27,6 +29,7 @@ function offerRow(offer, gold) {
     const levelText = offer.kind === 'mount' || offer.kind === 'torch' ? '' : ` • Niv. ${obj.minLevel}`;
     const stats = offer.kind === 'torch' ? 'Vue élargie sous terre'
         : offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
+        : offer.kind === 'stuff' ? `${STUFF_SLOT_LABELS[obj.slot]} • ${describeStuff(obj)}`
         : offer.kind === 'weapon'
         ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}`
         : obj.type === 'shield' ? `Déf. +${obj.defense} %`
@@ -51,7 +54,7 @@ function sellRow(entry) {
     const obj = entry.obj;
     const color = getRarityColor(entry.rarity);
     const icon = entry.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(entry.rarity);
-    const stats = entry.kind === 'weapon' ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}` : (obj.type === 'shield' ? `Déf. +${obj.defense} %` : obj.type === 'artifact' ? 'Relique' : 'Objet');
+    const stats = entry.kind === 'stuff' ? `${STUFF_SLOT_LABELS[obj.slot]} • ${describeStuff(obj)}` : entry.kind === 'weapon' ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}` : (obj.type === 'shield' ? `Déf. +${obj.defense} %` : obj.type === 'artifact' ? 'Relique' : 'Objet');
     return `
         <div class="weapon-item shop-weapon merchant-offer${entry.locked ? ' is-locked' : ''}" style="border-left:3px solid ${color}">
             <span class="weapon-icon">${icon}</span>
@@ -110,6 +113,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             const res = sellEntry(player, sellBtn.dataset.sell);
             if (res.ok) {
                 updateAvailableWeapons();
+                document.dispatchEvent(new Event('stuff-changed'));
                 updateInventoryTab?.();
                 updateItemButton?.();
                 createWeaponButton?.();
@@ -126,6 +130,7 @@ export function renderMerchant(npc, card, hooks = {}) {
         if (res.ok) {
             if (res.offer.kind === 'weapon') updateAvailableWeapons();
             else updateInventoryTab?.();
+            if (res.offer.kind === 'stuff') document.dispatchEvent(new Event('stuff-changed'));
             saveUpdate();
             log(res.message);
         }
