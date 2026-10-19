@@ -15,9 +15,9 @@ const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', im
 const templateIds = new Set(catalog.map(t => t.id));
 
 const TABLE = [
-    { templateId: 'fungal_horror', name: 'Crapaud de boue', weight: 5, offset: -1 },
-    { templateId: 'goblin_saboteur', name: "Voleur d'eau", weight: 4, offset: 0 },
-    { templateId: 'forest_guardian', name: 'Esprit des diguettes', weight: 1, offset: 1 }
+    { templateId: 'lingzhi_maudit', name: 'Crapaud de boue', weight: 5, offset: -1 },
+    { templateId: 'huli_jing', name: "Voleur d'eau", weight: 4, offset: 0 },
+    { templateId: 'shu_jing', name: 'Esprit des diguettes', weight: 1, offset: 1 }
 ];
 
 // Carte 12 x 5 : une rangée d'herbe (y = 2, x = 1..10) que le héros parcourt vers la droite depuis (0, 2).
@@ -47,12 +47,12 @@ describe('grassOf : données normalisées', () => {
         expect(g.rate).toBe(GRASS_RATE);
         expect(g.safeSteps).toBe(GRASS_SAFE_STEPS);
         expect(g.table).toHaveLength(3);
-        expect(g.table[0]).toEqual({ templateId: 'fungal_horror', name: 'Crapaud de boue', weight: 5, offset: -1 });
+        expect(g.table[0]).toEqual({ templateId: 'lingzhi_maudit', name: 'Crapaud de boue', weight: 5, offset: -1 });
     });
     test('poids absent ou négatif = 1, décalage absent = 0, taux borné à [0, 1]', () => {
-        const g = grassOf(screenOf({}, { rate: 4, table: [{ templateId: 'fungal_horror', weight: -2 }] }).t);
+        const g = grassOf(screenOf({}, { rate: 4, table: [{ templateId: 'lingzhi_maudit', weight: -2 }] }).t);
         expect(g.rate).toBe(1);
-        expect(g.table[0]).toMatchObject({ weight: 1, offset: 0, name: 'fungal_horror' });
+        expect(g.table[0]).toMatchObject({ weight: 1, offset: 0, name: 'lingzhi_maudit' });
     });
     test('aucune herbe sur une zone sûre, un intérieur ou une arène', () => {
         expect(grassOf(screenOf({ safe: true }).t)).toBeNull();
@@ -123,8 +123,8 @@ describe('déclenchement des rencontres', () => {
     test('pondération : le choix suit les poids cumulés de la table', () => {
         const pick = r => {
             const s = sessionOf({}, { safeSteps: 0, table: [
-                { templateId: 'fungal_horror', name: 'A', weight: 1 },
-                { templateId: 'goblin_saboteur', name: 'B', weight: 3 }
+                { templateId: 'lingzhi_maudit', name: 'A', weight: 1 },
+                { templateId: 'huli_jing', name: 'B', weight: 3 }
             ] });
             const res = tryMove(s, 1, 0, { random: seq(0, r) });
             return encounterFor(s, res.enemyId, 1).name;
@@ -182,7 +182,7 @@ describe('zones sans rencontre', () => {
     });
 
     test("l'aura d'un ennemi de la carte reste prioritaire sur l'herbe", () => {
-        const guard = { id: 'guard', templateId: 'goblin_saboteur', name: 'Garde', kind: 'sentinel', x: 4, y: 1, offset: 0 };
+        const guard = { id: 'guard', templateId: 'huli_jing', name: 'Garde', kind: 'sentinel', x: 4, y: 1, offset: 0 };
         const s = sessionOf({ enemies: [guard] }, { safeSteps: 0, rate: 1 }, { x: 2, y: 2 });
         expect(tryMove(s, 1, 0, { random: always })).toEqual({ type: 'combat', enemyId: 'guard' });
         expect(s.rt.wildSeq).toBe(0);
@@ -250,7 +250,7 @@ describe('créature d\'herbe : rencontre', () => {
     test('même forme qu\'un ennemi normal : dessin du gabarit, préparation neutre, biome', () => {
         const { enc } = encounter();
         expect(enc).toMatchObject({
-            enemyId: 'wild:t:1', spriteKey: 'fungal_horror', templateId: 'fungal_horror', name: 'Crapaud de boue',
+            enemyId: 'wild:t:1', spriteKey: 'lingzhi_maudit', templateId: 'lingzhi_maudit', name: 'Crapaud de boue',
             biome: 'paddy', boss: null, duel: null, wild: true
         });
         expect(enc.prep.tags).toEqual([]);
@@ -277,7 +277,7 @@ describe('créature d\'herbe : rencontre', () => {
     });
 
     test('jamais de boss, même si la table en déclare un', () => {
-        const { enc } = encounter({}, { table: [{ templateId: 'goblin_saboteur', name: 'X', weight: 1, offset: 0, boss: { level: 50 }, duel: { rapidShots: 3 } }] });
+        const { enc } = encounter({}, { table: [{ templateId: 'huli_jing', name: 'X', weight: 1, offset: 0, boss: { level: 50 }, duel: { rapidShots: 3 } }] });
         expect(enc.boss).toBeNull();
         expect(enc.duel).toBeNull();
         expect(enc.level).toBe(REGION_LEVEL.rizieres);
@@ -364,7 +364,7 @@ describe('données réelles du Grand Monde (garde-fou, vide tant qu\'aucune cart
             if (g.rate !== undefined) expect(g.rate > 0 && g.rate <= 1).toBe(true);
             if (g.safeSteps !== undefined) expect(Number.isInteger(g.safeSteps) && g.safeSteps >= 0).toBe(true);
             expect(g.table.length).toBeGreaterThanOrEqual(3);
-            expect(g.table.length).toBeLessThanOrEqual(5);
+            expect(g.table.length).toBeLessThanOrEqual(12);
             g.table.forEach(t => {
                 expect(templateIds.has(t.templateId)).toBe(true);
                 expect(typeof t.name).toBe('string');

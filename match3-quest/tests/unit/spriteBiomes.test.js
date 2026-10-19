@@ -36,16 +36,16 @@ describe('palettes par biome', () => {
 });
 
 describe('enemySprite avec biome', () => {
-    const base = () => enemySprite('deep_sea_serpent', 'deep_sea_serpent');
+    const base = () => enemySprite('jiaolong', 'jiaolong');
     test('rétrocompatible : sans biome, ou biome sans teinte, dessin d\'origine', () => {
-        expect(base()).toBe(ENEMY_SPRITES.deep_sea_serpent);
-        expect(enemySprite('deep_sea_serpent', 'deep_sea_serpent', undefined)).toBe(base());
-        expect(enemySprite('deep_sea_serpent', 'deep_sea_serpent', 'house')).toBe(base());
-        expect(enemySprite('deep_sea_serpent', 'deep_sea_serpent', 'inconnu')).toBe(base());
+        expect(base()).toBe(ENEMY_SPRITES.jiaolong);
+        expect(enemySprite('jiaolong', 'jiaolong', undefined)).toBe(base());
+        expect(enemySprite('jiaolong', 'jiaolong', 'house')).toBe(base());
+        expect(enemySprite('jiaolong', 'jiaolong', 'inconnu')).toBe(base());
         expect(enemySprite('zzz', 'zzz', 'riverbed')).toBeNull();
     });
     test('le serpent de vase (lit du fleuve) n\'est plus bleu', () => {
-        const mud = enemySprite('fleuve_w_serpent', 'deep_sea_serpent', 'riverbed');
+        const mud = enemySprite('fleuve_w_serpent', 'jiaolong', 'riverbed');
         expect(mud).not.toBe(base());
         expect(blueShare(base())).toBeGreaterThan(0.3);
         expect(blueShare(mud)).toBeLessThan(0.1);
@@ -54,13 +54,13 @@ describe('enemySprite avec biome', () => {
         expect(mud).toMatch(/^<svg/);
     });
     test('cache par (dessin, biome) : même chaîne, et biomes différents', () => {
-        expect(enemySprite('x', 'deep_sea_serpent', 'riverbed')).toBe(enemySprite('y', 'deep_sea_serpent', 'riverbed'));
-        expect(enemySprite('x', 'deep_sea_serpent', 'gobi')).not.toBe(enemySprite('x', 'deep_sea_serpent', 'riverbed'));
+        expect(enemySprite('x', 'jiaolong', 'riverbed')).toBe(enemySprite('y', 'jiaolong', 'riverbed'));
+        expect(enemySprite('x', 'jiaolong', 'gobi')).not.toBe(enemySprite('x', 'jiaolong', 'riverbed'));
     });
     test('soleils-boss et élémentaires gardent leur dessin', () => {
         expect(isTintable('sun_3')).toBe(false);
         expect(enemySprite('sun_3', null, 'riverbed')).toBe(ENEMY_SPRITES.sun_3);
-        expect(enemySprite('x', 'frost_dragon', 'volcano')).toBe(ENEMY_SPRITES.frost_dragon);
+        expect(enemySprite('x', 'canglong', 'volcano')).toBe(ENEMY_SPRITES.canglong);
     });
     test('tous les ennemis du jeu se teintent dans leur biome en un SVG valide de même structure', () => {
         Object.values(SCREENS).forEach(sc => sc.enemies.forEach(e => {

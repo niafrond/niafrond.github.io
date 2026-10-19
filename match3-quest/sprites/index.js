@@ -22,7 +22,7 @@ import { GBA_SPRITES } from './generated.js';
 // Sprite GBA pré-généré pour la clé donnée (direction : 'front'|'back'|'left'|'right').
 // Retourne null si aucun sprite généré n'existe pour cette clé.
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
-const GBA_ALIASES = { change_moon: 'change', mud_toad: 'rizieres_w_toad' };
+const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
 const gbaKey = key => GBA_ALIASES[key] || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
 export const hasGbaSprite = key => gbaKey(key) in GBA_SPRITES;

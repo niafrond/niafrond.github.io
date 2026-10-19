@@ -119,10 +119,10 @@ export default {
         grass: {
             rate: 0.1,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Renard des pétales', weight: 5, offset: -1 },
-                { templateId: 'forest_guardian', name: 'Esprit des racines', weight: 4, offset: 0 },
-                { templateId: 'storm_wyrm', name: 'Serpent de sève', weight: 2, offset: 0 },
-                { templateId: 'sun_paladin', name: 'Garde solaire égaré', weight: 1, offset: 1 }
+                { templateId: 'huli_jing', name: 'Renard des pétales', weight: 5, offset: -1 },
+                { templateId: 'shu_jing', name: 'Esprit des racines', weight: 4, offset: 0 },
+                { templateId: 'yinglong', name: 'Serpent de sève', weight: 2, offset: 0 },
+                { templateId: 'garde_solaire', name: 'Garde solaire égaré', weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -134,10 +134,10 @@ export default {
             { id: 'fusang_road_hidden', at: 'k', gold: 405 }
         ],
         enemies: [
-            { id: 'fusang_road_spirit', at: '2', templateId: 'forest_guardian', name: 'Esprit de la racine géante', kind: 'sentinel', offset: 0 },
-            { id: 'fusang_road_monkey', at: '3', templateId: 'goblin_saboteur', name: 'Singe-démon pillard', kind: 'sentinel', offset: -1 },
-            { id: 'fusang_road_wyrm', at: '4', templateId: 'storm_wyrm', name: 'Serpent de sève', kind: 'patrol', patrol: ['4', [7, 12]], offset: 0 },
-            { id: 'fusang_road_hopper', at: '5', templateId: 'void_vampire', name: 'Jiangshi sauteur des racines', kind: 'patrol', patrol: ['5', [38, 5]], offset: 0 }
+            { id: 'fusang_road_spirit', at: '2', templateId: 'shu_jing', name: 'Esprit de la racine géante', kind: 'sentinel', offset: 0 },
+            { id: 'fusang_road_monkey', at: '3', templateId: 'huli_jing', name: 'Singe-démon pillard', kind: 'sentinel', offset: -1 },
+            { id: 'fusang_road_wyrm', at: '4', templateId: 'yinglong', name: 'Serpent de sève', kind: 'patrol', patrol: ['4', [7, 12]], offset: 0 },
+            { id: 'fusang_road_hopper', at: '5', templateId: 'jiangshi', name: 'Jiangshi sauteur des racines', kind: 'patrol', patrol: ['5', [38, 5]], offset: 0 }
         ]
     },
 
@@ -171,11 +171,11 @@ export default {
         ],
         grass: {
             table: [
-                { templateId: 'goblin_saboteur', name: 'Renard des pétales', weight: 5, offset: -1 },
-                { templateId: 'forest_guardian', name: 'Esprit des mousses dorées', weight: 4, offset: 0 },
-                { templateId: 'storm_wyrm', name: 'Serpent de sève', weight: 3, offset: 0 },
-                { templateId: 'void_vampire', name: 'Jiangshi des feuillages', weight: 2, offset: 0 },
-                { templateId: 'crystal_sage', name: 'Sage de jade des herbes', weight: 1, offset: 1 }
+                { templateId: 'huli_jing', name: 'Renard des pétales', weight: 5, offset: -1 },
+                { templateId: 'shu_jing', name: 'Esprit des mousses dorées', weight: 4, offset: 0 },
+                { templateId: 'yinglong', name: 'Serpent de sève', weight: 3, offset: 0 },
+                { templateId: 'jiangshi', name: 'Jiangshi des feuillages', weight: 2, offset: 0 },
+                { templateId: 'immortel_jade', name: 'Sage de jade des herbes', weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -195,17 +195,17 @@ export default {
             { id: 'fusang_wild_hive', at: 'k', gold: 270 }
         ],
         enemies: [
-            { id: 'fusang_root_guard', at: 'l', templateId: 'sun_paladin', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 37 } },
-            { id: 'fusang_jade_wraith', at: 'm', templateId: 'crystal_sage', name: 'Immortel de jade égaré', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fusang_w_moth', at: 's', templateId: 'void_vampire', name: 'Phalène des racines', kind: 'patrol', patrol: ['s', [27, 18]], offset: 0 },
-            { id: 'fusang_w_wyrm', at: 't', templateId: 'storm_wyrm', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['t', [26, 4]], offset: -1 },
-            { id: 'fusang_w_scholar', at: 'n', templateId: 'arcane_scholar', name: 'Lettré des branches', kind: 'sentinel', offset: 0 },
-            { id: 'fusang_thief_a', at: 'o', templateId: 'goblin_saboteur', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
-            { id: 'fusang_thief_b', at: 'p', templateId: 'goblin_saboteur', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
-            { id: 'fusang_frost_wyrm', at: 'q', templateId: 'frost_dragon', name: 'Long de givre égaré', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fusang_w_wolf', at: 'u', templateId: 'ember_wolf', name: 'Loup de braise des terrasses', kind: 'patrol', patrol: ['u', [38, 19]], offset: 0 },
-            { id: 'fusang_w_mist', at: 'w', templateId: 'void_vampire', name: 'Jiangshi de la brume dorée', kind: 'patrol', patrol: ['w', [35, 10]], offset: 0 },
-            { id: 'fusang_w_general', at: 'r', templateId: 'storm_knight', name: 'Général des nuées égaré', kind: 'sentinel', offset: 0 }
+            { id: 'fusang_root_guard', at: 'l', templateId: 'garde_solaire', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 37 } },
+            { id: 'fusang_jade_wraith', at: 'm', templateId: 'immortel_jade', name: 'Immortel de jade égaré', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'fusang_w_moth', at: 's', templateId: 'jiangshi', name: 'Phalène des racines', kind: 'patrol', patrol: ['s', [27, 18]], offset: 0 },
+            { id: 'fusang_w_wyrm', at: 't', templateId: 'yinglong', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['t', [26, 4]], offset: -1 },
+            { id: 'fusang_w_scholar', at: 'n', templateId: 'lettre_sorcier', name: 'Lettré des branches', kind: 'sentinel', offset: 0 },
+            { id: 'fusang_thief_a', at: 'o', templateId: 'huli_jing', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
+            { id: 'fusang_thief_b', at: 'p', templateId: 'huli_jing', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
+            { id: 'fusang_frost_wyrm', at: 'q', templateId: 'canglong', name: 'Long de givre égaré', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'fusang_w_wolf', at: 'u', templateId: 'loup_braise', name: 'Loup de braise des terrasses', kind: 'patrol', patrol: ['u', [38, 19]], offset: 0 },
+            { id: 'fusang_w_mist', at: 'w', templateId: 'jiangshi', name: 'Jiangshi de la brume dorée', kind: 'patrol', patrol: ['w', [35, 10]], offset: 0 },
+            { id: 'fusang_w_general', at: 'r', templateId: 'lei_gong', name: 'Général des nuées égaré', kind: 'sentinel', offset: 0 }
         ],
         gate: {
             requires: 'sq_sceau_racines',

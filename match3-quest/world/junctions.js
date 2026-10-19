@@ -95,22 +95,22 @@ export const JUNCTIONS = [
     // ── Gardien spécial à vaincre (zone sauvage → hameau) ─────────────────────────────────────────────────────────
     {
         id: 'hameau_bambous', type: 'kill', region: 'bambous', from: 'bambous_wild', to: 'bambous_hamlet',
-        enemy: { id: 'bambous_hamlet_guardian', name: 'Ours de bambou, gardien du hameau', templateId: 'forest_guardian' },
+        enemy: { id: 'bambous_hamlet_guardian', name: 'Ours de bambou, gardien du hameau', templateId: 'shu_jing' },
         lockedMessage: 'Un ours de bambou gigantesque dort en travers du sentier du hameau : il faut le vaincre pour passer.'
     },
     {
         id: 'hameau_tonnerre', type: 'kill', region: 'tonnerre', from: 'tonnerre_wild', to: 'tonnerre_hamlet',
-        enemy: { id: 'tonnerre_hamlet_guardian', name: 'Cavalier de l\'orage égaré', templateId: 'storm_knight' },
+        enemy: { id: 'tonnerre_hamlet_guardian', name: 'Cavalier de l\'orage égaré', templateId: 'lei_gong' },
         lockedMessage: 'Un chevalier d\'orage, foudre au poing, garde le chemin du hameau : il faut le vaincre pour passer.'
     },
     {
         id: 'hameau_fauves', type: 'kill', region: 'fauves', from: 'fauves_wild', to: 'fauves_hamlet',
-        enemy: { id: 'fauves_hamlet_guardian', name: 'Tigresse blanche des pâtures', templateId: 'fire_tiger' },
+        enemy: { id: 'fauves_hamlet_guardian', name: 'Tigresse blanche des pâtures', templateId: 'tigre_embrase' },
         lockedMessage: 'Une tigresse blanche garde les pâtures qui mènent au hameau : il faut la vaincre pour passer.'
     },
     {
         id: 'hameau_fusang', type: 'kill', region: 'fusang', from: 'fusang_wild', to: 'fusang_hamlet',
-        enemy: { id: 'fusang_hamlet_guardian', name: 'Immortel égaré des branches', templateId: 'crystal_sage' },
+        enemy: { id: 'fusang_hamlet_guardian', name: 'Immortel égaré des branches', templateId: 'immortel_jade' },
         lockedMessage: 'Un immortel égaré tient le sentier des branches vers le hameau : il faut le vaincre pour passer.'
     }
 ];

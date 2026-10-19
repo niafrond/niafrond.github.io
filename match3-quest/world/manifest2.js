@@ -150,7 +150,7 @@ export const MANIFEST2 = {
       {
         id: "crow_a",
         name: "Corbeau-démon voleur",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild",
         group: "crow_gang"
@@ -158,7 +158,7 @@ export const MANIFEST2 = {
       {
         id: "crow_b",
         name: "Corbeau-démon voleur",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild",
         group: "crow_gang"
@@ -166,7 +166,7 @@ export const MANIFEST2 = {
       {
         id: "rizieres_mill_ghost",
         name: "Meunier revenant",
-        templateHint: "bone_reaver",
+        templateHint: "gui_guerrier",
         role: "quest",
         where: "wild"
       }
@@ -467,7 +467,7 @@ export const MANIFEST2 = {
       {
         id: "barge_ghost_a",
         name: "Matelot noyé revenant",
-        templateHint: "bone_reaver",
+        templateHint: "gui_guerrier",
         role: "quest",
         where: "wild",
         group: "barge_ghosts"
@@ -475,7 +475,7 @@ export const MANIFEST2 = {
       {
         id: "barge_ghost_b",
         name: "Matelot noyé revenant",
-        templateHint: "bone_reaver",
+        templateHint: "gui_guerrier",
         role: "quest",
         where: "wild",
         group: "barge_ghosts"
@@ -483,7 +483,7 @@ export const MANIFEST2 = {
       {
         id: "mud_imp_a",
         name: "Petit gui de vase",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild",
         group: "mud_imps"
@@ -491,7 +491,7 @@ export const MANIFEST2 = {
       {
         id: "mud_imp_b",
         name: "Petit gui de vase",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild",
         group: "mud_imps"
@@ -797,7 +797,7 @@ export const MANIFEST2 = {
       {
         id: "bambous_ash_shadow_a",
         name: "Ombre des cendres",
-        templateHint: "shadow_assassin",
+        templateHint: "assassin_masque",
         role: "quest",
         where: "wild",
         group: "ash_shadows"
@@ -805,7 +805,7 @@ export const MANIFEST2 = {
       {
         id: "bambous_ash_shadow_b",
         name: "Ombre des cendres",
-        templateHint: "shadow_assassin",
+        templateHint: "assassin_masque",
         role: "quest",
         where: "wild",
         group: "ash_shadows"
@@ -813,7 +813,7 @@ export const MANIFEST2 = {
       {
         id: "bambous_lantern_thief",
         name: "Démon voleur de lampions",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild"
       }
@@ -1118,14 +1118,14 @@ export const MANIFEST2 = {
       {
         id: "gobi_camel_thief",
         name: "Voleur de chameaux",
-        templateHint: "shadow_assassin",
+        templateHint: "assassin_masque",
         role: "quest",
         where: "wild"
       },
       {
         id: "gobi_lost_a",
         name: "Caravanier squelette",
-        templateHint: "bone_reaver",
+        templateHint: "gui_guerrier",
         role: "quest",
         where: "wild",
         group: "lost_caravan"
@@ -1133,7 +1133,7 @@ export const MANIFEST2 = {
       {
         id: "gobi_lost_b",
         name: "Caravanier squelette",
-        templateHint: "bone_reaver",
+        templateHint: "gui_guerrier",
         role: "quest",
         where: "wild",
         group: "lost_caravan"
@@ -1439,14 +1439,14 @@ export const MANIFEST2 = {
       {
         id: "tonnerre_wyrm_calf",
         name: "Serpenteau d'orage",
-        templateHint: "storm_wyrm",
+        templateHint: "yinglong",
         role: "quest",
         where: "wild"
       },
       {
         id: "tonnerre_rider_a",
         name: "Cavalier de l'orage",
-        templateHint: "storm_knight",
+        templateHint: "lei_gong",
         role: "quest",
         where: "wild",
         group: "storm_riders"
@@ -1454,7 +1454,7 @@ export const MANIFEST2 = {
       {
         id: "tonnerre_rider_b",
         name: "Cavalier de l'orage",
-        templateHint: "storm_knight",
+        templateHint: "lei_gong",
         role: "quest",
         where: "wild",
         group: "storm_riders"
@@ -1756,7 +1756,7 @@ export const MANIFEST2 = {
       {
         id: "volcan_hound_a",
         name: "Chien de magma",
-        templateHint: "ember_wolf",
+        templateHint: "loup_braise",
         role: "quest",
         where: "wild",
         group: "magma_hounds"
@@ -1764,7 +1764,7 @@ export const MANIFEST2 = {
       {
         id: "volcan_hound_b",
         name: "Chien de magma",
-        templateHint: "ember_wolf",
+        templateHint: "loup_braise",
         role: "quest",
         where: "wild",
         group: "magma_hounds"
@@ -1772,7 +1772,7 @@ export const MANIFEST2 = {
       {
         id: "volcan_obsidian_guard",
         name: "Soldat d'obsidienne",
-        templateHint: "iron_gladiator",
+        templateHint: "soldat_terre_cuite",
         role: "quest",
         where: "wild"
       }
@@ -2073,7 +2073,7 @@ export const MANIFEST2 = {
       {
         id: "fauves_hyena_a",
         name: "Hyène de braise",
-        templateHint: "ember_wolf",
+        templateHint: "loup_braise",
         role: "quest",
         where: "wild",
         group: "ember_hyenas"
@@ -2081,7 +2081,7 @@ export const MANIFEST2 = {
       {
         id: "fauves_hyena_b",
         name: "Hyène de braise",
-        templateHint: "ember_wolf",
+        templateHint: "loup_braise",
         role: "quest",
         where: "wild",
         group: "ember_hyenas"
@@ -2089,7 +2089,7 @@ export const MANIFEST2 = {
       {
         id: "fauves_ember_bull",
         name: "Taureau de braise",
-        templateHint: "flame_boar",
+        templateHint: "sanglier_flammes",
         role: "quest",
         where: "wild"
       }
@@ -2399,7 +2399,7 @@ export const MANIFEST2 = {
       {
         id: "mer_crab_a",
         name: "Crabe-soldat",
-        templateHint: "iron_gladiator",
+        templateHint: "soldat_terre_cuite",
         role: "quest",
         where: "wild",
         group: "giant_crabs"
@@ -2407,7 +2407,7 @@ export const MANIFEST2 = {
       {
         id: "mer_crab_b",
         name: "Crabe-soldat",
-        templateHint: "iron_gladiator",
+        templateHint: "soldat_terre_cuite",
         role: "quest",
         where: "wild",
         group: "giant_crabs"
@@ -2713,7 +2713,7 @@ export const MANIFEST2 = {
       {
         id: "fusang_thief_a",
         name: "Singe-démon voleur",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild",
         group: "peach_thieves"
@@ -2721,7 +2721,7 @@ export const MANIFEST2 = {
       {
         id: "fusang_thief_b",
         name: "Singe-démon voleur",
-        templateHint: "goblin_saboteur",
+        templateHint: "huli_jing",
         role: "quest",
         where: "wild",
         group: "peach_thieves"
@@ -2729,7 +2729,7 @@ export const MANIFEST2 = {
       {
         id: "fusang_frost_wyrm",
         name: "Long de givre égaré",
-        templateHint: "frost_dragon",
+        templateHint: "canglong",
         role: "quest",
         where: "wild"
       }
@@ -2954,7 +2954,7 @@ export const MANIFEST2 = {
       {
         id: "lune_shade_a",
         name: "Ombre du miroir",
-        templateHint: "shadow_assassin",
+        templateHint: "assassin_masque",
         role: "quest",
         where: "wild",
         group: "mirror_shades"
@@ -2962,7 +2962,7 @@ export const MANIFEST2 = {
       {
         id: "lune_shade_b",
         name: "Ombre du miroir",
-        templateHint: "shadow_assassin",
+        templateHint: "assassin_masque",
         role: "quest",
         where: "wild",
         group: "mirror_shades"

@@ -71,7 +71,7 @@ const everyClass = forge => CLASS_IDS.map(c => [c, forge(c)]);
 function miniWorld({ enemies = [], spots = [], w = 12, h = 12 } = {}) {
     return { t: { id: 't', region: 'rizieres', name: 'Terrain', biome: 'paddy', w, h, spawn: { x: 0, y: 0 }, obstacles: [], liquids: [], paths: [], exits: [], npcs: [], chests: [], enemies, spots } };
 }
-const sentinel = (id, x, y, extra = {}) => ({ id, templateId: 'goblin_saboteur', name: `Ennemi ${id}`, kind: 'sentinel', x, y, facing: { dx: 0, dy: 1 }, offset: 0, ...extra });
+const sentinel = (id, x, y, extra = {}) => ({ id, templateId: 'huli_jing', name: `Ennemi ${id}`, kind: 'sentinel', x, y, facing: { dx: 0, dy: 1 }, offset: 0, ...extra });
 const sessionIn = (player, world, pos, extra = {}) => createSession({ ...player.exploration, screenId: 't', x: pos.x, y: pos.y, ...extra }, world, []);
 
 // Session issue d'un joueur RELU depuis son fichier de sauvegarde.
@@ -669,7 +669,7 @@ describe('déblocage des sorts selon le niveau et la classe', () => {
 describe('garde-fous d\'équilibrage sur des héros sauvegardés', () => {
     // Les ennemis tirent leurs statistiques de gabarits ; Math.random est simulé (suite déterministe).
     const fight = (p, level) => {
-        const enemy = createMapEnemy({ templateId: 'orc_warmaster', level, enemyId: 'e' });
+        const enemy = createMapEnemy({ templateId: 'chiyou', level, enemyId: 'e' });
         const perHit = Math.max(1, p.equippedWeapon.damage + p.attack - enemy.defense);
         const enemyHit = Math.max(1, enemy.attack - (p.defense || 0));
         return { enemy, hitsToKill: Math.ceil(enemy.maxHp / perHit), hitsToDie: Math.ceil(p.maxHp / enemyHit) };
@@ -793,7 +793,7 @@ describe('sorts avancés (3 à 5 couleurs) et effets de classe', () => {
     test('les sorts avancés sont réservés au joueur : les ennemis n\'en tirent pas (tirages simulés, niveaux 10 à 70)', () => {
         const rng = lcg(7);
         randomSpy.mockImplementation(rng);
-        const templates = ['orc_warmaster', 'crypt_lich', 'moon_priestess', 'storm_knight', 'shadow_assassin', 'ice_witch'];
+        const templates = ['chiyou', 'gui_esprit', 'pretresse_lunaire', 'lei_gong', 'assassin_masque', 'dame_des_neiges'];
         for (const templateId of templates) {
             for (const level of [10, 17, 30, 50, 70]) {
                 const enemy = createMapEnemy({ templateId, level, enemyId: 'x' });
@@ -1088,7 +1088,7 @@ describe('terrain : faiblesse observée à une case de l\'ennemi', () => {
         const s = sessionIn(relu, miniWorld({ enemies: [sentinel('s1', 5, 5)] }), { x: 6, y: 5 });   // à côté (de côté : pas d'embuscade)
         expect(tick(s, OBSERVE_MS - 200).some(e => e.type === 'observed')).toBe(false);
         const events = tick(s, 200);
-        expect(events).toContainEqual(expect.objectContaining({ type: 'observed', enemyId: 's1', templateId: 'goblin_saboteur' }));
+        expect(events).toContainEqual(expect.objectContaining({ type: 'observed', enemyId: 's1', templateId: 'huli_jing' }));
         const prep = prepFor(s, s.rt.enemyIndex.s1.def);
         expect(prep.tags).toContain('observed');
         expect(prep.weaknessRevealed).toBe(true);

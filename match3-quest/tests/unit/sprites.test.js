@@ -5,6 +5,7 @@ import {
     HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri, pixelate,
     loadAllSprites
 } from '../../sprites/index.js';
+import { GBA_SPRITES } from '../../sprites/generated.js';
 
 // Les paquets de sprites sont chargés à la demande : ici on les charge tous pour vérifier l'ensemble des dessins.
 await loadAllSprites();
@@ -56,13 +57,14 @@ describe('couverture des sprites', () => {
     });
 
     test('chaque gabarit du catalogue a un dessin', () => {
-        catalog.forEach(t => expect(ENEMY_SPRITES[t.id]).toBeTruthy());
+        // dessin SVG (paquets cn/) ou sprite Pixel Lab de face (les créatures du bestiaire n'ont que celui-ci)
+        catalog.forEach(t => expect(ENEMY_SPRITES[t.id] || GBA_SPRITES[t.id]?.front).toBeTruthy());
     });
 
     test('les neuf soleils, les quatre Fengmeng et les trois bêtes ont chacun leur dessin', () => {
         for (let n = 1; n <= 9; n++) expect(ENEMY_SPRITES[`sun_${n}`]).toBeTruthy();
         ['fengmeng_1', 'fengmeng_2', 'fengmeng_3a', 'fengmeng_3b'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
-        ['fire_tiger', 'flame_boar', 'ember_wolf'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
+        ['tigre_embrase', 'sanglier_flammes', 'loup_braise'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
     });
 
     test('les boss ont un dessin propre, distinct de celui de leur gabarit', () => {
@@ -142,7 +144,7 @@ describe('qualité technique des SVG', () => {
 
     test('tous les dessins sont différents les uns des autres', () => {
         // Alias volontaires : gabarits qui réutilisent le dessin d'un autre ennemi (voir UNIVERS.md, sprites/cn/enemies-1.js).
-        const ALIAS_IDS = new Set(['ennemi mud_toad']);
+        const ALIAS_IDS = new Set(['ennemi crapaud_boue']);
         const svgs = all.filter(([name]) => !ALIAS_IDS.has(name)).map(([, svg]) => svg);
         expect(new Set(svgs).size).toBe(svgs.length);
     });

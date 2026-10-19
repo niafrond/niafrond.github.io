@@ -42,7 +42,7 @@ export const MANIFEST = {
     houses: [ { id: 'rizieres_h_wen', name: 'Maison du Doyen Wen', desc: '…', residents: ['elder_wen'], chests: ['wen_scroll_box'] }, … ],
     npcs: [ { id: 'lin_wife', name: 'Ping', title: 'Épouse de Lin', where: 'place' | 'house:<houseId>' | 'wild', role: 'ambiance|marchand|donneur|indice' }, … ],
     chests: [ { id: 'rice_jar', where: 'village|wild|house:<id>', tier: 1|2|3, label: 'Jarre de riz' }, … ],
-    enemies: [ { id: 'rizieres_warden', name: 'Gardien de la digue', templateHint: 'forest_guardian', role: 'gate|quest|elite' }, … ],
+    enemies: [ { id: 'rizieres_warden', name: 'Gardien de la digue', templateHint: 'shu_jing', role: 'gate|quest|elite' }, … ],
     quests: [ { id: 'sq_xxx', title: '…', giver: 'npc_id', turnIn: 'npc_id', chain: null | 'sq_prev', summary: '…',
                 objectives: [ { type: 'kill'|'killGroup'|'chest'|'talk'|'visit', target: 'id' } ] }, … ]
   }, …
@@ -103,7 +103,7 @@ nommées par leur caractère, utilisées par les entités (`at: '3'`). Les sorti
 ```js
 npcs:    [ { id: 'ping', at: '3' } ],                       // texte = world/text ou story.js (PNJ existants)
 chests:  [ { id: 'rice_jar', at: '5', gold: 25 } ],         // optionnel: showWhen/hideWhen
-enemies: [ { id: 'rizieres_warden', at: '7', templateId: 'forest_guardian', name: '…', kind: 'sentinel'|'patrol',
+enemies: [ { id: 'rizieres_warden', at: '7', templateId: 'shu_jing', name: '…', kind: 'sentinel'|'patrol',
              patrol: ['7','8'] /* ancres */, offset: 0|1|-1, permanent: true, group: 'id' } ],     // wild seulement
 exits:   [ { at: '<', to: 'rizieres_wild', arriveAt: '>' /* ancre de la zone d’arrivée */, label: 'Digue', requires: 'rizieres_warden', lockedMessage: '…' } ],
 ```

@@ -70,56 +70,58 @@ export const SPRITE_MANIFEST = {
   },
 
   enemies: {
-    goblin_saboteur: {
+    huli_jing: {
       desc: 'Huli Jing, small mischievous fox spirit, orange fox in a tattered patchwork vest, pointed ears, sly grin, holding a sizzling round black firecracker, glowing yellow eyes',
     },
-    forest_guardian: {
+    shu_jing: {
       desc: 'Shu Jing, ancient tree spirit, gnarled old pine and willow body with bark plates and green needle leaves, face in the trunk, root legs, glowing amber eyes, moss on shoulders',
     },
-    bone_reaver: {
+    gui_guerrier: {
       desc: 'Gui warrior, skeleton soldier in cracked bronze lamellar armor and a rusty helmet, yellowed bare bones, rusty curved dao saber, hollow black eye sockets with faint purple glow',
     },
-    storm_knight: {
+    lei_gong: {
       desc: 'Lei Gong, Chinese thunder god, blue-skinned bird-beaked general in blue armor, small wings, holding a mallet and chisel, crackling lightning around the hands, imposing silhouette',
     },
-    shadow_assassin: {
+    assassin_masque: {
       desc: 'shadow ninja, slender figure wrapped in dark charcoal silk, wisps of black smoke curling around the body, holding a gleaming shuriken, blank white mask face, crouching coiled ready-to-strike posture',
     },
-    arcane_scholar: {
+    lettre_sorcier: {
       desc: 'undead mage scholar, rotting tattered dark purple ceremonial robe, three glowing arcane tomes floating around the figure, cracked round spectacles, bony withered hands, hollow sunken eye sockets with green glow',
     },
-    iron_gladiator: {
+    soldat_terre_cuite: {
       desc: 'heavy armored arena gladiator, thick riveted iron chest plate, spiked iron gauntlets, full iron helmet with visor, swinging a spiked iron chain flail, scarred muscular arms visible, arena champion stance',
     },
-    sand_colossus: {
+    hundun: {
       desc: 'Hundun, formless primordial Chinese spirit, huge round faceless body of swirling sand and clay without eyes or mouth, six stubby legs, glowing amber cracks, dust flowing off the body',
     },
-    frost_dragon: {
+    canglong: {
       desc: 'Canglong, Chinese azure dragon, long wingless serpentine body of icy pale blue scales, four clawed legs, antlered horned head with long white whiskers and beard, frost mist around the mouth, cold glinting blue eyes',
     },
-    ember_dragon: {
+    chilong: {
       desc: 'Chilong, Chinese red dragon, long wingless serpentine body of deep red and burnt orange scales, four clawed legs, antlered horned head with long whiskers, ember sparks and flames in a mane, fierce orange eyes',
     },
-    orc_warmaster: {
-      desc: 'Chiyou, Chinese war god chieftain, massive muscular build, red-brown skin, bronze helmet with ox horns, bronze lamellar armor, giant crescent-moon battle axe on shoulder, fierce tusked scowl',
+    chiyou: {
+      desc: 'Chiyou, Chinese war god chieftain, massive muscular build, red-brown skin, bronze helmet with ox horns, bronze lamellar armor, giant crescent-moon battle axe on shoulder, fierce scowl',
     },
-    crystal_sage: {
+    immortel_jade: {
       desc: 'crystal mage sorcerer, translucent cobalt blue robe seeming to be made of light, crystal-tipped wooden staff, three orbiting gem shards of different colors floating around the figure, calm serene powerful expression, faint blue inner glow',
     },
-    moon_priestess: {
+    pretresse_lunaire: {
       desc: 'sinister moon cult priestess, silver silk robes covered in crescent moon and star motifs, silver crescent headdress, pale white face with dark eye markings, holding a silver ritual blade, soft blue moonlight aura',
     },
-    sun_paladin: {
+    garde_solaire: {
       desc: 'sun temple paladin, gleaming polished golden full plate armor, large radiant sun halo disc behind the head, sacred longsword raised in salute, visor open showing righteous determined face, warm golden light radiating outward',
     },
-    plague_doctor: {
-      desc: 'Wen Shen, Chinese plague demon, pale demon in a dark robe and wide hat, long hooked beak mask, belt with gourds of poison, black gloves, hunched sinister posture',
+    wen_shen: {
+      desc: 'Wen Shen, Chinese plague spirit, gaunt sickly green-faced official in a dark robe and a black winged official hat, holding a poison gourd and a bamboo fan, sickly green mist, ghostly stare',
     },
   },
 };
 
 import { EXTRA_MANIFEST } from './sprite-prompts-extra.js';
 for (const [cat, entries] of Object.entries(EXTRA_MANIFEST)) Object.assign(SPRITE_MANIFEST[cat], entries);
+import { BESTIARY_MANIFEST } from './sprite-prompts-bestiary.js';
+Object.assign(SPRITE_MANIFEST.enemies, BESTIARY_MANIFEST);
 
 // Style commun à tous les sprites — ne pas mettre de direction ici
 export const STYLE_SUFFIX =

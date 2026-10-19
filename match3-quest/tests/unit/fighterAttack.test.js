@@ -17,8 +17,8 @@ describe('animations d\'attaque du portrait de combat', () => {
     });
 
     test('les ennemis générés ont une animation d\'au moins 4 images', () => {
-        expect(gbaAttackFrames('frost_dragon').length).toBeGreaterThanOrEqual(4);
-        expect(gbaAttackFrames('bone_reaver').length).toBeGreaterThanOrEqual(4);
+        expect(gbaAttackFrames('fengmeng_1').length).toBeGreaterThanOrEqual(4);
+        expect(gbaAttackFrames('tigre_embrase').length).toBeGreaterThanOrEqual(4);
     });
 });
 

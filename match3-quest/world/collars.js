@@ -11,7 +11,7 @@ const COLLARS = [
       giver: { id: 'forger_hu', name: 'Hu le Braise-Sage', title: 'Vieux forgeron des gorges',
           idle: ['Trois fois, la lave m\'a brûlé les mains. La quatrième, j\'ai compris qu\'elle me parlait. Elle dit : « Rends-moi mon cœur. »'] },
       chest: { id: 'collar_volcan_relic', label: 'Cœur d\'obsidienne', openText: 'Au fond d\'une crevasse tiède, un cœur d\'obsidienne noire, froid comme une pierre de rivière. Il n\'a jamais connu la chaleur.' },
-      enemy: { id: 'collar_volcan_boss', templateId: 'lava_behemoth', name: 'Béhémoth des coulées', offset: 3 },
+      enemy: { id: 'collar_volcan_boss', templateId: 'pixiu', name: 'Béhémoth des coulées', offset: 3 },
       title: 'Le cœur d\'obsidienne', fragment: 'Collier d\'obsidienne froide',
       offer: [
           'Seigneur archer, vous qui marchez dans les cendres : écoutez un vieux forgeron. La lave brûle tout ce qu\'elle touche, sauf une pierre : l\'obsidienne froide, celle que la montagne garde pour elle.',
@@ -22,7 +22,7 @@ const COLLARS = [
       giver: { id: 'jade_carver_qing', name: 'Qing le Tailleur', title: 'Sculpteur de jade vert',
           idle: ['Le bambou pousse d\'un mètre par nuit dans cette forêt. Le jade, lui, a mis mille ans. Je préfère encore le jade.'] },
       chest: { id: 'collar_bambous_relic', label: 'Éclat de jade vert', openText: 'Dans un fourré de bambous, un éclat de jade vert, vif comme une pousse de printemps. Les bambous s\'écartent doucement autour.' },
-      enemy: { id: 'collar_bambous_boss', templateId: 'forest_guardian', name: 'Gardien-bambou ancestral', offset: 3 },
+      enemy: { id: 'collar_bambous_boss', templateId: 'shu_jing', name: 'Gardien-bambou ancestral', offset: 3 },
       title: 'Le jade des bambous', fragment: 'Collier de jade vert',
       offer: [
           'Vous avez remarqué comme les bambous se referment sur les voyageurs ? Ils obéissent à un éclat de jade vert que j\'ai enterré au cœur de la forêt, il y a longtemps, pour qu\'ils restent dociles.',
@@ -33,7 +33,7 @@ const COLLARS = [
       giver: { id: 'storm_sage_lei', name: 'Lei l\'Attiseur', title: 'Sage des crêtes foudroyées',
           idle: ['Le givre d\'orage est le pire : il tombe sans prévenir et gèle ce qu\'il touche. Seule une braise d\'orage lui tient tête.'] },
       chest: { id: 'collar_tonnerre_relic', label: 'Braise d\'orage', openText: 'Dans une faille battue par le vent, une braise captive d\'un cristal clair : elle brûle sans consumer, et le givre fond à son approche.' },
-      enemy: { id: 'collar_tonnerre_boss', templateId: 'storm_knight', name: 'Chevalier de l\'orage figé', offset: 3 },
+      enemy: { id: 'collar_tonnerre_boss', templateId: 'lei_gong', name: 'Chevalier de l\'orage figé', offset: 3 },
       title: 'La braise d\'orage', fragment: 'Collier de braise d\'orage',
       offer: [
           'Archer, avez-vous déjà vu une case geler sous votre pouce ? C\'est le givre d\'orage. Il n\'y a qu\'un remède : la braise d\'orage, que j\'ai cachée dans une faille de la zone sauvage.',
@@ -44,7 +44,7 @@ const COLLARS = [
       giver: { id: 'pearl_diver_meihua', name: 'Mei-Hua', title: 'Plongeuse de perles',
           idle: ['Les courants changent de sens sans prévenir, ici. Mon grand-père disait que seule une perle noire les calme.'] },
       chest: { id: 'collar_mer_relic', label: 'Perle noire', openText: 'Au creux d\'un rocher, une perle noire de la taille d\'un œuf de caille. Les vagues alentour se font plus lentes.' },
-      enemy: { id: 'collar_mer_boss', templateId: 'deep_sea_serpent', name: 'Serpent-roi des marées', offset: 3 },
+      enemy: { id: 'collar_mer_boss', templateId: 'jiaolong', name: 'Serpent-roi des marées', offset: 3 },
       title: 'La perle des marées', fragment: 'Collier de perle des marées',
       offer: [
           'Vous avez vu le sol glisser sous vos pieds quand la mer se met à dériver ? Ce n\'est pas naturel. Une perle noire calmait les courants, avant qu\'un serpent-roi ne l\'avale par jeu.',

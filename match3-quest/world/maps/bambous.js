@@ -126,10 +126,14 @@ export default {
         grass: {
             rate: 0.09,
             table: [
-                { templateId: 'fungal_horror', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
-                { templateId: 'goblin_saboteur', name: 'Petit démon des tiges', weight: 4, offset: 0 },
-                { templateId: 'shadow_assassin', name: 'Ombre rampante', weight: 2, offset: 0 },
-                { templateId: 'forest_guardian', name: 'Jeune esprit du bambou', weight: 1, offset: 1 }
+                { templateId: 'lingzhi_maudit', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
+                { templateId: 'huli_jing', name: 'Petit démon des tiges', weight: 4, offset: 0 },
+                { templateId: 'assassin_masque', name: 'Ombre rampante', weight: 2, offset: 0 },
+                { templateId: 'shu_jing', name: 'Jeune esprit du bambou', weight: 1, offset: 1 },
+                { templateId: 'mu_mei', name: "Mu Mei", weight: 5, offset: -1 },
+                { templateId: 'lu_jing', name: "Lu Jing", weight: 3, offset: 0 },
+                { templateId: 'he_jing', name: "He Jing", weight: 3, offset: 0 },
+                { templateId: 'shouling', name: "Shouling", weight: 5, offset: -1 }
             ]
         },
         npcs: [
@@ -149,18 +153,18 @@ export default {
             { id: 'bambous_wild_incense_chest', x: 44, y: 12, gold: 90 }
         ],
         enemies: [
-            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 17 } },
-            { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'shadow_assassin', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },
-            { id: 'bambous_w_spirit', x: 13, y: 17, templateId: 'forest_guardian', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: [[13, 17], [21, 17]], offset: -1 },
-            { id: 'bambous_w_pilgrim', x: 37, y: 12, templateId: 'bone_reaver', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
-            { id: 'bambous_ash_shadow_a', x: 22, y: 12, templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_ash_shadow_b', x: 26, y: 10, templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_lantern_thief', x: 31, y: 5, templateId: 'goblin_saboteur', name: 'Démon voleur de lampions', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'bambous_wild_ghost_monk', x: 31, y: 14, templateId: 'bone_reaver', name: 'Moine errant calciné', kind: 'patrol', patrol: [[31, 14], [31, 17]], offset: 0 },
-            { id: 'bambous_wild_pine_spirit', x: 41, y: 16, templateId: 'forest_guardian', name: 'Pin de cendre', kind: 'sentinel', offset: 0 },
-            { id: 'bambous_wild_lamp_priestess', x: 19, y: 4, templateId: 'moon_priestess', name: 'Prêtresse des lampions éteints', kind: 'sentinel', offset: -1 }
+            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'suanni', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 17 } },
+            { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'lingzhi_maudit', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'assassin_masque', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },
+            { id: 'bambous_w_spirit', x: 13, y: 17, templateId: 'shu_jing', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: [[13, 17], [21, 17]], offset: -1 },
+            { id: 'bambous_w_pilgrim', x: 37, y: 12, templateId: 'gui_guerrier', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_ash_shadow_a', x: 22, y: 12, templateId: 'assassin_masque', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
+            { id: 'bambous_ash_shadow_b', x: 26, y: 10, templateId: 'assassin_masque', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
+            { id: 'bambous_lantern_thief', x: 31, y: 5, templateId: 'huli_jing', name: 'Démon voleur de lampions', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'bambous_wild_ghost_monk', x: 31, y: 14, templateId: 'gui_guerrier', name: 'Moine errant calciné', kind: 'patrol', patrol: [[31, 14], [31, 17]], offset: 0 },
+            { id: 'bambous_wild_pine_spirit', x: 41, y: 16, templateId: 'shu_jing', name: 'Pin de cendre', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_wild_lamp_priestess', x: 19, y: 4, templateId: 'pretresse_lunaire', name: 'Prêtresse des lampions éteints', kind: 'sentinel', offset: -1 }
         ],
         gate: {
             requires: 'bambous_seal_keeper',
@@ -191,9 +195,13 @@ export default {
         grass: {
             rate: 0.08,
             table: [
-                { templateId: 'fungal_horror', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
-                { templateId: 'goblin_saboteur', name: 'Petit démon des tiges', weight: 4, offset: 0 },
-                { templateId: 'forest_guardian', name: 'Jeune esprit du bambou', weight: 1, offset: 1 }
+                { templateId: 'lingzhi_maudit', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
+                { templateId: 'huli_jing', name: 'Petit démon des tiges', weight: 4, offset: 0 },
+                { templateId: 'shu_jing', name: 'Jeune esprit du bambou', weight: 1, offset: 1 },
+                { templateId: 'mu_gui', name: "Mu Gui", weight: 5, offset: -1 },
+                { templateId: 'hu_jing', name: "Hu Jing", weight: 3, offset: 0 },
+                { templateId: 'lang_jing', name: "Lang Jing", weight: 5, offset: -1 },
+                { templateId: 'jing_shou', name: "Jing Shou", weight: 5, offset: -1 }
             ]
         },
         npcs: [
@@ -205,10 +213,10 @@ export default {
             { id: 'bambous_road_bank_urn', x: 40, y: 13, gold: 45 }
         ],
         enemies: [
-            { id: 'bambous_road_lingzhi', x: 14, y: 9, templateId: 'fungal_horror', name: 'Lingzhi pèlerin', kind: 'sentinel', offset: 0 },
-            { id: 'bambous_road_shade', x: 14, y: 3, templateId: 'shadow_assassin', name: 'Ombre du sentier', kind: 'patrol', patrol: [[14, 3], [22, 3]], offset: -1 },
-            { id: 'bambous_road_stone_lion', x: 28, y: 6, templateId: 'temple_warden', name: 'Lion de pierre éveillé', kind: 'sentinel', offset: 0 },
-            { id: 'bambous_road_thief', x: 37, y: 9, templateId: 'goblin_saboteur', name: 'Petit démon voleur d\'offrandes', kind: 'sentinel', offset: 0 }
+            { id: 'bambous_road_lingzhi', x: 14, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi pèlerin', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_road_shade', x: 14, y: 3, templateId: 'assassin_masque', name: 'Ombre du sentier', kind: 'patrol', patrol: [[14, 3], [22, 3]], offset: -1 },
+            { id: 'bambous_road_stone_lion', x: 28, y: 6, templateId: 'suanni', name: 'Lion de pierre éveillé', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_road_thief', x: 37, y: 9, templateId: 'huli_jing', name: 'Petit démon voleur d\'offrandes', kind: 'sentinel', offset: 0 }
         ]
     },
 
@@ -371,9 +379,12 @@ export default {
         grass: {
             rate: 0.07,
             table: [
-                { templateId: 'fungal_horror', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
-                { templateId: 'shadow_assassin', name: 'Ombre rampante', weight: 3, offset: 0 },
-                { templateId: 'forest_guardian', name: 'Jeune esprit du bambou', weight: 1, offset: 1 }
+                { templateId: 'lingzhi_maudit', name: 'Lingzhi des fougères', weight: 5, offset: -1 },
+                { templateId: 'assassin_masque', name: 'Ombre rampante', weight: 3, offset: 0 },
+                { templateId: 'shu_jing', name: 'Jeune esprit du bambou', weight: 1, offset: 1 },
+                { templateId: 'shan_gui', name: "Shan Gui", weight: 5, offset: -1 },
+                { templateId: 'xiong_jing', name: "Xiong Jing", weight: 3, offset: 0 },
+                { templateId: 'she_jing', name: "She Jing", weight: 3, offset: 0 }
             ]
         },
         places: {

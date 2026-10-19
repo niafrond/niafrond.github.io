@@ -93,7 +93,7 @@ const synth = (extra = {}) => ({
         obstacles: [], liquids: [], paths: [], exits: [], npcs: [], chests: [], enemies: [], ...extra
     }
 });
-const enemyDef = (id, x, y, extra = {}) => ({ id, templateId: 'goblin_saboteur', name: id, kind: 'sentinel', x, y, offset: 0, ...extra });
+const enemyDef = (id, x, y, extra = {}) => ({ id, templateId: 'huli_jing', name: id, kind: 'sentinel', x, y, offset: 0, ...extra });
 const synthSession = (extra, at = { x: 0, y: 2 }, quests = []) => {
     const s = createSession({ screenId: 't', ...at }, synth(extra), quests);
     s.rt.grace = 0;
@@ -589,9 +589,9 @@ describe('cartes (story.js)', () => {
 
     test('les gabarits des bêtes de la plaine des fauves et la répartition par région existent au catalogue', () => {
         const normalTemplates = id => new Set(SCREENS[id].enemies.filter(e => !e.boss && !e.permanent).map(e => e.templateId));
-        expect([...normalTemplates('fauves')].every(t => ['fire_tiger', 'flame_boar', 'ember_wolf', 'war_troll'].includes(t))).toBe(true);
+        expect([...normalTemplates('fauves')].every(t => ['tigre_embrase', 'sanglier_flammes', 'loup_braise', 'shanxiao'].includes(t))).toBe(true);
         const pack = SCREENS.fauves.enemies.filter(e => e.group === 'beast_pack');
-        expect(pack.map(e => e.templateId).sort()).toEqual(['ember_wolf', 'ember_wolf', 'fire_tiger', 'flame_boar']);
+        expect(pack.map(e => e.templateId).sort()).toEqual(['loup_braise', 'loup_braise', 'sanglier_flammes', 'tigre_embrase']);
         screens.forEach(s => s.enemies.forEach(e => expect(templateIds.has(e.templateId)).toBe(true)));
     });
 
@@ -1030,7 +1030,7 @@ describe('rencontres', () => {
 
     test('la rencontre expose la clé de sprite (le mirage réutilise le soleil des mirages)', () => {
         const s = createSession({});
-        expect(encounterFor(s, 'sun_1', 1)).toMatchObject({ enemyId: 'sun_1', spriteKey: 'sun_1', templateId: 'goblin_saboteur', name: 'Soleil Ardent' });
+        expect(encounterFor(s, 'sun_1', 1)).toMatchObject({ enemyId: 'sun_1', spriteKey: 'sun_1', templateId: 'huli_jing', name: 'Soleil Ardent' });
         expect(encounterFor(s, 'mirage_1', 7)).toMatchObject({ enemyId: 'mirage_1', spriteKey: 'sun_4' });
         expect(encounterFor(s, 'rizieres_goblin', 3).spriteKey).toBe('rizieres_goblin');
         expect(encounterFor(s, 'fengmeng_3b', 1).boss).toMatchObject({ name: 'Fengmeng, Rage et Désespoir', level: 48 });
@@ -2145,7 +2145,7 @@ describe('déplacement au clic : évitement des zones de combat', () => {
         const screen = {
             ...base, id: START_SCREEN, w: 9, h: 5, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
             spawn: { x: 0, y: 2 },
-            enemies: [{ id: 'arena_foe', x: 4, y: 2, name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel', facing: { dx: -1, dy: 0 } }],
+            enemies: [{ id: 'arena_foe', x: 4, y: 2, name: 'Foe', templateId: 'huli_jing', kind: 'sentinel', facing: { dx: -1, dy: 0 } }],
             ...extra
         };
         const s = createSession({}, { [START_SCREEN]: screen }, []);
@@ -2184,7 +2184,7 @@ describe('zone de vigilance : uniquement devant l\'ennemi', () => {
         const s = createSession({}, { [START_SCREEN]: {
             ...SCREENS[START_SCREEN], id: START_SCREEN, w: 9, h: 9, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
             spawn: { x: 0, y: 0 },
-            enemies: [{ id: 'foe', x: 4, y: 4, name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel', facing: face }]
+            enemies: [{ id: 'foe', x: 4, y: 4, name: 'Foe', templateId: 'huli_jing', kind: 'sentinel', facing: face }]
         } }, []);
         s.data.x = hero.x; s.data.y = hero.y;
         return s;

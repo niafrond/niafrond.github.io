@@ -102,7 +102,7 @@ describe('force et crânes', () => {
 });
 
 describe('ennemis', () => {
-    const enc = (level, extra = {}) => ({ templateId: 'orc_warmaster', level, ...extra });
+    const enc = (level, extra = {}) => ({ templateId: 'chiyou', level, ...extra });
 
     test('agilité proportionnelle au niveau, très rarement nulle', () => {
         let zeros = 0;

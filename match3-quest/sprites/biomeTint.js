@@ -1,5 +1,5 @@
 // Teinte des ennemis selon le biome où ils rôdent. Les dessins d'ennemis sont des SVG écrits à la main, un par gabarit : un « Serpent
-// de vase » (gabarit deep_sea_serpent, bleu) dans le lit boueux du fleuve détonne. `tintSvg(svg, biome)` recolore donc les couleurs
+// de vase » (gabarit jiaolong, bleu) dans le lit boueux du fleuve détonne. `tintSvg(svg, biome)` recolore donc les couleurs
 // saturées du dessin vers la gamme du biome (marais/vase → bruns, désert → ocres, glace → bleus pâles, volcan → rouges…) en gardant
 // contours, blancs, noirs et gris, ainsi que les variations de teinte (compressées autour de la teinte cible).
 
@@ -23,7 +23,7 @@ export const BIOME_TINTS = {
 export const biomeHasTint = biome => Boolean(biome && BIOME_TINTS[biome]);
 
 // Dessins qui ont déjà leur identité (élémentaires, soleils-boss) : jamais recolorés.
-const FIXED_KEYS = new Set(['frost_dragon', 'ice_witch', 'ember_dragon', 'lava_behemoth', 'fire_tiger', 'flame_boar', 'ember_wolf', 'sand_colossus', 'void_vampire']);
+const FIXED_KEYS = new Set(['canglong', 'dame_des_neiges', 'chilong', 'pixiu', 'tigre_embrase', 'sanglier_flammes', 'loup_braise', 'hundun', 'jiangshi']);
 export const isTintable = key => Boolean(key) && !FIXED_KEYS.has(key) && !/^sun_\d/.test(key);
 
 function hexToRgb(h) {

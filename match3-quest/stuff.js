@@ -157,7 +157,7 @@ export function unequipStuff(hero, slot) {
 // ── Poison ──────────────────────────────────────────────────────────────────
 
 // Ennemis dont les coups peuvent empoisonner le héros.
-export const VENOMOUS_TEMPLATES = ['deep_sea_serpent', 'mud_toad', 'plague_doctor', 'fungal_horror', 'goblin_saboteur'];
+export const VENOMOUS_TEMPLATES = ['jiaolong', 'crapaud_boue', 'wen_shen', 'lingzhi_maudit', 'huli_jing'];
 export const POISON_CHANCE = 0.35;
 export const POISON_TURNS = 3;
 

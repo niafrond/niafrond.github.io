@@ -126,10 +126,17 @@ export default {
         grass: {
             rate: 0.08,
             table: [
-                { templateId: 'shadow_assassin', name: 'Scorpion de sable', weight: 5, offset: -1 },
-                { templateId: 'goblin_saboteur', name: 'Chacal des dunes', weight: 4, offset: 0 },
-                { templateId: 'sand_colossus', name: 'Colosse de poussière', weight: 3, offset: -1 },
-                { templateId: 'arcane_scholar', name: 'Mirage hargneux', weight: 1, offset: 1 }
+                { templateId: 'assassin_masque', name: 'Scorpion de sable', weight: 5, offset: -1 },
+                { templateId: 'huli_jing', name: 'Chacal des dunes', weight: 4, offset: 0 },
+                { templateId: 'hundun', name: 'Colosse de poussière', weight: 3, offset: -1 },
+                { templateId: 'lettre_sorcier', name: 'Mirage hargneux', weight: 1, offset: 1 },
+                { templateId: 'mei', name: "Mei", weight: 3, offset: 0 },
+                { templateId: 'wangxiang', name: "Wangxiang", weight: 5, offset: -1 },
+                { templateId: 'houtu', name: "Houtu", weight: 1, offset: 1 },
+                { templateId: 'bashe', name: "Bashé", weight: 1, offset: 1 },
+                { templateId: 'fucanglong', name: "Fucanglong", weight: 1, offset: 1 },
+                { templateId: 'jing_jing', name: "Jing Jing", weight: 5, offset: -1 },
+                { templateId: 'wu_shou', name: "Wu Shou", weight: 3, offset: 0 }
             ]
         },
         npcs: [
@@ -149,17 +156,17 @@ export default {
             { id: 'gobi_wild_cliff_chest', x: 43, y: 20, gold: 120 }
         ],
         enemies: [
-            { id: 'gobi_dune_warlord', x: 45, y: 15, templateId: 'orc_warmaster', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 6 } },
-            { id: 'gobi_golem_a', x: 18, y: 14, templateId: 'sand_colossus', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
-            { id: 'gobi_golem_b', x: 27, y: 15, templateId: 'sand_colossus', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
-            { id: 'gobi_w_bandit', x: 14, y: 5, templateId: 'iron_gladiator', name: 'Brigand des dunes', kind: 'patrol', patrol: [[14, 5], [21, 5]], offset: 0 },
-            { id: 'gobi_w_scorpion', x: 20, y: 17, templateId: 'shadow_assassin', name: 'Scorpion de sable', kind: 'patrol', patrol: [[20, 17], [28, 17]], offset: -1 },
-            { id: 'gobi_camel_thief', x: 32, y: 6, templateId: 'shadow_assassin', name: 'Voleur de chameaux', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'gobi_lost_a', x: 32, y: 16, templateId: 'bone_reaver', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' },
-            { id: 'gobi_lost_b', x: 34, y: 17, templateId: 'bone_reaver', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' },
-            { id: 'gobi_wild_sand_raider', x: 6, y: 14, templateId: 'iron_gladiator', name: 'Pillard des sables', kind: 'patrol', patrol: [[6, 14], [14, 14]], offset: 0 },
-            { id: 'gobi_wild_dune_viper', x: 38, y: 6, templateId: 'shadow_assassin', name: 'Vipère cornue', kind: 'patrol', patrol: [[38, 6], [43, 6]], offset: -1 },
-            { id: 'gobi_wild_mummy', x: 41, y: 19, templateId: 'bone_reaver', name: 'Cadavre desséché de caravanier', kind: 'sentinel', offset: 0 }
+            { id: 'gobi_dune_warlord', x: 45, y: 15, templateId: 'chiyou', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 6 } },
+            { id: 'gobi_golem_a', x: 18, y: 14, templateId: 'hundun', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
+            { id: 'gobi_golem_b', x: 27, y: 15, templateId: 'hundun', name: 'Colosse des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
+            { id: 'gobi_w_bandit', x: 14, y: 5, templateId: 'soldat_terre_cuite', name: 'Brigand des dunes', kind: 'patrol', patrol: [[14, 5], [21, 5]], offset: 0 },
+            { id: 'gobi_w_scorpion', x: 20, y: 17, templateId: 'assassin_masque', name: 'Scorpion de sable', kind: 'patrol', patrol: [[20, 17], [28, 17]], offset: -1 },
+            { id: 'gobi_camel_thief', x: 32, y: 6, templateId: 'assassin_masque', name: 'Voleur de chameaux', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'gobi_lost_a', x: 32, y: 16, templateId: 'gui_guerrier', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' },
+            { id: 'gobi_lost_b', x: 34, y: 17, templateId: 'gui_guerrier', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' },
+            { id: 'gobi_wild_sand_raider', x: 6, y: 14, templateId: 'soldat_terre_cuite', name: 'Pillard des sables', kind: 'patrol', patrol: [[6, 14], [14, 14]], offset: 0 },
+            { id: 'gobi_wild_dune_viper', x: 38, y: 6, templateId: 'assassin_masque', name: 'Vipère cornue', kind: 'patrol', patrol: [[38, 6], [43, 6]], offset: -1 },
+            { id: 'gobi_wild_mummy', x: 41, y: 19, templateId: 'gui_guerrier', name: 'Cadavre desséché de caravanier', kind: 'sentinel', offset: 0 }
         ],
         gate: {
             requires: 'gobi_dune_warlord',
@@ -190,9 +197,15 @@ export default {
         grass: {
             rate: 0.07,
             table: [
-                { templateId: 'goblin_saboteur', name: 'Chacal des dunes', weight: 5, offset: -1 },
-                { templateId: 'shadow_assassin', name: 'Scorpion de sable', weight: 4, offset: 0 },
-                { templateId: 'arcane_scholar', name: 'Mirage hargneux', weight: 1, offset: 1 }
+                { templateId: 'huli_jing', name: 'Chacal des dunes', weight: 5, offset: -1 },
+                { templateId: 'assassin_masque', name: 'Scorpion de sable', weight: 4, offset: 0 },
+                { templateId: 'lettre_sorcier', name: 'Mirage hargneux', weight: 1, offset: 1 },
+                { templateId: 'wangliang', name: "Wangliang", weight: 5, offset: -1 },
+                { templateId: 'shi_jing', name: "Shi Jing", weight: 3, offset: 0 },
+                { templateId: 'feima', name: "Feima", weight: 5, offset: -1 },
+                { templateId: 'tiangou_noir', name: "Tian Gou", weight: 3, offset: 0 },
+                { templateId: 'dilong', name: "Dilong", weight: 3, offset: 0 },
+                { templateId: 'meng_shou', name: "Meng Shou", weight: 3, offset: 0 }
             ]
         },
         npcs: [
@@ -204,10 +217,10 @@ export default {
             { id: 'gobi_road_well_urn', x: 23, y: 11, gold: 60 }
         ],
         enemies: [
-            { id: 'gobi_road_scorpion', x: 14, y: 4, templateId: 'shadow_assassin', name: 'Scorpion des pistes', kind: 'patrol', patrol: [[14, 4], [22, 4]], offset: -1 },
-            { id: 'gobi_road_golem', x: 32, y: 7, templateId: 'sand_colossus', name: 'Colosse de la piste', kind: 'sentinel', offset: 0 },
-            { id: 'gobi_road_bandit', x: 14, y: 10, templateId: 'iron_gladiator', name: 'Brigand de la piste', kind: 'sentinel', offset: 0 },
-            { id: 'gobi_road_jackal', x: 38, y: 9, templateId: 'goblin_saboteur', name: 'Chacal charognard', kind: 'sentinel', offset: 0 }
+            { id: 'gobi_road_scorpion', x: 14, y: 4, templateId: 'assassin_masque', name: 'Scorpion des pistes', kind: 'patrol', patrol: [[14, 4], [22, 4]], offset: -1 },
+            { id: 'gobi_road_golem', x: 32, y: 7, templateId: 'hundun', name: 'Colosse de la piste', kind: 'sentinel', offset: 0 },
+            { id: 'gobi_road_bandit', x: 14, y: 10, templateId: 'soldat_terre_cuite', name: 'Brigand de la piste', kind: 'sentinel', offset: 0 },
+            { id: 'gobi_road_jackal', x: 38, y: 9, templateId: 'huli_jing', name: 'Chacal charognard', kind: 'sentinel', offset: 0 }
         ]
     },
 

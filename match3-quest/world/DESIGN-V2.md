@@ -83,9 +83,9 @@ grass: {
     rate: 0.12,          // probabilité par pas sur une case d'herbe, après `safeSteps` pas (défaut 0.12)
     safeSteps: 3,        // pas d'herbe sans rencontre, après l'arrivée sur la carte ou après un combat (défaut 3)
     table: [             // 3 à 5 entrées ; `templateId` ∈ enemies.catalog.json
-        { templateId: 'fungal_horror', name: 'Crapaud de boue',      weight: 5, offset: -1 },
-        { templateId: 'goblin_saboteur', name: 'Voleur d\'eau',        weight: 4, offset:  0 },
-        { templateId: 'forest_guardian', name: 'Esprit des diguettes', weight: 1, offset:  1 }   // la « rare »
+        { templateId: 'lingzhi_maudit', name: 'Crapaud de boue',      weight: 5, offset: -1 },
+        { templateId: 'huli_jing', name: 'Voleur d\'eau',        weight: 4, offset:  0 },
+        { templateId: 'shu_jing', name: 'Esprit des diguettes', weight: 1, offset:  1 }   // la « rare »
     ]
 }
 ```

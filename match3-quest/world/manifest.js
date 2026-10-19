@@ -45,8 +45,8 @@ export const MANIFEST = {
       { id: 'warden_hoard', where: 'wild', tier: 3, label: 'Trésor du gardien de la digue' }
     ],
     enemies: [
-      { id: 'rizieres_warden', name: 'Gardien de la digue', templateHint: 'forest_guardian', role: 'gate' },
-      { id: 'rizieres_marsh_imp', name: 'Démon des roseaux', templateHint: 'goblin_saboteur', role: 'quest' }
+      { id: 'rizieres_warden', name: 'Gardien de la digue', templateHint: 'shu_jing', role: 'gate' },
+      { id: 'rizieres_marsh_imp', name: 'Démon des roseaux', templateHint: 'huli_jing', role: 'quest' }
     ],
     quests: [
       { id: 'sq_cerf_volant', title: 'Le cerf-volant de Petit Bao', giver: 'xiaobao', turnIn: 'xiaobao', chain: null,
@@ -103,8 +103,8 @@ export const MANIFEST = {
       { id: 'wreck_hoard', where: 'wild', tier: 3, label: 'Cale d\'une épave' }
     ],
     enemies: [
-      { id: 'fleuve_sluice_golem', name: 'Colosse de l\'écluse', templateHint: 'iron_gladiator', role: 'elite' },
-      { id: 'fleuve_salt_thief', name: 'Voleur de sel masqué', templateHint: 'shadow_assassin', role: 'quest' }
+      { id: 'fleuve_sluice_golem', name: 'Colosse de l\'écluse', templateHint: 'soldat_terre_cuite', role: 'elite' },
+      { id: 'fleuve_salt_thief', name: 'Voleur de sel masqué', templateHint: 'assassin_masque', role: 'quest' }
     ],
     quests: [
       { id: 'sq_lettre_bao_2', title: 'La lettre fait escale', giver: 'ferryman_gu', turnIn: 'hua_gobi', chain: 'sq_lettre_bao_1',
@@ -160,9 +160,9 @@ export const MANIFEST = {
       { id: 'monk_hoard', where: 'wild', tier: 3, label: 'Réserve oubliée du temple' }
     ],
     enemies: [
-      { id: 'bambous_seal_keeper', name: 'Gardien des cendres', templateHint: 'temple_warden', role: 'gate' },
-      { id: 'bambous_ember_wisp', name: 'Lingzhi des braises', templateHint: 'fungal_horror', role: 'quest', group: 'ember_lingzhi' },
-      { id: 'bambous_ember_wisp_b', name: 'Lingzhi des braises', templateHint: 'fungal_horror', role: 'quest', group: 'ember_lingzhi' }
+      { id: 'bambous_seal_keeper', name: 'Gardien des cendres', templateHint: 'suanni', role: 'gate' },
+      { id: 'bambous_ember_wisp', name: 'Lingzhi des braises', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' },
+      { id: 'bambous_ember_wisp_b', name: 'Lingzhi des braises', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' }
     ],
     quests: [
       { id: 'sq_flute_1', title: 'La flûte fêlée', giver: 'flutist_chuan', turnIn: 'flutist_chuan', chain: null,
@@ -218,9 +218,9 @@ export const MANIFEST = {
       { id: 'warlord_loot', where: 'wild', tier: 3, label: 'Butin du chef de dune' }
     ],
     enemies: [
-      { id: 'gobi_dune_warlord', name: 'Chef de dune, Bras-de-Sable', templateHint: 'orc_warmaster', role: 'gate' },
-      { id: 'gobi_golem_a', name: 'Colosse des dunes', templateHint: 'sand_colossus', role: 'quest', group: 'dune_golems' },
-      { id: 'gobi_golem_b', name: 'Colosse des dunes', templateHint: 'sand_colossus', role: 'quest', group: 'dune_golems' }
+      { id: 'gobi_dune_warlord', name: 'Chef de dune, Bras-de-Sable', templateHint: 'chiyou', role: 'gate' },
+      { id: 'gobi_golem_a', name: 'Colosse des dunes', templateHint: 'hundun', role: 'quest', group: 'dune_golems' },
+      { id: 'gobi_golem_b', name: 'Colosse des dunes', templateHint: 'hundun', role: 'quest', group: 'dune_golems' }
     ],
     quests: [
       { id: 'sq_lettre_bao_3', title: 'La lettre prend le large', giver: 'hua_gobi', turnIn: 'sailor_bao', chain: 'sq_lettre_bao_2',
@@ -276,8 +276,8 @@ export const MANIFEST = {
       { id: 'lightning_vault', where: 'wild', tier: 3, label: 'Caveau foudroyé' }
     ],
     enemies: [
-      { id: 'tonnerre_stone_lion', name: 'Lion-gardien fendu', templateHint: 'temple_warden', role: 'elite' },
-      { id: 'tonnerre_crest_general', name: 'Général de la crête', templateHint: 'storm_knight', role: 'quest' }
+      { id: 'tonnerre_stone_lion', name: 'Lion-gardien fendu', templateHint: 'suanni', role: 'elite' },
+      { id: 'tonnerre_crest_general', name: 'Général de la crête', templateHint: 'lei_gong', role: 'quest' }
     ],
     quests: [
       { id: 'sq_etincelles', title: 'Les étincelles de Leimei', giver: 'kids_leimei', turnIn: 'kids_leimei', chain: null,
@@ -333,8 +333,8 @@ export const MANIFEST = {
       { id: 'forge_vault', where: 'wild', tier: 3, label: 'Caveau de la forge' }
     ],
     enemies: [
-      { id: 'volcan_forge_giant', name: 'Forgeron de lave', templateHint: 'lava_behemoth', role: 'gate' },
-      { id: 'volcan_ember_imp', name: 'Démon des cendres', templateHint: 'goblin_saboteur', role: 'quest' }
+      { id: 'volcan_forge_giant', name: 'Forgeron de lave', templateHint: 'pixiu', role: 'gate' },
+      { id: 'volcan_ember_imp', name: 'Démon des cendres', templateHint: 'huli_jing', role: 'quest' }
     ],
     quests: [
       { id: 'sq_pont_braise', title: 'Le pont de braise', giver: 'miner_shan', turnIn: 'miner_shan', chain: null,
@@ -390,9 +390,9 @@ export const MANIFEST = {
       { id: 'alpha_den', where: 'wild', tier: 3, label: 'Tanière de l\'alpha' }
     ],
     enemies: [
-      { id: 'fauves_alpha_tiger', name: 'Tigre alpha, Griffe-de-Feu', templateHint: 'fire_tiger', role: 'gate' },
-      { id: 'fauves_lamb_wolf', name: 'Loup chapardeur de braise', templateHint: 'ember_wolf', role: 'quest' },
-      { id: 'fauves_boar_chief', name: 'Hure, sanglier de flammes', templateHint: 'flame_boar', role: 'elite' }
+      { id: 'fauves_alpha_tiger', name: 'Tigre alpha, Griffe-de-Feu', templateHint: 'tigre_embrase', role: 'gate' },
+      { id: 'fauves_lamb_wolf', name: 'Loup chapardeur de braise', templateHint: 'loup_braise', role: 'quest' },
+      { id: 'fauves_boar_chief', name: 'Hure, sanglier de flammes', templateHint: 'sanglier_flammes', role: 'elite' }
     ],
     quests: [
       { id: 'sq_agneau_perdu', title: 'L\'agneau des jumeaux', giver: 'twins_mu', turnIn: 'twins_mu', chain: null,
@@ -449,8 +449,8 @@ export const MANIFEST = {
       { id: 'dragon_grotto', where: 'wild', tier: 3, label: 'Coffre de la grotte du dragon' }
     ],
     enemies: [
-      { id: 'mer_tide_serpent', name: 'Serpent de marée', templateHint: 'deep_sea_serpent', role: 'elite' },
-      { id: 'mer_kelp_witch', name: 'Dame des algues givrées', templateHint: 'ice_witch', role: 'quest' }
+      { id: 'mer_tide_serpent', name: 'Serpent de marée', templateHint: 'jiaolong', role: 'elite' },
+      { id: 'mer_kelp_witch', name: 'Dame des algues givrées', templateHint: 'dame_des_neiges', role: 'quest' }
     ],
     quests: [
       { id: 'sq_larmes_perle', title: 'Les larmes de Jiaoren', giver: 'pearl_diver_xi', turnIn: 'pearl_diver_xi', chain: null,
@@ -506,8 +506,8 @@ export const MANIFEST = {
       { id: 'seal_shard_c', where: 'wild', tier: 3, label: 'Troisième éclat du sceau' }
     ],
     enemies: [
-      { id: 'fusang_root_guard', name: 'Garde solaire des racines', templateHint: 'sun_paladin', role: 'elite' },
-      { id: 'fusang_jade_wraith', name: 'Immortel de jade égaré', templateHint: 'crystal_sage', role: 'quest' }
+      { id: 'fusang_root_guard', name: 'Garde solaire des racines', templateHint: 'garde_solaire', role: 'elite' },
+      { id: 'fusang_jade_wraith', name: 'Immortel de jade égaré', templateHint: 'immortel_jade', role: 'quest' }
     ],
     quests: [
       { id: 'sq_sceau_racines', title: 'Le sceau des racines', giver: 'astronomer_xing', turnIn: 'astronomer_xing', chain: null,
@@ -557,8 +557,8 @@ export const MANIFEST = {
       { id: 'osmanthus_hoard', where: 'wild', tier: 3, label: 'Trésor de l\'osmanthus' }
     ],
     enemies: [
-      { id: 'lune_frost_priestess', name: 'Prêtresse de givre', templateHint: 'moon_priestess', role: 'elite' },
-      { id: 'lune_mirror_shade', name: 'Ombre du miroir', templateHint: 'shadow_assassin', role: 'quest' }
+      { id: 'lune_frost_priestess', name: 'Prêtresse de givre', templateHint: 'pretresse_lunaire', role: 'elite' },
+      { id: 'lune_mirror_shade', name: 'Ombre du miroir', templateHint: 'assassin_masque', role: 'quest' }
     ],
     quests: [
       { id: 'sq_osmanthus', title: 'L\'osmanthus qui repousse', giver: 'osmanthus_woodcutter', turnIn: 'osmanthus_woodcutter', chain: null,

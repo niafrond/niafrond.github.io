@@ -85,20 +85,20 @@ export function buildAquaticWorld(screens) {
         npcs: [{ id: 'hermit_nu', at: '1' }],
         chests: [chest('mer_arch_reliquaire', '2', 2), chest('mer_arch_epave', '3', 2), chest('mer_arch_tortue', '4', 3)],
         enemies: [
-            { id: 'mer_arch_wyrm', at: '5', templateId: 'storm_wyrm', name: 'Long des hauts-fonds', kind: 'sentinel', offset: 1, permanent: true },
-            { id: 'mer_arch_witch', at: '6', templateId: 'ice_witch', name: 'Shamane des marées', kind: 'sentinel', offset: 1, permanent: true }
+            { id: 'mer_arch_wyrm', at: '5', templateId: 'yinglong', name: 'Long des hauts-fonds', kind: 'sentinel', offset: 1, permanent: true },
+            { id: 'mer_arch_witch', at: '6', templateId: 'dame_des_neiges', name: 'Shamane des marées', kind: 'sentinel', offset: 1, permanent: true }
         ],
         exits: [{ at: '<', to: 'mer_hamlet', label: 'Anse des Coquillages' }, { at: '>', to: ISLE_ID, label: 'Île de la Tortue-Dragon' }]
     });
     // Deux serpents de mer patrouillent à la surface de l'eau (ils ne sont pas posés sur des ancres : ce serait de la terre).
     [['mer_arch_serpent_a', [[15, 9], [23, 9]]], ['mer_arch_serpent_b', [[16, 22], [16, 14]]]].forEach(([id, route]) => {
-        archipel.enemies.push({ id, templateId: 'deep_sea_serpent', name: 'Serpent des Mille Îlots', kind: 'patrol', offset: 0,
+        archipel.enemies.push({ id, templateId: 'jiaolong', name: 'Serpent des Mille Îlots', kind: 'patrol', offset: 0,
             x: route[0][0], y: route[0][1], patrol: route });
     });
     const isle = buildAquaticZone(ISLE_ID, ISLE_GRID, {
         npcs: [{ id: 'yu_spirit', at: '1' }],
         chests: [chest('mer_isle_tresor', '2', 4)],
-        enemies: [{ id: 'mer_ile_dragon_guardian', at: '3', templateId: 'frost_dragon', name: 'Tortue-Dragon endormie', kind: 'sentinel', offset: 2, permanent: true }],
+        enemies: [{ id: 'mer_ile_dragon_guardian', at: '3', templateId: 'canglong', name: 'Tortue-Dragon endormie', kind: 'sentinel', offset: 2, permanent: true }],
         exits: [{ at: '<', to: ARCHIPEL_ID, label: 'Mer des Mille Îlots' }]
     });
     // Le passage de l'Anse vers la mer : fermé tant que le Pas de Yu n'est pas appris.

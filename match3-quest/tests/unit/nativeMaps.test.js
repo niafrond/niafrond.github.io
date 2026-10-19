@@ -19,7 +19,7 @@ const sanctuaryBase = (id, region, extra) => ({
 const BASE_SCREENS = {
     rizieres: sanctuaryBase('rizieres', 'rizieres', {
         exits: [{ x: 13, y: 4, to: 'fleuve', arrive: { x: 1, y: 4 }, label: 'Fleuve', requires: 'sun_a' }],
-        enemies: [{ id: 'sun_a', templateId: 'goblin_saboteur', name: 'Soleil A', kind: 'sentinel', x: 11, y: 4, permanent: true, boss: { name: 'Soleil A', level: 5 } }],
+        enemies: [{ id: 'sun_a', templateId: 'huli_jing', name: 'Soleil A', kind: 'sentinel', x: 11, y: 4, permanent: true, boss: { name: 'Soleil A', level: 5 } }],
         chests: [{ id: 'chest_r', x: 3, y: 8, gold: 25, label: 'Jarre' }]
     }),
     fleuve: sanctuaryBase('fleuve', 'fleuve', {
@@ -31,14 +31,14 @@ const BASE_SCREENS = {
         ],
         chests: [{ id: 'chest_f', x: 12, y: 3, gold: 60, label: 'Coffre', openText: 'Du bronze.' }],
         enemies: [
-            { id: 'guard_f', templateId: 'goblin_saboteur', name: 'Garde', kind: 'sentinel', x: 8, y: 8, offset: 1, permanent: true },
-            { id: 'patrol_f', templateId: 'fungal_horror', name: 'Rôdeur', kind: 'patrol', x: 8, y: 9, patrol: [[8, 9], [12, 9]], offset: 0 },
-            { id: 'sun_f', templateId: 'iron_gladiator', name: 'Soleil F', kind: 'sentinel', x: 11, y: 8, permanent: true,
+            { id: 'guard_f', templateId: 'huli_jing', name: 'Garde', kind: 'sentinel', x: 8, y: 8, offset: 1, permanent: true },
+            { id: 'patrol_f', templateId: 'lingzhi_maudit', name: 'Rôdeur', kind: 'patrol', x: 8, y: 9, patrol: [[8, 9], [12, 9]], offset: 0 },
+            { id: 'sun_f', templateId: 'soldat_terre_cuite', name: 'Soleil F', kind: 'sentinel', x: 11, y: 8, permanent: true,
               boss: { name: 'Soleil F', level: 9 }, weakenedBy: ['chest_f'], afterScenes: [{ speaker: { name: 'Hou Yi' }, lines: ['Un de moins.'] }] }
         ]
     })
 };
-const GRASS = { table: [{ templateId: 'goblin_saboteur', name: 'Voleur d\'eau', weight: 3, offset: 0 }, { templateId: 'forest_guardian', name: 'Esprit', weight: 1, offset: 1 }] };
+const GRASS = { table: [{ templateId: 'huli_jing', name: 'Voleur d\'eau', weight: 3, offset: 0 }, { templateId: 'shu_jing', name: 'Esprit', weight: 1, offset: 1 }] };
 
 const VILLAGE_R = [row(14, '#'), row(14), row(14), '#.S..........>', row(14), row(14), row(14), row(14, '#')];
 const WILD_R = [
@@ -82,8 +82,8 @@ const mapsFixture = () => ({
         wild: {
             id: 'rizieres_wild', biome: 'paddy', grid: WILD_R,
             enemies: [
-                { id: 'warden_r', at: '2', templateId: 'forest_guardian', name: 'Gardien', kind: 'sentinel', offset: 1, permanent: true },
-                { id: 'rr_patrol', at: '3', templateId: 'fungal_horror', name: 'Rôdeur', kind: 'patrol', patrol: ['3', [10, 7]], offset: 0 }
+                { id: 'warden_r', at: '2', templateId: 'shu_jing', name: 'Gardien', kind: 'sentinel', offset: 1, permanent: true },
+                { id: 'rr_patrol', at: '3', templateId: 'lingzhi_maudit', name: 'Rôdeur', kind: 'patrol', patrol: ['3', [10, 7]], offset: 0 }
             ],
             chests: [{ id: 'wild_chest_r', at: '1', gold: 15 }],
             gate: { requires: 'warden_r', lockedMessage: 'Fermé.' }
@@ -97,14 +97,14 @@ const mapsFixture = () => ({
             npcs: [{ id: 'road_npc', at: '1' }],
             chests: [{ id: 'road_chest', x: 20, y: 7, gold: 10 }],
             enemies: [
-                { id: 'road_a', at: '2', templateId: 'goblin_saboteur', name: 'Voleur', kind: 'sentinel', offset: 0 },
-                { id: 'road_patrol', x: 10, y: 6, templateId: 'fungal_horror', name: 'Rôdeur', kind: 'patrol', patrol: [[10, 6], [14, 6]], offset: 0 },
-                { id: 'road_b', x: 18, y: 6, templateId: 'forest_guardian', name: 'Sentinelle', kind: 'sentinel', offset: 0 }
+                { id: 'road_a', at: '2', templateId: 'huli_jing', name: 'Voleur', kind: 'sentinel', offset: 0 },
+                { id: 'road_patrol', x: 10, y: 6, templateId: 'lingzhi_maudit', name: 'Rôdeur', kind: 'patrol', patrol: [[10, 6], [14, 6]], offset: 0 },
+                { id: 'road_b', x: 18, y: 6, templateId: 'shu_jing', name: 'Sentinelle', kind: 'sentinel', offset: 0 }
             ]
         },
         wild: {
             id: 'fleuve_wild', biome: 'riverbed', grid: WILD_F,
-            enemies: [{ id: 'warden_f', at: '2', templateId: 'forest_guardian', name: 'Gardien', kind: 'sentinel', offset: 1, permanent: true }],
+            enemies: [{ id: 'warden_f', at: '2', templateId: 'shu_jing', name: 'Gardien', kind: 'sentinel', offset: 1, permanent: true }],
             gate: { requires: 'warden_f', lockedMessage: 'Fermé.' }
         },
         sanctuary: { id: 'fleuve', waypoint: { x: 2, y: 5 }, grid: SANCTUARY_F, native: true, places: clone(PLACES_F), grass: GRASS }

@@ -76,10 +76,10 @@ export default {
         grass: {
             rate: 0.08,
             table: [
-                { templateId: 'ice_witch', name: 'Xianzi de rosée', weight: 5, offset: -1 },
-                { templateId: 'shadow_assassin', name: 'Ombre du sentier', weight: 4, offset: 0 },
-                { templateId: 'void_vampire', name: 'Jiangshi des herbes argentées', weight: 2, offset: 0 },
-                { templateId: 'moon_priestess', name: 'Veilleuse égarée', weight: 1, offset: 1 }
+                { templateId: 'dame_des_neiges', name: 'Xianzi de rosée', weight: 5, offset: -1 },
+                { templateId: 'assassin_masque', name: 'Ombre du sentier', weight: 4, offset: 0 },
+                { templateId: 'jiangshi', name: 'Jiangshi des herbes argentées', weight: 2, offset: 0 },
+                { templateId: 'pretresse_lunaire', name: 'Veilleuse égarée', weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -91,10 +91,10 @@ export default {
             { id: 'lune_road_hidden', at: 'k', gold: 450 }
         ],
         enemies: [
-            { id: 'lune_road_witch', at: '2', templateId: 'ice_witch', name: 'Dame des neiges égarée', kind: 'sentinel', offset: 0 },
-            { id: 'lune_road_shade', at: '3', templateId: 'shadow_assassin', name: 'Ombre du sentier', kind: 'sentinel', offset: 0 },
-            { id: 'lune_road_hopper', at: '4', templateId: 'void_vampire', name: 'Jiangshi du givre', kind: 'patrol', patrol: ['4', [8, 11]], offset: 0 },
-            { id: 'lune_road_veil', at: '5', templateId: 'moon_priestess', name: 'Veilleuse égarée', kind: 'patrol', patrol: ['5', [33, 10]], offset: 0 }
+            { id: 'lune_road_witch', at: '2', templateId: 'dame_des_neiges', name: 'Dame des neiges égarée', kind: 'sentinel', offset: 0 },
+            { id: 'lune_road_shade', at: '3', templateId: 'assassin_masque', name: 'Ombre du sentier', kind: 'sentinel', offset: 0 },
+            { id: 'lune_road_hopper', at: '4', templateId: 'jiangshi', name: 'Jiangshi du givre', kind: 'patrol', patrol: ['4', [8, 11]], offset: 0 },
+            { id: 'lune_road_veil', at: '5', templateId: 'pretresse_lunaire', name: 'Veilleuse égarée', kind: 'patrol', patrol: ['5', [33, 10]], offset: 0 }
         ]
     },
 
@@ -126,10 +126,10 @@ export default {
         ],
         grass: {
             table: [
-                { templateId: 'shadow_assassin', name: 'Ombre des herbes argentées', weight: 4, offset: -1 },
-                { templateId: 'ice_witch', name: 'Xianzi de givre', weight: 4, offset: 0 },
-                { templateId: 'void_vampire', name: 'Jiangshi lunaire', weight: 3, offset: 0 },
-                { templateId: 'frost_dragon', name: 'Dragonneau de givre égaré', weight: 1, offset: 1 }
+                { templateId: 'assassin_masque', name: 'Ombre des herbes argentées', weight: 4, offset: -1 },
+                { templateId: 'dame_des_neiges', name: 'Xianzi de givre', weight: 4, offset: 0 },
+                { templateId: 'jiangshi', name: 'Jiangshi lunaire', weight: 3, offset: 0 },
+                { templateId: 'canglong', name: 'Dragonneau de givre égaré', weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -147,16 +147,16 @@ export default {
             { id: 'lune_wild_moonwell', at: 'i', gold: 450 }
         ],
         enemies: [
-            { id: 'lune_frost_priestess', at: 'l', templateId: 'moon_priestess', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 43 } },
-            { id: 'lune_mirror_shade', at: 'm', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'lune_w_hare', at: 'q', templateId: 'ice_witch', name: 'Xianzi de givre', kind: 'patrol', patrol: ['q', [7, 16]], offset: 0 },
-            { id: 'lune_w_jiangshi', at: 'r', templateId: 'void_vampire', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['r', [25, 16]], offset: -1 },
-            { id: 'lune_w_frostdragon', at: 'p', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', offset: 0 },
-            { id: 'lune_shade_a', at: 'n', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
-            { id: 'lune_shade_b', at: 'o', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
-            { id: 'lune_w_owl', at: 's', templateId: 'shadow_assassin', name: 'Hibou d’ombre', kind: 'patrol', patrol: ['s', [37, 7]], offset: 0 },
-            { id: 'lune_w_wisp', at: 't', templateId: 'ice_witch', name: 'Esprit de rosée', kind: 'patrol', patrol: ['t', [13, 10]], offset: 0 },
-            { id: 'lune_w_crystal', at: 'u', templateId: 'crystal_sage', name: 'Veilleur de cristal', kind: 'sentinel', offset: 0 }
+            { id: 'lune_frost_priestess', at: 'l', templateId: 'pretresse_lunaire', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 43 } },
+            { id: 'lune_mirror_shade', at: 'm', templateId: 'assassin_masque', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'lune_w_hare', at: 'q', templateId: 'dame_des_neiges', name: 'Xianzi de givre', kind: 'patrol', patrol: ['q', [7, 16]], offset: 0 },
+            { id: 'lune_w_jiangshi', at: 'r', templateId: 'jiangshi', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['r', [25, 16]], offset: -1 },
+            { id: 'lune_w_frostdragon', at: 'p', templateId: 'canglong', name: 'Long de givre', kind: 'sentinel', offset: 0 },
+            { id: 'lune_shade_a', at: 'n', templateId: 'assassin_masque', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
+            { id: 'lune_shade_b', at: 'o', templateId: 'assassin_masque', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
+            { id: 'lune_w_owl', at: 's', templateId: 'assassin_masque', name: 'Hibou d’ombre', kind: 'patrol', patrol: ['s', [37, 7]], offset: 0 },
+            { id: 'lune_w_wisp', at: 't', templateId: 'dame_des_neiges', name: 'Esprit de rosée', kind: 'patrol', patrol: ['t', [13, 10]], offset: 0 },
+            { id: 'lune_w_crystal', at: 'u', templateId: 'immortel_jade', name: 'Veilleur de cristal', kind: 'sentinel', offset: 0 }
         ],
         gate: {
             requires: 'moon_key_chest',
