@@ -8,6 +8,7 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
+import { protectsFromBiome, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
@@ -525,6 +526,8 @@ export let player = {
     equippedWeapon: null,  // arme équipée
     availableWeapons: [],  // armes débloquées
     equipment: { rightHand: null, leftHand: null, item: null },  // système d'équipement multi-slot
+    stuffOwned: [],  // casques, colliers, bracelets et bagues possédés (stuff.js)
+    stuff: { head: null, neck: null, wrist: null, ring: null },  // stuff porté (ids)
     combatPoints: 0,
     bonusTurn: 0,
     abilities: [],  // aptitudes acquises
@@ -600,6 +603,15 @@ export function grantChestLoot({ loot = [] } = {}){
         updateInventoryTab();
     }
     return labels;
+}
+
+// Range un stuff (casque, collier, bracelet, bague) dans la collection du héros ; renvoie son libellé, ou null s'il l'avait déjà.
+export function grantStuffPiece(id, origin = 'Trouvé'){
+    const s = grantStuff(player, id);
+    if(!s) return null;
+    log(`${getRarityIcon(s.rarity)} ${origin} : ${s.name} (onglet Stuff) !`);
+    document.dispatchEvent(new Event('stuff-changed'));
+    return s.name;
 }
 
 // tour actuel
@@ -942,6 +954,7 @@ export function restartCombat(){
     player.tempCritChance = 0;
     clearStatBuffs(player);
     clearStatBuffs(enemy);
+    if(player.statusEffects){ delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; }   // le poison ne survit pas au combat
     // Réinitialiser le statut du jeu
     setGameStarted(false);
     // Appliquer les aptitudes de début de combat
@@ -1122,6 +1135,9 @@ export function loadGameData() {
             player.inventory = loaded.inventory ?? player.inventory;
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
             player.equipment.rightHand = player.equippedWeapon;
+            player.stuffOwned = loaded.stuffOwned ?? [];
+            player.stuff = loaded.stuff ?? player.stuff;
+            normalizeStuff(player);
             if(player.equipment.leftHand && player.equipment.leftHand.type !== 'shield') player.equipment.leftHand = catalogWeapon(player.equipment.leftHand);
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
             player.tempAttack = loaded.tempAttack ?? player.tempAttack;
@@ -2117,7 +2133,7 @@ export function finishPlayerTurn(){
         if(player.hp <= 0){ handlePlayerDeath(); return; }
         const burn = advanceBiomeTurn();
         // « Case brûlante - 3 dégâts » s'affiche sur chaque case avant que les dégâts ne tombent.
-        const warnMs = burn > 0 ? announceBurningCells() * animationFactor() : 0;
+        const warnMs = announceBurningCells() * animationFactor();
         setTimeout(() => {
             if(gameState.combatState !== 'active') return;
             if(burn > 0){ applyDamage(player, burn); log(`Cases brûlantes : -${burn} PV.`); updateStats(); }
@@ -2273,6 +2289,10 @@ export function enemyTurn(){
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
             applyDamage(player, dmg);
+            if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
+                const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
+                log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
+            }
             playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
@@ -2343,6 +2363,19 @@ export function finishEnemyTurn(){
         }
 
         // Tick des effets de durée du joueur
+        if((player.statusEffects?.poisoned || 0) > 0){
+            const poisonDmg = Math.max(1, Math.floor(player.statusEffects.poisonDamage || 1));
+            applyDamage(player, poisonDmg);
+            player.statusEffects.poisoned--;
+            log(`Poison : vous subissez ${poisonDmg} dégâts.`);
+            if(player.statusEffects.poisoned <= 0){
+                delete player.statusEffects.poisoned;
+                delete player.statusEffects.poisonDamage;
+                log('Le poison se dissipe.');
+            }
+            updateStats();
+            if(player.hp <= 0){ handlePlayerDeath(); return; }
+        }
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
@@ -2575,6 +2608,13 @@ export function handleEnemyDefeated(){
             }
         }
     });
+
+    // Stuff : garanti (rare) contre un ennemi plus fort, sinon une petite chance.
+    const stuffDrop = rollStuffDrop(player, levelGap > 0 ? OVERLEVELED_STUFF_DROP : VICTORY_STUFF_DROP);
+    if(stuffDrop){
+        const label = grantStuffPiece(stuffDrop.id, `${enemy.name} laisse`);
+        if(label) combatRewards.items.push(label);
+    }
 
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.leveledUp) {
@@ -3372,7 +3412,8 @@ export function newEnemy(selectedEnemy = null){
         log(`${enemy.name} porte : ${enemy.inventoryItem.name}`);
     }
     applyDuelRulesAtCombatStart();
-    setBiomeRule(ruleForBiome(enemy.biome));
+    const biomeKey = ruleForBiome(enemy.biome);
+    setBiomeRule(biomeKey, protectsFromBiome(player, biomeKey));
     setCombatBackdrop(enemy.biome);
     applyTerrainPrep();
     if(enemy.spells.length > 0){

@@ -1,6 +1,7 @@
 import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
+import { BIOME_PROTECTION_TEXT } from "./stuff.js";
 import { flyManaToCounter } from "./manaFlight.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
@@ -45,9 +46,13 @@ export function setTrappedCells(indices = []){
 let biomeRule = null;
 let biomeState = createBiomeState();
 
-export function setBiomeRule(key){
+// `protectedByStuff` : le héros porte le collier du biome (stuff.js) — la lave ne brûle plus, les bambous, la glace et la dérive de la mer n'agissent plus.
+let biomeProtected = false;
+export function setBiomeRule(key, protectedByStuff = false){
     biomeRule = BIOME_RULES[key] || null;
+    biomeProtected = Boolean(biomeRule && protectedByStuff);
     biomeState = createBiomeState();
+    if(biomeProtected) log(`${biomeRule.label} : votre collier vous protège (${BIOME_PROTECTION_TEXT[key] || 'effet annulé'}).`);
 }
 export const getBiomeRule = () => biomeRule;
 export const getBiomeCells = () => ({ ...biomeState.cells });
@@ -56,7 +61,9 @@ const isBlocked = index => isBlockedCell(biomeState, index, biomeRule);
 // Fin du tour du joueur : les cases évoluent. Retourne les dégâts de brûlure à infliger au héros.
 export function advanceBiomeTurn(){
     if(!biomeRule) return 0;
-    const res = advanceBiome(biomeState, biomeRule, boardSize);
+    // Protégé par un collier : les cases nuisibles n'apparaissent plus (la lave, elle, apparaît encore pour être utilisée, mais ne brûle plus).
+    const rule = biomeProtected && !biomeRule.burnDamage ? { ...biomeRule, spawn: 0, drift: false } : biomeRule;
+    const res = advanceBiome(biomeState, rule, boardSize);
     if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'jackpot' ? 'dorée(s) (mana ×10)' : 'sacrée(s)'}.`);
     if(res.expired.length) log(`${biomeRule.label} : ${res.expired.length} case(s) se libèrent.`);
     if(res.drifted !== null){
@@ -69,7 +76,7 @@ export function advanceBiomeTurn(){
     // Les nouvelles cases annoncent leur effet (la lave le fait juste avant ses dégâts, voir announceBurningCells).
     if(!biomeRule.burnDamage) res.spawned.forEach(i => floatCellText(i, cellBanner(biomeRule)));
     if(res.drifted !== null) floatCellText(res.drifted * boardSize, cellBanner(biomeRule));
-    return burnDamage(biomeState, biomeRule);
+    return biomeProtected ? 0 : burnDamage(biomeState, biomeRule);
 }
 
 // Texte flottant au-dessus d'une case (« Case brûlante - 3 dégâts ») : posé sur la page, il survit au repaint du plateau.
@@ -90,7 +97,7 @@ function floatCellText(index, text){
 // Annonce « Case brûlante - 3 dégâts » sur chaque case brûlante avant que les dégâts ne tombent. Retourne le délai à attendre (ms).
 export function announceBurningCells(){
     if(!biomeRule?.burnDamage) return 0;
-    const text = cellBanner(biomeRule, `-${biomeRule.burnDamage} dégâts`);
+    const text = cellBanner(biomeRule, biomeProtected ? 'protégé par votre collier' : `-${biomeRule.burnDamage} dégâts`);
     const burning = Object.keys(biomeState.cells).filter(i => biomeState.cells[i].kind === biomeRule.kind);
     burning.forEach(i => floatCellText(Number(i), text));
     return burning.length ? BIOME_BANNER_MS : 0;

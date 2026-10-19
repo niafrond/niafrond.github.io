@@ -1,7 +1,9 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
+import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
+import { rollStuffDrop, CHEST_STUFF_DROP } from "./stuff.js";
+import "./stuffView.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
 import { weaknessLabel } from "./terrain.js";
@@ -146,7 +148,14 @@ function init() {
         getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
-        onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),
+        onChestLoot: ev => {
+            const roll = rollChestLoot(ev.chest, ev.screen, player);
+            const labels = grantChestLoot(roll);
+            const drop = CHEST_STUFF_DROP[roll.tier] && rollStuffDrop(player, CHEST_STUFF_DROP[roll.tier]);
+            const stuff = drop && grantStuffPiece(drop.id, 'Trouvé dans un coffre');
+            return stuff ? [...labels, stuff] : labels;
+        },
+        onQuestReward: ev => { if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête'); },
         onXp: amount => {
             const res = grantExplorationXP(amount);
             if(res.leveledUp) {

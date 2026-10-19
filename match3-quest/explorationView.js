@@ -12,6 +12,7 @@
 // région, la carte se fige (saisies bloquées) le temps de charger les nouveaux paquets de sprites, derrière un
 // écran de chargement si cela dure ; les images de l'ancienne région sont libérées.
 
+import { getStuffById } from './stuff.js';
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
@@ -368,10 +369,11 @@ export function createExplorationView(cfg) {
                     // Fin de la légende : dialogue final puis animation de fin
                     if (spoken.has(ev.quest.id)) playEndingAnimation(); else openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines, () => { playEndingAnimation(); });
                 } else if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
-                if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; }
+                if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; cfg.onQuestReward?.(ev); }
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
+                const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
-                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${plus}`, ev.ended ? 8000 : 5000);
+                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
                 // Butin (potions, reliques, armes) : tiré et rangé dans le sac par le jeu (chestLoot.js).
@@ -429,7 +431,7 @@ export function createExplorationView(cfg) {
             .filter(e => carnet.region === 'all' || e.region === carnet.region)
             .sort((a, b) => Number(b.tracked) - Number(a.tracked) || STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
         const chip = (key, label) => `<button type="button" class="carnet-chip${carnet.filter === key ? ' on' : ''}" data-filter="${key}">${label}</button>`;
-        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${escapeHtml(r.fragment)}` : ''].filter(Boolean).join(' · ');
+        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${escapeHtml(r.fragment)}` : '', r.stuff ? `${icon('shield')} ${escapeHtml(getStuffById(r.stuff)?.name || 'Stuff')}` : ''].filter(Boolean).join(' · ');
         return `
             <div class="carnet-filters">
                 ${chip('all', 'En cours')}${chip('main', `Principale (${counts.main})`)}${chip('side', `Annexes (${counts.side})`)}${chip('done', `Terminées (${counts.done})`)}

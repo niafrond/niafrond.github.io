@@ -214,6 +214,8 @@ function sanitizePlayer(player) {
         equippedWeapon: player.equippedWeapon?.id,
         equipment: compact({ leftHand: player.equipment?.leftHand, item: player.equipment?.item }),
         inventory: player.inventory,
+        stuffOwned: player.stuffOwned,
+        stuff: compact(player.stuff || {}),
         activeInventoryIndex: player.activeInventoryIndex,
         merchantSold: player.merchantSold,
         defeatedBossTiers: player.defeatedBossTiers,
@@ -300,6 +302,8 @@ function validateAndRestorePlayer(player) {
         player.equipment = { rightHand: null, leftHand: null, item: null };
     }
 
+    if (!Array.isArray(player.stuffOwned)) player.stuffOwned = [];
+    if (!player.stuff || typeof player.stuff !== 'object') player.stuff = { head: null, neck: null, wrist: null, ring: null };
     if (!player.spells) player.spells = {};
     if (!player.equippedSpells) player.equippedSpells = [];
     if (!player.exploration) player.exploration = {};
