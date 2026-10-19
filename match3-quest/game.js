@@ -6,7 +6,7 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
-import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
@@ -2116,10 +2116,15 @@ export function finishPlayerTurn(){
         if(gameState.combatState !== 'active') return;
         if(player.hp <= 0){ handlePlayerDeath(); return; }
         const burn = advanceBiomeTurn();
-        if(burn > 0){ applyDamage(player, burn); log(`Cases brûlantes : -${burn} PV.`); updateStats(); }
-        if(player.hp <= 0){ handlePlayerDeath(); return; }
-        if(!applyDuelRulesBeforeEnemyTurn()) return;
-        enemyTurn();
+        // « Case brûlante - 3 dégâts » s'affiche sur chaque case avant que les dégâts ne tombent.
+        const warnMs = burn > 0 ? announceBurningCells() * animationFactor() : 0;
+        setTimeout(() => {
+            if(gameState.combatState !== 'active') return;
+            if(burn > 0){ applyDamage(player, burn); log(`Cases brûlantes : -${burn} PV.`); updateStats(); }
+            if(player.hp <= 0){ handlePlayerDeath(); return; }
+            if(!applyDuelRulesBeforeEnemyTurn()) return;
+            enemyTurn();
+        }, warnMs);
     });
 }
 

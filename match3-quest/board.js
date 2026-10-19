@@ -1,6 +1,6 @@
 import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
-import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, applyBoardBoost } from "./terrain.js";
+import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
 import { flyManaToCounter } from "./manaFlight.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
@@ -66,7 +66,34 @@ export function advanceBiomeTurn(){
         else log('Mer : une rangée dérive.');
     }
     renderBoard(true);
+    // Les nouvelles cases annoncent leur effet (la lave le fait juste avant ses dégâts, voir announceBurningCells).
+    if(!biomeRule.burnDamage) res.spawned.forEach(i => floatCellText(i, cellBanner(biomeRule)));
+    if(res.drifted !== null) floatCellText(res.drifted * boardSize, cellBanner(biomeRule));
     return burnDamage(biomeState, biomeRule);
+}
+
+// Texte flottant au-dessus d'une case (« Case brûlante - 3 dégâts ») : posé sur la page, il survit au repaint du plateau.
+export const BIOME_BANNER_MS = 1100;
+function floatCellText(index, text){
+    const tile = document.getElementById('board')?.children[index];
+    if(!tile || !text) return;
+    const r = tile.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'biome-float';
+    el.textContent = text;
+    el.style.left = `${r.left + r.width / 2}px`;
+    el.style.top = `${r.top + r.height / 2}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), BIOME_BANNER_MS);
+}
+
+// Annonce « Case brûlante - 3 dégâts » sur chaque case brûlante avant que les dégâts ne tombent. Retourne le délai à attendre (ms).
+export function announceBurningCells(){
+    if(!biomeRule?.burnDamage) return 0;
+    const text = cellBanner(biomeRule, `-${biomeRule.burnDamage} dégâts`);
+    const burning = Object.keys(biomeState.cells).filter(i => biomeState.cells[i].kind === biomeRule.kind);
+    burning.forEach(i => floatCellText(Number(i), text));
+    return burning.length ? BIOME_BANNER_MS : 0;
 }
 
 // Départ de combat depuis un belvédère (terrain.js) : `count` tuiles passent à la couleur faible de l'ennemi.
@@ -80,7 +107,9 @@ export function boostBoardColor(color, count){
 // Effet d'une case de biome traversée par un match du joueur (terrain.js).
 function applyPlayerMatchExtras(indices, info){
     if(biomeRule){
+        const rule = biomeRule;
         const res = resolveBiomeMatch(biomeState, biomeRule, indices);
+        res.cleared.forEach(i => floatCellText(i, cellBanner(rule, rule.matchEffect)));
         if(res.manaDelta > 0 && info.color) addManaForColor(player, info.color, res.manaDelta);
         if(res.manaDelta < 0 && info.color) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
         if(res.damage){ applyDamage(enemy, res.damage); log(`Case brûlante : -${res.damage} PV pour l'ennemi.`); }
