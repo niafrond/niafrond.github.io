@@ -1,8 +1,8 @@
 [
   {
     "id": "frost_dragon",
-    "name": "Long de Givre",
-    "race": "Dragon",
+    "name": "Canglong de Givre",
+    "race": "Long",
 
     "title": "Seigneur du Grand Froid",
     "playerClass": "sorcerer",
@@ -19,8 +19,8 @@
   },
   {
     "id": "ember_dragon",
-    "name": "Long de Braise",
-    "race": "Dragon",
+    "name": "Chilong de Braise",
+    "race": "Long",
     "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
     "title": "Gueule de Magma",
     "playerClass": "sorcerer",
@@ -38,7 +38,7 @@
   {
     "id": "void_vampire",
     "name": "Jiangshi",
-    "race": "Vampire",
+    "race": "Cadavre sauteur",
 
     "title": "Sauteur de Minuit",
     "playerClass": "assassin",
@@ -55,8 +55,8 @@
   },
   {
     "id": "storm_wyrm",
-    "name": "Serpent-Dragon du Tonnerre",
-    "race": "Dragon",
+    "name": "Yinglong du Tonnerre",
+    "race": "Long",
     "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
     "title": "Briseur de Nuées",
     "playerClass": "sorcerer",
@@ -73,7 +73,7 @@
   },
   {
     "id": "orc_warmaster",
-    "name": "Général Ogre-Démon",
+    "name": "Chiyou, Chef de Guerre",
     "race": "Yaoguai",
 
     "title": "Hache de la Lune Rouge",
@@ -91,8 +91,8 @@
   },
   {
     "id": "temple_warden",
-    "name": "Lion de Pierre",
-    "race": "Construct",
+    "name": "Suanni de Pierre",
+    "race": "Gardien",
 
     "title": "Gardien du Temple",
     "playerClass": "templar",
@@ -109,8 +109,8 @@
   },
   {
     "id": "crypt_lich",
-    "name": "Prêtre-Squelette",
-    "race": "Mort-vivant",
+    "name": "Gui Taoïste",
+    "race": "Gui",
 
     "title": "Taoïste de la Flamme Verte",
     "playerClass": "sorcerer",
@@ -127,8 +127,8 @@
   },
   {
     "id": "goblin_saboteur",
-    "name": "Petit Démon-Renard",
-    "race": "Yaoguai",
+    "name": "Huli Jing",
+    "race": "Esprit-renard",
 
     "title": "Chapardeur Rusé",
     "playerClass": "assassin",
@@ -145,8 +145,8 @@
   },
    {
     "id": "sand_colossus",
-    "name": "Colosse d'Argile",
-    "race": "Elementaire",
+    "name": "Hundun du Gobi",
+    "race": "Esprit informe",
 
     "title": "Titan du Gobi",
     "playerClass": "barbarian",
@@ -181,7 +181,7 @@
   },
   {
     "id": "forest_guardian",
-    "name": "Esprit-Arbre",
+    "name": "Shu Jing",
     "race": "Esprit",
 
     "title": "Gardien des Vieux Pins",
@@ -218,7 +218,7 @@
   {
     "id": "lava_behemoth",
     "name": "Pixiu de Magma",
-    "race": "Elementaire",
+    "race": "Chimère",
     "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
     "title": "Cœur de Fournaise",
     "playerClass": "barbarian",
@@ -271,8 +271,8 @@
   },
   {
     "id": "plague_doctor",
-    "name": "Docteur-Démon",
-    "race": "Yaoguai",
+    "name": "Wen Shen",
+    "race": "Esprit",
     "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
     "title": "Maître des Gourdes de Poison",
     "playerClass": "sorcerer",
@@ -289,8 +289,8 @@
   },
   {
     "id": "storm_knight",
-    "name": "Général du Tonnerre",
-    "race": "Humain",
+    "name": "Lei Gong",
+    "race": "Esprit",
     "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
     "title": "Lance d'Éclair",
     "playerClass": "templar",
@@ -308,7 +308,7 @@
   {
     "id": "fungal_horror",
     "name": "Lingzhi Maudit",
-    "race": "Monstre",
+    "race": "Esprit végétal",
 
     "title": "Champignon aux Spores Rouges",
     "playerClass": "sorcerer",
@@ -361,8 +361,8 @@
   },
   {
     "id": "bone_reaver",
-    "name": "Guerrier-Squelette",
-    "race": "Mort-vivant",
+    "name": "Gui Guerrier",
+    "race": "Gui",
     "battleMusic": "wav/musicgen-03-mort-vivant-1773190645899.wav",
     "title": "Sabre Rouillé",
     "playerClass": "assassin",
@@ -397,8 +397,8 @@
   },
   {
     "id": "deep_sea_serpent",
-    "name": "Serpent du Fleuve",
-    "race": "Dragon",
+    "name": "Jiaolong du Fleuve",
+    "race": "Long",
     "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
     "title": "Terreur des Eaux Profondes",
     "playerClass": "sorcerer",
@@ -416,7 +416,7 @@
   {
     "id": "crystal_sage",
     "name": "Immortel de Jade",
-    "race": "Elementaire",
+    "race": "Esprit de pierre",
     "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
     "title": "Oracle Scintillant",
     "playerClass": "sorcerer",
@@ -433,8 +433,8 @@
   },
   {
     "id": "war_troll",
-    "name": "Ogre de Guerre",
-    "race": "Troll",
+    "name": "Shanxiao",
+    "race": "Géant des montagnes",
 
     "title": "Briseur de Boucliers",
     "playerClass": "barbarian",

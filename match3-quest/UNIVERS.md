@@ -130,33 +130,33 @@ Guerrier, 武士 Wǔshì** (fourrures, torse nu tatoué, grande hache). Noms aff
 sourcils marqués) pour les quatre.
 
 ### Correspondance gabarits d'ennemis → créatures chinoises
-Les ids de gabarits du catalogue restent inchangés (statistiques) ; seuls les noms et l'apparence changent.
+Les ids de gabarits du catalogue restent inchangés (statistiques) ; seuls les noms et l'apparence changent. Les fiches de référence des créatures sont dans `bestiaire.csv`.
 
 | id de gabarit | Nouvelle identité |
 |---|---|
-| `goblin_saboteur` | Xiao Gui, petit démon-renard farceur à piège |
+| `goblin_saboteur` | Huli Jing (esprit-renard),  petit démon-renard farceur à piège |
 | `fungal_horror` | Champignon lingzhi maudit (chapeau rouge à spores) |
 | `mud_toad` | Crapaud de boue des rizières (dessin de `rizieres_w_toad`) |
-| `forest_guardian` | Esprit-arbre ancien (vieux pin/saule noueux) |
-| `bone_reaver` | Guerrier-squelette à sabre rouillé |
-| `crypt_lich` | Taoïste-squelette (bonnet de lettré, flamme verte) |
-| `temple_warden` | Lion-gardien de pierre (shishi) |
+| `forest_guardian` | Shu Jing, esprit-arbre ancien (vieux pin/saule noueux) |
+| `bone_reaver` | Gui Guerrier, guerrier-squelette à sabre rouillé |
+| `crypt_lich` | Gui Taoïste, taoïste-squelette (bonnet de lettré, flamme verte) |
+| `temple_warden` | Suanni de pierre, lion-gardien de pierre (shishi) |
 | `arcane_scholar` | Lettré-sorcier (robe de mandarin, rouleau, pinceau-baguette) |
 | `iron_gladiator` | Soldat de terre cuite en armure de fer |
 | `shadow_assassin` | Assassin masqué de l'ombre (lames, voile noir) |
-| `plague_doctor` | Docteur-démon à masque de bec et gourdes de poison |
-| `storm_knight` | Général du tonnerre (armure bleu électrique, lance éclair) |
-| `storm_wyrm` | Serpent-dragon du tonnerre (long, jaune/bleu, éclairs) |
-| `orc_warmaster` | Général ogre-démon (peau rouge-verte, hache à lune) |
-| `war_troll` | Ogre de guerre massif au gourdin clouté |
-| `sand_colossus` | Colosse d'argile du désert (fissures, yeux ambre) |
+| `plague_doctor` | Wen Shen, docteur-démon à masque de bec et gourdes de poison |
+| `storm_knight` | Lei Gong, général du tonnerre (armure bleu électrique, lance éclair) |
+| `storm_wyrm` | Yinglong du tonnerre, serpent-dragon du tonnerre (long, jaune/bleu, éclairs) |
+| `orc_warmaster` | Chiyou, général ogre-démon (peau rouge-verte, hache à lune) |
+| `war_troll` | Shanxiao, ogre de guerre massif au gourdin clouté |
+| `sand_colossus` | Hundun du Gobi, colosse d'argile du désert (fissures, yeux ambre) |
 | `lava_behemoth` | Pixiu de magma (bête-chimère noire aux veines de feu) |
 | `ice_witch` | Dame des neiges (robe de givre, éventail de glace) |
-| `frost_dragon` | Long de givre (dragon chinois bleu glacé, longue barbe) |
-| `ember_dragon` | Long de braise (dragon chinois rouge sombre, flammes) |
+| `frost_dragon` | Canglong de givre (Long) (dragon chinois bleu glacé, longue barbe) |
+| `ember_dragon` | Chilong de braise (Long) (dragon chinois rouge sombre, flammes) |
 | `void_vampire` | Jiangshi (vampire sauteur, chapeau de mandarin, talisman sur le front) |
 | `sun_paladin` | Garde solaire (armure blanche et or, emblème de soleil) |
-| `deep_sea_serpent` | Serpent de rivière géant à nageoires |
+| `deep_sea_serpent` | Jiaolong du fleuve, serpent de rivière géant à nageoires |
 | `crystal_sage` | Immortel de jade (être de jade et cristal) |
 | `moon_priestess` | Prêtresse lunaire, servante de Chang'e (robe argentée, croissant) |
 | `fire_tiger` (NOUVEAU) | Tigre embrasé (rayures de braise) |
