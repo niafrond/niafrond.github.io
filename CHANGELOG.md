@@ -1,3 +1,9 @@
+## [2.94.0](https://github.com/niafrond/niafrond.github.io/compare/v2.93.1...v2.94.0) (2026-10-19)
+
+### Features
+
+* **match3-quest:** faire voler les pilules de mana vers le sort lancé ([#500](https://github.com/niafrond/niafrond.github.io/issues/500)) ([75bda3d](https://github.com/niafrond/niafrond.github.io/commit/75bda3db02f37883f8d3d6f04c1e7fc7024c54da))
+
 ## [2.93.1](https://github.com/niafrond/niafrond.github.io/compare/v2.93.0...v2.93.1) (2026-10-19)
 
 ### Bug Fixes
