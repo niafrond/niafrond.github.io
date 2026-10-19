@@ -445,7 +445,7 @@ export function consumeSpellMana(entity, spell){
     Object.entries(paid).forEach(([color, amount]) => {
         entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
     });
-    flyManaSpend(entity === player, paid);
+    flyManaSpend(entity === player, paid, { toSpellId: entity === player ? spell.id : null });
 }
 
 function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
@@ -2859,6 +2859,7 @@ export function createSpellButtons(){
     player.activeSpells.forEach(sp=>{
         const btn=document.createElement('div');
         btn.className = 'enemy-spell-item';
+        btn.dataset.spellId = sp.id;
         btn.tabIndex = 0;
         const damageText = sp.dmg ? ` - ${sp.dmg} dmg` : '';
         const healText = sp.heal ? ` - ${sp.heal} HP` : '';

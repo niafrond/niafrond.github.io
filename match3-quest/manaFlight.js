@@ -90,12 +90,14 @@ function flyDots(fromEl, toEl, color, count, { scatter = false } = {}) {
 
 const sideOf = isPlayer => (isPlayer ? 'player' : 'enemy');
 
-// Sort payé : les pilules quittent le compteur de mana et sont consommées par le lanceur. `cost` = { couleur: quantité }.
-export function flyManaSpend(isPlayer, cost) {
+// Sort payé : les pilules quittent le compteur de mana et sont consommées par le lanceur, ou rejoignent le sort
+// (élément `[data-spell-id]` désigné par `toSpellId`). `cost` = { couleur: quantité }.
+export function flyManaSpend(isPlayer, cost, { toSpellId = null } = {}) {
     try {
         const side = sideOf(isPlayer);
+        const spellEl = toSpellId ? document.querySelector(`[data-spell-id="${toSpellId}"]`) : null;
         Object.entries(cost || {}).forEach(([color, amount]) => {
-            flyDots(document.getElementById(`${side}-mana-${color}`), document.getElementById(`${side}-stats`), color, amount);
+            flyDots(document.getElementById(`${side}-mana-${color}`), spellEl || document.getElementById(`${side}-stats`), color, amount);
         });
     } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
