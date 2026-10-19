@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
-    skullStrengthBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
+    skullStrengthBonus, levelEdgeBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
@@ -151,7 +151,7 @@ describe('ennemis', () => {
         for (const level of [5, 20, 40]) {
             const normals = Array.from({ length: 60 }, () => createMapEnemy(enc(level)));
             const avg = f => normals.reduce((sum, e) => sum + f(e), 0) / normals.length;
-            expect(avg(e => e.attack)).toBeLessThan(level * 1.4 + 5);
+            expect(avg(e => e.attack)).toBeLessThan(level * 1.5 + 8);
             expect(avg(e => e.defense)).toBeLessThan(level * 1.1 + 5);
             const cap = avg(e => e.maxHp) / 4;
             const hit = avg(e => (e.weapon?.damage || 0) + (e.weaponPower || 0));
@@ -160,7 +160,8 @@ describe('ennemis', () => {
             const boss = createMapEnemy(enc(level, { enemyId: 'b', boss: { name: 'B' } }));
             expect(boss.maxHp).toBeGreaterThan(avg(e => e.maxHp) * 1.5);
             expect(boss.attack).toBeGreaterThan(avg(e => e.attack));
-            expect(boss.spells.length).toBe(Math.floor(level / 5) + 1 > boss.spells.length ? boss.spells.length : Math.floor(level / 5) + 1);
+            expect(boss.spells.length).toBeLessThanOrEqual(4);
+            expect(boss.spells.length).toBeGreaterThanOrEqual(Math.min(4, 2 + Math.floor(level / 3)) - 1);
         }
     });
 
@@ -175,5 +176,24 @@ describe('mêmes limites que le joueur : sorts et armes', () => {
         const boss = createBossEnemyForTier(tier);
         expect(boss.spells.length).toBeLessThanOrEqual(4);
         expect(Array.isArray(boss.weapon)).toBe(false);
+    });
+});
+
+describe('écart de niveau : avantage caché du plus haut niveau', () => {
+    test('aucun bonus sans écart en sa faveur, croissant puis plafonné', () => {
+        expect(levelEdgeBonus({ levelEdge: 0 }, 12)).toBe(12);
+        expect(levelEdgeBonus({}, 12)).toBe(12);
+        expect(levelEdgeBonus({ levelEdge: 1 }, 12)).toBe(16 + 5);
+        expect(levelEdgeBonus({ levelEdge: 4 }, 10)).toBe(36 + 20);
+        expect(levelEdgeBonus({ levelEdge: 60 }, 10)).toBe(40 + 300);
+    });
+
+    test('il augmente les chances de critique et de blocage, sans changer les valeurs affichées', () => {
+        const strong = { attack: 12, defense: 6, levelEdge: 4 };
+        const plain = { attack: 12, defense: 6 };
+        expect(critChance(strong)).toBeGreaterThan(critChance(plain) * 3);
+        expect(blockChance(strong)).toBeGreaterThan(blockChance(plain) * 3);
+        expect(rawAttack(strong)).toBe(12);
+        expect(rawDefense(strong)).toBe(6);
     });
 });

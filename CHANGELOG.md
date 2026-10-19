@@ -1,3 +1,15 @@
+## [2.93.0](https://github.com/niafrond/niafrond.github.io/compare/v2.92.0...v2.93.0) (2026-10-19)
+
+### Features
+
+* **match3-quest:** rééquilibrer les ennemis, butin rare et avantage de niveau ([#498](https://github.com/niafrond/niafrond.github.io/issues/498)) ([b3a59ac](https://github.com/niafrond/niafrond.github.io/commit/b3a59acef453fc948592f5bc27604c73ebd4caf5))
+
+## [2.92.0](https://github.com/niafrond/niafrond.github.io/compare/v2.91.1...v2.92.0) (2026-10-18)
+
+### Features
+
+* **match3-quest:** animer la chute des neuf soleils avec Pixel Lab ([#497](https://github.com/niafrond/niafrond.github.io/issues/497)) ([019a4d6](https://github.com/niafrond/niafrond.github.io/commit/019a4d618b8ac5f0e2ba890d6b842e17f7d163f9))
+
 ## [2.91.1](https://github.com/niafrond/niafrond.github.io/compare/v2.91.0...v2.91.1) (2026-10-18)
 
 ### Bug Fixes

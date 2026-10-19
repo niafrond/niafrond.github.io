@@ -14,6 +14,19 @@ export const TOTAL_BLOCK_SHARE = 0.4;      // part des blocages qui sont totaux 
 export const SKULL_STRENGTH_DIVISOR = 2;   // 1 dégât de plus par crâne tous les 2 points de force
 export const SKULL_STRENGTH_BONUS_CAP = 6;
 
+// Avantage caché du plus haut niveau : `entity.levelEdge` = écart de niveau en sa faveur (posé au début du combat, voir newEnemy).
+// Il multiplie son attaque et sa défense (×1,35 à 1 niveau, ×1,8 à 2, ×3,6 à 4, ×4 au plus) et y ajoute 5 points par niveau d'écart :
+// il crite et bloque bien plus souvent, donc frappe et encaisse mieux. Jamais affiché (rawAttack / rawDefense l'ignorent), aucun
+// malus pour le plus faible.
+export const LEVEL_EDGE_MAX_MULT = 4;
+export const LEVEL_EDGE_FLAT_PER_LEVEL = 5;
+export function levelEdgeBonus(entity, raw) {
+    const gap = Math.max(0, Math.floor(Number(entity?.levelEdge) || 0));
+    if (gap === 0) return raw;
+    const mult = Math.min(LEVEL_EDGE_MAX_MULT, 1 + 0.25 * gap + 0.1 * gap * gap);
+    return Math.floor(raw * mult) + LEVEL_EDGE_FLAT_PER_LEVEL * gap;
+}
+
 const clampChance = value => Math.max(0, Math.min(STAT_CHANCE_CAP, Math.floor(Number(value) || 0)));
 
 // Bonus d'Atk/Déf apportés par l'arme en main droite/gauche et le bouclier (champs `atkBonus` / `defBonus`).
@@ -84,10 +97,10 @@ export function rawDefense(entity) {
 
 // Chances réelles (plafonnées à 98 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
 export function critChance(entity, weakened = 0) {
-    return clampChance(rawAttack(entity) - Math.max(0, Math.floor(weakened || 0)));
+    return clampChance(levelEdgeBonus(entity, rawAttack(entity)) - Math.max(0, Math.floor(weakened || 0)));
 }
 export function blockChance(entity) {
-    return clampChance(rawDefense(entity));
+    return clampChance(levelEdgeBonus(entity, rawDefense(entity)));
 }
 
 export function rollCrit(entity, rng = Math.random, weakened = 0) {
