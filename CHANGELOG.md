@@ -1,3 +1,17 @@
+## [2.96.0](https://github.com/niafrond/niafrond.github.io/compare/v2.95.0...v2.96.0) (2026-10-19)
+
+### Features
+
+* **match3-quest:** générer en local les sprites du bestiaire avec game-maker ([c8f43bb](https://github.com/niafrond/niafrond.github.io/commit/c8f43bb0abecb0d9683010ecc402cfe1a9185c8c))
+* **match3-quest:** générer les sprites Pixel Lab des créatures chinoises ([3a4979d](https://github.com/niafrond/niafrond.github.io/commit/3a4979db4429a31ee659def41d2a784f93e6e717))
+* **match3-quest:** intégrer le bestiaire chinois, renommer les ids et répartir les créatures par région ([1e05a86](https://github.com/niafrond/niafrond.github.io/commit/1e05a86f3dcf8cd2ad478bc82624b6301d269537))
+* **match3-quest:** jouer les plans-séquences des ultimes et ranger les séquences terminées ([3f6b7db](https://github.com/niafrond/niafrond.github.io/commit/3f6b7db2bca5ead551ad6f48a88a6007dc2261e4))
+* **match3-quest:** remplacer les créatures occidentales par le bestiaire de la Chine ancienne ([52c4647](https://github.com/niafrond/niafrond.github.io/commit/52c4647dcf582e21a180ba0dd3fa81f6018213b4))
+
+### Bug Fixes
+
+* **match3-quest:** unifier l'apparence des quatre variantes de Fengmeng ([d06f3ce](https://github.com/niafrond/niafrond.github.io/commit/d06f3ced84f4ffa4b7246cd6ed75a5a660409012))
+
 ## [2.95.0](https://github.com/niafrond/niafrond.github.io/compare/v2.94.0...v2.95.0) (2026-10-19)
 
 ### Features
