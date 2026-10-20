@@ -1732,26 +1732,37 @@ describe('boss : mirages (illusions) du désert de Gobi', () => {
         const res = tryMove(s, 0, -1, { playerLevel: 5 });
         expect(res).toMatchObject({ type: 'illusion', enemyId: m.id });
         expect(res.lines.length).toBeGreaterThan(0);
-        expect(isEnemyAlive(s, m.id)).toBe(false);
+        // il se reforme ailleurs, à bonne distance du héros ; il n'est jamais « vaincu »
+        const moved = aliveEnemies(s).find(e => e.def.id === m.id);
+        expect(moved).toBeTruthy();
+        expect([moved.x, moved.y]).not.toEqual([m.x, m.y]);
+        expect(Math.max(Math.abs(moved.x - s.data.x), Math.abs(moved.y - s.data.y))).toBeGreaterThanOrEqual(6);
+        expect(isEnemyAlive(s, m.id)).toBe(true);
     });
 
-    test('un mirage dissipé ne revient pas, même après rechargement de la sauvegarde', async () => {
+    test('le vrai soleil ne bouge pas quand un mirage se dissipe', () => {
         const s = sessionAt();
+        const real = gobi().enemies.find(e => e.id === 'sun_4');
         next(s, mirage());
         tryMove(s, 0, -1, { playerLevel: 5 });
-        const hero = forgeEarlyGame();
-        hero.exploration = { ...hero.exploration, ...s.data };
-        const { session } = await reloadSession(hero);
-        expect(isEnemyAlive(session, mirage().id)).toBe(false);
+        const sun = aliveEnemies(s).find(e => e.def.id === 'sun_4');
+        expect([sun.x, sun.y]).toEqual([real.x, real.y]);
     });
 
-    test('les mirages ne donnent ni victoire d\'arène ni progression : seule la liste des vaincus change', () => {
+    test('anciennes sauvegardes : un mirage marqué vaincu est remis en jeu au chargement', async () => {
+        const hero = forgeEarlyGame();
+        hero.exploration = { ...hero.exploration, screenId: gobi().id, defeated: [mirage().id] };
+        const { session } = await reloadSession(hero);
+        expect(isEnemyAlive(session, mirage().id)).toBe(true);
+    });
+
+    test('les mirages ne donnent ni victoire d\'arène ni progression : la liste des vaincus reste intacte', () => {
         const s = sessionAt();
         const wins = s.data.arena.wins;
         next(s, mirage());
         tryMove(s, 0, -1, { playerLevel: 5 });
         expect(s.data.arena.wins).toBe(wins);
-        expect(s.data.defeated).toEqual([mirage().id]);
+        expect(s.data.defeated).toEqual([]);
     });
 
     test('le vrai soleil du désert n\'est pas une illusion : le contact lance le combat', () => {

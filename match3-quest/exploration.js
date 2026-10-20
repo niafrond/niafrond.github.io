@@ -240,6 +240,8 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
+    // Les mirages ne sont plus « vaincus » : ils se déplacent (anciennes sauvegardes : on les remet en jeu).
+    data.defeated = data.defeated.filter(id => !enemyIndex[id]?.def.illusion);
 
     const session = {
         data,
@@ -510,9 +512,30 @@ const DEFAULT_SHIELD_LINES = [
     "Un bouclier de flammes protège le soleil : il faut d'abord venir à bout de ses gardiens."
 ];
 
-// Un mirage se dissipe : il est marqué vaincu et la vue joue un court dialogue du Narrateur.
+// Un mirage se dissipe (court dialogue du Narrateur) et un autre se forme ailleurs : le mirage est déplacé sur une case libre,
+// loin du héros, au lieu d'être marqué vaincu. Le vrai soleil, lui, ne bouge jamais.
+const MIRAGE_MIN_DIST = 6;
+
+function relocateMirage(session, def) {
+    const screen = currentScreen(session);
+    const st = session.rt.enemies[def.id];
+    if (!st) return;
+    const { x: px, y: py } = session.data;
+    const cells = [];
+    for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) {
+        if (Math.max(Math.abs(x - px), Math.abs(y - py)) < MIRAGE_MIN_DIST) continue;
+        if (isTerrainBlocked(screen, x, y) || entityAt(session, x, y)) continue;
+        if ((screen.exits || []).some(e => e.x === x && e.y === y)) continue;
+        cells.push({ x, y });
+    }
+    if (!cells.length) return;
+    const pos = cells[Math.floor(Math.random() * cells.length)];
+    st.x = pos.x;
+    st.y = pos.y;
+}
+
 function dissipate(session, def) {
-    if (!session.data.defeated.includes(def.id)) session.data.defeated.push(def.id);
+    relocateMirage(session, def);
     return { type: 'illusion', enemyId: def.id, lines: def.illusionLines?.length ? def.illusionLines : DEFAULT_ILLUSION_LINES };
 }
 

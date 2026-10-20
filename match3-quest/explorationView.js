@@ -1320,11 +1320,10 @@ export function createExplorationView(cfg) {
                     const lvl = X.levelFor(session, def);
                     const size = tile * (big ? 1.55 : 1.08);
                     const feet = c.y + tile * 0.4;
-                    // Indice des mirages : ils scintillent, n'ont ni ombre au sol ni étiquette de niveau.
+                    // Indice des mirages : ils sont opaques mais n'ont ni ombre au sol ni étiquette de niveau.
                     if (!illusion) drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
-                    if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
                     const eKey = def.spriteKey || def.id;
                     const eDir = viewDir(it.e.face);
                     const baseSprite = enemySprite(eKey, def.templateId, screen.biome);
@@ -1344,7 +1343,6 @@ export function createExplorationView(cfg) {
                     }
                     if (big) {
                         ctx.save();
-                        if (illusion) ctx.globalAlpha = 0.5;
                         drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
                         ctx.restore();
                     }

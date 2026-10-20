@@ -1569,8 +1569,13 @@ describe('mirages (illusion)', () => {
         const res = tryMove(s, 0, -1);   // (10,2), à distance 1 de mirage_1 (9,1)
         const def = LEGACY.screens.gobi.enemies.find(e => e.id === 'mirage_1');
         expect(res).toEqual({ type: 'illusion', enemyId: 'mirage_1', lines: def.illusionLines });
-        expect(s.data.defeated).toContain('mirage_1');
-        expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('mirage_1');
+        expect(s.data.defeated).not.toContain('mirage_1');
+        // le mirage se reforme ailleurs (plus de 5 cases du héros) ; le vrai soleil reste en (11,8)
+        const m = aliveEnemies(s).find(e => e.def.id === 'mirage_1');
+        expect([m.x, m.y]).not.toEqual([9, 1]);
+        expect(Math.max(Math.abs(m.x - s.data.x), Math.abs(m.y - s.data.y))).toBeGreaterThanOrEqual(6);
+        const sun = aliveEnemies(s).find(e => e.def.id === 'sun_4');
+        expect([sun.x, sun.y]).toEqual([11, 8]);
         expect(tryMove(s, 0, 1).type).toBe('moved');
     });
 
@@ -1590,8 +1595,7 @@ describe('mirages (illusion)', () => {
         }, { x: 3, y: 0 });
         const events = tick(s, PATROL_STEP_MS * 2);
         expect(events).toEqual([expect.objectContaining({ type: 'illusion', enemyId: 'm' })]);
-        expect(isEnemyIllusionGone(s, 'm')).toBe(true);
-        expect(tick(s, PATROL_STEP_MS * 4)).toEqual([]);
+        expect(isEnemyIllusionGone(s, 'm')).toBe(false);   // il se reforme ailleurs
     });
     const isEnemyIllusionGone = (s, id) => !aliveEnemies(s).some(e => e.def.id === id);
 
