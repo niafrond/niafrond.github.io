@@ -3460,6 +3460,8 @@ export function setCombatBackdrop(biome){
 
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
+    // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
+    enemy.statusEffects = { ...(enemy.statusEffects || {}) };
     // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
     enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
