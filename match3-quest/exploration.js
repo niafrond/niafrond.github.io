@@ -559,7 +559,12 @@ function checkAura(session) {
 }
 
 // Une sortie est verrouillée tant que sa condition `requires` n'est pas remplie.
-export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires);
+// Une quête `unlockOnReady` ouvre sa porte dès que tous ses objectifs sont remplis, sans devoir retourner voir le PNJ (ex. sceau du Fusang).
+const readyUnlocks = (session, id) => {
+    const quest = typeof id === 'string' ? questById(session, id) : null;
+    return Boolean(quest?.unlockOnReady) && questStatus(session, quest) === 'ready';
+};
+export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires);
 
 // Transition vers une autre carte (sortie explicite ou connexion de bordure) : alerte de niveau, texte d'arrivée, quêtes.
 function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {

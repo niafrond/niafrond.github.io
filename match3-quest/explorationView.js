@@ -25,6 +25,7 @@ import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } fr
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon } from './icons.js';
+import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
@@ -1158,6 +1159,36 @@ export function createExplorationView(cfg) {
             const labelText = locked ? `${ex.label} (fermé)` : gated ? `${ex.label} (niv. ${minLevel})` : ex.label;
             drawLabel(c.x, labelY, labelText,
                 gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+        });
+
+        // Passages de bord fermés par une quête : une grande porte de bois cerclée de fer barre les 3 cases (plutôt que du vide)
+        const questGateRows = connectionRows(session.screens, screen).filter(r => r.requires && session.quests.some(q => q.id === r.requires) && X.isExitLocked(session, r));
+        questGateRows.forEach(r => {
+            const p = P(r.x, r.y), pad = tile * 0.04;
+            ctx.fillStyle = '#5a3a22';
+            ctx.fillRect(p.x + pad, p.y + pad, tile - pad * 2, tile - pad * 2);
+            ctx.strokeStyle = '#3b2415';
+            ctx.lineWidth = Math.max(1, tile * 0.04);
+            const vertical = r.edge === 'west' || r.edge === 'east';   // planches le long du passage
+            for (let i = 1; i < 4; i++) {
+                ctx.beginPath();
+                if (vertical) { ctx.moveTo(p.x + tile * i / 4, p.y + pad); ctx.lineTo(p.x + tile * i / 4, p.y + tile - pad); }
+                else { ctx.moveTo(p.x + pad, p.y + tile * i / 4); ctx.lineTo(p.x + tile - pad, p.y + tile * i / 4); }
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#8a8d96';   // bandes de fer
+            if (vertical) { ctx.fillRect(p.x + pad, p.y + tile * 0.18, tile - pad * 2, tile * 0.1); ctx.fillRect(p.x + pad, p.y + tile * 0.72, tile - pad * 2, tile * 0.1); }
+            else { ctx.fillRect(p.x + tile * 0.18, p.y + pad, tile * 0.1, tile - pad * 2); ctx.fillRect(p.x + tile * 0.72, p.y + pad, tile * 0.1, tile - pad * 2); }
+            if (!r.span) {   // case centrale : cadenas et nom du passage
+                const c = P(r.x + 0.5, r.y + 0.5);
+                ctx.fillStyle = '#f2c14e';
+                ctx.strokeStyle = '#2b1b17';
+                ctx.lineWidth = Math.max(1, tile * 0.05);
+                ctx.fillRect(c.x - tile * 0.14, c.y - tile * 0.02, tile * 0.28, tile * 0.22);
+                ctx.strokeRect(c.x - tile * 0.14, c.y - tile * 0.02, tile * 0.28, tile * 0.22);
+                ctx.beginPath(); ctx.arc(c.x, c.y - tile * 0.02, tile * 0.1, Math.PI, 0); ctx.stroke();
+                drawLabel(c.x, r.edge === 'north' ? c.y + tile * 0.75 : c.y - tile * 0.75, `${r.label} (fermé)`, '#e5e7eb', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+            }
         });
 
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)

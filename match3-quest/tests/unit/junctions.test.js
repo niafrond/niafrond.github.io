@@ -161,3 +161,20 @@ describe('sentinelles de niveau', () => {
         guards.forEach(g => expect(g.idle.join(' ')).not.toMatch(/niveau|niv\.|\d/i));
     });
 });
+
+describe('quête qui ouvre sa porte dès les objectifs remplis (unlockOnReady)', () => {
+    test('sceau du Fusang : les trois éclats ouvrent la porte sans retourner voir Mère Xing', () => {
+        const quest = QUESTS.find(q => q.id === 'sq_sceau_racines');
+        expect(quest.unlockOnReady).toBe(true);
+        const s = createSession({ screenId: 'fusang_h_astronome', x: 1, y: 1 });
+        const door = { requires: 'sq_sceau_racines' };
+        talkToNpc(s, 'astronomer_xing');
+        expect(isExitLocked(s, door)).toBe(true);
+        ['seal_shard_a', 'seal_shard_b', 'seal_shard_c'].forEach(id => {
+            s.data.screenId = 'fusang_wild';
+            openChest(s, id);
+        });
+        expect(questStatus(s, quest)).toBe('ready');
+        expect(isExitLocked(s, door)).toBe(false);
+    });
+});
