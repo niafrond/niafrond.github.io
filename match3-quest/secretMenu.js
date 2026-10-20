@@ -1,6 +1,6 @@
 // Menu secret : 6 clics sur « Particules de mana » (Options) l'ouvrent pour toute la session (jamais sauvegardé).
 // Permet de s'attribuer tous les stuffs, tous les sorts, toutes les armes et n'importe quel niveau.
-import { player, saveUpdate, log, updateStats, updateAvailableSpells, updateAvailableWeapons, createSpellButtons, createWeaponButton, updatePlayerStatsTab, grantStuffPiece, setCheatAllSpells } from "./game.js";
+import { player, saveUpdate, log, updateStats, updateAvailableSpells, updateAvailableWeapons, createSpellButtons, createWeaponButton, updatePlayerStatsTab, grantStuffPiece, setCheatAllSpells, setCheatOneShot, isCheatOneShot } from "./game.js";
 import { allStuff } from "./stuff.js";
 import { allWeapons } from "./weapons.js";
 import { MAX_LEVEL } from "./experience.js";
@@ -41,6 +41,7 @@ function buildModal() {
         <div class="options-row"><span>Tous les stuffs</span><button id="secret-stuff-btn">Obtenir</button></div>
         <div class="options-row"><span>Toutes les armes</span><button id="secret-weapons-btn">Obtenir</button></div>
         <div class="options-row"><span>Tous les sorts</span><button id="secret-spells-btn">Débloquer</button></div>
+        <div class="options-row"><span>One shot les ennemis</span><button id="secret-oneshot-btn" aria-pressed="false">Non</button></div>
         <div class="modal-actions"><button class="primary" id="secret-close-btn">Fermer</button></div>
     </div>`;
     document.body.appendChild(el);
@@ -68,12 +69,24 @@ function buildModal() {
         log('Menu secret : tous les sorts débloqués.');
         refreshAll();
     });
+    $('secret-oneshot-btn').addEventListener('click', () => {
+        setCheatOneShot(!isCheatOneShot());
+        syncOneShot(el);
+        log(`Menu secret : one shot ${isCheatOneShot() ? 'activé' : 'désactivé'}.`);
+    });
     return el;
+}
+
+function syncOneShot(el) {
+    const btn = el.querySelector('#secret-oneshot-btn');
+    btn.textContent = isCheatOneShot() ? 'Oui' : 'Non';
+    btn.setAttribute('aria-pressed', String(isCheatOneShot()));
 }
 
 export function openSecretMenu() {
     if(!modal) modal = buildModal();
     modal.querySelector('#secret-level').value = player.level || 1;
+    syncOneShot(modal);
     modal.classList.add('active');
 }
 

@@ -318,6 +318,7 @@ export function applyDamage(target, damage, options = {}){
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
     normalizedDamage = affinityResult.modifiedDamage;
+    if(cheatOneShot && target === enemy && normalizedDamage > 0) normalizedDamage = Math.max(normalizedDamage, (enemy.hp || 0) + (enemy.shield || 0) + 1);
 
     if(affinityResult.affinityType === 'force' && affinityResult.delta > 0) {
         log(`${target.name} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
@@ -2863,6 +2864,10 @@ function buildUnlockedSpellsList(spells, level) {
 
 // Menu secret (secretMenu.js) : le temps de la session, tous les sorts (toutes classes) sont débloqués.
 let cheatAllSpells = false;
+// Menu secret : tant qu'actif, tout dégât infligé à l'ennemi le tue d'un coup.
+let cheatOneShot = false;
+export function setCheatOneShot(on){ cheatOneShot = !!on; }
+export function isCheatOneShot(){ return cheatOneShot; }
 export function setCheatAllSpells(on){ cheatAllSpells = !!on; }
 
 export function updateAvailableSpells(){
