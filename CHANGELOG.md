@@ -1,3 +1,9 @@
+## [2.102.0](https://github.com/niafrond/niafrond.github.io/compare/v2.101.0...v2.102.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** marche fluide, gomettes de mana, onglet Spéciaux et déblocage du sceau ([#509](https://github.com/niafrond/niafrond.github.io/issues/509)) ([50331c4](https://github.com/niafrond/niafrond.github.io/commit/50331c437d836184a69e82dbb3994c76e26dbbfe))
+
 ## [2.101.0](https://github.com/niafrond/niafrond.github.io/compare/v2.100.1...v2.101.0) (2026-10-20)
 
 ### Features
