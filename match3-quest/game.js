@@ -1778,11 +1778,15 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     const boardPx = Math.min(...['width', 'height'].map(k => document.getElementById('board')?.getBoundingClientRect()[k] || Infinity));
     const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
-    let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${fx && fx.includes('spellfx-big') ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
-    if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
-    if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
-    if (source !== null) html += `<div class="attack-source">${source}</div>`;
-    if (target !== null) html += `<div class="attack-target">${target}</div>`;
+    const bigFx = Boolean(fx && fx.includes('spellfx-big'));
+    let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
+    let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
+    if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
+    if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
+    if (source !== null) caption += `<div class="attack-source">${source}</div>`;
+    if (target !== null) caption += `<div class="attack-target">${target}</div>`;
+    // Sort très cher : l'animation garde tout le plateau, titre et dégâts recouvrent les boutons de sorts.
+    html += bigFx ? `<div class="attack-caption">${caption}</div>` : caption;
     showAttackAnimation(html, isPlayerAttack, options);
 }
 
@@ -1819,13 +1823,24 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         overlay.classList.add('enemy-attack');
     }
 
+    // Légende d'un sort très cher : sortie de l'overlay pour se poser sur les boutons de sorts.
+    const caption = attackDiv.querySelector('.attack-caption');
+    const spellsBox = document.getElementById('spells-container');
+    if(caption && spellsBox) {
+        const r = spellsBox.getBoundingClientRect();
+        Object.assign(caption.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+        document.body.appendChild(caption);
+    }
+
     const finishOverlay = () => {
         if(!overlay.parentNode) return;
+        if(caption) caption.classList.add('fade-out');
         overlay.classList.add('fade-out');
         setTimeout(() => {
             if(overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
             }
+            caption?.remove();
             if(typeof onContinue === 'function') {
                 onContinue();
             }

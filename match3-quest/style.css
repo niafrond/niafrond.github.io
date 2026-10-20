@@ -1146,7 +1146,16 @@ progress.enemy-bar::-webkit-progress-value {
 .spellfx.spellfx-big { max-width: none; }
 /* Sort très coûteux : l'animation occupe le plateau, le texte se superpose */
 .attack-icon.has-spellfx-big { position: absolute; inset: 0; margin: 0; align-items: center; }
-.attack-animation:has(.has-spellfx-big) > :not(.attack-icon) { position: relative; z-index: 1; text-shadow: 0 0 6px #000, 0 0 12px #000; }
+/* Titre et dégâts d'un sort très cher : posés (en fixe) sur la zone des boutons de sorts, qu'ils cachent */
+.attack-caption {
+    position: fixed; z-index: 1001; pointer-events: none; box-sizing: border-box;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white;
+    background: rgba(20, 20, 30, 0.92); border-radius: 8px; overflow: hidden;
+    animation: content-appear 0.5s ease-out forwards;
+}
+.attack-caption.fade-out { opacity: 0; transition: opacity 0.5s ease-out; }
+.attack-caption .attack-title { font-size: clamp(16px, 2.4vw, 28px); margin: 4px 0; }
+.attack-caption .attack-damage, .attack-caption .attack-heal { font-size: clamp(24px, 4vw, 48px); margin: 4px 0; }
 @keyframes spellfx-play { to { background-position-x: calc(var(--px) * var(--frames) * -1); } }
 
 .attack-title {
