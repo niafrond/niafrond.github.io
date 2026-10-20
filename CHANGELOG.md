@@ -1,3 +1,9 @@
+## [2.100.1](https://github.com/niafrond/niafrond.github.io/compare/v2.100.0...v2.100.1) (2026-10-20)
+
+### Bug Fixes
+
+* **match3-quest:** ultimes inblocables et correctif des ultimes d'étourdissement et d'affaiblissement ([#507](https://github.com/niafrond/niafrond.github.io/issues/507)) ([5dc58fc](https://github.com/niafrond/niafrond.github.io/commit/5dc58fc9e281fd6d1dc14b30f964d137be5262de))
+
 ## [2.100.0](https://github.com/niafrond/niafrond.github.io/compare/v2.99.0...v2.100.0) (2026-10-20)
 
 ### Features
