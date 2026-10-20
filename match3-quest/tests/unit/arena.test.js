@@ -8,7 +8,7 @@ import { SCREENS } from '../../story.js';
 import { DECOR_NAMES } from '../../sprites/decor.js';
 import {
     createSession, enterArena, leaveArena, inArena, tryMove, markEnemyDefeated, encounterFor, resetAfterDefeat,
-    currentObjectiveText, isTerrainBlocked, START_SCREEN
+    currentObjectiveText, isTerrainBlocked, START_SCREEN, inFront
 } from '../../exploration.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
@@ -117,6 +117,12 @@ describe('Arène des Mille Flèches : salles à explorer', () => {
                 expect(e.permanent).toBe(true);
                 expect(e.boss).toBeUndefined();
                 expect(e.sight).toBe(GUARD_SIGHT);
+                expect(e.allAround).toBe(true);
+                // la vigilance couvre aussi derrière et sur les flancs : impossible d'esquiver un gardien
+                const st = { x: e.x, y: e.y, face: e.facing, def: e };
+                [[-1, 0], [1, 0], [0, -1], [0, 1], [-GUARD_SIGHT, 0], [GUARD_SIGHT, GUARD_SIGHT]].forEach(([dx, dy]) =>
+                    expect(inFront(st, GUARD_SIGHT, e.x + dx, e.y + dy)).toBe(true));
+                expect(inFront(st, GUARD_SIGHT, e.x + GUARD_SIGHT + 1, e.y)).toBe(false);
                 expect(e.group).toBe(gymGuardsGroup(t.id));
                 expect(e.facing.dy).toBe(0);                      // regarde vers l'allée centrale
                 expect(e.facing.dx).toBe(e.x < 7 ? 1 : -1);
