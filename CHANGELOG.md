@@ -1,3 +1,9 @@
+## [2.104.0](https://github.com/niafrond/niafrond.github.io/compare/v2.103.1...v2.104.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** animation des sorts très coûteux sur tout le plateau ([#512](https://github.com/niafrond/niafrond.github.io/issues/512)) ([31776dd](https://github.com/niafrond/niafrond.github.io/commit/31776dd6b74e42d8d3bcf01b0d567de866b3d22f))
+
 ## [2.103.1](https://github.com/niafrond/niafrond.github.io/compare/v2.103.0...v2.103.1) (2026-10-20)
 
 ### Bug Fixes
