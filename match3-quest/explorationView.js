@@ -1064,11 +1064,14 @@ export function createExplorationView(cfg) {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         // Défilement entre deux cartes : ancienne image qui sort, nouvelle carte qui entre (poussée dans le sens de la marche).
         const sp = slideProgress(now);
+        let slideX = 0, slideY = 0;   // décalage de la carte pendant le défilement (repère pour ne dessiner que ce qui est à l'écran)
         if (slide) {
             const d = DIRECTIONS[slide.dir === 'north' ? 'up' : slide.dir === 'south' ? 'down' : slide.dir === 'west' ? 'left' : 'right'] || { dx: 0, dy: 0 };
             const ease = 1 - (1 - sp) * (1 - sp);
             ctx.drawImage(slide.snap, -d.dx * vw * ease, -d.dy * vh * ease, vw, vh);
-            ctx.translate(d.dx * vw * (1 - ease), d.dy * vh * (1 - ease));
+            slideX = d.dx * vw * (1 - ease);
+            slideY = d.dy * vh * (1 - ease);
+            ctx.translate(slideX, slideY);
         }
 
         // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran
@@ -1087,6 +1090,12 @@ export function createExplorationView(cfg) {
         const oy = follow(mapH, availH, HUD_TOP, vis.cy ?? vis.py);
         cam = { ox, oy, tile, vw };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
+        // La carte (jusqu'à 48 colonnes) déborde de l'écran : tout ce qui est hors champ (avec `margin` cases de marge pour les grands sprites
+        // et les étiquettes) n'est pas dessiné. Rendu identique, beaucoup moins d'appels canvas.
+        const inView = (x, y, w = 1, h = 1, margin = 1) => {
+            const px = ox + x * tile + slideX, py = oy + y * tile + slideY;
+            return px + (w + margin) * tile >= 0 && px - margin * tile <= vw && py + (h + margin) * tile >= 0 && py - margin * tile <= vh;
+        };
 
         const level = cfg.getPlayerLevel();
         const aura = X.getAuraTiles(session);
@@ -1095,6 +1104,7 @@ export function createExplorationView(cfg) {
         const grids = gridsOf(screen);
         const isLiquidAt = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && grids.liq[y * screen.w + x] === 1;
         const cell = (x, y, fill, inset = 0) => {
+            if (!inView(x, y)) return;
             const p = P(x, y);
             ctx.fillStyle = fill;
             ctx.fillRect(p.x + inset, p.y + inset, tile - inset * 2, tile - inset * 2);
@@ -1114,6 +1124,7 @@ export function createExplorationView(cfg) {
         // Parties animées : reflets des liquides et zones de vigilance qui pulsent
         const liquidCells = getLiquidCells(screen, inRects);
         liquidCells.forEach(([x, y]) => {
+            if (!inView(x, y)) return;
             const shimmer = 0.10 + 0.10 * Math.sin(now / 500 + x * 1.7 + y * 1.1);
             cell(x, y, `rgba(255,255,255,${shimmer.toFixed(3)})`, tile * 0.08);
         });
@@ -1129,7 +1140,7 @@ export function createExplorationView(cfg) {
         ctx.strokeStyle = `rgba(220,38,38,${(0.35 + 0.25 * pulse).toFixed(3)})`;
         aura.forEach(key => {
             const [x, y] = key.split(',').map(Number);
-            if (isLiquidAt(x, y)) return;
+            if (isLiquidAt(x, y) || !inView(x, y)) return;
             const p = P(x, y);
             ctx.strokeRect(p.x + 0.75, p.y + 0.75, tile - 1.5, tile - 1.5);
         });
@@ -1142,7 +1153,7 @@ export function createExplorationView(cfg) {
             const fx = Math.abs(f.dx) >= Math.abs(f.dy) ? Math.sign(f.dx) : 0;
             const fy = fx ? 0 : (Math.sign(f.dy) || 1);
             X.auraCellsOf(session, e).forEach(({ x, y }) => {
-                if ((x === e.x && y === e.y) || isLiquidAt(x, y)) return;
+                if ((x === e.x && y === e.y) || isLiquidAt(x, y) || !inView(x, y)) return;
                 const c = P(x + 0.5, y + 0.5), a = tile * 0.14;
                 ctx.beginPath();
                 ctx.moveTo(c.x - fy * a - fx * a, c.y - fx * a - fy * a);
@@ -1251,6 +1262,7 @@ export function createExplorationView(cfg) {
         });
         items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
         items.sort((a, b) => a.depth - b.depth);
+        const drawItems = items.filter(it => it.kind === 'player' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : inView(it.x, it.y, 1, 1, 3)));
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
         const houseMk = X.houseMarkers(session);
@@ -1268,7 +1280,7 @@ export function createExplorationView(cfg) {
             ctx.ellipse(c.x, c.y + tile * 0.3, tile * (0.42 + 0.05 * pulse), tile * 0.17, 0, 0, Math.PI * 2);
             ctx.stroke();
         });
-        items.forEach(it => {
+        drawItems.forEach(it => {
             const c = P(it.x + 0.5, it.y + 0.5);
             switch (it.kind) {
                 case 'building': {

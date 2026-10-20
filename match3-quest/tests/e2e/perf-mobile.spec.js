@@ -98,6 +98,27 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         expect(c.blockingMs).toBeLessThan(2500);
     });
 
+    test('exploration : sur une grande zone sauvage, seul ce qui est à l\'écran est dessiné', async ({ page, context }) => {
+        await openGame(page, context);
+        await enterExploration(page);
+        // Zone sauvage de 48×24 cases (≈ 1 150 cases, dont beaucoup hors écran sur un téléphone) : on y place le héros puis on recharge
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('player'));
+            Object.assign(p.exploration, { screenId: 'rizieres_wild', x: 1, y: 11 });
+            localStorage.setItem('player', JSON.stringify(p));
+        });
+        await page.reload();
+        await page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
+        await page.waitForSelector('#explore-canvas', { state: 'visible' });
+        await page.waitForTimeout(2500);
+        await resetCounters(page);
+        await page.waitForTimeout(3000);
+        const c = await page.evaluate(() => window.__perf);
+        expect(c.frames).toBeGreaterThan(10);
+        // Mesuré sur cette zone : 315 fillRect / image avant le découpage hors écran, 46 après ; plafond large
+        expect(c.fillRect / c.frames).toBeLessThan(150);
+    });
+
     test('exploration : la carte n\'est plus redessinée à pleine cadence sous un modal ni sous une cinématique', async ({ page, context }) => {
         await openGame(page, context);
         await enterExploration(page);
