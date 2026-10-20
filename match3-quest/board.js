@@ -204,10 +204,15 @@ function getMaxTileSizeFromViewport(boardDiv){
     const battleResultScreen = document.getElementById('battle-result-screen');
     // Paysage : les sorts sont dans les colonnes latérales, pas sous la grille
     const spellsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(spellsContainer);
-    const resultHeight = getOuterBlockSize(battleResultScreen) + getOuterBlockSize(document.getElementById('combat-controls'));
+    // Paysage : les boutons de combat flottent en bas de la colonne joueur, ils ne prennent pas de hauteur à la grille
+    const controlsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(document.getElementById('combat-controls'));
+    const resultHeight = getOuterBlockSize(battleResultScreen) + controlsHeight;
     // Paysage : la pastille de niveau (fixe, en bas de l'écran) ne doit pas recouvrir les boutons de combat
     const hud = isLandscapeLayout() ? document.getElementById('level-hud') : null;
-    const hudRect = hud && hud.offsetParent !== null ? hud.getBoundingClientRect() : null;
+    const hudBox = hud && hud.offsetParent !== null ? hud.getBoundingClientRect() : null;
+    const boardBox = boardDiv.getBoundingClientRect();
+    // Seulement si elle passe sous la grille (sur écran bas elle est rangée dans la colonne ennemi)
+    const hudRect = hudBox && hudBox.left < boardBox.right && hudBox.right > boardBox.left ? hudBox : null;
     const bottomSafety = (hudRect ? 12 : 8) + (hudRect && hudRect.height > 0 ? Math.max(0, viewportHeight - hudRect.top) : 0);
 
     const availableBoardHeight = viewportHeight - top - spellsHeight - resultHeight - bottomSafety;
