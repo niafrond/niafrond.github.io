@@ -302,29 +302,20 @@ function init() {
         const modal = document.getElementById('worldmap-modal');
         const container = document.getElementById('worldmap-selection');
         if(!modal || !container) return;
-        mountWorldMap(container, worldZones, {
-            level: player.level,
-            visitedIds: player.worldMap?.visitedZoneIds || [],
-            currentId: exploration.getCurrentRegion(),
-            heroUri: spriteUri(heroSprite(player.class)),
-            requireVisit: true
-        }, zone => {
-            modal.classList.remove('active');
-            const screenId = REGION_ENTRY_SCREEN[zone.id];
-            if(screenId) exploration.teleportToScreen(screenId);
-        });
-        // Voyage rapide : pierres de voyage activées, groupées par région.
-        const stones = exploration.getTravelList();
-        if(stones.length) {
-            const panel = document.createElement('div');
-            panel.className = 'worldmap-travel';
-            panel.innerHTML = `<h4>${icon('stone')} Voyage rapide</h4>`;
-            const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
+        // Voyage rapide : seulement depuis une borne de voyage ; on choisit d'abord un biome, puis une de ses pierres.
+        const canTravel = exploration.canFastTravel();
+        const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
+        const panel = document.createElement('div');
+        panel.className = 'worldmap-travel';
+        const showStones = zone => {
+            const stones = exploration.getTravelList().filter(w => w.region === zone.id);
+            panel.innerHTML = `<h4>${icon('stone')} Voyage rapide · ${zoneName[zone.id] || zone.id}</h4>`;
+            if(!stones.length) panel.insertAdjacentHTML('beforeend', '<p>Aucune pierre de voyage activée dans ce biome.</p>');
             stones.forEach(w => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'worldmap-travel-btn';
-                btn.textContent = `${zoneName[w.region] || w.region} · ${w.screenName}`;
+                btn.textContent = w.screenName;
                 btn.disabled = w.current;
                 btn.addEventListener('click', () => {
                     modal.classList.remove('active');
@@ -332,8 +323,18 @@ function init() {
                 });
                 panel.appendChild(btn);
             });
-            container.appendChild(panel);
-        }
+        };
+        panel.innerHTML = canTravel
+            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.</p>`
+            : `<h4>${icon('stone')} Voyage rapide</h4><p>Le voyage rapide n'est possible que depuis une borne de voyage.</p>`;
+        mountWorldMap(container, worldZones, {
+            level: player.level,
+            visitedIds: player.worldMap?.visitedZoneIds || [],
+            currentId: exploration.getCurrentRegion(),
+            heroUri: spriteUri(heroSprite(player.class)),
+            requireVisit: true
+        }, zone => { if(canTravel) showStones(zone); });
+        container.appendChild(panel);
         modal.classList.add('active');
     };
     document.getElementById('worldmap-close-btn')?.addEventListener('click', () => {

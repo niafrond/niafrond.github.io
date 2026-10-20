@@ -1458,9 +1458,16 @@ export function waypointList(session) {
             || (kindRank[a.kind] ?? 2) - (kindRank[b.kind] ?? 2));
 }
 
-// Voyage rapide : impossible vers une pierre non activée ; arrivée à côté de la pierre.
+// Le héros se tient à côté d'une borne de voyage (la pierre de l'écran courant) : seul endroit d'où l'on peut voyager.
+export function nearWaypoint(session) {
+    const wp = currentScreen(session)?.waypoint;
+    return Boolean(wp) && Math.max(Math.abs(wp.x - session.data.x), Math.abs(wp.y - session.data.y)) <= 2;
+}
+
+// Voyage rapide : seulement depuis une borne de voyage, impossible vers une pierre non activée ; arrivée à côté de la pierre.
 export function fastTravel(session, screenId) {
     const screen = session.screens[screenId];
+    if (!nearWaypoint(session)) return false;
     if (!screen?.waypoint || !session.data.waypoints.includes(screenId)) return false;
     return enterScreen(session, screenId, screen.waypoint.spot || screen.spawn);
 }

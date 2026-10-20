@@ -5,7 +5,7 @@ import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, bossEase, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
-    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
+    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, nearWaypoint, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
     AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
@@ -935,6 +935,13 @@ describe('déplacement et zones de vigilance', () => {
         expect(waypointList(t).map(w => w.screenId)).toEqual(['rizieres']);
         enterScreen(t, 'rizieres_village', SCREENS.rizieres_village.spawn);   // entrer dans un village découvre sa pierre
         expect(waypointList(t).map(w => w.screenId)).toEqual(['rizieres_village', 'rizieres']);
+        // le voyage rapide exige d'être à une borne de voyage
+        const far = SCREENS.rizieres_village.waypoint;
+        t.data.x = 0; t.data.y = 0;
+        expect(nearWaypoint(t)).toBe(false);
+        expect(fastTravel(t, 'rizieres')).toBe(false);
+        t.data.x = far.x; t.data.y = far.y + 1;
+        expect(nearWaypoint(t)).toBe(true);
         expect(fastTravel(t, 'rizieres')).toBe(true);
         expect(t.data.screenId).toBe('rizieres');
         expect(fastTravel(t, 'fleuve_wild')).toBe(false);   // pierre non découverte

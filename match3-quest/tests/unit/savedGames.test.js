@@ -341,6 +341,13 @@ describe('déplacements et voyage sur une sauvegarde avancée', () => {
         const regionRank = r => REGIONS.indexOf(r);
         for (let i = 1; i < list.length; i++) expect(regionRank(list[i].region)).toBeGreaterThanOrEqual(regionRank(list[i - 1].region));
         const first = list[0];
+        // hors borne : refusé ; à côté d'une borne : possible
+        s.data.x = 0; s.data.y = 0;
+        expect(X.fastTravel(s, first.screenId)).toBe(false);
+        const stoneScreen = list.find(w => w.screenId !== first.screenId) || first;
+        X.enterScreen(s, stoneScreen.screenId, X.currentScreen(s).spawn);
+        const wp = s.screens[stoneScreen.screenId].waypoint;
+        s.data.x = wp.x; s.data.y = wp.y + 1;
         expect(X.fastTravel(s, first.screenId)).toBe(true);
         expect(s.data.screenId).toBe(first.screenId);
     });
