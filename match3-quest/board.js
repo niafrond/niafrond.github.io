@@ -186,15 +186,17 @@ function getOuterBlockSize(element){
     return rect.height + marginTop + marginBottom;
 }
 
-// Colonnes latérales (joueur / ennemi) réservées en paysage, rail d'onglets compris
-const LANDSCAPE_SIDE_RESERVE = 460;
+// Paysage : la grille occupe les 2/3 de la largeur de l'écran (le tiers restant sert aux colonnes joueur / ennemi)
+const LANDSCAPE_BOARD_WIDTH_RATIO = 2 / 3;
 
 function isLandscapeLayout(){
     return Boolean(typeof window !== 'undefined' && window.matchMedia?.('(orientation: landscape)').matches);
 }
 
 function getMaxTileSizeFromViewport(boardDiv){
-    const top = Math.max(0, boardDiv.getBoundingClientRect().top);
+    // Paysage : la grille est centrée dans sa rangée, son propre haut ne dit rien ; on part du haut de la zone de combat
+    const topRef = isLandscapeLayout() ? (document.getElementById('tab-combat') || boardDiv) : boardDiv;
+    const top = Math.max(0, topRef.getBoundingClientRect().top);
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
     if(viewportHeight <= 0) return Infinity;
 
@@ -202,8 +204,16 @@ function getMaxTileSizeFromViewport(boardDiv){
     const battleResultScreen = document.getElementById('battle-result-screen');
     // Paysage : les sorts sont dans les colonnes latérales, pas sous la grille
     const spellsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(spellsContainer);
-    const resultHeight = getOuterBlockSize(battleResultScreen) + getOuterBlockSize(document.getElementById('combat-controls'));
-    const bottomSafety = 8;
+    // Paysage : les boutons de combat flottent en bas de la colonne joueur, ils ne prennent pas de hauteur à la grille
+    const controlsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(document.getElementById('combat-controls'));
+    const resultHeight = getOuterBlockSize(battleResultScreen) + controlsHeight;
+    // Paysage : la pastille de niveau (fixe, en bas de l'écran) ne doit pas recouvrir les boutons de combat
+    const hud = isLandscapeLayout() ? document.getElementById('level-hud') : null;
+    const hudBox = hud && hud.offsetParent !== null ? hud.getBoundingClientRect() : null;
+    const boardBox = boardDiv.getBoundingClientRect();
+    // Seulement si elle passe sous la grille (sur écran bas elle est rangée dans la colonne ennemi)
+    const hudRect = hudBox && hudBox.left < boardBox.right && hudBox.right > boardBox.left ? hudBox : null;
+    const bottomSafety = (hudRect ? 12 : 8) + (hudRect && hudRect.height > 0 ? Math.max(0, viewportHeight - hudRect.top) : 0);
 
     const availableBoardHeight = viewportHeight - top - spellsHeight - resultHeight - bottomSafety;
     if(availableBoardHeight <= 0) return 1;
@@ -231,12 +241,13 @@ function syncBoardTileSize(){
     // Mobile en portrait : la grille occupe toute la largeur (priorité sur la hauteur : la page défile au besoin).
     const fullWidth = Boolean(window.matchMedia?.('(orientation: portrait) and (max-width: 820px)').matches);
     const landscape = !fullWidth && isLandscapeLayout();
-    const widthBudget = Math.min(
-        parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
-        viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
-        landscape && viewportWidth > 0 ? Math.max(120, viewportWidth - LANDSCAPE_SIDE_RESERVE) : Number.POSITIVE_INFINITY,
-        980
-    );
+    const widthBudget = landscape && viewportWidth > 0
+        ? Math.floor(viewportWidth * LANDSCAPE_BOARD_WIDTH_RATIO)
+        : Math.min(
+            parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
+            viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
+            980
+        );
 
     if(!Number.isFinite(widthBudget) || widthBudget <= 0) return;
 
