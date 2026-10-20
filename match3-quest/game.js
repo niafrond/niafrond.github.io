@@ -1831,6 +1831,8 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         const r = spellsBox.getBoundingClientRect();
         Object.assign(caption.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
         document.body.appendChild(caption);
+        // Le plateau peut être redessiné (overlay retiré sans passer par finishOverlay) : la légende ne doit jamais survivre à l'overlay.
+        const watch = setInterval(() => { if(!overlay.isConnected) { caption.remove(); clearInterval(watch); } }, 100);
     }
 
     const finishOverlay = () => {
