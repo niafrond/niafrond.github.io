@@ -8,7 +8,8 @@
  * Usage (WSL, Node 22) : node tools/pack-ultimate-sequences.mjs [--only=ultimateFiveElements,…] [--fps=24] [--cols=16]
  * Après un changement de planches : incrémenter ULTIMATE_ART_VERSION (ultimateCinematics.js).
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { createRequire } from 'module';
@@ -38,9 +39,14 @@ for (const id of IDS) {
     if (p.width !== W || p.height !== H) throw new Error(`${id}/${f} : taille ${p.width}×${p.height} ≠ ${W}×${H}`);
     PNG.bitblt(p, sheet, 0, 0, W, H, (n % COLS) * W, ((n / COLS) | 0) * H);
   });
-  writeFileSync(join(GAME, 'sprites', 'ultimates', `${id}-seq.png`), PNG.sync.write(sheet));
+  const out = join(GAME, 'sprites', 'ultimates', `${id}-seq.png`);
+  writeFileSync(out, PNG.sync.write(sheet));
+  // PNG indexé (Pillow, WSL) : les images sont déjà quantifiées (≈ 50 couleurs) → même rendu, ≈ 4× plus léger. Sans Pillow : PNG RGBA conservé.
+  try {
+    execFileSync('python3', ['-c', 'import sys;from PIL import Image;im=Image.open(sys.argv[1]).convert("RGB");assert len(im.getcolors(1<<24))<=256;im.quantize(colors=256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE).save(sys.argv[1],optimize=True)', out]);
+  } catch { console.log(`     (${id} : indexation ignorée — Pillow absent ou plus de 256 couleurs)`); }
   index[`${id}-seq`] = { frames: files.length, fps: FPS, size: [W, H], cols: COLS };
-  packed++; console.log(`OK   ${id} : ${files.length} images (${(files.length / FPS).toFixed(1)} s), planche ${W * COLS}×${H * rows}`);
+  packed++; console.log(`OK   ${id} : ${files.length} images (${(files.length / FPS).toFixed(1)} s), planche ${W * COLS}×${H * rows}, ${(statSync(out).size / 1e6).toFixed(1)} Mo`);
 }
 writeFileSync(indexPath, JSON.stringify(index, null, 2) + '\n');
 console.log(`Terminé : ${packed} séquence(s) rangée(s)`);
