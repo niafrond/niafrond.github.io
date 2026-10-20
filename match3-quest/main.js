@@ -2,7 +2,7 @@ import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
 import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
-import { rollStuffDrop, CHEST_STUFF_DROP } from "./stuff.js";
+import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById } from "./stuff.js";
 import "./stuffView.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
@@ -14,6 +14,7 @@ import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenComplete
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
+import { initCompare } from "./compareView.js";
 import { bindSecretTrigger } from "./secretMenu.js";
 import { renderMerchant } from "./shop.js";
 import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
@@ -394,6 +395,11 @@ function init() {
     if(effectsSelect) effectsSelect.value = getOption('effects');
     if(speedSelect) speedSelect.value = getOption('speed');
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
+    initCompare({
+        spell: id => player.availableSpells.find(s => s.id === id),
+        weapon: id => (player.weapons || []).find(w => w.id === id),
+        stuff: id => getStuffById(id)
+    });
     bindSecretTrigger(manaFlightBtn);   // 6 clics : menu secret (secretMenu.js)
     effectsSelect?.addEventListener('change', () => setOption('effects', effectsSelect.value));
     speedSelect?.addEventListener('change', () => setOption('speed', speedSelect.value));

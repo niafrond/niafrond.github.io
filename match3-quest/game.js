@@ -8,7 +8,8 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
-import { protectsFromBiome, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
+import { compareButtonHtml } from "./compareView.js";
+import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
@@ -212,7 +213,11 @@ function getUltimateTooltipHtml(entity, spell){
         + getSpellTooltipHtml(spell);
 }
 
-export function spellCostHtml(sp){
+export function spellCostHtml(sp, entity = null){
+    // Avec un lanceur : chaque couleur du coût d'un sort multi-mana est marquée atteinte (`met`) ou manquante (`unmet`).
+    if(entity && sp.cost && typeof sp.cost === 'object'){
+        return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${(entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}"><span class="mana-dot mana-${color}"></span>${amount}</span>`).join('<span class="cost-plus">+</span>');
+    }
     if(typeof sp.cost === 'number') return `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
     if(sp.cost && typeof sp.cost === 'object'){
         return Object.entries(sp.cost).map(([color, amount]) => `<span class="mana-dot mana-${color}"></span>${amount}`).join('<span class="cost-plus">+</span>');
@@ -1367,6 +1372,10 @@ export function updateStats(){
     const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
 
     const playerDiv=document.getElementById('player-stats');
+    if(playerDiv && !playerDiv.dataset.gearTipBound){
+        playerDiv.dataset.gearTipBound = '1';
+        bindTooltip(playerDiv, () => showPlayerGearTooltip(playerDiv), hideSpellTooltip);
+    }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
     const equippedUltimate = getEquippedUltimate(player);
@@ -2935,7 +2944,7 @@ export function createSpellButtons(){
         const healText = sp.heal ? ` - ${sp.heal} HP` : '';
         
         // Gérer l'affichage du coût (simple ou multiple)
-        const costHTML = spellCostHtml(sp);
+        const costHTML = spellCostHtml(sp, player);
         const hasEnoughMana = canEntityCastSpell(player, sp);
         markMultiManaSpell(btn, sp);
         
@@ -2945,6 +2954,8 @@ export function createSpellButtons(){
         `;
         if(player.level<sp.minLevel || !hasEnoughMana) {
             btn.classList.add('disabled');
+            // Sort multi-mana sans niveau manquant : les couleurs déjà atteintes restent en couleur (seules les autres sont grisées).
+            if(player.level >= sp.minLevel && spellColorsOf(sp).length > 1) btn.classList.add('spell-partial');
             btn.tabIndex = -1;
         } else {
             btn.onclick=()=>castSpell(sp.id);
@@ -3088,6 +3099,30 @@ function showSpellTooltip(button, spell) {
     placeTooltip(tooltip, button, 260);
 }
 
+// Équipement du joueur (arme, bouclier, stuff) : appui long sur sa carte en combat.
+function getPlayerGearTooltipHtml() {
+    const line = (label, text) => `<div class="spell-tooltip-line"><strong>${label} :</strong> ${text}</div>`;
+    const weapon = player.equippedWeapon;
+    const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+    let html = `<div class="spell-tooltip-title">${player.name || 'Hou Yi'}</div>`;
+    html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
+    html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
+    normalizeStuff(player);
+    Object.entries(STUFF_SLOT_LABELS).forEach(([slot, label]) => {
+        const piece = getStuffById(player.stuff[slot]);
+        html += line(label, piece ? piece.name : '—');
+    });
+    return html;
+}
+
+function showPlayerGearTooltip(targetEl) {
+    if(!targetEl) return;
+    const tooltip = ensureSpellTooltip();
+    tooltip.innerHTML = getPlayerGearTooltipHtml();
+    tooltip.classList.add('visible');
+    placeTooltip(tooltip, targetEl, 260);
+}
+
 function showItemTooltip(button, item, options = {}) {
     if(!button || !item) return;
     const tooltip = ensureSpellTooltip();
@@ -3221,6 +3256,8 @@ export function updateSpellsTab(){
                 </div>
                 <div class="spell-action" tabindex="0" onclick="window.unequipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.unequipSpell('${sp.id}');}">Retirer</div>
             `;
+            div.querySelector('.spell-content').insertAdjacentHTML('beforeend', compareButtonHtml('spell', sp.id));
+            bindSpellRowTooltip(div, sp);
             activeList.appendChild(div);
         });
     }
@@ -3254,9 +3291,16 @@ export function updateSpellsTab(){
                 </div>
                 <div class="spell-action ${canEquip ? '' : 'disabled'}" tabindex="${canEquip ? '0' : '-1'}" aria-disabled="${canEquip ? 'false' : 'true'}" ${canEquip ? `onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}"` : ''}>Équiper</div>
             `;
+            div.querySelector('.spell-content').insertAdjacentHTML('beforeend', compareButtonHtml('spell', sp.id));
+            bindSpellRowTooltip(div, sp);
             availableList.appendChild(div);
         });
     }
+}
+
+// Appui long (ou survol à la souris) sur un sort de la liste : affiche son effet.
+function bindSpellRowTooltip(div, sp){
+    bindTooltip(div, () => showSpellTooltip(div, sp), hideSpellTooltip);
 }
 
 // Choix de l'ultime : un seul, le seul lançable en combat (en cliquant sur la jauge de rage pleine).
@@ -3765,6 +3809,7 @@ export function updateWeaponsTab(){
             </div>
             <button class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>
         `;
+        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('weapon', weapon.id));
         equippedDiv.appendChild(div);
     };
     if(!player.equippedWeapon){
@@ -3809,6 +3854,7 @@ export function updateWeaponsTab(){
                 ${locked ? '' : `<button class="weapon-action" ${isLeft || isRight || leftBlocked ? 'disabled' : ''} title="${weapon.twoHanded ? 'Arme à deux mains' : ''}" onclick="window.equipWeapon('${weapon.id}', 'left')">${isLeft ? 'Main gauche' : 'Main gauche'}</button>`}
             </div>
         `;
+        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('weapon', weapon.id));
         availableList.appendChild(div);
     });
 
@@ -3817,6 +3863,8 @@ export function updateWeaponsTab(){
     updateItemButton();
 }
 
+
+const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
 
 // Boucliers (main gauche) et objets rechargeables (objet actif) : affichés dès l'achat,
 // non sélectionnables tant que le niveau requis n'est pas atteint.
@@ -3842,7 +3890,6 @@ function renderGearList(container){
             <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         section.appendChild(div);
     };
-    const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
     if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
@@ -3898,7 +3945,28 @@ export function updateInventoryTab(){
 
     inventoryList.innerHTML = '';
 
+    // Boucliers : celui qui est porté (main gauche) puis ceux du sac, sans quoi ils n'apparaîtraient nulle part ici.
+    const wornShield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+    const bagShields = (player.inventory || []).filter(item => item?.type === 'shield');
+    if(wornShield || bagShields.length > 0){
+        const section = document.createElement('div');
+        section.innerHTML = '<h3 class="shop-section-title">Bouclier</h3>';
+        const card = (it, badge) => {
+            const div = document.createElement('div');
+            div.className = 'item-card artifact-item';
+            div.style.borderLeft = `4px solid ${getRarityColor(it.rarity)}`;
+            div.innerHTML = `
+                <div class="item-header"><span class="item-name">${svgIcon('shield')} ${it.name}</span><div class="item-actions">${badge}</div></div>
+                <div class="item-description">${shieldStats(it)}${it.description ? ` — ${it.description}` : ''}</div>`;
+            section.appendChild(div);
+        };
+        if(wornShield) card(wornShield, '<span class="artifact-badge">Équipé</span>');
+        bagShields.forEach(it => card(it, '<span class="artifact-badge">Dans le sac</span>'));
+        inventoryList.appendChild(section);
+    }
+
     if(!player.inventory || !player.inventory.some(item => item.type !== 'shield')){
+        if(wornShield || bagShields.length > 0) return;
         inventoryList.innerHTML = `
             <div class="inventory-slot inventory-slot-empty">
                 <span class="slot-icon">${svgIcon('box')}</span>

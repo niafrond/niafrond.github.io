@@ -2,6 +2,7 @@
 
 import { player, gameState, log, saveUpdate, updateStats } from './game.js';
 import { getRarityColor } from './items.js';
+import { compareButtonHtml } from './compareView.js';
 import {
     STUFF_SLOTS, STUFF_SLOT_LABELS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL,
     getStuffById, describeStuff, equipStuff, unequipStuff, stuffTotals, normalizeStuff
@@ -23,6 +24,7 @@ function pieceCard(stuff, action) {
                 <span class="weapon-name">${escapeHtml(stuff.name)} <em class="merchant-rarity" style="color:${getRarityColor(stuff.rarity)}">${RARITY_LABEL[stuff.rarity] || ''}</em></span>
                 <span class="weapon-stats">${STUFF_SLOT_LABELS[stuff.slot]} • ${escapeHtml(describeStuff(stuff))} • Niv. ${stuff.minLevel}</span>
                 <span class="weapon-description">${escapeHtml(stuff.description)}${stuff.biomeProtect ? ` <strong>Au combat dans ce biome, ${escapeHtml(BIOME_PROTECTION_TEXT[stuff.biomeProtect])}.</strong>` : ''}</span>
+                ${compareButtonHtml('stuff', stuff.id)}
             </div>
             ${button}
         </div>`;
