@@ -48,6 +48,8 @@ export function buildCompareHtml(kind, a, b) {
 
 let selection = null;   // { kind, id } : premier élément choisi
 let resolvers = {};
+let equipActions = {};   // kind -> id => équipe l'objet (ou ouvre le choix du remplacement)
+let equipState = {};     // kind -> id => { label, disabled }
 
 function refreshButtons() {
     document.querySelectorAll('.compare-btn').forEach(btn => {
@@ -64,8 +66,18 @@ function showOverlay(kind, a, b) {
     const el = document.createElement('div');
     el.id = 'compare-overlay';
     el.className = 'modal active compare-overlay';
-    el.innerHTML = `<div class="modal-content"><h2>Comparer des ${esc(KIND_LABEL[kind])}s</h2>${buildCompareHtml(kind, a, b)}<div class="modal-actions"><button class="primary" type="button">Fermer</button></div></div>`;
-    el.addEventListener('click', e => { if (e.target === el || e.target.closest('.modal-actions button')) closeOverlay(); });
+    // Ligne d'actions : un bouton « Équiper » (ou « Remplacer » quand il n'y a plus de place) par colonne.
+    const equipCell = o => {
+        const st = equipState[kind]?.(o.id) || { label: 'Équiper', disabled: false };
+        return `<td><button type="button" class="weapon-action cmp-equip" data-cmp-equip="${esc(o.id)}"${st.disabled ? ' disabled' : ''}>${esc(st.label)}</button></td>`;
+    };
+    const table = buildCompareHtml(kind, a, b).replace('</tbody>', `<tr class="cmp-actions"><th scope="row"></th>${equipCell(a)}${equipCell(b)}</tr></tbody>`);
+    el.innerHTML = `<div class="modal-content"><h2>Comparer des ${esc(KIND_LABEL[kind])}s</h2>${table}<div class="modal-actions"><button class="primary" type="button">Fermer</button></div></div>`;
+    el.addEventListener('click', e => {
+        const eq = e.target.closest('[data-cmp-equip]');
+        if (eq && !eq.disabled) { closeOverlay(); equipActions[kind]?.(eq.dataset.cmpEquip); return; }
+        if (e.target === el || e.target.closest('.modal-actions button')) closeOverlay();
+    });
     document.body.appendChild(el);
 }
 
@@ -84,8 +96,10 @@ export function onCompareClick(kind, id) {
 export const compareButtonHtml = (kind, id) =>
     `<button type="button" class="compare-btn" data-compare-kind="${esc(kind)}" data-compare-id="${esc(id)}" aria-pressed="false" title="Comparer avec un autre ${esc(KIND_LABEL[kind])} (cliquez sur « Comparer » d'un second)">Comparer</button>`;
 
-export function initCompare(r) {
+export function initCompare(r, equip = {}) {
     resolvers = r;
+    equipActions = equip.actions || {};
+    equipState = equip.state || {};
     document.addEventListener('click', e => {
         const btn = e.target.closest?.('.compare-btn');
         if (!btn) return;

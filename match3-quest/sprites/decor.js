@@ -65,6 +65,14 @@ const D = {
         `<path d="M26 12 Q20 6 26 2 M34 12 Q38 6 34 0" fill="none" stroke="#9aa0aa" stroke-width="2"/>`,
     wave: () => `<path d="M4 50 Q4 30 22 26 Q40 24 42 38 Q36 32 30 36 Q26 42 34 46 Q46 50 60 40 L60 58 L4 58Z" fill="#3a8ad0"/>` +
         `<path d="M22 26 Q34 22 40 32 Q32 28 28 32" fill="#dcf0fa" ${N}/><path d="M8 50 Q18 46 28 52 Q40 56 56 48" fill="none" stroke="#dcf0fa" stroke-width="2"/>`,
+    // Coquillages échoués sur le sable (décors fixes de la côte).
+    shell: () => `<path d="M32 56 L10 40 Q6 24 18 16 Q32 8 46 16 Q58 24 54 40Z" fill="#f2c7b0"/>` +
+        `<path d="M32 56 L18 16 M32 56 L26 11 M32 56 L32 10 M32 56 L38 11 M32 56 L46 16" fill="none" stroke="#c98f7a" stroke-width="1.8"/>` +
+        `<path d="M26 56 L38 56 L36 60 L28 60Z" fill="#d9a58f"/><path d="M12 38 Q32 46 52 38" fill="none" stroke="#fbe6da" stroke-width="2"/>`,
+    conch: () => `<path d="M12 50 Q10 36 24 30 Q22 18 34 14 Q44 12 46 22 Q54 24 54 34 Q56 48 40 54 Q24 60 12 50Z" fill="#f4dcc0"/>` +
+        `<path d="M40 54 Q54 48 52 34 Q50 40 42 40 Q36 40 36 34" fill="none" stroke="#d9a57a" stroke-width="2"/>` +
+        `<path d="M24 30 Q32 32 34 26 Q38 20 44 24 M20 44 Q30 48 38 44" fill="none" stroke="#d9a57a" stroke-width="1.8"/>` +
+        `<path d="M34 14 Q40 8 44 12" fill="none" stroke="#f4dcc0" stroke-width="3"/>`,
     drop: () => `<path d="M32 4 Q52 30 52 40 Q52 58 32 58 Q12 58 12 40 Q12 30 32 4Z" fill="#4a9ad8"/>` +
         `<path d="M22 38 Q22 30 28 24" fill="none" stroke="#dcf0fa" stroke-width="3"/>`,
     tree: () => `<path d="M28 58 L29 36 L35 36 L36 58Z" fill="#8a5a33"/>` +

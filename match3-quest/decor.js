@@ -10,7 +10,7 @@ export const BIOME_DECOR = {
     storm: ['crag', 'deadtree', 'crag'],
     volcano: ['spire', 'rock', 'spire'],
     savanna: ['rice', 'rock', 'rice'],
-    coast: ['wave', 'rock', 'wave'],
+    coast: ['shell', 'rock', 'conch'],
     fusang: ['tree', 'deadtree', 'tree'],
     house: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'],
     cave: ['rock', 'stalagmite', 'rock'],
