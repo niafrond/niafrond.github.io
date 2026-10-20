@@ -299,5 +299,14 @@
       256
     ],
     "cols": 16
+  },
+  "ultimateEternalBastion-seq": {
+    "frames": 313,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
   }
 }
