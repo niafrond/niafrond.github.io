@@ -3287,3 +3287,4 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .stuff-summary { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-weight: 600; }
 .stuff-item .weapon-action { align-self: center; }
 .stuff-empty { opacity: 0.6; border-style: dashed; }
+.spell-fx-ic { width: .85em; height: .85em; opacity: .75; margin-left: .15em; }
