@@ -1835,13 +1835,12 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 
     const finishOverlay = () => {
         if(!overlay.parentNode) return;
-        if(caption) caption.classList.add('fade-out');
+        caption?.remove();   // la légende part en même temps que le clic « pour continuer » (ou la fin du délai)
         overlay.classList.add('fade-out');
         setTimeout(() => {
             if(overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
             }
-            caption?.remove();
             if(typeof onContinue === 'function') {
                 onContinue();
             }
