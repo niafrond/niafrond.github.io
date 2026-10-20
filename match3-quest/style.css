@@ -1154,6 +1154,11 @@ progress.enemy-bar::-webkit-progress-value {
     background: rgba(20, 20, 30, 0.92); border-radius: 8px; overflow: hidden;
     animation: content-appear 0.5s ease-out forwards;
 }
+.attack-caption-close {
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); pointer-events: auto; cursor: pointer;
+    min-width: 44px; min-height: 28px; padding: 0 10px; font-size: 18px; line-height: 1; color: white;
+    background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 6px;
+}
 .attack-caption.fade-out { opacity: 0; transition: opacity 0.5s ease-out; }
 .attack-caption .attack-title { font-size: clamp(16px, 2.4vw, 28px); margin: 4px 0; }
 .attack-caption .attack-damage, .attack-caption .attack-heal { font-size: clamp(24px, 4vw, 48px); margin: 4px 0; }
