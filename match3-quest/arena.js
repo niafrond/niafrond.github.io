@@ -214,7 +214,7 @@ function buildGym(tier) {
         const left = i % 2 === 0;
         const y = guardY(i);
         enemies.push({ id: arenaGuardId(tier.id, i + 1), templateId: guardTemplate(tier.id, i + 1), kind: 'sentinel',
-            x: left ? 4 : 9, y, facing: { dx: left ? 1 : -1, dy: 0 }, sight: GUARD_SIGHT, group: gymGuardsGroup(tier.id),
+            x: left ? 4 : 9, y, facing: { dx: left ? 1 : -1, dy: 0 }, sight: GUARD_SIGHT, allAround: true, group: gymGuardsGroup(tier.id),
             name: `${tier.guard} — combat ${i + 1}/${tier.waves}`, permanent: true, arena: { tier: tier.id, wave: i + 1 } });
         // Rochers décoratifs derrière chaque gardien, contre le mur.
         obstacles.push(left ? [1, y, 2, 1] : [11, y, 2, 1]);

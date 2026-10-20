@@ -196,6 +196,7 @@ const chebyshev = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - 
 export function inFront(st, r, x, y) {
     if (x === st.x && y === st.y) return true;
     if (r <= 0 || chebyshev(st.x, st.y, x, y) > r) return false;
+    if (st.def?.allAround) return true;   // gardien d'arène : vigilance à 360°, impossible de l'esquiver par derrière
     return approachOf(st.face, st, { x, y }) === FACE_FRONT;
 }
 
