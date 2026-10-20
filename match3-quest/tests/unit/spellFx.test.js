@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { setSpellFxIndex, spellFxHtml, spellFxIdForTitle, spellFxDurationMs } from '../../spellFx.js';
+import { bigScale, setSpellFxIndex, spellFxHtml, spellFxIdForTitle, spellFxDurationMs } from '../../spellFx.js';
 
 const index = JSON.parse(readFileSync(new URL('../../sprites/spellfx/index.json', import.meta.url), 'utf8'));
 const spells = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));
@@ -39,5 +39,17 @@ describe('spellFx', () => {
         expect(spellFxHtml('COUP D\'ÉPÉE')).toBeNull();
         setSpellFxIndex(null);
         expect(spellFxHtml('fireball')).toBeNull();
+    });
+
+    test('les sorts très chers (paliers 4-5) s\'étalent sur le plateau, les autres gardent leur taille', () => {
+        const big = Object.entries(index).find(([, e]) => e.tier === 5)[0];
+        const small = Object.entries(index).find(([, e]) => e.tier === 1)[0];
+        const sizeOf = h => parseInt(/--px:(\d+)px/.exec(h)[1], 10);
+        expect(sizeOf(spellFxHtml(big, 480))).toBeGreaterThan(sizeOf(spellFxHtml(big)));
+        expect(sizeOf(spellFxHtml(big, 480))).toBeLessThanOrEqual(480);
+        expect(sizeOf(spellFxHtml(big, 480))).toBeGreaterThan(480 - index[big].size);   // palier 5 : tout le plateau
+        expect(spellFxHtml(big, 480)).toContain('spellfx-big');
+        expect(spellFxHtml(small, 480)).toBe(spellFxHtml(small));
+        expect(bigScale(96, 480, 4, 1.5)).toBe(3);   // palier 4 : 75 % du plateau
     });
 });
