@@ -12,9 +12,10 @@ import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, get
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
-import { rechargeReusableItems } from "./items.js";
+import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
 import { initCompare } from "./compareView.js";
+import { getWeaponById } from "./weapons.js";
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
 import { bindSecretTrigger } from "./secretMenu.js";
 import { renderMerchant } from "./shop.js";
@@ -399,13 +400,20 @@ function init() {
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),
-        weapon: id => (player.weapons || []).find(w => w.id === id),
-        stuff: id => getStuffById(id)
+        weapon: id => (player.weapons || []).find(w => w.id === id) || getWeaponById(id),
+        stuff: id => getStuffById(id),
+        item: id => (player.inventory || []).find(i => i.id === id) || (player.equipment?.leftHand?.id === id ? player.equipment.leftHand : null) || allItems.find(i => i.id === id)
     }, {
         // « Équiper » depuis le comparateur ; sorts : « Remplacer » (fenêtre de choix) quand les emplacements sont pleins
         actions: {
             spell: id => window.equipSpell(id),
             weapon: id => window.equipWeapon(id, 'right'),
+            item: id => {
+                const index = (player.inventory || []).findIndex(i => i.id === id);
+                const it = player.inventory[index];
+                if(it?.type === 'shield') window.equipGear(index);
+                else if(it?.type === 'reusable') window.setActiveInventoryItem(index);
+            },
             stuff: id => {
                 const res = equipStuff(player, id);
                 log(res.message);
@@ -419,13 +427,23 @@ function init() {
                 : { label: player.activeSpells.length >= MAX_ACTIVE_SPELLS ? 'Remplacer' : 'Équiper', disabled: false },
             weapon: id => {
                 const w = (player.weapons || []).find(x => x.id === id);
+                if(!w) return { label: 'Non possédée', disabled: true };
                 return player.equippedWeapon?.id === id ? { label: 'Main droite', disabled: true }
-                    : { label: 'Équiper', disabled: !w || player.level < w.minLevel };
+                    : { label: player.equippedWeapon ? 'Remplacer' : 'Équiper', disabled: player.level < w.minLevel };
+            },
+            item: id => {
+                const it = (player.inventory || []).find(i => i.id === id);
+                if(player.equipment?.leftHand?.id === id) return { label: 'Équipé', disabled: true };
+                if(!it) return { label: 'Non possédé', disabled: true };
+                if(it.type !== 'shield' && it.type !== 'reusable') return { label: 'Passif', disabled: true };
+                const index = player.inventory.indexOf(it);
+                if(it.type === 'reusable') return { label: index === player.activeInventoryIndex ? 'Objet actif' : 'Choisir', disabled: index === player.activeInventoryIndex || player.level < (it.minLevel || 1) };
+                return { label: player.equipment?.leftHand?.type === 'shield' ? 'Remplacer' : 'Équiper', disabled: player.level < (it.minLevel || 1) };
             },
             stuff: id => {
                 const st = getStuffById(id);
                 return Object.values(player.stuff || {}).includes(id) ? { label: 'Porté', disabled: true }
-                    : { label: 'Équiper', disabled: !(player.stuffOwned || []).includes(id) || player.level < (st?.minLevel || 1) };
+                    : { label: st && player.stuff?.[st.slot] ? 'Remplacer' : 'Équiper', disabled: !(player.stuffOwned || []).includes(id) || player.level < (st?.minLevel || 1) };
             }
         }
     });

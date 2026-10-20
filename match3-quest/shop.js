@@ -6,6 +6,7 @@ import { getRarityIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry } from './merchants.js';
+import { compareButtonHtml } from './compareView.js';
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
 
 const SECTION_TITLES = {
@@ -42,6 +43,7 @@ function offerRow(offer, gold) {
                 <span class="weapon-name">${escapeHtml(obj.name)} <em class="merchant-rarity" style="color:${color}">${RARITY_LABEL[offer.rarity] || ''}</em></span>
                 <span class="weapon-stats">${stats}${levelText}</span>
                 <span class="weapon-description">${escapeHtml(obj.description || '')}</span>
+                ${offer.kind === 'mount' || offer.kind === 'torch' ? '' : compareButtonHtml(offer.kind === 'weapon' ? 'weapon' : offer.kind === 'stuff' ? 'stuff' : 'item', obj.id)}
             </div>
             <div class="shop-weapon-right">
                 <span class="shop-price-tag">${offer.price} ${svgIcon('coin')}</span>
@@ -61,6 +63,7 @@ function sellRow(entry) {
             <div class="weapon-details">
                 <span class="weapon-name">${escapeHtml(obj.name)} <em class="merchant-rarity" style="color:${color}">${RARITY_LABEL[entry.rarity] || ''}</em></span>
                 <span class="weapon-stats">${stats} • Niv. ${obj.minLevel}</span>
+                ${compareButtonHtml(entry.kind === 'weapon' ? 'weapon' : entry.kind === 'stuff' ? 'stuff' : 'item', obj.id)}
             </div>
             <div class="shop-weapon-right">
                 <span class="shop-price-tag">+${entry.price} ${svgIcon('coin')}</span>

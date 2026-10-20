@@ -2,7 +2,8 @@
 // Module d'affichage pur : les objets sont retrouvés par les résolveurs passés à initCompare (aucune dépendance à game.js).
 
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
-const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff' };
+const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff', item: 'objet' };
+const ITEM_TYPE_LABEL = { shield: 'Bouclier', reusable: 'Objet rechargeable', artifact: 'Relique', consumable: 'Consommable' };
 const SLOT_LABEL = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: 'Bague' };
 
 const costTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
@@ -26,6 +27,12 @@ export function compareRows(kind, o) {
         t('Emplacement', SLOT_LABEL[o.slot]), t('Rareté', RARITY_LABEL[o.rarity]),
         n('Attaque', o.atkBonus), n('Défense', o.defBonus), n('PV max', o.maxHp), n('Résistance poison (%)', o.poisonResist),
         n('Niveau requis', o.minLevel || 1, 'low'), t('Protège', o.biomeProtect)
+    ];
+    if (kind === 'item') return [
+        t('Type', ITEM_TYPE_LABEL[o.type] || o.type), t('Rareté', RARITY_LABEL[o.rarity]),
+        n('Défense', o.defense), n('Attaque', o.atkBonus), n('Absorbe', o.absorbDamage),
+        n('Charges', o.chargesPerCycle), n('Recharge (tours)', o.rechargeTurns, 'low'),
+        n('Niveau requis', o.minLevel || 1, 'low'), t('Effet', o.description)
     ];
     return [];
 }

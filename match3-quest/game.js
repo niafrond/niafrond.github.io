@@ -3937,6 +3937,7 @@ function renderGearList(container){
                 <span class="weapon-description">${it.description || ''}</span>
             </div>
             <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
+        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('item', it.id));
         section.appendChild(div);
     };
     if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
