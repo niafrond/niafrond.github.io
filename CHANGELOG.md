@@ -1,3 +1,9 @@
+## [2.99.0](https://github.com/niafrond/niafrond.github.io/compare/v2.98.0...v2.99.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** bouclier visible, comparaison, mana multimana et options du menu secret ([#505](https://github.com/niafrond/niafrond.github.io/issues/505)) ([6aeb72d](https://github.com/niafrond/niafrond.github.io/commit/6aeb72ddb4c8552330afc324adf42025ebe61649))
+
 ## [2.98.0](https://github.com/niafrond/niafrond.github.io/compare/v2.97.0...v2.98.0) (2026-10-20)
 
 ### Features
