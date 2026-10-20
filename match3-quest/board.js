@@ -186,8 +186,8 @@ function getOuterBlockSize(element){
     return rect.height + marginTop + marginBottom;
 }
 
-// Colonnes latérales (joueur / ennemi) réservées en paysage, rail d'onglets compris
-const LANDSCAPE_SIDE_RESERVE = 460;
+// Paysage : la grille occupe les 2/3 de la largeur de l'écran (le tiers restant sert aux colonnes joueur / ennemi)
+const LANDSCAPE_BOARD_WIDTH_RATIO = 2 / 3;
 
 function isLandscapeLayout(){
     return Boolean(typeof window !== 'undefined' && window.matchMedia?.('(orientation: landscape)').matches);
@@ -231,12 +231,13 @@ function syncBoardTileSize(){
     // Mobile en portrait : la grille occupe toute la largeur (priorité sur la hauteur : la page défile au besoin).
     const fullWidth = Boolean(window.matchMedia?.('(orientation: portrait) and (max-width: 820px)').matches);
     const landscape = !fullWidth && isLandscapeLayout();
-    const widthBudget = Math.min(
-        parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
-        viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
-        landscape && viewportWidth > 0 ? Math.max(120, viewportWidth - LANDSCAPE_SIDE_RESERVE) : Number.POSITIVE_INFINITY,
-        980
-    );
+    const widthBudget = landscape && viewportWidth > 0
+        ? Math.floor(viewportWidth * LANDSCAPE_BOARD_WIDTH_RATIO)
+        : Math.min(
+            parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
+            viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
+            980
+        );
 
     if(!Number.isFinite(widthBudget) || widthBudget <= 0) return;
 
@@ -264,7 +265,7 @@ function syncBoardTileSize(){
         }
     }
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
-    const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
+    const tileSize = Math.max(10, (fullWidth || landscape) ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
 }
 
