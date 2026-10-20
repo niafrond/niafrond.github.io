@@ -45,6 +45,13 @@ const WEAPON_ICONS = {
 };
 // Icône de la classe (sprites/icons) : affichée devant le nom des combattants et des sorts de classe.
 const CLASS_ICONS = { sorcerer: 'yinyang', assassin: 'bow', templar: 'shield', barbarian: 'axe' };
+// Pictogramme discret des sorts qui détruisent une ligne, une colonne, les deux ou toute une couleur.
+const SPELL_EFFECT_ICONS = {
+    sweepRow: 'sweepRow', sweepCol: 'sweepCol', destroyColumns: 'sweepCol',
+    sweepCross: 'sweepCross', starRain: 'sweepCross',
+    clearColor: 'sweepColor', destroyColor: 'sweepColor', destroyPurple: 'sweepColor'
+};
+const spellEffectIcon = sp => (SPELL_EFFECT_ICONS[sp.effect] ? svgIcon(SPELL_EFFECT_ICONS[sp.effect], 'spell-fx-ic') : '');
 const classIcon = classId => (CLASS_ICONS[classId] ? svgIcon(CLASS_ICONS[classId]) : '');
 const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
 const MANA_COLOR_META = {
@@ -1531,7 +1538,7 @@ export function updateEnemySpells(){
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
         const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
         div.innerHTML = `
-            <div class="spell-name">${spellClassIndicator} ${sp.name}</div>
+            <div class="spell-name">${spellClassIndicator} ${sp.name} ${spellEffectIcon(sp)}</div>
             <div class="spell-cost">${costDisplay}${damageText}${healText}</div>
         `;
         div.title = effectText;
@@ -2915,7 +2922,7 @@ export function createSpellButtons(){
         markMultiManaSpell(btn, sp);
         
         btn.innerHTML = `
-            <div class="spell-name">${sp.name}</div>
+            <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
             <div class="spell-cost">${costHTML}${damageText}${healText}</div>
         `;
         if(player.level<sp.minLevel || !hasEnoughMana) {
@@ -3191,7 +3198,7 @@ export function updateSpellsTab(){
             
             div.innerHTML = `
                 <div class="spell-content">
-                    <div class="spell-name">${sp.name}</div>
+                    <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
                     <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
                 </div>
                 <div class="spell-action" tabindex="0" onclick="window.unequipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.unequipSpell('${sp.id}');}">Retirer</div>
@@ -3224,7 +3231,7 @@ export function updateSpellsTab(){
             
             div.innerHTML = `
                 <div class="spell-content">
-                    <div class="spell-name">${sp.name}</div>
+                    <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
                     <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
                 </div>
                 <div class="spell-action ${canEquip ? '' : 'disabled'}" tabindex="${canEquip ? '0' : '-1'}" aria-disabled="${canEquip ? 'false' : 'true'}" ${canEquip ? `onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}"` : ''}>Équiper</div>
