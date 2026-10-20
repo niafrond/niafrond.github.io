@@ -45,6 +45,7 @@ export function resetRage(entity){
 }
 
 export function isRageFull(entity){
+    if(entity?.cheatMaxRage === true) return true;   // menu secret « rage toujours au max »
     return Math.floor(entity?.rage || 0) >= RAGE_MAX;
 }
 

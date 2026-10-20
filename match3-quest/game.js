@@ -136,6 +136,8 @@ export function getWeaponIcon(weaponType){
 // Indicateur porté par le joueur, non énumérable (jamais sauvegardé) : canEntityCastSpell doit rester autonome.
 export function setCheatFreeSpells(on){ Object.defineProperty(player, 'cheatFreeSpells', { value: !!on, enumerable: false, writable: true, configurable: true }); }
 export function isCheatFreeSpells(){ return player.cheatFreeSpells === true; }
+export function setCheatMaxRage(on){ Object.defineProperty(player, 'cheatMaxRage', { value: !!on, enumerable: false, writable: true, configurable: true }); }
+export function isCheatMaxRage(){ return player.cheatMaxRage === true; }
 
 export function canEntityCastSpell(entity, spell){
     if(!entity || !entity.mana || !spell) return false;
@@ -200,7 +202,7 @@ function spellCostEntries(sp){
 // (tronçon vide / pointillé = couleur manquante).
 function ultimateManaBarHtml(entity, spell){
     const parts = spellCostEntries(spell).map(([color, need]) => {
-        const have = entity?.mana?.[color] || 0;
+        const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
         const label = `${color} ${Math.min(have, need)}/${need}`;
         return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"></span>`;
@@ -211,7 +213,7 @@ function ultimateManaBarHtml(entity, spell){
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en mana avec le mana possédé, effet.
 function getUltimateTooltipHtml(entity, spell){
     const cost = spellCostEntries(spell).map(([color, need]) => {
-        const have = entity?.mana?.[color] || 0;
+        const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}"><span class="mana-dot mana-${color}"></span>${Math.min(have, need)}/${need}</span>`;
     }).join(' ');
     return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
