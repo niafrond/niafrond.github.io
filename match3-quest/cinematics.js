@@ -627,18 +627,28 @@ export async function playEndingAnimation() {
 // Défile sur fond de nuit étoilée après l'animation de fin ; un toucher ou une touche le passe. Résolue à la fin.
 export const CREDITS = [
     { type: 'title', text: 'La Légende de Hou Yi' },
-    { type: 'role', text: 'Développé, réalisé et scénarisé par' },
-    { type: 'name', text: 'Mickaël Fontaine' },
+    { role: 'Sur une idée originale de', names: ['Mickaël Fontaine'] },
+    { role: 'Développé, réalisé et scénarisé par', names: ['Mickaël Fontaine'] },
+    { role: "Inspiré librement des contes de Chang'e" },
+    { role: 'Assisté par', names: ['Claude (Anthropic)'] },
+    { role: 'Réalisé avec', names: ['ACE-Step', 'ComfyUI', 'Ollama'] },
+    { role: 'Idées et suggestions', names: ['Ethan', 'Luna'] },
+    { role: 'Tests (QA)', names: ['Ethan', 'Luna', 'Vanessa'] },
+    { type: 'thanks', text: "Merci à ma carte graphique d'avoir tenu le coup." },
     { type: 'thanks', text: "Merci d'avoir parcouru la légende jusqu'au bout." }
 ];
-const CREDITS_SECONDS = 22;
+const CREDITS_SECONDS = 40;
+
+const creditsHtml = c => c.type
+    ? `<p class="cine-credits-${c.type}">${c.text}</p>`
+    : `<div class="cine-credits-block"><p class="cine-credits-role">${c.role}</p>${(c.names || []).map(n => `<p class="cine-credits-name">${n}</p>`).join('')}</div>`;
 
 export function playCredits() {
     return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.className = 'cine-overlay cine-credits';
         overlay.innerHTML = `
-            <div class="cine-credits-roll" style="--credits-seconds:${CREDITS_SECONDS}s">${CREDITS.map(c => `<p class="cine-credits-${c.type}">${c.text}</p>`).join('')}</div>
+            <div class="cine-credits-roll" style="--credits-seconds:${CREDITS_SECONDS}s">${CREDITS.map(creditsHtml).join('')}</div>
             <div class="cine-skip">Toucher pour passer ►</div>`;
         document.body.appendChild(overlay);
         const roll = overlay.querySelector('.cine-credits-roll');

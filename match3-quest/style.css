@@ -2953,16 +2953,17 @@ body.dark-mode .tutorial-card {
     top: 0;
     display: flex;
     flex-direction: column;
-    gap: 9vh;
+    gap: 7vh;
     padding-top: 100vh;
     padding-bottom: 100vh;
     animation: cine-credits-scroll var(--credits-seconds, 22s) linear both;
     text-shadow: -3px 3px 0 #2a0f10, 1px 1px 0 #2a0f10, -1px -1px 0 #2a0f10;
 }
 .cine-credits p { margin: 0; }
+.cine-credits-block { display: flex; flex-direction: column; gap: 1.2vh; }
 .cine-credits-title { font-size: clamp(30px, 8vmin, 72px); line-height: 1.1; font-weight: 700; color: #e8b923; letter-spacing: 0.06em; }
 .cine-credits-role { font-size: clamp(14px, 3.2vmin, 26px); color: #f0d9a0; letter-spacing: 0.05em; }
-.cine-credits-name { font-size: clamp(26px, 6.4vmin, 56px); font-weight: 700; color: #fbe7b0; margin-top: -6vh !important; }
+.cine-credits-name { font-size: clamp(22px, 5.2vmin, 46px); font-weight: 700; color: #fbe7b0; }
 .cine-credits-thanks { font-size: clamp(13px, 2.8vmin, 22px); color: #f0d9a0; }
 @keyframes cine-credits-scroll { from { transform: translateY(0); } to { transform: translateY(-100%); } }
 .cine-credits.static .cine-credits-roll { position: static; animation: none; padding: 0; justify-content: center; height: 100%; }

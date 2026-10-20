@@ -73,10 +73,16 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
         expect(STORY_ENDING.length).toBeGreaterThan(0);
     });
 
-    test('le générique crédite Mickaël Fontaine (développement, réalisation, scénario)', () => {
-        const text = CREDITS.map(c => c.text).join(' ');
-        expect(text).toMatch(/Développé, réalisé et scénarisé par/);
-        expect(text).toMatch(/Mickaël Fontaine/);
+    test('le générique crédite l\'équipe, les outils et les remerciements', () => {
+        const text = CREDITS.map(c => [c.text, c.role, ...(c.names || [])].join(' ')).join(' ');
+        expect(text).toMatch(/Sur une idée originale de Mickaël Fontaine/);
+        expect(text).toMatch(/Développé, réalisé et scénarisé par Mickaël Fontaine/);
+        expect(text).toMatch(/Inspiré librement des contes de Chang'e/);
+        expect(text).toMatch(/Assisté par Claude/);
+        expect(text).toMatch(/ACE-Step ComfyUI Ollama/);
+        expect(CREDITS.find(c => c.role === 'Idées et suggestions').names).toEqual(['Ethan', 'Luna']);
+        expect(CREDITS.find(c => c.role === 'Tests (QA)').names).toEqual(['Ethan', 'Luna', 'Vanessa']);
+        expect(text).toMatch(/carte graphique/);
     });
 
     test('en Nouvelle Partie +, l\'arène est ouverte dès le début, même sans terrain visité', () => {
