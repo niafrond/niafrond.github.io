@@ -214,21 +214,23 @@ function ultimateManaBarHtml(entity, spell){
 function getUltimateTooltipHtml(entity, spell){
     const cost = spellCostEntries(spell).map(([color, need]) => {
         const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
-        return `<span class="ult-cost${have >= need ? '' : ' missing'}"><span class="mana-dot mana-${color}"></span>${Math.min(have, need)}/${need}</span>`;
+        return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
     }).join(' ');
     return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
         + `<div class="spell-tooltip-line">Mana : ${cost}</div>`
         + getSpellTooltipHtml(spell);
 }
 
+// Gomette de coût : disque de la couleur du mana avec la quantité écrite dedans.
+const costBadge = (color, text) => `<span class="cost-badge mana-${color}${color === 'yellow' ? ' cost-badge-light' : ''}" title="${color}">${text}</span>`;
 export function spellCostHtml(sp, entity = null){
     // Avec un lanceur : chaque couleur du coût d'un sort multi-mana est marquée atteinte (`met`) ou manquante (`unmet`).
     if(entity && sp.cost && typeof sp.cost === 'object'){
-        return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}"><span class="mana-dot mana-${color}"></span>${amount}</span>`).join('<span class="cost-plus">+</span>');
+        return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}">${costBadge(color, amount)}</span>`).join('');
     }
-    if(typeof sp.cost === 'number') return `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
+    if(typeof sp.cost === 'number') return costBadge(sp.color, sp.cost);
     if(sp.cost && typeof sp.cost === 'object'){
-        return Object.entries(sp.cost).map(([color, amount]) => `<span class="mana-dot mana-${color}"></span>${amount}`).join('<span class="cost-plus">+</span>');
+        return Object.entries(sp.cost).map(([color, amount]) => costBadge(color, amount)).join('');
     }
     return '';
 }
