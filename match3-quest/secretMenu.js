@@ -1,6 +1,6 @@
 // Menu secret : 6 clics sur « Particules de mana » (Options) l'ouvrent pour toute la session (jamais sauvegardé).
 // Permet de s'attribuer tous les stuffs, tous les sorts, toutes les armes et n'importe quel niveau.
-import { player, saveUpdate, log, updateStats, updateAvailableSpells, updateAvailableWeapons, createSpellButtons, createWeaponButton, updatePlayerStatsTab, grantStuffPiece, setCheatAllSpells, setCheatOneShot, isCheatOneShot } from "./game.js";
+import { player, saveUpdate, log, updateStats, updateAvailableSpells, updateAvailableWeapons, createSpellButtons, createWeaponButton, updatePlayerStatsTab, grantStuffPiece, setCheatAllSpells, setCheatOneShot, isCheatOneShot, setCheatFreeSpells, isCheatFreeSpells } from "./game.js";
 import { allStuff } from "./stuff.js";
 import { allWeapons } from "./weapons.js";
 import { MAX_LEVEL } from "./experience.js";
@@ -42,6 +42,7 @@ function buildModal() {
         <div class="options-row"><span>Toutes les armes</span><button id="secret-weapons-btn">Obtenir</button></div>
         <div class="options-row"><span>Tous les sorts</span><button id="secret-spells-btn">Débloquer</button></div>
         <div class="options-row"><span>One shot les ennemis</span><button id="secret-oneshot-btn" aria-pressed="false">Non</button></div>
+        <div class="options-row"><span>Sorts gratuits (sans mana)</span><button id="secret-free-btn" aria-pressed="false">Non</button></div>
         <div class="modal-actions"><button class="primary" id="secret-close-btn">Fermer</button></div>
     </div>`;
     document.body.appendChild(el);
@@ -74,10 +75,19 @@ function buildModal() {
         syncOneShot(el);
         log(`Menu secret : one shot ${isCheatOneShot() ? 'activé' : 'désactivé'}.`);
     });
+    $('secret-free-btn').addEventListener('click', () => {
+        setCheatFreeSpells(!isCheatFreeSpells());
+        syncOneShot(el);
+        createSpellButtons();
+        log(`Menu secret : sorts gratuits ${isCheatFreeSpells() ? 'activés' : 'désactivés'}.`);
+    });
     return el;
 }
 
 function syncOneShot(el) {
+    const free = el.querySelector('#secret-free-btn');
+    free.textContent = isCheatFreeSpells() ? 'Oui' : 'Non';
+    free.setAttribute('aria-pressed', String(isCheatFreeSpells()));
     const btn = el.querySelector('#secret-oneshot-btn');
     btn.textContent = isCheatOneShot() ? 'Oui' : 'Non';
     btn.setAttribute('aria-pressed', String(isCheatOneShot()));

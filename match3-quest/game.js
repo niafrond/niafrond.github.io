@@ -132,8 +132,14 @@ export function getWeaponIcon(weaponType){
     return svgIcon(WEAPON_ICONS[weaponType] || 'sword');
 }
 
+// Menu secret : tant qu'actif, les sorts du joueur ne coûtent aucun mana.
+// Indicateur porté par le joueur, non énumérable (jamais sauvegardé) : canEntityCastSpell doit rester autonome.
+export function setCheatFreeSpells(on){ Object.defineProperty(player, 'cheatFreeSpells', { value: !!on, enumerable: false, writable: true, configurable: true }); }
+export function isCheatFreeSpells(){ return player.cheatFreeSpells === true; }
+
 export function canEntityCastSpell(entity, spell){
     if(!entity || !entity.mana || !spell) return false;
+    if(entity.cheatFreeSpells === true) return true;
 
     if(typeof spell.cost === 'number') {
         return (entity.mana[spell.color] || 0) >= spell.cost;
@@ -216,7 +222,7 @@ function getUltimateTooltipHtml(entity, spell){
 export function spellCostHtml(sp, entity = null){
     // Avec un lanceur : chaque couleur du coût d'un sort multi-mana est marquée atteinte (`met`) ou manquante (`unmet`).
     if(entity && sp.cost && typeof sp.cost === 'object'){
-        return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${(entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}"><span class="mana-dot mana-${color}"></span>${amount}</span>`).join('<span class="cost-plus">+</span>');
+        return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}"><span class="mana-dot mana-${color}"></span>${amount}</span>`).join('<span class="cost-plus">+</span>');
     }
     if(typeof sp.cost === 'number') return `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
     if(sp.cost && typeof sp.cost === 'object'){
@@ -449,6 +455,7 @@ function getMissingManaColor(entity, spell){
 
 export function consumeSpellMana(entity, spell){
     if(!entity || !entity.mana || !spell) return;
+    if(entity.cheatFreeSpells === true) return;
 
     const paid = {};
     if(typeof spell.cost === 'number') {
