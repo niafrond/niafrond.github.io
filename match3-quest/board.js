@@ -241,8 +241,10 @@ function syncBoardTileSize(){
     // Mobile en portrait : la grille occupe toute la largeur (priorité sur la hauteur : la page défile au besoin).
     const fullWidth = Boolean(window.matchMedia?.('(orientation: portrait) and (max-width: 820px)').matches);
     const landscape = !fullWidth && isLandscapeLayout();
+    // Écran bas : colonnes latérales de largeur fixe (--landscape-side, style.css) ; la grille ne déborde pas sur elles
+    const sideWidth = landscape ? (parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--landscape-side')) || 0) : 0;
     const widthBudget = landscape && viewportWidth > 0
-        ? Math.floor(viewportWidth * LANDSCAPE_BOARD_WIDTH_RATIO)
+        ? Math.floor(Math.min(viewportWidth * LANDSCAPE_BOARD_WIDTH_RATIO, sideWidth > 0 ? viewportWidth - 2 * sideWidth - 24 : Infinity))
         : Math.min(
             parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
             viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,

@@ -2590,10 +2590,29 @@ body.dark-mode .tutorial-card {
     body { padding: 0; min-height: 100dvh; }
     .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; }
     #board { padding: 4px; grid-gap: 2px; }
-    /* Colonnes joueur / ennemi resserrées (plus de place pour la grille) ; boutons de combat flottants en bas à gauche */
-    #tab-combat.active { column-gap: 4px; row-gap: 3px; }
-    #player-stats, #enemy-stats { padding: 3px 5px; font-size: 0.78em; }
-    #player-spells, #enemy-spells { padding: 4px; font-size: 0.74em; }
+    /* Colonnes joueur / ennemi étroites et empilées verticalement : fiche compacte (portrait miniature, ligne par donnée),
+       sorts / armes / objets en liste serrée défilante. La largeur (--landscape-side) est relue par board.js. */
+    :root { --landscape-side: 142px; }
+    #tab-combat.active { grid-template-columns: var(--landscape-side) minmax(0, 1fr) var(--landscape-side); column-gap: 4px; row-gap: 3px; }
+    #board { justify-self: center; }
+    #player-stats, #enemy-stats { padding: 3px 4px; font-size: 0.72em; border-width: 2px; line-height: 1.15; }
+    #player-stats .stat, #enemy-stats .stat { margin: 2px 0; }
+    #player-stats .stat strong, #enemy-stats .stat strong { width: auto; margin-right: 2px; }
+    #player-stats .stat:nth-child(3), #enemy-stats .stat:nth-child(3) { flex-wrap: wrap; gap: 0 4px; }
+    body #player-stats::after, body #enemy-stats::after { width: 36px; height: 36px; right: 2px; top: 2px; }
+    body #player-stats[style*="--portrait"] .stat:nth-child(-n+2), body #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 38px; }
+    #player-stats .mana-dots, #enemy-stats .mana-dots { display: flex; flex-wrap: wrap; gap: 2px; font-size: 0.8em; }
+    #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { margin-right: 0; min-width: 1.6em; }
+    #player-spells, #enemy-spells { padding: 3px; font-size: 0.68em; scrollbar-width: none; }
+    #player-spells::-webkit-scrollbar, #enemy-spells::-webkit-scrollbar { display: none; }
+    #enemy-spells h4 { margin: 0 0 2px; font-size: 1em; }
+    #player-spells .enemy-spell-item, #enemy-spells .enemy-spell-item, #player-spells .weapon-btn, #player-spells .spell-btn {
+        margin: 0 0 2px; padding: 2px 4px; font-size: 1em; line-height: 1.15; text-align: left; border-width: 1px; }
+    #player-spells .enemy-spell-item .cost-badge, #enemy-spells .enemy-spell-item .cost-badge, #player-spells .cost-badge { font-size: 0.85em; margin-right: 1px; }
+    #player-spells hr { margin: 2px 0; }
+    /* colonnes de sorts : hauteur dictée par la grille (pas par leur contenu), défilement interne si trop longues */
+    #player-spells, #enemy-spells { contain: size; align-self: stretch; }
+    #enemy-spells { margin-bottom: 26px; }
     #player-spells { margin-bottom: 32px; }
     body .level-hud { left: auto; right: 4px; bottom: 2px; transform: none; }
     #combat-controls { position: fixed; left: 4px; bottom: 2px; z-index: 20; margin: 0 !important; padding: 0; display: flex; gap: 4px; }
