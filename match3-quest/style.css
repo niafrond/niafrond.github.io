@@ -1145,7 +1145,8 @@ progress.enemy-bar::-webkit-progress-value {
 }
 .spellfx.spellfx-big { max-width: none; }
 /* Sort très coûteux : l'animation occupe le plateau, le texte se superpose */
-.attack-icon.has-spellfx-big { position: absolute; inset: 0; margin: 0; align-items: center; }
+.attack-animation:has(.has-spellfx-big) { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.attack-icon.has-spellfx-big { margin: 0; align-items: center; }
 /* Titre et dégâts d'un sort très cher : posés (en fixe) sur la zone des boutons de sorts, qu'ils cachent */
 .attack-caption {
     position: fixed; z-index: 1001; pointer-events: none; box-sizing: border-box;

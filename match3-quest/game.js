@@ -1775,7 +1775,8 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
     if(damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
-    const boardPx = Math.min(...['width', 'height'].map(k => document.getElementById('board')?.getBoundingClientRect()[k] || Infinity));
+    const boardEl = document.getElementById('board');   // zone intérieure (l'overlay est dans le padding du plateau)
+    const boardPx = boardEl ? Math.min(boardEl.clientWidth, boardEl.clientHeight) || Infinity : Infinity;
     const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
