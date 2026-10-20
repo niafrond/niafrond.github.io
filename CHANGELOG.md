@@ -1,3 +1,9 @@
+## [2.103.0](https://github.com/niafrond/niafrond.github.io/compare/v2.102.0...v2.103.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** finale du Pic de la Lune, fin légendée, générique et Nouvelle Partie + avec export ([#510](https://github.com/niafrond/niafrond.github.io/issues/510)) ([5bf7093](https://github.com/niafrond/niafrond.github.io/commit/5bf70930dec2293a4f342e6e3a8cd766e40cdbc8))
+
 ## [2.102.0](https://github.com/niafrond/niafrond.github.io/compare/v2.101.0...v2.102.0) (2026-10-20)
 
 ### Features
