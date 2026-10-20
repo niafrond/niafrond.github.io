@@ -14,6 +14,7 @@ import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenComplete
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
+import { bindSecretTrigger } from "./secretMenu.js";
 import { renderMerchant } from "./shop.js";
 import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
 import { worldZones } from "./worldMap.js";
@@ -393,6 +394,7 @@ function init() {
     if(effectsSelect) effectsSelect.value = getOption('effects');
     if(speedSelect) speedSelect.value = getOption('speed');
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
+    bindSecretTrigger(manaFlightBtn);   // 6 clics : menu secret (secretMenu.js)
     effectsSelect?.addEventListener('change', () => setOption('effects', effectsSelect.value));
     speedSelect?.addEventListener('change', () => setOption('speed', speedSelect.value));
 

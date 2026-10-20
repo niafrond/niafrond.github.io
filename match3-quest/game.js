@@ -325,6 +325,7 @@ export function applyDamage(target, damage, options = {}){
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
     normalizedDamage = affinityResult.modifiedDamage;
+    if(cheatOneShot && target === enemy && normalizedDamage > 0) normalizedDamage = Math.max(normalizedDamage, (enemy.hp || 0) + (enemy.shield || 0) + 1);
 
     if(affinityResult.affinityType === 'force' && affinityResult.delta > 0) {
         log(`${target.name} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
@@ -2868,7 +2869,24 @@ function buildUnlockedSpellsList(spells, level) {
     return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
 }
 
+// Menu secret (secretMenu.js) : le temps de la session, tous les sorts (toutes classes) sont débloqués.
+let cheatAllSpells = false;
+// Menu secret : tant qu'actif, tout dégât infligé à l'ennemi le tue d'un coup.
+let cheatOneShot = false;
+export function setCheatOneShot(on){ cheatOneShot = !!on; }
+export function isCheatOneShot(){ return cheatOneShot; }
+export function setCheatAllSpells(on){ cheatAllSpells = !!on; }
+
 export function updateAvailableSpells(){
+    if(cheatAllSpells) {
+        import('./classes.js').then(module => {
+            const everySpell = [...spellsCatalog, ...module.allClassSpells];
+            const seen = new Set();
+            player.availableSpells = everySpell.filter(sp => sp?.id && !seen.has(sp.id) && seen.add(sp.id));
+            updateActiveSpells();
+        });
+        return;
+    }
     // Si le joueur a une classe, inclure les sorts de classe
     let allAvailableSpells = [...getSpellsByLevel(player.level)];
     
