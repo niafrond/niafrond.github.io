@@ -3288,3 +3288,16 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .stuff-item .weapon-action { align-self: center; }
 .stuff-empty { opacity: 0.6; border-style: dashed; }
 .spell-fx-ic { width: .85em; height: .85em; opacity: .75; margin-left: .15em; }
+
+/* Comparaison de sorts / armes / stuffs (compareView.js) */
+.compare-btn { margin-left: 6px; padding: 2px 8px; font-size: 1em; cursor: pointer; }
+.compare-btn.compare-selected { outline: 2px solid #d4a017; background: #fff3cd; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: .9em; }
+.compare-table th, .compare-table td { padding: 4px 6px; border-bottom: 1px solid rgba(128,128,128,.3); text-align: left; }
+.compare-table td.cmp-better { color: #2e7d32; font-weight: bold; }
+
+/* Sort multi-mana incomplet : seules les couleurs manquantes sont grisées, celles atteintes gardent leur couleur */
+#spell-buttons .enemy-spell-item.disabled.spell-partial { opacity: 1; filter: none; }
+#spell-buttons .enemy-spell-item.disabled.spell-partial .spell-name { opacity: 0.6; }
+#spell-buttons .enemy-spell-item .cost-part.unmet { opacity: 0.4; filter: grayscale(1); }
+#spell-buttons .enemy-spell-item .cost-part.met { font-weight: bold; }
