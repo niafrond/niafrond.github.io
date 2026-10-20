@@ -1,3 +1,9 @@
+## [2.103.1](https://github.com/niafrond/niafrond.github.io/compare/v2.103.0...v2.103.1) (2026-10-20)
+
+### Bug Fixes
+
+* **match3-quest:** couvrir l'arrière des gardiens d'arène dans leur zone de vigilance ([#511](https://github.com/niafrond/niafrond.github.io/issues/511)) ([24e0392](https://github.com/niafrond/niafrond.github.io/commit/24e03926cd0c2e9bd2ceb3947a2fc7da555d80d7))
+
 ## [2.103.0](https://github.com/niafrond/niafrond.github.io/compare/v2.102.0...v2.103.0) (2026-10-20)
 
 ### Features
