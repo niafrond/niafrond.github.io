@@ -1,3 +1,9 @@
+## [2.104.1](https://github.com/niafrond/niafrond.github.io/compare/v2.104.0...v2.104.1) (2026-10-20)
+
+### Bug Fixes
+
+* **match3-quest:** afficher l'animation des gros sorts en entier et relever les ultimes à 1000 dégâts ([#513](https://github.com/niafrond/niafrond.github.io/issues/513)) ([24116c8](https://github.com/niafrond/niafrond.github.io/commit/24116c8ed0a9d842cd3b5c929cf5ffe5de4c571b))
+
 ## [2.104.0](https://github.com/niafrond/niafrond.github.io/compare/v2.103.1...v2.104.0) (2026-10-20)
 
 ### Features
