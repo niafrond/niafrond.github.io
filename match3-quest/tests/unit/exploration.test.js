@@ -1456,14 +1456,12 @@ describe('dialogues d\'ambiance conditionnels', () => {
         });
     });
 
-    test('l\'indice des mirages est cohérent avec le rendu : le vrai soleil a une ombre et un niveau, les mirages non', () => {
+    test('l\'indice des mirages est cohérent avec le rendu : les mirages copient ombre et niveau, seul le vrai soleil reste en place', () => {
         const dawa = SCREENS.gobi_h_dawa.npcs.find(n => n.id === 'guide_dawa');
-        const text = [...dawa.idle, ...quest('q_sun_4').hint, ...quest('sq_oasis').offer].join(' ');
+        const text = [...dawa.idle, ...quest('q_sun_4').hint].join(' ');
         expect(text).toMatch(/ombre/);
-        expect(text).toMatch(/scintill/);
-        // la maxime « le vrai soleil ne projette pas d'ombre » est explicitement corrigée
-        expect(dawa.idle.join(' ')).toMatch(/ne projette pas d'ombre/);
-        expect(dawa.idle.join(' ')).toMatch(/se trompent|c'est l'inverse/);
+        expect(text).toMatch(/ne bouge jamais|ne quitte jamais sa place/);
+        expect(text).not.toMatch(/scintill|sans ombre|n'a ni ombre/);
     });
 });
 
