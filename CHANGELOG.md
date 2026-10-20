@@ -1,3 +1,9 @@
+## [2.106.0](https://github.com/niafrond/niafrond.github.io/compare/v2.105.0...v2.106.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** ajouter une flèche pour fermer de force les annonces de sorts ([#516](https://github.com/niafrond/niafrond.github.io/issues/516)) ([19f7c21](https://github.com/niafrond/niafrond.github.io/commit/19f7c21347baa6c5d3bf14999e8d062b39a6cd91))
+
 ## [2.105.0](https://github.com/niafrond/niafrond.github.io/compare/v2.104.2...v2.105.0) (2026-10-20)
 
 ### Features
