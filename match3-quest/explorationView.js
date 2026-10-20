@@ -151,7 +151,7 @@ export function createExplorationView(cfg) {
 
     function syncVisual(snap) {
         const st = session.data;
-        if (snap) { vis.px = st.x; vis.py = st.y; }
+        if (snap) { vis.px = st.x; vis.py = st.y; vis.cx = st.x; vis.cy = st.y; }
         X.aliveEnemies(session).forEach(e => {
             if (snap || !vis.enemies[e.def.id]) vis.enemies[e.def.id] = { x: e.x, y: e.y };
         });
@@ -922,8 +922,19 @@ export function createExplorationView(cfg) {
         if (X.autoDismount(session, hasMount())) { toast('Le cheval ne suit pas sur l\'eau : vous mettez pied à terre.', 3000); cfg.onSave(); }
         refreshMountButton();
         const k = Math.min(1, dt / (riding() ? 55 : 95));
-        vis.px += (session.data.x - vis.px) * k;
-        vis.py += (session.data.y - vis.py) * k;
+        // Héros : vitesse constante vers la case cible (une case par délai de pas), sans décélération entre deux pas :
+        // en marche continue le mouvement est fluide au lieu de repartir de zéro à chaque case.
+        const stepLen = dt / moveDelay() * 1.2;
+        const dx = session.data.x - vis.px, dy = session.data.y - vis.py;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 3) { vis.px = session.data.x; vis.py = session.data.y; }
+        else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; }
+        else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
+        // Caméra : suit le héros avec un léger amorti (indépendant du pas), pour absorber les à-coups du défilement.
+        if (vis.cx === undefined || Math.hypot(vis.px - vis.cx, vis.py - vis.cy) > 6) { vis.cx = vis.px; vis.cy = vis.py; }
+        const kc = 1 - Math.exp(-dt / 90);
+        vis.cx += (vis.px - vis.cx) * kc;
+        vis.cy += (vis.py - vis.cy) * kc;
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || (vis.enemies[e.def.id] = { x: e.x, y: e.y });
             v.x += (e.x - v.x) * k;
@@ -1018,8 +1029,8 @@ export function createExplorationView(cfg) {
         const follow = (size, avail, offset, pos) =>
             size <= avail ? offset + (avail - size) / 2
                 : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
-        const ox = follow(mapW, vw, 0, vis.px);
-        const oy = follow(mapH, availH, HUD_TOP, vis.py);
+        const ox = follow(mapW, vw, 0, vis.cx ?? vis.px);
+        const oy = follow(mapH, availH, HUD_TOP, vis.cy ?? vis.py);
         cam = { ox, oy, tile, vw };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
 
