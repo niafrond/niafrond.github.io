@@ -2155,9 +2155,9 @@
       },
       "minLevel": 8,
       "effect": "ultimate",
-      "dmg": 220,
+      "dmg": 1100,
       "cinematic": "ultimate-sorcerer-1",
-      "description": "Les cinq éléments s'abattent sur l'ennemi : 220 dégâts"
+      "description": "Les cinq éléments s'abattent sur l'ennemi : 1100 dégâts"
     },
     {
       "id": "ultimateHeavenlyThunder",
@@ -2170,10 +2170,10 @@
       },
       "minLevel": 15,
       "effect": "ultimate",
-      "dmg": 160,
+      "dmg": 1000,
       "stunTurns": 2,
       "cinematic": "ultimate-sorcerer-2",
-      "description": "La foudre du Ciel frappe l'ennemi : 160 dégâts et étourdissement 2 tours"
+      "description": "La foudre du Ciel frappe l'ennemi : 1000 dégâts et étourdissement 2 tours"
     },
     {
       "id": "ultimateThousandArrows",
@@ -2186,9 +2186,9 @@
       },
       "minLevel": 8,
       "effect": "ultimate",
-      "dmg": 200,
+      "dmg": 1000,
       "cinematic": "ultimate-assassin-1",
-      "description": "Mille flèches s'abattent d'un coup : 200 dégâts"
+      "description": "Mille flèches s'abattent d'un coup : 1000 dégâts"
     },
     {
       "id": "ultimateSunPiercer",
@@ -2201,9 +2201,9 @@
       },
       "minLevel": 15,
       "effect": "ultimate",
-      "dmg": 300,
+      "dmg": 1500,
       "cinematic": "ultimate-assassin-2",
-      "description": "La flèche légendaire de Hou Yi : 300 dégâts"
+      "description": "La flèche légendaire de Hou Yi : 1500 dégâts"
     },
     {
       "id": "ultimateImperialDragon",
@@ -2216,10 +2216,10 @@
       },
       "minLevel": 8,
       "effect": "ultimate",
-      "dmg": 180,
+      "dmg": 1000,
       "healPercent": 20,
       "cinematic": "ultimate-templar-1",
-      "description": "Le dragon de l'empire rugit : 180 dégâts et soigne 20 % des PV max"
+      "description": "Le dragon de l'empire rugit : 1000 dégâts et soigne 20 % des PV max"
     },
     {
       "id": "ultimateEternalBastion",
@@ -2232,12 +2232,12 @@
       },
       "minLevel": 15,
       "effect": "ultimate",
-      "dmg": 120,
+      "dmg": 1000,
       "healPercent": 40,
       "defBuff": 25,
       "duration": 3,
       "cinematic": "ultimate-templar-2",
-      "description": "Un rempart sacré : 120 dégâts, soigne 40 % des PV max et gagne +25 de défense pendant 3 tours"
+      "description": "Un rempart sacré : 1000 dégâts, soigne 40 % des PV max et gagne +25 de défense pendant 3 tours"
     },
     {
       "id": "ultimateThousandRiders",
@@ -2250,9 +2250,9 @@
       },
       "minLevel": 8,
       "effect": "ultimate",
-      "dmg": 230,
+      "dmg": 1150,
       "cinematic": "ultimate-barbarian-1",
-      "description": "La horde déferle sur l'ennemi : 230 dégâts"
+      "description": "La horde déferle sur l'ennemi : 1150 dégâts"
     },
     {
       "id": "ultimateSkyWolf",
@@ -2265,11 +2265,11 @@
       },
       "minLevel": 15,
       "effect": "ultimate",
-      "dmg": 150,
+      "dmg": 1000,
       "weakenAmount": 10,
       "duration": 3,
       "cinematic": "ultimate-barbarian-2",
-      "description": "Un hurlement terrifiant : 150 dégâts, attaque ennemie réduite de 10 pendant 3 tours"
+      "description": "Un hurlement terrifiant : 1000 dégâts, attaque ennemie réduite de 10 pendant 3 tours"
     }
   ]
 }
