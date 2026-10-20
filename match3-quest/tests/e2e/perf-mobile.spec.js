@@ -98,6 +98,34 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         expect(c.blockingMs).toBeLessThan(2500);
     });
 
+    test('exploration : la carte n\'est plus redessinée à pleine cadence sous un modal ni sous une cinématique', async ({ page, context }) => {
+        await openGame(page, context);
+        await enterExploration(page);
+        const measure = async ms => {
+            await resetCounters(page);
+            await page.waitForTimeout(ms);
+            return page.evaluate(() => window.__perf.fillRect);
+        };
+        const free = await measure(2000);
+        expect(free).toBeGreaterThan(0);
+
+        // Carte du monde ouverte (voile à 70 %) : redessin à ~4 images/s au lieu de toutes les images
+        await page.evaluate(() => document.getElementById('worldmap-modal').classList.add('active'));
+        const underModal = await measure(2000);
+        expect(underModal).toBeLessThan(free * 0.4);
+        await page.evaluate(() => document.getElementById('worldmap-modal').classList.remove('active'));
+
+        // Cinématique opaque par-dessus : plus aucun dessin de la carte
+        await page.evaluate(() => { const el = document.createElement('div'); el.className = 'cine-overlay'; el.id = 'perf-fake-cine'; document.body.appendChild(el); });
+        const underCine = await measure(1500);
+        expect(underCine).toBeLessThan(free * 0.1);
+        await page.evaluate(() => document.getElementById('perf-fake-cine').remove());
+
+        // Retour à la normale : la carte se redessine à pleine cadence
+        const after = await measure(2000);
+        expect(after).toBeGreaterThan(free * 0.5);
+    });
+
     test('coup suggéré : seules des propriétés composables sont animées', async ({ page, context }) => {
         await openGame(page, context);
         const props = await page.evaluate(() => {

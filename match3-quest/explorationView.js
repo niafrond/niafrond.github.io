@@ -29,6 +29,9 @@ import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
+// Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
+const COVERED_DRAW_MS = 250;
+
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
 const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
@@ -112,6 +115,7 @@ export function createExplorationView(cfg) {
     let session = null;
     let active = false;
     let rafId = null;
+    let lastDrawAt = 0;   // dernier dessin réel (la carte est redessinée au ralenti sous un modal)
     let lastFrame = 0;
     let held = null;
     let walk = null;          // déplacement au clic en cours : { tx, ty, path }
@@ -985,7 +989,13 @@ export function createExplorationView(cfg) {
         });
         vis.bob = now;
 
-        draw(now);
+        // Dessin inutile (onglet caché, carte hors écran, cinématique opaque par-dessus) : on le saute. Sous un modal (voile à 70 %), la carte
+        // ne bouge plus (la logique est bloquée) : 4 images/s suffisent. La logique ci-dessus reste exécutée à chaque image.
+        const covered = document.hidden || !isOnScreen() || Boolean(document.querySelector('.cine-overlay'));
+        if (!covered && (now - lastDrawAt >= COVERED_DRAW_MS || !isModalOpen())) {
+            lastDrawAt = now;
+            draw(now);
+        }
         rafId = requestAnimationFrame(frame);
     }
 
