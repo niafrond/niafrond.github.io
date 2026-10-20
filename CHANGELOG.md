@@ -1,3 +1,9 @@
+## [2.105.0](https://github.com/niafrond/niafrond.github.io/compare/v2.104.2...v2.105.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** agrandir la grille de combat en paysage sans défilement ([#515](https://github.com/niafrond/niafrond.github.io/issues/515)) ([3253c28](https://github.com/niafrond/niafrond.github.io/commit/3253c28b8ccfeb757a41e125b337d2ae78611c3a))
+
 ## [2.104.2](https://github.com/niafrond/niafrond.github.io/compare/v2.104.1...v2.104.2) (2026-10-20)
 
 ### Bug Fixes
