@@ -1,3 +1,9 @@
+## [2.100.0](https://github.com/niafrond/niafrond.github.io/compare/v2.99.0...v2.100.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** débloquer tous les ultimes via le menu secret ([#506](https://github.com/niafrond/niafrond.github.io/issues/506)) ([c55fd9e](https://github.com/niafrond/niafrond.github.io/commit/c55fd9ea8538a5b8d564b41cdd5740b2a1f6bc62))
+
 ## [2.99.0](https://github.com/niafrond/niafrond.github.io/compare/v2.98.0...v2.99.0) (2026-10-20)
 
 ### Features
