@@ -2861,7 +2861,20 @@ function buildUnlockedSpellsList(spells, level) {
     return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
 }
 
+// Menu secret (secretMenu.js) : le temps de la session, tous les sorts (toutes classes) sont débloqués.
+let cheatAllSpells = false;
+export function setCheatAllSpells(on){ cheatAllSpells = !!on; }
+
 export function updateAvailableSpells(){
+    if(cheatAllSpells) {
+        import('./classes.js').then(module => {
+            const everySpell = [...spellsCatalog, ...module.allClassSpells];
+            const seen = new Set();
+            player.availableSpells = everySpell.filter(sp => sp?.id && !seen.has(sp.id) && seen.add(sp.id));
+            updateActiveSpells();
+        });
+        return;
+    }
     // Si le joueur a une classe, inclure les sorts de classe
     let allAvailableSpells = [...getSpellsByLevel(player.level)];
     
