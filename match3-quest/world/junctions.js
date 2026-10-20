@@ -257,7 +257,8 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
             const guardPos = guardCellFor(from, gate, occupancy(from, screens), [1, 2, 3], [2, -2, 3, -3, 4, -4]);
             if (!chestPos || !guardPos) throw new Error(`jonction ${j.id} : pas de place pour ${!chestPos ? 'le coffre' : 'le garde'}`);
             const R = Math.max(1, Math.round(regionLevel[j.region] || 1));
-            holder.chests.push({ id: j.item.chest, label: j.item.label, openText: j.item.openText, gold: 15 * R, x: chestPos.x, y: chestPos.y });
+            const questItem = { id: `qi_${j.item.chest}`, name: j.item.name, description: j.quest.objective, quest: j.quest.id };
+            holder.chests.push({ id: j.item.chest, label: j.item.label, openText: j.item.openText, gold: 15 * R, questItem, x: chestPos.x, y: chestPos.y });
             const g = j.guard;
             from.npcs.push({
                 id: g.id, name: g.name, title: g.title, idle: g.idle, x: guardPos.x, y: guardPos.y,
@@ -267,7 +268,7 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
             quests.push({
                 id: j.quest.id, title: j.quest.title, chapter: `✦ Quête secondaire — ${regionName}`,
                 giver: g.id, turnIn: g.id, requires: [], side: true,
-                objectives: [{ type: 'chest', target: j.item.chest, text: j.quest.objective }],
+                objectives: [{ type: 'item', target: `qi_${j.item.chest}`, text: j.quest.objective }],
                 offer: j.quest.offer, hint: j.quest.hint, complete: j.quest.complete,
                 reward: { gold: Math.min(200, 40 + 8 * R), fragment: j.item.fragment, xp: 40 }
             });

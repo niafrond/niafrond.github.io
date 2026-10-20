@@ -277,6 +277,7 @@ function playQuest(s, id) {
             if (o.type === 'kill') defeat(s, o.target);
             else if (o.type === 'killGroup') Object.values(s.rt.enemyIndex).filter(e => e.def.group === o.target).forEach(e => defeat(s, e.def.id));
             else if (o.type === 'chest') openChestAt(s, o.target);
+            else if (o.type === 'item') openChestAt(s, Object.values(s.screens).flatMap(sc => sc.chests).find(c => c.questItem?.id === o.target).id);
             else if (o.type === 'talk') talkTo(s, o.target);
             else if (o.type === 'visit') travel(s, o.target);
         }
@@ -620,7 +621,7 @@ describe('quêtes (story.js)', () => {
         q.requires.forEach(r => expect(questIds.has(r)).toBe(true));
         expect(q.objectives.length).toBeGreaterThan(0);
         q.objectives.forEach(o => {
-            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, talk: npcIds, visit: new Set(Object.keys(SCREENS)) }[o.type];
+            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, item: new Set(Object.values(SCREENS).flatMap(sc => sc.chests).map(c => c.questItem?.id).filter(Boolean)), talk: npcIds, visit: new Set(Object.keys(SCREENS)) }[o.type];
             expect([q.id, o.type, Boolean(pool)]).toEqual([q.id, o.type, true]);
             expect([q.id, o.target, pool.has(o.target)]).toEqual([q.id, o.target, true]);
             if (o.type === 'talk') expect(o.lines?.length).toBeGreaterThan(0);   // la cible a une réplique à dire

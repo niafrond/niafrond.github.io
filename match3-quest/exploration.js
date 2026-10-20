@@ -212,6 +212,7 @@ function defaultData() {
         banterSeen: [],
         waypoints: [],
         tracked: null,
+        questItems: [],
         arena: normalizeArenaData(null)
     };
 }
@@ -228,7 +229,14 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
+    data.questItems = Array.isArray(data.questItems) ? data.questItems.filter(i => i && typeof i.id === 'string') : [];
     data.observed = data.observed && typeof data.observed === 'object' && !Array.isArray(data.observed) ? data.observed : {};
+
+    // Anciennes sauvegardes : un coffre d'objet de quête ouvert sans l'objet (ni quête terminée) est refermé pour pouvoir le fouiller.
+    Object.values(screens).forEach(screen => screen.chests.forEach(c => {
+        const qi = c.questItem;
+        if (qi && data.quests[qi.quest] !== 'done' && !data.questItems.some(i => i.id === qi.id)) data.openedChests = data.openedChests.filter(id => id !== c.id);
+    }));
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
@@ -888,6 +896,7 @@ function objectiveDone(session, obj) {
     if (obj.type === 'kill') return session.data.defeated.includes(obj.target);
     if (obj.type === 'chest') return session.data.openedChests.includes(obj.target);
     if (obj.type === 'talk') return session.data.talked.includes(obj.target);
+    if (obj.type === 'item') return session.data.questItems.some(i => i.id === obj.target);
     if (obj.type === 'visit') return session.data.visitedScreens.includes(obj.target);
     if (obj.type === 'killGroup') {
         const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === obj.target);
@@ -911,6 +920,8 @@ function startQuest(session, quest) {
 
 function completeQuest(session, quest) {
     session.data.quests[quest.id] = 'done';
+    // l'objet spécial est remis au PNJ
+    session.data.questItems = session.data.questItems.filter(i => i.quest !== quest.id);
     if (quest.final) session.data.ended = true;
     return {
         type: 'questCompleted', quest, lines: quest.complete, reward: quest.reward || {}, gold: quest.reward?.gold || 0,
@@ -989,6 +1000,7 @@ export function startNewGamePlus(session) {
     data.quests = {};
     data.defeated = [];
     data.openedChests = [];
+    data.questItems = [];
     data.visitedScreens = [];
     data.talked = [];
     data.banterSeen = [];
@@ -1114,12 +1126,21 @@ export function talkToNpc(session, npcId) {
     return { type: 'dialog', npc, lines: ambient, events: [] };
 }
 
+// Objets spéciaux (quêtes à objet) : rangés dans `data.questItems`, jamais dans le sac, donc invendables.
+export const questItemsOf = session => session.data.questItems.map(i => ({ ...i }));
+
 export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
+    const qi = chest.questItem;
+    // Le coffre d'un objet de quête ne s'ouvre que quête en cours : sinon l'objet serait « déjà trouvé » avant d'accepter la quête.
+    if (qi && session.data.quests[qi.quest] !== 'active') {
+        return { type: 'chestSealed', chest, events: [{ type: 'chestSealed', chest }] };
+    }
     session.data.openedChests.push(chestId);
+    if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: qi.description || '', quest: qi.quest });
     const { region, kind } = currentScreen(session);
-    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, screen: { region, kind } }, ...checkAutoQuests(session)];
+    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, screen: { region, kind } }, ...checkAutoQuests(session)];
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 

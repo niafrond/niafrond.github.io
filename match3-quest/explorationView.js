@@ -374,12 +374,15 @@ export function createExplorationView(cfg) {
                 const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
                 toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${plus}`, ev.ended ? 8000 : 5000);
+            } else if (ev.type === 'chestSealed') {
+                toast(`${ev.chest.label || 'Coffre'} : vous n'avez aucune raison de fouiller ici pour l'instant.`, 3500);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
                 // Butin (potions, reliques, armes) : tiré et rangé dans le sac par le jeu (chestLoot.js).
                 const loot = ev.paid ? [] : (cfg.onChestLoot?.(ev) || []);
                 const lootText = loot.length ? ` · ${loot.join(' · ')}` : '';
-                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}`, loot.length ? 5500 : 3200);
+                const specialText = ev.questItem ? ` · Objet spécial : ${ev.questItem.name}` : '';
+                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`, loot.length ? 5500 : 3200);
             }
         });
         if (gold > 0) cfg.onGold(gold);

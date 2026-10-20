@@ -320,6 +320,7 @@ describe('Grand Monde : textes et quêtes', () => {
                 if (o.type === 'kill') expect(enemyIds.has(o.target)).toBe(true);
                 else if (o.type === 'killGroup') expect(groups.has(o.target)).toBe(true);
                 else if (o.type === 'chest') expect(chestIds.has(o.target)).toBe(true);
+                else if (o.type === 'item') expect(Object.values(SCREENS).flatMap(sc => sc.chests).some(c => c.questItem?.id === o.target)).toBe(true);
                 else if (o.type === 'talk') { expect(npcIds.has(o.target)).toBe(true); expect(o.lines?.length).toBeGreaterThan(0); }
                 else if (o.type === 'visit') expect(SCREENS[o.target]).toBeTruthy();
                 else throw new Error(`type d'objectif inconnu : ${o.type}`);

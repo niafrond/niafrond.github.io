@@ -48,10 +48,15 @@ export function renderStuffTab() {
         totals.poisonResist ? (totals.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${totals.poisonResist} %`) : '',
         ...[...totals.biomes].map(b => `Protégé : ${BIOME_PROTECTION_LABEL[b]}`)
     ].filter(Boolean).join(' • ');
+    const special = Array.isArray(player.exploration?.questItems) ? player.exploration.questItems : [];
+    const specialHtml = special.length
+        ? special.map(i => `<div class="weapon-item stuff-item special-item"><div class="weapon-details"><span class="weapon-name">${escapeHtml(i.name)} <em class="merchant-rarity">Quête</em></span><span class="weapon-description">${escapeHtml(i.description || '')}</span></div></div>`).join('')
+        : '<p class="shop-empty">Aucun objet spécial. Les objets de quête rangés ici ne peuvent pas être vendus.</p>';
     root.innerHTML = `
         <div class="stuff-summary">${summary ? escapeHtml(summary) : '<em>Aucun bonus : équipez un casque, un collier, un bracelet ou une bague.</em>'}</div>
         <h3>Porté</h3>${worn}
-        <h3>Collection</h3>${spare.length ? spare.map(s => pieceCard(s, 'equip')).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}`;
+        <h3>Collection</h3>${spare.length ? spare.map(s => pieceCard(s, 'equip')).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}
+        <h3>Objets spéciaux</h3>${specialHtml}`;
 }
 
 function afterChange(message) {
