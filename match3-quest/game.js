@@ -326,7 +326,8 @@ export function applyDamage(target, damage, options = {}){
     if(options.sourceSpell && normalizedDamage > 0 && (target === player || target === enemy)) {
         const caster = target === player ? enemy : player;
         const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
-        const strike = resolveStrike(normalizedDamage, caster, target, { weakened });
+        // Les ultimes sont inblocables et imparables : on les résout contre une cible sans défense (le critique reste possible).
+        const strike = resolveStrike(normalizedDamage, caster, options.sourceSpell.ultimate ? {} : target, { weakened });
         normalizedDamage = strike.damage;
         strike.damage = normalizedDamage;
         lastSpellStrike = strike;
@@ -3464,6 +3465,8 @@ export function setCombatBackdrop(biome){
 
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
+    // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
+    enemy.statusEffects = { ...(enemy.statusEffects || {}) };
     // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
     enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
