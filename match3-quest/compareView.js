@@ -1,6 +1,8 @@
 // Comparaison de deux sorts, armes ou stuffs : bouton « Comparer » sur chaque ligne (1er clic = référence, 2e clic = tableau comparatif).
 // Module d'affichage pur : les objets sont retrouvés par les résolveurs passés à initCompare (aucune dépendance à game.js).
 
+import { MANA_HEX } from './icons.js';
+
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff', item: 'objet' };
 const ITEM_TYPE_LABEL = { shield: 'Bouclier', reusable: 'Objet rechargeable', artifact: 'Relique', consumable: 'Consommable' };
@@ -9,13 +11,19 @@ const SLOT_LABEL = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: '
 const costTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
 const costText = sp => typeof sp.cost === 'number' ? `${sp.cost} ${sp.color || ''}`.trim() : Object.entries(sp.cost || {}).map(([c, n]) => `${n} ${c}`).join(' + ');
 
+// Coût en gomettes : un disque de la couleur du mana avec la quantité écrite dedans (ex. gomette rouge « 5 »).
+const costBadges = sp => {
+    const entries = typeof sp.cost === 'number' ? [[sp.color, sp.cost]] : Object.entries(sp.cost || {});
+    return entries.map(([color, n]) => `<span class="cost-badge${color === 'yellow' ? ' cost-badge-light' : ''}" style="background:${MANA_HEX[color] || '#888'}" title="${esc(color)}">${esc(n)}</span>`).join('');
+};
+
 // Lignes comparées : { label, num (valeur numérique ou null), text, better: 'high' | 'low' | null }.
 export function compareRows(kind, o) {
     if (!o) return [];
     const n = (label, v, better = 'high') => ({ label, num: v || 0, text: String(v || 0), better });
     const t = (label, text) => ({ label, num: null, text: text || '—', better: null });
     if (kind === 'spell') return [
-        { label: 'Coût (total)', num: costTotal(o), text: costText(o) || '0', better: 'low' },
+        { label: 'Coût (total)', num: costTotal(o), text: costText(o) || '0', html: costBadges(o) || '0', better: 'low' },
         n('Dégâts', o.dmg), n('Soin', o.heal), n('Niveau requis', o.minLevel || 1, 'low'),
         t('Effet', o.description)
     ];
@@ -48,7 +56,7 @@ export function buildCompareHtml(kind, a, b) {
             const aWins = row.better === 'high' ? row.num > other.num : row.num < other.num;
             ca = aWins ? ' class="cmp-better"' : ''; cb = aWins ? '' : ' class="cmp-better"';
         }
-        return `<tr><th scope="row">${esc(row.label)}</th><td${ca}>${esc(row.text)}</td><td${cb}>${esc(other.text)}</td></tr>`;
+        return `<tr><th scope="row">${esc(row.label)}</th><td${ca}>${row.html ?? esc(row.text)}</td><td${cb}>${other.html ?? esc(other.text)}</td></tr>`;
     }).join('');
     return `<table class="compare-table"><thead><tr><th></th><th>${esc(a.name)}</th><th>${esc(b.name)}</th></tr></thead><tbody>${body}</tbody></table>`;
 }
