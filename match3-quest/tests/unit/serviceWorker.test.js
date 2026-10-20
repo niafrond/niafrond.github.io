@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import vm from 'vm';
+import { FakeCaches } from './fixtures/fakeCaches.js';
 import { registerServiceWorker, registerServiceWorkerWhenLoaded, serviceWorkerUrl, canUseServiceWorker } from '../../offlineCache.js';
 
 // sw.js est exécuté tel quel dans un faux environnement de worker (caches, réseau et minuteries simulés).
@@ -7,38 +8,19 @@ const SW_CODE = readFileSync(new URL('../../sw.js', import.meta.url), 'utf8');
 const ORIGIN = 'https://site.test';
 const SCOPE = `${ORIGIN}/match3-quest/`;
 
-class FakeCache {
-    constructor() { this.map = new Map(); }
-    keyOf(req) { return typeof req === 'string' ? req : req.url; }
-    async put(req, res) { this.map.set(this.keyOf(req), { body: Buffer.from(await res.arrayBuffer()), status: res.status, headers: [...res.headers] }); }
-    async match(req, opts = {}) {
-        const key = this.keyOf(req);
-        let hit = this.map.get(key);
-        if (!hit && opts.ignoreSearch) for (const [k, v] of this.map) if (k.split('?')[0] === key.split('?')[0]) { hit = v; break; }
-        return hit ? new Response(hit.body, { status: hit.status, headers: hit.headers }) : undefined;
-    }
-    async delete(req) { return this.map.delete(this.keyOf(req)); }
-    text(key) { return this.map.has(key) ? this.map.get(key).body.toString() : undefined; }
-}
-class FakeCaches {
-    constructor() { this.stores = new Map(); }
-    async open(name) { if (!this.stores.has(name)) this.stores.set(name, new FakeCache()); return this.stores.get(name); }
-    async keys() { return [...this.stores.keys()]; }
-    async delete(name) { return this.stores.delete(name); }
-}
-
 const MANIFEST = {
     version: 1,
     core: ['index.html', 'game.js', 'style.css', 'sprites/generated.js'],
     media: [{ p: 'audio/music/a.mp3', s: 10, h: 'h1' }, { p: 'sprites/ultimates/x.png', s: 3, h: 'h2' }]
 };
 
-function loadSw({ build = 'B1', files = {} } = {}) {
+function loadSw({ build = 'B1', files = {}, manifest = MANIFEST } = {}) {
     const server = { online: true, hold: null, calls: [], files: {
-        [`${SCOPE}precache-manifest.json`]: JSON.stringify(MANIFEST),
+        [`${SCOPE}precache-manifest.json`]: JSON.stringify(manifest),
         [`${SCOPE}index.html`]: 'INDEX',
         [`${ORIGIN}/version.js`]: 'VERSION',
-        ...Object.fromEntries(MANIFEST.core.filter(p => p !== 'index.html').map(p => [`${SCOPE}${p}`, `CORE:${p}`])),
+        ...Object.fromEntries(manifest.core.filter(p => p !== 'index.html').map(p => [`${SCOPE}${p}`, `CORE:${p}`])),
+        ...Object.fromEntries(manifest.media.map(m => [`${SCOPE}${m.p}`, `MEDIA:${m.p}`])),
         [`${SCOPE}audio/music/a.mp3`]: '0123456789',
         [`${SCOPE}sprites/ultimates/x.png`]: 'PNG',
         ...files
@@ -227,6 +209,18 @@ describe('sw.js — requêtes', () => {
         const again = await sw.fetchEvent(sw.request('audio/music/a.mp3?v=AUTRE'));   // le média ne change qu'avec son empreinte
         expect(await again.text()).toBe('0123456789');
         expect(sw.server.calls.length).toBe(0);
+    });
+
+    test('médias demandés en même temps : toutes les empreintes sont conservées (pas d\'écrasement mutuel)', async () => {
+        const media = Array.from({ length: 12 }, (_, i) => ({ p: `audio/music/m${i}.mp3`, s: 5, h: `h${i}` }));
+        const sw = loadSw({ manifest: { version: 1, core: ['index.html'], media } });
+        await sw.lifecycle('install');
+        await Promise.all(media.map(async m => (await sw.fetchEvent(sw.request(m.p))).text()));
+        for (let i = 0; i < 30; i++) await sw.flush();
+        const cache = await sw.caches.open('match3-media-v1');
+        const hashes = JSON.parse(cache.text(`${SCOPE}__hashes.json`));
+        expect(Object.keys(hashes).sort()).toEqual(media.map(m => m.p).sort());
+        media.forEach(m => expect(hashes[m.p]).toBe(m.h));
     });
 
     test('médias : un 404 n\'est pas mis en cache', async () => {

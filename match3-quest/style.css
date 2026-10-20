@@ -3166,6 +3166,7 @@ body.fx-low .wm-cloud { animation: none !important; }
 body.fx-low .tile.suggested { animation: blink 0.85s ease-in-out infinite; }
 body.fx-low .mana-fly-dot { box-shadow: none; }
 .options-row select { font: inherit; max-width: 55%; }
+.options-row #offline-status { margin-right: 6px; font-size: 0.85em; opacity: 0.85; }
 
 /* Bouton « cheval » du HUD d'exploration : caché sans monture, allumé quand on est en selle */
 .explore-hud-buttons button[hidden] { display: none; }

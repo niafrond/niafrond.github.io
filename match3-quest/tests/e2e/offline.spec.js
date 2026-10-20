@@ -30,6 +30,41 @@ test.describe('match3-quest · hors ligne (service worker)', () => {
         expect(errors).toEqual([]);
     });
 
+    test('« tout pré-télécharger » : musiques et dessins sont disponibles sans réseau, et le statut des Options le dit', async ({ page, context }) => {
+        test.setTimeout(240_000);
+        await page.goto(URL);
+        await loaded(page);
+        await expect.poll(() => page.evaluate(async () => {
+            const reg = await navigator.serviceWorker.getRegistration();
+            return Boolean(reg && reg.active && navigator.serviceWorker.controller);
+        }), { timeout: 30_000 }).toBe(true);
+
+        // Options : « Jeu hors ligne » (le téléchargement démarre seul après quelques secondes ; sinon on le lance)
+        await page.evaluate(() => document.getElementById('options-modal').classList.add('active'));
+        const status = page.locator('#offline-status');
+        await expect(status).toContainText(/Non téléchargé|Téléchargement|Prêt hors ligne/, { timeout: 30_000 });
+        const button = page.locator('#offline-btn');
+        if ((await button.textContent()) === 'Télécharger') await button.click();
+        await expect(status).toContainText('Prêt hors ligne', { timeout: 200_000 });
+
+        await context.setOffline(true);
+        const fetched = await page.evaluate(async () => {
+            const urls = ['audio/music/title.mp3', 'audio/music/boss-a0.mp3', 'sprites/ultimates/ultimateFiveElements-1.png', 'sprites/spellfx/index.json', 'sprites/prologue/index.json'];
+            const out = {};
+            for (const url of urls) {
+                try { const res = await fetch(url); out[url] = [res.status, (await res.arrayBuffer()).byteLength > 0]; } catch (e) { out[url] = ['erreur', false]; }
+            }
+            return out;
+        });
+        Object.values(fetched).forEach(([status, hasBody]) => { expect(status).toBe(200); expect(hasBody).toBe(true); });
+
+        // Rechargé sans réseau, le jeu redémarre et les Options affichent toujours « prêt »
+        await page.reload();
+        await loaded(page);
+        await page.evaluate(() => document.getElementById('options-modal').classList.add('active'));
+        await expect(status).toContainText('Prêt hors ligne', { timeout: 30_000 });
+    });
+
     test('sans service worker, le même scénario hors ligne échoue (témoin : le test mesure bien le cache)', async ({ browser }) => {
         const context = await browser.newContext({ serviceWorkers: 'block' });
         const page = await context.newPage();

@@ -76,10 +76,16 @@ function readHashes(mediaCache) {
 function writeHashes(mediaCache, hashes) {
     return mediaCache.put(HASHES_KEY, new Response(JSON.stringify(hashes), { headers: { 'Content-Type': 'application/json' } }));
 }
+// Lecture-modification-écriture d'un seul fichier : les mises à jour sont mises en file, sinon plusieurs médias reçus en même temps (le
+// pré-téléchargement en demande 2 à la fois) s'écraseraient les uns les autres et des empreintes se perdraient.
+var hashChain = Promise.resolve();
 function rememberHash(path, hash) {
-    return caches.open(MEDIA_CACHE).then(function (cache) {
-        return readHashes(cache).then(function (hashes) { hashes[path] = hash; return writeHashes(cache, hashes); });
+    hashChain = hashChain.then(function () {
+        return caches.open(MEDIA_CACHE).then(function (cache) {
+            return readHashes(cache).then(function (hashes) { hashes[path] = hash; return writeHashes(cache, hashes); });
+        });
     }).catch(function () { /* l'empreinte manquante provoquera un simple retéléchargement */ });
+    return hashChain;
 }
 
 // ── Installation : cœur du jeu, puis mise à jour des médias déjà téléchargés ───────────────
