@@ -1314,14 +1314,15 @@ export function createExplorationView(cfg) {
                 case 'enemy': {
                     const def = it.e.def;
                     const illusion = Boolean(def.illusion);
-                    const boss = Boolean(def.boss);
-                    const big = boss || illusion;       // un mirage copie la silhouette du vrai soleil
+                    // un mirage copie en tout point le vrai soleil (silhouette, ombre, étiquette « Boss · Nv »)
+                    const twin = illusion ? screen.enemies.find(e => e.boss && e.id === def.spriteKey) : null;
+                    const boss = Boolean(def.boss || twin);
+                    const big = boss || illusion;
                     const shielded = X.isShielded(session, def);
-                    const lvl = X.levelFor(session, def);
+                    const lvl = X.levelFor(session, twin || def);
                     const size = tile * (big ? 1.55 : 1.08);
                     const feet = c.y + tile * 0.4;
-                    // Indice des mirages : ils sont opaques mais n'ont ni ombre au sol ni étiquette de niveau.
-                    if (!illusion) drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
+                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
                     const eKey = def.spriteKey || def.id;
@@ -1346,10 +1347,8 @@ export function createExplorationView(cfg) {
                         drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
                         ctx.restore();
                     }
-                    if (!illusion) {
-                        const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
-                        drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? 'Bouclier · ' : boss ? 'Boss · ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
-                    }
+                    const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
+                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? 'Bouclier · ' : boss ? 'Boss · ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
                     break;
                 }
                 case 'player': {
