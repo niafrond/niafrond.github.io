@@ -226,6 +226,7 @@ function sanitizePlayer(player) {
             screenId: ex.screenId,
             defeated: ex.defeated,
             openedChests: ex.openedChests,
+            questItems: ex.questItems,
             quests: ex.quests,
             visitedScreens: ex.visitedScreens,
             talked: ex.talked,

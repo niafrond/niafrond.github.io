@@ -25,6 +25,7 @@ import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } fr
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon } from './icons.js';
+import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
@@ -55,7 +56,7 @@ const KEY_TO_DIR = {
 // Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
     paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: BIOME_DECOR.paddy },
-    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: BIOME_DECOR.riverbed },
+    riverbed: { a: '#6b5538', b: '#614d33', path: '#8c7550', cliff: '#3f3020', liquid: '#4f4129', sky: ['#e3b878', '#f7e6c6'], decor: BIOME_DECOR.riverbed },
     bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: BIOME_DECOR.bamboo },
     gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: BIOME_DECOR.gobi },
     storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: BIOME_DECOR.storm },
@@ -151,7 +152,7 @@ export function createExplorationView(cfg) {
 
     function syncVisual(snap) {
         const st = session.data;
-        if (snap) { vis.px = st.x; vis.py = st.y; }
+        if (snap) { vis.px = st.x; vis.py = st.y; vis.cx = st.x; vis.cy = st.y; }
         X.aliveEnemies(session).forEach(e => {
             if (snap || !vis.enemies[e.def.id]) vis.enemies[e.def.id] = { x: e.x, y: e.y };
         });
@@ -374,12 +375,15 @@ export function createExplorationView(cfg) {
                 const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
                 toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${plus}`, ev.ended ? 8000 : 5000);
+            } else if (ev.type === 'chestSealed') {
+                toast(`${ev.chest.label || 'Coffre'} : vous n'avez aucune raison de fouiller ici pour l'instant.`, 3500);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
                 // Butin (potions, reliques, armes) : tiré et rangé dans le sac par le jeu (chestLoot.js).
                 const loot = ev.paid ? [] : (cfg.onChestLoot?.(ev) || []);
                 const lootText = loot.length ? ` · ${loot.join(' · ')}` : '';
-                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}`, loot.length ? 5500 : 3200);
+                const specialText = ev.questItem ? ` · Objet spécial : ${ev.questItem.name}` : '';
+                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`, loot.length ? 5500 : 3200);
             }
         });
         if (gold > 0) cfg.onGold(gold);
@@ -411,7 +415,7 @@ export function createExplorationView(cfg) {
 
     // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression ──────
     const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
-    const carnet = { tab: 'quests', filter: 'all', region: 'all' };
+    const carnet = { tab: 'quests', filter: 'all', region: 'all', travelRegion: null };
     const STATUS_LABEL = { available: `${icon('talk')} À démarrer`, active: `${icon('target')} En cours`, ready: `${icon('check')} À rendre`, done: `${icon('flag')} Terminée` };
     const STATUS_ORDER = { ready: 0, active: 1, available: 2, done: 3 };
 
@@ -457,16 +461,21 @@ export function createExplorationView(cfg) {
 
     function travelPanel() {
         const stones = X.waypointList(session);
+        if (stones.length === 0) return '<p>Aucune pierre de voyage activée. Touchez une pierre de voyage dans un village ou en chemin.</p>';
+        if (!X.nearWaypoint(session)) {
+            return `<p class="carnet-hint">${icon('stone')} Le voyage rapide n'est possible que depuis une borne de voyage. Approchez-vous d'une pierre de voyage (dans chaque village, au milieu des terres sauvages et à l'entrée des sanctuaires), puis touchez-la.</p>`;
+        }
         const byRegion = new Map();
         stones.forEach(w => { if (!byRegion.has(w.region)) byRegion.set(w.region, []); byRegion.get(w.region).push(w); });
-        if (stones.length === 0) return '<p>Aucune pierre de voyage activée. Touchez une pierre de voyage dans un village ou en chemin.</p>';
         const kindIcon = { village: icon('village'), wild: icon('leafWild'), sanctuary: icon('sun') };
-        return `<p class="carnet-hint">Les pierres de voyage ${icon('stone')} se trouvent dans chaque village, au milieu des terres sauvages et à l'entrée des sanctuaires. Touchez-les pour les activer.</p>
-            <div class="carnet-travel">${[...byRegion.entries()].map(([region, list]) => `
-                <div class="carnet-travel-region"><h4>${escapeHtml(REGION_LABEL[region] || region)}</h4>
-                ${list.map(w => `<button type="button" class="carnet-travel-btn" data-travel="${w.screenId}"${w.current ? ' disabled' : ''}>
-                    ${kindIcon[w.kind] || icon('stone')} ${escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}
-                </div>`).join('')}</div>`;
+        const chosen = byRegion.has(carnet.travelRegion) ? carnet.travelRegion : null;
+        const biomes = `<div class="carnet-travel-biomes">${[...byRegion.entries()].map(([region, list]) =>
+            `<button type="button" class="carnet-chip carnet-travel-biome${region === chosen ? ' active' : ''}" data-travel-region="${region}">${escapeHtml(REGION_LABEL[region] || region)} <small>(${list.length})</small></button>`).join('')}</div>`;
+        const list = chosen ? `<div class="carnet-travel-region"><h4>${escapeHtml(REGION_LABEL[chosen] || chosen)}</h4>
+            ${byRegion.get(chosen).map(w => `<button type="button" class="carnet-travel-btn" data-travel="${w.screenId}"${w.current ? ' disabled' : ''}>
+                ${kindIcon[w.kind] || icon('stone')} ${escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}</div>`
+            : '<p class="carnet-hint">Choisissez un biome pour voir ses pierres de voyage.</p>';
+        return `<p class="carnet-hint">Borne de voyage ${icon('stone')} : choisissez une destination.</p>${biomes}<div class="carnet-travel">${list}</div>`;
     }
 
     function progressPanel() {
@@ -515,6 +524,8 @@ export function createExplorationView(cfg) {
                 renderCarnet();
                 return;
             }
+            const biomeBtn = ev.target.closest('[data-travel-region]');
+            if (biomeBtn) { carnet.travelRegion = biomeBtn.dataset.travelRegion; renderCarnet(); return; }
             const travelBtn = ev.target.closest('[data-travel]');
             if (travelBtn) { closeJournal(); travelTo(travelBtn.dataset.travel); }
         });
@@ -723,9 +734,10 @@ export function createExplorationView(cfg) {
             case 'waypoint':
                 walk = null;
                 playSfx('uiClick');
-                toast(res.isNew ? `${res.name} activée : voyage rapide possible depuis la carte` : `${res.name}`, res.isNew ? 4200 : 2200);
+                toast(res.isNew ? `${res.name} activée` : `${res.name}`, res.isNew ? 4200 : 2200);
                 cfg.onSave();
                 refreshHud();
+                if (!journalEl) showJournal('travel');   // la borne ouvre le voyage rapide
                 break;
             case 'transition': {
                 const screen = X.currentScreen(session);
@@ -851,7 +863,7 @@ export function createExplorationView(cfg) {
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
         if (ev.key === 'c' || ev.key === 'C') { toggleMount(); return; }
-        if (ev.key === 'v' || ev.key === 'V') { showJournal('travel'); return; }
+        if (ev.key === 'v' || ev.key === 'V') { showJournal('travel'); return; }   // sans borne à portée : simple rappel de la règle
         const dir = KEY_TO_DIR[ev.key];
         if (!dir) return;
         ev.preventDefault();
@@ -919,8 +931,19 @@ export function createExplorationView(cfg) {
         if (X.autoDismount(session, hasMount())) { toast('Le cheval ne suit pas sur l\'eau : vous mettez pied à terre.', 3000); cfg.onSave(); }
         refreshMountButton();
         const k = Math.min(1, dt / (riding() ? 55 : 95));
-        vis.px += (session.data.x - vis.px) * k;
-        vis.py += (session.data.y - vis.py) * k;
+        // Héros : vitesse constante vers la case cible (une case par délai de pas), sans décélération entre deux pas :
+        // en marche continue le mouvement est fluide au lieu de repartir de zéro à chaque case.
+        const stepLen = dt / moveDelay() * 1.2;
+        const dx = session.data.x - vis.px, dy = session.data.y - vis.py;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 3) { vis.px = session.data.x; vis.py = session.data.y; }
+        else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; }
+        else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
+        // Caméra : suit le héros avec un léger amorti (indépendant du pas), pour absorber les à-coups du défilement.
+        if (vis.cx === undefined || Math.hypot(vis.px - vis.cx, vis.py - vis.cy) > 6) { vis.cx = vis.px; vis.cy = vis.py; }
+        const kc = 1 - Math.exp(-dt / 90);
+        vis.cx += (vis.px - vis.cx) * kc;
+        vis.cy += (vis.py - vis.cy) * kc;
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || (vis.enemies[e.def.id] = { x: e.x, y: e.y });
             v.x += (e.x - v.x) * k;
@@ -1015,8 +1038,8 @@ export function createExplorationView(cfg) {
         const follow = (size, avail, offset, pos) =>
             size <= avail ? offset + (avail - size) / 2
                 : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
-        const ox = follow(mapW, vw, 0, vis.px);
-        const oy = follow(mapH, availH, HUD_TOP, vis.py);
+        const ox = follow(mapW, vw, 0, vis.cx ?? vis.px);
+        const oy = follow(mapH, availH, HUD_TOP, vis.cy ?? vis.py);
         cam = { ox, oy, tile, vw };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
 
@@ -1136,6 +1159,36 @@ export function createExplorationView(cfg) {
             const labelText = locked ? `${ex.label} (fermé)` : gated ? `${ex.label} (niv. ${minLevel})` : ex.label;
             drawLabel(c.x, labelY, labelText,
                 gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+        });
+
+        // Passages de bord fermés par une quête : une grande porte de bois cerclée de fer barre les 3 cases (plutôt que du vide)
+        const questGateRows = connectionRows(session.screens, screen).filter(r => r.requires && session.quests.some(q => q.id === r.requires) && X.isExitLocked(session, r));
+        questGateRows.forEach(r => {
+            const p = P(r.x, r.y), pad = tile * 0.04;
+            ctx.fillStyle = '#5a3a22';
+            ctx.fillRect(p.x + pad, p.y + pad, tile - pad * 2, tile - pad * 2);
+            ctx.strokeStyle = '#3b2415';
+            ctx.lineWidth = Math.max(1, tile * 0.04);
+            const vertical = r.edge === 'west' || r.edge === 'east';   // planches le long du passage
+            for (let i = 1; i < 4; i++) {
+                ctx.beginPath();
+                if (vertical) { ctx.moveTo(p.x + tile * i / 4, p.y + pad); ctx.lineTo(p.x + tile * i / 4, p.y + tile - pad); }
+                else { ctx.moveTo(p.x + pad, p.y + tile * i / 4); ctx.lineTo(p.x + tile - pad, p.y + tile * i / 4); }
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#8a8d96';   // bandes de fer
+            if (vertical) { ctx.fillRect(p.x + pad, p.y + tile * 0.18, tile - pad * 2, tile * 0.1); ctx.fillRect(p.x + pad, p.y + tile * 0.72, tile - pad * 2, tile * 0.1); }
+            else { ctx.fillRect(p.x + tile * 0.18, p.y + pad, tile * 0.1, tile - pad * 2); ctx.fillRect(p.x + tile * 0.72, p.y + pad, tile * 0.1, tile - pad * 2); }
+            if (!r.span) {   // case centrale : cadenas et nom du passage
+                const c = P(r.x + 0.5, r.y + 0.5);
+                ctx.fillStyle = '#f2c14e';
+                ctx.strokeStyle = '#2b1b17';
+                ctx.lineWidth = Math.max(1, tile * 0.05);
+                ctx.fillRect(c.x - tile * 0.14, c.y - tile * 0.02, tile * 0.28, tile * 0.22);
+                ctx.strokeRect(c.x - tile * 0.14, c.y - tile * 0.02, tile * 0.28, tile * 0.22);
+                ctx.beginPath(); ctx.arc(c.x, c.y - tile * 0.02, tile * 0.1, Math.PI, 0); ctx.stroke();
+                drawLabel(c.x, r.edge === 'north' ? c.y + tile * 0.75 : c.y - tile * 0.75, `${r.label} (fermé)`, '#e5e7eb', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+            }
         });
 
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
@@ -1311,17 +1364,17 @@ export function createExplorationView(cfg) {
                 case 'enemy': {
                     const def = it.e.def;
                     const illusion = Boolean(def.illusion);
-                    const boss = Boolean(def.boss);
-                    const big = boss || illusion;       // un mirage copie la silhouette du vrai soleil
+                    // un mirage copie en tout point le vrai soleil (silhouette, ombre, étiquette « Boss · Nv »)
+                    const twin = illusion ? screen.enemies.find(e => e.boss && e.id === def.spriteKey) : null;
+                    const boss = Boolean(def.boss || twin);
+                    const big = boss || illusion;
                     const shielded = X.isShielded(session, def);
-                    const lvl = X.levelFor(session, def);
+                    const lvl = X.levelFor(session, twin || def);
                     const size = tile * (big ? 1.55 : 1.08);
                     const feet = c.y + tile * 0.4;
-                    // Indice des mirages : ils scintillent, n'ont ni ombre au sol ni étiquette de niveau.
-                    if (!illusion) drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
+                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
-                    if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
                     const eKey = def.spriteKey || def.id;
                     const eDir = viewDir(it.e.face);
                     const baseSprite = enemySprite(eKey, def.templateId, screen.biome);
@@ -1341,14 +1394,11 @@ export function createExplorationView(cfg) {
                     }
                     if (big) {
                         ctx.save();
-                        if (illusion) ctx.globalAlpha = 0.5;
                         drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
                         ctx.restore();
                     }
-                    if (!illusion) {
-                        const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
-                        drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? 'Bouclier · ' : boss ? 'Boss · ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
-                    }
+                    const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
+                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? 'Bouclier · ' : boss ? 'Boss · ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
                     break;
                 }
                 case 'player': {
@@ -1730,6 +1780,7 @@ export function createExplorationView(cfg) {
         travelTo,
         openCarnet: tab => { if (!isBlocked()) showJournal(tab); },
         getTravelList() { ensureSession(); return X.waypointList(session); },
+        canFastTravel() { ensureSession(); return X.nearWaypoint(session); },
 
         // Arène des Mille Flèches : entrée (point de retour mémorisé) et sortie à tout moment.
         inArena() { ensureSession(); return X.inArena(session); },
@@ -1740,7 +1791,7 @@ export function createExplorationView(cfg) {
 
         teleportToScreen(screenId) {
             ensureSession();
-            if (!X.teleportToScreen(session, screenId)) return false;
+            if (!X.nearWaypoint(session) || !X.teleportToScreen(session, screenId)) return false;
             vis.enemies = {};
             syncVisual(true);
             refreshHud();

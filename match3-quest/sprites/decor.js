@@ -46,9 +46,14 @@ const D = {
         `<path d="M34 16 L32 28 L36 26 L35 38" fill="none" stroke="#ff7a2e" stroke-width="2.4"/><circle cx="34" cy="12" r="2" fill="#ffd24a" ${N}/>`,
     stalagmite: () => `<path d="M10 58 L16 34 L22 58Z M20 58 L30 10 L40 58Z M38 58 L46 30 L54 58Z" fill="#7a726a"/>` +
         `<path d="M30 10 L40 58 L34 58 L32 30Z" fill="#5a534c" ${N}/><path d="M24 40 L28 34 M44 44 L47 38" fill="none" stroke="#9a9288" stroke-width="1.4"/>`,
-    crag: () => `<path d="M8 58 L14 36 L22 40 L30 20 L40 34 L46 28 L56 58Z" fill="#7a7690"/>` +
-        `<path d="M30 20 L36 30 L32 32 L28 28 L24 32Z M46 28 L50 38 L46 36 L42 38Z" fill="#f4f2ea" stroke-width="1.4"/>` +
-        `<path d="M30 20 L34 58" fill="none" stroke="#5a5670" stroke-width="1.4"/>`,
+    // Amas de blocs de basalte frappés par la foudre (à l'échelle d'une case, pas une montagne en miniature).
+    crag: () => `<path d="M6 58 L8 44 L16 36 L26 38 L30 46 L28 58Z" fill="#6f6a86"/>` +
+        `<path d="M24 58 L26 38 L34 24 L46 26 L52 38 L54 58Z" fill="#7a7690"/>` +
+        `<path d="M44 58 L46 46 L54 42 L60 48 L60 58Z" fill="#625e78"/>` +
+        `<path d="M34 24 L46 26 L52 38 L54 58 L44 58 L46 40 L40 32Z" fill="#4e4a66" ${N}/>` +
+        `<path d="M8 44 L16 36 L26 38 L30 46 L22 44Z" fill="#8f8aa8" ${N}/>` +
+        `<path d="M36 28 L33 38 L38 38 L35 50" fill="none" stroke="#f2c14e" stroke-width="1.6"/>` +
+        `<path d="M12 50 L18 46 M30 56 L34 50" fill="none" stroke="#4e4a66" stroke-width="1.3"/>`,
     mountain: () => `<path d="M2 58 L24 16 L36 34 L44 24 L62 58Z" fill="#7a7690"/>` +
         `<path d="M24 16 L30 28 L26 30 L22 26 L18 30 Z M44 24 L50 36 L46 34 L42 38 L38 32Z" fill="#f4f2ea" stroke-width="1.4"/>` +
         `<path d="M36 34 L44 58 M24 16 L14 58" fill="none" stroke="#5a5670" stroke-width="1.4"/>`,
@@ -60,6 +65,14 @@ const D = {
         `<path d="M26 12 Q20 6 26 2 M34 12 Q38 6 34 0" fill="none" stroke="#9aa0aa" stroke-width="2"/>`,
     wave: () => `<path d="M4 50 Q4 30 22 26 Q40 24 42 38 Q36 32 30 36 Q26 42 34 46 Q46 50 60 40 L60 58 L4 58Z" fill="#3a8ad0"/>` +
         `<path d="M22 26 Q34 22 40 32 Q32 28 28 32" fill="#dcf0fa" ${N}/><path d="M8 50 Q18 46 28 52 Q40 56 56 48" fill="none" stroke="#dcf0fa" stroke-width="2"/>`,
+    // Coquillages échoués sur le sable (décors fixes de la côte).
+    shell: () => `<path d="M32 56 L10 40 Q6 24 18 16 Q32 8 46 16 Q58 24 54 40Z" fill="#f2c7b0"/>` +
+        `<path d="M32 56 L18 16 M32 56 L26 11 M32 56 L32 10 M32 56 L38 11 M32 56 L46 16" fill="none" stroke="#c98f7a" stroke-width="1.8"/>` +
+        `<path d="M26 56 L38 56 L36 60 L28 60Z" fill="#d9a58f"/><path d="M12 38 Q32 46 52 38" fill="none" stroke="#fbe6da" stroke-width="2"/>`,
+    conch: () => `<path d="M12 50 Q10 36 24 30 Q22 18 34 14 Q44 12 46 22 Q54 24 54 34 Q56 48 40 54 Q24 60 12 50Z" fill="#f4dcc0"/>` +
+        `<path d="M40 54 Q54 48 52 34 Q50 40 42 40 Q36 40 36 34" fill="none" stroke="#d9a57a" stroke-width="2"/>` +
+        `<path d="M24 30 Q32 32 34 26 Q38 20 44 24 M20 44 Q30 48 38 44" fill="none" stroke="#d9a57a" stroke-width="1.8"/>` +
+        `<path d="M34 14 Q40 8 44 12" fill="none" stroke="#f4dcc0" stroke-width="3"/>`,
     drop: () => `<path d="M32 4 Q52 30 52 40 Q52 58 32 58 Q12 58 12 40 Q12 30 32 4Z" fill="#4a9ad8"/>` +
         `<path d="M22 38 Q22 30 28 24" fill="none" stroke="#dcf0fa" stroke-width="3"/>`,
     tree: () => `<path d="M28 58 L29 36 L35 36 L36 58Z" fill="#8a5a33"/>` +

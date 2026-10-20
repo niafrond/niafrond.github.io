@@ -5,7 +5,7 @@ import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, bossEase, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
-    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
+    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, nearWaypoint, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
     AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
@@ -168,7 +168,11 @@ const enter = (s, key) => {
 function walkTo(s, x, y) {
     const fights = [];
     for (let attempt = 0; attempt < 30; attempt++) {
-        const path = findPath(s, x, y);
+        let path = findPath(s, x, y);
+        if (!path) {   // rangée de piliers d'un boss de porte : on le vainc d'abord
+            s.screens[s.data.screenId].enemies.filter(e => e.guardsDoor).forEach(e => markEnemyDefeated(s, e.id));
+            path = findPath(s, x, y);
+        }
         if (!path) throw new Error(`aucun chemin vers (${x},${y}) sur ${s.data.screenId} depuis (${s.data.x},${s.data.y})`);
         let last = { type: 'moved' };
         let interrupted = false;
@@ -206,6 +210,10 @@ function travel(s, target) {
     for (let hops = 0; hops < 200 && s.data.screenId !== target; hops++) {
         const exit = nextExit(s, s.data.screenId, target);
         if (isExitLocked(s, exit)) { satisfy(s, exit.requires); continue; }
+        // la rangée de piliers d'un boss de porte est infranchissable : le héros qui la remonte doit d'abord vaincre ce boss
+        if (!findPath(s, exit.x, exit.y)) {
+            s.screens[s.data.screenId].enemies.filter(e => e.guardsDoor).forEach(e => events.push(...markEnemyDefeated(s, e.id)));
+        }
         const res = crossExit(s, exit, walkTo);
         events.push(...res.fights);
         if (res.type !== 'transition') throw new Error(`sortie ${s.data.screenId} -> ${exit.to} non franchie : ${JSON.stringify(res)}`);
@@ -277,6 +285,7 @@ function playQuest(s, id) {
             if (o.type === 'kill') defeat(s, o.target);
             else if (o.type === 'killGroup') Object.values(s.rt.enemyIndex).filter(e => e.def.group === o.target).forEach(e => defeat(s, e.def.id));
             else if (o.type === 'chest') openChestAt(s, o.target);
+            else if (o.type === 'item') openChestAt(s, Object.values(s.screens).flatMap(sc => sc.chests).find(c => c.questItem?.id === o.target).id);
             else if (o.type === 'talk') talkTo(s, o.target);
             else if (o.type === 'visit') travel(s, o.target);
         }
@@ -515,14 +524,22 @@ describe('cartes (story.js)', () => {
         expect(reachable(s, s.spawn, new Set([`${fengmeng.x},${fengmeng.y}`])).has(`${east.x},${east.y}`)).toBe(true);
     });
 
-    test('le sanctuaire d\'un boss ne barre jamais le passage vers la sortie est', () => {
+    test('le sanctuaire d\'un boss : la sortie est atteignable par la case du boss, jamais en le contournant', () => {
         ORDER.slice(0, -1).forEach(id => {
             const s = SCREENS[id];
             const east = exitsOf(s, SCREENS).find(e => e.x === s.w - 1);
-            const bodies = new Set(s.enemies.map(e => `${e.x},${e.y}`));
+            const bodies = new Set([...s.enemies, ...s.npcs, ...s.chests].map(e => `${e.x},${e.y}`));   // les PNJ et coffres arrêtent aussi le héros
             s.enemies.filter(e => e.kind === 'patrol').forEach(e => buildRoute(e.patrol).forEach(p => bodies.add(`${p.x},${p.y}`)));
             bodies.delete(`${s.spawn.x},${s.spawn.y}`);
-            expect(reachable(s, s.spawn, bodies).has(`${east.x},${east.y}`)).toBe(true);
+            const doorGuards = s.enemies.filter(e => e.guardsDoor);
+            // sans le corps du boss de porte, la sortie est atteignable (ses piliers ne ferment que sa rangée)
+            const open = new Set(bodies);
+            doorGuards.forEach(e => open.delete(`${e.x},${e.y}`));
+            expect(reachable(s, s.spawn, open).has(`${east.x},${east.y}`)).toBe(true);
+            // avec le boss en place, impossible de passer derrière lui
+            doorGuards.forEach(g => exitsOf(s, SCREENS).filter(e => e.requires === g.id).forEach(door => {
+                expect([id, door.x, door.y, reachable(s, s.spawn, bodies).has(`${door.x},${door.y}`)]).toEqual([id, door.x, door.y, false]);
+            }));
         });
     });
 
@@ -620,7 +637,7 @@ describe('quêtes (story.js)', () => {
         q.requires.forEach(r => expect(questIds.has(r)).toBe(true));
         expect(q.objectives.length).toBeGreaterThan(0);
         q.objectives.forEach(o => {
-            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, talk: npcIds, visit: new Set(Object.keys(SCREENS)) }[o.type];
+            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, item: new Set(Object.values(SCREENS).flatMap(sc => sc.chests).map(c => c.questItem?.id).filter(Boolean)), talk: npcIds, visit: new Set(Object.keys(SCREENS)) }[o.type];
             expect([q.id, o.type, Boolean(pool)]).toEqual([q.id, o.type, true]);
             expect([q.id, o.target, pool.has(o.target)]).toEqual([q.id, o.target, true]);
             if (o.type === 'talk') expect(o.lines?.length).toBeGreaterThan(0);   // la cible a une réplique à dire
@@ -934,6 +951,13 @@ describe('déplacement et zones de vigilance', () => {
         expect(waypointList(t).map(w => w.screenId)).toEqual(['rizieres']);
         enterScreen(t, 'rizieres_village', SCREENS.rizieres_village.spawn);   // entrer dans un village découvre sa pierre
         expect(waypointList(t).map(w => w.screenId)).toEqual(['rizieres_village', 'rizieres']);
+        // le voyage rapide exige d'être à une borne de voyage
+        const far = SCREENS.rizieres_village.waypoint;
+        t.data.x = 0; t.data.y = 0;
+        expect(nearWaypoint(t)).toBe(false);
+        expect(fastTravel(t, 'rizieres')).toBe(false);
+        t.data.x = far.x; t.data.y = far.y + 1;
+        expect(nearWaypoint(t)).toBe(true);
         expect(fastTravel(t, 'rizieres')).toBe(true);
         expect(t.data.screenId).toBe('rizieres');
         expect(fastTravel(t, 'fleuve_wild')).toBe(false);   // pierre non découverte
@@ -1455,14 +1479,12 @@ describe('dialogues d\'ambiance conditionnels', () => {
         });
     });
 
-    test('l\'indice des mirages est cohérent avec le rendu : le vrai soleil a une ombre et un niveau, les mirages non', () => {
+    test('l\'indice des mirages est cohérent avec le rendu : les mirages copient ombre et niveau, seul le vrai soleil reste en place', () => {
         const dawa = SCREENS.gobi_h_dawa.npcs.find(n => n.id === 'guide_dawa');
-        const text = [...dawa.idle, ...quest('q_sun_4').hint, ...quest('sq_oasis').offer].join(' ');
+        const text = [...dawa.idle, ...quest('q_sun_4').hint].join(' ');
         expect(text).toMatch(/ombre/);
-        expect(text).toMatch(/scintill/);
-        // la maxime « le vrai soleil ne projette pas d'ombre » est explicitement corrigée
-        expect(dawa.idle.join(' ')).toMatch(/ne projette pas d'ombre/);
-        expect(dawa.idle.join(' ')).toMatch(/se trompent|c'est l'inverse/);
+        expect(text).toMatch(/ne bouge jamais|ne quitte jamais sa place/);
+        expect(text).not.toMatch(/scintill|sans ombre|n'a ni ombre/);
     });
 });
 
@@ -1568,8 +1590,13 @@ describe('mirages (illusion)', () => {
         const res = tryMove(s, 0, -1);   // (10,2), à distance 1 de mirage_1 (9,1)
         const def = LEGACY.screens.gobi.enemies.find(e => e.id === 'mirage_1');
         expect(res).toEqual({ type: 'illusion', enemyId: 'mirage_1', lines: def.illusionLines });
-        expect(s.data.defeated).toContain('mirage_1');
-        expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('mirage_1');
+        expect(s.data.defeated).not.toContain('mirage_1');
+        // le mirage se reforme ailleurs (plus de 5 cases du héros) ; le vrai soleil reste en (11,8)
+        const m = aliveEnemies(s).find(e => e.def.id === 'mirage_1');
+        expect([m.x, m.y]).not.toEqual([9, 1]);
+        expect(Math.max(Math.abs(m.x - s.data.x), Math.abs(m.y - s.data.y))).toBeGreaterThanOrEqual(6);
+        const sun = aliveEnemies(s).find(e => e.def.id === 'sun_4');
+        expect([sun.x, sun.y]).toEqual([11, 8]);
         expect(tryMove(s, 0, 1).type).toBe('moved');
     });
 
@@ -1589,8 +1616,7 @@ describe('mirages (illusion)', () => {
         }, { x: 3, y: 0 });
         const events = tick(s, PATROL_STEP_MS * 2);
         expect(events).toEqual([expect.objectContaining({ type: 'illusion', enemyId: 'm' })]);
-        expect(isEnemyIllusionGone(s, 'm')).toBe(true);
-        expect(tick(s, PATROL_STEP_MS * 4)).toEqual([]);
+        expect(isEnemyIllusionGone(s, 'm')).toBe(false);   // il se reforme ailleurs
     });
     const isEnemyIllusionGone = (s, id) => !aliveEnemies(s).some(e => e.def.id === id);
 

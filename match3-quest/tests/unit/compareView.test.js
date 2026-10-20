@@ -8,7 +8,8 @@ describe('comparaison', () => {
         expect(compareRows('spell', a)[0].num).toBe(5);
         const html = buildCompareHtml('spell', a, b);
         expect(html).toContain('<td>10</td><td class="cmp-better">30</td>');   // dégâts : B meilleur
-        expect(html).toContain('<td>2 red + 3 blue</td><td class="cmp-better">4 red</td>');   // coût : B moins cher
+        // coût en gomettes (disque de couleur avec la quantité) : B moins cher
+        expect(html).toMatch(/<td><span class="cost-badge"[^>]*>2<\/span><span class="cost-badge"[^>]*>3<\/span><\/td><td class="cmp-better"><span class="cost-badge"[^>]*>4<\/span><\/td>/);
     });
 
     test('armes et stuffs', () => {

@@ -212,6 +212,7 @@ function defaultData() {
         banterSeen: [],
         waypoints: [],
         tracked: null,
+        questItems: [],
         arena: normalizeArenaData(null)
     };
 }
@@ -228,10 +229,19 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
+    data.questItems = Array.isArray(data.questItems) ? data.questItems.filter(i => i && typeof i.id === 'string') : [];
     data.observed = data.observed && typeof data.observed === 'object' && !Array.isArray(data.observed) ? data.observed : {};
+
+    // Anciennes sauvegardes : un coffre d'objet de quête ouvert sans l'objet (ni quête terminée) est refermé pour pouvoir le fouiller.
+    Object.values(screens).forEach(screen => screen.chests.forEach(c => {
+        const qi = c.questItem;
+        if (qi && data.quests[qi.quest] !== 'done' && !data.questItems.some(i => i.id === qi.id)) data.openedChests = data.openedChests.filter(id => id !== c.id);
+    }));
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
+    // Les mirages ne sont plus « vaincus » : ils se déplacent (anciennes sauvegardes : on les remet en jeu).
+    data.defeated = data.defeated.filter(id => !enemyIndex[id]?.def.illusion);
 
     const session = {
         data,
@@ -502,9 +512,30 @@ const DEFAULT_SHIELD_LINES = [
     "Un bouclier de flammes protège le soleil : il faut d'abord venir à bout de ses gardiens."
 ];
 
-// Un mirage se dissipe : il est marqué vaincu et la vue joue un court dialogue du Narrateur.
+// Un mirage se dissipe (court dialogue du Narrateur) et un autre se forme ailleurs : le mirage est déplacé sur une case libre,
+// loin du héros, au lieu d'être marqué vaincu. Le vrai soleil, lui, ne bouge jamais.
+const MIRAGE_MIN_DIST = 6;
+
+function relocateMirage(session, def) {
+    const screen = currentScreen(session);
+    const st = session.rt.enemies[def.id];
+    if (!st) return;
+    const { x: px, y: py } = session.data;
+    const cells = [];
+    for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) {
+        if (Math.max(Math.abs(x - px), Math.abs(y - py)) < MIRAGE_MIN_DIST) continue;
+        if (isTerrainBlocked(screen, x, y) || entityAt(session, x, y)) continue;
+        if ((screen.exits || []).some(e => e.x === x && e.y === y)) continue;
+        cells.push({ x, y });
+    }
+    if (!cells.length) return;
+    const pos = cells[Math.floor(Math.random() * cells.length)];
+    st.x = pos.x;
+    st.y = pos.y;
+}
+
 function dissipate(session, def) {
-    if (!session.data.defeated.includes(def.id)) session.data.defeated.push(def.id);
+    relocateMirage(session, def);
     return { type: 'illusion', enemyId: def.id, lines: def.illusionLines?.length ? def.illusionLines : DEFAULT_ILLUSION_LINES };
 }
 
@@ -528,7 +559,12 @@ function checkAura(session) {
 }
 
 // Une sortie est verrouillée tant que sa condition `requires` n'est pas remplie.
-export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires);
+// Une quête `unlockOnReady` ouvre sa porte dès que tous ses objectifs sont remplis, sans devoir retourner voir le PNJ (ex. sceau du Fusang).
+const readyUnlocks = (session, id) => {
+    const quest = typeof id === 'string' ? questById(session, id) : null;
+    return Boolean(quest?.unlockOnReady) && questStatus(session, quest) === 'ready';
+};
+export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires);
 
 // Transition vers une autre carte (sortie explicite ou connexion de bordure) : alerte de niveau, texte d'arrivée, quêtes.
 function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
@@ -888,6 +924,7 @@ function objectiveDone(session, obj) {
     if (obj.type === 'kill') return session.data.defeated.includes(obj.target);
     if (obj.type === 'chest') return session.data.openedChests.includes(obj.target);
     if (obj.type === 'talk') return session.data.talked.includes(obj.target);
+    if (obj.type === 'item') return session.data.questItems.some(i => i.id === obj.target);
     if (obj.type === 'visit') return session.data.visitedScreens.includes(obj.target);
     if (obj.type === 'killGroup') {
         const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === obj.target);
@@ -911,6 +948,8 @@ function startQuest(session, quest) {
 
 function completeQuest(session, quest) {
     session.data.quests[quest.id] = 'done';
+    // l'objet spécial est remis au PNJ
+    session.data.questItems = session.data.questItems.filter(i => i.quest !== quest.id);
     if (quest.final) session.data.ended = true;
     return {
         type: 'questCompleted', quest, lines: quest.complete, reward: quest.reward || {}, gold: quest.reward?.gold || 0,
@@ -989,6 +1028,7 @@ export function startNewGamePlus(session) {
     data.quests = {};
     data.defeated = [];
     data.openedChests = [];
+    data.questItems = [];
     data.visitedScreens = [];
     data.talked = [];
     data.banterSeen = [];
@@ -1114,12 +1154,21 @@ export function talkToNpc(session, npcId) {
     return { type: 'dialog', npc, lines: ambient, events: [] };
 }
 
+// Objets spéciaux (quêtes à objet) : rangés dans `data.questItems`, jamais dans le sac, donc invendables.
+export const questItemsOf = session => session.data.questItems.map(i => ({ ...i }));
+
 export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
+    const qi = chest.questItem;
+    // Le coffre d'un objet de quête ne s'ouvre que quête en cours : sinon l'objet serait « déjà trouvé » avant d'accepter la quête.
+    if (qi && session.data.quests[qi.quest] !== 'active') {
+        return { type: 'chestSealed', chest, events: [{ type: 'chestSealed', chest }] };
+    }
     session.data.openedChests.push(chestId);
+    if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: qi.description || '', quest: qi.quest });
     const { region, kind } = currentScreen(session);
-    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, screen: { region, kind } }, ...checkAutoQuests(session)];
+    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, screen: { region, kind } }, ...checkAutoQuests(session)];
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 
@@ -1414,9 +1463,16 @@ export function waypointList(session) {
             || (kindRank[a.kind] ?? 2) - (kindRank[b.kind] ?? 2));
 }
 
-// Voyage rapide : impossible vers une pierre non activée ; arrivée à côté de la pierre.
+// Le héros se tient à côté d'une borne de voyage (la pierre de l'écran courant) : seul endroit d'où l'on peut voyager.
+export function nearWaypoint(session) {
+    const wp = currentScreen(session)?.waypoint;
+    return Boolean(wp) && Math.max(Math.abs(wp.x - session.data.x), Math.abs(wp.y - session.data.y)) <= 2;
+}
+
+// Voyage rapide : seulement depuis une borne de voyage, impossible vers une pierre non activée ; arrivée à côté de la pierre.
 export function fastTravel(session, screenId) {
     const screen = session.screens[screenId];
+    if (!nearWaypoint(session)) return false;
     if (!screen?.waypoint || !session.data.waypoints.includes(screenId)) return false;
     return enterScreen(session, screenId, screen.waypoint.spot || screen.spawn);
 }

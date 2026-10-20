@@ -320,6 +320,7 @@ describe('Grand Monde : textes et quêtes', () => {
                 if (o.type === 'kill') expect(enemyIds.has(o.target)).toBe(true);
                 else if (o.type === 'killGroup') expect(groups.has(o.target)).toBe(true);
                 else if (o.type === 'chest') expect(chestIds.has(o.target)).toBe(true);
+                else if (o.type === 'item') expect(Object.values(SCREENS).flatMap(sc => sc.chests).some(c => c.questItem?.id === o.target)).toBe(true);
                 else if (o.type === 'talk') { expect(npcIds.has(o.target)).toBe(true); expect(o.lines?.length).toBeGreaterThan(0); }
                 else if (o.type === 'visit') expect(SCREENS[o.target]).toBeTruthy();
                 else throw new Error(`type d'objectif inconnu : ${o.type}`);
@@ -380,6 +381,9 @@ describe('Grand Monde : jeu', () => {
         expect(activateWaypoint(session, 'rizieres_wild')).toMatchObject({ isNew: true });
         expect(activateWaypoint(session, 'rizieres_wild')).toMatchObject({ isNew: false });
         expect(waypointList(session).map(w => w.screenId)).toEqual(['rizieres_village', 'rizieres_wild']);
+        expect(fastTravel(session, 'rizieres_wild')).toBe(false);   // pas à une borne de voyage
+        const home = SCREENS.rizieres_village.waypoint;
+        session.data.x = home.x; session.data.y = home.y + 1;
         expect(fastTravel(session, 'rizieres_wild')).toBe(true);
         expect(session.data.screenId).toBe('rizieres_wild');
         expect(isTerrainBlocked(SCREENS.rizieres_wild, session.data.x, session.data.y)).toBe(false);

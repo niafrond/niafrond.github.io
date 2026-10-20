@@ -2,7 +2,7 @@ import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
 import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
-import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById } from "./stuff.js";
+import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff } from "./stuff.js";
 import "./stuffView.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
@@ -12,9 +12,11 @@ import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, get
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
-import { rechargeReusableItems } from "./items.js";
+import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
 import { initCompare } from "./compareView.js";
+import { getWeaponById } from "./weapons.js";
+import { MAX_ACTIVE_SPELLS } from "./constants.js";
 import { bindSecretTrigger } from "./secretMenu.js";
 import { renderMerchant } from "./shop.js";
 import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
@@ -302,29 +304,20 @@ function init() {
         const modal = document.getElementById('worldmap-modal');
         const container = document.getElementById('worldmap-selection');
         if(!modal || !container) return;
-        mountWorldMap(container, worldZones, {
-            level: player.level,
-            visitedIds: player.worldMap?.visitedZoneIds || [],
-            currentId: exploration.getCurrentRegion(),
-            heroUri: spriteUri(heroSprite(player.class)),
-            requireVisit: true
-        }, zone => {
-            modal.classList.remove('active');
-            const screenId = REGION_ENTRY_SCREEN[zone.id];
-            if(screenId) exploration.teleportToScreen(screenId);
-        });
-        // Voyage rapide : pierres de voyage activées, groupées par région.
-        const stones = exploration.getTravelList();
-        if(stones.length) {
-            const panel = document.createElement('div');
-            panel.className = 'worldmap-travel';
-            panel.innerHTML = `<h4>${icon('stone')} Voyage rapide</h4>`;
-            const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
+        // Voyage rapide : seulement depuis une borne de voyage ; on choisit d'abord un biome, puis une de ses pierres.
+        const canTravel = exploration.canFastTravel();
+        const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
+        const panel = document.createElement('div');
+        panel.className = 'worldmap-travel';
+        const showStones = zone => {
+            const stones = exploration.getTravelList().filter(w => w.region === zone.id);
+            panel.innerHTML = `<h4>${icon('stone')} Voyage rapide · ${zoneName[zone.id] || zone.id}</h4>`;
+            if(!stones.length) panel.insertAdjacentHTML('beforeend', '<p>Aucune pierre de voyage activée dans ce biome.</p>');
             stones.forEach(w => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'worldmap-travel-btn';
-                btn.textContent = `${zoneName[w.region] || w.region} · ${w.screenName}`;
+                btn.textContent = w.screenName;
                 btn.disabled = w.current;
                 btn.addEventListener('click', () => {
                     modal.classList.remove('active');
@@ -332,8 +325,18 @@ function init() {
                 });
                 panel.appendChild(btn);
             });
-            container.appendChild(panel);
-        }
+        };
+        panel.innerHTML = canTravel
+            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.</p>`
+            : `<h4>${icon('stone')} Voyage rapide</h4><p>Le voyage rapide n'est possible que depuis une borne de voyage.</p>`;
+        mountWorldMap(container, worldZones, {
+            level: player.level,
+            visitedIds: player.worldMap?.visitedZoneIds || [],
+            currentId: exploration.getCurrentRegion(),
+            heroUri: spriteUri(heroSprite(player.class)),
+            requireVisit: true
+        }, zone => { if(canTravel) showStones(zone); });
+        container.appendChild(panel);
         modal.classList.add('active');
     };
     document.getElementById('worldmap-close-btn')?.addEventListener('click', () => {
@@ -397,8 +400,52 @@ function init() {
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),
-        weapon: id => (player.weapons || []).find(w => w.id === id),
-        stuff: id => getStuffById(id)
+        weapon: id => (player.weapons || []).find(w => w.id === id) || getWeaponById(id),
+        stuff: id => getStuffById(id),
+        item: id => (player.inventory || []).find(i => i.id === id) || (player.equipment?.leftHand?.id === id ? player.equipment.leftHand : null) || allItems.find(i => i.id === id)
+    }, {
+        // « Équiper » depuis le comparateur ; sorts : « Remplacer » (fenêtre de choix) quand les emplacements sont pleins
+        actions: {
+            spell: id => window.equipSpell(id),
+            weapon: id => window.equipWeapon(id, 'right'),
+            item: id => {
+                const index = (player.inventory || []).findIndex(i => i.id === id);
+                const it = player.inventory[index];
+                if(it?.type === 'shield') window.equipGear(index);
+                else if(it?.type === 'reusable') window.setActiveInventoryItem(index);
+            },
+            stuff: id => {
+                const res = equipStuff(player, id);
+                log(res.message);
+                saveUpdate();
+                updateStats();
+                document.dispatchEvent(new Event('stuff-changed'));
+            }
+        },
+        state: {
+            spell: id => player.activeSpells.some(s => s.id === id) ? { label: 'Équipé', disabled: true }
+                : { label: player.activeSpells.length >= MAX_ACTIVE_SPELLS ? 'Remplacer' : 'Équiper', disabled: false },
+            weapon: id => {
+                const w = (player.weapons || []).find(x => x.id === id);
+                if(!w) return { label: 'Non possédée', disabled: true };
+                return player.equippedWeapon?.id === id ? { label: 'Main droite', disabled: true }
+                    : { label: player.equippedWeapon ? 'Remplacer' : 'Équiper', disabled: player.level < w.minLevel };
+            },
+            item: id => {
+                const it = (player.inventory || []).find(i => i.id === id);
+                if(player.equipment?.leftHand?.id === id) return { label: 'Équipé', disabled: true };
+                if(!it) return { label: 'Non possédé', disabled: true };
+                if(it.type !== 'shield' && it.type !== 'reusable') return { label: 'Passif', disabled: true };
+                const index = player.inventory.indexOf(it);
+                if(it.type === 'reusable') return { label: index === player.activeInventoryIndex ? 'Objet actif' : 'Choisir', disabled: index === player.activeInventoryIndex || player.level < (it.minLevel || 1) };
+                return { label: player.equipment?.leftHand?.type === 'shield' ? 'Remplacer' : 'Équiper', disabled: player.level < (it.minLevel || 1) };
+            },
+            stuff: id => {
+                const st = getStuffById(id);
+                return Object.values(player.stuff || {}).includes(id) ? { label: 'Porté', disabled: true }
+                    : { label: st && player.stuff?.[st.slot] ? 'Remplacer' : 'Équiper', disabled: !(player.stuffOwned || []).includes(id) || player.level < (st?.minLevel || 1) };
+            }
+        }
     });
     bindSecretTrigger(manaFlightBtn);   // 6 clics : menu secret (secretMenu.js)
     effectsSelect?.addEventListener('change', () => setOption('effects', effectsSelect.value));

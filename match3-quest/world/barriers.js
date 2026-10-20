@@ -97,7 +97,7 @@ export function addBorderBarriers(screens) {
         const lane = openRim(screens, screen, LANE_DEPTH);
         const built = buildingCells(screen);
         let cleared = false;
-        const pillars = new Set((screen.pillars || []).map(([px, py]) => key(px, py)));   // piliers d'un gardien de passage : intentionnels
+        const pillars = new Set([...(screen.pillars || []), ...(screen.sealed || [])].map(([px, py]) => key(px, py)));   // piliers d'un gardien de passage et rochers qui ferment sa rangée : intentionnels
         lane.forEach(k => { if (!built.has(k) && !pillars.has(k) && (obst.delete(k) || liq.delete(k))) cleared = true; });
         relocateEntities(screen, lane, open, obst, liq);
         if (cleared) { screen.obstacles = toRects(obst); screen.liquids = toRects(liq); }

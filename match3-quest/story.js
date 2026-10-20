@@ -624,8 +624,8 @@ const BASE_SCREENS = {
             { id: 'guide_dawa', x: 3, y: 7, name: 'Dawa', title: 'Guide du désert', 
               idle: [
                   "Au Gobi, on apprend vite à douter de ses yeux. Un mirage vous fait des signes, vous sourit, vous promet de l'eau. Il ment comme les plus beaux.",
-                  "Les anciens disent : « le vrai soleil ne projette pas d'ombre ». Les anciens se trompent, ou ils parlent du ciel. Ici, sur terre, c'est l'inverse : tout ce qui est vrai pèse sur le sable, donc a une ombre.",
-                  "Un mirage, lui, flotte : il scintille, sans ombre ni nom. Cherchez le soleil qui projette une ombre à ses pieds et porte un nom au-dessus de sa tête : c'est le vrai."
+                  "Ne vous fiez pas à vos yeux : les mirages copient le vrai soleil jusqu'à son ombre et à son nom. Fiez-vous plutôt à vos pas.",
+                  "Quand un mirage se défait, un autre se forme ailleurs, au hasard des dunes. Le vrai soleil, lui, ne bouge jamais : c'est celui qui reste toujours à la même place."
               ],
               talk: [
                   { whenDone: 'sq_oasis', lines: [
@@ -638,7 +638,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             { id: 'gobi_colossus', templateId: 'hundun', name: 'Colosse de sable', kind: 'sentinel', x: 6, y: 1, offset: 0 },
-            // Mirages du Soleil des Mirages : même sprite que `sun_4`, sans ombre ni niveau, ils scintillent.
+            // Mirages du Soleil des Mirages : même sprite que `sun_4`, ombre et niveau identiques ; ils changent de place quand on les dissipe.
             { id: 'mirage_1', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 1,
               permanent: true, illusion: true,
               illusionLines: [
@@ -1290,8 +1290,8 @@ const BASE_QUESTS = [
             "Le guide Dawa saura vous dire comment faire la différence."
         ],
         hint: [
-            "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Cherchez celui qui projette une ombre au sol et porte un nom au-dessus de sa tête.",
-            "Un mirage scintille, comme l'air chaud : il n'a ni ombre, ni nom. Si vous hésitez, touchez-le : au pire, il se défait entre vos doigts.",
+            "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Ils lui ressemblent trait pour trait, ombre et nom compris.",
+            "Quand un mirage se défait, un autre renaît ailleurs. Le vrai soleil, lui, ne quitte jamais sa place : repérez celui qui ne change pas d'un passage à l'autre.",
             "Régler la caravane de l'oasis et trouver la carte qui ne ment pas affaiblira le vrai soleil."
         ],
         complete: [
@@ -1583,9 +1583,9 @@ const BASE_QUESTS = [
         objectives: [{ type: 'chest', target: 'oasis_cache', text: "Retrouver la cache de l'oasis (coin nord-ouest du Gobi, près des tentes)" }],
         offer: [
             "Un guide du Gobi ne se perd jamais, seigneur. Mais il laisse parfois des choses derrière lui. J'ai enterré, il y a longtemps, une cache de rosée d'oasis dans le coin nord-ouest, sous une dalle rouge.",
-            "Allez la chercher avant que le sable ne la mange. Et méfiez-vous de ce qui scintille au loin : un mirage n'a ni ombre ni poids, alors que tout ce qui est vrai écrase le sable de son ombre."
+            "Allez la chercher avant que le sable ne la mange. Et méfiez-vous des silhouettes au loin : au Gobi, un mirage a même une ombre, et il change de place chaque fois qu'on le défait."
         ],
-        hint: ["La cache est enterrée dans le coin nord-ouest, près des tentes du marchand. Évitez de suivre les silhouettes qui scintillent au loin."],
+        hint: ["La cache est enterrée dans le coin nord-ouest, près des tentes du marchand. Évitez de suivre les silhouettes qui changent de place au loin."],
         complete: [
             "Elle est intacte ! La rosée d'oasis ne se perd jamais, voyez-vous : elle attend qu'on la boive.",
             "Gardez-en pour vos flèches, elles tiendront la soif du désert. Et prenez ces pièces : un guide paie toujours ses dettes."

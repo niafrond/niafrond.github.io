@@ -179,4 +179,9 @@ describe('revente aux marchands', () => {
         expect(src).toContain('data-sell');
         expect(src).toContain('data-mode="sell"');
     });
+
+    test('les objets spéciaux de quête (exploration.questItems) ne sont jamais proposés à la vente', () => {
+        const h = { ...hero(), exploration: { questItems: [{ id: 'qi_x', name: 'Sceau', quest: 'q' }] } };
+        expect(sellableEntries(h).some(e => /Sceau|qi_x/.test(e.obj.name + e.obj.id))).toBe(false);
+    });
 });

@@ -151,6 +151,7 @@ function playQuest(s, id) {
                     .forEach(e => defeat(s, e.def.id));
             }
             else if (o.type === 'chest') openChestAt(s, o.target);
+            else if (o.type === 'item') openChestAt(s, Object.values(s.screens).flatMap(sc => sc.chests).find(c => c.questItem?.id === o.target).id);
             else if (o.type === 'talk') talkTo(s, o.target);
             else if (o.type === 'visit') travel(s, o.target);
         }

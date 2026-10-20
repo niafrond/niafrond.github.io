@@ -78,7 +78,7 @@ export default {
     fusang_road_hidden: { label: 'Cachette sous les racines', openText: 'Dans une niche de racines que le chemin ne montre pas, la cache d\'un voyageur prudent : un joli tas de pièces d\'or.' }
   },
   quests: [
-    { id: 'sq_sceau_racines', title: 'Le sceau des racines', chapter: '✦ Quête secondaire — Cime du Fusang', giver: 'astronomer_xing', turnIn: 'astronomer_xing', requires: [], side: true,
+    { id: 'sq_sceau_racines', title: 'Le sceau des racines', chapter: '✦ Quête secondaire — Cime du Fusang', giver: 'astronomer_xing', turnIn: 'astronomer_xing', requires: [], side: true, unlockOnReady: true,
       objectives: [
         { type: 'chest', target: 'seal_shard_a', text: 'Retrouver le premier éclat du sceau (racines et branches dorées)' },
         { type: 'chest', target: 'seal_shard_b', text: 'Retrouver le deuxième éclat du sceau (racines et branches dorées)' },

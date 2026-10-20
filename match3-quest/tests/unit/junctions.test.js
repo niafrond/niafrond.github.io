@@ -47,7 +47,7 @@ describe('jonctions gardées', () => {
         expect(guard).toBeDefined();
         expect(chest).toBeDefined();
         expect(quest).toMatchObject({ giver: j.guard.id, turnIn: j.guard.id, side: true });
-        expect(quest.objectives).toEqual([expect.objectContaining({ type: 'chest', target: j.item.chest })]);
+        expect(quest.objectives).toEqual([expect.objectContaining({ type: 'item', target: `qi_${j.item.chest}` })]);
         expect(quest.reward.fragment).toBe(j.item.fragment);
         // le garde est dans la zone d'arrivée côté village, hors du passage ; le coffre est au sud-est de la carte porteuse
         expect(isTerrainBlocked(guardScreen, guard.x, guard.y)).toBe(false);
@@ -73,17 +73,32 @@ describe('jonctions gardées', () => {
         // le coffre est dans une autre carte : on s'y rend, on l'ouvre
         s.data.screenId = j.item.screen;
         expect(openChest(s, j.item.chest)).toMatchObject({ type: 'chestOpened' });
+        expect(s.data.questItems).toEqual([expect.objectContaining({ id: `qi_${j.item.chest}`, quest: j.quest.id })]);
         expect(questStatus(s, quest)).toBe('ready');
         // retour au garde : remise de l'objet, le passage s'ouvre
         s.data.screenId = j.from;
         const done = talkToNpc(s, j.guard.id);
         expect(done.lines).toEqual(j.quest.complete);
         expect(questStatus(s, quest)).toBe('done');
+        expect(s.data.questItems).toEqual([]);   // objet remis au garde
         expect(isExitLocked(s, centerOf(j))).toBe(false);
         const g = atGate(j, { quests: { [j.quest.id]: 'done' } });
         expect(tryMove(g.s, g.dx, g.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', to: j.to });
         // après la remise, le garde a une réplique d'après
         expect(talkToNpc(s, j.guard.id).lines).toEqual(SCREENS[j.from].npcs.find(n => n.id === j.guard.id).talk[0].lines);
+    });
+
+    test.each(items.map(j => [j.id, j]))('%s : reparler au garde sans l\'objet ne valide pas la quête (coffre scellé avant la quête)', (_id, j) => {
+        const { s } = atGate(j);
+        const quest = QUESTS.find(q => q.id === j.quest.id);
+        s.data.screenId = j.item.screen;
+        expect(openChest(s, j.item.chest)).toMatchObject({ type: 'chestSealed' });   // quête non acceptée : rien n'est pris
+        expect(s.data.openedChests).not.toContain(j.item.chest);
+        s.data.screenId = j.from;
+        talkToNpc(s, j.guard.id);
+        const again = talkToNpc(s, j.guard.id);
+        expect(again.lines).toEqual(j.quest.hint);
+        expect(questStatus(s, quest)).toBe('active');
     });
 
     test.each(kills.map(j => [j.id, j]))('%s : gardien permanent posé près du passage, verrou levé par sa défaite', (_id, j) => {
@@ -144,5 +159,22 @@ describe('sentinelles de niveau', () => {
         const guards = Object.values(SCREENS).flatMap(s => s.npcs.filter(n => n.id.startsWith('level_guard_')));
         expect(guards.length).toBe(9);
         guards.forEach(g => expect(g.idle.join(' ')).not.toMatch(/niveau|niv\.|\d/i));
+    });
+});
+
+describe('quête qui ouvre sa porte dès les objectifs remplis (unlockOnReady)', () => {
+    test('sceau du Fusang : les trois éclats ouvrent la porte sans retourner voir Mère Xing', () => {
+        const quest = QUESTS.find(q => q.id === 'sq_sceau_racines');
+        expect(quest.unlockOnReady).toBe(true);
+        const s = createSession({ screenId: 'fusang_h_astronome', x: 1, y: 1 });
+        const door = { requires: 'sq_sceau_racines' };
+        talkToNpc(s, 'astronomer_xing');
+        expect(isExitLocked(s, door)).toBe(true);
+        ['seal_shard_a', 'seal_shard_b', 'seal_shard_c'].forEach(id => {
+            s.data.screenId = 'fusang_wild';
+            openChest(s, id);
+        });
+        expect(questStatus(s, quest)).toBe('ready');
+        expect(isExitLocked(s, door)).toBe(false);
     });
 });

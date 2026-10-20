@@ -385,7 +385,7 @@ export default {
             mirage_3: [23, 11],
             bandit_a: [9, 15],
             bandit_b: [14, 17],
-            sun_4: [27, 11],
+            sun_4: [18, 9],
             oasis_cache: [6, 7],
             gobi_chest: [26, 3]
         }

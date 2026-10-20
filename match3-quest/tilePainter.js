@@ -213,7 +213,7 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
     const h = (salt) => cellHash(x, y, salt);
     const at = (salt, span) => Math.floor(h(salt) * span);
     switch (biomeId) {
-        case 'gobi': case 'coast': case 'riverbed': case 'savanna': {       // sable : rides en arcs, cailloux, brins secs
+        case 'gobi': case 'coast': case 'savanna': {       // sable : rides en arcs, cailloux, brins secs
             for (let i = 0; i < 2; i++) {
                 const rx = 1 + at(200 + i, 8), ry = 3 + at(210 + i, 9) + i * 2;
                 R(rx, ry, 5, 1, shade(base, -22)); R(rx + 1, ry + 1, 3, 1, shade(base, 18)); R(rx - 1, ry, 1, 1, shade(base, -22));
@@ -221,6 +221,15 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             if (h(220) < 0.2) { const px_ = 2 + at(221, 11), py_ = 3 + at(222, 10); R(px_, py_, 2, 1, shade(base, -40)); R(px_, py_ - 1, 1, 1, shade(base, 26)); }
             if (biomeId === 'savanna' && h(223) < 0.5) { const tx = 2 + at(224, 11); R(tx, 8, 1, 3, '#8a7230'); R(tx + 1, 9, 1, 2, '#a88a3a'); R(tx - 1, 9, 1, 2, '#a88a3a'); }
             if (biomeId === 'coast' && h(225) < 0.12) { const sx = 3 + at(226, 9); R(sx, 11, 3, 1, '#f4ead6'); R(sx + 1, 10, 1, 1, '#f08a7a'); }
+            return true;
+        }
+        case 'riverbed': {                                                  // vase humide : sillons sombres, flaques luisantes, galets mouillés
+            for (let i = 0; i < 2; i++) {
+                const rx = 1 + at(200 + i, 8), ry = 3 + at(210 + i, 9) + i * 2;
+                R(rx, ry, 5, 1, shade(base, -20)); R(rx + 1, ry + 1, 3, 1, shade(base, 10));
+            }
+            if (h(220) < 0.3) { const fx = 2 + at(221, 9), fy = 4 + at(222, 8); R(fx, fy, 4, 2, shade(base, -34)); R(fx + 1, fy, 2, 1, shade(base, 22)); }
+            if (h(223) < 0.15) { const px_ = 2 + at(224, 11), py_ = 3 + at(225, 10); R(px_, py_, 2, 1, shade(base, -44)); R(px_, py_ - 1, 1, 1, shade(base, 18)); }
             return true;
         }
         case 'volcano': {                                                   // cendres : éclats sombres, fissures de braise
