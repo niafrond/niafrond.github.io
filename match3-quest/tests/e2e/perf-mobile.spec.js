@@ -11,7 +11,7 @@ const instrument = ({ cores }) => {
     Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => cores });
     Object.defineProperty(navigator, 'deviceMemory', { get: () => (cores <= 4 ? 2 : 8) });
 
-    const c = (window.__perf = { shadowBlur: 0, fillRect: 0, frames: 0, longTasks: 0, blockingMs: 0, audioArgs: [] });
+    const c = (window.__perf = { shadowBlur: 0, fillRect: 0, frames: 0, longTasks: 0, blockingMs: 0, maxLongMs: 0, audioArgs: [] });
     const P = CanvasRenderingContext2D.prototype;
     const blur = Object.getOwnPropertyDescriptor(P, 'shadowBlur');
     Object.defineProperty(P, 'shadowBlur', {
@@ -23,7 +23,7 @@ const instrument = ({ cores }) => {
     const loop = () => { c.frames++; requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
     try {
-        new PerformanceObserver(list => list.getEntries().forEach(e => { c.longTasks++; c.blockingMs += e.duration - 50; }))
+        new PerformanceObserver(list => list.getEntries().forEach(e => { c.longTasks++; c.blockingMs += e.duration - 50; c.maxLongMs = Math.max(c.maxLongMs, e.duration); }))
             .observe({ entryTypes: ['longtask'] });
     } catch { /* longtask non supporté */ }
 
@@ -36,7 +36,7 @@ const instrument = ({ cores }) => {
 
 const resetCounters = page => page.evaluate(() => {
     const c = window.__perf;
-    c.shadowBlur = c.fillRect = c.frames = c.longTasks = c.blockingMs = 0;
+    c.shadowBlur = c.fillRect = c.frames = c.longTasks = c.blockingMs = c.maxLongMs = 0;
 });
 
 async function openGame(page, context, { cores = 4 } = {}) {
@@ -59,6 +59,18 @@ async function enterExploration(page) {
     await page.click('#confirm-class');
     await page.waitForSelector('#explore-canvas', { state: 'visible' });
     await page.waitForTimeout(2000); // chargement des dessins de la région + mise en cache du sol
+}
+
+// Place le héros sur un écran donné (la sauvegarde est lue au chargement) puis recharge le jeu jusqu'à l'exploration.
+async function reloadAt(page, screenId, x, y) {
+    await page.evaluate(([id, px, py]) => {
+        const p = JSON.parse(localStorage.getItem('player'));
+        Object.assign(p.exploration, { screenId: id, x: px, y: py });
+        localStorage.setItem('player', JSON.stringify(p));
+    }, [screenId, x, y]);
+    await page.reload();
+    await page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
+    await page.waitForSelector('#explore-canvas', { state: 'visible' });
 }
 
 test.describe('match3-quest · performances mobile (CPU ×4)', () => {
@@ -102,14 +114,7 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         await openGame(page, context);
         await enterExploration(page);
         // Zone sauvage de 48×24 cases (≈ 1 150 cases, dont beaucoup hors écran sur un téléphone) : on y place le héros puis on recharge
-        await page.evaluate(() => {
-            const p = JSON.parse(localStorage.getItem('player'));
-            Object.assign(p.exploration, { screenId: 'rizieres_wild', x: 1, y: 11 });
-            localStorage.setItem('player', JSON.stringify(p));
-        });
-        await page.reload();
-        await page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
-        await page.waitForSelector('#explore-canvas', { state: 'visible' });
+        await reloadAt(page, 'rizieres_wild', 1, 11);
         await page.waitForTimeout(2500);
         await resetCounters(page);
         await page.waitForTimeout(3000);
@@ -117,6 +122,20 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         expect(c.frames).toBeGreaterThan(10);
         // Mesuré sur cette zone : 315 fillRect / image avant le découpage hors écran, 46 après ; plafond large
         expect(c.fillRect / c.frames).toBeLessThan(150);
+    });
+
+    test('transition d\'écran : le sol de la carte voisine est préparé avant la sortie (pas de tâche bloquante > 450 ms)', async ({ page, context }) => {
+        await openGame(page, context);
+        await enterExploration(page);
+        // Cave du fleuve, au pied de la sortie vers la zone sauvage (48×24) : avant, la transition peignait d'un coup ~1 150 cases (≈ 770 ms à CPU ×4)
+        await reloadAt(page, 'fleuve_cave', 1, 5);
+        await page.waitForTimeout(5000);   // le héros est près de la sortie : le sol voisin se prépare par tranches
+        await resetCounters(page);
+        await page.keyboard.press('ArrowLeft');
+        await page.waitForTimeout(3000);
+        const c = await page.evaluate(() => window.__perf);
+        expect(c.frames).toBeGreaterThan(10);
+        expect(c.maxLongMs).toBeLessThan(450);
     });
 
     test('exploration : la carte n\'est plus redessinée à pleine cadence sous un modal ni sous une cinématique', async ({ page, context }) => {

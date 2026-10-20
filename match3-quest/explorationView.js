@@ -27,11 +27,14 @@ import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon } from './icons.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
-import { gridsOf } from './explorationGrids.js';
+import { gridsOf, rectGrid } from './explorationGrids.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
 // Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
 const COVERED_DRAW_MS = 250;
+// Distance (cases) à une sortie en deçà de laquelle le sol de la carte voisine est préparé, et temps (ms) alloué à chaque image.
+const PREBUILD_RANGE = 14;
+const PREBUILD_BUDGET_MS = 6;
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -996,6 +999,7 @@ export function createExplorationView(cfg) {
         if (!covered && (now - lastDrawAt >= COVERED_DRAW_MS || !isModalOpen())) {
             lastDrawAt = now;
             draw(now);
+            if (!slide) prebuildNeighborGround();
         }
         rafId = requestAnimationFrame(frame);
     }
@@ -1006,49 +1010,127 @@ export function createExplorationView(cfg) {
     let groundCache = null;
 
     // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
-    function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
+    // Retourne la fonction qui peint les lignes [y0, y1[ du sol : le calque peut ainsi être construit d'un coup ou par tranches (carte voisine).
+    function groundPainter(g, screen, biome, tile, ox, oy) {
         const inMap = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h;
+        const grids = gridsOf(screen);
         // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
-        const isLiquid = (x, y) => inMap(x, y) && (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y)));
-        const isPath = (x, y) => !inMap(x, y) || (inRects(screen.paths, x, y) && !isLiquid(x, y));
+        const isLiquid = (x, y) => inMap(x, y) && (grids.liq[y * screen.w + x] === 1 || (screen.aquatic && grids.obst[y * screen.w + x] === 1));
+        const isPath = (x, y) => !inMap(x, y) || (grids.path[y * screen.w + x] === 1 && !isLiquid(x, y));
         const tiled = !!(screen.interior || screen.kind === 'arena');
         // hautes herbes (rencontres aléatoires) : touffes sombres peintes dans le calque de sol
         const grassCells = X.grassOf(screen)?.cells || [];
-        const isTall = grassCells.length ? (x, y) => inMap(x, y) && inRects(grassCells, x, y) : null;
+        const grassGrid = grassCells.length ? rectGrid(screen, grassCells) : null;
+        const isTall = grassGrid ? (x, y) => inMap(x, y) && grassGrid[y * screen.w + x] === 1 : null;
         g.imageSmoothingEnabled = false;
-        for (let y = 0; y < screen.h; y++) {
-            for (let x = 0; x < screen.w; x++) {
-                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome, isTall });
+        return (y0, y1) => {
+            for (let y = y0; y < y1; y++) {
+                for (let x = 0; x < screen.w; x++) {
+                    paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome, isTall });
+                }
             }
-        }
+        };
+    }
+
+    function paintGroundCells(g, screen, biome, tile, ox, oy) {
+        groundPainter(g, screen, biome, tile, ox, oy)(0, screen.h);
     }
 
     let liquidCache = { screen: null, cells: [] };
-    function getLiquidCells(screen, inRects) {
+    function getLiquidCells(screen) {
         if (liquidCache.screen === screen) return liquidCache.cells;
         const cells = [];
-        for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (inRects(screen.liquids, x, y)) cells.push([x, y]);
+        const liq = gridsOf(screen).liq;
+        for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (liq[y * screen.w + x] === 1) cells.push([x, y]);
         liquidCache = { screen, cells };
         return cells;
     }
 
-    function getGroundLayer(screen, biome, tile, dpr, inRects) {
-        const c = groundCache;
-        if (c && c.screen === screen && c.biome === biome && c.tile === tile && c.dpr === dpr) return c;
+    // Taille de tuile d'un écran (la carte rétrécit jusqu'à MIN_TILE puis défile avec le héros).
+    function tileFor(screen, vw, vh) {
+        const availH = Math.max(1, vh - HUD_TOP - HUD_BOTTOM);
+        return Math.max(MIN_TILE, Math.min(MAX_TILE, Math.floor(Math.min(vw / screen.w, availH / screen.h))));
+    }
+
+    // Calque de sol de la carte voisine, construit par tranches pendant que le héros s'approche d'une sortie : à la transition il n'y a plus
+    // qu'à l'échanger, au lieu de peindre d'un coup des milliers de cases (0,5 à 0,8 s d'arrêt à CPU ×4).
+    let groundJob = null;     // { screen, biome, tile, dpr, canvas, paintRows, y, done }
+    let spareCanvas = null;   // canvas de sol recyclé (évite de réallouer ~30 Mo à chaque carte)
+    const sameGround = (c, screen, biome, tile, dpr) => c && c.screen === screen && c.biome === biome && c.tile === tile && c.dpr === dpr;
+
+    function groundCanvasSize(screen, tile, dpr) {
         const M = GROUND_MARGIN;
-        const w = Math.ceil((tile * screen.w + 2 * M) * dpr);
-        const h = Math.ceil((tile * screen.h + 2 * M) * dpr);
+        return [Math.ceil((tile * screen.w + 2 * M) * dpr), Math.ceil((tile * screen.h + 2 * M) * dpr)];
+    }
+
+    function startGroundJob(screen, biome, tile, dpr) {
+        const [w, h] = groundCanvasSize(screen, tile, dpr);
         if (w * h > GROUND_MAX_PIXELS || typeof document === 'undefined') return null;
-        const canvas = c?.canvas || document.createElement('canvas');
+        const canvas = spareCanvas || document.createElement('canvas');
+        spareCanvas = null;
+        canvas.width = w;
+        canvas.height = h;
+        const g = canvas.getContext('2d');
+        if (!g) return null;
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { screen, biome, tile, dpr, canvas, paintRows: groundPainter(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN), y: 0, done: false };
+    }
+
+    function dropGroundJob() {
+        if (groundJob) spareCanvas = groundJob.canvas;
+        groundJob = null;
+    }
+
+    // Avance la construction d'au plus `budgetMs` ; true quand le calque est terminé.
+    function stepGroundJob(job, budgetMs) {
+        const t0 = performance.now();
+        while (job.y < job.screen.h && performance.now() - t0 < budgetMs) job.paintRows(job.y++, job.y);
+        job.done = job.y >= job.screen.h;
+        return job.done;
+    }
+
+    function getGroundLayer(screen, biome, tile, dpr) {
+        const c = groundCache;
+        if (sameGround(c, screen, biome, tile, dpr)) return c;
+        if (sameGround(groundJob, screen, biome, tile, dpr)) {
+            // la carte voisine préparée est celle où l'on arrive : on termine les lignes restantes (s'il y en a) et on l'adopte
+            if (!groundJob.done) { groundJob.paintRows(groundJob.y, screen.h); groundJob.done = true; }
+            if (c?.canvas) spareCanvas = c.canvas;
+            groundCache = { screen, biome, tile, dpr, canvas: groundJob.canvas };
+            groundJob = null;
+            return groundCache;
+        }
+        const [w, h] = groundCanvasSize(screen, tile, dpr);
+        if (w * h > GROUND_MAX_PIXELS || typeof document === 'undefined') return null;
+        const canvas = c?.canvas || spareCanvas || document.createElement('canvas');
+        if (canvas === spareCanvas) spareCanvas = null;
         canvas.width = w;
         canvas.height = h;
         const g = canvas.getContext('2d');
         if (!g) return null;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         // Aucune bordure : ni falaise ni ombre autour de la carte (le décor se prolonge jusqu'au bord de l'écran).
-        paintGroundCells(g, screen, biome, tile, M, M, inRects);
+        paintGroundCells(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN);
         groundCache = { screen, biome, tile, dpr, canvas };
         return groundCache;
+    }
+
+    // Héros à moins de PREBUILD_RANGE cases d'une sortie : prépare (par tranches) le sol de la carte où elle mène ; ailleurs, libère le travail en cours.
+    function prebuildNeighborGround() {
+        const screen = X.currentScreen(session);
+        const hx = session.data.x, hy = session.data.y;
+        const exit = (screen.exits || []).find(e => e.to && e.to !== screen.id && session.screens[e.to] && Math.abs(e.x - hx) + Math.abs(e.y - hy) <= PREBUILD_RANGE);
+        if (!exit) { dropGroundJob(); return; }
+        const target = session.screens[exit.to];
+        const biome = BIOMES[target.biome] || BIOMES.paddy;
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const tile = tileFor(target, Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientHeight));
+        if (!sameGround(groundJob, target, biome, tile, dpr)) {
+            dropGroundJob();
+            if (sameGround(groundCache, target, biome, tile, dpr)) return;
+            groundJob = startGroundJob(target, biome, tile, dpr);
+        }
+        if (groundJob && !groundJob.done) stepGroundJob(groundJob, PREBUILD_BUDGET_MS);
     }
 
     function draw(now) {
@@ -1080,7 +1162,7 @@ export function createExplorationView(cfg) {
 
         // taille de tuile et caméra
         const availH = Math.max(1, vh - HUD_TOP - HUD_BOTTOM);
-        const tile = Math.max(MIN_TILE, Math.min(MAX_TILE, Math.floor(Math.min(vw / screen.w, availH / screen.h))));
+        const tile = tileFor(screen, vw, vh);
         const mapW = tile * screen.w;
         const mapH = tile * screen.h;
         const follow = (size, avail, offset, pos) =>
@@ -1100,7 +1182,6 @@ export function createExplorationView(cfg) {
         const level = cfg.getPlayerLevel();
         const aura = X.getAuraTiles(session);
         const pulse = 0.5 + 0.5 * Math.sin(now / 320);
-        const inRects = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
         const grids = gridsOf(screen);
         const isLiquidAt = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && grids.liq[y * screen.w + x] === 1;
         const cell = (x, y, fill, inset = 0) => {
@@ -1114,15 +1195,15 @@ export function createExplorationView(cfg) {
         // Le fond statique (sol, chemins, base des liquides) est dessiné une seule fois dans un calque hors écran puis
         // simplement recopié à chaque image : des centaines de fillRect par image étaient le principal coût de rendu
         // sur les vieux appareils. Rendu identique.
-        const ground = getGroundLayer(screen, biome, tile, dpr, inRects);
+        const ground = getGroundLayer(screen, biome, tile, dpr);
         if (ground) {
             ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
                 ground.canvas.width / dpr, ground.canvas.height / dpr);
         } else {
-            paintGroundCells(ctx, screen, biome, tile, ox, oy, inRects);
+            paintGroundCells(ctx, screen, biome, tile, ox, oy);
         }
         // Parties animées : reflets des liquides et zones de vigilance qui pulsent
-        const liquidCells = getLiquidCells(screen, inRects);
+        const liquidCells = getLiquidCells(screen);
         liquidCells.forEach(([x, y]) => {
             if (!inView(x, y)) return;
             const shimmer = 0.10 + 0.10 * Math.sin(now / 500 + x * 1.7 + y * 1.1);

@@ -7,7 +7,7 @@ const inBuilding = (s, x, y) => (s.buildings || []).some(b => x >= b.x && x < b.
 const screens = Object.values(SCREENS);
 
 describe('explorationGrids', () => {
-    test('liquides et obstacles : identiques à inRects sur toutes les cases de tous les écrans', () => {
+    test('liquides, obstacles et chemins : identiques à inRects sur toutes les cases de tous les écrans', () => {
         expect(screens.length).toBeGreaterThan(100);
         let cells = 0;
         screens.forEach(s => {
@@ -16,6 +16,7 @@ describe('explorationGrids', () => {
                 cells++;
                 if (g.liq[y * s.w + x] !== (inRects(s.liquids, x, y) ? 1 : 0)) throw new Error(`liquide ${s.id} ${x},${y}`);
                 if (g.obst[y * s.w + x] !== (inRects(s.obstacles, x, y) ? 1 : 0)) throw new Error(`obstacle ${s.id} ${x},${y}`);
+                if (g.path[y * s.w + x] !== (inRects(s.paths, x, y) ? 1 : 0)) throw new Error(`chemin ${s.id} ${x},${y}`);
             }
         });
         expect(cells).toBeGreaterThan(40000);
