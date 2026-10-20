@@ -1402,8 +1402,9 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'player': {
-                    const moving = Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
-                    const hop = moving ? -tile * 0.08 * Math.abs(Math.sin(now / 70)) : Math.sin(now / 500) * tile * 0.01;
+                    const moving = now - (vis.lastMoveAt || -1e9) < 130 || Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
+                    const walkPhase = vis.walkPhase || 0;
+                    const hop = moving ? -tile * 0.07 * Math.abs(Math.sin(walkPhase * Math.PI)) : Math.sin(now / 500) * tile * 0.01;
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     ctx.beginPath();
@@ -1425,9 +1426,12 @@ export function createExplorationView(cfg) {
                     const hero = cfg.getHero();
                     const heroBase = heroSprite(hero.classId);
                     const heroDir = viewDir(session.rt.facing);
-                    const heroView = (moving && gbaWalkSprite(hero.classId, heroDir, now / 110))
+                    const heroView = (moving && gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase)))
                         || gbaSprite(hero.classId, heroDir)
                         || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
+                    // fondu entre l'image de marche courante et la suivante (progression fractionnaire de la phase)
+                    const nextView = moving ? gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase) + 1) : null;
+                    const blend = walkPhase - Math.floor(walkPhase);
 
                     // Xiao Gui (renard compagnon) : visible derrière le héros quand il a rejoint le groupe.
                     const companions = X.companionsOf(session);
@@ -1440,8 +1444,10 @@ export function createExplorationView(cfg) {
                         // à cheval : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
                         drawSprite(heroView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase);
+                        if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(nextView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase); ctx.restore(); }
                     } else {
                         drawSprite(heroView, c.x, feet + hop, tile * 1.06, heroBase);
+                        if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(nextView, c.x, feet + hop, tile * 1.06, heroBase); ctx.restore(); }
                     }
                     // hautes herbes : des brins devant ses pieds, qui frémissent (davantage en marchant)
                     if (X.isGrassCell(screen, Math.round(vis.px), Math.round(vis.py)) || X.isLowObstacle(screen, Math.round(vis.px), Math.round(vis.py))) {

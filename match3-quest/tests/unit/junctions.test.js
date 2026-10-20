@@ -177,4 +177,11 @@ describe('quête qui ouvre sa porte dès les objectifs remplis (unlockOnReady)',
         expect(questStatus(s, quest)).toBe('ready');
         expect(isExitLocked(s, door)).toBe(false);
     });
+
+    test('ancienne partie : éclats trouvés avant de parler à Mère Xing, la porte est déjà ouverte', () => {
+        const s = createSession({ screenId: 'fusang_wild', x: 1, y: 1, openedChests: ['seal_shard_a', 'seal_shard_b', 'seal_shard_c'] });
+        const quest = QUESTS.find(q => q.id === 'sq_sceau_racines');
+        expect(questStatus(s, quest)).toBe('available');
+        expect(isExitLocked(s, { requires: 'sq_sceau_racines' })).toBe(false);
+    });
 });

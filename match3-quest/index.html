@@ -119,6 +119,7 @@
         <button class="tab-btn" onclick="switchTab('weapons')" title="Armes" aria-label="Armes"><svg class="ic ic-sword" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M12.8 2.2 L13.8 3.2 L6.6 10.4 L5.6 9.4Z" fill="#cfd6de" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M3.6 9.2 L6.8 12.4 M2.4 13.6 L5 11" fill="none" stroke="#2b1b17" stroke-width="1.8" stroke-linecap="round"/></svg> Armes</button>
         <button class="tab-btn" onclick="switchTab('items')" title="Objets" aria-label="Objets"><svg class="ic ic-bag" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 6.4 Q3 4.4 5 4.4 L11 4.4 Q13 4.4 13 6.4 L13.4 12.6 Q13.4 14 12 14 L4 14 Q2.6 14 2.6 12.6Z" fill="#b8742a" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M5.6 4.4 Q5.6 1.6 8 1.6 Q10.4 1.6 10.4 4.4" fill="none" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><rect x="6.4" y="7.2" width="3.2" height="2.4" rx=".6" fill="#f2c14e" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg> Objets</button>
         <button class="tab-btn" onclick="switchTab('stuff')" title="Stuff" aria-label="Stuff"><svg class="ic ic-ring" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="9.4" r="4.4" fill="none" stroke="#2b1b17" stroke-width="3.2"/><circle cx="8" cy="9.4" r="4.4" fill="none" stroke="#f2c14e" stroke-width="1.6"/><path d="M8 1.6 L10.2 3.8 L8 6 L5.8 3.8Z" fill="#4fc3f7" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round"/></svg> Stuff</button>
+        <button class="tab-btn" onclick="switchTab('special')" title="Objets spéciaux" aria-label="Objets spéciaux"><svg class="ic ic-scroll" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="3" width="10" height="10" rx="1" fill="#f4ecd8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><rect x="1.8" y="2" width="12.4" height="2.4" rx="1.2" fill="#a8683a" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><rect x="1.8" y="11.6" width="12.4" height="2.4" rx="1.2" fill="#a8683a" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M5 6.6 L11 6.6 M5 9 L9.6 9" fill="none" stroke="#8a7a60" stroke-width="1"/></svg> Spéciaux</button>
         
         <button class="tab-btn" onclick="switchTab('spells')" title="Sorts" aria-label="Sorts"><svg class="ic ic-spark" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.4 L9.3 6.7 L14.6 8 L9.3 9.3 L8 14.6 L6.7 9.3 L1.4 8 L6.7 6.7Z" fill="#fbe08a" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg> Sorts</button>
         <button class="tab-btn" onclick="switchTab('stats')" title="Stats" aria-label="Stats"><svg class="ic ic-chart" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 14 L14 14" fill="none" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><rect x="3" y="8" width="2.6" height="5.4" fill="#e8452e" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><rect x="6.8" y="4.6" width="2.6" height="8.8" fill="#4fa34a" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><rect x="10.6" y="2" width="2.6" height="11.4" fill="#3a7ad8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg> Stats</button>
@@ -209,6 +210,13 @@
         <div id="stuff-content"></div>
     </div>
 
+    <!-- Onglet Objets spéciaux (objets de quête, invendables) -->
+    <div id="tab-special" class="tab-panel">
+        <h2>Objets spéciaux</h2>
+        <p>Objets de quête : ils ne se vendent pas et sont remis à leur destinataire en terminant la quête.</p>
+        <div id="special-content"></div>
+    </div>
+
     <!-- Onglet Stats -->
     <div id="tab-stats" class="tab-panel">
         <h2>Statistiques</h2>
@@ -262,6 +270,7 @@
                 btn.classList.remove('active');
             });
             document.getElementById('tab-' + tabName).classList.add('active');
+            if(tabName === 'special') document.dispatchEvent(new Event('special-tab-open'));
             const activeButton = clickEvent?.target || document.querySelector(`.tab-btn[onclick*="switchTab('${tabName}')"]`);
             activeButton?.classList.add('active');
         });

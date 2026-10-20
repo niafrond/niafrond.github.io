@@ -1414,11 +1414,11 @@ export function updateStats(){
             <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
-                    <span class="mana-dot mana-red" title="${targetPlayerMana.red}"></span><span id="player-mana-red">${targetPlayerMana.red}</span>
-                    <span class="mana-dot mana-blue" title="${targetPlayerMana.blue}"></span><span id="player-mana-blue">${targetPlayerMana.blue}</span>
-                    <span class="mana-dot mana-green" title="${targetPlayerMana.green}"></span><span id="player-mana-green">${targetPlayerMana.green}</span>
-                    <span class="mana-dot mana-yellow" title="${targetPlayerMana.yellow}"></span><span id="player-mana-yellow">${targetPlayerMana.yellow}</span>
-                    <span class="mana-dot mana-purple" title="${targetPlayerMana.purple}"></span><span id="player-mana-purple">${targetPlayerMana.purple}</span>
+                    <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
+                    <span id="player-mana-blue" class="cost-badge mana-blue" title="blue">${targetPlayerMana.blue}</span>
+                    <span id="player-mana-green" class="cost-badge mana-green" title="green">${targetPlayerMana.green}</span>
+                    <span id="player-mana-yellow" class="cost-badge mana-yellow cost-badge-light" title="yellow">${targetPlayerMana.yellow}</span>
+                    <span id="player-mana-purple" class="cost-badge mana-purple" title="purple">${targetPlayerMana.purple}</span>
                 </div>
             </div>`;
         
@@ -1470,11 +1470,11 @@ export function updateStats(){
         <div class="stat"><strong>Atk:</strong> ${rawAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
-                <span class="mana-dot mana-red" title="${targetEnemyMana.red}"></span><span id="enemy-mana-red">${targetEnemyMana.red}</span>
-                <span class="mana-dot mana-blue" title="${targetEnemyMana.blue}"></span><span id="enemy-mana-blue">${targetEnemyMana.blue}</span>
-                <span class="mana-dot mana-green" title="${targetEnemyMana.green}"></span><span id="enemy-mana-green">${targetEnemyMana.green}</span>
-                <span class="mana-dot mana-yellow" title="${targetEnemyMana.yellow}"></span><span id="enemy-mana-yellow">${targetEnemyMana.yellow}</span>
-                <span class="mana-dot mana-purple" title="${targetEnemyMana.purple}"></span><span id="enemy-mana-purple">${targetEnemyMana.purple}</span>
+                <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
+                <span id="enemy-mana-blue" class="cost-badge mana-blue" title="blue">${targetEnemyMana.blue}</span>
+                <span id="enemy-mana-green" class="cost-badge mana-green" title="green">${targetEnemyMana.green}</span>
+                <span id="enemy-mana-yellow" class="cost-badge mana-yellow cost-badge-light" title="yellow">${targetEnemyMana.yellow}</span>
+                <span id="enemy-mana-purple" class="cost-badge mana-purple" title="purple">${targetEnemyMana.purple}</span>
             </div>
         </div>`;
     // Animer les compteurs ennemi

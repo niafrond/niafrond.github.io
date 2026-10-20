@@ -3312,3 +3312,5 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 /* Tri des listes d'armes et d'objets */
 .sort-bar { display: flex; align-items: center; gap: 8px; margin: 6px 0 10px; font-size: .9em; }
 .sort-bar select { font: inherit; padding: 2px 6px; }
+/* Mana du héros et de l'ennemi en gomettes (zone de stats) */
+#player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .85em; margin-right: 3px; }
