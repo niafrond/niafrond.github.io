@@ -562,7 +562,10 @@ function checkAura(session) {
 // Une quête `unlockOnReady` ouvre sa porte dès que tous ses objectifs sont remplis, sans devoir retourner voir le PNJ (ex. sceau du Fusang).
 const readyUnlocks = (session, id) => {
     const quest = typeof id === 'string' ? questById(session, id) : null;
-    return Boolean(quest?.unlockOnReady) && questStatus(session, quest) === 'ready';
+    if (!quest?.unlockOnReady) return false;
+    // Prête, ou jamais acceptée mais déjà accomplie (anciennes parties : éclats trouvés avant de parler au PNJ) : la porte s'ouvre.
+    const status = questStatus(session, quest);
+    return status === 'ready' || (status === 'available' && quest.objectives.every(o => objectiveDone(session, o)));
 };
 export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires);
 
