@@ -1,3 +1,9 @@
+## [2.98.0](https://github.com/niafrond/niafrond.github.io/compare/v2.97.0...v2.98.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** ajouter un menu secret (stuffs, sorts, niveau, one shot) ([#504](https://github.com/niafrond/niafrond.github.io/issues/504)) ([8daa033](https://github.com/niafrond/niafrond.github.io/commit/8daa033dc1e797b27b59d314ef4c3226c6cf49ee))
+
 ## [2.97.0](https://github.com/niafrond/niafrond.github.io/compare/v2.96.0...v2.97.0) (2026-10-20)
 
 ### Features
