@@ -19,6 +19,10 @@
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
 //  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
 //    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
+//  - bait (PNJ) : { enemy, lines, retry } ; lui parler fait surgir l'ennemi `enemy` (tant qu'il n'est pas vaincu) : les lignes sont
+//    dites, puis le combat démarre (résultat `combat` de talkToNpc) ; `retry` remplace `lines` aux conversations suivantes ;
+//  - chain (ennemi) : id d'un ennemi attaqué tout de suite après sa victoire (événement `chain`, après les scènes) ;
+//    carryHp / chainedFrom (ennemi suivant) : le héros garde ses PV, et une défaite annule la victoire sur `chainedFrom` ;
 //  - duel : règles de duel recopiées dans la rencontre (miroir, héros affaibli, tirs rapides, pièges : duel.js) ;
 //  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés) ;
@@ -884,6 +888,7 @@ function wildEncounter(session, { def, screenId }) {
         level,
         boss: null,
         duel: null,
+        carryHp: false,
         wild: true
     };
 }
@@ -915,7 +920,8 @@ export function encounterFor(session, enemyId, playerLevel) {
         name: def.name,
         level,
         boss: def.boss ? { ...def.boss, level } : null,
-        duel: def.duel ? { ...def.duel } : null
+        duel: def.duel ? { ...def.duel } : null,
+        carryHp: Boolean(def.carryHp)
     };
 }
 
@@ -1008,9 +1014,11 @@ export function markEnemyDefeated(session, enemyId) {
     if (isWildId(enemyId)) return [];
     const events = [];
     let after = [];
+    let chain = null;
     if (!session.data.defeated.includes(enemyId)) {
         session.data.defeated.push(enemyId);
         const def = session.rt.enemyIndex[enemyId]?.def;
+        if (def?.chain) chain = { type: 'chain', enemyId: def.chain };
         if (def?.defeatScene?.lines?.length) events.push(sceneEvent(def.defeatScene));
         after = (def?.afterScenes || []).filter(sc => sc?.lines?.length).map(sceneEvent);
         if (def?.arena) events.push(...arenaVictory(session, def));
@@ -1019,6 +1027,7 @@ export function markEnemyDefeated(session, enemyId) {
     const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
     quests.splice(lastDone + 1 || quests.length, 0, ...after);
     events.push(...quests);
+    if (chain) events.push(chain);   // le combat suivant démarre une fois toutes les scènes dites
     return events;
 }
 
@@ -1042,8 +1051,11 @@ export function startNewGamePlus(session) {
     return true;
 }
 
-export function resetAfterDefeat(session) {
+export function resetAfterDefeat(session, enemyId = session.rt.pendingEnemyId) {
     resetGrassSteps(session);
+    // Duel en plusieurs phases : battu dans la dernière, le héros doit refaire la première (aucun répit entre les phases).
+    const from = session.rt.enemyIndex[enemyId]?.def?.chainedFrom;
+    if (from) session.data.defeated = session.data.defeated.filter(id => id !== from && id !== enemyId);
     // Défaite dans l'arène : on en est expulsé (retour au point d'entrée).
     if (inArena(session)) {
         leaveArena(session);
@@ -1124,6 +1136,14 @@ export function talkToNpc(session, npcId) {
     if (ready) {
         const events = [completeQuest(session, ready.quest), ...checkAutoQuests(session)];
         return { type: 'dialog', npc, lines: ready.quest.complete, events };
+    }
+
+    // Appât : lui parler attire l'ennemi (`bait.enemy`) ; les lignes sont dites, puis le combat démarre.
+    if (npc.bait && !session.data.defeated.includes(npc.bait.enemy)) {
+        const first = !session.data.talked.includes(npcId);
+        if (first) session.data.talked.push(npcId);
+        const lines = first || !npc.bait.retry?.length ? npc.bait.lines : npc.bait.retry;
+        return { type: 'dialog', npc, lines: [...lines], events: [], combat: npc.bait.enemy };
     }
 
     // Objectif « parler à » : la réplique de la cible, puis éventuellement l'offre d'une autre quête.

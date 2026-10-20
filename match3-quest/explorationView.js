@@ -17,7 +17,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playFengmengDuelCinematic } from './cinematics.js';
+import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
@@ -91,6 +91,7 @@ const shade = (hex, amt) => {
  *  onOpenMap()                ouvre la carte du monde
  *  onOpenArena()              ouvre l'Arène des Mille Flèches (arena.js)
  *  onOpenMenu()               ouvre le menu (inventaire, sorts, stats)
+ *  onExportSave()             exporte la sauvegarde dans un fichier (avant la Nouvelle Partie +) ; retourne true si l'export a réussi
  *  renderMerchant(npc, card, { close, ngPlus })  remplit la fenêtre de boutique d'un PNJ marchand (shop.js)
  */
 export function createExplorationView(cfg) {
@@ -368,7 +369,7 @@ export function createExplorationView(cfg) {
             } else if (ev.type === 'questCompleted') {
                 if (ev.ended) {
                     // Fin de la légende : dialogue final puis animation de fin
-                    if (spoken.has(ev.quest.id)) playEndingAnimation(); else openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines, () => { playEndingAnimation(); });
+                    if (spoken.has(ev.quest.id)) playLegendEnd(); else openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines, () => { playLegendEnd(); });
                 } else if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
                 if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; cfg.onQuestReward?.(ev); }
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
@@ -388,9 +389,32 @@ export function createExplorationView(cfg) {
         });
         if (gold > 0) cfg.onGold(gold);
         if (xp > 0) cfg.onXp?.(xp);
-        playBanter();
+        // Duel en plusieurs phases : la suivante démarre dès que les scènes sont dites, sans retour libre sur la carte.
+        const chain = events.find(e => e.type === 'chain');
+        if (chain) afterDialogs(() => startEncounter(chain.enemyId)); else playBanter();
         cfg.onSave();
         refreshHud();
+    }
+
+    // Exécute `fn` quand la file de dialogues est vide (tout de suite si aucun dialogue n'est ouvert).
+    function afterDialogs(fn) {
+        const last = dialogQueue[dialogQueue.length - 1];
+        if (!last) { fn(); return; }
+        const prev = last.after;
+        last.after = () => { prev?.(); fn(); };
+    }
+
+    // Fin de la légende : animation de fin, générique, puis le choix entre continuer la partie et la Nouvelle Partie +.
+    async function playLegendEnd() {
+        await playEndingAnimation();
+        await playCredits();
+        openDialog({ ...NARRATOR, title: 'La légende continue' }, [
+            "Votre histoire s'achève, mais le monde, lui, reste ouvert : les soleils dorment, les routes sont sûres, l'Arène des Mille Flèches vous attend.",
+            "Continuez à parcourir les terres à votre rythme, ou exportez votre sauvegarde dans un fichier pour entamer la Nouvelle Partie + : l'histoire repart des Rizières, vous gardez tout votre équipement, et l'arène est ouverte dès le début."
+        ], null, [
+            { label: 'Continuer ma partie', run: () => { toast('Le monde est à vous : la Nouvelle Partie + reste disponible dans le carnet.', 5000); } },
+            { label: 'Exporter ma sauvegarde et lancer la Nouvelle Partie +', run: () => launchNewGamePlus() }
+        ]);
     }
 
     const kindBadge = quest => quest.side
@@ -598,12 +622,18 @@ export function createExplorationView(cfg) {
         cfg.onSave?.();
     }
 
-    // Nouvelle Partie + : l'histoire repart de zéro (le niveau et l'équipement du joueur sont conservés),
-    // les adversaires sont plus coriaces. Confirmation demandée, puis sauvegarde.
+    // Nouvelle Partie + : l'histoire repart de zéro (niveau, équipement et arène sont conservés ; l'arène est ouverte dès le début),
+    // les adversaires sont plus coriaces. Confirmation demandée, puis export de la sauvegarde, puis départ.
     function confirmNewGamePlus() {
-        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nL\'histoire repart des Rizières Desséchées : quêtes, soleils et coffres sont remis à zéro, '
-            + 'mais votre niveau et votre équipement sont conservés. Les ennemis seront plus puissants.');
-        if (!ok) return;
+        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart des Rizières Desséchées : '
+            + 'quêtes, soleils et coffres sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
+        if (ok) launchNewGamePlus();
+    }
+
+    // Exporte la sauvegarde (la partie terminée sert de copie de secours), puis relance l'histoire en Nouvelle Partie +.
+    function launchNewGamePlus() {
+        if (!session.data.ended) return;
+        if (cfg.onExportSave && !cfg.onExportSave()) { toast("L'export de la sauvegarde a échoué : la Nouvelle Partie + n'a pas été lancée.", 6000); return; }
         if (!X.startNewGamePlus(session)) return;
         closeJournal();
         session.rt.queuedEvents = [];
@@ -701,7 +731,11 @@ export function createExplorationView(cfg) {
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
                 openDialog({ sprite: npcSprite(talk.npc.id), gba: gbaSprite(talk.npc.id), name: talk.npc.name, title: talk.npc.title }, talk.lines,
-                    () => { processEvents(talk.events, spoken); if (talk.npc.merchant) openMerchant(talk.npc); });
+                    () => {
+                        processEvents(talk.events, spoken);
+                        if (talk.npc.merchant) openMerchant(talk.npc);
+                        if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
+                    });
                 break;
             }
             case 'chest': {
@@ -1790,8 +1824,8 @@ export function createExplorationView(cfg) {
 
         // Arène des Mille Flèches : entrée (point de retour mémorisé) et sortie à tout moment.
         inArena() { ensureSession(); return X.inArena(session); },
-        // L'arène s'ouvre dès le 3e terrain (Bambous) : arena.js `isArenaUnlocked`
-        isArenaUnlocked() { ensureSession(); return isArenaUnlocked(session.data.visitedScreens); },
+        // L'arène s'ouvre dès le 3e terrain (Bambous), ou dès le début en Nouvelle Partie + : arena.js `isArenaUnlocked`
+        isArenaUnlocked() { ensureSession(); return isArenaUnlocked(session.data.visitedScreens, session.data.ngPlus); },
         enterArena() { return changeArena(true); },
         leaveArena() { return changeArena(false); },
 

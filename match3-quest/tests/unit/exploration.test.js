@@ -1124,7 +1124,8 @@ describe('histoire complète', () => {
         // Finale : phase 1 (scène de l'envol de Chang'e), phase 2 (n'existe qu'après), autel
         expect(s.data.ended).toBe(false);
         events = markEnemyDefeated(s, 'fengmeng_3a');
-        expect(events.map(e => e.type)).toEqual(['scene']);
+        expect(events.map(e => e.type)).toEqual(['scene', 'chain']);   // la phase 2 enchaîne tout de suite
+        expect(events[1].enemyId).toBe('fengmeng_3b');
         expect(s.data.quests.q_fengmeng).toBe('active');
         events = markEnemyDefeated(s, 'fengmeng_3b');
         expect(events.map(e => e.type)).toEqual(['scene', 'questCompleted', 'questStarted']);
@@ -1458,7 +1459,7 @@ describe('dialogues d\'ambiance conditionnels', () => {
     test('Chang\'e à la Lune garde le reflet de son envol, puis celui de l\'épilogue', () => {
         const s = createSession({ screenId: 'lune', x: SCREENS.lune.spawn.x, y: SCREENS.lune.spawn.y });
         const moon = SCREENS.lune.npcs.find(n => n.id === 'change_moon');
-        expect(talkToNpc(s, 'change_moon').lines).toEqual(moon.idle);
+        expect(talkToNpc(s, 'change_moon').lines).toEqual(moon.bait.lines);
         markEnemyDefeated(s, 'fengmeng_3a');
         expect(talkToNpc(s, 'change_moon').lines).toEqual(moon.talk.find(t => t.whenDone === 'fengmeng_3a').lines);
     });
@@ -1491,6 +1492,8 @@ describe('dialogues d\'ambiance conditionnels', () => {
 describe('showWhen / hideWhen : entités conditionnelles', () => {
     test('Fengmeng phase 2 n\'existe qu\'après la phase 1 : ennemis, aura, entités', () => {
         const s = atL('lune', 8, 4);
+        expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3a');   // phase 1 : surgit quand on parle à Chang'e
+        talkToNpc(s, 'change_moon');
         expect(aliveEnemies(s).map(e => e.def.id)).toContain('fengmeng_3a');
         expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3b');
         expect(entityAt(s, 11, 3)).toBeNull();
@@ -1507,6 +1510,7 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
 
     test('la phase 2 ne se déclenche pas d\'elle-même : il faut aller la chercher', () => {
         const s = atL('lune', 10, 4);
+        talkToNpc(s, 'change_moon');
         s.rt.grace = 0;
         expect(tryMove(s, 0, -1).type).toBe('moved');         // (10,3) : plus d'aura autour d'un boss
         expect(tryMove(s, 0, 1).type).toBe('moved');
@@ -1744,7 +1748,7 @@ describe('scènes de fin de duel (defeatScene)', () => {
     test('Chang\'e boit l\'élixir : scène de la phase 1, puis Fengmeng entre en fureur', () => {
         const s = at('lune', 8, 4);
         const events = markEnemyDefeated(s, 'fengmeng_3a');
-        expect(events).toHaveLength(1);
+        expect(events.map(e => e.type)).toEqual(['scene', 'chain']);
         expect(events[0].type).toBe('scene');
         const text = events[0].lines.join(' ');
         expect(text).toMatch(/élixir/);

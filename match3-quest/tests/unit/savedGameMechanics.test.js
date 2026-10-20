@@ -1367,7 +1367,7 @@ describe('duel : deux phases de Fengmeng sur une sauvegarde', () => {
         const s = loneAt();
         const phase2 = SCREENS.lune.enemies.find(e => e.id === 'fengmeng_3b');
         expect(isEntityVisible(s, phase2)).toBe(false);
-        expect(aliveEnemies(s).map(e => e.def.id)).toContain('fengmeng_3a');
+        expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3a');   // il surgit quand on parle à Chang'e
         expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3b');
     });
 

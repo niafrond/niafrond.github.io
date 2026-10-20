@@ -365,16 +365,36 @@ function endChange(ctx, mx, my, r, t, alpha) {
 }
 
 const ENDING_BEATS = 4;   // tableaux Pixel Lab de la fin : crépuscule, autel, Chang'e dans la lune, lanternes
-const ENDING_BEAT_SECONDS = 3.6;
+const ENDING_BEAT_SECONDS = 6.5;
+
+// Une légende par tableau : elle explique ce qu'il advient du monde, de Fengmeng, de Chang'e et des hommes.
+export const ENDING_CAPTIONS = [
+    "Le dernier soleil décline : pour la première fois depuis des lunes, la nuit tombe sur la Terre. Les fleuves regonflent, les rizières reverdissent, et l'empereur Yao fait graver le nom de Hou Yi dans le jade.",
+    "Hou Yi dépose les gâteaux de lune sur l'autel blanc, un à un, comme Chang'e le faisait. Fengmeng, lui, est redescendu à pied, son carquois laissé au pied de l'autel : il n'a plus jamais visé personne.",
+    "Là-haut, Chang'e veille. L'élixir lui a donné le ciel, mais n'a pas pris son cœur : dans le bronze, les deux moitiés du miroir ne forment plus qu'un seul cercle, et une main se lève dans la lune.",
+    "Chaque automne, à la pleine lune, les hommes posent des gâteaux sur leurs toits et allument des lanternes. Et là-haut, quelqu'un leur sourit. Ainsi s'achève la légende de Hou Yi."
+];
 
 export async function playEndingAnimation() {
     const art = await loadSceneArt('ending', ENDING_BEATS, window.innerHeight > window.innerWidth);
-    const DURATION = art ? ENDING_BEATS * ENDING_BEAT_SECONDS + 1.5 : 15.5;
+    const DURATION = art ? ENDING_BEATS * ENDING_BEAT_SECONDS + 2.5 : 27.5;
+    const PROC_BEAT_SECONDS = 6;   // sans tableaux : une légende toutes les 6 s sur la scène dessinée
     const C = P ? END_LAYOUT.port : END_LAYOUT.land;
     let stars = null;
     let overlayEl = null;
     const shown = {};
     const reveal = (cls, on) => { if (on && !shown[cls] && overlayEl) { shown[cls] = true; overlayEl.classList.add(cls); } };
+    // Légende du tableau en cours : elle réapparaît en fondu à chaque changement.
+    let captionIdx = -1;
+    const showCaption = i => {
+        const el = overlayEl?.querySelector('.cine-ending-legend');
+        if (!el || i === captionIdx) return;
+        captionIdx = i;
+        el.textContent = ENDING_CAPTIONS[i];
+        el.classList.remove('swap');
+        void el.offsetWidth;
+        el.classList.add('swap');
+    };
     let layout = null;
     // Tableaux Pixel Lab : un fondu enchaîné entre chaque temps ; « FIN » et la légende apparaissent sur le dernier.
     const drawEndingArt = (ctx, t) => {
@@ -386,8 +406,8 @@ export async function playEndingAnimation() {
         const blit = (b, tt) => { const a = art[b], [aw, ah] = a.size; ctx.drawImage(a.img, frameOf(b, tt) * aw, 0, aw, ah, 0, 0, aw, ah); };
         blit(beat, local);
         if (beat > 0 && local < 0.8) { ctx.globalAlpha = 1 - local / 0.8; blit(beat - 1, local + ENDING_BEAT_SECONDS); ctx.globalAlpha = 1; }   // fondu depuis le tableau précédent
+        showCaption(beat);
         reveal('show-fin', t > (ENDING_BEATS - 1) * ENDING_BEAT_SECONDS + 0.6);
-        reveal('show-legend', t > (ENDING_BEATS - 1) * ENDING_BEAT_SECONDS + 1.8);
         reveal('show-prompt', t >= DURATION);
     };
     return runScene({
@@ -401,7 +421,7 @@ export async function playEndingAnimation() {
             overlay.insertAdjacentHTML('beforeend', `
                 <div class="cine-ending-text">
                     <div class="cine-ending-fin">FIN</div>
-                    <div class="cine-ending-legend">Ainsi s'achève la légende de Hou Yi.<br>Chaque automne, là-haut, quelqu'un vous sourira.</div>
+                    <div class="cine-ending-legend"></div>
                 </div>
                 <div class="cine-ending-prompt">► Toucher pour continuer</div>`);
         },
@@ -596,10 +616,93 @@ export async function playEndingAnimation() {
             ctx.globalAlpha = 1;
 
             // ── Textes (overlay HTML) ──
-            reveal('show-fin', t > 11.2);
-            reveal('show-legend', t > 12.4);
+            showCaption(Math.min(ENDING_BEATS - 1, Math.floor(t / PROC_BEAT_SECONDS)));
+            reveal('show-fin', t > (ENDING_BEATS - 1) * PROC_BEAT_SECONDS + 0.6);
             reveal('show-prompt', t >= DURATION);
         }
+    });
+}
+
+// ── Générique de fin ────────────────────────────────────────────────────────
+// Défile tout seul sur la musique de fin (main.js : `.cine-credits` → piste `ending`). Le joueur peut remonter pour relire :
+// dès qu'il touche, roule ou presse une flèche, le défilement s'arrête et reprend après quelques secondes d'inactivité.
+// À la fin, l'écran reste sur la dernière phrase et un bouton « Continuer » résout la Promise.
+// Entrées : `{ type: 'title' | 'rule' | 'thanks' }` ou un bloc `{ role, names?, lines? }` (noms en gras, lignes en retrait).
+export const CREDITS = [
+    { type: 'title', text: 'La Légende de Hou Yi' },
+    { role: 'Un jeu imaginé et créé par', names: ['Mickaël Fontaine'] },
+    { type: 'rule' },
+    { role: 'Concept original, réalisation et scénario', names: ['Mickaël Fontaine'] },
+    { role: 'Inspiré librement de la mythologie chinoise', lines: ["Et notamment des légendes de Hou Yi et de Chang'e"] },
+    { role: 'Inspiration et transmission', lines: ['Ethan, pour ses cours de chinois'] },
+    { type: 'rule' },
+    { role: "Avec le soutien de l'intelligence artificielle", lines: ['Assistance créative : Claude (Anthropic)', 'Musique : ACE-Step', 'Création visuelle : ComfyUI', 'Génération de textes : Ollama'] },
+    { type: 'rule' },
+    { role: 'Idées, suggestions et contributions', names: ['Ethan, Luna'] },
+    { role: 'Tests et assurance qualité (QA)', names: ['Ethan, Luna, Vanessa'] },
+    { type: 'rule' },
+    { role: 'Remerciements', lines: ['À ma carte graphique, qui a affronté les flammes sans jamais rendre l\'âme.'] },
+    { type: 'thanks', text: "À ma femme et mes enfants, qui m'ont suivi dans mon délire, je vous aime fort." }
+];
+export const CREDITS_SPEED = 42;          // px CSS par seconde
+export const CREDITS_RESUME_MS = 3000;    // inactivité du joueur avant la reprise du défilement
+
+const creditsHtml = c => c.type === 'rule' ? '<div class="cine-credits-rule"></div>'
+    : c.type ? `<p class="cine-credits-${c.type}">${c.text}</p>`
+    : `<div class="cine-credits-block"><p class="cine-credits-role">${c.role}</p>${(c.names || []).map(n => `<p class="cine-credits-name">${n}</p>`).join('')}${(c.lines || []).map(l => `<p class="cine-credits-line">${l}</p>`).join('')}</div>`;
+
+export function playCredits() {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'cine-overlay cine-credits';
+        overlay.innerHTML = `
+            <div class="cine-credits-scroll" tabindex="0"><div class="cine-credits-roll">${CREDITS.map(creditsHtml).join('')}</div></div>
+            <button type="button" class="cine-credits-skip">Passer ►►</button>
+            <button type="button" class="cine-credits-continue">Continuer</button>`;
+        document.body.appendChild(overlay);
+        const scroller = overlay.querySelector('.cine-credits-scroll');
+        const reduced = prefersReducedMotion();
+        const maxScroll = () => Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        let pos = 0, last = 0, raf = 0, idleUntil = 0, done = false, finished = false;
+        const markDone = () => { done = true; overlay.classList.add('done'); };
+        const frame = now => {
+            const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+            last = now;
+            if (!done && now >= idleUntil) {
+                pos = Math.min(maxScroll(), pos + CREDITS_SPEED * dt);
+                scroller.scrollTop = pos;
+                if (pos >= maxScroll() - 1) markDone();   // reste sur la dernière phrase
+            }
+            raf = requestAnimationFrame(frame);
+        };
+        // Le joueur reprend la main (remonter pour relire) : on se cale sur sa position et on attend avant de reprendre.
+        const userTouch = () => { pos = scroller.scrollTop; idleUntil = performance.now() + CREDITS_RESUME_MS; };
+        ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev => scroller.addEventListener(ev, userTouch, { passive: true }));
+        scroller.addEventListener('scroll', () => {
+            if (!done && scroller.scrollTop >= maxScroll() - 1 && !reduced) markDone();
+        });
+        const toEnd = () => { scroller.scrollTop = pos = maxScroll(); markDone(); };
+        const close = () => {
+            if (finished) return;
+            finished = true;
+            cancelAnimationFrame(raf);
+            document.removeEventListener('keydown', onKey, true);
+            overlay.classList.add('closing');
+            setTimeout(() => { overlay.remove(); resolve(); }, 350);
+        };
+        const onKey = e => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' || e.key === 'PageDown') { userTouch(); return; }
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (done) close(); else toEnd();
+            }
+        };
+        document.addEventListener('keydown', onKey, true);
+        overlay.querySelector('.cine-credits-skip').addEventListener('click', toEnd);
+        overlay.querySelector('.cine-credits-continue').addEventListener('click', close);
+        if (reduced) markDone();   // pas de défilement automatique : lecture à la main, bouton déjà là
+        else raf = requestAnimationFrame(frame);
     });
 }
 

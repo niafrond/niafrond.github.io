@@ -113,8 +113,9 @@ export const ARENA_BIOMES = {
     arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['deadtree', 'rock', 'deadtree'] }
 };
 
-// Vrai si l'un des écrans visités appartient au 3e terrain (Bambous) ou à un terrain plus avancé.
-export const isArenaUnlocked = (visitedScreens = []) => (Array.isArray(visitedScreens) ? visitedScreens : [])
+// Vrai si l'un des écrans visités appartient au 3e terrain (Bambous) ou à un terrain plus avancé ; en Nouvelle Partie + (`ngPlus` > 0),
+// l'arène est ouverte dès le début de l'histoire.
+export const isArenaUnlocked = (visitedScreens = [], ngPlus = 0) => ngPlus > 0 || (Array.isArray(visitedScreens) ? visitedScreens : [])
     .some(id => ARENA_REGIONS.some(r => id === r || id.startsWith(`${r}_`)));
 
 export const arenaTier = id => ARENA_TIERS.find(t => t.id === Number(id)) || null;

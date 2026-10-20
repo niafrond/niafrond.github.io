@@ -178,6 +178,13 @@ function init() {
         },
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
+        onExportSave: () => {
+            const res = exportSaveToFile(player, getMatch3Version());
+            if(!res.success) return false;
+            downloadSaveFile(res.blob, res.filename);
+            log(res.message);
+            return true;
+        },
         onOpenMenu: () => window.switchTab('weapons'),
         renderMerchant
     });
@@ -189,7 +196,7 @@ function init() {
     let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
     window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
-        if(document.querySelector('.cine-ending')) return ['ending'];
+        if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
@@ -278,7 +285,7 @@ function init() {
     const openArena = () => {
         if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
         if(!exploration.isArenaUnlocked()) {
-            exploration.toast(`L'${ARENA_NAME} ouvre ses portes dès que vous atteignez le 3e terrain (les Bambous).`, 4500);
+            exploration.toast(`L'${ARENA_NAME} ouvre ses portes dès que vous atteignez le 3e terrain (les Bambous), ou dès le début en Nouvelle Partie +.`, 4500);
             return;
         }
         playSfx('uiClick');
