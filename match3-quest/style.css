@@ -2580,6 +2580,13 @@ body.dark-mode .tutorial-card {
     #combat-controls button { padding: 4px 12px; font-size: 13px; }
 }
 
+/* Paysage sur écran bas (téléphone) : aucune marge autour du jeu, tout le combat tient dans la hauteur sans défilement */
+@media (orientation: landscape) and (max-height: 520px) {
+    body { padding: 0; min-height: 100dvh; }
+    .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; }
+    #board { padding: 4px; grid-gap: 2px; }
+}
+
 /* Tours bonus accumulés (à côté du nom du combattant) */
 .bonus-turn-badge {
     margin-left: auto;

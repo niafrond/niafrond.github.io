@@ -194,7 +194,9 @@ function isLandscapeLayout(){
 }
 
 function getMaxTileSizeFromViewport(boardDiv){
-    const top = Math.max(0, boardDiv.getBoundingClientRect().top);
+    // Paysage : la grille est centrée dans sa rangée, son propre haut ne dit rien ; on part du haut de la zone de combat
+    const topRef = isLandscapeLayout() ? (document.getElementById('tab-combat') || boardDiv) : boardDiv;
+    const top = Math.max(0, topRef.getBoundingClientRect().top);
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
     if(viewportHeight <= 0) return Infinity;
 
@@ -203,7 +205,10 @@ function getMaxTileSizeFromViewport(boardDiv){
     // Paysage : les sorts sont dans les colonnes latérales, pas sous la grille
     const spellsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(spellsContainer);
     const resultHeight = getOuterBlockSize(battleResultScreen) + getOuterBlockSize(document.getElementById('combat-controls'));
-    const bottomSafety = 8;
+    // Paysage : la pastille de niveau (fixe, en bas de l'écran) ne doit pas recouvrir les boutons de combat
+    const hud = isLandscapeLayout() ? document.getElementById('level-hud') : null;
+    const hudRect = hud && hud.offsetParent !== null ? hud.getBoundingClientRect() : null;
+    const bottomSafety = (hudRect ? 12 : 8) + (hudRect && hudRect.height > 0 ? Math.max(0, viewportHeight - hudRect.top) : 0);
 
     const availableBoardHeight = viewportHeight - top - spellsHeight - resultHeight - bottomSafety;
     if(availableBoardHeight <= 0) return 1;
@@ -265,7 +270,7 @@ function syncBoardTileSize(){
         }
     }
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
-    const tileSize = Math.max(10, (fullWidth || landscape) ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
+    const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
 }
 
