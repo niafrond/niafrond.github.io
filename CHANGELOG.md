@@ -1,3 +1,9 @@
+## [2.104.2](https://github.com/niafrond/niafrond.github.io/compare/v2.104.1...v2.104.2) (2026-10-20)
+
+### Bug Fixes
+
+* **match3-quest:** retirer la légende des gros sorts au clic pour continuer ([#514](https://github.com/niafrond/niafrond.github.io/issues/514)) ([d483b0a](https://github.com/niafrond/niafrond.github.io/commit/d483b0a41c9f6617e5d92739c48b07a8bd4fb06c))
+
 ## [2.104.1](https://github.com/niafrond/niafrond.github.io/compare/v2.104.0...v2.104.1) (2026-10-20)
 
 ### Bug Fixes
