@@ -631,11 +631,10 @@ export const CREDITS = [
     { role: 'Développé, réalisé et scénarisé par', names: ['Mickaël Fontaine'] },
     { role: "Inspiré librement des contes de Chang'e" },
     { role: 'Assisté par', names: ['Claude (Anthropic)'] },
-    { role: 'Réalisé avec', names: ['ACE-Step', 'ComfyUI', 'Ollama'] },
+    { role: 'Réalisé avec', names: ['Musique : ACE-Step', 'Images : ComfyUI', 'Textes : Ollama'] },
     { role: 'Idées et suggestions', names: ['Ethan', 'Luna'] },
     { role: 'Tests (QA)', names: ['Ethan', 'Luna', 'Vanessa'] },
-    { type: 'thanks', text: "Merci à ma carte graphique d'avoir tenu le coup." },
-    { type: 'thanks', text: "Merci d'avoir parcouru la légende jusqu'au bout." }
+    { type: 'thanks', text: "Merci à ma carte graphique d'avoir tenu le coup." }
 ];
 const CREDITS_SECONDS = 40;
 
