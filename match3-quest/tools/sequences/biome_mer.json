@@ -1,0 +1,77 @@
+{
+  "id": "biome_mer",
+  "style": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "plate": "the Eastern Sea at dawn, a calm teal ocean with Chinese junk ships, jade-green cliffs, a stone pier in the lower third",
+  "style_plate": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "hero": {
+      "prompt": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, full body, standing, three-quarter view",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "magenta"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "the Eastern Sea at dawn, a calm teal ocean with Chinese junk ships, jade-green cliffs, a stone pier in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the camera moves slowly forward along the pier, waves crash on the rocks",
+      "denoise": 0.35,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.12,
+          "color": [
+            200,
+            240,
+            230
+          ],
+          "alpha": 90
+        }
+      ]
+    },
+    {
+      "prompt": "the Eastern Sea at dawn, a calm teal ocean with Chinese junk ships, jade-green cliffs, a stone pier in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the archer looks out to sea, the sun glitters on the water",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.4,
+          "r": 0.22,
+          "color": [
+            200,
+            240,
+            230
+          ],
+          "alpha": 140
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "waves roll and foam sparkles, seabirds glide, ships rock gently"
+    },
+    {
+      "frames": 49,
+      "motion": "the camera moves slowly forward along the pier, waves crash on the rocks"
+    },
+    {
+      "frames": 25,
+      "motion": "the archer looks out to sea, the sun glitters on the water"
+    }
+  ]
+}

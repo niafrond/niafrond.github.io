@@ -3,7 +3,7 @@
  * pack-ultimate-sequences.mjs — Range les plans-séquences terminés des ultimes (sprites/ultimates-seq/<id>/px/fNNNN.png, 144×256)
  * en UNE planche en grille `sprites/ultimates/<id>-seq.png` et déclare `<id>-seq` dans sprites/ultimates/index.json
  * ({ frames, fps, size, cols }) : lue par `loadSequence` (ultimateCinematics.js), qui joue la séquence à la place des 4 plans.
- * Ne retient que les ultimes dont la séquence est terminée (px/preview.gif présent, comme gen-all-ultimate-sequences.py).
+ * Traite aussi les intros de biome (`biome_<région>`, tools/gen-biome-intros.py). Ne retient que les séquences terminées (px/preview.gif présent, comme gen-all-ultimate-sequences.py).
  *
  * Usage (WSL, Node 22) : node tools/pack-ultimate-sequences.mjs [--only=ultimateFiveElements,…] [--fps=24] [--cols=16]
  * Après un changement de planches : incrémenter ULTIMATE_ART_VERSION (ultimateCinematics.js).
@@ -20,7 +20,9 @@ const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('
 const ONLY = args.only ? String(args.only).split(',') : null;
 const FPS = Number(args.fps || 24), COLS = Number(args.cols || 16), MAX_SIDE = 16384;
 const IDS = ['ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousandArrows', 'ultimateSunPiercer', 'ultimateImperialDragon',
-  'ultimateEternalBastion', 'ultimateThousandRiders', 'ultimateSkyWolf'];
+  'ultimateEternalBastion', 'ultimateThousandRiders', 'ultimateSkyWolf',
+  // mini-animations d'arrivée dans un biome (tools/gen-biome-intros.py) : `biome_<région>`
+  ...['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'].map(r => `biome_${r}`)];
 
 const indexPath = join(GAME, 'sprites', 'ultimates', 'index.json');
 const index = JSON.parse(readFileSync(indexPath, 'utf8'));

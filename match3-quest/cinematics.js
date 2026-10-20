@@ -3,6 +3,7 @@
 // Chaque scène retourne une Promise résolue à la fin ou au toucher/clic/touche (passer).
 import { icon } from './icons.js';
 import { playSfx } from './sound.js';
+import { loadSequence, sequenceRect } from './ultimateCinematics.js';
 
 // Taille logique de la scène : 16:9 en paysage, 9:16 en portrait (mise à jour à chaque scène).
 let W = 160;
@@ -1014,9 +1015,17 @@ export const REGION_SCENES = {
     lune: ['#0b0b2b', '#3a3a90', '#2a2a70', '#141446', '#fff4c8']
 };
 
-export function playRegionDiscovery({ id = 'rizieres', name = '', description = '' } = {}) {
+// Animation pixel art générée en local (tools/gen-biome-intros.py, rangée par pack-ultimate-sequences.mjs) : `biome_<id>-seq` dans
+// sprites/ultimates/index.json. En portrait et si elle existe, elle remplace la scène procédurale (dernière image tenue jusqu'au titre).
+export function playRegionDiscovery(zone = {}) {
+    const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
+    const clip = portrait ? loadSequence(`biome_${zone.id || 'rizieres'}`).catch(() => null) : Promise.resolve(null);
+    return clip.then(seq => playRegionScene(zone, seq));
+}
+
+function playRegionScene({ id = 'rizieres', name = '', description = '' } = {}, seq = null) {
     const pal = REGION_SCENES[id] || REGION_SCENES.rizieres;
-    const DURATION = 5.5;
+    const DURATION = seq ? Math.max(5.5, seq.frames / seq.fps + 1.5) : 5.5;
     return runScene({
         extraClass: 'cine-region',
         duration: DURATION,
@@ -1037,6 +1046,15 @@ export function playRegionDiscovery({ id = 'rizieres', name = '', description = 
             overlay.append(box);
         },
         draw(ctx, t) {
+            if (seq) {   // clip pixel art plein écran : image courante de la planche, fondu d'entrée et de sortie comme la scène procédurale
+                const [sx, sy, sw, sh] = sequenceRect(seq, t * seq.fps);
+                ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, W, H);
+                const k = Math.min(1, t / 0.6) * Math.min(1, (DURATION - t + 0.4) / 0.8);
+                ctx.globalAlpha = 1 - Math.max(0, Math.min(1, k));
+                px(ctx, '#000000', 0, 0, W, H);
+                ctx.globalAlpha = 1;
+                return;
+            }
             sky(ctx, pal[0], pal[1], 16);
             if (id === 'lune' || id === 'tonnerre') stars(ctx, t, 36, 0.9);
             // soleil bas / lune selon la région

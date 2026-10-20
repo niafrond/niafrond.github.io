@@ -1,0 +1,77 @@
+{
+  "id": "biome_tonnerre",
+  "style": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "plate": "a stormy mountain range at dusk, dark purple thunderclouds, lightning striking the peaks, snowy rocks, a rocky snow path in the lower third",
+  "style_plate": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "hero": {
+      "prompt": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, full body, standing, three-quarter view",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "cyan"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "a stormy mountain range at dusk, dark purple thunderclouds, lightning striking the peaks, snowy rocks, a rocky snow path in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the camera moves slowly forward, thunder strikes a distant peak",
+      "denoise": 0.35,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.12,
+          "color": [
+            220,
+            210,
+            255
+          ],
+          "alpha": 90
+        }
+      ]
+    },
+    {
+      "prompt": "a stormy mountain range at dusk, dark purple thunderclouds, lightning striking the peaks, snowy rocks, a rocky snow path in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the archer braces against the storm, a bolt of lightning lights the scene",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.4,
+          "r": 0.22,
+          "color": [
+            220,
+            210,
+            255
+          ],
+          "alpha": 140
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "dark clouds churn, lightning flashes across the sky, snow blows"
+    },
+    {
+      "frames": 49,
+      "motion": "the camera moves slowly forward, thunder strikes a distant peak"
+    },
+    {
+      "frames": 25,
+      "motion": "the archer braces against the storm, a bolt of lightning lights the scene"
+    }
+  ]
+}

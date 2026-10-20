@@ -1,0 +1,77 @@
+{
+  "id": "biome_volcan",
+  "style": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "plate": "a volcano landscape at night, rivers of glowing lava, black rock, a huge red glowing crater in the distance, an ash-covered path in the lower third",
+  "style_plate": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "hero": {
+      "prompt": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, full body, standing, three-quarter view",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "cyan"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "a volcano landscape at night, rivers of glowing lava, black rock, a huge red glowing crater in the distance, an ash-covered path in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the camera moves slowly forward, ash falls and the crater erupts with sparks",
+      "denoise": 0.35,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.12,
+          "color": [
+            255,
+            120,
+            60
+          ],
+          "alpha": 90
+        }
+      ]
+    },
+    {
+      "prompt": "a volcano landscape at night, rivers of glowing lava, black rock, a huge red glowing crater in the distance, an ash-covered path in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the archer shields his face from the heat, the crater glows brighter",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.4,
+          "r": 0.22,
+          "color": [
+            255,
+            120,
+            60
+          ],
+          "alpha": 140
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "lava flows and bubbles, embers rise into the dark red sky"
+    },
+    {
+      "frames": 49,
+      "motion": "the camera moves slowly forward, ash falls and the crater erupts with sparks"
+    },
+    {
+      "frames": 25,
+      "motion": "the archer shields his face from the heat, the crater glows brighter"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "id": "biome_bambous",
+  "style": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "plate": "a dense bamboo forest in morning mist, tall green bamboo stalks, shafts of light, a stone path in the lower third",
+  "style_plate": "pixel art, pixel art, 16-bit pixel art illustration, ancient China mythology, epic cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "hero": {
+      "prompt": "a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, full body, standing, three-quarter view",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "magenta"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "a dense bamboo forest in morning mist, tall green bamboo stalks, shafts of light, a stone path in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the camera moves slowly forward along the path, light shafts shimmer",
+      "denoise": 0.35,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.12,
+          "color": [
+            190,
+            240,
+            170
+          ],
+          "alpha": 90
+        }
+      ]
+    },
+    {
+      "prompt": "a dense bamboo forest in morning mist, tall green bamboo stalks, shafts of light, a stone path in the lower third, a 30-year-old male archer in a red and gold tunic with a topknot, a recurve bow in his hand and a quiver of arrows on his back, the archer stops and listens, fireflies of light float around",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.4,
+          "r": 0.22,
+          "color": [
+            190,
+            240,
+            170
+          ],
+          "alpha": 140
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "bamboo sways gently, mist drifts, leaves fall"
+    },
+    {
+      "frames": 49,
+      "motion": "the camera moves slowly forward along the path, light shafts shimmer"
+    },
+    {
+      "frames": 25,
+      "motion": "the archer stops and listens, fireflies of light float around"
+    }
+  ]
+}
