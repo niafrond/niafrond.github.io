@@ -1,3 +1,9 @@
+## [2.107.0](https://github.com/niafrond/niafrond.github.io/compare/v2.106.0...v2.107.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** empiler les stats et sorts en colonnes étroites en paysage ([#518](https://github.com/niafrond/niafrond.github.io/issues/518)) ([c4f4a6d](https://github.com/niafrond/niafrond.github.io/commit/c4f4a6dffdc4d7248b69475c26ee13decc1a66ae))
+
 ## [2.106.0](https://github.com/niafrond/niafrond.github.io/compare/v2.105.0...v2.106.0) (2026-10-20)
 
 ### Features
