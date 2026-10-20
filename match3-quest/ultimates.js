@@ -16,6 +16,7 @@ export function getUltimateById(id){
 
 // Ultimes que le joueur peut choisir : ceux de sa classe dont le niveau requis est atteint.
 export function getSelectableUltimates(entity){
+    if(entity?.cheatAllUltimates === true) return [...ultimateSpells];   // menu secret : tous les ultimes, toutes classes et niveaux
     return getUltimatesForClass(entity?.class).filter(spell => (entity?.level || 1) >= (spell.minLevel || 1));
 }
 
