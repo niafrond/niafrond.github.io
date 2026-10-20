@@ -627,10 +627,8 @@ export async function playEndingAnimation() {
 // Défile sur fond de nuit étoilée après l'animation de fin ; un toucher ou une touche le passe. Résolue à la fin.
 export const CREDITS = [
     { type: 'title', text: 'La Légende de Hou Yi' },
-    { role: 'Sur une idée originale de', names: ['Mickaël Fontaine'] },
     { role: 'Développé, réalisé et scénarisé par', names: ['Mickaël Fontaine'] },
-    { role: "Inspiré librement des contes de Chang'e" },
-    { role: "Inspiré par les cours de chinois d'Ethan" },
+    { role: "Inspiré librement des contes de Chang'e, découverts grâce aux cours de chinois d'Ethan" },
     { role: 'Assisté par', names: ['Claude (Anthropic)'] },
     { role: 'Réalisé avec', names: ['Musique : ACE-Step', 'Images : ComfyUI', 'Textes : Ollama'] },
     { role: 'Idées et suggestions', names: ['Ethan', 'Luna'] },

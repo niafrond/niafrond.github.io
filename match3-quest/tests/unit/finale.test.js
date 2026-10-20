@@ -75,10 +75,9 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
 
     test('le générique crédite l\'équipe, les outils et les remerciements', () => {
         const text = CREDITS.map(c => [c.text, c.role, ...(c.names || [])].join(' ')).join(' ');
-        expect(text).toMatch(/Sur une idée originale de Mickaël Fontaine/);
+        expect(text).not.toMatch(/idée originale/);
         expect(text).toMatch(/Développé, réalisé et scénarisé par Mickaël Fontaine/);
-        expect(text).toMatch(/Inspiré librement des contes de Chang'e/);
-        expect(text).toMatch(/Inspiré par les cours de chinois d'Ethan/);
+        expect(text).toMatch(/Inspiré librement des contes de Chang'e, découverts grâce aux cours de chinois d'Ethan/);
         expect(text).toMatch(/Assisté par Claude/);
         expect(text).toMatch(/Musique : ACE-Step Images : ComfyUI Textes : Ollama/);
         expect(text).not.toMatch(/jusqu'au bout/);
