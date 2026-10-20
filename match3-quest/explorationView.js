@@ -55,7 +55,7 @@ const KEY_TO_DIR = {
 // Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
     paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: BIOME_DECOR.paddy },
-    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: BIOME_DECOR.riverbed },
+    riverbed: { a: '#6b5538', b: '#614d33', path: '#8c7550', cliff: '#3f3020', liquid: '#4f4129', sky: ['#e3b878', '#f7e6c6'], decor: BIOME_DECOR.riverbed },
     bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: BIOME_DECOR.bamboo },
     gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: BIOME_DECOR.gobi },
     storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: BIOME_DECOR.storm },
