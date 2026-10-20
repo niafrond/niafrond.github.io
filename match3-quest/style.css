@@ -3306,3 +3306,6 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .cost-badge-light { color: #3a2a00; text-shadow: none; }
 /* Gomettes de coût en combat : plus compactes dans les boutons de sorts */
 #spell-buttons .cost-badge, .spell-cost .cost-badge { font-size: .8em; margin-right: 3px; }
+/* Cases créées par un sort (ex. crânes du Porte-Soleil) : anneau doré pulsé (board.js, flashTiles) */
+.tile.tile-created { position: relative; z-index: 2; animation: tile-created-pulse .6s ease-in-out 3; box-shadow: 0 0 0 3px #ffd24a, 0 0 14px 6px rgba(255,210,74,.85); }
+@keyframes tile-created-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }

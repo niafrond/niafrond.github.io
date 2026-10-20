@@ -728,6 +728,15 @@ function paintBoard(tiles, skipCleanup){
     refreshTargetingHighlights();
 }
 
+// Met en évidence quelques cases un court instant (ex. crânes créés par un sort) : anneau pulsé `.tile-created`.
+export function flashTiles(indices, durationMs = 1800){
+    const tiles = document.getElementById('board')?.children;
+    if(!tiles) return;
+    const marked = indices.map(i => tiles[i]).filter(Boolean);
+    marked.forEach(el => el.classList.add('tile-created'));
+    setTimeout(() => marked.forEach(el => el.classList.remove('tile-created')), durationMs);
+}
+
 export function renderBoard(skipCleanup = false){
     startSuggestionTimer();
     const boardDiv=document.getElementById('board');

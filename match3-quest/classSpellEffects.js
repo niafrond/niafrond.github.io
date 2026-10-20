@@ -2,7 +2,7 @@
 
 import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage } from "./game.js";
-import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
+import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 import { addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
@@ -1139,14 +1139,17 @@ function applyDeathbringer(spell) {
     }
 
     const count = Math.min(skullsToCreate, candidates.length);
+    const created = [];
     for(let i = 0; i < count; i++) {
         const idx = Math.floor(Math.random() * candidates.length);
         const target = candidates.splice(idx, 1)[0];
         board[target.index] = 'skull';
+        created.push(target.index);
     }
 
     renderBoard();
-    showCombatAnimation({ icon: 'poison', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true);
+    // une fois l'animation du sort terminée, on montre où les crânes sont apparus
+    showCombatAnimation({ icon: 'poison', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true, { onContinue: () => flashTiles(created) });
     log(`Porte-Soleil crée ${count} crânes (basé sur le mana rouge).`);
     return true;
 }
