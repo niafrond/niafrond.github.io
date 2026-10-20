@@ -3840,8 +3840,38 @@ export function createWeaponButton(){
     updateWeaponsTab();
 }
 
+// ── Tri des listes d'armes et d'objets (menus déroulants des onglets Armes et Objets) ──
+const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+const byText = (a, b) => String(a).localeCompare(String(b), 'fr');
+const WEAPON_SORTS = {
+    name: (a, b) => byText(a.name, b.name),
+    damage: (a, b) => (b.damage || 0) - (a.damage || 0) || byText(a.name, b.name),
+    ap: (a, b) => (a.actionPoints || 0) - (b.actionPoints || 0) || byText(a.name, b.name),
+    level: (a, b) => (a.minLevel || 1) - (b.minLevel || 1) || byText(a.name, b.name)
+};
+const ITEM_SORTS = {
+    name: (a, b) => byText(a.it.name, b.it.name),
+    rarity: (a, b) => (RARITY_RANK[b.it.rarity] ?? 0) - (RARITY_RANK[a.it.rarity] ?? 0) || byText(a.it.name, b.it.name),
+    level: (a, b) => (a.it.minLevel || 1) - (b.it.minLevel || 1) || byText(a.it.name, b.it.name),
+    type: (a, b) => byText(a.it.type, b.it.type) || byText(a.it.name, b.it.name)
+};
+const sortChoice = id => { try { return localStorage.getItem('sort:' + id) || 'default'; } catch { return 'default'; } };
+function bindSortSelect(id, rerender){
+    const sel = document.getElementById(id);
+    if(!sel || sel.dataset.bound) return;
+    sel.value = sortChoice(id);
+    sel.dataset.bound = '1';
+    sel.addEventListener('change', () => { try { localStorage.setItem('sort:' + id, sel.value); } catch {} rerender(); });
+}
+const sortedEntries = (entries, sortId) => {
+    const fn = ITEM_SORTS[sortChoice(sortId)];
+    return fn ? [...entries].sort(fn) : entries;
+};
+
 // mise à jour de l'onglet armes
 export function updateWeaponsTab(){
+    bindSortSelect('weapons-sort', updateWeaponsTab);
+    bindSortSelect('items-sort', updateWeaponsTab);
     const equippedDiv = document.getElementById('equipped-weapon');
     const availableList = document.getElementById('available-weapons-list');
     if(!equippedDiv || !availableList) return;
@@ -3873,10 +3903,11 @@ export function updateWeaponsTab(){
 
     // Armes disponibles
     availableList.innerHTML = '';
-    const ownedWeapons = player.weapons || [];
+    const weaponSort = WEAPON_SORTS[sortChoice('weapons-sort')];
+    const ownedWeapons = weaponSort ? [...(player.weapons || [])].sort(weaponSort) : (player.weapons || []);
     if(ownedWeapons.length === 0){
         availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
-        renderGearList(availableList);
+        renderGearList(document.getElementById('gear-list'));
         updateInventoryTab();
         updateItemButton();
         return;
@@ -3909,7 +3940,7 @@ export function updateWeaponsTab(){
         availableList.appendChild(div);
     });
 
-    renderGearList(availableList);
+    renderGearList(document.getElementById('gear-list'));
     updateInventoryTab();
     updateItemButton();
 }
@@ -3920,11 +3951,13 @@ const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus
 // Boucliers (main gauche) et objets rechargeables (objet actif) : affichés dès l'achat,
 // non sélectionnables tant que le niveau requis n'est pas atteint.
 function renderGearList(container){
+    if(!container) return;
+    container.innerHTML = '';
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
     const inventory = player.inventory || [];
     const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    const shields = inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield');
-    const reusables = inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable');
+    const shields = sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort');
+    const reusables = sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable'), 'items-sort');
     if(!wornShield && shields.length === 0 && reusables.length === 0) return;
     const section = document.createElement('div');
     section.innerHTML = '<h3 class="shop-section-title">Boucliers et objets</h3>';
@@ -3993,6 +4026,7 @@ export function unequipGear(slot){
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
     if(!inventoryList) return;
+    bindSortSelect('items-sort', updateWeaponsTab);
     normalizeActiveInventoryIndex();
 
     inventoryList.innerHTML = '';
@@ -4028,8 +4062,7 @@ export function updateInventoryTab(){
         return;
     }
 
-    player.inventory.forEach((item, index) => {
-        if(item.type === 'shield') return;
+    sortedEntries(player.inventory.map((item, index) => ({ it: item, index })).filter(({ it }) => it.type !== 'shield'), 'items-sort').forEach(({ it: item, index }) => {
         const isActive = index === player.activeInventoryIndex;
         const rarityEmoji = getRarityIcon(item.rarity);
         const rarityColor = getRarityColor(item.rarity);
