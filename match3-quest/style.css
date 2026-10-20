@@ -2941,35 +2941,63 @@ body.dark-mode .tutorial-card {
 /* ── Générique de fin (cinematics.js : playCredits) ─────────────────────────── */
 .cine-credits {
     background: radial-gradient(ellipse at 50% 120%, #1d3a52 0%, #0d3440 45%, #05141a 100%);
-    overflow: hidden;
     font-family: "Pixelify Sans", "Press Start 2P", monospace;
     color: #fbf1d8;
     text-align: center;
+    cursor: default;
+    align-items: stretch;
 }
-.cine-credits-roll {
+.cine-credits-scroll {
     position: absolute;
-    left: 6vw;
-    right: 6vw;
-    top: 0;
+    inset: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    padding: 0 6vw;
+    outline: none;
+    -webkit-mask-image: linear-gradient(transparent 0, #000 9%, #000 91%, transparent 100%);
+    mask-image: linear-gradient(transparent 0, #000 9%, #000 91%, transparent 100%);
+}
+.cine-credits-scroll::-webkit-scrollbar { display: none; }
+.cine-credits-roll {
     display: flex;
     flex-direction: column;
     gap: 7vh;
-    padding-top: 100vh;
-    padding-bottom: 100vh;
-    animation: cine-credits-scroll var(--credits-seconds, 22s) linear both;
+    max-width: 900px;
+    margin: 0 auto;
+    padding-top: 55vh;
+    padding-bottom: 40vh;
     text-shadow: -3px 3px 0 #2a0f10, 1px 1px 0 #2a0f10, -1px -1px 0 #2a0f10;
 }
 .cine-credits p { margin: 0; }
-.cine-credits-block { display: flex; flex-direction: column; gap: 1.2vh; }
-.cine-credits-title { font-size: clamp(30px, 8vmin, 72px); line-height: 1.1; font-weight: 700; color: #e8b923; letter-spacing: 0.06em; }
-.cine-credits-role { font-size: clamp(14px, 3.2vmin, 26px); color: #f0d9a0; letter-spacing: 0.05em; }
-.cine-credits-name { font-size: clamp(22px, 5.2vmin, 46px); font-weight: 700; color: #fbe7b0; }
-.cine-credits-thanks { font-size: clamp(13px, 2.8vmin, 22px); color: #f0d9a0; }
-@keyframes cine-credits-scroll { from { transform: translateY(0); } to { transform: translateY(-100%); } }
-.cine-credits.static .cine-credits-roll { position: static; animation: none; padding: 0; justify-content: center; height: 100%; }
-@media (prefers-reduced-motion: reduce) {
-    .cine-credits .cine-credits-roll { position: static; animation: none; padding: 0; justify-content: center; height: 100%; }
+.cine-credits-block { display: flex; flex-direction: column; gap: 1.4vh; }
+.cine-credits-title { font-size: clamp(30px, 8vmin, 72px); line-height: 1.1; font-weight: 700; color: #e8b923; letter-spacing: 0.06em; text-transform: uppercase; }
+.cine-credits-role { font-size: clamp(13px, 2.8vmin, 22px); color: #f0d9a0; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.35; }
+.cine-credits-name { font-size: clamp(22px, 5.2vmin, 46px); font-weight: 700; color: #fbe7b0; line-height: 1.2; }
+.cine-credits-line { font-size: clamp(15px, 3.4vmin, 28px); color: #fbf1d8; line-height: 1.4; }
+.cine-credits-thanks { font-size: clamp(16px, 3.6vmin, 30px); color: #fbe7b0; line-height: 1.45; }
+.cine-credits-rule { height: 2px; width: 40%; margin: 0 auto; background: linear-gradient(90deg, transparent, #e8b923, transparent); }
+.cine-credits-skip, .cine-credits-continue {
+    position: absolute;
+    font: 700 clamp(13px, 2.8vmin, 20px) "Pixelify Sans", monospace;
+    color: #2a0f10;
+    background: #e8b923;
+    border: 2px solid #2a0f10;
+    box-shadow: -3px 3px 0 #2a0f10;
+    cursor: pointer;
 }
+.cine-credits-skip { top: max(12px, env(safe-area-inset-top)); right: 12px; padding: 6px 12px; opacity: 0.75; }
+.cine-credits-continue {
+    left: 50%;
+    bottom: max(7vh, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    padding: 12px 34px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease-out;
+}
+.cine-credits.done .cine-credits-continue { opacity: 1; pointer-events: auto; }
+.cine-credits.done .cine-credits-skip { display: none; }
 
 /* ── Prologue animé (cinematics.js : playPrologueAnimation) ──────────────────── */
 .cine-prologue { background: #0d3440; }

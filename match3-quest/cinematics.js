@@ -624,45 +624,85 @@ export async function playEndingAnimation() {
 }
 
 // ── Générique de fin ────────────────────────────────────────────────────────
-// Défile sur fond de nuit étoilée après l'animation de fin ; un toucher ou une touche le passe. Résolue à la fin.
+// Défile tout seul sur la musique de fin (main.js : `.cine-credits` → piste `ending`). Le joueur peut remonter pour relire :
+// dès qu'il touche, roule ou presse une flèche, le défilement s'arrête et reprend après quelques secondes d'inactivité.
+// À la fin, l'écran reste sur la dernière phrase et un bouton « Continuer » résout la Promise.
+// Entrées : `{ type: 'title' | 'rule' | 'thanks' }` ou un bloc `{ role, names?, lines? }` (noms en gras, lignes en retrait).
 export const CREDITS = [
     { type: 'title', text: 'La Légende de Hou Yi' },
-    { role: 'Développé, réalisé et scénarisé par', names: ['Mickaël Fontaine'] },
-    { role: "Inspiré librement des contes de Chang'e, découverts grâce aux cours de chinois d'Ethan" },
-    { role: 'Assisté par', names: ['Claude (Anthropic)'] },
-    { role: 'Réalisé avec', names: ['Musique : ACE-Step', 'Images : ComfyUI', 'Textes : Ollama'] },
-    { role: 'Idées et suggestions', names: ['Ethan', 'Luna'] },
-    { role: 'Tests (QA)', names: ['Ethan', 'Luna', 'Vanessa'] },
-    { type: 'thanks', text: "Merci à ma carte graphique d'avoir tenu le coup." }
+    { role: 'Un jeu imaginé et créé par', names: ['Mickaël Fontaine'] },
+    { type: 'rule' },
+    { role: 'Concept original, réalisation et scénario', names: ['Mickaël Fontaine'] },
+    { role: 'Inspiré librement de la mythologie chinoise', lines: ["Et notamment des légendes de Hou Yi et de Chang'e"] },
+    { role: 'Inspiration et transmission', lines: ['Ethan, pour ses cours de chinois'] },
+    { type: 'rule' },
+    { role: "Avec le soutien de l'intelligence artificielle", lines: ['Assistance créative : Claude (Anthropic)', 'Musique : ACE-Step', 'Création visuelle : ComfyUI', 'Génération de textes : Ollama'] },
+    { type: 'rule' },
+    { role: 'Idées, suggestions et contributions', names: ['Ethan, Luna'] },
+    { role: 'Tests et assurance qualité (QA)', names: ['Ethan, Luna, Vanessa'] },
+    { type: 'rule' },
+    { role: 'Remerciements', lines: ['À ma carte graphique, qui a affronté les flammes sans jamais rendre l\'âme.'] },
+    { type: 'thanks', text: "À ma femme et mes enfants, qui m'ont suivi dans mon délire, je vous aime fort." }
 ];
-const CREDITS_SECONDS = 40;
+export const CREDITS_SPEED = 42;          // px CSS par seconde
+export const CREDITS_RESUME_MS = 3000;    // inactivité du joueur avant la reprise du défilement
 
-const creditsHtml = c => c.type
-    ? `<p class="cine-credits-${c.type}">${c.text}</p>`
-    : `<div class="cine-credits-block"><p class="cine-credits-role">${c.role}</p>${(c.names || []).map(n => `<p class="cine-credits-name">${n}</p>`).join('')}</div>`;
+const creditsHtml = c => c.type === 'rule' ? '<div class="cine-credits-rule"></div>'
+    : c.type ? `<p class="cine-credits-${c.type}">${c.text}</p>`
+    : `<div class="cine-credits-block"><p class="cine-credits-role">${c.role}</p>${(c.names || []).map(n => `<p class="cine-credits-name">${n}</p>`).join('')}${(c.lines || []).map(l => `<p class="cine-credits-line">${l}</p>`).join('')}</div>`;
 
 export function playCredits() {
     return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.className = 'cine-overlay cine-credits';
         overlay.innerHTML = `
-            <div class="cine-credits-roll" style="--credits-seconds:${CREDITS_SECONDS}s">${CREDITS.map(creditsHtml).join('')}</div>
-            <div class="cine-skip">Toucher pour passer ►</div>`;
+            <div class="cine-credits-scroll" tabindex="0"><div class="cine-credits-roll">${CREDITS.map(creditsHtml).join('')}</div></div>
+            <button type="button" class="cine-credits-skip">Passer ►►</button>
+            <button type="button" class="cine-credits-continue">Continuer</button>`;
         document.body.appendChild(overlay);
-        const roll = overlay.querySelector('.cine-credits-roll');
-        let finished = false;
+        const scroller = overlay.querySelector('.cine-credits-scroll');
+        const reduced = prefersReducedMotion();
+        const maxScroll = () => Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        let pos = 0, last = 0, raf = 0, idleUntil = 0, done = false, finished = false;
+        const markDone = () => { done = true; overlay.classList.add('done'); };
+        const frame = now => {
+            const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+            last = now;
+            if (!done && now >= idleUntil) {
+                pos = Math.min(maxScroll(), pos + CREDITS_SPEED * dt);
+                scroller.scrollTop = pos;
+                if (pos >= maxScroll() - 1) markDone();   // reste sur la dernière phrase
+            }
+            raf = requestAnimationFrame(frame);
+        };
+        // Le joueur reprend la main (remonter pour relire) : on se cale sur sa position et on attend avant de reprendre.
+        const userTouch = () => { pos = scroller.scrollTop; idleUntil = performance.now() + CREDITS_RESUME_MS; };
+        ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev => scroller.addEventListener(ev, userTouch, { passive: true }));
+        scroller.addEventListener('scroll', () => {
+            if (!done && scroller.scrollTop >= maxScroll() - 1 && !reduced) markDone();
+        });
+        const toEnd = () => { scroller.scrollTop = pos = maxScroll(); markDone(); };
         const close = () => {
             if (finished) return;
             finished = true;
+            cancelAnimationFrame(raf);
             document.removeEventListener('keydown', onKey, true);
             overlay.classList.add('closing');
             setTimeout(() => { overlay.remove(); resolve(); }, 350);
         };
-        const onKey = e => { e.preventDefault(); e.stopPropagation(); close(); };
-        overlay.addEventListener('pointerdown', close);
+        const onKey = e => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' || e.key === 'PageDown') { userTouch(); return; }
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (done) close(); else toEnd();
+            }
+        };
         document.addEventListener('keydown', onKey, true);
-        if (prefersReducedMotion()) overlay.classList.add('static');
-        else roll.addEventListener('animationend', () => setTimeout(close, 1500));
+        overlay.querySelector('.cine-credits-skip').addEventListener('click', toEnd);
+        overlay.querySelector('.cine-credits-continue').addEventListener('click', close);
+        if (reduced) markDone();   // pas de défilement automatique : lecture à la main, bouton déjà là
+        else raf = requestAnimationFrame(frame);
     });
 }
 

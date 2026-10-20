@@ -73,17 +73,27 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
         expect(STORY_ENDING.length).toBeGreaterThan(0);
     });
 
-    test('le générique crédite l\'équipe, les outils et les remerciements', () => {
-        const text = CREDITS.map(c => [c.text, c.role, ...(c.names || [])].join(' ')).join(' ');
-        expect(text).not.toMatch(/idée originale/);
-        expect(text).toMatch(/Développé, réalisé et scénarisé par Mickaël Fontaine/);
-        expect(text).toMatch(/Inspiré librement des contes de Chang'e, découverts grâce aux cours de chinois d'Ethan/);
-        expect(text).toMatch(/Assisté par Claude/);
-        expect(text).toMatch(/Musique : ACE-Step Images : ComfyUI Textes : Ollama/);
-        expect(text).not.toMatch(/jusqu'au bout/);
-        expect(CREDITS.find(c => c.role === 'Idées et suggestions').names).toEqual(['Ethan', 'Luna']);
-        expect(CREDITS.find(c => c.role === 'Tests (QA)').names).toEqual(['Ethan', 'Luna', 'Vanessa']);
-        expect(text).toMatch(/carte graphique/);
+    test('le générique reprend les crédits voulus, dans l\'ordre, et finit sur le mot pour la famille', () => {
+        const text = CREDITS.map(c => [c.text, c.role, ...(c.names || []), ...(c.lines || [])].join(' ')).join(' | ');
+        expect(text).toMatch(/Un jeu imaginé et créé par Mickaël Fontaine/);
+        expect(text).toMatch(/Concept original, réalisation et scénario Mickaël Fontaine/);
+        expect(text).toMatch(/Inspiré librement de la mythologie chinoise Et notamment des légendes de Hou Yi et de Chang'e/);
+        expect(text).toMatch(/Ethan, pour ses cours de chinois/);
+        expect(text).toMatch(/Claude \(Anthropic\).*Musique : ACE-Step.*Création visuelle : ComfyUI.*Génération de textes : Ollama/);
+        expect(text).toMatch(/Idées, suggestions et contributions Ethan, Luna/);
+        expect(text).toMatch(/Tests et assurance qualité \(QA\) Ethan, Luna, Vanessa/);
+        expect(text).toMatch(/carte graphique, qui a affronté les flammes/);
+        expect(CREDITS[CREDITS.length - 1].text).toBe("À ma femme et mes enfants, qui m'ont suivi dans mon délire, je vous aime fort.");
+        expect(CREDITS.filter(c => c.type === 'rule')).toHaveLength(4);
+    });
+
+    test('le générique défile seul, se laisse remonter, s\'arrête sur la dernière phrase et attend « Continuer »', () => {
+        const src = readFileSync(new URL('../../cinematics.js', import.meta.url), 'utf8');
+        expect(src).toMatch(/cine-credits-continue/);
+        expect(src).toMatch(/\['wheel', 'touchstart', 'touchmove', 'pointerdown'\]/);   // le joueur reprend la main
+        expect(src).toMatch(/if \(pos >= maxScroll\(\) - 1\) markDone\(\)/);
+        const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
+        expect(main).toMatch(/\.cine-ending, \.cine-credits'\)\) return \['ending'\]/);
     });
 
     test('en Nouvelle Partie +, l\'arène est ouverte dès le début, même sans terrain visité', () => {

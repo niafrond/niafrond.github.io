@@ -196,7 +196,7 @@ function init() {
     let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
     window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
-        if(document.querySelector('.cine-ending')) return ['ending'];
+        if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
