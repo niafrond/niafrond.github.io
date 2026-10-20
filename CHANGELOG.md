@@ -1,3 +1,9 @@
+## [2.97.0](https://github.com/niafrond/niafrond.github.io/compare/v2.96.0...v2.97.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** ajouter des icônes aux sorts de destruction ([#503](https://github.com/niafrond/niafrond.github.io/issues/503)) ([f14596c](https://github.com/niafrond/niafrond.github.io/commit/f14596c49844273cb018335901bebc1350e25268))
+
 ## [2.96.0](https://github.com/niafrond/niafrond.github.io/compare/v2.95.0...v2.96.0) (2026-10-19)
 
 ### Features
