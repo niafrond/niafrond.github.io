@@ -46,7 +46,7 @@ const media = (root, path) => ({ p: path, s: statSync(join(root, path)).size, h:
 export function buildManifest(root = GAME_DIR) {
     const core = [
         'index.html',
-        ...list(root, '', name => ext('.js', '.css', '.json', '.svg')(name) && name !== MANIFEST_FILE && !name.startsWith('test-')),
+        ...list(root, '', name => ext('.js', '.css', '.json', '.svg')(name) && name !== MANIFEST_FILE && name !== 'sw.js' && !name.startsWith('test-')),
         ...listDeep(root, 'world', ext('.js')),
         ...list(root, 'sprites', ext('.js')),
         ...list(root, 'sprites/cn', ext('.js')),

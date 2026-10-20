@@ -43,6 +43,7 @@
   "merchants.js",
   "music.js",
   "musicTracks.js",
+  "offlineCache.js",
   "playerNames.js",
   "progression.js",
   "retro.css",

@@ -10,6 +10,7 @@ import { weaknessLabel } from "./terrain.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
+import { registerServiceWorkerWhenLoaded } from "./offlineCache.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
@@ -522,3 +523,6 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
+// Jeu hors ligne : service worker (sw.js), enregistré une fois la page chargée
+registerServiceWorkerWhenLoaded();
