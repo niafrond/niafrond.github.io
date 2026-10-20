@@ -27,6 +27,7 @@ import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon } from './icons.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
+import { gridsOf } from './explorationGrids.js';
 import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
 // Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
@@ -1091,6 +1092,8 @@ export function createExplorationView(cfg) {
         const aura = X.getAuraTiles(session);
         const pulse = 0.5 + 0.5 * Math.sin(now / 320);
         const inRects = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+        const grids = gridsOf(screen);
+        const isLiquidAt = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && grids.liq[y * screen.w + x] === 1;
         const cell = (x, y, fill, inset = 0) => {
             const p = P(x, y);
             ctx.fillStyle = fill;
@@ -1118,7 +1121,7 @@ export function createExplorationView(cfg) {
             const auraFill = `rgba(220,38,38,${(0.16 + 0.12 * pulse).toFixed(3)})`;
             aura.forEach(key => {
                 const [x, y] = key.split(',').map(Number);
-                if (!inRects(screen.liquids, x, y)) cell(x, y, auraFill);
+                if (!isLiquidAt(x, y)) cell(x, y, auraFill);
             });
         }
         // contour des zones de vigilance (lecture claire de « où ne pas passer »)
@@ -1126,7 +1129,7 @@ export function createExplorationView(cfg) {
         ctx.strokeStyle = `rgba(220,38,38,${(0.35 + 0.25 * pulse).toFixed(3)})`;
         aura.forEach(key => {
             const [x, y] = key.split(',').map(Number);
-            if (inRects(screen.liquids, x, y)) return;
+            if (isLiquidAt(x, y)) return;
             const p = P(x, y);
             ctx.strokeRect(p.x + 0.75, p.y + 0.75, tile - 1.5, tile - 1.5);
         });
@@ -1139,7 +1142,7 @@ export function createExplorationView(cfg) {
             const fx = Math.abs(f.dx) >= Math.abs(f.dy) ? Math.sign(f.dx) : 0;
             const fy = fx ? 0 : (Math.sign(f.dy) || 1);
             X.auraCellsOf(session, e).forEach(({ x, y }) => {
-                if ((x === e.x && y === e.y) || inRects(screen.liquids, x, y)) return;
+                if ((x === e.x && y === e.y) || isLiquidAt(x, y)) return;
                 const c = P(x + 0.5, y + 0.5), a = tile * 0.14;
                 ctx.beginPath();
                 ctx.moveTo(c.x - fy * a - fx * a, c.y - fx * a - fy * a);
@@ -1236,15 +1239,7 @@ export function createExplorationView(cfg) {
         });
 
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
-        const items = [];
-        const inBuilding = (x, y) => (screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
-        const pillarCells = new Set((screen.pillars || []).map(([px, py]) => `${px},${py}`));
-        for (let x = 0; x < screen.w; x++) {
-            for (let y = 0; y < screen.h; y++) {
-                if (pillarCells.has(`${x},${y}`)) { items.push({ depth: y, kind: 'pillar', x, y }); continue; }
-                if (inRects(screen.obstacles, x, y) && !inBuilding(x, y)) items.push({ depth: y, kind: 'block', x, y });
-            }
-        }
+        const items = grids.blocks.slice();   // décors fixes mis en cache (voir gridsOf)
         (screen.buildings || []).forEach(b => items.push({ depth: b.y + b.h - 0.5, kind: 'building', b, x: b.x, y: b.y }));
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
@@ -1457,7 +1452,7 @@ export function createExplorationView(cfg) {
                     ctx.lineWidth = 3;
                     ctx.stroke();
                     // Pas de Yu : sur l'eau, le héros glisse à la surface et des rides s'étendent sous ses pieds
-                    if (inRects(screen.liquids || [], Math.round(vis.px), Math.round(vis.py))) {
+                    if (isLiquidAt(Math.round(vis.px), Math.round(vis.py))) {
                         for (let r = 0; r < 2; r++) {
                             const phase = ((now / 900) + r * 0.5) % 1;
                             ctx.beginPath();
