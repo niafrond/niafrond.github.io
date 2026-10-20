@@ -344,6 +344,8 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     if(encounter?.prep?.tags?.length) enemyEntity.prep = { ...encounter.prep };
     // Règles de duel (Fengmeng : miroir, tirs rapides, pièges de zone) appliquées par game.js, voir duel.js.
     if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
+    // Phase d'un duel enchaîné : le héros garde les PV de la phase précédente (game.js : restartCombat).
+    if(encounter?.carryHp) enemyEntity.carryHp = true;
     // Vague de l'Arène des Mille Flèches (arena.js) : prime versée par game.js à la victoire.
     if(encounter?.arena) {
         enemyEntity.arena = { ...encounter.arena };

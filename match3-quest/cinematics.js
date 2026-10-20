@@ -365,16 +365,36 @@ function endChange(ctx, mx, my, r, t, alpha) {
 }
 
 const ENDING_BEATS = 4;   // tableaux Pixel Lab de la fin : crépuscule, autel, Chang'e dans la lune, lanternes
-const ENDING_BEAT_SECONDS = 3.6;
+const ENDING_BEAT_SECONDS = 6.5;
+
+// Une légende par tableau : elle explique ce qu'il advient du monde, de Fengmeng, de Chang'e et des hommes.
+export const ENDING_CAPTIONS = [
+    "Le dernier soleil décline : pour la première fois depuis des lunes, la nuit tombe sur la Terre. Les fleuves regonflent, les rizières reverdissent, et l'empereur Yao fait graver le nom de Hou Yi dans le jade.",
+    "Hou Yi dépose les gâteaux de lune sur l'autel blanc, un à un, comme Chang'e le faisait. Fengmeng, lui, est redescendu à pied, son carquois laissé au pied de l'autel : il n'a plus jamais visé personne.",
+    "Là-haut, Chang'e veille. L'élixir lui a donné le ciel, mais n'a pas pris son cœur : dans le bronze, les deux moitiés du miroir ne forment plus qu'un seul cercle, et une main se lève dans la lune.",
+    "Chaque automne, à la pleine lune, les hommes posent des gâteaux sur leurs toits et allument des lanternes. Et là-haut, quelqu'un leur sourit. Ainsi s'achève la légende de Hou Yi."
+];
 
 export async function playEndingAnimation() {
     const art = await loadSceneArt('ending', ENDING_BEATS, window.innerHeight > window.innerWidth);
-    const DURATION = art ? ENDING_BEATS * ENDING_BEAT_SECONDS + 1.5 : 15.5;
+    const DURATION = art ? ENDING_BEATS * ENDING_BEAT_SECONDS + 2.5 : 27.5;
+    const PROC_BEAT_SECONDS = 6;   // sans tableaux : une légende toutes les 6 s sur la scène dessinée
     const C = P ? END_LAYOUT.port : END_LAYOUT.land;
     let stars = null;
     let overlayEl = null;
     const shown = {};
     const reveal = (cls, on) => { if (on && !shown[cls] && overlayEl) { shown[cls] = true; overlayEl.classList.add(cls); } };
+    // Légende du tableau en cours : elle réapparaît en fondu à chaque changement.
+    let captionIdx = -1;
+    const showCaption = i => {
+        const el = overlayEl?.querySelector('.cine-ending-legend');
+        if (!el || i === captionIdx) return;
+        captionIdx = i;
+        el.textContent = ENDING_CAPTIONS[i];
+        el.classList.remove('swap');
+        void el.offsetWidth;
+        el.classList.add('swap');
+    };
     let layout = null;
     // Tableaux Pixel Lab : un fondu enchaîné entre chaque temps ; « FIN » et la légende apparaissent sur le dernier.
     const drawEndingArt = (ctx, t) => {
@@ -386,8 +406,8 @@ export async function playEndingAnimation() {
         const blit = (b, tt) => { const a = art[b], [aw, ah] = a.size; ctx.drawImage(a.img, frameOf(b, tt) * aw, 0, aw, ah, 0, 0, aw, ah); };
         blit(beat, local);
         if (beat > 0 && local < 0.8) { ctx.globalAlpha = 1 - local / 0.8; blit(beat - 1, local + ENDING_BEAT_SECONDS); ctx.globalAlpha = 1; }   // fondu depuis le tableau précédent
+        showCaption(beat);
         reveal('show-fin', t > (ENDING_BEATS - 1) * ENDING_BEAT_SECONDS + 0.6);
-        reveal('show-legend', t > (ENDING_BEATS - 1) * ENDING_BEAT_SECONDS + 1.8);
         reveal('show-prompt', t >= DURATION);
     };
     return runScene({
@@ -401,7 +421,7 @@ export async function playEndingAnimation() {
             overlay.insertAdjacentHTML('beforeend', `
                 <div class="cine-ending-text">
                     <div class="cine-ending-fin">FIN</div>
-                    <div class="cine-ending-legend">Ainsi s'achève la légende de Hou Yi.<br>Chaque automne, là-haut, quelqu'un vous sourira.</div>
+                    <div class="cine-ending-legend"></div>
                 </div>
                 <div class="cine-ending-prompt">► Toucher pour continuer</div>`);
         },
@@ -596,10 +616,45 @@ export async function playEndingAnimation() {
             ctx.globalAlpha = 1;
 
             // ── Textes (overlay HTML) ──
-            reveal('show-fin', t > 11.2);
-            reveal('show-legend', t > 12.4);
+            showCaption(Math.min(ENDING_BEATS - 1, Math.floor(t / PROC_BEAT_SECONDS)));
+            reveal('show-fin', t > (ENDING_BEATS - 1) * PROC_BEAT_SECONDS + 0.6);
             reveal('show-prompt', t >= DURATION);
         }
+    });
+}
+
+// ── Générique de fin ────────────────────────────────────────────────────────
+// Défile sur fond de nuit étoilée après l'animation de fin ; un toucher ou une touche le passe. Résolue à la fin.
+export const CREDITS = [
+    { type: 'title', text: 'La Légende de Hou Yi' },
+    { type: 'role', text: 'Développé, réalisé et scénarisé par' },
+    { type: 'name', text: 'Mickaël Fontaine' },
+    { type: 'thanks', text: "Merci d'avoir parcouru la légende jusqu'au bout." }
+];
+const CREDITS_SECONDS = 22;
+
+export function playCredits() {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'cine-overlay cine-credits';
+        overlay.innerHTML = `
+            <div class="cine-credits-roll" style="--credits-seconds:${CREDITS_SECONDS}s">${CREDITS.map(c => `<p class="cine-credits-${c.type}">${c.text}</p>`).join('')}</div>
+            <div class="cine-skip">Toucher pour passer ►</div>`;
+        document.body.appendChild(overlay);
+        const roll = overlay.querySelector('.cine-credits-roll');
+        let finished = false;
+        const close = () => {
+            if (finished) return;
+            finished = true;
+            document.removeEventListener('keydown', onKey, true);
+            overlay.classList.add('closing');
+            setTimeout(() => { overlay.remove(); resolve(); }, 350);
+        };
+        const onKey = e => { e.preventDefault(); e.stopPropagation(); close(); };
+        overlay.addEventListener('pointerdown', close);
+        document.addEventListener('keydown', onKey, true);
+        if (prefersReducedMotion()) overlay.classList.add('static');
+        else roll.addEventListener('animationend', () => setTimeout(close, 1500));
     });
 }
 

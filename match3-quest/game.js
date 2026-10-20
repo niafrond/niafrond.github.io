@@ -936,8 +936,8 @@ export const skullDamage = 1;           // dégâts infligés par soleil lors d'
 // ennemi courant (combatPoints pour attaquer)
 export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
-// si le joueur meurt, on restaure ses PV et réinitialise le combat
-export function restartCombat(){
+// si le joueur meurt, on restaure ses PV et réinitialise le combat ; `keepHp` : phase enchaînée d'un duel, les PV restent ceux du combat précédent
+export function restartCombat({ keepHp = false } = {}){
     actionGuard.reset();
     introToken++;
     foxActedThisTurn = false;
@@ -948,7 +948,7 @@ export function restartCombat(){
         pendingPlayerDeathTimeout = null;
     }
 
-    player.hp = player.maxHp;
+    player.hp = keepHp ? Math.max(1, Math.min(player.hp, player.maxHp)) : player.maxHp;
     player.combatPoints = 0;
     player.bonusTurn = 0;
     resetRage(player);
@@ -985,7 +985,7 @@ export function restartCombat(){
     // Appliquer les aptitudes de début de combat
     applyStartingAbilities();
     
-    log("Combat réinitialisé, vous êtes en pleine santé.");
+    log(keepHp ? `Le duel se poursuit sans répit : vous gardez vos ${player.hp}/${player.maxHp} PV.` : "Combat réinitialisé, vous êtes en pleine santé.");
     updateStats();
     saveUpdate();
 }
@@ -1065,8 +1065,8 @@ export function startNewCombat(selectedEnemy = null){
     if(tabs) {
         tabs.style.display = 'none';
     }
-    // Restaurer les PV et préparer le combat
-    restartCombat();
+    // Restaurer les PV (sauf phase enchaînée d'un duel) et préparer le combat
+    restartCombat({ keepHp: Boolean(selectedEnemy?.carryHp) });
     newEnemy(selectedEnemy);
     playSfx(enemy?.isBoss ? 'bossStart' : 'combatStart');
 }

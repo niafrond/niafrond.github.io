@@ -178,6 +178,13 @@ function init() {
         },
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
+        onExportSave: () => {
+            const res = exportSaveToFile(player, getMatch3Version());
+            if(!res.success) return false;
+            downloadSaveFile(res.blob, res.filename);
+            log(res.message);
+            return true;
+        },
         onOpenMenu: () => window.switchTab('weapons'),
         renderMerchant
     });
@@ -278,7 +285,7 @@ function init() {
     const openArena = () => {
         if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
         if(!exploration.isArenaUnlocked()) {
-            exploration.toast(`L'${ARENA_NAME} ouvre ses portes dès que vous atteignez le 3e terrain (les Bambous).`, 4500);
+            exploration.toast(`L'${ARENA_NAME} ouvre ses portes dès que vous atteignez le 3e terrain (les Bambous), ou dès le début en Nouvelle Partie +.`, 4500);
             return;
         }
         playSfx('uiClick');

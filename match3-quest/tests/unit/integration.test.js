@@ -129,6 +129,11 @@ function satisfy(s, cond) {
         openChestAt(s, cond);
         return;
     }
+    // PNJ « appât » (Chang'e au Pic de la Lune) : lui parler fait surgir l'ennemi
+    if (Object.values(s.screens).some(sc => sc.npcs.some(n => n.id === cond))) {
+        talkTo(s, cond);
+        return;
+    }
     throw new Error(`unknown condition: ${cond}`);
 }
 

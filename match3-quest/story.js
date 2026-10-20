@@ -1143,11 +1143,24 @@ const BASE_SCREENS = {
         ],
         npcs: [
             // Chang'e vêtue de lumière lunaire, au bord du bassin d'eau lunaire ; après son envol, il n'en reste que le reflet.
-            { id: 'change_moon', x: 3, y: 2, name: "Chang'e", title: 'Vêtue de lumière lunaire', 
+            { id: 'change_moon', x: 3, y: 2, name: "Chang'e", title: 'Vêtue de lumière lunaire',
+              // Chang'e est l'appât : lui parler attire Fengmeng, et le duel (phase 1 puis phase 2, sans répit) commence aussitôt.
+              bait: {
+                  enemy: 'fengmeng_3a',
+                  lines: [
+                      "Hou Yi… Tu es venu. Je savais que tu viendrais, avant même que la grue ne parte. Regarde-moi : la lune m'a déjà un peu changée.",
+                      "J'ai la fiole contre moi. Fengmeng la veut, et il me suit depuis la digue, pas à pas. Il ne s'arrêtera jamais tant qu'il croira pouvoir l'avoir.",
+                      "Alors laissons-le croire. Je resterai là, au bord du bassin, la fiole bien en vue : je serai l'appât, et toi l'archer qui l'attend. Ne discute pas, tu n'as jamais su me faire changer d'avis.",
+                      "(Elle élève la fiole dans la lumière. Sur le sentier de l'est, un pas craque, puis un autre.)",
+                      "Le voilà. Ne le hais pas, mon archer, mais ne baisse pas ta garde : entre ses flèches, il n'y aura aucun répit, et personne pour te rendre ton souffle."
+                  ],
+                  retry: [
+                      "Il revient, Hou Yi. Il revient toujours. Reprends ton souffle, si tu le peux : la fiole brille encore, et lui aussi vous attend.",
+                      "(Elle élève de nouveau la fiole. Un pas craque sur le sentier de l'est.)"
+                  ]
+              },
               idle: [
-                  "Hou Yi… Tu es venu. Je savais que tu viendrais, avant même que la grue ne parte. Regarde-moi : la lune m'a déjà un peu changée.",
-                  "J'ai la fiole contre moi. Fengmeng arrive : j'entends ses pas sur le sentier de l'est. Il ne se calmera pas, tu sais. Il a trop faim d'être aimé, ce garçon.",
-                  "Prends un gâteau, pour tenir debout quand tout tremble. Tu n'as jamais su te battre le ventre vide."
+                  "Il n'y a plus que la lune et nous, Hou Yi. Prends un gâteau, pour tenir debout quand tout tremble."
               ],
               talk: [
                   { whenDone: 'fengmeng_3a', lines: [
@@ -1168,6 +1181,8 @@ const BASE_SCREENS = {
             // Phase 1 : il copie les techniques du héros, qui arrive affaibli par les neuf soleils (duel.js).
             { id: 'fengmeng_3a', templateId: 'assassin_masque', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
               permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 45 },
+              // Il surgit quand le héros parle à Chang'e (l'appât), puis la phase 2 s'enchaîne sans retour sur la carte.
+              showWhen: 'change_moon', chain: 'fengmeng_3b',
               duel: { mirror: true, heroHpPct: 0.75 },
               defeatScene: {
                   speaker: { name: 'Narrateur', title: 'Le Pic de la Lune' },
@@ -1181,6 +1196,8 @@ const BASE_SCREENS = {
               } },
             { id: 'fengmeng_3b', templateId: 'lei_gong', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
               permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 48 },
+              // Les PV du héros ne remontent pas entre les deux phases ; une défaite ici recommence tout le duel.
+              carryHp: true, chainedFrom: 'fengmeng_3a',
               // Phase 2 : fureur, tirs rapides (un tour bonus tous les 3 tours) et pièges de zone (tous les 2 tours).
               duel: { rapidShots: 3, zoneTraps: 2 },
               defeatScene: {

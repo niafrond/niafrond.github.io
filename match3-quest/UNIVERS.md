@@ -13,7 +13,7 @@ composants (eau sacrée, vent céleste, pierre de glace…) pour de meilleures f
 Son disciple **Fengmeng**, jaloux, le suit comme un rival récurrent. Chang'e garde à la maison l'Élixir d'Immortalité, offert
 par la Reine Mère de l'Occident, que Fengmeng convoite. Après le neuvième soleil, Fengmeng trahit. Chang'e boit l'élixir pour
 le sauver de ses mains et s'envole vers la Lune. Épilogue tragique : Hou Yi dépose des gâteaux de lune au sommet d'une
-montagne sous la pleine lune. La **Nouvelle Partie +** se débloque.
+montagne sous la pleine lune. Un générique de fin défile, puis le joueur continue sa partie ou exporte sa sauvegarde pour la **Nouvelle Partie +** (histoire rejouée, équipement gardé, arène ouverte dès le début).
 
 Ton : épique, poétique, mélancolique ; humour léger chez les villageois ; tout public (pas de gore). Vouvoiement pour les
 anciens et dignitaires, tutoiement pour les proches et les enfants. Français soigné, avec quelques termes chinois usuels
