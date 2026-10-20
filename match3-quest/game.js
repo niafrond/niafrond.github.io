@@ -2017,8 +2017,8 @@ export async function castUltimate(spellId){
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell = getUltimateById(spellId);
-    if(!spell || spell.class !== player.class || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
-    if(player.level < spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
+    if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
     if(!canEntityCastSpell(player, spell)){
         const missingColor = getMissingManaColor(player, spell);
@@ -2893,7 +2893,11 @@ let cheatAllSpells = false;
 let cheatOneShot = false;
 export function setCheatOneShot(on){ cheatOneShot = !!on; }
 export function isCheatOneShot(){ return cheatOneShot; }
-export function setCheatAllSpells(on){ cheatAllSpells = !!on; }
+export function setCheatAllSpells(on){
+    cheatAllSpells = !!on;
+    // Indicateur non énumérable (jamais sauvegardé) lu par ultimates.js : tous les ultimes, toutes classes.
+    Object.defineProperty(player, 'cheatAllUltimates', { value: !!on, enumerable: false, writable: true, configurable: true });
+}
 
 export function updateAvailableSpells(){
     if(cheatAllSpells) {
