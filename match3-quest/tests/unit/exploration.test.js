@@ -168,7 +168,11 @@ const enter = (s, key) => {
 function walkTo(s, x, y) {
     const fights = [];
     for (let attempt = 0; attempt < 30; attempt++) {
-        const path = findPath(s, x, y);
+        let path = findPath(s, x, y);
+        if (!path) {   // rangée de piliers d'un boss de porte : on le vainc d'abord
+            s.screens[s.data.screenId].enemies.filter(e => e.guardsDoor).forEach(e => markEnemyDefeated(s, e.id));
+            path = findPath(s, x, y);
+        }
         if (!path) throw new Error(`aucun chemin vers (${x},${y}) sur ${s.data.screenId} depuis (${s.data.x},${s.data.y})`);
         let last = { type: 'moved' };
         let interrupted = false;
@@ -206,6 +210,10 @@ function travel(s, target) {
     for (let hops = 0; hops < 200 && s.data.screenId !== target; hops++) {
         const exit = nextExit(s, s.data.screenId, target);
         if (isExitLocked(s, exit)) { satisfy(s, exit.requires); continue; }
+        // la rangée de piliers d'un boss de porte est infranchissable : le héros qui la remonte doit d'abord vaincre ce boss
+        if (!findPath(s, exit.x, exit.y)) {
+            s.screens[s.data.screenId].enemies.filter(e => e.guardsDoor).forEach(e => events.push(...markEnemyDefeated(s, e.id)));
+        }
         const res = crossExit(s, exit, walkTo);
         events.push(...res.fights);
         if (res.type !== 'transition') throw new Error(`sortie ${s.data.screenId} -> ${exit.to} non franchie : ${JSON.stringify(res)}`);
@@ -516,14 +524,22 @@ describe('cartes (story.js)', () => {
         expect(reachable(s, s.spawn, new Set([`${fengmeng.x},${fengmeng.y}`])).has(`${east.x},${east.y}`)).toBe(true);
     });
 
-    test('le sanctuaire d\'un boss ne barre jamais le passage vers la sortie est', () => {
+    test('le sanctuaire d\'un boss : la sortie est atteignable par la case du boss, jamais en le contournant', () => {
         ORDER.slice(0, -1).forEach(id => {
             const s = SCREENS[id];
             const east = exitsOf(s, SCREENS).find(e => e.x === s.w - 1);
-            const bodies = new Set(s.enemies.map(e => `${e.x},${e.y}`));
+            const bodies = new Set([...s.enemies, ...s.npcs, ...s.chests].map(e => `${e.x},${e.y}`));   // les PNJ et coffres arrêtent aussi le héros
             s.enemies.filter(e => e.kind === 'patrol').forEach(e => buildRoute(e.patrol).forEach(p => bodies.add(`${p.x},${p.y}`)));
             bodies.delete(`${s.spawn.x},${s.spawn.y}`);
-            expect(reachable(s, s.spawn, bodies).has(`${east.x},${east.y}`)).toBe(true);
+            const doorGuards = s.enemies.filter(e => e.guardsDoor);
+            // sans le corps du boss de porte, la sortie est atteignable (ses piliers ne ferment que sa rangée)
+            const open = new Set(bodies);
+            doorGuards.forEach(e => open.delete(`${e.x},${e.y}`));
+            expect(reachable(s, s.spawn, open).has(`${east.x},${east.y}`)).toBe(true);
+            // avec le boss en place, impossible de passer derrière lui
+            doorGuards.forEach(g => exitsOf(s, SCREENS).filter(e => e.requires === g.id).forEach(door => {
+                expect([id, door.x, door.y, reachable(s, s.spawn, bodies).has(`${door.x},${door.y}`)]).toEqual([id, door.x, door.y, false]);
+            }));
         });
     });
 

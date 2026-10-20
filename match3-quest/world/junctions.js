@@ -3,6 +3,8 @@
 // Les verrous passent par `exit.requires` (quête terminée ou ennemi vaincu) : aucune mécanique nouvelle côté moteur.
 // Logique pure, sans DOM ; appliquée par `assembleWorld` après l'agrandissement des cartes (world/expand.js).
 
+import { isLowObstacle } from '../decor.js';
+
 const key = (x, y) => `${x},${y}`;
 const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
 
@@ -209,6 +211,35 @@ export function addPillarsAroundGuard(screen, door, guard, sealed = false) {
     return true;
 }
 
+/**
+ * Ferme la rangée du gardien : de part et d'autre de lui, des piliers (obstacles) prolongent la ligne jusqu'au premier mur, à l'eau ou au
+ * bord de la carte, pour qu'on ne puisse pas contourner le boss et atteindre la porte sans l'avoir vaincu. Une case occupée par une
+ * entité n'est pas murée (aucune entité n'est déplacée). Retourne le nombre de piliers posés.
+ */
+export function sealLineAtGuard(screen, door, guard) {
+    const [ax, ay] = along(door), [ix, iy] = inward(door);
+    const depth = Math.abs(guard.x - door.x) * Math.abs(ix) + Math.abs(guard.y - door.y) * Math.abs(iy);
+    if (depth < 1) return 0;
+    const solid = new Set([...screen.npcs, ...screen.chests, ...screen.enemies, ...screen.exits, screen.spawn, screen.waypoint].filter(Boolean).map(e => key(e.x, e.y)));
+    screen.pillars = screen.pillars || [];
+    let placed = 0;
+    // La rangée entière est murée, d'un bord à l'autre de la carte : les couloirs de bordure sont dégagés plus tard et l'état du terrain
+    // au moment de la pose n'est pas définitif, on ne cherche donc pas à s'arrêter au premier obstacle.
+    for (let t = 1; t < Math.max(screen.w, screen.h); t++) for (const sign of [1, -1]) {
+        const x = guard.x + ax * sign * t, y = guard.y + ay * sign * t;
+        if (x < 0 || y < 0 || x >= screen.w || y >= screen.h || inRects(screen.liquids, x, y) || solid.has(key(x, y))) continue;
+        if (inRects(screen.obstacles, x, y) && !isLowObstacle(screen, x, y)) {
+            // dans le couloir du passage (±1 case du gardien) le rocher devient un pilier visible, ailleurs il reste un rocher protégé du déblaiement
+            if (t <= 1) screen.pillars.push([x, y]); else (screen.sealed = screen.sealed || []).push([x, y]);
+            continue;
+        }
+        if (!inRects(screen.obstacles, x, y)) screen.obstacles.push([x, y, 1, 1]);
+        screen.pillars.push([x, y]);   // (un décor bas, franchissable, est lui aussi remplacé par un pilier)
+        placed++;
+    }
+    return placed;
+}
+
 // Première case libre près d'un passage : à côté de la bouche du passage (écart latéral ≥ 2), 1 à 3 pas à l'intérieur.
 function placeNearGate(screen, gate, occ, depths, laterals) {
     const [ix, iy] = inward(gate), [ax, ay] = along(gate);
@@ -281,6 +312,7 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
                 id: j.enemy.id, templateId: j.enemy.templateId, name: j.enemy.name, kind: 'sentinel', offset: 2, permanent: true, aggro: 2, x: pos.x, y: pos.y
             });
             addPillarsAroundGuard(from, gate, pos);
+            sealLineAtGuard(from, gate, pos);
             requires = j.enemy.id;
         }
         // le verrou couvre toutes les cases du passage ; le chemin de retour reste libre
@@ -317,6 +349,7 @@ export function guardLockedGates(screens) {
                 }
             }
             addPillarsAroundGuard(screen, door, enemy);
+            sealLineAtGuard(screen, door, enemy);
         });
     });
 }

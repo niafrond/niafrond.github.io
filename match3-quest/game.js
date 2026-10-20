@@ -3290,7 +3290,7 @@ export function updateSpellsTab(){
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
             markMultiManaSpell(div, sp);
-            const canEquip = player.activeSpells.length < MAX_ACTIVE_SPELLS;
+            const full = player.activeSpells.length >= MAX_ACTIVE_SPELLS;   // plus de place : le bouton propose de remplacer un sort
             const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
             const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
@@ -3303,7 +3303,7 @@ export function updateSpellsTab(){
                     <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
                     <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
                 </div>
-                <div class="spell-action ${canEquip ? '' : 'disabled'}" tabindex="${canEquip ? '0' : '-1'}" aria-disabled="${canEquip ? 'false' : 'true'}" ${canEquip ? `onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}"` : ''}>Équiper</div>
+                <div class="spell-action" tabindex="0" onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}">${full ? 'Remplacer' : 'Équiper'}</div>
             `;
             div.querySelector('.spell-content').insertAdjacentHTML('beforeend', compareButtonHtml('spell', sp.id));
             bindSpellRowTooltip(div, sp);
@@ -3357,22 +3357,55 @@ export function equipUltimate(spellId){
     log(`Ultime ${spell.name} choisi.`);
 }
 
-export function equipSpell(spellId){
+export function equipSpell(spellId, replaceId = null){
     if(gameState.combatState === 'active'){
         log('Vous ne pouvez pas modifier vos sorts pendant le combat !');
-        return;
-    }
-    if(player.activeSpells.length >= MAX_ACTIVE_SPELLS){
-        log('Maximum 4 sorts actifs atteint.');
         return;
     }
     const spell = player.availableSpells.find(s => s.id === spellId);
     if(!spell) return;
     if(player.activeSpells.some(s => s.id === spellId)) return;
+    if(player.activeSpells.length >= MAX_ACTIVE_SPELLS){
+        // plus de place : on demande quel sort remplacer
+        if(!replaceId){ askSpellToReplace(spell); return; }
+        const idx = player.activeSpells.findIndex(s => s.id === replaceId);
+        if(idx < 0) return;
+        const old = player.activeSpells[idx];
+        player.activeSpells[idx] = spell;
+        player.spells = player.activeSpells;
+        saveUpdate();
+        log(`${spell.name} équipé à la place de ${old.name}.`);
+        return;
+    }
     player.activeSpells.push(spell);
     player.spells = player.activeSpells;
     saveUpdate();
     log(`${spell.name} équipé.`);
+}
+
+// Fenêtre « Remplacer quel sort ? » : liste des sorts équipés, un clic échange l'élu.
+function askSpellToReplace(spell){
+    document.getElementById('replace-spell-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'replace-spell-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `<div class="modal-content">
+        <h3>Remplacer quel sort par ${spell.name} ?</h3>
+        <div class="replace-spell-list"></div>
+        <button type="button" class="weapon-action replace-spell-cancel">Annuler</button>
+    </div>`;
+    const list = modal.querySelector('.replace-spell-list');
+    player.activeSpells.forEach(sp => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'weapon-action';
+        btn.innerHTML = `${sp.name} ${spellCostHtml(sp)}${sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : ''}${sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : ''}`;
+        btn.addEventListener('click', () => { modal.remove(); equipSpell(spell.id, sp.id); });
+        list.appendChild(btn);
+    });
+    modal.querySelector('.replace-spell-cancel').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', ev => { if(ev.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
 }
 
 export function unequipSpell(spellId){

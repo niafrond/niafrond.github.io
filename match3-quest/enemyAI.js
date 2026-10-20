@@ -201,7 +201,8 @@ export function analyzeBattleContext() {
 
 export function evaluateSpells() {
     const context = analyzeBattleContext();
-    const useableSpells = enemy.spells.filter(s => canAffordSpell(s));
+    // un sort de soin n'a aucun intérêt quand l'ennemi est déjà à pleine vie
+    const useableSpells = enemy.spells.filter(s => canAffordSpell(s) && !(s.heal && !s.dmg && enemy.hp >= enemy.maxHp));
     
     if (useableSpells.length === 0) {
         return null;
