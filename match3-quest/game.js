@@ -1775,9 +1775,10 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
     if(damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
-    const fx = spellFxHtml(title);   // mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
+    const boardPx = Math.min(...['width', 'height'].map(k => document.getElementById('board')?.getBoundingClientRect()[k] || Infinity));
+    const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
-    let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}">${fx || svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
+    let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${fx && fx.includes('spellfx-big') ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
     if (source !== null) html += `<div class="attack-source">${source}</div>`;

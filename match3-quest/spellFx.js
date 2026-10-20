@@ -37,16 +37,28 @@ export function spellFxDurationMs(idOrTitle) {
     return e ? Math.round(e.frames / (e.fps || 10) * 1000) : 0;
 }
 
-/** HTML de l'animation d'un sort (par id ou par titre d'annonce), ou null si absente. */
-export function spellFxHtml(idOrTitle) {
+// Sorts très coûteux en mana (paliers 4 et 5) : l'animation s'étale sur le plateau (palier 5 : tout le plateau, palier 4 : ~75 %).
+export const BIG_TIER = 4;
+const BOARD_FILL = { 4: 0.75, 5: 1 };
+
+/** Facteur d'agrandissement entier d'une planche de `size` px pour qu'elle occupe `fill` × le plateau (`boardPx`), jamais sous `base`. */
+export function bigScale(size, boardPx, tier, base) {
+    const fill = BOARD_FILL[tier] || 0;
+    if (!fill || !(boardPx > 0)) return base;
+    return Math.max(base, Math.floor(boardPx * fill / size));
+}
+
+/** HTML de l'animation d'un sort (par id ou par titre d'annonce), ou null si absente. `boardPx` : côté du plateau (agrandit les sorts chers). */
+export function spellFxHtml(idOrTitle, boardPx = 0) {
     if (!index) return null;
     const id = index[idOrTitle] ? idOrTitle : spellFxIdForTitle(idOrTitle);
     const e = id && index[id];
     if (!e) return null;
-    const scale = SCALE_BY_SIZE[e.size] || 2;
+    const big = e.tier >= BIG_TIER && boardPx > 0;
+    const scale = bigScale(e.size, boardPx, e.tier, SCALE_BY_SIZE[e.size] || 2);
     const px = e.size * scale;
     const url = typeof import.meta !== 'undefined' ? new URL(`./sprites/spellfx/${id}.png`, import.meta.url).href : `./sprites/spellfx/${id}.png`;
     const dur = (e.frames / (e.fps || 10)).toFixed(2);
     const style = `--frames:${e.frames};--px:${px}px;--dur:${dur}s;width:${px}px;height:${px}px;background-image:url(${url});background-size:${px * e.frames}px ${px}px`;
-    return `<div class="spellfx" data-spell="${id}" aria-hidden="true" style="${style}"></div>`;
+    return `<div class="spellfx${big ? ' spellfx-big' : ''}" data-spell="${id}" aria-hidden="true" style="${style}"></div>`;
 }
