@@ -326,7 +326,8 @@ export function applyDamage(target, damage, options = {}){
     if(options.sourceSpell && normalizedDamage > 0 && (target === player || target === enemy)) {
         const caster = target === player ? enemy : player;
         const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
-        const strike = resolveStrike(normalizedDamage, caster, target, { weakened });
+        // Les ultimes sont inblocables et imparables : on les résout contre une cible sans défense (le critique reste possible).
+        const strike = resolveStrike(normalizedDamage, caster, options.sourceSpell.ultimate ? {} : target, { weakened });
         normalizedDamage = strike.damage;
         strike.damage = normalizedDamage;
         lastSpellStrike = strike;
