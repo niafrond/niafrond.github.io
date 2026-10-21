@@ -1831,6 +1831,14 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         const r = spellsBox.getBoundingClientRect();
         Object.assign(caption.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
         document.body.appendChild(caption);
+        // Fermeture forcée : petite flèche vers le bas en bas de la légende (elle seule capte les clics).
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'attack-caption-close';
+        closeBtn.setAttribute('aria-label', "Fermer l'annonce");
+        closeBtn.textContent = '▼';
+        closeBtn.addEventListener('click', (event) => { event.stopPropagation(); finishOverlay(); });
+        caption.appendChild(closeBtn);
     }
 
     const finishOverlay = () => {

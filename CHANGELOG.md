@@ -1,3 +1,21 @@
+## [2.107.0](https://github.com/niafrond/niafrond.github.io/compare/v2.106.0...v2.107.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** empiler les stats et sorts en colonnes étroites en paysage ([#518](https://github.com/niafrond/niafrond.github.io/issues/518)) ([c4f4a6d](https://github.com/niafrond/niafrond.github.io/commit/c4f4a6dffdc4d7248b69475c26ee13decc1a66ae))
+
+## [2.106.0](https://github.com/niafrond/niafrond.github.io/compare/v2.105.0...v2.106.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** ajouter une flèche pour fermer de force les annonces de sorts ([#516](https://github.com/niafrond/niafrond.github.io/issues/516)) ([19f7c21](https://github.com/niafrond/niafrond.github.io/commit/19f7c21347baa6c5d3bf14999e8d062b39a6cd91))
+
+## [2.105.0](https://github.com/niafrond/niafrond.github.io/compare/v2.104.2...v2.105.0) (2026-10-20)
+
+### Features
+
+* **match3-quest:** agrandir la grille de combat en paysage sans défilement ([#515](https://github.com/niafrond/niafrond.github.io/issues/515)) ([3253c28](https://github.com/niafrond/niafrond.github.io/commit/3253c28b8ccfeb757a41e125b337d2ae78611c3a))
+
 ## [2.104.2](https://github.com/niafrond/niafrond.github.io/compare/v2.104.1...v2.104.2) (2026-10-20)
 
 ### Bug Fixes

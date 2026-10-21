@@ -1154,6 +1154,11 @@ progress.enemy-bar::-webkit-progress-value {
     background: rgba(20, 20, 30, 0.92); border-radius: 8px; overflow: hidden;
     animation: content-appear 0.5s ease-out forwards;
 }
+.attack-caption-close {
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); pointer-events: auto; cursor: pointer;
+    min-width: 44px; min-height: 28px; padding: 0 10px; font-size: 18px; line-height: 1; color: white;
+    background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 6px;
+}
 .attack-caption.fade-out { opacity: 0; transition: opacity 0.5s ease-out; }
 .attack-caption .attack-title { font-size: clamp(16px, 2.4vw, 28px); margin: 4px 0; }
 .attack-caption .attack-damage, .attack-caption .attack-heal { font-size: clamp(24px, 4vw, 48px); margin: 4px 0; }
@@ -2578,6 +2583,40 @@ body.dark-mode .tutorial-card {
     #tab-combat > #battle-result-screen { grid-column: 1 / -1; }
     #combat-controls { margin: 4px 0 !important; }
     #combat-controls button { padding: 4px 12px; font-size: 13px; }
+}
+
+/* Paysage sur écran bas (téléphone) : aucune marge autour du jeu, tout le combat tient dans la hauteur sans défilement */
+@media (orientation: landscape) and (max-height: 520px) {
+    body { padding: 0; min-height: 100dvh; }
+    .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; }
+    #board { padding: 4px; grid-gap: 2px; }
+    /* Colonnes joueur / ennemi étroites et empilées verticalement : fiche compacte (portrait miniature, ligne par donnée),
+       sorts / armes / objets en liste serrée défilante. La largeur (--landscape-side) est relue par board.js. */
+    :root { --landscape-side: 142px; }
+    #tab-combat.active { grid-template-columns: var(--landscape-side) minmax(0, 1fr) var(--landscape-side); column-gap: 4px; row-gap: 3px; }
+    #board { justify-self: center; }
+    #player-stats, #enemy-stats { padding: 3px 4px; font-size: 0.72em; border-width: 2px; line-height: 1.15; }
+    #player-stats .stat, #enemy-stats .stat { margin: 2px 0; }
+    #player-stats .stat strong, #enemy-stats .stat strong { width: auto; margin-right: 2px; }
+    #player-stats .stat:nth-child(3), #enemy-stats .stat:nth-child(3) { flex-wrap: wrap; gap: 0 4px; }
+    body #player-stats::after, body #enemy-stats::after { width: 36px; height: 36px; right: 2px; top: 2px; }
+    body #player-stats[style*="--portrait"] .stat:nth-child(-n+2), body #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 38px; }
+    #player-stats .mana-dots, #enemy-stats .mana-dots { display: flex; flex-wrap: wrap; gap: 2px; font-size: 0.8em; }
+    #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { margin-right: 0; min-width: 1.6em; }
+    #player-spells, #enemy-spells { padding: 3px; font-size: 0.68em; scrollbar-width: none; }
+    #player-spells::-webkit-scrollbar, #enemy-spells::-webkit-scrollbar { display: none; }
+    #enemy-spells h4 { margin: 0 0 2px; font-size: 1em; }
+    #player-spells .enemy-spell-item, #enemy-spells .enemy-spell-item, #player-spells .weapon-btn, #player-spells .spell-btn {
+        margin: 0 0 2px; padding: 2px 4px; font-size: 1em; line-height: 1.15; text-align: left; border-width: 1px; }
+    #player-spells .enemy-spell-item .cost-badge, #enemy-spells .enemy-spell-item .cost-badge, #player-spells .cost-badge { font-size: 0.85em; margin-right: 1px; }
+    #player-spells hr { margin: 2px 0; }
+    /* colonnes de sorts : hauteur dictée par la grille (pas par leur contenu), défilement interne si trop longues */
+    #player-spells, #enemy-spells { contain: size; align-self: stretch; }
+    #enemy-spells { margin-bottom: 26px; }
+    #player-spells { margin-bottom: 32px; }
+    body .level-hud { left: auto; right: 4px; bottom: 2px; transform: none; }
+    #combat-controls { position: fixed; left: 4px; bottom: 2px; z-index: 20; margin: 0 !important; padding: 0; display: flex; gap: 4px; }
+    #combat-controls button { padding: 3px 8px; font-size: 11px; margin: 0 !important; }
 }
 
 /* Tours bonus accumulés (à côté du nom du combattant) */
