@@ -21,6 +21,7 @@ import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDisco
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
+import { loadSequence } from './ultimateCinematics.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
@@ -240,12 +241,14 @@ export function createExplorationView(cfg) {
         const packs = packsForKeys({ npcs, enemies });
         const zone = worldZones.find(z => z.id === region);
         const label = zone ? zone.name : region === ARENA_REGION ? ARENA_NAME : 'Chargement…';
+        const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
+        const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
         const promise = withLoadingScreen(label, async progress => {
             await trackProgress(packs.map(loadSpritePack), r => progress(r * 0.5));
             const svgs = regionSprites(region);
             retainSprites(svgs);
             await trackProgress(svgs.map(svg => decodeSprites([svg])), r => progress(0.5 + r * 0.5));
-        }).catch(err => {
+        }, clip).catch(err => {
             console.warn('[exploration] chargement des dessins de la région incomplet', err);
         }).then(() => {
             if (preparing?.promise !== promise) return;

@@ -19,6 +19,7 @@ import { dirname, join, resolve } from 'path';
 import { execSync } from 'child_process';
 import { createRequire } from 'module';
 import { BESTIARY } from './bestiary-data.mjs';
+import { biblePrompt } from './bible-graphique.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const GAME = resolve(__dirname, '..');
@@ -194,7 +195,8 @@ const todo = BESTIARY.filter(b => (!ONLY || ONLY.includes(b[0])) && (args.force 
 console.log(`${todo.length} créature(s) à générer`);
 
 let ok = 0, fail = 0;
-for (const [id, , , , color, , , desc] of todo) {
+for (const entry of todo) {
+  const [id, , , , color, , , baseDesc] = entry, bible = biblePrompt(entry), desc = bible ? baseDesc + ", " + bible : baseDesc;   // bible graphique : motifs de l'iconographie ancienne
   const t0 = Date.now();
   try {
     const bg = args.bg ? String(args.bg).replace(/_/g, ' ') : 'flat medium gray (#808080)';
