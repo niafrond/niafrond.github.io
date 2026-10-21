@@ -223,6 +223,59 @@ describe('sw.js — requêtes', () => {
         media.forEach(m => expect(hashes[m.p]).toBe(m.h));
     });
 
+    describe('pré-téléchargement (en-tête X-Prefetch) : le service worker fait tout, la page ne reçoit aucun corps', () => {
+        const prefetch = (sw, path) => sw.fetchEvent(sw.request(path, { headers: { 'X-Prefetch': '1' } }));
+
+        test('télécharge, range, note l\'empreinte, puis répond 204 sans corps', async () => {
+            const sw = await installed();
+            const res = await prefetch(sw, 'audio/music/a.mp3');
+            expect(res.status).toBe(204);
+            expect(await res.text()).toBe('');
+            const media = await sw.caches.open('match3-media-v1');
+            expect(media.text(`${SCOPE}audio/music/a.mp3`)).toBe('0123456789');
+            expect(JSON.parse(media.text(`${SCOPE}__hashes.json`))).toEqual({ 'audio/music/a.mp3': 'h1' });   // déjà noté au moment de la réponse
+            expect(sw.server.calls.filter(c => c.url.endsWith('a.mp3')).length).toBe(1);
+        });
+
+        test('déjà en cache : 204 sans réseau, et l\'empreinte est notée si elle manquait', async () => {
+            const sw = await installed();
+            const media = await sw.caches.open('match3-media-v1');
+            await media.put(`${SCOPE}audio/music/a.mp3`, new Response('0123456789'));
+            const res = await prefetch(sw, 'audio/music/a.mp3');
+            expect(res.status).toBe(204);
+            expect(sw.server.calls.length).toBe(0);
+            expect(JSON.parse(media.text(`${SCOPE}__hashes.json`))).toEqual({ 'audio/music/a.mp3': 'h1' });
+        });
+
+        test('échec (réseau coupé ou fichier absent) : 502, rien n\'est rangé (la page réessaiera)', async () => {
+            const sw = await installed();
+            expect((await prefetch(sw, 'sprites/ultimates/inconnu.png')).status).toBe(502);
+            sw.server.online = false;
+            expect((await prefetch(sw, 'audio/music/a.mp3')).status).toBe(502);
+            const media = await sw.caches.open('match3-media-v1');
+            expect([...media.map.keys()].filter(k => !k.endsWith('__hashes.json'))).toEqual([]);   // (l'installation a écrit un fichier d'empreintes vide)
+            expect(JSON.parse(media.text(`${SCOPE}__hashes.json`))).toEqual({});
+        });
+
+        test('plusieurs en même temps : toutes les empreintes sont conservées', async () => {
+            const media = Array.from({ length: 12 }, (_, i) => ({ p: `audio/music/p${i}.mp3`, s: 5, h: `h${i}` }));
+            const sw = loadSw({ manifest: { version: 1, core: ['index.html'], media } });
+            await sw.lifecycle('install');
+            const results = await Promise.all(media.map(m => prefetch(sw, m.p)));
+            expect(results.map(r => r.status)).toEqual(media.map(() => 204));
+            const cache = await sw.caches.open('match3-media-v1');
+            expect(Object.keys(JSON.parse(cache.text(`${SCOPE}__hashes.json`))).sort()).toEqual(media.map(m => m.p).sort());
+        });
+
+        test('une lecture normale du même média (sans l\'en-tête) reçoit toujours le fichier complet', async () => {
+            const sw = await installed();
+            await prefetch(sw, 'audio/music/a.mp3');
+            const res = await sw.fetchEvent(sw.request('audio/music/a.mp3'));
+            expect(res.status).toBe(200);
+            expect(await res.text()).toBe('0123456789');
+        });
+    });
+
     test('médias : un 404 n\'est pas mis en cache', async () => {
         const sw = await installed();
         const res = await sw.fetchEvent(sw.request('sprites/ultimates/inconnu.png'));

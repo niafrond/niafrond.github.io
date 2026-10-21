@@ -10,9 +10,11 @@ const MEDIA = [
 const manifest = media => ({ version: 1, core: [], media });
 
 // Faux environnement de page : réseau, Cache Storage, service worker (qui range ce qu'il voit passer, comme sw.js), stockage et connexion.
-function makeEnv({ media = MEDIA, online = true, controller = true, quota = Infinity, usage = 0, saveData = false, swCaches = true, failures = {} } = {}) {
+function makeEnv({ media = MEDIA, online = true, controller = true, quota = Infinity, usage = 0, saveData = false, swCaches = true, failures = {}, legacySw = false } = {}) {
     const caches = new FakeCaches();
     const calls = [];
+    const prefetchHeaders = [];   // en-tête X-Prefetch de chaque téléchargement
+    const statuses = [];          // statut de chaque réponse de média (204 = le service worker a tout fait)
     const stats = { inflight: 0, maxInflight: 0, hold: null };
     const attempts = {};
     const env = {
@@ -24,10 +26,11 @@ function makeEnv({ media = MEDIA, online = true, controller = true, quota = Infi
             storage: { estimate: async () => ({ quota, usage }), persist: async () => true },
             connection: { saveData }
         },
-        fetch: async (input) => {
+        fetch: async (input, init = {}) => {
             const url = new URL(input, SCOPE).href;
             if (url.endsWith('precache-manifest.json')) return new Response(JSON.stringify(manifest(media)));
             calls.push(url);
+            prefetchHeaders.push(init.headers && init.headers['X-Prefetch']);
             stats.inflight++; stats.maxInflight = Math.max(stats.maxInflight, stats.inflight);
             try {
                 await new Promise(resolve => setImmediate(resolve));
@@ -45,11 +48,16 @@ function makeEnv({ media = MEDIA, online = true, controller = true, quota = Infi
                     hashes[path] = entry.h;
                     await cache.put(hashesKey, new Response(JSON.stringify(hashes)));
                 }
-                return new Response('x');
+                // nouveau service worker : il a tout fait, réponse 204 sans corps ; ancien : le fichier complet
+                const res = init.headers && init.headers['X-Prefetch'] && !legacySw ? new Response(null, { status: 204 }) : new Response('x');
+                statuses.push(res.status);
+                return res;
             } finally { stats.inflight--; }
         }
     };
     env.attempts = attempts;
+    env.prefetchHeaders = prefetchHeaders;
+    env.statuses = statuses;
     return env;
 }
 
@@ -93,6 +101,23 @@ describe('createPrefetcher', () => {
         await pf.start();
         expect(env.calls).toEqual([]);
         expect(pf.state.phase).toBe('done');
+    });
+
+    test('chaque téléchargement est confié au service worker (en-tête X-Prefetch) : la page ne reçoit aucun corps', async () => {
+        const env = makeEnv();
+        const pf = createPrefetcher(env, quick);
+        await pf.start();
+        expect(env.prefetchHeaders).toEqual(['1', '1', '1']);
+        expect(env.statuses).toEqual([204, 204, 204]);
+        expect(pf.state).toMatchObject({ phase: 'done', done: 3, failed: 0 });
+    });
+
+    test('ancien service worker (réponse complète au lieu de 204) : le fichier est lu en entier et le téléchargement aboutit', async () => {
+        const env = makeEnv({ legacySw: true });
+        const pf = createPrefetcher(env, quick);
+        await pf.start();
+        expect(env.statuses).toEqual([200, 200, 200]);
+        expect(pf.state).toMatchObject({ phase: 'done', done: 3, failed: 0 });
     });
 
     test('une seule exécution à la fois', async () => {

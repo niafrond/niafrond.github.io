@@ -185,7 +185,32 @@ function rangeResponse(cached, rangeHeader) {
     });
 }
 
+// Pré-téléchargement (offlineCache.js) : le service worker télécharge et range le média lui-même, puis répond 204 SANS corps. La page n'a ainsi aucun
+// octet à recevoir ni à copier : recevoir 120 Mo sur le thread principal faisait chuter la fluidité pendant la première partie (mesuré : tâches de
+// 100 à 200 ms et jusqu'à 4 s de blocage sur 9 s de marche). 204 = rangé (ou déjà présent), 502 = échec (la page réessaie).
+function prefetchMedia(request) {
+    var key = mediaKey(request.url);
+    var path = new URL(request.url).pathname.slice(SCOPE_PATH.length);
+    var done = function () { return new Response(null, { status: 204 }); };
+    var remember = function () {
+        return loadManifest().then(function (manifest) {
+            var entry = manifest.media.filter(function (m) { return m.p === path; })[0];
+            return entry ? rememberHash(path, entry.h) : null;
+        });
+    };
+    return caches.open(MEDIA_CACHE).then(function (cache) {
+        return cache.match(key).then(function (hit) {
+            if (hit) return remember().then(done);   // déjà là : on s'assure seulement que l'empreinte est notée
+            return fetch(request.url).then(function (res) {
+                if (!(res.ok && res.status === 200)) return new Response(null, { status: 502 });
+                return clean(res).then(function (body) { return cache.put(key, body); }).then(remember).then(done);
+            });
+        });
+    }).catch(function () { return new Response(null, { status: 502 }); });
+}
+
 function mediaResponse(request) {
+    if (request.headers.get('X-Prefetch')) return prefetchMedia(request);
     var key = mediaKey(request.url);
     return caches.open(MEDIA_CACHE).then(function (cache) {
         return cache.match(key).then(function (hit) {

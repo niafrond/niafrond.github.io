@@ -124,9 +124,10 @@ export function createPrefetcher(env = globalThis, { concurrency = 2, retries = 
         for (let attempt = 0; attempt <= retries; attempt++) {
             if (stopRequested) return false;
             try {
-                const res = await env.fetch(mediaUrl(env, m.p));
+                // `X-Prefetch` : le service worker télécharge et range lui-même le fichier, puis répond 204 sans corps (rien à recevoir sur le thread principal)
+                const res = await env.fetch(mediaUrl(env, m.p), { headers: { 'X-Prefetch': '1' } });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                await res.arrayBuffer();   // lecture complète : le service worker range sa copie pendant ce temps
+                if (res.status !== 204) await res.arrayBuffer();   // ancien service worker : réponse complète, rangée pendant qu'on la lit
                 return true;
             } catch (e) {
                 if (attempt < retries) await new Promise(resolve => setTimeout(resolve, retryDelayMs * (attempt + 1)));
