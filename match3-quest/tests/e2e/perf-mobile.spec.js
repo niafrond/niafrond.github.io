@@ -11,7 +11,7 @@ const instrument = ({ cores }) => {
     Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => cores });
     Object.defineProperty(navigator, 'deviceMemory', { get: () => (cores <= 4 ? 2 : 8) });
 
-    const c = (window.__perf = { shadowBlur: 0, fillRect: 0, frames: 0, longTasks: 0, blockingMs: 0, maxLongMs: 0, audioArgs: [] });
+    const c = (window.__perf = { shadowBlur: 0, fillRect: 0, frames: 0, longTasks: 0, blockingMs: 0, maxLongMs: 0, fullFills: 0, audioArgs: [] });
     const P = CanvasRenderingContext2D.prototype;
     const blur = Object.getOwnPropertyDescriptor(P, 'shadowBlur');
     Object.defineProperty(P, 'shadowBlur', {
@@ -19,7 +19,12 @@ const instrument = ({ cores }) => {
         set(v) { if (v > 0) c.shadowBlur++; blur.set.call(this, v); }
     });
     const fillRect = P.fillRect;
-    P.fillRect = function (...a) { c.fillRect++; return fillRect.apply(this, a); };
+    P.fillRect = function (...a) {
+        c.fillRect++;
+        // remplissage couvrant tout le canvas d'exploration (le fond plein écran d'avant, repeint à chaque image)
+        if (this.canvas && this.canvas.id === 'explore-canvas' && a[2] >= this.canvas.clientWidth && a[3] >= this.canvas.clientHeight) c.fullFills++;
+        return fillRect.apply(this, a);
+    };
     const loop = () => { c.frames++; requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
     try {
@@ -36,7 +41,7 @@ const instrument = ({ cores }) => {
 
 const resetCounters = page => page.evaluate(() => {
     const c = window.__perf;
-    c.shadowBlur = c.fillRect = c.frames = c.longTasks = c.blockingMs = c.maxLongMs = 0;
+    c.shadowBlur = c.fillRect = c.frames = c.longTasks = c.blockingMs = c.maxLongMs = c.fullFills = 0;
 });
 
 async function openGame(page, context, { cores = 4 } = {}) {
@@ -122,6 +127,8 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         expect(c.frames).toBeGreaterThan(10);
         // Mesuré sur cette zone : 315 fillRect / image avant le découpage hors écran, 46 après ; plafond large
         expect(c.fillRect / c.frames).toBeLessThan(150);
+        // Le fond plein écran n'est plus repeint à chaque image quand la carte recouvre l'écran (seules les bandes autour de la carte le sont)
+        expect(c.fullFills).toBe(0);
     });
 
     test('transition d\'écran : le sol de la carte voisine est préparé avant la sortie (pas de tâche bloquante > 450 ms)', async ({ page, context }) => {

@@ -1156,10 +1156,6 @@ export function createExplorationView(cfg) {
             ctx.translate(slideX, slideY);
         }
 
-        // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran
-        ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
-        ctx.fillRect(0, 0, vw, vh);
-
         // taille de tuile et caméra
         const availH = Math.max(1, vh - HUD_TOP - HUD_BOTTOM);
         const tile = tileFor(screen, vw, vh);
@@ -1172,6 +1168,19 @@ export function createExplorationView(cfg) {
         const oy = follow(mapH, availH, HUD_TOP, vis.cy ?? vis.py);
         cam = { ox, oy, tile, vw };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
+        // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran. Les cases de la carte sont opaques
+        // et repeintes juste après : on ne peint que ce qui est autour d'elles (jamais tout l'écran quand la carte le recouvre).
+        ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
+        const mx0 = Math.max(0, ox), my0 = Math.max(0, oy), mx1 = Math.min(vw, ox + mapW), my1 = Math.min(vh, oy + mapH);
+        if (slide || mx1 <= mx0 || my1 <= my0) ctx.fillRect(0, 0, vw, vh);
+        else {
+            // Chaque bande déborde d'un pixel sous la carte : le bord de la carte tombe sur des coordonnées fractionnaires (anti-crénelage),
+            // la carte repeint ce pixel et la couture reste celle de l'ancien fond plein.
+            if (my0 > 0) ctx.fillRect(0, 0, vw, my0 + 1);
+            if (my1 < vh) ctx.fillRect(0, my1 - 1, vw, vh - my1 + 1);
+            if (mx0 > 0) ctx.fillRect(0, my0, mx0 + 1, my1 - my0);
+            if (mx1 < vw) ctx.fillRect(mx1 - 1, my0, vw - mx1 + 1, my1 - my0);
+        }
         // La carte (jusqu'à 48 colonnes) déborde de l'écran : tout ce qui est hors champ (avec `margin` cases de marge pour les grands sprites
         // et les étiquettes) n'est pas dessiné. Rendu identique, beaucoup moins d'appels canvas.
         const inView = (x, y, w = 1, h = 1, margin = 1) => {
