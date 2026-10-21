@@ -1,3 +1,19 @@
+## [2.108.0](https://github.com/niafrond/niafrond.github.io/compare/v2.107.0...v2.108.0) (2026-10-21)
+
+### Features
+
+* **match3-quest:** ajouter la bible graphique du bestiaire ([d7583b2](https://github.com/niafrond/niafrond.github.io/commit/d7583b26e8b873038a9da7b4d8390043292c7299))
+* **match3-quest:** jouer les boucles de biome pendant le chargement des régions ([067c916](https://github.com/niafrond/niafrond.github.io/commit/067c9169b96bbbe40a9660289b50cf3d4c73e77a))
+* **match3-quest:** préparer les animations d'arrivée dans un biome générées avec game-maker ([ac18c9a](https://github.com/niafrond/niafrond.github.io/commit/ac18c9aba2c73c2b19d2e5a901052952409380ec))
+* **match3-quest:** ranger le plan-séquence des Mille Cavaliers ([0b18c53](https://github.com/niafrond/niafrond.github.io/commit/0b18c53c55ce03ed42012f0b0179e0575387c81e))
+* **match3-quest:** ranger le plan-séquence du Rempart Éternel ([b71484c](https://github.com/niafrond/niafrond.github.io/commit/b71484c56ab2d6c64234104ff9217ca635d6de55))
+* **match3-quest:** ranger les plans-séquences de Perce-Soleil et du Dragon Impérial ([de50a12](https://github.com/niafrond/niafrond.github.io/commit/de50a1219cfb4dfe94c31a8dcfd8788ad0828833))
+* **match3-quest:** ranger les plans-séquences de trois ultimes en planches indexées ([c08fbc5](https://github.com/niafrond/niafrond.github.io/commit/c08fbc5cb352dddc40b970635f86d18274a6813a))
+
+### Reverts
+
+* **match3-quest:** retirer les plans-séquences d'ultimes de la branche (sauvegardés dans backup/ultimes-sequences) ([efdda06](https://github.com/niafrond/niafrond.github.io/commit/efdda0648cc23d951cf0124e4a644580c21042f9))
+
 ## [2.107.0](https://github.com/niafrond/niafrond.github.io/compare/v2.106.0...v2.107.0) (2026-10-20)
 
 ### Features
