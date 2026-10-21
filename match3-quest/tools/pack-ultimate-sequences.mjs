@@ -47,7 +47,7 @@ for (const id of IDS) {
   try {
     execFileSync('python3', ['-c', 'import sys;from PIL import Image;im=Image.open(sys.argv[1]).convert("RGB");assert len(im.getcolors(1<<24))<=256;im.quantize(colors=256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE).save(sys.argv[1],optimize=True)', out]);
   } catch { console.log(`     (${id} : indexation ignorée — Pillow absent ou plus de 256 couleurs)`); }
-  index[`${id}-seq`] = { frames: files.length, fps: FPS, size: [W, H], cols: COLS };
+  index[`${id}-seq`] = { frames: files.length, fps: FPS, size: [W, H], cols: COLS, ...(id.startsWith('biome_') ? { loop: true } : {}) };   // les clips de biome sont des boucles courtes
   packed++; console.log(`OK   ${id} : ${files.length} images (${(files.length / FPS).toFixed(1)} s), planche ${W * COLS}×${H * rows}, ${(statSync(out).size / 1e6).toFixed(1)} Mo`);
 }
 writeFileSync(indexPath, JSON.stringify(index, null, 2) + '\n');

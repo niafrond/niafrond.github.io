@@ -1025,7 +1025,7 @@ export function playRegionDiscovery(zone = {}) {
 
 function playRegionScene({ id = 'rizieres', name = '', description = '' } = {}, seq = null) {
     const pal = REGION_SCENES[id] || REGION_SCENES.rizieres;
-    const DURATION = seq ? Math.max(5.5, seq.frames / seq.fps + 1.5) : 5.5;
+    const DURATION = seq && !seq.loop ? Math.max(5.5, seq.frames / seq.fps + 1.5) : 5.5;   // un clip en boucle tourne pendant les 5,5 s de la scène
     return runScene({
         extraClass: 'cine-region',
         duration: DURATION,
@@ -1047,7 +1047,7 @@ function playRegionScene({ id = 'rizieres', name = '', description = '' } = {}, 
         },
         draw(ctx, t) {
             if (seq) {   // clip pixel art plein écran : image courante de la planche, fondu d'entrée et de sortie comme la scène procédurale
-                const [sx, sy, sw, sh] = sequenceRect(seq, t * seq.fps);
+                const [sx, sy, sw, sh] = sequenceRect(seq, seq.loop ? (t * seq.fps) % seq.frames : t * seq.fps);
                 ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, W, H);
                 const k = Math.min(1, t / 0.6) * Math.min(1, (DURATION - t + 0.4) / 0.8);
                 ctx.globalAlpha = 1 - Math.max(0, Math.min(1, k));

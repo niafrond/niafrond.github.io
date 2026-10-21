@@ -2269,4 +2269,7 @@
       "weakenAmount": 10,
       "duration": 3,
       "cinematic": "ultimate-barbarian-2",
-      "description": "Un hurlement terrifiant : 1000 dégâts, attaque ennemie réduite de 10 pendant 3                    
+      "description": "Un hurlement terrifiant : 1000 dégâts, attaque ennemie réduite de 10 pendant 3 tours"
+    }
+  ]
+}
