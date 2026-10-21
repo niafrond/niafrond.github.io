@@ -187,6 +187,14 @@ const PX_GRID = 32, PX_LEVELS = 6, PX_SAMPLE = 4;
 const OUTLINE_RGB = [43, 27, 23];
 const pixelDone = new Map();      // `${grille}|${svg}` → { canvas, uri }
 const pixelPending = new Map();   // idem → Promise
+
+// L'URI PNG ne sert qu'aux <img> du DOM (`spriteUri`) ; la carte d'exploration dessine `canvas` directement. `toDataURL` relit tout le canvas :
+// sur GPU c'est une attente synchrone du thread principal (≈ 30 ms par sprite mesuré, contre ≈ 2 ms en rendu logiciel), qui faisait chuter
+// des images en marchant. Elle n'est donc calculée qu'à la première demande, puis mémorisée.
+function pixelEntry(canvas) {
+    let uri = null;
+    return { canvas, get uri() { return uri || (uri = canvas.toDataURL('image/png')); } };
+}
 const q = v => Math.round(Math.round(v / 255 * (PX_LEVELS - 1)) * 255 / (PX_LEVELS - 1));
 const pxKey = (svg, grid) => `${grid}|${svg}`;
 const normGrid = grid => (grid === PX_GRID_BIG ? PX_GRID_BIG : PX_GRID);
@@ -248,7 +256,7 @@ function preparePngSprite(uri, grid) {
         const c = up.getContext('2d');
         c.imageSmoothingEnabled = false;
         c.drawImage(img, 0, 0, size, size);
-        pixelDone.set(key, { canvas: up, uri: up.toDataURL('image/png') });
+        pixelDone.set(key, pixelEntry(up));
     };
     img.onerror = () => pixelDone.delete(key);
     img.src = uri;
@@ -281,12 +289,12 @@ export function preparePixelSprite(svg, grid = PX_GRID) {
         pixelPending.set(key, (async () => {
             const img = g === PX_GRID ? spriteImage(svg) : Object.assign(new Image(), { src: rawUri(thinStrokes(svg)) });
             if (!(img.complete && img.naturalWidth)) await (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }));
-            const canvas = buildPixelCanvas(img, g);
-            const uri = canvas.toDataURL('image/png');
-            pixelDone.set(key, { canvas, uri });
-            // les <img> qui affichaient la version de repli passent à la version nette
+            const entry = pixelEntry(buildPixelCanvas(img, g));
+            pixelDone.set(key, entry);
+            // les <img> qui affichaient la version de repli passent à la version nette (l'URI n'est calculée que s'il y en a)
             const fallback = fallbackUri(svg, g);
-            document.querySelectorAll?.('img').forEach(el => { if (el.getAttribute('src') === fallback) el.setAttribute('src', uri); });
+            const waiting = [...(document.querySelectorAll?.('img') || [])].filter(el => el.getAttribute('src') === fallback);
+            if (waiting.length) { const uri = entry.uri; waiting.forEach(el => el.setAttribute('src', uri)); }
         })().catch(() => {}).finally(() => pixelPending.delete(key)));
     }
     return pixelPending.get(key);
