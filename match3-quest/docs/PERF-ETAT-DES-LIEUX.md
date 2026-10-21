@@ -39,7 +39,7 @@ Marche réelle par clics, CPU ×4, base `afa26e3` → aujourd'hui (une seule sé
 - Carte du monde ouverte : 17,5 → 54,5 images/s (l'exploration ne se dessine plus derrière). Cinématique du prologue : 16,6 → 60 (idem : elle était mesurée avec l'exploration derrière).
 - Chargement du jeu, CPU ×4 : 10,4 s → 4,6 s. En 4G lente (1,6 Mb/s, 150 ms), CPU ×4 : première visite 28,7 s, visites suivantes **3,6 s** (service worker).
 - Transitions (CPU ×4) : grenier ≈ 100 ms de tâche la plus longue, cave 180-225 ms (valeur isolée jusqu'à 413-500 ms : variance non expliquée).
-- Combat au plateau, animation de sort, ultimes : déjà à 60 images/s à CPU ×4, rien à optimiser.
+- ~~Combat au plateau, animation de sort : déjà à 60 images/s, rien à optimiser.~~ **Faux, retiré** : ces mesures portaient sur un plateau masqué (voir « Combat sur GPU » plus bas). Ultimes : mesure valable (plein écran, indépendante du plateau).
 - RAM : tas JS ≈ 10 Mo, une piste décodée 20,5 Mo (mono), un ultime 7,7 Mo : **la RAM n'est pas le problème** (les pistes de 116 s sont en mono 32 kHz).
 
 **Erreur corrigée en cours de route** : la première série de mesures « en marchant » utilisait des touches fléchées ; le héros restait souvent bloqué contre un
@@ -65,6 +65,22 @@ Accélération vérifiée (`SystemInfo.getInfo` : `2d_canvas`, `gpu_compositing`
 - Les valeurs absolues dépendent du processeur de cette machine (plus rapide que le banc précédent) : ne pas les comparer avec le tableau ci-dessus, seuls les rapports avant/après se transposent.
 - 120 Mo à 1,6 Mb/s représentent ≈ 10 minutes de téléchargement ; `navigator.connection.type` (`cellular` / `wifi`) existe sur Chrome Android (pas sur iOS) : une règle « wifi seulement » est faisable (décision en attente).
 
+## Combat sur GPU (2026-10-21, suite) : un défaut majeur, trouvé et corrigé
+
+**Mes mesures de combat étaient invalides.** `startNewCombat` appelé seul laisse l'exploration affichée et le plateau masqué (0×0) : les relevés « combat à 60 images/s » (phase 1 comprise) ne mesuraient rien.
+`tools/perf-bench/common.mjs` fournit maintenant `startCombat` (interface de combat réellement affichée) et lève une erreur si le plateau a une taille nulle.
+
+- **Symptôme (GPU, CPU ×4)** : à l'entrée en combat, 12-15 images/s puis montée lente (28-38 → 50 → 60) : **8 à 14 s** avant d'être stable ; 60 d'emblée en rendu logiciel (donc *pire* sur un appareil avec GPU).
+- **Cause** : les 64 tuiles ont chacune un fond SVG d'une quarantaine de primitives, découpé en cercle ; le GPU rejoue ce vectoriel à chaque rastérisation du plateau (`DoEndRasterCHROMIUM::Flush` = 90-94 % du thread GPU).
+  Preuve par variantes (`warmup.mjs`) : sans l'image de fond des tuiles, 59-61 images/s dès la première seconde ; aucun autre effet retiré seul (ombres, filtres, fond de page, animations, mode Économe) ne suffit.
+- **Correctif** : `tileBitmaps.js` rastérise une fois les 8 SVG en PNG à la taille exacte d'affichage (taille CSS × densité de pixels) et les sert comme fond ; le SVG reste en repli (voir `SPECS.md`).
+- **Avant → après** (GPU, CPU ×4) : stable après 8-14 s → **2 s** ; moyenne sur 16 s 38-49 → **56-57** ; combat joué 15 s : 38-39 → **52-53 images/s** ; sorts de palier 1-3 : 35-48 → **59-60**.
+- **Rendu** : indiscernable à l'œil (agrandi ×6 au pire, DPR 1), mais **pas identique au bit près** : écart moyen 2,4 / 1,2 / 0,8 niveaux à DPR 1 / 2 / 3, part des pixels à plus de 32 niveaux 0,28 / 0,04 / 0,03 %.
+- **Hypothèses écartées par la mesure** : « calque d'auras » (supprimer les auras ne change rien) ; l'arène « lente » était un banc qui déclenchait un combat (animations d'attaque d'un gardien).
+- **Reste** : première seconde après le correctif encore à 31-39 images/s (fabrication des 8 bitmaps + création du plateau : on pourrait les préparer avant l'entrée en combat, p. ex. à l'idle, avec une taille estimée) ;
+  animations de sorts de paliers 4-5 : ≈ 54 images/s avec un à-coup de ≈ 283 ms au démarrage (planche très agrandie, `background-size` jusqu'à ≈ 4 350 × 256 px ; non traité) ;
+  `updateLevelHud` réécrit ses textes toutes les 500 ms (même inchangés) et le `MutationObserver` de `compareView.js` (observe tout le `body`) relance `refreshButtons` à chaque mutation : bruit, non mesuré comme gênant.
+
 ## Architecture livrée
 
 - **`sw.js`** (classique ES2017, version lue dans `sw.js?v=<build>`) : cache du cœur par build (`match3-core-v<build>`), cache des médias commun à tous les builds
@@ -80,7 +96,7 @@ Accélération vérifiée (`SystemInfo.getInfo` : `2d_canvas`, `gpu_compositing`
 
 ## Tests
 
-- jest : `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects match3-quest-node` → 70 suites / 2 331 tests verts (≈ 3 min). Filtre : `--testPathPatterns "<motif>"` (**pas** `--testPathPattern`, ignoré en silence).
+- jest : `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects match3-quest-node` → 72 suites / 2 346 tests verts le 2026-10-21 (≈ 3 min ; dont un test d'une autre session, `bibleGraphique.test.js`). Filtre : `--testPathPatterns "<motif>"` (**pas** `--testPathPattern`, ignoré en silence).
 - Playwright : `npx playwright test --project=match3-quest-mobile` → 12/12 verts. Ici, la version de Playwright du dépôt attendait un autre Chromium que celui installé : un fichier local **non versionné** `.pw-local.config.mjs`
   à la racine (ajouté à `.git/info/exclude`) réutilisait la config du dépôt en forçant `launchOptions.executablePath` ; inutile sur une machine où `npx playwright install chromium` a fonctionné.
 - Tests ajoutés : `explorationGrids`, `precacheManifest`, `serviceWorker` (sw.js exécuté dans un faux environnement ; plusieurs mutations volontaires détectées), `offlinePrefetch`, et dans `tests/e2e` : `perf-mobile.spec.js` (compteurs `fillRect`, tâche la plus longue d'une transition, pas de remplissage plein écran) et `offline.spec.js` (jeu hors ligne, tout pré-téléchargé, témoin sans service worker).

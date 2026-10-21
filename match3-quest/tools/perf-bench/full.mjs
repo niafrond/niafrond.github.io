@@ -3,7 +3,7 @@
 // Usage : node full.mjs <étiquette> [ralentissement CPU, 4 par défaut]     puis     node full.mjs --compare <étiquetteA> <étiquetteB>
 // Résultats : .cache/full-<étiquette>.jsonl. Durée : une dizaine de minutes. Ne rien lancer d'autre en parallèle (les mesures se fausseraient).
 import fs from 'fs';
-import { launch, openScreen, readJson, writeCache, resetCounters, readCounters, stopProfile, exitKey, CACHE } from './common.mjs';
+import { launch, openScreen, readJson, writeCache, resetCounters, readCounters, stopProfile, exitKey, startCombat, CACHE } from './common.mjs';
 import { join } from 'path';
 
 const load = tag => fs.readFileSync(join(CACHE, `full-${tag}.jsonl`), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
@@ -73,18 +73,21 @@ for (const id of ['rizieres_h_grenier', 'fleuve_cave', 'rizieres_village']) {
     emit({ test: 'worldmap', rate, ...(await readCounters(page, 4)) });
     await page.evaluate(() => document.getElementById('worldmap-modal').classList.remove('active'));
 
-    await page.evaluate(async () => {
-        const g = await import('./game.js'), bd = await import('./board.js'), en = await import('./enemies.js');
-        document.querySelectorAll('.tabs').forEach(t => { t.style.display = 'none'; });
-        g.startNewCombat(en.createMapEnemy({ level: 1 }));
-        bd.generateBoard();
-        bd.renderBoard();
-    });
+    await startCombat(page);   // interface de combat réellement affichée (voir common.mjs)
     await page.waitForTimeout(1500);
     await resetCounters(page);
     await page.evaluate(async () => { (await import('./game.js')).showCombatAnimation({ icon: 'cross', title: 'Cinq Éléments', damage: 1100 }, true); });
     await page.waitForTimeout(4500);
     emit({ test: 'combat-sort', rate, ...(await readCounters(page, 4.5)) });
+    // sort de palier 5 : la planche d'animation s'étale sur tout le plateau
+    await page.evaluate(() => { document.querySelectorAll('.attack-overlay').forEach(o => o.click()); });
+    await page.waitForTimeout(1000);
+    await resetCounters(page);
+    await page.evaluate(async () => { (await import('./game.js')).showCombatAnimation({ icon: 'cross', title: 'Chute des Neuf Soleils', damage: 1100 }, true); });
+    await page.waitForTimeout(600);
+    await resetCounters(page);
+    await page.waitForTimeout(2500);
+    emit({ test: 'sort-palier-5', rate, ...(await readCounters(page, 2.5)) });
 
     for (const id of ['ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousandRiders']) {
         for (const pass of ['1re lecture', '2e lecture']) {

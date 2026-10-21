@@ -26,6 +26,9 @@ node match3-quest/tools/perf-bench/setup.mjs
 | `transition.mjs <CPU> <écran…>` | Changement de carte : plus longue tâche et plus grand écart entre images. `WAIT=<ms>` règle l'attente avant la sortie. |
 | `pixels.mjs <étiquette>` / `--compare A B` | 21 captures du canvas, temps et aléa figés, répétées jusqu'à stabilité (le chargement asynchrone des sprites faussait la comparaison) : prouve qu'une optimisation ne change aucun pixel. Lancer sur la référence (worktree de `HEAD` servi sur un autre port : `URL=http://127.0.0.1:4181`) puis sur la version modifiée. `--compare` tolère un arrondi du GPU (2 niveaux sur 0,01 % des pixels) et le dit. Bruit résiduel connu : `820-fleuve_cave`. |
 | `trace.mjs <CPU> <écran…>` | Trace Chromium d'une marche : temps propre par événement du thread principal, charge par thread, tâches ≥ 80 ms avec leur composition, nombre et coût des `toDataURL`. À utiliser dès que le profil CPU montre surtout `(program)` (le natif y est regroupé). |
+| `combat.mjs <CPU> [durée]` | Combat joué automatiquement (plateau **réellement affiché**, `startCombat`) : images/s, blocage, et avec `TRACE=1` la répartition du thread principal et du thread GPU. |
+| `spells.mjs <CPU> [palier…]` | Animations de sorts (un sort par palier) mesurées en plein combat ; les paliers 4-5 s'étalent sur tout le plateau. |
+| `warmup.mjs <CPU> [variante…]` | Cadence toutes les 2 s après l'entrée en combat, avec ou sans une règle CSS ou un réglage (variantes listées dans le script) : sert à isoler ce qui allonge l'échauffement sur GPU. |
 | `cold.mjs <4g\|aucun>` | Première visite puis visite suivante (service worker), réseau lent ou non. |
 | `full.mjs <étiquette> [CPU]` / `--compare A B` | Benchmark complet (≈ 10 min) : exploration sur 16 écrans, transitions, carte du monde, sort, ultimes, cinématiques. |
 
@@ -58,5 +61,9 @@ console.log(s.gpu.featureStatus);   // attendu : 2d_canvas: 'enabled', gpu_compo
 
 Les options `--use-angle=vulkan` et l'absence d'options donnent du logiciel ; `--use-angle=gl` et `--use-angle=gl-egl` donnent « D3D12 (NVIDIA …) » sous WSL2.
 Autre machine : adapter le backend ANGLE (`gl`, `gl-egl`, `metal`, `d3d11`…) et revérifier `featureStatus`.
+
+**Attention au combat** : ne jamais mesurer un combat sans `startCombat` (plateau masqué = mesure sans objet) ; mesurer **l'entrée en combat** (les 10 premières secondes) et pas seulement le régime établi.
+**Diagnostic** : `INIT_SCRIPT='<js>'` exécute du JavaScript avant le chargement de la page (désactiver une partie du dessin, forcer un réglage).
+`pixels.mjs --compare` classe chaque différence : *arrondi* (≤ 2 niveaux), *proche* (anticrénelage : écart moyen ≤ 3 et ≤ 0,1 % de pixels à plus de 32 niveaux, **à confirmer à l'œil**) ou *différent*.
 
 **Mesurer le jeu seul, sans le pré-téléchargement automatique** : `NO_PREFETCH=1 node …/walk.mjs …` (simule l'économiseur de données). Une première visite normale mesure aussi le téléchargement des 120 Mo.

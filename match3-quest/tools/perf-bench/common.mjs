@@ -61,6 +61,8 @@ export async function openScreen(browser, screen, { rate = 1, dpr = 2, freeze = 
         // l'économiseur de données empêche le téléchargement automatique des 120 Mo (offlineCache.js) : mesure sans lui, pour isoler son coût
         await ctx.addInitScript(() => { Object.defineProperty(navigator, 'connection', { get: () => ({ saveData: true }) }); });
     }
+    // JavaScript exécuté avant le chargement de la page (diagnostic : désactiver une partie du dessin, forcer un réglage…)
+    if (process.env.INIT_SCRIPT) await ctx.addInitScript(process.env.INIT_SCRIPT);
     if (instrumented) await ctx.addInitScript(instrument);
     const page = await ctx.newPage();
     const cdp = await ctx.newCDPSession(page);
@@ -71,6 +73,35 @@ export async function openScreen(browser, screen, { rate = 1, dpr = 2, freeze = 
     await page.waitForTimeout(2000);
     if (rate > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate });
     return { ctx, page, cdp, errors };
+}
+
+/**
+ * Lance un vrai combat avec l'interface de combat VISIBLE, comme `startEncounterCombat` de main.js : exploration masquée, onglet Combat actif,
+ * plateau, statistiques et sorts affichés. (Appeler `startNewCombat` seul laisse l'exploration à l'écran et le plateau masqué, 0×0 : les mesures
+ * portent alors sur rien — c'est arrivé.) Retourne la taille du plateau.
+ */
+export async function startCombat(page, level = 1) {
+    const size = await page.evaluate(async lvl => {
+        const g = await import('./game.js'), bd = await import('./board.js'), en = await import('./enemies.js'), fx = await import('./spellFx.js');
+        await fx.preloadSpellFx();
+        document.getElementById('explore-container').style.display = 'none';
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-combat').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.querySelector('.stats-container').style.display = 'flex';
+        document.getElementById('board').style.display = 'grid';
+        document.getElementById('spells-container').style.display = 'flex';
+        document.querySelectorAll('.tabs').forEach(t => { t.style.display = 'none'; });
+        g.startNewCombat(en.createMapEnemy({ level: lvl }));
+        bd.generateBoard();
+        bd.renderBoard();
+        g.updateStats?.();
+        const b = document.getElementById('board');
+        return { w: b.clientWidth, h: b.clientHeight };
+    }, level);
+    if (!(size.w > 0 && size.h > 0)) throw new Error(`le plateau de combat n'est pas affiché (${size.w}×${size.h}) : les mesures de combat seraient sans objet`);
+    return size;
 }
 
 export const resetCounters = page => page.evaluate(() => { window.__f.t = []; window.__f.block = 0; window.__f.maxLong = 0; window.__cam = []; });

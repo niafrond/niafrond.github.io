@@ -102,6 +102,13 @@ if (process.argv[1] && process.argv[1].endsWith('trace.mjs')) {
             const total = [...main[1].values()].reduce((x, y) => x + y, 0);
             console.log(`   thread principal (${main[0]}), temps propre par événement :`);
             console.log('   ' + [...main[1]].sort((a, b) => b[1] - a[1]).slice(0, 14).map(([n, v]) => `${(100 * v / total).toFixed(0)}% ${n}`).join(' · '));
+            // thread du processus GPU : s'il est saturé, le goulot est le nombre ou la complexité des opérations de dessin, pas le JavaScript
+            const gpu = [...perThread].filter(([k]) => /CrGpuMain/.test(k))[0];
+            if (gpu) {
+                const gTotal = [...gpu[1].values()].reduce((x, y) => x + y, 0);
+                console.log(`   thread GPU (${gpu[0]}), ${(gTotal / 1000).toFixed(0)} ms de travail, temps propre par événement :`);
+                console.log('   ' + [...gpu[1]].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([n, v]) => `${(100 * v / gTotal).toFixed(0)}% ${n}`).join(' · '));
+            }
             const longs = (longTasks.get(main[0]) || []).sort((a, b) => b.ms - a.ms);
             console.log(`   tâches ≥ 80 ms : ${longs.length}, cumul ${longs.reduce((s, l) => s + l.ms, 0).toFixed(0)} ms ; les plus longues (instant depuis le début de la trace) :`);
             longs.slice(0, 6).forEach(l => console.log(`     ${l.ms.toFixed(0).padStart(5)} ms @${l.at.toFixed(1)}s  ${l.name} ${l.detail} → ${l.parts}`));
