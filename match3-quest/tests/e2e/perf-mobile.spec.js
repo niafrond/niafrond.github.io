@@ -145,6 +145,43 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         expect(c.maxLongMs).toBeLessThan(450);
     });
 
+    test('combat : les fonds des tuiles sont des bitmaps à la taille d\'affichage (pas 64 SVG vectoriels rejoués par le GPU)', async ({ page, context }) => {
+        await openGame(page, context);
+        await enterExploration(page);
+        // Interface de combat réellement affichée (comme startEncounterCombat de main.js)
+        await page.evaluate(async () => {
+            const g = await import('./game.js'), bd = await import('./board.js'), en = await import('./enemies.js');
+            document.getElementById('explore-container').style.display = 'none';
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('tab-combat').classList.add('active');
+            document.querySelector('.stats-container').style.display = 'flex';
+            document.getElementById('board').style.display = 'grid';
+            document.getElementById('spells-container').style.display = 'flex';
+            g.startNewCombat(en.createMapEnemy({ level: 1 }));
+            bd.generateBoard();
+            bd.renderBoard();
+        });
+        // Côté en pixels du fond de la première tuile, et côté attendu (taille CSS × densité de pixels)
+        const measure = () => page.evaluate(async () => {
+            const tile = document.querySelector('#board .tile');
+            const url = /url\("([^"]+)"\)/.exec(getComputedStyle(tile).backgroundImage)?.[1] || '';
+            const img = new Image();
+            img.src = url;
+            await img.decode().catch(() => {});
+            return { bitmap: url.startsWith('data:image/png'), side: img.naturalWidth, expected: Math.round(parseFloat(getComputedStyle(tile).width) * window.devicePixelRatio) };
+        });
+        await expect.poll(async () => (await measure()).bitmap, { timeout: 15_000 }).toBe(true);
+        const first = await measure();
+        expect(first.side).toBe(first.expected);
+        expect(first.side).toBeGreaterThan(40);
+        // Les 8 saveurs ont leur règle
+        expect(await page.evaluate(() => document.getElementById('tile-bitmaps').textContent.match(/background-image/g).length)).toBe(8);
+
+        // Un redimensionnement (rotation, fenêtre) refait les bitmaps à la nouvelle taille
+        await page.setViewportSize({ width: 300, height: 640 });
+        await expect.poll(async () => { const m = await measure(); return m.bitmap && m.side === m.expected && m.side !== first.side; }, { timeout: 15_000 }).toBe(true);
+    });
+
     test('exploration : la carte n\'est plus redessinée à pleine cadence sous un modal ni sous une cinématique', async ({ page, context }) => {
         await openGame(page, context);
         await enterExploration(page);
