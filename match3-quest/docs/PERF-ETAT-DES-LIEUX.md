@@ -48,6 +48,23 @@ les chiffres du tableau ci-dessus sont ceux de la marche réelle.
 
 **Profil restant** (marche réelle, CPU ×4) : le JavaScript du jeu ≈ 5 % ; le reste est le rendu natif du canvas : `(program)` ≈ 50 %, `fillRect` ≈ 27 %.
 
+## Mesures avec GPU (2026-10-21, RTX 3060 Ti, Chromium sous WSL2)
+
+Accélération vérifiée (`SystemInfo.getInfo` : `2d_canvas`, `gpu_compositing`, `rasterization` activés ; WebGL sur « D3D12 (NVIDIA GeForce RTX 3060 Ti) ») avec
+`--use-angle=gl --enable-gpu-rasterization --ignore-gpu-blocklist`. **Sans ces options Chromium utilise SwiftShader (logiciel)** : toujours vérifier avant de mesurer.
+
+- **Rendu canvas** : `fillRect` 13-29 % → 2-3 % du temps ; marche réelle à CPU ×4 : 40-58 images/s contre 22-40 en logiciel. Les pistes canvas de la version précédente de ce document
+  (calque d'eau, calque d'auras, blit partiel du sol) sont **abandonnées** : plus rien à gagner de ce côté.
+- **Deux défauts trouvés par la trace, absents en rendu logiciel, corrigés** :
+  1. `toDataURL` (`sprites/index.js`) : relecture GPU→CPU synchrone, ≈ 30 ms par sprite (15-17 par marche, 457-634 ms) → URI calculée à la demande (`pixelEntry`).
+  2. Le pré-téléchargement de 120 Mo était reçu par la **page** (thread principal) : blocages de 0,6 à 4,1 s en première visite → le service worker télécharge et range lui-même (en-tête `X-Prefetch`, réponse `204`).
+     Première visite, GPU, CPU ×4, Rizières, 8 exécutions alternées par version : blocage médian 168 → 29 ms, pire cas 1 114 → 179 ms ; images/s médian 54,6 → 58,2, pire cas 28,8 → 46,3.
+- Rendu identique : 21 captures sur GPU et 21 en logiciel (ancien code contre nouveau), toutes égales.
+- Répartition du thread principal sur GPU (trace, Tonnerre) : JavaScript 35-37 %, tâches natives 22-30 %, attentes du GPU (`WaitForGetOffset`) 4-5 %, `CanvasResourceProviderSharedImage::Snapshot` 3-4 %.
+  Le thread du service worker est occupé ≈ 1,6 s sur 9 s pendant le téléchargement (autre thread : sur un téléphone à deux cœurs il peut quand même concurrencer la page, à vérifier sur appareil).
+- Les valeurs absolues dépendent du processeur de cette machine (plus rapide que le banc précédent) : ne pas les comparer avec le tableau ci-dessus, seuls les rapports avant/après se transposent.
+- 120 Mo à 1,6 Mb/s représentent ≈ 10 minutes de téléchargement ; `navigator.connection.type` (`cellular` / `wifi`) existe sur Chrome Android (pas sur iOS) : une règle « wifi seulement » est faisable (décision en attente).
+
 ## Architecture livrée
 
 - **`sw.js`** (classique ES2017, version lue dans `sw.js?v=<build>`) : cache du cœur par build (`match3-core-v<build>`), cache des médias commun à tous les builds
@@ -63,18 +80,18 @@ les chiffres du tableau ci-dessus sont ceux de la marche réelle.
 
 ## Tests
 
-- jest : `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects match3-quest-node` → 69 suites / 2 318 tests verts (≈ 3 min). Filtre : `--testPathPatterns "<motif>"` (**pas** `--testPathPattern`, ignoré en silence).
+- jest : `NODE_OPTIONS=--experimental-vm-modules npx jest --selectProjects match3-quest-node` → 70 suites / 2 331 tests verts (≈ 3 min). Filtre : `--testPathPatterns "<motif>"` (**pas** `--testPathPattern`, ignoré en silence).
 - Playwright : `npx playwright test --project=match3-quest-mobile` → 12/12 verts. Ici, la version de Playwright du dépôt attendait un autre Chromium que celui installé : un fichier local **non versionné** `.pw-local.config.mjs`
   à la racine (ajouté à `.git/info/exclude`) réutilisait la config du dépôt en forçant `launchOptions.executablePath` ; inutile sur une machine où `npx playwright install chromium` a fonctionné.
 - Tests ajoutés : `explorationGrids`, `precacheManifest`, `serviceWorker` (sw.js exécuté dans un faux environnement ; plusieurs mutations volontaires détectées), `offlinePrefetch`, et dans `tests/e2e` : `perf-mobile.spec.js` (compteurs `fillRect`, tâche la plus longue d'une transition, pas de remplissage plein écran) et `offline.spec.js` (jeu hors ligne, tout pré-téléchargé, témoin sans service worker).
 - Connus et **hors périmètre** : 31 échecs Playwright dans `dj-mix` (29) et `flash-guess` (2), présents avant le chantier ; test jest instable `progression.test.js` « les ennemis générés utilisent cette défense » (≈ 3,4 % d'échecs : défense tirée au hasard dans `enemies.js`, mesuré sur 3 000 tirages).
 
-## Ce qui n'a PAS été fait / à reprendre sur une machine avec GPU
+## Ce qui n'a PAS été fait
 
-1. **Re-mesurer avec GPU** (`tools/perf-bench/README.md`, section GPU). Question centrale : `fillRect` ≈ 27 % et `(program)` ≈ 50 % persistent-ils avec le rendu accéléré ? Si non, le travail restant sur le canvas est probablement inutile. Si oui, pistes : calque unique pour les reflets de liquides (alpha par case recalculé à chaque image), calque d'auras mis en cache (redessiné seulement quand un ennemi bouge), blit du calque de sol limité à la zone visible (`drawImage` à 9 arguments).
-2. **Vrai téléphone ancien** (jamais testé) : fluidité en exploration, installation du service worker, mode hors ligne, pré-téléchargement de 120 Mo (quota, batterie, forfait), mises à jour du jeu.
-3. **Phase 3 non faite** : adaptation par FPS mesuré (descendre d'un cran si la médiane tombe sous 40 images/s). Écartée pour l'instant : sans GPU, les gains restants se mesurent mal.
-4. **Non mesuré** : délai audible réel de la musique (démarrage, boucle) ; sorts de classe en combat ; la plupart des 135 cartes (16 mesurées) ; cause de la variance de la transition de la cave.
+1. ~~Re-mesurer avec GPU~~ **Fait le 2026-10-21** (section « Mesures avec GPU ») : le canvas n'est plus un goulot, deux défauts propres au GPU ont été corrigés.
+2. **Vrai téléphone ancien** (jamais testé) : fluidité en exploration, installation du service worker, mode hors ligne, pré-téléchargement de 120 Mo (quota, batterie, forfait), mises à jour du jeu, concurrence du thread du service worker avec la page sur un téléphone à deux cœurs.
+3. **Phase 3 (adaptation par FPS mesuré) : écartée.** Sur GPU à CPU ×4 le jeu tient 40-58 images/s ; sans appareil réel il n'y a rien à calibrer.
+4. **Non mesuré** : délai audible réel de la musique (démarrage, boucle) ; sorts de classe en combat ; la plupart des 135 cartes (16 mesurées) ; cause de la variance de la transition de la cave ; première visite en réseau lent (le service worker retélécharge le cœur, ≈ 5 Mo, sous des URL sans `?v=` donc sans réutiliser le cache HTTP de la page : piste, jamais mesurée).
 5. **Décisions en attente de l'utilisateur** : le pré-téléchargement démarre seul 8 s après le chargement (sauf économiseur de données) et peut consommer le forfait mobile (le navigateur ne dit pas de façon fiable si l'on est en 4G) → lancement manuel ? ;
    rendre déterministe le test instable ; retirer du dépôt les ≈ 1,2 Go de sprites sources (irréversible côté historique).
 
@@ -86,3 +103,8 @@ les chiffres du tableau ci-dessus sont ceux de la marche réelle.
 - Les XHR synchrones ne passent pas par les service workers (voir `index.html`).
 - Un test d'équivalence visuelle doit figer le temps **et** l'aléa (`pixels.mjs`) ; deux rendus de la même version doivent être identiques avant de comparer deux versions.
 - Un `git ls-files` de 1,2 Go de sprites ne dit pas ce que le jeu charge : se fier à `precache-manifest.json`.
+- **Mesurer le profileur CPU seul ne suffit pas sur GPU** : `(program)` cache le natif. Utiliser `tools/perf-bench/trace.mjs` (trace Chromium, temps propre par événement, tâches longues).
+- Une mesure « première visite » démarre le pré-téléchargement : l'isoler avec `NO_PREFETCH=1` pour savoir ce qui vient du jeu et ce qui vient du téléchargement.
+- Machine Windows + WSL2 : sous Git Bash, `MSYS_NO_PATHCONV=1` est nécessaire avant `wsl.exe` (sinon `/mnt/c/...` est réécrit) ; pas de `python` ni de `node` côté Git Bash (utiliser WSL, Node 22 via nvm) ;
+  `chrome://gpu` est inaccessible en headless : lire l'état par `browser.newBrowserCDPSession().send('SystemInfo.getInfo')`.
+- `Math.min(...tableau)` dépasse la pile sur une trace Chromium (centaines de milliers d'événements) : utiliser une boucle.

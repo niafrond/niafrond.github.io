@@ -57,6 +57,10 @@ export async function openScreen(browser, screen, { rate = 1, dpr = 2, freeze = 
             window.__freeze = () => { window.requestAnimationFrame = cb => raf(() => cb(100000)); };
         });
     }
+    if (process.env.NO_PREFETCH) {
+        // l'économiseur de données empêche le téléchargement automatique des 120 Mo (offlineCache.js) : mesure sans lui, pour isoler son coût
+        await ctx.addInitScript(() => { Object.defineProperty(navigator, 'connection', { get: () => ({ saveData: true }) }); });
+    }
     if (instrumented) await ctx.addInitScript(instrument);
     const page = await ctx.newPage();
     const cdp = await ctx.newCDPSession(page);

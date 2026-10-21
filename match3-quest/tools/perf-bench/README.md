@@ -24,7 +24,8 @@ node match3-quest/tools/perf-bench/setup.mjs
 |---|---|
 | `walk.mjs <clic\|touches> <CPU> <écran…>` | Marche de 9 s : images/s, p95, blocage, caméra, profil CPU. **Utiliser `clic`** : avec `touches` le héros reste souvent bloqué contre un obstacle (la caméra bouge à peine) et les chiffres flattent. |
 | `transition.mjs <CPU> <écran…>` | Changement de carte : plus longue tâche et plus grand écart entre images. `WAIT=<ms>` règle l'attente avant la sortie. |
-| `pixels.mjs <étiquette>` / `--compare A B` | 21 captures du canvas, temps et aléa figés : prouve qu'une optimisation ne change aucun pixel. Lancer sur la référence (`git stash`/worktree) puis sur la version modifiée. |
+| `pixels.mjs <étiquette>` / `--compare A B` | 21 captures du canvas, temps et aléa figés, répétées jusqu'à stabilité (le chargement asynchrone des sprites faussait la comparaison) : prouve qu'une optimisation ne change aucun pixel. Lancer sur la référence (worktree de `HEAD` servi sur un autre port : `URL=http://127.0.0.1:4181`) puis sur la version modifiée. `--compare` tolère un arrondi du GPU (2 niveaux sur 0,01 % des pixels) et le dit. Bruit résiduel connu : `820-fleuve_cave`. |
+| `trace.mjs <CPU> <écran…>` | Trace Chromium d'une marche : temps propre par événement du thread principal, charge par thread, tâches ≥ 80 ms avec leur composition, nombre et coût des `toDataURL`. À utiliser dès que le profil CPU montre surtout `(program)` (le natif y est regroupé). |
 | `cold.mjs <4g\|aucun>` | Première visite puis visite suivante (service worker), réseau lent ou non. |
 | `full.mjs <étiquette> [CPU]` / `--compare A B` | Benchmark complet (≈ 10 min) : exploration sur 16 écrans, transitions, carte du monde, sort, ultimes, cinématiques. |
 
@@ -40,12 +41,22 @@ node match3-quest/tools/perf-bench/setup.mjs
 
 ## Mesurer avec un GPU
 
-Les mesures du chantier ont été faites **sans GPU** (rendu logiciel de Chromium) : `(program)` ≈ 50 % et `fillRect` ≈ 27 % du temps y sont probablement
-pessimistes. Sur une machine avec GPU, lancer par exemple :
+Les premières mesures du chantier ont été faites **sans GPU** (rendu logiciel). Procédure vérifiée le 2026-10-21 (RTX 3060 Ti, Chromium de Playwright sous WSL2) :
 
 ```bash
-export CHROMIUM_ARGS="--enable-gpu-rasterization --ignore-gpu-blocklist --use-angle=gl"   # adapter à la machine (egl, vulkan…)
+export CHROMIUM_ARGS="--no-sandbox --use-angle=gl --enable-gpu-rasterization --ignore-gpu-blocklist"
 node match3-quest/tools/perf-bench/walk.mjs clic 4 rizieres_wild tonnerre_wild mer_wild
 ```
 
-Vérifier d'abord que l'accélération est bien active (ouvrir `chrome://gpu` dans la même instance Chromium) : sans cela on retombe sur le rendu logiciel.
+**Vérifier que l'accélération est réellement active** (sans les options ci-dessus Chromium retombe sur SwiftShader, sans message) : `chrome://gpu` est inaccessible en headless,
+lire l'état par le protocole de débogage :
+
+```js
+const s = await (await browser.newBrowserCDPSession()).send('SystemInfo.getInfo');
+console.log(s.gpu.featureStatus);   // attendu : 2d_canvas: 'enabled', gpu_compositing: 'enabled', rasterization: 'enabled_force'
+```
+
+Les options `--use-angle=vulkan` et l'absence d'options donnent du logiciel ; `--use-angle=gl` et `--use-angle=gl-egl` donnent « D3D12 (NVIDIA …) » sous WSL2.
+Autre machine : adapter le backend ANGLE (`gl`, `gl-egl`, `metal`, `d3d11`…) et revérifier `featureStatus`.
+
+**Mesurer le jeu seul, sans le pré-téléchargement automatique** : `NO_PREFETCH=1 node …/walk.mjs …` (simule l'économiseur de données). Une première visite normale mesure aussi le téléchargement des 120 Mo.
