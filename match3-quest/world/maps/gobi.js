@@ -383,9 +383,16 @@ export default {
             mirage_1: [20, 6],
             mirage_2: [20, 16],
             mirage_3: [23, 11],
+            mirage_4: [12, 4],
+            mirage_5: [16, 10],
+            mirage_6: [9, 12],
+            mirage_7: [26, 5],
+            mirage_8: [24, 8],
+            mirage_9: [16, 19],
+            mirage_10: [26, 15],
             bandit_a: [9, 15],
             bandit_b: [14, 17],
-            sun_4: [18, 9],
+            sun_4: [24, 16],
             oasis_cache: [6, 7],
             gobi_chest: [26, 3]
         }

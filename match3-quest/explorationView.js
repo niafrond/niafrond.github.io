@@ -1199,9 +1199,22 @@ export function createExplorationView(cfg) {
         });
 
         // Passages de bord fermés par une quête : une grande porte de bois cerclée de fer barre les 3 cases (plutôt que du vide)
-        const questGateRows = connectionRows(session.screens, screen).filter(r => r.requires && session.quests.some(q => q.id === r.requires) && X.isExitLocked(session, r));
+        const questGateRows = connectionRows(session.screens, screen).filter(r => r.requires && (r.wall || session.quests.some(q => q.id === r.requires)) && X.isExitLocked(session, r));
         questGateRows.forEach(r => {
             const p = P(r.x, r.y), pad = tile * 0.04;
+            if (r.wall === 'sand') {   // mur de sable : blocs de grès empilés, levés quand le boss tombe
+                ctx.fillStyle = '#d8b878';
+                ctx.fillRect(p.x, p.y, tile, tile);
+                ctx.strokeStyle = '#a8864a';
+                ctx.lineWidth = Math.max(1, tile * 0.05);
+                for (let i = 0; i < 3; i++) {
+                    const by = p.y + tile * i / 3;
+                    ctx.strokeRect(p.x + pad, by + pad, tile - pad * 2, tile / 3 - pad * 2);
+                    ctx.beginPath(); ctx.moveTo(p.x + tile * (i % 2 ? 0.35 : 0.65), by + pad); ctx.lineTo(p.x + tile * (i % 2 ? 0.35 : 0.65), by + tile / 3 - pad); ctx.stroke();
+                }
+                if (!r.span) drawLabel(p.x + tile / 2, p.y + tile / 2 - tile * 0.75, `${r.label} (muré)`, '#e5e7eb', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+                return;
+            }
             ctx.fillStyle = '#5a3a22';
             ctx.fillRect(p.x + pad, p.y + pad, tile - pad * 2, tile - pad * 2);
             ctx.strokeStyle = '#3b2415';
