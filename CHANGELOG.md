@@ -1,3 +1,9 @@
+## [2.112.0](https://github.com/niafrond/niafrond.github.io/compare/v2.111.0...v2.112.0) (2026-10-22)
+
+### Features
+
+* **match3-quest:** ajouter l'agilité aux stats et huit compagnons avec pouvoirs de combat ([#523](https://github.com/niafrond/niafrond.github.io/issues/523)) ([ea74077](https://github.com/niafrond/niafrond.github.io/commit/ea74077976f60f66807df1a0c2747e7116f24e1e))
+
 ## [2.111.0](https://github.com/niafrond/niafrond.github.io/compare/v2.110.1...v2.111.0) (2026-10-22)
 
 ### Features
