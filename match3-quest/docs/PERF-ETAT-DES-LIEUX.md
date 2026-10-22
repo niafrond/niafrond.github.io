@@ -88,7 +88,7 @@ Accélération vérifiée (`SystemInfo.getInfo` : `2d_canvas`, `gpu_compositing`
   cœur et médias : cache d'abord ; `Range` géré ; une URL `?v=` d'un autre build va au réseau (repli sur le cache hors ligne seulement) ; réponses redirigées reconstruites.
 - **`offlineCache.js`** : enregistrement du service worker (`registerServiceWorkerWhenLoaded`), `createPrefetcher` (reprenable, 2 fichiers à la fois, quota, hors ligne, économiseur de données),
   statut et bouton « Jeu hors ligne » dans les Options.
-- **`precache-manifest.json`** : 178 fichiers de cœur (4,9 Mo) et 359 médias (119,6 Mo). **À régénérer (`npm run precache:build`) à chaque ajout ou changement de fichier du jeu** ; un test jest échoue sinon.
+- **`precache-manifest.json`** : 181 fichiers de cœur et 377 médias (134,4 Mo après la fusion de `main` du 2026-10-23, qui a ajouté les nouveaux ultimes ; 178 / 359 / 119,6 Mo avant). **À régénérer (`npm run precache:build`) à chaque ajout ou changement de fichier du jeu** ; un test jest échoue sinon.
   `sprites/png`, `sprites/ultimates-seq|comfy|sdxl`, `tools`, `tests`… n'y sont pas (≈ 1,2 Go suivis par git mais jamais demandés par le jeu).
 - **`explorationGrids.js`** (`gridsOf`) et, dans `explorationView.js` : `inView` (découpage hors écran), `groundPainter`/`groundJob`/`prebuildNeighborGround` (sol voisin par tranches),
   fond en bandes, suspension du dessin quand la carte est couverte.

@@ -44,6 +44,7 @@
   "music.js",
   "musicTracks.js",
   "offlineCache.js",
+  "playTime.js",
   "playerNames.js",
   "progression.js",
   "retro.css",
@@ -184,9 +185,59 @@
  ],
  "media": [
   {
+   "p": "sprites/ultimates/biome_bambous-seq.png",
+   "s": 196659,
+   "h": "15c3b4688c"
+  },
+  {
+   "p": "sprites/ultimates/biome_fauves-seq.png",
+   "s": 188041,
+   "h": "46b6579d6b"
+  },
+  {
+   "p": "sprites/ultimates/biome_fleuve-seq.png",
+   "s": 176004,
+   "h": "728155d4ff"
+  },
+  {
+   "p": "sprites/ultimates/biome_fusang-seq.png",
+   "s": 187674,
+   "h": "a74f74e387"
+  },
+  {
+   "p": "sprites/ultimates/biome_gobi-seq.png",
+   "s": 172295,
+   "h": "c9cc15c071"
+  },
+  {
+   "p": "sprites/ultimates/biome_lune-seq.png",
+   "s": 182072,
+   "h": "7bdf6015a0"
+  },
+  {
+   "p": "sprites/ultimates/biome_mer-seq.png",
+   "s": 188709,
+   "h": "a36d22e86d"
+  },
+  {
+   "p": "sprites/ultimates/biome_rizieres-seq.png",
+   "s": 181297,
+   "h": "bf1eb25cd2"
+  },
+  {
+   "p": "sprites/ultimates/biome_tonnerre-seq.png",
+   "s": 187274,
+   "h": "bafef8d290"
+  },
+  {
+   "p": "sprites/ultimates/biome_volcan-seq.png",
+   "s": 205692,
+   "h": "5cb614902a"
+  },
+  {
    "p": "sprites/ultimates/index.json",
-   "s": 3475,
-   "h": "8af23db210"
+   "s": 5871,
+   "h": "423c4fd057"
   },
   {
    "p": "sprites/ultimates/ultimateEternalBastion-1.png",
@@ -209,6 +260,11 @@
    "h": "13579e6fec"
   },
   {
+   "p": "sprites/ultimates/ultimateEternalBastion-seq.png",
+   "s": 1396088,
+   "h": "7302cf27d8"
+  },
+  {
    "p": "sprites/ultimates/ultimateFiveElements-1.png",
    "s": 476767,
    "h": "b38883ad49"
@@ -227,6 +283,11 @@
    "p": "sprites/ultimates/ultimateFiveElements-4.png",
    "s": 602745,
    "h": "8824b6427a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-seq.png",
+   "s": 1636035,
+   "h": "976655b050"
   },
   {
    "p": "sprites/ultimates/ultimateHeavenlyThunder-1.png",
@@ -249,6 +310,11 @@
    "h": "c7738f9709"
   },
   {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-seq.png",
+   "s": 1531952,
+   "h": "045ea6be56"
+  },
+  {
    "p": "sprites/ultimates/ultimateImperialDragon-1.png",
    "s": 556277,
    "h": "363d8c7281"
@@ -267,6 +333,11 @@
    "p": "sprites/ultimates/ultimateImperialDragon-4.png",
    "s": 646334,
    "h": "896c4c105f"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-seq.png",
+   "s": 1688682,
+   "h": "b020cfe1ed"
   },
   {
    "p": "sprites/ultimates/ultimateSkyWolf-1.png",
@@ -289,6 +360,11 @@
    "h": "0823e4d953"
   },
   {
+   "p": "sprites/ultimates/ultimateSkyWolf-seq.png",
+   "s": 1390074,
+   "h": "830e512e32"
+  },
+  {
    "p": "sprites/ultimates/ultimateSunPiercer-1.png",
    "s": 341137,
    "h": "60434aa6f6"
@@ -307,6 +383,11 @@
    "p": "sprites/ultimates/ultimateSunPiercer-4.png",
    "s": 474071,
    "h": "d6c19c1b8d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-seq.png",
+   "s": 1688702,
+   "h": "8e64fb4974"
   },
   {
    "p": "sprites/ultimates/ultimateThousandArrows-1.png",
@@ -329,6 +410,11 @@
    "h": "b89ef789b9"
   },
   {
+   "p": "sprites/ultimates/ultimateThousandArrows-seq.png",
+   "s": 1941704,
+   "h": "af339889e3"
+  },
+  {
    "p": "sprites/ultimates/ultimateThousandRiders-1.png",
    "s": 451646,
    "h": "f1a601cd34"
@@ -347,6 +433,11 @@
    "p": "sprites/ultimates/ultimateThousandRiders-4.png",
    "s": 434463,
    "h": "4c905bf173"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-seq.png",
+   "s": 1692632,
+   "h": "7ba00cabaa"
   },
   {
    "p": "sprites/spellfx/azureDragonRoar.png",

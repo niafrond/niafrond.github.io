@@ -347,7 +347,7 @@ export function guardLockedGates(screens) {
         const doors = (screen.exits || []).filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
         doors.forEach(door => {
             const enemy = screen.enemies.find(en => en.id === door.requires && en.kind !== 'patrol');
-            if (!enemy) return;
+            if (!enemy || enemy.noDoorGuard) return;   // `noDoorGuard` : le boss se tient ailleurs, la porte est fermée par un mur (ex. sable du Gobi)
             enemy.guardsDoor = true;
             const [ix, iy] = inward(door);
             const depth = Math.abs(enemy.x - door.x) * Math.abs(ix) + Math.abs(enemy.y - door.y) * Math.abs(iy);

@@ -2779,6 +2779,11 @@ body.dark-mode .tutorial-card {
 }
 .loading-screen.visible { display: flex; }
 .loading-screen.closing { opacity: 0; }
+/* Entrée dans un biome (portrait) : la boucle pixel art du biome plein écran, le panneau de chargement en bas. */
+.loading-screen.has-clip { align-items: flex-end; padding-bottom: max(24px, env(safe-area-inset-bottom)); background: #000; }
+.loading-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.loading-screen.has-clip .loading-panel { position: relative; opacity: 0.94; }
+.loading-screen.has-clip .loading-sun { display: none; }
 .loading-panel {
     width: min(92vw, 360px);
     box-sizing: border-box;
@@ -3430,3 +3435,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .sort-bar select { font: inherit; padding: 2px 6px; }
 /* Mana du héros et de l'ennemi en gomettes (zone de stats) */
 #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .85em; margin-right: 3px; }
+
+/* Menu Options : temps de jeu (aujourd'hui, hier, semaine, total) */
+.playtime-stats { display: flex; flex-direction: column; gap: 2px; min-width: 50%; }
+.playtime-line { display: flex; justify-content: space-between; gap: 12px; }

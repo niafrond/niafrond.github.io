@@ -15,6 +15,7 @@ import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenComplete
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
+import { playTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { initCompare } from "./compareView.js";
 import { getWeaponById } from "./weapons.js";
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
@@ -392,6 +393,17 @@ function init() {
         localStorage.setItem('player', JSON.stringify(res.player));
         location.reload();
     });
+
+    // Temps de jeu : aujourd'hui, hier, cette semaine, total (playTime.js)
+    const playTimeEl = document.getElementById('playtime-stats');
+    const renderPlayTime = () => {
+        if(!playTimeEl || !optionsModal?.classList.contains('active')) return;
+        const t = playTimeStats();
+        playTimeEl.innerHTML = [['Aujourd\'hui', t.today], ['Hier', t.yesterday], ['Cette semaine', t.week], ['Total', t.total]]
+            .map(([label, sec]) => `<span class="playtime-line"><span>${label}</span><b>${formatDuration(sec)}</b></span>`).join('');
+    };
+    startPlayTimeTracking(renderPlayTime);
+    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', renderPlayTime));
 
     // Options d'affichage / performance (gameOptions.js)
     applyOptions();

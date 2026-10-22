@@ -1,3 +1,40 @@
+## [2.110.1](https://github.com/niafrond/niafrond.github.io/compare/v2.110.0...v2.110.1) (2026-10-22)
+
+### Bug Fixes
+
+* **match3-quest:** placer le vrai soleil du Gobi au sud-est avec dix mirages et un mur de sable ([#522](https://github.com/niafrond/niafrond.github.io/issues/522)) ([2b8d714](https://github.com/niafrond/niafrond.github.io/commit/2b8d71447bd977e01068a4f8caa119c1354e1d28))
+
+## [2.110.0](https://github.com/niafrond/niafrond.github.io/compare/v2.109.0...v2.110.0) (2026-10-22)
+
+### Features
+
+* **match3-quest:** afficher le temps de jeu dans les options ([#521](https://github.com/niafrond/niafrond.github.io/issues/521)) ([5119a62](https://github.com/niafrond/niafrond.github.io/commit/5119a62eef5a9351f4a710f46e851543b6dcd1c5))
+
+## [2.109.0](https://github.com/niafrond/niafrond.github.io/compare/v2.108.0...v2.109.0) (2026-10-22)
+
+### Features
+
+* **match3-quest:** animer les ultimes en trois actes dans la direction artistique des biomes ([6b0cb7f](https://github.com/niafrond/niafrond.github.io/commit/6b0cb7fe6ed897e6ab657033198ec60f6fc09fc1))
+* **match3-quest:** animer vraiment l'invoqué des ultimes avec Wan et refaire les décors en pixel art ([eab19f0](https://github.com/niafrond/niafrond.github.io/commit/eab19f0b4c5f61525c09e74f80486cfde4d3d369))
+* **match3-quest:** finir les huit ultimes animés avec l'arbre sacré central et les cavaliers refaits ([8949c3b](https://github.com/niafrond/niafrond.github.io/commit/8949c3bf63ca4fae467f1c46c65d0bb4a5260c73))
+* **match3-quest:** rendre les ultimes plus épiques avec anticipation, impact et explosion ([701fb91](https://github.com/niafrond/niafrond.github.io/commit/701fb91a8a8da55df0816b9de63fcd288f503040))
+
+## [2.108.0](https://github.com/niafrond/niafrond.github.io/compare/v2.107.0...v2.108.0) (2026-10-21)
+
+### Features
+
+* **match3-quest:** ajouter la bible graphique du bestiaire ([d7583b2](https://github.com/niafrond/niafrond.github.io/commit/d7583b26e8b873038a9da7b4d8390043292c7299))
+* **match3-quest:** jouer les boucles de biome pendant le chargement des régions ([067c916](https://github.com/niafrond/niafrond.github.io/commit/067c9169b96bbbe40a9660289b50cf3d4c73e77a))
+* **match3-quest:** préparer les animations d'arrivée dans un biome générées avec game-maker ([ac18c9a](https://github.com/niafrond/niafrond.github.io/commit/ac18c9aba2c73c2b19d2e5a901052952409380ec))
+* **match3-quest:** ranger le plan-séquence des Mille Cavaliers ([0b18c53](https://github.com/niafrond/niafrond.github.io/commit/0b18c53c55ce03ed42012f0b0179e0575387c81e))
+* **match3-quest:** ranger le plan-séquence du Rempart Éternel ([b71484c](https://github.com/niafrond/niafrond.github.io/commit/b71484c56ab2d6c64234104ff9217ca635d6de55))
+* **match3-quest:** ranger les plans-séquences de Perce-Soleil et du Dragon Impérial ([de50a12](https://github.com/niafrond/niafrond.github.io/commit/de50a1219cfb4dfe94c31a8dcfd8788ad0828833))
+* **match3-quest:** ranger les plans-séquences de trois ultimes en planches indexées ([c08fbc5](https://github.com/niafrond/niafrond.github.io/commit/c08fbc5cb352dddc40b970635f86d18274a6813a))
+
+### Reverts
+
+* **match3-quest:** retirer les plans-séquences d'ultimes de la branche (sauvegardés dans backup/ultimes-sequences) ([efdda06](https://github.com/niafrond/niafrond.github.io/commit/efdda0648cc23d951cf0124e4a644580c21042f9))
+
 ## [2.107.0](https://github.com/niafrond/niafrond.github.io/compare/v2.106.0...v2.107.0) (2026-10-20)
 
 ### Features

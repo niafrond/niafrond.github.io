@@ -254,5 +254,177 @@
       144,
       256
     ]
+  },
+  "biome_rizieres-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_volcan-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_gobi-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_fleuve-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_bambous-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_tonnerre-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_fauves-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_mer-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_fusang-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_lune-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "ultimateFiveElements-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateHeavenlyThunder-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateThousandArrows-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateSunPiercer-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateImperialDragon-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateEternalBastion-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateThousandRiders-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateSkyWolf-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
   }
 }

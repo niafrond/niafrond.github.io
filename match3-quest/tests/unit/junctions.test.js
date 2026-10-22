@@ -120,7 +120,7 @@ describe('jonctions gardées', () => {
 describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => {
     const all = Object.values(SCREENS);
     const doors = all.flatMap(s => exitsOf(s, SCREENS)
-        .filter(e => e.edge && e.span === 0 && s.enemies.some(en => en.id === e.requires))
+        .filter(e => e.edge && e.span === 0 && s.enemies.some(en => en.id === e.requires && !en.noDoorGuard))
         .map(e => ({ s, e, boss: s.enemies.find(en => en.id === e.requires) })));
 
     test('toutes les portes de bord fermées par un ennemi sont concernées (soleils, gardiens de gate, gardiens de hameau)', () => {

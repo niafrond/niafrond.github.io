@@ -86,7 +86,8 @@ describe('plans-séquences', () => {
         const { readFileSync } = await import('fs');
         const index = JSON.parse(readFileSync(new URL('../../sprites/ultimates/index.json', import.meta.url), 'utf8'));
         Object.entries(index).filter(([k]) => k.endsWith('-seq')).forEach(([k, m]) => {
-            expect(ULTIMATE_COLORS[k.replace(/-seq$/, '')]).toBeTruthy();
+            const id = k.replace(/-seq$/, '');
+            expect(ULTIMATE_COLORS[id] || /^biome_(rizieres|volcan|gobi|fleuve|bambous|tonnerre|fauves|mer|fusang|lune)$/.test(id)).toBeTruthy();
             expect(m.frames).toBeGreaterThan(24);
             expect(m.cols * m.size[0]).toBeLessThanOrEqual(16384);
             expect(Math.ceil(m.frames / m.cols) * m.size[1]).toBeLessThanOrEqual(16384);
