@@ -8,7 +8,7 @@ Une seule prise en trois actes (arrivée de l'invocation, mouvement de l'invoqu�
 (les anciens plans-séquences Wan sont rangés dans px-wan/). Rangement : node tools/pack-ultimate-sequences.mjs.
 
 Prérequis (WSL) : ComfyUI via `gm up pixel` (une image SDXL par ultimate, ≈ 1 min). Pillow.
-Usage : python3 tools/gen-ultimate-acts.py [--only=ultimateSunPiercer,…] [--force] [--replate] [--seed=N]
+Usage : python3 tools/gen-ultimate-acts.py [--only=ultimateSunPiercer,…] [--force] [--replate] [--plates-only] [--seed=N]
 """
 import sys, os, subprocess, glob, shutil, math, random
 from PIL import Image, ImageDraw, ImageChops, ImageFilter
@@ -18,33 +18,34 @@ GAME_MAKER = os.environ.get('GAME_MAKER_DIR', '/mnt/c/Users/Niafrond/dev/game-ma
 opts = dict(a[2:].split('=') if '=' in a else (a[2:], '1') for a in sys.argv[1:] if a.startswith('--'))
 ONLY = opts['only'].split(',') if 'only' in opts else None
 W, H, FPS = 144, 256, 24
+CLIP_W, CLIP_H, CLIP_K = 480, 832, 0.3   # cadre des clips de l'invoqué (tools/gen-summon-clips.py) et échelle vers 144×256
 # Trois actes, une seule prise : 1 arrivée de l'invocation, 2 mouvement de l'invoqué, 3 explosion du sort (6,5 s, pas de boucle)
 ARRIVAL, EXP_START, N = 48, 104, 156
 EXPLOSION_LEN = N - EXP_START
 
 STYLE = ('pixel art, 16-bit, full bleed edge to edge, epic wide establishing shot seen from far away, ancient China mythology, '
-         'dramatic lighting, rich saturated colors, huge sky, empty center of the sky, ground in the lower part, nobody in the scene')
+         'dramatic lighting, rich saturated colors, huge sky, empty center of the sky, ground in the lower part, nobody in the scene, no creatures, no figures, no statues in the sky, clean composition')
 NEGATIVE = ('person, human, character, figure, warrior, archer, creature, monster, dragon, text, letters, watermark, border, frame, letterbox, '
             'black bars, gray bars, margin, vignette, poster, 3d render, realistic, photo, blurry')
 
 # id : classe du héros, décor (plan large, sans personnage), entité (cadre x, y, largeur max, hauteur max, en fraction du cadre ; bob = amplitude px),
 #      mouvement de l'invoqué (dive : plonge sur la cible, grow : enfle, sweep : traverse), couleur du halo / de l'éclat, particules [(type, couleur, nombre, cycles par boucle)], éclairs (couleur) ou None
 ULTIMATES = {
-    'ultimateFiveElements': dict(move='grow', cls='sorcerer', plate='a huge glowing circle of five colored runes (red, blue, green, yellow, white) in a dark indigo night sky, drifting embers, cosmic clouds, a rocky plateau below',
-                                 ent=(0.5, 0.34, 0.95, 0.62), glow=(190, 150, 255), bob=2, parts=[('rise', (255, 190, 90), 40, 1), ('rise', (130, 220, 255), 24, 2)], bolts=None),
-    'ultimateHeavenlyThunder': dict(move='dive', cls='sorcerer', plate='a mountain peak at night, dark purple storm clouds gathering in a wide sky, a rocky summit below',
+    'ultimateFiveElements': dict(neg='pagoda, tower, temple, building, stairs, buildings in the center', move='grow', cls='sorcerer', plate='an empty sacred stone altar plateau at night, a vast starry sky with swirling cosmic clouds and drifting embers, a huge glowing circle of five colored runes (red, blue, green, yellow, white) engraved on the stone ground in the foreground, nothing in the center of the sky',
+                                 ent=(0.5, 0.42, 1.0, 0.8), glow=(190, 150, 255), bob=2, parts=[('rise', (255, 190, 90), 40, 1), ('rise', (130, 220, 255), 24, 2)], bolts=None),
+    'ultimateHeavenlyThunder': dict(move='dive', cls='sorcerer', plate='a lone mountain summit at night, dark purple storm clouds swirling in a vast sky, distant jagged peaks, a rocky ledge in the foreground, a faint lightning glow inside the clouds',
                                     ent=(0.5, 0.3, 0.95, 0.55), glow=(255, 240, 140), bob=2, parts=[('rain', (200, 190, 255), 30, 2)], bolts=(255, 250, 200)),
-    'ultimateThousandArrows': dict(move='dive', cls='assassin', plate='a cliff edge under a dark red sky with red and gold clouds, a lone twisted tree, a rocky ledge below',
+    'ultimateThousandArrows': dict(move='dive', cls='assassin', plate='a cliff edge under a dark crimson sky with red and gold clouds, a lone twisted pine tree, a rocky ledge in the foreground, vast open sky',
                                    ent=(0.5, 0.33, 0.95, 0.6), glow=(255, 200, 80), bob=1, parts=[('fall', (255, 215, 90), 36, 2), ('rise', (255, 120, 60), 18, 1)], bolts=None),
-    'ultimateSunPiercer': dict(move='grow', cls='assassin', plate='a cliff at dawn under a red-orange sky with a huge blazing sun at the top, a rocky ledge below',
+    'ultimateSunPiercer': dict(move='grow', cls='assassin', plate='a high cliff at dawn under a red-orange sky, far mountain ranges in a warm haze, a rocky ledge in the foreground, vast open sky',
                                ent=(0.5, 0.3, 0.9, 0.55), glow=(255, 170, 60), bob=2, parts=[('rise', (255, 200, 80), 36, 1), ('rise', (255, 90, 40), 24, 2)], bolts=None),
-    'ultimateImperialDragon': dict(move='dive', cls='templar', plate='a Chinese palace and pagoda silhouette under a stormy golden sky, a stone courtyard below',
+    'ultimateImperialDragon': dict(move='dive', cls='templar', plate='an imperial Chinese palace courtyard with pagodas and stone stairs under a stormy golden sky, vast open sky above',
                                    ent=(0.5, 0.36, 0.98, 0.66), glow=(255, 210, 90), bob=3, parts=[('rise', (255, 225, 120), 40, 1)], bolts=None),
-    'ultimateEternalBastion': dict(move='grow', cls='templar', plate='a Chinese stone watchtower on a hill at dusk, a deep blue sky, glowing blue-green seal-script runes on the ground below',
+    'ultimateEternalBastion': dict(move='grow', cls='templar', plate='a Chinese stone watchtower on a hill at dusk under a deep blue sky, ancient fortress walls in the distance, glowing blue-green seal-script runes on the stone ground in the foreground',
                                    ent=(0.5, 0.36, 0.98, 0.62), glow=(110, 230, 200), bob=1, parts=[('rise', (140, 255, 220), 36, 1), ('rise', (200, 255, 255), 18, 2)], bolts=None),
-    'ultimateThousandRiders': dict(move='sweep', cls='barbarian', plate='a dusty steppe hilltop at sunset near the Great Wall, a red sky with a big red sun, flat dusty ground below',
+    'ultimateThousandRiders': dict(move='sweep', cls='barbarian', plate='a vast dusty steppe at sunset near the Great Wall, a red sky with a huge red sun low over the horizon, rolling plains, flat dusty ground in the foreground',
                                    ent=(0.5, 0.4, 0.98, 0.5), glow=(255, 150, 70), bob=2, parts=[('dust', (255, 200, 140), 36, 3)], bolts=None),
-    'ultimateSkyWolf': dict(move='dive', cls='barbarian', plate='a snowy mountain top at night under a huge full purple moon, purple aurora in the sky, a snowy summit below',
+    'ultimateSkyWolf': dict(move='dive', cls='barbarian', plate='a snowy mountain summit at night under a huge full moon, purple and teal aurora across the sky, snowy peaks, a flat snowy ledge in the foreground',
                             ent=(0.5, 0.36, 0.98, 0.6), glow=(170, 200, 255), bob=2, parts=[('rise', (200, 220, 255), 36, 1), ('fall', (255, 255, 255), 24, 1)], bolts=None),
 }
 SEEDS = {u: 7100 + i * 53 for i, u in enumerate(ULTIMATES)}
@@ -74,7 +75,7 @@ def plate(uid, out):
     tmp = os.path.join(out, 'raw-plate')
     shutil.rmtree(tmp, ignore_errors=True)
     subprocess.run([os.path.join(GAME_MAKER, 'gm'), 'image', f"{STYLE}, {ULTIMATES[uid]['plate']}", '--out', tmp, '--name', 'plate',
-                    '--size', '768x1344', '--negative', NEGATIVE, '--seed', str(opts.get('seed', SEEDS[uid]))], check=True)
+                    '--size', '768x1344', '--negative', NEGATIVE + ', ' + ULTIMATES[uid].get('neg', ''), '--seed', str(opts.get('seed', SEEDS[uid]))], check=True)
     found = sorted(glob.glob(os.path.join(tmp, '**', '*.png'), recursive=True))
     if not found:
         raise SystemExit(f'{uid} : aucun décor généré')
@@ -214,13 +215,16 @@ def render(uid):
         ent_path = os.path.join(out, 'elements', 'wolf_stand.png')
         if not os.path.exists(ent_path):
             return
-    bg = crop_bars(plate(uid, out)).resize((W, H), Image.LANCZOS)
+    bg = crop_bars(plate(uid, out)).resize((W, H), Image.BOX).quantize(colors=40, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert('RGB')   # grille de pixels nette
     ent = fit(Image.open(ent_path).convert('RGBA'), round(W * cfg['ent'][2]), round(H * cfg['ent'][3]))
     gcol = cfg['glow']
     parts = [Particles(k, c, n * 2, cy, 17 + i) for i, (k, c, n, cy) in enumerate(cfg['parts'])] + [Particles('spark', (255, 255, 255), 26, 1, 99), Particles('spark', gcol, 30, 2, 98)]
     halo = glow_layer(gcol, 100, 1.0)
     vig = vignette()
     move = cfg['move']
+    clip = [Image.open(f).convert('RGBA') for f in sorted(glob.glob(os.path.join(out, 'summon', 'f*.png')))]   # tools/gen-summon-clips.py
+    if clip:
+        print(f'     {uid} : animation de l\'invoqué ({len(clip)} images)')
     uid_seed = list(ULTIMATES).index(uid)
     bolt_frames = {f: bolt(random.Random(f), random.Random(f + 9).randint(30, W - 30), round(H * 0.74))
                    for f in (14, 15, 56, 57, 58, 86, 87, EXP_START, EXP_START + 1, EXP_START + 2)} if cfg['bolts'] else {}
@@ -258,15 +262,21 @@ def render(uid):
                 sc *= 1 + 0.1 * clamp01(k / 26)
                 power = 1.8 * (1 - 0.7 * clamp01(k / 40))
         zoom = 1 + 0.06 * (ease_in(q) if k < 0 else 1 - 0.6 * clamp01(k / 30))
-        cam = bg.resize((round(W * zoom), round(H * zoom)), Image.LANCZOS)
+        cam = bg.resize((round(W * zoom), round(H * zoom)), Image.NEAREST)   # le décor reste net en pixels
         fr = cam.crop(((cam.width - W) // 2, (cam.height - H) // 2, (cam.width - W) // 2 + W, (cam.height - H) // 2 + H)).convert('RGB')
         ex, ey = round(ex), round(ey)
         flick = 0.85 + 0.15 * math.sin(f * 0.9)
         add(fr, ray_image(gcol, f / 60, min(1.2, 0.5 * power * flick) * alpha ** 0.5), (ex - 170, ey - 170))
         add(fr, halo.point(lambda v, a=min(1.3, 0.55 * power * flick) * alpha ** 0.5: min(255, int(v * a))), (ex - 100, ey - 100))
         if alpha > 0.01:
-            av = alive(ent, f, power, uid_seed)
-            e = av.resize((max(1, round(av.width * sc)), max(1, round(av.height * sc))), Image.LANCZOS)
+            if clip:   # image courante du clip (act 1 et 2 : lue en continu ; act 3 : dernière image tenue)
+                ci = min(len(clip) - 1, round(min(f, EXP_START) * (len(clip) - 1) / EXP_START))
+                cw, ch = max(1, round(CLIP_W * CLIP_K * sc)), max(1, round(CLIP_H * CLIP_K * sc))
+                e = clip[ci].resize((cw, ch), Image.BOX)
+            else:
+                av = alive(ent, f, power, uid_seed)
+                e = av.resize((max(1, round(av.width * sc)), max(1, round(av.height * sc))), Image.BOX)
+            e.putalpha(e.split()[3].point(lambda v: 255 if v > 110 else 0))   # bords nets : pixel plein ou rien
             sil = e.split()[3].filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(2))
             r = Image.merge('RGBA', [sil.point(lambda v, c=c: c) for c in gcol] + [sil])
             r.putalpha(r.split()[3].point(lambda v, a=min(1.0, 0.5 * power * alpha): min(255, int(v * a))))
@@ -345,5 +355,9 @@ def render(uid):
 
 for uid in ULTIMATES:
     if ONLY and uid not in ONLY:
+        continue
+    if 'plates-only' in opts:   # décors seuls : sprites/ultimates-seq/<id>/plate.png
+        plate(uid, os.path.join(GAME, 'sprites', 'ultimates-seq', uid))
+        print(f'OK   {uid} : décor', flush=True)
         continue
     render(uid)
