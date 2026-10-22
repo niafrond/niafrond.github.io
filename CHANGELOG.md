@@ -1,3 +1,9 @@
+## [2.110.0](https://github.com/niafrond/niafrond.github.io/compare/v2.109.0...v2.110.0) (2026-10-22)
+
+### Features
+
+* **match3-quest:** afficher le temps de jeu dans les options ([#521](https://github.com/niafrond/niafrond.github.io/issues/521)) ([5119a62](https://github.com/niafrond/niafrond.github.io/commit/5119a62eef5a9351f4a710f46e851543b6dcd1c5))
+
 ## [2.109.0](https://github.com/niafrond/niafrond.github.io/compare/v2.108.0...v2.109.0) (2026-10-22)
 
 ### Features
