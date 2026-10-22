@@ -1591,10 +1591,10 @@ export function createExplorationView(cfg) {
                     const blend = walkPhase - Math.floor(walkPhase);
 
                     // Xiao Gui (renard compagnon) : visible derrière le héros quand il a rejoint le groupe.
-                    const companions = X.companionsOf(session);
-                    if (companions.some(c => c.id === 'xiao_gui')) {
+                    const companion = X.activeCompanionOf(session);
+                    if (companion) {
                         const foxHop = moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
-                        drawSprite(npcSprite('xiao_gui'), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
+                        drawSprite(npcSprite(companion.id === 'xiao_gui' ? 'xiao_gui' : companion.npc), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
                     }
 
                     if (riding()) {
@@ -1983,7 +1983,22 @@ export function createExplorationView(cfg) {
 
         getActiveCompanionIds() {
             ensureSession();
-            return X.companionsOf(session).map(c => c.id);
+            const active = X.activeCompanionOf(session);
+            return active ? [active.id] : [];
+        },
+
+        // Menu des compagnons : recrutés, actif, et choix de l'actif (un seul à la fois).
+        getCompanionChoices() {
+            ensureSession();
+            const active = X.activeCompanionOf(session);
+            return { companions: X.companionsOf(session), activeId: active ? active.id : 'none' };
+        },
+
+        setActiveCompanion(id) {
+            ensureSession();
+            const ok = X.setActiveCompanion(session, id);
+            if (ok) cfg.onSave?.();
+            return ok;
         },
 
         isBusy: () => isBlocked(),

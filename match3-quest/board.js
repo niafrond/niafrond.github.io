@@ -112,6 +112,17 @@ export function boostBoardColor(color, count){
     renderBoard();
 }
 
+// Pouvoir de Jian : toutes les tuiles d'une couleur tirée au hasard (parmi celles du plateau) deviennent des flèches.
+// Renvoie la couleur transformée, ou null s'il n'y a rien à transformer ; le plateau n'est pas résolu ici (voir checkMatches).
+export function convertRandomColorToArrows(rng = Math.random){
+    const present = colors.filter(c => board.includes(c));
+    if(!present.length) return null;
+    const color = present[Math.min(present.length - 1, Math.floor(rng() * present.length))];
+    board.forEach((tile, i) => { if(tile === color) board[i] = 'combat'; });
+    renderBoard();
+    return color;
+}
+
 // Effet d'une case de biome traversée par un match du joueur (terrain.js).
 function applyPlayerMatchExtras(indices, info){
     if(biomeRule){

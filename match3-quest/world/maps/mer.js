@@ -389,7 +389,8 @@ export default {
             sun8_wardens_b: '6',
             sun_8: [27, 11],
             dragon_pearl: '7',
-            mer_chest: '8'
+            mer_chest: '8',
+            jian_quiver: [9, 7]
         }
     }
 };

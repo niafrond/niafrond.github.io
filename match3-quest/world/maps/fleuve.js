@@ -400,6 +400,7 @@ export default {
             drowned_a: [7, 5],
             drowned_b: [11, 5],
             river_serpent: [23, 5],
+            golden_carp: [4, 4],
             fleuve_doctor: [10, 13],
             fleuve_lich: [6, 17],
             sun2_wardens_a: [24, 9],

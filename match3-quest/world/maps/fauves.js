@@ -398,7 +398,8 @@ export default {
             pack_wolf_b: '6',
             sun_7: [27, 11],
             zi_bell: '7',
-            fauves_chest: '8'
+            fauves_chest: '8',
+            tou_stash: [7, 3]
         }
     }
 };
