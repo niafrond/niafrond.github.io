@@ -354,5 +354,77 @@
     ],
     "cols": 16,
     "loop": true
+  },
+  "ultimateFiveElements-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateHeavenlyThunder-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateThousandArrows-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateSunPiercer-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateImperialDragon-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateEternalBastion-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateThousandRiders-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateSkyWolf-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
   }
 }
