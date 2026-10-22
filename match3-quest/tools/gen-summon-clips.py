@@ -51,8 +51,10 @@ ULTIMATES = {
         'a colossal ethereal great wall of glowing jade and blue light with giant guardian statues, light flows through the stones, the statues stir',
         'the great wall rises higher and the guardian statues raise their spears, a barrier of light surges upward'),
     'ultimateThousandRiders': (
-        'a vast horde of steppe cavalrymen in lamellar armor on horses, red silk banners flapping, the horses begin to run, dust rises',
-        'the cavalry charges forward at a full gallop, horses running, banners streaming, a thunderous wave of riders'),
+        'a vast horde of steppe cavalrymen in lamellar armor on horses in front of a red palace and a big sun disc, red silk banners flapping, the horses begin to trot; '
+        'everything outside the horde is a perfectly flat uniform solid color, no sky, no ground, no dust, no clouds, no smoke',
+        'the cavalry charges forward at a full gallop, horses running, banners streaming; '
+        'everything outside the horde stays a perfectly flat uniform solid color, no sky, no ground, no dust, no clouds, no smoke'),
     'ultimateSkyWolf': (
         'a colossal ethereal spirit wolf made of glowing blue-white stars and aurora light, it breathes, its mane and tail flow, stars twinkle inside its body',
         'the spirit wolf raises its head and howls, then lunges forward, aurora ribbons streaming behind it'),
@@ -136,7 +138,7 @@ def keyed(img, key):
 def run_video(start, prompt, outdir, seed):
     shutil.rmtree(outdir, ignore_errors=True)
     os.makedirs(outdir)
-    r = subprocess.run([os.path.join(GAME_MAKER, 'gm'), 'video', prompt + ', plain solid flat background, the subject stays centered, fixed camera', '--image', start,
+    r = subprocess.run([os.path.join(GAME_MAKER, 'gm'), 'video', prompt + ', plain solid flat uniform background color, nothing else in the background, the subject stays centered, fixed camera', '--image', start,
                         '--model', 'flf', '--out', outdir, '--width', str(CW), '--height', str(CH), '--frames', '49', '--seed', str(seed)])
     files = sorted(glob.glob(os.path.join(outdir, '*.png')))
     if r.returncode != 0 or not files:
