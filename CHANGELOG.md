@@ -1,3 +1,9 @@
+## [2.110.1](https://github.com/niafrond/niafrond.github.io/compare/v2.110.0...v2.110.1) (2026-10-22)
+
+### Bug Fixes
+
+* **match3-quest:** placer le vrai soleil du Gobi au sud-est avec dix mirages et un mur de sable ([#522](https://github.com/niafrond/niafrond.github.io/issues/522)) ([2b8d714](https://github.com/niafrond/niafrond.github.io/commit/2b8d71447bd977e01068a4f8caa119c1354e1d28))
+
 ## [2.110.0](https://github.com/niafrond/niafrond.github.io/compare/v2.109.0...v2.110.0) (2026-10-22)
 
 ### Features
