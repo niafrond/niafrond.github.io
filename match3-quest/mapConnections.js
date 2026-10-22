@@ -177,7 +177,7 @@ export function migrateEdgeExits(screens) {
                 offset: centre[axis] - centre.arrive[axis],
                 range: [Math.min(...alongs), Math.max(...alongs)]
             };
-            for (const f of ['label', 'requires', 'lockedMessage']) if (centre[f] !== undefined) conn[f] = centre[f];
+            for (const f of ['label', 'requires', 'lockedMessage', 'wall']) if (centre[f] !== undefined) conn[f] = centre[f];
             list.push(conn);
         }
         s.exits = s.exits.filter(e => e.edge === undefined || e.door || e.leaveArena);
@@ -200,7 +200,7 @@ export function connectionRows(screens, screen) {
         for (let a = range[0]; a <= range[1]; a++) {
             const { x, y } = borderCell(screen, dir, a);
             const cell = arrivalCell(c, screen, to, x, y, (m, cx, cy) => cx < 0 || cy < 0 || cx >= m.w || cy >= m.h, 0);   // arrivée théorique (sans collisions)
-            rows.push({ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, edge: dir,
+            rows.push({ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, wall: c.wall, edge: dir,
                 span: a - mid, arrive: cell, connection: true });
         }
         return rows.sort((p, q) => Math.abs(p.span) - Math.abs(q.span));

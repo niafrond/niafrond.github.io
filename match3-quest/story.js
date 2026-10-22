@@ -594,7 +594,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 4 },
         arrival: [
             "Le Gobi vibre sous un ciel blanc. Le soleil a l'air d'être partout à la fois. L'horizon ondule, et l'on ne sait plus si les dunes sont des dunes.",
-            "Le troisième soleil s'est multiplié en mirages. Un seul est réel : celui qui pèse sur le sable."
+            "Le troisième soleil s'est multiplié en mirages. Dix mirages dansent sur les dunes ; un seul est réel, tapi au sud-est, et le sable murera la piste de l'est tant qu'il vivra."
         ],
         obstacles: [[4, 1, 2, 2], [7, 0, 1, 2], [7, 8, 1, 1], [9, 3, 1, 1], [9, 6, 1, 1], [12, 7, 1, 1]],
         liquids: [[0, 8, 2, 2]],
@@ -603,8 +603,8 @@ const BASE_SCREENS = {
             { x: 0, y: 4, to: 'bambous', arrive: { x: 12, y: 4 }, label: 'Forêt de Bambous Calcinée' },
             {
                 x: 13, y: 5, to: 'tonnerre', arrive: { x: 1, y: 5 }, label: 'Monts du Tonnerre',
-                requires: 'sun_4',
-                lockedMessage: "Le Soleil des Mirages brouille la piste de l'est : trouvez le vrai soleil et abattez-le."
+                requires: 'sun_4', wall: 'sand',
+                lockedMessage: "Un mur de sable barre la piste de l'est : trouvez le vrai Soleil des Mirages, tapi au sud-est parmi ses doubles, et abattez-le."
             }
         ],
         npcs: [
@@ -657,11 +657,53 @@ const BASE_SCREENS = {
                   "L'image se plie en deux et s'évanouit, laissant une odeur de sable chaud.",
                   "Le désert se moque de vous, mais ses mensonges se font de plus en plus rares."
               ] },
+            { id: 'mirage_4', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 3,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "Le soleil se plisse comme une page de sable et s'éparpille : un mirage de plus.",
+                  "Ce n'était qu'un reflet. Le vrai pèse quelque part au sud-est."
+              ] },
+            { id: 'mirage_5', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 4, y: 5,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "Votre flèche le traverse sans bruit : l'image tremble, puis s'efface dans la chaleur.",
+                  "Trop brillant pour être vrai."
+              ] },
+            { id: 'mirage_6', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 6,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "Le disque se dérobe devant vous, léger comme une vapeur : encore un mirage.",
+                  "Cherchez celui qui projette une ombre."
+              ] },
+            { id: 'mirage_7', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 5, y: 8,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "Un souffle de sable et il n'y a plus rien : ce soleil-là n'avait pas de poids.",
+                  "Le désert vous fait marcher en rond."
+              ] },
+            { id: 'mirage_8', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 4,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "Le mirage s'étire, se déchire et s'envole en poussière dorée.",
+                  "Ce n'était pas lui."
+              ] },
+            { id: 'mirage_9', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 2, y: 6,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "La silhouette ardente se dissout comme du sucre dans le thé.",
+                  "Plus que quelques mensonges avant la vérité."
+              ] },
+            { id: 'mirage_10', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 10, y: 9,
+              permanent: true, illusion: true,
+              illusionLines: [
+                  "L'illusion se fendille et retombe en pluie de grains brillants.",
+                  "Le vrai soleil est tout près… et il ne bouge pas."
+              ] },
             // Brigands nommés (quête secondaire de Ma), sud-ouest.
             { id: 'bandit_a', templateId: 'soldat_terre_cuite', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'bandit_b', templateId: 'assassin_masque', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 14 },
+              permanent: true, noDoorGuard: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 14 },
               afterScenes: MIRROR_TALKS.sun_4 }
         ],
         chests: [
