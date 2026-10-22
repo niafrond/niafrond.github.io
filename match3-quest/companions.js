@@ -13,7 +13,7 @@
 //     - scenes    : [{ speaker, lines }] (speaker : { name, title?, npc?, hero? }) ; sinon `speaker` + `lines` pour une seule voix.
 //   Un compagnon commente un LIEU, une DÉCISION (chemin pris) ou un ÉVÉNEMENT ; jamais deux fois la même chose, bulles ≤ 160 caractères.
 //
-// Trois compagnons, trois moments, trois voix (tous facultatifs : ils dépendent de quêtes annexes) :
+// Cinq compagnons (Yu et Étincelle ont été ajoutés avec leur pouvoir de combat, voir companionPowers.js). Trois d’origine, trois moments, trois voix (tous facultatifs : ils dépendent de quêtes annexes) :
 //   - Xiao Gui (région 1, `sq_rice_thief`) : le démon-renard chapardeur battu aux rizières. Tutoie tout le monde, farceur, « hi hi ».
 //     But : gagner ses neuf queues (il en a trois) ; il apprend que les queues se gagnent en rendant service, pas en volant.
 //   - Zhi (région 3, `sq_bell`) : le jeune moine novice de Maître Zhen. Vouvoie le héros (« seigneur »), cite son Maître, tutoie Xiao Gui.
@@ -28,6 +28,8 @@ const HERO = { name: 'Hou Yi', hero: true };
 const GUI = { name: 'Xiao Gui', title: 'Démon-renard repenti', npc: 'huli_xia' };
 const ZHI = { name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi' };
 const DAWA = { name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa' };
+const YU = { name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin' };
+const ETINCELLE = { name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit' };
 
 const say = (speaker, ...lines) => ({ speaker, lines });
 // Les deux gardes d'un sanctuaire : « les gardes sont abattus » = les deux sont vaincus.
@@ -36,10 +38,19 @@ const wardens = n => [`sun${n}_wardens_a`, `sun${n}_wardens_b`];
 export const COMPANIONS = [
     { id: 'xiao_gui', name: 'Xiao Gui', title: 'Démon-renard repenti', npc: 'huli_xia', joinWhen: 'sq_rice_thief' },
     { id: 'zhi', name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi', joinWhen: 'sq_bell' },
-    { id: 'dawa', name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa', joinWhen: 'sq_oasis' }
+    { id: 'dawa', name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa', joinWhen: 'sq_oasis' },
+    { id: 'yu', name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin', joinWhen: 'sq_golden_carp' },
+    { id: 'etincelle', name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg' }
 ];
 
 export const BANTER = [
+    // ── Nouveaux compagnons, chacun avec son pouvoir de combat (companionPowers.js) ─────────────
+    { id: 'yu_rejoint', companion: 'yu', scenes: [
+        say(YU, "Glou. Pardon : bonjour. Vous m'avez battue à la loyale, seigneur. Je remonte les fleuves pour devenir dragon ; autant remonter avec quelqu'un qui sait viser.", "Quand l'ennemi m'agacera, je lui cracherai de l'eau dessus. J'ai de la réserve : j'ai le fleuve entier dans la gorge.")
+    ] },
+    { id: 'etincelle_rejoint', companion: 'etincelle', scenes: [
+        say(ETINCELLE, "Zzzt ! Bonjour ! Je suis née il y a une heure, je suis déjà très fatiguée de ne pas avoir mangé.", "Donne-moi un peu de mana de temps en temps. En échange, je te le rends, avec des étincelles dessus.")
+    ] },
     // ── Région 1 : Rizières Desséchées (Xiao Gui rejoint le héros) ─────────────────────────────
     { id: 'gui_rejoint', companion: 'xiao_gui', scenes: [
         say(GUI, "Hi hi ! Tu m'as battu, archer. Personne ne m'avait battu depuis que j'ai volé la lune dans une jarre. C'était un reflet, mais quand même."),

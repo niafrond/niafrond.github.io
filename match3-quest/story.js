@@ -474,6 +474,8 @@ const BASE_SCREENS = {
             { id: 'drowned_b', templateId: 'gui_guerrier', name: 'Noyé revenant', kind: 'sentinel', x: 10, y: 2, offset: 0, permanent: true, group: 'drowned' },
             // Vieux serpent nommé (quête secondaire de Gu), coin nord-est.
             { id: 'river_serpent', templateId: 'jiaolong', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
+            // Carpe dorée nommée (quête secondaire de Gu : elle devient la compagne Yu), nord-ouest du lit.
+            { id: 'golden_carp', templateId: 'jiaolong', name: 'Carpe dorée du gué', kind: 'sentinel', x: 3, y: 2, offset: 0, permanent: true },
             { id: 'fleuve_doctor', templateId: 'wen_shen', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fleuve_lich', templateId: 'gui_esprit', name: 'Taoïste-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable, sauf pourparlers (parley_sun2 : ils s'écartent, `hideWhen`).
@@ -800,7 +802,8 @@ const BASE_SCREENS = {
         ],
         chests: [
             { id: 'lei_drum', x: 1, y: 0, gold: 10, label: 'Tambour du tonnerre' },
-            { id: 'tonnerre_chest', x: 12, y: 5, gold: 100 }
+            { id: 'tonnerre_chest', x: 12, y: 5, gold: 100 },
+            { id: 'spark_egg', x: 2, y: 1, gold: 10, label: 'Œuf de foudre' }
         ]
     },
 
@@ -1563,6 +1566,40 @@ const BASE_QUESTS = [
             "Prenez-la, seigneur : pour la pointe de vos flèches. Et ces pièces, c'est tout ce qui me reste du dernier marché."
         ],
         reward: { gold: 40, fragment: 'Eau sacrée' }
+    },
+    {
+        id: 'sq_golden_carp', side: true,
+        title: 'La carpe qui voulait être dragon',
+        chapter: '✦ Quête secondaire — Lit du Fleuve Jaune',
+        giver: 'ferryman_gu', turnIn: 'ferryman_gu', requires: ['q_sun_4'],
+        objectives: [{ type: 'kill', target: 'golden_carp', text: 'Éprouver la carpe dorée (coin nord-ouest du lit, près des rochers)' }],
+        offer: [
+            "Seigneur archer, une dernière chose, sur le fleuve. Une carpe dorée s'est échouée dans une flaque, au nord-ouest. La légende dit qu'une carpe qui franchit la Porte du Dragon devient dragon. Celle-ci est têtue : elle remonte un fleuve sans eau.",
+            "Elle ne cédera qu'à un adversaire de valeur. Éprouvez-la, et elle vous suivra : les carpes savent à qui elles doivent leur élan."
+        ],
+        hint: ["La carpe dorée est dans le coin nord-ouest du lit, dans une flaque. Elle crache l'eau comme un archer ses flèches."],
+        complete: [
+            "Elle vous suit déjà, regardez ! Elle s'appelle Yu. Elle dit que vous l'avez battue mieux qu'aucun courant ne l'avait fait, et que ça mérite un voyage.",
+            "Prenez ces pièces. Et surveillez ses jets d'eau : elle vise juste."
+        ],
+        reward: { gold: 70, fragment: 'Écaille dorée' }
+    },
+    {
+        id: 'sq_spark_egg', side: true,
+        title: "L'œuf de foudre",
+        chapter: '✦ Quête secondaire — Monts du Tonnerre',
+        giver: 'smith_tie', turnIn: 'smith_tie', requires: ['q_sun_3'],
+        objectives: [{ type: 'chest', target: 'spark_egg', text: "Retrouver l'œuf de foudre (coin nord-ouest des monts, entre les rochers)" }],
+        offer: [
+            "Une dernière chose, archer. Quand le dragon-serpent a niché sur la crête, un œuf de foudre est tombé du nid, au nord-ouest. Il est tiède et il crépite. Si l'éclair le couve, il éclora de toute façon, et mieux vaut que ce soit dans vos mains que dans ma forge.",
+            "Rapportez-le-moi, et ne le secouez pas."
+        ],
+        hint: ["L'œuf est dans le coin nord-ouest des monts, entre les rochers. Aucun ennemi ne le garde."],
+        complete: [
+            "Il éclot ! Une petite étincelle sur quatre pattes. Elle vous a choisi, archer : elle a mordu votre carquois et ne le lâche plus.",
+            "Elle s'appelle Étincelle. Elle fait de la lumière de ce qu'on lui donne à manger, c'est-à-dire de la mana. Prenez ces pièces, et gardez-la loin de ma poudre."
+        ],
+        reward: { gold: 60, fragment: 'Coquille de foudre' }
     },
     {
         id: 'sq_river_serpent', side: true,

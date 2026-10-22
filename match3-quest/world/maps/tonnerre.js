@@ -393,6 +393,7 @@ export default {
             sun_5: [27, 11],
             lei_drum: [4, 5],
             tonnerre_chest: [14, 5],
+            spark_egg: [7, 3],
             spawn: [3, 11],
             waypoint: [4, 9]
         }

@@ -22,7 +22,8 @@ import { rollOverleveledLoot } from "./victoryLoot.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
-import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
+import { rollCompanionPowers } from "./companionPowers.js";
+import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
@@ -648,6 +649,7 @@ export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || [
 
 // Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
 let foxActedThisTurn = false;
+let companionsActedThisTurn = false; // les pouvoirs des autres compagnons (companionPowers.js) ne jouent qu'une fois par tour
 let foxPlaying = false;   // le coup de Xiao Gui est en cours : le joueur ne peut ni jouer le plateau ni utiliser armes, objets, sorts
 export const isFoxPlaying = () => foxPlaying;
 
@@ -941,6 +943,7 @@ export function restartCombat({ keepHp = false } = {}){
     actionGuard.reset();
     introToken++;
     foxActedThisTurn = false;
+    companionsActedThisTurn = false;
     foxPlaying = false;
     dismissCombatIntro();
     if(pendingPlayerDeathTimeout) {
@@ -1725,6 +1728,10 @@ export function updatePlayerStatsTab(){
                 <span class="stat-value">${rawDefense(player)}</span>
             </div>
             <div class="stat-line">
+                <span class="stat-label" title="Agilité : joue en premier quand elle dépasse celle de l'ennemi (initiative) ; chaque point ajoute aussi 1 de défense">${svgIcon('runner')} Agilité (initiative):</span>
+                <span class="stat-value">${player.attributes.agility || 0}</span>
+            </div>
+            <div class="stat-line">
                 <span class="stat-label">${svgIcon('heart')} HP Maximum:</span>
                 <span class="stat-value">${player.maxHp}</span>
             </div>
@@ -2137,6 +2144,31 @@ export function forcePlayerTurnForCheat(){
     }
 }
 
+// Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, mana, mirage). Renvoie { skipEnemy, enemyDown }.
+const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Étincelle' };
+function applyCompanionPowers(){
+    const outcome = { skipEnemy: false, enemyDown: false };
+    rollCompanionPowers([...activeCompanionIds], player).forEach(({ id, power, amount, color }) => {
+        const who = COMPANION_NAMES[id] || id;
+        if(power.kind === 'heal'){
+            const healed = Math.max(0, Math.min(player.maxHp - player.hp, amount));
+            player.hp += healed;
+            if(healed > 0) flyHeal(true, healed);
+            log(`${power.name} : ${who} rend ${healed} PV.`);
+        } else if(power.kind === 'splash'){
+            applyDamage(enemy, amount);
+            log(`${power.name} : ${enemy.name} subit ${amount} dégâts.`);
+            if(enemy.hp <= 0) outcome.enemyDown = true;
+        } else if(power.kind === 'mana'){
+            const r = addManaForColor(player, color, amount, { applyGainBonus: false });
+            log(`${power.name} : +${r.gained ?? amount} mana ${MANA_COLOR_LABELS[color] || color}.`);
+        } else if(power.kind === 'mirage'){
+            outcome.skipEnemy = true;
+        }
+    });
+    return outcome;
+}
+
 export function finishPlayerTurn(){
     foxPlaying = false;
     if(gameState.combatState !== 'active'){
@@ -2157,6 +2189,14 @@ export function finishPlayerTurn(){
         saveUpdate();
         return;
     }
+    // Pouvoirs des autres compagnons (Zhi, Dawa, Yu, Étincelle) : tirés une fois par tour, en fin de tour du joueur.
+    if (!companionsActedThisTurn) {
+        companionsActedThisTurn = true;
+        const outcome = applyCompanionPowers();
+        if (outcome.enemyDown) { currentTurn = 'enemy'; updateStats(); afterPlayerAnimations(() => { if(gameState.combatState === 'active') enemyTurn(); }); return; }
+        if (outcome.skipEnemy) { log(`Mirage de Dawa : ${enemy.name} se perd, pas d'attaque ennemie.`); updateStats(); saveUpdate(); return; }
+    }
+
     // Xiao Gui (compagnon renard) : 30 % de chance de jouer un coup aléatoire supplémentaire.
     if (!foxActedThisTurn && activeCompanionIds.has('xiao_gui') && Math.random() < 0.30) {
         foxActedThisTurn = true;
@@ -2529,6 +2569,7 @@ export function finishEnemyTurn(){
         tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         foxActedThisTurn = false;
+        companionsActedThisTurn = false;
         currentTurn = 'player';
         updateStats();
         saveUpdate();
