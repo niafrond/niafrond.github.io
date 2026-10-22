@@ -6,7 +6,7 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
-import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor, convertRandomColorToArrows, checkMatches } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareButtonHtml } from "./compareView.js";
 import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
@@ -2145,10 +2145,10 @@ export function forcePlayerTurnForCheat(){
 }
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, mana, mirage). Renvoie { skipEnemy, enemyDown }.
-const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Étincelle' };
+const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Étincelle', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
 function applyCompanionPowers(){
-    const outcome = { skipEnemy: false, enemyDown: false };
-    rollCompanionPowers([...activeCompanionIds], player).forEach(({ id, power, amount, color }) => {
+    const outcome = { skipEnemy: false, enemyDown: false, boardChanged: false };
+    rollCompanionPowers([...activeCompanionIds], player, Math.random, enemy).forEach(({ id, power, amount, color }) => {
         const who = COMPANION_NAMES[id] || id;
         if(power.kind === 'heal'){
             const healed = Math.max(0, Math.min(player.maxHp - player.hp, amount));
@@ -2164,6 +2164,17 @@ function applyCompanionPowers(){
             log(`${power.name} : +${r.gained ?? amount} mana ${MANA_COLOR_LABELS[color] || color}.`);
         } else if(power.kind === 'mirage'){
             outcome.skipEnemy = true;
+        } else if(power.kind === 'rage'){
+            const gained = addRage(player, Math.floor(RAGE_MAX * amount));
+            log(`${power.name} : +${gained} rage.`);
+        } else if(power.kind === 'arrows'){
+            const converted = convertRandomColorToArrows();
+            if(converted){ outcome.boardChanged = true; log(`${power.name} : les tuiles ${MANA_COLOR_LABELS[converted] || converted} deviennent des flèches.`); }
+        } else if(power.kind === 'steal'){
+            const stolen = Math.max(0, Math.floor(enemy.mana[color] || 0));
+            enemy.mana[color] = 0;
+            const r = addManaForColor(player, color, stolen, { applyGainBonus: false });
+            log(`${power.name} : ${stolen} mana ${MANA_COLOR_LABELS[color] || color} volé à ${enemy.name} (+${r.gained} pour vous).`);
         }
     });
     return outcome;
@@ -2194,6 +2205,9 @@ export function finishPlayerTurn(){
         companionsActedThisTurn = true;
         const outcome = applyCompanionPowers();
         if (outcome.enemyDown) { currentTurn = 'enemy'; updateStats(); afterPlayerAnimations(() => { if(gameState.combatState === 'active') enemyTurn(); }); return; }
+        if (outcome.boardChanged) {   // le plateau se résout, puis rappelle finishPlayerTurn (les pouvoirs ne se retirent pas : flag posé)
+            foxPlaying = true; updateStats(); saveUpdate(); checkMatches(true); return;
+        }
         if (outcome.skipEnemy) { log(`Mirage de Dawa : ${enemy.name} se perd, pas d'attaque ennemie.`); updateStats(); saveUpdate(); return; }
     }
 

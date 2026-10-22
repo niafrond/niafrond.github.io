@@ -893,6 +893,8 @@ const BASE_SCREENS = {
             { id: 'ore_guard_a', templateId: 'pixiu', name: 'Pixiu de magma', kind: 'sentinel', x: 9, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'ore_guard_b', templateId: 'pixiu', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'volcan_dragon', templateId: 'chilong', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            // Louveteau de braise nommé (quête secondaire de Shan : il devient le compagnon Braise).
+            { id: 'ember_pup', templateId: 'loup_braise', name: 'Louveteau de braise', kind: 'sentinel', x: 2, y: 7, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_6 est intouchable, sauf pourparlers (parley_sun6 : ils s'écartent, `hideWhen`).
             { id: 'sun6_wardens_a', templateId: 'pixiu', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
             { id: 'sun6_wardens_b', templateId: 'soldat_terre_cuite', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
@@ -980,7 +982,8 @@ const BASE_SCREENS = {
         ],
         chests: [
             { id: 'zi_bell', x: 5, y: 9, gold: 10, label: 'Clochette du bélier' },
-            { id: 'fauves_chest', x: 12, y: 3, gold: 120 }
+            { id: 'fauves_chest', x: 12, y: 3, gold: 120 },
+            { id: 'tou_stash', x: 1, y: 1, gold: 10, label: 'Cachette de Tou' }
         ]
     },
 
@@ -1073,7 +1076,8 @@ const BASE_SCREENS = {
         ],
         chests: [
             { id: 'dragon_pearl', x: 1, y: 8, gold: 10, label: 'Perle du Roi-Dragon' },
-            { id: 'mer_chest', x: 12, y: 4, gold: 130 }
+            { id: 'mer_chest', x: 12, y: 4, gold: 130 },
+            { id: 'jian_quiver', x: 2, y: 2, gold: 10, label: 'Carquois de Jian' }
         ]
     },
 
@@ -1600,6 +1604,57 @@ const BASE_QUESTS = [
             "Elle s'appelle Étincelle. Elle fait de la lumière de ce qu'on lui donne à manger, c'est-à-dire de la mana. Prenez ces pièces, et gardez-la loin de ma poudre."
         ],
         reward: { gold: 60, fragment: 'Coquille de foudre' }
+    },
+    {
+        id: 'sq_ember_pup', side: true,
+        title: 'Le louveteau de braise',
+        chapter: '✦ Quête secondaire — Gorges du Volcan',
+        giver: 'miner_shan', turnIn: 'miner_shan', requires: ['q_sun_1'],
+        objectives: [{ type: 'kill', target: 'ember_pup', text: 'Dompter le louveteau de braise (sud-ouest des gorges, près des éboulis)' }],
+        offer: [
+            "Un louveteau mord mes mineurs depuis une semaine, au sud-ouest, là où la roche est encore chaude. Il n'a pas de meute : le volcan a mangé la sienne. Il est furieux, et sa rage ne retombe jamais.",
+            "Ce n'est pas un monstre, seigneur : c'est un petit qui ne sait plus quoi faire de sa colère. Tenez-lui tête, il saura vous suivre."
+        ],
+        hint: ["Le louveteau rôde au sud-ouest des gorges, près des éboulis. Il mord fort, mais il n'a qu'un seul coup dans le sac."],
+        complete: [
+            "Il vous suit ! Il se frotte contre votre botte, et il a l'air presque calme. Presque.",
+            "Il s'appelle Braise. Quand les coups pleuvent, sa colère devient la vôtre. Prenez ces pièces, mes mineurs dorment enfin."
+        ],
+        reward: { gold: 80, fragment: 'Croc de braise' }
+    },
+    {
+        id: 'sq_tou_stash', side: true,
+        title: 'La cachette de la belette',
+        chapter: '✦ Quête secondaire — Plaine des Fauves',
+        giver: 'hunter_wu', turnIn: 'hunter_wu', requires: ['q_sun_5'],
+        objectives: [{ type: 'chest', target: 'tou_stash', text: 'Fouiller la cachette de la belette (coin nord-ouest de la plaine)' }],
+        offer: [
+            "Une belette me vole mes appâts, mes flèches, et même mes bottes depuis l'automne. Elle a une cachette dans le coin nord-ouest, et je veux savoir ce qu'il y a dedans.",
+            "Rapportez ce que vous y trouvez. Mais prévenez-la : une belette qu'on dévalise cherche vite quelqu'un à qui voler en retour."
+        ],
+        hint: ["La cachette est dans le coin nord-ouest de la plaine, sous des broussailles. Aucun ennemi ne la garde."],
+        complete: [
+            "Mes bottes ! Et quarante appâts, tous comptés. Elle s'est jointe à vous : elle dit que voler à un chasseur est trop facile, et qu'elle préfère voler aux monstres.",
+            "Elle s'appelle Tou. Prenez ces pièces, et surveillez vos poches quand même."
+        ],
+        reward: { gold: 90, fragment: 'Poil de belette' }
+    },
+    {
+        id: 'sq_jian_quiver', side: true,
+        title: 'Le carquois du corbeau',
+        chapter: '✦ Quête secondaire — Rivage de la Mer Orientale',
+        giver: 'fisher_hai', turnIn: 'fisher_hai', requires: ['q_sun_7'],
+        objectives: [{ type: 'chest', target: 'jian_quiver', text: 'Retrouver le carquois du corbeau (coin nord-ouest de la grève)' }],
+        offer: [
+            "Un corbeau de mer a ramassé des flèches perdues sur la grève, et il a bâti son nid dedans, au nord-ouest. Je vous jure qu'il les trie par couleur.",
+            "Récupérez le carquois. Le corbeau y tient plus qu'à sa vie : il ne le lâchera qu'à quelqu'un qui sait tirer."
+        ],
+        hint: ["Le carquois est dans le coin nord-ouest de la grève, dans le nid du corbeau. Aucun ennemi ne le garde."],
+        complete: [
+            "Il a changé d'avis : il veut voler avec vous. Il dit que vous tirez comme on respire, et qu'il saura transformer les gâteaux de lune en flèches.",
+            "Il s'appelle Jian. Prenez ces pièces et laissez-le choisir sa couleur préférée."
+        ],
+        reward: { gold: 100, fragment: 'Plume de corbeau marin' }
     },
     {
         id: 'sq_river_serpent', side: true,

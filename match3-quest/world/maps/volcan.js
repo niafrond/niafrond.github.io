@@ -393,6 +393,7 @@ export default {
             sun_6: [27, 11],
             phoenix_brazier: [4, 5],
             volcan_chest: [13, 3],
+            ember_pup: [11, 15],
             spawn: [3, 11],
             waypoint: [2, 10]
         }
