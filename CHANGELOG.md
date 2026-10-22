@@ -1,3 +1,23 @@
+## [2.111.0](https://github.com/niafrond/niafrond.github.io/compare/v2.110.1...v2.111.0) (2026-10-22)
+
+### Features
+
+* **match3-quest:** pré-télécharger tout le jeu en arrière-plan pour jouer hors ligne ([a74fa82](https://github.com/niafrond/niafrond.github.io/commit/a74fa82b488b24e6abcbdf9bf7697c5afd1c44da))
+* **match3-quest:** servir le jeu depuis le téléphone avec un service worker ([456cd92](https://github.com/niafrond/niafrond.github.io/commit/456cd92e809a99accfc6f3e02d836d436e724e22))
+
+### Performance Improvements
+
+* **match3-quest:** accélérer l exploration sur vieux téléphones et jouer hors ligne ([#519](https://github.com/niafrond/niafrond.github.io/issues/519)) ([a693ca1](https://github.com/niafrond/niafrond.github.io/commit/a693ca17fb0b431f73bc1a7b22176ee53067602e))
+* **match3-quest:** calculer l'URI des sprites pixellisés à la demande ([c81d96b](https://github.com/niafrond/niafrond.github.io/commit/c81d96bfae34c7af46a3e1e19bb21c0c76c7bc2b))
+* **match3-quest:** faire télécharger les médias par le service worker ([95f35df](https://github.com/niafrond/niafrond.github.io/commit/95f35df59dfbf3948894508c55636c0961603eb5))
+* **match3-quest:** lire les obstacles et liquides dans des grilles en cache pendant l'exploration ([51fe96f](https://github.com/niafrond/niafrond.github.io/commit/51fe96f35f9274498b6b0bdbd0396f224b848e81))
+* **match3-quest:** ne dessiner que les éléments visibles à l'écran pendant l'exploration ([04df962](https://github.com/niafrond/niafrond.github.io/commit/04df96245a8c3401036856f1980078c9fcb2a90a))
+* **match3-quest:** ne peindre que les bandes de fond autour de la carte d'exploration ([16ac9d7](https://github.com/niafrond/niafrond.github.io/commit/16ac9d74e56dc627645ef9971075b5ef9355d233))
+* **match3-quest:** ne plus redessiner la carte d'exploration quand elle est couverte ([d6e0c75](https://github.com/niafrond/niafrond.github.io/commit/d6e0c755e5c223505236923a1582a715b0f26edc))
+* **match3-quest:** préparer le sol de la carte voisine avant la transition ([48e7733](https://github.com/niafrond/niafrond.github.io/commit/48e77334fe4a193fbc95503651986fc883fd4035))
+* **match3-quest:** rastériser les fonds des tuiles du plateau en bitmaps ([b86dc27](https://github.com/niafrond/niafrond.github.io/commit/b86dc274c0662336bb4b954bbb570870ff3d3a1f))
+* **match3-quest:** tester les cases par grilles dans l'assemblage du monde ([7a00b35](https://github.com/niafrond/niafrond.github.io/commit/7a00b357a407db7770d998b115bed4339af258a3))
+
 ## [2.110.1](https://github.com/niafrond/niafrond.github.io/compare/v2.110.0...v2.110.1) (2026-10-22)
 
 ### Bug Fixes

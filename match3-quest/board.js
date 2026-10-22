@@ -3,6 +3,7 @@ import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
 import { BIOME_PROTECTION_TEXT } from "./stuff.js";
 import { flyManaToCounter } from "./manaFlight.js";
+import { requestTileBitmaps } from "./tileBitmaps.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
     hasMatches as hasMatchesOnBoard,
@@ -290,6 +291,7 @@ function syncBoardTileSize(){
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
     const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
+    requestTileBitmaps(tileSize);   // fonds des tuiles rastérisés à la taille d'affichage (tileBitmaps.js)
 }
 
 function ensureBoardResizeListeners(){
