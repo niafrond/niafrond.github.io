@@ -1,6 +1,6 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
+import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff } from "./stuff.js";
 import "./stuffView.js";
@@ -293,6 +293,8 @@ function init() {
         exploration.enterArena();
     };
 
+    companionMenuHooks.getChoices = () => exploration.getCompanionChoices();
+    companionMenuHooks.setActive = id => exploration.setActiveCompanion(id);
     combatHooks.onVictory = () => exploration.onCombatVictory();
     combatHooks.onEnd = isVictory => { lastCombatVictory = !!isVictory; exploration.onCombatEnd(isVictory); };
     window.addEventListener('match3:enter-exploration', enterExploration);

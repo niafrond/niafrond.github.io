@@ -215,6 +215,7 @@ function defaultData() {
         ngPlus: 0,
         talked: [],
         banterSeen: [],
+        activeCompanion: null,   // compagnon qui combat à vos côtés (id, 'none' = aucun, null = le premier recruté)
         waypoints: [],
         tracked: null,
         questItems: [],
@@ -231,6 +232,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
     data.banterSeen = Array.isArray(data.banterSeen) ? data.banterSeen : [];
+    data.activeCompanion = typeof data.activeCompanion === 'string' ? data.activeCompanion : null;
     data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
@@ -1087,6 +1089,19 @@ export function progressReached(session, cond) {
 // condition `whenDone` (si précisée) est remplie. Retourne des événements `scene` (comme `afterScenes`), au plus `limit` à la fois.
 export const companionJoined = (session, comp) => Boolean(comp) && (!comp.joinWhen || progressReached(session, comp.joinWhen));
 export const companionsOf = session => COMPANIONS.filter(c => companionJoined(session, c));
+
+// Un seul compagnon est actif à la fois (celui qui combat et suit le héros) : `data.activeCompanion`, ou le premier recruté par défaut.
+export function activeCompanionOf(session) {
+    const joined = companionsOf(session);
+    const chosen = session.data.activeCompanion;
+    if (chosen === 'none') return null;
+    return joined.find(c => c.id === chosen) || joined[0] || null;
+}
+export function setActiveCompanion(session, id) {
+    const ok = id === 'none' || companionsOf(session).some(c => c.id === id);
+    if (ok) session.data.activeCompanion = id;
+    return ok;
+}
 
 const asList = v => (v == null ? [] : [].concat(v));
 

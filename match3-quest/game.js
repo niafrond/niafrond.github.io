@@ -22,7 +22,7 @@ import { rollOverleveledLoot } from "./victoryLoot.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
-import { rollCompanionPowers } from "./companionPowers.js";
+import { rollCompanionPowers, COMPANION_POWERS } from "./companionPowers.js";
 import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
@@ -837,6 +837,8 @@ function playCombatEndFade(isVictory){
 // Points d'accroche de la phase d'exploration : onVictory est appelé dès la victoire (avant la
 // sauvegarde), onEnd quand l'écran de résultat s'affiche (victoire, défaite ou abandon).
 export const combatHooks = { onVictory: null, onEnd: null };
+// Menu des compagnons (branché par main.js sur l'exploration) : { getChoices(): { companions, activeId }, setActive(id) }.
+export const companionMenuHooks = { getChoices: null, setActive: null };
 
 function finalizeCombatEndUI(isVictory){
     introToken++;
@@ -1635,6 +1637,19 @@ export function clearSaveData() {
 }
 
 // mise à jour de l'onglet stats détaillées
+// Section « Compagnon » de l'onglet Stats : un seul compagnon actif à la fois, choisi parmi les recrutés (hors combat).
+function companionSectionHtml(){
+    const choices = companionMenuHooks.getChoices?.();
+    if(!choices || !choices.companions.length) return '';
+    const locked = gameState.combatState === 'active' ? ' disabled' : '';
+    const buttons = [...choices.companions.map(c => ({ id: c.id, name: c.name, title: c.title })), { id: 'none', name: 'Aucun', title: 'Combattre seul' }].map(c => {
+        const power = COMPANION_POWERS[c.id];
+        const on = choices.activeId === c.id;
+        return `<div class="stat-line"><button type="button" data-companion="${c.id}" class="${on ? 'active' : 'secondary'}" aria-pressed="${on}"${locked}>${c.name}${on ? ' (actif)' : ''}</button><span class="stat-effect">${c.title}${power ? ` · ${power.name} : ${power.text}` : ''}</span></div>`;
+    }).join('');
+    return `<div class="stats-section"><h3>Compagnon actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul compagnon à la fois ; le changer se fait hors combat.</span></div></div>`;
+}
+
 export function updatePlayerStatsTab(){
     const statsContent = document.getElementById('stats-content');
     if(!statsContent) return;
@@ -1753,10 +1768,15 @@ export function updatePlayerStatsTab(){
             </div>`).join('')}
         </div>
 
+        ${companionSectionHtml()}
         <div class="stats-section">
             <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
         </div>
     `;
+        statsContent.querySelectorAll('[data-companion]').forEach(btn => btn.addEventListener('click', () => {
+            if(gameState.combatState === 'active') return;
+            if(companionMenuHooks.setActive?.(btn.dataset.companion)) updatePlayerStatsTab();
+        }));
         statsContent.querySelector('#spend-points-btn')?.addEventListener('click', () => showAttributeMenu());
         statsContent.querySelector('#reset-points-btn')?.addEventListener('click', () => {
             if(gameState.combatState === 'active') return;

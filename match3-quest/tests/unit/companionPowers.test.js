@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { COMPANION_POWERS, rollCompanionPowers, turnPowerIds, MANA_COLORS } from '../../companionPowers.js';
 import { COMPANIONS } from '../../companions.js';
+import { createSession, activeCompanionOf, setActiveCompanion } from '../../exploration.js';
 import { QUESTS } from '../../story.js';
 
 const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
@@ -54,5 +55,34 @@ describe('pouvoirs des compagnons', () => {
 describe('agilité dans les statistiques de combat', () => {
     test("l'onglet Stats affiche l'agilité", () => {
         expect(game).toContain('Agilité (initiative)');
+    });
+});
+
+describe('un seul compagnon actif, choisi dans le menu', () => {
+    const withJoined = ids => createSession({ quests: Object.fromEntries(ids.map(q => [q, 'done'])) });
+    test('sans choix, le premier compagnon recruté est actif ; aucun recruté = aucun', () => {
+        expect(activeCompanionOf(createSession(null))).toBeNull();
+        expect(activeCompanionOf(withJoined(['sq_bell', 'sq_golden_carp'])).id).toBe('zhi');
+    });
+    test('on choisit parmi les recrutés seulement, ou « none »', () => {
+        const session = withJoined(['sq_bell', 'sq_golden_carp']);
+        expect(setActiveCompanion(session, 'dawa')).toBe(false);
+        expect(setActiveCompanion(session, 'yu')).toBe(true);
+        expect(activeCompanionOf(session).id).toBe('yu');
+        expect(setActiveCompanion(session, 'none')).toBe(true);
+        expect(activeCompanionOf(session)).toBeNull();
+    });
+    test('le choix survit à la sauvegarde et un id obsolète retombe sur le premier', () => {
+        const session = withJoined(['sq_bell', 'sq_golden_carp']);
+        setActiveCompanion(session, 'yu');
+        expect(activeCompanionOf(createSession({ ...session.data })).id).toBe('yu');
+        expect(activeCompanionOf(createSession({ ...session.data, activeCompanion: 'fantome' })).id).toBe('zhi');
+    });
+    test("le menu Stats propose le choix et le combat n'active que le compagnon choisi", () => {
+        expect(game).toContain('companionSectionHtml()');
+        const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
+        expect(main).toContain('companionMenuHooks.setActive');
+        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        expect(view).toContain('return active ? [active.id] : [];');
     });
 });
