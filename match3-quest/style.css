@@ -3434,3 +3434,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .sort-bar select { font: inherit; padding: 2px 6px; }
 /* Mana du héros et de l'ennemi en gomettes (zone de stats) */
 #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .85em; margin-right: 3px; }
+
+/* Menu Options : temps de jeu (aujourd'hui, hier, semaine, total) */
+.playtime-stats { display: flex; flex-direction: column; gap: 2px; min-width: 50%; }
+.playtime-line { display: flex; justify-content: space-between; gap: 12px; }
