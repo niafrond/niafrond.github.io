@@ -1,3 +1,12 @@
+## [2.109.0](https://github.com/niafrond/niafrond.github.io/compare/v2.108.0...v2.109.0) (2026-10-22)
+
+### Features
+
+* **match3-quest:** animer les ultimes en trois actes dans la direction artistique des biomes ([6b0cb7f](https://github.com/niafrond/niafrond.github.io/commit/6b0cb7fe6ed897e6ab657033198ec60f6fc09fc1))
+* **match3-quest:** animer vraiment l'invoqué des ultimes avec Wan et refaire les décors en pixel art ([eab19f0](https://github.com/niafrond/niafrond.github.io/commit/eab19f0b4c5f61525c09e74f80486cfde4d3d369))
+* **match3-quest:** finir les huit ultimes animés avec l'arbre sacré central et les cavaliers refaits ([8949c3b](https://github.com/niafrond/niafrond.github.io/commit/8949c3bf63ca4fae467f1c46c65d0bb4a5260c73))
+* **match3-quest:** rendre les ultimes plus épiques avec anticipation, impact et explosion ([701fb91](https://github.com/niafrond/niafrond.github.io/commit/701fb91a8a8da55df0816b9de63fcd288f503040))
+
 ## [2.108.0](https://github.com/niafrond/niafrond.github.io/compare/v2.107.0...v2.108.0) (2026-10-21)
 
 ### Features
