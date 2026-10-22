@@ -1,0 +1,2073 @@
+{
+ "version": 1,
+ "core": [
+  "index.html",
+  "actionGuard.js",
+  "arena.js",
+  "attributes.js",
+  "board.js",
+  "bossTips.js",
+  "cheatMode.js",
+  "chestLoot.js",
+  "cinematics.js",
+  "classSpellEffects.js",
+  "classes.js",
+  "combatFlow.js",
+  "combatStats.js",
+  "companions.js",
+  "compareView.js",
+  "constants.js",
+  "decor.js",
+  "duel.js",
+  "elements.js",
+  "enemies.catalog.json",
+  "enemies.js",
+  "enemyAI.js",
+  "equipment.js",
+  "experience.js",
+  "exploration.js",
+  "explorationGrids.js",
+  "explorationView.js",
+  "game.js",
+  "gameOptions.js",
+  "icon.svg",
+  "icons.js",
+  "items.js",
+  "joker.js",
+  "loader.js",
+  "main.js",
+  "manaFlight.js",
+  "manifest.json",
+  "mapConnections.js",
+  "matchMechanics.js",
+  "merchants.js",
+  "music.js",
+  "musicTracks.js",
+  "offlineCache.js",
+  "playTime.js",
+  "playerNames.js",
+  "progression.js",
+  "retro.css",
+  "saveManager.js",
+  "secretLogic.js",
+  "secretMenu.js",
+  "sfxCatalog.js",
+  "shop.js",
+  "sound.js",
+  "spellFx.js",
+  "spells.js",
+  "spells.json",
+  "story.js",
+  "stuff.js",
+  "stuffView.js",
+  "style.css",
+  "terrain.js",
+  "tileBitmaps.js",
+  "tilePainter.js",
+  "tutorial.js",
+  "ultimateCinematics.js",
+  "ultimates.js",
+  "version.js",
+  "victoryLoot.js",
+  "weapons.js",
+  "welcomeBack.js",
+  "worldMap.js",
+  "worldMapView.js",
+  "world/aquatic.js",
+  "world/barriers.js",
+  "world/collars.js",
+  "world/connections.js",
+  "world/expand.js",
+  "world/index.js",
+  "world/junctions.js",
+  "world/manifest.js",
+  "world/manifest2.js",
+  "world/mapKit.js",
+  "world/maps/bambous.js",
+  "world/maps/fauves.js",
+  "world/maps/fleuve.js",
+  "world/maps/fusang.js",
+  "world/maps/gobi.js",
+  "world/maps/index.js",
+  "world/maps/lune.js",
+  "world/maps/mer.js",
+  "world/maps/rizieres.js",
+  "world/maps/tonnerre.js",
+  "world/maps/volcan.js",
+  "world/spots.js",
+  "world/text/bambous.js",
+  "world/text/extra/bambous.js",
+  "world/text/extra/fauves.js",
+  "world/text/extra/fleuve.js",
+  "world/text/extra/fusang.js",
+  "world/text/extra/gobi.js",
+  "world/text/extra/lune.js",
+  "world/text/extra/mer.js",
+  "world/text/extra/rizieres.js",
+  "world/text/extra/tonnerre.js",
+  "world/text/extra/volcan.js",
+  "world/text/fauves.js",
+  "world/text/fleuve.js",
+  "world/text/fusang.js",
+  "world/text/gobi.js",
+  "world/text/index.js",
+  "world/text/lune.js",
+  "world/text/mer.js",
+  "world/text/merge.js",
+  "world/text/rizieres.js",
+  "world/text/tonnerre.js",
+  "world/text/volcan.js",
+  "world/underground.js",
+  "sprites/biomeTint.js",
+  "sprites/creatures.js",
+  "sprites/deadtrees.js",
+  "sprites/decor.js",
+  "sprites/generated.js",
+  "sprites/index.js",
+  "sprites/packContents.js",
+  "sprites/packs.js",
+  "sprites/side.js",
+  "sprites/villagers.js",
+  "sprites/cn/actors-a.js",
+  "sprites/cn/actors-b.js",
+  "sprites/cn/enemies-1.js",
+  "sprites/cn/enemies-2.js",
+  "sprites/cn/suns.js",
+  "sprites/tiles/tile-blue.svg",
+  "sprites/tiles/tile-combat.svg",
+  "sprites/tiles/tile-green.svg",
+  "sprites/tiles/tile-joker.svg",
+  "sprites/tiles/tile-purple.svg",
+  "sprites/tiles/tile-red.svg",
+  "sprites/tiles/tile-skull.svg",
+  "sprites/tiles/tile-yellow.svg",
+  "fonts/pixelify-sans-400.woff2",
+  "fonts/pixelify-sans-700.woff2",
+  "fonts/press-start-2p.woff2",
+  "audio/manifest.json",
+  "audio/sfx/battleStart.mp3",
+  "audio/sfx/bossStart.mp3",
+  "audio/sfx/combatStart.mp3",
+  "audio/sfx/default.mp3",
+  "audio/sfx/defeat.mp3",
+  "audio/sfx/endingJingle.mp3",
+  "audio/sfx/heal.mp3",
+  "audio/sfx/introJingle.mp3",
+  "audio/sfx/invalid.mp3",
+  "audio/sfx/manaGain-3.mp3",
+  "audio/sfx/manaGain-4.mp3",
+  "audio/sfx/manaGain-5.mp3",
+  "audio/sfx/match-color-3.mp3",
+  "audio/sfx/match-color-4.mp3",
+  "audio/sfx/match-color-5.mp3",
+  "audio/sfx/match-combat-3.mp3",
+  "audio/sfx/match-combat-4.mp3",
+  "audio/sfx/match-combat-5.mp3",
+  "audio/sfx/match-skull-3.mp3",
+  "audio/sfx/match-skull-4.mp3",
+  "audio/sfx/match-skull-5.mp3",
+  "audio/sfx/skullHit-e-3.mp3",
+  "audio/sfx/skullHit-e-4.mp3",
+  "audio/sfx/skullHit-e-5.mp3",
+  "audio/sfx/skullHit-p-3.mp3",
+  "audio/sfx/skullHit-p-4.mp3",
+  "audio/sfx/skullHit-p-5.mp3",
+  "audio/sfx/spellCast.mp3",
+  "audio/sfx/spellHit-e.mp3",
+  "audio/sfx/spellHit-p.mp3",
+  "audio/sfx/swap.mp3",
+  "audio/sfx/toggleOn.mp3",
+  "audio/sfx/turnBonus.mp3",
+  "audio/sfx/uiClick.mp3",
+  "audio/sfx/victory.mp3",
+  "audio/sfx/weaponHit-e.mp3",
+  "audio/sfx/weaponHit-p.mp3"
+ ],
+ "media": [
+  {
+   "p": "sprites/ultimates/biome_bambous-seq.png",
+   "s": 196659,
+   "h": "15c3b4688c"
+  },
+  {
+   "p": "sprites/ultimates/biome_fauves-seq.png",
+   "s": 188041,
+   "h": "46b6579d6b"
+  },
+  {
+   "p": "sprites/ultimates/biome_fleuve-seq.png",
+   "s": 176004,
+   "h": "728155d4ff"
+  },
+  {
+   "p": "sprites/ultimates/biome_fusang-seq.png",
+   "s": 187674,
+   "h": "a74f74e387"
+  },
+  {
+   "p": "sprites/ultimates/biome_gobi-seq.png",
+   "s": 172295,
+   "h": "c9cc15c071"
+  },
+  {
+   "p": "sprites/ultimates/biome_lune-seq.png",
+   "s": 182072,
+   "h": "7bdf6015a0"
+  },
+  {
+   "p": "sprites/ultimates/biome_mer-seq.png",
+   "s": 188709,
+   "h": "a36d22e86d"
+  },
+  {
+   "p": "sprites/ultimates/biome_rizieres-seq.png",
+   "s": 181297,
+   "h": "bf1eb25cd2"
+  },
+  {
+   "p": "sprites/ultimates/biome_tonnerre-seq.png",
+   "s": 187274,
+   "h": "bafef8d290"
+  },
+  {
+   "p": "sprites/ultimates/biome_volcan-seq.png",
+   "s": 205692,
+   "h": "5cb614902a"
+  },
+  {
+   "p": "sprites/ultimates/index.json",
+   "s": 5871,
+   "h": "423c4fd057"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-1.png",
+   "s": 552413,
+   "h": "1783c49d0a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-2.png",
+   "s": 277936,
+   "h": "d650e70012"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-3.png",
+   "s": 481689,
+   "h": "8bcc0ecca9"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-4.png",
+   "s": 510481,
+   "h": "13579e6fec"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-seq.png",
+   "s": 1396088,
+   "h": "7302cf27d8"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-1.png",
+   "s": 476767,
+   "h": "b38883ad49"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-2.png",
+   "s": 550764,
+   "h": "dbb755bd26"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-3.png",
+   "s": 336822,
+   "h": "cc70691e79"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-4.png",
+   "s": 602745,
+   "h": "8824b6427a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-seq.png",
+   "s": 1636035,
+   "h": "976655b050"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-1.png",
+   "s": 634089,
+   "h": "700a0fecad"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-2.png",
+   "s": 663599,
+   "h": "ba1c0af80d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-3.png",
+   "s": 407874,
+   "h": "0fcbe24459"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-4.png",
+   "s": 479343,
+   "h": "c7738f9709"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-seq.png",
+   "s": 1531952,
+   "h": "045ea6be56"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-1.png",
+   "s": 556277,
+   "h": "363d8c7281"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-2.png",
+   "s": 630035,
+   "h": "95cc9a3be5"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-3.png",
+   "s": 554630,
+   "h": "31400fbd79"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-4.png",
+   "s": 646334,
+   "h": "896c4c105f"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-seq.png",
+   "s": 1688682,
+   "h": "b020cfe1ed"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-1.png",
+   "s": 717218,
+   "h": "21e53dda0f"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-2.png",
+   "s": 649396,
+   "h": "360900d83d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-3.png",
+   "s": 606352,
+   "h": "da60b2d4f5"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-4.png",
+   "s": 393087,
+   "h": "0823e4d953"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-seq.png",
+   "s": 1390074,
+   "h": "830e512e32"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-1.png",
+   "s": 341137,
+   "h": "60434aa6f6"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-2.png",
+   "s": 494585,
+   "h": "86395ba8da"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-3.png",
+   "s": 408132,
+   "h": "3fc9171280"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-4.png",
+   "s": 474071,
+   "h": "d6c19c1b8d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-seq.png",
+   "s": 1688702,
+   "h": "8e64fb4974"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-1.png",
+   "s": 506240,
+   "h": "7b83c97e3b"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-2.png",
+   "s": 535964,
+   "h": "8088864e3d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-3.png",
+   "s": 518281,
+   "h": "60f08fc9c3"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-4.png",
+   "s": 456988,
+   "h": "b89ef789b9"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-seq.png",
+   "s": 1941704,
+   "h": "af339889e3"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-1.png",
+   "s": 451646,
+   "h": "f1a601cd34"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-2.png",
+   "s": 588599,
+   "h": "ab05d1b69a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-3.png",
+   "s": 559989,
+   "h": "b2e38d0156"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-4.png",
+   "s": 434463,
+   "h": "4c905bf173"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-seq.png",
+   "s": 1692632,
+   "h": "7ba00cabaa"
+  },
+  {
+   "p": "sprites/spellfx/azureDragonRoar.png",
+   "s": 98163,
+   "h": "a3cc97e625"
+  },
+  {
+   "p": "sprites/spellfx/barrier.png",
+   "s": 3443,
+   "h": "a02a34bbe7"
+  },
+  {
+   "p": "sprites/spellfx/berserkerRage.png",
+   "s": 8252,
+   "h": "e32cfaa30a"
+  },
+  {
+   "p": "sprites/spellfx/bladeWinds.png",
+   "s": 22356,
+   "h": "acf2dbe7cd"
+  },
+  {
+   "p": "sprites/spellfx/blizzard.png",
+   "s": 25442,
+   "h": "c11e510af3"
+  },
+  {
+   "p": "sprites/spellfx/bloodlust.png",
+   "s": 13600,
+   "h": "86a4e116fc"
+  },
+  {
+   "p": "sprites/spellfx/bolt.png",
+   "s": 6482,
+   "h": "56d7e9f971"
+  },
+  {
+   "p": "sprites/spellfx/brasierSeals.png",
+   "s": 14467,
+   "h": "9515cc26e2"
+  },
+  {
+   "p": "sprites/spellfx/burningTide.png",
+   "s": 17164,
+   "h": "5a6939f1b9"
+  },
+  {
+   "p": "sprites/spellfx/chasm.png",
+   "s": 9759,
+   "h": "caf01ffa14"
+  },
+  {
+   "p": "sprites/spellfx/cleave.png",
+   "s": 14889,
+   "h": "3bb6dd7ff9"
+  },
+  {
+   "p": "sprites/spellfx/commandAura.png",
+   "s": 4944,
+   "h": "611eb515c9"
+  },
+  {
+   "p": "sprites/spellfx/confuse.png",
+   "s": 10438,
+   "h": "a7965de0ce"
+  },
+  {
+   "p": "sprites/spellfx/counterAttack.png",
+   "s": 4700,
+   "h": "bd570c4266"
+  },
+  {
+   "p": "sprites/spellfx/crimsonPurge.png",
+   "s": 9550,
+   "h": "f6e21f5cba"
+  },
+  {
+   "p": "sprites/spellfx/darkChannels.png",
+   "s": 5140,
+   "h": "4cbb9b1a63"
+  },
+  {
+   "p": "sprites/spellfx/deathbringer.png",
+   "s": 15452,
+   "h": "c869c2493d"
+  },
+  {
+   "p": "sprites/spellfx/defensiveWall.png",
+   "s": 7451,
+   "h": "2babd33c4d"
+  },
+  {
+   "p": "sprites/spellfx/divinePower.png",
+   "s": 3435,
+   "h": "2b81ab3aed"
+  },
+  {
+   "p": "sprites/spellfx/dragonCross.png",
+   "s": 78598,
+   "h": "a618c0daee"
+  },
+  {
+   "p": "sprites/spellfx/dualShot.png",
+   "s": 84184,
+   "h": "3f4d8a6956"
+  },
+  {
+   "p": "sprites/spellfx/emberGoldCross.png",
+   "s": 7391,
+   "h": "a0e69f893f"
+  },
+  {
+   "p": "sprites/spellfx/emberScythe.png",
+   "s": 4155,
+   "h": "8f23d4100b"
+  },
+  {
+   "p": "sprites/spellfx/emberStorm.png",
+   "s": 31890,
+   "h": "3cd7d96a57"
+  },
+  {
+   "p": "sprites/spellfx/enrage.png",
+   "s": 4665,
+   "h": "c8a57128a1"
+  },
+  {
+   "p": "sprites/spellfx/fingerOfDeath.png",
+   "s": 4356,
+   "h": "e652ad702b"
+  },
+  {
+   "p": "sprites/spellfx/fireball.png",
+   "s": 4861,
+   "h": "8ea8441144"
+  },
+  {
+   "p": "sprites/spellfx/fiveElementsSeal.png",
+   "s": 309762,
+   "h": "d973566dac"
+  },
+  {
+   "p": "sprites/spellfx/fiveHarmony.png",
+   "s": 53530,
+   "h": "e1ab575ab2"
+  },
+  {
+   "p": "sprites/spellfx/flameBolts.png",
+   "s": 3849,
+   "h": "8b75b4d5e8"
+  },
+  {
+   "p": "sprites/spellfx/flameSphere.png",
+   "s": 3178,
+   "h": "cfe52c5bdd"
+  },
+  {
+   "p": "sprites/spellfx/flameStrike.png",
+   "s": 18584,
+   "h": "ee132ea390"
+  },
+  {
+   "p": "sprites/spellfx/flameblade.png",
+   "s": 2253,
+   "h": "8e7dda043f"
+  },
+  {
+   "p": "sprites/spellfx/focus.png",
+   "s": 3171,
+   "h": "e6a5d3845c"
+  },
+  {
+   "p": "sprites/spellfx/frostCleave.png",
+   "s": 3832,
+   "h": "23a0aa351f"
+  },
+  {
+   "p": "sprites/spellfx/frostLightning.png",
+   "s": 35333,
+   "h": "968876368d"
+  },
+  {
+   "p": "sprites/spellfx/frostNova.png",
+   "s": 19760,
+   "h": "cf58996fbe"
+  },
+  {
+   "p": "sprites/spellfx/galeSlash.png",
+   "s": 2489,
+   "h": "f95c6a9eb3"
+  },
+  {
+   "p": "sprites/spellfx/goldenDew.png",
+   "s": 7246,
+   "h": "3ae908fc2b"
+  },
+  {
+   "p": "sprites/spellfx/greatHeal.png",
+   "s": 12129,
+   "h": "4712903fdf"
+  },
+  {
+   "p": "sprites/spellfx/handOfIce.png",
+   "s": 4970,
+   "h": "a4671fa604"
+  },
+  {
+   "p": "sprites/spellfx/heal.png",
+   "s": 4271,
+   "h": "00c63259a2"
+  },
+  {
+   "p": "sprites/spellfx/heavenTribulationEnd.png",
+   "s": 182966,
+   "h": "ccbef8dfb6"
+  },
+  {
+   "p": "sprites/spellfx/heavenlyRiverFlood.png",
+   "s": 181242,
+   "h": "4c2de1720d"
+  },
+  {
+   "p": "sprites/spellfx/heavensWrath.png",
+   "s": 11062,
+   "h": "917e384299"
+  },
+  {
+   "p": "sprites/spellfx/holdTheLine.png",
+   "s": 11049,
+   "h": "38d3691469"
+  },
+  {
+   "p": "sprites/spellfx/ice.png",
+   "s": 6676,
+   "h": "620b3c31e4"
+  },
+  {
+   "p": "sprites/spellfx/iceAge.png",
+   "s": 140162,
+   "h": "cb78cc277a"
+  },
+  {
+   "p": "sprites/spellfx/iceShield.png",
+   "s": 4908,
+   "h": "0f6558ea30"
+  },
+  {
+   "p": "sprites/spellfx/immortalPeach.png",
+   "s": 66495,
+   "h": "8fb3e4400a"
+  },
+  {
+   "p": "sprites/spellfx/index.json",
+   "s": 13300,
+   "h": "0e8f23db4e"
+  },
+  {
+   "p": "sprites/spellfx/inferno.png",
+   "s": 39059,
+   "h": "898a358b6f"
+  },
+  {
+   "p": "sprites/spellfx/intimidate.png",
+   "s": 6050,
+   "h": "38e36d0a7f"
+  },
+  {
+   "p": "sprites/spellfx/jadeBreath.png",
+   "s": 19226,
+   "h": "263b27a57f"
+  },
+  {
+   "p": "sprites/spellfx/jadeCurtain.png",
+   "s": 13311,
+   "h": "0e11a9caa3"
+  },
+  {
+   "p": "sprites/spellfx/jadeEmperorDecree.png",
+   "s": 148524,
+   "h": "5ec43669f3"
+  },
+  {
+   "p": "sprites/spellfx/jadePurge.png",
+   "s": 15826,
+   "h": "ff6f886db7"
+  },
+  {
+   "p": "sprites/spellfx/jadeSpringBlessing.png",
+   "s": 65227,
+   "h": "ed33b8a327"
+  },
+  {
+   "p": "sprites/spellfx/kunlunMountainFall.png",
+   "s": 143904,
+   "h": "7a242e9f92"
+  },
+  {
+   "p": "sprites/spellfx/lightningStorm.png",
+   "s": 37283,
+   "h": "f252056a93"
+  },
+  {
+   "p": "sprites/spellfx/lotusPoison.png",
+   "s": 15333,
+   "h": "c99b151492"
+  },
+  {
+   "p": "sprites/spellfx/mageStrike.png",
+   "s": 3520,
+   "h": "76b939d59e"
+  },
+  {
+   "p": "sprites/spellfx/manaBlast.png",
+   "s": 27150,
+   "h": "471771b1b3"
+  },
+  {
+   "p": "sprites/spellfx/manaSiphon.png",
+   "s": 4223,
+   "h": "c2b8a50b85"
+  },
+  {
+   "p": "sprites/spellfx/meteor.png",
+   "s": 42388,
+   "h": "e959a3a663"
+  },
+  {
+   "p": "sprites/spellfx/miracle.png",
+   "s": 24037,
+   "h": "dff70e4d5a"
+  },
+  {
+   "p": "sprites/spellfx/mirrorShield.png",
+   "s": 5447,
+   "h": "7300c97404"
+  },
+  {
+   "p": "sprites/spellfx/nineSunsFall.png",
+   "s": 93930,
+   "h": "efec0297fe"
+  },
+  {
+   "p": "sprites/spellfx/pangusAxe.png",
+   "s": 88796,
+   "h": "9f4151cb5b"
+  },
+  {
+   "p": "sprites/spellfx/poisonBlade.png",
+   "s": 1770,
+   "h": "54030a6826"
+  },
+  {
+   "p": "sprites/spellfx/purpleRazor.png",
+   "s": 16678,
+   "h": "f78e885eea"
+  },
+  {
+   "p": "sprites/spellfx/queenMotherElixir.png",
+   "s": 98109,
+   "h": "90e68f96ab"
+  },
+  {
+   "p": "sprites/spellfx/reinforce.png",
+   "s": 2444,
+   "h": "58c5d5cfe3"
+  },
+  {
+   "p": "sprites/spellfx/revenant.png",
+   "s": 57313,
+   "h": "5091c4e1da"
+  },
+  {
+   "p": "sprites/spellfx/revitalize.png",
+   "s": 19620,
+   "h": "73adb119fe"
+  },
+  {
+   "p": "sprites/spellfx/rush.png",
+   "s": 2257,
+   "h": "4c96c8f88e"
+  },
+  {
+   "p": "sprites/spellfx/seasonsPurge.png",
+   "s": 26174,
+   "h": "65b83dc3c9"
+  },
+  {
+   "p": "sprites/spellfx/shadowCurse.png",
+   "s": 3411,
+   "h": "97e08feb84"
+  },
+  {
+   "p": "sprites/spellfx/shadowFlame.png",
+   "s": 6892,
+   "h": "7cca0a7b36"
+  },
+  {
+   "p": "sprites/spellfx/shadowPurge.png",
+   "s": 14655,
+   "h": "712c447673"
+  },
+  {
+   "p": "sprites/spellfx/shadowStep.png",
+   "s": 2082,
+   "h": "7ff71688e5"
+  },
+  {
+   "p": "sprites/spellfx/shadowStrike.png",
+   "s": 5459,
+   "h": "629621a610"
+  },
+  {
+   "p": "sprites/spellfx/sharpenedBlade.png",
+   "s": 2998,
+   "h": "df974cd968"
+  },
+  {
+   "p": "sprites/spellfx/shieldBash.png",
+   "s": 3729,
+   "h": "f18ec25e34"
+  },
+  {
+   "p": "sprites/spellfx/singingBlades.png",
+   "s": 7422,
+   "h": "675b947d55"
+  },
+  {
+   "p": "sprites/spellfx/sneakAttack.png",
+   "s": 2087,
+   "h": "be9b764298"
+  },
+  {
+   "p": "sprites/spellfx/springRain.png",
+   "s": 17129,
+   "h": "0df2b98e5b"
+  },
+  {
+   "p": "sprites/spellfx/starRain.png",
+   "s": 36657,
+   "h": "4e4d6a715d"
+  },
+  {
+   "p": "sprites/spellfx/stealth.png",
+   "s": 6627,
+   "h": "7963d9b9ed"
+  },
+  {
+   "p": "sprites/spellfx/stoneskin.png",
+   "s": 4862,
+   "h": "06449f6c80"
+  },
+  {
+   "p": "sprites/spellfx/stormOfGods.png",
+   "s": 110035,
+   "h": "2143741e95"
+  },
+  {
+   "p": "sprites/spellfx/stormPurge.png",
+   "s": 11452,
+   "h": "245411db63"
+  },
+  {
+   "p": "sprites/spellfx/strength.png",
+   "s": 6188,
+   "h": "6ce8444608"
+  },
+  {
+   "p": "sprites/spellfx/summonTempest.png",
+   "s": 18098,
+   "h": "00fe97a9b7"
+  },
+  {
+   "p": "sprites/spellfx/swiftStrike.png",
+   "s": 9273,
+   "h": "2d74130f23"
+  },
+  {
+   "p": "sprites/spellfx/threeDragons.png",
+   "s": 76481,
+   "h": "2321946e7b"
+  },
+  {
+   "p": "sprites/spellfx/throwAxe.png",
+   "s": 15448,
+   "h": "80de7e635c"
+  },
+  {
+   "p": "sprites/spellfx/thunderBolt.png",
+   "s": 16829,
+   "h": "40932a69ea"
+  },
+  {
+   "p": "sprites/spellfx/thunderDukeWrath.png",
+   "s": 196137,
+   "h": "f72acf38a0"
+  },
+  {
+   "p": "sprites/spellfx/thunderPrison.png",
+   "s": 25248,
+   "h": "e555249ddc"
+  },
+  {
+   "p": "sprites/spellfx/tidalPurge.png",
+   "s": 23117,
+   "h": "79dedb9938"
+  },
+  {
+   "p": "sprites/spellfx/tigerEye.png",
+   "s": 3440,
+   "h": "38874f9991"
+  },
+  {
+   "p": "sprites/spellfx/twinDragonsStrike.png",
+   "s": 166997,
+   "h": "fae964ae7e"
+  },
+  {
+   "p": "sprites/spellfx/vaporBurst.png",
+   "s": 16523,
+   "h": "aa19f6a8f4"
+  },
+  {
+   "p": "sprites/spellfx/vermilionBirdDive.png",
+   "s": 76870,
+   "h": "e6a998369f"
+  },
+  {
+   "p": "sprites/spellfx/voidChill.png",
+   "s": 18935,
+   "h": "5ec85997d8"
+  },
+  {
+   "p": "sprites/spellfx/voidRift.png",
+   "s": 12786,
+   "h": "eb531d9d2f"
+  },
+  {
+   "p": "sprites/spellfx/warCry.png",
+   "s": 4883,
+   "h": "a7f0253a30"
+  },
+  {
+   "p": "sprites/spellfx/weakness.png",
+   "s": 2656,
+   "h": "00d9ed90a4"
+  },
+  {
+   "p": "sprites/spellfx/whiteTigerClaw.png",
+   "s": 61727,
+   "h": "7e103214ec"
+  },
+  {
+   "p": "sprites/spellfx/wildMana.png",
+   "s": 5050,
+   "h": "8252b08b62"
+  },
+  {
+   "p": "sprites/prologue/1-land.png",
+   "s": 491382,
+   "h": "cfc2519131"
+  },
+  {
+   "p": "sprites/prologue/1-port.png",
+   "s": 595452,
+   "h": "5f481001d6"
+  },
+  {
+   "p": "sprites/prologue/2-land.png",
+   "s": 628528,
+   "h": "af4a43b98e"
+  },
+  {
+   "p": "sprites/prologue/2-port.png",
+   "s": 661605,
+   "h": "ff56f2a7e0"
+  },
+  {
+   "p": "sprites/prologue/3-land.png",
+   "s": 434137,
+   "h": "d94d4c0f34"
+  },
+  {
+   "p": "sprites/prologue/3-port.png",
+   "s": 539681,
+   "h": "f9bf76f63e"
+  },
+  {
+   "p": "sprites/prologue/4-land.png",
+   "s": 521419,
+   "h": "8fba1a5755"
+  },
+  {
+   "p": "sprites/prologue/4-port.png",
+   "s": 686885,
+   "h": "57809c4344"
+  },
+  {
+   "p": "sprites/prologue/5-land.png",
+   "s": 528776,
+   "h": "dd34cac8a1"
+  },
+  {
+   "p": "sprites/prologue/5-port.png",
+   "s": 674756,
+   "h": "118db7a0fd"
+  },
+  {
+   "p": "sprites/prologue/index.json",
+   "s": 923,
+   "h": "47024e6907"
+  },
+  {
+   "p": "sprites/sunfall/1-land.png",
+   "s": 559765,
+   "h": "f3af2b2139"
+  },
+  {
+   "p": "sprites/sunfall/1-port.png",
+   "s": 463359,
+   "h": "f524b5046d"
+  },
+  {
+   "p": "sprites/sunfall/2-land.png",
+   "s": 444138,
+   "h": "06090f9e18"
+  },
+  {
+   "p": "sprites/sunfall/2-port.png",
+   "s": 431248,
+   "h": "81b9d480f0"
+  },
+  {
+   "p": "sprites/sunfall/3-land.png",
+   "s": 361222,
+   "h": "f1181411ff"
+  },
+  {
+   "p": "sprites/sunfall/3-port.png",
+   "s": 328678,
+   "h": "bc8b731195"
+  },
+  {
+   "p": "sprites/sunfall/4-land.png",
+   "s": 310070,
+   "h": "42655abb2e"
+  },
+  {
+   "p": "sprites/sunfall/4-port.png",
+   "s": 423897,
+   "h": "fbc0e3ba9b"
+  },
+  {
+   "p": "sprites/sunfall/5-land.png",
+   "s": 438217,
+   "h": "5004279ba8"
+  },
+  {
+   "p": "sprites/sunfall/5-port.png",
+   "s": 520646,
+   "h": "3d4f1f8f4c"
+  },
+  {
+   "p": "sprites/sunfall/6-land.png",
+   "s": 443319,
+   "h": "7ce4c8f73a"
+  },
+  {
+   "p": "sprites/sunfall/6-port.png",
+   "s": 538392,
+   "h": "3a1248fed8"
+  },
+  {
+   "p": "sprites/sunfall/7-land.png",
+   "s": 405983,
+   "h": "dfaec087c0"
+  },
+  {
+   "p": "sprites/sunfall/7-port.png",
+   "s": 378655,
+   "h": "613e9a5d09"
+  },
+  {
+   "p": "sprites/sunfall/8-land.png",
+   "s": 437849,
+   "h": "3457b61dc4"
+  },
+  {
+   "p": "sprites/sunfall/8-port.png",
+   "s": 442398,
+   "h": "eccf0e7edd"
+  },
+  {
+   "p": "sprites/sunfall/9-land.png",
+   "s": 690545,
+   "h": "9529065363"
+  },
+  {
+   "p": "sprites/sunfall/9-port.png",
+   "s": 341545,
+   "h": "6994998431"
+  },
+  {
+   "p": "sprites/sunfall/index.json",
+   "s": 1659,
+   "h": "7606e5d802"
+  },
+  {
+   "p": "sprites/ending/1-land.png",
+   "s": 398235,
+   "h": "7878895612"
+  },
+  {
+   "p": "sprites/ending/1-port.png",
+   "s": 344336,
+   "h": "abb9f4db07"
+  },
+  {
+   "p": "sprites/ending/2-land.png",
+   "s": 555156,
+   "h": "7e83b1b722"
+  },
+  {
+   "p": "sprites/ending/2-port.png",
+   "s": 472384,
+   "h": "d6c8ae7895"
+  },
+  {
+   "p": "sprites/ending/3-land.png",
+   "s": 401333,
+   "h": "9d29f8ef06"
+  },
+  {
+   "p": "sprites/ending/3-port.png",
+   "s": 482488,
+   "h": "a1b193e3ff"
+  },
+  {
+   "p": "sprites/ending/4-land.png",
+   "s": 765862,
+   "h": "998dd761fb"
+  },
+  {
+   "p": "sprites/ending/4-port.png",
+   "s": 562692,
+   "h": "aedebb277c"
+  },
+  {
+   "p": "sprites/ending/index.json",
+   "s": 739,
+   "h": "fb96f62d88"
+  },
+  {
+   "p": "sprites/fengmeng/1-land.png",
+   "s": 586384,
+   "h": "056a1ff8e7"
+  },
+  {
+   "p": "sprites/fengmeng/1-port.png",
+   "s": 645741,
+   "h": "96fe7594f7"
+  },
+  {
+   "p": "sprites/fengmeng/2-land.png",
+   "s": 561744,
+   "h": "2f529f9fce"
+  },
+  {
+   "p": "sprites/fengmeng/2-port.png",
+   "s": 450107,
+   "h": "766eaa2acc"
+  },
+  {
+   "p": "sprites/fengmeng/3-land.png",
+   "s": 617640,
+   "h": "eb7d591271"
+  },
+  {
+   "p": "sprites/fengmeng/3-port.png",
+   "s": 599456,
+   "h": "2c7b371a27"
+  },
+  {
+   "p": "sprites/fengmeng/4-land.png",
+   "s": 630139,
+   "h": "c5125a7724"
+  },
+  {
+   "p": "sprites/fengmeng/4-port.png",
+   "s": 481116,
+   "h": "8634563132"
+  },
+  {
+   "p": "sprites/fengmeng/index.json",
+   "s": 739,
+   "h": "9bca18fed5"
+  },
+  {
+   "p": "sprites/launcher/1-land.png",
+   "s": 535871,
+   "h": "381ace63b0"
+  },
+  {
+   "p": "sprites/launcher/1-port.png",
+   "s": 473293,
+   "h": "01652d6c04"
+  },
+  {
+   "p": "sprites/launcher/index.json",
+   "s": 187,
+   "h": "35f3ace6bf"
+  },
+  {
+   "p": "audio/music/boss-a0-b.mp3",
+   "s": 464481,
+   "h": "4fda511820"
+  },
+  {
+   "p": "audio/music/boss-a0.mp3",
+   "s": 464481,
+   "h": "6d5cda92dc"
+  },
+  {
+   "p": "audio/music/boss-a1-b.mp3",
+   "s": 464481,
+   "h": "b01fc27d28"
+  },
+  {
+   "p": "audio/music/boss-a1.mp3",
+   "s": 464481,
+   "h": "da6b41896e"
+  },
+  {
+   "p": "audio/music/boss-a2-b.mp3",
+   "s": 464481,
+   "h": "0994e195e6"
+  },
+  {
+   "p": "audio/music/boss-a2.mp3",
+   "s": 464481,
+   "h": "eefba5994b"
+  },
+  {
+   "p": "audio/music/boss-a3-b.mp3",
+   "s": 464481,
+   "h": "3d33417b66"
+  },
+  {
+   "p": "audio/music/boss-a3.mp3",
+   "s": 464481,
+   "h": "a0687affb5"
+  },
+  {
+   "p": "audio/music/boss-a4-b.mp3",
+   "s": 464481,
+   "h": "48471d0eb3"
+  },
+  {
+   "p": "audio/music/boss-a4.mp3",
+   "s": 464481,
+   "h": "a9a6c76dd4"
+  },
+  {
+   "p": "audio/music/boss-a5-b.mp3",
+   "s": 464481,
+   "h": "e4f08b24fd"
+  },
+  {
+   "p": "audio/music/boss-a5.mp3",
+   "s": 464481,
+   "h": "f067473ff1"
+  },
+  {
+   "p": "audio/music/boss-a6-b.mp3",
+   "s": 464481,
+   "h": "3b244e2602"
+  },
+  {
+   "p": "audio/music/boss-a6.mp3",
+   "s": 464481,
+   "h": "5fd1a3dad9"
+  },
+  {
+   "p": "audio/music/boss-a7-b.mp3",
+   "s": 464481,
+   "h": "50bbb4f649"
+  },
+  {
+   "p": "audio/music/boss-a7.mp3",
+   "s": 464481,
+   "h": "3415ec89e4"
+  },
+  {
+   "p": "audio/music/boss-chef-de-dune-bras-de-sable-b.mp3",
+   "s": 464481,
+   "h": "84b9c3ea0e"
+  },
+  {
+   "p": "audio/music/boss-chef-de-dune-bras-de-sable.mp3",
+   "s": 464481,
+   "h": "dd456988be"
+  },
+  {
+   "p": "audio/music/boss-colosse-de-l-ecluse-b.mp3",
+   "s": 464481,
+   "h": "31b37cd7d0"
+  },
+  {
+   "p": "audio/music/boss-colosse-de-l-ecluse.mp3",
+   "s": 464481,
+   "h": "1c61ac6b03"
+  },
+  {
+   "p": "audio/music/boss-colosse-des-caravanes-ensevelies-b.mp3",
+   "s": 464481,
+   "h": "fd6532a891"
+  },
+  {
+   "p": "audio/music/boss-colosse-des-caravanes-ensevelies.mp3",
+   "s": 464481,
+   "h": "52180968ec"
+  },
+  {
+   "p": "audio/music/boss-dame-bi-yu-la-main-de-jade-b.mp3",
+   "s": 464481,
+   "h": "2b114322b9"
+  },
+  {
+   "p": "audio/music/boss-dame-bi-yu-la-main-de-jade.mp3",
+   "s": 464481,
+   "h": "9d8daac50d"
+  },
+  {
+   "p": "audio/music/boss-dame-yin-yue-la-lune-d-argent-b.mp3",
+   "s": 464481,
+   "h": "0bb59e77f4"
+  },
+  {
+   "p": "audio/music/boss-dame-yin-yue-la-lune-d-argent.mp3",
+   "s": 464481,
+   "h": "0bea1564a3"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-l-archer-miroir-b.mp3",
+   "s": 464481,
+   "h": "293bcce047"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-l-archer-miroir.mp3",
+   "s": 464481,
+   "h": "cf29d050a2"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-l-archer-presse-b.mp3",
+   "s": 464481,
+   "h": "61776b4b28"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-l-archer-presse.mp3",
+   "s": 464481,
+   "h": "70d958c266"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-le-disciple-b.mp3",
+   "s": 464481,
+   "h": "444a2b14c8"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-le-disciple.mp3",
+   "s": 464481,
+   "h": "e0316b1813"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-rage-et-desespoir-b.mp3",
+   "s": 464481,
+   "h": "fcb8e0b964"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-rage-et-desespoir.mp3",
+   "s": 464481,
+   "h": "2177adc007"
+  },
+  {
+   "p": "audio/music/boss-forgeron-de-lave-b.mp3",
+   "s": 464481,
+   "h": "61b69d50b0"
+  },
+  {
+   "p": "audio/music/boss-forgeron-de-lave.mp3",
+   "s": 464481,
+   "h": "ccd9e921ef"
+  },
+  {
+   "p": "audio/music/boss-garde-solaire-des-racines-b.mp3",
+   "s": 464481,
+   "h": "829693b5b8"
+  },
+  {
+   "p": "audio/music/boss-garde-solaire-des-racines.mp3",
+   "s": 464481,
+   "h": "cc6f1b4922"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-digue-b.mp3",
+   "s": 464481,
+   "h": "effa778797"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-digue.mp3",
+   "s": 464481,
+   "h": "7aeeef14f8"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-forge-noire-b.mp3",
+   "s": 464481,
+   "h": "2b1ad6b7ae"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-forge-noire.mp3",
+   "s": 464481,
+   "h": "ef2fcb9ca5"
+  },
+  {
+   "p": "audio/music/boss-gardien-des-cendres-b.mp3",
+   "s": 464481,
+   "h": "35288e174c"
+  },
+  {
+   "p": "audio/music/boss-gardien-des-cendres.mp3",
+   "s": 464481,
+   "h": "a925678ecb"
+  },
+  {
+   "p": "audio/music/boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b.mp3",
+   "s": 464481,
+   "h": "c59dc53c8d"
+  },
+  {
+   "p": "audio/music/boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches.mp3",
+   "s": 464481,
+   "h": "c93936dfe4"
+  },
+  {
+   "p": "audio/music/boss-hebo-seigneur-du-fleuve-noye-b.mp3",
+   "s": 464481,
+   "h": "27d5b407c9"
+  },
+  {
+   "p": "audio/music/boss-hebo-seigneur-du-fleuve-noye.mp3",
+   "s": 464481,
+   "h": "baa9c73135"
+  },
+  {
+   "p": "audio/music/boss-immortel-dechu-des-branches-b.mp3",
+   "s": 464481,
+   "h": "665e10e57b"
+  },
+  {
+   "p": "audio/music/boss-immortel-dechu-des-branches.mp3",
+   "s": 464481,
+   "h": "6ecae0f080"
+  },
+  {
+   "p": "audio/music/boss-immortel-yun-zhong-celui-des-nuees-b.mp3",
+   "s": 464481,
+   "h": "1461d89983"
+  },
+  {
+   "p": "audio/music/boss-immortel-yun-zhong-celui-des-nuees.mp3",
+   "s": 464481,
+   "h": "a317ab87bd"
+  },
+  {
+   "p": "audio/music/boss-lion-cendre-gardien-du-sutra-b.mp3",
+   "s": 464481,
+   "h": "dfc23957d7"
+  },
+  {
+   "p": "audio/music/boss-lion-cendre-gardien-du-sutra.mp3",
+   "s": 464481,
+   "h": "3d5d89b6c3"
+  },
+  {
+   "p": "audio/music/boss-lion-gardien-fendu-b.mp3",
+   "s": 464481,
+   "h": "9923a84ed7"
+  },
+  {
+   "p": "audio/music/boss-lion-gardien-fendu.mp3",
+   "s": 464481,
+   "h": "b048e654f2"
+  },
+  {
+   "p": "audio/music/boss-long-du-tonnerre-sourd-b.mp3",
+   "s": 464481,
+   "h": "ac3b98888a"
+  },
+  {
+   "p": "audio/music/boss-long-du-tonnerre-sourd.mp3",
+   "s": 464481,
+   "h": "934c281fab"
+  },
+  {
+   "p": "audio/music/boss-maitre-hong-gang-le-gong-de-cuivre-b.mp3",
+   "s": 464481,
+   "h": "ea267597ca"
+  },
+  {
+   "p": "audio/music/boss-maitre-hong-gang-le-gong-de-cuivre.mp3",
+   "s": 464481,
+   "h": "53e45f8646"
+  },
+  {
+   "p": "audio/music/boss-maitre-tie-bi-le-bras-de-fer-b.mp3",
+   "s": 464481,
+   "h": "ff100f803d"
+  },
+  {
+   "p": "audio/music/boss-maitre-tie-bi-le-bras-de-fer.mp3",
+   "s": 464481,
+   "h": "eb6c6c6ec6"
+  },
+  {
+   "p": "audio/music/boss-maitresse-tong-la-lame-de-bronze-b.mp3",
+   "s": 464481,
+   "h": "3b78fb2b03"
+  },
+  {
+   "p": "audio/music/boss-maitresse-tong-la-lame-de-bronze.mp3",
+   "s": 464481,
+   "h": "f353d745fc"
+  },
+  {
+   "p": "audio/music/boss-pretresse-de-givre-b.mp3",
+   "s": 464481,
+   "h": "817b6cd983"
+  },
+  {
+   "p": "audio/music/boss-pretresse-de-givre.mp3",
+   "s": 464481,
+   "h": "ca64ceddc1"
+  },
+  {
+   "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or-b.mp3",
+   "s": 464481,
+   "h": "4d63924cd5"
+  },
+  {
+   "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or.mp3",
+   "s": 464481,
+   "h": "c382e0ac9a"
+  },
+  {
+   "p": "audio/music/boss-serpent-de-maree-b.mp3",
+   "s": 464481,
+   "h": "7fc6b477f0"
+  },
+  {
+   "p": "audio/music/boss-serpent-de-maree.mp3",
+   "s": 464481,
+   "h": "4fbaa5f8d0"
+  },
+  {
+   "p": "audio/music/boss-serpent-des-marees-noires-b.mp3",
+   "s": 464481,
+   "h": "21f49571bf"
+  },
+  {
+   "p": "audio/music/boss-serpent-des-marees-noires.mp3",
+   "s": 464481,
+   "h": "f6f1ae859f"
+  },
+  {
+   "p": "audio/music/boss-soleil-ardent-b.mp3",
+   "s": 464481,
+   "h": "4c08bb028e"
+  },
+  {
+   "p": "audio/music/boss-soleil-ardent.mp3",
+   "s": 464481,
+   "h": "ecda4a4b27"
+  },
+  {
+   "p": "audio/music/boss-soleil-de-cendres-b.mp3",
+   "s": 464481,
+   "h": "db2a81417d"
+  },
+  {
+   "p": "audio/music/boss-soleil-de-cendres.mp3",
+   "s": 464481,
+   "h": "3bac4c7855"
+  },
+  {
+   "p": "audio/music/boss-soleil-de-magma-b.mp3",
+   "s": 464481,
+   "h": "f8cc9a0bf6"
+  },
+  {
+   "p": "audio/music/boss-soleil-de-magma.mp3",
+   "s": 464481,
+   "h": "4723fc9cc0"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-betes-folles-b.mp3",
+   "s": 464481,
+   "h": "97f089a6ba"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-betes-folles.mp3",
+   "s": 464481,
+   "h": "46042e22c6"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-eaux-taries-b.mp3",
+   "s": 464481,
+   "h": "e96c1c32ed"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-eaux-taries.mp3",
+   "s": 464481,
+   "h": "f9c7519919"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-marees-b.mp3",
+   "s": 464481,
+   "h": "67d6ccc83a"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-marees.mp3",
+   "s": 464481,
+   "h": "566bf49130"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-mirages-b.mp3",
+   "s": 464481,
+   "h": "9120dadb0a"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-mirages.mp3",
+   "s": 464481,
+   "h": "e410a54254"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-orages-b.mp3",
+   "s": 464481,
+   "h": "d7d0e49b57"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-orages.mp3",
+   "s": 464481,
+   "h": "516a56a66c"
+  },
+  {
+   "p": "audio/music/boss-soleil-lache-b.mp3",
+   "s": 464481,
+   "h": "782d55b4d2"
+  },
+  {
+   "p": "audio/music/boss-soleil-lache.mp3",
+   "s": 464481,
+   "h": "ff1006959a"
+  },
+  {
+   "p": "audio/music/boss-tigre-alpha-griffe-de-feu-b.mp3",
+   "s": 464481,
+   "h": "81b495aa8c"
+  },
+  {
+   "p": "audio/music/boss-tigre-alpha-griffe-de-feu.mp3",
+   "s": 464481,
+   "h": "e14b8723bf"
+  },
+  {
+   "p": "audio/music/boss-tigre-blanc-des-ancetres-b.mp3",
+   "s": 464481,
+   "h": "a5086bb61c"
+  },
+  {
+   "p": "audio/music/boss-tigre-blanc-des-ancetres.mp3",
+   "s": 464481,
+   "h": "cf84b9d5ff"
+  },
+  {
+   "p": "audio/music/boss-tortue-des-boues-gardienne-du-terrier-b.mp3",
+   "s": 464481,
+   "h": "09f202cf17"
+  },
+  {
+   "p": "audio/music/boss-tortue-des-boues-gardienne-du-terrier.mp3",
+   "s": 464481,
+   "h": "115a1fa1cd"
+  },
+  {
+   "p": "audio/music/boss-wu-gang-spectre-du-cassia-lunaire-b.mp3",
+   "s": 464481,
+   "h": "0f2eac4773"
+  },
+  {
+   "p": "audio/music/boss-wu-gang-spectre-du-cassia-lunaire.mp3",
+   "s": 464481,
+   "h": "b53bad268f"
+  },
+  {
+   "p": "audio/music/combat-0-b.mp3",
+   "s": 464481,
+   "h": "677dbca490"
+  },
+  {
+   "p": "audio/music/combat-0.mp3",
+   "s": 464481,
+   "h": "d7a7540b67"
+  },
+  {
+   "p": "audio/music/combat-1-b.mp3",
+   "s": 464481,
+   "h": "df467ac2b8"
+  },
+  {
+   "p": "audio/music/combat-1.mp3",
+   "s": 464481,
+   "h": "a012c7d696"
+  },
+  {
+   "p": "audio/music/combat-2-b.mp3",
+   "s": 464481,
+   "h": "18c9588544"
+  },
+  {
+   "p": "audio/music/combat-2.mp3",
+   "s": 464481,
+   "h": "ba81c93693"
+  },
+  {
+   "p": "audio/music/combat-3-b.mp3",
+   "s": 464481,
+   "h": "3d0e395777"
+  },
+  {
+   "p": "audio/music/combat-3.mp3",
+   "s": 464481,
+   "h": "0431d3fd30"
+  },
+  {
+   "p": "audio/music/combat-4-b.mp3",
+   "s": 464481,
+   "h": "6ead901547"
+  },
+  {
+   "p": "audio/music/combat-4.mp3",
+   "s": 464481,
+   "h": "a2faee5ee8"
+  },
+  {
+   "p": "audio/music/defeat-b.mp3",
+   "s": 464481,
+   "h": "9d30ba2a9e"
+  },
+  {
+   "p": "audio/music/defeat.mp3",
+   "s": 464481,
+   "h": "b580455b16"
+  },
+  {
+   "p": "audio/music/ending-b.mp3",
+   "s": 464481,
+   "h": "2ece5df3ee"
+  },
+  {
+   "p": "audio/music/ending.mp3",
+   "s": 464481,
+   "h": "1317f36e17"
+  },
+  {
+   "p": "audio/music/house-b.mp3",
+   "s": 464481,
+   "h": "66e7bbd4e1"
+  },
+  {
+   "p": "audio/music/house.mp3",
+   "s": 464481,
+   "h": "3ab53e475d"
+  },
+  {
+   "p": "audio/music/menu-b.mp3",
+   "s": 464481,
+   "h": "ce2a978cb0"
+  },
+  {
+   "p": "audio/music/menu.mp3",
+   "s": 464481,
+   "h": "c27279c1b6"
+  },
+  {
+   "p": "audio/music/moon-b.mp3",
+   "s": 464481,
+   "h": "95b343b9bb"
+  },
+  {
+   "p": "audio/music/moon.mp3",
+   "s": 464481,
+   "h": "54f0b69146"
+  },
+  {
+   "p": "audio/music/sanctuary-b.mp3",
+   "s": 464481,
+   "h": "cc521b8bbd"
+  },
+  {
+   "p": "audio/music/sanctuary.mp3",
+   "s": 464481,
+   "h": "e6f708566c"
+  },
+  {
+   "p": "audio/music/title-b.mp3",
+   "s": 464481,
+   "h": "548f4cfb47"
+  },
+  {
+   "p": "audio/music/title.mp3",
+   "s": 464481,
+   "h": "25ccd2f987"
+  },
+  {
+   "p": "audio/music/victory-b.mp3",
+   "s": 464481,
+   "h": "baa72fc983"
+  },
+  {
+   "p": "audio/music/victory.mp3",
+   "s": 464481,
+   "h": "4b1fc5145d"
+  },
+  {
+   "p": "audio/music/village-bamboo-b.mp3",
+   "s": 464481,
+   "h": "596f9ef7c3"
+  },
+  {
+   "p": "audio/music/village-bamboo.mp3",
+   "s": 464481,
+   "h": "56d9c9f883"
+  },
+  {
+   "p": "audio/music/village-coast-b.mp3",
+   "s": 464481,
+   "h": "742d03bd2e"
+  },
+  {
+   "p": "audio/music/village-coast.mp3",
+   "s": 464481,
+   "h": "e81628994d"
+  },
+  {
+   "p": "audio/music/village-fusang-b.mp3",
+   "s": 464481,
+   "h": "5bc119599d"
+  },
+  {
+   "p": "audio/music/village-fusang.mp3",
+   "s": 464481,
+   "h": "6d8a55dc8b"
+  },
+  {
+   "p": "audio/music/village-gobi-b.mp3",
+   "s": 464481,
+   "h": "0504322fdd"
+  },
+  {
+   "p": "audio/music/village-gobi.mp3",
+   "s": 464481,
+   "h": "9708ccd1db"
+  },
+  {
+   "p": "audio/music/village-moon-b.mp3",
+   "s": 464481,
+   "h": "690a370a43"
+  },
+  {
+   "p": "audio/music/village-moon.mp3",
+   "s": 464481,
+   "h": "967793ea4f"
+  },
+  {
+   "p": "audio/music/village-paddy-b.mp3",
+   "s": 464481,
+   "h": "e57551f044"
+  },
+  {
+   "p": "audio/music/village-paddy.mp3",
+   "s": 464481,
+   "h": "d217171539"
+  },
+  {
+   "p": "audio/music/village-riverbed-b.mp3",
+   "s": 464481,
+   "h": "96c9a2baf0"
+  },
+  {
+   "p": "audio/music/village-riverbed.mp3",
+   "s": 464481,
+   "h": "55dc42aa70"
+  },
+  {
+   "p": "audio/music/village-savanna-b.mp3",
+   "s": 464481,
+   "h": "647cc80ffd"
+  },
+  {
+   "p": "audio/music/village-savanna.mp3",
+   "s": 464481,
+   "h": "4031901dc1"
+  },
+  {
+   "p": "audio/music/village-storm-b.mp3",
+   "s": 464481,
+   "h": "39443c165b"
+  },
+  {
+   "p": "audio/music/village-storm.mp3",
+   "s": 464481,
+   "h": "d4c57e5a16"
+  },
+  {
+   "p": "audio/music/village-volcano-b.mp3",
+   "s": 464481,
+   "h": "c60098731f"
+  },
+  {
+   "p": "audio/music/village-volcano.mp3",
+   "s": 464481,
+   "h": "b5ce7d3e74"
+  },
+  {
+   "p": "audio/music/wild-bamboo-b.mp3",
+   "s": 464481,
+   "h": "cb843d6e68"
+  },
+  {
+   "p": "audio/music/wild-bamboo.mp3",
+   "s": 464481,
+   "h": "3541482e2c"
+  },
+  {
+   "p": "audio/music/wild-coast-b.mp3",
+   "s": 464481,
+   "h": "9ef177dcd0"
+  },
+  {
+   "p": "audio/music/wild-coast.mp3",
+   "s": 464481,
+   "h": "f36507ffa3"
+  },
+  {
+   "p": "audio/music/wild-fusang-b.mp3",
+   "s": 464481,
+   "h": "358876eab5"
+  },
+  {
+   "p": "audio/music/wild-fusang.mp3",
+   "s": 464481,
+   "h": "6a70baba34"
+  },
+  {
+   "p": "audio/music/wild-gobi-b.mp3",
+   "s": 464481,
+   "h": "ddf1b6ff15"
+  },
+  {
+   "p": "audio/music/wild-gobi.mp3",
+   "s": 464481,
+   "h": "0a9d301c84"
+  },
+  {
+   "p": "audio/music/wild-moon-b.mp3",
+   "s": 464481,
+   "h": "0d83ffe31d"
+  },
+  {
+   "p": "audio/music/wild-moon.mp3",
+   "s": 464481,
+   "h": "51c7c573aa"
+  },
+  {
+   "p": "audio/music/wild-paddy-b.mp3",
+   "s": 464481,
+   "h": "cc2e2ee4b9"
+  },
+  {
+   "p": "audio/music/wild-paddy.mp3",
+   "s": 464481,
+   "h": "1ff2037dff"
+  },
+  {
+   "p": "audio/music/wild-riverbed-b.mp3",
+   "s": 464481,
+   "h": "9b529f1e97"
+  },
+  {
+   "p": "audio/music/wild-riverbed.mp3",
+   "s": 464481,
+   "h": "bde86c1581"
+  },
+  {
+   "p": "audio/music/wild-savanna-b.mp3",
+   "s": 464481,
+   "h": "9e0749f9f6"
+  },
+  {
+   "p": "audio/music/wild-savanna.mp3",
+   "s": 464481,
+   "h": "5f8a79d209"
+  },
+  {
+   "p": "audio/music/wild-storm-b.mp3",
+   "s": 464481,
+   "h": "5d9f9590f2"
+  },
+  {
+   "p": "audio/music/wild-storm.mp3",
+   "s": 464481,
+   "h": "944f4e9984"
+  },
+  {
+   "p": "audio/music/wild-volcano-b.mp3",
+   "s": 464481,
+   "h": "1352fdc8e2"
+  },
+  {
+   "p": "audio/music/wild-volcano.mp3",
+   "s": 464481,
+   "h": "ee7d1f79c0"
+  }
+ ]
+}

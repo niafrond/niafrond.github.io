@@ -8,6 +8,15 @@ import { isLowObstacle } from '../decor.js';
 const key = (x, y) => `${x},${y}`;
 const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
 
+// Grille w×h (1 = case couverte par l'un des rectangles) : un test de case devient une lecture au lieu d'un parcours de tous les rectangles.
+function rectGrid(screen, rects) {
+    const grid = new Uint8Array(screen.w * screen.h);
+    (rects || []).forEach(([rx, ry, rw, rh]) => {
+        for (let y = Math.max(0, ry); y < Math.min(screen.h, ry + rh); y++) for (let x = Math.max(0, rx); x < Math.min(screen.w, rx + rw); x++) grid[y * screen.w + x] = 1;
+    });
+    return grid;
+}
+
 export const JUNCTIONS = [
     // ── Objet à rapporter à un garde (village → zone sauvage) ─────────────────────────────────────────────────
     {
@@ -123,26 +132,28 @@ function hashSeed(text) {
     return h >>> 0;
 }
 
-// Occupation d'un écran (terrain bloquant, entités, sorties, cases d'arrivée).
+// Occupation d'un écran (terrain bloquant, entités, sorties, cases d'arrivée). Instantané : à reconstruire après avoir posé un obstacle.
 export function occupancy(screen, screens) {
     const taken = new Set([
         ...screen.npcs, ...screen.chests, ...screen.enemies, ...(screen.waypoint ? [screen.waypoint] : []), ...(screen.spawn ? [screen.spawn] : []),
         ...screen.exits
     ].map(e => key(e.x, e.y)));
     Object.values(screens).forEach(s => s.exits.forEach(e => { if (e.to === screen.id && e.arrive) taken.add(key(e.arrive.x, e.arrive.y)); }));
-    const blocked = (x, y) => x < 0 || y < 0 || x >= screen.w || y >= screen.h
-        || inRects(screen.obstacles, x, y) || inRects(screen.liquids, x, y);
+    const { w, h } = screen;
+    const solid = rectGrid(screen, screen.obstacles), liquid = rectGrid(screen, screen.liquids);
+    const blocked = (x, y) => x < 0 || y < 0 || x >= w || y >= h || solid[y * w + x] === 1 || liquid[y * w + x] === 1;
     // cases atteignables à pied depuis l'apparition (les entités sont posées seulement là où le héros peut aller)
-    const reach = new Set([key(screen.spawn.x, screen.spawn.y)]);
+    const reach = new Uint8Array(w * h);
     const queue = [screen.spawn];
-    while (queue.length) {
-        const p = queue.shift();
+    reach[screen.spawn.y * w + screen.spawn.x] = 1;
+    for (let head = 0; head < queue.length; head++) {
+        const p = queue[head];
         [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
             const nx = p.x + dx, ny = p.y + dy;
-            if (!reach.has(key(nx, ny)) && !blocked(nx, ny)) { reach.add(key(nx, ny)); queue.push({ x: nx, y: ny }); }
+            if (!blocked(nx, ny) && !reach[ny * w + nx]) { reach[ny * w + nx] = 1; queue.push({ x: nx, y: ny }); }
         });
     }
-    const free = (x, y) => !blocked(x, y) && !taken.has(key(x, y)) && reach.has(key(x, y));
+    const free = (x, y) => !blocked(x, y) && !taken.has(key(x, y)) && reach[y * w + x] === 1;
     const openNeighbors = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => !blocked(x + dx, y + dy)).length;
     return { taken, blocked, free, openNeighbors };
 }
@@ -183,14 +194,16 @@ export function addPillarsAroundGuard(screen, door, guard, sealed = false) {
     screen.pillars = screen.pillars || [];
     // un pilier ne doit jamais couper un chemin : on ne le pose que si tout ce qui était atteignable à pied le reste (le gardien ne bloque pas ce calcul)
     const solid = new Set([...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => e !== guard), ...screen.exits, ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
+    const { w, h } = screen;
+    const rock = rectGrid(screen, screen.obstacles), water = rectGrid(screen, screen.liquids);
     const reachCount = () => {
         const seen = new Set([key(screen.spawn.x, screen.spawn.y)]), queue = [screen.spawn];
-        while (queue.length) {
-            const p = queue.shift();
+        for (let head = 0; head < queue.length; head++) {
+            const p = queue[head];
             [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
                 const nx = p.x + dx, ny = p.y + dy;
-                if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || seen.has(key(nx, ny)) || solid.has(key(nx, ny))) return;
-                if (inRects(screen.obstacles, nx, ny) || inRects(screen.liquids, nx, ny)) return;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h || seen.has(key(nx, ny)) || solid.has(key(nx, ny))) return;
+                if (rock[ny * w + nx] === 1 || water[ny * w + nx] === 1) return;
                 seen.add(key(nx, ny)); queue.push({ x: nx, y: ny });
             });
         }
@@ -200,12 +213,13 @@ export function addPillarsAroundGuard(screen, door, guard, sealed = false) {
     const touched = seen => targets.filter(t => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(t.x + dx, t.y + dy)))).length;
     cells.forEach(p => {
         if (p.x < 0 || p.y < 0 || p.x >= screen.w || p.y >= screen.h) return;
-        if (inRects(screen.obstacles, p.x, p.y)) return;
+        if (rock[p.y * w + p.x] === 1) return;
         const before = reachCount(), touchedBefore = touched(before);
         screen.obstacles.push([p.x, p.y, 1, 1]);
+        rock[p.y * w + p.x] = 1;
         // la case du pilier n'est plus atteignable (−1) ; au-delà, ou si une entité devient inaccessible, un chemin a été coupé : on retire le pilier
         const after = reachCount();
-        if (after.size < before.size - 1 || touched(after) < touchedBefore) { screen.obstacles.pop(); return; }
+        if (after.size < before.size - 1 || touched(after) < touchedBefore) { screen.obstacles.pop(); rock[p.y * w + p.x] = 0; return; }
         screen.pillars.push([p.x, p.y]);
     });
     return true;
@@ -254,8 +268,9 @@ function placeNearGate(screen, gate, occ, depths, laterals) {
 export function placeInLand(screen, occ, seedText) {
     const exits = screen.exits.filter(e => !e.door);
     const cells = [];
+    const pathGrid = rectGrid(screen, screen.paths);
     for (let x = 1; x < screen.w - 1; x++) for (let y = 1; y < screen.h - 1; y++) {
-        if (!occ.free(x, y) || occ.openNeighbors(x, y) < 3 || inRects(screen.paths, x, y)) continue;
+        if (!occ.free(x, y) || occ.openNeighbors(x, y) < 3 || pathGrid[y * screen.w + x] === 1) continue;
         const dist = Math.min(...exits.map(e => Math.abs(e.x - x) + Math.abs(e.y - y)), 99);
         if (dist < 4) continue;
         cells.push({ x, y, dist });

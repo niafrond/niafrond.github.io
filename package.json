@@ -10,6 +10,7 @@
     "test:e2e": "playwright test",
     "test": "npm run test:unit",
     "audio:build": "node match3-quest/tools/audio/render.mjs",
+    "precache:build": "node match3-quest/tools/precache-manifest.mjs",
     "start": " serve -l 8080 ",
     "start:local": " serve -l 8000 "
   },
