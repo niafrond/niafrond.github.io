@@ -1,3 +1,9 @@
+## [2.113.0](https://github.com/niafrond/niafrond.github.io/compare/v2.112.0...v2.113.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** ajouter le collier du voile d'ombre, indétectable par les ennemis ([#524](https://github.com/niafrond/niafrond.github.io/issues/524)) ([ab84ee5](https://github.com/niafrond/niafrond.github.io/commit/ab84ee5fb89c997404b3045d14dd47ebc6c19772))
+
 ## [2.112.0](https://github.com/niafrond/niafrond.github.io/compare/v2.111.0...v2.112.0) (2026-10-22)
 
 ### Features
