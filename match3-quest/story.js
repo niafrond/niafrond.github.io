@@ -1176,6 +1176,34 @@ const BASE_SCREENS = {
         ]
     },
 
+    // ── 9 bis. Hautes-Eaux de la Lune Montante : autel de Mazu (world/maps/marees.js, world/PLAN-MAREES.md) ──
+    // Sanctuaire sans soleil : Changxi, mère des douze lunes, y dort ; l'épreuve de bravoure ouvre le passage vers la Lune.
+    marees: {
+        id: 'marees', region: 'marees', name: 'Autel de Mazu', biome: 'coast',
+        w: 14, h: 10, spawn: { x: 1, y: 5 },
+        arrival: [
+            "Au bout des pontons, un petit pavillon laqué flotte sur l'eau noire : l'autel de Mazu et du Dragon-Roi. Des lanternes rouges s'y reflètent par dizaines.",
+            "Une femme immense y dort, pelotonnée contre la balustrade, des lunes pâles tournant lentement autour de sa tête. Personne n'ose la réveiller."
+        ],
+        obstacles: [[0, 0, 14, 2], [0, 8, 14, 2]],
+        liquids: [],
+        paths: [[0, 5, 14, 1]],
+        exits: [
+            { x: 0, y: 5, to: 'fusang', arrive: { x: 12, y: 4 }, label: 'Gouffre des Mirages' },
+            {
+                x: 13, y: 5, to: 'lune', arrive: { x: 1, y: 4 }, label: 'Pic de la Lune',
+                requires: 'changxi',
+                lockedMessage: "Le chemin de lune ne s'ouvre pas tout seul : Changxi, mère des douze lunes, doit d'abord éprouver votre courage."
+            }
+        ],
+        npcs: [],
+        enemies: [
+            { id: 'changxi', templateId: 'changxi', name: 'Changxi, mère des douze lunes', kind: 'sentinel', x: 9, y: 5, offset: 0,
+              permanent: true, boss: { name: 'Changxi, mère des douze lunes', level: 41 } }
+        ],
+        chests: []
+    },
+
     // ── 10. Pic de la Lune : finale ──────────────────────────────────────────
     lune: {
         id: 'lune', region: 'lune', name: 'Pic de la Lune', biome: 'moon',
@@ -1279,6 +1307,7 @@ export const REGION_UNLOCK_LEVEL = {
     fauves: 27,
     mer: 32,
     fusang: 37,
+    marees: 38,
     lune: 40
 };
 
@@ -1516,10 +1545,30 @@ const BASE_QUESTS = [
         reward: { gold: 540, fragment: 'Éclat du Soleil Lâche' }
     },
     {
+        id: 'q_changxi',
+        title: "L'épreuve de Changxi",
+        chapter: 'Chapitre IX bis — Les Hautes-Eaux de la Lune Montante',
+        giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_9'],
+        objectives: [{ type: 'kill', target: 'changxi', text: "Prouver votre courage à Changxi, mère des douze lunes (Autel de Mazu, au bout des Hautes-Eaux)" }],
+        offer: [
+            "La grue blanche se penche vers vous : « La Lune est montée si haut que la mer a voulu la suivre. Entre le Fusang et le Pic, il n'y a plus de sentier : seulement des pontons, et l'eau noire qui les sépare. Il faudra marcher sur l'eau. »",
+            "« Au bout, une divinité dort sur l'autel de Mazu : Changxi, mère des douze lunes. Elle seule peut porter un homme jusqu'à la Lune. Elle ne vous veut aucun mal, archer : elle veut seulement savoir si vous osez. »"
+        ],
+        hint: [
+            "Les Hautes-Eaux sont à l'est du Fusang. Sans le Pas de Yu, l'eau reste infranchissable : le vieux Xu, à la digue, se souvient d'une tortue noire.",
+            "L'autel de Mazu est au bout des pontons. Changxi n'est pas un ennemi : c'est une épreuve de bravoure. Restez, et elle vous ouvrira le chemin de la Lune."
+        ],
+        complete: [
+            "Changxi se lève, immense, les douze lunes tournant autour de sa tête. Elle sourit : « Tu es resté. Peu restent. Va, archer : la Lune t'attend, et celle qui t'y attend plus encore. »",
+            "Le ciel se déchire d'argent, et un sentier de lumière monte de l'autel vers le Pic de la Lune."
+        ],
+        reward: { gold: 600, fragment: 'Larme de Changxi' }
+    },
+    {
         id: 'q_fengmeng',
         title: "L'Archer Miroir",
         chapter: 'Chapitre Final — Le Pic de la Lune',
-        giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_9'],
+        giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_changxi'],
         objectives: [{ type: 'kill', target: 'fengmeng_3b', text: 'Affronter Fengmeng au sommet du Pic de la Lune (duel en deux phases, à l\'est du Fusang)' }],
         offer: [
             "La grue blanche se pose sur la plus haute branche, un rouleau dans le bec : le sceau de la Reine Mère de l'Occident. « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir. »",
@@ -1932,6 +1981,6 @@ export const buildLegacyWorld = () => assembleWorld(BASE_SCREENS, BASE_QUESTS, u
 
 // Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.
 export const REGION_ENTRY_SCREEN = Object.fromEntries(
-    ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune']
+    ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'marees', 'lune']
         .map(region => [region, SCREENS[`${region}_village`] ? `${region}_village` : region])
 );

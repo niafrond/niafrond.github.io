@@ -93,6 +93,7 @@
   "world/maps/gobi.js",
   "world/maps/index.js",
   "world/maps/lune.js",
+  "world/maps/marees.js",
   "world/maps/mer.js",
   "world/maps/rizieres.js",
   "world/maps/tonnerre.js",
@@ -115,6 +116,7 @@
   "world/text/gobi.js",
   "world/text/index.js",
   "world/text/lune.js",
+  "world/text/marees.js",
   "world/text/mer.js",
   "world/text/merge.js",
   "world/text/rizieres.js",
@@ -136,6 +138,7 @@
   "sprites/cn/enemies-1.js",
   "sprites/cn/enemies-2.js",
   "sprites/cn/legends.js",
+  "sprites/cn/marees.js",
   "sprites/cn/suns.js",
   "sprites/tiles/tile-blue.svg",
   "sprites/tiles/tile-combat.svg",
@@ -1372,6 +1375,16 @@
    "p": "audio/music/boss-capitaine-noye-des-limons.mp3",
    "s": 464481,
    "h": "baa9c73135"
+  },
+  {
+   "p": "audio/music/boss-changxi-mere-des-douze-lunes-b.mp3",
+   "s": 464481,
+   "h": "2cbdaafa07"
+  },
+  {
+   "p": "audio/music/boss-changxi-mere-des-douze-lunes.mp3",
+   "s": 464481,
+   "h": "075fd9b715"
   },
   {
    "p": "audio/music/boss-chef-de-dune-bras-de-sable-b.mp3",

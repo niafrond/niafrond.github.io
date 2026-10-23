@@ -7,16 +7,16 @@
 import { SCREENS, QUESTS, REGION_ENTRY_SCREEN, REGION_UNLOCK_LEVEL } from '../../../story.js';
 import { createSession, questRegion, START_SCREEN } from '../../../exploration.js';
 
-export const REGIONS = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
+export const REGIONS = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'marees', 'lune'];
 // Boss principal de chaque région (le soleil, ou les deux phases de Fengmeng sur la Lune).
 export const REGION_BOSSES = {
     rizieres: ['sun_1'], fleuve: ['sun_2'], bambous: ['sun_3'], gobi: ['sun_4'], tonnerre: ['sun_5'],
-    volcan: ['fengmeng_2', 'sun_6'], fauves: ['sun_7'], mer: ['sun_8'], fusang: ['sun_9'], lune: ['fengmeng_3a', 'fengmeng_3b']
+    volcan: ['fengmeng_2', 'sun_6'], fauves: ['sun_7'], mer: ['sun_8'], fusang: ['sun_9'], marees: ['changxi'], lune: ['fengmeng_3a', 'fengmeng_3b']
 };
 // Quête principale qui valide la région.
 export const REGION_QUEST = {
     rizieres: 'q_sun_1', fleuve: 'q_sun_2', bambous: 'q_sun_3', gobi: 'q_sun_4', tonnerre: 'q_sun_5',
-    volcan: 'q_sun_6', fauves: 'q_sun_7', mer: 'q_sun_8', fusang: 'q_sun_9',
+    volcan: 'q_sun_6', fauves: 'q_sun_7', mer: 'q_sun_8', fusang: 'q_sun_9', marees: 'q_changxi',
     lune: 'q_fengmeng'   // le duel contre Fengmeng ; la quête finale (`final`) s'enchaîne ensuite toute seule
 };
 export const regionIndex = region => REGIONS.indexOf(region);

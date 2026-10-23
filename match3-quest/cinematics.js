@@ -1012,6 +1012,7 @@ export const REGION_SCENES = {
     fauves: ['#7a4a1c', '#e8b04a', '#a8783a', '#5a3a1c', '#fbe7b0'],
     mer: ['#0d3440', '#58a89f', '#1b5f68', '#0a2a34', '#b4dcd0'],
     fusang: ['#5a1d3a', '#ffb06b', '#a8504a', '#4a1830', '#ffd24a'],
+    marees: ['#0a2038', '#4a8fb0', '#1b4a6a', '#08172a', '#ffd9a0'],
     lune: ['#0b0b2b', '#3a3a90', '#2a2a70', '#141446', '#fff4c8']
 };
 

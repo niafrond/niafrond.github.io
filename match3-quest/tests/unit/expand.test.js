@@ -2,7 +2,9 @@
 // l'autre en sortant par un bord, comme aux jonctions des routes Pokémon.
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
-import { isTerrainBlocked, aggroOf } from '../../exploration.js';
+import { isTerrainBlocked as terrainBlocked, aggroOf } from '../../exploration.js';
+// Hautes-Eaux (world/PLAN-MAREES.md) : toute l'eau se franchit avec le Pas de Yu, comme dans un écran aquatique.
+const isTerrainBlocked = (s, x, y, swim) => terrainBlocked(s, x, y, swim ?? (s.aquatic || s.region === 'marees'));
 import { scaleScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
 import { openRim, WATER_BIOMES } from '../../world/barriers.js';
 import { exitsOf } from './fixtures/gates.js';
@@ -30,8 +32,8 @@ describe('cartes extérieures : grandes et reliées', () => {
     test('toutes les cartes extérieures sont grandes (≥ 350 cases) ; seuls les intérieurs restent petits', () => {
         // 10 sanctuaires + 10 zones sauvages + 9 hameaux + 10 villages + 2 cartes de mer (+ une route d'accès `_road` par région qui en a une)
         const roads = outdoors.filter(s => s.id.endsWith('_road'));
-        expect(roads.length).toBeLessThanOrEqual(9);   // rizieres, le point d'apparition, n'a pas de route
-        expect(outdoors.length).toBe(41 + roads.length);
+        expect(roads.length).toBeLessThanOrEqual(10);   // rizieres, le point d'apparition, n'a pas de route
+        expect(outdoors.length).toBe(44 + roads.length);
         outdoors.forEach(s => expect({ id: s.id, area: s.w * s.h >= 350 }).toEqual({ id: s.id, area: true }));
         Object.values(SCREENS).filter(s => s.interior || s.kind === 'house').forEach(s => expect(s.w * s.h).toBeLessThan(120));
     });

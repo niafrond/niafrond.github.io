@@ -139,14 +139,15 @@ export function validateGrass(config, label) {
  */
 export function buildGrass(g, config, label, forbidden = false) {
     if (config !== undefined && config !== null) validateGrass(config, label);
-    if (!g.grass.length) return null;
+    if (!g.grass.length && !config?.water) return null;
     if (forbidden) throw new Error(`${label} : hautes herbes (« " ») interdites dans un village, un hameau, un intérieur ou une arène`);
     if (!config) throw new Error(`${label} : cases de hautes herbes (« " ») sans table : ajouter « grass: { table: [...] } »`);
     return {
         cells: g.grass.map(r => [...r]),
         rate: config.rate ?? GRASS_DEFAULTS.rate,
         safeSteps: config.safeSteps ?? GRASS_DEFAULTS.safeSteps,
-        table: config.table.map(e => ({ ...e }))
+        table: config.table.map(e => ({ ...e })),
+        ...(config.water ? { water: true } : {})
     };
 }
 

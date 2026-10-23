@@ -71,7 +71,7 @@ export function grassOf(screen) {
     const g = screen?.grass;
     if (!g || screen.safe || screen.interior || screen.arena || screen.kind === 'arena') return null;
     const cells = Array.isArray(g.cells) ? g.cells.filter(r => Array.isArray(r) && r.length >= 4) : [];
-    if (cells.length === 0) return null;
+    if (cells.length === 0 && !g.water) return null;   // `water` : table propre à la carte, déclenchée par l'eau (world/maps/marees.js)
     const rate = Number.isFinite(g.rate) ? Math.min(1, Math.max(0, g.rate)) : GRASS_RATE;
     const safeSteps = Number.isInteger(g.safeSteps) && g.safeSteps >= 0 ? g.safeSteps : GRASS_SAFE_STEPS;
     const table = (Array.isArray(g.table) ? g.table : [])

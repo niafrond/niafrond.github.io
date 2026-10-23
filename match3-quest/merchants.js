@@ -14,7 +14,7 @@ import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 import { lootableStuff, getStuffById, baseStuffPrice, grantStuff } from './stuff.js';
 
-export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
+export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
 
 // Bonus d'enchères : plus c'est rare, plus c'est cher.
 export const PRICE_MULT = { common: 2, uncommon: 2.5, rare: 4, legendary: 8 };
@@ -42,6 +42,8 @@ export const MERCHANTS = [
       idle: ['Des perles, des coquillages, des armes repêchées là où personne ne retourne. Le prix inclut le courage.', 'La marée monte, mes tarifs aussi. Question de principe.'] },
     { id: 'merchant_fusang', region: 'fusang', name: 'Maître Tao', title: 'Marchand céleste',
       idle: ['Des reliques tombées de l\'Arbre Fusang. Elles brillent encore. Leur prix aussi, à vrai dire.', 'Les immortels paient comptant. Pourquoi pas vous ?'] },
+    { id: 'merchant_marees', region: 'marees', name: 'Maître Tang', title: 'Saunier des radeaux',
+      idle: ["Mon sel vient de la mer et y retourne. Entre-temps, il fait vivre trois familles : c'est le plus honnête des cycles.", "Le sel garde le poisson, le poisson garde le village. Moi, j'ai gardé les radeaux. Et mes tarifs."] },
     { id: 'merchant_lune', region: 'lune', name: 'Yutu le Lièvre', title: 'Marchand lunaire',
       idle: ['Pilons de jade, éclats de lune et trésors qu\'aucun mortel ne devrait posséder. Prix en conséquence.', 'Ici, on paie en or. Même la lune a des factures.'] }
 ];
@@ -57,7 +59,7 @@ export const TORCH = { id: 'torch', name: 'Torche', type: 'torch',
     description: 'Une torche de résine qui ne s\'éteint pas : elle éclaire largement les cavernes et les cryptes, où l\'on ne voit guère à plus d\'un pas.' };
 export const TORCH_PRICE = 400;
 // Vendue tardivement : le joueur traverse d'abord les souterrains à tâtons, puis revient avec la torche après avoir avancé dans l'intrigue.
-export const TORCH_MERCHANTS = ['merchant_fauves', 'merchant_mer', 'merchant_fusang', 'merchant_lune'];
+export const TORCH_MERCHANTS = ['merchant_fauves', 'merchant_mer', 'merchant_fusang', 'merchant_marees', 'merchant_lune'];
 export const MOUNT_OFFERS = { merchant_bambous: { id: 'horse', price: 480 } };
 
 export const MERCHANT_IDS = MERCHANTS.map(m => m.id);

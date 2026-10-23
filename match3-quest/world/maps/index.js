@@ -8,6 +8,7 @@ import volcan from './volcan.js';
 import fauves from './fauves.js';
 import mer from './mer.js';
 import fusang from './fusang.js';
+import marees from './marees.js';
 import lune from './lune.js';
 
-export const MAPS = { rizieres, fleuve, bambous, gobi, tonnerre, volcan, fauves, mer, fusang, lune };
+export const MAPS = { rizieres, fleuve, bambous, gobi, tonnerre, volcan, fauves, mer, fusang, marees, lune };

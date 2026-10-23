@@ -46,7 +46,7 @@ describe("collier d'ombre : indétectable, évite les combats (sauf boss)", () =
         expect(collar.slot).toBe('neck');
         expect(collar.quest).toBe(true);
         expect(lootableStuff()).not.toContain(collar);
-        expect(REGION_ORDER[REGION_ORDER.length - 2]).toBe('fusang');
+        expect(REGION_ORDER[REGION_ORDER.length - 3]).toBe('fusang');   // les Hautes-Eaux s'intercalent avant la Lune
         const quest = QUESTS.sq_collar_fusang || (Array.isArray(QUESTS) ? QUESTS.find(q => q.id === 'sq_collar_fusang') : null);
         expect(quest.reward.stuff).toBe(collar.id);
         const hero = { stuff: null, stuffOwned: [], maxHp: 50, hp: 50, level: 40 };

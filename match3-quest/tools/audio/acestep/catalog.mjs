@@ -163,6 +163,10 @@ const CELESTIAL = {
 };
 for (const [k, [s, bpm, key]] of Object.entries(CELESTIAL)) T(`boss-${k}`, `legendary celestial guardian boss battle, ${s}, ${BOSS_MOOD}, ${I.pipa}, ${BOSS_PERC}, readable heroic melody`, { bpm, keyScale: key, dur: 60 });
 
+/* ───────────── Boss : Changxi, mère des douze lunes (Hautes-Eaux, world/PLAN-MAREES.md §6) : épreuve de bravoure, plus solennelle que menaçante ───────────── */
+T('boss-changxi-mere-des-douze-lunes', `epic cinematic trial boss battle, Changxi mother of twelve moons testing the hero's courage on a moonlit sea altar, slow ceremonial gongs, xiao flute, muted wordless choir, deep guqin pulse, ${I.pipa}, ${BOSS_PERC}, solemn and majestic rather than cruel, tidal swells, tension then release, readable heroic melody`,
+    { bpm: 92, keyScale: 'E minor', dur: 60 });
+
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [
     'brute, heavy stomping drums and low erhu', 'swift hunter, fast pipa runs and dizi', 'mystic, sheng pads and guqin with eerie xiao',

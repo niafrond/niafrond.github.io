@@ -28,5 +28,11 @@ export const NAMED_ENEMIES = {
     taureau_braise: { desc: 'ember bull, powerful black bull with glowing orange cracks in its hide, horns red-hot like embers, smoke from the nostrils, pawing the ground ready to charge' },
     crabe_soldat: { desc: 'crab soldier, large red armored crab standing upright, one oversized blade-like pincer, small soldier helmet, barnacles on the shell, sea foam' },
     carpe_doree: { desc: 'golden carp spirit, big shimmering golden koi-like carp with long flowing fins and small dragon whiskers, jumping out of water, splashing droplets' },
+    // Hautes-Eaux de la Lune Montante (world/maps/marees.js)
+    shuimu_denglong: { desc: 'Chinese red paper-lantern jellyfish, translucent amber glowing bell shaped like a lantern, trailing ribbon tentacles, deep blue sea spirit' },
+    baoyu_jian: { desc: 'sleek swordfish spirit leaping, silver scales with storm-blue stripes, long sword-like bill, ink-wash cloud pattern, aggressive pose' },
+    lu_ci_gui: { desc: 'ghostly cormorant fisher bird, pale translucent feathers, straw ring around the neck, hollow glowing eyes, drowned spirit, wet dripping wings' },
+    hai_ma_xing: { desc: 'small armored seahorse rider with a bronze spear, foam crest, jade-green scales, Chinese sea cavalry soldier' },
+    changxi: { desc: 'Changxi, tall serene Chinese goddess, mother of twelve moons, flowing silver-white and indigo hanfu with wide sleeves, twelve small glowing pale moons orbiting her head, long black hair with jade ornaments, sleepy gentle face, calm upright stance' },
     tortue_dragon: { desc: 'dragon turtle, giant sleeping turtle with a dragon head, dark blue-green frosted shell covered in moss and small rocks, icy breath, closed heavy-lidded eyes' }
 };

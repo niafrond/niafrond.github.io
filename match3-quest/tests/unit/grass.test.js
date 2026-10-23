@@ -356,7 +356,7 @@ describe('données réelles du Grand Monde (garde-fou, vide tant qu\'aucune cart
     test('chaque `screen.grass` est exploitable : cellules, taux, table valide', () => {
         withGrass.forEach(sc => {
             const g = sc.grass;
-            expect(Array.isArray(g.cells) && g.cells.length > 0).toBe(true);
+            expect(Array.isArray(g.cells) && (g.cells.length > 0 || g.water === true)).toBe(true);   // `water` : l'eau fait office d'herbes (Hautes-Eaux)
             g.cells.forEach(([x, y, w, h]) => {
                 expect([x, y, w, h].every(Number.isInteger)).toBe(true);
                 expect(x >= 0 && y >= 0 && w >= 1 && h >= 1 && x + w <= sc.w && y + h <= sc.h).toBe(true);

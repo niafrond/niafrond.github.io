@@ -20,6 +20,9 @@ const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', im
 const templateIds = new Set(catalog.map(t => t.id));
 const screens = Object.values(SCREENS).filter(s => !s.arena);   // hors Arène (arena.test.js)
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// Régions marines (world/PLAN-MAREES.md) : toute l'eau est franchissable avec le Pas de Yu ; pas de hameau ni de patrouilleurs, leurs rencontres sont aquatiques et aléatoires.
+const WATER_REGIONS = new Set(['marees']);
+const onWater = screen => WATER_REGIONS.has(screen.region);
 
 function reach(screen, from, blocked = () => false) {
     const seen = new Set([`${from.x},${from.y}`]);
@@ -28,7 +31,7 @@ function reach(screen, from, blocked = () => false) {
         const { x, y } = queue.shift();
         for (const [dx, dy] of DIRS) {
             const nx = x + dx, ny = y + dy, key = `${nx},${ny}`;
-            if (seen.has(key) || isTerrainBlocked(screen, nx, ny) || blocked(nx, ny)) continue;
+            if (seen.has(key) || isTerrainBlocked(screen, nx, ny, onWater(screen)) || blocked(nx, ny)) continue;
             seen.add(key);
             queue.push({ x: nx, y: ny });
         }
@@ -115,10 +118,10 @@ describe('villageois générés', () => {
 describe('Grand Monde : cartes', () => {
     test('chaque région a un village, une zone sauvage et des maisons ; un hameau sauf lune', () => {
         REGION_ORDER.forEach(region => {
-            expect(Boolean(SCREENS[`${region}_hamlet`])).toBe(region !== 'lune');
+            expect(Boolean(SCREENS[`${region}_hamlet`])).toBe(region !== 'lune' && !WATER_REGIONS.has(region));
             expect(SCREENS[`${region}_village`]).toBeTruthy();
             expect(SCREENS[`${region}_wild`]).toBeTruthy();
-            expect(screens.filter(s => s.region === region && s.interior).length).toBeGreaterThanOrEqual(region === 'lune' ? 3 : 6);
+            expect(screens.filter(s => s.region === region && s.interior).length).toBeGreaterThanOrEqual(region === 'lune' || WATER_REGIONS.has(region) ? 3 : 6);
             expect(REGION_ENTRY_SCREEN[region]).toBe(`${region}_village`);
         });
     });
@@ -210,7 +213,7 @@ describe('Grand Monde : cartes', () => {
     test('wild : 5 à 9 ennemis (≥ 2 patrouilleurs ; natif : 8 à 14, ≥ 3), gabarits connus, pas près de l\'entrée', () => {
         REGION_ORDER.forEach(region => {
             const wild = SCREENS[`${region}_wild`];
-            const [min, max, patrols] = wild.native ? [8, 14, 3] : [5, 10, 2];
+            const [min, max, patrols] = WATER_REGIONS.has(region) ? [2, 6, 0] : wild.native ? [8, 14, 3] : [5, 10, 2];
             expect({ id: wild.id, n: wild.enemies.length >= min && wild.enemies.length <= max }).toEqual({ id: wild.id, n: true });
             expect({ id: wild.id, patrols: wild.enemies.filter(e => e.kind === 'patrol').length >= patrols }).toEqual({ id: wild.id, patrols: true });
             noEnemyNearEntry(wild);
@@ -223,7 +226,7 @@ describe('Grand Monde : cartes', () => {
             expect(road.kind).toBe('wild');
             expect(road.id).toBe(`${road.region}_road`);
             expect({ id: road.id, n: road.enemies.length >= 3 && road.enemies.length <= 6 }).toEqual({ id: road.id, n: true });
-            expect({ id: road.id, patrols: road.enemies.filter(e => e.kind === 'patrol').length >= 1 }).toEqual({ id: road.id, patrols: true });
+            if (!WATER_REGIONS.has(road.region)) expect({ id: road.id, patrols: road.enemies.filter(e => e.kind === 'patrol').length >= 1 }).toEqual({ id: road.id, patrols: true });
             noEnemyNearEntry(road);
         });
     });
@@ -242,6 +245,11 @@ describe('Grand Monde : cartes', () => {
         });
         screens.filter(s => s.native && /_(wild|road)$/.test(s.id)).forEach(s => {
             expect({ id: s.id, grass: Boolean(s.grass) }).toEqual({ id: s.id, grass: true });
+            if (onWater(s)) {   // l'eau fait office de hautes herbes : table propre à la carte + grande étendue d'eau
+                expect({ id: s.id, water: s.grass.water === true }).toEqual({ id: s.id, water: true });
+                expect({ id: s.id, water: s.liquids.reduce((n, [, , w, h]) => n + w * h, 0) >= 300 }).toEqual({ id: s.id, water: true });
+                return;
+            }
             const cells = new Set();
             s.grass.cells.forEach(([x, y, w, h]) => { for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) cells.add(`${x + i},${y + j}`); });
             const seen = reach(s, s.spawn);
@@ -278,6 +286,31 @@ describe('Grand Monde : cartes', () => {
             const where = isEnemy ? screens.find(s => s.enemies.some(e => e.id === id)) : isChest ? screens.find(s => s.chests.some(c => c.id === id)) : null;
             if (where) expect(where.region === region && where.id !== region).toBe(true);
         });
+    });
+});
+
+describe('Grand Monde : régions marines (Hautes-Eaux)', () => {
+    const road = SCREENS.marees_road;
+    test("sans le Pas de Yu, seules la digue et le premier ponton sont atteignables ; avec, toute la zone l'est", () => {
+        const dry = reach({ ...road, region: 'terre' }, road.spawn);
+        const wet = reach(road, road.spawn);
+        const exitToVillage = exitsOf(road, SCREENS).find(e => e.to === 'marees_village');
+        expect(DIRS.some(([dx, dy]) => dry.has(`${exitToVillage.x + dx},${exitToVillage.y + dy}`))).toBe(false);
+        expect(DIRS.some(([dx, dy]) => wet.has(`${exitToVillage.x + dx},${exitToVillage.y + dy}`))).toBe(true);
+        expect(dry.size).toBeLessThan(wet.size / 5);
+        // le PNJ d'indice est atteignable sans le sort (il est sur la digue)
+        const xu = road.npcs.find(n => n.id === 'marees_road_xu');
+        expect(DIRS.some(([dx, dy]) => dry.has(`${xu.x + dx},${xu.y + dy}`))).toBe(true);
+    });
+    test("toute l'eau des zones de combat déclenche des rencontres aquatiques, les pontons et le village aucune", () => {
+        ['marees_road', 'marees_wild'].forEach(id => {
+            const s = SCREENS[id];
+            expect(s.grass.water).toBe(true);
+            s.grass.table.forEach(e => expect(templateIds.has(e.templateId)).toBe(true));
+        });
+        expect(SCREENS.marees_village.grass).toBeUndefined();
+        expect(SCREENS.marees_road.aquatic).toBeFalsy();   // jamais aquatic : le verrou serait levé
+        expect(SCREENS.marees_wild.aquatic).toBeFalsy();
     });
 });
 
@@ -456,7 +489,7 @@ describe('Grand Monde : jeu', () => {
     test('progression par région', () => {
         const session = fresh();
         const rows = regionProgress(session);
-        expect(rows).toHaveLength(10);
+        expect(rows).toHaveLength(11);
         expect(rows[0]).toMatchObject({ region: 'rizieres', visited: true, stonesFound: 1 });
         expect(rows[0].chestsTotal).toBeGreaterThan(3);
     });

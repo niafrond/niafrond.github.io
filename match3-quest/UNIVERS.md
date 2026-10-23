@@ -35,6 +35,7 @@ Une région = **un écran** (14×10) contenant un coin village (PNJ, quêtes) et
 | 7 | `fauves` | Plaine des Fauves | 27 | `savanna` | `sun_7` Soleil des Bêtes Folles | Meutes embrasées : le soleil est **protégé** tant que la meute n'est pas abattue |
 | 8 | `mer` | Rivage de la Mer Orientale | 32 | `coast` | `sun_8` Soleil des Marées | Pêcheurs, envoyé du Roi-Dragon |
 | 9 | `fusang` | Cime du Fusang | 37 | `fusang` | `sun_9` Soleil Lâche | Il utilise le 10ᵉ soleil (PNJ `sun_ten`) comme bouclier : tir de précision, **ne pas toucher le dernier soleil** |
+| 9 bis | `marees` | Hautes-Eaux de la Lune Montante | 38 | `coast` | `changxi` Changxi, mère des douze lunes (épreuve de bravoure, pas de soleil) | Région **marine** : digue, pontons de bois, village de pêcheurs sur pilotis (Shuiyu-sous-l'Eau). Toute l'eau déclenche des rencontres aquatiques et ne se franchit qu'avec le Pas de Yu (`sq_pas_de_yu`) ; le Vieux Xu, sur la digue, en donne un indice incomplet. Dossier : `world/PLAN-MAREES.md` |
 | 10 | `lune` | Pic de la Lune | 40 | `moon` | — | Finale : Chang'e, **Fengmeng, boss final en 2 phases**, autel des gâteaux de lune, épilogue, NG+ |
 
 Niveaux des soleils (`boss.level`, niveau de base ; `weakenedBy` en retire jusqu'à 2), dans l'ordre d'abattage : `sun_1` 6, `sun_6` 9, `sun_4` 14, `sun_2` 19, `sun_3` 24,

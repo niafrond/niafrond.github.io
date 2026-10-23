@@ -1,6 +1,6 @@
 # Plan : nouveau biome marin « Les Hautes-Eaux de la Lune Montante » (`marees`)
 
-Statut : **préparation, rien n'est implémenté.** Dossier narratif rédigé par l'agent Scénario (§5), faisabilité technique vérifiée dans le code (§2).
+Statut : **implémenté (23/10/2026), voir SPECS.md.** Écarts avec ce plan : zone 1 = `marees_road`, zone 3 = `marees_wild` (le format de région impose route → village → zone sauvage → sanctuaire) ; gate de la zone 3 = coffre `marees_compass_chest` ; quête principale `q_changxi`. Dossier narratif rédigé par l'agent Scénario (§5), faisabilité technique vérifiée dans le code (§2).
 Décisions de l'utilisateur : le sort requis est le **Pas de Yu existant** (quête `sq_pas_de_yu`, Gui à Hekou) ; la région se place **entre `fusang` (niv. 37) et `lune` (niv. 40)**, niveau conseillé **38**.
 
 ## 1. Cahier des charges
@@ -20,9 +20,9 @@ Décisions de l'utilisateur : le sort requis est le **Pas de Yu existant** (quê
 
 **Point d'attention majeur (écart avec l'agent Scénario).** Ne PAS marquer `marees_wild` `aquatic: true` : un écran aquatique rend l'eau toujours franchissable (`isTerrainBlocked`, exploration.js ~l.171) et casserait le verrou voulu. On utilise une carte ordinaire dont les `liquids` sont l'eau, avec la table de rencontres de la carte.
 
-**Chaîne d'écrans proposée.**
-`fusang` (sanctuaire) → `marees_road` (**Digue des Dernières Racines**, sûre, PNJ d'indice) → `marees_wild` (**Haute Mer des Pontons**, eau + pontons) → `marees_village` (**Shuiyu-sous-l'Eau**) → `marees` (**Autel de Mazu**, petit sanctuaire sans soleil, comme `lune`) → `lune_village`.
-Sans Pas de Yu, le joueur ne dépasse pas la digue ni les pontons d'entrée : il reste l'indice du PNJ, un message de verrou clair et le voyage rapide vers `fleuve_village`.
+**Chaîne d'écrans proposée (trois zones, comme les autres régions).**
+`fusang` (sanctuaire) → **zone 1, exploration + combat** `marees_wild` (**Haute Mer des Pontons** : démarre par la **Digue des Dernières Racines**, bande sûre avec le PNJ d'indice Vieux Xu, puis eau-herbe et pontons de repos) → **zone 2, village sans combat** `marees_village` (**Shuiyu-sous-l'Eau**, écran `safe`, intérieurs sans rencontre) → **zone 3, exploration + combat vers le boss** `marees_deep` (**Gouffre des Mirages** : eau plus dense, moins de pontons, ennemis plus forts, chemin de pontons qui mène à l'autel) → `marees` (sanctuaire **Autel de Mazu**, gardé par Shen s'il est retenu ; petit sanctuaire sans soleil, comme `lune`) → `lune_village`.
+Chaque zone de combat a sa propre table de rencontres (`marees_wild`, `marees_deep`) et reste une carte ordinaire à `liquids` (jamais `aquatic`). Sans Pas de Yu, le joueur ne dépasse pas la digue ni le premier ponton de la zone 1 : il reste l'indice du PNJ, un message de verrou clair et le voyage rapide vers `fleuve_village`. Le village est le ravitaillement entre les deux zones de combat (marchand, repos, quêtes annexes).
 
 **Points de contact à modifier** (11 régions au lieu de 10) :
 
@@ -39,7 +39,7 @@ Sans Pas de Yu, le joueur ne dépasse pas la digue ni les pontons d'entrée : il
 ## 3. Étapes
 
 1. **Squelette de région** : ids, `REGION_*`, écrans vides reliés, tests de monde verts (`world.test`, `story`).
-2. **Cartes** : `marees_road` (digue), `marees_wild` (eau `~`, pontons `=`, 4 pontons nommés + autel), `marees_village` (liquides entre pilotis), intérieurs. Test d'atteignabilité avec `canWalkOnWater` = vrai ; sans le sort, vérifier que seuls la digue et le premier ponton sont accessibles.
+2. **Cartes** : `marees_wild` (digue sûre au départ, eau `~`, pontons `=` : *Dernière Racine*, *Trois Lanternes*), `marees_village` (`safe`, liquides décoratifs entre pilotis, intérieurs), `marees_deep` (eau dense, pontons *Cormoran Veuf* et *Sel Rouge*, passage vers l'autel), `marees` (autel). Test d'atteignabilité avec `canWalkOnWater` = vrai ; sans le sort, vérifier que seuls la digue et le premier ponton sont accessibles.
 3. **Rendu** : tuiles d'eau-herbe (légère ondulation distincte pour signaler les rencontres), pontons de bois, pilotis, lanternes rouges.
 4. **PNJ, textes, quêtes annexes** (§5) ; message de verrou ; suggestion de `sq_pas_de_yu` au journal.
 5. **Ennemis** : réutiliser 6 gabarits existants, créer 4 nouveaux (+ boss optionnel) ; table de rencontres de la carte.
@@ -48,10 +48,10 @@ Sans Pas de Yu, le joueur ne dépasse pas la digue ni les pontons d'entrée : il
 
 ## 4. Décisions encore ouvertes
 
-- Boss de région **Shen, Seigneur du Mirage (蜃)** : oui / non (le plan le prévoit gardant l'accès à l'autel).
-- Un collier de région `marees` (« Perle de Mazu ») : oui / non.
+- **Boss de région : tranché (23/10/2026).** La divinité est **Changxi (常羲), mère des douze lunes**, sans lien avec la mer : c’est elle qui peut porter Hou Yi jusqu’à la Lune. Elle se repose sur l’autel maintenant que les soleils sont abattus. Le combat est une épreuve de bravoure et de courage, non un duel à mort (§6). Shen est abandonné comme boss.
+- Un collier de région `marees` : oui / non ; s’il est retenu, le rebaptiser (« Éclat de Changxi » plutôt que « Perle de Mazu », la divinité n’étant plus Mazu).
 - Interlude du miroir de Chang'e : **à supprimer** (après le neuvième soleil le bronze reste froid, cf. §5-8) ; ne garder que Sœur Mo.
-- Ordre village / sauvage : ici `road → wild → village → autel` (le village est le prix de la traversée, non un point de départ) ; l'ordre habituel des autres régions est village → wild.
+- Ordre des zones : **tranché** par l'utilisateur (23/10/2026), trois zones : exploration/combat → village sans combat → exploration/combat vers le boss (§2). Le boss (divinité, §6) garde l'autel au bout de la zone 3.
 
 ## 5. Dossier narratif (agent Scénario, résumé)
 
@@ -66,8 +66,22 @@ Sans Pas de Yu, le joueur ne dépasse pas la digue ni les pontons d'entrée : il
 
 **Quêtes annexes.** `sq_cormoran` (anneau de Pointe-de-Neige : coffre + 3 crabes, 120 or, 90 xp) ; `sq_bateaux_lanternes` (mèches de cire + 4 méduses-lanternes, 100 or, 80 xp) ; `sq_offrande_mazu` (urne de riz + Tortue des Récifs, 140 or, 100 xp). Quête principale suggérée : `sq_traversee_marees` (atteindre l'autel, ouvre la porte vers la Lune).
 
-**Ennemis (10).** Existants : crabe-soldat, carpe dorée, serpent des tourbillons (`hai_she`), sirène chantante (`ren_yu`), tortue des récifs (`hai_gui`), jiaolong. Nouveaux : méduse-lanterne (`shuimu_denglong`), poisson-épée de tempête, cormoran-fantôme, hippocampe-lancier. Boss optionnel : Shen, palourde-dragon qui projette des mirages de cités.
+**Ennemis (10).** Existants : crabe-soldat, carpe dorée, serpent des tourbillons (`hai_she`), sirène chantante (`ren_yu`), tortue des récifs (`hai_gui`), jiaolong. Nouveaux : méduse-lanterne (`shuimu_denglong`), poisson-épée de tempête, cormoran-fantôme, hippocampe-lancier. Boss : la divinité de l'autel (§6) ; Shen (palourde-dragon) est abandonné comme boss, il peut rester un ennemi ordinaire de la zone 3 (mirages).
 
-**Musique.** Région « Haute Mer sous la Lune » : ~70 bpm, mi/ré pentatonique mineur, guzheng en glissandi de vagues, xiao, erhu discret, carillon de bronze, motif de trois notes montantes + une descendante (écho du « 3 pas, 3 côté, 1 arrière » du Pas de Yu). Combat « Tourbillon des Eaux » : 128-136 bpm en 6/8, pipa en trémolo, tangu, gongs, suona ; boss : demi-ton au-dessus, chœur étouffé.
+**Musique.** Région « Haute Mer sous la Lune » : ~70 bpm, mi/ré pentatonique mineur, guzheng en glissandi de vagues, xiao, erhu discret, carillon de bronze, motif de trois notes montantes + une descendante (écho du « 3 pas, 3 côté, 1 arrière » du Pas de Yu). Combat « Tourbillon des Eaux » : 128-136 bpm en 6/8, pipa en trémolo, tangu, gongs, suona ; boss (épreuve) : demi-ton au-dessus, chœur étouffé, mais plus solennel que menaçant (gongs lents, xiao, pas de suona agressif).
 
 **Risques relevés.** Ne pas dupliquer la Mer des Mille Îlots (`mer_archipel` reste l'archipel de la Tortue-Dragon) ni réutiliser ses PNJ ; éviter les motifs déjà pris dans `mer.js` (beignets de crevette, phare, plongeuse de perles) ; vérifier les tests qui comptent les régions ; le joueur qui a ignoré `sq_pas_de_yu` doit pouvoir revenir (voyage rapide vers Hekou).
+
+## 6. Boss : Changxi et l’épreuve de bravoure
+
+**Rôle.** Au bout de la zone 3, Changxi, mère des douze lunes, est allongée près de l’Autel de Mazu (Sœur Mo la laisse dormir : elle n’est pas d’ici). Elle n’a rien à voir avec la mer ; ce qu’elle peut, c’est faire voyager vers la Lune, et c’est le dernier verrou avant `lune_village`. Fatiguée, elle ne veut plus rien porter : les soleils tués, ses lunes n’ont plus de rivales et elle se repose enfin. Elle ne cherche pas à tuer Hou Yi, elle juge s’il ose.
+
+**Déroulé proposé (à valider).**
+1. Dialogue d’approche : Changxi, assoupie, demande pourquoi on la dérange ; elle ne donne rien gratuitement (l’archer a abattu neuf soleils, mais il a peur de ce qu’il va retrouver là-haut).
+2. Combat en phases, chacune une peur à affronter : la **tempête** (grosses vagues, dégâts élevés mais lisibles), le **mirage** (illusions de Chang'e et du village, dont une seule est réelle), le **gouffre** (la divinité s'efface, le joueur tient seul face à l'eau noire).
+3. Fuir n'est pas puni par la mort mais le combat reprend à la phase atteinte : la bravoure se prouve en restant.
+4. Victoire : Changxi ne meurt pas, elle se lève, sourit et ouvre le chemin de lune (porte vers `lune_village`), puis récompense (collier de région éventuel « Éclat de Changxi »).
+
+**Points d'attention techniques.** Vérifier dans le moteur de combat ce qui est possible pour des phases à intentions scénarisées (mécanique d'illusions, reprise de phase) avant de s'engager ; sinon se limiter à un boss à seuils de PV avec dialogues, sans changer les règles.
+
+**Pas de conflit avec le reste.** Sœur Mo garde l’autel mais n’est pas le boss ; le combat se déclenche en parlant à Changxi après la zone 3. Vérifier la cohérence avec `lune` (Changxi n’y apparaît pas déjà) et avec le chant de Chang’e.
