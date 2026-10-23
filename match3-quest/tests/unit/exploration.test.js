@@ -1836,7 +1836,7 @@ describe('Nouvelle Partie +', () => {
         expect(s.data.ngPlus).toBe(0);
     });
 
-    test('remet l\'histoire à zéro, replace le héros au départ, garde introSeen et incrémente ngPlus', () => {
+    test('remet l\'histoire à zéro, replace le héros au départ, relance le prologue et incrémente ngPlus', () => {
         const s = endedSession();
         expect(s.data.ended).toBe(true);
         expect(s.data.visitedScreens.length).toBeGreaterThan(30);
@@ -1844,7 +1844,7 @@ describe('Nouvelle Partie +', () => {
         expect(s.data).toMatchObject({
             screenId: START_SCREEN, x: SCREENS[START_SCREEN].spawn.x, y: SCREENS[START_SCREEN].spawn.y,
             quests: {}, defeated: [], openedChests: [], talked: [], visitedScreens: [START_SCREEN],
-            ended: false, introSeen: true, ngPlus: 1
+            ended: false, introSeen: false, ngPlus: 1
         });
         expect(s.rt.grace).toBeGreaterThan(0);
         expect(questStatus(s, quest('q_sun_1'))).toBe('available');

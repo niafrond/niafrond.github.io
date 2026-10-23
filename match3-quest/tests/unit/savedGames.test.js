@@ -164,7 +164,7 @@ describe('Nouvelle Partie + depuis l\'épilogue', () => {
         expect(X.startNewGamePlus(s)).toBe(false);
         expect(s.data.ngPlus).toBe(0);
     });
-    it('remet l\'histoire à zéro, garde le prologue vu et augmente la difficulté', () => {
+    it('remet l\'histoire à zéro, relance le prologue et augmente la difficulté', () => {
         const s = load(forge.ended());
         expect(X.startNewGamePlus(s)).toBe(true);
         expect(s.data.ngPlus).toBe(1);
@@ -172,7 +172,7 @@ describe('Nouvelle Partie + depuis l\'épilogue', () => {
         expect(s.data.defeated).toEqual([]);
         expect(s.data.openedChests).toEqual([]);
         expect(s.data.quests).toEqual({});
-        expect(s.data.introSeen).toBe(true);
+        expect(s.data.introSeen).toBe(false);
         expect(s.data.screenId).toBe(X.START_SCREEN);
         X.currentScreen(s).enemies.forEach(e => expect(X.isEnemyAlive(s, e.id)).toBe(true));
     });

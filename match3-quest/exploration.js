@@ -1038,8 +1038,9 @@ export function markEnemyDefeated(session, enemyId) {
     return events;
 }
 
-// Nouvelle Partie + : possible une fois l'épilogue joué. Remet l'histoire à zéro (quêtes, ennemis, coffres,
-// écrans visités), replace le héros au point de départ, garde `introSeen` ; `ngPlus` augmente la difficulté.
+// Nouvelle Partie + : possible une fois l'épilogue joué. Remet toute l'histoire à zéro (quêtes, ennemis, coffres,
+// écrans visités, pierres de voyage, compagnons, cinématiques vues, prologue) et replace le héros au point de départ ;
+// l'arène et le bestiaire observé sont conservés, `ngPlus` augmente la difficulté.
 export function startNewGamePlus(session) {
     const data = session.data;
     if (!data.ended) return false;
@@ -1051,6 +1052,10 @@ export function startNewGamePlus(session) {
     data.visitedScreens = [];
     data.talked = [];
     data.banterSeen = [];
+    data.waypoints = [];
+    data.activeCompanion = null;
+    data.seenCinematics = {};
+    data.introSeen = false;
     data.tracked = null;
     data.ended = false;
     const start = session.screens[START_SCREEN];

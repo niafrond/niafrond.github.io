@@ -17,7 +17,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playFengmengDuelCinematic } from './cinematics.js';
+import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
@@ -97,6 +97,7 @@ const shade = (hex, amt) => {
  *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
+ *  onNewGamePlus()            Nouvelle Partie + lancée (remise à zéro de la carte du monde côté joueur)
  *  onOpenMap()                ouvre la carte du monde
  *  onOpenArena()              ouvre l'Arène des Mille Flèches (arena.js)
  *  onOpenMenu()               ouvre le menu (inventaire, sorts, stats)
@@ -637,8 +638,8 @@ export function createExplorationView(cfg) {
     // Nouvelle Partie + : l'histoire repart de zéro (niveau, équipement et arène sont conservés ; l'arène est ouverte dès le début),
     // les adversaires sont plus coriaces. Confirmation demandée, puis export de la sauvegarde, puis départ.
     function confirmNewGamePlus() {
-        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart des Rizières Desséchées : '
-            + 'quêtes, soleils et coffres sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
+        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart du prologue, aux Rizières Desséchées : '
+            + 'quêtes, soleils, coffres, pierres de voyage et compagnons sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
         if (ok) launchNewGamePlus();
     }
 
@@ -655,9 +656,16 @@ export function createExplorationView(cfg) {
         vis.enemies = {};
         syncVisual(true);
         refreshHud();
+        cfg.onNewGamePlus?.();
         cfg.onRegionVisited?.(X.currentScreen(session).region);
         cfg.onSave();
-        toast(`Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
+        // L'histoire repart comme une nouvelle partie : prologue animé, puis duel d'ouverture contre Fengmeng.
+        playPrologueAnimation().then(() => {
+            X.markIntroSeen(session);
+            cfg.onSave();
+            toast(`Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
+            return prepareRegion(X.currentScreen(session).region);
+        }).then(() => startEncounter('fengmeng_1'));
     }
 
     function escapeHtml(str) {
