@@ -85,6 +85,11 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
         paintWater(R, biome, x, y, isLiquid, biomeId);
         return;
     }
+    if (isPath(x, y) && (biomeId === 'tides' || biomeId === 'tides_calm')) {   // passerelle de bois : planches claires
+        R(0, 0, 16, 16, biome.path);
+        paintTerrainDetail(R, biome.path, x, y, biomeId);
+        return;
+    }
     if (isPath(x, y)) {
         paintDirt(R, biome, x, y, isPath, grass);
         if (tall) paintTallGrass(R, biome, x, y, isTall);
@@ -213,6 +218,12 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
     const h = (salt) => cellHash(x, y, salt);
     const at = (salt, span) => Math.floor(h(salt) * span);
     switch (biomeId) {
+        case 'tides': case 'tides_calm': {                                  // planches de ponton : lames sombres, clous, nœuds du bois
+            for (let i = 0; i < 4; i++) R(0, 1 + i * 4, 16, 1, shade(base, -34));
+            for (let i = 0; i < 4; i++) { const nx = 1 + at(360 + i, 12); R(nx, 2 + i * 4, 1, 1, shade(base, 26)); if (h(365 + i) < 0.35) R(nx + 3, 3 + i * 4, 2, 1, shade(base, -20)); }
+            R(1, 2, 1, 1, '#2a1c10'); R(14, 2, 1, 1, '#2a1c10'); R(1, 10, 1, 1, '#2a1c10'); R(14, 10, 1, 1, '#2a1c10');
+            return true;
+        }
         case 'gobi': case 'coast': case 'savanna': {       // sable : rides en arcs, cailloux, brins secs
             for (let i = 0; i < 2; i++) {
                 const rx = 1 + at(200 + i, 8), ry = 3 + at(210 + i, 9) + i * 2;
@@ -318,6 +329,13 @@ function paintWater(R, biome, x, y, isLiquid, biomeId = '') {
             R(cx, cy, 3, 2, '#3b1a12'); R(cx + 1, cy + 2, 2, 1, '#6a2a14');
         }
         R(Math.floor(cellHash(x, y, 160) * 10), Math.floor(cellHash(x, y, 161) * 12) + 2, 3, 1, '#ffd24a');
+    }
+    if (biomeId === 'tides' || biomeId === 'tides_calm') {   // mer de nuit : reflets de lune ; en zone de combat, des algues dressées comme de hautes herbes
+        for (let i = 0; i < 2; i++) R(Math.floor(cellHash(x, y, 170 + i) * 12), 1 + Math.floor(cellHash(x, y, 175 + i) * 13), 3, 1, 'rgba(255,236,180,0.34)');
+        if (biomeId === 'tides') for (let i = 0; i < 4; i++) {
+            const bx = 1 + Math.floor(cellHash(x, y, 180 + i) * 13), by = 6 + Math.floor(cellHash(x, y, 185 + i) * 6);
+            R(bx, by + 2, 1, 4, '#0b6a63'); R(bx + (i % 2 ? 1 : -1), by, 1, 3, '#1f9a86'); R(bx, by - 1, 1, 1, '#6fe0c0');
+        }
     }
     const out = biomeId === 'volcano' ? '#2a0f0a' : shade(base, -72), foam = shade(base, 56);
     const N = isLiquid(x, y - 1), S = isLiquid(x, y + 1), W = isLiquid(x - 1, y), E = isLiquid(x + 1, y);
@@ -527,7 +545,7 @@ export function drawWallTile(g, biome, tile, px, py, top) {
 // porte à deux vantaux de planches cloutés de bronze sous un linteau, grand toit de chaume aux avant-toits relevés.
 // `thatch` : couleur de base du toit (paille, chaume sombre ou ardoise). (px, py) : coin haut-gauche de l'emprise,
 // w × h en pixels, door : { dx, dy } en pixels depuis ce coin.
-export function drawHouse(g, px, py, w, h, tile, thatch, door) {
+export function drawHouse(g, px, py, w, h, tile, thatch, door, stilts = false) {
     const u = tile / TILE_GRID;
     const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
     const wallTop = py + roofH - Math.round(u * 2);
@@ -605,6 +623,13 @@ export function drawHouse(g, px, py, w, h, tile, thatch, door) {
     // extrémités relevées
     fill(rx - u * 1.5, py + roofH - u * 4, u * 2, u * 2, OUTLINE); fill(rx - u * 0.8, py + roofH - u * 5, u * 1.4, u * 2, thatch);
     fill(rx + rw - u * 0.5, py + roofH - u * 4, u * 2, u * 2, OUTLINE); fill(rx + rw - u * 0.6, py + roofH - u * 5, u * 1.4, u * 2, thatch);
+    if (stilts) {   // pilotis : plancher débordant, poteaux de bois enfoncés dans l'eau, reflet sombre entre eux
+        const baseY = py + h - Math.round(u * 5);
+        fill(px + u, baseY, w - 2 * u, Math.round(u * 2), woodLight);
+        fill(px + u, baseY + Math.round(u * 2), w - 2 * u, Math.round(u * 3), '#0b2a3d');
+        const n = Math.max(3, Math.floor(w / (u * 6)));
+        for (let k = 0; k < n; k++) fill(px + u * 2 + (w - u * 6) * k / (n - 1), baseY + Math.round(u * 2), Math.round(u * 2), Math.round(u * 3.5), woodDark);
+    }
     g.restore();
     return { roofH };
 }

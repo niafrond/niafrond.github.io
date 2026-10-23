@@ -1179,7 +1179,7 @@ const BASE_SCREENS = {
     // ── 9 bis. Hautes-Eaux de la Lune Montante : autel de Mazu (world/maps/marees.js, world/PLAN-MAREES.md) ──
     // Sanctuaire sans soleil : Changxi, mère des douze lunes, y dort ; l'épreuve de bravoure ouvre le passage vers la Lune.
     marees: {
-        id: 'marees', region: 'marees', name: 'Autel de Mazu', biome: 'coast',
+        id: 'marees', region: 'marees', name: 'Autel de Mazu', biome: 'tides',
         w: 14, h: 10, spawn: { x: 1, y: 5 },
         arrival: [
             "Au bout des pontons, un petit pavillon laqué flotte sur l'eau noire : l'autel de Mazu et du Dragon-Roi. Des lanternes rouges s'y reflètent par dizaines.",

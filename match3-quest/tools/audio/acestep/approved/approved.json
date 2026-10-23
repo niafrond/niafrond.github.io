@@ -607,5 +607,26 @@
     "seed": "160827814",
     "date": "2026-10-23T17:28:16.686Z",
     "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, epic cinematic trial boss battle, Changxi mother of twelve moons testing the hero's courage on a moonlit sea altar, slow ceremonial gongs, xiao flute, muted wordless choir, deep guqin pulse, agile plucked pipa ostinato (martial tension, arrows), aggressive war drums, hard woodblocks, crashing cymbals, solemn and majestic rather than cruel, tidal swells, tension then release, readable heroic melody"
+  },
+  "village-tides": {
+    "version": "v001",
+    "alt": "v002",
+    "seed": "2142012670",
+    "date": "2026-10-23T18:11:14.418Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts, village theme, warm and slow, clear melody, flowing guzheng (rivers, passing time) glissandi like gentle waves, soft xiao (solitude, destiny, twilight), soft bronze chimes, lantern glow, restrained Chinese drums, woodblocks and small cymbals very soft, hope under a harsh sky"
+  },
+  "wild-tides": {
+    "version": "v001",
+    "alt": "v002",
+    "seed": "1708588338",
+    "date": "2026-10-23T18:11:14.530Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts, exploration theme, scattered phrases, gentle tension, slow flowing guzheng (rivers, passing time) wave glissandi, soft xiao (solitude, destiny, twilight) open melody, discreet expressive erhu lead (Hou Yi, courage and loneliness), deep sea pulse, three rising notes and one falling, spacious, lonely journey of Hou Yi"
+  },
+  "combat-tides": {
+    "version": "v001",
+    "alt": "v002",
+    "seed": "2143820324",
+    "date": "2026-10-23T18:11:14.641Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, epic battle theme, epic cinematic orchestral battle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant, whirlpool sea battle at night, rolling 6/8 swell feel, fast pipa tremolo, descending guzheng arpeggios, big tangu drum and gongs, erhu cries, suona answering phrases, bass wave ostinato, readable memorable melody, short loop"
   }
 }

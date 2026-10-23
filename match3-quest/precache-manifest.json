@@ -1867,6 +1867,16 @@
    "h": "a2faee5ee8"
   },
   {
+   "p": "audio/music/combat-tides-b.mp3",
+   "s": 464481,
+   "h": "75b70f7cc3"
+  },
+  {
+   "p": "audio/music/combat-tides.mp3",
+   "s": 464481,
+   "h": "03fbe3c83a"
+  },
+  {
    "p": "audio/music/defeat-b.mp3",
    "s": 464481,
    "h": "9d30ba2a9e"
@@ -2037,6 +2047,16 @@
    "h": "d4c57e5a16"
   },
   {
+   "p": "audio/music/village-tides-b.mp3",
+   "s": 464481,
+   "h": "6d7c09f710"
+  },
+  {
+   "p": "audio/music/village-tides.mp3",
+   "s": 464481,
+   "h": "3acb01d592"
+  },
+  {
    "p": "audio/music/village-volcano-b.mp3",
    "s": 464481,
    "h": "c60098731f"
@@ -2135,6 +2155,16 @@
    "p": "audio/music/wild-storm.mp3",
    "s": 464481,
    "h": "944f4e9984"
+  },
+  {
+   "p": "audio/music/wild-tides-b.mp3",
+   "s": 464481,
+   "h": "e4809d4afb"
+  },
+  {
+   "p": "audio/music/wild-tides.mp3",
+   "s": 464481,
+   "h": "8b89862b7c"
   },
   {
    "p": "audio/music/wild-volcano-b.mp3",

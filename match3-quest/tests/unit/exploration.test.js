@@ -28,7 +28,7 @@ const SUN_ID = ['sun_1', 'sun_6', 'sun_4', 'sun_2', 'sun_3', 'sun_5', 'sun_7', '
 const FORCED = ['rizieres', 'volcan'];
 const BIOME_OF = {
     rizieres: 'paddy', fleuve: 'riverbed', bambous: 'bamboo', gobi: 'gobi', tonnerre: 'storm',
-    volcan: 'volcano', fauves: 'savanna', mer: 'coast', fusang: 'fusang', marees: 'coast', lune: 'moon'
+    volcan: 'volcano', fauves: 'savanna', mer: 'coast', fusang: 'fusang', marees: 'tides', lune: 'moon'
 };
 const SUN_LEVELS = [6, 9, 14, 19, 24, 30, 35, 40, 45];
 

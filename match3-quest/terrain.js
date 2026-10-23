@@ -146,7 +146,7 @@ const colors = Object.keys(COLOR_NAMES);
 // Biome de carte (explorationView / story) → règle de plateau.
 export const BIOME_RULE_OF = {
     bamboo: 'bamboo', volcano: 'volcano', paddy: 'swamp', riverbed: 'swamp',
-    fusang: 'sanctuary', moon: 'sanctuary', coast: 'sea', storm: 'snow'
+    fusang: 'sanctuary', moon: 'sanctuary', coast: 'sea', tides: 'sea', storm: 'snow'
 };
 export const ruleForBiome = biome => BIOME_RULE_OF[biome] || null;
 

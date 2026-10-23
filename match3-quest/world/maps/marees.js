@@ -94,7 +94,7 @@ const deepTable = [
 
 export default {
     road: {
-        id: 'marees_road', biome: 'coast', native: true,
+        id: 'marees_road', biome: 'tides', native: true,
         grid: rows(road),
         exits: [{
             at: '>', to: 'marees_village', label: "Shuiyu-sous-l'Eau", requires: 'sq_pas_de_yu',
@@ -115,7 +115,7 @@ export default {
     },
 
     village: {
-        id: 'marees_village', biome: 'coast', native: true,
+        id: 'marees_village', biome: 'tides', native: true,
         grid: rows(village),
         npcs: [
             { id: 'merchant_marees', at: '2' },
@@ -131,7 +131,7 @@ export default {
     },
 
     wild: {
-        id: 'marees_wild', biome: 'coast', native: true,
+        id: 'marees_wild', biome: 'tides', native: true,
         grid: rows(deep),
         grass: { water: true, rate: 0.16, safeSteps: 3, table: deepTable },
         gate: {

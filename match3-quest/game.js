@@ -3605,14 +3605,16 @@ export function getCombatMusicScene() {
 }
 
 // Options de la scène musicale : thème propre à chaque boss (son nom), style de rythme variable selon l'ennemi ordinaire.
+let combatBiomeId = null;   // biome du combat en cours (musique propre aux Hautes-Eaux)
 export function getCombatMusicOptions() {
     if(!enemy) return {};
-    return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name };
+    return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name, biome: combatBiomeId };
 }
 
 // Fond de la page de combat : teinte et motif du biome (CSS `body[data-combat-biome]` de retro.css).
 export function setCombatBackdrop(biome){
     if(typeof document === 'undefined') return;
+    combatBiomeId = biome || null;
     if(biome && BIOME_LABELS[biome]) document.body.dataset.combatBiome = biome;
     else delete document.body.dataset.combatBiome;
 }

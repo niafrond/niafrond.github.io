@@ -11,6 +11,7 @@ export const BIOME_DECOR = {
     volcano: ['spire', 'rock', 'spire'],
     savanna: ['rice', 'rock', 'rice'],
     coast: ['shell', 'rock', 'conch'],
+    tides: ['rock', 'shell', 'rock'],
     fusang: ['tree', 'deadtree', 'tree'],
     house: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'],
     cave: ['rock', 'stalagmite', 'rock'],
