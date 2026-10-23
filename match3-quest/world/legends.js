@@ -12,11 +12,13 @@ import { occupancy, placeInLand } from './junctions.js';
  * l'apparition, les entités posées (hors gardiens de porte) comptant comme obstacles. Les cases candidates qui isoleraient quelque chose sont écartées (placeInLand, paramètre `accept`).
  */
 function placeSafely(screen, screens, id) {
-    return placeInLand(screen, occupancy(screen, screens), id, pos => !isolatesSomething(screen, screens, pos));
+    // l'occupation et les isolements déjà présents ne dépendent pas de la case essayée : calculés une fois par placement
+    const occ = occupancy(screen, screens);
+    const before = unreachedWith(screen, occ, null);
+    return placeInLand(screen, occ, id, pos => !isolatesSomething(screen, occ, before, pos));
 }
 
-function unreachedWith(screen, screens, pos) {
-    const occ = occupancy(screen, screens);
+function unreachedWith(screen, occ, pos) {
     const entities = [...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => !e.guardsDoor)];
     const targets = [...entities, ...screen.exits, ...(pos ? [pos] : [])];
     const solid = new Set(targets.map(e => `${e.x},${e.y}`));
@@ -34,9 +36,8 @@ function unreachedWith(screen, screens, pos) {
 }
 
 /** Vrai si poser une entité en `pos` rend inatteignable une case qui l'était (les isolements déjà présents sur la carte ne comptent pas). */
-function isolatesSomething(screen, screens, pos) {
-    const before = unreachedWith(screen, screens, null);
-    const after = unreachedWith(screen, screens, pos);
+function isolatesSomething(screen, occ, before, pos) {
+    const after = unreachedWith(screen, occ, pos);
     return after.has(`${pos.x},${pos.y}`) || [...after].some(k => !before.has(k));
 }
 
