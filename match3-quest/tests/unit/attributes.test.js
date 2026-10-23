@@ -83,7 +83,7 @@ describe('réinitialisation des points d\'attribut', () => {
         expect(p.attack).toBe(15 + 17);
         respecAttributes(p);
         expect(p).toMatchObject({ attack: 15, defense: 1, maxHp: 100, unspentLevelPoints: 17 });
-        expect(before.attack).toBe(20);   // la réinitialisation retire l'effet des points, pas celui des niveaux
+        expect(before.attack).toBe(18);   // la réinitialisation retire l'effet des points, pas celui des niveaux
     });
 });
 

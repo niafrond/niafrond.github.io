@@ -78,7 +78,7 @@ describe('écran de victoire / défaite : barre de PV réellement vide', () => {
     });
     test('game.js attend la barre de PV avant l\'écran de fin', () => {
         expect(game).toMatch(/function whenLoserHpBarEmpty/);
-        expect(game).toMatch(/whenLoserHpBarEmpty\(isVictory, \(\) => \{[\s\S]*finalizeCombatEndUI\(true\)/);
+        expect(game).toMatch(/whenLoserHpBarEmpty\(isVictory, \(\) => \{[\s\S]*finalizeCombatEndUI\(isVictory\)/);
     });
 });
 
@@ -182,7 +182,7 @@ describe('fin de combat : le mot Victoire / Défaite, puis le résultat, puis «
     });
 
     test("le mot plein écran vient d'abord ; le résultat ne se met en place que plus tard, sous lui", () => {
-        const final = body(game, 'finalizeCombatEndUI');
+        const final = body(game, 'finalizeCombatEndUI').replace(/\/\/.*$/gm, '');   // sans les commentaires
         expect(final).toMatch(/playCombatEndBanner\(isVictory,/);
         expect(final).not.toMatch(/showCombatResultScreen|combat-ended/);   // ni le résultat ni le bouton avant le mot
         const reveal = body(game, 'revealCombatEndUI');
