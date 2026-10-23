@@ -386,6 +386,24 @@ export function addWaterBorder(screen) {
     return screen;
 }
 
+// Couronne d'arbres (`screen.treeBorder`) : l'eau des deux rangées de bord devient un obstacle, dessiné en rangée d'arbres
+// (explorationView.js). Rien ne devient inaccessible : l'eau bloquait déjà la marche à pied.
+export function addTreeBorder(screen) {
+    if (!screen.treeBorder) return screen;
+    const { w, h } = screen;
+    const obst = toSet(screen.obstacles);
+    const liq = toSet(screen.liquids);
+    for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) {
+        const k = key(x, y);
+        if (Math.min(x, y, w - 1 - x, h - 1 - y) > 1 || !liq.has(k)) continue;
+        liq.delete(k);
+        obst.add(k);
+    }
+    screen.obstacles = toRects(obst);
+    screen.liquids = toRects(liq);
+    return screen;
+}
+
 // Les hautes herbes (`screen.grass.cells`) ne couvrent que des cases franchissables : retire celles que le décor de bordure, l'eau
 // d'une couronne ou un bâtiment ont recouvertes (dans un écran aquatique, l'eau se parcourt). Sans case restante, `grass` disparaît.
 export function pruneGrass(screen) {

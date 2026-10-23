@@ -228,3 +228,7 @@ Faits nouveaux : les noyés ont un doyen (Yuan) ; la cloche du temple brûlé a 
 le tonnerre a un enfant (Rongrong) ; le temple du feu avait un attiseur (Chi, maître de Yan) ; l'escadre du Roi-Dragon a un amiral (Xie), et
 sa perle fait foi d'ordre ; les grues-lige du Fusang protègent le Dixième Soleil (Hegui, sœur de la messagère) ; Maître Zhen a reçu
 Fengmeng en méditation, Xia la renarde a sept queues.
+
+## Bordures de mer (post-Pas de Yu)
+
+La plupart des cartes sont entourées de mer. Une fois le Pas de Yu appris (`sq_pas_de_yu`, Gui à Hekou), le héros peut marcher sur cette mer et, en atteignant le bord nord ou sud de n'importe quelle carte de ces régions (route, village, zone sauvage ou hameau, sanctuaire), arriver sur le bord de la carte d'en face dans la région voisine sur la carte du monde : Gobi ↕ Plaine des Fauves, Lit du Fleuve ↕ Bambous ↕ Monts du Tonnerre, Mer Orientale ↕ Fusang (`world/connections.js`). Pas de route ni de ponton : seulement l'eau. Chaque bordure reste fermée par un courant contraire tant que le gardien de la route vers la plus avancée des deux régions n'est pas vaincu. La Lune n'en a aucune (on n'y monte que depuis les Hautes-Eaux, par Changxi) ; les Rizières sont entourées d'une couronne d'arbres, sans mer.

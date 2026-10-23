@@ -1547,7 +1547,8 @@ export function createExplorationView(cfg) {
                         drawCachedObject(`wall:${screen.biome}:${it.y === 0}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0));
                         break;
                     }
-                    const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
+                    const depth = Math.min(it.x, it.y, screen.w - 1 - it.x, screen.h - 1 - it.y);
+                    const border = depth === 0 || (screen.treeBorder && depth <= 1);   // couronne d'arbres (Rizières) : deux rangées d'arbres
                     if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
                         // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
                         const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);

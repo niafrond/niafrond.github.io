@@ -50,7 +50,7 @@ describe('bordures de toutes les cartes de plein air', () => {
     });
 
     test.each(outdoors.map(s => [s.id, s]))('%s : chaque passage a son inverse, des cases alignées et atteignables, une arrivée dégagée', (_id, s) => {
-        for (const [dir, c] of Object.entries(s.connections)) {
+        for (const [dir, c] of Object.entries(s.connections).filter(([, c]) => !c.sea)) {   // bordures de mer : seaRoutes.test.js
             const to = SCREENS[c.to];
             const back = to.connections[DIRS[dir].opposite];
             expect({ at: `${s.id}.${dir}`, back: back && back.to }).toEqual({ at: `${s.id}.${dir}`, back: s.id });

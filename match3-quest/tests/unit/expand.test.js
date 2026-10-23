@@ -101,13 +101,13 @@ describe('plus de délimitation factice, de l\'eau en bordure (openPerimeter, ad
             const shut = rim.filter(([x, y]) => inRects(s.liquids, x, y) || inRects(s.obstacles, x, y));
             expect({ id: s.id, shut: shut.length / rim.length > 0.85 }).toEqual({ id: s.id, shut: true });
             // biomes d'eau : l'eau domine la bordure ; les passages restent de la terre
-            if (WATER_BIOMES.has(s.biome)) expect(rim.filter(([x, y]) => inRects(s.liquids, x, y)).length / rim.length).toBeGreaterThan(0.4);
+            if (WATER_BIOMES.has(s.biome) && !s.treeBorder) expect(rim.filter(([x, y]) => inRects(s.liquids, x, y)).length / rim.length).toBeGreaterThan(0.4);
             open.forEach(k => { const [x, y] = k.split(',').map(Number); expect(inRects(s.liquids, x, y)).toBe(false); });
         });
     });
 
     test('l\'eau de bordure se traverse avec le Pas de Yu, jamais sans', () => {
-        const v = SCREENS.rizieres_village;
+        const v = SCREENS.mer_village;   // les Rizières n'ont pas d'eau en bordure : une couronne d'arbres
         const [x, y] = ring(v).find(([cx, cy]) => inRects(v.liquids, cx, cy));
         expect(isTerrainBlocked(v, x, y)).toBe(true);
         expect(isTerrainBlocked(v, x, y, true)).toBe(false);

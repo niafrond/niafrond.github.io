@@ -16,10 +16,12 @@ export const WATER_BIOMES = new Set(['coast', 'riverbed', 'paddy']);   // barri�
 const key = (x, y) => `${x},${y}`;
 const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-// Cases de la bordure restées ouvertes par les connexions de la carte.
+// Cases de la bordure restées ouvertes par les connexions de la carte. Les bordures de mer (`sea`, world/connections.js) n'en font pas
+// partie : elles restent de l'eau (on les franchit avec le Pas de Yu), sans couloir creusé ni bordure à fermer.
 export function openRim(screens, screen, depth = 1) {
     const open = new Set();
     for (const [dir, c] of Object.entries(screen.connections || {})) {
+        if (c.sea) continue;
         const to = screens[c.to];
         const range = to && overlapOf(c, screen, to);
         if (!range) continue;
@@ -90,7 +92,7 @@ export function addBorderBarriers(screens) {
         const { w, h } = screen;
         const open = openRim(screens, screen);
         if (screen.aquatic) { closeAquaticRim(screen, open); continue; }
-        const water = WATER_BIOMES.has(screen.biome);
+        const water = WATER_BIOMES.has(screen.biome) && !screen.treeBorder;   // couronne d'arbres (Rizières) : bordure fermée par des arbres
         const obst = toSet(screen.obstacles);
         const liq = toSet(screen.liquids);
         // couloirs devant les passages : on retire décor et eau (hors bâtiments), puis on dégage les personnages
