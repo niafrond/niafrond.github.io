@@ -2,7 +2,7 @@ import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
 import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
-import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff } from "./stuff.js";
+import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
@@ -151,6 +151,7 @@ function init() {
         setSaved: data => { player.exploration = data; },
         getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch) }),
         getPlayerLevel: () => player.level,
+        hasStealth: () => hasStealth(player),
         getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },

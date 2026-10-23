@@ -556,8 +556,12 @@ function contactEvent(session, def) {
 }
 
 // Zone de vigilance : un boss protégé n'en a pas ; un vrai combat l'emporte sur un mirage.
+// Collier d'ombre (stuff.js : hasStealth), posé par la vue avant chaque pas : aucun ennemi ne détecte le héros (sauf dans l'arène).
+export function setStealth(session, on) { session.rt.stealth = Boolean(on); }
+const isStealthy = session => Boolean(session.rt.stealth) && !inArena(session);
+
 function checkAura(session) {
-    if (session.rt.grace > 0) return null;
+    if (session.rt.grace > 0 || isStealthy(session)) return null;
     const { x, y } = session.data;
     const hits = aliveEnemies(session)
         .filter(e => inFront(e, aggroOf(e.def), x, y) && !isShielded(session, e.def));
@@ -668,7 +672,7 @@ function rollWildEncounter(session, ctx = {}) {
     const screen = currentScreen(session);
     const g = encounterOf(screen);
     if (!g || g.table.length === 0) return null;
-    if (session.rt.grace > 0 || session.rt.grassSteps <= g.safeSteps) return null;
+    if (session.rt.grace > 0 || isStealthy(session) || session.rt.grassSteps <= g.safeSteps) return null;
     const random = typeof ctx.random === 'function' ? ctx.random : Math.random;
     if (random() >= g.rate) return null;
     const total = g.table.reduce((sum, t) => sum + t.weight, 0);
@@ -783,7 +787,7 @@ export function findPath(session, tx, ty) {
 
     // Zones de vigilance à éviter : celles des ennemis (non protégés) dont l'aura ne contient pas la destination.
     const avoid = new Set();
-    aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
+    aliveEnemies(session).filter(e => !isShielded(session, e.def) && !isStealthy(session)).forEach(e => {
         const r = aggroOf(e.def);
         if (inFront(e, r, tx, ty)) return;
         for (let dy = -r; dy <= r; dy++) {
