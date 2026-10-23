@@ -66,7 +66,7 @@ export const BESTIARY = [
   ['heilong', 'Heilong', 'Dragon', 'Dragon Noir des Profondeurs', 'purple', 'fleuve', 'e', 'Heilong, Chinese black dragon, long wingless serpentine body of dark scales, glowing yellow eyes, whiskers, storm clouds'],
   ['bailong', 'Bailong', 'Dragon', 'Dragon Blanc', 'blue', 'fleuve', 'e', 'Bailong, Chinese white dragon, long wingless pale serpentine body, pearl scales, long whiskers, mist'],
   ['ao', 'Ao', 'Tortue', 'Tortue Porteuse de Montagne', 'blue', 'fleuve', 'e', 'Ao, giant sea turtle carrying a small mountain and a pagoda on its shell, mossy shell, calm ancient eyes'],
-  ['gui_tortue', 'Gui', 'Tortue', 'Tortue Spirituelle', 'green', 'fleuve', 'b', 'Gui, spirit tortoise with an ornate shell patterned with divination lines, ancient wrinkled head, slow and heavy'],
+  ['gui_tortue', 'Tortue Gui', 'Tortue', 'Tortue Spirituelle', 'green', 'fleuve', 'b', 'Gui, spirit tortoise with an ornate shell patterned with divination lines, ancient wrinkled head, slow and heavy'],
   ['linggui', 'Linggui', 'Tortue', 'Tortue des Présages', 'blue', 'fleuve', 'c', 'Linggui, sacred turtle with glowing luminous patterns on the shell, calm, soft cyan aura'],
   ['xuan_gui', 'Xuan Gui', 'Tortue', 'Grande Tortue Noire', 'purple', 'fleuve', 'b', 'Xuan Gui, huge black tortoise with a dark shell and thick legs, dripping river water'],
   ['bixi', 'Bixi', 'Dragon', 'Dragon-Tortue Porte-Stèle', 'green', 'fleuve', 'b', 'Bixi, dragon-headed tortoise with a massive shell carrying a carved stone stele, heavy body, stony teeth'],

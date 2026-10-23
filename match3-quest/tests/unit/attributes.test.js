@@ -1,5 +1,5 @@
 import {
-    ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, manaPerMatch, summarizeColorBonuses
+    ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, ATTRIBUTE_STAT_EFFECTS, agilityScore, describeAttributeChoice, manaPerMatch, summarizeColorBonuses
 } from '../../attributes.js';
 import { getColorMatchManaBaseGain } from '../../matchMechanics.js';
 
@@ -35,9 +35,9 @@ describe('attributs de niveau et bonus de couleur', () => {
 });
 
 describe('réinitialisation des points d\'attribut', () => {
-    // Joueur ayant dépensé des points comme applyAttributeBonus (game.js) : Battle/Morale +1 attaque, Agilité +1 défense, Endurance +1 PV max.
+    // Joueur ayant dépensé des points comme applyAttributeBonus (game.js) : Battle +1 attaque, Agilité et Morale +1 défense, Endurance +1 PV max.
     const spent = () => ({
-        attack: 15 + 3 + 2, defense: 1 + 4, maxHp: 100 + 5, hp: 90, unspentLevelPoints: 1,
+        attack: 15 + 3, defense: 1 + 4 + 2, maxHp: 100 + 5, hp: 90, unspentLevelPoints: 1,
         attributes: { strength: 3, agility: 4, intelligence: 2, stamina: 5, morale: 2 }
     });
 
@@ -47,8 +47,8 @@ describe('réinitialisation des points d\'attribut', () => {
         expect(totalAttributePoints(p)).toBe(16);
         expect(respecAttributes(p)).toEqual({ refunded: 16 });
         expect(p.attributes).toEqual({ strength: 0, agility: 0, intelligence: 0, stamina: 0, morale: 0 });
-        expect(p.attack).toBe(15);        // 20 − 3 (Battle) − 2 (Morale)
-        expect(p.defense).toBe(1);        // 5 − 4 (Agilité)
+        expect(p.attack).toBe(15);        // 18 − 3 (Battle)
+        expect(p.defense).toBe(1);        // 7 − 4 (Agilité) − 2 (Morale)
         expect(p.maxHp).toBe(100);        // 105 − 5 (Endurance)
         expect(p.hp).toBe(90);            // les PV actuels ne dépassent jamais le nouveau maximum
         expect(p.unspentLevelPoints).toBe(17);   // 1 déjà en réserve + 16 rendus
@@ -84,5 +84,19 @@ describe('réinitialisation des points d\'attribut', () => {
         respecAttributes(p);
         expect(p).toMatchObject({ attack: 15, defense: 1, maxHp: 100, unspentLevelPoints: 17 });
         expect(before.attack).toBe(20);   // la réinitialisation retire l'effet des points, pas celui des niveaux
+    });
+});
+
+describe('le Moral (violet) donne de l\'agilité, pas de l\'attaque', () => {
+    test('effet direct : +1 défense (comme l\'Agilité), plus aucune attaque', () => {
+        expect(ATTRIBUTE_STAT_EFFECTS.morale).toMatchObject({ stat: 'defense', amount: 1 });
+        expect(ATTRIBUTE_STAT_EFFECTS.strength.stat).toBe('attack');
+        expect(describeAttributeChoice(hero(), 'morale').lines[0]).toMatch(/\+1 défense et \+1 agilité/);
+        expect(describeAttributeChoice(hero(), 'morale').statTitle).toBe('Agilité morale');
+    });
+
+    test("l'initiative compte les points de Moral comme ceux d'Agilité", () => {
+        expect(agilityScore(hero({ agility: 2, morale: 3 }))).toBe(5);
+        expect(agilityScore(hero({ strength: 4 }))).toBe(0);
     });
 });

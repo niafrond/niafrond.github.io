@@ -45,9 +45,13 @@ describe('Bestiaire du carnet', () => {
         expect(createSession({ bestiary: ['nian', 'nian', 3] }).data.bestiary).toEqual(['nian']);
     });
 
-    test('le carnet a un onglet Bestiaire et le combat inscrit la créature', () => {
+    test("le bestiaire est un volet de l'onglet Inventaire (plus du carnet) et le combat inscrit la créature", () => {
         const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
-        expect(view).toMatch(/tab\('bestiary'/);
+        expect(view).not.toMatch(/tab\('bestiary'/);   // plus d'onglet dans le carnet
+        expect(view).toMatch(/async bestiaryHtml\(\)/);
+        const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+        expect(html).toMatch(/id="tab-items"[\s\S]*data-inv-sub="bag"[\s\S]*data-inv-sub="bestiary"[\s\S]*id="inv-bestiary"/);
+        expect(readFileSync(new URL('../../main.js', import.meta.url), 'utf8')).toMatch(/exploration\.bestiaryHtml\(\)/);
         expect(view).toMatch(/X\.recordBestiary\(session, enc\.templateId\)/);
         const save = readFileSync(new URL('../../saveManager.js', import.meta.url), 'utf8');
         expect(save).toMatch(/bestiary: ex\.bestiary/);
@@ -83,5 +87,28 @@ describe('Ennemis nommés : gabarit et fiche propres (copies)', () => {
         expect(tpl.golden_carp).toBe('carpe_doree');
         expect(tpl.arena_c8_master).toBe('grand_maitre_qian_jian');
         expect(tpl.sun9_wardens_a).toBe(tpl.sun9_wardens_b);
+    });
+});
+
+describe('Bestiaire aquatique : fiches lisibles', () => {
+    const AQUATIC_RACES = /Poisson|Tortue|Méduse|Serpent|Dragon|Long|aquatique|Hybride/;
+
+    test('deux fiches ne portent pas le même nom, hors variantes d\'une même figure (Pixiu, Zhulong, Bai Ze, Tianlu, Fuxi, Yingzhao)', () => {
+        const byName = {};
+        catalog.forEach(t => (byName[t.name] ||= []).push(t.id));
+        const dups = Object.entries(byName).filter(([, ids]) => ids.length > 1).map(([name]) => name).sort();
+        expect(dups).toEqual(['Bai Ze', 'Fuxi', 'Pixiu', 'Tianlu', 'Yingzhao', 'Zhulong']);   // « Gui » (esprit) et « Gui » (tortue) se confondaient
+        expect(catalog.find(t => t.id === 'gui_tortue').name).toBe('Tortue Gui');
+        expect(catalog.find(t => t.id === 'gui_esprit').name).toBe('Gui');
+    });
+
+    test('les créatures de la mer ont une fiche complète : notice, provenance, force et faiblesse différentes', () => {
+        const sea = catalog.filter(t => AQUATIC_RACES.test(t.race) && BESTIARY_LORE[t.id]);
+        expect(sea.length).toBeGreaterThan(20);
+        sea.forEach(t => {
+            const e = bestiaryEntry(t);
+            expect({ id: t.id, lore: e.lore.length > 40, source: Boolean(SOURCE_LABELS[e.source]) }).toEqual({ id: t.id, lore: true, source: true });
+            expect({ id: t.id, same: e.strongColor === e.weakColor }).toEqual({ id: t.id, same: false });
+        });
     });
 });

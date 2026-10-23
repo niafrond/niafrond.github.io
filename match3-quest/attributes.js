@@ -19,7 +19,7 @@ export const ATTRIBUTE_STAT_EFFECTS = {
     agility: { stat: "defense", amount: 1 },
     intelligence: { stat: "spellPower", amount: 1 }, // calculé à l'utilisation (dégâts/soins des sorts)
     stamina: { stat: "maxHp", amount: 1 },
-    morale: { stat: "attack", amount: 1 }
+    morale: { stat: "defense", amount: 1 } // le moral donne de l'agilité (défense et initiative), pas de l'attaque
 };
 
 export const ATTRIBUTE_ORDER = ["strength", "agility", "intelligence", "stamina", "morale"];
@@ -52,8 +52,8 @@ const STAT_TEXT = {
         line: `+${n} PV max (et ${n} PV rendu).`
     }),
     morale: (n) => ({
-        title: "Attaque morale",
-        line: `+${n} attaque : ${n} % de chances de coup critique en plus (arme, crânes).`
+        title: "Agilité morale",
+        line: `+${n} défense et +${n} agilité : ${n} % de chances de bloquer en plus, et l'initiative compte les points de moral comme ceux d'agilité.`
     })
 };
 
@@ -109,7 +109,7 @@ export const totalAttributePoints = entity => ATTRIBUTE_ORDER.reduce((sum, attr)
 
 /**
  * Remet à zéro tous les points d'attribut dépensés et les rend à dépenser (menu « Réinitialiser les points ») : retire l'effet direct
- * de chaque point (attaque pour Battle et Morale, défense pour Agilité, PV max pour Endurance) et rend les points dans
+ * de chaque point (attaque pour Battle, défense pour Agilité et Moral, PV max pour Endurance) et rend les points dans
  * `unspentLevelPoints`. Les bonus de couleur de mana disparaissent avec les points (ils se calculent d'après eux). Hors combat seulement :
  * l'appelant vérifie. Renvoie { refunded } (nombre de points rendus).
  */
@@ -117,8 +117,8 @@ export function respecAttributes(entity) {
     const pts = Object.fromEntries(ATTRIBUTE_ORDER.map(attr => [attr, getAttributePoints(entity, attr)]));
     const refunded = ATTRIBUTE_ORDER.reduce((sum, attr) => sum + pts[attr], 0);
     if (refunded <= 0) return { refunded: 0 };
-    entity.attack = Math.max(0, Math.floor(entity.attack || 0) - pts.strength - pts.morale);
-    entity.defense = Math.max(0, Math.floor(entity.defense || 0) - pts.agility);
+    entity.attack = Math.max(0, Math.floor(entity.attack || 0) - pts.strength);
+    entity.defense = Math.max(0, Math.floor(entity.defense || 0) - pts.agility - pts.morale);
     entity.maxHp = Math.max(1, Math.floor(entity.maxHp || 1) - pts.stamina);
     entity.hp = Math.max(1, Math.min(Math.floor(entity.hp || 1), entity.maxHp));
     ATTRIBUTE_ORDER.forEach(attr => { entity.attributes[attr] = 0; });
@@ -142,3 +142,6 @@ export function summarizeColorBonuses(entity) {
         };
     });
 }
+
+// Agilité effective (initiative en début de combat) : les points d'agilité et de moral comptent pareil.
+export const agilityScore = entity => getAttributePoints(entity, "agility") + getAttributePoints(entity, "morale");

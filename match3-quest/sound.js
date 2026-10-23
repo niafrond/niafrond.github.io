@@ -20,8 +20,8 @@ const defaultSettings = {
     developerMode: false
 };
 
-// Durée du jingle d'entrée en combat : la musique de combat démarre après ce délai.
-export const COMBAT_INTRO_MS = 1400;
+// Durée du jingle d'entrée en combat (combatStart, ≈ 3,6 s) : la musique de combat démarre après ce délai. Un boss n'a pas ce délai : son jingle (bossStart) a joué pendant l'annonce du combat.
+export const COMBAT_INTRO_MS = 3600;
 
 const DEV_MODE_CLICK_TARGET = 6;
 

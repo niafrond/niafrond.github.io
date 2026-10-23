@@ -45,7 +45,7 @@ const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
 const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
-const BATTLE_TRANSITION_MS = 2200;   // durée de l'animation d'entrée en combat (≥ 2 s)
+const BATTLE_TRANSITION_MS = 3400;   // durée de l'animation d'entrée en combat : le nom de l'adversaire reste lisible environ 2 s
 const BATTLE_STRIPS = 10;
 
 const DIRECTIONS = {
@@ -460,7 +460,7 @@ export function createExplorationView(cfg) {
         return new Set(events.filter(e => e.quest).map(e => e.quest.id));
     }
 
-    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression, bestiaire ──────
+    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression (le bestiaire est dans l'onglet Inventaire) ──────
     const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
     const carnet = { tab: 'quests', filter: 'all', region: 'all', travelRegion: null };
     const STATUS_LABEL = { available: `${icon('talk')} À démarrer`, active: `${icon('target')} En cours`, ready: `${icon('check')} À rendre`, done: `${icon('flag')} Terminée` };
@@ -536,7 +536,7 @@ export function createExplorationView(cfg) {
             </div>`).join('')}</div>`;
     }
 
-    // Bestiaire : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
+    // Bestiaire (volet de l'onglet Inventaire, voir bestiaryHtml) : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
     function bestiaryPanel() {
         const { entries, known, total } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);
         const head = `<p class="carnet-hint">${icon('book')} ${known}/${total} créatures connues. Combattez ou observez une créature (immobile près d'elle) pour l'inscrire.</p>`;
@@ -562,13 +562,13 @@ export function createExplorationView(cfg) {
 
     function renderCarnet() {
         if (!journalEl) return;
-        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : carnet.tab === 'bestiary' ? bestiaryPanel() : questsPanel();
+        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : questsPanel();
         const tab = (key, label) => `<button type="button" class="carnet-tab${carnet.tab === key ? ' on' : ''}" data-tab="${key}">${label}</button>`;
         journalEl.innerHTML = `
             <div class="explore-journal-card">
                 <h3>${icon('scroll')} ${escapeHtml(STORY_TITLE)}</h3>
                 ${session.data.ended ? `<p class="explore-journal-end">${icon('moon')} La légende est achevée !</p>` : ''}
-                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}${tab('bestiary', `${icon('book')} Bestiaire`)}</div>
+                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}</div>
                 ${body}
                 ${session.data.ended ? `<button type="button" class="primary explore-journal-ngplus">${icon('moon')} Nouvelle Partie +</button>` : ''}
                 <button type="button" class="primary explore-journal-close">Fermer</button>
@@ -710,6 +710,7 @@ export function createExplorationView(cfg) {
     // Animation « à la Pokémon » : éclairs blancs, volets noirs qui se referment en alternance,
     // puis le nom de l'adversaire. Le combat démarre à la fin (les saisies sont bloquées entre-temps).
     function playBattleTransition(enc, done) {
+        playSfx(enc.boss ? 'bossStart' : 'battleStart');   // avant tout le reste : le jingle part avant l'animation, pas après
         removeBattleTransition();
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const overlay = document.createElement('div');
@@ -732,7 +733,6 @@ export function createExplorationView(cfg) {
             </div>`;
         root.appendChild(overlay);
         battleTransitionEl = overlay;
-        playSfx(enc.boss ? 'bossStart' : 'battleStart');
         battleTransitionTimer = setTimeout(() => {
             battleTransitionTimer = null;
             if (!enc.boss) { done(); return; }
@@ -2027,6 +2027,13 @@ export function createExplorationView(cfg) {
 
         travelTo,
         openCarnet: tab => { if (!isBlocked()) showJournal(tab); },
+        // Volet Bestiaire de l'onglet Inventaire : les dessins des créatures connues (de toutes les régions) sont chargés avant d'afficher.
+        async bestiaryHtml() {
+            ensureSession();
+            const { entries } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);
+            await loadGbaSprites(entries.map(e => e.id)).catch(() => {});
+            return bestiaryPanel();
+        },
         getTravelList() { ensureSession(); return X.waypointList(session); },
         canFastTravel() { ensureSession(); return X.nearWaypoint(session); },
 

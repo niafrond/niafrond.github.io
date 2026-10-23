@@ -170,3 +170,57 @@ describe('compagnon renard', () => {
         expect(block.indexOf('afterPlayerAnimations(')).toBeLessThan(block.indexOf('showCombatAnimation'));
     });
 });
+
+describe('fin de combat : le mot Victoire / Défaite, puis le résultat, puis « Retour à l\'exploration »', () => {
+    const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
+    const body = (src, name) => src.slice(src.indexOf(`function ${name}`), src.indexOf('\n}\n', src.indexOf(`function ${name}`)));
+
+    test("victoire et défaite passent par le même enchaînement, sans second écran « Cliquez pour continuer »", () => {
+        const end = body(game, 'showEndCombatAnimation');
+        expect(end).toMatch(/finalizeCombatEndUI\(isVictory\)/);
+        expect(end).not.toMatch(/showCombatAnimation/);
+    });
+
+    test("le mot plein écran vient d'abord ; le résultat ne se met en place que plus tard, sous lui", () => {
+        const final = body(game, 'finalizeCombatEndUI');
+        expect(final).toMatch(/playCombatEndBanner\(isVictory,/);
+        expect(final).not.toMatch(/showCombatResultScreen|combat-ended/);   // ni le résultat ni le bouton avant le mot
+        const reveal = body(game, 'revealCombatEndUI');
+        expect(reveal.indexOf('showCombatResultScreen(isVictory)')).toBeGreaterThan(-1);
+        expect(reveal.indexOf('showCombatResultScreen(isVictory)')).toBeLessThan(reveal.indexOf("classList.add('combat-ended')"));
+        expect(body(game, 'showCombatResultScreen')).not.toMatch(/Banner|combat-end-fade/);
+    });
+
+    test('le bouton de retour apparaît avec retard, une fois le résultat en place', () => {
+        expect(css).toMatch(/body\.combat-ended #combat-controls #new-combat-btn \{[^}]*animation: returnBtnIn [\d.]+s ease-out 0\.9s backwards/);
+        expect(css).toMatch(/@keyframes returnBtnIn/);
+    });
+
+    test("la musique de l'issue démarre avec le mot et boucle jusqu'au retour à l'exploration", () => {
+        expect(game).toMatch(/document\.body\.dataset\.combatEnd = isVictory \? 'victory' : 'defeat'/);
+        expect(main).toMatch(/document\.body\.dataset\.combatEnd\) return \[document\.body\.dataset\.combatEnd\]/);
+        expect(main).toMatch(/enterExploration = \(\) => \{[\s\S]*?delete document\.body\.dataset\.combatEnd/);
+        expect(game).toMatch(/startNewCombat[\s\S]*?delete document\.body\.dataset\.combatEnd/);
+    });
+});
+
+describe('début de combat : jingles avant l\'animation, nom de l\'adversaire plus longtemps', () => {
+    const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+    const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
+
+    test("le jingle d'annonce part avant même la construction de l'animation", () => {
+        const fn = view.slice(view.indexOf('function playBattleTransition'));
+        expect(fn.indexOf("playSfx(enc.boss ? 'bossStart' : 'battleStart')")).toBeGreaterThan(-1);
+        expect(fn.indexOf("playSfx(enc.boss ? 'bossStart' : 'battleStart')")).toBeLessThan(fn.indexOf('removeBattleTransition()'));
+        expect(fn.indexOf("playSfx(enc.boss ? 'bossStart' : 'battleStart')")).toBeLessThan(fn.indexOf("createElement('div')"));
+    });
+
+    test("l'annonce dure au moins 3 s (le nom de l'adversaire reste lisible environ 2 s)", () => {
+        expect(Number(view.match(/BATTLE_TRANSITION_MS = (\d+)/)[1])).toBeGreaterThanOrEqual(3000);
+    });
+
+    test("un boss ne rejoue pas son jingle au début du combat, et la musique n'attend pas de jingle de combat", () => {
+        expect(game).toMatch(/if\(!enemy\?\.isBoss\) playSfx\('combatStart'\)/);
+        expect(main).toMatch(/e\.detail\?\.boss \? 0 : Date\.now\(\) \+ COMBAT_INTRO_MS/);
+    });
+});

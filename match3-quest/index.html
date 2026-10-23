@@ -197,13 +197,17 @@
 
     <!-- Onglet Objets (boucliers, objets rechargeables, reliques, consommables) -->
     <div id="tab-items" class="tab-panel">
-        <h2>Objets</h2>
+        <h2>Inventaire</h2>
+        <div class="carnet-tabs inv-subtabs"><button type="button" class="carnet-tab on" data-inv-sub="bag">Sac</button><button type="button" class="carnet-tab" data-inv-sub="bestiary">Bestiaire</button></div>
+        <div id="inv-bag">
         <label class="sort-bar">Trier par <select id="items-sort"><option value="default">Ordre du sac</option><option value="name">Nom</option><option value="rarity">Rareté</option><option value="level">Niveau requis</option><option value="type">Type</option></select></label>
         <div id="gear-list"></div>
         <h3 style="margin-top: 20px;">Sac</h3>
         <div id="inventory-list"></div>
+        </div>
+        <div id="inv-bestiary" style="display: none;"></div>
     </div>
-    
+
     <!-- Onglet Stuff (casque, collier, bracelet, bague) -->
     <div id="tab-stuff" class="tab-panel">
         <h2>Stuff</h2>
@@ -273,6 +277,7 @@
             });
             document.getElementById('tab-' + tabName).classList.add('active');
             if(tabName === 'special') document.dispatchEvent(new Event('special-tab-open'));
+            if(tabName === 'items') document.dispatchEvent(new Event('items-tab-open'));
             const activeButton = clickEvent?.target || document.querySelector(`.tab-btn[onclick*="switchTab('${tabName}')"]`);
             activeButton?.classList.add('active');
         });

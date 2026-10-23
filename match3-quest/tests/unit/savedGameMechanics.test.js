@@ -125,11 +125,11 @@ describe('forge de joueurs : cohérence des jalons', () => {
         });
     });
 
-    test('attaque : points de Force et de Morale dépensés + croissance innée après le niveau 18', () => {
+    test('attaque : points de Force dépensés + croissance innée après le niveau 18 (le Moral donne de l\'agilité, pas de l\'attaque)', () => {
         MILESTONES.forEach(m => {
             const p = m.forge('barbarian');
             const startAtkPoints = (playerClasses.barbarian.startingStats.strength || 0);
-            const gained = p.attributes.strength + p.attributes.morale - startAtkPoints;
+            const gained = p.attributes.strength - startAtkPoints;
             expect(p.attack).toBe(NEW_PLAYER_ATTACK + gained + growthExtras(1, m.level).attack);
         });
     });
