@@ -18,7 +18,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { execSync } from 'child_process';
 import { createRequire } from 'module';
-import { BESTIARY } from './bestiary-data.mjs';
+import { BESTIARY as BASE_BESTIARY } from './bestiary-data.mjs';
+import { OVERRIDES } from './sprite-overrides.mjs';
 import { biblePrompt } from './bible-graphique.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const GENERATED = join(GAME, 'sprites', 'generated.js');
 const PNG_DIR = join(GAME, 'sprites', 'png');
 const DIRS = ['front', 'back', 'left', 'right'];
+// bestiaire + créatures de sprite-overrides.mjs (une surcharge remplace l'entrée de même id)
+const BESTIARY = [...BASE_BESTIARY.filter(b => !OVERRIDES.some(o => o[0] === b[0])), ...OVERRIDES];
 const VIEWS = {
   front: 'front view, facing the viewer',
   back: 'back view, seen from behind, facing away from the viewer',
