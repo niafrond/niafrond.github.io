@@ -1,3 +1,9 @@
+## [2.120.1](https://github.com/niafrond/niafrond.github.io/compare/v2.120.0...v2.120.1) (2026-10-23)
+
+### Bug Fixes
+
+* **match3-quest:** masquer la section des ultimes tant qu'aucun n'est débloqué ([#534](https://github.com/niafrond/niafrond.github.io/issues/534)) ([b993b2b](https://github.com/niafrond/niafrond.github.io/commit/b993b2badfd53ccfedfe165fec2532b099515554))
+
 ## [2.120.0](https://github.com/niafrond/niafrond.github.io/compare/v2.119.0...v2.120.0) (2026-10-23)
 
 ### Features
