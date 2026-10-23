@@ -30,7 +30,9 @@ export const JUNCTIONS = [
             after: ['La chaîne est levée pour vous. Mais ne dites pas à la préfecture que j\'ai laissé passer quelqu\'un sans rapport en triple exemplaire.']
         },
         item: { chest: 'rizieres_courier_satchel', screen: 'rizieres_wild', fragment: 'Cire impériale', label: 'Besace du courrier égaré', name: 'sceau de courrier impérial',
-            openText: 'Sous un roseau sec gît la besace d\'un courrier impérial, mort de soif avant d\'avoir atteint le fleuve. Son sceau de passage est encore dedans : vous le glissez dans votre manche.' },
+            openText: 'Sous un roseau sec gît la besace d\'un courrier impérial, mort de soif avant d\'avoir atteint le fleuve. Son sceau de passage est encore dedans : vous le glissez dans votre manche.',
+            earlyText: 'Sous un roseau sec gît une besace de cuir, abandonnée depuis longtemps. Au fond, un petit objet gravé que vous glissez dans votre manche, sans trop savoir à quoi il peut servir.',
+            earlyDescription: 'Un petit objet gravé trouvé dans une besace abandonnée. Vous ignorez à quoi il sert.' },
         quest: {
             id: 'jq_passerelle_hekou', title: 'Le sceau de la passerelle',
             objective: 'Retrouver le sceau d\'un courrier impérial (Digue et Marais Craquelés, dans les terres au sud-est)',
@@ -51,7 +53,9 @@ export const JUNCTIONS = [
             after: ['Votre gourde est pleine, la mienne aussi. Les dunes vous attendent. Elles sont patientes, mais pas hospitalières.']
         },
         item: { chest: 'volcan_sealed_gourd', screen: 'volcan_wild', fragment: 'Cuir de gourde', label: 'Gourde de la source scellée', name: 'gourde de source scellée',
-            openText: 'Dans une niche de basalte, au bord d\'une source encore tiède, une gourde de cuir scellée à la cire. Son eau est fraîche comme au premier jour : elle servira de viatique.' },
+            openText: 'Dans une niche de basalte, au bord d\'une source encore tiède, une gourde de cuir scellée à la cire. Son eau est fraîche comme au premier jour : elle servira de viatique.',
+            earlyText: 'Dans une niche de basalte, au bord d\'une source encore tiède, un objet de cuir scellé à la cire. Vous l\'emportez, à tout hasard.',
+            earlyDescription: 'Un objet de cuir scellé à la cire, trouvé près d\'une source. Vous ignorez à quoi il sert.' },
         quest: {
             id: 'jq_dernier_puits', title: 'Une gourde pour les dunes',
             objective: 'Rapporter une gourde de source scellée (Gorges du Volcan, dans les terres au sud-est)',
@@ -72,7 +76,9 @@ export const JUNCTIONS = [
             after: ['Votre plaquette est en règle. Gardez-la sur vous : si on vous retrouve sans, on vous prendra pour un voleur de braise.']
         },
         item: { chest: 'rizieres_basalt_pass', screen: 'rizieres_wild', fragment: 'Éclat de basalte', label: 'Coffret de la digue', name: 'laissez-passer de basalte',
-            openText: 'Sous une dalle fendue de la digue, un coffret de pierre noire : à l\'intérieur, une plaquette de basalte gravée au sceau du forgeron-chef. Votre laissez-passer.' },
+            openText: 'Sous une dalle fendue de la digue, un coffret de pierre noire : à l\'intérieur, une plaquette de basalte gravée au sceau du forgeron-chef. Votre laissez-passer.',
+            earlyText: 'Sous une dalle fendue de la digue, un coffret de pierre noire : à l\'intérieur, une plaquette gravée d\'un sceau inconnu. Vous la gardez, par curiosité.',
+            earlyDescription: 'Une plaquette de pierre noire gravée d\'un sceau inconnu. Vous ignorez à quoi elle sert.' },
         quest: {
             id: 'jq_galeries_volcan', title: 'Le laissez-passer de basalte',
             objective: 'Récupérer un laissez-passer de basalte (Digue et Marais Craquelés, dans les terres au sud-est)',
@@ -93,7 +99,9 @@ export const JUNCTIONS = [
             after: ['Cette boussole pointe juste, et elle est jolie. La jetée est à vous. Si vous vous perdez, regardez l\'aiguille et priez.']
         },
         item: { chest: 'fauves_jade_compass', screen: 'fauves_wild', fragment: 'Aiguille de jade', label: 'Reliquaire du chasseur', name: 'boussole de jade',
-            openText: 'Sous un tas de pierres, un reliquaire de chasseur : une boussole de jade, dont l\'aiguille tremble comme un cœur d\'oiseau. Elle pointe vers la mer.' },
+            openText: 'Sous un tas de pierres, un reliquaire de chasseur : une boussole de jade, dont l\'aiguille tremble comme un cœur d\'oiseau. Elle pointe vers la mer.',
+            earlyText: 'Sous un tas de pierres, un reliquaire de chasseur : un objet de jade dont l\'aiguille tremble comme un cœur d\'oiseau. Vous le prenez avec vous.',
+            earlyDescription: 'Un objet de jade dont l\'aiguille tremble, trouvé dans un reliquaire. Vous ignorez à quoi il sert.' },
         quest: {
             id: 'jq_quai_de_jade', title: 'La boussole de jade',
             objective: 'Retrouver la boussole de jade d\'un chasseur (Hautes Herbes de Cendre, dans les terres au sud-est)',
@@ -303,8 +311,8 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
             const guardPos = guardCellFor(from, gate, occupancy(from, screens), [1, 2, 3], [2, -2, 3, -3, 4, -4]);
             if (!chestPos || !guardPos) throw new Error(`jonction ${j.id} : pas de place pour ${!chestPos ? 'le coffre' : 'le garde'}`);
             const R = Math.max(1, Math.round(regionLevel[j.region] || 1));
-            const questItem = { id: `qi_${j.item.chest}`, name: j.item.name, description: j.quest.objective, quest: j.quest.id };
-            holder.chests.push({ id: j.item.chest, label: j.item.label, openText: j.item.openText, gold: 15 * R, questItem, x: chestPos.x, y: chestPos.y });
+            const questItem = { id: `qi_${j.item.chest}`, name: j.item.name, description: j.quest.objective, earlyDescription: j.item.earlyDescription, quest: j.quest.id };
+            holder.chests.push({ id: j.item.chest, label: j.item.label, openText: j.item.openText, earlyText: j.item.earlyText, gold: 15 * R, questItem, x: chestPos.x, y: chestPos.y });
             const g = j.guard;
             from.npcs.push({
                 id: g.id, name: g.name, title: g.title, idle: g.idle, x: guardPos.x, y: guardPos.y,

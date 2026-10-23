@@ -88,17 +88,23 @@ describe('jonctions gardées', () => {
         expect(talkToNpc(s, j.guard.id).lines).toEqual(SCREENS[j.from].npcs.find(n => n.id === j.guard.id).talk[0].lines);
     });
 
-    test.each(items.map(j => [j.id, j]))('%s : reparler au garde sans l\'objet ne valide pas la quête (coffre scellé avant la quête)', (_id, j) => {
+    test.each(items.map(j => [j.id, j]))('%s : le coffre s\'ouvre avant la quête, avec un texte évasif, et l\'objet prend son sens à l\'acceptation', (_id, j) => {
         const { s } = atGate(j);
         const quest = QUESTS.find(q => q.id === j.quest.id);
         s.data.screenId = j.item.screen;
-        expect(openChest(s, j.item.chest)).toMatchObject({ type: 'chestSealed' });   // quête non acceptée : rien n'est pris
-        expect(s.data.openedChests).not.toContain(j.item.chest);
+        const res = openChest(s, j.item.chest);
+        expect(res).toMatchObject({ type: 'chestOpened' });
+        expect(res.events[0]).toMatchObject({ early: true });
+        expect(res.chest.earlyText).toBeTruthy();
+        expect(res.chest.earlyText).not.toBe(res.chest.openText);
+        expect(res.chest.earlyText).not.toContain(j.quest.title);
+        const held = s.data.questItems.find(i => i.id === `qi_${j.item.chest}`);
+        expect(held.description).toBe(j.item.earlyDescription);
+        expect(held.description).not.toBe(j.quest.objective);
         s.data.screenId = j.from;
-        talkToNpc(s, j.guard.id);
-        const again = talkToNpc(s, j.guard.id);
-        expect(again.lines).toEqual(j.quest.hint);
-        expect(questStatus(s, quest)).toBe('active');
+        talkToNpc(s, j.guard.id);   // le garde propose la quête : l\'objet déjà en poche révèle son usage
+        expect(s.data.questItems.find(i => i.id === held.id).description).toBe(j.quest.objective);
+        expect(questStatus(s, quest)).toBe('ready');
     });
 
     test.each(kills.map(j => [j.id, j]))('%s : gardien permanent posé près du passage, verrou levé par sa défaite', (_id, j) => {
