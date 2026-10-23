@@ -141,7 +141,7 @@ export default {
         ],
         enemies: [
             { id: 'fusang_road_spirit', at: '2', templateId: 'shu_jing', name: 'Esprit de la racine géante', kind: 'sentinel', offset: 0 },
-            { id: 'fusang_road_monkey', at: '3', templateId: 'huli_jing', name: 'Singe-démon pillard', kind: 'sentinel', offset: -1 },
+            { id: 'fusang_road_monkey', at: '3', templateId: 'singe_demon', name: 'Singe-démon pillard', kind: 'sentinel', offset: -1 },
             { id: 'fusang_road_wyrm', at: '4', templateId: 'yinglong', name: 'Serpent de sève', kind: 'patrol', patrol: ['4', [7, 12]], offset: 0 },
             { id: 'fusang_road_hopper', at: '5', templateId: 'jiangshi', name: 'Jiangshi sauteur des racines', kind: 'patrol', patrol: ['5', [38, 5]], offset: 0 }
         ]
@@ -213,8 +213,8 @@ export default {
             { id: 'fusang_w_moth', at: 's', templateId: 'jiangshi', name: 'Jiangshi des mousses', kind: 'patrol', patrol: ['s', [27, 18]], offset: 0 },
             { id: 'fusang_w_wyrm', at: 't', templateId: 'yinglong', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['t', [26, 4]], offset: -1 },
             { id: 'fusang_w_scholar', at: 'n', templateId: 'lettre_sorcier', name: 'Lettré des branches', kind: 'sentinel', offset: 0 },
-            { id: 'fusang_thief_a', at: 'o', templateId: 'huli_jing', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
-            { id: 'fusang_thief_b', at: 'p', templateId: 'huli_jing', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
+            { id: 'fusang_thief_a', at: 'o', templateId: 'singe_demon', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
+            { id: 'fusang_thief_b', at: 'p', templateId: 'singe_demon', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
             { id: 'fusang_frost_wyrm', at: 'q', templateId: 'canglong', name: 'Long de givre égaré', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fusang_w_wolf', at: 'u', templateId: 'loup_braise', name: 'Loup de braise des terrasses', kind: 'patrol', patrol: ['u', [38, 19]], offset: 0 },
             { id: 'fusang_w_mist', at: 'w', templateId: 'jiangshi', name: 'Jiangshi de la brume dorée', kind: 'patrol', patrol: ['w', [35, 10]], offset: 0 },

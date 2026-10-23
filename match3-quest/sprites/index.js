@@ -24,7 +24,36 @@ import { GBA_SPRITES } from './generated.js';
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
 const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
-const gbaKey = key => GBA_ALIASES[key] || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
+// Gabarits « copies » d'ennemis nommés (champ `copyOf` de enemies.catalog.json) sans dessin propre : ils empruntent le dessin du
+// gabarit d'origine, jusqu'à ce qu'un sprite dédié soit généré (il suffira alors de retirer la ligne).
+export const TEMPLATE_SPRITE_COPIES = {
+    maitresse_tong: 'soldat_terre_cuite',
+    maitre_hong_gang: 'chiyou',
+    maitre_tie_bi: 'lei_gong',
+    dame_yin_yue: 'pretresse_lunaire',
+    seigneur_jin_long: 'garde_solaire',
+    dame_bi_yu: 'immortel_jade',
+    immortel_yun_zhong: 'dame_des_neiges',
+    grand_maitre_qian_jian: 'assassin_masque',
+    noye_garde: 'gui_guerrier',
+    esprit_cloche: 'suanni',
+    foudre_garde: 'lei_gong',
+    forgeron_magma: 'pixiu',
+    forgeron_lave: 'pixiu',
+    garde_maree: 'jiaolong',
+    grue_lige: 'lettre_sorcier',
+    brigand_sables: 'soldat_terre_cuite',
+    chef_de_dune: 'chiyou',
+    petit_gui: 'huli_jing',
+    corbeau_demon: 'huli_jing',
+    singe_demon: 'huli_jing',
+    taureau_braise: 'sanglier_flammes',
+    crabe_soldat: 'soldat_terre_cuite',
+    carpe_doree: 'jiaolong',
+    tortue_dragon: 'canglong'
+};
+export const spriteSourceOf = key => TEMPLATE_SPRITE_COPIES[key] || key;
+const gbaKey = key => GBA_ALIASES[key] || TEMPLATE_SPRITE_COPIES[key] || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
 export const hasGbaSprite = key => gbaKey(key) in GBA_SPRITES;
 export function gbaSprite(key, dir = 'front') {
     const s = GBA_SPRITES[gbaKey(key)];
@@ -108,7 +137,7 @@ export function packsForKeys({ npcs = [], enemies = [] } = {}) {
     const packs = new Set([CORE_PACK]);
     npcs.forEach(id => { if (NPC_PACK[id]) packs.add(NPC_PACK[id]); });
     enemies.forEach(([key, templateId]) => {
-        const pack = ENEMY_PACK[key] || ENEMY_PACK[templateId];
+        const pack = ENEMY_PACK[key] || ENEMY_PACK[spriteSourceOf(templateId)];
         if (pack) packs.add(pack);
     });
     return [...packs];
@@ -133,7 +162,8 @@ export const chestSprite = opened => CHEST_SPRITES[opened ? 'open' : 'closed'] |
 // Un ennemi nommé (soleil, rival) a son propre dessin ; sinon on prend celui de son gabarit.
 // `biome` (optionnel) recolore le dessin aux teintes du biome (voir biomeTint.js) ; sans biome, ou pour un biome sans teinte,
 // le dessin d'origine est renvoyé. Le résultat est mis en cache par (dessin, biome) : même chaîne à chaque appel.
-const baseEnemySprite = (enemyId, templateId) => {
+const baseEnemySprite = (enemyId, rawTemplateId) => {
+    const templateId = spriteSourceOf(rawTemplateId);
     const svg = ENEMY_SPRITES[enemyId] || null;
     if (svg) return { svg, key: enemyId };
     // dessin propre pas encore chargé : on ne retombe pas sur celui du gabarit

@@ -329,7 +329,8 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     const template = catalog.find(t => t.id === encounter?.templateId) || pickRandom(catalog);
     const level = Math.max(1, Math.floor(encounter?.level || 1));
     // Boss : équipement, sorts et objet pré-générés d'après son identité (ils ne bougent pas quand on revient le voir).
-    const bossKey = encounter?.boss ? `map-boss|${encounter.enemyId || ''}|${template.id}|${level}` : null;
+    // une copie de gabarit (`copyOf`) tire le même équipement que l'original : seuls le nom et la fiche du bestiaire changent
+    const bossKey = encounter?.boss ? `map-boss|${encounter.enemyId || ''}|${template.copyOf || template.id}|${level}` : null;
     const enemyEntity = bossKey
         ? withSeededRandom(bossKey, () => buildEnemyFromTemplate(template, level, allWeaponsArg, { boss: true }))
         : buildEnemyFromTemplate(template, level, allWeaponsArg);

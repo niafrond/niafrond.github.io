@@ -53,3 +53,35 @@ describe('Bestiaire du carnet', () => {
         expect(save).toMatch(/bestiary: ex\.bestiary/);
     });
 });
+
+describe('Ennemis nommés : gabarit et fiche propres (copies)', () => {
+    const copies = catalog.filter(t => t.copyOf);
+
+    test('une copie reprend exactement les statistiques de son gabarit d\'origine', () => {
+        expect(copies.length).toBeGreaterThanOrEqual(37);
+        const strip = ({ id, name, race, title, copyOf, ...rest }) => rest;
+        copies.forEach(t => {
+            const from = catalog.find(o => o.id === t.copyOf);
+            expect(from && !from.copyOf).toBe(true);
+            expect(strip(t)).toEqual(strip(from));
+            expect(BESTIARY_SOURCE[t.id]).toBe('adaptation');
+        });
+    });
+
+    test('le venin du gabarit d\'origine est conservé', async () => {
+        const { isVenomous } = await import('../../stuff.js');
+        copies.forEach(t => expect(isVenomous(t.id)).toBe(isVenomous(t.copyOf)));
+    });
+
+    test('soleils, Fengmeng, maîtres d\'arène et ennemis de quête ouvrent leur propre fiche', async () => {
+        const { SCREENS } = await import('../../story.js');
+        const tpl = Object.fromEntries(Object.values(SCREENS).flatMap(sc => sc.enemies || []).map(e => [e.id, e.templateId]));
+        ['sun_1', 'sun_2', 'sun_3', 'sun_4', 'sun_5', 'sun_6', 'sun_7', 'sun_8', 'sun_9', 'fengmeng_1', 'fengmeng_2', 'fengmeng_3a', 'fengmeng_3b']
+            .forEach(id => expect(tpl[id]).toBe(id));
+        expect(tpl.mirage_1).toBe('sun_4');
+        expect(tpl.crow_a).toBe('corbeau_demon');
+        expect(tpl.golden_carp).toBe('carpe_doree');
+        expect(tpl.arena_c8_master).toBe('grand_maitre_qian_jian');
+        expect(tpl.sun9_wardens_a).toBe(tpl.sun9_wardens_b);
+    });
+});

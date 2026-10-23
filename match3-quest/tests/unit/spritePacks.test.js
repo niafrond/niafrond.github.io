@@ -4,7 +4,7 @@ import { SPRITE_PACK_FILES, packContents } from '../../sprites/packContents.js';
 import { NPC_PACK, ENEMY_PACK } from '../../sprites/packs.js';
 import {
     SPRITE_PACKS, CORE_PACK, NPC_SPRITES, ENEMY_SPRITES, isPackLoaded, loadSpritePack, loadSpritePacks, packsForKeys,
-    heroSprite, npcSprite, enemySprite
+    heroSprite, npcSprite, enemySprite, spriteSourceOf
 } from '../../sprites/index.js';
 
 const screens = Object.values(SCREENS);
@@ -57,7 +57,7 @@ describe('chargement des sprites à la demande', () => {
             const npcs = Object.assign({}, ...mods.map(m => packContents(m).npcs));
             const enemies = Object.assign({}, ...mods.map(m => packContents(m).enemies));
             keys.npcs.filter(id => NPC_PACK[id]).forEach(id => expect(npcs[id]).toBeTruthy());
-            keys.enemies.forEach(([key, tpl]) => expect(enemies[key] || enemies[tpl]).toBeTruthy());
+            keys.enemies.forEach(([key, tpl]) => expect(enemies[key] || enemies[spriteSourceOf(tpl)]).toBeTruthy());
         }
     });
 });

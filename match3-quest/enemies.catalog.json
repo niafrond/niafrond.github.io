@@ -2878,5 +2878,1358 @@
     },
     "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
     "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "sun_1",
+    "name": "Soleil Ardent",
+    "race": "Soleil",
+    "title": "Le Plus Jeune des Dix",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "sun_2",
+    "name": "Soleil des Eaux Taries",
+    "race": "Soleil",
+    "title": "Buveur du Fleuve Jaune",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "sun_3",
+    "name": "Soleil de Cendres",
+    "race": "Soleil",
+    "title": "Silence des Bambous",
+    "copyOf": "lingzhi_maudit",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.2,
+      "defMult": 1.25
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "green",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.4,
+      "yellow": 0.1,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 0.3,
+      "dropChance": 0.45,
+      "weaponChance": 0.05
+    }
+  },
+  {
+    "id": "sun_4",
+    "name": "Soleil des Mirages",
+    "race": "Soleil",
+    "title": "Mille Reflets du Gobi",
+    "copyOf": "lettre_sorcier",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.3,
+      "defMult": 1.0
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "purple",
+        "blue"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.25,
+      "red": 0.05,
+      "green": 0.08,
+      "yellow": 0.1,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.2,
+      "dropChance": 0.7,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "sun_5",
+    "name": "Soleil des Orages",
+    "race": "Soleil",
+    "title": "Cage d'Éclairs",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "sun_6",
+    "name": "Soleil de Magma",
+    "race": "Soleil",
+    "title": "Cœur du Volcan",
+    "copyOf": "pixiu",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.45,
+      "defMult": 1.3
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.05,
+      "red": 0.4,
+      "green": 0.05,
+      "yellow": 0.18,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.4,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "sun_7",
+    "name": "Soleil des Bêtes Folles",
+    "race": "Soleil",
+    "title": "Fièvre de la Plaine",
+    "copyOf": "shanxiao",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "green",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.22,
+      "green": 0.2,
+      "yellow": 0.12,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 0.8,
+      "dropChance": 0.5,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "sun_8",
+    "name": "Soleil des Marées",
+    "race": "Soleil",
+    "title": "Seigneur des Vagues Chaudes",
+    "copyOf": "jiaolong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.4,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 2.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.25
+    }
+  },
+  {
+    "id": "sun_9",
+    "name": "Soleil Lâche",
+    "race": "Soleil",
+    "title": "Ombre du Fusang",
+    "copyOf": "chilong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.8,
+      "atkMult": 1.55,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.33,
+      "green": 0.08,
+      "yellow": 0.2,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 3.0,
+      "dropChance": 0.75,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "fengmeng_1",
+    "name": "Fengmeng, le Disciple",
+    "race": "Humain",
+    "title": "Élève Jaloux de Hou Yi",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "fengmeng_2",
+    "name": "Fengmeng, l'Archer Pressé",
+    "race": "Humain",
+    "title": "Rival de la Route du Volcan",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "fengmeng_3a",
+    "name": "Fengmeng, l'Archer Miroir",
+    "race": "Humain",
+    "title": "Voleur d'Élixir",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "fengmeng_3b",
+    "name": "Fengmeng, Rage et Désespoir",
+    "race": "Humain",
+    "title": "Disciple Brisé",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "maitresse_tong",
+    "name": "Maîtresse Tong",
+    "race": "Humain",
+    "title": "la Lame de Bronze",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "maitre_hong_gang",
+    "name": "Maître Hong Gang",
+    "race": "Humain",
+    "title": "le Gong de Cuivre",
+    "copyOf": "chiyou",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.4,
+      "defMult": 1.05
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.2,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.1,
+      "dropChance": 0.55,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "maitre_tie_bi",
+    "name": "Maître Tie Bi",
+    "race": "Humain",
+    "title": "le Bras de Fer",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "dame_yin_yue",
+    "name": "Dame Yin Yue",
+    "race": "Humain",
+    "title": "la Lune d'Argent",
+    "copyOf": "pretresse_lunaire",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.4,
+      "atkMult": 1.15,
+      "defMult": 1.3
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "blue",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.2,
+      "red": 0.08,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.25
+    },
+    "dropProfile": {
+      "goldMult": 1.5,
+      "dropChance": 0.65,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "seigneur_jin_long",
+    "name": "Seigneur Jin Long",
+    "race": "Humain",
+    "title": "le Dragon d'Or",
+    "copyOf": "garde_solaire",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.2,
+      "defMult": 1.4
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.32,
+      "green": 0.15,
+      "yellow": 0.2,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.5,
+      "dropChance": 0.65,
+      "weaponChance": 0.4
+    }
+  },
+  {
+    "id": "dame_bi_yu",
+    "name": "Dame Bi Yu",
+    "race": "Humain",
+    "title": "la Main de Jade",
+    "copyOf": "immortel_jade",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.25,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "green",
+        "purple",
+        "blue"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.18,
+      "red": 0.1,
+      "green": 0.28,
+      "yellow": 0.08,
+      "purple": 0.22
+    },
+    "dropProfile": {
+      "goldMult": 1.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.15
+    }
+  },
+  {
+    "id": "immortel_yun_zhong",
+    "name": "Immortel Yun Zhong",
+    "race": "Humain",
+    "title": "Celui-des-Nuées",
+    "copyOf": "dame_des_neiges",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.35,
+      "defMult": 1.1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "blue",
+        "purple"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.32,
+      "red": 0.05,
+      "green": 0.08,
+      "yellow": 0.1,
+      "purple": 0.18
+    },
+    "dropProfile": {
+      "goldMult": 1.1,
+      "dropChance": 0.65,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "grand_maitre_qian_jian",
+    "name": "Grand Maître Qian Jian",
+    "race": "Humain",
+    "title": "l'Archer aux Mille Flèches",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "noye_garde",
+    "name": "Noyé-garde des roches",
+    "race": "Gui",
+    "title": "Veilleur de l'Eau Perdue",
+    "copyOf": "gui_guerrier",
+    "battleMusic": "wav/musicgen-03-mort-vivant-1773190645899.wav",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.4,
+      "defMult": 1.0
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "red",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.12,
+      "green": 0.15,
+      "yellow": 0.08,
+      "purple": 0.3
+    },
+    "dropProfile": {
+      "goldMult": 0.7,
+      "dropChance": 0.55,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "esprit_cloche",
+    "name": "Esprit de la cloche",
+    "race": "Esprit",
+    "title": "Écho Perdu",
+    "copyOf": "suanni",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.7,
+      "atkMult": 1.15,
+      "defMult": 1.5
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.12,
+      "green": 0.3,
+      "yellow": 0.15,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.45,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "foudre_garde",
+    "name": "Foudre-garde du col",
+    "race": "Esprit",
+    "title": "Fils du Tonnerre",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "forgeron_magma",
+    "name": "Forgeron de magma",
+    "race": "Humain",
+    "title": "Servant du Temple du Feu",
+    "copyOf": "pixiu",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.45,
+      "defMult": 1.3
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.05,
+      "red": 0.4,
+      "green": 0.05,
+      "yellow": 0.18,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.4,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "forgeron_lave",
+    "name": "Forgeron de lave",
+    "race": "Géant",
+    "title": "Gardien des Gorges",
+    "copyOf": "pixiu",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.45,
+      "defMult": 1.3
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.05,
+      "red": 0.4,
+      "green": 0.05,
+      "yellow": 0.18,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.4,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "garde_maree",
+    "name": "Garde-marée du Roi-Dragon",
+    "race": "Esprit aquatique",
+    "title": "Escadre de la Mer Orientale",
+    "copyOf": "jiaolong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.4,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 2.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.25
+    }
+  },
+  {
+    "id": "grue_lige",
+    "name": "Grue-lige du Fusang",
+    "race": "Oiseau",
+    "title": "Messagère des Branches Hautes",
+    "copyOf": "lettre_sorcier",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.3,
+      "defMult": 1.0
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "purple",
+        "blue"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.25,
+      "red": 0.05,
+      "green": 0.08,
+      "yellow": 0.1,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.2,
+      "dropChance": 0.7,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "brigand_sables",
+    "name": "Brigand des sables",
+    "race": "Humain",
+    "title": "Pillard des Caravanes",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "chef_de_dune",
+    "name": "Chef de dune",
+    "race": "Humain",
+    "title": "Bras-de-Sable",
+    "copyOf": "chiyou",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.4,
+      "defMult": 1.05
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.2,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.1,
+      "dropChance": 0.55,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "petit_gui",
+    "name": "Petit gui",
+    "race": "Gui",
+    "title": "Chapardeur des Flaques",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "corbeau_demon",
+    "name": "Corbeau-démon",
+    "race": "Oiseau",
+    "title": "Voleur des Rizières",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "singe_demon",
+    "name": "Singe-démon",
+    "race": "Bête",
+    "title": "Voleur de Pêches",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "taureau_braise",
+    "name": "Taureau de braise",
+    "race": "Bête",
+    "title": "Corne Ardente",
+    "copyOf": "sanglier_flammes",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.4,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "red"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.05
+    }
+  },
+  {
+    "id": "crabe_soldat",
+    "name": "Crabe-soldat",
+    "race": "Bête",
+    "title": "Lame des Bancs de Sable",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "carpe_doree",
+    "name": "Carpe dorée",
+    "race": "Poisson",
+    "title": "Gardienne du Gué",
+    "copyOf": "jiaolong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.4,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 2.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.25
+    }
+  },
+  {
+    "id": "tortue_dragon",
+    "name": "Tortue-Dragon",
+    "race": "Tortue",
+    "title": "Dormeuse de l'Île",
+    "copyOf": "canglong",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.5,
+      "defMult": 1.4
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "blue",
+        "purple"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.12,
+      "yellow": 0.12,
+      "purple": 0.18
+    },
+    "dropProfile": {
+      "goldMult": 3.5,
+      "dropChance": 0.75,
+      "weaponChance": 0.3
+    }
   }
 ]

@@ -1054,7 +1054,7 @@ describe('rencontres', () => {
 
     test('la rencontre expose la clé de sprite (le mirage réutilise le soleil des mirages)', () => {
         const s = createSession({});
-        expect(encounterFor(s, 'sun_1', 1)).toMatchObject({ enemyId: 'sun_1', spriteKey: 'sun_1', templateId: 'huli_jing', name: 'Soleil Ardent' });
+        expect(encounterFor(s, 'sun_1', 1)).toMatchObject({ enemyId: 'sun_1', spriteKey: 'sun_1', templateId: 'sun_1', name: 'Soleil Ardent' });
         expect(encounterFor(s, 'mirage_1', 7)).toMatchObject({ enemyId: 'mirage_1', spriteKey: 'sun_4' });
         expect(encounterFor(s, 'rizieres_goblin', 3).spriteKey).toBe('rizieres_goblin');
         expect(encounterFor(s, 'fengmeng_3b', 1).boss).toMatchObject({ name: 'Fengmeng, Rage et Désespoir', level: 48 });

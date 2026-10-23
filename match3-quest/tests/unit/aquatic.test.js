@@ -90,7 +90,7 @@ describe('Monde aquatique', () => {
         });
         expect(archipel.chests).toHaveLength(3);
         expect(isle.chests.map(c => c.id)).toEqual(['mer_isle_tresor']);
-        expect(isle.enemies.find(e => e.id === 'mer_ile_dragon_guardian')).toMatchObject({ permanent: true, templateId: 'canglong' });
+        expect(isle.enemies.find(e => e.id === 'mer_ile_dragon_guardian')).toMatchObject({ permanent: true, templateId: 'tortue_dragon' });
         // sur l'archipel les serpents patrouillent à la surface de l'eau
         const onWater = archipel.enemies.filter(e => e.patrol && inRects(archipel.liquids, e.x, e.y));
         expect(onWater.length).toBeGreaterThanOrEqual(2);
