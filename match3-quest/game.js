@@ -28,7 +28,7 @@ import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPTo
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
+import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -3432,8 +3432,10 @@ function updateUltimatePicker(){
     if(!list) return;
     // Rien à montrer tant qu'aucun ultime n'est débloqué : pas de section, pas de cadenas, pas d'indice sur la façon de les obtenir.
     const choices = getSelectableUltimates(player);
-    list.innerHTML = choices.length ? '<h3>Ultime (1 seul, jauge de rage)</h3>' : '';
-    if(choices.length === 0) return;
+    // Déjà gagné par sa quête mais niveau insuffisant : seul cas où un ultime non choisissable est montré.
+    const tooWeak = getQuestUltimates().filter(sp => isUltimateUnlocked(player, sp) && !choices.some(c => c.id === sp.id));
+    list.innerHTML = choices.length || tooWeak.length ? '<h3>Ultime (1 seul, jauge de rage)</h3>' : '';
+    if(choices.length === 0 && tooWeak.length === 0) return;
     const current = getEquippedUltimate(player);
     choices.forEach(sp => {
         const chosen = sp.id === current.id;
@@ -3449,6 +3451,17 @@ function updateUltimatePicker(){
                 <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
             ${cardActionsHtml('', action)}`;
+        list.appendChild(div);
+    });
+    tooWeak.forEach(sp => {
+        const div = document.createElement('div');
+        div.className = 'spell-item ultimate-spell locked-spell';
+        div.innerHTML = `
+            <div class="spell-content">
+                <div class="spell-name">${svgIcon('lock')} ${sp.name}</div>
+                <div class="spell-cost">Niveau ${sp.minLevel} requis</div>
+            </div>
+        `;
         list.appendChild(div);
     });
 }
