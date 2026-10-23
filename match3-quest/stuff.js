@@ -5,6 +5,7 @@
 //  - des PV max permanents (`maxHp`) tant qu'il est porté : le retirer les retire, les PV actuels suivent à la hausse seulement ;
 //  - une résistance au poison (`poisonResist`, % de dégâts de poison évités, 100 = immunité) ;
 //  - une protection de biome (`biomeProtect` : clé de règle de terrain.js), réservée aux colliers de quête, un par biome hostile :
+//  - l'indétectabilité (`stealth`, collier du voile d'ombre de Fusang, avant-dernier biome) : les ennemis ne détectent plus le héros (voir exploration.js) ;
 //    la lave ne brûle plus (Volcan), les bambous n'envahissent plus (Bambous), la glace ne gèle plus (Neige), la mer ne dérive plus (Mer).
 //
 // Le héros garde `stuffOwned` (ids possédés) et `stuff` ({ head, neck, wrist, ring } : id porté ou null).
@@ -48,6 +49,7 @@ export const allStuff = [
     piece('collier_obsidienne', 'neck', 'Collier d\'obsidienne froide', 4, 'rare', 'Une obsidienne qui ne chauffe jamais : la lave vous est indifférente.', { biomeProtect: 'volcano', maxHp: 10, quest: true }),
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
     piece('collier_braise_d_orage', 'neck', 'Collier de braise d\'orage', 22, 'rare', 'Une braise captive dans le cristal : le givre n\'y accroche pas.', { biomeProtect: 'snow', maxHp: 20, quest: true }),
+    piece('collier_voile_d_ombre', 'neck', 'Collier du voile d\'ombre', 37, 'legendary', 'Un fil d\'ombre tressé aux racines de Fusang : les regards glissent sur vous.', { stealth: true, maxHp: 30, quest: true }),
     piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true })
 ];
 
@@ -67,7 +69,8 @@ export function describeStuff(stuff) {
         stuff.defBonus ? `Déf +${stuff.defBonus}` : '',
         stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
         stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
-        stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : ''
+        stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',
+        stuff.stealth ? 'Indétectable : évite les combats (sauf boss)' : ''
     ].filter(Boolean).join(' • ');
 }
 
@@ -100,17 +103,21 @@ export function wornStuff(hero) {
 
 // Totaux des bonus portés : { atk, def, maxHp, poisonResist (0–100), biomes: Set }.
 export function stuffTotals(hero) {
-    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, biomes: new Set() };
+    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, stealth: false, biomes: new Set() };
     wornStuff(hero).forEach(s => {
         totals.atk += s.atkBonus || 0;
         totals.def += s.defBonus || 0;
         totals.maxHp += s.maxHp || 0;
         totals.poisonResist += s.poisonResist || 0;
         if (s.biomeProtect) totals.biomes.add(s.biomeProtect);
+        if (s.stealth) totals.stealth = true;
     });
     totals.poisonResist = Math.min(100, totals.poisonResist);
     return totals;
 }
+
+// Collier d'ombre : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
+export const hasStealth = hero => stuffTotals(hero).stealth;
 
 export const protectsFromBiome = (hero, biomeRuleKey) => stuffTotals(hero).biomes.has(biomeRuleKey);
 
