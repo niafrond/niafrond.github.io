@@ -1,4 +1,7 @@
-import { gbaWalkSprite, gbaSprite } from '../../sprites/index.js';
+import { gbaWalkSprite, gbaSprite, loadAllGbaSprites } from '../../sprites/index.js';
+
+// Les sprites GBA sont chargés à la demande (avec leur région) : ici on les charge tous.
+await loadAllGbaSprites();
 
 describe('animation de marche du héros', () => {
     const classes = ['archer', 'templar', 'barbarian', 'assassin', 'sorcerer'];

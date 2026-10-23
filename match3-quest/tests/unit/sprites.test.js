@@ -1,5 +1,5 @@
-import { gbaSprite } from '../../sprites/index.js';
-import { readFileSync } from 'fs';
+import { gbaSprite, loadGbaSprites, loadAllGbaSprites, hasGbaSprite } from '../../sprites/index.js';
+import { readFileSync, readdirSync } from 'fs';
 import { SCREENS } from '../../story.js';
 import { playerClasses } from '../../classes.js';
 import {
@@ -7,9 +7,16 @@ import {
     loadAllSprites, spriteSourceOf, TEMPLATE_SPRITE_COPIES
 } from '../../sprites/index.js';
 import { GBA_SPRITES } from '../../sprites/generated.js';
+import { GBA_FILES } from '../../sprites/gbaIndex.js';
+import { splitGba, GBA_DIR } from '../../sprites/build-gba.mjs';
+
+// Sprites GBA chargés à la demande : avant tout chargement, rien n'est disponible (le jeu retombe sur le dessin vectoriel).
+const gbaBeforeLoad = gbaSprite('farmer_lin');
+const gbaAfterOneKey = await loadGbaSprites(['farmer_lin']).then(() => [gbaSprite('farmer_lin'), gbaSprite('elder_wen')]);
 
 // Les paquets de sprites sont chargés à la demande : ici on les charge tous pour vérifier l'ensemble des dessins.
 await loadAllSprites();
+await loadAllGbaSprites();
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const screens = Object.values(SCREENS);
@@ -208,5 +215,33 @@ describe('ennemis nommés (gabarits copyOf) : dessin dédié', () => {
             expect(['front', 'back', 'left', 'right'].map(d => Boolean(GBA_SPRITES[id]?.[d]))).toEqual([true, true, true, true]);
             expect(gbaSprite(id, 'front')).toBe(GBA_SPRITES[id].front);
         });
+    });
+});
+
+describe('sprites GBA découpés par clé (sprites/build-gba.mjs), chargés avec leur région', () => {
+    test('le découpage est à jour avec sprites/generated.js (sinon : node match3-quest/sprites/build-gba.mjs)', () => {
+        const { files, index } = splitGba();
+        expect(readFileSync(new URL('../../sprites/gbaIndex.js', import.meta.url), 'utf8')).toBe(index);
+        expect(readdirSync(GBA_DIR).sort()).toEqual(Object.keys(files).sort());
+        Object.entries(files).forEach(([name, body]) => expect({ name, same: readFileSync(new URL(name, GBA_DIR), 'utf8') === body }).toEqual({ name, same: true }));
+    });
+
+    test('une clé n\'est disponible qu\'une fois chargée, et seulement elle', () => {
+        expect(gbaBeforeLoad).toBeNull();
+        expect(hasGbaSprite('farmer_lin')).toBe(true);
+        expect(gbaAfterOneKey[0]).toBe(GBA_SPRITES.farmer_lin.front);
+        expect(gbaAfterOneKey[1]).toBeNull();
+    });
+
+    test('une fois chargés, chaque clé et chaque direction rendent la même image que sprites/generated.js', () => {
+        expect(Object.keys(GBA_FILES).sort()).toEqual(Object.keys(GBA_SPRITES).sort());
+        // change_moon : alias vers le dessin de Chang'e (sprites/index.js GBA_ALIASES), son propre sprite n'est pas utilisé
+        Object.entries(GBA_SPRITES).filter(([key]) => key !== 'change_moon').forEach(([key, s]) => ['front', 'back', 'left', 'right'].filter(d => s[d]).forEach(d => expect(gbaSprite(key, d)).toBe(s[d])));
+    });
+
+    test('le jeu ne télécharge plus sprites/generated.js : ni import, ni carte d\'imports', () => {
+        const root = new URL('../../', import.meta.url);
+        expect(readFileSync(new URL('sprites/index.js', root), 'utf8')).not.toMatch(/(from\s+|import\s*\(\s*)['"]\.\/generated\.js/);
+        expect(readFileSync(new URL('index.html', root), 'utf8')).not.toMatch(/sprites\/generated\.js/);
     });
 });

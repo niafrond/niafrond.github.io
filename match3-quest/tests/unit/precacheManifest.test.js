@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
-import { buildManifest, serialize, MANIFEST_FILE, GAME_DIR, MEDIA_SPRITE_DIRS } from '../../tools/precache-manifest.mjs';
+import { buildManifest, serialize, MANIFEST_FILE, GAME_DIR, MEDIA_SPRITE_DIRS, GBA_SPRITE_DIR } from '../../tools/precache-manifest.mjs';
 
 const committed = JSON.parse(readFileSync(new URL(`../../${MANIFEST_FILE}`, import.meta.url), 'utf8'));
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
@@ -12,7 +12,7 @@ describe('precache-manifest.json', () => {
     test('le cœur contient index.html, les feuilles de style, les polices, les données et tous les modules de l\'import map', () => {
         const core = new Set(committed.core);
         ['index.html', 'style.css', 'retro.css', 'manifest.json', 'icon.svg', 'spells.json', 'enemies.catalog.json', 'audio/manifest.json',
-            'fonts/pixelify-sans-400.woff2', 'fonts/press-start-2p.woff2', 'sprites/generated.js', 'world/index.js'].forEach(p => expect(core.has(p)).toBe(true));
+            'fonts/pixelify-sans-400.woff2', 'fonts/press-start-2p.woff2', 'sprites/gbaIndex.js', 'world/index.js'].forEach(p => expect(core.has(p)).toBe(true));
         const modules = /var map = \{\};\s*\n\s*(\[[^\n]*?\])\.forEach/.exec(html);
         expect(modules).not.toBeNull();
         const names = JSON.parse(modules[1]);
@@ -30,6 +30,15 @@ describe('precache-manifest.json', () => {
             expect(files.length).toBeGreaterThan(0);
             files.forEach(n => expect(media.has(`sprites/${dir}/${n}`)).toBe(true));
         });
+    });
+
+    test('sprites GBA : un média par module de sprites/gba/, et jamais leur source sprites/generated.js (3 Mo)', () => {
+        const media = new Set(committed.media.map(f => f.p));
+        const files = readdirSync(`${GAME_DIR}/${GBA_SPRITE_DIR}`).filter(n => n.endsWith('.js'));
+        expect(files.length).toBeGreaterThan(400);
+        files.forEach(n => expect(media.has(`${GBA_SPRITE_DIR}/${n}`)).toBe(true));
+        expect(committed.core).not.toContain('sprites/generated.js');
+        expect(media.has('sprites/generated.js')).toBe(false);
     });
 
     test('exclut les sources de génération, les outils et les tests (jamais demandés par le jeu)', () => {

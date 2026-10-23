@@ -7,7 +7,7 @@
  *
  * Deux caches (liste des fichiers : precache-manifest.json, généré par tools/precache-manifest.mjs) :
  *   - match3-core-v<build>  : code, css, polices, données, effets sonores ; rempli à l'installation, un par build, purgé à l'activation.
- *   - match3-media-v1       : musiques et dessins des cinématiques, sorts et ultimes (≈ 120 Mo) ; survit aux builds, indexé par chemin
+ *   - match3-media-v1       : musiques, sprites GBA (sprites/gba/) et dessins des cinématiques, sorts et ultimes (≈ 120 Mo) ; survit aux builds, indexé par chemin
  *                             (sans `?v=`) ; à l'installation seuls les fichiers déjà présents dont l'empreinte a changé sont retéléchargés.
  *                             Rempli au fil des demandes du jeu et par le pré-téléchargement en arrière-plan (offlineCache.js).
  *
@@ -30,7 +30,7 @@ var NETWORK_TIMEOUT_MS = 3000;
 var BATCH = 8;
 
 // Dossiers de médias (voir MEDIA_SPRITE_DIRS dans tools/precache-manifest.mjs)
-var MEDIA_RE = new RegExp('^' + SCOPE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(audio/music/|sprites/(ultimates|spellfx|prologue|sunfall|ending|fengmeng|launcher)/)');
+var MEDIA_RE = new RegExp('^' + SCOPE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(audio/music/|sprites/(gba|ultimates|spellfx|prologue|sunfall|ending|fengmeng|launcher)/)');
 
 var manifestPromise = null;
 

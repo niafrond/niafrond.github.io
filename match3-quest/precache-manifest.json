@@ -127,7 +127,7 @@
   "sprites/creatures.js",
   "sprites/deadtrees.js",
   "sprites/decor.js",
-  "sprites/generated.js",
+  "sprites/gbaIndex.js",
   "sprites/index.js",
   "sprites/packContents.js",
   "sprites/packs.js",
@@ -191,6 +191,2396 @@
   "audio/sfx/weaponHit-p.mp3"
  ],
  "media": [
+  {
+   "p": "sprites/gba/acolyte_ri.b6143f90.js",
+   "s": 1780,
+   "h": "b6143f90ca"
+  },
+  {
+   "p": "sprites/gba/alchemist_dan.7686e9f1.js",
+   "s": 1548,
+   "h": "7686e9f12a"
+  },
+  {
+   "p": "sprites/gba/ao.fea61db0.js",
+   "s": 4957,
+   "h": "fea61db02c"
+  },
+  {
+   "p": "sprites/gba/apprentice_zhu.02d72f66.js",
+   "s": 1556,
+   "h": "02d72f663a"
+  },
+  {
+   "p": "sprites/gba/archer.225395ce.js",
+   "s": 47558,
+   "h": "225395ce6c"
+  },
+  {
+   "p": "sprites/gba/archer_huo.ea608456.js",
+   "s": 1172,
+   "h": "ea608456d2"
+  },
+  {
+   "p": "sprites/gba/assassin.68b70256.js",
+   "s": 48426,
+   "h": "68b7025676"
+  },
+  {
+   "p": "sprites/gba/assassin_masque.27d84f40.js",
+   "s": 89649,
+   "h": "27d84f405d"
+  },
+  {
+   "p": "sprites/gba/astronomer_xing.79b53d47.js",
+   "s": 1292,
+   "h": "79b53d4766"
+  },
+  {
+   "p": "sprites/gba/aunt_liu.47bcebc1.js",
+   "s": 1164,
+   "h": "47bcebc16a"
+  },
+  {
+   "p": "sprites/gba/bai_she.440dc493.js",
+   "s": 4409,
+   "h": "440dc49329"
+  },
+  {
+   "p": "sprites/gba/bai_ze.977f9081.js",
+   "s": 8901,
+   "h": "977f908190"
+  },
+  {
+   "p": "sprites/gba/bai_ze_savant.a622880f.js",
+   "s": 10005,
+   "h": "a622880f2b"
+  },
+  {
+   "p": "sprites/gba/baihu.97dd7064.js",
+   "s": 10605,
+   "h": "97dd70640e"
+  },
+  {
+   "p": "sprites/gba/bailong.14dc6092.js",
+   "s": 8613,
+   "h": "14dc60921e"
+  },
+  {
+   "p": "sprites/gba/bambous_hamlet_old_lamplighter.587e8d4a.js",
+   "s": 1536,
+   "h": "587e8d4a1e"
+  },
+  {
+   "p": "sprites/gba/bambous_road_old_pilgrim.423147f0.js",
+   "s": 1372,
+   "h": "423147f071"
+  },
+  {
+   "p": "sprites/gba/bambous_village_fan_seller.4b7df2f0.js",
+   "s": 1616,
+   "h": "4b7df2f064"
+  },
+  {
+   "p": "sprites/gba/bambous_village_kid_runner.1c38625d.js",
+   "s": 1620,
+   "h": "1c38625d27"
+  },
+  {
+   "p": "sprites/gba/bambous_village_old_gardener.685ac902.js",
+   "s": 1660,
+   "h": "685ac90228"
+  },
+  {
+   "p": "sprites/gba/bambous_village_scribe_wei.4523b9e5.js",
+   "s": 1548,
+   "h": "4523b9e53e"
+  },
+  {
+   "p": "sprites/gba/bambous_village_tea_porter.6866bb65.js",
+   "s": 1624,
+   "h": "6866bb6577"
+  },
+  {
+   "p": "sprites/gba/bambous_wild_old_woodcutter.b31bf178.js",
+   "s": 1796,
+   "h": "b31bf1788a"
+  },
+  {
+   "p": "sprites/gba/bandit_gerel.e9e3717c.js",
+   "s": 1648,
+   "h": "e9e3717ce2"
+  },
+  {
+   "p": "sprites/gba/baoyu_jian.05153215.js",
+   "s": 17697,
+   "h": "0515321571"
+  },
+  {
+   "p": "sprites/gba/barbarian.04cd30cc.js",
+   "s": 47802,
+   "h": "04cd30cc17"
+  },
+  {
+   "p": "sprites/gba/bard_xiang.34c3ea9d.js",
+   "s": 1204,
+   "h": "34c3ea9de5"
+  },
+  {
+   "p": "sprites/gba/bashe.aaefc31a.js",
+   "s": 4977,
+   "h": "aaefc31a83"
+  },
+  {
+   "p": "sprites/gba/bath_mu.25c2abd1.js",
+   "s": 1472,
+   "h": "25c2abd1dc"
+  },
+  {
+   "p": "sprites/gba/bath_old_wang.410cbda6.js",
+   "s": 1368,
+   "h": "410cbda6b0"
+  },
+  {
+   "p": "sprites/gba/bather_fei.dd8af329.js",
+   "s": 1268,
+   "h": "dd8af329dd"
+  },
+  {
+   "p": "sprites/gba/beekeeper_ju.5c612fe7.js",
+   "s": 1836,
+   "h": "5c612fe7aa"
+  },
+  {
+   "p": "sprites/gba/bi_fang.9b532140.js",
+   "s": 4377,
+   "h": "9b53214012"
+  },
+  {
+   "p": "sprites/gba/bian.ae308af8.js",
+   "s": 9257,
+   "h": "ae308af8f1"
+  },
+  {
+   "p": "sprites/gba/bixi.4ae21861.js",
+   "s": 6085,
+   "h": "4ae2186144"
+  },
+  {
+   "p": "sprites/gba/bixie.0b3588c1.js",
+   "s": 9961,
+   "h": "0b3588c1b6"
+  },
+  {
+   "p": "sprites/gba/boatman_shan.aabeb71b.js",
+   "s": 1484,
+   "h": "aabeb71b10"
+  },
+  {
+   "p": "sprites/gba/boy_tarik.35854fa1.js",
+   "s": 1496,
+   "h": "35854fa187"
+  },
+  {
+   "p": "sprites/gba/brigand_sables.d748caaf.js",
+   "s": 21753,
+   "h": "d748caaf79"
+  },
+  {
+   "p": "sprites/gba/buffalo_dahei.cf6609cf.js",
+   "s": 1236,
+   "h": "cf6609cfc9"
+  },
+  {
+   "p": "sprites/gba/cairn_spirit.59a32f81.js",
+   "s": 1272,
+   "h": "59a32f81e1"
+  },
+  {
+   "p": "sprites/gba/camel_baba.304ebbe9.js",
+   "s": 1412,
+   "h": "304ebbe9c1"
+  },
+  {
+   "p": "sprites/gba/camel_foreman_tang.d7a2bedf.js",
+   "s": 1428,
+   "h": "d7a2bedfab"
+  },
+  {
+   "p": "sprites/gba/canglong.f898e87e.js",
+   "s": 5385,
+   "h": "f898e87e92"
+  },
+  {
+   "p": "sprites/gba/cao_jing.571ddee0.js",
+   "s": 5753,
+   "h": "571ddee0d3"
+  },
+  {
+   "p": "sprites/gba/captain_lo.32175d9a.js",
+   "s": 1380,
+   "h": "32175d9a13"
+  },
+  {
+   "p": "sprites/gba/captain_yaer.df950642.js",
+   "s": 1812,
+   "h": "df95064212"
+  },
+  {
+   "p": "sprites/gba/caravan_cook_lu.8586b8d3.js",
+   "s": 1760,
+   "h": "8586b8d304"
+  },
+  {
+   "p": "sprites/gba/carp_jin.37e0f879.js",
+   "s": 1832,
+   "h": "37e0f879ba"
+  },
+  {
+   "p": "sprites/gba/carpe_doree.4ee3a0f5.js",
+   "s": 27937,
+   "h": "4ee3a0f502"
+  },
+  {
+   "p": "sprites/gba/carver_ling.747d08a1.js",
+   "s": 1416,
+   "h": "747d08a113"
+  },
+  {
+   "p": "sprites/gba/change.fd52fd3d.js",
+   "s": 4965,
+   "h": "fd52fd3d05"
+  },
+  {
+   "p": "sprites/gba/change_moon.d131916f.js",
+   "s": 1324,
+   "h": "d131916fdc"
+  },
+  {
+   "p": "sprites/gba/changxi.1ee0855c.js",
+   "s": 85197,
+   "h": "1ee0855c23"
+  },
+  {
+   "p": "sprites/gba/chaofeng.c54f9fa2.js",
+   "s": 10289,
+   "h": "c54f9fa2ae"
+  },
+  {
+   "p": "sprites/gba/cheese_sa.d6e8c5e6.js",
+   "s": 1356,
+   "h": "d6e8c5e6f3"
+  },
+  {
+   "p": "sprites/gba/chef_de_dune.50bb8760.js",
+   "s": 26497,
+   "h": "50bb87606a"
+  },
+  {
+   "p": "sprites/gba/chi_niao.27e36441.js",
+   "s": 6293,
+   "h": "27e36441a8"
+  },
+  {
+   "p": "sprites/gba/child_yuer.1a3f4e71.js",
+   "s": 1228,
+   "h": "1a3f4e71da"
+  },
+  {
+   "p": "sprites/gba/chilong.2e6ca632.js",
+   "s": 5729,
+   "h": "2e6ca632f4"
+  },
+  {
+   "p": "sprites/gba/chiwen.140a3eb5.js",
+   "s": 10185,
+   "h": "140a3eb54f"
+  },
+  {
+   "p": "sprites/gba/chiyou.8cd2d50b.js",
+   "s": 6337,
+   "h": "8cd2d50b7d"
+  },
+  {
+   "p": "sprites/gba/climber_dai.fc982acc.js",
+   "s": 1284,
+   "h": "fc982accba"
+  },
+  {
+   "p": "sprites/gba/cloud_sweeper_yun.0fe4bd30.js",
+   "s": 1376,
+   "h": "0fe4bd3091"
+  },
+  {
+   "p": "sprites/gba/cook_dada.e1852e6d.js",
+   "s": 1452,
+   "h": "e1852e6d46"
+  },
+  {
+   "p": "sprites/gba/corbeau_demon.6b35cf4c.js",
+   "s": 24057,
+   "h": "6b35cf4c78"
+  },
+  {
+   "p": "sprites/gba/courier_tong.9db04615.js",
+   "s": 1252,
+   "h": "9db04615cf"
+  },
+  {
+   "p": "sprites/gba/crab_old_gong.648cb739.js",
+   "s": 1328,
+   "h": "648cb739f9"
+  },
+  {
+   "p": "sprites/gba/crabe_soldat.4037a947.js",
+   "s": 23377,
+   "h": "4037a94775"
+  },
+  {
+   "p": "sprites/gba/crane_apprentice_ling.59979a5f.js",
+   "s": 1484,
+   "h": "59979a5fb7"
+  },
+  {
+   "p": "sprites/gba/crane_elder_hegu.5108b825.js",
+   "s": 1280,
+   "h": "5108b82541"
+  },
+  {
+   "p": "sprites/gba/crane_envoy.eb4934a7.js",
+   "s": 5161,
+   "h": "eb4934a786"
+  },
+  {
+   "p": "sprites/gba/cricket_boy_hao.6e2faf96.js",
+   "s": 1432,
+   "h": "6e2faf96e6"
+  },
+  {
+   "p": "sprites/gba/crow_wing.6bbc31a5.js",
+   "s": 1048,
+   "h": "6bbc31a51f"
+  },
+  {
+   "p": "sprites/gba/dame_bi_yu.69302fab.js",
+   "s": 20441,
+   "h": "69302fab8f"
+  },
+  {
+   "p": "sprites/gba/dame_des_neiges.ca6edc63.js",
+   "s": 18465,
+   "h": "ca6edc6352"
+  },
+  {
+   "p": "sprites/gba/dame_yin_yue.3ffdb6a7.js",
+   "s": 29609,
+   "h": "3ffdb6a7ca"
+  },
+  {
+   "p": "sprites/gba/date_farmer_ismail.079a93d1.js",
+   "s": 1644,
+   "h": "079a93d199"
+  },
+  {
+   "p": "sprites/gba/dian_mu.f5c05aea.js",
+   "s": 6717,
+   "h": "f5c05aeacc"
+  },
+  {
+   "p": "sprites/gba/diaosi_gui.bf9774ad.js",
+   "s": 9173,
+   "h": "bf9774ad80"
+  },
+  {
+   "p": "sprites/gba/dijiang.7bd8fc24.js",
+   "s": 4529,
+   "h": "7bd8fc2414"
+  },
+  {
+   "p": "sprites/gba/dilong.9fd3626f.js",
+   "s": 5809,
+   "h": "9fd3626fec"
+  },
+  {
+   "p": "sprites/gba/dragonet_xiaohong.b943672f.js",
+   "s": 1772,
+   "h": "b943672f6a"
+  },
+  {
+   "p": "sprites/gba/drover_boldo.38cc5f1c.js",
+   "s": 1568,
+   "h": "38cc5f1c6b"
+  },
+  {
+   "p": "sprites/gba/du_she.5109a27d.js",
+   "s": 4705,
+   "h": "5109a27dd6"
+  },
+  {
+   "p": "sprites/gba/duck_fu.dfea8a56.js",
+   "s": 1184,
+   "h": "dfea8a56e5"
+  },
+  {
+   "p": "sprites/gba/eagle_boy_temur.aa5b564f.js",
+   "s": 1640,
+   "h": "aa5b564f99"
+  },
+  {
+   "p": "sprites/gba/elder_wen.9fd83292.js",
+   "s": 5093,
+   "h": "9fd8329203"
+  },
+  {
+   "p": "sprites/gba/envoy_longwang.9d344011.js",
+   "s": 1752,
+   "h": "9d344011f4"
+  },
+  {
+   "p": "sprites/gba/esprit_cloche.fb561d81.js",
+   "s": 28413,
+   "h": "fb561d8153"
+  },
+  {
+   "p": "sprites/gba/fairy_yun.95ee78f9.js",
+   "s": 1440,
+   "h": "95ee78f950"
+  },
+  {
+   "p": "sprites/gba/falconer_arslan.9fa3e99c.js",
+   "s": 1348,
+   "h": "9fa3e99c62"
+  },
+  {
+   "p": "sprites/gba/farmer_lin.27286c30.js",
+   "s": 5853,
+   "h": "27286c3068"
+  },
+  {
+   "p": "sprites/gba/farrier_batu.5e1e5c8c.js",
+   "s": 1996,
+   "h": "5e1e5c8c16"
+  },
+  {
+   "p": "sprites/gba/fauves_hamlet_ganbat.9c058df9.js",
+   "s": 1616,
+   "h": "9c058df977"
+  },
+  {
+   "p": "sprites/gba/fauves_hamlet_sarnai.1d272827.js",
+   "s": 1408,
+   "h": "1d27282751"
+  },
+  {
+   "p": "sprites/gba/fauves_road_herder_oyun.46a1f035.js",
+   "s": 1680,
+   "h": "46a1f0357f"
+  },
+  {
+   "p": "sprites/gba/fauves_village_erdene.0d759213.js",
+   "s": 1688,
+   "h": "0d75921317"
+  },
+  {
+   "p": "sprites/gba/fauves_village_khulan.cec33260.js",
+   "s": 1460,
+   "h": "cec3326049"
+  },
+  {
+   "p": "sprites/gba/fauves_village_naran.63fc5027.js",
+   "s": 1564,
+   "h": "63fc5027db"
+  },
+  {
+   "p": "sprites/gba/fauves_village_tsetseg.a273582d.js",
+   "s": 1468,
+   "h": "a273582d9b"
+  },
+  {
+   "p": "sprites/gba/feilong.4006b921.js",
+   "s": 11209,
+   "h": "4006b921ca"
+  },
+  {
+   "p": "sprites/gba/feima.090a1670.js",
+   "s": 4677,
+   "h": "090a1670e9"
+  },
+  {
+   "p": "sprites/gba/feiyi.f700c1a7.js",
+   "s": 10685,
+   "h": "f700c1a7b9"
+  },
+  {
+   "p": "sprites/gba/feiyu.10c6f3f1.js",
+   "s": 3197,
+   "h": "10c6f3f1e8"
+  },
+  {
+   "p": "sprites/gba/felt_maker_uyun.a64b2ead.js",
+   "s": 1496,
+   "h": "a64b2ead47"
+  },
+  {
+   "p": "sprites/gba/feng_bo.9d9ca3b7.js",
+   "s": 10081,
+   "h": "9d9ca3b781"
+  },
+  {
+   "p": "sprites/gba/feng_shou.0ed58678.js",
+   "s": 8785,
+   "h": "0ed58678a5"
+  },
+  {
+   "p": "sprites/gba/fenghuang.97282232.js",
+   "s": 11745,
+   "h": "97282232a8"
+  },
+  {
+   "p": "sprites/gba/fengmeng_1.f62b19ce.js",
+   "s": 16101,
+   "h": "f62b19cefa"
+  },
+  {
+   "p": "sprites/gba/fengmeng_2.1b620d71.js",
+   "s": 18917,
+   "h": "1b620d7142"
+  },
+  {
+   "p": "sprites/gba/fengmeng_3a.f74050ba.js",
+   "s": 18773,
+   "h": "f74050ba6a"
+  },
+  {
+   "p": "sprites/gba/fengmeng_3b.4d49930a.js",
+   "s": 20009,
+   "h": "4d49930a1f"
+  },
+  {
+   "p": "sprites/gba/fennec_lili.36b9ee7f.js",
+   "s": 1528,
+   "h": "36b9ee7f08"
+  },
+  {
+   "p": "sprites/gba/ferry_pei.81641297.js",
+   "s": 1540,
+   "h": "816412971b"
+  },
+  {
+   "p": "sprites/gba/ferryman_gu.8d6dc1d5.js",
+   "s": 4121,
+   "h": "8d6dc1d5e4"
+  },
+  {
+   "p": "sprites/gba/fisher_hai.93b277d4.js",
+   "s": 5877,
+   "h": "93b277d4d8"
+  },
+  {
+   "p": "sprites/gba/fleuve_hamlet_kid_dun.e1ce224a.js",
+   "s": 1776,
+   "h": "e1ce224ad7"
+  },
+  {
+   "p": "sprites/gba/fleuve_road_toll_keeper.814c02b7.js",
+   "s": 1588,
+   "h": "814c02b78d"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_dock_clerk.d1a509d6.js",
+   "s": 1112,
+   "h": "d1a509d690"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_kid_ming.ccc50e1b.js",
+   "s": 1492,
+   "h": "ccc50e1bd1"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_old_caulker.9c2909c7.js",
+   "s": 1776,
+   "h": "9c2909c77c"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_rope_maker.b14eb937.js",
+   "s": 1408,
+   "h": "b14eb93753"
+  },
+  {
+   "p": "sprites/gba/fleuve_wild_old_surveyor.dc01bc24.js",
+   "s": 1696,
+   "h": "dc01bc2420"
+  },
+  {
+   "p": "sprites/gba/flutist_chuan.b86eb857.js",
+   "s": 1760,
+   "h": "b86eb8574d"
+  },
+  {
+   "p": "sprites/gba/foreman_han.2ed2f322.js",
+   "s": 1472,
+   "h": "2ed2f32294"
+  },
+  {
+   "p": "sprites/gba/forge_spirit.e016a708.js",
+   "s": 1204,
+   "h": "e016a708fb"
+  },
+  {
+   "p": "sprites/gba/forgeron_lave.e8ecab82.js",
+   "s": 34189,
+   "h": "e8ecab823f"
+  },
+  {
+   "p": "sprites/gba/forgeron_magma.869af0b3.js",
+   "s": 19889,
+   "h": "869af0b3dc"
+  },
+  {
+   "p": "sprites/gba/fortune_sha.9256905c.js",
+   "s": 1500,
+   "h": "9256905caa"
+  },
+  {
+   "p": "sprites/gba/foudre_garde.7aff127e.js",
+   "s": 28521,
+   "h": "7aff127ec7"
+  },
+  {
+   "p": "sprites/gba/fucanglong.d4665cfd.js",
+   "s": 5605,
+   "h": "d4665cfdca"
+  },
+  {
+   "p": "sprites/gba/fuxi.a274a482.js",
+   "s": 10509,
+   "h": "a274a4825e"
+  },
+  {
+   "p": "sprites/gba/fuxi_dragon.9731cd07.js",
+   "s": 9189,
+   "h": "9731cd07c4"
+  },
+  {
+   "p": "sprites/gba/garde_maree.b7da2576.js",
+   "s": 25809,
+   "h": "b7da2576b8"
+  },
+  {
+   "p": "sprites/gba/garde_solaire.72f1d0f0.js",
+   "s": 20097,
+   "h": "72f1d0f0b6"
+  },
+  {
+   "p": "sprites/gba/gatekeeper_men.2ccff75c.js",
+   "s": 1984,
+   "h": "2ccff75c92"
+  },
+  {
+   "p": "sprites/gba/geologist_zhou.070a1277.js",
+   "s": 1692,
+   "h": "070a1277bc"
+  },
+  {
+   "p": "sprites/gba/ghost_miner_shu.734daa75.js",
+   "s": 1656,
+   "h": "734daa757a"
+  },
+  {
+   "p": "sprites/gba/ghost_rider_tolui.a70fb268.js",
+   "s": 1272,
+   "h": "a70fb26816"
+  },
+  {
+   "p": "sprites/gba/girl_lian.467cf1b0.js",
+   "s": 1136,
+   "h": "467cf1b043"
+  },
+  {
+   "p": "sprites/gba/girl_net_mi.ab21a1d9.js",
+   "s": 1600,
+   "h": "ab21a1d95c"
+  },
+  {
+   "p": "sprites/gba/girl_noor.e0036312.js",
+   "s": 1420,
+   "h": "e00363121e"
+  },
+  {
+   "p": "sprites/gba/glassblower_ouyang.457fee6f.js",
+   "s": 1560,
+   "h": "457fee6f6e"
+  },
+  {
+   "p": "sprites/gba/goat_yang.77e29055.js",
+   "s": 1056,
+   "h": "77e290559e"
+  },
+  {
+   "p": "sprites/gba/gobi_hamlet_old_dyer.b8d6f7d5.js",
+   "s": 1324,
+   "h": "b8d6f7d526"
+  },
+  {
+   "p": "sprites/gba/gobi_road_old_drover.c0be6e87.js",
+   "s": 1708,
+   "h": "c0be6e8724"
+  },
+  {
+   "p": "sprites/gba/gobi_village_kid_guide.da324037.js",
+   "s": 1588,
+   "h": "da324037d8"
+  },
+  {
+   "p": "sprites/gba/gobi_village_old_weaver.80c47116.js",
+   "s": 1164,
+   "h": "80c4711605"
+  },
+  {
+   "p": "sprites/gba/gobi_village_water_seller.4c075fc4.js",
+   "s": 1352,
+   "h": "4c075fc431"
+  },
+  {
+   "p": "sprites/gba/gobi_wild_old_caravaneer.c8f94c68.js",
+   "s": 1536,
+   "h": "c8f94c6850"
+  },
+  {
+   "p": "sprites/gba/goose_dagong.278c9537.js",
+   "s": 936,
+   "h": "278c953710"
+  },
+  {
+   "p": "sprites/gba/grand_maitre_qian_jian.11cb2c6c.js",
+   "s": 26081,
+   "h": "11cb2c6cd9"
+  },
+  {
+   "p": "sprites/gba/grandma_altan.6f3a475c.js",
+   "s": 1648,
+   "h": "6f3a475c88"
+  },
+  {
+   "p": "sprites/gba/grandma_tao.55515ab8.js",
+   "s": 1460,
+   "h": "55515ab842"
+  },
+  {
+   "p": "sprites/gba/grue_lige.5f4d5313.js",
+   "s": 23349,
+   "h": "5f4d5313b3"
+  },
+  {
+   "p": "sprites/gba/guai_niao.92aaa708.js",
+   "s": 9697,
+   "h": "92aaa70882"
+  },
+  {
+   "p": "sprites/gba/gui_esprit.4173848a.js",
+   "s": 3869,
+   "h": "4173848aca"
+  },
+  {
+   "p": "sprites/gba/gui_guerrier.92a8bd76.js",
+   "s": 4469,
+   "h": "92a8bd76b4"
+  },
+  {
+   "p": "sprites/gba/gui_po.30eb00f1.js",
+   "s": 6485,
+   "h": "30eb00f109"
+  },
+  {
+   "p": "sprites/gba/gui_tortue.8b25399a.js",
+   "s": 5389,
+   "h": "8b25399a2b"
+  },
+  {
+   "p": "sprites/gba/gui_turtle.6f12fcb7.js",
+   "s": 1536,
+   "h": "6f12fcb737"
+  },
+  {
+   "p": "sprites/gba/guide_dawa.a417eeb1.js",
+   "s": 5149,
+   "h": "a417eeb190"
+  },
+  {
+   "p": "sprites/gba/gull_pip.89cd59b3.js",
+   "s": 1008,
+   "h": "89cd59b313"
+  },
+  {
+   "p": "sprites/gba/hai_gui.f165e1ff.js",
+   "s": 6977,
+   "h": "f165e1ff80"
+  },
+  {
+   "p": "sprites/gba/hai_ma_xing.39ab13d9.js",
+   "s": 28209,
+   "h": "39ab13d9a6"
+  },
+  {
+   "p": "sprites/gba/hai_ruo.8c6fd0c6.js",
+   "s": 11193,
+   "h": "8c6fd0c679"
+  },
+  {
+   "p": "sprites/gba/hai_she.be2d39b5.js",
+   "s": 10077,
+   "h": "be2d39b589"
+  },
+  {
+   "p": "sprites/gba/hai_shen.433ab72b.js",
+   "s": 8641,
+   "h": "433ab72b13"
+  },
+  {
+   "p": "sprites/gba/hanba.0c54f398.js",
+   "s": 7813,
+   "h": "0c54f398be"
+  },
+  {
+   "p": "sprites/gba/harbor_master_lu.e864c8c8.js",
+   "s": 1412,
+   "h": "e864c8c88c"
+  },
+  {
+   "p": "sprites/gba/hare_tuzi.e6fcdded.js",
+   "s": 1088,
+   "h": "e6fcdded7d"
+  },
+  {
+   "p": "sprites/gba/he_bo.5540d066.js",
+   "s": 3913,
+   "h": "5540d0664c"
+  },
+  {
+   "p": "sprites/gba/he_jing.8edcbba8.js",
+   "s": 3745,
+   "h": "8edcbba8b0"
+  },
+  {
+   "p": "sprites/gba/heibai_wuchang.d56bb82a.js",
+   "s": 8525,
+   "h": "d56bb82aa8"
+  },
+  {
+   "p": "sprites/gba/heilong.334c7c2e.js",
+   "s": 7493,
+   "h": "334c7c2ed9"
+  },
+  {
+   "p": "sprites/gba/heishui_xuan_she.bebb1156.js",
+   "s": 6449,
+   "h": "bebb1156bd"
+  },
+  {
+   "p": "sprites/gba/herbalist_xu.63431b5b.js",
+   "s": 5229,
+   "h": "63431b5bdd"
+  },
+  {
+   "p": "sprites/gba/hermit_lei.db64375d.js",
+   "s": 1068,
+   "h": "db64375dc6"
+  },
+  {
+   "p": "sprites/gba/hermit_nu.81c283d3.js",
+   "s": 1296,
+   "h": "81c283d3a5"
+  },
+  {
+   "p": "sprites/gba/honey_keeper_mi.16f85532.js",
+   "s": 1944,
+   "h": "16f85532dc"
+  },
+  {
+   "p": "sprites/gba/horse_tian.36f4e751.js",
+   "s": 1492,
+   "h": "36f4e75125"
+  },
+  {
+   "p": "sprites/gba/houtu.d6196c37.js",
+   "s": 5781,
+   "h": "d6196c3772"
+  },
+  {
+   "p": "sprites/gba/hu_jing.4949fe90.js",
+   "s": 5109,
+   "h": "4949fe90b3"
+  },
+  {
+   "p": "sprites/gba/hua.11da26fe.js",
+   "s": 1732,
+   "h": "11da26fe6d"
+  },
+  {
+   "p": "sprites/gba/hua_jing.8e3365cd.js",
+   "s": 5009,
+   "h": "8e3365cdae"
+  },
+  {
+   "p": "sprites/gba/huang_xian.e5f986b5.js",
+   "s": 1244,
+   "h": "e5f986b5c4"
+  },
+  {
+   "p": "sprites/gba/huangdi.ddc6f282.js",
+   "s": 8005,
+   "h": "ddc6f282da"
+  },
+  {
+   "p": "sprites/gba/huli_commun.b1e4791b.js",
+   "s": 4477,
+   "h": "b1e4791bc5"
+  },
+  {
+   "p": "sprites/gba/huli_jing.03aec772.js",
+   "s": 4241,
+   "h": "03aec772d6"
+  },
+  {
+   "p": "sprites/gba/huli_xia.9c1dc80a.js",
+   "s": 1580,
+   "h": "9c1dc80adc"
+  },
+  {
+   "p": "sprites/gba/hundun.ca37ee67.js",
+   "s": 5449,
+   "h": "ca37ee67cd"
+  },
+  {
+   "p": "sprites/gba/hunter_wu.1fdfafd7.js",
+   "s": 5337,
+   "h": "1fdfafd7cd"
+  },
+  {
+   "p": "sprites/gba/huo_shen.2202805d.js",
+   "s": 6161,
+   "h": "2202805d24"
+  },
+  {
+   "p": "sprites/gba/huo_shou.6442b0d5.js",
+   "s": 5849,
+   "h": "6442b0d568"
+  },
+  {
+   "p": "sprites/gba/immortel_jade.6a643570.js",
+   "s": 16517,
+   "h": "6a64357067"
+  },
+  {
+   "p": "sprites/gba/immortel_yun_zhong.7de8de8c.js",
+   "s": 29189,
+   "h": "7de8de8c22"
+  },
+  {
+   "p": "sprites/gba/incense_lanxiang.057031b6.js",
+   "s": 1212,
+   "h": "057031b69a"
+  },
+  {
+   "p": "sprites/gba/innkeeper_pao.16ee63ee.js",
+   "s": 1644,
+   "h": "16ee63ee71"
+  },
+  {
+   "p": "sprites/gba/jade_hare.f1fec3ee.js",
+   "s": 856,
+   "h": "f1fec3ee50"
+  },
+  {
+   "p": "sprites/gba/jade_step_keeper_lin.4f492c2d.js",
+   "s": 1488,
+   "h": "4f492c2d62"
+  },
+  {
+   "p": "sprites/gba/jelly_shui.4f555884.js",
+   "s": 936,
+   "h": "4f55588465"
+  },
+  {
+   "p": "sprites/gba/jiangshi.45f0b297.js",
+   "s": 11553,
+   "h": "45f0b29726"
+  },
+  {
+   "p": "sprites/gba/jiao.442e69e9.js",
+   "s": 4985,
+   "h": "442e69e94a"
+  },
+  {
+   "p": "sprites/gba/jiaolong.328211f7.js",
+   "s": 4705,
+   "h": "328211f715"
+  },
+  {
+   "p": "sprites/gba/jiaoyu.adbe8d4b.js",
+   "s": 5345,
+   "h": "adbe8d4b40"
+  },
+  {
+   "p": "sprites/gba/jing_jing.2b924f4f.js",
+   "s": 5145,
+   "h": "2b924f4f68"
+  },
+  {
+   "p": "sprites/gba/jing_shou.c1d6c679.js",
+   "s": 5305,
+   "h": "c1d6c67925"
+  },
+  {
+   "p": "sprites/gba/jingwei.21fadf9a.js",
+   "s": 4413,
+   "h": "21fadf9afd"
+  },
+  {
+   "p": "sprites/gba/jinwu.c96c919b.js",
+   "s": 10097,
+   "h": "c96c919b8f"
+  },
+  {
+   "p": "sprites/gba/jiuweihu.e3a27312.js",
+   "s": 10869,
+   "h": "e3a27312d4"
+  },
+  {
+   "p": "sprites/gba/ke_paper.e6c20fcb.js",
+   "s": 1516,
+   "h": "e6c20fcb8a"
+  },
+  {
+   "p": "sprites/gba/keeper_ao.5f097ad0.js",
+   "s": 1144,
+   "h": "5f097ad0de"
+  },
+  {
+   "p": "sprites/gba/keeper_lunar.30dec522.js",
+   "s": 1740,
+   "h": "30dec5223d"
+  },
+  {
+   "p": "sprites/gba/keeper_nur.116da050.js",
+   "s": 1624,
+   "h": "116da05044"
+  },
+  {
+   "p": "sprites/gba/kid_ahu.4048c2e2.js",
+   "s": 1452,
+   "h": "4048c2e262"
+  },
+  {
+   "p": "sprites/gba/kid_dandan.18d8bedc.js",
+   "s": 1752,
+   "h": "18d8bedc8b"
+  },
+  {
+   "p": "sprites/gba/kids_leimei.bd1fb018.js",
+   "s": 1700,
+   "h": "bd1fb0189a"
+  },
+  {
+   "p": "sprites/gba/kite_boy_feng.86dc5446.js",
+   "s": 1500,
+   "h": "86dc5446e2"
+  },
+  {
+   "p": "sprites/gba/kuafu.0baad7cf.js",
+   "s": 9053,
+   "h": "0baad7cfed"
+  },
+  {
+   "p": "sprites/gba/kuafu_geant.3fcd8666.js",
+   "s": 10433,
+   "h": "3fcd866663"
+  },
+  {
+   "p": "sprites/gba/kun.27bf28d4.js",
+   "s": 7189,
+   "h": "27bf28d473"
+  },
+  {
+   "p": "sprites/gba/lady_lan.4b2f6e3e.js",
+   "s": 1816,
+   "h": "4b2f6e3ee9"
+  },
+  {
+   "p": "sprites/gba/lang_jing.64218cb8.js",
+   "s": 4337,
+   "h": "64218cb897"
+  },
+  {
+   "p": "sprites/gba/lantern_old.40289dbc.js",
+   "s": 1752,
+   "h": "40289dbc61"
+  },
+  {
+   "p": "sprites/gba/lanternier_fa.85e0499b.js",
+   "s": 1168,
+   "h": "85e0499b81"
+  },
+  {
+   "p": "sprites/gba/lao_shuo_riz.581a8fdd.js",
+   "s": 1340,
+   "h": "581a8fdddf"
+  },
+  {
+   "p": "sprites/gba/lava_fish_bi.86fca14c.js",
+   "s": 1612,
+   "h": "86fca14cab"
+  },
+  {
+   "p": "sprites/gba/lei_gong.00248497.js",
+   "s": 6445,
+   "h": "0024849728"
+  },
+  {
+   "p": "sprites/gba/lei_shou.d1f34a65.js",
+   "s": 9297,
+   "h": "d1f34a65a1"
+  },
+  {
+   "p": "sprites/gba/lettre_sorcier.7fd94072.js",
+   "s": 17545,
+   "h": "7fd94072ed"
+  },
+  {
+   "p": "sprites/gba/level_guard.8605745a.js",
+   "s": 1848,
+   "h": "8605745a40"
+  },
+  {
+   "p": "sprites/gba/lighthouse_ming.460afe97.js",
+   "s": 1548,
+   "h": "460afe972e"
+  },
+  {
+   "p": "sprites/gba/linggui.d11d5837.js",
+   "s": 5993,
+   "h": "d11d583782"
+  },
+  {
+   "p": "sprites/gba/lingzhi_maudit.3c40fad1.js",
+   "s": 20589,
+   "h": "3c40fad1f6"
+  },
+  {
+   "p": "sprites/gba/lizard_zao.bd65165a.js",
+   "s": 1636,
+   "h": "bd65165a65"
+  },
+  {
+   "p": "sprites/gba/long.a198e7e8.js",
+   "s": 9645,
+   "h": "a198e7e886"
+  },
+  {
+   "p": "sprites/gba/longma.9c4516a2.js",
+   "s": 12061,
+   "h": "9c4516a241"
+  },
+  {
+   "p": "sprites/gba/longwang.2902b908.js",
+   "s": 9785,
+   "h": "2902b908fe"
+  },
+  {
+   "p": "sprites/gba/lost_pilgrim_ren.4a534b01.js",
+   "s": 1132,
+   "h": "4a534b01ea"
+  },
+  {
+   "p": "sprites/gba/loup_braise.e9a014b9.js",
+   "s": 19589,
+   "h": "e9a014b9e7"
+  },
+  {
+   "p": "sprites/gba/lu_ci_gui.e5b729e7.js",
+   "s": 19933,
+   "h": "e5b729e77c"
+  },
+  {
+   "p": "sprites/gba/lu_jing.1c197e81.js",
+   "s": 4657,
+   "h": "1c197e81a7"
+  },
+  {
+   "p": "sprites/gba/maitre_hong_gang.3b0bf45f.js",
+   "s": 29749,
+   "h": "3b0bf45f77"
+  },
+  {
+   "p": "sprites/gba/maitre_tie_bi.7b29f897.js",
+   "s": 24761,
+   "h": "7b29f8977c"
+  },
+  {
+   "p": "sprites/gba/maitresse_tong.a0fb259c.js",
+   "s": 28369,
+   "h": "a0fb259c98"
+  },
+  {
+   "p": "sprites/gba/mapmaker_ali.67b878a4.js",
+   "s": 1152,
+   "h": "67b878a441"
+  },
+  {
+   "p": "sprites/gba/mare_chagan.890b67e9.js",
+   "s": 1552,
+   "h": "890b67e9a3"
+  },
+  {
+   "p": "sprites/gba/matchmaker_hong.835c9a07.js",
+   "s": 1512,
+   "h": "835c9a0788"
+  },
+  {
+   "p": "sprites/gba/mei.d698e4ae.js",
+   "s": 3981,
+   "h": "d698e4aefb"
+  },
+  {
+   "p": "sprites/gba/meng_shou.1ee3ac37.js",
+   "s": 4337,
+   "h": "1ee3ac374f"
+  },
+  {
+   "p": "sprites/gba/mer_hamlet_dao.ba240b64.js",
+   "s": 1140,
+   "h": "ba240b64a9"
+  },
+  {
+   "p": "sprites/gba/mer_hamlet_lanfang.a08e4544.js",
+   "s": 1472,
+   "h": "a08e4544af"
+  },
+  {
+   "p": "sprites/gba/mer_road_ferryman_zhong.61463fa8.js",
+   "s": 1556,
+   "h": "61463fa8ae"
+  },
+  {
+   "p": "sprites/gba/mer_village_awen.a146debf.js",
+   "s": 1084,
+   "h": "a146debf74"
+  },
+  {
+   "p": "sprites/gba/mer_village_meiling.5b665fc8.js",
+   "s": 1248,
+   "h": "5b665fc89e"
+  },
+  {
+   "p": "sprites/gba/mer_village_rong.cff04329.js",
+   "s": 1800,
+   "h": "cff043298e"
+  },
+  {
+   "p": "sprites/gba/mer_village_yue.69e99af0.js",
+   "s": 1484,
+   "h": "69e99af081"
+  },
+  {
+   "p": "sprites/gba/merchant_bambous.0fe7630d.js",
+   "s": 1584,
+   "h": "0fe7630d57"
+  },
+  {
+   "p": "sprites/gba/merchant_fauves.758d32b5.js",
+   "s": 1452,
+   "h": "758d32b5f0"
+  },
+  {
+   "p": "sprites/gba/merchant_fleuve.74a6266c.js",
+   "s": 1080,
+   "h": "74a6266c75"
+  },
+  {
+   "p": "sprites/gba/merchant_fusang.668e5385.js",
+   "s": 1552,
+   "h": "668e538569"
+  },
+  {
+   "p": "sprites/gba/merchant_gobi.27a46af3.js",
+   "s": 1880,
+   "h": "27a46af3e9"
+  },
+  {
+   "p": "sprites/gba/merchant_lune.2ff6b6a9.js",
+   "s": 1292,
+   "h": "2ff6b6a9ac"
+  },
+  {
+   "p": "sprites/gba/merchant_ma.21575ef2.js",
+   "s": 6253,
+   "h": "21575ef269"
+  },
+  {
+   "p": "sprites/gba/merchant_mer.37bda8e2.js",
+   "s": 1304,
+   "h": "37bda8e268"
+  },
+  {
+   "p": "sprites/gba/merchant_rizieres.600a3c44.js",
+   "s": 1764,
+   "h": "600a3c44a2"
+  },
+  {
+   "p": "sprites/gba/merchant_tonnerre.e0b355c2.js",
+   "s": 1300,
+   "h": "e0b355c2f7"
+  },
+  {
+   "p": "sprites/gba/merchant_volcan.ec8df5fd.js",
+   "s": 1124,
+   "h": "ec8df5fd27"
+  },
+  {
+   "p": "sprites/gba/mermaid_jiaoren.cb506a58.js",
+   "s": 1316,
+   "h": "cb506a58bb"
+  },
+  {
+   "p": "sprites/gba/miller_gao.4676d4d8.js",
+   "s": 1716,
+   "h": "4676d4d824"
+  },
+  {
+   "p": "sprites/gba/miner_shan.afcf4c4a.js",
+   "s": 6225,
+   "h": "afcf4c4ae4"
+  },
+  {
+   "p": "sprites/gba/ming_niao.cb5b4a13.js",
+   "s": 8841,
+   "h": "cb5b4a1328"
+  },
+  {
+   "p": "sprites/gba/mirage_djinn.dfc2fdcb.js",
+   "s": 1928,
+   "h": "dfc2fdcbd0"
+  },
+  {
+   "p": "sprites/gba/monk_kong.5c40fe0c.js",
+   "s": 1252,
+   "h": "5c40fe0c11"
+  },
+  {
+   "p": "sprites/gba/monk_zhen.154952c3.js",
+   "s": 4377,
+   "h": "154952c3e7"
+  },
+  {
+   "p": "sprites/gba/monkey_ji.f50bcf4a.js",
+   "s": 1272,
+   "h": "f50bcf4a97"
+  },
+  {
+   "p": "sprites/gba/monkey_sun.1ae13bd4.js",
+   "s": 904,
+   "h": "1ae13bd425"
+  },
+  {
+   "p": "sprites/gba/moon_child.73e904be.js",
+   "s": 1240,
+   "h": "73e904be01"
+  },
+  {
+   "p": "sprites/gba/moon_child_lan.fe9e1060.js",
+   "s": 1280,
+   "h": "fe9e1060c4"
+  },
+  {
+   "p": "sprites/gba/moon_cook_gui.962e6cf7.js",
+   "s": 1720,
+   "h": "962e6cf726"
+  },
+  {
+   "p": "sprites/gba/moon_crow_wu.d25b018b.js",
+   "s": 808,
+   "h": "d25b018ba6"
+  },
+  {
+   "p": "sprites/gba/moon_dew_gatherer_lu.32f9554f.js",
+   "s": 1528,
+   "h": "32f9554f6d"
+  },
+  {
+   "p": "sprites/gba/moon_ferryman_yin.65d2e63d.js",
+   "s": 1840,
+   "h": "65d2e63da7"
+  },
+  {
+   "p": "sprites/gba/moon_fisher_tong.82e7e869.js",
+   "s": 1816,
+   "h": "82e7e8693f"
+  },
+  {
+   "p": "sprites/gba/moon_lamplighter_qiu.a915c849.js",
+   "s": 1624,
+   "h": "a915c84940"
+  },
+  {
+   "p": "sprites/gba/moon_rabbit_yutu.e77ddd94.js",
+   "s": 1324,
+   "h": "e77ddd9498"
+  },
+  {
+   "p": "sprites/gba/moon_stargazer_ming.f44070e7.js",
+   "s": 1048,
+   "h": "f44070e707"
+  },
+  {
+   "p": "sprites/gba/moon_taster_bao.1ae16e32.js",
+   "s": 2260,
+   "h": "1ae16e327a"
+  },
+  {
+   "p": "sprites/gba/mu_gui.537d9f22.js",
+   "s": 5561,
+   "h": "537d9f2206"
+  },
+  {
+   "p": "sprites/gba/mu_mei.0d728ef3.js",
+   "s": 4389,
+   "h": "0d728ef3ab"
+  },
+  {
+   "p": "sprites/gba/mud_imp_pit.7c7685bf.js",
+   "s": 1712,
+   "h": "7c7685bff1"
+  },
+  {
+   "p": "sprites/gba/net_mender_wei.095731e3.js",
+   "s": 1712,
+   "h": "095731e328"
+  },
+  {
+   "p": "sprites/gba/nian.fcc02adb.js",
+   "s": 10009,
+   "h": "fcc02adb49"
+  },
+  {
+   "p": "sprites/gba/noye_garde.2ed66de0.js",
+   "s": 26249,
+   "h": "2ed66de00c"
+  },
+  {
+   "p": "sprites/gba/nu_gui.6fe5a748.js",
+   "s": 6553,
+   "h": "6fe5a74810"
+  },
+  {
+   "p": "sprites/gba/nuba.1d2bc60d.js",
+   "s": 4429,
+   "h": "1d2bc60d25"
+  },
+  {
+   "p": "sprites/gba/nun_ying.db7af9fd.js",
+   "s": 1144,
+   "h": "db7af9fded"
+  },
+  {
+   "p": "sprites/gba/nuwa.9f730667.js",
+   "s": 7681,
+   "h": "9f730667ef"
+  },
+  {
+   "p": "sprites/gba/octo_ba.fb337de2.js",
+   "s": 1572,
+   "h": "fb337de272"
+  },
+  {
+   "p": "sprites/gba/old_nomad_bayan.e0d8aa22.js",
+   "s": 1556,
+   "h": "e0d8aa22aa"
+  },
+  {
+   "p": "sprites/gba/oracle_ahmad.c1b46605.js",
+   "s": 1196,
+   "h": "c1b46605f5"
+  },
+  {
+   "p": "sprites/gba/orphan_xiaoyu.6b341144.js",
+   "s": 1324,
+   "h": "6b34114485"
+  },
+  {
+   "p": "sprites/gba/osmanthus_woodcutter.cacff0ce.js",
+   "s": 1628,
+   "h": "cacff0ce04"
+  },
+  {
+   "p": "sprites/gba/oxherd_niulang.cf13415c.js",
+   "s": 1960,
+   "h": "cf13415c50"
+  },
+  {
+   "p": "sprites/gba/oyster_coque.e4fd3fa5.js",
+   "s": 1480,
+   "h": "e4fd3fa5c5"
+  },
+  {
+   "p": "sprites/gba/panda_baobao.96f9c2ac.js",
+   "s": 1388,
+   "h": "96f9c2acd1"
+  },
+  {
+   "p": "sprites/gba/panda_mimi.ed85480a.js",
+   "s": 1344,
+   "h": "ed85480abc"
+  },
+  {
+   "p": "sprites/gba/panlong.fbc129d6.js",
+   "s": 9181,
+   "h": "fbc129d6ac"
+  },
+  {
+   "p": "sprites/gba/paper_dragon_long.1b89475a.js",
+   "s": 1776,
+   "h": "1b89475ade"
+  },
+  {
+   "p": "sprites/gba/parley_sun2.b3f1e467.js",
+   "s": 1492,
+   "h": "b3f1e467c6"
+  },
+  {
+   "p": "sprites/gba/parley_sun3.0cf5c515.js",
+   "s": 1424,
+   "h": "0cf5c51551"
+  },
+  {
+   "p": "sprites/gba/parley_sun5.c709b2db.js",
+   "s": 1404,
+   "h": "c709b2dbf2"
+  },
+  {
+   "p": "sprites/gba/parley_sun6.c58f5daf.js",
+   "s": 1568,
+   "h": "c58f5daf56"
+  },
+  {
+   "p": "sprites/gba/parley_sun8.6e9e1c56.js",
+   "s": 1668,
+   "h": "6e9e1c56ba"
+  },
+  {
+   "p": "sprites/gba/parley_sun9.6b484982.js",
+   "s": 1548,
+   "h": "6b484982fb"
+  },
+  {
+   "p": "sprites/gba/pass_guard_kuang.fb342ee1.js",
+   "s": 1840,
+   "h": "fb342ee12f"
+  },
+  {
+   "p": "sprites/gba/pearl_diver_xi.7d10b67f.js",
+   "s": 1212,
+   "h": "7d10b67f0d"
+  },
+  {
+   "p": "sprites/gba/peng.10ef4538.js",
+   "s": 8061,
+   "h": "10ef45386e"
+  },
+  {
+   "p": "sprites/gba/petit_gui.3c8a775c.js",
+   "s": 28013,
+   "h": "3c8a775ce2"
+  },
+  {
+   "p": "sprites/gba/phoenix_chick.f8c996e7.js",
+   "s": 952,
+   "h": "f8c996e7c0"
+  },
+  {
+   "p": "sprites/gba/picker_tao.98d9df91.js",
+   "s": 1692,
+   "h": "98d9df9178"
+  },
+  {
+   "p": "sprites/gba/pigeon_zhao.7030f9f9.js",
+   "s": 1424,
+   "h": "7030f9f992"
+  },
+  {
+   "p": "sprites/gba/pilgrim_wuya.c4b48959.js",
+   "s": 1732,
+   "h": "c4b48959d0"
+  },
+  {
+   "p": "sprites/gba/ping.6684d808.js",
+   "s": 1392,
+   "h": "6684d808b4"
+  },
+  {
+   "p": "sprites/gba/pixiu.831690df.js",
+   "s": 5517,
+   "h": "831690df0e"
+  },
+  {
+   "p": "sprites/gba/pixiu_tresor.1f175465.js",
+   "s": 11017,
+   "h": "1f17546521"
+  },
+  {
+   "p": "sprites/gba/poet_bo.d0c86a26.js",
+   "s": 1296,
+   "h": "d0c86a2683"
+  },
+  {
+   "p": "sprites/gba/porter_san.69152e18.js",
+   "s": 1688,
+   "h": "69152e1889"
+  },
+  {
+   "p": "sprites/gba/potter_rui.9c447882.js",
+   "s": 1404,
+   "h": "9c44788244"
+  },
+  {
+   "p": "sprites/gba/pretresse_lunaire.41e5afa7.js",
+   "s": 19065,
+   "h": "41e5afa71e"
+  },
+  {
+   "p": "sprites/gba/priestess_mazu.68809e91.js",
+   "s": 1344,
+   "h": "68809e9149"
+  },
+  {
+   "p": "sprites/gba/priestess_yan.0f717999.js",
+   "s": 5993,
+   "h": "0f717999f2"
+  },
+  {
+   "p": "sprites/gba/pulao.cfd0796f.js",
+   "s": 11053,
+   "h": "cfd0796fcc"
+  },
+  {
+   "p": "sprites/gba/pup_tuan.5842cfa9.js",
+   "s": 1356,
+   "h": "5842cfa932"
+  },
+  {
+   "p": "sprites/gba/qilin.4a3e8a0e.js",
+   "s": 10093,
+   "h": "4a3e8a0ebc"
+  },
+  {
+   "p": "sprites/gba/qing_she.b0a67edf.js",
+   "s": 4709,
+   "h": "b0a67edf43"
+  },
+  {
+   "p": "sprites/gba/qinglong.94d9e191.js",
+   "s": 9469,
+   "h": "94d9e191ea"
+  },
+  {
+   "p": "sprites/gba/qingniao.48680b70.js",
+   "s": 8709,
+   "h": "48680b700d"
+  },
+  {
+   "p": "sprites/gba/qiongqi.740933d0.js",
+   "s": 8553,
+   "h": "740933d040"
+  },
+  {
+   "p": "sprites/gba/rain_pu.0c79ca99.js",
+   "s": 1432,
+   "h": "0c79ca99c8"
+  },
+  {
+   "p": "sprites/gba/ren_yu.564ca698.js",
+   "s": 7869,
+   "h": "564ca6989e"
+  },
+  {
+   "p": "sprites/gba/rizieres_hamlet_weaver_zhu.3b7bc5e0.js",
+   "s": 1236,
+   "h": "3b7bc5e08c"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_kid_lan.6593120b.js",
+   "s": 1476,
+   "h": "6593120bd8"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_old_watch.a5dc01c1.js",
+   "s": 1484,
+   "h": "a5dc01c10a"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_porter.91a38a06.js",
+   "s": 1252,
+   "h": "91a38a06fc"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_potter.07dd6202.js",
+   "s": 1448,
+   "h": "07dd62028a"
+  },
+  {
+   "p": "sprites/gba/rizieres_w_toad.190b6c2e.js",
+   "s": 21185,
+   "h": "190b6c2e41"
+  },
+  {
+   "p": "sprites/gba/rizieres_wild_old_dikekeeper.58bae65c.js",
+   "s": 1800,
+   "h": "58bae65cfb"
+  },
+  {
+   "p": "sprites/gba/rodman_gang.8c169218.js",
+   "s": 1772,
+   "h": "8c1692180d"
+  },
+  {
+   "p": "sprites/gba/root_elder.9ee9ba9d.js",
+   "s": 1464,
+   "h": "9ee9ba9d80"
+  },
+  {
+   "p": "sprites/gba/root_surveyor_gen.b2c0e26a.js",
+   "s": 1380,
+   "h": "b2c0e26abc"
+  },
+  {
+   "p": "sprites/gba/rug_seller_zeynep.ff48b927.js",
+   "s": 1292,
+   "h": "ff48b9278e"
+  },
+  {
+   "p": "sprites/gba/ruiniao.889e1e78.js",
+   "s": 8229,
+   "h": "889e1e781e"
+  },
+  {
+   "p": "sprites/gba/sailor_bao.40eba3c0.js",
+   "s": 1436,
+   "h": "40eba3c003"
+  },
+  {
+   "p": "sprites/gba/sailor_tai.d895287b.js",
+   "s": 1740,
+   "h": "d895287b88"
+  },
+  {
+   "p": "sprites/gba/salt_hu.33749be7.js",
+   "s": 1256,
+   "h": "33749be702"
+  },
+  {
+   "p": "sprites/gba/salt_jun.9f2bf5e6.js",
+   "s": 2088,
+   "h": "9f2bf5e699"
+  },
+  {
+   "p": "sprites/gba/sanglier_flammes.957c23ba.js",
+   "s": 14757,
+   "h": "957c23ba39"
+  },
+  {
+   "p": "sprites/gba/sanzu_wu.de66ca27.js",
+   "s": 9529,
+   "h": "de66ca2751"
+  },
+  {
+   "p": "sprites/gba/scarecrow_cao.820d446f.js",
+   "s": 1684,
+   "h": "820d446f53"
+  },
+  {
+   "p": "sprites/gba/scholar_dong.073258d7.js",
+   "s": 1364,
+   "h": "073258d7ed"
+  },
+  {
+   "p": "sprites/gba/scribe_ou.87543631.js",
+   "s": 1544,
+   "h": "8754363130"
+  },
+  {
+   "p": "sprites/gba/seigneur_jin_long.e66821f3.js",
+   "s": 29281,
+   "h": "e66821f3f5"
+  },
+  {
+   "p": "sprites/gba/sergeant_mo.6f68b748.js",
+   "s": 1876,
+   "h": "6f68b74860"
+  },
+  {
+   "p": "sprites/gba/shaman_ula.597589dd.js",
+   "s": 1260,
+   "h": "597589dd75"
+  },
+  {
+   "p": "sprites/gba/shan_gui.e20ca6f1.js",
+   "s": 4701,
+   "h": "e20ca6f14d"
+  },
+  {
+   "p": "sprites/gba/shan_shen.e5909791.js",
+   "s": 9357,
+   "h": "e590979182"
+  },
+  {
+   "p": "sprites/gba/shanxiao.29aa0fb0.js",
+   "s": 4157,
+   "h": "29aa0fb05f"
+  },
+  {
+   "p": "sprites/gba/she_jing.7173bc81.js",
+   "s": 5557,
+   "h": "7173bc81ef"
+  },
+  {
+   "p": "sprites/gba/she_shen.000d58b2.js",
+   "s": 5765,
+   "h": "000d58b217"
+  },
+  {
+   "p": "sprites/gba/shenlong.2c2b689b.js",
+   "s": 10549,
+   "h": "2c2b689b5e"
+  },
+  {
+   "p": "sprites/gba/shennong.e18e82ac.js",
+   "s": 10833,
+   "h": "e18e82acb7"
+  },
+  {
+   "p": "sprites/gba/shepherd_zi.5b4bc09e.js",
+   "s": 4713,
+   "h": "5b4bc09e63"
+  },
+  {
+   "p": "sprites/gba/shi_jing.526d2916.js",
+   "s": 6953,
+   "h": "526d29160f"
+  },
+  {
+   "p": "sprites/gba/shipwright_bing.09ee5214.js",
+   "s": 1660,
+   "h": "09ee5214a7"
+  },
+  {
+   "p": "sprites/gba/shouling.d0912aad.js",
+   "s": 3901,
+   "h": "d0912aad29"
+  },
+  {
+   "p": "sprites/gba/shu_jing.c71e2170.js",
+   "s": 5473,
+   "h": "c71e21703a"
+  },
+  {
+   "p": "sprites/gba/shui_gui.4c3190a0.js",
+   "s": 4497,
+   "h": "4c3190a025"
+  },
+  {
+   "p": "sprites/gba/shui_shen.87fa0277.js",
+   "s": 4357,
+   "h": "87fa02774a"
+  },
+  {
+   "p": "sprites/gba/shuihou.92c94793.js",
+   "s": 6929,
+   "h": "92c94793e3"
+  },
+  {
+   "p": "sprites/gba/shuimu_denglong.606cca08.js",
+   "s": 13917,
+   "h": "606cca0895"
+  },
+  {
+   "p": "sprites/gba/singe_demon.3b4ae802.js",
+   "s": 29741,
+   "h": "3b4ae80273"
+  },
+  {
+   "p": "sprites/gba/singer_hailing.ab7d3663.js",
+   "s": 1356,
+   "h": "ab7d36636d"
+  },
+  {
+   "p": "sprites/gba/sluicekeeper_rong.d3cdbc81.js",
+   "s": 2156,
+   "h": "d3cdbc8130"
+  },
+  {
+   "p": "sprites/gba/smith_tie.e663686b.js",
+   "s": 5025,
+   "h": "e663686b37"
+  },
+  {
+   "p": "sprites/gba/snake_qing.9bc623a0.js",
+   "s": 1356,
+   "h": "9bc623a0ba"
+  },
+  {
+   "p": "sprites/gba/soldat_terre_cuite.f30f1c08.js",
+   "s": 17021,
+   "h": "f30f1c08b5"
+  },
+  {
+   "p": "sprites/gba/sorcerer.a4e11c04.js",
+   "s": 48778,
+   "h": "a4e11c04ea"
+  },
+  {
+   "p": "sprites/gba/spinner_yue.8710263f.js",
+   "s": 1592,
+   "h": "8710263fe3"
+  },
+  {
+   "p": "sprites/gba/stair_mason_shi.907d9827.js",
+   "s": 1572,
+   "h": "907d982739"
+  },
+  {
+   "p": "sprites/gba/star_child_xing.292695a2.js",
+   "s": 1468,
+   "h": "292695a2ac"
+  },
+  {
+   "p": "sprites/gba/stem_sprite.417caed0.js",
+   "s": 1172,
+   "h": "417caed0ca"
+  },
+  {
+   "p": "sprites/gba/stoker_ge.85356ac5.js",
+   "s": 2196,
+   "h": "85356ac50e"
+  },
+  {
+   "p": "sprites/gba/storyteller_yun.4ecb94e2.js",
+   "s": 1492,
+   "h": "4ecb94e234"
+  },
+  {
+   "p": "sprites/gba/suanni.d64d1903.js",
+   "s": 6421,
+   "h": "d64d1903b0"
+  },
+  {
+   "p": "sprites/gba/sun_1.351edf78.js",
+   "s": 15881,
+   "h": "351edf7865"
+  },
+  {
+   "p": "sprites/gba/sun_2.d24c6d20.js",
+   "s": 16013,
+   "h": "d24c6d20cb"
+  },
+  {
+   "p": "sprites/gba/sun_3.4899eeb8.js",
+   "s": 17209,
+   "h": "4899eeb8ea"
+  },
+  {
+   "p": "sprites/gba/sun_4.a21336dd.js",
+   "s": 23577,
+   "h": "a21336dd75"
+  },
+  {
+   "p": "sprites/gba/sun_5.6d0409f9.js",
+   "s": 18253,
+   "h": "6d0409f9fa"
+  },
+  {
+   "p": "sprites/gba/sun_6.533e39f6.js",
+   "s": 19037,
+   "h": "533e39f634"
+  },
+  {
+   "p": "sprites/gba/sun_7.ce0092fc.js",
+   "s": 20017,
+   "h": "ce0092fc06"
+  },
+  {
+   "p": "sprites/gba/sun_8.df9cb925.js",
+   "s": 19481,
+   "h": "df9cb92520"
+  },
+  {
+   "p": "sprites/gba/sun_9.19bef18a.js",
+   "s": 16597,
+   "h": "19bef18ad5"
+  },
+  {
+   "p": "sprites/gba/sun_ten.b46e50aa.js",
+   "s": 1364,
+   "h": "b46e50aac5"
+  },
+  {
+   "p": "sprites/gba/taotie_bete.3ecd6db6.js",
+   "s": 10705,
+   "h": "3ecd6db6bb"
+  },
+  {
+   "p": "sprites/gba/taotie_bronze.63c9e4ae.js",
+   "s": 11205,
+   "h": "63c9e4ae20"
+  },
+  {
+   "p": "sprites/gba/taureau_braise.d0500c41.js",
+   "s": 26789,
+   "h": "d0500c4170"
+  },
+  {
+   "p": "sprites/gba/tea_zhuang.66d085c8.js",
+   "s": 1064,
+   "h": "66d085c8e5"
+  },
+  {
+   "p": "sprites/gba/teamaster_you.72c16973.js",
+   "s": 888,
+   "h": "72c1697386"
+  },
+  {
+   "p": "sprites/gba/templar.05dd17c9.js",
+   "s": 48282,
+   "h": "05dd17c950"
+  },
+  {
+   "p": "sprites/gba/tengshe.e26ce939.js",
+   "s": 9261,
+   "h": "e26ce93907"
+  },
+  {
+   "p": "sprites/gba/tiangou_lune.5aa6b317.js",
+   "s": 10697,
+   "h": "5aa6b31727"
+  },
+  {
+   "p": "sprites/gba/tiangou_noir.f79d035e.js",
+   "s": 4773,
+   "h": "f79d035e4b"
+  },
+  {
+   "p": "sprites/gba/tianlu.622c0716.js",
+   "s": 9413,
+   "h": "622c07163d"
+  },
+  {
+   "p": "sprites/gba/tianlu_gardien.dc282e27.js",
+   "s": 9925,
+   "h": "dc282e276b"
+  },
+  {
+   "p": "sprites/gba/tianma.ee8ba8aa.js",
+   "s": 9077,
+   "h": "ee8ba8aa29"
+  },
+  {
+   "p": "sprites/gba/tigre_embrase.dc7bef55.js",
+   "s": 21789,
+   "h": "dc7bef55ca"
+  },
+  {
+   "p": "sprites/gba/toad_chan.90eb629a.js",
+   "s": 1844,
+   "h": "90eb629a8d"
+  },
+  {
+   "p": "sprites/gba/tonnerre_hamlet_lichen_gatherer.b382bce2.js",
+   "s": 1132,
+   "h": "b382bce21c"
+  },
+  {
+   "p": "sprites/gba/tonnerre_road_pilgrim.fba90ba6.js",
+   "s": 1820,
+   "h": "fba90ba637"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_apprentice.95e300cd.js",
+   "s": 1896,
+   "h": "95e300cde0"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_baker.73d0c402.js",
+   "s": 1300,
+   "h": "73d0c40225"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_counter.a50c760b.js",
+   "s": 1348,
+   "h": "a50c760b2e"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_roper.7b295d8d.js",
+   "s": 1704,
+   "h": "7b295d8d33"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_watchman.26a9a332.js",
+   "s": 1632,
+   "h": "26a9a33255"
+  },
+  {
+   "p": "sprites/gba/tonnerre_wild_rope_keeper.fc55077d.js",
+   "s": 1280,
+   "h": "fc55077d46"
+  },
+  {
+   "p": "sprites/gba/tortue_dragon.6dfb9a2e.js",
+   "s": 28593,
+   "h": "6dfb9a2ec8"
+  },
+  {
+   "p": "sprites/gba/traveler_hui.a79be53c.js",
+   "s": 1480,
+   "h": "a79be53c9e"
+  },
+  {
+   "p": "sprites/gba/twins_mu.e227e0d4.js",
+   "s": 1944,
+   "h": "e227e0d4f9"
+  },
+  {
+   "p": "sprites/gba/volcan_hamlet_steam_keeper.760f1c8a.js",
+   "s": 1824,
+   "h": "760f1c8af6"
+  },
+  {
+   "p": "sprites/gba/volcan_road_prospector.bf3192a8.js",
+   "s": 2096,
+   "h": "bf3192a890"
+  },
+  {
+   "p": "sprites/gba/volcan_village_bellows_man.6e39a11a.js",
+   "s": 1684,
+   "h": "6e39a11aaf"
+  },
+  {
+   "p": "sprites/gba/volcan_village_ember_boy.21cf2e53.js",
+   "s": 1308,
+   "h": "21cf2e53cb"
+  },
+  {
+   "p": "sprites/gba/volcan_village_lantern_maker.5f51474a.js",
+   "s": 1928,
+   "h": "5f51474a2a"
+  },
+  {
+   "p": "sprites/gba/volcan_village_surveyor.4693c726.js",
+   "s": 1684,
+   "h": "4693c72664"
+  },
+  {
+   "p": "sprites/gba/volcan_village_washer.0cf74b77.js",
+   "s": 1848,
+   "h": "0cf74b7791"
+  },
+  {
+   "p": "sprites/gba/volcan_wild_ash_sweeper.77475950.js",
+   "s": 1276,
+   "h": "77475950e9"
+  },
+  {
+   "p": "sprites/gba/wangliang.b88a8336.js",
+   "s": 4869,
+   "h": "b88a8336b2"
+  },
+  {
+   "p": "sprites/gba/wangxiang.8a2afa41.js",
+   "s": 3133,
+   "h": "8a2afa41ec"
+  },
+  {
+   "p": "sprites/gba/warrior.05dd17c9.js",
+   "s": 48282,
+   "h": "05dd17c950"
+  },
+  {
+   "p": "sprites/gba/weaver_mei.e17f1a6a.js",
+   "s": 5417,
+   "h": "e17f1a6ace"
+  },
+  {
+   "p": "sprites/gba/weaver_zhinu.f91e80f8.js",
+   "s": 1648,
+   "h": "f91e80f8fc"
+  },
+  {
+   "p": "sprites/gba/well_digger_omar.bf2ad997.js",
+   "s": 1432,
+   "h": "bf2ad99718"
+  },
+  {
+   "p": "sprites/gba/wen_shen.64d58355.js",
+   "s": 5573,
+   "h": "64d583557c"
+  },
+  {
+   "p": "sprites/gba/whale_kun.72bcc7bd.js",
+   "s": 892,
+   "h": "72bcc7bd8f"
+  },
+  {
+   "p": "sprites/gba/widow_cai.7bd6b669.js",
+   "s": 1556,
+   "h": "7bd6b6696b"
+  },
+  {
+   "p": "sprites/gba/wind_piper_fei.7f309c97.js",
+   "s": 1480,
+   "h": "7f309c9762"
+  },
+  {
+   "p": "sprites/gba/wolf_pup_baatar.f6482063.js",
+   "s": 1528,
+   "h": "f64820631c"
+  },
+  {
+   "p": "sprites/gba/wu_shou.426e084c.js",
+   "s": 4821,
+   "h": "426e084cba"
+  },
+  {
+   "p": "sprites/gba/xiangliu.a455f3c3.js",
+   "s": 9205,
+   "h": "a455f3c39b"
+  },
+  {
+   "p": "sprites/gba/xiaobao.5bf01207.js",
+   "s": 1688,
+   "h": "5bf01207d0"
+  },
+  {
+   "p": "sprites/gba/xiezhi.79f7a4b0.js",
+   "s": 10977,
+   "h": "79f7a4b077"
+  },
+  {
+   "p": "sprites/gba/xingtian.9be34e69.js",
+   "s": 11001,
+   "h": "9be34e6907"
+  },
+  {
+   "p": "sprites/gba/xiong_jing.03794f2b.js",
+   "s": 5625,
+   "h": "03794f2bea"
+  },
+  {
+   "p": "sprites/gba/xuan_gui.3395f965.js",
+   "s": 4013,
+   "h": "3395f96562"
+  },
+  {
+   "p": "sprites/gba/xuan_she.a3fadd69.js",
+   "s": 6269,
+   "h": "a3fadd69f4"
+  },
+  {
+   "p": "sprites/gba/xuanwu.7f282aaa.js",
+   "s": 8581,
+   "h": "7f282aaa2a"
+  },
+  {
+   "p": "sprites/gba/xue_niao.eaa3d937.js",
+   "s": 9521,
+   "h": "eaa3d9375b"
+  },
+  {
+   "p": "sprites/gba/yayu.7ffdecff.js",
+   "s": 9625,
+   "h": "7ffdecff88"
+  },
+  {
+   "p": "sprites/gba/yazi.0b61ec3c.js",
+   "s": 6829,
+   "h": "0b61ec3ca8"
+  },
+  {
+   "p": "sprites/gba/yinglong.182e4097.js",
+   "s": 5529,
+   "h": "182e4097a6"
+  },
+  {
+   "p": "sprites/gba/yingyu.556637b6.js",
+   "s": 3325,
+   "h": "556637b66c"
+  },
+  {
+   "p": "sprites/gba/yingzhao_ailee.b9f52538.js",
+   "s": 10625,
+   "h": "b9f525389a"
+  },
+  {
+   "p": "sprites/gba/yingzhao_cheval.4fa02bda.js",
+   "s": 10457,
+   "h": "4fa02bda7c"
+  },
+  {
+   "p": "sprites/gba/young_miner_bo.c3429ee0.js",
+   "s": 1840,
+   "h": "c3429ee042"
+  },
+  {
+   "p": "sprites/gba/young_monk_zhi.0d25a01e.js",
+   "s": 960,
+   "h": "0d25a01e31"
+  },
+  {
+   "p": "sprites/gba/yu_shi.292394f7.js",
+   "s": 8225,
+   "h": "292394f764"
+  },
+  {
+   "p": "sprites/gba/yu_spirit.b7c65f73.js",
+   "s": 1568,
+   "h": "b7c65f735e"
+  },
+  {
+   "p": "sprites/gba/yuan_gui.4d4246b5.js",
+   "s": 7901,
+   "h": "4d4246b577"
+  },
+  {
+   "p": "sprites/gba/yun_shou.e8081eff.js",
+   "s": 11157,
+   "h": "e8081effe9"
+  },
+  {
+   "p": "sprites/gba/yutu.45a8c3bc.js",
+   "s": 9493,
+   "h": "45a8c3bc43"
+  },
+  {
+   "p": "sprites/gba/zhulong_serpent.d651871a.js",
+   "s": 4537,
+   "h": "d651871a0b"
+  },
+  {
+   "p": "sprites/gba/zhulong_torche.d65454c6.js",
+   "s": 7977,
+   "h": "d65454c6b9"
+  },
+  {
+   "p": "sprites/gba/zhuque.b380811f.js",
+   "s": 9629,
+   "h": "b380811ff3"
+  },
+  {
+   "p": "sprites/gba/zouyu.43828da4.js",
+   "s": 11861,
+   "h": "43828da440"
+  },
+  {
+   "p": "sprites/gba/zu_xian.95a7c938.js",
+   "s": 4681,
+   "h": "95a7c938f3"
+  },
   {
    "p": "sprites/ultimates/biome_bambous-seq.png",
    "s": 196659,

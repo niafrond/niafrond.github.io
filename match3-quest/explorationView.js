@@ -18,7 +18,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { loadSequence } from './ultimateCinematics.js';
@@ -249,7 +249,8 @@ export function createExplorationView(cfg) {
 
     // Charge les paquets de sprites de la région, libère les images des autres régions et décode les nouvelles.
     function prepareRegion(region) {
-        if (preparedRegion === region) return Promise.resolve();
+        // région prête : seul le héros peut manquer (classe choisie après le chargement initial)
+        if (preparedRegion === region) return loadGbaSprites([cfg.getHero().classId]).catch(() => {});
         if (preparing?.region === region) return preparing.promise;
         const { npcs, enemies } = regionEntities(region);
         const packs = packsForKeys({ npcs, enemies });
@@ -257,8 +258,10 @@ export function createExplorationView(cfg) {
         const label = zone ? zone.name : region === ARENA_REGION ? ARENA_NAME : 'Chargement…';
         const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
         const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
+        // sprites GBA de la région : héros, PNJ, ennemis et leurs gabarits (le reste se charge à la première apparition)
+        const gba = loadGbaSprites([cfg.getHero().classId, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
         const promise = withLoadingScreen(label, async progress => {
-            await trackProgress(packs.map(loadSpritePack), r => progress(r * 0.5));
+            await trackProgress([...packs.map(loadSpritePack), gba], r => progress(r * 0.5));
             const svgs = regionSprites(region);
             retainSprites(svgs);
             await trackProgress(svgs.map(svg => decodeSprites([svg])), r => progress(0.5 + r * 0.5));

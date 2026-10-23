@@ -17,10 +17,16 @@ import { NPC_PACK, ENEMY_PACK } from './packs.js';
 import { villagerSprite } from './villagers.js';
 import { tintSvg, isTintable } from './biomeTint.js';
 export { BIOME_TINTS, tintSvg } from './biomeTint.js';
-import { GBA_SPRITES } from './generated.js';
+import { GBA_FILES } from './gbaIndex.js';
+
+// Sprites GBA pré-générés (sprites/generated.js, découpé par build-gba.mjs en un module par clé dans sprites/gba/) : chargés avec la
+// région qui les montre (loadGbaSprites, appelé par explorationView prepareRegion), jamais tous au démarrage. Remplis au fil des chargements.
+const GBA_SPRITES = {};
+const gbaPending = new Map();   // clé → Promise
+const gbaFailedAt = new Map();  // clé → date du dernier échec (pas de nouvel essai à chaque image)
 
 // Sprite GBA pré-généré pour la clé donnée (direction : 'front'|'back'|'left'|'right').
-// Retourne null si aucun sprite généré n'existe pour cette clé.
+// Retourne null si aucun sprite généré n'existe pour cette clé, ou s'il n'est pas encore chargé (son chargement est alors lancé).
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
 const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad', changxi_calm: 'changxi', changxi_moon: 'changxi' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
@@ -54,10 +60,37 @@ export const TEMPLATE_SPRITE_COPIES = {
 };
 export const spriteSourceOf = key => TEMPLATE_SPRITE_COPIES[key] || key;
 // Un sprite généré propre au gabarit passe avant l'emprunt du dessin du gabarit d'origine.
-const gbaKey = key => GBA_ALIASES[key] || (key in GBA_SPRITES ? key : TEMPLATE_SPRITE_COPIES[key]) || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
-export const hasGbaSprite = key => gbaKey(key) in GBA_SPRITES;
+const gbaKey = key => GBA_ALIASES[key] || (key in GBA_FILES ? key : TEMPLATE_SPRITE_COPIES[key]) || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
+export const hasGbaSprite = key => gbaKey(key) in GBA_FILES;
+
+// Charge les sprites GBA de ces clés (PNJ, ennemis, gabarits, classes du héros ; alias résolus, clés sans sprite ignorées).
+export function loadGbaSprites(keys) {
+    const wanted = [...new Set(keys.filter(Boolean).map(gbaKey))].filter(k => k in GBA_FILES && !GBA_SPRITES[k]);
+    return Promise.all(wanted.map(k => {
+        if (!gbaPending.has(k)) {
+            gbaPending.set(k, import(`./gba/${GBA_FILES[k]}`).then(mod => {
+                GBA_SPRITES[k] = mod.default;
+                gbaFailedAt.delete(k);
+            }, err => {
+                gbaFailedAt.set(k, Date.now());
+                throw err;
+            }).finally(() => gbaPending.delete(k)));
+        }
+        return gbaPending.get(k);
+    }));
+}
+export const loadAllGbaSprites = () => loadGbaSprites(Object.keys(GBA_FILES));
+
+// Données d'un sprite GBA chargé ; sinon null, et chargement lancé en arrière-plan (repli sur le dessin vectoriel en attendant).
+function gbaData(key) {
+    const k = gbaKey(key);
+    if (GBA_SPRITES[k]) return GBA_SPRITES[k];
+    if (k in GBA_FILES && !gbaPending.has(k) && !(Date.now() - (gbaFailedAt.get(k) || 0) < RETRY_MS)) loadGbaSprites([k]).catch(() => {});
+    return null;
+}
+
 export function gbaSprite(key, dir = 'front') {
-    const s = GBA_SPRITES[gbaKey(key)];
+    const s = gbaData(key);
     if (!s) return null;
     return s[dir] || s.front || null;
 }
@@ -65,7 +98,7 @@ export function gbaSprite(key, dir = 'front') {
 // Image du cycle de marche (« walk_<dir>_<n> ») : n tourne sur les images disponibles (aller-retour si 3 images).
 // Retourne null s'il n'existe pas d'animation de marche pour cette clé/direction.
 export function gbaWalkSprite(key, dir, tick) {
-    const s = GBA_SPRITES[gbaKey(key)];
+    const s = gbaData(key);
     if (!s) return null;
     let n = 0;
     while (s[`walk_${dir}_${n}`]) n++;
@@ -77,7 +110,7 @@ export function gbaWalkSprite(key, dir, tick) {
 // Images de l'animation d'attaque (« attack_<n> ») d'un combattant : tir à l'arc du héros, coup d'arme / griffes / souffle d'un ennemi.
 // Tableau vide s'il n'y en a pas (le portrait reste alors fixe).
 export function gbaAttackFrames(key) {
-    const s = GBA_SPRITES[gbaKey(key)];
+    const s = gbaData(key);
     const out = [];
     while (s && s[`attack_${out.length}`]) out.push(s[`attack_${out.length}`]);
     return out;

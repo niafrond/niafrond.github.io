@@ -22,6 +22,10 @@ export const MANIFEST_FILE = 'precache-manifest.json';
 
 // Dossiers de dessins chargés à la demande par le jeu (cinématiques, sorts, ultimes).
 export const MEDIA_SPRITE_DIRS = ['ultimates', 'spellfx', 'prologue', 'sunfall', 'ending', 'fengmeng', 'launcher'];
+// Sprites GBA découpés par sprites/build-gba.mjs (un module par clé, chargé avec sa région) ; leur source sprites/generated.js n'est jamais
+// demandée par le jeu.
+export const GBA_SPRITE_DIR = 'sprites/gba';
+const GBA_SOURCE = 'sprites/generated.js';
 
 const list = (root, dir, accept) => {
     const full = join(root, dir);
@@ -48,7 +52,7 @@ export function buildManifest(root = GAME_DIR) {
         'index.html',
         ...list(root, '', name => ext('.js', '.css', '.json', '.svg')(name) && name !== MANIFEST_FILE && name !== 'sw.js' && !name.startsWith('test-')),
         ...listDeep(root, 'world', ext('.js')),
-        ...list(root, 'sprites', ext('.js')),
+        ...list(root, 'sprites', ext('.js')).filter(p => p !== GBA_SOURCE),
         ...list(root, 'sprites/cn', ext('.js')),
         ...list(root, 'sprites/tiles', ext('.svg')),
         ...list(root, 'fonts', ext('.woff2')),
@@ -56,7 +60,7 @@ export function buildManifest(root = GAME_DIR) {
         ...list(root, 'audio/sfx', ext('.mp3'))
     ];
     const music = list(root, 'audio/music', ext('.mp3'));
-    const art = MEDIA_SPRITE_DIRS.flatMap(dir => list(root, `sprites/${dir}`, ext('.png', '.json')));
+    const art = [...list(root, GBA_SPRITE_DIR, ext('.js')), ...MEDIA_SPRITE_DIRS.flatMap(dir => list(root, `sprites/${dir}`, ext('.png', '.json')))];
     // Ordre de téléchargement : petits fichiers de décor d'abord, musiques ensuite (la majorité des octets)
     return { version: 1, core, media: [...art, ...music].map(path => media(root, path)) };
 }

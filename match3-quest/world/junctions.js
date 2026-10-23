@@ -273,6 +273,7 @@ function placeNearGate(screen, gate, occ, depths, laterals) {
 }
 
 // Case de coffre cachée : libre, ouverte, loin des sorties, de préférence au sud-est de la carte ; choix déterministe parmi les 6 plus reculées.
+// `accept` (coûteux : un parcours de la carte par appel) n'est évalué que dans l'ordre de préférence, jusqu'aux 6 premières cases retenues.
 export function placeInLand(screen, occ, seedText, accept = null) {
     const exits = screen.exits.filter(e => !e.door);
     const cells = [];
@@ -280,14 +281,22 @@ export function placeInLand(screen, occ, seedText, accept = null) {
     for (let x = 1; x < screen.w - 1; x++) for (let y = 1; y < screen.h - 1; y++) {
         if (!occ.free(x, y) || occ.openNeighbors(x, y) < 3 || pathGrid[y * screen.w + x] === 1) continue;
         const dist = Math.min(...exits.map(e => Math.abs(e.x - x) + Math.abs(e.y - y)), 99);
-        if (dist < 4 || (accept && !accept({ x, y }))) continue;
+        if (dist < 4) continue;
         cells.push({ x, y, dist });
     }
+    cells.sort((a, b) => b.dist - a.dist || a.x - b.x || a.y - b.y);
+    const firstAccepted = pool => {
+        const top = [];
+        for (const c of pool) {
+            if (accept && !accept({ x: c.x, y: c.y })) continue;
+            top.push(c);
+            if (top.length === 6) break;
+        }
+        return top;
+    };
     // les textes de quête parlent du « sud-est » : on cache les coffres dans ce quart de la carte quand c'est possible
-    const southEast = cells.filter(c => c.x >= screen.w * 0.5 && c.y >= screen.h * 0.45);
-    const pool = southEast.length ? southEast : cells;
-    pool.sort((a, b) => b.dist - a.dist || a.x - b.x || a.y - b.y);
-    const top = pool.slice(0, 6);
+    const southEast = firstAccepted(cells.filter(c => c.x >= screen.w * 0.5 && c.y >= screen.h * 0.45));
+    const top = southEast.length ? southEast : firstAccepted(cells);
     return top.length ? top[hashSeed(seedText) % top.length] : null;
 }
 

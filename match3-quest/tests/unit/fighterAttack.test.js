@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { gbaAttackFrames } from '../../sprites/index.js';
+import { gbaAttackFrames, loadAllGbaSprites } from '../../sprites/index.js';
 import { DEAD_TREES } from '../../sprites/deadtrees.js';
 import { DECOR_NAMES } from '../../sprites/decor.js';
 import { ARENA_BIOMES } from '../../arena.js';
+
+// Les sprites GBA sont chargés à la demande (avec leur région) : ici on les charge tous.
+await loadAllGbaSprites();
 
 describe('animations d\'attaque du portrait de combat', () => {
     test.each(['archer', 'templar', 'barbarian', 'assassin', 'sorcerer'])('%s tire à l\'arc (4 images)', cls => {
