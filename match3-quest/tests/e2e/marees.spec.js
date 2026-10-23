@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 
 const URL = '/match3-quest/';
 const SCREENS = [
-    ['marees_road', 6, 11], ['marees_village', 2, 12], ['marees_wild', 2, 12], ['marees', 3, 10]
+    ['marees_road', 8, 10], ['marees_village', 2, 12], ['marees_wild', 2, 12], ['marees', 3, 10]
 ];
 
 const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });

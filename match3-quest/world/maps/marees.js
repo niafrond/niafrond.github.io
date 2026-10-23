@@ -22,18 +22,22 @@ const house = (g, x0, y0, x1, y1, letter) => {
 const rows = g => g.map(r => r.join(''));
 
 // ── Zone 1 : Haute Mer des Pontons (48×22) ─────────────────────────────────────────────────────────────────────────────────────────
+// Pontons d'UNE case de large (planche de pêcheur) : chaque ponton est un îlot séparé par de l'eau (le Pas de Yu les relie). Coffres, ennemis et
+// PNJ sont posés sur de petites avancées d'une case, jamais sur la planche elle-même, pour ne pas la barrer.
 const road = grid(48, 22);
 fill(road, 0, 8, 7, 13, '.');                 // Digue des Dernières Racines : seule terre ferme, sûre
 fill(road, 0, 7, 7, 7, '#'); fill(road, 0, 14, 7, 14, '#');
-fill(road, 7, 10, 7, 12, '=');                // l'escalier de la digue s'enfonce dans l'eau
-fill(road, 8, 9, 11, 13, '=');                // ponton de la Dernière Racine (premier relais, relié à la digue)
-fill(road, 18, 4, 22, 7, '=');                // ponton des Trois Lanternes
-fill(road, 28, 13, 32, 17, '=');              // ponton du Sel Rouge, gardé par des crabes
-fill(road, 37, 5, 41, 8, '=');                // ponton du Cormoran Veuf
-fill(road, 44, 9, 47, 12, '=');               // dernier ponton, vers Shuiyu-sous-l'Eau
+fill(road, 7, 10, 12, 10, '=');               // ponton de la Dernière Racine : relié à la digue, premier relais
+fill(road, 20, 4, 20, 9, '=');                // ponton des Trois Lanternes (vertical)
+put(road, 21, 5, '=');                        // avancée : coffre de l'anneau
+fill(road, 27, 15, 33, 15, '=');              // ponton du Sel Rouge, gardé par des crabes
+fill(road, 28, 14, 28, 14, '='); fill(road, 30, 14, 30, 14, '='); fill(road, 32, 14, 32, 14, '='); put(road, 30, 16, '=');
+fill(road, 38, 4, 38, 9, '='); put(road, 39, 6, '=');          // ponton du Cormoran Veuf (vertical)
+fill(road, 41, 10, 44, 10, '=');              // dernier ponton, vers Shuiyu-sous-l'Eau
+fill(road, 45, 9, 47, 11, '=');               // accostage de 3 cases (passage de bord)
 put(road, 0, 10, '<'); put(road, 2, 10, 'S'); put(road, 6, 11, '1');
-put(road, 20, 5, 'i'); put(road, 30, 14, 'j'); put(road, 39, 6, 'k');
-put(road, 29, 16, '2'); put(road, 31, 16, '3'); put(road, 30, 16, '4');
+put(road, 21, 5, 'i'); put(road, 30, 16, 'j'); put(road, 39, 6, 'k');
+put(road, 28, 14, '2'); put(road, 30, 14, '3'); put(road, 32, 14, '4');
 put(road, 47, 10, '>');
 
 // ── Zone 2 : Shuiyu-sous-l'Eau, village sur pilotis (30×22) ──────────────────────────────────────────────────────────────────────────
@@ -51,15 +55,17 @@ put(village, 10, 17, 'j'); put(village, 22, 16, 'k'); put(village, 27, 10, 'm');
 
 // ── Zone 3 : Gouffre des Mirages (48×24) ───────────────────────────────────────────────────────────────────────────────────────────
 const deep = grid(48, 24);
-fill(deep, 0, 11, 4, 13, '=');                // ponton d'arrivée, relié au village
-fill(deep, 9, 7, 12, 10, '=');
-fill(deep, 18, 15, 22, 18, '=');              // ponton du Cormoran Veuf
-fill(deep, 27, 5, 31, 9, '=');                // ponton du Sel Rouge : four à sel flottant
-fill(deep, 36, 14, 40, 17, '=');              // autel du Dragon-Roi : urne de riz de Mazu, gardée par une tortue des récifs
-fill(deep, 44, 11, 47, 13, '=');              // dernier ponton, vers l'Autel de Mazu
+fill(deep, 0, 11, 2, 13, '=');                // accostage d'arrivée de 3 cases, relié au village
+fill(deep, 3, 12, 7, 12, '=');                // premier ponton
+fill(deep, 12, 6, 12, 11, '='); put(deep, 13, 7, '=');                           // ponton des Racines noyées : coffre sur l'avancée
+fill(deep, 17, 17, 23, 17, '='); put(deep, 20, 18, '='); put(deep, 19, 16, '=');  // ponton du Cormoran Veuf : coffre et cormoran-fantôme
+fill(deep, 29, 5, 29, 10, '='); put(deep, 30, 6, '='); put(deep, 28, 6, '='); put(deep, 28, 8, '='); put(deep, 30, 9, '=');   // ponton du Sel Rouge : four à sel flottant
+fill(deep, 35, 15, 41, 15, '='); put(deep, 38, 16, '='); put(deep, 38, 14, '=');  // autel du Dragon-Roi : urne de riz, gardée par une tortue des récifs
+fill(deep, 42, 12, 44, 12, '=');
+fill(deep, 45, 11, 47, 13, '=');              // dernier accostage, vers l'Autel de Mazu
 put(deep, 0, 12, '<'); put(deep, 47, 12, '>');
-put(deep, 10, 8, 'i'); put(deep, 20, 16, 'j'); put(deep, 29, 7, 'k'); put(deep, 38, 15, 'l');
-put(deep, 37, 17, '2'); put(deep, 30, 8, '1'); put(deep, 19, 17, '3'); put(deep, 28, 6, 'm'); put(deep, 21, 16, '4');
+put(deep, 13, 7, 'i'); put(deep, 20, 18, 'j'); put(deep, 28, 8, 'k'); put(deep, 38, 16, 'l');
+put(deep, 38, 14, '2'); put(deep, 30, 6, '1'); put(deep, 19, 16, '3'); put(deep, 28, 6, '4'); put(deep, 30, 9, 'm');
 
 // ── Sanctuaire : Autel de Mazu (30×16) ───────────────────────────────────────────────────────────────────────────────────────────────
 const altar = grid(30, 22);
@@ -148,8 +154,8 @@ export default {
         ],
         enemies: [
             { id: 'marees_hai_gui', at: '2', templateId: 'hai_gui', name: 'Tortue des récifs gardienne de l\'urne', kind: 'sentinel', offset: 1, permanent: true },
-            { id: 'marees_deep_cormorant', at: '4', templateId: 'lu_ci_gui', name: 'Cormoran-fantôme du ponton', kind: 'sentinel', offset: 1 },
-            { id: 'marees_deep_mirage', at: '3', templateId: 'shuimu_denglong', name: 'Méduse des mirages', kind: 'sentinel', offset: 1, permanent: true }
+            { id: 'marees_deep_cormorant', at: '3', templateId: 'lu_ci_gui', name: 'Cormoran-fantôme du ponton', kind: 'sentinel', offset: 1 },
+            { id: 'marees_deep_mirage', at: '4', templateId: 'shuimu_denglong', name: 'Méduse des mirages', kind: 'sentinel', offset: 1, permanent: true }
         ]
     },
 
