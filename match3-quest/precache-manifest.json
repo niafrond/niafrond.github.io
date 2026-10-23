@@ -82,6 +82,7 @@
   "world/expand.js",
   "world/index.js",
   "world/junctions.js",
+  "world/legends.js",
   "world/manifest.js",
   "world/manifest2.js",
   "world/mapKit.js",
@@ -134,6 +135,7 @@
   "sprites/cn/actors-b.js",
   "sprites/cn/enemies-1.js",
   "sprites/cn/enemies-2.js",
+  "sprites/cn/legends.js",
   "sprites/cn/suns.js",
   "sprites/tiles/tile-blue.svg",
   "sprites/tiles/tile-combat.svg",
@@ -238,8 +240,18 @@
   },
   {
    "p": "sprites/ultimates/index.json",
-   "s": 5871,
-   "h": "423c4fd057"
+   "s": 6382,
+   "h": "0ff67801c4"
+  },
+  {
+   "p": "sprites/ultimates/ultimateAzureDragon-seq.png",
+   "s": 1732742,
+   "h": "adc54b66d3"
+  },
+  {
+   "p": "sprites/ultimates/ultimateBlackTortoise-seq.png",
+   "s": 1481357,
+   "h": "0eb91ac7a1"
   },
   {
    "p": "sprites/ultimates/ultimateEternalBastion-1.png",
@@ -440,6 +452,16 @@
    "p": "sprites/ultimates/ultimateThousandRiders-seq.png",
    "s": 1692632,
    "h": "7ba00cabaa"
+  },
+  {
+   "p": "sprites/ultimates/ultimateVermilionBird-seq.png",
+   "s": 1562947,
+   "h": "4bf5e5366b"
+  },
+  {
+   "p": "sprites/ultimates/ultimateWhiteTiger-seq.png",
+   "s": 1444145,
+   "h": "3f51ef06d8"
   },
   {
    "p": "sprites/spellfx/azureDragonRoar.png",
@@ -1332,6 +1354,16 @@
    "h": "3415ec89e4"
   },
   {
+   "p": "audio/music/boss-baihu-le-tigre-blanc-b.mp3",
+   "s": 464481,
+   "h": "a2c0724801"
+  },
+  {
+   "p": "audio/music/boss-baihu-le-tigre-blanc.mp3",
+   "s": 464481,
+   "h": "51e802c17b"
+  },
+  {
    "p": "audio/music/boss-capitaine-noye-des-limons-b.mp3",
    "s": 464481,
    "h": "27d5b407c9"
@@ -1592,6 +1624,16 @@
    "h": "ca64ceddc1"
   },
   {
+   "p": "audio/music/boss-qinglong-le-dragon-d-azur-b.mp3",
+   "s": 464481,
+   "h": "a98e302137"
+  },
+  {
+   "p": "audio/music/boss-qinglong-le-dragon-d-azur.mp3",
+   "s": 464481,
+   "h": "ce384c3fcd"
+  },
+  {
    "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or-b.mp3",
    "s": 464481,
    "h": "4d63924cd5"
@@ -1740,6 +1782,26 @@
    "p": "audio/music/boss-vieux-saule-des-boues-gardien-du-terrier.mp3",
    "s": 464481,
    "h": "115a1fa1cd"
+  },
+  {
+   "p": "audio/music/boss-xuanwu-la-tortue-noire-b.mp3",
+   "s": 464481,
+   "h": "56e888cf9b"
+  },
+  {
+   "p": "audio/music/boss-xuanwu-la-tortue-noire.mp3",
+   "s": 464481,
+   "h": "5581a81fb6"
+  },
+  {
+   "p": "audio/music/boss-zhuque-l-oiseau-vermillon-b.mp3",
+   "s": 464481,
+   "h": "4d98d59cf2"
+  },
+  {
+   "p": "audio/music/boss-zhuque-l-oiseau-vermillon.mp3",
+   "s": 464481,
+   "h": "9013d323f8"
   },
   {
    "p": "audio/music/combat-0-b.mp3",

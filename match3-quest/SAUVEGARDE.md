@@ -15,6 +15,7 @@ Toutes les informations du joueur sont sauvegardées, notamment :
 - ⭐ **Niveau** : Niveau actuel du joueur
 - 📊 **Attributs** : Force, Agilité, Intelligence, Endurance, Moral
 - 🔮 **Sorts** : Sorts débloqués, sorts actifs équipés
+- ✦ **Ultimes** : ultime choisi (`equippedUltimate`) et ultimes de légende débloqués par quête (`unlockedUltimates`, liste d'identifiants ; les identifiants inconnus ou en double sont ignorés au chargement)
 - ⚔️ **Armes** : Armes possédées et arme équipée
 - 🎯 **Points de combat** : Progression dans le combat actuel
 - 💫 **Aptitudes** : Compétences spéciales acquises

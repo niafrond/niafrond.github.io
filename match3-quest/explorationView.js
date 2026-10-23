@@ -95,6 +95,7 @@ const shade = (hex, amt) => {
  *  hasStealth()               vrai si le héros porte le collier d'ombre (indétectable par les ennemis, hors boss)
  *  onEncounter(encounter)     lance le combat (encounter.prep : préparation du terrain, voir terrain.js)
  *  getWeakness(templateId)    nom de la faiblesse d'un ennemi (observation), facultatif
+ *  onUltimateLearned(id)      un ultime de légende vient d'être gagné (cinématique de révélation, jouée après les dialogues)
  *  onGold(amount)             crédite de l'or
  *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
@@ -387,6 +388,7 @@ export function createExplorationView(cfg) {
                     if (spoken.has(ev.quest.id)) playLegendEnd(); else openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines, () => { playLegendEnd(); });
                 } else if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
                 if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; cfg.onQuestReward?.(ev); }
+                if (!ev.paid && ev.reward?.ultimate) afterDialogs(() => cfg.onUltimateLearned?.(ev.reward.ultimate));   // révélation de l'ultime après les dialogues
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
                 const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';

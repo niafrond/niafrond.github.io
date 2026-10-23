@@ -22,6 +22,7 @@ import { applyJunctions, applyLevelGuards } from './junctions.js';
 import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { applyCollarQuests } from './collars.js';
+import { applyLegendQuests } from './legends.js';
 import { applyUnderground } from './underground.js';
 import { applyConnections, migrateEdgeExits } from '../mapConnections.js';
 import { CONNECTIONS } from './connections.js';
@@ -220,6 +221,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         applyLevelGuards(screens, REGION_LEVEL);   // sentinelle qui annonce le niveau conseillé devant chaque passage vers une région plus difficile
         applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
         applyCollarQuests(screens, quests);   // colliers de biome : relique + mini-boss + quête (stuff.js)
+        applyLegendQuests(screens, quests);   // Gardiens Célestes : relique + boss unique + quête qui rapporte un ultime de légende (ultimates.js)
         Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
         applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)
 

@@ -79,6 +79,14 @@ quête annexe de la région. Les ids FIXES ci-dessus ne changent pas.
 - Les quêtes principales ne dépendent que de la progression linéaire (les soleils précédents) ; les quêtes secondaires sont
   facultatives. Le doyen `elder_wen` délivre la première mission (ordre de l'empereur Yao) ; les suivantes démarrent
   automatiquement ou par un PNJ de la région (au choix du scénariste), toujours cohérentes avec le texte.
+- **Légendes des Quatre Gardiens Célestes** (`world/legends.js`, ids FIXES) : quatre quêtes annexes qui rapportent chacune un **ultime utilisable par toutes les classes** (`spells.json`, `unlock.quest` ; le choix et la sauvegarde sont dans `ultimates.js` et `player.unlockedUltimates`). Les quatre Gardiens des points cardinaux ont perdu la mémoire sous la chaleur des neuf soleils ; un PNJ du village demande de retrouver leur relique dans la zone sauvage (coffre), puis de les affronter : le Gardien est un **boss unique nommé** (`boss: { name, level }`, permanent). Dessin de carte : PNG 64×64 du paquet `legends` (`tools/gen-legend-sprites.py`) ; cinématique : planche `sprites/ultimates/<ultime>-seq.png` (voir `SPECS.md`).
+
+| Quête | Région (village, PNJ) | Relique (coffre) | Gardien (boss, niveau) | Ultime (niveau requis) |
+|---|---|---|---|---|
+| `sq_legend_zhuque` « Le feu du Sud » | Volcan (Hameau des Braises Sages, Rong) | `legend_zhuque_relic` plume de braise | `legend_zhuque_boss` Zhuque, niv. 10 | Renaissance de l'Oiseau Vermillon (10) : 1100 dégâts, soin 30 % |
+| `sq_legend_xuanwu` « La carapace du Nord » | Fleuve (Port-à-Sec de Hekou, Bian) | `legend_xuanwu_relic` écaille de carapace | `legend_xuanwu_boss` Xuanwu, niv. 17 | Carapace de la Tortue Noire (16) : 900 dégâts, soin 25 %, +30 défense 4 tours |
+| `sq_legend_baihu` « La chasse de l'Ouest » | Fauves (Enclos de Caoyuan, Hu Mu) | `legend_baihu_relic` griffe d'argent | `legend_baihu_boss` Baihu, niv. 33 | Chasse du Tigre Blanc (28) : 1250 dégâts, attaque ennemie −12 pendant 3 tours |
+| `sq_legend_qinglong` « La tempête de l'Est » | Fusang (Terrasses de Fusang-le-Bas, Qing Yun) | `legend_qinglong_relic` perle d'azur | `legend_qinglong_boss` Qinglong, niv. 43 | Tempête du Dragon d'Azur (38) : 1050 dégâts, soin 20 %, +15 défense 3 tours |
 
 ## 5. Tuiles du plateau (art dans `sprites/tiles/*.svg`)
 

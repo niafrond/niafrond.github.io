@@ -13,12 +13,16 @@ await loadAllSprites();
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const screens = Object.values(SCREENS);
 
-const all = [
+const everySprite = [
     ...Object.entries(HERO_SPRITES).map(([k, v]) => [`héros ${k}`, v]),
     ...Object.entries(NPC_SPRITES).map(([k, v]) => [`PNJ ${k}`, v]),
     ...Object.entries(CHEST_SPRITES).map(([k, v]) => [`coffre ${k}`, v]),
     ...Object.entries(ENEMY_SPRITES).map(([k, v]) => [`ennemi ${k}`, v])
 ];
+// Dessins vectoriels faits main (règles ci-dessous) ; les dessins pixellisés en PNG data URI (paquet `legends`, tools/gen-legend-sprites.py) ont leurs propres règles.
+const isBitmap = v => typeof v === 'string' && v.startsWith('data:image/png;base64,');
+const all = everySprite.filter(([, v]) => !isBitmap(v));
+const bitmaps = everySprite.filter(([, v]) => isBitmap(v));
 
 // Analyse minimale : balises équilibrées (les balises auto-fermantes sont ignorées).
 function checkWellFormed(svg) {
@@ -118,6 +122,21 @@ describe('tuiles du plateau (gâteaux de lune)', () => {
         ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'combat', 'joker'].forEach(name => {
             expect(css).toContain(`sprites/tiles/tile-${name}.svg`);
         });
+    });
+});
+
+describe('dessins pixellisés (PNG data URI, paquet legends)', () => {
+    test('les quatre Gardiens Célestes sont les seuls dessins de ce type', () => {
+        expect(bitmaps.map(([k]) => k)).toEqual(['ennemi legend_zhuque_boss', 'ennemi legend_xuanwu_boss', 'ennemi legend_baihu_boss', 'ennemi legend_qinglong_boss']);
+    });
+
+    test.each(bitmaps)('%s : vrai PNG 64×64, léger, avec un sujet et un contour', (_name, uri) => {
+        const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
+        expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([64, 64]);
+        expect(png.readUInt8(25)).toBe(6);                 // RGBA : fond transparent
+        expect(uri.length).toBeLessThanOrEqual(12000);
+        expect(uri.length).toBeGreaterThan(1500);          // pas un simple carré
     });
 });
 
