@@ -968,8 +968,19 @@ export function questStatus(session, quest) {
     return unlocked ? 'available' : 'locked';
 }
 
+// Description « complète » d'un objet de quête (celle du coffre qui le contient), gardée telle quelle s'il n'est plus trouvé.
+function questItemDescription(session, item) {
+    for (const screen of Object.values(session.screens)) {
+        const chest = screen.chests.find(c => c.questItem?.id === item.id);
+        if (chest) return chest.questItem.description || item.description;
+    }
+    return item.description;
+}
+
 function startQuest(session, quest) {
     session.data.quests[quest.id] = 'active';
+    // Objet trouvé avant la quête : sa description révèle enfin à quoi il sert.
+    session.data.questItems.forEach(i => { if (i.quest === quest.id) i.description = questItemDescription(session, i); });
     return { type: 'questStarted', quest, lines: quest.offer };
 }
 
@@ -1223,14 +1234,12 @@ export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
     const qi = chest.questItem;
-    // Le coffre d'un objet de quête ne s'ouvre que quête en cours : sinon l'objet serait « déjà trouvé » avant d'accepter la quête.
-    if (qi && session.data.quests[qi.quest] !== 'active') {
-        return { type: 'chestSealed', chest, events: [{ type: 'chestSealed', chest }] };
-    }
+    // Le coffre d'un objet de quête s'ouvre à tout moment : avant la quête, le texte et la description de l'objet restent évasifs.
+    const early = Boolean(qi) && session.data.quests[qi.quest] !== 'active' && session.data.quests[qi.quest] !== 'done';
     session.data.openedChests.push(chestId);
-    if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: qi.description || '', quest: qi.quest });
+    if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: (early ? qi.earlyDescription : qi.description) || qi.description || '', quest: qi.quest });
     const { region, kind } = currentScreen(session);
-    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, screen: { region, kind } }, ...checkAutoQuests(session)];
+    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, early, screen: { region, kind } }, ...checkAutoQuests(session)];
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 

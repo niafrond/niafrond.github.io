@@ -407,7 +407,7 @@ export function createExplorationView(cfg) {
                 const specialText = ev.questItem ? ` · Objet spécial : ${ev.questItem.name}` : '';
                 // Popup qui reste jusqu'au clic : le joueur a le temps de lire la description et le butin.
                 openDialog({ ...NARRATOR, icon: 'chest', title: ev.chest.label || 'Coffre' },
-                    [`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`]);
+                    [`${(ev.early && ev.chest.earlyText) || ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`]);
             }
         });
         if (gold > 0) cfg.onGold(gold);
