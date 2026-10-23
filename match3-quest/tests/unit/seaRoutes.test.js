@@ -9,6 +9,7 @@ import { overlapOf } from '../../mapConnections.js';
 
 const seaEdges = CONNECTIONS.filter(c => c.sea);
 const regionOf = id => SCREENS[id].region;
+const cols = s => [...Array(s.w).keys()];
 
 describe('bordures de mer', () => {
     test('six liaisons nord-sud entre régions différentes, dans les deux sens, sur toute la largeur commune', () => {
@@ -29,27 +30,26 @@ describe('bordures de mer', () => {
         ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'].forEach(r => expect(linked.has(r)).toBe(true));
     });
 
-    test('le bord reste de l\'eau : aucun couloir creusé', () => {
+    test("les deux bords reliés sont de l'eau : infranchissables à pied, praticables avec le Pas de Yu (aucun couloir creusé)", () => {
         seaEdges.forEach(c => {
-            const a = SCREENS[c.from];
-            const water = [...Array(a.w).keys()].filter(x => isTerrainBlocked(a, x, 0) && !isTerrainBlocked(a, x, 0, true));
-            expect(water.length).toBeGreaterThan(a.w / 2);
+            const a = SCREENS[c.from], b = SCREENS[c.to];
+            expect(cols(a).filter(x => !isTerrainBlocked(a, x, 0))).toEqual([]);
+            expect(cols(b).filter(x => !isTerrainBlocked(b, x, b.h - 1))).toEqual([]);
+            expect(cols(a).filter(x => !isTerrainBlocked(a, x, 0, true)).length).toBeGreaterThan(a.w / 2);
+            expect(cols(b).filter(x => !isTerrainBlocked(b, x, b.h - 1, true)).length).toBeGreaterThan(b.w / 2);
         });
     });
 
-    test('sans le Pas de Yu on ne passe pas ; avec, le bord nord mène au bord sud de la carte voisine, et inversement', () => {
+    test('avec le Pas de Yu, le bord nord mène au bord sud de la carte voisine, et inversement', () => {
         const s = createSession({});
-        teleportToScreen(s, 'volcan_road');
-        const a = SCREENS.volcan_road;
-        const x = [...Array(a.w).keys()].find(x => !isTerrainBlocked(a, x, 0, true) && x > 2 && x < a.w - 3);
-        s.data.x = x; s.data.y = 0;
-        expect(tryMove(s, 0, -1).type).not.toBe('transition');   // l'arrivée est de l'eau : sans le Pas de Yu, impossible
         s.data.quests.sq_pas_de_yu = 'done';
-        s.data.x = x; s.data.y = 0;
-        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'transition', to: 'mer_road' });
+        teleportToScreen(s, 'volcan_road');
         const b = SCREENS.mer_road;
+        s.data.x = 22; s.data.y = 0;
+        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'transition', to: 'mer_road' });
         expect(s.data.y).toBeGreaterThan(b.h - 5);
         s.data.y = b.h - 1;
         expect(tryMove(s, 0, 1)).toMatchObject({ type: 'transition', to: 'volcan_road' });
+        expect(s.data.y).toBeLessThan(4);
     });
 });
