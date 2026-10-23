@@ -94,7 +94,7 @@ export default {
         { type: "chest", target: "marees_cire_chest", text: "Rapporter la caisse de mèches de cire (atelier des bateaux-lanternes)" },
         { type: "kill", target: "marees_deep_mirage", text: "Chasser la méduse des mirages qui éteint les flammes (Gouffre des Mirages)" }],
       offer: ["Il me manque des mèches de cire pour finir mes quarante bateaux-lanternes. Et une méduse du Gouffre éteint les flammes de loin : elle les prend pour des étoiles.", "Aidez-moi, voulez-vous ? La Lune aime qu'on lui écrive."],
-      hint: ["La caisse de mèches est dans l'atelier, au fond. La méduse rôde dans le Gouffre des Mirages, à l'est de la grande passerelle."],
+      hint: ["La caisse de mèches est dans l'atelier, au fond. La méduse rôde sur le ponton du Sel Rouge, au nord du Gouffre des Mirages."],
       complete: ["Xiao Deng allume la première mèche. Elle brille. « Elles ne reviendront pas, mais elles éclaireront tout le trajet. Merci. »"],
       reward: { gold: 100, fragment: "Lanterne de Xiao Deng", xp: 80 } },
     { id: "sq_offrande_mazu", title: "Le riz de Mazu", chapter: "✦ Quête secondaire — Hautes-Eaux de la Lune Montante", giver: "marees_village_nonne_mo", turnIn: "marees_village_nonne_mo", requires: [], side: true,
