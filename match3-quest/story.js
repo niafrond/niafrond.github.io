@@ -764,7 +764,7 @@ const BASE_SCREENS = {
             { id: 'parley_sun5', x: 11, y: 9, name: 'Rongrong', title: 'Petite voix du tonnerre', showWhen: 'sq_lei_drum', hideWhen: ['sun5_wardens_a', 'sun5_wardens_b'],
               parley: { lines: [
                   "Boum ! Ne tire pas, archer. Je suis Rongrong, la petite voix du tonnerre. Le vieux Lei m'a rendu mon tambour, alors je viens dire merci.",
-                  "Les foudre-gardes du col sont mes grands frères. Le soleil leur donne des éclairs à manger : ils tiennent sa cage et n'écoutent plus personne.",
+                  "Le foudre-garde du col est mon grand frère, et le lion de pierre son vieux compagnon. Le soleil les nourrit d'éclairs : ils tiennent sa cage et n'écoutent plus personne.",
                   "Ils croient défendre la montagne. La cage ne retient qu'un soleil qui a peur d'être éteint.",
                   "Je leur dis de la lâcher. Passe, archer. Mais ne tarde pas : un orage retenu finit toujours par éclater."
               ] },
@@ -789,12 +789,12 @@ const BASE_SCREENS = {
             { id: 'thunder_wyrm', templateId: 'yinglong', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_5 est intouchable, sauf pourparlers (parley_sun5 : ils s'écartent, `hideWhen`).
             { id: 'sun5_wardens_a', templateId: 'lei_gong', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
-            { id: 'sun5_wardens_b', templateId: 'suanni', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
+            { id: 'sun5_wardens_b', templateId: 'suanni', name: 'Lion de pierre du col', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
             { id: 'sun_5', templateId: 'lei_gong', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 30 },
               afterScenes: MIRROR_TALKS.sun_5,
               shieldLines: [
-                  "Une cage d'éclairs ceint le Soleil des Orages : deux gardes de foudre la tiennent tendue, d'un pylône à l'autre.",
+                  "Une cage d'éclairs ceint le Soleil des Orages : un foudre-garde et un lion de pierre la tiennent tendue, d'un pylône à l'autre.",
                   "Aucune flèche ne traverse la cage tant que ses deux gardiens sont debout ; elle crépite à vous en faire dresser les cheveux.",
                   "Abattez les gardes, et la cage tombera. (Le dragon-serpent et le tambour de Lei, une fois réglés, affaibliront le soleil.)",
                   "Les gardes ne bougent qu'en mesure, comme au son d'un tambour lointain. Si le tonnerre retrouvait sa voix, ils l'écouteraient peut-être."
@@ -1311,6 +1311,7 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
+            "Le plus jeune des dix est moins un brasier qu'un vent brûlant qui court sur les rizières. Une flamme plus franche que la sienne le ferait vaciller.",
             "Les maraudeurs des rizières sont de bons adversaires pour s'échauffer, et ils reviennent toujours. Les monstres se voient de loin : un cercle rouge marque leur zone de vigilance."
         ],
         complete: [
@@ -1404,7 +1405,7 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil de Cendres est au nord-est de la forêt, au-delà des bambous noircis. Évitez les cercles rouges : les esprits y sont nerveux.",
-            "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
+            "Si le feu vous fait peur, souvenez-vous : ce soleil n'est plus que ce que le feu laisse derrière lui. La cendre, c'est déjà de la terre.",
             "Trois chemins mènent au soleil. Risque : éteignez les deux esprits de la cloche, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : rapportez la cloche à Zhen, et son âme parlera aux esprits. Ils se rendorment dans le bronze, sans combat.",
             "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil.",
@@ -1430,8 +1431,8 @@ const BASE_QUESTS = [
         hint: [
             "Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.",
             "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
-            "Trois chemins mènent au soleil. Risque : abattez les deux gardes de foudre, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera à ses frères de lâcher la cage, sans combat.",
+            "Trois chemins mènent au soleil. Risque : abattez les deux gardes du col, au prix d'un combat, pour leur expérience et un soleil entier.",
+            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera aux gardes de lâcher la cage, sans combat.",
             "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent."
         ],

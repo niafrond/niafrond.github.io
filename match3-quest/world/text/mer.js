@@ -86,7 +86,7 @@ export default {
       reward: { gold: 175, fragment: 'Perle de brume', xp: 320 } },
     { id: 'sq_dame_algues', title: 'La Dame des algues', chapter: '✦ Quête secondaire — Rivage de la Mer Orientale', giver: 'lighthouse_ming', turnIn: 'lighthouse_ming', requires: [], side: true,
       objectives: [{ type: 'kill', target: 'mer_kelp_witch', text: 'Faire reculer la Dame des algues givrées (falaises et criques du Dragon)' }],
-      offer: ['Mon phare s\'éteint chaque fois qu\'une Dame des algues givrées passe sur la crique. Elle ne le fait pas exprès : elle a froid, et elle cherche de la chaleur.', 'Faites-la reculer, archer, sans lui faire de mal si possible.'],
+      offer: ['Mon phare s\'éteint chaque fois qu\'une Dame des algues givrées passe sur la crique. Elle ne le fait pas exprès : égarée loin des neiges, elle cherche la lumière, et son givre l\'éteint.', 'Faites-la reculer, archer, sans lui faire de mal si possible.'],
       hint: ['La Dame des algues givrées rôde dans les criques du Dragon, sous les falaises.'],
       complete: ['Mon phare brille à nouveau, et elle est partie, soulagée. Prenez ce givre d\'algue : il garde la fraîcheur, même dans le feu.'],
       reward: { gold: 180, fragment: 'Givre d\'algue', xp: 340 } },

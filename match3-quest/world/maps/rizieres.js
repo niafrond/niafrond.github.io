@@ -130,7 +130,7 @@ export default {
             table: [
                 { templateId: 'crapaud_boue', name: 'Crapaud de boue', weight: 5, offset: -1 },
                 { templateId: 'huli_jing', name: 'Renardeau des roseaux', weight: 4, offset: 0 },
-                { templateId: 'gui_guerrier', name: 'Épouvantail raide', weight: 2, offset: 0 },
+                { templateId: 'gui_guerrier', name: 'Revenant des diguettes', weight: 2, offset: 0 },
                 { templateId: 'shu_jing', name: 'Esprit des diguettes', weight: 1, offset: 1 },
                 { templateId: 'cao_jing', name: "Cao Jing", weight: 5, offset: -1 },
                 { templateId: 'huli_commun', name: "Huli", weight: 5, offset: -1 },

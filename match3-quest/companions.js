@@ -215,7 +215,7 @@ export const BANTER = [
     ] },
     { id: 'dawa_tonnerre_parley', companion: 'dawa', screen: 'tonnerre', whenDone: 'parley_sun5', unless: 'sun5_wardens_a', scenes: [
         say(DAWA, "Il a suffi d'un enfant et d'un tambour. Au désert, on appelle cela contourner la dune."),
-        say(HERO, "Ses frères ont lâché la cage sans broncher."),
+        say(HERO, "Son frère et le lion de pierre ont lâché la cage sans broncher."),
         say(DAWA, "On lâche plus volontiers pour une voix connue que pour une flèche. Gardez vos forces pour le soleil, seigneur.")
     ] },
     { id: 'gui_tonnerre_soleil', companion: 'xiao_gui', screen: 'tonnerre', whenDone: 'sun_5', scenes: [

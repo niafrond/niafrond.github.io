@@ -106,8 +106,8 @@ export const JUNCTIONS = [
     // ── Gardien spécial à vaincre (zone sauvage → hameau) ─────────────────────────────────────────────────────────
     {
         id: 'hameau_bambous', type: 'kill', region: 'bambous', from: 'bambous_wild', to: 'bambous_hamlet',
-        enemy: { id: 'bambous_hamlet_guardian', name: 'Ours de bambou, gardien du hameau', templateId: 'shu_jing' },
-        lockedMessage: 'Un ours de bambou gigantesque dort en travers du sentier du hameau : il faut le vaincre pour passer.'
+        enemy: { id: 'bambous_hamlet_guardian', name: 'Vieux bambou, gardien du hameau', templateId: 'shu_jing' },
+        lockedMessage: 'Un vieux bambou éveillé, gigantesque, barre de ses racines le sentier du hameau : il faut le vaincre pour passer.'
     },
     {
         id: 'hameau_tonnerre', type: 'kill', region: 'tonnerre', from: 'tonnerre_wild', to: 'tonnerre_hamlet',

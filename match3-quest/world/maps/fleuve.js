@@ -217,7 +217,7 @@ export default {
             { id: 'barge_ghost_b', x: 23, y: 15, templateId: 'gui_guerrier', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
             { id: 'mud_imp_a', x: 13, y: 20, templateId: 'huli_jing', name: 'Petit gui de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
             { id: 'mud_imp_b', x: 41, y: 11, templateId: 'huli_jing', name: 'Petit gui de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
-            { id: 'fleuve_wild_patrol_crab', x: 30, y: 19, templateId: 'huli_jing', name: 'Crabe de vase', kind: 'patrol', patrol: [[30, 19], [34, 19]], offset: 0 },
+            { id: 'fleuve_wild_patrol_crab', x: 30, y: 19, templateId: 'huli_jing', name: 'Renard des vasières', kind: 'patrol', patrol: [[30, 19], [34, 19]], offset: 0 },
             { id: 'fleuve_wild_patrol_eel', x: 6, y: 6, templateId: 'jiaolong', name: 'Anguille des chenaux', kind: 'patrol', patrol: [[6, 6], [10, 6]], offset: -1 },
             { id: 'fleuve_wild_lock_guard', x: 43, y: 17, templateId: 'soldat_terre_cuite', name: 'Garde-vanne rouillé', kind: 'sentinel', offset: 0 }
         ],

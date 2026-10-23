@@ -157,7 +157,7 @@ export default {
         enemies: [
             { id: 'mer_tide_serpent', at: 'j', templateId: 'jiaolong', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 32 } },
             { id: 'mer_kelp_witch', at: 'k', templateId: 'dame_des_neiges', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'mer_w_crab', at: 'l', templateId: 'shanxiao', name: 'Crabe-roi des falaises', kind: 'patrol', offset: 0, patrol: ['l', 'm'] },
+            { id: 'mer_w_crab', at: 'l', templateId: 'shanxiao', name: 'Démon des falaises', kind: 'patrol', offset: 0, patrol: ['l', 'm'] },
             { id: 'mer_w_wraith', at: 'n', templateId: 'wen_shen', name: 'Spectre de la marée', kind: 'patrol', offset: -1, patrol: ['n', [12, 15]] },
             { id: 'mer_w_cutter', at: 'o', templateId: 'assassin_masque', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
             { id: 'mer_crab_a', at: 'p', templateId: 'soldat_terre_cuite', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },

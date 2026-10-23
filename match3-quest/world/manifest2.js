@@ -1826,7 +1826,7 @@ export const MANIFEST2 = {
         giver: "cook_dada",
         turnIn: "cook_dada",
         chain: null,
-        summary: "Un Démon des cendres vole les bols de la cantine. Faites-lui regretter son appétit.",
+        summary: "Un Démon des fumées vole les bols de la cantine. Faites-lui regretter son appétit.",
         objectives: [
           {
             type: "kill",

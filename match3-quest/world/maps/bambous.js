@@ -155,8 +155,8 @@ export default {
         ],
         enemies: [
             { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'suanni', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 17 } },
-            { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'lingzhi_maudit', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'assassin_masque', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },
             { id: 'bambous_w_spirit', x: 13, y: 17, templateId: 'shu_jing', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: [[13, 17], [21, 17]], offset: -1 },
             { id: 'bambous_w_pilgrim', x: 37, y: 12, templateId: 'gui_guerrier', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },

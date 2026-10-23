@@ -210,7 +210,7 @@ export default {
         enemies: [
             { id: 'fusang_root_guard', at: 'l', templateId: 'garde_solaire', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 37 } },
             { id: 'fusang_jade_wraith', at: 'm', templateId: 'immortel_jade', name: 'Immortel de jade égaré', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fusang_w_moth', at: 's', templateId: 'jiangshi', name: 'Phalène des racines', kind: 'patrol', patrol: ['s', [27, 18]], offset: 0 },
+            { id: 'fusang_w_moth', at: 's', templateId: 'jiangshi', name: 'Jiangshi des mousses', kind: 'patrol', patrol: ['s', [27, 18]], offset: 0 },
             { id: 'fusang_w_wyrm', at: 't', templateId: 'yinglong', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['t', [26, 4]], offset: -1 },
             { id: 'fusang_w_scholar', at: 'n', templateId: 'lettre_sorcier', name: 'Lettré des branches', kind: 'sentinel', offset: 0 },
             { id: 'fusang_thief_a', at: 'o', templateId: 'huli_jing', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
