@@ -90,6 +90,7 @@ const shade = (hex, amt) => {
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
  *  getHero()                  { classId, name, mount? } du personnage (mount : 'horse' = déplacements deux fois plus rapides)
  *  getPlayerLevel()           niveau courant
+ *  hasStealth()               vrai si le héros porte le collier d'ombre (indétectable par les ennemis, hors boss)
  *  onEncounter(encounter)     lance le combat (encounter.prep : préparation du terrain, voir terrain.js)
  *  getWeakness(templateId)    nom de la faiblesse d'un ennemi (observation), facultatif
  *  onGold(amount)             crédite de l'or
@@ -823,8 +824,11 @@ export function createExplorationView(cfg) {
         slide = { dir: res.dir, snap, t0: null };
     }
 
+    const syncStealth = () => X.setStealth(session, cfg.hasStealth?.());
+
     function doMove(dirName) {
         if (isBlocked()) return;
+        syncStealth();
         const d = DIRECTIONS[dirName];
         if (!d) return;
         handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel() }));
@@ -843,6 +847,7 @@ export function createExplorationView(cfg) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
         const { x, y } = tileFromEvent(ev);
+        syncStealth();
         const path = X.findPath(session, x, y);
         if (path === null) {
             walk = null;
@@ -880,12 +885,14 @@ export function createExplorationView(cfg) {
 
     // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
     function walkStep() {
+        syncStealth();
         const path = X.findPath(session, walk.tx, walk.ty);
         if (!path || path.length === 0) { walk = null; return; }
         walk.path = path;
         const next = path[0];
         const dx = next.x - session.data.x;
         const dy = next.y - session.data.y;
+        syncStealth();
         const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel() });
         lastMoveAt = performance.now();
         if (res.type !== 'moved') {
@@ -966,6 +973,7 @@ export function createExplorationView(cfg) {
         else if (walk && !sliding && !isBlocked() && now - lastMoveAt >= moveDelay()) walkStep();
         if (walk && isBlocked()) walk = null;
         if (!isBlocked()) {
+            syncStealth();
             const events = X.tick(session, dt);
             const hit = events.find(e => e.type === 'combat');
             if (hit) startEncounter(hit.enemyId);

@@ -69,7 +69,8 @@ export function renderStuffTab() {
         totals.atk ? `Atk +${totals.atk}` : '', totals.def ? `Déf +${totals.def}` : '',
         totals.maxHp ? `PV max +${totals.maxHp}` : '',
         totals.poisonResist ? (totals.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${totals.poisonResist} %`) : '',
-        ...[...totals.biomes].map(b => `Protégé : ${BIOME_PROTECTION_LABEL[b]}`)
+        ...[...totals.biomes].map(b => `Protégé : ${BIOME_PROTECTION_LABEL[b]}`),
+        totals.stealth ? 'Indétectable' : ''
     ].filter(Boolean).join(' • ');
     root.innerHTML = `
         <div class="stuff-summary">${summary ? `Bonus portés : ${escapeHtml(summary)}` : '<em>Aucun bonus porté.</em>'}</div>
