@@ -229,6 +229,6 @@ le tonnerre a un enfant (Rongrong) ; le temple du feu avait un attiseur (Chi, ma
 sa perle fait foi d'ordre ; les grues-lige du Fusang protègent le Dixième Soleil (Hegui, sœur de la messagère) ; Maître Zhen a reçu
 Fengmeng en méditation, Xia la renarde a sept queues.
 
-## Routes maritimes (post-Pas de Yu)
+## Bordures de mer (post-Pas de Yu)
 
-Une fois le Pas de Yu appris (`sq_pas_de_yu`, Gui à Hekou), le héros peut quitter la terre par un ponton et traverser la mer entre régions voisines sur la carte du monde, sans repasser par la chaîne officielle : Volcan ⇄ Mer Orientale, Gobi ⇄ Plaine des Fauves, Lit du Fleuve ⇄ Bambous ⇄ Monts du Tonnerre, Plaine des Fauves ⇄ Lune, Rizières ⇄ Fusang (`world/connections.js`). Chaque route reste fermée tant que le gardien de la région précédente (la plus avancée des deux) n'est pas vaincu : l'histoire ne se saute pas.
+Chaque carte est entourée de mer. Une fois le Pas de Yu appris (`sq_pas_de_yu`, Gui à Hekou), le héros peut marcher sur cette mer et, en atteignant le bord nord ou sud d'une carte, arriver sur le bord de la carte voisine sur la carte du monde : Volcan ↕ Mer Orientale, Gobi ↕ Plaine des Fauves, Lit du Fleuve ↕ Bambous ↕ Monts du Tonnerre, Plaine des Fauves ↕ Lune, Rizières ↕ Fusang (`world/connections.js`). Pas de route ni de ponton : seulement l'eau.
