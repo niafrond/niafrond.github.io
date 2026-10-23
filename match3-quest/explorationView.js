@@ -405,7 +405,9 @@ export function createExplorationView(cfg) {
                 const loot = ev.paid ? [] : (cfg.onChestLoot?.(ev) || []);
                 const lootText = loot.length ? ` · ${loot.join(' · ')}` : '';
                 const specialText = ev.questItem ? ` · Objet spécial : ${ev.questItem.name}` : '';
-                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`, loot.length ? 5500 : 3200);
+                // Popup qui reste jusqu'au clic : le joueur a le temps de lire la description et le butin.
+                openDialog({ ...NARRATOR, icon: 'chest', title: ev.chest.label || 'Coffre' },
+                    [`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}${specialText}`]);
             }
         });
         if (gold > 0) cfg.onGold(gold);

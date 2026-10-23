@@ -1,3 +1,9 @@
+## [2.121.0](https://github.com/niafrond/niafrond.github.io/compare/v2.120.1...v2.121.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** afficher l'ouverture d'un coffre dans une popup à fermer d'un clic ([#535](https://github.com/niafrond/niafrond.github.io/issues/535)) ([9bec4ef](https://github.com/niafrond/niafrond.github.io/commit/9bec4efbbf79c4bbaffcafc7d35d7e652c416ea2))
+
 ## [2.120.1](https://github.com/niafrond/niafrond.github.io/compare/v2.120.0...v2.120.1) (2026-10-23)
 
 ### Bug Fixes
