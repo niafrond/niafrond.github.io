@@ -108,6 +108,9 @@ function resolvePreferredColor(template){
     return 'red';
 }
 
+// Catalogue complet des gabarits d'ennemis (onglet Bestiaire du carnet, bestiary.js).
+export const enemyCatalogList = () => loadEnemyCatalogSync();
+
 // Faiblesse d'un gabarit d'ennemi (révélée par l'observation sur la carte, voir terrain.js).
 export function weakColorOfTemplate(templateId){
     const template = loadEnemyCatalogSync().find(t => t.id === templateId);

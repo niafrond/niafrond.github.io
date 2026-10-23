@@ -5,6 +5,7 @@
   "actionGuard.js",
   "arena.js",
   "attributes.js",
+  "bestiary.js",
   "board.js",
   "bossTips.js",
   "cheatMode.js",

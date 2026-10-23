@@ -25,7 +25,9 @@ import { loadSequence } from './ultimateCinematics.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
-import { icon } from './icons.js';
+import { icon, manaIcon } from './icons.js';
+import { enemyCatalogList } from './enemies.js';
+import { bestiaryEntries } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
@@ -450,7 +452,7 @@ export function createExplorationView(cfg) {
         return new Set(events.filter(e => e.quest).map(e => e.quest.id));
     }
 
-    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression ──────
+    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression, bestiaire ──────
     const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
     const carnet = { tab: 'quests', filter: 'all', region: 'all', travelRegion: null };
     const STATUS_LABEL = { available: `${icon('talk')} À démarrer`, active: `${icon('target')} En cours`, ready: `${icon('check')} À rendre`, done: `${icon('flag')} Terminée` };
@@ -526,15 +528,38 @@ export function createExplorationView(cfg) {
             </div>`).join('')}</div>`;
     }
 
+    // Bestiaire : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
+    function bestiaryPanel() {
+        const { entries, known, total } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);
+        const head = `<p class="carnet-hint">${icon('book')} ${known}/${total} créatures connues. Combattez ou observez une créature (immobile près d'elle) pour l'inscrire.</p>`;
+        if (entries.length === 0) return `${head}<p>Aucune créature dans le bestiaire pour l'instant.</p>`;
+        const element = (color, label) => color ? `${manaIcon(color)} ${escapeHtml(label || color)}` : '?';
+        return `${head}<div class="carnet-bestiary">${entries.map(e => {
+            const img = gbaSprite(e.id, 'front');
+            return `
+            <div class="carnet-beast">
+                <div class="carnet-beast-head">
+                    ${img ? `<img class="carnet-beast-sprite" alt="" loading="lazy" src="${img}">` : `<span class="carnet-beast-sprite">${icon('ghost')}</span>`}
+                    <div><b>${escapeHtml(e.name)}</b>${e.title ? ` <small>· ${escapeHtml(e.title)}</small>` : ''}<div class="carnet-beast-race">${escapeHtml(e.race)}</div></div>
+                </div>
+                <div class="carnet-beast-stats">
+                    <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${escapeHtml(e.traits.join(', '))}` : ''}</span>
+                    <span>${icon('target')} Faiblesse : ${element(e.weakColor, e.weakElement)}</span>
+                </div>
+                <p class="carnet-beast-lore">${icon('scroll')} ${escapeHtml(e.lore)}</p>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
     function renderCarnet() {
         if (!journalEl) return;
-        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : questsPanel();
+        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : carnet.tab === 'bestiary' ? bestiaryPanel() : questsPanel();
         const tab = (key, label) => `<button type="button" class="carnet-tab${carnet.tab === key ? ' on' : ''}" data-tab="${key}">${label}</button>`;
         journalEl.innerHTML = `
             <div class="explore-journal-card">
                 <h3>${icon('scroll')} ${escapeHtml(STORY_TITLE)}</h3>
                 ${session.data.ended ? `<p class="explore-journal-end">${icon('moon')} La légende est achevée !</p>` : ''}
-                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}</div>
+                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}${tab('bestiary', `${icon('book')} Bestiaire`)}</div>
                 ${body}
                 ${session.data.ended ? `<button type="button" class="primary explore-journal-ngplus">${icon('moon')} Nouvelle Partie +</button>` : ''}
                 <button type="button" class="primary explore-journal-close">Fermer</button>
@@ -722,6 +747,7 @@ export function createExplorationView(cfg) {
         const enc = X.encounterFor(session, enemyId, cfg.getPlayerLevel());
         if (!enc) return;
         if (opts.tutorial) enc.tutorial = true;
+        X.recordBestiary(session, enc.templateId);   // la créature entre au bestiaire du carnet
         session.rt.pendingEnemyId = enemyId;
         if (enc.prep?.lines?.length) toast(enc.prep.lines.join(' '), 4500);
         held = null;
