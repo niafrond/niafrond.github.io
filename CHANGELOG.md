@@ -1,3 +1,25 @@
+## [2.120.1](https://github.com/niafrond/niafrond.github.io/compare/v2.120.0...v2.120.1) (2026-10-23)
+
+### Bug Fixes
+
+* **match3-quest:** masquer la section des ultimes tant qu'aucun n'est débloqué ([#534](https://github.com/niafrond/niafrond.github.io/issues/534)) ([b993b2b](https://github.com/niafrond/niafrond.github.io/commit/b993b2badfd53ccfedfe165fec2532b099515554))
+
+## [2.120.0](https://github.com/niafrond/niafrond.github.io/compare/v2.119.0...v2.120.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** fermer les bordures de mer tant que le gardien de la région n'est pas vaincu ([5b39c5e](https://github.com/niafrond/niafrond.github.io/commit/5b39c5e36513d82538f4d35406ac010f176e0663))
+* **match3-quest:** relier les biomes voisins par des routes maritimes (Pas de Yu) ([156bbeb](https://github.com/niafrond/niafrond.github.io/commit/156bbebe76901454f523aff582244264cf0c0b48))
+* **match3-quest:** relier Mer Orientale et Fusang par la mer, entourer les Rizières d'arbres ([b5b16d2](https://github.com/niafrond/niafrond.github.io/commit/b5b16d2e004822ad8b1967b47801884bcf03824f))
+* **match3-quest:** relier par la mer chaque carte des régions voisines à la carte d'en face ([1672d3e](https://github.com/niafrond/niafrond.github.io/commit/1672d3e211e11f0d68690452a978348183bf965a))
+
+### Bug Fixes
+
+* **match3-quest:** adapter les tests de bordure d'eau aux Rizières entourées d'arbres ([8dc9750](https://github.com/niafrond/niafrond.github.io/commit/8dc975018b3cad24a3273260965d3ab1f260813f))
+* **match3-quest:** ne laisser monter sur la Lune que par Changxi (retrait de la bordure de mer Fauves-Lune) ([094a09e](https://github.com/niafrond/niafrond.github.io/commit/094a09eeb3ff078f68ebec67d92a3addf64211d5))
+* **match3-quest:** retirer la dernière flèche non ASCII des bordures de mer ([b77320a](https://github.com/niafrond/niafrond.github.io/commit/b77320a1434198c3f82dcd023c161524fced78f6))
+* **match3-quest:** retirer les flèches non ASCII et vérifier le bon bord des bordures de mer ([5b5edc1](https://github.com/niafrond/niafrond.github.io/commit/5b5edc1c3167b41428c3f13577252d1c97c541fb))
+
 ## [2.119.0](https://github.com/niafrond/niafrond.github.io/compare/v2.118.0...v2.119.0) (2026-10-23)
 
 ### Features

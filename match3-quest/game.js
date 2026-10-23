@@ -3430,9 +3430,12 @@ function bindSpellRowTooltip(div, sp){
 function updateUltimatePicker(){
     const list = document.getElementById('ultimate-spells-list');
     if(!list) return;
-    list.innerHTML = '<h3>Ultime (1 seul, jauge de rage)</h3>';
+    // Rien à montrer tant qu'aucun ultime n'est débloqué : pas de section, pas de cadenas, pas d'indice sur la façon de les obtenir.
     const choices = getSelectableUltimates(player);
-    if(choices.length === 0) list.innerHTML += '<p><em>Aucun ultime débloqué</em></p>';
+    // Déjà gagné par sa quête mais niveau insuffisant : seul cas où un ultime non choisissable est montré.
+    const tooWeak = getQuestUltimates().filter(sp => isUltimateUnlocked(player, sp) && !choices.some(c => c.id === sp.id));
+    list.innerHTML = choices.length || tooWeak.length ? '<h3>Ultime (1 seul, jauge de rage)</h3>' : '';
+    if(choices.length === 0 && tooWeak.length === 0) return;
     const current = getEquippedUltimate(player);
     choices.forEach(sp => {
         const chosen = sp.id === current.id;
@@ -3450,15 +3453,13 @@ function updateUltimatePicker(){
             ${cardActionsHtml('', action)}`;
         list.appendChild(div);
     });
-    // Ultimes de légende pas encore utilisables (toutes classes) : la quête à terminer, ou le niveau à atteindre.
-    getQuestUltimates().filter(sp => !choices.some(c => c.id === sp.id)).forEach(sp => {
+    tooWeak.forEach(sp => {
         const div = document.createElement('div');
         div.className = 'spell-item ultimate-spell locked-spell';
-        const reason = isUltimateUnlocked(player, sp) ? `Niveau ${sp.minLevel} requis` : (sp.unlock.hint || 'Quête à terminer');
         div.innerHTML = `
             <div class="spell-content">
                 <div class="spell-name">${svgIcon('lock')} ${sp.name}</div>
-                <div class="spell-cost">${reason}</div>
+                <div class="spell-cost">Niveau ${sp.minLevel} requis</div>
             </div>
         `;
         list.appendChild(div);
