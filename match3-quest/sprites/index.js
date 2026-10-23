@@ -25,7 +25,7 @@ import { GBA_SPRITES } from './generated.js';
 const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
 // Gabarits « copies » d'ennemis nommés (champ `copyOf` de enemies.catalog.json) sans dessin propre : ils empruntent le dessin du
-// gabarit d'origine, jusqu'à ce qu'un sprite dédié soit généré (il suffira alors de retirer la ligne).
+// gabarit d'origine (SVG de repli ; côté GBA, un sprite généré propre au gabarit est prioritaire, voir gbaKey).
 export const TEMPLATE_SPRITE_COPIES = {
     maitresse_tong: 'soldat_terre_cuite',
     maitre_hong_gang: 'chiyou',
@@ -53,7 +53,8 @@ export const TEMPLATE_SPRITE_COPIES = {
     tortue_dragon: 'canglong'
 };
 export const spriteSourceOf = key => TEMPLATE_SPRITE_COPIES[key] || key;
-const gbaKey = key => GBA_ALIASES[key] || TEMPLATE_SPRITE_COPIES[key] || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
+// Un sprite généré propre au gabarit passe avant l'emprunt du dessin du gabarit d'origine.
+const gbaKey = key => GBA_ALIASES[key] || (key in GBA_SPRITES ? key : TEMPLATE_SPRITE_COPIES[key]) || (GBA_ALIAS_PATTERNS.find(([re]) => re.test(key)) || [])[1] || key;
 export const hasGbaSprite = key => gbaKey(key) in GBA_SPRITES;
 export function gbaSprite(key, dir = 'front') {
     const s = GBA_SPRITES[gbaKey(key)];
