@@ -92,7 +92,7 @@ export function addBorderBarriers(screens) {
         const { w, h } = screen;
         const open = openRim(screens, screen);
         if (screen.aquatic) { closeAquaticRim(screen, open); continue; }
-        const water = WATER_BIOMES.has(screen.biome);
+        const water = WATER_BIOMES.has(screen.biome) && !screen.treeBorder;   // couronne d'arbres (Rizières) : bordure fermée par des arbres
         const obst = toSet(screen.obstacles);
         const liq = toSet(screen.liquids);
         // couloirs devant les passages : on retire décor et eau (hors bâtiments), puis on dégage les personnages

@@ -17,7 +17,7 @@
 import { merchantNpc } from '../merchants.js';
 import { getXPCostForLevel } from '../experience.js';
 import { buildZone, arrivalFor, freeNeighbor, applyNativeSanctuary } from './mapKit.js';
-import { EXPANDED_SIZES, fitScreen, widenGates, linkGates, openPerimeter, addWaterBorder, pruneGrass } from './expand.js';
+import { EXPANDED_SIZES, fitScreen, widenGates, linkGates, openPerimeter, addWaterBorder, addTreeBorder, pruneGrass } from './expand.js';
 import { applyJunctions, applyLevelGuards } from './junctions.js';
 import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
@@ -37,7 +37,9 @@ const BASE_CHAIN = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan
 
 // Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
-const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (experience.js : getXPCostForLevel)
+const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };
+// Régions bordées d'arbres plutôt que de mer (world/expand.js addTreeBorder).
+export const TREE_BORDER_REGIONS = new Set(['rizieres']);   // part du coût d'un niveau (experience.js : getXPCostForLevel)
 
 // Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
 export function questXp(quest, region) {
@@ -216,6 +218,9 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         linkGates(screens);
         Object.values(screens).forEach(openPerimeter);   // plus de bordure factice : les terrains sont reliés, la limite de la carte suffit
         Object.values(screens).forEach(addWaterBorder);  // ... mais de l'eau tout autour des terrains (franchissable avec le Pas de Yu)
+        // ... sauf autour des Rizières : une couronne d'arbres, sans mer (aucune bordure de mer n'y mène, world/connections.js)
+        Object.values(screens).filter(s => TREE_BORDER_REGIONS.has(s.region) && !s.interior && s.kind !== 'house' && !s.arena)
+            .forEach(s => { s.treeBorder = true; addTreeBorder(s); });
         // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
         applyJunctions(screens, quests, REGION_LEVEL);
         applyLevelGuards(screens, REGION_LEVEL);   // sentinelle qui annonce le niveau conseillé devant chaque passage vers une région plus difficile

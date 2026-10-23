@@ -14,8 +14,8 @@ const cols = s => [...Array(s.w).keys()];
 
 describe('bordures de mer', () => {
     test("chaque carte des régions voisines fait face à une carte de l'autre région, dans les deux sens, sur toute la largeur commune", () => {
-        expect(northward).toHaveLength(19);   // 4 paires de cartes x 4 liaisons + 3 pour Rizières (sans route d'accès) -> Fusang
-        expect(seaEdges).toHaveLength(38);
+        expect(northward).toHaveLength(16);   // 4 paires de cartes x 4 liaisons
+        expect(seaEdges).toHaveLength(32);
         northward.forEach(c => {
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(regionOf(c.from)).not.toBe(regionOf(c.to));
@@ -27,16 +27,25 @@ describe('bordures de mer', () => {
         });
     });
 
-    test("Rizières et Fusang : chaque carte des Rizières mène au Fusang, et chaque carte du Fusang (sauf sa route d'accès) aux Rizières", () => {
-        ['rizieres_village', 'rizieres_wild', 'rizieres'].forEach(id => expect(regionOf(SCREENS[id].connections.north.to)).toBe('fusang'));
-        ['fusang_village', 'fusang_hamlet', 'fusang'].forEach(id => expect(regionOf(SCREENS[id].connections.south.to)).toBe('rizieres'));
-        expect(SCREENS.fusang_road.connections.south).toBeUndefined();
+    test('Mer Orientale et Fusang : chaque carte de la Mer Orientale mène au Fusang, et chaque carte du Fusang à la Mer Orientale', () => {
+        ['mer_road', 'mer_village', 'mer_wild', 'mer'].forEach(id => expect(regionOf(SCREENS[id].connections.north.to)).toBe('fusang'));
+        ['fusang_road', 'fusang_village', 'fusang_hamlet', 'fusang'].forEach(id => expect(regionOf(SCREENS[id].connections.south.to)).toBe('mer'));
     });
 
-    test("neuf régions sur onze sont reliées par la mer ; la Lune et les Hautes-Eaux jamais (la Lune ne s'atteint que par Changxi)", () => {
+    test("les Rizières n'ont pas de mer autour : une couronne d'arbres, et aucune bordure de mer (le Volcan non plus)", () => {
+        Object.values(SCREENS).filter(s => s.region === 'rizieres' && !s.interior && s.kind !== 'house' && s.connections && !/_(cave|crypt)$/.test(s.id)).forEach(s => {
+            expect(s.treeBorder).toBe(true);
+            for (let x = 0; x < s.w; x++) for (let y = 0; y < s.h; y++) {
+                if (Math.min(x, y, s.w - 1 - x, s.h - 1 - y) > 1) continue;
+                expect({ id: s.id, x, y, eau: isTerrainBlocked(s, x, y) && !isTerrainBlocked(s, x, y, true) }).toEqual({ id: s.id, x, y, eau: false });
+            }
+        });
+    });
+
+    test("sept régions sont reliées par la mer ; jamais la Lune (seulement par Changxi), les Hautes-Eaux, les Rizières ni le Volcan", () => {
         const linked = new Set(seaEdges.flatMap(c => [regionOf(c.from), regionOf(c.to)]));
-        ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang'].forEach(r => expect(linked.has(r)).toBe(true));
-        ['lune', 'marees'].forEach(r => expect(linked.has(r)).toBe(false));
+        ['gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang'].forEach(r => expect(linked.has(r)).toBe(true));
+        ['lune', 'marees', 'rizieres', 'volcan'].forEach(r => expect(linked.has(r)).toBe(false));
     });
 
     test("les deux bords reliés sont de l'eau : infranchissables à pied, praticables avec le Pas de Yu (aucun couloir creusé)", () => {
@@ -52,17 +61,17 @@ describe('bordures de mer', () => {
     test("avec le Pas de Yu, fermé tant que le gardien n'est pas vaincu, puis le bord nord mène au bord sud de la carte voisine, et inversement", () => {
         const s = createSession({});
         s.data.quests.sq_pas_de_yu = 'done';
-        teleportToScreen(s, 'volcan_road');
-        const b = SCREENS.mer_road;
+        teleportToScreen(s, 'gobi_road');
+        const b = SCREENS.fauves_road;
         s.data.x = 22; s.data.y = 0;
-        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'exitBlocked', reason: 'quest' });   // la Mer Orientale s'ouvre avec la défaite du Soleil de la Plaine des Fauves
-        expect(SCREENS.volcan_road.connections.north.requires).toBe('sun_7');
-        markEnemyDefeated(s, 'sun_7');
+        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'exitBlocked', reason: 'quest' });   // la Plaine des Fauves s'ouvre avec la défaite du soleil des Monts du Tonnerre
+        expect(SCREENS.gobi_road.connections.north.requires).toBe('sun_5');
+        markEnemyDefeated(s, 'sun_5');
         s.data.x = 22; s.data.y = 0;
-        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'transition', to: 'mer_road' });
+        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'transition', to: 'fauves_road' });
         expect(s.data.y).toBeGreaterThan(b.h - 5);
         s.data.y = b.h - 1;
-        expect(tryMove(s, 0, 1)).toMatchObject({ type: 'transition', to: 'volcan_road' });
+        expect(tryMove(s, 0, 1)).toMatchObject({ type: 'transition', to: 'gobi_road' });
         expect(s.data.y).toBeLessThan(4);
     });
 });
