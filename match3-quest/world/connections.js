@@ -25,7 +25,7 @@ const NAMES = {
 };
 const regionOfMap = id => id.replace(/_(road|wild|village|hamlet)$/, '');
 
-// Bord nord de `south` (carte du sud) ↔ bord sud de `north` (carte du nord), recouvrement centré sur toute la largeur commune.
+// Bord nord de `south` (carte du sud) <-> bord sud de `north` (carte du nord), recouvrement centré sur toute la largeur commune.
 // Fermé dans les deux sens tant que le gardien qui ouvre la route officielle vers la plus avancée des deux régions n'est pas vaincu :
 // le Pas de Yu ne fait pas sauter l'histoire. Une connexion explicite par sens, pour que le message parle de la bonne destination.
 function seaEdge(south, north) {
