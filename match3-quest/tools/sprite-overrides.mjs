@@ -4,7 +4,13 @@
 // assassin_masque : l'ancien dessin ressemblait à un ninja japonais (capuche, bandeau sur le visage, shuriken). Remplacé par un tueur
 // à gages de la Chine ancienne : masque rituel de bronze nuo/taotie (yeux globuleux, crocs), cheveux en chignon retenu par une épingle,
 // robe croisée à larges manches ornée de nuages (yunwen), lame droite jian — ni capuche, ni voile, ni shuriken.
+import { NAMED_ENEMIES } from './sprite-prompts-named.js';
+
+// Ennemis nommés (gabarits `copyOf`) : leur dessin dédié remplace l'emprunt de TEMPLATE_SPRITE_COPIES (sprites/index.js).
+const NAMED = Object.entries(NAMED_ENEMIES).map(([id, { desc }]) => [id, id, 'Humain', '', 'purple', 'rizieres', 'e', desc]);
+
 export const OVERRIDES = [
+    ...NAMED,
   ['assassin_masque', 'Assassin Masqué', 'Humain', 'Lame du Voile Noir', 'purple', 'rizieres', 'e',
     'ancient Chinese hired killer of the Warring States, wearing a carved bronze nuo ritual mask with bulging round eyes and fangs, ' +
     'bare head with black hair in a topknot held by a bronze hairpin, no hood, no headscarf, no cloth over the face, ' +

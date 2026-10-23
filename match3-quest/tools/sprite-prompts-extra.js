@@ -2,6 +2,8 @@
 // Les clés sont les identifiants du jeu (classes, PNJ, gabarits d'ennemis). Fusionné dans SPRITE_MANIFEST.
 // PNJ : face seule (--dir=front) ; héros et ennemis : 4 directions.
 
+import { NAMED_ENEMIES } from './sprite-prompts-named.js';
+
 export const EXTRA_MANIFEST = {
   heroes: {
     templar: { desc: 'Hou Yi as a young Chinese imperial guard, lacquered red and black lamellar armor with gold trim, round bronze shield on the left arm, short spear, plumed helmet, steadfast expression' },
@@ -9,6 +11,7 @@ export const EXTRA_MANIFEST = {
   },
 
   enemies: {
+    ...NAMED_ENEMIES,
     gui_esprit: { desc: 'Gui, wandering dead spirit, pale shadowy human silhouette in a faded robe, no feet, faint violet glow' },
     jiaolong: { desc: 'Jiaolong, Chinese river dragon, long coiled serpentine body of teal and dark blue scales, short horns, four small claws, finned head with glowing yellow eyes, reptile jaws' },
     loup_braise: { desc: 'wolf made of embers, charcoal black fur cracked with glowing orange lava veins, flames on the tail and mane, bright red eyes, snarling' },

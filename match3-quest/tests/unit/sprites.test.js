@@ -1,3 +1,4 @@
+import { gbaSprite } from '../../sprites/index.js';
 import { readFileSync } from 'fs';
 import { SCREENS } from '../../story.js';
 import { playerClasses } from '../../classes.js';
@@ -193,5 +194,15 @@ describe('qualité technique des SVG', () => {
         expect(px).toContain(`<g filter="url(#m3px)">${inner}</g></svg>`);
         expect(pixelate(px.replace('viewBox="0 0 64 64"', 'viewBox="0 0 10 10"'))).toContain('viewBox="0 0 10 10"');
         expect(pixelate(null)).toBe(null);
+    });
+});
+
+describe('ennemis nommés (gabarits copyOf) : dessin dédié', () => {
+    const copies = Object.keys(TEMPLATE_SPRITE_COPIES);
+    test('chacun a ses 4 directions générées, et elles passent avant le dessin du gabarit d\'origine', () => {
+        copies.forEach(id => {
+            expect(['front', 'back', 'left', 'right'].map(d => Boolean(GBA_SPRITES[id]?.[d]))).toEqual([true, true, true, true]);
+            expect(gbaSprite(id, 'front')).toBe(GBA_SPRITES[id].front);
+        });
     });
 });
