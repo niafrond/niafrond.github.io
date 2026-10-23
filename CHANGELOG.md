@@ -1,3 +1,17 @@
+## [2.117.0](https://github.com/niafrond/niafrond.github.io/compare/v2.116.0...v2.117.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** ajouter le biome marin des Hautes-Eaux de la Lune Montante ([f2111e9](https://github.com/niafrond/niafrond.github.io/commit/f2111e9c569f4392596b9796740f48ff18d8e4d3))
+* **match3-quest:** finir les Hautes-Eaux (musique, rendu des pilotis et de l'eau-herbe, animations d'attaque) ([0a7f104](https://github.com/niafrond/niafrond.github.io/commit/0a7f1047a6d1483d350032899f36eadd4de09472))
+* **match3-quest:** réduire les pontons des Hautes-Eaux à une case de large ([a9a591c](https://github.com/niafrond/niafrond.github.io/commit/a9a591c4c7a9a925fa9ab4488f101dd386892a59))
+* **match3-quest:** rendre Changxi immense et la faire passer entre la Terre et la Lune ([e229c86](https://github.com/niafrond/niafrond.github.io/commit/e229c86fc84961d2c52e710d0bb64907c2746cce))
+* **match3-quest:** rendre Changxi muette, décrite par le Narrateur ([9070cde](https://github.com/niafrond/niafrond.github.io/commit/9070cde1d18f156927ddf483f340591192b62abe))
+
+### Bug Fixes
+
+* **match3-quest:** corriger l'indice de la quête des bateaux-lanternes ([e9beced](https://github.com/niafrond/niafrond.github.io/commit/e9beced8f68db3d70d180baf91a780a9f0edd683))
+
 ## [2.116.0](https://github.com/niafrond/niafrond.github.io/compare/v2.115.0...v2.116.0) (2026-10-23)
 
 ### Features
