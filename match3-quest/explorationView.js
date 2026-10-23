@@ -884,9 +884,35 @@ export function createExplorationView(cfg) {
         return { x: Math.floor((px - cam.ox) / cam.tile), y: Math.floor((py - cam.oy) / cam.tile) };
     }
 
+    // Maintien du doigt : un « clic » est rejoué toutes les HOLD_REPEAT_MS à la dernière position connue.
+    const HOLD_REPEAT_MS = 500;
+    let holdTimer = null;
+    let holdPointer = null;
+    function stopHoldRepeat() {
+        if (holdTimer !== null) clearInterval(holdTimer);
+        holdTimer = null;
+        holdPointer = null;
+    }
+    function onCanvasPointerMove(ev) {
+        if (holdPointer && ev.pointerId === holdPointer.id) {
+            holdPointer.clientX = ev.clientX;
+            holdPointer.clientY = ev.clientY;
+        }
+    }
     function onCanvasPointerDown(ev) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
+        stopHoldRepeat();
+        holdPointer = { id: ev.pointerId, clientX: ev.clientX, clientY: ev.clientY };
+        holdTimer = setInterval(() => {
+            if (!holdPointer || !active) { stopHoldRepeat(); return; }
+            if (isBlocked()) return;
+            walkTo(holdPointer);
+        }, HOLD_REPEAT_MS);
+        walkTo(ev);
+    }
+
+    function walkTo(ev) {
         const { x, y } = tileFromEvent(ev);
         syncStealth();
         const path = X.findPath(session, x, y);
@@ -975,6 +1001,8 @@ export function createExplorationView(cfg) {
         window.addEventListener('keydown', onKeyDown);
         window.addEventListener('keyup', onKeyUp);
         canvas.addEventListener('pointerdown', onCanvasPointerDown);
+        canvas.addEventListener('pointermove', onCanvasPointerMove);
+        for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, stopHoldRepeat);
         canvas.addEventListener('contextmenu', ev => ev.preventDefault());
         els.dialog?.addEventListener('click', ev => {
             const btn = ev.target.closest?.('[data-choice]');
