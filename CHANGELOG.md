@@ -1,3 +1,11 @@
+## [2.118.0](https://github.com/niafrond/niafrond.github.io/compare/v2.117.0...v2.118.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** composer les jingles les plus audibles avec ACE-Step ([0c7c1ba](https://github.com/niafrond/niafrond.github.io/commit/0c7c1baca0b416eaa0dc3bd742ae0f420e2d2abe))
+* **match3-quest:** refaire le jingle d'entrée de boss ([bf29636](https://github.com/niafrond/niafrond.github.io/commit/bf296363bd8a49412a741cc0bc727b03d70aa02b))
+* **match3-quest:** rendre le jingle d'entrée de boss plus épique ([ef0b1c8](https://github.com/niafrond/niafrond.github.io/commit/ef0b1c82140061708999506802353942abd787d9))
+
 ## [2.117.0](https://github.com/niafrond/niafrond.github.io/compare/v2.116.0...v2.117.0) (2026-10-23)
 
 ### Features
