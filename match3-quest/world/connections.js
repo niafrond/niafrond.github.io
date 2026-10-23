@@ -39,11 +39,11 @@ function seaEdge(south, north) {
     ];
 }
 
+// La Lune n'a aucune bordure de mer : on n'y monte que depuis les Hautes-Eaux, par Changxi (story.js, autel de Mazu).
 export const CONNECTIONS = [
     seaEdge('volcan_road', 'mer_road'),          // Volcan <-> Mer Orientale
     seaEdge('gobi_road', 'fauves_road'),         // Gobi <-> Plaine des Fauves
     seaEdge('fleuve_road', 'bambous_road'),      // Lit du Fleuve Jaune <-> Bambous
     seaEdge('bambous_road', 'tonnerre_road'),    // Bambous <-> Monts du Tonnerre
-    seaEdge('fauves_road', 'lune_road'),         // Plaine des Fauves <-> Lune
     seaEdge('rizieres_wild', 'fusang_road')      // Rizières <-> Fusang
 ].flat();

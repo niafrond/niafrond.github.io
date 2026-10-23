@@ -12,8 +12,8 @@ const regionOf = id => SCREENS[id].region;
 const cols = s => [...Array(s.w).keys()];
 
 describe('bordures de mer', () => {
-    test('six liaisons nord-sud entre régions différentes, dans les deux sens, sur toute la largeur commune', () => {
-        expect(seaEdges).toHaveLength(12);   // une connexion explicite par sens
+    test('cinq liaisons nord-sud entre régions différentes, dans les deux sens, sur toute la largeur commune', () => {
+        expect(seaEdges).toHaveLength(10);   // une connexion explicite par sens
         seaEdges.filter(c => c.dir === 'north').forEach(c => {
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(regionOf(c.from)).not.toBe(regionOf(c.to));
@@ -25,9 +25,10 @@ describe('bordures de mer', () => {
         });
     });
 
-    test('dix régions sur onze sont reliées par la mer à une région non voisine dans la chaîne', () => {
+    test("neuf régions sur onze sont reliées par la mer ; la Lune et les Hautes-Eaux jamais (la Lune ne s'atteint que par Changxi)", () => {
         const linked = new Set(seaEdges.flatMap(c => [regionOf(c.from), regionOf(c.to)]));
-        ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'].forEach(r => expect(linked.has(r)).toBe(true));
+        ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang'].forEach(r => expect(linked.has(r)).toBe(true));
+        ['lune', 'marees'].forEach(r => expect(linked.has(r)).toBe(false));
     });
 
     test("les deux bords reliés sont de l'eau : infranchissables à pied, praticables avec le Pas de Yu (aucun couloir creusé)", () => {
