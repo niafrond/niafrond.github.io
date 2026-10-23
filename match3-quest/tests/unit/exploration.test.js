@@ -194,7 +194,7 @@ function nextExit(s, from, to) {
     const queue = [from];
     while (queue.length && !prev.has(to)) {
         const id = queue.shift();
-        exitsOf(s.screens[id], SCREENS).forEach(e => { if (!prev.has(e.to)) { prev.set(e.to, { id, exit: e }); queue.push(e.to); } });
+        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea).forEach(e => { if (!prev.has(e.to)) { prev.set(e.to, { id, exit: e }); queue.push(e.to); } });
     }
     if (!prev.has(to)) throw new Error(`aucune route de ${from} vers ${to}`);
     let node = to;

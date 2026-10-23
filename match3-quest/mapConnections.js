@@ -44,9 +44,9 @@ export function overlapOf(conn, from, to) {
 
 // Connexion inverse (même passage vu depuis l'autre carte) : décalage opposé.
 export function reverseOf(conn, from, to) {
-    const { requires, lockedMessage, label } = conn;
+    const { requires, lockedMessage, label, sea } = conn;
     const off = offsetOf(conn, from, to);
-    const rev = { from: conn.to, dir: DIRS[conn.dir].opposite, to: conn.from, offset: -off, requires, lockedMessage, label, derived: true };
+    const rev = { from: conn.to, dir: DIRS[conn.dir].opposite, to: conn.from, offset: -off, requires, lockedMessage, label, sea, derived: true };
     if (conn.range) rev.range = [conn.range[0] - off, conn.range[1] - off];
     return rev;
 }
@@ -200,7 +200,7 @@ export function connectionRows(screens, screen) {
         for (let a = range[0]; a <= range[1]; a++) {
             const { x, y } = borderCell(screen, dir, a);
             const cell = arrivalCell(c, screen, to, x, y, (m, cx, cy) => cx < 0 || cy < 0 || cx >= m.w || cy >= m.h, 0);   // arrivée théorique (sans collisions)
-            rows.push({ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, wall: c.wall, edge: dir,
+            rows.push({ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, wall: c.wall, sea: c.sea, edge: dir,
                 span: a - mid, arrive: cell, connection: true });
         }
         return rows.sort((p, q) => Math.abs(p.span) - Math.abs(q.span));

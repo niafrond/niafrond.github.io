@@ -228,3 +228,7 @@ Faits nouveaux : les noyés ont un doyen (Yuan) ; la cloche du temple brûlé a 
 le tonnerre a un enfant (Rongrong) ; le temple du feu avait un attiseur (Chi, maître de Yan) ; l'escadre du Roi-Dragon a un amiral (Xie), et
 sa perle fait foi d'ordre ; les grues-lige du Fusang protègent le Dixième Soleil (Hegui, sœur de la messagère) ; Maître Zhen a reçu
 Fengmeng en méditation, Xia la renarde a sept queues.
+
+## Routes maritimes (post-Pas de Yu)
+
+Une fois le Pas de Yu appris (`sq_pas_de_yu`, Gui à Hekou), le héros peut quitter la terre par un ponton et traverser la mer entre régions voisines sur la carte du monde, sans repasser par la chaîne officielle : Volcan ⇄ Mer Orientale, Gobi ⇄ Plaine des Fauves, Lit du Fleuve ⇄ Bambous ⇄ Monts du Tonnerre, Plaine des Fauves ⇄ Lune, Rizières ⇄ Fusang (`world/connections.js`). Chaque route reste fermée tant que le gardien de la région précédente (la plus avancée des deux) n'est pas vaincu : l'histoire ne se saute pas.
