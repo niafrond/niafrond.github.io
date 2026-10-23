@@ -1,3 +1,9 @@
+## [2.119.0](https://github.com/niafrond/niafrond.github.io/compare/v2.118.0...v2.119.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** répéter le clic toutes les 500 ms quand le doigt reste appuyé en exploration ([#532](https://github.com/niafrond/niafrond.github.io/issues/532)) ([8fa4359](https://github.com/niafrond/niafrond.github.io/commit/8fa4359c4f035a5433975b489ffe0ae915a31ea0))
+
 ## [2.118.0](https://github.com/niafrond/niafrond.github.io/compare/v2.117.0...v2.118.0) (2026-10-23)
 
 ### Features
