@@ -28,7 +28,7 @@ import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPTo
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
+import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -3430,9 +3430,10 @@ function bindSpellRowTooltip(div, sp){
 function updateUltimatePicker(){
     const list = document.getElementById('ultimate-spells-list');
     if(!list) return;
-    list.innerHTML = '<h3>Ultime (1 seul, jauge de rage)</h3>';
+    // Rien à montrer tant qu'aucun ultime n'est débloqué : pas de section, pas de cadenas, pas d'indice sur la façon de les obtenir.
     const choices = getSelectableUltimates(player);
-    if(choices.length === 0) list.innerHTML += '<p><em>Aucun ultime débloqué</em></p>';
+    list.innerHTML = choices.length ? '<h3>Ultime (1 seul, jauge de rage)</h3>' : '';
+    if(choices.length === 0) return;
     const current = getEquippedUltimate(player);
     choices.forEach(sp => {
         const chosen = sp.id === current.id;
@@ -3448,19 +3449,6 @@ function updateUltimatePicker(){
                 <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
             ${cardActionsHtml('', action)}`;
-        list.appendChild(div);
-    });
-    // Ultimes de légende pas encore utilisables (toutes classes) : la quête à terminer, ou le niveau à atteindre.
-    getQuestUltimates().filter(sp => !choices.some(c => c.id === sp.id)).forEach(sp => {
-        const div = document.createElement('div');
-        div.className = 'spell-item ultimate-spell locked-spell';
-        const reason = isUltimateUnlocked(player, sp) ? `Niveau ${sp.minLevel} requis` : (sp.unlock.hint || 'Quête à terminer');
-        div.innerHTML = `
-            <div class="spell-content">
-                <div class="spell-name">${svgIcon('lock')} ${sp.name}</div>
-                <div class="spell-cost">${reason}</div>
-            </div>
-        `;
         list.appendChild(div);
     });
 }
