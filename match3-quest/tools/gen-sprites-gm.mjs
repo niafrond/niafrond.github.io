@@ -28,7 +28,7 @@ const { PNG } = createRequire(import.meta.url)('pngjs');
 const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const [k, ...v] = a.slice(2).split('='); return [k, v.length ? v.join('=') : true]; }));
 const ONLY = args.only ? String(args.only).split(',') : null;
 const STEPS = Number(args.steps || 25), CFG = Number(args.cfg || 7), LORA = Number(args.lora ?? 1);
-const SIZE = 512, PORT = 8188, OUT_PX = 32, MAX_PX = 30;
+const OUT_PX = Number(args.px || 32), MAX_PX = OUT_PX - 2, SIZE = Number(args.size || (OUT_PX > 32 ? 1024 : 512)), PORT = 8188;   // --px=64 : sprite plus détaillé (génération SDXL native 1024²)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const GENERATED = join(GAME, 'sprites', 'generated.js');
