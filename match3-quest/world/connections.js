@@ -40,10 +40,10 @@ function seaEdge(south, north) {
 }
 
 export const CONNECTIONS = [
-    seaEdge('volcan_road', 'mer_road'),          // Volcan ↕ Mer Orientale
-    seaEdge('gobi_road', 'fauves_road'),         // Gobi ↕ Plaine des Fauves
-    seaEdge('fleuve_road', 'bambous_road'),      // Lit du Fleuve Jaune ↕ Bambous
-    seaEdge('bambous_road', 'tonnerre_road'),    // Bambous ↕ Monts du Tonnerre
-    seaEdge('fauves_road', 'lune_road'),         // Plaine des Fauves ↕ Lune
-    seaEdge('rizieres_wild', 'fusang_road')      // Rizières ↕ Fusang
+    seaEdge('volcan_road', 'mer_road'),          // Volcan <-> Mer Orientale
+    seaEdge('gobi_road', 'fauves_road'),         // Gobi <-> Plaine des Fauves
+    seaEdge('fleuve_road', 'bambous_road'),      // Lit du Fleuve Jaune <-> Bambous
+    seaEdge('bambous_road', 'tonnerre_road'),    // Bambous <-> Monts du Tonnerre
+    seaEdge('fauves_road', 'lune_road'),         // Plaine des Fauves <-> Lune
+    seaEdge('rizieres_wild', 'fusang_road')      // Rizières <-> Fusang
 ].flat();

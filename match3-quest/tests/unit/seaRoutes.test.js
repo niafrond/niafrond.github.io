@@ -31,7 +31,7 @@ describe('bordures de mer', () => {
     });
 
     test("les deux bords reliés sont de l'eau : infranchissables à pied, praticables avec le Pas de Yu (aucun couloir creusé)", () => {
-        seaEdges.forEach(c => {
+        seaEdges.filter(c => c.dir === 'north').forEach(c => {   // bord nord de la carte du sud, bord sud de la carte du nord
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(cols(a).filter(x => !isTerrainBlocked(a, x, 0))).toEqual([]);
             expect(cols(b).filter(x => !isTerrainBlocked(b, x, b.h - 1))).toEqual([]);
