@@ -1,3 +1,19 @@
+## [2.115.0](https://github.com/niafrond/niafrond.github.io/compare/v2.114.0...v2.115.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** ajouter l'onglet Bestiaire au carnet (force, faiblesse, notice mythologique) ([2c8ae0a](https://github.com/niafrond/niafrond.github.io/commit/2c8ae0acae1bbc96763c45717ae799eb536f0cc0))
+* **match3-quest:** donner un gabarit et une fiche propres aux ennemis nommés ([a5aa9bf](https://github.com/niafrond/niafrond.github.io/commit/a5aa9bf61af1a94e960f1234b7af6888104b0a3f))
+* **match3-quest:** remettre toute l'histoire à zéro en Nouvelle Partie + et relancer le prologue ([282b456](https://github.com/niafrond/niafrond.github.io/commit/282b456684f365666fdf42d14045a08f451e3974))
+
+### Bug Fixes
+
+* **match3-quest:** accorder zones, noms et dialogues de l'histoire avec le bestiaire ([2e4d552](https://github.com/niafrond/niafrond.github.io/commit/2e4d552f8b6d2d2587fa877249cb38d4656ba852))
+* **match3-quest:** aligner l'élément des créatures du bestiaire sur leur nature ([714e77e](https://github.com/niafrond/niafrond.github.io/commit/714e77ebea7b668860d777341d5d66dd54a0e6e1))
+* **match3-quest:** corriger les notices du bestiaire et distinguer attesté, folklore et adaptation ([82e3461](https://github.com/niafrond/niafrond.github.io/commit/82e3461637dce175ae4cc5977fc75dfd940f52f6))
+* **match3-quest:** relire les 160 notices du bestiaire et afficher leur provenance ([1a7f595](https://github.com/niafrond/niafrond.github.io/commit/1a7f5957238af673ad41f57db1d0945bf3dbdee5))
+* **match3-quest:** retirer les références japonaises et préciser les citations du bestiaire ([ec621f7](https://github.com/niafrond/niafrond.github.io/commit/ec621f74e114739fe61c1bc2e328b1ecf11cfae1))
+
 ## [2.114.0](https://github.com/niafrond/niafrond.github.io/compare/v2.113.0...v2.114.0) (2026-10-23)
 
 ### Features
