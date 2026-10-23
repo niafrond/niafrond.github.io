@@ -15,3 +15,9 @@ rendus une fois pour toutes, puis simplement lus (`music.js`, `sound.js`). Aucun
   repli pour un boss sans piste dédiée). Clés d'effets : `sfxCatalog.js`.
 * Ajouter un boss dans `story.js` : relancer `render.mjs --music` (ou `--only=boss-<nom>`) ; le test `music.test.js` signale
   toute piste manquante.
+
+## Jingles composés par ACE-Step
+
+Les 7 jingles les plus audibles (`introJingle`, `endingJingle`, `battleStart`, `combatStart`, `bossStart`, `victory`, `defeat`) sont composés par
+ACE-Step (voir `acestep/README.md`) et non rendus par `render.mjs` : `node acestep/generate.mjs generate "jingle-*"` puis
+`node acestep/jingles.mjs install`. Ne pas relancer `render.mjs --sfx` sans `--only` : il écraserait ces clips.

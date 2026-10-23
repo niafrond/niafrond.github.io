@@ -172,6 +172,20 @@ T('combat-tides', `epic battle theme, ${EPIC}, whirlpool sea battle at night, ro
 T('boss-changxi-mere-des-douze-lunes', `epic cinematic trial boss battle, Changxi mother of twelve moons testing the hero's courage on a moonlit sea altar, slow ceremonial gongs, xiao flute, muted wordless choir, deep guqin pulse, ${I.pipa}, ${BOSS_PERC}, solemn and majestic rather than cruel, tidal swells, tension then release, readable heroic melody`,
     { bpm: 92, keyScale: 'E minor', dur: 60 });
 
+/* ───────────── Jingles du jeu (audio/sfx/<clé>.mp3), voir jingles.mjs ───────────── */
+// ACE-Step génère au moins 10 s : `gen` = durée demandée, `jingle.target` = durée gardée (début net, fondu de fin de `fade` s).
+const JINGLE_STYLE = 'instrumental video game jingle, Chinese instruments, short musical stinger with a clear immediate start and a decisive ending, no vocals, clean and punchy production';
+const JINGLES = {
+    introJingle:  ['slow mysterious ancient chant of the Fusang tree at dawn, soft guqin, xiao flute, distant bronze bells, sustained sheng pad, rising wonder resolving gently', 58, 'D minor', 14, 9, 1.2],
+    endingJingle: ['peaceful nostalgic lullaby after the last sun has fallen, tender erhu melody over a gentle guzheng arpeggio, warm and bittersweet, slow and calm, resolving softly on a long tonic chord', 60, 'D major', 18, 13, 2],
+    battleStart:  ['sudden alert sting at the start of a battle, two fast pipa tremolo hits and a sharp taiko drum hit, tense rising dizi flick, danger approaching', 140, 'E minor', 10, 1.8, 0.3],
+    combatStart:  ['heroic charge call before a fight, fast taiko drum roll rising into a bright sheng fanfare burst, determined and energetic, ends on a strong accent', 150, 'A minor', 10, 1.7, 0.3],
+    bossStart:    ['ominous boss entrance, huge low gong, deep taiko drum hits, dissonant low strings and erhu growl, menacing and heavy, ends on a massive dark hit', 88, 'C minor', 10, 3, 0.6],
+    victory:      ['triumphant short victory fanfare, bright rising pipa arpeggio, sheng chord and cymbal swell, joyful, ending on a clear major resolution', 120, 'D major', 10, 2.6, 0.5],
+    defeat:       ['sad defeat sting, slow descending erhu phrase over a low muffled drum, fading minor ending, sorrowful but gentle', 60, 'A minor', 10, 2.8, 0.7]
+};
+for (const [k, [s, bpm, key, dur, target, fade]] of Object.entries(JINGLES)) T(`jingle-${k}`, s, { bpm, keyScale: key, dur, jingle: { target, fade } });
+
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [
     'brute, heavy stomping drums and low erhu', 'swift hunter, fast pipa runs and dizi', 'mystic, sheng pads and guqin with eerie xiao',
@@ -188,5 +202,6 @@ const isEpic = (track) => /^(combat|boss)-/.test(track.key);
 const EPIC_STYLE = GLOBAL_STYLE.replace('no cinematic orchestral bombast', 'big cinematic orchestral power').replace('compact arrangement with limited polyphony', 'rich layered arrangement, full ensemble');
 
 export function buildCaption(track, extra = '') {
+    if (track.jingle) return [track.style, JINGLE_STYLE, extra].filter(Boolean).join(', ');   // jingles : pas de brief de boucle ni de références de style
     return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
 }
