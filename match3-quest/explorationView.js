@@ -17,7 +17,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playFengmengDuelCinematic } from './cinematics.js';
+import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
@@ -25,7 +25,9 @@ import { loadSequence } from './ultimateCinematics.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
-import { icon } from './icons.js';
+import { icon, manaIcon } from './icons.js';
+import { enemyCatalogList } from './enemies.js';
+import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
@@ -97,6 +99,7 @@ const shade = (hex, amt) => {
  *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
+ *  onNewGamePlus()            Nouvelle Partie + lancée (remise à zéro de la carte du monde côté joueur)
  *  onOpenMap()                ouvre la carte du monde
  *  onOpenArena()              ouvre l'Arène des Mille Flèches (arena.js)
  *  onOpenMenu()               ouvre le menu (inventaire, sorts, stats)
@@ -449,7 +452,7 @@ export function createExplorationView(cfg) {
         return new Set(events.filter(e => e.quest).map(e => e.quest.id));
     }
 
-    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression ──────
+    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression, bestiaire ──────
     const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
     const carnet = { tab: 'quests', filter: 'all', region: 'all', travelRegion: null };
     const STATUS_LABEL = { available: `${icon('talk')} À démarrer`, active: `${icon('target')} En cours`, ready: `${icon('check')} À rendre`, done: `${icon('flag')} Terminée` };
@@ -525,15 +528,39 @@ export function createExplorationView(cfg) {
             </div>`).join('')}</div>`;
     }
 
+    // Bestiaire : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
+    function bestiaryPanel() {
+        const { entries, known, total } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);
+        const head = `<p class="carnet-hint">${icon('book')} ${known}/${total} créatures connues. Combattez ou observez une créature (immobile près d'elle) pour l'inscrire.</p>`;
+        if (entries.length === 0) return `${head}<p>Aucune créature dans le bestiaire pour l'instant.</p>`;
+        const element = (color, label) => color ? `${manaIcon(color)} ${escapeHtml(label || color)}` : '?';
+        return `${head}<div class="carnet-bestiary">${entries.map(e => {
+            const img = gbaSprite(e.id, 'front');
+            return `
+            <div class="carnet-beast">
+                <div class="carnet-beast-head">
+                    ${img ? `<img class="carnet-beast-sprite" alt="" loading="lazy" src="${img}">` : `<span class="carnet-beast-sprite">${icon('ghost')}</span>`}
+                    <div><b>${escapeHtml(e.name)}</b>${e.title ? ` <small>· ${escapeHtml(e.title)}</small>` : ''}<div class="carnet-beast-race">${escapeHtml(e.race)}</div></div>
+                </div>
+                <div class="carnet-beast-stats">
+                    <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${escapeHtml(e.traits.join(', '))}` : ''}</span>
+                    <span>${icon('target')} Faiblesse : ${element(e.weakColor, e.weakElement)}</span>
+                </div>
+                <p class="carnet-beast-lore">${icon('scroll')} ${escapeHtml(e.lore)}</p>
+                <div class="carnet-beast-source ${e.source}">${icon('book')} ${escapeHtml(SOURCE_LABELS[e.source] || e.source)}</div>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
     function renderCarnet() {
         if (!journalEl) return;
-        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : questsPanel();
+        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : carnet.tab === 'bestiary' ? bestiaryPanel() : questsPanel();
         const tab = (key, label) => `<button type="button" class="carnet-tab${carnet.tab === key ? ' on' : ''}" data-tab="${key}">${label}</button>`;
         journalEl.innerHTML = `
             <div class="explore-journal-card">
                 <h3>${icon('scroll')} ${escapeHtml(STORY_TITLE)}</h3>
                 ${session.data.ended ? `<p class="explore-journal-end">${icon('moon')} La légende est achevée !</p>` : ''}
-                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}</div>
+                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}${tab('bestiary', `${icon('book')} Bestiaire`)}</div>
                 ${body}
                 ${session.data.ended ? `<button type="button" class="primary explore-journal-ngplus">${icon('moon')} Nouvelle Partie +</button>` : ''}
                 <button type="button" class="primary explore-journal-close">Fermer</button>
@@ -637,8 +664,8 @@ export function createExplorationView(cfg) {
     // Nouvelle Partie + : l'histoire repart de zéro (niveau, équipement et arène sont conservés ; l'arène est ouverte dès le début),
     // les adversaires sont plus coriaces. Confirmation demandée, puis export de la sauvegarde, puis départ.
     function confirmNewGamePlus() {
-        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart des Rizières Desséchées : '
-            + 'quêtes, soleils et coffres sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
+        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nVotre sauvegarde sera d\'abord exportée dans un fichier. L\'histoire repart du prologue, aux Rizières Desséchées : '
+            + 'quêtes, soleils, coffres, pierres de voyage et compagnons sont remis à zéro, mais votre niveau et votre équipement sont conservés, et l\'arène est ouverte dès le début. Les ennemis seront plus puissants.');
         if (ok) launchNewGamePlus();
     }
 
@@ -655,9 +682,16 @@ export function createExplorationView(cfg) {
         vis.enemies = {};
         syncVisual(true);
         refreshHud();
+        cfg.onNewGamePlus?.();
         cfg.onRegionVisited?.(X.currentScreen(session).region);
         cfg.onSave();
-        toast(`Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
+        // L'histoire repart comme une nouvelle partie : prologue animé, puis duel d'ouverture contre Fengmeng.
+        playPrologueAnimation().then(() => {
+            X.markIntroSeen(session);
+            cfg.onSave();
+            toast(`Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
+            return prepareRegion(X.currentScreen(session).region);
+        }).then(() => startEncounter('fengmeng_1'));
     }
 
     function escapeHtml(str) {
@@ -714,6 +748,7 @@ export function createExplorationView(cfg) {
         const enc = X.encounterFor(session, enemyId, cfg.getPlayerLevel());
         if (!enc) return;
         if (opts.tutorial) enc.tutorial = true;
+        X.recordBestiary(session, enc.templateId);   // la créature entre au bestiaire du carnet
         session.rt.pendingEnemyId = enemyId;
         if (enc.prep?.lines?.length) toast(enc.prep.lines.join(' '), 4500);
         held = null;

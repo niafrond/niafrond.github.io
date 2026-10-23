@@ -1866,6 +1866,17 @@ progress.enemy-bar::-webkit-progress-value {
 .carnet-progress-row { margin-bottom: 10px; padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c9a3; background: #fffdf5; font-size: 0.85em; }
 .carnet-bar { display: inline-block; width: 90px; height: 8px; border-radius: 4px; border: 1px solid #5a3e1b; background: #eadfc0; vertical-align: middle; overflow: hidden; }
 .carnet-bar i { display: block; height: 100%; background: #d68910; }
+.carnet-bestiary { display: flex; flex-direction: column; gap: 8px; }
+.carnet-beast { padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c9a3; background: #fffdf5; font-size: 0.85em; }
+.carnet-beast-head { display: flex; align-items: center; gap: 8px; }
+.carnet-beast-head small { opacity: 0.75; }
+.carnet-beast-sprite { width: 40px; height: 40px; flex: 0 0 40px; image-rendering: pixelated; object-fit: contain; display: inline-flex; align-items: center; justify-content: center; }
+.carnet-beast-race { font-size: 0.85em; opacity: 0.7; }
+.carnet-beast-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 4px 0; }
+.carnet-beast-lore { margin: 4px 0 0; font-style: italic; line-height: 1.35; }
+.carnet-beast-source { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 6px; font-size: 0.8em; border: 1px solid #5a3e1b; background: #eadfc0; }
+.carnet-beast-source.classique { background: #f3d58a; }
+.carnet-beast-source.adaptation { background: #e3e3e3; opacity: 0.85; }
 
 /* Carte du monde (style overworld) — rendu par worldMapView.js */
 .worldmap-modal-content {

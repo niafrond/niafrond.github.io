@@ -219,6 +219,7 @@ function defaultData() {
         waypoints: [],
         tracked: null,
         questItems: [],
+        bestiary: [],            // gabarits d'ennemis croisés en combat ou observés (onglet Bestiaire du carnet, conservé en NG+)
         arena: normalizeArenaData(null)
     };
 }
@@ -237,6 +238,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
     data.questItems = Array.isArray(data.questItems) ? data.questItems.filter(i => i && typeof i.id === 'string') : [];
+    data.bestiary = Array.isArray(data.bestiary) ? [...new Set(data.bestiary.filter(id => typeof id === 'string' && id))] : [];
     data.observed = data.observed && typeof data.observed === 'object' && !Array.isArray(data.observed) ? data.observed : {};
 
     // Anciennes sauvegardes : un coffre d'objet de quête ouvert sans l'objet (ni quête terminée) est refermé pour pouvoir le fouiller.
@@ -723,6 +725,7 @@ function observeStep(session, dtMs) {
     if (!id) return null;
     session.data.observed[id] = true;
     const def = session.rt.enemyIndex[id].def;
+    recordBestiary(session, def.templateId);
     return { type: 'observed', enemyId: id, name: def.name, templateId: def.templateId };
 }
 
@@ -1038,8 +1041,9 @@ export function markEnemyDefeated(session, enemyId) {
     return events;
 }
 
-// Nouvelle Partie + : possible une fois l'épilogue joué. Remet l'histoire à zéro (quêtes, ennemis, coffres,
-// écrans visités), replace le héros au point de départ, garde `introSeen` ; `ngPlus` augmente la difficulté.
+// Nouvelle Partie + : possible une fois l'épilogue joué. Remet toute l'histoire à zéro (quêtes, ennemis, coffres,
+// écrans visités, pierres de voyage, compagnons, cinématiques vues, prologue) et replace le héros au point de départ ;
+// l'arène et le bestiaire observé sont conservés, `ngPlus` augmente la difficulté.
 export function startNewGamePlus(session) {
     const data = session.data;
     if (!data.ended) return false;
@@ -1051,6 +1055,10 @@ export function startNewGamePlus(session) {
     data.visitedScreens = [];
     data.talked = [];
     data.banterSeen = [];
+    data.waypoints = [];
+    data.activeCompanion = null;
+    data.seenCinematics = {};
+    data.introSeen = false;
     data.tracked = null;
     data.ended = false;
     const start = session.screens[START_SCREEN];
@@ -1538,6 +1546,13 @@ export function regionProgress(session) {
             stonesTotal: stones.length
         };
     });
+}
+
+// Bestiaire : une créature (gabarit) y entre dès qu'on la combat ou qu'on l'observe. Renvoie true si elle est nouvelle.
+export function recordBestiary(session, templateId) {
+    if (typeof templateId !== 'string' || !templateId || session.data.bestiary.includes(templateId)) return false;
+    session.data.bestiary.push(templateId);
+    return true;
 }
 
 export function needsIntro(session) {

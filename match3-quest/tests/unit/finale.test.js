@@ -107,6 +107,28 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
         expect(isArenaUnlocked(s.data.visitedScreens, s.data.ngPlus)).toBe(true);
     });
 
+    test('la Nouvelle Partie + remet toutes les quêtes à zéro et relance l\'histoire depuis le prologue', () => {
+        const s = createSession({});
+        s.data.quests = { q_sun_1: 'done', q_sun_2: 'active' };
+        s.data.defeated = ['fengmeng_1'];
+        s.data.waypoints = ['some_village'];
+        s.data.activeCompanion = 'someone';
+        s.data.seenCinematics = { fengmeng_2: true };
+        s.data.introSeen = true;
+        s.data.tracked = 'q_sun_2';
+        s.data.ended = true;
+        expect(startNewGamePlus(s)).toBe(true);
+        expect(s.data.quests).toEqual({});
+        expect(s.data.defeated).toEqual([]);
+        expect(s.data.activeCompanion).toBe(null);
+        expect(s.data.seenCinematics).toEqual({});
+        expect(s.data.introSeen).toBe(false);
+        expect(s.data.tracked).toBe(null);
+        expect(s.data.waypoints.includes('some_village')).toBe(false);
+        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        expect(view).toMatch(/playPrologueAnimation\(\)\.then[\s\S]*startEncounter\('fengmeng_1'\)/);
+    });
+
     test('la Nouvelle Partie + passe par l\'export de la sauvegarde, après le générique', () => {
         const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
         expect(view).toMatch(/await playEndingAnimation\(\);\s*await playCredits\(\);/);

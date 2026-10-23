@@ -164,7 +164,7 @@ export default {
             { id: 'fauves_w_ogre', at: 'l', templateId: 'shanxiao', name: 'Ogre de la plaine', kind: 'sentinel', offset: 0 },
             { id: 'fauves_hyena_a', at: 'm', templateId: 'loup_braise', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
             { id: 'fauves_hyena_b', at: 'n', templateId: 'loup_braise', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
-            { id: 'fauves_ember_bull', at: 'o', templateId: 'sanglier_flammes', name: 'Taureau de braise', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'fauves_ember_bull', at: 'o', templateId: 'taureau_braise', name: 'Taureau de braise', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fauves_wild_boar_patrol', x: 21, y: 18, templateId: 'sanglier_flammes', name: 'Sanglier des vagues d\'herbe', kind: 'patrol', offset: 0, patrol: [[21, 18], [27, 18]] },
             { id: 'fauves_wild_jackal_patrol', at: 'p', templateId: 'loup_braise', name: 'Chacal de braise', kind: 'patrol', offset: -1, patrol: ['p', 'q'] },
             { id: 'fauves_wild_den_guard', at: 'r', templateId: 'tigre_embrase', name: 'Tigreau de la tanière', kind: 'sentinel', offset: 0 }

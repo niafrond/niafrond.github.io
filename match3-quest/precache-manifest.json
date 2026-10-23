@@ -5,6 +5,7 @@
   "actionGuard.js",
   "arena.js",
   "attributes.js",
+  "bestiary.js",
   "board.js",
   "bossTips.js",
   "cheatMode.js",
@@ -1331,6 +1332,16 @@
    "h": "3415ec89e4"
   },
   {
+   "p": "audio/music/boss-capitaine-noye-des-limons-b.mp3",
+   "s": 464481,
+   "h": "27d5b407c9"
+  },
+  {
+   "p": "audio/music/boss-capitaine-noye-des-limons.mp3",
+   "s": 464481,
+   "h": "baa9c73135"
+  },
+  {
    "p": "audio/music/boss-chef-de-dune-bras-de-sable-b.mp3",
    "s": 464481,
    "h": "84b9c3ea0e"
@@ -1481,16 +1492,6 @@
    "h": "c93936dfe4"
   },
   {
-   "p": "audio/music/boss-hebo-seigneur-du-fleuve-noye-b.mp3",
-   "s": 464481,
-   "h": "27d5b407c9"
-  },
-  {
-   "p": "audio/music/boss-hebo-seigneur-du-fleuve-noye.mp3",
-   "s": 464481,
-   "h": "baa9c73135"
-  },
-  {
    "p": "audio/music/boss-immortel-dechu-des-branches-b.mp3",
    "s": 464481,
    "h": "665e10e57b"
@@ -1509,6 +1510,16 @@
    "p": "audio/music/boss-immortel-yun-zhong-celui-des-nuees.mp3",
    "s": 464481,
    "h": "a317ab87bd"
+  },
+  {
+   "p": "audio/music/boss-jiangshi-du-cassia-lunaire-b.mp3",
+   "s": 464481,
+   "h": "0f2eac4773"
+  },
+  {
+   "p": "audio/music/boss-jiangshi-du-cassia-lunaire.mp3",
+   "s": 464481,
+   "h": "b53bad268f"
   },
   {
    "p": "audio/music/boss-lion-cendre-gardien-du-sutra-b.mp3",
@@ -1721,24 +1732,14 @@
    "h": "cf84b9d5ff"
   },
   {
-   "p": "audio/music/boss-tortue-des-boues-gardienne-du-terrier-b.mp3",
+   "p": "audio/music/boss-vieux-saule-des-boues-gardien-du-terrier-b.mp3",
    "s": 464481,
    "h": "09f202cf17"
   },
   {
-   "p": "audio/music/boss-tortue-des-boues-gardienne-du-terrier.mp3",
+   "p": "audio/music/boss-vieux-saule-des-boues-gardien-du-terrier.mp3",
    "s": 464481,
    "h": "115a1fa1cd"
-  },
-  {
-   "p": "audio/music/boss-wu-gang-spectre-du-cassia-lunaire-b.mp3",
-   "s": 464481,
-   "h": "0f2eac4773"
-  },
-  {
-   "p": "audio/music/boss-wu-gang-spectre-du-cassia-lunaire.mp3",
-   "s": 464481,
-   "h": "b53bad268f"
   },
   {
    "p": "audio/music/combat-0-b.mp3",

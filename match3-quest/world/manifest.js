@@ -161,15 +161,15 @@ export const MANIFEST = {
     ],
     enemies: [
       { id: 'bambous_seal_keeper', name: 'Gardien des cendres', templateHint: 'suanni', role: 'gate' },
-      { id: 'bambous_ember_wisp', name: 'Lingzhi des braises', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' },
-      { id: 'bambous_ember_wisp_b', name: 'Lingzhi des braises', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' }
+      { id: 'bambous_ember_wisp', name: 'Lingzhi des cendres', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' },
+      { id: 'bambous_ember_wisp_b', name: 'Lingzhi des cendres', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' }
     ],
     quests: [
       { id: 'sq_flute_1', title: 'La flûte fêlée', giver: 'flutist_chuan', turnIn: 'flutist_chuan', chain: null,
         summary: 'La flûte de Chuan s\'est fendue dans l\'incendie. Une tige creuse intacte, scellée quelque part sur le sentier, pourrait la remplacer.',
         objectives: [{ type: 'chest', target: 'hollow_stem' }] },
       { id: 'sq_flute_2', title: 'Le chant du bambou', giver: 'flutist_chuan', turnIn: 'flutist_chuan', chain: 'sq_flute_1',
-        summary: 'La flûte réparée n\'obéit toujours pas : des lingzhi des braises étouffent le souffle du sentier. Chassez-les pour que l\'air chante à nouveau.',
+        summary: 'La flûte réparée n\'obéit toujours pas : des lingzhi des cendres étouffent le souffle du sentier. Chassez-les pour que l\'air chante à nouveau.',
         objectives: [{ type: 'killGroup', target: 'ember_lingzhi' }] },
       { id: 'sq_sentier_sceaux', title: 'Les sceaux du sentier', giver: 'monk_zhen', turnIn: 'monk_zhen', chain: null,
         summary: 'Le moine Zhen ne peut renouveler les sceaux tant qu\'un gardien de cendres rôde sur le sentier. Abattez-le sans insulter les bambous.',
@@ -334,7 +334,7 @@ export const MANIFEST = {
     ],
     enemies: [
       { id: 'volcan_forge_giant', name: 'Forgeron de lave', templateHint: 'pixiu', role: 'gate' },
-      { id: 'volcan_ember_imp', name: 'Démon des cendres', templateHint: 'huli_jing', role: 'quest' }
+      { id: 'volcan_ember_imp', name: 'Démon des fumées', templateHint: 'huli_jing', role: 'quest' }
     ],
     quests: [
       { id: 'sq_pont_braise', title: 'Le pont de braise', giver: 'miner_shan', turnIn: 'miner_shan', chain: null,

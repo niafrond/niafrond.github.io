@@ -166,7 +166,7 @@ export default {
             { id: 'lune_w_frostdragon', at: 'p', templateId: 'canglong', name: 'Long de givre', kind: 'sentinel', offset: 0 },
             { id: 'lune_shade_a', at: 'n', templateId: 'assassin_masque', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
             { id: 'lune_shade_b', at: 'o', templateId: 'assassin_masque', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
-            { id: 'lune_w_owl', at: 's', templateId: 'assassin_masque', name: 'Hibou d’ombre', kind: 'patrol', patrol: ['s', [37, 7]], offset: 0 },
+            { id: 'lune_w_owl', at: 's', templateId: 'assassin_masque', name: 'Guetteur d’ombre', kind: 'patrol', patrol: ['s', [37, 7]], offset: 0 },
             { id: 'lune_w_wisp', at: 't', templateId: 'dame_des_neiges', name: 'Esprit de rosée', kind: 'patrol', patrol: ['t', [13, 10]], offset: 0 },
             { id: 'lune_w_crystal', at: 'u', templateId: 'immortel_jade', name: 'Veilleur de cristal', kind: 'sentinel', offset: 0 }
         ],

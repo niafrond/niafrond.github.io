@@ -375,7 +375,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Duel d'entraînement : Fengmeng garde la digue, seul passage vers l'est (corridor de 3 tuiles de large).
-            { id: 'fengmeng_1', templateId: 'assassin_masque', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
+            { id: 'fengmeng_1', templateId: 'fengmeng_1', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
               permanent: true, boss: { name: 'Fengmeng, le Disciple', level: 4 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_1'),
@@ -390,7 +390,7 @@ const BASE_SCREENS = {
             { id: 'rizieres_guardian', templateId: 'shu_jing', name: 'Esprit des digues', kind: 'patrol', x: 8, y: 9, patrol: [[8, 9], [12, 9]], offset: 0 },
             // Chapardeur nommé (quête secondaire), côté est de la digue.
             { id: 'rice_thief', templateId: 'huli_jing', name: 'Le démon chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
-            { id: 'sun_1', templateId: 'huli_jing', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
+            { id: 'sun_1', templateId: 'sun_1', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
               permanent: true, boss: { name: 'Soleil Ardent', level: 6 },
               afterScenes: MIRROR_TALKS.sun_1 }
         ],
@@ -475,13 +475,13 @@ const BASE_SCREENS = {
             // Vieux serpent nommé (quête secondaire de Gu), coin nord-est.
             { id: 'river_serpent', templateId: 'jiaolong', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             // Carpe dorée nommée (quête secondaire de Gu : elle devient la compagne Yu), nord-ouest du lit.
-            { id: 'golden_carp', templateId: 'jiaolong', name: 'Carpe dorée du gué', kind: 'sentinel', x: 3, y: 2, offset: 0, permanent: true },
+            { id: 'golden_carp', templateId: 'carpe_doree', name: 'Carpe dorée du gué', kind: 'sentinel', x: 3, y: 2, offset: 0, permanent: true },
             { id: 'fleuve_doctor', templateId: 'wen_shen', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fleuve_lich', templateId: 'gui_esprit', name: 'Taoïste-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable, sauf pourparlers (parley_sun2 : ils s'écartent, `hideWhen`).
-            { id: 'sun2_wardens_a', templateId: 'gui_guerrier', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
-            { id: 'sun2_wardens_b', templateId: 'soldat_terre_cuite', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
-            { id: 'sun_2', templateId: 'soldat_terre_cuite', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
+            { id: 'sun2_wardens_a', templateId: 'noye_garde', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
+            { id: 'sun2_wardens_b', templateId: 'noye_garde', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
+            { id: 'sun_2', templateId: 'sun_2', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'sun2_wardens', unsealedBy: ['parley_sun2'], weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 19 },
               afterScenes: MIRROR_TALKS.sun_2,
               shieldLines: [
@@ -572,9 +572,9 @@ const BASE_SCREENS = {
             // Esprit-arbre nommé (quête secondaire de Xu), coin sud-ouest.
             { id: 'old_pine', templateId: 'shu_jing', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_3 est intouchable, sauf pourparlers (parley_sun3 : ils s'écartent, `hideWhen`).
-            { id: 'sun3_wardens_a', templateId: 'suanni', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
-            { id: 'sun3_wardens_b', templateId: 'assassin_masque', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
-            { id: 'sun_3', templateId: 'lingzhi_maudit', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
+            { id: 'sun3_wardens_a', templateId: 'esprit_cloche', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
+            { id: 'sun3_wardens_b', templateId: 'esprit_cloche', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
+            { id: 'sun_3', templateId: 'sun_3', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
               permanent: true, shieldedBy: 'sun3_wardens', unsealedBy: ['parley_sun3'], weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 24 },
               afterScenes: MIRROR_TALKS.sun_3,
               shieldLines: [
@@ -641,70 +641,70 @@ const BASE_SCREENS = {
         enemies: [
             { id: 'gobi_colossus', templateId: 'hundun', name: 'Colosse de sable', kind: 'sentinel', x: 6, y: 1, offset: 0 },
             // Mirages du Soleil des Mirages : même sprite que `sun_4`, ombre et niveau identiques ; ils changent de place quand on les dissipe.
-            { id: 'mirage_1', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 1,
+            { id: 'mirage_1', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 1,
               permanent: true, illusion: true,
               illusionLines: [
                   "Votre main traverse le soleil comme une fumée : un mirage, qui se dissipe en poussière de lumière.",
                   "Ce n'était pas lui. Le vrai soleil, lui, pèse sur le sable."
               ] },
-            { id: 'mirage_2', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 12, y: 1,
+            { id: 'mirage_2', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 12, y: 1,
               permanent: true, illusion: true,
               illusionLines: [
                   "Le disque ardent vacille, se déchire comme un voile de soie : encore un mirage.",
                   "Cherchez celui qui projette une ombre."
               ] },
-            { id: 'mirage_3', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 8,
+            { id: 'mirage_3', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 8,
               permanent: true, illusion: true,
               illusionLines: [
                   "L'image se plie en deux et s'évanouit, laissant une odeur de sable chaud.",
                   "Le désert se moque de vous, mais ses mensonges se font de plus en plus rares."
               ] },
-            { id: 'mirage_4', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 3,
+            { id: 'mirage_4', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 3,
               permanent: true, illusion: true,
               illusionLines: [
                   "Le soleil se plisse comme une page de sable et s'éparpille : un mirage de plus.",
                   "Ce n'était qu'un reflet. Le vrai pèse quelque part au sud-est."
               ] },
-            { id: 'mirage_5', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 4, y: 5,
+            { id: 'mirage_5', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 4, y: 5,
               permanent: true, illusion: true,
               illusionLines: [
                   "Votre flèche le traverse sans bruit : l'image tremble, puis s'efface dans la chaleur.",
                   "Trop brillant pour être vrai."
               ] },
-            { id: 'mirage_6', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 6,
+            { id: 'mirage_6', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 6,
               permanent: true, illusion: true,
               illusionLines: [
                   "Le disque se dérobe devant vous, léger comme une vapeur : encore un mirage.",
                   "Cherchez celui qui projette une ombre."
               ] },
-            { id: 'mirage_7', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 5, y: 8,
+            { id: 'mirage_7', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 5, y: 8,
               permanent: true, illusion: true,
               illusionLines: [
                   "Un souffle de sable et il n'y a plus rien : ce soleil-là n'avait pas de poids.",
                   "Le désert vous fait marcher en rond."
               ] },
-            { id: 'mirage_8', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 4,
+            { id: 'mirage_8', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 4,
               permanent: true, illusion: true,
               illusionLines: [
                   "Le mirage s'étire, se déchire et s'envole en poussière dorée.",
                   "Ce n'était pas lui."
               ] },
-            { id: 'mirage_9', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 2, y: 6,
+            { id: 'mirage_9', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 2, y: 6,
               permanent: true, illusion: true,
               illusionLines: [
                   "La silhouette ardente se dissout comme du sucre dans le thé.",
                   "Plus que quelques mensonges avant la vérité."
               ] },
-            { id: 'mirage_10', spriteKey: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 10, y: 9,
+            { id: 'mirage_10', spriteKey: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 10, y: 9,
               permanent: true, illusion: true,
               illusionLines: [
                   "L'illusion se fendille et retombe en pluie de grains brillants.",
                   "Le vrai soleil est tout près… et il ne bouge pas."
               ] },
             // Brigands nommés (quête secondaire de Ma), sud-ouest.
-            { id: 'bandit_a', templateId: 'soldat_terre_cuite', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
+            { id: 'bandit_a', templateId: 'brigand_sables', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'bandit_b', templateId: 'assassin_masque', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
-            { id: 'sun_4', templateId: 'lettre_sorcier', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
+            { id: 'sun_4', templateId: 'sun_4', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
               permanent: true, noDoorGuard: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 14 },
               afterScenes: MIRROR_TALKS.sun_4 }
         ],
@@ -764,7 +764,7 @@ const BASE_SCREENS = {
             { id: 'parley_sun5', x: 11, y: 9, name: 'Rongrong', title: 'Petite voix du tonnerre', showWhen: 'sq_lei_drum', hideWhen: ['sun5_wardens_a', 'sun5_wardens_b'],
               parley: { lines: [
                   "Boum ! Ne tire pas, archer. Je suis Rongrong, la petite voix du tonnerre. Le vieux Lei m'a rendu mon tambour, alors je viens dire merci.",
-                  "Les foudre-gardes du col sont mes grands frères. Le soleil leur donne des éclairs à manger : ils tiennent sa cage et n'écoutent plus personne.",
+                  "Le foudre-garde du col est mon grand frère, et le lion de pierre son vieux compagnon. Le soleil les nourrit d'éclairs : ils tiennent sa cage et n'écoutent plus personne.",
                   "Ils croient défendre la montagne. La cage ne retient qu'un soleil qui a peur d'être éteint.",
                   "Je leur dis de la lâcher. Passe, archer. Mais ne tarde pas : un orage retenu finit toujours par éclater."
               ] },
@@ -788,13 +788,13 @@ const BASE_SCREENS = {
             // Dragon-serpent nommé (quête secondaire de Tie), coin nord-est.
             { id: 'thunder_wyrm', templateId: 'yinglong', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_5 est intouchable, sauf pourparlers (parley_sun5 : ils s'écartent, `hideWhen`).
-            { id: 'sun5_wardens_a', templateId: 'lei_gong', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
-            { id: 'sun5_wardens_b', templateId: 'suanni', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
-            { id: 'sun_5', templateId: 'lei_gong', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
+            { id: 'sun5_wardens_a', templateId: 'foudre_garde', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
+            { id: 'sun5_wardens_b', templateId: 'suanni', name: 'Lion de pierre du col', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
+            { id: 'sun_5', templateId: 'sun_5', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 30 },
               afterScenes: MIRROR_TALKS.sun_5,
               shieldLines: [
-                  "Une cage d'éclairs ceint le Soleil des Orages : deux gardes de foudre la tiennent tendue, d'un pylône à l'autre.",
+                  "Une cage d'éclairs ceint le Soleil des Orages : un foudre-garde et un lion de pierre la tiennent tendue, d'un pylône à l'autre.",
                   "Aucune flèche ne traverse la cage tant que ses deux gardiens sont debout ; elle crépite à vous en faire dresser les cheveux.",
                   "Abattez les gardes, et la cage tombera. (Le dragon-serpent et le tambour de Lei, une fois réglés, affaibliront le soleil.)",
                   "Les gardes ne bougent qu'en mesure, comme au son d'un tambour lointain. Si le tonnerre retrouvait sa voix, ils l'écouteraient peut-être."
@@ -877,7 +877,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Embuscade : Fengmeng tient le défilé (corridor de 3 tuiles), seul passage vers l'est.
-            { id: 'fengmeng_2', templateId: 'assassin_masque', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
+            { id: 'fengmeng_2', templateId: 'fengmeng_2', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
               permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 8 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
@@ -896,9 +896,9 @@ const BASE_SCREENS = {
             // Louveteau de braise nommé (quête secondaire de Shan : il devient le compagnon Braise).
             { id: 'ember_pup', templateId: 'loup_braise', name: 'Louveteau de braise', kind: 'sentinel', x: 2, y: 7, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_6 est intouchable, sauf pourparlers (parley_sun6 : ils s'écartent, `hideWhen`).
-            { id: 'sun6_wardens_a', templateId: 'pixiu', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
-            { id: 'sun6_wardens_b', templateId: 'soldat_terre_cuite', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
-            { id: 'sun_6', templateId: 'pixiu', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
+            { id: 'sun6_wardens_a', templateId: 'forgeron_magma', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
+            { id: 'sun6_wardens_b', templateId: 'forgeron_magma', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
+            { id: 'sun_6', templateId: 'sun_6', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'sun6_wardens', unsealedBy: ['parley_sun6'], weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 9 },
               afterScenes: MIRROR_TALKS.sun_6,
               shieldLines: [
@@ -971,7 +971,7 @@ const BASE_SCREENS = {
             { id: 'pack_boar', templateId: 'sanglier_flammes', name: 'Sanglier de flammes', kind: 'sentinel', x: 9, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'pack_tiger', templateId: 'tigre_embrase', name: 'Tigre embrasé', kind: 'sentinel', x: 13, y: 8, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'pack_wolf_b', templateId: 'loup_braise', name: 'Loup de braise', kind: 'sentinel', x: 11, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
-            { id: 'sun_7', templateId: 'shanxiao', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
+            { id: 'sun_7', templateId: 'sun_7', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'beast_pack', weakenedBy: ['sq_scarred_tiger', 'sq_zi_bell'], boss: { name: 'Soleil des Bêtes Folles', level: 35 },
               afterScenes: MIRROR_TALKS.sun_7,
               shieldLines: [
@@ -1062,9 +1062,9 @@ const BASE_SCREENS = {
             { id: 'net_cutter_b', templateId: 'jiaolong', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'mer_doctor', templateId: 'wen_shen', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_8 est intouchable, sauf pourparlers (parley_sun8 : ils s'écartent, `hideWhen`).
-            { id: 'sun8_wardens_a', templateId: 'jiaolong', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 2, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
-            { id: 'sun8_wardens_b', templateId: 'wen_shen', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
-            { id: 'sun_8', templateId: 'jiaolong', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
+            { id: 'sun8_wardens_a', templateId: 'garde_maree', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 2, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
+            { id: 'sun8_wardens_b', templateId: 'garde_maree', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
+            { id: 'sun_8', templateId: 'sun_8', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'sun8_wardens', unsealedBy: ['parley_sun8'], weakenedBy: ['sq_nets', 'sq_pearl'], boss: { name: 'Soleil des Marées', level: 40 },
               afterScenes: MIRROR_TALKS.sun_8,
               shieldLines: [
@@ -1159,9 +1159,9 @@ const BASE_SCREENS = {
             { id: 'fusang_dragon', templateId: 'canglong', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             { id: 'fusang_vampire', templateId: 'jiangshi', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_9 est intouchable, sauf pourparlers (parley_sun9 : ils s'écartent, `hideWhen`).
-            { id: 'sun9_wardens_a', templateId: 'lettre_sorcier', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 2, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
-            { id: 'sun9_wardens_b', templateId: 'lei_gong', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 2, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
-            { id: 'sun_9', templateId: 'chilong', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
+            { id: 'sun9_wardens_a', templateId: 'grue_lige', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 2, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
+            { id: 'sun9_wardens_b', templateId: 'grue_lige', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 2, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
+            { id: 'sun_9', templateId: 'sun_9', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
               permanent: true, shieldedBy: 'sun9_wardens', unsealedBy: ['parley_sun9'], weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 45 },
               afterScenes: MIRROR_TALKS.sun_9,
               shieldLines: [
@@ -1228,7 +1228,7 @@ const BASE_SCREENS = {
             { id: 'lune_assassin', templateId: 'assassin_masque', name: 'Ombre du pic', kind: 'sentinel', x: 1, y: 9, offset: 0 },
             // Finale en deux phases. La phase 2 n'existe qu'après la défaite de la phase 1.
             // Phase 1 : il copie les techniques du héros, qui arrive affaibli par les neuf soleils (duel.js).
-            { id: 'fengmeng_3a', templateId: 'assassin_masque', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
+            { id: 'fengmeng_3a', templateId: 'fengmeng_3a', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
               permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 45 },
               // Il surgit quand le héros parle à Chang'e (l'appât), puis la phase 2 s'enchaîne sans retour sur la carte.
               showWhen: 'change_moon', chain: 'fengmeng_3b',
@@ -1243,7 +1243,7 @@ const BASE_SCREENS = {
                       "Fengmeng hurle. Ce qu'il voulait vient de lui échapper à jamais ; il ne reste que la fureur. Il saisit un nouvel arc et un carquois plein, et ses yeux ne sont plus ceux d'un disciple."
                   ]
               } },
-            { id: 'fengmeng_3b', templateId: 'lei_gong', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
+            { id: 'fengmeng_3b', templateId: 'fengmeng_3b', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
               permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 48 },
               // Les PV du héros ne remontent pas entre les deux phases ; une défaite ici recommence tout le duel.
               carryHp: true, chainedFrom: 'fengmeng_3a',
@@ -1311,6 +1311,7 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
+            "Le plus jeune des dix est moins un brasier qu'un vent brûlant qui court sur les rizières. Une flamme plus franche que la sienne le ferait vaciller.",
             "Les maraudeurs des rizières sont de bons adversaires pour s'échauffer, et ils reviennent toujours. Les monstres se voient de loin : un cercle rouge marque leur zone de vigilance."
         ],
         complete: [
@@ -1404,7 +1405,7 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil de Cendres est au nord-est de la forêt, au-delà des bambous noircis. Évitez les cercles rouges : les esprits y sont nerveux.",
-            "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
+            "Si le feu vous fait peur, souvenez-vous : ce soleil n'est plus que ce que le feu laisse derrière lui. La cendre, c'est déjà de la terre.",
             "Trois chemins mènent au soleil. Risque : éteignez les deux esprits de la cloche, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : rapportez la cloche à Zhen, et son âme parlera aux esprits. Ils se rendorment dans le bronze, sans combat.",
             "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil.",
@@ -1430,8 +1431,8 @@ const BASE_QUESTS = [
         hint: [
             "Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.",
             "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
-            "Trois chemins mènent au soleil. Risque : abattez les deux gardes de foudre, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera à ses frères de lâcher la cage, sans combat.",
+            "Trois chemins mènent au soleil. Risque : abattez les deux gardes du col, au prix d'un combat, pour leur expérience et un soleil entier.",
+            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera aux gardes de lâcher la cage, sans combat.",
             "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent."
         ],

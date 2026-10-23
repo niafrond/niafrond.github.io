@@ -179,6 +179,8 @@ function init() {
                 player.worldMap.visitedZoneIds.push(regionId);
             }
         },
+        // Nouvelle Partie + : la carte du monde se redécouvre avec l'histoire.
+        onNewGamePlus: () => { player.worldMap = { currentZoneId: null, visitedZoneIds: [] }; },
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
         onExportSave: () => {

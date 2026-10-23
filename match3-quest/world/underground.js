@@ -43,7 +43,7 @@ export const UNDERGROUND = [
         entrance: 'Entrée de la Grotte des Limons',
         arrival: ['Sous la berge, une bouche de boue séchée s\'enfonce dans la terre. L\'air y sent la vase et le temps arrêté.', 'Sans lumière, vous n\'y verrez presque rien. Une torche aiderait.'],
         chests: [['fleuve_cave_urne', 'Urne des limons', 'Au fond d\'une niche, une urne scellée de vase durcie : des pièces de cuivre, grises comme le fleuve.', 3], ['fleuve_cave_bac', 'Bac du passeur noyé', 'Un coffre de passeur, rongé par l\'humidité, a gardé sa cargaison : de l\'or que personne n\'est venu réclamer.', 2]],
-        enemies: [['fleuve_cave_gardien', '1', 'gui_guerrier', 'Hebo, Seigneur du Fleuve Noyé', 'sentinel', 1, null, true], ['fleuve_cave_ombre', '2', 'assassin_masque', 'Ombre de la grotte', 'sentinel', 0], ['fleuve_cave_serpent', '5', 'jiaolong', 'Serpent des galeries', 'patrol', 0, ['5', '6']]]
+        enemies: [['fleuve_cave_gardien', '1', 'gui_guerrier', 'Capitaine Noyé des Limons', 'sentinel', 1, null, true], ['fleuve_cave_ombre', '2', 'assassin_masque', 'Ombre de la grotte', 'sentinel', 0], ['fleuve_cave_serpent', '5', 'jiaolong', 'Serpent des galeries', 'patrol', 0, ['5', '6']]]
     },
     {
         id: 'bambous_crypt', parent: 'bambous_wild', region: 'bambous', level: 17, layout: 'crypt', name: 'Crypte des Moines Cendrés',
@@ -71,14 +71,14 @@ export const UNDERGROUND = [
         entrance: 'Escalier de la Crypte du Lièvre',
         arrival: ['Sous la poussière d\'argent, un escalier descend vers une crypte où dorment les premiers pilons de jade.', 'Aucune lune n\'éclaire ces marches : il vous faudra une torche.'],
         chests: [['lune_crypt_reliquaire', 'Reliquaire de jade', 'Un reliquaire de jade blanc, froid comme la lune : des perles d\'argent y dorment depuis l\'aube des temps.', 3], ['lune_crypt_pilon', 'Pilon d\'argent', 'Un pilon et son mortier, oubliés dans une alcôve, avec une bourse de pièces d\'argent lunaire.', 2]],
-        enemies: [['lune_crypt_vampire', '1', 'jiangshi', 'Wu Gang, Spectre du Cassia Lunaire', 'sentinel', 1, null, true], ['lune_crypt_sorciere', '2', 'dame_des_neiges', 'Gardienne de givre', 'sentinel', 0], ['lune_crypt_ombre', '5', 'assassin_masque', 'Ombre de jade', 'patrol', 0, ['5', '6']]]
+        enemies: [['lune_crypt_vampire', '1', 'jiangshi', 'Jiangshi du Cassia Lunaire', 'sentinel', 1, null, true], ['lune_crypt_sorciere', '2', 'dame_des_neiges', 'Gardienne de givre', 'sentinel', 0], ['lune_crypt_ombre', '5', 'assassin_masque', 'Ombre de jade', 'patrol', 0, ['5', '6']]]
     },
     {
         id: 'rizieres_cave', parent: 'rizieres_wild', region: 'rizieres', level: 2, layout: 'cave', name: 'Terrier de la Digue',
         entrance: 'Trou du Terrier de la Digue',
         arrival: ['Sous la digue fendue, un trou noir s\'enfonce dans la boue durcie. Des galeries de rats d\'eau, creusées par des générations de sécheresse.', 'Sans lumière, vous n\'y verrez presque rien. Une torche aiderait.'],
         chests: [['rizieres_cave_jarre', 'Jarre du paysan enfui', 'Une jarre de grès, cachée là par un paysan qui n\'est jamais revenu : quelques pièces et un peu de riz sec.', 3],['rizieres_cave_nid', 'Nid du rat d\'eau', 'Un nid de paille tressée où un rat d\'eau collectionnait les pièces perdues.', 2]],
-        enemies: [['rizieres_cave_gardien', '1', 'shu_jing', 'Tortue des Boues, Gardienne du Terrier', 'sentinel', 1, null, true],['rizieres_cave_ombre', '2', 'assassin_masque', 'Ombre du terrier', 'sentinel', 0, null],['rizieres_cave_diablotin', '5', 'huli_jing', 'Petit démon des galeries', 'patrol', 0, ['5', '6']]]
+        enemies: [['rizieres_cave_gardien', '1', 'shu_jing', 'Vieux Saule des Boues, Gardien du Terrier', 'sentinel', 1, null, true],['rizieres_cave_ombre', '2', 'assassin_masque', 'Ombre du terrier', 'sentinel', 0, null],['rizieres_cave_diablotin', '5', 'huli_jing', 'Petit démon des galeries', 'patrol', 0, ['5', '6']]]
     },
     {
         id: 'tonnerre_cave', parent: 'tonnerre_wild', region: 'tonnerre', level: 22, layout: 'cave', name: 'Galeries du Tonnerre Sourd',

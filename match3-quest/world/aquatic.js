@@ -98,7 +98,7 @@ export function buildAquaticWorld(screens) {
     const isle = buildAquaticZone(ISLE_ID, ISLE_GRID, {
         npcs: [{ id: 'yu_spirit', at: '1' }],
         chests: [chest('mer_isle_tresor', '2', 4)],
-        enemies: [{ id: 'mer_ile_dragon_guardian', at: '3', templateId: 'canglong', name: 'Tortue-Dragon endormie', kind: 'sentinel', offset: 2, permanent: true }],
+        enemies: [{ id: 'mer_ile_dragon_guardian', at: '3', templateId: 'tortue_dragon', name: 'Tortue-Dragon endormie', kind: 'sentinel', offset: 2, permanent: true }],
         exits: [{ at: '<', to: ARCHIPEL_ID, label: 'Mer des Mille Îlots' }]
     });
     // Le passage de l'Anse vers la mer : fermé tant que le Pas de Yu n'est pas appris.

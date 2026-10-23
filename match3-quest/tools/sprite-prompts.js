@@ -83,7 +83,7 @@ export const SPRITE_MANIFEST = {
       desc: 'Lei Gong, Chinese thunder god, blue-skinned bird-beaked general in blue armor, small wings, holding a mallet and chisel, crackling lightning around the hands, imposing silhouette',
     },
     assassin_masque: {
-      desc: 'shadow ninja, slender figure wrapped in dark charcoal silk, wisps of black smoke curling around the body, holding a gleaming shuriken, blank white mask face, crouching coiled ready-to-strike posture',
+      desc: 'ancient Chinese assassin (cike), slender figure in a dark charcoal hanfu with bound sleeves and a hair topknot, wisps of black smoke curling around the body, holding a short jian dagger and steel throwing darts (biao), blank white mask face, crouching coiled ready-to-strike posture',
     },
     lettre_sorcier: {
       desc: 'undead mage scholar, rotting tattered dark purple ceremonial robe, three glowing arcane tomes floating around the figure, cracked round spectacles, bony withered hands, hollow sunken eye sockets with green glow',

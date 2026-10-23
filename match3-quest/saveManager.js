@@ -235,6 +235,7 @@ function sanitizePlayer(player) {
             introSeen: ex.introSeen,
             ended: ex.ended,
             ngPlus: ex.ngPlus,
+            bestiary: ex.bestiary,
             arena: arena && compact({
                 cleared: arena.cleared,
                 best: arena.best,

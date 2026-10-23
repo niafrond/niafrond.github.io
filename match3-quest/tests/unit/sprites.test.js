@@ -3,7 +3,7 @@ import { SCREENS } from '../../story.js';
 import { playerClasses } from '../../classes.js';
 import {
     HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri, pixelate,
-    loadAllSprites
+    loadAllSprites, spriteSourceOf, TEMPLATE_SPRITE_COPIES
 } from '../../sprites/index.js';
 import { GBA_SPRITES } from '../../sprites/generated.js';
 
@@ -58,7 +58,9 @@ describe('couverture des sprites', () => {
 
     test('chaque gabarit du catalogue a un dessin', () => {
         // dessin SVG (paquets cn/) ou sprite Pixel Lab de face (les créatures du bestiaire n'ont que celui-ci)
-        catalog.forEach(t => expect(ENEMY_SPRITES[t.id] || GBA_SPRITES[t.id]?.front).toBeTruthy());
+        // une copie d'ennemi nommé (copyOf) sans dessin propre emprunte celui de son gabarit d'origine
+        catalog.forEach(t => expect(ENEMY_SPRITES[spriteSourceOf(t.id)] || GBA_SPRITES[spriteSourceOf(t.id)]?.front).toBeTruthy());
+        Object.entries(TEMPLATE_SPRITE_COPIES).forEach(([id, from]) => expect(catalog.find(t => t.id === id)?.copyOf).toBe(from));
     });
 
     test('les neuf soleils, les quatre Fengmeng et les trois bêtes ont chacun leur dessin', () => {
