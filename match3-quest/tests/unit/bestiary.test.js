@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { BESTIARY_LORE, bestiaryEntries, bestiaryEntry, weakColorOf, strongColorOf } from '../../bestiary.js';
+import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, weakColorOf, strongColorOf } from '../../bestiary.js';
 import { weaknessOf } from '../../elements.js';
 import { createSession, recordBestiary, startNewGamePlus } from '../../exploration.js';
 
@@ -11,6 +11,9 @@ describe('Bestiaire du carnet', () => {
         expect(ids.filter(id => !BESTIARY_LORE[id])).toEqual([]);
         expect(Object.keys(BESTIARY_LORE).filter(id => !ids.includes(id))).toEqual([]);
         Object.values(BESTIARY_LORE).forEach(text => expect(text.length).toBeGreaterThan(40));
+        // provenance : texte classique, folklore ou adaptation du jeu, pour chaque créature
+        expect(ids.filter(id => !SOURCE_LABELS[BESTIARY_SOURCE[id]])).toEqual([]);
+        expect(Object.keys(BESTIARY_SOURCE).filter(id => !ids.includes(id))).toEqual([]);
     });
 
     test('la faiblesse affichée est celle du combat, la force est la résistance la plus haute', () => {
