@@ -1,3 +1,9 @@
+## [2.122.0](https://github.com/niafrond/niafrond.github.io/compare/v2.121.0...v2.122.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** ouvrir les coffres de quête sans la quête et agrandir les icônes de direction des sorts ([#536](https://github.com/niafrond/niafrond.github.io/issues/536)) ([c6bdd4d](https://github.com/niafrond/niafrond.github.io/commit/c6bdd4d60964920ac0fc5e1089e685a6c2120087))
+
 ## [2.121.0](https://github.com/niafrond/niafrond.github.io/compare/v2.120.1...v2.121.0) (2026-10-23)
 
 ### Features
