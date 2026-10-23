@@ -1,3 +1,10 @@
+## [2.122.1](https://github.com/niafrond/niafrond.github.io/compare/v2.122.0...v2.122.1) (2026-10-23)
+
+### Performance Improvements
+
+* **match3-quest:** charger les sprites GBA avec leur région au lieu de tout generated.js au démarrage ([b384f9e](https://github.com/niafrond/niafrond.github.io/commit/b384f9ecf39ec3c79f0df42c362c8d58cd409d4b))
+* **match3-quest:** placer les quêtes de légende sans reparcourir la carte pour chaque case ([7d496a6](https://github.com/niafrond/niafrond.github.io/commit/7d496a6cf5a6f32501db83721c0a63e08e0acc83))
+
 ## [2.122.0](https://github.com/niafrond/niafrond.github.io/compare/v2.121.0...v2.122.0) (2026-10-23)
 
 ### Features
