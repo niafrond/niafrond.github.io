@@ -9,7 +9,7 @@
  */
 
 export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat'];
-export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'fusang', 'moon'];
+export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'tides', 'fusang', 'moon'];
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;
 export const MUSIC_DIR = 'audio/music/';
@@ -43,7 +43,7 @@ export function combatStyleIndex(variant) {
 export function trackCandidates(sceneId, { biome, boss, variant } = {}) {
     if (!SCENE_IDS.includes(sceneId)) return [];
     if (sceneId === 'village' || sceneId === 'wild') return [`${sceneId}-${BIOMES.includes(biome) ? biome : 'paddy'}`];
-    if (sceneId === 'combat') return [`combat-${combatStyleIndex(variant ?? 0)}`];
+    if (sceneId === 'combat') return [...(biome === 'tides' ? ['combat-tides'] : []), `combat-${combatStyleIndex(variant ?? 0)}`];   // Hautes-Eaux : « Tourbillon des Eaux »
     if (sceneId === 'boss') {
         const name = boss ?? variant;
         return name ? [`boss-${bossSlug(name)}`, `boss-a${bossArchetypeIndex(name)}`] : ['boss-a0'];

@@ -8,7 +8,7 @@ import { exitsOf, crossExit } from './fixtures/gates.js';
 
 const WORLD_LEVEL = 30;
 const screens = Object.values(SCREENS).filter(s => !s.arena);
-const ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+const ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'marees', 'lune'];
 
 // Guard contre les dépendances circulaires
 const guard = new WeakMap();
@@ -63,6 +63,8 @@ function nextExit(s, from, to) {
 
 // Traverse à un écran en remplissant les conditions
 function travel(s, target) {
+    // Les Hautes-Eaux (world/PLAN-MAREES.md) se traversent à pied sur l'eau : il faut le Pas de Yu (le joueur l'a appris à Hekou).
+    if (['marees', 'lune'].includes(SCREENS[target]?.region)) s.data.quests.sq_pas_de_yu = 'done';
     for (let hops = 0; hops < 200 && s.data.screenId !== target; hops++) {
         const exit = nextExit(s, s.data.screenId, target);
         if (isExitLocked(s, exit)) {
@@ -174,7 +176,7 @@ describe('integration: full game playthrough', () => {
 
         // Play all main quests
         const mainQuests = QUESTS.filter(q => !q.side);
-        expect(mainQuests).toHaveLength(11);
+        expect(mainQuests).toHaveLength(12);
         mainQuests.forEach(q => playQuest(s, q.id));
 
         // Game should be complete

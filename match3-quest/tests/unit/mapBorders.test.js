@@ -3,7 +3,9 @@
 import './fixtures/playerForge.js';   // installe le stub XHR avant le chargement de story.js
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
-import { isTerrainBlocked } from '../../exploration.js';
+import { isTerrainBlocked as terrainBlocked } from '../../exploration.js';
+// Hautes-Eaux (world/PLAN-MAREES.md) : toute l'eau se franchit avec le Pas de Yu, comme dans un écran aquatique.
+const isTerrainBlocked = (s, x, y, swim) => terrainBlocked(s, x, y, swim ?? (s.aquatic || s.region === 'marees'));
 import { overlapOf, offsetOf, DIRS } from '../../mapConnections.js';
 import { openRim } from '../../world/barriers.js';
 import { routeCells } from '../../world/expand.js';
@@ -26,7 +28,7 @@ function reach(s, from) {
         const p = q.shift();
         for (const [dx, dy] of STEPS) {
             const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-            if (seen.has(k) || isTerrainBlocked(s, nx, ny, s.aquatic) || solid.has(k)) continue;
+            if (seen.has(k) || isTerrainBlocked(s, nx, ny) || solid.has(k)) continue;
             seen.add(k); q.push({ x: nx, y: ny });
         }
     }

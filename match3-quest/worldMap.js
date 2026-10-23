@@ -87,6 +87,15 @@ export const worldZones = [
         description: "Le sommet de l'arbre où les soleils reposent : le Soleil Lâche s'y cache derrière le dernier soleil."
     },
     {
+        id: 'marees',
+        map: { x: 250, y: 125 },
+        name: 'Hautes-Eaux de la Lune Montante',
+        shortName: 'Hautes-Eaux',
+        decor: 'wave',
+        unlockLevel: 38,
+        description: "La Grande Marée a noyé les basses terres : seuls de petits pontons émergent. Sans le Pas de Yu, nul ne passe."
+    },
+    {
         id: 'lune',
         map: { x: 335, y: 85 },
         name: 'Pic de la Lune',

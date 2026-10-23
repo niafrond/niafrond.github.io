@@ -4231,5 +4231,180 @@
       "dropChance": 0.75,
       "weaponChance": 0.3
     }
+  },
+  {
+    "id": "shuimu_denglong",
+    "name": "Méduse-lanterne",
+    "race": "Méduse",
+    "title": "Lanterne des Eaux Noires",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.3,
+      "atkMult": 1.3,
+      "defMult": 1.1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "yellow",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.05,
+      "blue": 0.3,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.55,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "baoyu_jian",
+    "name": "Poisson-épée de tempête",
+    "race": "Poisson",
+    "title": "Lame des Orages",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.7,
+      "defMult": 1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "red",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.08,
+      "blue": 0.3,
+      "green": 0.08,
+      "yellow": 0.12,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.5,
+      "dropChance": 0.55,
+      "weaponChance": 0.15
+    }
+  },
+  {
+    "id": "lu_ci_gui",
+    "name": "Cormoran-fantôme",
+    "race": "Esprit",
+    "title": "Noyé des Pontons",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.3,
+      "atkMult": 1.4,
+      "defMult": 1.1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "blue",
+        "purple"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.08,
+      "blue": 0.2,
+      "green": 0.08,
+      "yellow": 0.08,
+      "purple": 0.25
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.55,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "hai_ma_xing",
+    "name": "Hippocampe-lancier",
+    "race": "Poisson",
+    "title": "Cavalier d'Écume",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.4,
+      "defMult": 1.3
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.08,
+      "blue": 0.3,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.8,
+      "dropChance": 0.6,
+      "weaponChance": 0.3
+    }
+  },
+  {
+    "id": "changxi",
+    "name": "Changxi",
+    "race": "Divinité",
+    "title": "Mère des douze lunes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 3,
+      "atkMult": 1.2,
+      "defMult": 1.4
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "purple",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "red": 0.1,
+      "blue": 0.3,
+      "green": 0.1,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 3,
+      "dropChance": 0.9,
+      "weaponChance": 0.5
+    }
   }
 ]

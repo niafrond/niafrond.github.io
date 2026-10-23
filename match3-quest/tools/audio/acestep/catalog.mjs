@@ -68,6 +68,7 @@ const BIOMES = {
     volcano:  { place: 'volcano gorges and magma', village: `low ${I.pipa}, ${I.erhu}, ember glow`, wild: `slow low pulse, ${I.pipa} tremolo, heat haze`, bpm: 78, key: 'C minor' },
     savanna:  { place: 'golden dry plain of beasts', village: `${I.dizi}, lively hand drums, ${I.guzheng}`, wild: `${I.xiao}, restless drums, wind`, bpm: 88, key: 'C major' },
     coast:    { place: 'Eastern Sea shore', village: `${I.guzheng} like gentle waves, ${I.dizi}`, wild: `${I.guzheng} arpeggios, ${I.xiao}, sea wind`, bpm: 72, key: 'F major' },
+    tides:    { place: 'moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts', village: `${I.guzheng} glissandi like gentle waves, ${I.xiao}, soft bronze chimes, lantern glow`, wild: `slow ${I.guzheng} wave glissandi, ${I.xiao} open melody, discreet ${I.erhu}, deep sea pulse, three rising notes and one falling`, bpm: 70, key: 'E minor' },
     fusang:   { place: 'golden summit of the mythical Fusang tree', village: `${I.sheng}, ${I.dizi}, golden bells`, wild: `${I.sheng}, shimmering ${I.guzheng}, celestial awe`, bpm: 66, key: 'D major' },
     moon:     { place: 'silver Moon Peak at night', village: `crystalline plucked strings, ${I.xiao}, hushed`, wild: `very sparse crystalline notes, ${I.guqin}, silence`, bpm: 56, key: 'A minor' }
 };
@@ -162,6 +163,14 @@ const CELESTIAL = {
     'qinglong-le-dragon-d-azur': ['Qinglong the Azure Dragon of the East, storm winds, sweeping sheng and dizi, thunderous drums, majestic and furious', 124, 'D minor']
 };
 for (const [k, [s, bpm, key]] of Object.entries(CELESTIAL)) T(`boss-${k}`, `legendary celestial guardian boss battle, ${s}, ${BOSS_MOOD}, ${I.pipa}, ${BOSS_PERC}, readable heroic melody`, { bpm, keyScale: key, dur: 60 });
+
+/* ───────────── Combats des Hautes-Eaux : « Tourbillon des Eaux » (biome `tides`, musicTracks.js `combat-tides`) ───────────── */
+T('combat-tides', `epic battle theme, ${EPIC}, whirlpool sea battle at night, rolling 6/8 swell feel, fast pipa tremolo, descending guzheng arpeggios, big tangu drum and gongs, erhu cries, suona answering phrases, bass wave ostinato, readable memorable melody, short loop`,
+    { bpm: 132, keyScale: 'D minor' });
+
+/* ───────────── Boss : Changxi, mère des douze lunes (Hautes-Eaux, world/PLAN-MAREES.md §6) : épreuve de bravoure, plus solennelle que menaçante ───────────── */
+T('boss-changxi-mere-des-douze-lunes', `epic cinematic trial boss battle, Changxi mother of twelve moons testing the hero's courage on a moonlit sea altar, slow ceremonial gongs, xiao flute, muted wordless choir, deep guqin pulse, ${I.pipa}, ${BOSS_PERC}, solemn and majestic rather than cruel, tidal swells, tension then release, readable heroic melody`,
+    { bpm: 92, keyScale: 'E minor', dur: 60 });
 
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [

@@ -9,6 +9,7 @@ import volcan from './volcan.js';
 import fauves from './fauves.js';
 import mer from './mer.js';
 import fusang from './fusang.js';
+import marees from './marees.js';
 import lune from './lune.js';
 import rizieresX from './extra/rizieres.js';
 import fleuveX from './extra/fleuve.js';
@@ -32,5 +33,6 @@ export const TEXTS = {
   fauves: mergeTexts(fauves, fauvesX),
   mer: mergeTexts(mer, merX),
   fusang: mergeTexts(fusang, fusangX),
+  marees: mergeTexts(marees),
   lune: mergeTexts(lune, luneX)
 };

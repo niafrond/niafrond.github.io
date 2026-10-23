@@ -343,6 +343,22 @@
   "boss-qinglong-le-dragon-d-azur": {
    "seconds": 118,
    "sections": 1
+  },
+  "boss-changxi-mere-des-douze-lunes": {
+   "seconds": 118,
+   "sections": 1
+  },
+  "village-tides": {
+   "seconds": 118,
+   "sections": 1
+  },
+  "wild-tides": {
+   "seconds": 118,
+   "sections": 1
+  },
+  "combat-tides": {
+   "seconds": 118,
+   "sections": 1
   }
  },
  "sfx": {

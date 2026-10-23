@@ -14,21 +14,21 @@ import { exitsOf, crossExit } from './fixtures/gates.js';
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
 // Les tests de structure historiques portent sur les 10 sanctuaires (14x10) ; le Grand Monde a ses tests dans world.test.js.
-const ORDER_IDS = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
+const ORDER_IDS = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'marees', 'lune'];
 // Le monde de la légende (l'Arène des Mille Flèches, hors chaîne des régions, a ses propres tests : arena.test.js).
 const screens = Object.values(SCREENS).filter(s => !s.arena);
 const sanctuaries = ORDER_IDS.map(id => SCREENS[id]);
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // Ordre linéaire du monde : chaque écran est relié au précédent (ouest) et au suivant (est).
-const ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
+const ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'marees', 'lune'];
 // Soleil de chaque région, dans l'ordre de progression (du plus chaud au plus verdoyant) ; les ids de soleils ne suivent plus l'ordre.
-const SUN_ID = ['sun_1', 'sun_6', 'sun_4', 'sun_2', 'sun_3', 'sun_5', 'sun_7', 'sun_8', 'sun_9'];
+const SUN_ID = ['sun_1', 'sun_6', 'sun_4', 'sun_2', 'sun_3', 'sun_5', 'sun_7', 'sun_8', 'sun_9', 'changxi'];   // les Hautes-Eaux n'ont pas de soleil : l'épreuve de Changxi garde la porte vers la Lune
 // Écrans où Fengmeng barre un défilé de 3 tuiles (duel obligatoire) : pas de chemin hors vigilance.
 const FORCED = ['rizieres', 'volcan'];
 const BIOME_OF = {
     rizieres: 'paddy', fleuve: 'riverbed', bambous: 'bamboo', gobi: 'gobi', tonnerre: 'storm',
-    volcan: 'volcano', fauves: 'savanna', mer: 'coast', fusang: 'fusang', lune: 'moon'
+    volcan: 'volcano', fauves: 'savanna', mer: 'coast', fusang: 'fusang', marees: 'tides', lune: 'moon'
 };
 const SUN_LEVELS = [6, 9, 14, 19, 24, 30, 35, 40, 45];
 
@@ -59,7 +59,7 @@ function reachable(screen, from, forbidden = new Set()) {
         const { x, y } = queue.shift();
         for (const [dx, dy] of DIRS) {
             const nx = x + dx, ny = y + dy, key = `${nx},${ny}`;
-            if (seen.has(key) || isTerrainBlocked(screen, nx, ny) || forbidden.has(key)) continue;
+            if (seen.has(key) || isTerrainBlocked(screen, nx, ny, screen.region === 'marees' && screen.id !== 'marees') || forbidden.has(key)) continue;   // Hautes-Eaux : Pas de Yu acquis (sauf à l'autel : le couloir de Changxi est fermé par des rochers)
             seen.add(key);
             queue.push({ x: nx, y: ny });
         }
@@ -205,6 +205,8 @@ function nextExit(s, from, to) {
 // Traverse le monde jusqu'à l'écran voulu, en remplissant les conditions des sorties verrouillées.
 // Retourne { transitions, events } (résultats de tryMove des franchissements, événements de quêtes/combats).
 function travel(s, target) {
+    // Les Hautes-Eaux (world/PLAN-MAREES.md) se traversent à pied sur l'eau : il faut le Pas de Yu (le joueur l'a appris à Hekou).
+    if (['marees', 'lune'].includes(SCREENS[target]?.region)) s.data.quests.sq_pas_de_yu = 'done';
     const transitions = [];
     const events = [];
     for (let hops = 0; hops < 200 && s.data.screenId !== target; hops++) {
@@ -350,7 +352,7 @@ describe('cartes (story.js)', () => {
     });
 
     test('le monde est une chaîne : sanctuaire précédent → route d\'accès → village → zone sauvage → sanctuaire, sorties symétriques', () => {
-        expect(Object.keys(SCREENS).slice(0, 10)).toEqual(['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune']);   // les sanctuaires gardent leur ordre d'origine
+        expect(Object.keys(SCREENS).slice(0, 10)).toEqual(['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'marees']);   // les sanctuaires gardent leur ordre d'origine
         expect(START_SCREEN).toBe('rizieres_village');
         ORDER.forEach((id, i) => {
             const sanctuary = SCREENS[id];
@@ -491,7 +493,7 @@ describe('cartes (story.js)', () => {
     test('chaque région a un village pour écran d\'entrée et le niveau requis prévu', () => {
         expect(REGION_ENTRY_SCREEN).toEqual(Object.fromEntries(ORDER.map(id => [id, `${id}_village`])));
         expect(REGION_UNLOCK_LEVEL).toEqual({
-            rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40
+            rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40
         });
         Object.entries(REGION_ENTRY_SCREEN).forEach(([region, id]) => { expect(SCREENS[id].region).toBe(region); expect(SCREENS[id].kind).toBe('village'); });
         screens.forEach(s => expect(REGION_UNLOCK_LEVEL[s.region]).toBeDefined());
@@ -535,7 +537,7 @@ describe('cartes (story.js)', () => {
             // sans le corps du boss de porte, la sortie est atteignable (ses piliers ne ferment que sa rangée)
             const open = new Set(bodies);
             doorGuards.forEach(e => open.delete(`${e.x},${e.y}`));
-            expect(reachable(s, s.spawn, open).has(`${east.x},${east.y}`)).toBe(true);
+            expect([id, reachable(s, s.spawn, open).has(`${east.x},${east.y}`)]).toEqual([id, true]);
             // avec le boss en place, impossible de passer derrière lui
             doorGuards.forEach(g => exitsOf(s, SCREENS).filter(e => e.requires === g.id).forEach(door => {
                 expect([id, door.x, door.y, reachable(s, s.spawn, bodies).has(`${door.x},${door.y}`)]).toEqual([id, door.x, door.y, false]);
@@ -546,7 +548,7 @@ describe('cartes (story.js)', () => {
     test('les PNJ vivent au village et dans les maisons, les sanctuaires abritent les soleils-boss', () => {
         // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil et Chang'e à la Lune
         // (+ les PNJ de pourparlers `parley_sunN` du chemin relationnel)
-        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
+        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon', 'changxi_calm']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
         ORDER.forEach(id => {
             const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
             expect(villagers.length).toBeGreaterThan(0);
@@ -659,12 +661,12 @@ describe('quêtes (story.js)', () => {
 
     test('l\'histoire principale : 9 soleils, Fengmeng, épilogue ; la dernière quête est la seule finale', () => {
         const main = QUESTS.filter(q => !q.side);
-        expect(main.map(q => q.id)).toEqual([...SUN_ID.map(id => `q_${id}`), 'q_fengmeng', 'q_epilogue']);
+        expect(main.map(q => q.id)).toEqual([...SUN_ID.map(id => `q_${id}`), 'q_fengmeng', 'q_epilogue']);   // q_changxi : l'épreuve des Hautes-Eaux, sans soleil
         SUN_ID.forEach((sun, i) => {
             expect(quest(`q_${sun}`).objectives).toEqual([expect.objectContaining({ type: 'kill', target: sun })]);
             if (i > 0) expect(quest(`q_${sun}`).requires).toEqual([`q_${SUN_ID[i - 1]}`]);
         });
-        expect(quest('q_fengmeng').requires).toEqual(['q_sun_9']);
+        expect(quest('q_fengmeng').requires).toEqual(['q_changxi']);
         expect(quest('q_fengmeng').objectives[0]).toMatchObject({ type: 'kill', target: 'fengmeng_3b' });
         expect(quest('q_epilogue').requires).toEqual(['q_fengmeng']);
         expect(quest('q_epilogue').objectives[0]).toMatchObject({ type: 'chest', target: 'moon_altar' });
@@ -1102,7 +1104,7 @@ describe('histoire complète', () => {
         expect(events[events.length - 1].quest.id).toBe('q_sun_6');
 
         const golds = [80];
-        for (let n = 2; n <= 9; n++) {
+        for (let n = 2; n <= 10; n++) {
             travel(s, ORDER[n - 1]);   // village, zone sauvage (gate rempli au passage) puis sanctuaire de la région
             expect(s.data.screenId).toBe(ORDER[n - 1]);
             if (n === 2) {
@@ -1117,7 +1119,7 @@ describe('histoire complète', () => {
             golds.push(events[0].gold);
             const started = events.find(e => e.type === 'questStarted');
             expect(events.indexOf(started)).toBe(events.length - 1);   // après l'interlude avec Chang'e
-            expect(started.quest.id).toBe(n < 9 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
+            expect(started.quest.id).toBe(n < 10 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);
 
@@ -1195,7 +1197,8 @@ describe('quêtes secondaires', () => {
     // quêtes annexes qui ferment une sortie (gate de zone sauvage) : elles font partie du chemin de l'histoire
     const gateQuests = new Set([
         ...ORDER.map(id => exitsOf(SCREENS[`${id}_wild`], SCREENS).find(e => e.to === id).requires),
-        ...JUNCTIONS.filter(j => j.type === 'item').map(j => j.quest.id)   // jonctions gardées : objet à rapporter à un garde
+        ...JUNCTIONS.filter(j => j.type === 'item').map(j => j.quest.id),   // jonctions gardées : objet à rapporter à un garde
+        'sq_pas_de_yu'   // les Hautes-Eaux ne se traversent qu'avec le Pas de Yu (exit.requires de marees_road)
     ].filter(r => QUESTS.some(q => q.id === r)));
 
     test('au moins 2 quêtes secondaires par région, récompenses raisonnables, jamais requises par l\'histoire', () => {
@@ -1811,7 +1814,7 @@ describe('sorties verrouillées (exit.requires)', () => {
 
     test('toutes les sorties est se rouvrent dans l\'ordre de l\'histoire', () => {
         const s = createSession({});
-        ORDER.slice(0, 9).forEach((id, i) => {
+        ORDER.slice(0, 10).forEach((id, i) => {
             const east = gateOf(id, `${ORDER[i + 1]}_road`);
             expect(isExitLocked(s, east)).toBe(true);
             markEnemyDefeated(s, SUN_ID[i]);

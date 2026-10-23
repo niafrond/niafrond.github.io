@@ -73,6 +73,7 @@ const BIOMES = {
     volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: BIOME_DECOR.volcano },
     savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: BIOME_DECOR.savanna },
     coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: BIOME_DECOR.coast },
+    tides: { a: '#8a6a44', b: '#7d5f3c', path: '#b88b52', cliff: '#2c2018', liquid: '#123a52', sky: ['#08142a', '#1d3d63'], decor: BIOME_DECOR.tides },
     fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: BIOME_DECOR.fusang },
     house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: BIOME_DECOR.house },
     cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: BIOME_DECOR.cave },
@@ -784,7 +785,10 @@ export function createExplorationView(cfg) {
                         processEvents(talk.events, spoken);
                         if (talk.npc.merchant) openMerchant(talk.npc);
                         if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
-                    });
+                    }, talk.warp ? [
+                        { label: talk.warp.label || 'Partir', run: () => { const r = X.warpNpc(session, talk.npc.id); if (r) { held = null; walk = null; handleResult(r); } } },
+                        { label: talk.warp.stay || 'Rester ici', run: () => {} }
+                    ] : undefined);
                 break;
             }
             case 'chest': {
@@ -1059,6 +1063,8 @@ export function createExplorationView(cfg) {
 
     // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
     // Retourne la fonction qui peint les lignes [y0, y1[ du sol : le calque peut ainsi être construit d'un coup ou par tranches (carte voisine).
+    // Hautes-Eaux : l'eau des zones de combat est une « haute herbe » marine (algues), celle du village (sans rencontre) reste calme.
+    const tileBiomeId = screen => (screen.biome === 'tides' && !X.grassOf(screen) ? 'tides_calm' : screen.biome);
     function groundPainter(g, screen, biome, tile, ox, oy) {
         const inMap = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h;
         const grids = gridsOf(screen);
@@ -1074,7 +1080,7 @@ export function createExplorationView(cfg) {
         return (y0, y1) => {
             for (let y = y0; y < y1; y++) {
                 for (let x = 0; x < screen.w; x++) {
-                    paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome, isTall });
+                    paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: tileBiomeId(screen), isTall });
                 }
             }
         };
@@ -1435,7 +1441,7 @@ export function createExplorationView(cfg) {
             const c = P(it.x + 0.5, it.y + 0.5);
             switch (it.kind) {
                 case 'building': {
-                    drawBuilding(it.b, P(it.b.x, it.b.y), tile, labelSize);
+                    drawBuilding(it.b, P(it.b.x, it.b.y), tile, labelSize, screen.biome === 'tides');
                     // indicateur de quête : « ! » (quête à prendre) ou « ? » (à rendre / cible de la quête suivie) dans la maison
                     const hm = houseMk.find(h => h.exit.x === it.b.door.x && h.exit.y === it.b.door.y);
                     if (hm) {
@@ -1539,7 +1545,7 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * 1.02);
+                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi)
                     const marker = X.npcMarker(session, it.n.id);
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
@@ -1572,7 +1578,7 @@ export function createExplorationView(cfg) {
                     const big = boss || illusion;
                     const shielded = X.isShielded(session, def);
                     const lvl = X.levelFor(session, twin || def);
-                    const size = tile * (big ? 1.55 : 1.08);
+                    const size = tile * (def.span || (big ? 1.55 : 1.08));   // `span` : boss immense (Changxi, 6 cases)
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
@@ -1755,14 +1761,14 @@ export function createExplorationView(cfg) {
 
     const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
 
-    function drawBuilding(b, p, tile, labelSize) {
+    function drawBuilding(b, p, tile, labelSize, stilts = false) {
         const w = b.w * tile;
         const h = b.h * tile;
         const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
         const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
-        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}`, p.x, p.y, w, h,
+        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}${stilts ? ':stilts' : ''}`, p.x, p.y, w, h,
             [tile * 0.5, tile * 0.4, tile * 0.9, tile * 0.5],
-            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }));
+            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }, stilts));
         if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 

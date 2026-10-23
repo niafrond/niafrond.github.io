@@ -71,7 +71,7 @@ export function grassOf(screen) {
     const g = screen?.grass;
     if (!g || screen.safe || screen.interior || screen.arena || screen.kind === 'arena') return null;
     const cells = Array.isArray(g.cells) ? g.cells.filter(r => Array.isArray(r) && r.length >= 4) : [];
-    if (cells.length === 0) return null;
+    if (cells.length === 0 && !g.water) return null;   // `water` : table propre à la carte, déclenchée par l'eau (world/maps/marees.js)
     const rate = Number.isFinite(g.rate) ? Math.min(1, Math.max(0, g.rate)) : GRASS_RATE;
     const safeSteps = Number.isInteger(g.safeSteps) && g.safeSteps >= 0 ? g.safeSteps : GRASS_SAFE_STEPS;
     const table = (Array.isArray(g.table) ? g.table : [])
@@ -442,6 +442,14 @@ function arenaObjectiveText(session) {
     return left
         ? `${tier.name} : ${left} gardien${left > 1 ? 's' : ''} à battre avant le maître · « Sortir » pour quitter l'arène`
         : `Affrontez ${tier.master.name}, maître du ${tier.name} · « Sortir » pour quitter l'arène`;
+}
+
+// Emporte le héros là où le PNJ de passage `npcId` le mène (écran d'arrivée par défaut : son point d'apparition). Retourne une transition.
+export function warpNpc(session, npcId) {
+    const npc = visibleNpcs(session).find(n => n.id === npcId);
+    const target = npc?.warp && session.screens[npc.warp.to];
+    if (!target) return null;
+    return transitionTo(session, currentScreen(session), target.id, npc.warp.pos || target.spawn, 99, { warp: true });
 }
 
 export function teleportToScreen(session, screenId) {
@@ -1165,6 +1173,9 @@ export function talkToNpc(session, npcId) {
         const events = [completeQuest(session, ready.quest), ...checkAutoQuests(session)];
         return { type: 'dialog', npc, lines: ready.quest.complete, events };
     }
+
+    // PNJ de passage (`warp: { to, lines, label }`) : les lignes sont dites, puis le joueur choisit d'être emporté vers `warp.to` (voir `warpNpc`).
+    if (npc.warp) return { type: 'dialog', npc, lines: [...(npc.warp.lines?.length ? npc.warp.lines : npc.idle || ['...'])], events: [], warp: npc.warp };
 
     // Appât : lui parler attire l'ennemi (`bait.enemy`) ; les lignes sont dites, puis le combat démarre.
     if (npc.bait && !session.data.defeated.includes(npc.bait.enemy)) {

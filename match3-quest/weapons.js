@@ -16,7 +16,7 @@ export const WeaponRarity = {
 // Biomes de carte (champ `biome` des cartes/ennemis) → nom affiché.
 export const BIOME_LABELS = {
     bamboo: 'Bambous', volcano: 'Volcan', paddy: 'Rizières', riverbed: 'Fleuve', fusang: 'Fusang',
-    moon: 'Lune', coast: 'Côte', storm: 'Tonnerre', savanna: 'Fauves', gobi: 'Gobi'
+    moon: 'Lune', coast: 'Côte', tides: 'Hautes-Eaux', storm: 'Tonnerre', savanna: 'Fauves', gobi: 'Gobi'
 };
 
 // Certains arcs (champ `biome`) infligent +25 % de dégâts (au moins +2) quand le combat a lieu dans leur biome.

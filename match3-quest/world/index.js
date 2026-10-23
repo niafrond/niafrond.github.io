@@ -31,12 +31,12 @@ import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
 // Ordre de progression : du plus chaud et chaotique (les dix soleils sont allumés) au plus verdoyant (les soleils sont tombés).
-export const REGION_ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'];
+export const REGION_ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'marees', 'lune'];
 // Chaîne d'origine des écrans de story.js (chaque sanctuaire y mène à la région suivante de CET ordre) : sert à rebrancher les sorties.
 const BASE_CHAIN = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
 
 // Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
-export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
+export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
 const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (experience.js : getXPCostForLevel)
 
 // Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.

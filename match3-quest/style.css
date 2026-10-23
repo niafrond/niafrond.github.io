@@ -2752,6 +2752,9 @@ body.dark-mode .tutorial-card {
     animation: bt-dialog-in 0.25s steps(4, end);
 }
 .bt-dialog.hero { box-shadow: inset 0 0 0 3px #4fb36a, 0 5px 0 #1b1030; }
+.bt-dialog.narrator { box-shadow: inset 0 0 0 3px #7a6aa8, 0 5px 0 #1b1030; }
+.bt-dialog.narrator .bt-dialog-name { color: #5a4a8a; }
+.bt-dialog.narrator .bt-dialog-text { font-style: italic; }
 @keyframes bt-dialog-in { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 .bt-dialog-portrait {
     flex: 0 0 56px;

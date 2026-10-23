@@ -22,7 +22,7 @@ import { GBA_SPRITES } from './generated.js';
 // Sprite GBA pré-généré pour la clé donnée (direction : 'front'|'back'|'left'|'right').
 // Retourne null si aucun sprite généré n'existe pour cette clé.
 // Alias : plusieurs PNJ partagent un même sprite généré (sentinelles de la brume, Hua, Chang'e).
-const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad' };
+const GBA_ALIASES = { change_moon: 'change', crapaud_boue: 'rizieres_w_toad', changxi_calm: 'changxi', changxi_moon: 'changxi' };
 const GBA_ALIAS_PATTERNS = [[/^level_guard_/, 'level_guard'], [/^hua_/, 'hua']];
 // Gabarits « copies » d'ennemis nommés (champ `copyOf` de enemies.catalog.json) sans dessin propre : ils empruntent le dessin du
 // gabarit d'origine (SVG de repli ; côté GBA, un sprite généré propre au gabarit est prioritaire, voir gbaKey).

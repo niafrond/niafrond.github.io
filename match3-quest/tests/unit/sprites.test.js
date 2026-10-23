@@ -126,18 +126,22 @@ describe('tuiles du plateau (gâteaux de lune)', () => {
     });
 });
 
-describe('dessins pixellisés (PNG data URI, paquet legends)', () => {
-    test('les quatre Gardiens Célestes sont les seuls dessins de ce type', () => {
-        expect(bitmaps.map(([k]) => k)).toEqual(['ennemi legend_zhuque_boss', 'ennemi legend_xuanwu_boss', 'ennemi legend_baihu_boss', 'ennemi legend_qinglong_boss']);
+describe('dessins pixellisés (PNG data URI, paquets legends et marees)', () => {
+    const LEGENDS = ['ennemi legend_zhuque_boss', 'ennemi legend_xuanwu_boss', 'ennemi legend_baihu_boss', 'ennemi legend_qinglong_boss'];
+    // Hautes-Eaux (sprites/cn/marees.js, tools/gen-marees-sprites.mjs) : dessins 32×32 des ennemis aquatiques, Changxi en 64×64
+    const MAREES = ['shuimu_denglong', 'baoyu_jian', 'lu_ci_gui', 'hai_ma_xing', 'changxi', 'hai_gui', 'hai_she', 'ren_yu'].map(id => `ennemi ${id}`);
+    test('seuls les Gardiens Célestes et les ennemis des Hautes-Eaux sont dessinés ainsi', () => {
+        expect(bitmaps.map(([k]) => k)).toEqual([...LEGENDS, ...MAREES]);
     });
 
-    test.each(bitmaps)('%s : vrai PNG 64×64, léger, avec un sujet et un contour', (_name, uri) => {
+    test.each(bitmaps)('%s : vrai PNG carré, léger, avec un sujet et un contour', (name, uri) => {
         const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
         expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
-        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([64, 64]);
+        const side = LEGENDS.includes(name) || name === 'ennemi changxi' ? 64 : 32;
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([side, side]);
         expect(png.readUInt8(25)).toBe(6);                 // RGBA : fond transparent
         expect(uri.length).toBeLessThanOrEqual(12000);
-        expect(uri.length).toBeGreaterThan(1500);          // pas un simple carré
+        expect(uri.length).toBeGreaterThan(side === 64 ? 1500 : 800);   // pas un simple carré
     });
 });
 
