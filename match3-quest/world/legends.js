@@ -7,6 +7,39 @@
 
 import { occupancy, placeInLand } from './junctions.js';
 
+/**
+ * Comme placeInLand, mais refuse une case qui emmurerait une autre entité ou une sortie : tout doit rester atteignable à pied depuis
+ * l'apparition, les entités posées (hors gardiens de porte) comptant comme obstacles. Les cases candidates qui isoleraient quelque chose sont écartées (placeInLand, paramètre `accept`).
+ */
+function placeSafely(screen, screens, id) {
+    return placeInLand(screen, occupancy(screen, screens), id, pos => !isolatesSomething(screen, screens, pos));
+}
+
+function unreachedWith(screen, screens, pos) {
+    const occ = occupancy(screen, screens);
+    const entities = [...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => !e.guardsDoor)];
+    const targets = [...entities, ...screen.exits, ...(pos ? [pos] : [])];
+    const solid = new Set(targets.map(e => `${e.x},${e.y}`));
+    const seen = new Set([`${screen.spawn.x},${screen.spawn.y}`]);
+    const queue = [screen.spawn];
+    const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (let head = 0; head < queue.length; head++) {
+        const { x, y } = queue[head];
+        DIRS.forEach(([dx, dy]) => {
+            const nx = x + dx, ny = y + dy, k = `${nx},${ny}`;
+            if (!seen.has(k) && !occ.blocked(nx, ny) && !solid.has(k)) { seen.add(k); queue.push({ x: nx, y: ny }); }
+        });
+    }
+    return new Set(targets.filter(e => !DIRS.some(([dx, dy]) => seen.has(`${e.x + dx},${e.y + dy}`))).map(e => `${e.x},${e.y}`));
+}
+
+/** Vrai si poser une entité en `pos` rend inatteignable une case qui l'était (les isolements déjà présents sur la carte ne comptent pas). */
+function isolatesSomething(screen, screens, pos) {
+    const before = unreachedWith(screen, screens, null);
+    const after = unreachedWith(screen, screens, pos);
+    return after.has(`${pos.x},${pos.y}`) || [...after].some(k => !before.has(k));
+}
+
 export const LEGENDS = [
     { region: 'volcan', ultimate: 'ultimateVermilionBird', questId: 'sq_legend_zhuque', level: 10,
       giver: { id: 'ember_keeper_rong', name: 'Rong la Gardienne des Braises', title: 'Veilleuse du feu du Sud',
@@ -63,16 +96,16 @@ export function applyLegendQuests(screens, quests) {
         const village = screens[`${l.region}_village`];
         const wild = screens[`${l.region}_wild`];
         if (!village || !wild) return;
-        const npcPos = placeInLand(village, occupancy(village, screens), l.giver.id);
+        const npcPos = placeSafely(village, screens, l.giver.id);
         if (!npcPos) throw new Error(`légende ${l.questId} : pas de place pour ${l.giver.id}`);
         village.npcs.push({
             id: l.giver.id, name: l.giver.name, title: l.giver.title, idle: l.giver.idle, x: npcPos.x, y: npcPos.y,
             talk: [{ whenDone: l.questId, lines: ['« Le Gardien est en paix, et c\'est grâce à vous. Que sa force vous accompagne. »'] }]
         });
-        const chestPos = placeInLand(wild, occupancy(wild, screens), l.chest.id);
+        const chestPos = placeSafely(wild, screens, l.chest.id);
         if (!chestPos) throw new Error(`légende ${l.questId} : pas de place pour la relique`);
         wild.chests.push({ id: l.chest.id, label: l.chest.label, openText: l.chest.openText, gold: 20 * l.level, x: chestPos.x, y: chestPos.y });
-        const enemyPos = placeInLand(wild, occupancy(wild, screens), l.enemy.id);
+        const enemyPos = placeSafely(wild, screens, l.enemy.id);
         if (!enemyPos) throw new Error(`légende ${l.questId} : pas de place pour le Gardien`);
         wild.enemies.push({
             id: l.enemy.id, templateId: l.enemy.templateId, name: l.enemy.name, kind: 'sentinel', offset: l.enemy.offset,
