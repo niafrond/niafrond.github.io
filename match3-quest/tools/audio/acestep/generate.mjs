@@ -153,7 +153,7 @@ async function cmdGenerate(opts) {
         const t = CATALOG[key];
         const body = {
             prompt: buildCaption(t, opts.extra), lyrics: '[Instrumental]', vocal_language: 'unknown', audio_format: 'mp3',
-            audio_duration: Math.max(MIN_DURATION, Number(opts.duration ?? t.dur)), batch_size: variants, thinking: !!opts.thinking,
+            audio_duration: Math.max(t.jingle ? 10 : MIN_DURATION, Number(opts.duration ?? t.dur)), batch_size: variants, thinking: !!opts.thinking,
             ...(t.bpm ? { bpm: t.bpm } : {}), ...(t.keyScale ? { key_scale: t.keyScale } : {}), time_signature: '4',
             ...(opts.seed !== undefined ? { use_random_seed: false, seed: Number(opts.seed) } : { use_random_seed: true }),
             ...(opts.steps ? { inference_steps: Number(opts.steps) } : {})
