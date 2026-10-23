@@ -785,7 +785,10 @@ export function createExplorationView(cfg) {
                         processEvents(talk.events, spoken);
                         if (talk.npc.merchant) openMerchant(talk.npc);
                         if (talk.combat) startEncounter(talk.combat);   // appât : l'ennemi surgit à la fin de la conversation
-                    });
+                    }, talk.warp ? [
+                        { label: talk.warp.label || 'Partir', run: () => { const r = X.warpNpc(session, talk.npc.id); if (r) { held = null; walk = null; handleResult(r); } } },
+                        { label: talk.warp.stay || 'Rester ici', run: () => {} }
+                    ] : undefined);
                 break;
             }
             case 'chest': {
@@ -1542,7 +1545,7 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * 1.02);
+                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi)
                     const marker = X.npcMarker(session, it.n.id);
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
@@ -1575,7 +1578,7 @@ export function createExplorationView(cfg) {
                     const big = boss || illusion;
                     const shielded = X.isShielded(session, def);
                     const lvl = X.levelFor(session, twin || def);
-                    const size = tile * (big ? 1.55 : 1.08);
+                    const size = tile * (def.span || (big ? 1.55 : 1.08));   // `span` : boss immense (Changxi, 6 cases)
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;

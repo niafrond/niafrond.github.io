@@ -2,6 +2,18 @@
 export default {
   screens: {},
   npcs: {
+    changxi_moon: {
+      name: "Changxi",
+      title: "Mère des douze lunes",
+      span: 6,
+      idle: ["..."],
+      warp: {
+        to: "marees",
+        label: "Redescendre sur Terre",
+        stay: "Rester sur la Lune",
+        lines: ["...", "(Changxi est assise au bord du sentier, immense, comme si elle n'avait jamais bougé. Les douze lunes dorment sur ses genoux. Elle ne dit rien : elle montre d'un geste la mer, tout en bas, et propose de vous y redéposer, quand vous le voudrez.)"]
+      }
+    },
     moon_cook_gui: {
       name: "Gui",
       title: "Cuisinier de gâteaux de lune",

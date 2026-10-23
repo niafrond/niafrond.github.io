@@ -1196,9 +1196,17 @@ const BASE_SCREENS = {
                 lockedMessage: "Le chemin de lune ne s'ouvre pas tout seul : Changxi, mère des douze lunes, doit d'abord éprouver votre courage."
             }
         ],
-        npcs: [],
+        // Après l'épreuve, Changxi (immense, muette) emporte Hou Yi sur la Lune d'un geste ; sur la Lune, elle le ramène sur Terre (world/text/lune.js).
+        npcs: [
+            { id: 'changxi_calm', name: 'Changxi', title: 'Mère des douze lunes', x: 7, y: 5, showWhen: 'changxi', span: 6,
+              idle: ['...'],
+              warp: {
+                  to: 'lune_road', label: 'Monter vers la Lune', stay: 'Pas encore',
+                  lines: ['...', "(Changxi se redresse, immense, et son ombre couvre tout l'autel. Elle ne dit rien. Elle vous regarde comme on regarde quelqu'un qui est enfin arrivé, puis elle tend la paume, et les douze lunes se rangent autour de vous.)"]
+              } }
+        ],
         enemies: [
-            { id: 'changxi', templateId: 'changxi', name: 'Changxi, mère des douze lunes', kind: 'sentinel', x: 9, y: 5, offset: 0,
+            { id: 'changxi', templateId: 'changxi', name: 'Changxi, mère des douze lunes', kind: 'sentinel', x: 9, y: 5, offset: 0, span: 6,
               permanent: true, boss: { name: 'Changxi, mère des douze lunes', level: 41 } }
         ],
         chests: []

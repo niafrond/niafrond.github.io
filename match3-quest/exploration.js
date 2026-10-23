@@ -444,6 +444,14 @@ function arenaObjectiveText(session) {
         : `Affrontez ${tier.master.name}, maître du ${tier.name} · « Sortir » pour quitter l'arène`;
 }
 
+// Emporte le héros là où le PNJ de passage `npcId` le mène (écran d'arrivée par défaut : son point d'apparition). Retourne une transition.
+export function warpNpc(session, npcId) {
+    const npc = visibleNpcs(session).find(n => n.id === npcId);
+    const target = npc?.warp && session.screens[npc.warp.to];
+    if (!target) return null;
+    return transitionTo(session, currentScreen(session), target.id, npc.warp.pos || target.spawn, 99, { warp: true });
+}
+
 export function teleportToScreen(session, screenId) {
     const screen = session.screens[screenId];
     if (!screen) return false;
@@ -1165,6 +1173,9 @@ export function talkToNpc(session, npcId) {
         const events = [completeQuest(session, ready.quest), ...checkAutoQuests(session)];
         return { type: 'dialog', npc, lines: ready.quest.complete, events };
     }
+
+    // PNJ de passage (`warp: { to, lines, label }`) : les lignes sont dites, puis le joueur choisit d'être emporté vers `warp.to` (voir `warpNpc`).
+    if (npc.warp) return { type: 'dialog', npc, lines: [...(npc.warp.lines?.length ? npc.warp.lines : npc.idle || ['...'])], events: [], warp: npc.warp };
 
     // Appât : lui parler attire l'ennemi (`bait.enemy`) ; les lignes sont dites, puis le combat démarre.
     if (npc.bait && !session.data.defeated.includes(npc.bait.enemy)) {

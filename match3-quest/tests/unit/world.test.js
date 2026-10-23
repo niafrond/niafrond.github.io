@@ -11,7 +11,7 @@ import { villagerSprite } from '../../sprites/villagers.js';
 import { creatureKind, drawCreature, CREATURE_KINDS } from '../../sprites/creatures.js';
 import {
     createSession, tryMove, enterScreen, isTerrainBlocked, findPath, talkToNpc, openChest, markEnemyDefeated,
-    questStatus, checkAutoQuests, activateWaypoint, waypointList, fastTravel, setTrackedQuest, trackedQuest,
+    questStatus, checkAutoQuests, activateWaypoint, warpNpc, teleportToScreen, waypointList, fastTravel, setTrackedQuest, trackedQuest,
     trackedMarkers, currentObjectiveText, journalEntries, regionProgress, npcMarker, progressReached, aliveEnemies
 } from '../../exploration.js';
 import { exitsOf } from './fixtures/gates.js';
@@ -311,6 +311,39 @@ describe('Grand Monde : régions marines (Hautes-Eaux)', () => {
         expect(SCREENS.marees_village.grass).toBeUndefined();
         expect(SCREENS.marees_road.aquatic).toBeFalsy();   // jamais aquatic : le verrou serait levé
         expect(SCREENS.marees_wild.aquatic).toBeFalsy();
+    });
+});
+
+describe('Grand Monde : Changxi, passage entre la Terre et la Lune', () => {
+    const forge = () => { const s = createSession({}); s.data.quests.sq_pas_de_yu = 'done'; return s; };
+    test('Changxi est immense (6 cases) et ne parle pas : « ... »', () => {
+        const boss = SCREENS.marees.enemies.find(e => e.id === 'changxi');
+        const calm = SCREENS.marees.npcs.find(n => n.id === 'changxi_calm');
+        const moon = SCREENS.lune_road.npcs.find(n => n.id === 'changxi_moon');
+        [boss, calm, moon].forEach(e => expect(e.span).toBeGreaterThanOrEqual(6));
+        expect(calm.idle).toEqual(['...']);
+        expect(calm.warp.lines[0]).toBe('...');
+        expect(moon.warp.lines[0]).toBe('...');
+    });
+    test("elle n'apparaît comme PNJ qu'après l'épreuve, puis emporte sur la Lune ; sur la Lune, elle ramène sur Terre", () => {
+        const s = forge();
+        teleportToScreen(s, 'marees');
+        expect(talkToNpc(s, 'changxi_calm')).toBeNull();   // invisible tant que le boss est debout
+        markEnemyDefeated(s, 'changxi');
+        const talk = talkToNpc(s, 'changxi_calm');
+        expect(talk.warp.to).toBe('lune_road');
+        const up = warpNpc(s, 'changxi_calm');
+        expect(up).toMatchObject({ type: 'transition', to: 'lune_road', warp: true });
+        expect(s.data.screenId).toBe('lune_road');
+        expect(talkToNpc(s, 'changxi_moon').warp.to).toBe('marees');
+        const down = warpNpc(s, 'changxi_moon');
+        expect(down).toMatchObject({ type: 'transition', to: 'marees', warp: true });
+        expect(s.data.screenId).toBe('marees');
+    });
+    test("sur la Lune, elle se tient tout au début du niveau, près de l'arrivée", () => {
+        const road = SCREENS.lune_road, moon = road.npcs.find(n => n.id === 'changxi_moon');
+        const west = exitsOf(road, SCREENS).find(e => e.to === 'marees');
+        expect(Math.abs(moon.x - west.x)).toBeLessThanOrEqual(4);
     });
 });
 

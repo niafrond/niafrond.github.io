@@ -76,7 +76,7 @@ fill(altar, 12, 6, 21, 14, '=');              // pavillon laqué
 fill(altar, 12, 5, 21, 5, '#'); fill(altar, 12, 15, 21, 15, '#');
 fill(altar, 22, 9, 29, 11, '=');              // passerelle de Changxi puis dernier ponton, vers la Lune
 put(altar, 0, 10, '<'); put(altar, 2, 10, 'S'); put(altar, 29, 10, '>'); put(altar, 3, 9, 'W');
-put(altar, 27, 10, '1');
+put(altar, 27, 10, '1'); put(altar, 24, 10, '2');
 
 // Table de rencontres : zone 1, aquatique « courante » ; zone 3, plus dense et plus forte (Changxi attend au bout).
 const roadTable = [
@@ -208,7 +208,8 @@ export default {
         id: 'marees', waypoint: { x: 3, y: 9 }, native: true,
         grid: rows(altar),
         places: {
-            changxi: '1'
+            changxi: '1',
+            changxi_calm: '2'
         }
     }
 };

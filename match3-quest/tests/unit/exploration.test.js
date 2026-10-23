@@ -548,7 +548,7 @@ describe('cartes (story.js)', () => {
     test('les PNJ vivent au village et dans les maisons, les sanctuaires abritent les soleils-boss', () => {
         // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil et Chang'e à la Lune
         // (+ les PNJ de pourparlers `parley_sunN` du chemin relationnel)
-        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
+        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon', 'changxi_calm']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
         ORDER.forEach(id => {
             const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
             expect(villagers.length).toBeGreaterThan(0);
