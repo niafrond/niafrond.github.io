@@ -139,13 +139,13 @@ const SCENES = {
         perc: 'drive'
     },
     boss: {
-        label: 'Boss', description: 'Épique et rythmé : thème propre à chaque boss (nom du boss), taiko, gong, cordes.',
+        label: 'Boss', description: 'Épique et rythmé : thème propre à chaque boss (nom du boss), tanggu, gong, cordes.',
         root: 2, scale: 'jue', bpm: 128, lo: 62, hi: 90,
         melody: { inst: 'erhu', vel: 0.62, cells: SYNC, rest: 0.08, orn: 0.3, bend: 0.4 },
         hetero: { inst: 'pipa', oct: 0, vel: 0.4 },
         accomp: { kind: 'pluck', inst: 'pipa', vel: 0.36, keep: 0.9, lo: 38 },
         pad: { inst: 'sheng', bars: 2, vel: 0.2 },
-        perc: 'taiko', suona: { prob: 0.25, vel: 0.3 }
+        perc: 'tanggu', suona: { prob: 0.25, vel: 0.3 }
     },
     ending: {
         label: 'Épilogue', description: 'Mélancolique et lumineux : erhu, dizi, guzheng, cloches.',
@@ -226,14 +226,14 @@ const COMBAT_STYLES = [
 
 // Thèmes de boss : archétypes (couleur, rythme, instruments) + mode/tempo propres à chaque boss.
 const BOSS_ARCHETYPES = [
-    { perc: 'taiko', scale: 'jue', bpm: 130, melody: { inst: 'erhu', cells: SYNC }, hetero: { inst: 'pipa', oct: 0, vel: 0.4 }, suona: { prob: 0.3, vel: 0.3 } },   // fanfare martiale
+    { perc: 'tanggu', scale: 'jue', bpm: 130, melody: { inst: 'erhu', cells: SYNC }, hetero: { inst: 'pipa', oct: 0, vel: 0.4 }, suona: { prob: 0.3, vel: 0.3 } },   // fanfare martiale
     { perc: 'gallop', scale: 'yu', bpm: 138, melody: { inst: 'pipa', cells: GALLOP }, hetero: { inst: 'erhu', oct: 0, vel: 0.35 }, suona: null },                       // charge
     { perc: 'tresillo', scale: 'zhi', bpm: 120, melody: { inst: 'guzheng', cells: [...SYNC, ...TRIPLET] }, hetero: { inst: 'dizi', oct: 12, vel: 0.3 }, suona: null },  // incantatoire
     { perc: 'march', scale: 'shang', bpm: 112, melody: { inst: 'erhu', cells: DOTTED }, hetero: { inst: 'xiao', oct: 12, vel: 0.3 }, suona: { prob: 0.4, vel: 0.28 } },  // procession
     { perc: 'thunder', scale: 'jue', bpm: 126, melody: { inst: 'erhu', cells: [...DRIVE, ...SYNC] }, hetero: { inst: 'yangqin', oct: 12, vel: 0.35 }, suona: null },        // orage
     { perc: 'shuffle', scale: 'gong', bpm: 116, melody: { inst: 'dizi', cells: [...TRIPLET, ...DOTTED] }, hetero: { inst: 'pipa', oct: 0, vel: 0.4 }, suona: null },      // ruse
     { perc: 'drive', scale: 'yu', bpm: 134, melody: { inst: 'pipa', cells: DRIVE }, hetero: { inst: 'erhu', oct: 0, vel: 0.4 }, suona: { prob: 0.3, vel: 0.28 } },         // fournaise
-    { perc: 'taiko', scale: 'zhi', bpm: 108, melody: { inst: 'erhu', cells: [...DOTTED, ...MID] }, hetero: { inst: 'bell', oct: 12, vel: 0.28 }, suona: null }             // solennel
+    { perc: 'tanggu', scale: 'zhi', bpm: 108, melody: { inst: 'erhu', cells: [...DOTTED, ...MID] }, hetero: { inst: 'bell', oct: 12, vel: 0.28 }, suona: null }             // solennel
 ];
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -431,7 +431,7 @@ function composePerc(kind, rng, c, b, out) {
                 for (let k = 0; k < 6; k++) d(s + k * 0.25, 0.2 + k * 0.07, k % 2 ? MID_D : LOW, 0.3);
             }
             break;
-        case 'taiko':
+        case 'tanggu':
             if (b % 2 === 0) { d(0, 0.9); d(1.5, 0.55, MID_D); d(2, 0.7); d(3, 0.55, MID_D); }
             else { d(0, 0.8); d(2.5, 0.5, MID_D); d(3, 0.6); d(3.5, 0.5, MID_D); }
             if (b % 4 === 0) gg(0, 0.7);
