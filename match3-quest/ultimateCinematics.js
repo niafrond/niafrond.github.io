@@ -20,7 +20,12 @@ export const ULTIMATE_COLORS = {
     ultimateImperialDragon: '#ffd24a',
     ultimateEternalBastion: '#6ee7d8',
     ultimateThousandRiders: '#ff6a4a',
-    ultimateSkyWolf: '#8fb8ff'
+    ultimateSkyWolf: '#8fb8ff',
+    // ultimes de légende (Quatre Gardiens Célestes, gagnés par quête)
+    ultimateVermilionBird: '#ff7a45',
+    ultimateBlackTortoise: '#5fd0e6',
+    ultimateWhiteTiger: '#e6ecff',
+    ultimateAzureDragon: '#3de0c0'
 };
 
 const prefersReducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
@@ -34,7 +39,7 @@ const plansCache = new Map();
 
 // Stockage permanent sur l'appareil (Cache Storage, sans service worker) : téléchargé une seule fois, puis servi depuis
 // le téléphone, y compris hors ligne et d'une session à l'autre. À régénérer les planches, incrémenter la version.
-export const ULTIMATE_ART_VERSION = 6;   // 6 : ultimes épiques de 8 s (anticipation, impact, explosion) ; 5 : ultimes en trois actes (arrivée, mouvement, explosion) `<id>-seq.png` ; 4 : boucles d'arrivée en biome `biome_<région>-seq.png` ; 2 : Dragon Impérial, Rempart Éternel et Mille Cavaliers régénérés (héros chinois) ; 3 : plans-séquences `<id>-seq.png`
+export const ULTIMATE_ART_VERSION = 7;   // 7 : quatre ultimes de légende (`ultimateVermilionBird`, `ultimateBlackTortoise`, `ultimateWhiteTiger`, `ultimateAzureDragon`) ; 6 : ultimes épiques de 8 s (anticipation, impact, explosion) ; 5 : ultimes en trois actes (arrivée, mouvement, explosion) `<id>-seq.png` ; 4 : boucles d'arrivée en biome `biome_<région>-seq.png` ; 2 : Dragon Impérial, Rempart Éternel et Mille Cavaliers régénérés (héros chinois) ; 3 : plans-séquences `<id>-seq.png`
 const CACHE_NAME = `match3-ultimates-v${ULTIMATE_ART_VERSION}`;
 let persistAsked = false;   // demande de persistance + purge des anciennes versions : une fois par session
 

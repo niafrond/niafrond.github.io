@@ -47,6 +47,15 @@ ULTIMATES = {
                                    ent=(0.5, 0.4, 0.98, 0.5), glow=(255, 150, 70), bob=2, parts=[('dust', (255, 200, 140), 36, 3)], bolts=None),
     'ultimateSkyWolf': dict(move='dive', cls='barbarian', plate='a snowy mountain summit at night under a huge full moon, purple and teal aurora across the sky, snowy peaks, a flat snowy ledge in the foreground',
                             ent=(0.5, 0.36, 0.98, 0.6), glow=(170, 200, 255), bob=2, parts=[('rise', (200, 220, 255), 36, 1), ('fall', (255, 255, 255), 24, 1)], bolts=None),
+    # ultimes de légende : les Quatre Gardiens Célestes
+    'ultimateVermilionBird': dict(move='grow', cls='legend', plate='a volcanic cliff at dusk, rivers of glowing lava far below, a crimson sky with drifting embers and ash clouds, a dark basalt ledge in the foreground, vast open sky',
+                                  ent=(0.5, 0.34, 0.95, 0.6), glow=(255, 120, 60), bob=2, parts=[('rise', (255, 170, 70), 40, 1), ('rise', (255, 90, 40), 24, 2)], bolts=None),
+    'ultimateBlackTortoise': dict(move='grow', cls='legend', plate='a misty great river delta at night under a deep blue sky and a pale moon, still black water reflecting the stars, a stone shore in the foreground, vast open sky',
+                                  ent=(0.5, 0.4, 0.98, 0.6), glow=(90, 200, 230), bob=1, parts=[('fall', (120, 220, 255), 30, 2), ('rise', (200, 255, 255), 18, 1)], bolts=None),
+    'ultimateWhiteTiger': dict(move='dive', cls='legend', plate='a vast autumn savanna at twilight with golden grass under a silver moon and a pale lavender sky, a rocky outcrop in the foreground, vast open sky',
+                               ent=(0.5, 0.36, 0.98, 0.55), glow=(230, 235, 255), bob=2, parts=[('rise', (255, 255, 255), 30, 1), ('fall', (190, 210, 255), 20, 2)], bolts=None),
+    'ultimateAzureDragon': dict(move='dive', cls='legend', plate='ancient Chinese sacred mountain peaks piercing a sea of teal storm clouds at dawn, a sacred cypress on a rocky ledge in the foreground, vast open sky',
+                                ent=(0.5, 0.3, 0.95, 0.62), glow=(80, 220, 200), bob=2, parts=[('rise', (150, 255, 230), 36, 1), ('fall', (180, 240, 255), 24, 2)], bolts=(200, 255, 245)),
 }
 SEEDS = {u: 7100 + i * 53 for i, u in enumerate(ULTIMATES)}
 
