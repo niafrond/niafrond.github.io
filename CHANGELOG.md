@@ -1,3 +1,9 @@
+## [2.114.0](https://github.com/niafrond/niafrond.github.io/compare/v2.113.0...v2.114.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** améliorer l'UX mobile des onglets armes, sorts et stuff ([#525](https://github.com/niafrond/niafrond.github.io/issues/525)) ([64dd789](https://github.com/niafrond/niafrond.github.io/commit/64dd7896b4bcef619aa3520efa2bc4f0766c3f53))
+
 ## [2.113.0](https://github.com/niafrond/niafrond.github.io/compare/v2.112.0...v2.113.0) (2026-10-23)
 
 ### Features
