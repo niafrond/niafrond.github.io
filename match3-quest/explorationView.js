@@ -27,7 +27,7 @@ import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
-import { bestiaryEntries } from './bestiary.js';
+import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
@@ -547,6 +547,7 @@ export function createExplorationView(cfg) {
                     <span>${icon('target')} Faiblesse : ${element(e.weakColor, e.weakElement)}</span>
                 </div>
                 <p class="carnet-beast-lore">${icon('scroll')} ${escapeHtml(e.lore)}</p>
+                <div class="carnet-beast-source ${e.source}">${icon('book')} ${escapeHtml(SOURCE_LABELS[e.source] || e.source)}</div>
             </div>`;
         }).join('')}</div>`;
     }

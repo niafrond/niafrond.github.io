@@ -21,7 +21,7 @@ describe('Bestiaire du carnet', () => {
         });
         const e = bestiaryEntry(catalog.find(t => t.id === 'chilong'));
         expect(e).toMatchObject({ strongColor: 'red', strongElement: 'Feu', weakColor: 'blue', weakElement: 'Eau' });
-        expect(e.lore).toMatch(/dragon/i);
+        expect(e.lore).toMatch(/Chilong/);
     });
 
     test('seules les créatures croisées apparaissent, triées, avec le compteur', () => {
