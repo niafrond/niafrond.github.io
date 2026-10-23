@@ -183,14 +183,15 @@
         <div id="active-spells-list"></div>
         <div id="ultimate-spells-list"></div>
         <h3>Sorts disponibles</h3>
+        <label class="sort-bar">Trier par <select id="spells-sort"><option value="default">Ordre d'obtention</option><option value="name">Nom</option><option value="cost">Coût</option><option value="dmg">Dégâts</option><option value="heal">Soin</option><option value="color">Couleur</option></select></label>
         <div id="available-spells-list"></div>
     </div>
     
     <!-- Onglet Armes -->
     <div id="tab-weapons" class="tab-panel">
         <h2>Armes</h2>
-        <label class="sort-bar">Trier par <select id="weapons-sort"><option value="default">Équipées d'abord</option><option value="name">Nom</option><option value="damage">Dégâts</option><option value="ap">Points d'action</option><option value="level">Niveau requis</option></select></label>
-        <p>Équipez une arme pour l'utiliser en combat. Chaque arme a des dégâts (crânes <svg class="ic ic-skull" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 7.4 Q3 2 8 2 Q13 2 13 7.4 Q13 10 11 10.6 L11 13.4 L5 13.4 L5 10.6 Q3 10 3 7.4Z" fill="#f4ecd8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="7.4" r="1.4" fill="#2b1b17"/><circle cx="10" cy="7.4" r="1.4" fill="#2b1b17"/><path d="M7 13.4 L7 11.8 M9 13.4 L9 11.8" fill="none" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>) et un coût en flèches <svg class="ic ic-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.6 13.4 L12 4" fill="none" stroke="#2b1b17" stroke-width="2.6" stroke-linecap="round"/><path d="M2.6 13.4 L12 4" fill="none" stroke="#c9a448" stroke-width="1.2" stroke-linecap="round"/><path d="M13.8 2.2 L9.6 3.6 L12.4 6.4Z" fill="#cfd6de" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M2 11 L4.2 11.8 L5 14 M3.6 9.6 L5.6 10.4 L6.4 12.4" fill="none" stroke="#d9452e" stroke-width="1.2"/></svg> (points d'action) différents.</p>
+        <label class="sort-bar">Trier par <select id="weapons-sort"><option value="default">Ordre d'obtention</option><option value="name">Nom</option><option value="damage">Dégâts</option><option value="ap">Points d'action</option><option value="level">Niveau requis</option></select></label>
+        <p>Dégâts (crânes <svg class="ic ic-skull" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 7.4 Q3 2 8 2 Q13 2 13 7.4 Q13 10 11 10.6 L11 13.4 L5 13.4 L5 10.6 Q3 10 3 7.4Z" fill="#f4ecd8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="7.4" r="1.4" fill="#2b1b17"/><circle cx="10" cy="7.4" r="1.4" fill="#2b1b17"/><path d="M7 13.4 L7 11.8 M9 13.4 L9 11.8" fill="none" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>) et coût en flèches <svg class="ic ic-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.6 13.4 L12 4" fill="none" stroke="#2b1b17" stroke-width="2.6" stroke-linecap="round"/><path d="M2.6 13.4 L12 4" fill="none" stroke="#c9a448" stroke-width="1.2" stroke-linecap="round"/><path d="M13.8 2.2 L9.6 3.6 L12.4 6.4Z" fill="#cfd6de" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M2 11 L4.2 11.8 L5 14 M3.6 9.6 L5.6 10.4 L6.4 12.4" fill="none" stroke="#d9452e" stroke-width="1.2"/></svg> (points d'action). Pastilles vertes ou rouges : écart avec l'arme en main droite.</p>
         <div id="equipped-weapon"></div>
         <h3>Armes disponibles</h3>
         <div id="available-weapons-list"></div>
@@ -208,7 +209,7 @@
     <!-- Onglet Stuff (casque, collier, bracelet, bague) -->
     <div id="tab-stuff" class="tab-panel">
         <h2>Stuff</h2>
-        <p>Casque, collier, bracelet et bague donnent des bonus, des PV max, une résistance au poison ou une protection de biome tant qu'ils sont portés. Le collier d'un biome s'obtient en finissant sa quête.</p>
+        <p>Bonus actifs tant que la pièce est portée. Pastilles : écart avec la pièce portée au même emplacement.</p>
         <div id="stuff-content"></div>
     </div>
 

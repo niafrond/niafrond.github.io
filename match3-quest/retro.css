@@ -254,7 +254,15 @@ body.rt .tutorial-card {
     box-shadow: 0 4px 0 var(--rt-ink);
 }
 
-body.rt .inventory-slot-empty { border-style: dashed; box-shadow: none; color: var(--rt-muted); }
+body.rt .inventory-slot-empty,
+body.rt .gear-card.slot-empty { border-style: dashed; box-shadow: none; color: var(--rt-muted); }
+body.rt .gear-card .compare-btn { font-size: 11px; padding: 2px 8px; box-shadow: 0 2px 0 var(--rt-ink); }
+body.rt .gear-card .weapon-action { font-size: 12px; }
+/* Écran tactile : pas d'effet de survol « collé » après un appui sur une carte */
+@media (hover: none) {
+    body.rt .gear-card.available-weapon:hover { transform: none; background: var(--rt-paper); box-shadow: 0 4px 0 var(--rt-ink); }
+}
+body.rt .locked-group > summary { color: var(--rt-muted); }
 
 body.rt .class-card:hover,
 body.rt .attribute-card:hover,
@@ -598,11 +606,14 @@ body.rt .stat { line-height: 1.5; }
 /* Titres des onglets : les règles à identifiant de style.css imposent des tailles prévues pour une police
    étroite ; avec la police de titre pixel (très large) on les ramène à une taille lisible. */
 body.rt #tab-spells h2,
+body.rt #tab-stuff h2,
 body.rt #tab-stats h2,
 body.rt #tab-weapons h2,
 body.rt .shop-header h2 { font-size: 14px; }
 body.rt #tab-spells h3,
 body.rt #tab-weapons h3,
+body.rt #tab-stuff h3,
+body.rt .stuff-slot-title,
 body.rt .stats-section h3,
 body.rt .shop-section-title { font-size: 11px; }
 

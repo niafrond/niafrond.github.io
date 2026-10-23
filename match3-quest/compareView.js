@@ -5,6 +5,7 @@ import { MANA_HEX } from './icons.js';
 
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff', item: 'objet' };
+const ANOTHER = { spell: 'un autre sort', weapon: 'une autre arme', stuff: 'un autre stuff', item: 'un autre objet' };
 const ITEM_TYPE_LABEL = { shield: 'Bouclier', reusable: 'Objet rechargeable', artifact: 'Relique', consumable: 'Consommable' };
 const SLOT_LABEL = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: 'Bague' };
 
@@ -61,6 +62,18 @@ export function buildCompareHtml(kind, a, b) {
     return `<table class="compare-table"><thead><tr><th></th><th>${esc(a.name)}</th><th>${esc(b.name)}</th></tr></thead><tbody>${body}</tbody></table>`;
 }
 
+// Écarts d'un objet avec celui déjà porté, en pastilles (« +12 Dégâts » en vert, « −2 Déf » en rouge).
+// fields : [clé, libellé, 'high' | 'low'] ('low' = plus petit est meilleur, ex. points d'action).
+export function deltaBadgesHtml(candidate, current, fields) {
+    if (!candidate || !current || candidate.id === current.id) return '';
+    return fields.map(([key, label, better = 'high']) => {
+        const d = (candidate[key] || 0) - (current[key] || 0);
+        if (!d) return '';
+        const good = better === 'high' ? d > 0 : d < 0;
+        return `<span class="delta ${good ? 'delta-up' : 'delta-down'}">${d > 0 ? '+' : '−'}${Math.abs(d)} ${esc(label)}</span>`;
+    }).join('');
+}
+
 let selection = null;   // { kind, id } : premier élément choisi
 let resolvers = {};
 let equipActions = {};   // kind -> id => équipe l'objet (ou ouvre le choix du remplacement)
@@ -69,9 +82,32 @@ let equipState = {};     // kind -> id => { label, disabled }
 function refreshButtons() {
     document.querySelectorAll('.compare-btn').forEach(btn => {
         const on = !!selection && btn.dataset.compareKind === selection.kind && btn.dataset.compareId === selection.id;
+        const label = on ? 'Choisi' : 'Comparer';
         btn.classList.toggle('compare-selected', on);
-        btn.setAttribute('aria-pressed', String(on));
+        if (btn.getAttribute('aria-pressed') !== String(on)) btn.setAttribute('aria-pressed', String(on));
+        if (btn.textContent !== label) btn.textContent = label;   // garde : l'observateur de mutations rappelle cette fonction
     });
+}
+
+// Bandeau en bas d'écran tant qu'une référence est choisie : rappelle quoi faire et permet d'annuler.
+function refreshHint() {
+    let bar = document.getElementById('compare-hint');
+    const ref = selection && resolvers[selection.kind]?.(selection.id);
+    if (!ref) { bar?.remove(); return; }
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'compare-hint';
+        bar.setAttribute('role', 'status');
+        bar.addEventListener('click', e => { if (e.target.closest('[data-compare-cancel]')) setSelection(null); });
+        document.body.appendChild(bar);
+    }
+    bar.innerHTML = `<span>Comparer <strong>${esc(ref.name)}</strong> avec : touchez « Comparer » sur ${ANOTHER[selection.kind]}.</span><button type="button" data-compare-cancel>Annuler</button>`;
+}
+
+function setSelection(sel) {
+    selection = sel;
+    refreshButtons();
+    refreshHint();
 }
 
 function closeOverlay() { document.getElementById('compare-overlay')?.remove(); }
@@ -97,11 +133,10 @@ function showOverlay(kind, a, b) {
 }
 
 export function onCompareClick(kind, id) {
-    if (!selection || selection.kind !== kind) { selection = { kind, id }; refreshButtons(); return 'selected'; }
-    if (selection.id === id) { selection = null; refreshButtons(); return 'cleared'; }
+    if (!selection || selection.kind !== kind) { setSelection({ kind, id }); return 'selected'; }
+    if (selection.id === id) { setSelection(null); return 'cleared'; }
     const a = resolvers[kind]?.(selection.id), b = resolvers[kind]?.(id);
-    selection = null;
-    refreshButtons();
+    setSelection(null);
     if (!a || !b) return 'missing';
     showOverlay(kind, a, b);
     return 'shown';
@@ -109,7 +144,7 @@ export function onCompareClick(kind, id) {
 
 // Bouton « Comparer » à ajouter dans une ligne.
 export const compareButtonHtml = (kind, id) =>
-    `<button type="button" class="compare-btn" data-compare-kind="${esc(kind)}" data-compare-id="${esc(id)}" aria-pressed="false" title="Comparer avec un autre ${esc(KIND_LABEL[kind])} (cliquez sur « Comparer » d'un second)">Comparer</button>`;
+    `<button type="button" class="compare-btn" data-compare-kind="${esc(kind)}" data-compare-id="${esc(id)}" aria-pressed="false" title="Comparer avec ${ANOTHER[kind]} (cliquez sur « Comparer » d'un second)">Comparer</button>`;
 
 export function initCompare(r, equip = {}) {
     resolvers = r;

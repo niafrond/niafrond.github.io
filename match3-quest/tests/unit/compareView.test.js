@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { compareRows, buildCompareHtml } from '../../compareView.js';
+import { compareRows, buildCompareHtml, deltaBadgesHtml } from '../../compareView.js';
 
 describe('comparaison', () => {
     test('sorts : coût total et valeur plus haute mise en évidence', () => {
@@ -18,5 +18,17 @@ describe('comparaison', () => {
         const s = compareRows('stuff', { slot: 'ring', rarity: 'rare', atkBonus: 2, minLevel: 9 });
         expect(s[0].text).toBe('Bague');
         expect(buildCompareHtml('stuff', { name: '<x>', slot: 'ring' }, { name: 'y', slot: 'head' })).toContain('&lt;x&gt;');
+    });
+
+    test('écarts avec l\'objet porté : vert si meilleur, rouge sinon, rien si identique', () => {
+        const fields = [['damage', 'Dégâts'], ['actionPoints', 'PA', 'low'], ['defBonus', 'Déf']];
+        const worn = { id: 'a', damage: 10, actionPoints: 3, defBonus: 2 };
+        const html = deltaBadgesHtml({ id: 'b', damage: 22, actionPoints: 5, defBonus: 2 }, worn, fields);
+        expect(html).toContain('<span class="delta delta-up">+12 Dégâts</span>');
+        expect(html).toContain('<span class="delta delta-down">+2 PA</span>');   // plus de PA = moins bien
+        expect(html).not.toContain('Déf');
+        expect(deltaBadgesHtml({ id: 'c', damage: 4 }, worn, fields)).toContain('delta-down">−6 Dégâts');
+        expect(deltaBadgesHtml(worn, worn, fields)).toBe('');
+        expect(deltaBadgesHtml({ id: 'd', damage: 5 }, null, fields)).toBe('');
     });
 });

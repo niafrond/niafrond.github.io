@@ -8,7 +8,7 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor, convertRandomColorToArrows, checkMatches } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
-import { compareButtonHtml } from "./compareView.js";
+import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
 import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
@@ -3342,75 +3342,71 @@ function hideEnemyNameTooltip() {
     }
 }
 
+// Cartes des onglets Armes / Sorts : nom, caractéristiques, description, puis pied « Comparer » + actions.
+const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cardActionsHtml = (compare, actions) => `<div class="card-actions">${compare}<span class="card-actions-main">${actions}</span></div>`;
+const emptySlotHtml = (label, text) => `<div class="weapon-item gear-card slot-empty"><div class="weapon-details"><span class="weapon-name">${label}</span><span class="weapon-description">${text}</span></div></div>`;
+
+// ── Tri de la liste des sorts disponibles (menu déroulant de l'onglet Sorts) ──
+const spellCostTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
+const SPELL_COLOR_ORDER = ['red', 'blue', 'green', 'yellow'];
+const SPELL_SORTS = {
+    name: (a, b) => String(a.name).localeCompare(String(b.name), 'fr'),
+    cost: (a, b) => spellCostTotal(a) - spellCostTotal(b) || String(a.name).localeCompare(String(b.name), 'fr'),
+    dmg: (a, b) => (b.dmg || 0) - (a.dmg || 0) || spellCostTotal(a) - spellCostTotal(b),
+    heal: (a, b) => (b.heal || 0) - (a.heal || 0) || spellCostTotal(a) - spellCostTotal(b),
+    color: (a, b) => ((SPELL_COLOR_ORDER.indexOf(spellColorsOf(a)[0]) + 1) || 99) - ((SPELL_COLOR_ORDER.indexOf(spellColorsOf(b)[0]) + 1) || 99) || spellCostTotal(a) - spellCostTotal(b)
+};
+
+// Carte d'un sort : nom, coût en gomettes et effets, puis pied « Comparer » + action.
+function spellCard(sp, actionHtml, extraClass){
+    const div = document.createElement('div');
+    div.className = `spell-item gear-card ${extraClass}`;
+    markMultiManaSpell(div, sp);
+    const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
+    const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
+    const effectText = sp.effect ? ` • ${sp.description}` : '';
+    div.innerHTML = `
+        <div class="spell-content">
+            <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
+            <div class="spell-cost">${spellCostHtml(sp)}${damageText}${healText}${effectText}</div>
+        </div>
+        ${cardActionsHtml(compareButtonHtml('spell', sp.id), actionHtml)}`;
+    bindSpellRowTooltip(div, sp);
+    return div;
+}
+
 // mise à jour de l'onglet sorts
 export function updateSpellsTab(){
     const activeList = document.getElementById('active-spells-list');
     const availableList = document.getElementById('available-spells-list');
     if(!activeList || !availableList) return;
-    
-    // sorts actifs
-    activeList.innerHTML = '<h3>Sorts actifs (' + player.activeSpells.length + '/4)</h3>';
-    if(player.activeSpells.length === 0){
-        activeList.innerHTML += '<p><em>Aucun sort équipé</em></p>';
-    } else {
-        player.activeSpells.forEach(sp => {
-            const div = document.createElement('div');
-            div.className = 'spell-item active-spell';
-            markMultiManaSpell(div, sp);
-            const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
-            const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
-            const effectText = sp.effect ? ` • ${sp.description}` : '';
-            
-            // Gérer l'affichage du coût
-            const costHTML = spellCostHtml(sp);
-            
-            div.innerHTML = `
-                <div class="spell-content">
-                    <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
-                    <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
-                </div>
-                <div class="spell-action" tabindex="0" onclick="window.unequipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.unequipSpell('${sp.id}');}">Retirer</div>
-            `;
-            div.querySelector('.spell-content').insertAdjacentHTML('beforeend', compareButtonHtml('spell', sp.id));
-            bindSpellRowTooltip(div, sp);
-            activeList.appendChild(div);
-        });
+    bindSortSelect('spells-sort', updateSpellsTab);
+
+    // sorts actifs, puis une case vide par emplacement libre
+    activeList.innerHTML = `<h3>Sorts actifs (${player.activeSpells.length}/${MAX_ACTIVE_SPELLS})</h3>`;
+    player.activeSpells.forEach(sp => {
+        activeList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" onclick="window.unequipSpell('${sp.id}')">Retirer</button>`, 'active-spell'));
+    });
+    for(let i = player.activeSpells.length; i < MAX_ACTIVE_SPELLS; i++){
+        activeList.insertAdjacentHTML('beforeend', `<div class="spell-item gear-card slot-empty"><div class="spell-content"><div class="spell-name">Emplacement ${i + 1}</div><div class="spell-cost">libre</div></div></div>`);
     }
-    
+
     updateUltimatePicker();
 
     // sorts disponibles (non équipés)
     availableList.innerHTML = '';
-    const unequipped = player.availableSpells.filter(sp => 
-        !player.activeSpells.some(active => active.id === sp.id)
-    );
+    const sortFn = SPELL_SORTS[sortChoice('spells-sort')];
+    const unequipped = player.availableSpells.filter(sp => !player.activeSpells.some(active => active.id === sp.id));
+    if(sortFn) unequipped.sort(sortFn);
     if(unequipped.length === 0){
-        availableList.innerHTML = '<p><em>Tous vos sorts sont équipés</em></p>';
-    } else {
-        unequipped.forEach(sp => {
-            const div = document.createElement('div');
-            div.className = 'spell-item available-spell';
-            markMultiManaSpell(div, sp);
-            const full = player.activeSpells.length >= MAX_ACTIVE_SPELLS;   // plus de place : le bouton propose de remplacer un sort
-            const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
-            const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
-            const effectText = sp.effect ? ` • ${sp.description}` : '';
-            
-            // Gérer l'affichage du coût
-            const costHTML = spellCostHtml(sp);
-            
-            div.innerHTML = `
-                <div class="spell-content">
-                    <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
-                    <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
-                </div>
-                <div class="spell-action" tabindex="0" onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}">${full ? 'Remplacer' : 'Équiper'}</div>
-            `;
-            div.querySelector('.spell-content').insertAdjacentHTML('beforeend', compareButtonHtml('spell', sp.id));
-            bindSpellRowTooltip(div, sp);
-            availableList.appendChild(div);
-        });
+        availableList.innerHTML = '<p class="shop-empty">Tous vos sorts sont équipés.</p>';
+        return;
     }
+    const full = player.activeSpells.length >= MAX_ACTIVE_SPELLS;   // plus de place : le bouton propose de remplacer un sort
+    unequipped.forEach(sp => {
+        availableList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" onclick="window.equipSpell('${sp.id}')">${full ? 'Remplacer…' : 'Équiper'}</button>`, 'available-spell'));
+    });
 }
 
 // Appui long (ou survol à la souris) sur un sort de la liste : affiche son effet.
@@ -3430,17 +3426,19 @@ function updateUltimatePicker(){
     }
     const current = getEquippedUltimate(player);
     choices.forEach(sp => {
-        const div = document.createElement('div');
-        div.className = 'spell-item ultimate-spell' + (sp.id === current.id ? ' active-spell' : '');
-        markMultiManaSpell(div, sp);
         const chosen = sp.id === current.id;
+        const action = chosen
+            ? '<button type="button" class="weapon-action" disabled>Choisi</button>'
+            : `<button type="button" class="weapon-action" onclick="window.equipUltimate('${sp.id}')">Choisir</button>`;
+        const div = document.createElement('div');
+        div.className = 'spell-item gear-card ultimate-spell' + (chosen ? ' active-spell' : '');
+        markMultiManaSpell(div, sp);
         div.innerHTML = `
             <div class="spell-content">
                 <div class="spell-name">${sp.name}</div>
                 <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
-            <div class="spell-action ${chosen ? 'disabled' : ''}" tabindex="${chosen ? '-1' : '0'}" aria-disabled="${chosen}" ${chosen ? '' : `onclick="window.equipUltimate('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipUltimate('${sp.id}');}"`}>${chosen ? 'Choisi' : 'Choisir'}</div>
-        `;
+            ${cardActionsHtml('', action)}`;
         list.appendChild(div);
     });
 }
@@ -3967,6 +3965,41 @@ const sortedEntries = (entries, sortId) => {
     return fn ? [...entries].sort(fn) : entries;
 };
 
+const WEAPON_DELTA_FIELDS = [['damage', 'Dégâts'], ['actionPoints', 'PA', 'low'], ['atkBonus', 'Atk'], ['defBonus', 'Déf']];
+
+// hand : 'right' | 'left' pour une arme en main (bouton « Retirer »), absent pour une arme du sac.
+function weaponCardHtml(weapon, { hand } = {}){
+    const right = player.equippedWeapon;
+    const locked = player.level < weapon.minLevel;
+    const bonuses = describeStatBonuses(weapon);
+    const stats = `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}${bonuses ? ` • ${bonuses}` : ''}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}`;
+    const deltas = hand || locked ? '' : deltaBadgesHtml(weapon, right, WEAPON_DELTA_FIELDS);
+    let actions;
+    if(hand){
+        actions = `<button type="button" class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>`;
+    } else if(locked){
+        actions = `<button type="button" class="weapon-action" disabled>Niv. ${weapon.minLevel} requis</button>`;
+    } else if(weapon.twoHanded){
+        actions = `<button type="button" class="weapon-action" onclick="window.equipWeapon('${weapon.id}', 'right')">${right ? 'Remplacer' : 'Équiper'} (2 mains)</button>`;
+    } else {
+        const leftBlocked = right?.twoHanded;
+        actions = `<button type="button" class="weapon-action" onclick="window.equipWeapon('${weapon.id}', 'right')">Main droite</button>`
+            + `<button type="button" class="weapon-action" ${leftBlocked ? `disabled title="${escapeHtml(right.name)} occupe les deux mains"` : ''} onclick="window.equipWeapon('${weapon.id}', 'left')">Main gauche</button>`;
+    }
+    const handBadge = hand ? `<em class="slot-badge">${hand === 'left' ? 'Main gauche' : 'Main droite'}</em>` : '';
+    return `
+        <div class="weapon-item gear-card ${hand ? 'equipped-weapon' : 'available-weapon'}${locked && !hand ? ' is-locked' : ''}">
+            <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
+            <div class="weapon-details">
+                <span class="weapon-name">${weapon.name} ${handBadge}</span>
+                <span class="weapon-stats">${stats}</span>
+                ${deltas ? `<span class="card-deltas" title="Par rapport à l'arme en main droite">${deltas}</span>` : ''}
+                <span class="weapon-description">${weapon.description}</span>
+            </div>
+            ${cardActionsHtml(compareButtonHtml('weapon', weapon.id), actions)}
+        </div>`;
+}
+
 // mise à jour de l'onglet armes
 export function updateWeaponsTab(){
     bindSortSelect('weapons-sort', updateWeaponsTab);
@@ -3975,69 +4008,35 @@ export function updateWeaponsTab(){
     const availableList = document.getElementById('available-weapons-list');
     if(!equippedDiv || !availableList) return;
     
-    // Armes équipées (main droite / main gauche)
+    // Armes équipées : une case par main, vide ou occupée (bouclier, arme à deux mains), comme l'onglet Stuff.
     equippedDiv.innerHTML = '<h3>Armes équipées</h3>';
-    const equippedRow = (weapon, hand) => {
-        const div = document.createElement('div');
-        div.className = 'weapon-item equipped-weapon';
-        div.innerHTML = `
-            <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${weapon.name} <em>(${hand === 'left' ? 'main gauche' : 'main droite'}${weapon.twoHanded ? ', deux mains' : ''})</em></span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${describeStatBonuses(weapon) ? ` • ${describeStatBonuses(weapon)}` : ''}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
-                <span class="weapon-description">${weapon.description}</span>
-            </div>
-            <button class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>
-        `;
-        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('weapon', weapon.id));
-        equippedDiv.appendChild(div);
-    };
-    if(!player.equippedWeapon){
-        equippedDiv.innerHTML += '<p><em>Aucune arme en main droite</em></p>';
-    } else {
-        equippedRow(player.equippedWeapon, 'right');
-    }
-    const equippedLeft = getLeftHandWeapon();
-    if(equippedLeft) equippedRow(equippedLeft, 'left');
+    const right = player.equippedWeapon;
+    const left = getLeftHandWeapon();
+    equippedDiv.insertAdjacentHTML('beforeend', right
+        ? weaponCardHtml(right, { hand: 'right' })
+        : emptySlotHtml('Main droite', 'Vide : équipez une arme ci-dessous.'));
+    const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+    if(left) equippedDiv.insertAdjacentHTML('beforeend', weaponCardHtml(left, { hand: 'left' }));
+    else if(right?.twoHanded) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `Occupée : ${escapeHtml(right.name)} se tient à deux mains.`));
+    else if(shield) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `${escapeHtml(shield.name)} (bouclier, onglet Objets).`));
+    else equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', 'Vide : une arme à une main peut s\'y ajouter.'));
 
-    // Armes disponibles
+    // Armes disponibles : celles du sac (hors mains), utilisables d'abord, puis « Niveau trop bas » repliées.
+    const lockedWasOpen = !!availableList.querySelector('details.locked-group')?.open;
     availableList.innerHTML = '';
     const weaponSort = WEAPON_SORTS[sortChoice('weapons-sort')];
     const ownedWeapons = weaponSort ? [...(player.weapons || [])].sort(weaponSort) : (player.weapons || []);
-    if(ownedWeapons.length === 0){
-        availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
-        renderGearList(document.getElementById('gear-list'));
-        updateInventoryTab();
-        updateItemButton();
-        return;
+    const spare = ownedWeapons.filter(w => w.id !== right?.id && w.id !== left?.id);
+    if(spare.length === 0){
+        availableList.innerHTML = ownedWeapons.length
+            ? '<p class="shop-empty">Toutes vos armes sont en main.</p>'
+            : '<p class="shop-empty"><strong>Aucune arme en votre possession.</strong> Les armes s\'obtiennent en gagnant des combats ou chez les marchands.</p>';
+    } else {
+        const usable = spare.filter(w => player.level >= w.minLevel);
+        const locked = spare.filter(w => player.level < w.minLevel);
+        availableList.innerHTML = usable.map(w => weaponCardHtml(w)).join('')
+            + (locked.length ? `<details class="locked-group"${lockedWasOpen ? ' open' : ''}><summary>Niveau trop bas (${locked.length})</summary>${locked.map(w => weaponCardHtml(w)).join('')}</details>` : '');
     }
-    ownedWeapons.forEach(weapon => {
-        const icon = getWeaponIcon(weapon.type);
-        const div = document.createElement('div');
-        div.className = 'weapon-item available-weapon';
-        const locked = player.level < weapon.minLevel;
-        if(locked) div.classList.add('is-locked');
-        const isRight = player.equippedWeapon?.id === weapon.id;
-        const isLeft = getLeftHandWeapon()?.id === weapon.id;
-        const isEquipped = isRight || isLeft;
-        if(isEquipped) div.classList.add('is-equipped');
-        const leftBlocked = weapon.twoHanded || player.equippedWeapon?.twoHanded;
-        
-        div.innerHTML = `
-            <span class="weapon-icon">${icon}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${describeStatBonuses(weapon) ? ` • ${describeStatBonuses(weapon)}` : ''}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
-                <span class="weapon-description">${weapon.description}</span>
-            </div>
-            <div class="weapon-hand-actions">
-                <button class="weapon-action" ${isRight || locked ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}', 'right')">${isRight ? 'Main droite' : locked ? `Niv. ${weapon.minLevel} requis` : 'Main droite'}</button>
-                ${locked ? '' : `<button class="weapon-action" ${isLeft || isRight || leftBlocked ? 'disabled' : ''} title="${weapon.twoHanded ? 'Arme à deux mains' : ''}" onclick="window.equipWeapon('${weapon.id}', 'left')">${isLeft ? 'Main gauche' : 'Main gauche'}</button>`}
-            </div>
-        `;
-        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('weapon', weapon.id));
-        availableList.appendChild(div);
-    });
 
     renderGearList(document.getElementById('gear-list'));
     updateInventoryTab();
