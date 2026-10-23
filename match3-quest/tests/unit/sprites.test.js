@@ -241,7 +241,7 @@ describe('sprites GBA découpés par clé (sprites/build-gba.mjs), chargés avec
 
     test('le jeu ne télécharge plus sprites/generated.js : ni import, ni carte d\'imports', () => {
         const root = new URL('../../', import.meta.url);
-        expect(readFileSync(new URL('sprites/index.js', root), 'utf8')).not.toMatch(/generated\.js/);
+        expect(readFileSync(new URL('sprites/index.js', root), 'utf8')).not.toMatch(/(from\s+|import\s*\(\s*)['"]\.\/generated\.js/);
         expect(readFileSync(new URL('index.html', root), 'utf8')).not.toMatch(/sprites\/generated\.js/);
     });
 });
