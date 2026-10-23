@@ -154,6 +154,15 @@ const GUARDS = {
 };
 for (const [k, [s, bpm, key]] of Object.entries(GUARDS)) T(`boss-${k}`, `dangerous boss battle, ${s}, ${BOSS_MOOD}, ${I.pipa}, ${BOSS_PERC}, readable melody`, { bpm, keyScale: key, dur: 50 });
 
+/* ───────────── Boss : les quatre Gardiens Célestes (quêtes de légende, world/legends.js) ───────────── */
+const CELESTIAL = {
+    'zhuque-l-oiseau-vermillon': ['Zhuque the Vermilion Bird of the South, blazing fire, soaring dizi flights, crackling drums, rising and falling flame arpeggios', 138, 'E minor'],
+    'xuanwu-la-tortue-noire': ['Xuanwu the Black Tortoise and serpent of the North, deep watery guqin, slow crushing drums, cold tolling bells', 96, 'C minor'],
+    'baihu-le-tigre-blanc': ['Baihu the White Tiger of the West, prowling metallic rhythm then violent pounce, pipa slides, sharp cymbals', 132, 'A minor'],
+    'qinglong-le-dragon-d-azur': ['Qinglong the Azure Dragon of the East, storm winds, sweeping sheng and dizi, thunderous drums, majestic and furious', 124, 'D minor']
+};
+for (const [k, [s, bpm, key]] of Object.entries(CELESTIAL)) T(`boss-${k}`, `legendary celestial guardian boss battle, ${s}, ${BOSS_MOOD}, ${I.pipa}, ${BOSS_PERC}, readable heroic melody`, { bpm, keyScale: key, dur: 60 });
+
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [
     'brute, heavy stomping drums and low erhu', 'swift hunter, fast pipa runs and dizi', 'mystic, sheng pads and guqin with eerie xiao',
