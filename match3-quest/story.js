@@ -1559,7 +1559,7 @@ const BASE_QUESTS = [
             "L'autel de Mazu est au bout des pontons. Changxi n'est pas un ennemi : c'est une épreuve de bravoure. Restez, et elle vous ouvrira le chemin de la Lune."
         ],
         complete: [
-            "Changxi se lève, immense, les douze lunes tournant autour de sa tête. Elle sourit : « Tu es resté. Peu restent. Va, archer : la Lune t'attend, et celle qui t'y attend plus encore. »",
+            "Changxi se lève, immense, les douze lunes tournant autour de sa tête. Elle ne dit rien, mais son visage s'adoucit : le sourire d'une mère qui a vu ce qu'elle voulait voir. Elle vous fait signe de passer, et ce geste vaut toutes les paroles.",
             "Le ciel se déchire d'argent, et un sentier de lumière monte de l'autel vers le Pic de la Lune."
         ],
         reward: { gold: 600, fragment: 'Larme de Changxi' }

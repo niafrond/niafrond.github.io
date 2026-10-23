@@ -17,6 +17,16 @@ describe('dialogues d\'avant-combat des soleils', () => {
 
 import { SUN_FALL_CAPTIONS, REGION_SCENES } from '../../cinematics.js';
 
+describe('boss muet : Changxi', () => {
+    test('le Narrateur décrit, Changxi ne répond que « ... »', () => {
+        const lines = bossIntroLines({ enemyId: 'changxi', name: 'Changxi', level: 41 });
+        expect(lines.some(l => l.who === 'narrator')).toBe(true);
+        expect(lines.filter(l => l.who === 'boss').map(l => l.text)).toEqual(['...', '...']);
+        expect(lines.some(l => l.who === 'hero')).toBe(false);
+        expect(lines.at(-1).who).toBe('narrator');
+    });
+});
+
 describe('chute des soleils', () => {
     test('une légende par soleil', () => {
         expect(SUN_FALL_CAPTIONS).toHaveLength(9);

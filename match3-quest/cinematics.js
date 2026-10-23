@@ -824,8 +824,21 @@ function pick(list, seed) {
     return list[h % list.length];
 }
 
-// Lignes d'un échange de début de combat de boss : [{ who: 'boss' | 'hero', text }].
+// Boss muets : leur visage, leur humeur et leurs gestes sont décrits par le Narrateur ; eux ne disent que « ... ».
+export const SILENT_BOSS_LINES = {
+    changxi: [
+        { who: 'narrator', text: "Changxi ne bouge pas. Allongée contre la balustrade, elle garde les paupières closes, et les douze lunes qui tournent autour de sa tête ralentissent à mesure que vous approchez." },
+        { who: 'narrator', text: "Un souffle d'embruns passe sur son visage, long, pâle, d'une beauté fatiguée. Une ride fine entre ses sourcils : celle de quelqu'un qui a veillé trop de nuits sans que personne ne l'en remercie." },
+        { who: 'boss', text: '...' },
+        { who: 'narrator', text: "Elle ouvre un œil, comme on ouvre une fenêtre sur un ciel qu'on ne connaît que trop. Elle vous regarde longtemps. Ni colère ni mépris : seulement l'attente de savoir si vous allez détourner la tête." },
+        { who: 'boss', text: '...' },
+        { who: 'narrator', text: "Sa main se lève, lentement, et les lunes se détachent de sa chevelure, une à une. Elle n'a pas dit un mot. Elle n'en a pas besoin : l'épreuve commence." }
+    ]
+};
+
+// Lignes d'un échange de début de combat de boss : [{ who: 'boss' | 'hero' | 'narrator', text }].
 export function bossIntroLines(enc) {
+    if (SILENT_BOSS_LINES[enc?.enemyId]) return SILENT_BOSS_LINES[enc.enemyId].map(line => ({ ...line }));
     const name = enc?.boss?.name || enc?.name || 'Boss';
     // Répliques propres à la rencontre (maîtres de l'Arène des Mille Flèches) : [adversaire, héros].
     if (enc?.introLines?.length === 2) return [{ who: 'boss', text: enc.introLines[0] }, { who: 'hero', text: enc.introLines[1] }];
@@ -1113,10 +1126,11 @@ export function playBossDialogue(host, enc, spriteHtml, heroName = 'Hou Yi') {
 
         const showLine = () => {
             const line = lines[idx];
-            const isBoss = line.who === 'boss';
-            box.classList.toggle('hero', !isBoss);
-            portrait.innerHTML = isBoss ? spriteHtml : icon('bow');
-            nameEl.textContent = isBoss ? bossName : heroName;
+            const isBoss = line.who === 'boss', isNarrator = line.who === 'narrator';
+            box.classList.toggle('hero', !isBoss && !isNarrator);
+            box.classList.toggle('narrator', isNarrator);
+            portrait.innerHTML = isBoss || isNarrator ? spriteHtml : icon('bow');   // le Narrateur décrit le boss : son portrait reste à l'écran
+            nameEl.textContent = isNarrator ? 'Narrateur' : isBoss ? bossName : heroName;
             full = line.text;
             pos = 0;
             textEl.textContent = '';
