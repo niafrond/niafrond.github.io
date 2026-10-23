@@ -10,7 +10,7 @@
  * Usage (WSL, `gm up audio` pour la génération ; ffmpeg pour l'installation) :
  *   node generate.mjs generate "jingle-*" --variants 4      # 4 variantes par jingle -> out/jingle-<clé>/vNNN.mp3
  *   node jingles.mjs list                                   # durées visées et variantes disponibles
- *   node jingles.mjs install [clé…] [--pick vNNN]           # meilleure variante (ou celle imposée) -> audio/sfx/<clé>.mp3 + manifest.json
+ *   node jingles.mjs install [clé…] [--pick vNNN] [--from vNNN]  # meilleure variante (ou celle imposée) -> audio/sfx/<clé>.mp3 + manifest.json
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -63,11 +63,13 @@ function cmdList() {
 function cmdInstall(args) {
     const pickIdx = args.indexOf('--pick');
     const pick = pickIdx >= 0 ? args[pickIdx + 1] : null;
-    const wanted = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--pick');
+    const fromIdx = args.indexOf('--from');   // `--from vNNN` : ne considérer que les variantes à partir de celle-ci (après une régénération)
+    const from = fromIdx >= 0 ? args[fromIdx + 1] : null;
+    const wanted = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--pick' && args[i - 1] !== '--from');
     const todo = keys.filter(k => !wanted.length || wanted.includes(sfxKeyOf(k)) || wanted.includes(k));
     const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
     for (const key of todo) {
-        const spec = CATALOG[key].jingle, files = variantsOf(key);
+        const spec = CATALOG[key].jingle, files = variantsOf(key).filter(f => !from || path.basename(f, '.mp3') >= from);
         if (!files.length) { console.log(`· ${sfxKeyOf(key)} : aucune variante dans out/${key}/`); continue; }
         const scored = files.map(f => ({ f, s: stats(f, spec) })).filter(x => x.s);
         // la plus énergique dans sa durée (niveau moyen le plus haut) : un jingle doit « sonner » d'emblée
@@ -85,5 +87,5 @@ function cmdInstall(args) {
 
 const [cmd, ...rest] = process.argv.slice(2);
 const commands = { list: cmdList, install: () => cmdInstall(rest) };
-if (!commands[cmd]) die("Usage : node jingles.mjs list | install [clé…] [--pick vNNN]");
+if (!commands[cmd]) die("Usage : node jingles.mjs list | install [clé…] [--pick vNNN] [--from vNNN]");
 commands[cmd]();
