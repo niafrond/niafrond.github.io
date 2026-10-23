@@ -3421,7 +3421,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 
 /* Onglet Stuff (stuffView.js) */
 .stuff-summary { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-weight: 600; }
-.spell-fx-ic { width: .85em; height: .85em; opacity: .75; margin-left: .15em; }
+.spell-fx-ic { width: 1.7em; height: 1.7em; opacity: 1; margin-left: .25em; vertical-align: -0.45em; }
 
 /* Comparaison de sorts / armes / stuffs (compareView.js) */
 .compare-btn { margin-left: 6px; padding: 2px 8px; font-size: 1em; cursor: pointer; }
