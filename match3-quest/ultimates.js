@@ -14,10 +14,43 @@ export function getUltimateById(id){
     return ultimateSpells.find(spell => spell.id === id) || null;
 }
 
-// Ultimes que le joueur peut choisir : ceux de sa classe dont le niveau requis est atteint.
+// Ultimes de légende (les Quatre Gardiens Célestes) : gagnés en terminant une quête (`spell.unlock.quest`), quelle que soit la classe.
+// Les ultimes de classe, eux, sont liés à leur classe (`spell.class`) et ne dépendent que du niveau.
+export const isQuestUltimate = spell => typeof spell?.unlock?.quest === 'string';
+
+export function getQuestUltimates(){
+    return ultimateSpells.filter(isQuestUltimate);
+}
+
+/** Identifiants d'ultimes de légende valides, sans doublon (sauvegardes anciennes, modifiées ou venant d'un autre appareil). */
+export function normalizeUnlockedUltimates(ids){
+    const known = new Set(getQuestUltimates().map(spell => spell.id));
+    return [...new Set(Array.isArray(ids) ? ids : [])].filter(id => known.has(id));
+}
+
+export const isUltimateUnlocked = (entity, spell) => isQuestUltimate(spell)
+    ? normalizeUnlockedUltimates(entity?.unlockedUltimates).includes(spell.id)
+    : spell?.class === entity?.class;
+
+/** Débloque un ultime de légende pour `entity` ; retourne false s'il est inconnu, n'est pas de légende ou était déjà débloqué. */
+export function unlockUltimate(entity, id){
+    const spell = getUltimateById(id);
+    if(!entity || !isQuestUltimate(spell)) return false;
+    entity.unlockedUltimates = normalizeUnlockedUltimates(entity.unlockedUltimates);
+    if(entity.unlockedUltimates.includes(id)) return false;
+    entity.unlockedUltimates.push(id);
+    return true;
+}
+
+// Ultimes de légende qu'une quête (terminée ou non) permettra de gagner : pour l'afficher verrouillé dans la liste.
+export const getLockedQuestUltimates = entity => getQuestUltimates().filter(spell => !isUltimateUnlocked(entity, spell));
+
+// Ultimes que le joueur peut choisir : ceux de sa classe, puis ceux de légende qu'il a débloqués, dont le niveau requis est atteint.
 export function getSelectableUltimates(entity){
     if(entity?.cheatAllUltimates === true) return [...ultimateSpells];   // menu secret : tous les ultimes, toutes classes et niveaux
-    return getUltimatesForClass(entity?.class).filter(spell => (entity?.level || 1) >= (spell.minLevel || 1));
+    const level = entity?.level || 1;
+    const legends = getQuestUltimates().filter(spell => isUltimateUnlocked(entity, spell));
+    return [...getUltimatesForClass(entity?.class), ...legends].filter(spell => level >= (spell.minLevel || 1));
 }
 
 // Le seul ultime accessible en combat : celui choisi dans l'onglet Sorts, à défaut le premier débloqué.

@@ -265,14 +265,14 @@ function placeNearGate(screen, gate, occ, depths, laterals) {
 }
 
 // Case de coffre cachée : libre, ouverte, loin des sorties, de préférence au sud-est de la carte ; choix déterministe parmi les 6 plus reculées.
-export function placeInLand(screen, occ, seedText) {
+export function placeInLand(screen, occ, seedText, accept = null) {
     const exits = screen.exits.filter(e => !e.door);
     const cells = [];
     const pathGrid = rectGrid(screen, screen.paths);
     for (let x = 1; x < screen.w - 1; x++) for (let y = 1; y < screen.h - 1; y++) {
         if (!occ.free(x, y) || occ.openNeighbors(x, y) < 3 || pathGrid[y * screen.w + x] === 1) continue;
         const dist = Math.min(...exits.map(e => Math.abs(e.x - x) + Math.abs(e.y - y)), 99);
-        if (dist < 4) continue;
+        if (dist < 4 || (accept && !accept({ x, y }))) continue;
         cells.push({ x, y, dist });
     }
     // les textes de quête parlent du « sud-est » : on cache les coffres dans ce quart de la carte quand c'est possible

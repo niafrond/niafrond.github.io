@@ -58,6 +58,19 @@ ULTIMATES = {
     'ultimateSkyWolf': (
         'a colossal ethereal spirit wolf made of glowing blue-white stars and aurora light, it breathes, its mane and tail flow, stars twinkle inside its body',
         'the spirit wolf raises its head and howls, then lunges forward, aurora ribbons streaming behind it'),
+    # ultimes de légende : les Quatre Gardiens Célestes
+    'ultimateVermilionBird': (
+        'a colossal vermilion phoenix with burning wings spread wide, its flame feathers flicker, its long tail streams like fire, embers rise from its body, it flaps its wings slowly',
+        'the phoenix soars upward and bursts into a blazing fireball of rebirth, wings flaring wide, flames radiating outward in all directions'),
+    'ultimateBlackTortoise': (
+        'a colossal black tortoise with a serpent coiled around its shell, glowing cyan runes pulse on the shell, water streams down its sides, the serpent sways and hisses, the tortoise slowly raises its head',
+        'the tortoise rears up and slams its huge shell forward, a shockwave of water surges outward, the runes blaze bright cyan, the serpent strikes'),
+    'ultimateWhiteTiger': (
+        'a colossal white tiger crouching low, its fur ripples, its muscles tense, its tail sways, its golden eyes glow, it breathes heavily with a low growl',
+        'the white tiger roars and leaps forward in a huge pounce, claws extended, silver light streaking behind it'),
+    'ultimateAzureDragon': (
+        'a colossal azure Chinese dragon coiling in the air, its teal scales shimmer, its long whiskers and mane flow, a glowing pearl in its claw, its body undulates slowly',
+        'the azure dragon roars and dives forward in a spiral, lightning crackling along its body, its mane whipping'),
 }
 ENTITY_FIT = {u: None for u in ULTIMATES}   # rempli depuis gen-ultimate-acts.py (même `ent`)
 

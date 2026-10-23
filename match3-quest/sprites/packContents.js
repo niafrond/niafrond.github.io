@@ -5,7 +5,8 @@ export const SPRITE_PACK_FILES = {
     'actors-b': './cn/actors-b.js',
     'enemies-1': './cn/enemies-1.js',
     'enemies-2': './cn/enemies-2.js',
-    suns: './cn/suns.js'
+    suns: './cn/suns.js',
+    legends: './cn/legends.js'
 };
 
 // Répartit les exports d'un paquet entre héros, coffres, PNJ et ennemis.
@@ -19,7 +20,8 @@ export function packContents(mod) {
             ...(mod.ENEMY_SPRITES_CN_2 || {}),
             ...(mod.BEAST_SPRITES || {}),
             ...(mod.SUN_SPRITES || {}),
-            ...(mod.FENGMENG_SPRITES || {})
+            ...(mod.FENGMENG_SPRITES || {}),
+            ...(mod.LEGEND_SPRITES || {})
         }
     };
 }

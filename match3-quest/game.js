@@ -28,7 +28,7 @@ import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPTo
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
+import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -547,6 +547,7 @@ export let player = {
     spells: [],
     activeSpells: [],  // sorts équipés (max 4)
     equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
+    unlockedUltimates: [],   // ultimes de légende (Quatre Gardiens Célestes) gagnés par quête, toutes classes (ultimates.js)
     availableSpells: [], // sorts débloqués
     weapons: [],  // armes possédées
     equippedWeapon: null,  // arme équipée
@@ -638,6 +639,16 @@ export function grantStuffPiece(id, origin = 'Trouvé'){
     log(`${getRarityIcon(s.rarity)} ${origin} : ${s.name} (onglet Stuff) !`);
     document.dispatchEvent(new Event('stuff-changed'));
     return s.name;
+}
+
+// Récompense de quête : un ultime de légende, pour toutes les classes. Retourne le sort s'il vient d'être débloqué, sinon null (déjà acquis ou inconnu).
+export function grantUltimate(id, origin = 'Récompense de quête'){
+    if(!unlockUltimate(player, id)) return null;
+    const spell = getUltimateById(id);
+    log(`✦ ${origin} : ultime « ${spell.name} » débloqué (onglet Sorts, niveau ${spell.minLevel} requis) !`);
+    saveUpdate();
+    if(typeof document !== 'undefined' && document.getElementById('ultimate-spells-list')) updateUltimatePicker();
+    return spell;
 }
 
 // tour actuel
@@ -1148,6 +1159,7 @@ export function loadGameData() {
             player.spells = loaded.spells ?? player.spells;
             player.activeSpells = loaded.activeSpells ?? player.activeSpells;
             player.equippedUltimate = loaded.equippedUltimate ?? player.equippedUltimate;
+            player.unlockedUltimates = normalizeUnlockedUltimates(loaded.unlockedUltimates);
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
@@ -3420,10 +3432,7 @@ function updateUltimatePicker(){
     if(!list) return;
     list.innerHTML = '<h3>Ultime (1 seul, jauge de rage)</h3>';
     const choices = getSelectableUltimates(player);
-    if(choices.length === 0){
-        list.innerHTML += '<p><em>Aucun ultime débloqué</em></p>';
-        return;
-    }
+    if(choices.length === 0) list.innerHTML += '<p><em>Aucun ultime débloqué</em></p>';
     const current = getEquippedUltimate(player);
     choices.forEach(sp => {
         const chosen = sp.id === current.id;
@@ -3439,6 +3448,19 @@ function updateUltimatePicker(){
                 <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
             ${cardActionsHtml('', action)}`;
+        list.appendChild(div);
+    });
+    // Ultimes de légende pas encore utilisables (toutes classes) : la quête à terminer, ou le niveau à atteindre.
+    getQuestUltimates().filter(sp => !choices.some(c => c.id === sp.id)).forEach(sp => {
+        const div = document.createElement('div');
+        div.className = 'spell-item ultimate-spell locked-spell';
+        const reason = isUltimateUnlocked(player, sp) ? `Niveau ${sp.minLevel} requis` : (sp.unlock.hint || 'Quête à terminer');
+        div.innerHTML = `
+            <div class="spell-content">
+                <div class="spell-name">${svgIcon('lock')} ${sp.name}</div>
+                <div class="spell-cost">${reason}</div>
+            </div>
+        `;
         list.appendChild(div);
     });
 }

@@ -1,6 +1,6 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
+import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -10,6 +10,7 @@ import { weaknessLabel } from "./terrain.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
+import { getUltimateById, playUltimateCinematic } from "./ultimates.js";
 import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefetch, bindOfflineOptions } from "./offlineCache.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
@@ -162,7 +163,12 @@ function init() {
             const stuff = drop && grantStuffPiece(drop.id, 'Trouvé dans un coffre');
             return stuff ? [...labels, stuff] : labels;
         },
-        onQuestReward: ev => { if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête'); },
+        onQuestReward: ev => {
+            if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête');
+            if(ev.reward?.ultimate) grantUltimate(ev.reward.ultimate);   // ultime de légende : toutes classes (ultimates.js)
+        },
+        // Révélation de l'ultime gagné : sa cinématique plein écran, jouée une fois les dialogues de fin de quête terminés
+        onUltimateLearned: id => { const spell = getUltimateById(id); if(spell) playUltimateCinematic(spell); },
         onXp: amount => {
             const res = grantExplorationXP(amount);
             if(res.leveledUp) {

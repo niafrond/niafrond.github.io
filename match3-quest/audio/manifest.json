@@ -327,6 +327,22 @@
   "boss-immortel-dechu-des-branches": {
    "seconds": 118,
    "sections": 2
+  },
+  "boss-zhuque-l-oiseau-vermillon": {
+   "seconds": 118,
+   "sections": 1
+  },
+  "boss-xuanwu-la-tortue-noire": {
+   "seconds": 118,
+   "sections": 1
+  },
+  "boss-baihu-le-tigre-blanc": {
+   "seconds": 118,
+   "sections": 1
+  },
+  "boss-qinglong-le-dragon-d-azur": {
+   "seconds": 118,
+   "sections": 1
   }
  },
  "sfx": {

@@ -18,7 +18,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { execSync } from 'child_process';
 import { createRequire } from 'module';
-import { BESTIARY } from './bestiary-data.mjs';
+import { BESTIARY as BASE_BESTIARY } from './bestiary-data.mjs';
+import { OVERRIDES } from './sprite-overrides.mjs';
 import { biblePrompt } from './bible-graphique.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,12 +28,14 @@ const { PNG } = createRequire(import.meta.url)('pngjs');
 const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const [k, ...v] = a.slice(2).split('='); return [k, v.length ? v.join('=') : true]; }));
 const ONLY = args.only ? String(args.only).split(',') : null;
 const STEPS = Number(args.steps || 25), CFG = Number(args.cfg || 7), LORA = Number(args.lora ?? 1);
-const SIZE = 512, PORT = 8188, OUT_PX = 32, MAX_PX = 30;
+const OUT_PX = Number(args.px || 32), MAX_PX = OUT_PX - 2, SIZE = Number(args.size || (OUT_PX > 32 ? 1024 : 512)), PORT = 8188;   // --px=64 : sprite plus détaillé (génération SDXL native 1024²)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const GENERATED = join(GAME, 'sprites', 'generated.js');
 const PNG_DIR = join(GAME, 'sprites', 'png');
 const DIRS = ['front', 'back', 'left', 'right'];
+// bestiaire + créatures de sprite-overrides.mjs (une surcharge remplace l'entrée de même id)
+const BESTIARY = [...BASE_BESTIARY.filter(b => !OVERRIDES.some(o => o[0] === b[0])), ...OVERRIDES];
 const VIEWS = {
   front: 'front view, facing the viewer',
   back: 'back view, seen from behind, facing away from the viewer',

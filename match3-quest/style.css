@@ -3414,6 +3414,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 #ultimate-spells-list .ultimate-spell { border: 1px solid #d9452e; }
 #spell-buttons .ultimate-spell { border: 1px solid #d9452e; background: linear-gradient(135deg, rgba(217,69,46,0.25), rgba(242,193,78,0.2)); }
 #spell-buttons .ultimate-spell.ready { box-shadow: 0 0 8px #f2c14e; animation: rage-pulse 0.9s ease-in-out infinite; }
+#ultimate-spells-list .ultimate-spell.locked-spell { opacity: 0.6; border-style: dashed; }
 
 /* Onglet Stuff (stuffView.js) */
 .stuff-summary { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-weight: 600; }

@@ -1,0 +1,17 @@
+{
+  "id": "ultimateWhiteTiger",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon creature, dramatic lighting, rich saturated colors, no text",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "elements": {
+    "entity": {
+      "prompt": "a colossal white tiger of the West, Baihu, pure white fur with bold black stripes, glowing golden eyes, polished silver armor plates on its shoulders, crouching ready to pounce, mouth open in a roar, ancient Chinese mythology, side view, full body",
+      "w": 1024,
+      "h": 768,
+      "seed": 300,
+      "bg": "green",
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, human, rider, person, grass, rocks, cub, two tigers",
+      "tries": 6,
+      "pick": 1
+    }
+  }
+}

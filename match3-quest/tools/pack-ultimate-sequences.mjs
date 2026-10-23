@@ -21,6 +21,8 @@ const ONLY = args.only ? String(args.only).split(',') : null;
 const FPS = Number(args.fps || 24), COLS = Number(args.cols || 16), MAX_SIDE = 16384;
 const IDS = ['ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousandArrows', 'ultimateSunPiercer', 'ultimateImperialDragon',
   'ultimateEternalBastion', 'ultimateThousandRiders', 'ultimateSkyWolf',
+  // ultimes de légende (Quatre Gardiens Célestes)
+  'ultimateVermilionBird', 'ultimateBlackTortoise', 'ultimateWhiteTiger', 'ultimateAzureDragon',
   // mini-animations d'arrivée dans un biome (tools/gen-biome-intros.py) : `biome_<région>`
   ...['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'].map(r => `biome_${r}`)];
 

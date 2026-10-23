@@ -2270,6 +2270,91 @@
       "duration": 3,
       "cinematic": "ultimate-barbarian-2",
       "description": "Un hurlement terrifiant : 1000 dégâts, attaque ennemie réduite de 10 pendant 3 tours"
+    },
+    {
+      "id": "ultimateVermilionBird",
+      "name": "Renaissance de l'Oiseau Vermillon",
+      "ultimate": true,
+      "legend": "zhuque",
+      "unlock": {
+        "quest": "sq_legend_zhuque",
+        "hint": "Quête « Le feu du Sud » : Rong, au Hameau des Braises Sages (Volcan)"
+      },
+      "cost": {
+        "red": 35,
+        "purple": 25
+      },
+      "minLevel": 10,
+      "effect": "ultimate",
+      "dmg": 1100,
+      "healPercent": 30,
+      "cinematic": "ultimate-legend-1",
+      "description": "Le Gardien du Sud renaît de ses cendres : 1100 dégâts et soigne 30 % des PV max"
+    },
+    {
+      "id": "ultimateBlackTortoise",
+      "name": "Carapace de la Tortue Noire",
+      "ultimate": true,
+      "legend": "xuanwu",
+      "unlock": {
+        "quest": "sq_legend_xuanwu",
+        "hint": "Quête « La carapace du Nord » : Bian, au Port-à-Sec de Hekou (Fleuve)"
+      },
+      "cost": {
+        "blue": 40,
+        "green": 25
+      },
+      "minLevel": 16,
+      "effect": "ultimate",
+      "dmg": 900,
+      "healPercent": 25,
+      "defBuff": 30,
+      "duration": 4,
+      "cinematic": "ultimate-legend-2",
+      "description": "Le Gardien du Nord se referme sur vous : 900 dégâts, soigne 25 % des PV max et gagne +30 de défense pendant 4 tours"
+    },
+    {
+      "id": "ultimateWhiteTiger",
+      "name": "Chasse du Tigre Blanc",
+      "ultimate": true,
+      "legend": "baihu",
+      "unlock": {
+        "quest": "sq_legend_baihu",
+        "hint": "Quête « La chasse de l'Ouest » : Hu Mu, à l'Enclos de Caoyuan (Fauves)"
+      },
+      "cost": {
+        "red": 30,
+        "blue": 30
+      },
+      "minLevel": 28,
+      "effect": "ultimate",
+      "dmg": 1250,
+      "weakenAmount": 12,
+      "duration": 3,
+      "cinematic": "ultimate-legend-3",
+      "description": "Le Gardien de l'Ouest bondit : 1250 dégâts, attaque ennemie réduite de 12 pendant 3 tours"
+    },
+    {
+      "id": "ultimateAzureDragon",
+      "name": "Tempête du Dragon d'Azur",
+      "ultimate": true,
+      "legend": "qinglong",
+      "unlock": {
+        "quest": "sq_legend_qinglong",
+        "hint": "Quête « La tempête de l'Est » : Qing Yun, aux Terrasses de Fusang-le-Bas (Fusang)"
+      },
+      "cost": {
+        "green": 35,
+        "blue": 30
+      },
+      "minLevel": 38,
+      "effect": "ultimate",
+      "dmg": 1050,
+      "healPercent": 20,
+      "defBuff": 15,
+      "duration": 3,
+      "cinematic": "ultimate-legend-4",
+      "description": "Le Gardien de l'Est déchaîne la tempête : 1050 dégâts, soigne 20 % des PV max et gagne +15 de défense pendant 3 tours"
     }
   ]
 }
