@@ -39,11 +39,18 @@ function seaEdge(south, north) {
     ];
 }
 
-// La Lune n'a aucune bordure de mer : on n'y monte que depuis les Hautes-Eaux, par Changxi (story.js, autel de Mazu).
-export const CONNECTIONS = [
-    seaEdge('volcan_road', 'mer_road'),          // Volcan <-> Mer Orientale
-    seaEdge('gobi_road', 'fauves_road'),         // Gobi <-> Plaine des Fauves
-    seaEdge('fleuve_road', 'bambous_road'),      // Lit du Fleuve Jaune <-> Bambous
-    seaEdge('bambous_road', 'tonnerre_road'),    // Bambous <-> Monts du Tonnerre
-    seaEdge('rizieres_wild', 'fusang_road')      // Rizières <-> Fusang
-].flat();
+// Régions voisines sur la carte du monde (worldMap.js) : [région du sud, région du nord]. La Lune n'a aucune bordure de mer : on n'y monte
+// que depuis les Hautes-Eaux, par Changxi (story.js, autel de Mazu) ; les Hautes-Eaux, elles, sont déjà verrouillées par leur propre eau.
+const SEA_NEIGHBOURS = [['volcan', 'mer'], ['gobi', 'fauves'], ['fleuve', 'bambous'], ['bambous', 'tonnerre'], ['rizieres', 'fusang']];
+
+// Chaque carte de la région du sud est mise en face d'une carte de la région du nord, dans l'ordre de la chaîne (route, village, zone
+// sauvage / hameau, sanctuaire) : le bord nord de l'une mène au bord sud de l'autre, et inversement. La zone sauvage du sud (son bord nord
+// est libre) fait face au hameau du nord (son bord sud est libre). Une carte sans vis-à-vis (la route du Fusang : les Rizières n'en ont
+// pas) garde un bord de mer sans issue.
+const SOUTH_SIDE = r => [`${r}_road`, `${r}_village`, `${r}_wild`, r];
+const NORTH_SIDE = r => [`${r}_road`, `${r}_village`, `${r}_hamlet`, r];
+const NO_MAP = new Set(['rizieres_road']);   // la première région n'a pas de route d'accès (le jeu démarre au village)
+
+export const CONNECTIONS = SEA_NEIGHBOURS.flatMap(([south, north]) =>
+    SOUTH_SIDE(south).map((id, i) => [id, NORTH_SIDE(north)[i]]).filter(([s]) => !NO_MAP.has(s)).map(([s, n]) => seaEdge(s, n))
+).flat();

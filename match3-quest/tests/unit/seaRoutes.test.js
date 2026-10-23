@@ -1,5 +1,5 @@
 // Bordures de mer (world/connections.js) : le bord d'une carte mène au bord de la carte voisine sur la carte du monde. Ces bords sont de
-// l'eau : on n'y passe qu'en marchant sur l'eau, avec le Pas de Yu.
+// l'eau : on n'y passe qu'en marchant sur l'eau, avec le Pas de Yu, et une fois vaincu le gardien de la région la plus avancée.
 import './fixtures/xhrFromDisk.js';
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
@@ -8,13 +8,15 @@ import { createSession, teleportToScreen, tryMove, isTerrainBlocked, markEnemyDe
 import { overlapOf } from '../../mapConnections.js';
 
 const seaEdges = CONNECTIONS.filter(c => c.sea);
+const northward = seaEdges.filter(c => c.dir === 'north');
 const regionOf = id => SCREENS[id].region;
 const cols = s => [...Array(s.w).keys()];
 
 describe('bordures de mer', () => {
-    test('cinq liaisons nord-sud entre régions différentes, dans les deux sens, sur toute la largeur commune', () => {
-        expect(seaEdges).toHaveLength(10);   // une connexion explicite par sens
-        seaEdges.filter(c => c.dir === 'north').forEach(c => {
+    test("chaque carte des régions voisines fait face à une carte de l'autre région, dans les deux sens, sur toute la largeur commune", () => {
+        expect(northward).toHaveLength(19);   // 4 paires de cartes x 4 liaisons + 3 pour Rizières (sans route d'accès) -> Fusang
+        expect(seaEdges).toHaveLength(38);
+        northward.forEach(c => {
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(regionOf(c.from)).not.toBe(regionOf(c.to));
             expect(a.connections.north).toMatchObject({ to: c.to, sea: true });
@@ -25,6 +27,12 @@ describe('bordures de mer', () => {
         });
     });
 
+    test("Rizières et Fusang : chaque carte des Rizières mène au Fusang, et chaque carte du Fusang (sauf sa route d'accès) aux Rizières", () => {
+        ['rizieres_village', 'rizieres_wild', 'rizieres'].forEach(id => expect(regionOf(SCREENS[id].connections.north.to)).toBe('fusang'));
+        ['fusang_village', 'fusang_hamlet', 'fusang'].forEach(id => expect(regionOf(SCREENS[id].connections.south.to)).toBe('rizieres'));
+        expect(SCREENS.fusang_road.connections.south).toBeUndefined();
+    });
+
     test("neuf régions sur onze sont reliées par la mer ; la Lune et les Hautes-Eaux jamais (la Lune ne s'atteint que par Changxi)", () => {
         const linked = new Set(seaEdges.flatMap(c => [regionOf(c.from), regionOf(c.to)]));
         ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang'].forEach(r => expect(linked.has(r)).toBe(true));
@@ -32,7 +40,7 @@ describe('bordures de mer', () => {
     });
 
     test("les deux bords reliés sont de l'eau : infranchissables à pied, praticables avec le Pas de Yu (aucun couloir creusé)", () => {
-        seaEdges.filter(c => c.dir === 'north').forEach(c => {   // bord nord de la carte du sud, bord sud de la carte du nord
+        northward.forEach(c => {
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(cols(a).filter(x => !isTerrainBlocked(a, x, 0))).toEqual([]);
             expect(cols(b).filter(x => !isTerrainBlocked(b, x, b.h - 1))).toEqual([]);
