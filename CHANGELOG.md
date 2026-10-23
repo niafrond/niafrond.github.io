@@ -1,3 +1,18 @@
+## [2.116.0](https://github.com/niafrond/niafrond.github.io/compare/v2.115.0...v2.116.0) (2026-10-23)
+
+### Features
+
+* **match3-quest:** ajouter les musiques de boss des quatre Gardiens Célestes ([b4e978f](https://github.com/niafrond/niafrond.github.io/commit/b4e978fa248983cd3933b05a4bbadd86786b1721))
+* **match3-quest:** ajouter quatre ultimes de légende gagnés par quête, toutes classes ([5afb9cf](https://github.com/niafrond/niafrond.github.io/commit/5afb9cfddbf936c9554d2e3117302576775efbdf))
+* **match3-quest:** dessiner les 24 ennemis nommés au lieu d'emprunter ceux de leur gabarit ([15bbf1b](https://github.com/niafrond/niafrond.github.io/commit/15bbf1b066f196a5530a2d8d59e13c0d09f83d98))
+* **match3-quest:** générer les cinématiques des ultimes de légende ([cbe1a0e](https://github.com/niafrond/niafrond.github.io/commit/cbe1a0e347aa7111d3a1e8c237a093be7af2cf6f))
+* **match3-quest:** régénérer l'Assassin Masqué en 64×64 plus détaillé ([8d2ab97](https://github.com/niafrond/niafrond.github.io/commit/8d2ab97119c0994e027cb109d064f8a0b276108c))
+
+### Bug Fixes
+
+* **match3-quest:** empêcher les quêtes de légende d'emmurer une entité après le rebase ([00abb27](https://github.com/niafrond/niafrond.github.io/commit/00abb2779b7c3ce574f5dc3301adeb1b7b1a9d58))
+* **match3-quest:** redessiner l'Assassin Masqué en tueur à gages chinois (masque nuo, robe à nuages) ([fa8d37e](https://github.com/niafrond/niafrond.github.io/commit/fa8d37ef3716646b62f3a6e7dec92e9cc8d6d68d))
+
 ## [2.115.0](https://github.com/niafrond/niafrond.github.io/compare/v2.114.0...v2.115.0) (2026-10-23)
 
 ### Features
