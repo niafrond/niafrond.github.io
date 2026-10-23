@@ -180,7 +180,7 @@ const JINGLES = {
     endingJingle: ['peaceful nostalgic lullaby after the last sun has fallen, tender erhu melody over a gentle guzheng arpeggio, warm and bittersweet, slow and calm, resolving softly on a long tonic chord', 60, 'D major', 18, 13, 2],
     battleStart:  ['sudden alert sting at the start of a battle, two fast pipa tremolo hits and a sharp taiko drum hit, tense rising dizi flick, danger approaching', 140, 'E minor', 10, 1.8, 0.3],
     combatStart:  ['heroic charge call before a fight, fast taiko drum roll rising into a bright sheng fanfare burst, determined and energetic, ends on a strong accent', 150, 'A minor', 10, 1.7, 0.3],
-    bossStart:    ['ominous boss entrance, huge low gong, deep taiko drum hits, dissonant low strings and erhu growl, menacing and heavy, ends on a massive dark hit', 88, 'C minor', 10, 3, 0.6],
+    bossStart:    ['EPIC cinematic boss entrance fanfare, thunderous taiko war drums in unison, huge gong strike, soaring heroic brass-like sheng and erhu fanfare melody rising to a triumphant dramatic climax, layered epic orchestra with powerful low strings, grand and heroic yet dangerous, ends on a massive epic final chord', 96, 'D minor', 10, 3.4, 0.6],
     victory:      ['triumphant short victory fanfare, bright rising pipa arpeggio, sheng chord and cymbal swell, joyful, ending on a clear major resolution', 120, 'D major', 10, 2.6, 0.5],
     defeat:       ['sad defeat sting, slow descending erhu phrase over a low muffled drum, fading minor ending, sorrowful but gentle', 60, 'A minor', 10, 2.8, 0.7]
 };
