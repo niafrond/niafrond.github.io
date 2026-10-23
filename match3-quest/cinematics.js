@@ -1507,7 +1507,6 @@ export function playTitleScreen() {
             window.removeEventListener('resize', resize);
             window.removeEventListener('resize', ensureArt);
             document.removeEventListener('keydown', onKey, true);
-            playSfx('introJingle');
             overlay.classList.add('closing');
             setTimeout(() => { overlay.remove(); resolve(); }, 600);
         };
