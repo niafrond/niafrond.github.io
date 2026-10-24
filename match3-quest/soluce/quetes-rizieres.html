@@ -43,6 +43,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -71,6 +77,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil Ardent (Soleil) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>80 pièces d’or · 600 points d’expérience · composant de flèche : Éclat du Soleil Ardent</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h_wen.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du Doyen Wen"><span class="ring" style="left:75.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Maison du Doyen Wen : <b>1</b> Doyen Wen (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rizières Desséchées"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rizières Desséchées : <b>1</b> Soleil Ardent (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-q_sun_6">Le Soleil de Magma</a>, <a href="quetes-volcan.html#q-sq_ember_pup">Le louveteau de braise</a>, <a href="quetes-volcan.html#q-sq_ore">La veine de cinabre</a>, <a href="quetes-volcan.html#q-sq_ember">La braise du phénix</a>, <a href="quetes-rizieres.html#q-sq_riz_gateau">Les lanternes de Chang'e</a>, <a href="quetes-rizieres.html#q-sq_hua_1">La colporteuse sans âge</a></dd>
   </dl>
 </article>
@@ -86,6 +93,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Huli Jing (Esprit-renard) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Eau sacrée · <a href="compagnon-xiao_gui.html"><strong>Xiao Gui</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h_lin.jpg" width="440" height="308" loading="lazy" alt="Carte : Chaumière de Lin"><span class="ring" style="left:65.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Chaumière de Lin : <b>1</b> Lin (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rizières Desséchées"><span class="ring" style="left:85.00%;top:38.64%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rizières Desséchées : <b>1</b> Le démon chapardeur (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -97,6 +105,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver le cerf-volant de Petit Bao (dans les roseaux de la digue, au-delà du hameau)<br><small>Lieu : Digue et Marais Craquelés (partie nord de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés</small></li></ol></dd>
     <dt>Récompense</dt><dd>30 pièces d’or · 250 points d’expérience · composant de flèche : Plume de cerf-volant</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring" style="left:76.56%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Petit Bao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Digue et Marais Craquelés"><span class="ring" style="left:34.38%;top:27.08%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Digue et Marais Craquelés : <b>1</b> Cerf-volant dans les roseaux (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-rizieres.html#q-sq_cerf_volant_ficelle">La ficelle du chapardeur</a></dd>
   </dl>
 </article>
@@ -112,6 +121,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Huli Jing (Esprit-renard) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Ficelle de soie</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring" style="left:76.56%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Petit Bao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Digue et Marais Craquelés"><span class="ring" style="left:59.38%;top:77.08%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Digue et Marais Craquelés : <b>1</b> Démon des roseaux (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -123,6 +133,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>À rapporter à</dt><dd><b>Gu</b> — Cabane du passeur Gu (partie nord de l’écran)</dd>
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Porter la lettre de Petit Bao au passeur Gu (Lit du Fleuve Jaune)<br><small>Lieu : Cabane du passeur Gu (partie nord de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>35 pièces d’or · 250 points d’expérience · composant de flèche : Encre de voyage</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring" style="left:76.56%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Petit Bao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/fleuve_h_gu.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du passeur Gu"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>2</i></span></div><figcaption>Cabane du passeur Gu : <b>1</b> Gu (à qui la rendre) · <b>2</b> Gu (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fleuve.html#q-sq_lettre_bao_2">La lettre fait escale</a></dd>
   </dl>
 </article>
@@ -134,6 +145,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger le crapaud Chan (digue et marais)<br><small>Lieu : Digue et Marais Craquelés (partie ouest de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés</small></li><li><b>Ouvrir</b> : Fouiller la cache au bord de l'étang (Hameau des Lucioles)<br><small>Lieu : Hameau des Lucioles (partie sud-ouest de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés → Hameau des Lucioles</small></li></ol></dd>
     <dt>Récompense</dt><dd>30 pièces d’or · 250 points d’expérience · composant de flèche : Plume de pigeon</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Hameau des Lucioles"><span class="ring" style="left:83.93%;top:47.73%;width:6.43%;height:8.18%"><i>1</i></span><span class="ring" style="left:19.64%;top:79.55%;width:6.43%;height:8.18%"><i>2</i></span></div><figcaption>Hameau des Lucioles : <b>1</b> Zhao (donne la quête) · <b>2</b> Cache de l'étang (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Digue et Marais Craquelés"><span class="ring" style="left:11.46%;top:60.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Digue et Marais Craquelés : <b>1</b> Chan (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -145,6 +157,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Tante Liu (Hameau des Lucioles)<br><small>Lieu : Cabane de Tante Liu (partie nord de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés → Hameau des Lucioles → Cabane de Tante Liu</small></li></ol></dd>
     <dt>Récompense</dt><dd>30 pièces d’or · 250 points d’expérience · composant de flèche : Étincelle de luciole</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_moulin.jpg" width="440" height="308" loading="lazy" alt="Carte : Moulin tari du meunier Gao"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Moulin tari du meunier Gao : <b>1</b> Gao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_lucioles.jpg" width="440" height="308" loading="lazy" alt="Carte : Cabane de Tante Liu"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cabane de Tante Liu : <b>1</b> Tante Liu (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-rizieres.html#q-sq_riz_mill_2">Le meunier revenant</a></dd>
   </dl>
 </article>
@@ -160,6 +173,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Gui Guerrier (Gui) — Force : <span class="dot" style="background:#9b62d6"></span>Arcane (violet) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — frappe fort, rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Farine d'esprit</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_moulin.jpg" width="440" height="308" loading="lazy" alt="Carte : Moulin tari du meunier Gao"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Moulin tari du meunier Gao : <b>1</b> Gao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Digue et Marais Craquelés"><span class="ring" style="left:71.88%;top:31.25%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Digue et Marais Craquelés : <b>1</b> Meunier revenant (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-rizieres.html#q-sq_riz_mill_3">La farine de la fête</a></dd>
   </dl>
 </article>
@@ -171,6 +185,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>À rapporter à</dt><dd><b>Doyen Wen</b> — Maison du Doyen Wen (partie nord-est de l’écran)</dd>
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer la farine dans le coffre du moulin (Hameau des Lucioles)<br><small>Lieu : Moulin tari du meunier Gao (partie ouest de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés → Hameau des Lucioles → Moulin tari du meunier Gao</small></li><li><b>Parler à</b> : Porter la farine au Doyen Wen (maison du Doyen, Dongqiao)<br><small>Lieu : Maison du Doyen Wen (partie nord-est de l’écran) — itinéraire : Hameau de Dongqiao → Maison du Doyen Wen</small></li></ol></dd>
     <dt>Récompense</dt><dd>50 pièces d’or · 250 points d’expérience · composant de flèche : Farine bénie</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_moulin.jpg" width="440" height="308" loading="lazy" alt="Carte : Moulin tari du meunier Gao"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span><span class="ring" style="left:15.00%;top:64.29%;width:18.00%;height:25.71%"><i>2</i></span></div><figcaption>Moulin tari du meunier Gao : <b>1</b> Gao (donne la quête) · <b>2</b> Coffre à farine (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h_wen.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du Doyen Wen"><span class="ring" style="left:75.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span><span class="ring" style="left:75.00%;top:21.43%;width:18.00%;height:25.71%"><i>2</i></span></div><figcaption>Maison du Doyen Wen : <b>1</b> Doyen Wen (à qui la rendre) · <b>2</b> Doyen Wen (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -182,6 +197,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les corbeaux-démons voleurs (digue et marais)<br><small>Lieu : Digue et Marais Craquelés (partie nord de l’écran)</small><ul class="enemy"><li>Corbeau-démon voleur — nord</li><li>Corbeau-démon voleur — nord</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</p></li></ol></dd>
     <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Plume de corbeau</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Hameau des Lucioles"><span class="ring" style="left:48.21%;top:70.45%;width:6.43%;height:8.18%"><i>1</i></span></div><figcaption>Hameau des Lucioles : <b>1</b> Fu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Digue et Marais Craquelés"><span class="ring" style="left:53.13%;top:27.08%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:65.63%;top:27.08%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Digue et Marais Craquelés : <b>1</b> Corbeau-démon voleur (objectif) · <b>2</b> Corbeau-démon voleur (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -193,6 +209,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Sonder Dahei le buffle (étable de Dahei, Dongqiao)<br><small>Lieu : Étable de Dahei (partie ouest de l’écran) — itinéraire : Hameau de Dongqiao → Étable de Dahei</small></li><li><b>Parler à</b> : Sonder Cao l'Épouvantail (place de Dongqiao)<br><small>Lieu : Hameau de Dongqiao (partie nord-est de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>30 pièces d’or · 250 points d’expérience · composant de flèche : Ruban rouge</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring" style="left:32.81%;top:33.93%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:85.94%;top:33.93%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Dame Hong (donne la quête) · <b>2</b> Cao l'Épouvantail (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/rizieres_h_etable.jpg" width="528" height="352" loading="lazy" alt="Carte : Étable de Dahei"><span class="ring" style="left:29.17%;top:56.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Étable de Dahei : <b>1</b> Dahei (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -204,6 +221,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Se rendre à</b> : Rejoindre le Hameau des Lucioles (chemin latéral de la digue)<br><small>Lieu : Hameau des Lucioles — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés → Hameau des Lucioles</small></li><li><b>Parler à</b> : Prendre des nouvelles de Tante Liu<br><small>Lieu : Cabane de Tante Liu (partie nord de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés → Hameau des Lucioles → Cabane de Tante Liu</small></li></ol></dd>
     <dt>Récompense</dt><dd>35 pièces d’or · 250 points d’expérience · composant de flèche : Lueur de luciole</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/rizieres_h_grenier.jpg" width="528" height="352" loading="lazy" alt="Carte : Grenier communal"><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Grenier communal : <b>1</b> Grand-mère Tao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_lucioles.jpg" width="440" height="308" loading="lazy" alt="Carte : Cabane de Tante Liu"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cabane de Tante Liu : <b>1</b> Tante Liu (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -215,6 +233,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>À rapporter à</dt><dd><b>Gao</b> — Moulin tari du meunier Gao (partie nord de l’écran)</dd>
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Rapporter une jarre de lucioles au meunier Gao (Hameau des Lucioles)<br><small>Lieu : Cabane de Tante Liu (partie est de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés → Hameau des Lucioles → Cabane de Tante Liu</small></li></ol></dd>
     <dt>Récompense</dt><dd>50 pièces d’or · 250 points d’expérience · composant de flèche : Lanterne de Chang'e</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/rizieres_h_houyi.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Hou Yi et Chang'e"><span class="ring" style="left:68.18%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Hou Yi et Chang'e : <b>1</b> Chang'e (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_moulin.jpg" width="440" height="308" loading="lazy" alt="Carte : Moulin tari du meunier Gao"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Moulin tari du meunier Gao : <b>1</b> Gao (à qui la rendre)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h2_lucioles.jpg" width="440" height="308" loading="lazy" alt="Carte : Cabane de Tante Liu"><span class="ring" style="left:85.00%;top:64.29%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cabane de Tante Liu : <b>1</b> Jarre de lucioles (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -226,6 +245,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page déchirée (digue et marais)<br><small>Lieu : Digue et Marais Craquelés (partie nord-est de l’écran) — itinéraire : Hameau de Dongqiao → Digue et Marais Craquelés</small></li></ol></dd>
     <dt>Récompense</dt><dd>35 pièces d’or · 250 points d’expérience · composant de flèche : Page du carnet (I)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/rizieres_h_grenier.jpg" width="528" height="352" loading="lazy" alt="Carte : Grenier communal"><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Grenier communal : <b>1</b> Grand-mère Tao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Digue et Marais Craquelés"><span class="ring" style="left:67.71%;top:14.58%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Digue et Marais Craquelés : <b>1</b> Page déchirée dans les roseaux (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_journal_6">La page brûlée</a></dd>
   </dl>
 </article>
@@ -237,6 +257,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Hua la colporteuse sur ses babioles (place du hameau)<br><small>Lieu : Hameau de Dongqiao (au centre de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Caillou tiède de Hua</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/rizieres_h_grenier.jpg" width="528" height="352" loading="lazy" alt="Carte : Grenier communal"><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Grenier communal : <b>1</b> Grand-mère Tao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring" style="left:35.94%;top:37.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Hua (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fleuve.html#q-sq_hua_2">Les mêmes babioles</a></dd>
   </dl>
 </article>

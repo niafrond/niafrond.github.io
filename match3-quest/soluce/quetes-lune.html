@@ -43,6 +43,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -67,6 +73,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Déposer les gâteaux de lune sur l'autel (sommet du Pic de la Lune)<br><small>Lieu : Pic de la Lune (partie est de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent → Pic de la Lune</small></li></ol></dd>
     <dt>Récompense</dt><dd>800 pièces d’or · 27700 points d’expérience · composant de flèche : Gâteau de pleine lune</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:31.67%;top:43.18%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:91.67%;top:43.18%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Pic de la Lune : <b>1</b> Chang'e (donne la quête) · <b>2</b> Autel des gâteaux de lune (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -82,6 +89,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Assassin Masqué (Humain) — Force : <span class="dot" style="background:#9b62d6"></span>Arcane (violet) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — frappe fort, rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Écorce d'osmanthus</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:23.75%;top:34.09%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:8.75%;top:84.09%;width:4.50%;height:8.18%"><i>2</i></span><span class="ring" style="left:21.25%;top:47.73%;width:4.50%;height:8.18%"><i>3</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Wu Gang (donne la quête) · <b>2</b> Cache sous le givre (objectif) · <b>3</b> Ombre du miroir (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -93,6 +101,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>À rapporter à</dt><dd><b>Veilleuse Yin</b> — Maison de la veilleuse (partie nord-est de l’écran)</dd>
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Porter la lanterne de Hua à la veilleuse Yin (Hameau sous la Lune)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Lanterne de Hua</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>2</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>3</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Hua (donne la quête) · <b>2</b> Veilleuse Yin (à qui la rendre) · <b>3</b> Veilleuse Yin (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -104,6 +113,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la boîte à gâteaux (Hameau sous la Lune)<br><small>Lieu : Hameau sous la Lune (au centre de l’écran)</small></li><li><b>Parler à</b> : Porter un gâteau à la veilleuse Yin (maison de la veilleuse)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Pâte de lotus</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:44.23%;top:47.92%;width:6.92%;height:7.50%"><i>1</i></span><span class="ring" style="left:36.54%;top:43.75%;width:6.92%;height:7.50%"><i>2</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Gui (donne la quête) · <b>2</b> Boîte à gâteaux de lune (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Veilleuse Yin (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -115,6 +125,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter le Corbeau d'ombre (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li><li><b>Ouvrir</b> : Récupérer la cache de la rivière d'argent (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Caillou d'argent</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:48.08%;top:39.58%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Vieux Shen (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:31.25%;top:70.45%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:23.75%;top:84.09%;width:4.50%;height:8.18%"><i>2</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Corbeau d'ombre (objectif) · <b>2</b> Cache de la rivière d'argent (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -126,6 +137,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les ombres du miroir (sentier d'argent)<br><small>Lieu : Sentier d'Argent (au centre de l’écran)</small><ul class="enemy"><li>Ombre du miroir — centre</li><li>Ombre du miroir — est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</p></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Éclat de miroir</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:75.00%;top:60.42%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Lan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:61.25%;top:56.82%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:71.25%;top:65.91%;width:4.50%;height:8.18%"><i>2</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Ombre du miroir (objectif) · <b>2</b> Ombre du miroir (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -137,6 +149,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la dernière page du carnet (sentier d'argent)<br><small>Lieu : Sentier d'Argent (au centre de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Carnet complet</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:63.46%;top:43.75%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Yutu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:63.75%;top:43.18%;width:4.50%;height:8.18%"><i>1</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Dernière page du carnet (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -148,6 +161,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Demander à la veilleuse Yin d'allumer la dernière lanterne pour Xihe (Hameau sous la Lune)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Caillou d'aurore</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>2</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Hua (donne la quête) · <b>2</b> Veilleuse Yin (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>

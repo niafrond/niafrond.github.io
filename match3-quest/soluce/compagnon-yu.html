@@ -43,6 +43,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -76,6 +82,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Carpe dorée (Poisson) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>70 pièces d’or · 2780 points d’expérience · composant de flèche : Écaille dorée · <a href="compagnon-yu.html"><strong>Yu</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/fleuve_h_gu.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du passeur Gu"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Cabane du passeur Gu : <b>1</b> Gu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/fleuve.jpg" width="1320" height="968" loading="lazy" alt="Carte : Lit du Fleuve Jaune"><span class="ring" style="left:15.00%;top:20.45%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Lit du Fleuve Jaune : <b>1</b> Carpe dorée du gué (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>

@@ -43,6 +43,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -72,6 +78,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Fouiller la cachette de la belette (coin nord-ouest de la plaine)<br><small>Lieu : Plaine des Fauves (partie nord-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre → Plaine des Fauves</small></li></ol></dd>
     <dt>Récompense</dt><dd>90 pièces d’or · 7550 points d’expérience · composant de flèche : Poil de belette · <a href="compagnon-tou.html"><strong>Tou</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:25.00%;top:15.91%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Cachette de Tou (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>

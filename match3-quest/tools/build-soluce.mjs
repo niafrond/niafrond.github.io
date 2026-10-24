@@ -5,7 +5,7 @@
 // La soluce n'est liée depuis aucune page du jeu : on y accède uniquement en connaissant l'adresse (…/match3-quest/soluce.html).
 // Les pages sont `noindex` et ne figurent pas dans precache-manifest.json.
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { QUESTS, SCREENS, REGION_UNLOCK_LEVEL } from '../story.js';
@@ -13,10 +13,11 @@ import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry } from '../bestiary.js';
-import { ELEMENT_LABELS } from '../elements.js';
+import { entOf, questTargets } from './soluce-targets.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
+const IMG = join(OUT, 'img');
 const CATALOG = JSON.parse(readFileSync(join(ROOT, 'enemies.catalog.json'), 'utf8'));
 const TEMPLATE = Object.fromEntries(CATALOG.map(t => [t.id, t]));
 
@@ -31,15 +32,6 @@ const dot = c => (c ? `<span class="dot" style="background:${COLOR_DOT[c]}"></sp
 const REGION_ORDER = Object.keys(REGION_UNLOCK_LEVEL).sort((a, b) => REGION_UNLOCK_LEVEL[a] - REGION_UNLOCK_LEVEL[b]);
 const regionName = r => SCREENS[r]?.name || r;
 const regionSlug = r => `quetes-${r}.html`;
-
-// Index des entités : id → { kind, screen, ent }
-const ENT = {};
-for (const s of Object.values(SCREENS)) {
-    for (const [list, kind] of [[s.npcs, 'npc'], [s.enemies, 'enemy'], [s.chests, 'chest']]) {
-        for (const e of list || []) if (e.id && !ENT[`${kind}:${e.id}`]) ENT[`${kind}:${e.id}`] = { kind, screen: s, ent: e };
-    }
-}
-const entOf = (id, kinds = ['npc', 'enemy', 'chest']) => kinds.map(k => ENT[`${k}:${id}`]).find(Boolean) || null;
 
 // Position approximative d'une case sur l'écran (tiers de la carte).
 function compass(x, y, w, h) {
@@ -155,6 +147,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -227,6 +225,24 @@ function objectiveHtml(o, region) {
     return `<li><b>${kindFr}</b> : ${esc(o.text)}${where ? `<br><small>Lieu : ${esc(where)}</small>` : ''}${extra}</li>`;
 }
 
+
+// Captures annotées : la carte de l'écran (soluce/img, voir build-soluce-shots.mjs) avec un cercle rouge par case citée par la quête.
+const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif' };
+function shotsHtml(q) {
+    const byScreen = new Map();
+    for (const t of questTargets(q)) byScreen.set(t.screenId, [...(byScreen.get(t.screenId) || []), t]);
+    const figs = [];
+    for (const [sid, list] of byScreen) {
+        if (!existsSync(join(IMG, `${sid}.jpg`))) continue;
+        const sc = SCREENS[sid];
+        const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
+        const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
+        const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
+        figs.push(`<figure class="shot"><div class="shotbox" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend}</figcaption></figure>`);
+    }
+    return figs.join('');
+}
+
 function questHtml(q) {
     const region = q._region;
     const giver = entOf(q.giver, ['npc']);
@@ -252,6 +268,7 @@ function questHtml(q) {
     ${turn ? `<dt>À rapporter à</dt><dd><b>${esc(turn.ent.name)}</b> — ${esc(whereOf(turn))}</dd>` : ''}
     <dt>Objectifs</dt><dd><ol class="steps">${q.objectives.map(o => objectiveHtml(o, region)).join('')}</ol></dd>
     <dt>Récompense</dt><dd>${rewards.join(' · ') || '—'}</dd>
+    ${shotsHtml(q) ? `<dt>Où chercher</dt><dd>${shotsHtml(q)}</dd>` : ''}
     ${next.length ? `<dt>Débloque</dt><dd>${next.map(n => `<a href="${regionSlug(n._region)}#${questAnchor(n.id)}">${esc(n.title)}</a>`).join(', ')}</dd>` : ''}
   </dl>
 </article>`;
@@ -484,8 +501,8 @@ q.addEventListener('input',function(){
     }));
 }
 
-if (existsSync(OUT)) rmSync(OUT, { recursive: true });
-mkdirSync(OUT, { recursive: true });
+mkdirSync(IMG, { recursive: true });
+for (const f of readdirSync(OUT)) if (f.endsWith('.html')) rmSync(join(OUT, f));
 buildQuests();
 buildCompanions();
 buildStuff();

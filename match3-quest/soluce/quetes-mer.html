@@ -43,6 +43,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -71,6 +77,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil des Marées (Soleil) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>440 pièces d’or · 21780 points d’expérience · composant de flèche : Éclat du Soleil des Marées</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/mer_h_longwang.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon de l'envoyé"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon de l'envoyé : <b>1</b> Longwang (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rivage de la Mer Orientale"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rivage de la Mer Orientale : <b>1</b> Soleil des Marées (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_sun_9">Le Soleil Lâche</a>, <a href="quetes-fusang.html#q-sq_crane">Le nid de la grue</a>, <a href="quetes-mer.html#q-sq_mer_mazu">Le serpent de Mazu</a>, <a href="quetes-mer.html#q-sq_hua_4">Ce que la mer a gardé</a>, <a href="quetes-fusang.html#q-sq_fus_etoile">L'enfant d'étoile</a></dd>
   </dl>
 </article>
@@ -82,6 +89,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver le carquois du corbeau (coin nord-ouest de la grève)<br><small>Lieu : Rivage de la Mer Orientale (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Rivage de la Mer Orientale</small></li></ol></dd>
     <dt>Récompense</dt><dd>100 pièces d’or · 9080 points d’expérience · composant de flèche : Plume de corbeau marin · <a href="compagnon-jian.html"><strong>Jian</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/mer_h_hai.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du pêcheur Hai"><span class="ring" style="left:77.27%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Cabane du pêcheur Hai : <b>1</b> Hai (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rivage de la Mer Orientale"><span class="ring" style="left:31.67%;top:34.09%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rivage de la Mer Orientale : <b>1</b> Carquois de Jian (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -93,6 +101,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les 2 serpents coupe-filets (nord-est de la grève)<br><small>Lieu : Rivage de la Mer Orientale (partie nord-est de l’écran)</small><ul class="enemy"><li>Serpent coupe-filets — nord-est</li><li>Serpent coupe-filets — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</p></li></ol></dd>
     <dt>Récompense</dt><dd>95 pièces d’or · 9080 points d’expérience · composant de flèche : Pierre de glace</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/mer_h_hai.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du pêcheur Hai"><span class="ring" style="left:77.27%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Cabane du pêcheur Hai : <b>1</b> Hai (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rivage de la Mer Orientale"><span class="ring" style="left:78.33%;top:20.45%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:88.33%;top:20.45%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Rivage de la Mer Orientale : <b>1</b> Serpent coupe-filets (objectif) · <b>2</b> Serpent coupe-filets (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -104,6 +113,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la perle du Roi-Dragon (coin sud-ouest de la grève)<br><small>Lieu : Rivage de la Mer Orientale (partie sud-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Rivage de la Mer Orientale</small></li></ol></dd>
     <dt>Récompense</dt><dd>140 pièces d’or · 9080 points d’expérience · composant de flèche : Écaille de dragon</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/mer_h_longwang.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon de l'envoyé"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon de l'envoyé : <b>1</b> Longwang (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rivage de la Mer Orientale"><span class="ring" style="left:25.00%;top:88.64%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rivage de la Mer Orientale : <b>1</b> Perle du Roi-Dragon (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -115,6 +125,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Rapporter</b> : Retrouver la boussole de jade d'un chasseur (Hautes Herbes de Cendre, dans les terres au sud-est)</li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 9080 points d’expérience · composant de flèche : Aiguille de jade</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Port aux Perles de Haiyan"><span class="ring" style="left:92.19%;top:55.36%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Port aux Perles de Haiyan : <b>1</b> Maître de port Lu (donne la quête)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -130,6 +141,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Jiaolong du Fleuve (Long) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>168 pièces d’or · 9080 points d’expérience · <a href="stuff-collier_perle_des_marees.html"><strong>Collier de perle des marées</strong></a> (stuff d’exception) · composant de flèche : Collier de perle des marées</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Port aux Perles de Haiyan"><span class="ring" style="left:73.44%;top:91.07%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Port aux Perles de Haiyan : <b>1</b> Mei-Hua (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:78.13%;top:56.25%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:73.96%;top:64.58%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Perle noire (objectif) · <b>2</b> Serpent-roi des marées (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -141,6 +153,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter la sirène Jiaoren (falaises et criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li><li><b>Ouvrir</b> : Rapporter le coffre aux larmes de perle (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
     <dt>Récompense</dt><dd>175 pièces d’or · 9080 points d’expérience · composant de flèche : Perle de brume</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_perles.jpg" width="440" height="308" loading="lazy" alt="Carte : Atelier des perles"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Atelier des perles : <b>1</b> Xi (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:17.71%;top:43.75%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:7.29%;top:43.75%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Jiaoren (objectif) · <b>2</b> Coffre aux larmes de perle (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -156,6 +169,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Dame des Neiges (Esprit) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>180 pièces d’or · 9080 points d’expérience · composant de flèche : Givre d'algue</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_phare.jpg" width="440" height="308" loading="lazy" alt="Carte : Phare de Haiyan"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Phare de Haiyan : <b>1</b> Ming (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:19.79%;top:22.92%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Dame des algues givrées (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -167,6 +181,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>À rapporter à</dt><dd><b>Petit Bao</b> — Hameau de Dongqiao (partie est de l’écran)</dd>
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Rapporter la réponse du marin Bao à son fils (Hameau de Dongqiao, Rizières)<br><small>Lieu : Hameau de Dongqiao (partie est de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>190 pièces d’or · 9080 points d’expérience · composant de flèche : Galet du marin</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_marin.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du marin Bao"><span class="ring" style="left:65.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Maison du marin Bao : <b>1</b> Bao (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring" style="left:76.56%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:76.56%;top:44.64%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Petit Bao (à qui la rendre) · <b>2</b> Petit Bao (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -178,6 +193,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer les planches de la cache du récif (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie sud-est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
     <dt>Récompense</dt><dd>150 pièces d’or · 9080 points d’expérience · composant de flèche : Planche de teck</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h2_chantier.jpg" width="440" height="308" loading="lazy" alt="Carte : Chantier du calfat Bing"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Chantier du calfat Bing : <b>1</b> Bing (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:71.88%;top:89.58%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Cache du récif (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_mer_navire_2">Les crabes de la coque</a></dd>
   </dl>
 </article>
@@ -189,6 +205,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les crabes-soldats (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie nord de l’écran)</small><ul class="enemy"><li>Crabe-soldat — nord</li><li>Crabe-soldat — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
     <dt>Récompense</dt><dd>190 pièces d’or · 9080 points d’expérience · composant de flèche : Pince de crabe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h2_chantier.jpg" width="440" height="308" loading="lazy" alt="Carte : Chantier du calfat Bing"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Chantier du calfat Bing : <b>1</b> Bing (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:57.29%;top:22.92%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:73.96%;top:22.92%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Crabe-soldat (objectif) · <b>2</b> Crabe-soldat (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_mer_navire_3">Le dernier clou</a></dd>
   </dl>
 </article>
@@ -200,6 +217,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Ouvrir le trésor de l'épave (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie sud-est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 9080 points d’expérience · composant de flèche : Clou d'or</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h2_chantier.jpg" width="440" height="308" loading="lazy" alt="Carte : Chantier du calfat Bing"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Chantier du calfat Bing : <b>1</b> Bing (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:92.71%;top:85.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Trésor de l'épave (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -211,6 +229,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger le poulpe Ba (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li><li><b>Parler à</b> : Interroger la méduse Shui (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
     <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Coquillage rare</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h2_ecaillere.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison de Dame Bei"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Dame Bei : <b>1</b> Dame Bei (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:80.21%;top:56.25%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:78.13%;top:52.08%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Ba (objectif) · <b>2</b> Shui (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -226,6 +245,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Jiaolong du Fleuve (Long) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 9080 points d’expérience · composant de flèche : Talisman de Mazu</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Port aux Perles de Haiyan"><span class="ring" style="left:60.94%;top:37.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Port aux Perles de Haiyan : <b>1</b> Dame Mo (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:90.63%;top:56.25%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Serpent de marée (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -237,6 +257,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Recueillir un couplet auprès de Hai (Cabane du pêcheur Hai)<br><small>Lieu : Cabane du pêcheur Hai (partie nord-est de l’écran) — itinéraire : Port aux Perles de Haiyan → Cabane du pêcheur Hai</small></li><li><b>Parler à</b> : Recueillir un couplet auprès de Longwang (Pavillon de l'envoyé)<br><small>Lieu : Pavillon de l'envoyé (partie nord de l’écran) — itinéraire : Port aux Perles de Haiyan → Pavillon de l'envoyé</small></li><li><b>Parler à</b> : Recueillir un couplet auprès de Mi (place de Haiyan)<br><small>Lieu : Port aux Perles de Haiyan (au centre de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>190 pièces d’or · 9080 points d’expérience · composant de flèche : Corde de luth</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Port aux Perles de Haiyan"><span class="ring" style="left:39.06%;top:33.93%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:64.06%;top:62.50%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Port aux Perles de Haiyan : <b>1</b> Hailing (donne la quête) · <b>2</b> Mi (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/mer_h_hai.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du pêcheur Hai"><span class="ring" style="left:77.27%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Cabane du pêcheur Hai : <b>1</b> Hai (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/mer_h_longwang.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon de l'envoyé"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon de l'envoyé : <b>1</b> Longwang (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -248,6 +269,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Livrer le sel à Xi (Atelier des perles)<br><small>Lieu : Atelier des perles (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Atelier des perles</small></li><li><b>Parler à</b> : Livrer le sel à Ming (Phare de Haiyan)<br><small>Lieu : Phare de Haiyan (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Phare de Haiyan</small></li></ol></dd>
     <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Cristal de sel</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Anse des Coquillages"><span class="ring" style="left:23.21%;top:70.45%;width:6.43%;height:8.18%"><i>1</i></span></div><figcaption>Anse des Coquillages : <b>1</b> Jun (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_perles.jpg" width="440" height="308" loading="lazy" alt="Carte : Atelier des perles"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Atelier des perles : <b>1</b> Xi (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_phare.jpg" width="440" height="308" loading="lazy" alt="Carte : Phare de Haiyan"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Phare de Haiyan : <b>1</b> Ming (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -259,6 +281,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Se rendre à</b> : Visiter la maison de Dame Bei (Anse des Coquillages)<br><small>Lieu : Maison de Dame Bei — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages → Maison de Dame Bei</small></li><li><b>Ouvrir</b> : Fouiller la cache de la saline (Anse des Coquillages)<br><small>Lieu : Anse des Coquillages (partie sud-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages</small></li></ol></dd>
     <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Coquille chantante</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Anse des Coquillages"><span class="ring" style="left:33.93%;top:52.27%;width:6.43%;height:8.18%"><i>1</i></span><span class="ring" style="left:16.07%;top:79.55%;width:6.43%;height:8.18%"><i>2</i></span></div><figcaption>Anse des Coquillages : <b>1</b> Ahu (donne la quête) · <b>2</b> Cache de la saline (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -270,6 +293,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page sur le récif (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie sud de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
     <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Page du carnet (VIII)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_phare.jpg" width="440" height="308" loading="lazy" alt="Carte : Phare de Haiyan"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Phare de Haiyan : <b>1</b> Ming (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Falaises et Criques du Dragon"><span class="ring" style="left:42.71%;top:89.58%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Falaises et Criques du Dragon : <b>1</b> Page flottant sur un récif (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_journal_9">La page accrochée</a></dd>
   </dl>
 </article>
@@ -281,6 +305,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter le Vieux Gong, qui a tout vu (rochers du rivage)<br><small>Lieu : Port aux Perles de Haiyan (partie ouest de l’écran)</small></li><li><b>Parler à</b> : Demander à Hua ce qu'elle compte (jetée du phare)<br><small>Lieu : Port aux Perles de Haiyan (au centre de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>140 pièces d’or · 9080 points d’expérience · composant de flèche : Perle d'aube</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/mer_h_phare.jpg" width="440" height="308" loading="lazy" alt="Carte : Phare de Haiyan"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Phare de Haiyan : <b>1</b> Ming (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Port aux Perles de Haiyan"><span class="ring" style="left:32.81%;top:66.07%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:42.19%;top:37.50%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Port aux Perles de Haiyan : <b>1</b> Vieux Gong (objectif) · <b>2</b> Hua (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_hua_5">Xihe, mère des dix soleils</a></dd>
   </dl>
 </article>

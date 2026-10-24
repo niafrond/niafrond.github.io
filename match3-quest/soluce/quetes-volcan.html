@@ -43,6 +43,12 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -71,6 +77,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil de Magma (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>110 pièces d’or · 1900 points d’expérience · composant de flèche : Éclat du Soleil de Magma</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h_yan.jpg" width="440" height="308" loading="lazy" alt="Carte : Petit temple de Yan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Petit temple de Yan : <b>1</b> Yan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Soleil de Magma (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-q_sun_4">Le Soleil des Mirages</a>, <a href="quetes-gobi.html#q-sq_oasis">La cache de l'oasis</a>, <a href="quetes-gobi.html#q-sq_bandits">La caravane de Ma</a>, <a href="quetes-volcan.html#q-sq_vol_obsidienne">Les soldats d'obsidienne</a></dd>
   </dl>
 </article>
@@ -86,6 +93,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Loup de Braise (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — frappe fort, rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>80 pièces d’or · 790 points d’expérience · composant de flèche : Croc de braise · <a href="compagnon-braise.html"><strong>Braise</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/volcan_h_shan.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Shan"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Shan : <b>1</b> Shan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:38.33%;top:70.45%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Louveteau de braise (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -97,6 +105,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les 2 pixiu de magma (nord-est des gorges, au-delà du défilé)<br><small>Lieu : Gorges du Volcan (partie nord-est de l’écran)</small><ul class="enemy"><li>Pixiu de magma — nord-est</li><li>Pixiu de magma — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
     <dt>Récompense</dt><dd>110 pièces d’or · 790 points d’expérience · composant de flèche : Obsidienne vive</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/volcan_h_shan.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Shan"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Shan : <b>1</b> Shan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:78.33%;top:20.45%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:88.33%;top:25.00%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Pixiu de magma (objectif) · <b>2</b> Pixiu de magma (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -108,6 +117,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Rapporter la cendre du brasero du phénix (coin nord-ouest, derrière le sanctuaire)<br><small>Lieu : Gorges du Volcan (partie nord-ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Gorges du Volcan</small></li></ol></dd>
     <dt>Récompense</dt><dd>80 pièces d’or · 790 points d’expérience · composant de flèche : Cendre de phénix</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h_yan.jpg" width="440" height="308" loading="lazy" alt="Carte : Petit temple de Yan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Petit temple de Yan : <b>1</b> Yan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:15.00%;top:25.00%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Brasero du phénix (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -119,6 +129,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Rapporter</b> : Récupérer un laissez-passer de basalte (Digue et Marais Craquelés, dans les terres au sud-est)</li></ol></dd>
     <dt>Récompense</dt><dd>72 pièces d’or · 790 points d’expérience · composant de flèche : Éclat de basalte</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau des Braises Sages"><span class="ring" style="left:89.06%;top:48.21%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau des Braises Sages : <b>1</b> Contremaître Han (donne la quête)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -134,6 +145,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Pixiu (Hybride) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>56 pièces d’or · 790 points d’expérience · <a href="stuff-collier_obsidienne.html"><strong>Collier d'obsidienne froide</strong></a> (stuff d’exception) · composant de flèche : Collier d'obsidienne froide</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau des Braises Sages"><span class="ring" style="left:60.94%;top:83.93%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau des Braises Sages : <b>1</b> Hu le Braise-Sage (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:51.04%;top:47.92%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:51.04%;top:60.42%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Cœur d'obsidienne (objectif) · <b>2</b> Béhémoth des coulées (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -149,6 +161,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Zhuque (Oiseau) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>120 pièces d’or · 790 points d’expérience · <strong>Renaissance de l'Oiseau Vermillon</strong> (sort ultime)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau des Braises Sages"><span class="ring" style="left:64.06%;top:87.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau des Braises Sages : <b>1</b> Rong la Gardienne des Braises (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:53.13%;top:47.92%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:53.13%;top:52.08%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Plume de braise (objectif) · <b>2</b> Zhuque, l'Oiseau Vermillon (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -164,6 +177,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Forgeron de lave (Géant) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Pierre de forge</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/volcan_h_shan.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Shan"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Shan : <b>1</b> Shan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:94.79%;top:39.58%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Forgeron de lave (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -175,6 +189,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer le vase de Rui dans la niche de basalte (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie nord de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
     <dt>Récompense</dt><dd>155 pièces d’or · 790 points d’expérience · composant de flèche : Lave refroidie</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/volcan_h_potier.jpg" width="528" height="352" loading="lazy" alt="Carte : Atelier du potier de lave"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Atelier du potier de lave : <b>1</b> Rui (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:42.71%;top:10.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Niche de basalte cachée (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_cendrillon">Le murmure de la forge</a></dd>
   </dl>
 </article>
@@ -186,6 +201,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Huohui, l'esprit de la forge (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
     <dt>Récompense</dt><dd>160 pièces d’or · 790 points d’expérience · composant de flèche : Cendre vive</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/volcan_h_bains.jpg" width="528" height="352" loading="lazy" alt="Carte : Bains de source chaude"><span class="ring" style="left:87.50%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Bains de source chaude : <b>1</b> Grand-père Fei (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:44.79%;top:60.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Huohui (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -197,6 +213,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Demander l'herbe rare à Xu (Officine de Xu, forêt de bambous)<br><small>Lieu : Officine de Xu (partie est de l’écran)</small></li></ol></dd>
     <dt>Récompense</dt><dd>105 pièces d’or · 790 points d’expérience · composant de flèche : Lingzhi séché</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h2_alchimiste.jpg" width="440" height="308" loading="lazy" alt="Carte : Laboratoire de l'alchimiste Dan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Laboratoire de l'alchimiste Dan : <b>1</b> Dan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/bambous_h_xu.jpg" width="528" height="352" loading="lazy" alt="Carte : Officine de Xu"><span class="ring" style="left:79.17%;top:43.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Officine de Xu : <b>1</b> Xu (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_vol_alchimie_2">Les chiens de magma</a></dd>
   </dl>
 </article>
@@ -208,6 +225,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les chiens de magma (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie est de l’écran)</small><ul class="enemy"><li>Chien de magma — est</li><li>Chien de magma — est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
     <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Cornue brisée</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h2_alchimiste.jpg" width="440" height="308" loading="lazy" alt="Carte : Laboratoire de l'alchimiste Dan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Laboratoire de l'alchimiste Dan : <b>1</b> Dan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:69.79%;top:35.42%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:73.96%;top:64.58%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Chien de magma (objectif) · <b>2</b> Chien de magma (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_vol_alchimie_3">Le grand œuvre</a></dd>
   </dl>
 </article>
@@ -219,6 +237,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Ouvrir le caveau de cinabre (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie nord-est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
     <dt>Récompense</dt><dd>195 pièces d’or · 790 points d’expérience · composant de flèche : Poudre de cinabre</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h2_alchimiste.jpg" width="440" height="308" loading="lazy" alt="Carte : Laboratoire de l'alchimiste Dan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Laboratoire de l'alchimiste Dan : <b>1</b> Dan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:76.04%;top:22.92%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Caveau de cinabre (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -234,6 +253,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Huli Jing (Esprit-renard) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>135 pièces d’or · 790 points d’expérience · composant de flèche : Cuillère de braise</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/volcan_h_cantine.jpg" width="528" height="352" loading="lazy" alt="Carte : Cantine des mineurs"><span class="ring" style="left:20.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Cantine des mineurs : <b>1</b> Dada (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:40.63%;top:35.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Démon des fumées (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -245,6 +265,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Shan le mineur (Maison de Shan)<br><small>Lieu : Maison de Shan (partie nord de l’écran) — itinéraire : Hameau des Braises Sages → Maison de Shan</small></li><li><b>Parler à</b> : Interroger Bo (place des Braises Sages)<br><small>Lieu : Hameau des Braises Sages (au centre de l’écran)</small></li><li><b>Parler à</b> : Interroger le fantôme Shu (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
     <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Basalte étiqueté</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau des Braises Sages"><span class="ring" style="left:20.31%;top:41.07%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:39.06%;top:41.07%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Hameau des Braises Sages : <b>1</b> Zhou (donne la quête) · <b>2</b> Bo (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/volcan_h_shan.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Shan"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Shan : <b>1</b> Shan (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:11.46%;top:43.75%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Vieux Shu (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -256,6 +277,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au poisson Bi (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li><li><b>Ouvrir</b> : Ouvrir le coffre des bains (Sources Tièdes)<br><small>Lieu : Sources Tièdes (partie sud-ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes</small></li></ol></dd>
     <dt>Récompense</dt><dd>135 pièces d’or · 790 points d’expérience · composant de flèche : Écaille pourpre</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Sources Tièdes"><span class="ring" style="left:41.07%;top:29.55%;width:6.43%;height:8.18%"><i>1</i></span><span class="ring" style="left:16.07%;top:79.55%;width:6.43%;height:8.18%"><i>2</i></span></div><figcaption>Sources Tièdes : <b>1</b> Mu (donne la quête) · <b>2</b> Coffre des bains (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:23.96%;top:39.58%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Bi (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -267,6 +289,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au dragonnet Xiaohong (Sources Tièdes)<br><small>Lieu : Sources Tièdes (partie sud-est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes</small></li><li><b>Ouvrir</b> : Récupérer l'œuf dans la cache d'obsidienne (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie sud-est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
     <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Coquille de dragonnet</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h_yan.jpg" width="440" height="308" loading="lazy" alt="Carte : Petit temple de Yan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Petit temple de Yan : <b>1</b> Yan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Sources Tièdes"><span class="ring" style="left:76.79%;top:75.00%;width:6.43%;height:8.18%"><i>1</i></span></div><figcaption>Sources Tièdes : <b>1</b> Xiaohong (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:76.04%;top:72.92%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Cache d'obsidienne (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -282,6 +305,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soldat de Terre Cuite (Humain) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>180 pièces d’or · 790 points d’expérience · composant de flèche : Éclat d'obsidienne</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/volcan_h_potier.jpg" width="528" height="352" loading="lazy" alt="Carte : Atelier du potier de lave"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Atelier du potier de lave : <b>1</b> Rui (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:48.96%;top:52.08%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Soldat d'obsidienne (objectif)</figcaption></figure></dd>
     
   </dl>
 </article>
@@ -293,6 +317,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page dans la fissure (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie sud de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
     <dt>Récompense</dt><dd>135 pièces d’or · 790 points d’expérience · composant de flèche : Page du carnet (VI)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/volcan_h_bains.jpg" width="528" height="352" loading="lazy" alt="Carte : Bains de source chaude"><span class="ring" style="left:87.50%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Bains de source chaude : <b>1</b> Grand-père Fei (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Coulées et Passerelles Rougeoyantes"><span class="ring" style="left:65.63%;top:68.75%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Coulées et Passerelles Rougeoyantes : <b>1</b> Page coincée dans une fissure (objectif)</figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-sq_journal_4">La carte vendue</a></dd>
   </dl>
 </article>
