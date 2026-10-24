@@ -1169,10 +1169,8 @@ export function playBossDialogue(host, enc, spriteHtml, heroName = 'Hou Yi') {
     });
 }
 
-// ── Écran de démarrage (launcher) : portrait pixel art animé de Hou Yi ───────
-// Le portrait est peint une seule fois sur 3 calques (carquois/arc, buste, tête) en 100×120, puis
-// « posterisé » (alpha binaire) pour des bords nets ; l'animation déplace les calques (respiration,
-// parallaxe), fait cligner les yeux, balance le feuillage et fait dériver les rayons de lumière.
+// ── Écran de démarrage (launcher) : boucle pixel art Pixel Lab de Hou Yi ─────
+// Seule la boucle sprites/launcher/ est affichée (fond uni teal le temps du chargement ; plus de scène dessinée en code).
 //
 // Palette unique (miroir des variables CSS `--title-*` de style.css) : décor = une seule teinte froide
 // (teal), lumière/liserés/titre = une seule famille chaude (or/ambre, mêmes valeurs que `--rt-gold`,
@@ -1193,134 +1191,8 @@ const TP = {
     // bois / cuir
     woodLo: '#5a3418', wood: '#8a5a34', woodHi: '#b9823f', brown: '#7a1f24', brownHi: '#a8504a'
 };
-const PORTRAIT_W = 100;
-const PORTRAIT_H = 120;
-
-function makeLayer(drawFn) {
-    const c = document.createElement('canvas');
-    c.width = PORTRAIT_W;
-    c.height = PORTRAIT_H;
-    const g = c.getContext('2d', { willReadFrequently: true });
-    drawFn(g);
-    const d = g.getImageData(0, 0, PORTRAIT_W, PORTRAIT_H);
-    for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0;
-    g.putImageData(d, 0, 0);
-    return c;
-}
-const gPoly = (g, col, pts) => { g.fillStyle = col; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); };
-const gEll = (g, col, x, y, rx, ry, rot = 0) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, 7); g.fill(); };
-const gLine = (g, col, pts, w = 1) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'butt'; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); };
-
-// Silhouette unie d'un calque (pour l'ombre portée sur le décor)
-function silhouette(layer, color) {
-    const c = document.createElement('canvas');
-    c.width = PORTRAIT_W;
-    c.height = PORTRAIT_H;
-    const g = c.getContext('2d');
-    g.drawImage(layer, 0, 0);
-    g.globalCompositeOperation = 'source-in';
-    g.fillStyle = color;
-    g.fillRect(0, 0, PORTRAIT_W, PORTRAIT_H);
-    return c;
-}
-
-let portraitCache = null;
-function buildPortrait() {
-    if (portraitCache) return portraitCache;
-    // Arc et carquois derrière l'épaule
-    const back = makeLayer(g => {
-        gPoly(g, TP.wood, [[62, 60], [88, 54], [93, 88], [66, 92]]);
-        gPoly(g, TP.woodHi, [[80, 56], [88, 54], [93, 88], [86, 90]]);
-        for (let k = 0; k < 6; k++) {
-            gLine(g, TP.woodHi, [[66 + k * 3.4, 66], [70 + k * 3.4 + k * 0.8, 38 - k * 2]], 1);
-            gEll(g, k % 2 ? TP.cream : TP.sand, 65 + k * 3.4, 64, 2.2, 6, 0.1);
-        }
-        gPoly(g, TP.woodLo, [[70, 0], [77, 0], [78, 10], [81, 30], [87, 52], [91, 72], [86, 75], [80, 57], [73, 35], [70, 12]]);
-        gLine(g, TP.wood, [[75, 2], [76, 12], [79, 30], [85, 52]], 1);
-        gPoly(g, TP.gold, [[68, 6], [79, 6], [79, 10], [68, 10]]);
-        gLine(g, TP.cream, [[69, 11], [60, 78]], 1);
-    });
-    // Buste : cou, robe teal à liserés or, baudrier, épaule nue
-    const body = makeLayer(g => {
-        gPoly(g, TP.robe, [[2, 120], [6, 92], [24, 76], [40, 70], [58, 72], [74, 70], [92, 78], [99, 96], [100, 120]]);
-        gPoly(g, TP.robeLo, [[2, 120], [6, 92], [24, 76], [34, 86], [26, 120]]);
-        gPoly(g, TP.robeHi, [[60, 72], [92, 78], [99, 96], [88, 86], [70, 80]]);
-        gPoly(g, TP.wood, [[80, 98], [99, 98], [100, 120], [74, 120]]);
-        gPoly(g, TP.woodLo, [[80, 98], [88, 104], [84, 120], [74, 120]]);
-        gLine(g, TP.gold, [[28, 80], [46, 99], [62, 90], [78, 96]], 1);
-        gLine(g, TP.gold, [[58, 100], [82, 92], [99, 98]], 1);
-        gLine(g, TP.goldHi, [[60, 73], [92, 79]], 1);
-        gPoly(g, TP.skin, [[38, 56], [60, 56], [62, 78], [50, 96], [36, 80]]);
-        gPoly(g, TP.skinLo, [[38, 60], [60, 60], [60, 70], [40, 70]]);
-        gPoly(g, TP.cream, [[36, 76], [44, 98], [54, 82], [46, 72]]);
-        gPoly(g, TP.sand, [[44, 98], [54, 82], [50, 82]]);
-        gPoly(g, TP.brown, [[10, 102], [20, 90], [42, 120], [26, 120]]);
-        gLine(g, TP.brownHi, [[20, 90], [42, 120]], 1);
-    });
-    // Tête : chignon, cheveux, visage éclairé par la droite, sourcils, yeux, moustache et bouc
-    const head = makeLayer(g => {
-        gEll(g, TP.hair, 48, 26, 22, 18);
-        gEll(g, TP.hair, 68, 12, 6, 7);
-        gPoly(g, TP.gold, [[66, 17], [71, 17], [71, 19], [66, 19]]);
-        gPoly(g, TP.skin, [[30, 26], [36, 20], [60, 20], [66, 26], [66, 44], [62, 56], [54, 64], [44, 64], [36, 56], [31, 44]]);
-        gPoly(g, TP.skinLo, [[30, 26], [36, 22], [37, 56], [31, 44]]);
-        gPoly(g, TP.skinHi, [[56, 28], [64, 28], [64, 46], [60, 54], [58, 40]]);
-        gEll(g, TP.skin, 67, 38, 3, 5);
-        gEll(g, TP.blush, 67, 38, 1.4, 3);
-        gPoly(g, TP.hair, [[28, 30], [30, 18], [40, 10], [56, 10], [66, 18], [68, 32], [64, 26], [58, 19], [48, 17], [38, 19], [32, 26]]);
-        gLine(g, TP.hair, [[64, 24], [63, 52]], 1.6);
-        gLine(g, TP.hair, [[31, 26], [30, 48]], 1.6);
-        gLine(g, TP.hairHi, [[44, 13], [58, 13]], 1);
-        gLine(g, TP.ink, [[48, 11], [48, 18]], 1);
-        gLine(g, TP.ink, [[34, 29.5], [45, 28.2]], 2.2);
-        gLine(g, TP.ink, [[50, 28.2], [62, 30.2]], 2.2);
-        gEll(g, TP.cream, 40, 34, 4.6, 2.4);
-        gEll(g, TP.cream, 56, 35, 4.6, 2.4);
-        gEll(g, TP.woodLo, 41, 34.2, 2.2, 2.2);
-        gEll(g, TP.woodLo, 57.5, 35.2, 2.2, 2.2);
-        gEll(g, TP.ink, 41, 34.2, 1, 1);
-        gEll(g, TP.ink, 57.5, 35.2, 1, 1);
-        gLine(g, TP.ink, [[35, 32.4], [45, 32.2]], 1.2);
-        gLine(g, TP.ink, [[51, 33], [62, 33.4]], 1.2);
-        gLine(g, TP.skinLo, [[36, 37.5], [44, 37.5]], 1);
-        gLine(g, TP.skinLo, [[52, 38.5], [60, 38.5]], 1);
-        gPoly(g, TP.skinLo, [[49, 36], [46, 46], [50, 48], [53, 46], [52, 38]]);
-        gEll(g, TP.skinHi, 50, 45, 2, 1.2);
-        gPoly(g, TP.ink, [[39, 51], [46, 47], [50, 48.5], [54, 47], [61, 51], [56, 51.5], [50, 50.5], [44, 51.5]]);
-        gEll(g, TP.brown, 50, 54.5, 3.2, 1.6);
-        gEll(g, TP.blush, 50, 52.8, 3.6, 1);
-        gPoly(g, TP.ink, [[46, 57], [54, 57], [53, 66], [50, 69], [47, 66]]);
-        gLine(g, TP.hairHi, [[37, 50], [41, 62], [46, 65]], 1);
-        gLine(g, TP.hairHi, [[62, 50], [58, 62], [54, 65]], 1);
-    });
-    // Ombres portées (lumière en haut à droite → l'ombre tombe vers la gauche)
-    const shade = { back: silhouette(back, TP.tealDeep), body: silhouette(body, TP.tealDeep), head: silhouette(head, TP.tealDeep) };
-    portraitCache = { back, body, head, shade };
-    return portraitCache;
-}
-
-// Feuillage : petits carrés de feuilles, répartis une fois pour toutes (graine fixe).
-function makeLeaves() {
-    const leaves = [];
-    let seed = 7;
-    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    for (let i = 0; i < 90; i++) {
-        const right = i % 3 === 0;
-        leaves.push({
-            x: right ? 0.62 + rnd() * 0.38 : rnd() * 0.42,
-            y: (right ? 0 : 0.02) + rnd() * (right ? 0.26 : 0.38) * (1 - (right ? 0.3 : 0.4) * rnd()),
-            s: 2 + Math.floor(rnd() * 3),
-            c: [TP.tealDeep, TP.tealMid, TP.tealLight, TP.mist, TP.goldHi][Math.floor(rnd() * 5)],
-            p: rnd() * 6
-        });
-    }
-    return leaves;
-}
-
 export function playTitleScreen() {
     return new Promise(resolve => {
-        const portrait = buildPortrait();
-        const leaves = makeLeaves();
         const pollen = Array.from({ length: 36 }, (_, i) => ({ x: (i * 37 % 100) / 100, y: (i * 61 % 100) / 100, v: 0.01 + (i % 5) * 0.004, p: i }));
         const reduced = prefersReducedMotion();
 
@@ -1340,7 +1212,7 @@ export function playTitleScreen() {
         let W = 0;
         let H = 0;
         let portraitMode = false;
-        let art = null;      // boucle Pixel Lab { img, frames, fps, size } ou null (scène dessinée en code)
+        let art = null;      // boucle Pixel Lab { img, frames, fps, size } ou null (fond uni le temps du chargement)
         let artFor = null;   // orientation pour laquelle `art` est (ou sera) chargée
         let ended = false;
 
@@ -1353,8 +1225,8 @@ export function playTitleScreen() {
                 const [nw, nh] = art.size;
                 if (portraitMode) { W = nw; H = Math.max(nh, Math.round(nw * vh / vw)); }
                 else { H = nh; W = Math.max(nw, Math.round(nh * vw / vh)); }
-            } else if (portraitMode) { W = 100; H = Math.max(150, Math.round(100 * vh / vw)); }
-            else { H = 130; W = Math.max(150, Math.round(130 * vw / vh)); }
+            } else if (portraitMode) { W = 144; H = Math.max(256, Math.round(144 * vh / vw)); }
+            else { H = 144; W = Math.max(256, Math.round(144 * vw / vh)); }
             canvas.width = W;
             canvas.height = H;
             ctx.imageSmoothingEnabled = false;
@@ -1363,7 +1235,7 @@ export function playTitleScreen() {
         window.addEventListener('resize', resize);
 
         // Boucle Pixel Lab (tools/gen-prologue.mjs --set=launcher), une planche par orientation. Chargement tolérant : sans
-        // planche, la scène dessinée en code ci-dessous reste le repli. Relue si l'orientation change.
+        // planche, seul le fond uni teal s'affiche. Relue si l'orientation change.
         const ensureArt = () => {
             if (artFor === portraitMode) return;
             artFor = portraitMode;
@@ -1412,105 +1284,9 @@ export function playTitleScreen() {
                 if (!ended) raf = requestAnimationFrame(frame);
                 return;
             }
-            const bobBody = Math.round(Math.sin(t * 1.3) * 1.2);
-            const bobHead = Math.round(Math.sin(t * 1.3 - 0.7) * 1.4);
-            const camY = Math.round(Math.sin(t * 0.45) * 2);
-            const charX = portraitMode ? 0 : Math.round(W * 0.58 - PORTRAIT_W / 2);
-            const charY = H - PORTRAIT_H + 6;
-
-            // Ciel / sous-bois en bandes teal (sombre en haut → brume claire en bas)
-            const bands = 18;
-            for (let i = 0; i < bands; i++) {
-                const k = i / (bands - 1);
-                px(ctx, k < 0.55 ? lerpColor(TP.tealDeep, TP.tealMid, k / 0.55) : lerpColor(TP.tealMid, TP.mist, (k - 0.55) / 0.45), 0, Math.floor(i * H / bands), W, Math.ceil(H / bands) + 1);
-            }
-            // lueur chaude venant du haut-droite
-            const glow = ctx.createRadialGradient(W * 0.92, -H * 0.05, 2, W * 0.92, -H * 0.05, Math.max(W, H) * 0.8);
-            glow.addColorStop(0, 'rgba(251,231,176,0.55)');
-            glow.addColorStop(0.5, 'rgba(232,185,35,0.14)');
-            glow.addColorStop(1, 'rgba(232,185,35,0)');
-            ctx.fillStyle = glow;
+            // pas de boucle chargée : fond uni teal (jamais de scène dessinée en code)
+            ctx.fillStyle = TP.tealDeep;
             ctx.fillRect(0, 0, W, H);
-            // troncs lointains (parallaxe lente)
-            ctx.globalAlpha = 0.35;
-            for (let i = 0; i < 6; i++) {
-                const x = ((i * 47 + 13) % W) + Math.round(Math.sin(t * 0.3 + i) * 1);
-                px(ctx, TP.tealDeep, x, 0, 5 + (i % 3) * 3, H);
-            }
-            ctx.globalAlpha = 1;
-            // taches de lumière (bokeh carré, plus chaudes vers la droite)
-            for (let i = 0; i < 26; i++) {
-                const bx = (i * 43) % W;
-                ctx.globalAlpha = 0.12 + 0.1 * Math.sin(t * 0.8 + i);
-                px(ctx, bx > W * 0.55 ? TP.goldHi : TP.mist, bx, ((i * 29) % H) + camY, 4 + (i % 4) * 2, 4 + (i % 3) * 2);
-            }
-            ctx.globalAlpha = 1;
-
-            // halo chaud derrière la tête + ombre portée du personnage (côté gauche, lumière à droite)
-            const hcx = charX + 48 + Math.round(Math.sin(t * 0.7) * 0.8);
-            const hcy = charY + bobHead + 34;
-            const halo = ctx.createRadialGradient(hcx + 4, hcy - 4, 4, hcx + 4, hcy - 4, 46);
-            halo.addColorStop(0, 'rgba(251,231,176,0.42)');
-            halo.addColorStop(1, 'rgba(232,185,35,0)');
-            ctx.fillStyle = halo;
-            ctx.fillRect(hcx - 50, hcy - 50, 100, 100);
-            ctx.globalAlpha = 0.4;
-            ctx.drawImage(portrait.shade.back, charX - 3, charY + bobBody + 2);
-            ctx.drawImage(portrait.shade.body, charX - 3, charY + bobBody + 2);
-            ctx.globalAlpha = 1;
-
-            // Calque arrière (arc, carquois) : léger décalage opposé
-            ctx.drawImage(portrait.back, charX + Math.round(Math.sin(t * 0.9) * 1), charY + bobBody - 1);
-            ctx.drawImage(portrait.body, charX, charY + bobBody);
-            // tête
-            ctx.drawImage(portrait.head, charX + Math.round(Math.sin(t * 0.7) * 0.8), charY + bobHead);
-            // clignement des yeux
-            if (!reduced && (t % 4.2) < 0.16) {
-                const hx = charX + Math.round(Math.sin(t * 0.7) * 0.8);
-                const hy = charY + bobHead;
-                px(ctx, TP.skin, hx + 35, hy + 32, 11, 4);
-                px(ctx, TP.skin, hx + 51, hy + 33, 11, 4);
-                px(ctx, TP.ink, hx + 35, hy + 35, 10, 1);
-                px(ctx, TP.ink, hx + 51, hy + 36, 11, 1);
-            }
-
-            // Feuillage balancé par le vent
-            leaves.forEach((l, i) => {
-                const sway = Math.sin(t * 1.1 + l.p) * 1.5;
-                px(ctx, l.c, l.x * W + sway, l.y * H + camY + Math.sin(t * 0.8 + i) * 0.6, l.s, l.s);
-            });
-
-            // Rayons de lumière dérivants
-            for (let i = 0; i < 5; i++) {
-                const a = 0.07 + 0.06 * Math.sin(t * 0.7 + i * 1.7);
-                const x0 = ((i * 0.27 + t * 0.012) % 1.3 - 0.15) * W;
-                ctx.globalAlpha = Math.max(0, a);
-                ctx.fillStyle = TP.goldHi;
-                ctx.beginPath();
-                ctx.moveTo(x0, 0);
-                ctx.lineTo(x0 + 10 + i * 3, 0);
-                ctx.lineTo(x0 - 40 + i * 3 + 10, H);
-                ctx.lineTo(x0 - 40 + i * 3, H);
-                ctx.closePath();
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-
-            // Pollen / poussières montantes
-            pollen.forEach(p => {
-                const y = ((p.y - t * p.v) % 1 + 1) % 1;
-                ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 2 + p.p);
-                px(ctx, TP.goldHi, p.x * W + Math.sin(t + p.p) * 3, y * H, 1, 1);
-            });
-            ctx.globalAlpha = 1;
-
-            // Vignette basse pour la lisibilité du titre
-            for (let i = 0; i < 14; i++) {
-                ctx.globalAlpha = 0.035 * (i + 1);
-                px(ctx, TP.ink, 0, H - 14 + i, W, 1);
-            }
-            ctx.globalAlpha = 1;
-
             if (!ended) raf = requestAnimationFrame(frame);
         };
         raf = requestAnimationFrame(frame);
