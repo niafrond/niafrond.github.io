@@ -20,3 +20,4 @@ Spécifications de `mix-blind-test/`, extraites de l'ancien §17 de `dj-mix/SPEC
 - **SPEC-1.2.4** `writeBlobToIdb` et `readBlobFromIdb` et `deleteBlobFromIdb` sont des méthodes atomiques sur le store IndexedDB ; toute erreur est silencieuse (retour `null` ou no-op).
 - **SPEC-1.2.5** Les vérifications de disponibilité du Cache API utilisent `'caches' in globalThis` (compatible browser et Node) au lieu de `'caches' in window`.
 ```
+- 2026-10-24 (mesure d'audience GoatCounter) : à la demande de l'utilisateur, sur tout le site. Script `data-goatcounter="https://niafrond.goatcounter.com/count"` (`//gc.zgo.at/count.js`, async) ajouté avant `</head>` des pages HTML.
