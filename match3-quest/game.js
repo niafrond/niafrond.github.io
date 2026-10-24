@@ -515,6 +515,11 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         }
     }
 
+    if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
+        addBonusTurn(caster, 1);
+        log(`${spell.name} : ${caster.name} gagne un tour bonus !`);
+    }
+
     if(spell.heal){
         const healAmount = spell.heal + intelligenceBonus;
         caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);

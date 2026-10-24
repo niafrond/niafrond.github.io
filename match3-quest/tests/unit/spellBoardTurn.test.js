@@ -22,3 +22,13 @@ describe('fin de tour après un sort qui modifie le plateau', () => {
         expect(body).toMatch(/if\(changed\) checkMatches\(true\);\s*else finishPlayerTurn\(\);/);
     });
 });
+
+describe('Tir Furtif : tour bonus pour celui qui le lance', () => {
+    const game = read('game.js');
+
+    test('le lanceur (joueur ou ennemi) reçoit le tour bonus dans applyStandardSpellEffects', () => {
+        const fn = game.slice(game.indexOf('function applyStandardSpellEffects'));
+        const body = fn.slice(0, fn.indexOf('\n}\n'));
+        expect(body).toMatch(/spell\.effect === 'bonusTurn'[\s\S]*addBonusTurn\(caster, 1\)/);
+    });
+});
