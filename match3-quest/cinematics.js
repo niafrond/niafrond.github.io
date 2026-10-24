@@ -641,6 +641,7 @@ export const CREDITS = [
     { type: 'rule' },
     { role: 'Idées, suggestions et contributions', names: ['Ethan, Luna'] },
     { role: 'Tests et assurance qualité (QA)', names: ['Ethan, Luna, Vanessa'] },
+    { role: 'Early bird', names: ['Jo et Arnaud'] },
     { type: 'rule' },
     { role: 'Remerciements', lines: ['À ma carte graphique, qui a affronté les flammes sans jamais rendre l\'âme.'] },
     { type: 'thanks', text: "À ma femme et mes enfants, qui m'ont suivi dans mon délire, je vous aime fort." }
