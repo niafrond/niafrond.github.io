@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Pic de la Lune.">
+<title>Quêtes — Pic de la Lune — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+details{margin:6px 0}summary{cursor:pointer;color:var(--blue);font:600 .85rem system-ui,sans-serif}
+blockquote{margin:6px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--dim);font-style:italic}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Pic de la Lune</div>
+<h2>Pic de la Lune</h2>
+<p class="lead">Région débloquée au niveau 40. 8 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_epilogue">Les gâteaux de lune</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_osmanthus">L'osmanthus qui repousse</a></li><li><a href="#q-sq_lanterne_hua">La dernière lanterne de Hua</a></li><li><a href="#q-sq_lune_gateaux">Les gâteaux de Gui</a></li><li><a href="#q-sq_lune_passeur">La rivière d'argent</a></li><li><a href="#q-sq_lune_ombres">Les ombres du miroir</a></li><li><a href="#q-sq_journal_10">La dernière page</a></li><li><a href="#q-sq_hua_6">La lanterne de Xihe</a></li></ul></div>
+<article class="quest" id="q-q_epilogue">
+  <h3>Les gâteaux de lune <span class="badge main">Principale</span><small>Épilogue — Le Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-q_fengmeng">L'Archer Miroir</a></dd>
+    <dt>Donneur</dt><dd><b>Chang'e</b> (Vêtue de lumière lunaire) — Pic de la Lune (partie ouest de l’écran)<br><small>Itinéraire depuis le village : Hameau sous la Lune → Sentier d'Argent → Pic de la Lune</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Déposer les gâteaux de lune sur l'autel (sommet du Pic de la Lune)<br><small>Lieu : Pic de la Lune (partie est de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent → Pic de la Lune</small></li></ol></dd>
+    <dt>Récompense</dt><dd>800 pièces d’or · 27700 points d’expérience · composant de flèche : Gâteau de pleine lune</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>L'autel de pierre blanche attend vos gâteaux de lune. Ouvrez-le : c'est tout ce qu'elle vous demande.<br>Prenez votre temps. La lune ne s'en va pas.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Le calme revient sur le pic. Là où la pierre était nue, un autel blanc apparaît, gravé d'une lune et d'un lièvre de jade : l'autel des gâteaux de lune.</blockquote><blockquote>Chang'e vous attend dans la lumière. Elle ne dit rien, elle sourit seulement, et désigne la corbeille posée devant l'autel. Déposez les gâteaux : c'est la dernière chose qu'elle vous demande.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le dernier jour a été long. Hou Yi ramasse la corbeille de gâteaux de lune et s'avance seul vers l'autel du pic : au haricot rouge, au taro, au thé vert, ceux que Chang'e pétrissait pour lui chaque aube, avant qu'il ne parte.</blockquote><blockquote>Sur l'autel, la pierre est blanche et fraîche. Il dispose les gâteaux sur l'autel, un à un, comme elle le faisait, puis il s'assoit. Au-dessus de lui, la pleine lune est si grande qu'on croirait pouvoir la toucher du bout de l'arc.</blockquote><blockquote>Un seul soleil traverse désormais le ciel, et la Terre a de nouveau des jours et des nuits. Les rizières reverdissent, le fleuve gonfle, les villages allument des lanternes pour la fête d'automne. Hou Yi n'entend plus que le vent.</blockquote><blockquote>Hou Yi lève vers le ciel sa moitié de miroir et l'ajuste contre la lune : le bronze en couvre une moitié, la lumière achève l'autre. Le cercle est entier. Sur le disque, une silhouette passe, une main levée, très lentement. Hou Yi lève la sienne. Chaque année, à la pleine lune d'automne, les hommes poseront des gâteaux de lune sur leurs toits, et cette nuit-là, quelqu'un, là-haut, leur sourira.</blockquote><blockquote>Ainsi s'achève la légende de Hou Yi. Mais une légende se raconte toujours une fois de plus : une Nouvelle Partie + vous attend, où les soleils se lèveront plus ardents.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_osmanthus">
+  <h3>L'osmanthus qui repousse <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Wu Gang</b> (Bûcheron éternel de l'osmanthus) — Sentier d'Argent (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Hameau sous la Lune → Sentier d'Argent</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Vider la dernière cache de bois de Wu Gang (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li><li><b>Vaincre</b> : Chasser l'ombre du miroir qui rôde sur le sentier (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small><ul class="enemy">
+      <li><b>Ombre du miroir</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Sentier d'Argent (partie ouest de l’écran)</li>
+      <li>Espèce : Assassin Masqué (Humain) — Force : <span class="dot" style="background:#9b62d6"></span>Arcane (violet) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — frappe fort, rapide et sournois</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Écorce d'osmanthus</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La cache de Wu Gang est sous le givre, sur le sentier d'argent. L'ombre du miroir rôde dans les parages.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Je coupe l'osmanthus depuis mille ans, et il repousse toujours. Aujourd'hui, je voudrais juste vider ma dernière cache de bois et chasser l'ombre qui rôde.</blockquote><blockquote>Aidez-moi, archer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ma cache est vide, l'ombre s'est dissipée. Je coupe en paix. Prenez cette écorce d'osmanthus : elle sent la nostalgie et la cannelle.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_lanterne_hua">
+  <h3>La dernière lanterne de Hua <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Hua</b> (Colporteuse aux mille babioles) — Maison de la veilleuse (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau sous la Lune → Maison de la veilleuse</small></dd>
+    <dt>À rapporter à</dt><dd><b>Veilleuse Yin</b> — Maison de la veilleuse (partie nord-est de l’écran)</dd>
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Porter la lanterne de Hua à la veilleuse Yin (Hameau sous la Lune)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Lanterne de Hua</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La veilleuse Yin est dans sa maison, au cœur du Hameau sous la Lune.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>J'ai fait un long chemin pour livrer une dernière lanterne à la veilleuse Yin. Mes pieds n'iront pas plus loin.</blockquote><blockquote>Portez-la-lui, voulez-vous ? Vous avez passé la mienne en chemin, quelque part, je crois.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Yin lève la lanterne, qui projette sa lumière sur les murs. Les ombres dansent. « C'est exactement celle que j'attendais », murmure-t-elle.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_lune_gateaux">
+  <h3>Les gâteaux de Gui <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Gui</b> (Cuisinier de gâteaux de lune) — Hameau sous la Lune (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la boîte à gâteaux (Hameau sous la Lune)<br><small>Lieu : Hameau sous la Lune (au centre de l’écran)</small></li><li><b>Parler à</b> : Porter un gâteau à la veilleuse Yin (maison de la veilleuse)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Pâte de lotus</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La boîte est quelque part sur la place du hameau. La veilleuse est dans sa maison.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Ma boîte de gâteaux de lune a disparu ! Elle contient tout mon travail de la semaine. Retrouvez-la, puis portez une part à la veilleuse.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Les gâteaux sont partis, la boîte est revenue, et le hameau est content. Je vous offre ce fragment de pâte de lotus.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_lune_passeur">
+  <h3>La rivière d'argent <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Vieux Shen</b> (Passeur d'argent) — Hameau sous la Lune (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter le Corbeau d'ombre (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li><li><b>Ouvrir</b> : Récupérer la cache de la rivière d'argent (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Caillou d'argent</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La cache est au bord de la rivière d'argent, sur le sentier. Le Corbeau d'ombre rôde par là.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>J'ai déposé quelques souvenirs au bord de la rivière d'argent. Je suis trop vieux pour y retourner. Pouvez-vous les chercher, archer ?</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes souvenirs ! Un peigne, une lettre, un caillou. Je vous offre le caillou : il est plus précieux qu'il n'en a l'air.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_lune_ombres">
+  <h3>Les ombres du miroir <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-q_sun_9">Le Soleil Lâche</a></dd>
+    <dt>Donneur</dt><dd><b>Lan</b> (Petite veilleuse) — Hameau sous la Lune (partie est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les ombres du miroir (sentier d'argent)<br><small>Lieu : Sentier d'Argent (au centre de l’écran)</small><ul class="enemy"><li>Ombre du miroir — centre</li><li>Ombre du miroir — est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Éclat de miroir</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les deux ombres rôdent sur le sentier d'argent, entre les cairns de givre.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Il y a deux ombres qui me suivent, sur le sentier, avec mon visage. Elles sont drôles, mais elles me font peur. Chassez-les, archer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes ombres sont reparties dans le miroir. Je n'ai plus peur. Tenez, un éclat de miroir lunaire.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_journal_10">
+  <h3>La dernière page <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-sq_journal_9">La page accrochée</a></dd>
+    <dt>Donneur</dt><dd><b>Yutu</b> (Lapin de jade) — Hameau sous la Lune (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la dernière page du carnet (sentier d'argent)<br><small>Lieu : Sentier d'Argent (au centre de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Carnet complet</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La page est sur le sentier d'argent, à demi cachée dans le givre.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un papier est tombé de la manche d'un jeune archer, il y a peu. Il le cherche partout. Allez le chercher avant lui, sur le sentier.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>« Je ne veux pas lui faire de mal. Je veux juste qu'il me regarde. Je n'ai que mes flèches. » Yutu se tait. Il pile doucement, à contretemps.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_hua_6">
+  <h3>La lanterne de Xihe <small>Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-sq_hua_5">Xihe, mère des dix soleils</a>, <a href="quetes-fusang.html#q-q_fengmeng">L'Archer Miroir</a></dd>
+    <dt>Donneur</dt><dd><b>Hua</b> (Colporteuse aux mille babioles) — Maison de la veilleuse (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau sous la Lune → Maison de la veilleuse</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Demander à la veilleuse Yin d'allumer la dernière lanterne pour Xihe (Hameau sous la Lune)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Caillou d'aurore</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La veilleuse Yin est dans sa maison, au cœur du Hameau sous la Lune.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Vous savez qui je suis, maintenant. Ne vous excusez pas : j'ai eu dix fils, vous en avez rendu neuf à la nuit, et la nuit les a bercés.</blockquote><blockquote>Il me reste une prière : demandez à Yin d'allumer ma dernière lanterne. Je la lui ai confiée il y a longtemps, pour ce soir précisément.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Une petite lumière monte, sur le muret, vers la lune. « Mes enfants… », souffle Hua. Puis, plus bas : « Merci, archer. Le monde peut dormir. » Elle vous presse dans la main un dernier caillou tiède, qui ne refroidira jamais.</blockquote>
+  </details>
+</article>
+</main>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

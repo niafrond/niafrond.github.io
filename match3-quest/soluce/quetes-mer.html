@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Rivage de la Mer Orientale.">
+<title>Quêtes — Rivage de la Mer Orientale — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+details{margin:6px 0}summary{cursor:pointer;color:var(--blue);font:600 .85rem system-ui,sans-serif}
+blockquote{margin:6px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--dim);font-style:italic}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Rivage de la Mer Orientale</div>
+<h2>Rivage de la Mer Orientale</h2>
+<p class="lead">Région débloquée au niveau 32. 19 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_sun_8">Le Soleil des Marées</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_jian_quiver">Le carquois du corbeau</a></li><li><a href="#q-sq_nets">Les filets déchirés</a></li><li><a href="#q-sq_pearl">La perle du Roi-Dragon</a></li><li><a href="#q-jq_quai_de_jade">La boussole de jade</a></li><li><a href="#q-sq_collar_mer">La perle des marées</a></li><li><a href="#q-sq_larmes_perle">Les larmes de Jiaoren</a></li><li><a href="#q-sq_dame_algues">La Dame des algues</a></li><li><a href="#q-sq_marin_reponse">La réponse du marin</a></li><li><a href="#q-sq_mer_navire_1">Du bois pour le navire</a></li><li><a href="#q-sq_mer_navire_2">Les crabes de la coque</a></li><li><a href="#q-sq_mer_navire_3">Le dernier clou</a></li><li><a href="#q-sq_mer_coquille">La perle de Dame Bei</a></li><li><a href="#q-sq_mer_mazu">Le serpent de Mazu</a></li><li><a href="#q-sq_mer_chanson">La chanson du port</a></li><li><a href="#q-sq_mer_sel">Le sel de Jun</a></li><li><a href="#q-sq_mer_ahu">La coquille qui chante</a></li><li><a href="#q-sq_journal_8">La page du récif</a></li><li><a href="#q-sq_hua_4">Ce que la mer a gardé</a></li></ul></div>
+<article class="quest" id="q-q_sun_8">
+  <h3>Le Soleil des Marées <span class="badge main">Principale</span><small>Chapitre VIII — Le Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-q_sun_7">Le Soleil des Bêtes Folles</a></dd>
+    <dt>Donneur</dt><dd><b>Longwang</b> (Envoyé du Roi-Dragon) — Pavillon de l'envoyé (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Pavillon de l'envoyé</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre le Soleil des Marées (sanctuaire du Rivage de la Mer Orientale, au sud-est)<br><small>Lieu : Rivage de la Mer Orientale (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Rivage de la Mer Orientale</small><ul class="enemy">
+      <li><b>Soleil des Marées</b> — niveau 40, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Rivage de la Mer Orientale (partie est de l’écran)</li>
+      <li>Espèce : Soleil des Marées (Soleil) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>440 pièces d’or · 21780 points d’expérience · composant de flèche : Éclat du Soleil des Marées</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_sun_9">Le Soleil Lâche</a>, <a href="quetes-fusang.html#q-sq_crane">Le nid de la grue</a>, <a href="quetes-mer.html#q-sq_mer_mazu">Le serpent de Mazu</a>, <a href="quetes-mer.html#q-sq_hua_4">Ce que la mer a gardé</a>, <a href="quetes-fusang.html#q-sq_fus_etoile">L'enfant d'étoile</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Mon maître le Roi-Dragon supplie le Ciel depuis des semaines : la mer étouffe. Le Soleil des Marées est au sud-est, sur les rochers.<br>Ses serpents de mer ont perdu leur eau et leur raison : méfiez-vous des cercles rouges.<br>Trois chemins mènent au soleil. Risque : faites taire les deux gardes-marée, au prix d'un combat, pour leur expérience et un soleil entier.<br>Relation : rendez sa perle au Roi-Dragon, et l'amiral Xie lèvera la consigne des gardes-marée, sans combat.<br>Découverte : les filets rendus et la perle du Roi-Dragon affaiblissent le soleil.<br>Chaque chemin laisse sa trace : des gardes abattus ou rentrés aux récifs, un amiral reconnaissant, un soleil moins ardent.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Huitième soleil : celui des Marées. Il a aspiré la mer et la tient en suspens au-dessus de la grève, comme une cloche d'eau prête à retomber. Il siège sur les rochers de l'est.</blockquote><blockquote>Un envoyé du Roi-Dragon attend de pouvoir vous remercier.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le Soleil des Marées éclate en une pluie tiède, et la cloche d'eau, enfin libérée, retombe sur la grève : un bruit de tonnerre mou, un grand soupir d'écume, puis l'immense mer qui revient, doucement, lécher les pieds des pêcheurs.</blockquote><blockquote>L'envoyé Longwang s'incline si bas que ses cheveux touchent le sable. « Le Roi-Dragon n'oubliera pas. Il y a, dans son palais, des écailles pour d'autres flèches. »</blockquote><blockquote>Huit soleils abattus. Il reste le Neuvième, au sommet du monde, et le Dixième, que vous devez épargner.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_jian_quiver">
+  <h3>Le carquois du corbeau <span class="badge comp">Compagnon</span><small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-q_sun_7">Le Soleil des Bêtes Folles</a></dd>
+    <dt>Donneur</dt><dd><b>Hai</b> (Pêcheur) — Cabane du pêcheur Hai (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Cabane du pêcheur Hai</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver le carquois du corbeau (coin nord-ouest de la grève)<br><small>Lieu : Rivage de la Mer Orientale (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Rivage de la Mer Orientale</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 9080 points d’expérience · composant de flèche : Plume de corbeau marin · <a href="compagnon-jian.html"><strong>Jian</strong></a> rejoint le groupe</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le carquois est dans le coin nord-ouest de la grève, dans le nid du corbeau. Aucun ennemi ne le garde.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un corbeau de mer a ramassé des flèches perdues sur la grève, et il a bâti son nid dedans, au nord-ouest. Je vous jure qu'il les trie par couleur.</blockquote><blockquote>Récupérez le carquois. Le corbeau y tient plus qu'à sa vie : il ne le lâchera qu'à quelqu'un qui sait tirer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il a changé d'avis : il veut voler avec vous. Il dit que vous tirez comme on respire, et qu'il saura transformer les gâteaux de lune en flèches.</blockquote><blockquote>Il s'appelle Jian. Prenez ces pièces et laissez-le choisir sa couleur préférée.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_nets">
+  <h3>Les filets déchirés <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-q_sun_7">Le Soleil des Bêtes Folles</a></dd>
+    <dt>Donneur</dt><dd><b>Hai</b> (Pêcheur) — Cabane du pêcheur Hai (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Cabane du pêcheur Hai</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les 2 serpents coupe-filets (nord-est de la grève)<br><small>Lieu : Rivage de la Mer Orientale (partie nord-est de l’écran)</small><ul class="enemy"><li>Serpent coupe-filets — nord-est</li><li>Serpent coupe-filets — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>95 pièces d’or · 9080 points d’expérience · composant de flèche : Pierre de glace</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les serpents coupe-filets sont au nord-est de la grève, sur les rochers. Ils mordent vite, mais sont lents à tourner.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Seigneur archer, regardez mes filets : ils pendent en lambeaux. Deux serpents de mer, échoués au nord-est de la grève, les ont déchirés pour s'en faire un nid. Sans filets, pas de poisson ; sans poisson, pas de village.</blockquote><blockquote>Ils ont perdu l'eau, ils ont perdu la raison. Si vous pouvez les calmer, je vous donnerai la pierre de glace que je garde dans ma glacière : la dernière du rivage.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes filets ! Presque entiers. On les raccommodera ce soir, en chantant.</blockquote><blockquote>Voici la pierre de glace, comme promis : elle garde le poisson frais trois jours, et la flèche froide une vie. Et ces pièces.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_pearl">
+  <h3>La perle du Roi-Dragon <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-q_sun_7">Le Soleil des Bêtes Folles</a></dd>
+    <dt>Donneur</dt><dd><b>Longwang</b> (Envoyé du Roi-Dragon) — Pavillon de l'envoyé (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Pavillon de l'envoyé</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la perle du Roi-Dragon (coin sud-ouest de la grève)<br><small>Lieu : Rivage de la Mer Orientale (partie sud-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Rivage de la Mer Orientale</small></li></ol></dd>
+    <dt>Récompense</dt><dd>140 pièces d’or · 9080 points d’expérience · composant de flèche : Écaille de dragon</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La perle est dans le coin sud-ouest de la grève, juste au-dessus de la ligne d'eau. Aucun ennemi ne la garde.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, une faveur. J'ai laissé tomber la perle de mon maître en traversant la grève, au sud-ouest. Sans elle, je ne puis rentrer au palais ; avec elle, le Roi-Dragon pourra enfin pleurer, et sa mer avec lui.</blockquote><blockquote>Récupérez-la. Je suis tenu de ne pas quitter mon poste, et je tremble à l'idée que le sable l'ait avalée.</blockquote><blockquote>Mon maître m'a chargé d'ajouter ceci : la Reine Mère de l'Occident n'offre pas son élixir à n'importe qui. Elle sait lire dans les cœurs. Elle a vu quelque chose dans le vôtre, et quelque chose dans un autre, qu'elle n'a pas aimé.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La perle ! Elle est intacte ! Le Roi-Dragon vous en sera redevable dix mille ans.</blockquote><blockquote>En gage de sa gratitude, voici une écaille de dragon, détachée de sa propre barbe. Vos flèches voleront aussi droit que la mer. Et ces pièces d'or.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-jq_quai_de_jade">
+  <h3>La boussole de jade <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Maître de port Lu</b> (Gardien de la jetée) — Port aux Perles de Haiyan (partie est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Rapporter</b> : Retrouver la boussole de jade d'un chasseur (Hautes Herbes de Cendre, dans les terres au sud-est)</li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 9080 points d’expérience · composant de flèche : Aiguille de jade</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le reliquaire est caché sous un tas de pierres, dans les hautes herbes de cendre, vers le sud-est.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un chasseur des plaines possédait une boussole de jade, un cadeau de marin. Il est mort sans héritier ; elle doit dormir dans un reliquaire, quelque part dans les hautes herbes de cendre, vers le sud-est.</blockquote><blockquote>Rapportez-la et la jetée est à vous.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Elle tremble encore ! Le jade n'oublie jamais où est la mer. Voilà un objet qui rend aux marins leur dignité.</blockquote><blockquote>La jetée est ouverte, archer. Dites bonjour aux vagues de ma part, elles sont susceptibles.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_collar_mer">
+  <h3>La perle des marées <span class="badge stuff">Stuff</span><small>Port aux Perles de Haiyan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Mei-Hua</b> (Plongeuse de perles) — Port aux Perles de Haiyan (partie sud-est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique cachée (Falaises et Criques du Dragon, dans les terres au sud-est)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li><li><b>Vaincre</b> : Abattre le mini-boss : Serpent-roi des marées (Falaises et Criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small><ul class="enemy">
+      <li><b>Serpent-roi des marées</b> — niveau du héros +3, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Falaises et Criques du Dragon (partie est de l’écran)</li>
+      <li>Espèce : Jiaolong du Fleuve (Long) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>168 pièces d’or · 9080 points d’expérience · <a href="stuff-collier_perle_des_marees.html"><strong>Collier de perle des marées</strong></a> (stuff d’exception) · composant de flèche : Collier de perle des marées</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La perle noire est au sud-est de la zone sauvage de la côte. Le serpent-roi nage dans les parages : méfiez-vous de son venin.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Vous avez vu le sol glisser sous vos pieds quand la mer se met à dériver ? Ce n'est pas naturel. Une perle noire calmait les courants, avant qu'un serpent-roi ne l'avale par jeu.</blockquote><blockquote>Retrouvez la perle de remplacement que j'avais cachée dans un rocher, puis abattez le serpent : je monterai la perle sur un collier.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La perle est là, et la mer respire. Voici votre collier de perle noire.</blockquote><blockquote>Les courants ne vous feront plus dériver : la mer vous doit un service, et la mer paie toujours.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_larmes_perle">
+  <h3>Les larmes de Jiaoren <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Xi</b> (Plongeuse de perles) — Atelier des perles (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Atelier des perles</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter la sirène Jiaoren (falaises et criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li><li><b>Ouvrir</b> : Rapporter le coffre aux larmes de perle (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
+    <dt>Récompense</dt><dd>175 pièces d’or · 9080 points d’expérience · composant de flèche : Perle de brume</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La sirène Jiaoren se tient dans les criques du Dragon. Son coffre est tout près.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, une sirène pleure dans les criques du Dragon. Ses larmes deviennent des perles, et elle ne sait plus où les mettre.</blockquote><blockquote>Écoutez-la, puis rapportez-moi son coffre. Les perles de larmes sont les plus rares, et elle mérite qu'on en prenne soin.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ses larmes sont magnifiques ! Je les garderai précieusement, et je lui apporterai du thé. Tenez, une perle de brume pour vos flèches de mer.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_dame_algues">
+  <h3>La Dame des algues <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Ming</b> (Gardienne du phare) — Phare de Haiyan (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Phare de Haiyan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Faire reculer la Dame des algues givrées (falaises et criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small><ul class="enemy">
+      <li><b>Dame des algues givrées</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Falaises et Criques du Dragon (partie nord-ouest de l’écran)</li>
+      <li>Espèce : Dame des Neiges (Esprit) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>180 pièces d’or · 9080 points d’expérience · composant de flèche : Givre d'algue</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La Dame des algues givrées rôde dans les criques du Dragon, sous les falaises.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mon phare s'éteint chaque fois qu'une Dame des algues givrées passe sur la crique. Elle ne le fait pas exprès : égarée loin des neiges, elle cherche la lumière, et son givre l'éteint.</blockquote><blockquote>Faites-la reculer, archer, sans lui faire de mal si possible.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mon phare brille à nouveau, et elle est partie, soulagée. Prenez ce givre d'algue : il garde la fraîcheur, même dans le feu.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_marin_reponse">
+  <h3>La réponse du marin <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-gobi.html#q-sq_lettre_bao_3">La lettre prend le large</a></dd>
+    <dt>Donneur</dt><dd><b>Bao</b> (Marin, père de Petit Bao) — Maison du marin Bao (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Maison du marin Bao</small></dd>
+    <dt>À rapporter à</dt><dd><b>Petit Bao</b> — Hameau de Dongqiao (partie est de l’écran)</dd>
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Rapporter la réponse du marin Bao à son fils (Hameau de Dongqiao, Rizières)<br><small>Lieu : Hameau de Dongqiao (partie est de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>190 pièces d’or · 9080 points d’expérience · composant de flèche : Galet du marin</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Petit Bao vit au Hameau de Dongqiao, dans les rizières, tout au début de votre voyage.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Votre lettre est arrivée, et je pleure dans ma barbe. Voilà ma réponse, écrite à la hâte et à l'encre salée. Portez-la à Dongqiao, à mon fils.</blockquote><blockquote>Ajoutez ce galet poli par la mer : il lui portera chance.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Petit Bao serre la lettre contre son cœur : « Il rentrera ! Il me l'a dit ! » Il vous tend son cerf-volant : « Pour ton carquois, archer. »</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_navire_1">
+  <h3>Du bois pour le navire <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Bing</b> (Calfat et charpentier) — Chantier du calfat Bing (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages → Chantier du calfat Bing</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer les planches de la cache du récif (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie sud-est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
+    <dt>Récompense</dt><dd>150 pièces d’or · 9080 points d’expérience · composant de flèche : Planche de teck</dd>
+    <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_mer_navire_2">Les crabes de la coque</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La cache est dans une grotte basse, sur le récif. Mouillez-vous un peu.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mon navire manque de planches. Je sais qu'une cache d'équipage en conserve, dans les criques. Allez la chercher, archer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Du bois sec, de bonnes planches. Mon navire respire. Il me reste à nettoyer la coque, à chasser les parasites…</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_navire_2">
+  <h3>Les crabes de la coque <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-sq_mer_navire_1">Du bois pour le navire</a></dd>
+    <dt>Donneur</dt><dd><b>Bing</b> (Calfat et charpentier) — Chantier du calfat Bing (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages → Chantier du calfat Bing</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les crabes-soldats (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie nord de l’écran)</small><ul class="enemy"><li>Crabe-soldat — nord</li><li>Crabe-soldat — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>190 pièces d’or · 9080 points d’expérience · composant de flèche : Pince de crabe</dd>
+    <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_mer_navire_3">Le dernier clou</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les crabes rôdent dans les criques du Dragon, au pied de la falaise.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Deux crabes-soldats grignotent ma coque ! Ils se prennent pour des termites. Chassez-les.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ma coque est sauve ! Voici une pince de crabe : elle ne pince plus, elle porte chance.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_navire_3">
+  <h3>Le dernier clou <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-sq_mer_navire_2">Les crabes de la coque</a></dd>
+    <dt>Donneur</dt><dd><b>Bing</b> (Calfat et charpentier) — Chantier du calfat Bing (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages → Chantier du calfat Bing</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Ouvrir le trésor de l'épave (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie sud-est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 9080 points d’expérience · composant de flèche : Clou d'or</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>L'épave est au bout des criques du Dragon. Le trésor est sous un amas d'algues.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Le dernier clou est d'or : il vient d'une épave ancienne, tout au bout des criques. Rapportez-le-moi, que mon navire soit parfait.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le clou d'or ! Mon navire peut naviguer ! Je vous baptise « premier passager ». Tenez, un second clou d'or, pour vos flèches.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_coquille">
+  <h3>La perle de Dame Bei <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Dame Bei</b> (Écaillère) — Maison de Dame Bei (partie nord de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages → Maison de Dame Bei</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger le poulpe Ba (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li><li><b>Parler à</b> : Interroger la méduse Shui (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Coquillage rare</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Ba et Shui sont dans les criques du Dragon, côte à côte.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Ma perle noire a disparu ! La plus grosse, la plus noire ! Elle a roulé vers les criques, je jure. Interrogez les poulpes et les méduses.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La perle est revenue ! Elle a fait le tour des criques, la coquine. Voici un coquillage rare, par gratitude.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_mazu">
+  <h3>Le serpent de Mazu <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a></dd>
+    <dt>Donneur</dt><dd><b>Dame Mo</b> (Prêtresse de Mazu) — Port aux Perles de Haiyan (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Chasser le serpent de marée (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie est de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small><ul class="enemy">
+      <li><b>Serpent de marée</b> — niveau 32, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Falaises et Criques du Dragon (partie est de l’écran)</li>
+      <li>Espèce : Jiaolong du Fleuve (Long) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 9080 points d’expérience · composant de flèche : Talisman de Mazu</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le serpent de marée rôde dans les criques du Dragon, sous les falaises.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un serpent de marée empêche les pêcheurs d'offrir du riz à Mazu. La déesse s'impatiente. Rendez-lui sa mer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mazu a accepté l'offrande. La mer est apaisée, les marins sourient. Prenez ce talisman : il garde des tempêtes.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_chanson">
+  <h3>La chanson du port <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Hailing</b> (Chanteuse des marins) — Port aux Perles de Haiyan (partie nord de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Recueillir un couplet auprès de Hai (Cabane du pêcheur Hai)<br><small>Lieu : Cabane du pêcheur Hai (partie nord-est de l’écran) — itinéraire : Port aux Perles de Haiyan → Cabane du pêcheur Hai</small></li><li><b>Parler à</b> : Recueillir un couplet auprès de Longwang (Pavillon de l'envoyé)<br><small>Lieu : Pavillon de l'envoyé (partie nord de l’écran) — itinéraire : Port aux Perles de Haiyan → Pavillon de l'envoyé</small></li><li><b>Parler à</b> : Recueillir un couplet auprès de Mi (place de Haiyan)<br><small>Lieu : Port aux Perles de Haiyan (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>190 pièces d’or · 9080 points d’expérience · composant de flèche : Corde de luth</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Hai est dans sa cabane, Longwang dans son pavillon, Mi sur la place de Haiyan.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Ma chanson du port a trois couplets à trouver. Allez voir Hai, Longwang et la petite Mi. Rapportez-moi leurs mots !</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Trois couplets, une chanson ! Je la chanterai à la fête. Tenez, une corde de luth : elle chantera pour vos flèches.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_sel">
+  <h3>Le sel de Jun <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Jun</b> (Saunier) — Anse des Coquillages (partie sud-ouest de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Livrer le sel à Xi (Atelier des perles)<br><small>Lieu : Atelier des perles (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Atelier des perles</small></li><li><b>Parler à</b> : Livrer le sel à Ming (Phare de Haiyan)<br><small>Lieu : Phare de Haiyan (partie nord-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Phare de Haiyan</small></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Cristal de sel</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Xi est à l'atelier des perles, Ming au phare. Toutes deux à Haiyan.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>J'ai du sel de choix pour Xi et Ming. Je suis coincé à ma saline : la marée n'attend pas. Pouvez-vous livrer pour moi ?</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Elles sont ravies ! Jun vous offre un cristal de sel pur : il brille comme une petite étoile.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_mer_ahu">
+  <h3>La coquille qui chante <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Ahu</b> (Petit ramasseur de coquillages) — Anse des Coquillages (partie ouest de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Se rendre à</b> : Visiter la maison de Dame Bei (Anse des Coquillages)<br><small>Lieu : Maison de Dame Bei — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages → Maison de Dame Bei</small></li><li><b>Ouvrir</b> : Fouiller la cache de la saline (Anse des Coquillages)<br><small>Lieu : Anse des Coquillages (partie sud-ouest de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon → Anse des Coquillages</small></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Coquille chantante</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La maison de Dame Bei et la saline sont toutes deux au hameau de l'Anse.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, aide-moi : j'ai perdu ma coquille qui chante. Je l'ai peut-être laissée chez Dame Bei, ou près des salines. Cherche avec moi !</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ma coquille ! Elle chante encore ! Je te la prête quand tu seras triste. Elle dit « chhhh » et tout va mieux.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_journal_8">
+  <h3>La page du récif <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-sq_journal_7">La page dans l'herbe</a></dd>
+    <dt>Donneur</dt><dd><b>Ming</b> (Gardienne du phare) — Phare de Haiyan (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Phare de Haiyan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page sur le récif (criques du Dragon)<br><small>Lieu : Falaises et Criques du Dragon (partie sud de l’écran) — itinéraire : Port aux Perles de Haiyan → Falaises et Criques du Dragon</small></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 9080 points d’expérience · composant de flèche : Page du carnet (VIII)</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_journal_9">La page accrochée</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La page flotte sur un récif des criques du Dragon, entre deux vagues.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Une page est venue s'échouer sur un récif, juste sous mon phare. Elle porte de l'encre rouge. Allez voir, mais soyez prudent.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>« J'ai entendu parler de l'élixir. Elle le garde dans une boîte rouge. » Ming éteint son phare un instant, comme pour le cacher.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_hua_4">
+  <h3>Ce que la mer a gardé <small>Rivage de la Mer Orientale</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-gobi.html#q-sq_hua_3">La carte des pas de Hua</a>, <a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a></dd>
+    <dt>Donneur</dt><dd><b>Ming</b> (Gardienne du phare) — Phare de Haiyan (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Port aux Perles de Haiyan → Phare de Haiyan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter le Vieux Gong, qui a tout vu (rochers du rivage)<br><small>Lieu : Port aux Perles de Haiyan (partie ouest de l’écran)</small></li><li><b>Parler à</b> : Demander à Hua ce qu'elle compte (jetée du phare)<br><small>Lieu : Port aux Perles de Haiyan (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>140 pièces d’or · 9080 points d’expérience · composant de flèche : Perle d'aube</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_hua_5">Xihe, mère des dix soleils</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le Vieux Gong est sur les rochers, Hua sur la jetée près du phare.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mon phare éclaire la mer, pas les cœurs. Mais il y a des soirs où je vois une femme sur la jetée qui compte, qui compte, et qui s'arrête toujours au même chiffre.</blockquote><blockquote>Interrogez le crabe Gong, puis allez à sa rencontre. Soyez doux : elle ne ressemble pas à quelqu'un qu'on brusque.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Dix enfants… Je n'aurais pas dû poser la question. Ou bien j'aurais dû la poser plus tôt. Voici une perle d'aube : elle luit comme les premières matinées, avant la colère.</blockquote>
+  </details>
+</article>
+</main>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

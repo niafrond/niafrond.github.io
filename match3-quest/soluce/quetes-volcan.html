@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Gorges du Volcan.">
+<title>Quêtes — Gorges du Volcan — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+details{margin:6px 0}summary{cursor:pointer;color:var(--blue);font:600 .85rem system-ui,sans-serif}
+blockquote{margin:6px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--dim);font-style:italic}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Gorges du Volcan</div>
+<h2>Gorges du Volcan</h2>
+<p class="lead">Région débloquée au niveau 4. 19 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_sun_6">Le Soleil de Magma</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_ember_pup">Le louveteau de braise</a></li><li><a href="#q-sq_ore">La veine de cinabre</a></li><li><a href="#q-sq_ember">La braise du phénix</a></li><li><a href="#q-jq_galeries_volcan">Le laissez-passer de basalte</a></li><li><a href="#q-sq_collar_volcan">Le cœur d'obsidienne</a></li><li><a href="#q-sq_legend_zhuque">Le feu du Sud</a></li><li><a href="#q-sq_pont_braise">Le pont de braise</a></li><li><a href="#q-sq_vase_rui">Le vase de Rui</a></li><li><a href="#q-sq_cendrillon">Le murmure de la forge</a></li><li><a href="#q-sq_vol_alchimie_1">Le cinabre d'Occident</a></li><li><a href="#q-sq_vol_alchimie_2">Les chiens de magma</a></li><li><a href="#q-sq_vol_alchimie_3">Le grand œuvre</a></li><li><a href="#q-sq_vol_farceur">Le farceur des cendres</a></li><li><a href="#q-sq_vol_geologue">Les trois témoins</a></li><li><a href="#q-sq_vol_poisson">Le poisson dans le bain</a></li><li><a href="#q-sq_vol_dragonnet">L'œuf de la sœur</a></li><li><a href="#q-sq_vol_obsidienne">Les soldats d'obsidienne</a></li><li><a href="#q-sq_journal_6">La page brûlée</a></li></ul></div>
+<article class="quest" id="q-q_sun_6">
+  <h3>Le Soleil de Magma <span class="badge main">Principale</span><small>Chapitre II — Les Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-rizieres.html#q-q_sun_1">Le Soleil Ardent</a></dd>
+    <dt>Donneur</dt><dd><b>Yan</b> (Prêtresse du feu repentie) — Petit temple de Yan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Petit temple de Yan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre le Soleil de Magma (sanctuaire des Gorges du Volcan, au-delà du défilé)<br><small>Lieu : Gorges du Volcan (partie est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Gorges du Volcan</small><ul class="enemy">
+      <li><b>Soleil de Magma</b> — niveau 9, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Gorges du Volcan (partie est de l’écran)</li>
+      <li>Espèce : Soleil de Magma (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>110 pièces d’or · 1900 points d’expérience · composant de flèche : Éclat du Soleil de Magma</dd>
+    <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-q_sun_4">Le Soleil des Mirages</a>, <a href="quetes-gobi.html#q-sq_oasis">La cache de l'oasis</a>, <a href="quetes-gobi.html#q-sq_bandits">La caravane de Ma</a>, <a href="quetes-volcan.html#q-sq_vol_obsidienne">Les soldats d'obsidienne</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le défilé est étroit : un archer pressé y a tendu une embuscade. Après lui, le Soleil de Magma vous attend à l'est.<br>Les pixiu de magma gardent les veines de cinabre : prudence, ils chargent la tête baissée.<br>Trois chemins mènent au soleil. Risque : faites taire les deux forgerons de magma, au prix d'un combat, pour leur expérience et un soleil entier.<br>Relation : sauvez la cendre du phénix pour Yan, et le vieil attiseur du temple du feu ordonnera aux forgerons de poser leurs soufflets.<br>Découverte : les veines de cinabre et la braise d'Ember affaiblissent le soleil.<br>Chaque chemin laisse sa trace : des forgerons éteints ou endormis, un attiseur allié, un soleil moins ardent.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Deuxième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé.</blockquote><blockquote>Une silhouette connue vous attend à l'entrée des gorges, l'arc déjà tendu…</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le Soleil de Magma se fige, noircit, se fend comme une coulée refroidie, puis s'effondre en gravats encore chauds. Les rivières de feu ralentissent et s'éteignent une à une, laissant une roche luisante comme du verre.</blockquote><blockquote>La prêtresse Yan s'agenouille, le front contre la pierre : elle priait les soleils comme des dieux, autrefois. « Pardonnez-moi, murmure-t-elle, de les avoir aimés. »</blockquote><blockquote>Deux soleils sont tombés. À l'est, les dunes du Gobi miroitent, et le sable y a viré au verre.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ember_pup">
+  <h3>Le louveteau de braise <span class="badge comp">Compagnon</span><small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-rizieres.html#q-q_sun_1">Le Soleil Ardent</a></dd>
+    <dt>Donneur</dt><dd><b>Shan</b> (Mineur) — Maison de Shan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Maison de Shan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Dompter le louveteau de braise (sud-ouest des gorges, près des éboulis)<br><small>Lieu : Gorges du Volcan (partie sud de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Gorges du Volcan</small><ul class="enemy">
+      <li><b>Louveteau de braise</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Gorges du Volcan (partie sud de l’écran)</li>
+      <li>Espèce : Loup de Braise (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — frappe fort, rapide et sournois</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>80 pièces d’or · 790 points d’expérience · composant de flèche : Croc de braise · <a href="compagnon-braise.html"><strong>Braise</strong></a> rejoint le groupe</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le louveteau rôde au sud-ouest des gorges, près des éboulis. Il mord fort, mais il n'a qu'un seul coup dans le sac.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un louveteau mord mes mineurs depuis une semaine, au sud-ouest, là où la roche est encore chaude. Il n'a pas de meute : le volcan a mangé la sienne. Il est furieux, et sa rage ne retombe jamais.</blockquote><blockquote>Ce n'est pas un monstre, seigneur : c'est un petit qui ne sait plus quoi faire de sa colère. Tenez-lui tête, il saura vous suivre.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il vous suit ! Il se frotte contre votre botte, et il a l'air presque calme. Presque.</blockquote><blockquote>Il s'appelle Braise. Quand les coups pleuvent, sa colère devient la vôtre. Prenez ces pièces, mes mineurs dorment enfin.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ore">
+  <h3>La veine de cinabre <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-rizieres.html#q-q_sun_1">Le Soleil Ardent</a></dd>
+    <dt>Donneur</dt><dd><b>Shan</b> (Mineur) — Maison de Shan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Maison de Shan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les 2 pixiu de magma (nord-est des gorges, au-delà du défilé)<br><small>Lieu : Gorges du Volcan (partie nord-est de l’écran)</small><ul class="enemy"><li>Pixiu de magma — nord-est</li><li>Pixiu de magma — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>110 pièces d’or · 790 points d’expérience · composant de flèche : Obsidienne vive</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les deux pixiu de magma gardent la veine au nord-est des gorges, passé le défilé. Ils chargent la tête baissée.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Seigneur archer ! Je suis Shan, mineur. Deux pixiu de magma gardent la veine de cinabre, au nord-est de la gorge, derrière la barrière de lave. Impossible d'en tirer un grain de minerai sans se faire charger.</blockquote><blockquote>Je suis prêt à vous payer tout ce que j'ai, et à vous offrir un morceau d'obsidienne vive, la plus noire que j'aie jamais taillée.</blockquote><blockquote>Prenez garde au défilé, en chemin : un jeune archer y est passé tout à l'heure et vous attend, l'arc tendu. Un garçon qui a faim, voilà ce que j'ai vu. Un garçon qui a faim.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Voilà la veine libre ! Mes pioches vont chanter.</blockquote><blockquote>Voici l'obsidienne vive que je vous avais promise. Elle tranche le feu, dit-on. Et mon or : ne le dépensez pas en gâteaux, ma femme les fait mieux.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ember">
+  <h3>La braise du phénix <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-rizieres.html#q-q_sun_1">Le Soleil Ardent</a></dd>
+    <dt>Donneur</dt><dd><b>Yan</b> (Prêtresse du feu repentie) — Petit temple de Yan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Petit temple de Yan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Rapporter la cendre du brasero du phénix (coin nord-ouest, derrière le sanctuaire)<br><small>Lieu : Gorges du Volcan (partie nord-ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Gorges du Volcan</small></li></ol></dd>
+    <dt>Récompense</dt><dd>80 pièces d’or · 790 points d’expérience · composant de flèche : Cendre de phénix</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le brasero est à l'ouest, dans l'enceinte du vieux temple du feu, derrière le sanctuaire. Rien ne le garde.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Autrefois, je servais les soleils. J'ai rallumé chaque aube un brasero de cendre de phénix, près du sanctuaire, au nord-ouest. Depuis que les soleils sont devenus fous, ce brasero est abandonné.</blockquote><blockquote>Récupérez-en la cendre. Elle n'a plus de maître, et je ne veux pas qu'un autre la prenne pour de mauvaises raisons.</blockquote><blockquote>Je connais le regard de l'archer qui vous guette au défilé : celui d'un garçon qui croit que le monde lui doit quelque chose. J'ai eu ce regard, à seize ans, devant l'autel d'un soleil.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La cendre de phénix… Elle est encore tiède, comme si l'oiseau venait de s'envoler.</blockquote><blockquote>Prenez-la : c'est pour vos flèches, pour qu'elles renaissent à chaque tir. Et ces pièces. Je n'ai plus besoin de rien d'autre que de votre pardon.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-jq_galeries_volcan">
+  <h3>Le laissez-passer de basalte <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Contremaître Han</b> (Surveillant des galeries) — Hameau des Braises Sages (partie est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Rapporter</b> : Récupérer un laissez-passer de basalte (Digue et Marais Craquelés, dans les terres au sud-est)</li></ol></dd>
+    <dt>Récompense</dt><dd>72 pièces d’or · 790 points d’expérience · composant de flèche : Éclat de basalte</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le coffret de pierre noire est enfoui sous une dalle fendue de la digue, vers le sud-est.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un laissez-passer de basalte, gravé au sceau du forgeron-chef : sans lui, je ne vous ouvre pas les galeries.</blockquote><blockquote>Les anciens en cachaient sous les dalles fendues de la digue des rizières, du côté du sud-est. Allez voir.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La plaquette est authentique, je reconnais l'entaille du forgeron. Vous êtes bien plus débrouillard que mes apprentis.</blockquote><blockquote>Les galeries sont à vous, archer. Évitez les murs qui chantent : ils vont s'effondrer.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_collar_volcan">
+  <h3>Le cœur d'obsidienne <span class="badge stuff">Stuff</span><small>Hameau des Braises Sages</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Hu le Braise-Sage</b> (Vieux forgeron des gorges) — Hameau des Braises Sages (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique cachée (Coulées et Passerelles Rougeoyantes, dans les terres au sud-est)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li><li><b>Vaincre</b> : Abattre le mini-boss : Béhémoth des coulées (Coulées et Passerelles Rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small><ul class="enemy">
+      <li><b>Béhémoth des coulées</b> — niveau du héros +3, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran)</li>
+      <li>Espèce : Pixiu (Hybride) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>56 pièces d’or · 790 points d’expérience · <a href="stuff-collier_obsidienne.html"><strong>Collier d'obsidienne froide</strong></a> (stuff d’exception) · composant de flèche : Collier d'obsidienne froide</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le cœur d'obsidienne est au sud-est de la zone sauvage des gorges. Le béhémoth de magma rôde non loin : il charge, soyez prêt.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Seigneur archer, vous qui marchez dans les cendres : écoutez un vieux forgeron. La lave brûle tout ce qu'elle touche, sauf une pierre : l'obsidienne froide, celle que la montagne garde pour elle.</blockquote><blockquote>J'ai caché un cœur d'obsidienne dans une crevasse de la zone sauvage, avant que les soleils ne rendent fou ce pays. Un béhémoth de magma s'en est fait une tanière. Rapportez-moi la pierre, puis chassez la bête, et je vous en taillerai un collier.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La pierre est froide comme au premier jour… et la bête ne souffle plus. Tenez, un collier d'obsidienne.</blockquote><blockquote>Tant que vous le porterez, les cases brûlantes ne vous feront plus aucun mal. La lave a de la mémoire : elle saura que vous êtes de la famille.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_legend_zhuque">
+  <h3>Le feu du Sud <small>✦ Quête secondaire (légende) — Hameau des Braises Sages</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Rong la Gardienne des Braises</b> (Veilleuse du feu du Sud) — Hameau des Braises Sages (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique du Gardien (Coulées et Passerelles Rougeoyantes, dans les terres au sud-est)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li><li><b>Vaincre</b> : Affronter le Gardien Céleste : Zhuque, l'Oiseau Vermillon (Coulées et Passerelles Rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small><ul class="enemy">
+      <li><b>Zhuque, l'Oiseau Vermillon</b> — niveau 10, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran)</li>
+      <li>Espèce : Zhuque (Oiseau) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>120 pièces d’or · 790 points d’expérience · <strong>Renaissance de l'Oiseau Vermillon</strong> (sort ultime)</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La plume de braise gît au sud-est des coulées rougeoyantes. Zhuque survole les passerelles : il frappe fort, et il renaît de ses cendres.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, le Sud a un gardien : Zhuque, l'Oiseau Vermillon. Quand les neuf soleils sont montés, il a brûlé de rage et de honte, et depuis, il ne reconnaît plus personne, pas même ses cendres.</blockquote><blockquote>Retrouvez la plume de braise qu'il a perdue dans les coulées : elle seule peut lui rappeler qui il est. Puis affrontez-le, car un gardien ne confie son feu qu'à celui qui tient debout devant lui.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La plume est chaude… et l'oiseau s'est calmé. Il vous a reconnu.</blockquote><blockquote>Zhuque vous offre sa renaissance : quand la jauge de rage sera pleine, son feu vermillon vous relèvera. Ne la gaspillez pas.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_pont_braise">
+  <h3>Le pont de braise <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Shan</b> (Mineur) — Maison de Shan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Maison de Shan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Calmer le forgeron de lave qui frappe sur le pont de basalte (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small><ul class="enemy">
+      <li><b>Forgeron de lave</b> — niveau 4, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Coulées et Passerelles Rougeoyantes (partie est de l’écran)</li>
+      <li>Espèce : Forgeron de lave (Géant) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Pierre de forge</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le forgeron de lave se dresse sur le pont de basalte, au bout des coulées rougeoyantes.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Seigneur archer, le pont de basalte menant au sanctuaire est rompu. Un forgeron de lave y frappe son enclume nuit et jour, et nous ne pouvons pas le réparer.</blockquote><blockquote>Calmez-le à votre manière, mais gardez quelques planches : nous aurons du travail.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le pont est libre ! Nous allons le réparer avant la nuit. Prenez cette pierre de forge : elle garde la chaleur pour les flèches froides.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vase_rui">
+  <h3>Le vase de Rui <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Rui</b> (Potier de lave) — Atelier du potier de lave (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Atelier du potier de lave</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer le vase de Rui dans la niche de basalte (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie nord de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>155 pièces d’or · 790 points d’expérience · composant de flèche : Lave refroidie</dd>
+    <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_cendrillon">Le murmure de la forge</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La niche de basalte est cachée dans les coulées rougeoyantes. Cherchez une paroi lisse, presque polie.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>J'ai laissé mon plus beau vase dans une niche de basalte, avant que les gorges ne s'embrasent. Il est trop beau pour finir en cendres.</blockquote><blockquote>Récupérez-le, archer, avant qu'il ne refroidisse. Il y a des vases qui se fâchent quand on les oublie.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mon vase ! Il est encore tiède, comme un enfant endormi. Il vous revient en partie : ce fragment de lave refroidie est ma meilleure création.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_cendrillon">
+  <h3>Le murmure de la forge <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-sq_vase_rui">Le vase de Rui</a></dd>
+    <dt>Donneur</dt><dd><b>Grand-père Fei</b> (Baigneur invétéré) — Bains de source chaude (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Bains de source chaude</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Huohui, l'esprit de la forge (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>160 pièces d’or · 790 points d’expérience · composant de flèche : Cendre vive</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Huohui, l'esprit de la forge, se trouve dans les coulées rougeoyantes. Soyez poli : c'est une braise.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, j'ai entendu Fengmeng passer dans les gorges, en pestant. Il parlait de son maître et d'un flacon d'immortalité. Je suis trop vieux pour y aller, et trop sage pour m'en mêler.</blockquote><blockquote>L'esprit de la forge, Huohui, a tout vu. Demandez-lui, gentiment : les braises sont susceptibles.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ainsi il convoite l'élixir… Merci, archer. Gardez cette cendre vive : un souvenir de la forge, pour vos flèches de feu.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_alchimie_1">
+  <h3>Le cinabre d'Occident <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Dan</b> (Alchimiste du cinabre) — Laboratoire de l'alchimiste Dan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes → Laboratoire de l'alchimiste Dan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Demander l'herbe rare à Xu (Officine de Xu, forêt de bambous)<br><small>Lieu : Officine de Xu (partie est de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>105 pièces d’or · 790 points d’expérience · composant de flèche : Lingzhi séché</dd>
+    <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_vol_alchimie_2">Les chiens de magma</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Xu tient son officine au village des Cent Tiges, dans la forêt de bambous.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Il me faut un lingzhi séché, de grande qualité. Seul un herboriste de la forêt de bambous en a. Si vous passez là-bas, faites-moi plaisir.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le lingzhi ! Je vais pouvoir terminer mon élixir. Non, pas celui-là : un autre, plus modeste. Je ne touche plus à l'immortalité.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_alchimie_2">
+  <h3>Les chiens de magma <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-sq_vol_alchimie_1">Le cinabre d'Occident</a></dd>
+    <dt>Donneur</dt><dd><b>Dan</b> (Alchimiste du cinabre) — Laboratoire de l'alchimiste Dan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes → Laboratoire de l'alchimiste Dan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les chiens de magma (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie est de l’écran)</small><ul class="enemy"><li>Chien de magma — est</li><li>Chien de magma — est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Cornue brisée</dd>
+    <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-sq_vol_alchimie_3">Le grand œuvre</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les deux chiens de magma errent dans les coulées, tout rougeoyants.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mes chiens de garde ont mal tourné : ils se sont enfuis dans les coulées. Je ne peux plus laisser traîner le cinabre. Chassez-les.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ils sont maîtrisés, je m'en occupe. Je leur donnerai des os de basalte. Tenez, un éclat de cornue : fragile, utile.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_alchimie_3">
+  <h3>Le grand œuvre <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-sq_vol_alchimie_2">Les chiens de magma</a></dd>
+    <dt>Donneur</dt><dd><b>Dan</b> (Alchimiste du cinabre) — Laboratoire de l'alchimiste Dan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes → Laboratoire de l'alchimiste Dan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Ouvrir le caveau de cinabre (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie nord-est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>195 pièces d’or · 790 points d’expérience · composant de flèche : Poudre de cinabre</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le caveau est dans les coulées rougeoyantes, sur une plate-forme de basalte rouge.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mon grand œuvre n'attend plus que du cinabre pur. Un caveau en regorge, dans les coulées. Ouvrez-le, archer, mais ne touchez à rien.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Du cinabre pur ! Avec ça, je fabrique une poudre qui rend les flèches rouges. C'est inutile, mais très beau.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_farceur">
+  <h3>Le farceur des cendres <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Dada</b> (Cuisinière des mineurs) — Cantine des mineurs (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Cantine des mineurs</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Chasser le Démon des fumées (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small><ul class="enemy">
+      <li><b>Démon des fumées</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran)</li>
+      <li>Espèce : Huli Jing (Esprit-renard) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — rapide et sournois</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>135 pièces d’or · 790 points d’expérience · composant de flèche : Cuillère de braise</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le Démon des fumées rôde dans les coulées. Il adore les bols fumants.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un petit démon vole mes bols de nouilles ! Il laisse une trace de cendres. Chassez-le, ou nous finirons tous au pain sec.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes bols sont revenus ! Il a même laissé un mot : « Bonnes nouilles ». Tenez, une cuillère de braise.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_geologue">
+  <h3>Les trois témoins <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Zhou</b> (Sage des roches des gorges) — Hameau des Braises Sages (partie ouest de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Shan le mineur (Maison de Shan)<br><small>Lieu : Maison de Shan (partie nord de l’écran) — itinéraire : Hameau des Braises Sages → Maison de Shan</small></li><li><b>Parler à</b> : Interroger Bo (place des Braises Sages)<br><small>Lieu : Hameau des Braises Sages (au centre de l’écran)</small></li><li><b>Parler à</b> : Interroger le fantôme Shu (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Basalte étiqueté</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Shan est dans sa maison, Bo sur la place, Shu dans les coulées.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Je cherche l'origine de la chaleur. Interrogez trois témoins : Shan, Bo et un fantôme de mineur. Leurs réponses me fixeront.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Trois réponses, une conclusion : la chaleur partira avec le soleil. Joli bilan scientifique. Voici un échantillon de basalte.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_poisson">
+  <h3>Le poisson dans le bain <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Mu</b> (Gardienne des bains) — Sources Tièdes (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au poisson Bi (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li><li><b>Ouvrir</b> : Ouvrir le coffre des bains (Sources Tièdes)<br><small>Lieu : Sources Tièdes (partie sud-ouest de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>135 pièces d’or · 790 points d’expérience · composant de flèche : Écaille pourpre</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Bi est dans les coulées, près du magma. Le coffre est au hameau.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un poisson de lave a nagé dans les bains. Il y a pris goût. Parlez-lui, puis ouvrez le coffre au fond du bassin : il y a laissé de quoi payer ses bains.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Bi est rentré chez lui, le poisson. Il m'a laissé une écaille pourpre. Elle chauffe les mains : un trésor.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_dragonnet">
+  <h3>L'œuf de la sœur <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Yan</b> (Prêtresse du feu repentie) — Petit temple de Yan (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Petit temple de Yan</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au dragonnet Xiaohong (Sources Tièdes)<br><small>Lieu : Sources Tièdes (partie sud-est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes → Sources Tièdes</small></li><li><b>Ouvrir</b> : Récupérer l'œuf dans la cache d'obsidienne (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie sud-est de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>150 pièces d’or · 790 points d’expérience · composant de flèche : Coquille de dragonnet</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Xiaohong est au hameau. La cache d'obsidienne est dans les coulées.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un petit dragon pleure aux Sources Tièdes : il a perdu l'œuf de sa sœur. Je crois savoir où il est tombé. Aidez-le, archer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>L'œuf est revenu. La sœur a embrassé son petit frère, et ne l'a pas mangé. C'est une victoire familiale.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_vol_obsidienne">
+  <h3>Les soldats d'obsidienne <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-q_sun_6">Le Soleil de Magma</a></dd>
+    <dt>Donneur</dt><dd><b>Rui</b> (Potier de lave) — Atelier du potier de lave (partie nord de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Atelier du potier de lave</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre le soldat d'obsidienne (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small><ul class="enemy">
+      <li><b>Soldat d'obsidienne</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Coulées et Passerelles Rougeoyantes (au centre de l’écran)</li>
+      <li>Espèce : Soldat de Terre Cuite (Humain) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>180 pièces d’or · 790 points d’expérience · composant de flèche : Éclat d'obsidienne</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le soldat d'obsidienne patrouille dans les coulées. Il brille en noir.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un soldat d'obsidienne casse mes vases. Il croit que ce sont des ennemis. Mes vases ne sont pas dangereux, hélas.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes vases sont sauvés. Le soldat est devenu une statue sur la route : elle sert d'épouvantail. Voici un éclat d'obsidienne.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_journal_6">
+  <h3>La page brûlée <small>Gorges du Volcan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-rizieres.html#q-sq_journal_1">Une page tombée du ciel</a></dd>
+    <dt>Donneur</dt><dd><b>Grand-père Fei</b> (Baigneur invétéré) — Bains de source chaude (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Hameau des Braises Sages → Bains de source chaude</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page dans la fissure (coulées rougeoyantes)<br><small>Lieu : Coulées et Passerelles Rougeoyantes (partie sud de l’écran) — itinéraire : Hameau des Braises Sages → Coulées et Passerelles Rougeoyantes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>135 pièces d’or · 790 points d’expérience · composant de flèche : Page du carnet (VI)</dd>
+    <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-sq_journal_4">La carte vendue</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La page est coincée dans une fissure de basalte, dans les coulées.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Une page brûlée a volé jusqu'au bain. Elle parle d'une flèche manquée et d'un regard. Je crois qu'il y en a d'autres. Allez dans les coulées.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>« Ma flèche a manqué, à l'entraînement. Il m'a regardé, enfin. Je n'aurais pas dû. » Fei se tait, et trempe ses pieds en silence.</blockquote>
+  </details>
+</article>
+</main>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

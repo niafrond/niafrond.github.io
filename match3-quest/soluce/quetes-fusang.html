@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Cime du Fusang.">
+<title>Quêtes — Cime du Fusang — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+details{margin:6px 0}summary{cursor:pointer;color:var(--blue);font:600 .85rem system-ui,sans-serif}
+blockquote{margin:6px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--dim);font-style:italic}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Cime du Fusang</div>
+<h2>Cime du Fusang</h2>
+<p class="lead">Région débloquée au niveau 37. 19 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_sun_9">Le Soleil Lâche</a> <span class="badge main">Principale</span></li><li><a href="#q-q_changxi">L'épreuve de Changxi</a> <span class="badge main">Principale</span></li><li><a href="#q-q_fengmeng">L'Archer Miroir</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_crane">Le nid de la grue</a></li><li><a href="#q-sq_collar_fusang">Le fil d'ombre</a></li><li><a href="#q-sq_legend_qinglong">La tempête de l'Est</a></li><li><a href="#q-sq_sceau_racines">Le sceau des racines</a></li><li><a href="#q-sq_neuf_lanternes">Les neuf lanternes</a></li><li><a href="#q-sq_immortel_egare">L'immortel égaré</a></li><li><a href="#q-sq_fus_pont_1">Le message du bouvier</a></li><li><a href="#q-sq_fus_pont_2">Les pêches de Zhinü</a></li><li><a href="#q-sq_fus_pont_3">Le pont des pies</a></li><li><a href="#q-sq_fus_singes">Les voleurs de pêches</a></li><li><a href="#q-sq_fus_encens">Le parfum du matin</a></li><li><a href="#q-sq_fus_etoile">L'enfant d'étoile</a></li><li><a href="#q-sq_fus_pelerin">Les écailles de Kun</a></li><li><a href="#q-sq_fus_wyrm">Le long égaré</a></li><li><a href="#q-sq_journal_9">La page accrochée</a></li><li><a href="#q-sq_hua_5">Xihe, mère des dix soleils</a></li></ul></div>
+<article class="quest" id="q-q_sun_9">
+  <h3>Le Soleil Lâche <span class="badge main">Principale</span><small>Chapitre IX — La Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a></dd>
+    <dt>Donneur</dt><dd><b>La Grue</b> (Messagère de la Reine Mère) — Nid de la messagère (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Nid de la messagère</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre le Soleil Lâche sans toucher au Dixième Soleil (sanctuaire de la Cime du Fusang, au nord-est)<br><small>Lieu : Cime du Fusang (partie est de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées → Cime du Fusang</small><ul class="enemy">
+      <li><b>Soleil Lâche</b> — niveau 45, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Cime du Fusang (partie est de l’écran)</li>
+      <li>Espèce : Soleil Lâche (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>540 pièces d’or · 25470 points d’expérience · composant de flèche : Éclat du Soleil Lâche</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_changxi">L'épreuve de Changxi</a>, <a href="quetes-fusang.html#q-sq_hua_5">Xihe, mère des dix soleils</a>, <a href="quetes-lune.html#q-sq_lune_ombres">Les ombres du miroir</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le Soleil Lâche est dans le sanctuaire, au nord-est. Le Dixième se tient derrière lui, terrifié : ne le visez jamais.<br>Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort.<br>Trois chemins mènent au soleil. Risque : écartez les deux grues-lige, sans toucher au Dixième, pour leur expérience et un soleil entier.<br>Relation : rapportez les plumes du nid, et Hegui, la sœur de la messagère, rappellera les grues-lige sans combat.<br>Découverte : le nid de la grue et le sceau des racines affaiblissent le soleil.<br>Chaque chemin laisse sa trace : des grues abattues ou posées sur la branche, une grue reconnaissante, un soleil moins ardent.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Neuvième soleil : celui qu'on appelle le Lâche. Il s'est réfugié au pied du Fusang, à l'abri derrière son plus jeune frère, le Dixième, qui tremble de tout son corps.</blockquote><blockquote>Vous devez abattre le Neuvième sans toucher au Dixième : un seul tir mal placé, et la Terre n'aurait plus de jour.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le Soleil Lâche tombe sans un cri, comme un fruit mûr. Derrière lui, le Dixième Soleil, un petit être lumineux de la taille d'un enfant, se serre contre le tronc du Fusang et ose enfin regarder son sauveur.</blockquote><blockquote>« Tu… tu ne m'as pas touché », murmure-t-il. « Je serai sage. Je me lèverai à l'heure. Je ne brûlerai personne. » Il lève vers le ciel un visage mouillé de lumière.</blockquote><blockquote>Neuf soleils sont tombés ; un seul demeure, qui éclairera la Terre à jamais. Mais déjà, une grue blanche descend de la plus haute branche…</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-q_changxi">
+  <h3>L'épreuve de Changxi <span class="badge main">Principale</span><small>Chapitre IX bis — Les Hautes-Eaux de la Lune Montante</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-q_sun_9">Le Soleil Lâche</a></dd>
+    <dt>Donneur</dt><dd><b>La Grue</b> (Messagère de la Reine Mère) — Nid de la messagère (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Nid de la messagère</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Prouver votre courage à Changxi, mère des douze lunes (Autel de Mazu, au bout des Hautes-Eaux)<br><small>Lieu : Autel de Mazu (partie est de l’écran)</small><ul class="enemy">
+      <li><b>Changxi, mère des douze lunes</b> — niveau 41, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Autel de Mazu (partie est de l’écran)</li>
+      <li>Espèce : Changxi (Divinité) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>600 pièces d’or · 25470 points d’expérience · composant de flèche : Larme de Changxi</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_fengmeng">L'Archer Miroir</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les Hautes-Eaux sont à l'est du Fusang. Sans le Pas de Yu, l'eau reste infranchissable : le vieux Xu, à la digue, se souvient d'une tortue noire.<br>L'autel de Mazu est au bout des pontons. Changxi n'est pas un ennemi : c'est une épreuve de bravoure. Restez, et elle vous ouvrira le chemin de la Lune.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>La grue blanche se penche vers vous : « La Lune est montée si haut que la mer a voulu la suivre. Entre le Fusang et le Pic, il n'y a plus de sentier : seulement des pontons, et l'eau noire qui les sépare. Il faudra marcher sur l'eau. »</blockquote><blockquote>« Au bout, une divinité dort sur l'autel de Mazu : Changxi, mère des douze lunes. Elle seule peut porter un homme jusqu'à la Lune. Elle ne vous veut aucun mal, archer : elle veut seulement savoir si vous osez. »</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Changxi se lève, immense, les douze lunes tournant autour de sa tête. Elle ne dit rien, mais son visage s'adoucit : le sourire d'une mère qui a vu ce qu'elle voulait voir. Elle vous fait signe de passer, et ce geste vaut toutes les paroles.</blockquote><blockquote>Le ciel se déchire d'argent, et un sentier de lumière monte de l'autel vers le Pic de la Lune.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-q_fengmeng">
+  <h3>L'Archer Miroir <span class="badge main">Principale</span><small>Chapitre Final — Le Pic de la Lune</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-q_changxi">L'épreuve de Changxi</a></dd>
+    <dt>Donneur</dt><dd><b>La Grue</b> (Messagère de la Reine Mère) — Nid de la messagère (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Nid de la messagère</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Affronter Fengmeng au sommet du Pic de la Lune (duel en deux phases, à l'est du Fusang)<br><small>Lieu : Pic de la Lune (partie nord-est de l’écran)</small><ul class="enemy">
+      <li><b>Fengmeng, Rage et Désespoir</b> — niveau 48, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Pic de la Lune (partie nord-est de l’écran)</li>
+      <li>Espèce : Fengmeng, Rage et Désespoir (Humain) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>600 pièces d’or · 25470 points d’expérience · composant de flèche : Carquois de Fengmeng</dd>
+    <dt>Débloque</dt><dd><a href="quetes-lune.html#q-q_epilogue">Les gâteaux de lune</a>, <a href="quetes-lune.html#q-sq_hua_6">La lanterne de Xihe</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le Pic de la Lune est à l'est de l'Arbre. Fengmeng est un archer redoutable, et il connaît vos techniques par cœur : n'attendez pas de lui qu'il tire autrement que vous.<br>Ne cherchez pas à le détester. Dame Chang'e vous le dirait elle-même.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>La grue blanche se pose sur la plus haute branche, un rouleau dans le bec : le sceau de la Reine Mère de l'Occident. « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir. »</blockquote><blockquote>« Elle vous attend au Pic de la Lune, à l'est de l'Arbre : c'est le seul endroit du monde où la Reine Mère peut encore veiller sur elle. Fengmeng la suit. Allez, archer : il ne vous reste que le temps d'un soupir. »</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Fengmeng ne se relève pas tout de suite. Quand il le fait, il a vieilli de dix ans. Il laisse son carquois au pied de l'autel et redescend vers la vallée, sans se retourner.</blockquote><blockquote>On dit qu'il passa le reste de ses jours à tirer à l'arc sur des cibles de paille, pour ne plus jamais viser personne.</blockquote><blockquote>Le silence retombe sur le pic. Il ne reste plus, dans la lumière froide, que l'archer, la lune, et la dernière chose que Chang'e lui demande.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_crane">
+  <h3>Le nid de la grue <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a></dd>
+    <dt>Donneur</dt><dd><b>La Grue</b> (Messagère de la Reine Mère) — Nid de la messagère (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Nid de la messagère</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Rapporter les plumes du nid de grue (coin nord-ouest du Fusang, derrière le pavillon)<br><small>Lieu : Cime du Fusang (partie nord-ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées → Cime du Fusang</small></li></ol></dd>
+    <dt>Récompense</dt><dd>70 pièces d’or · 10610 points d’expérience · composant de flèche : Plume de grue</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le nid est dans le coin nord-ouest du Fusang, derrière le pavillon. Aucun ennemi ne le garde.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, ma sœur la grue a perdu ses petits, et son nid, au nord-ouest de l'Arbre, ne tient plus qu'à un fil. J'ai besoin de quelqu'un d'adroit pour y ramasser les dernières plumes avant la pluie.</blockquote><blockquote>La Reine Mère en fait des flèches de messager : celles qui ne manquent jamais ceux qu'on aime.</blockquote><blockquote>Un jeune archer est venu frapper à sa porte, il y a quelques semaines. Il demandait un élixir pour lui seul. Elle a refusé avec bonté : « Cet élixir est déjà promis. » Je n'ai jamais vu quelqu'un pâlir ainsi, ni sourire en même temps.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Elles sont intactes… et chaudes. Ma sœur vous remercie, à sa manière : par ce cri que vous entendrez cette nuit.</blockquote><blockquote>Voici une plume de grue, choisie pour vous : elle guide la flèche, même dans le vent. Et ces pièces d'or, de la part de la Reine Mère.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_collar_fusang">
+  <h3>Le fil d'ombre <span class="badge stuff">Stuff</span><small>Terrasses de Fusang-le-Bas</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Mu la Tisseuse d'ombre</b> (Fileuse des racines dorées) — Terrasses de Fusang-le-Bas (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique cachée (Racines et Branches Dorées, dans les terres au sud-est)<br><small>Lieu : Racines et Branches Dorées (partie sud de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Vaincre</b> : Abattre le mini-boss : Veilleur de l'ombre dorée (Racines et Branches Dorées)<br><small>Lieu : Racines et Branches Dorées (au centre de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small><ul class="enemy">
+      <li><b>Veilleur de l'ombre dorée</b> — niveau du héros +3, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Racines et Branches Dorées (au centre de l’écran)</li>
+      <li>Espèce : Lei Gong (Esprit) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>188 pièces d’or · 10610 points d’expérience · <a href="stuff-collier_voile_d_ombre.html"><strong>Collier du voile d'ombre</strong></a> (stuff d’exception) · composant de flèche : Collier du voile d'ombre</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le fil d'ombre est au sud-est de la zone sauvage de Fusang. Le veilleur rôde non loin du fil.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Seigneur archer, vous qui marchez devant tous les regards : saviez-vous qu'on peut passer sans être vu ? Il suffit d'un fil d'ombre, filé à l'ombre de l'arbre de Fusang. J'en ai caché une pelote dans les racines, au sud-est.</blockquote><blockquote>Un veilleur de l'ombre dorée la garde, par habitude plus que par méchanceté. Rapportez-moi le fil, puis délivrez le veilleur : je tresserai un collier que les yeux ne verront pas.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le fil est intact… et le veilleur peut enfin fermer les yeux. Voici votre collier du voile d'ombre.</blockquote><blockquote>Tant que vous le porterez, aucun ennemi ne vous remarquera. Sauf ceux qui ne regardent jamais ailleurs : les maîtres des soleils.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_legend_qinglong">
+  <h3>La tempête de l'Est <small>✦ Quête secondaire (légende) — Terrasses de Fusang-le-Bas</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Qing Yun</b> (Moine des terrasses) — Terrasses de Fusang-le-Bas (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique du Gardien (Racines et Branches Dorées, dans les terres au sud-est)<br><small>Lieu : Racines et Branches Dorées (au centre de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Vaincre</b> : Affronter le Gardien Céleste : Qinglong, le Dragon d'Azur (Racines et Branches Dorées)<br><small>Lieu : Racines et Branches Dorées (partie sud de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small><ul class="enemy">
+      <li><b>Qinglong, le Dragon d'Azur</b> — niveau 43, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Racines et Branches Dorées (partie sud de l’écran)</li>
+      <li>Espèce : Qinglong (Dragon) — Force : <span class="dot" style="background:#4cae5d"></span>Terre (vert) — <b>Faiblesse : <span class="dot" style="background:#e6c13a"></span>Air (jaune)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>186 pièces d’or · 10610 points d’expérience · <strong>Tempête du Dragon d'Azur</strong> (sort ultime)</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La perle d'azur est enfouie au sud-est des racines et des branches dorées. Qinglong plane au-dessus : il frappe du ciel, et le tonnerre l'accompagne.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>À l'est, là où le soleil se lève, vit Qinglong, le Dragon d'Azur. Il est le maître de la pluie et du tonnerre, et depuis que les neuf soleils ont tout séché, il refuse de faire pleuvoir : « À quoi bon ? » dit-il.</blockquote><blockquote>Sa perle d'azur est cachée dans les racines de Fusang. Retrouvez-la, puis montrez-lui qu'il reste quelque chose à sauver : un dragon ne déchaîne sa tempête que pour qui a gagné le droit de la demander.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La perle brille de nouveau, et là-haut, les premiers nuages se rassemblent. Il a décidé de faire pleuvoir.</blockquote><blockquote>Qinglong vous confie sa tempête : une fois la rage pleine, il frappera, vous soignera et vous protégera quelques tours. L'Est a retrouvé son maître du ciel.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_sceau_racines">
+  <h3>Le sceau des racines <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Mère Xing</b> (Astronome de l'arbre) — Observatoire de Mère Xing (au centre de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Observatoire de Mère Xing</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver le premier éclat du sceau (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Ouvrir</b> : Retrouver le deuxième éclat du sceau (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (au centre de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Ouvrir</b> : Retrouver le troisième éclat du sceau (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie nord-est de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>195 pièces d’or · 10610 points d’expérience · composant de flèche : Éclat de jade céleste</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les trois éclats du sceau se cachent dans les racines et branches dorées, derrière le village.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Seigneur archer, le sceau que la Reine Mère avait posé sur la cime est brisé en trois éclats, cachés dans les racines. Tant qu'il n'est pas recomposé, la voie vers le sanctuaire reste close.</blockquote><blockquote>Retrouvez-les, un à un. Ils sont dans des coffres que seule la patience ouvre.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le sceau est reformé ! La cime est ouverte. Gardez cet éclat de jade céleste : il vient d'un ciel qui n'est plus.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_neuf_lanternes">
+  <h3>Les neuf lanternes <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Ri</b> (Acolyte aux neuf lanternes) — Petit temple des Dix Soleils (au centre de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Petit temple des Dix Soleils</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter la Racine-Ancienne (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Parler à</b> : Parler à Yuer, la fillette qui écoute les soleils (terrasses de Fusang-le-Bas)<br><small>Lieu : Terrasses de Fusang-le-Bas (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Cendre de lanterne</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_immortel_egare">L'immortel égaré</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La Racine-Ancienne est dans les racines et branches dorées. Yuer est sur la place du village.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Je voudrais rallumer une lanterne pour chaque soleil abattu, afin de ne pas oublier ce qu'ils furent. Mais je ne sais pas quoi dire.</blockquote><blockquote>Écoutez la Racine-Ancienne, puis parlez à Yuer. Elles sauront me souffler les mots.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Merci, archer. Les lanternes brûlent, et leurs noms avec elles. Voici une cendre de lanterne : elle ne s'éteint jamais complètement.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_immortel_egare">
+  <h3>L'immortel égaré <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-sq_neuf_lanternes">Les neuf lanternes</a></dd>
+    <dt>Donneur</dt><dd><b>Yuer</b> (Fillette qui écoute les soleils) — Terrasses de Fusang-le-Bas (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Calmer l'immortel de jade égaré (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie est de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small><ul class="enemy">
+      <li><b>Immortel de jade égaré</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Racines et Branches Dorées (partie est de l’écran)</li>
+      <li>Espèce : Immortel de Jade (Esprit de pierre) — Force : <span class="dot" style="background:#4cae5d"></span>Terre (vert) — <b>Faiblesse : <span class="dot" style="background:#e6c13a"></span>Air (jaune)</b> — lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Jade chantant</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>L'immortel de jade égaré rôde dans les racines et branches dorées, derrière le village.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un immortel de jade vagabonde dans les racines, hanté par un souvenir. Les soleils m'ont dit qu'il cherche son maître.</blockquote><blockquote>Il suffit de le calmer, tu es le plus doué pour ça. Mais ne lui fais pas de mal : il est fragile comme un vase.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il a retrouvé le calme ! Il m'a dit merci, dans sa voix de cristal. Il m'a donné ceci : un morceau de jade chantant.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_pont_1">
+  <h3>Le message du bouvier <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Niulang</b> (Bouvier de la rive) — Terrasses de Fusang-le-Bas (partie ouest de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Remettre le mot à Zhinü (Perchoir des Grues)<br><small>Lieu : Perchoir des Grues (partie ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées → Perchoir des Grues</small></li></ol></dd>
+    <dt>Récompense</dt><dd>160 pièces d’or · 10610 points d’expérience · composant de flèche : Fil d'argent</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_fus_pont_2">Les pêches de Zhinü</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Zhinü est au Perchoir des Grues, au hameau, près de son métier.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Hou Yi, je ne vous demande pas grand-chose : un mot à porter. Zhinü est de l'autre côté, au Perchoir. Dites-lui que je l'attends, chaque nuit.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Un nuage pour moi… Je sens déjà sa douceur. Merci, archer. Gardez ce fil d'argent : il vient de son métier.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_pont_2">
+  <h3>Les pêches de Zhinü <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-sq_fus_pont_1">Le message du bouvier</a></dd>
+    <dt>Donneur</dt><dd><b>Zhinü</b> (Tisseuse des nuages) — Perchoir des Grues (partie ouest de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Racines et Branches Dorées → Perchoir des Grues</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer les pêches séchées dans la cache (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Parler à</b> : Porter les pêches à Niulang (place de Fusang-le-Bas)<br><small>Lieu : Terrasses de Fusang-le-Bas (partie ouest de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Noyau de pêche</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-sq_fus_pont_3">Le pont des pies</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La cache est dans une racine creuse, au cœur des racines dorées. Niulang est sur la place.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Je voudrais envoyer des pêches séchées à Niulang. Elles sont dans une cache, dans les racines. Pouvez-vous aller les lui livrer ?</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il a souri en croquant la première. C'est tout ce qu'elle voulait savoir. Prenez ce noyau de pêche céleste.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_pont_3">
+  <h3>Le pont des pies <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fusang.html#q-sq_fus_pont_2">Les pêches de Zhinü</a></dd>
+    <dt>Donneur</dt><dd><b>Men</b> (Portier du sceau) — Terrasses de Fusang-le-Bas (partie est de l’écran)</dd>
+    <dt>À rapporter à</dt><dd><b>Zhinü</b> — Perchoir des Grues (partie ouest de l’écran)</dd>
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Se rendre à</b> : Gagner les racines et branches dorées<br><small>Lieu : Racines et Branches Dorées — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Parler à</b> : Demander un permis de pont à Men (place de Fusang-le-Bas)<br><small>Lieu : Terrasses de Fusang-le-Bas (partie est de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Plume de pie</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Men est sur la place, devant la porte du sceau.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Zhinü voudrait que le pont des pies tienne plus d'une nuit par an. Il lui faudrait un permis, et je ne les accorde pas à la légère. Passez par les racines dorées, puis revenez me voir : nous en reparlerons.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le permis ! Le pont sera plus long cette année. Merci, archer. Voici une plume de pie : elle ne ment jamais.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_singes">
+  <h3>Les voleurs de pêches <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Tao</b> (Cueilleur de pêches) — Maison du cueilleur de pêches (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Maison du cueilleur de pêches</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les singes-démons voleurs (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie ouest de l’écran)</small><ul class="enemy"><li>Singe-démon voleur — ouest</li><li>Singe-démon voleur — ouest</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Pêche céleste</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les deux singes rôdent dans les racines et branches dorées. Ils font du bruit en mâchant.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Deux singes dérobent mes pêches. Elles sont précieuses : une par siècle ! Je n'en ai pas plus. Chassez-les.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes pêches sont sauves ! Tenez, une pêche mûre : pas celle d'immortalité, hélas, l'autre, celle du dessert.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_encens">
+  <h3>Le parfum du matin <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Lanxiang</b> (Faiseuse d'encens) — Atelier d'encens de Lanxiang (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Racines et Branches Dorées → Perchoir des Grues → Atelier d'encens de Lanxiang</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Consulter la Racine-Ancienne (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Parler à</b> : Consulter Petit Fenghuang (place de Fusang-le-Bas)<br><small>Lieu : Terrasses de Fusang-le-Bas (au centre de l’écran)</small></li><li><b>Parler à</b> : Consulter Mère Xing (Observatoire de Mère Xing)<br><small>Lieu : Observatoire de Mère Xing (au centre de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Observatoire de Mère Xing</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Encens céleste</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La Racine-Ancienne est dans les racines, le poussin sur la place, Mère Xing à l'observatoire.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>La Reine Mère me demande un parfum du matin. Je ne sais pas par où commencer. Interrogez trois sages pour moi : la Racine, le poussin de phénix, Mère Xing.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Bois, cendre et ciel : voilà mon parfum. La Reine Mère sera ravie. Tenez, un bâton d'encens céleste.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_etoile">
+  <h3>L'enfant d'étoile <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a></dd>
+    <dt>Donneur</dt><dd><b>Xingxing</b> (Enfant d'étoile) — Terrasses de Fusang-le-Bas (partie ouest de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Vaincre le garde solaire des racines (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie nord-est de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small><ul class="enemy">
+      <li><b>Garde solaire des racines</b> — niveau 37, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Racines et Branches Dorées (partie nord-est de l’écran)</li>
+      <li>Espèce : Garde Solaire (Humain) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Éclat d'étoile</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le garde solaire se tient dans les racines et branches dorées, près d'un arbre brillant.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mes parents sont partis. Le garde solaire a pris leur lueur, je crois. Reprenez-la, s'il vous plaît !</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La lueur est revenue ! Elle est dans mon cœur. Je sais maintenant qu'ils me veillent. Merci, archer. Voici un éclat d'étoile.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_pelerin">
+  <h3>Les écailles de Kun <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Wuya</b> (Pèlerin sans destination) — Perchoir des Grues (au centre de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Racines et Branches Dorées → Perchoir des Grues</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Demander une écaille à Kun (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie sud de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Ouvrir</b> : Ouvrir le coffre aux écailles de Kun (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie sud de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Écaille de Kun</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Kun nage au-dessus des racines et branches dorées. Il y a un coffre juste au-dessous.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>On dit qu'une écaille de Kun guérit ceux qui marchent trop. Je voudrais essayer. Allez la demander au poisson géant.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>L'écaille m'a calmé. Je vais m'asseoir, enfin. Elle est à vous, par amitié : voici le coffre, et un fragment pour vos flèches.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_fus_wyrm">
+  <h3>Le long égaré <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Men</b> (Portier du sceau) — Terrasses de Fusang-le-Bas (partie est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Chasser le long de givre égaré (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (au centre de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small><ul class="enemy">
+      <li><b>Long de givre égaré</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Racines et Branches Dorées (au centre de l’écran)</li>
+      <li>Espèce : Canglong de Givre (Long) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 10610 points d’expérience · composant de flèche : Écaille de givre</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le long de givre rôde dans les racines et branches dorées, près des lianes.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un long de givre s'est perdu dans les branches. Il gèle les ponts. Chassez-le, archer, avec douceur.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le pont dégèle. Merci, archer. Voici une écaille de givre : elle garde la fraîcheur, même près d'un feu de camp.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_journal_9">
+  <h3>La page accrochée <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-sq_journal_8">La page du récif</a></dd>
+    <dt>Donneur</dt><dd><b>La Grue</b> (Messagère de la Reine Mère) — Nid de la messagère (partie nord de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Nid de la messagère</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page accrochée (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie est de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>180 pièces d’or · 10610 points d’expérience · composant de flèche : Page du carnet (IX)</dd>
+    <dt>Débloque</dt><dd><a href="quetes-lune.html#q-sq_journal_10">La dernière page</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La page est accrochée à une branche dorée, dans les racines et branches du Fusang.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>J'ai vu passer un jeune archer, l'air sombre. Il a laissé une page dans les branches. Elle parle d'une boîte, et d'une dame que je connais : Chang'e.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>« Je sais où est la boîte. Je saurai la prendre. Il me remerciera plus tard. » La Grue baisse la tête : « Il faut prévenir Dame Chang'e. »</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_hua_5">
+  <h3>Xihe, mère des dix soleils <small>Cime du Fusang</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-mer.html#q-sq_hua_4">Ce que la mer a gardé</a>, <a href="quetes-fusang.html#q-q_sun_9">Le Soleil Lâche</a></dd>
+    <dt>Donneur</dt><dd><b>Mère Xing</b> (Astronome de l'arbre) — Observatoire de Mère Xing (au centre de l’écran)<br><small>Itinéraire depuis le village : Terrasses de Fusang-le-Bas → Observatoire de Mère Xing</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger la Racine-Ancienne sur la mère des soleils (racines et branches dorées)<br><small>Lieu : Racines et Branches Dorées (partie ouest de l’écran) — itinéraire : Terrasses de Fusang-le-Bas → Racines et Branches Dorées</small></li><li><b>Parler à</b> : Dire son vrai nom à Hua (village du Fusang)<br><small>Lieu : Terrasses de Fusang-le-Bas (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>190 pièces d’or · 10610 points d’expérience · composant de flèche : Plume d'aube</dd>
+    <dt>Débloque</dt><dd><a href="quetes-lune.html#q-sq_hua_6">La lanterne de Xihe</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La Racine-Ancienne est dans les racines et branches dorées. Hua se trouve au village du Fusang.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>J'ai observé les étoiles toute ma vie, et rien ne m'a troublée comme cette colporteuse. Ses pas suivent les chutes des soleils comme l'ombre suit l'ombre.</blockquote><blockquote>La Racine-Ancienne a tout vu naître : demandez-lui qui est Hua. Puis dites son vrai nom, à Hua elle-même, et regardez-la.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Xihe. Mère des dix soleils. Je n'ai pas le droit de la juger, ni vous. Prenez cette plume de phénix : elle n'a jamais brûlé, parce qu'elle vient d'une mère qui n'a jamais cessé de veiller.</blockquote>
+  </details>
+</article>
+</main>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

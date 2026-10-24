@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Monts du Tonnerre.">
+<title>Quêtes — Monts du Tonnerre — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+details{margin:6px 0}summary{cursor:pointer;color:var(--blue);font:600 .85rem system-ui,sans-serif}
+blockquote{margin:6px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--dim);font-style:italic}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Monts du Tonnerre</div>
+<h2>Monts du Tonnerre</h2>
+<p class="lead">Région débloquée au niveau 22. 17 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_sun_5">Le Soleil des Orages</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_spark_egg">L'œuf de foudre</a></li><li><a href="#q-sq_thunder_wyrm">Le dragon-serpent du tonnerre</a></li><li><a href="#q-sq_lei_drum">Le tambour du tonnerre</a></li><li><a href="#q-sq_collar_tonnerre">La braise d'orage</a></li><li><a href="#q-sq_etincelles">Les étincelles de Leimei</a></li><li><a href="#q-sq_paratonnerre">Le paratonnerre de la crête</a></li><li><a href="#q-sq_singe_soupe">Le singe et la soupe</a></li><li><a href="#q-sq_ton_verre_1">Le sable qui brille</a></li><li><a href="#q-sq_ton_verre_2">Le serpenteau chapardeur</a></li><li><a href="#q-sq_ton_verre_3">Le verre de Tie</a></li><li><a href="#q-sq_ton_pluie">La pluie de Pu</a></li><li><a href="#q-sq_ton_cavaliers">Les cavaliers de l'orage</a></li><li><a href="#q-sq_ton_chevre">La chèvre qui n'en fait qu'à sa tête</a></li><li><a href="#q-sq_ton_lion">Le lion fendu</a></li><li><a href="#q-sq_ton_dai">Le frère de Dai</a></li><li><a href="#q-sq_journal_5">Une page entre deux rochers</a></li></ul></div>
+<article class="quest" id="q-q_sun_5">
+  <h3>Le Soleil des Orages <span class="badge main">Principale</span><small>Chapitre VI — Les Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-bambous.html#q-q_sun_3">Le Soleil de Cendres</a></dd>
+    <dt>Donneur</dt><dd><b>Lei</b> (Ermite du tonnerre) — Grotte-cabane de Lei (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Grotte-cabane de Lei</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre le Soleil des Orages (sanctuaire des Monts du Tonnerre, au sud-est)<br><small>Lieu : Monts du Tonnerre (partie est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées → Monts du Tonnerre</small><ul class="enemy">
+      <li><b>Soleil des Orages</b> — niveau 30, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Monts du Tonnerre (partie est de l’écran)</li>
+      <li>Espèce : Soleil des Orages (Soleil) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>290 pièces d’or · 14500 points d’expérience · composant de flèche : Éclat du Soleil des Orages</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fauves.html#q-q_sun_7">Le Soleil des Bêtes Folles</a>, <a href="quetes-fauves.html#q-sq_tou_stash">La cachette de la belette</a>, <a href="quetes-fauves.html#q-sq_scarred_tiger">Balafré</a>, <a href="quetes-fauves.html#q-sq_zi_bell">La clochette du bélier</a>, <a href="quetes-tonnerre.html#q-sq_ton_cavaliers">Les cavaliers de l'orage</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.<br>Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.<br>Trois chemins mènent au soleil. Risque : abattez les deux gardes du col, au prix d'un combat, pour leur expérience et un soleil entier.<br>Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera aux gardes de lâcher la cage, sans combat.<br>Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil.<br>Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Sixième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs.</blockquote><blockquote>Le forgeron Tie ajustera vos flèches ; l'ermite Lei sait où frappe l'éclair.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le Soleil des Orages éclate en un dernier coup de tonnerre, si fort que les montagnes en tremblent. Puis le silence, d'une pureté stupéfiante, et une pluie fine, tiède, qui sent le fer et la terre.</blockquote><blockquote>Au loin, le forgeron Tie lève son marteau vers le ciel clair. L'ermite Lei, qui parlait au tonnerre depuis trente ans, hoche simplement la tête : le tonnerre a fini de répondre.</blockquote><blockquote>Six soleils abattus. À l'est, la Plaine des Fauves ondule encore de chaleur.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_spark_egg">
+  <h3>L'œuf de foudre <span class="badge comp">Compagnon</span><small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-bambous.html#q-q_sun_3">Le Soleil de Cendres</a></dd>
+    <dt>Donneur</dt><dd><b>Tie</b> (Forgeron de flèches) — Forge de Tie (au centre de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Forge de Tie</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver l'œuf de foudre (coin nord-ouest des monts, entre les rochers)<br><small>Lieu : Monts du Tonnerre (partie nord-ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées → Monts du Tonnerre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>60 pièces d’or · 6040 points d’expérience · composant de flèche : Coquille de foudre · <a href="compagnon-etincelle.html"><strong>Étincelle</strong></a> rejoint le groupe</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>L'œuf est dans le coin nord-ouest des monts, entre les rochers. Aucun ennemi ne le garde.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Une dernière chose, archer. Quand le dragon-serpent a niché sur la crête, un œuf de foudre est tombé du nid, au nord-ouest. Il est tiède et il crépite. Si l'éclair le couve, il éclora de toute façon, et mieux vaut que ce soit dans vos mains que dans ma forge.</blockquote><blockquote>Rapportez-le-moi, et ne le secouez pas.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il éclot ! Une petite étincelle sur quatre pattes. Elle vous a choisi, archer : elle a mordu votre carquois et ne le lâche plus.</blockquote><blockquote>Elle s'appelle Étincelle. Elle fait de la lumière de ce qu'on lui donne à manger, c'est-à-dire du qì. Prenez ces pièces, et gardez-la loin de ma poudre.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_thunder_wyrm">
+  <h3>Le dragon-serpent du tonnerre <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-bambous.html#q-q_sun_3">Le Soleil de Cendres</a></dd>
+    <dt>Donneur</dt><dd><b>Tie</b> (Forgeron de flèches) — Forge de Tie (au centre de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Forge de Tie</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Terrasser le dragon-serpent du tonnerre (coin nord-est des monts, sur la crête)<br><small>Lieu : Monts du Tonnerre (partie nord-est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées → Monts du Tonnerre</small><ul class="enemy">
+      <li><b>Dragon-serpent du tonnerre</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Monts du Tonnerre (partie nord-est de l’écran)</li>
+      <li>Espèce : Yinglong (Long) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, frappe fort, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 6040 points d’expérience · composant de flèche : Foudre en bouteille</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le dragon-serpent du tonnerre est dans le coin nord-est, sur la crête. Il lance des éclairs : ne restez pas à découvert.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Alors c'est vous, l'archer ? Bien. Je suis Tie, forgeron de flèches. Un dragon-serpent du tonnerre a niché dans le coin nord-est des monts, sur la crête où frappe l'éclair. Il en fait des perles de foudre, que je ne peux plus récolter.</blockquote><blockquote>Battez-le, et je vous en garde une, enfermée dans du verre : de la foudre en bouteille, pour la pointe de votre meilleure flèche.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il est tombé ? Alors voici : de la foudre en bouteille, la dernière perle qu'il a faite. N'ouvrez jamais le bouchon sans vouloir tirer.</blockquote><blockquote>Et ces pièces, gagnées à la sueur de votre front, et de mon enclume. Quand vous reviendrez, je vous referai toutes vos flèches.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_lei_drum">
+  <h3>Le tambour du tonnerre <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-bambous.html#q-q_sun_3">Le Soleil de Cendres</a></dd>
+    <dt>Donneur</dt><dd><b>Lei</b> (Ermite du tonnerre) — Grotte-cabane de Lei (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Grotte-cabane de Lei</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver le tambour du tonnerre (coin nord-ouest des Monts du Tonnerre)<br><small>Lieu : Monts du Tonnerre (partie nord-ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées → Monts du Tonnerre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>70 pièces d’or · 6040 points d’expérience · composant de flèche : Vent céleste</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le tambour est tombé dans le coin nord-ouest, près de ma hutte. Aucun ennemi ne le garde ; seul le vent s'en amuse.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Je parle au tonnerre depuis trente ans, archer. Un jour, il m'a répondu, et il m'a demandé un tambour. J'en ai fabriqué un avec une peau de nuage, mais le vent l'a emporté dans le coin nord-ouest de la montagne.</blockquote><blockquote>Rapportez-le-moi, et je vous donnerai un peu de vent céleste, celui qui court sous les nuages. Il rend les flèches droites comme la vérité.</blockquote><blockquote>Le tonnerre m'a prévenu : un arc sera tendu contre un autre arc avant la fin de l'histoire. Je ne sais pas lequel des deux se brisera.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mon tambour ! Écoutez comme il sonne. Le tonnerre va être content, il s'ennuyait.</blockquote><blockquote>Voici le vent céleste que je vous ai promis, enfermé dans cette gourde : à n'ouvrir qu'en tirant. Et ces pièces, pour votre peine.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_collar_tonnerre">
+  <h3>La braise d'orage <span class="badge stuff">Stuff</span><small>Village des Forges-Éclairs</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Lei l'Attiseur</b> (Sage des crêtes foudroyées) — Village des Forges-Éclairs (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique cachée (Crêtes Foudroyées, dans les terres au sud-est)<br><small>Lieu : Crêtes Foudroyées (partie est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li><li><b>Vaincre</b> : Abattre le mini-boss : Chevalier de l'orage figé (Crêtes Foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small><ul class="enemy">
+      <li><b>Chevalier de l'orage figé</b> — niveau du héros +3, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Crêtes Foudroyées (partie est de l’écran)</li>
+      <li>Espèce : Lei Gong (Esprit) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>128 pièces d’or · 6040 points d’expérience · <a href="stuff-collier_braise_d_orage.html"><strong>Collier de braise d'orage</strong></a> (stuff d’exception) · composant de flèche : Collier de braise d'orage</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La braise d'orage est au sud-est des Crêtes Foudroyées. Le chevalier figé garde le secteur.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer, avez-vous déjà vu une case geler sous votre pouce ? C'est le givre d'orage. Il n'y a qu'un remède : la braise d'orage, que j'ai cachée dans une faille de la zone sauvage.</blockquote><blockquote>Un chevalier figé par la tempête la garde en croyant protéger son maître. Rapportez-moi la braise, puis mettez fin à sa veille : je la sertirai dans un collier.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La braise est vivante… et le chevalier peut enfin se reposer. Voici votre collier.</blockquote><blockquote>Tant qu'il pendra sur votre poitrine, le givre d'orage ne gèlera plus une seule case. Allez, que la tempête vous reconnaisse.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_etincelles">
+  <h3>Les étincelles de Leimei <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Leimei</b> (Petite chasseuse d'étincelles) — Village des Forges-Éclairs (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au Vieux Shidui (crêtes foudroyées, au-delà du village)<br><small>Lieu : Crêtes Foudroyées (partie nord-ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li><li><b>Ouvrir</b> : Ouvrir la cache du cairn sur les crêtes foudroyées<br><small>Lieu : Crêtes Foudroyées (partie nord-ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>120 pièces d’or · 6040 points d’expérience · composant de flèche : Étincelle en pot</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le Vieux Shidui est sur les crêtes foudroyées, derrière le village. Parlez-lui, puis ouvrez sa cache.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Archer ! Mes pots à étincelles ne tiennent pas : les étincelles s'échappent toujours. Le Vieux Shidui, là-haut, a un pot qui tient, paraît-il.</blockquote><blockquote>Peux-tu aller lui demander ? Moi je n'ose pas : il a une voix de cailloux qui s'entrechoquent.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le pot ! Il brille ! Les étincelles dedans dansent en rond. Je vais l'appeler Éclair. Merci, archer. Prends ça : une étincelle que j'ai gardée pour toi.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_paratonnerre">
+  <h3>Le paratonnerre de la crête <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Gang</b> (Gardien des pointes de bronze) — Tour des paratonnerres (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Tour des paratonnerres</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Déloger le général qui s'est perché sur le paratonnerre (crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie nord de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small><ul class="enemy">
+      <li><b>Général de la crête</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Crêtes Foudroyées (partie nord de l’écran)</li>
+      <li>Espèce : Lei Gong (Esprit) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li><li><b>Se rendre à</b> : Aller vérifier la tige de la crête (crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>130 pièces d’or · 6040 points d’expérience · composant de flèche : Cuivre foudroyé</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le général du tonnerre se tient sur les crêtes foudroyées. Une fois battu, allez vérifier la tige.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>La grande tige de cuivre de la crête ne fonctionne plus depuis qu'un général du tonnerre s'y est perché. La foudre le prend pour son quartier général.</blockquote><blockquote>Délogez-le, puis allez voir si la tige tient encore. Elle protège tout le village.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>La tige est droite, le cuivre luit ! Le village est à l'abri. Je vous dois bien ce fragment de cuivre foudroyé : il attire les bonnes surprises.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_singe_soupe">
+  <h3>Le singe et la soupe <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Pao</b> (Aubergiste) — Auberge du Coup-de-Tonnerre (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Auberge du Coup-de-Tonnerre</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Houzi le singe (auberge du Coup-de-Tonnerre)<br><small>Lieu : Auberge du Coup-de-Tonnerre (partie est de l’écran) — itinéraire : Village des Forges-Éclairs → Auberge du Coup-de-Tonnerre</small></li><li><b>Parler à</b> : Récupérer la louche auprès du Vieux Shidui (crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie nord-ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>140 pièces d’or · 6040 points d’expérience · composant de flèche : Amulette de soupe</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Houzi est à l'auberge. Selon lui, la louche serait chez le Vieux Shidui, sur les crêtes foudroyées.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Ma louche d'argent a disparu ! Cette louche remue ma soupe depuis quatre générations.</blockquote><blockquote>Je soupçonne Houzi, le singe. Allez le voir, il a la mauvaise manie de tout prêter à tout le monde.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Ma louche ! Elle est un peu cabossée, mais elle remue encore. Prenez cette amulette de soupe : elle porte chance aux affamés.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_verre_1">
+  <h3>Le sable qui brille <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Ouyang</b> (Souffleur de verre) — Verrerie de la foudre (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns → Verrerie de la foudre</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Récupérer l'urne de sable foudroyé (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie sud-est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 6040 points d’expérience · composant de flèche : Sable de foudre</dd>
+    <dt>Débloque</dt><dd><a href="quetes-tonnerre.html#q-sq_ton_verre_2">Le serpenteau chapardeur</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>L'urne est sur les crêtes, dans une anfractuosité. N'éternuez pas.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mon four manque de sable foudroyé. Il est dans une urne, sur les crêtes, en équilibre précaire. Rapportez-la, archer, avec délicatesse.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Du sable de foudre ! Voyez comme il brille, même à l'ombre. Je vais fabriquer un verre qui retient l'orage.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_verre_2">
+  <h3>Le serpenteau chapardeur <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-sq_ton_verre_1">Le sable qui brille</a></dd>
+    <dt>Donneur</dt><dd><b>Ouyang</b> (Souffleur de verre) — Verrerie de la foudre (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns → Verrerie de la foudre</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Chasser le serpenteau d'orage (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small><ul class="enemy">
+      <li><b>Serpenteau d'orage</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Crêtes Foudroyées (partie ouest de l’écran)</li>
+      <li>Espèce : Yinglong (Long) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, frappe fort, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>125 pièces d’or · 6040 points d’expérience · composant de flèche : Écaille d'éclair</dd>
+    <dt>Débloque</dt><dd><a href="quetes-tonnerre.html#q-sq_ton_verre_3">Le verre de Tie</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le serpenteau d'orage rôde sur les crêtes, à la lisière des cairns. Il crépite.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un petit serpent-dragon a pris mes vitraux pour des bonbons. Je l'aime bien, mais pas à ce point. Chassez-le.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mes vitraux sont saufs ! Le petit n'a pas trop de rancœur. Voici une écaille d'éclair, il l'a laissée en partant.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_verre_3">
+  <h3>Le verre de Tie <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-sq_ton_verre_2">Le serpenteau chapardeur</a></dd>
+    <dt>Donneur</dt><dd><b>Ouyang</b> (Souffleur de verre) — Verrerie de la foudre (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns → Verrerie de la foudre</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Apporter le verre de foudre à Tie (Forge de Tie)<br><small>Lieu : Forge de Tie (au centre de l’écran) — itinéraire : Village des Forges-Éclairs → Forge de Tie</small></li></ol></dd>
+    <dt>Récompense</dt><dd>165 pièces d’or · 6040 points d’expérience · composant de flèche : Œil d'orage</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Tie est à sa forge, dans le village des Forges-Éclairs.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Le verre est coulé. Portez-le à Tie, le forgeron. Il saura en faire un œil de flèche, à condition de ne pas le casser.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Tie m'a envoyé un billet : « Il brille comme une promesse. » Voilà un éclat de mon dernier lot, pour vous.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_pluie">
+  <h3>La pluie de Pu <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Pu</b> (Marchand de pluie) — Village des Forges-Éclairs (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger l'ermite Lei (Grotte-cabane de Lei)<br><small>Lieu : Grotte-cabane de Lei (partie nord de l’écran) — itinéraire : Village des Forges-Éclairs → Grotte-cabane de Lei</small></li><li><b>Parler à</b> : Interroger la xianzi Yunxi (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie nord de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li><li><b>Parler à</b> : Interroger Leimei (place des Forges-Éclairs)<br><small>Lieu : Village des Forges-Éclairs (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>125 pièces d’or · 6040 points d’expérience · composant de flèche : Pluie en fiole</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Lei est dans sa grotte, Yunxi sur les crêtes, Leimei sur la place.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Je vends de la pluie en bouteille, mais elle est factice ! J'aimerais de la vraie. Interrogez les experts : l'ermite, la xianzi et la petite.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Les conseils sont contradictoires, mais ils sont tous poétiques. Je vais inviter les nuages à dîner. En attendant, voici une fiole de vraie pluie.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_cavaliers">
+  <h3>Les cavaliers de l'orage <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-q_sun_5">Le Soleil des Orages</a></dd>
+    <dt>Donneur</dt><dd><b>Kuang</b> (Garde du col) — Poste du garde de col (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns → Poste du garde de col</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Disperser les cavaliers de l'orage (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie nord-est de l’écran)</small><ul class="enemy"><li>Cavalier de l'orage — nord-est</li><li>Cavalier de l'orage — nord-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>150 pièces d’or · 6040 points d’expérience · composant de flèche : Éperon d'orage</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Les cavaliers patrouillent sur les crêtes, entre les cairns. Ils crépitent.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Deux cavaliers, mi-généraux mi-éclairs, rançonnent mon col. Je suis garde, pas héros. Pouvez-vous leur faire la leçon ?</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Mon col est libre ! J'ai écrit « victoire » dans mon registre, en rouge. Prenez cet éperon d'orage.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_chevre">
+  <h3>La chèvre qui n'en fait qu'à sa tête <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Ao</b> (Gardien des cairns) — Refuge des Trois Cairns (partie sud de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Convaincre la chèvre Yang (Refuge des Trois Cairns)<br><small>Lieu : Refuge des Trois Cairns (au centre de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns</small></li><li><b>Ouvrir</b> : Fouiller l'abri de la chèvre<br><small>Lieu : Refuge des Trois Cairns (partie sud-ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 6040 points d’expérience · composant de flèche : Schiste de chèvre</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Yang est au hameau, dans l'abri près des cairns. Soyez patient.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Le caillou des offrandes a disparu ! J'ai interrogé les cairns, ils sont muets. Reste la chèvre. Parlez-lui, elle comprend les cailloux.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Le caillou est revenu. Les cairns grincent de bonheur. Prenez ce fragment de schiste : il a dormi avec la chèvre.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_lion">
+  <h3>Le lion fendu <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Dame Ying</b> (Gardienne du petit temple) — Chapelle du Dieu des monts (partie nord de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Chapelle du Dieu des monts</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Calmer le lion-gardien fendu (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small><ul class="enemy">
+      <li><b>Lion-gardien fendu</b> — niveau 22, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Crêtes Foudroyées (partie est de l’écran)</li>
+      <li>Espèce : Suanni de Pierre (Gardien) — Force : <span class="dot" style="background:#4cae5d"></span>Terre (vert) — <b>Faiblesse : <span class="dot" style="background:#e6c13a"></span>Air (jaune)</b> — très robuste, carapace épaisse, défenseur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>140 pièces d’or · 6040 points d’expérience · composant de flèche : Éclat de lion</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>Le lion fendu rôde sur les crêtes, près des cairns. Il rugit d'une voix de pierre.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Le lion-gardien de la chapelle s'est fissuré sous la foudre. Il erre, désorienté, dans les crêtes. Calmez-le sans le briser de nouveau.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il est paisible, adossé au rocher, la gueule tournée vers le ciel. Il gardera la chapelle comme avant. Merci, archer.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_ton_dai">
+  <h3>Le frère de Dai <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Dai</b> (Grimpeur solitaire) — Refuge des Trois Cairns (partie sud-est de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Crêtes Foudroyées → Refuge des Trois Cairns</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Se rendre à</b> : Atteindre les crêtes foudroyées<br><small>Lieu : Crêtes Foudroyées — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li><li><b>Ouvrir</b> : Trouver la cache du sommet (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie nord-est de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>140 pièces d’or · 6040 points d’expérience · composant de flèche : Corde du frère</dd>
+    
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La cache est calée sous un surplomb, tout en haut des crêtes. Cherchez une corde tressée.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Mon frère a laissé une cache sous un surplomb, avant de disparaître. Je n'ose pas y monter. Pouvez-vous la chercher pour moi ?</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>Il y a un mot dans l'étui : « Pour Dai, quand tu seras assez grand pour me pardonner. » Dai sourit entre ses larmes.</blockquote>
+  </details>
+</article>
+<article class="quest" id="q-sq_journal_5">
+  <h3>Une page entre deux rochers <small>Monts du Tonnerre</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-bambous.html#q-sq_journal_3">La page dans la tige</a></dd>
+    <dt>Donneur</dt><dd><b>Pao</b> (Aubergiste) — Auberge du Coup-de-Tonnerre (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Village des Forges-Éclairs → Auberge du Coup-de-Tonnerre</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page entre les rochers (Crêtes foudroyées)<br><small>Lieu : Crêtes Foudroyées (partie ouest de l’écran) — itinéraire : Village des Forges-Éclairs → Crêtes Foudroyées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>115 pièces d’or · 6040 points d’expérience · composant de flèche : Page du carnet (V)</dd>
+    <dt>Débloque</dt><dd><a href="quetes-fauves.html#q-sq_journal_7">La page dans l'herbe</a></dd>
+  </dl>
+  <div class="box tip"><b class="t">Indice du PNJ</b>La page est pliée entre deux pierres, sur les crêtes.</div>
+  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
+    <p><b>Quand on la prend :</b></p><blockquote>Un client est passé, l'air vexé. Il a glissé un papier entre deux rochers, là-haut, sur les crêtes. Allez voir ce que c'est, archer.</blockquote>
+    <p><b>Quand on la rend :</b></p><blockquote>« J'ai fait semblant d'être calme. Il m'a félicité. C'est pire. » Pao verse une soupe fumante : « Pour vous, archer. Pour lui, plus tard. »</blockquote>
+  </details>
+</article>
+</main>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>
