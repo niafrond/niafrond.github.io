@@ -107,7 +107,11 @@ export function flyManaSpend(isPlayer, cost, { toSpellId = null } = {}) {
 export function flyManaGain(isPlayer, gains, { fromBoard = false, fromId = null } = {}) {
     try {
         const side = sideOf(isPlayer);
-        const source = (fromId && document.getElementById(fromId))
+        const visible = el => el && (el.getBoundingClientRect().width || el.getBoundingClientRect().height);
+        // Le conteneur d'objet est en `display: contents` en mobile (aucune boîte) : on part alors du bouton qu'il contient.
+        const fromEl = fromId ? document.getElementById(fromId) : null;
+        const fromButton = visible(fromEl) ? fromEl : fromEl?.firstElementChild;
+        const source = (visible(fromButton) && fromButton)
             || (fromBoard ? document.getElementById('board') : document.getElementById(`${side}-stats`));
         Object.entries(gains || {}).forEach(([color, amount]) => {
             if (amount > 0) flyDots(source, document.getElementById(`${side}-mana-${color}`), color, amount, { scatter: fromBoard });
