@@ -4,7 +4,7 @@
   - victoire : un feu d'artifice au-dessus d'une ville en fête, de nuit (fusées qui montent, éclatements dorés / rouges / cyan / roses / blancs avec
     traînées et retombées d'étincelles, lueur de chaque éclatement sur le décor) ;
   - défaite : un cœur qui ne bat presque plus dans une salle de pierre sombre (deux battements faibles puis un long silence, lueur rouge qui
-    vacille, tracé de pouls quasi plat, cendres qui tombent).
+    vacille, cendres qui tombent) : les battements s'espacent, s'affaiblissent, puis le cœur s'arrête et s'éteint.
   Aucun personnage. 1. décor (SDXL + Pixel Art XL via `gm image`, portrait) → sprites/ultimates-seq/combatend_<issue>/bg.png ;
   2. animation en boucle parfaite (96 images à 24 i/s = 4 s, 144×256) composée image par image → px/fNNNN.png + px/preview.gif.
 Rangement : node tools/pack-ultimate-sequences.mjs (planches sprites/ultimates/combatend_<issue>-seq.png, `loop: true`), lues par game.js.
@@ -139,17 +139,29 @@ def compose_victory(bg, i):
 
 # ───────────── Défaite : un cœur qui ne bat presque plus ─────────────
 HEART_COL = {'1': (36, 8, 16), '2': (150, 26, 40), '3': (214, 90, 96), '4': (52, 12, 22)}
-BEATS = [(10, 1.0), (22, 0.55)]   # (image, force) : un battement faible, un second plus faible encore, puis un long silence (74 images)
+BEATS = [(3, 1.0, 12), (13, 0.85, 12), (26, 0.65, 14), (44, 0.4, 16)]   # (image, force, durée) : battements de plus en plus espacés et faibles, puis le cœur s'arrête
+STOP_AT = 44 + 16   # après le dernier battement le cœur s'éteint lentement (la bannière montre les ≈ 62 premières images)
 
 
 def beat_amount(i):
     """Intensité du battement à l'image i (0..1) : montée rapide, retombée douce, sur la période de la boucle."""
     amt = 0.0
-    for t0, force in BEATS:
+    for t0, force, dur in BEATS:
         dt = (i - t0) % FRAMES
-        if dt < 12:
-            amt = max(amt, force * math.sin(math.pi * dt / 12) ** 1.5)
+        if dt < dur:
+            amt = max(amt, force * math.sin(math.pi * dt / dur) ** 1.5)
     return amt
+
+
+def life(i):
+    """Vitalité du cœur (1 = vivant, 0,35 = éteint) : constante jusqu'au dernier battement, décline ensuite, remonte en fin de boucle pour la reprise."""
+    if i < STOP_AT:
+        return 1.0
+    if i < STOP_AT + 22:
+        return 1.0 - 0.65 * (i - STOP_AT) / 22
+    if i < FRAMES - 12:
+        return 0.35
+    return 0.35 + 0.65 * (i - (FRAMES - 12)) / 12
 
 
 def heart_image(beat, dim):
@@ -169,30 +181,16 @@ def compose_defeat(bg, ps, i):
     base = ImageEnhance.Brightness(base).enhance(0.62).convert('RGBA')
     beat = beat_amount(i)
     flick = 0.5 + 0.5 * cycle(i, 3)
-    cx, cy = W // 2, int(H * 0.46)
+    vit = life(i)
+    cx, cy = W // 2, int(H * 0.5)
     # lueur rouge derrière le cœur : faible, qui vacille, plus vive au battement
     glow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     gd = ImageDraw.Draw(glow)
     for r, a in [(70, 14), (52, 20), (36, 28)]:
-        gd.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(190, 24, 40, int(a * (0.55 + 0.25 * flick + 0.9 * beat))))
+        gd.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(190, 24, 40, int(a * vit * (0.55 + 0.25 * flick + 0.9 * beat))))
     base = Image.alpha_composite(base, glow)
-    heart = heart_image(beat, 0.5 + 0.28 * beat + 0.05 * flick)
+    heart = heart_image(beat, (0.5 + 0.28 * beat + 0.05 * flick) * (0.4 + 0.6 * vit))
     base.alpha_composite(heart, (cx - heart.width // 2, cy - heart.height // 2))
-    d = ImageDraw.Draw(base)
-    # tracé de pouls : quasi plat, un petit sursaut au battement, qui défile lentement vers la gauche
-    y0 = int(H * 0.80)
-    pts = []
-    for x in range(W):
-        ph = (x + i * 1.5) % W
-        yv = y0
-        for t0, force in BEATS:
-            bx = (t0 / FRAMES * W * 1.5) % W
-            dx = (ph - bx) % W
-            if 0 <= dx < 10:
-                yv -= int(math.sin(dx / 10 * math.pi * 2) * 9 * force)
-        pts.append((x, yv))
-    d.line(pts, fill=(200, 40, 52, 255), width=1)
-    d.line([(x, y + 1) for x, y in pts], fill=(90, 18, 28, 255), width=1)
     layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
     for p in ps:                               # cendres grises qui tombent, quelques braises
