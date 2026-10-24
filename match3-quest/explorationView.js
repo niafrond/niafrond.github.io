@@ -45,6 +45,7 @@ const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
 const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
+const MOUNTED_SPRITE_TILES = 1.59;  // sprite du cavalier (48 px) : 1,06 case pour 32 px (héros à pied) × 48/32, soit le même grain de pixel
 const BATTLE_TRANSITION_MS = 3400;   // durée de l'animation d'entrée en combat : le nom de l'adversaire reste lisible environ 2 s
 const BATTLE_STRIPS = 10;
 
@@ -250,7 +251,7 @@ export function createExplorationView(cfg) {
     // Charge les paquets de sprites de la région, libère les images des autres régions et décode les nouvelles.
     function prepareRegion(region) {
         // région prête : seul le héros peut manquer (classe choisie après le chargement initial)
-        if (preparedRegion === region) return loadGbaSprites([cfg.getHero().classId]).catch(() => {});
+        if (preparedRegion === region) return loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`]).catch(() => {});
         if (preparing?.region === region) return preparing.promise;
         const { npcs, enemies } = regionEntities(region);
         const packs = packsForKeys({ npcs, enemies });
@@ -259,7 +260,7 @@ export function createExplorationView(cfg) {
         const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
         const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
         // sprites GBA de la région : héros, PNJ, ennemis et leurs gabarits (le reste se charge à la première apparition)
-        const gba = loadGbaSprites([cfg.getHero().classId, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
+        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
         const promise = withLoadingScreen(label, async progress => {
             await trackProgress([...packs.map(loadSpritePack), gba], r => progress(r * 0.5));
             const svgs = regionSprites(region);
@@ -1682,8 +1683,15 @@ export function createExplorationView(cfg) {
                         drawSprite(npcSprite(companion.id === 'xiao_gui' ? 'xiao_gui' : companion.npc), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
                     }
 
-                    if (riding()) {
-                        // à cheval : la monture au sol, le héros en selle
+                    const mountKey = `${hero.classId}_horse`;
+                    const mountView = riding() && ((moving && gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase))) || gbaSprite(mountKey, heroDir));
+                    if (mountView) {
+                        // à cheval : sprite du cavalier de la classe (tools/gen-mounted-heroes.py), 48 px au même grain que le héros à pied (32 px)
+                        const mountNext = moving ? gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase) + 1) : null;
+                        drawSprite(mountView, c.x, feet + hop * 0.5 + tile * 0.065, tile * MOUNTED_SPRITE_TILES);
+                        if (mountNext && mountNext !== mountView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(mountNext, c.x, feet + hop * 0.5 + tile * 0.065, tile * MOUNTED_SPRITE_TILES); ctx.restore(); }
+                    } else if (riding()) {
+                        // repli (sprite du cavalier pas encore chargé) : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
                         drawSprite(heroView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase);
                         if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(nextView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase); ctx.restore(); }

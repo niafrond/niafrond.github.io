@@ -217,6 +217,11 @@
    "h": "225395ce6c"
   },
   {
+   "p": "sprites/gba/archer_horse.c4701652.js",
+   "s": 42721,
+   "h": "c4701652ee"
+  },
+  {
    "p": "sprites/gba/archer_huo.ea608456.js",
    "s": 1172,
    "h": "ea608456d2"
@@ -225,6 +230,11 @@
    "p": "sprites/gba/assassin.68b70256.js",
    "s": 48426,
    "h": "68b7025676"
+  },
+  {
+   "p": "sprites/gba/assassin_horse.cc534cd5.js",
+   "s": 43189,
+   "h": "cc534cd5a7"
   },
   {
    "p": "sprites/gba/assassin_masque.27d84f40.js",
@@ -320,6 +330,11 @@
    "p": "sprites/gba/barbarian.04cd30cc.js",
    "s": 47802,
    "h": "04cd30cc17"
+  },
+  {
+   "p": "sprites/gba/barbarian_horse.f812ba48.js",
+   "s": 42785,
+   "h": "f812ba48cb"
   },
   {
    "p": "sprites/gba/bard_xiang.34c3ea9d.js",
@@ -2137,6 +2152,11 @@
    "h": "a4e11c04ea"
   },
   {
+   "p": "sprites/gba/sorcerer_horse.0a7dafe1.js",
+   "s": 43301,
+   "h": "0a7dafe165"
+  },
+  {
    "p": "sprites/gba/spinner_yue.8710263f.js",
    "s": 1592,
    "h": "8710263fe3"
@@ -2250,6 +2270,11 @@
    "p": "sprites/gba/templar.05dd17c9.js",
    "s": 48282,
    "h": "05dd17c950"
+  },
+  {
+   "p": "sprites/gba/templar_horse.560a1f0d.js",
+   "s": 43037,
+   "h": "560a1f0d86"
   },
   {
    "p": "sprites/gba/tengshe.e26ce939.js",
