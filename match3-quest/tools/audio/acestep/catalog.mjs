@@ -53,10 +53,10 @@ T('moon', `moonlit peak, crystalline plucked guzheng and harp-like tones, very a
     { bpm: 58, keyScale: 'A minor', dur: 60 });
 T('ending', `ending theme, the Hou Yi motif returns slowly on ${I.erhu} with sparse ${I.guqin} accompaniment, same melody as the heroic theme but stripped of grandeur, slower, deeply bittersweet, lament, long silences, quiet final resolution`,
     { bpm: 48, keyScale: 'D minor', dur: 70, motif: 'houyi' });
-T('victory', `short triumphant fanfare of a sun fallen, ${I.dizi} and ${I.erhu} stating the Hou Yi motif, relief and warmth, bright but humble, gentle drums`,
-    { bpm: 92, keyScale: 'D major', dur: 20, motif: 'houyi' });
-T('defeat', `defeat jingle, fragments of the Hou Yi motif on lonely ${I.xiao}, slow, hollow, unresolved suspended harmony, long silence`,
-    { bpm: 54, keyScale: 'D minor', dur: 15, motif: 'houyi' });
+T('victory', `triumphant victory theme after a sun has fallen, ${I.dizi} and ${I.erhu} stating the Hou Yi motif, relief and warmth, bright but humble, gentle drums, steady warm groove, a calm repeating phrase that loops seamlessly`,
+    { bpm: 92, keyScale: 'D major', dur: 60, motif: 'houyi' });
+T('defeat', `somber defeat theme, fragments of the Hou Yi motif on lonely ${I.xiao} and soft ${I.erhu}, slow, hollow, unresolved suspended harmony, sparse low drum, quiet and sorrowful but not bleak, a slow repeating phrase that loops seamlessly`,
+    { bpm: 54, keyScale: 'D minor', dur: 60, motif: 'houyi' });
 
 /* ───────────── Biomes : village (chaleureux) / sauvage (dispersé) ───────────── */
 const BIOMES = {
@@ -178,11 +178,11 @@ const JINGLE_STYLE = 'instrumental video game jingle, Chinese instruments, short
 const JINGLES = {
     introJingle:  ['slow mysterious ancient chant of the Fusang tree at dawn, soft guqin, xiao flute, distant bronze bells, sustained sheng pad, rising wonder resolving gently', 58, 'D minor', 14, 9, 1.2],
     endingJingle: ['peaceful nostalgic lullaby after the last sun has fallen, tender erhu melody over a gentle guzheng arpeggio, warm and bittersweet, slow and calm, resolving softly on a long tonic chord', 60, 'D major', 18, 13, 2],
-    battleStart:  ['sudden alert sting at the start of a battle, two fast pipa tremolo hits and a sharp taiko drum hit, tense rising dizi flick, danger approaching', 140, 'E minor', 10, 1.8, 0.3],
-    combatStart:  ['heroic charge call before a fight, fast taiko drum roll rising into a bright sheng fanfare burst, determined and energetic, ends on a strong accent', 150, 'A minor', 10, 1.7, 0.3],
-    bossStart:    ['EPIC cinematic boss entrance fanfare, thunderous taiko war drums in unison, huge gong strike, soaring heroic brass-like sheng and erhu fanfare melody rising to a triumphant dramatic climax, layered epic orchestra with powerful low strings, grand and heroic yet dangerous, ends on a massive epic final chord', 96, 'D minor', 10, 3.4, 0.6],
-    victory:      ['triumphant short victory fanfare, bright rising pipa arpeggio, sheng chord and cymbal swell, joyful, ending on a clear major resolution', 120, 'D major', 10, 2.6, 0.5],
-    defeat:       ['sad defeat sting, slow descending erhu phrase over a low muffled drum, fading minor ending, sorrowful but gentle', 60, 'A minor', 10, 2.8, 0.7]
+    battleStart:  ['alert at the start of a battle, two fast pipa tremolo hits and a sharp taiko drum hit, then a tense rising dizi line and building drums, danger approaching, ending on a held tense chord', 140, 'E minor', 10, 3.6, 0.5],
+    combatStart:  ['heroic charge call before a fight, fast taiko drum roll rising into a bright sheng fanfare burst, determined and energetic, ends on a strong accent', 150, 'A minor', 10, 3.6, 0.5],
+    bossStart:    ['EPIC cinematic boss entrance fanfare, thunderous taiko war drums in unison, huge gong strike, soaring heroic brass-like sheng and erhu fanfare melody rising to a triumphant dramatic climax, layered epic orchestra with powerful low strings, grand and heroic yet dangerous, ends on a massive epic final chord', 96, 'D minor', 12, 6.5, 0.8],
+    victory:      ['triumphant short victory fanfare, bright rising pipa arpeggio, sheng chord and cymbal swell, joyful, ending on a clear major resolution', 120, 'D major', 10, 4, 0.7],
+    defeat:       ['sad defeat sting, slow descending erhu phrase over a low muffled drum, fading minor ending, sorrowful but gentle', 60, 'A minor', 10, 4.5, 1]
 };
 for (const [k, [s, bpm, key, dur, target, fade]] of Object.entries(JINGLES)) T(`jingle-${k}`, s, { bpm, keyScale: key, dur, jingle: { target, fade } });
 

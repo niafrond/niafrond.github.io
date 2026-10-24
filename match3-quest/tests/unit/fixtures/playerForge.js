@@ -147,7 +147,7 @@ export function explorationForRegions(regionCount, extra = {}) {
 
 // ── Joueur ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 const ATTRIBUTE_EFFECT_ON_STATS = {   // application d'un point (game.js > applyAttributeBonus)
-    strength: p => { p.attack += 1; }, morale: p => { p.attack += 1; }, agility: p => { p.defense += 1; },
+    strength: p => { p.attack += 1; }, morale: p => { p.defense += 1; }, agility: p => { p.defense += 1; },
     stamina: p => { p.maxHp += 1; p.hp = Math.min(p.maxHp, p.hp + 1); }, intelligence: () => {}
 };
 

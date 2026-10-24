@@ -205,11 +205,12 @@ function init() {
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
     let combatIntroUntil = 0;
     let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
-    window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
+    window.addEventListener('match3:combat-start', e => { combatIntroUntil = e.detail?.boss ? 0 : Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
+        if(document.body.dataset.combatEnd) return [document.body.dataset.combatEnd];   // Victoire / Défaite : la musique de l'issue démarre avec le mot plein écran et boucle jusqu'au retour à l'exploration
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
         // En exploration (carte visible, pas de rencontre en cours), seule la musique d'exploration joue : un état de combat resté
         // « actif » (combat quitté sans passer par l'écran de résultat) ne doit pas garder la musique de combat.
@@ -256,6 +257,7 @@ function init() {
     // Phase exploration : on affiche la carte, plus de plateau ni de bouton de combat.
     const enterExploration = () => {
         document.body.classList.remove('combat-ended');
+        delete document.body.dataset.combatEnd;
         setCombatBackdrop(null);
         document.getElementById('worldmap-modal')?.classList.remove('active');
         document.getElementById('battle-result-screen')?.classList.remove('active');
@@ -535,6 +537,25 @@ function init() {
         window.addEventListener('pagehide', touchLastPlayed);
     });
     
+    // Onglet Inventaire : deux volets, Sac et Bestiaire (créatures connues, force, faiblesse, notice mythologique).
+    const invSubtab = () => document.querySelector('.inv-subtabs .carnet-tab.on')?.dataset.invSub || 'bag';
+    const showInventoryPane = async () => {
+        const bestiary = invSubtab() === 'bestiary';
+        document.getElementById('inv-bag').style.display = bestiary ? 'none' : '';
+        const pane = document.getElementById('inv-bestiary');
+        pane.style.display = bestiary ? '' : 'none';
+        if(bestiary) { const html = await exploration.bestiaryHtml(); if(invSubtab() === 'bestiary') pane.innerHTML = html; }
+    };
+    document.querySelector('.inv-subtabs')?.addEventListener('click', e => {
+        const btn = e.target.closest('[data-inv-sub]');
+        if(!btn) return;
+        primeAudioFromGesture();
+        playSfx('uiClick');
+        document.querySelectorAll('.inv-subtabs .carnet-tab').forEach(b => b.classList.toggle('on', b === btn));
+        showInventoryPane();
+    });
+    document.addEventListener('items-tab-open', () => { if(invSubtab() === 'bestiary') showInventoryPane(); });   // nouvelles créatures inscrites depuis la dernière ouverture
+
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
     window.clearPlayerSave = clearSaveData;
 }

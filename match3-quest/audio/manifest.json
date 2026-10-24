@@ -384,19 +384,19 @@
    "seconds": 0.32
   },
   "victory": {
-   "seconds": 2.66
+   "seconds": 4.07
   },
   "defeat": {
-   "seconds": 2.84
+   "seconds": 4.54
   },
   "battleStart": {
-   "seconds": 1.84
+   "seconds": 3.64
   },
   "combatStart": {
-   "seconds": 1.76
+   "seconds": 3.64
   },
   "bossStart": {
-   "seconds": 3.46
+   "seconds": 6.55
   },
   "introJingle": {
    "seconds": 9.04

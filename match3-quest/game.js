@@ -23,7 +23,7 @@ import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEff
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
 import { rollCompanionPowers, COMPANION_POWERS } from "./companionPowers.js";
-import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
+import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints, agilityScore } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
@@ -829,20 +829,24 @@ function showCombatResultScreen(isVictory){
     `;
 
     screen.classList.add('active');
-    playCombatEndFade(isVictory);
 }
 
-// Fin de combat : fondu au noir très court avec le mot « Victoire » / « Défaite », puis retour à l'écran de résultat.
-function playCombatEndFade(isVictory){
+// Fin de combat : écran noir avec le mot « Victoire » / « Défaite » (la musique de l'issue démarre avec lui), qui s'efface ensuite
+// sur l'écran de résultat. Rappelle `reveal` quand l'écran est plein : c'est là que le résultat se met en place, sous le mot.
+export const COMBAT_END_BANNER_MS = 2600;
+function playCombatEndBanner(isVictory, reveal){
     document.getElementById('combat-end-fade')?.remove();
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const total = reduced ? 400 : COMBAT_END_BANNER_MS;
     const fade = document.createElement('div');
     fade.id = 'combat-end-fade';
     fade.className = `combat-end-fade ${isVictory ? 'victory' : 'defeat'}`;
     fade.textContent = isVictory ? 'VICTOIRE' : 'DÉFAITE';
     fade.style.pointerEvents = 'none';
+    fade.style.animationDuration = `${total}ms`;
     document.body.appendChild(fade);
-    setTimeout(() => fade.remove(), reduced ? 400 : 1300);
+    setTimeout(reveal, total * 0.7);
+    setTimeout(() => fade.remove(), total);
 }
 
 // Points d'accroche de la phase d'exploration : onVictory est appelé dès la victoire (avant la
@@ -854,6 +858,16 @@ export const companionMenuHooks = { getChoices: null, setActive: null };
 function finalizeCombatEndUI(isVictory){
     introToken++;
     dismissCombatIntro();
+    // Ordre : 1. le mot Victoire / Défaite plein écran (et la musique de l'issue, qui boucle jusqu'au retour à l'exploration),
+    // 2. l'écran de résultat, 3. le bouton « Retour à l'exploration » (apparition retardée, style.css body.combat-ended).
+    document.body.dataset.combatEnd = isVictory ? 'victory' : 'defeat';
+    playCombatEndBanner(isVictory, () => {
+        if(gameState.combatState !== 'finished') return;   // un nouveau combat a démarré entre-temps
+        revealCombatEndUI(isVictory);
+    });
+}
+
+function revealCombatEndUI(isVictory){
     showCombatResultScreen(isVictory);
     // Fin de partie : « Retour à l'exploration » est la seule action possible (voir style.css, body.combat-ended).
     document.body.classList.add('combat-ended');
@@ -916,31 +930,11 @@ function whenLoserHpBarEmpty(isVictory, callback){
     waitUntil(() => isFighterHpBarEmpty(!isVictory), () => setTimeout(callback, HP_BAR_EMPTY_PAUSE_MS * animationFactor()));
 }
 
-function showEndCombatAnimation(isVictory, options = {}){
-    const {
-        requireClick = true,
-        continueText = ''
-    } = options;
-
+function showEndCombatAnimation(isVictory){
     whenLoserHpBarEmpty(isVictory, () => {
         if(gameState.combatState !== 'finished') return;   // un nouveau combat a démarré entre-temps
-        // Victoire : l'écran de résultat (avec son fondu « VICTOIRE ») s'affiche sans second écran « Cliquez pour continuer ».
-        if(isVictory){
-            finalizeCombatEndUI(true);
-            return;
-        }
-
-        const data = { icon: 'skull', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
-        if(!requireClick){
-            data.target = 'Retour a l ecran de resultat...';
-        }
-
-        showCombatAnimation(data, isVictory, {
-            requireClick,
-            continueText,
-            autoHideMs: 650,
-            onContinue: () => finalizeCombatEndUI(isVictory)
-        });
+        // Victoire comme défaite : le mot plein écran, puis l'écran de résultat, sans second écran « Cliquez pour continuer ».
+        finalizeCombatEndUI(isVictory);
     });
 }
 
@@ -1053,7 +1047,7 @@ export function handlePlayerDeath(){
     // Laisse le coup fatal visible avant l'écran de défaite.
     pendingPlayerDeathTimeout = setTimeout(() => {
         pendingPlayerDeathTimeout = null;
-        showEndCombatAnimation(false, { requireClick: false });
+        showEndCombatAnimation(false);
     }, PLAYER_DEATH_DELAY_MS);
 }
 
@@ -1061,8 +1055,9 @@ export function handlePlayerDeath(){
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
     document.body.classList.remove('combat-ended');
+    delete document.body.dataset.combatEnd;
     gameState.combatState = 'active';
-    window.dispatchEvent(new Event('match3:combat-start'));
+    window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
     ensureCombatUsableActiveItem();
     resetCombatRewards();
     hideCombatResultScreen();
@@ -1084,7 +1079,7 @@ export function startNewCombat(selectedEnemy = null){
     // Restaurer les PV (sauf phase enchaînée d'un duel) et préparer le combat
     restartCombat({ keepHp: Boolean(selectedEnemy?.carryHp) });
     newEnemy(selectedEnemy);
-    playSfx(enemy?.isBoss ? 'bossStart' : 'combatStart');
+    if(!enemy?.isBoss) playSfx('combatStart');   // boss : bossStart a déjà joué pendant l'annonce du combat (explorationView.js)
 }
 
 // Abandonner le combat en cours
@@ -1740,7 +1735,7 @@ export function updatePlayerStatsTab(){
             <div class="stat-line">
                 <span class="stat-label">${svgIcon('target')} Moral (Morale):</span>
                 <span class="stat-value">${player.attributes.morale}</span>
-                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'morale')} Attaque morale</span>
+                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'morale')} Défense et agilité</span>
             </div>
         </div>
         
@@ -1755,8 +1750,8 @@ export function updatePlayerStatsTab(){
                 <span class="stat-value">${rawDefense(player)}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label" title="Agilité : joue en premier quand elle dépasse celle de l'ennemi (initiative) ; chaque point ajoute aussi 1 de défense">${svgIcon('runner')} Agilité (initiative):</span>
-                <span class="stat-value">${player.attributes.agility || 0}</span>
+                <span class="stat-label" title="Agilité (points d'Agilité et de Moral) : joue en premier quand elle dépasse celle de l'ennemi (initiative) ; chaque point ajoute aussi 1 de défense">${svgIcon('runner')} Agilité (initiative):</span>
+                <span class="stat-value">${agilityScore(player)}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">${svgIcon('heart')} HP Maximum:</span>
@@ -2955,7 +2950,7 @@ export function applyAttributeBonus(attr){
             player.hp = Math.min(player.maxHp, player.hp + 1);
             break;
         case "morale":
-            player.attack += 1;
+            player.defense = (player.defense || 0) + 1;   // le moral donne de l'agilité : défense (comme l'agilité) et initiative (agilityScore)
             break;
     }
     clampManaToCaps(player);
@@ -3749,7 +3744,7 @@ export function decideFirstTurn(){
         anim = { icon: 'bolt', title: 'Préparation du terrain', source: '', target: starter === 'player' ? '→ À vous de jouer !' : '→ Ennemi joue en premier' };
         log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
     } else {
-        const playerAgility = player.attributes.agility || 0;
+        const playerAgility = agilityScore(player);
         const enemyAgility = enemy.attributes?.agility || 0;
         if(playerAgility > enemyAgility){
             starter = 'player';

@@ -389,7 +389,7 @@ export default {
                 { templateId: 'jiaolong', name: 'Anguille de vase', weight: 3, offset: 0 },
                 { templateId: 'jiao', name: "Jiao", weight: 3, offset: 0 },
                 { templateId: 'heilong', name: "Heilong", weight: 1, offset: 1 },
-                { templateId: 'gui_tortue', name: "Gui", weight: 3, offset: 0 },
+                { templateId: 'gui_tortue', name: "Tortue Gui", weight: 3, offset: 0 },
                 { templateId: 'bixi', name: "Bixi", weight: 3, offset: 0 },
                 { templateId: 'yingyu', name: "Yingyu", weight: 5, offset: -1 }
             ]
