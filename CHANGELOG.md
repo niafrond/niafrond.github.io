@@ -1,3 +1,9 @@
+## [2.125.1](https://github.com/niafrond/niafrond.github.io/compare/v2.125.0...v2.125.1) (2026-10-24)
+
+### Bug Fixes
+
+* **match3-quest:** émettre les particules de mana des objets en mobile ([#541](https://github.com/niafrond/niafrond.github.io/issues/541)) ([563c26a](https://github.com/niafrond/niafrond.github.io/commit/563c26a36408fa69d8aa372250fa2a87b9961220))
+
 ## [2.125.0](https://github.com/niafrond/niafrond.github.io/compare/v2.124.0...v2.125.0) (2026-10-24)
 
 ### Features
