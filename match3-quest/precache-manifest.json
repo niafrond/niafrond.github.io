@@ -8,6 +8,7 @@
   "bestiary.js",
   "board.js",
   "bossTips.js",
+  "breakReminder.js",
   "cheatMode.js",
   "chestLoot.js",
   "cinematics.js",
