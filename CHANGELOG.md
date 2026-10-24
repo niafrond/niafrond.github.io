@@ -1,3 +1,9 @@
+## [2.123.0](https://github.com/niafrond/niafrond.github.io/compare/v2.122.1...v2.123.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** allonger les jingles de combat, ordonner les écrans de fin et annoncer l'adversaire plus longtemps ([4be898e](https://github.com/niafrond/niafrond.github.io/commit/4be898e3d502585e27fdf1628d5832defaf8c6a2))
+
 ## [2.122.1](https://github.com/niafrond/niafrond.github.io/compare/v2.122.0...v2.122.1) (2026-10-23)
 
 ### Performance Improvements
