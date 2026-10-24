@@ -82,6 +82,7 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
         expect(text).toMatch(/Claude \(Anthropic\).*Musique : ACE-Step.*Création visuelle : ComfyUI.*Génération de textes : Ollama/);
         expect(text).toMatch(/Idées, suggestions et contributions Ethan, Luna/);
         expect(text).toMatch(/Tests et assurance qualité \(QA\) Ethan, Luna, Vanessa/);
+        expect(text).toMatch(/Early bird Jo et Arnaud/);
         expect(text).toMatch(/carte graphique, qui a affronté les flammes/);
         expect(CREDITS[CREDITS.length - 1].text).toBe("À ma femme et mes enfants, qui m'ont suivi dans mon délire, je vous aime fort.");
         expect(CREDITS.filter(c => c.type === 'rule')).toHaveLength(4);
