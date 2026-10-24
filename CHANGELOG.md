@@ -1,3 +1,15 @@
+## [2.127.0](https://github.com/niafrond/niafrond.github.io/compare/v2.126.0...v2.127.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** ajouter un héros à cheval pour chaque classe, utilisable à l'exploration ([2bfb32f](https://github.com/niafrond/niafrond.github.io/commit/2bfb32f63184dbbf1d7f7333e6f85bda4038dc8c))
+* **match3-quest:** redessiner le cheval en chibi brun et le fusionner avec chaque classe ([3861417](https://github.com/niafrond/niafrond.github.io/commit/3861417300a7f7c20eafbdad148bced687a63b66))
+
+### Bug Fixes
+
+* **match3-quest:** affiner le cheval vu de face (plus de joues) ([0494380](https://github.com/niafrond/niafrond.github.io/commit/04943808e9d7405ce1435898915e92a218aed554))
+* **match3-quest:** réduire le cheval et son cavalier à l'échelle du héros à pied ([c9cfd0c](https://github.com/niafrond/niafrond.github.io/commit/c9cfd0c9800427c2a96e564506afe8de8cc75f9b))
+
 ## [2.126.0](https://github.com/niafrond/niafrond.github.io/compare/v2.125.1...v2.126.0) (2026-10-24)
 
 ### Features
