@@ -6,7 +6,7 @@ le sprite GBA du héros (sprites/gba/<classe>.*.js) est repris tel quel puis ré
 domine) et posé en selle. La selle prend la couleur de la classe. De face, la tête du cheval passe devant le cavalier, assis derrière elle ; de dos,
 le cavalier est assis sur la croupe. Marche : le cheval et le cavalier montent et descendent d'un pixel, les jambes diagonales alternent.
 
-Sortie : sprites/ultimates-seq/horse/mounted.json (clé `<classe>_horse` → { front, back, left, right, walk_<dir>_<n> } en PNG base64 48×48) et planche
+Sortie : sprites/ultimates-seq/horse/mounted.json (clé `<classe>_horse` → { front, back, left, right, walk_<dir>_<n> } en PNG base64 40×40) et planche
 d'aperçu `preview.png`. Puis : node tools/merge-mounted.mjs (écrit dans sprites/generated.js) et node sprites/build-gba.mjs.
 Usage : python3 tools/gen-mounted-heroes.py
 """
@@ -22,10 +22,11 @@ _spec.loader.exec_module(horse)
 CLASSES = {  # classe : couleur de la selle
     'archer': (190, 52, 48), 'templar': (52, 96, 190), 'barbarian': (66, 150, 70), 'assassin': (112, 62, 156), 'sorcerer': (40, 160, 170),
 }
-S = 48
+S = 48              # canevas de travail ; réduit à OUT_SIZE en sortie
 DIRS = ['front', 'back', 'left', 'right']
 FRAMES = 4
-RIDER = 24          # cavalier réduit (32 → 24)
+RIDER = 21          # cavalier réduit (32 → 21), avant la réduction d'ensemble ci-dessous
+OUT_SIZE = 40       # sprite final 40×40 : à la même taille de pixel à l'écran que le héros à pied (32 px), cavalier et cheval tiennent en ≈ 1,2 case
 HX, HY = 4, 19      # position du cheval 40×28 dans le canevas 48×48 : sabots en bas
 
 
@@ -89,7 +90,19 @@ def mounted(cls, view, phase):
     else:
         out.alpha_composite(recolor(horse.front(phase, back=True), col), (HX, HY))
         out.alpha_composite(rider, (24 - RIDER // 2, HY + 13 + bob - RIDER))
-    return out
+    return shrink(out)
+
+
+def shrink(im):
+    """Réduction d'ensemble 48 → 40 (BOX), chaque pixel recalé sur une couleur du sprite d'origine : pas de teintes mélangées, contours nets."""
+    palette = sorted({im.getpixel((x, y))[:3] for x in range(im.width) for y in range(im.height) if im.getpixel((x, y))[3] >= 200})
+    r = im.resize((OUT_SIZE, OUT_SIZE), Image.BOX)
+    px = r.load()
+    for y in range(OUT_SIZE):
+        for x in range(OUT_SIZE):
+            c = px[x, y]
+            px[x, y] = (0, 0, 0, 0) if c[3] < 128 else min(palette, key=lambda p: (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2) + (255,)
+    return r
 
 
 def b64(im):
@@ -100,7 +113,7 @@ def b64(im):
 
 os.makedirs(OUT, exist_ok=True)
 result = {}
-sheet = Image.new('RGBA', (4 * (S * 3 + 8), len(CLASSES) * (S * 3 + 2)), (0, 168, 200, 255))
+sheet = Image.new('RGBA', (4 * (OUT_SIZE * 3 + 8), len(CLASSES) * (OUT_SIZE * 3 + 2)), (0, 168, 200, 255))
 for r, cls in enumerate(CLASSES):
     entry = {}
     for view in DIRS:
@@ -109,7 +122,7 @@ for r, cls in enumerate(CLASSES):
             entry[f'walk_{view}_{n}'] = b64(mounted(cls, view, n))
     result[f'{cls}_horse'] = entry
     for c, view in enumerate(DIRS):
-        sheet.alpha_composite(mounted(cls, view, 0).resize((S * 3, S * 3), Image.NEAREST), (c * (S * 3 + 8), r * (S * 3 + 2)))
+        sheet.alpha_composite(mounted(cls, view, 0).resize((OUT_SIZE * 3, OUT_SIZE * 3), Image.NEAREST), (c * (OUT_SIZE * 3 + 8), r * (OUT_SIZE * 3 + 2)))
 json.dump(result, open(os.path.join(OUT, 'mounted.json'), 'w'))
 sheet.save(os.path.join(OUT, 'preview.png'))
 print('OK', ', '.join(result))

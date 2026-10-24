@@ -1,4 +1,4 @@
-// Héros à cheval (tools/gen-mounted-heroes.py) : un sprite de cavalier par classe, 4 directions + cycle de marche, 48×48, chargé avec la région.
+// Héros à cheval (tools/gen-mounted-heroes.py) : un sprite de cavalier par classe, 4 directions + cycle de marche, 40×40, chargé avec la région.
 import { readFileSync } from 'fs';
 import { gbaSprite, gbaWalkSprite, loadGbaSprites, hasGbaSprite } from '../../sprites/index.js';
 
@@ -9,12 +9,12 @@ const size = uri => { const b = Buffer.from(uri.split(',')[1], 'base64'); return
 await loadGbaSprites(CLASSES.map(c => `${c}_horse`));
 
 describe('héros à cheval', () => {
-    test.each(CLASSES)('%s : 4 directions fixes et 4 images de marche par direction, en PNG 48×48', cls => {
+    test.each(CLASSES)('%s : 4 directions fixes et 4 images de marche par direction, en PNG 40×40', cls => {
         expect(hasGbaSprite(`${cls}_horse`)).toBe(true);
         DIRS.forEach(dir => {
-            expect(size(gbaSprite(`${cls}_horse`, dir))).toEqual([48, 48]);
+            expect(size(gbaSprite(`${cls}_horse`, dir))).toEqual([40, 40]);
             const frames = [0, 1, 2, 3].map(n => gbaWalkSprite(`${cls}_horse`, dir, n));
-            frames.forEach(f => expect(size(f)).toEqual([48, 48]));
+            frames.forEach(f => expect(size(f)).toEqual([40, 40]));
             expect(new Set(frames).size).toBeGreaterThan(1);        // le cheval marche : les images changent
             expect(gbaWalkSprite(`${cls}_horse`, dir, 4)).toBe(frames[0]);   // boucle de 4 images
         });

@@ -45,7 +45,7 @@ const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
 const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
-const MOUNTED_SPRITE_TILES = 1.59;  // sprite du cavalier (48 px) : 1,06 case pour 32 px (héros à pied) × 48/32, soit le même grain de pixel
+const MOUNTED_SPRITE_TILES = 1.325; // sprite du cavalier (40 px) : 1,06 case pour 32 px (héros à pied) × 40/32, soit le même grain de pixel
 const BATTLE_TRANSITION_MS = 3400;   // durée de l'animation d'entrée en combat : le nom de l'adversaire reste lisible environ 2 s
 const BATTLE_STRIPS = 10;
 
@@ -1688,8 +1688,8 @@ export function createExplorationView(cfg) {
                     if (mountView) {
                         // à cheval : sprite du cavalier de la classe (tools/gen-mounted-heroes.py), 48 px au même grain que le héros à pied (32 px)
                         const mountNext = moving ? gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase) + 1) : null;
-                        drawSprite(mountView, c.x, feet + hop * 0.5 + tile * 0.065, tile * MOUNTED_SPRITE_TILES);
-                        if (mountNext && mountNext !== mountView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(mountNext, c.x, feet + hop * 0.5 + tile * 0.065, tile * MOUNTED_SPRITE_TILES); ctx.restore(); }
+                        drawSprite(mountView, c.x, feet + hop * 0.5 + tile * 0.055, tile * MOUNTED_SPRITE_TILES);
+                        if (mountNext && mountNext !== mountView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(mountNext, c.x, feet + hop * 0.5 + tile * 0.055, tile * MOUNTED_SPRITE_TILES); ctx.restore(); }
                     } else if (riding()) {
                         // repli (sprite du cavalier pas encore chargé) : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
