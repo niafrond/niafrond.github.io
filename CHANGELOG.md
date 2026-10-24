@@ -1,3 +1,9 @@
+## [2.129.0](https://github.com/niafrond/niafrond.github.io/compare/v2.128.0...v2.129.0) (2026-10-24)
+
+### Features
+
+* **site:** ajouter la mesure d'audience GoatCounter ([b2171a6](https://github.com/niafrond/niafrond.github.io/commit/b2171a6e21bfad3e81d9866fc74628bccccbff0a))
+
 ## [2.128.0](https://github.com/niafrond/niafrond.github.io/compare/v2.127.0...v2.128.0) (2026-10-24)
 
 ### Features
