@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { QUESTS, SCREENS, REGION_UNLOCK_LEVEL } from '../story.js';
-import { COMPANIONS, BANTER } from '../companions.js';
+import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry } from '../bestiary.js';
@@ -155,8 +155,6 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
 ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
-details{margin:6px 0}summary{cursor:pointer;color:var(--blue);font:600 .85rem system-ui,sans-serif}
-blockquote{margin:6px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--dim);font-style:italic}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -256,11 +254,6 @@ function questHtml(q) {
     <dt>Récompense</dt><dd>${rewards.join(' · ') || '—'}</dd>
     ${next.length ? `<dt>Débloque</dt><dd>${next.map(n => `<a href="${regionSlug(n._region)}#${questAnchor(n.id)}">${esc(n.title)}</a>`).join(', ')}</dd>` : ''}
   </dl>
-  ${asArray(q.hint).length ? `<div class="box tip"><b class="t">Indice du PNJ</b>${asArray(q.hint).map(esc).join('<br>')}</div>` : ''}
-  <details><summary>Voir le dialogue de la quête (spoiler)</summary>
-    ${asArray(q.offer).length ? `<p><b>Quand on la prend :</b></p>${asArray(q.offer).map(t => `<blockquote>${esc(t)}</blockquote>`).join('')}` : ''}
-    ${asArray(q.complete).length ? `<p><b>Quand on la rend :</b></p>${asArray(q.complete).map(t => `<blockquote>${esc(t)}</blockquote>`).join('')}` : ''}
-  </details>
 </article>`;
 }
 
@@ -279,7 +272,7 @@ function buildQuests() {
         crumbs: [['soluce.html', 'Accueil'], [null, 'Quêtes']],
         body: `<h2>Toutes les quêtes</h2>
 <p class="lead">${QUESTS.length} quêtes (${QUESTS.filter(q => !q.side).length} principales et ${QUESTS.filter(q => q.side).length} secondaires), classées par région dans l’ordre où on les débloque.</p>
-<div class="box info"><b class="t">Lire une fiche</b>Chaque fiche donne les prérequis, qui la donne et où, les objectifs avec leur position approximative dans l’écran (nord, sud, ouest, est), l’itinéraire depuis le village, la faiblesse des ennemis à abattre et la récompense. Le dialogue complet est caché dans un bloc à déplier.</div>
+<div class="box info"><b class="t">Lire une fiche</b>Chaque fiche donne les prérequis, qui la donne et où, les objectifs avec leur position approximative dans l’écran (nord, sud, ouest, est), l’itinéraire depuis le village, la faiblesse des ennemis à abattre et la récompense.</div>
 <div class="grid">${cards}</div>`
     }));
     for (const r of regionsWithQuests) {
@@ -317,9 +310,6 @@ function buildCompanions() {
     for (const c of COMPANIONS) {
         const q = questById[c.joinWhen];
         const p = COMPANION_POWERS[c.id];
-        const intro = BANTER.find(b => b.companion === c.id && (b.id || '').endsWith('rejoint'));
-        const lines = intro ? (intro.scenes || [{ speaker: intro.speaker, lines: intro.lines }]).flatMap(s => (s.lines || []).map(l => `<blockquote><b>${esc(s.speaker?.name || '')}</b> : ${esc(l)}</blockquote>`)).join('') : '';
-        const chat = BANTER.filter(b => asArray(b.companion).includes(c.id) && b !== intro).length;
         const reqQ = q && asArray(q.requires).map(reqText);
         write(`compagnon-${c.id}.html`, page({
             file: `compagnon-${c.id}.html`, title: `Compagnon : ${c.name}`, active: 'compagnons.html',
@@ -333,9 +323,7 @@ function buildCompanions() {
 <dt>Quête</dt><dd>${q ? `<a href="${regionSlug(q._region)}#${questAnchor(q.id)}">${esc(q.title)}</a>` : esc(c.joinWhen)}</dd>
 <dt>Prérequis</dt><dd>${reqQ?.length ? reqQ.map(x => x.html).join(', ') : 'Aucun.'}</dd>
 </dl>
-${q ? questHtml(q) : ''}
-${lines ? `<h3>À son arrivée</h3>${lines}` : ''}
-<p class="dim">${c.name} commente aussi ${chat} ${plural(chat, 'lieu ou décision', 'lieux et décisions')} en cours de route (dialogues de groupe à découvrir en jouant).</p>`
+${q ? questHtml(q) : ''}`
         }));
     }
 }
@@ -462,7 +450,7 @@ function buildHub() {
         desc: 'Soluce complète : parcours, compagnons, quêtes et stuff d’exception.',
         body: `<h2>Soluce complète de La Légende de Hou Yi</h2>
 <p class="lead">Tout ce qu’il faut pour finir le jeu à 100 % : le parcours principal, les ${COMPANIONS.length} compagnons, les ${total} quêtes et le stuff d’exception.</p>
-<div class="box warn"><b class="t">Spoilers</b>Cette soluce révèle l’intrigue, les boss et les récompenses. Les dialogues de quête sont repliés par défaut.</div>
+<div class="box warn"><b class="t">Spoilers</b>Cette soluce révèle l’intrigue, les boss et les récompenses.</div>
 <input class="search" id="q" type="search" placeholder="Rechercher une quête, un compagnon, un objet…" autocomplete="off" aria-label="Recherche">
 <div id="results"></div>
 <div class="grid">
