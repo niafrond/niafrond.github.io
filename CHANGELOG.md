@@ -1,3 +1,9 @@
+## [2.125.0](https://github.com/niafrond/niafrond.github.io/compare/v2.124.0...v2.125.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** appliquer les cases de biome aux crânes et aux flèches ([6ef0125](https://github.com/niafrond/niafrond.github.io/commit/6ef01252b66ccabb6796990a05b238fd1dba22fe))
+
 ## [2.124.0](https://github.com/niafrond/niafrond.github.io/compare/v2.123.0...v2.124.0) (2026-10-24)
 
 ### Features
