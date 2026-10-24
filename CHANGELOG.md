@@ -1,3 +1,10 @@
+## [2.126.0](https://github.com/niafrond/niafrond.github.io/compare/v2.125.1...v2.126.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** animer les écrans de victoire et de défaite (feu d'artifice, cœur qui ne bat presque plus) ([99e7e22](https://github.com/niafrond/niafrond.github.io/commit/99e7e2235326a991957e2a2246bb9d949a9ee39a))
+* **match3-quest:** faire ralentir puis s'arrêter le cœur de l'écran de défaite, sans tracé de pouls ([394a22c](https://github.com/niafrond/niafrond.github.io/commit/394a22c2758cd0599e0f49091e5eb3c2578cafc0))
+
 ## [2.125.1](https://github.com/niafrond/niafrond.github.io/compare/v2.125.0...v2.125.1) (2026-10-24)
 
 ### Bug Fixes
