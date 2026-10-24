@@ -414,7 +414,7 @@ body.rt .tile {
     box-shadow: none;
 }
 
-/* Les gemmes sont des gâteaux de lune (dessins dans sprites/tiles/, une saveur par couleur de mana) ;
+/* Les gemmes sont des gâteaux de lune (dessins dans sprites/tiles/, une saveur par couleur de qì) ;
    le crâne est un crâne vectoriel sur médaillon sombre et les épées une flèche. La couleur de fond ne sert que de socle. */
 body.rt .tile,
 body.rt .tile.red, body.rt .tile.blue, body.rt .tile.green, body.rt .tile.yellow, body.rt .tile.purple, body.rt .tile.combat, body.rt .tile.skull, body.rt .tile.joker {

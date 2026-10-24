@@ -202,7 +202,7 @@ export function findRandomMove(board){
     return null;
 }
 
-// Un joker combiné dans un alignement double le gain : mana (couleur), points d'action (épées) ou dégâts (crânes).
+// Un joker combiné dans un alignement double le gain : qì (couleur), points d'action (épées) ou dégâts (crânes).
 // Le doublement ne se cumule pas : un alignement avec 1 ou 2 jokers vaut ×2.
 export const JOKER_MATCH_MULTIPLIER = 2;
 export const JOKER_MANA_MULTIPLIER = JOKER_MATCH_MULTIPLIER;

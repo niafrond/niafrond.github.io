@@ -1,6 +1,6 @@
-// Éléments de mana et table des faiblesses. Module pur (aucun DOM), partagé par enemies.js, terrain.js et l'UI.
+// Éléments de qì et table des faiblesses. Module pur (aucun DOM), partagé par enemies.js, terrain.js et l'UI.
 //
-// Les 5 couleurs de mana portent chacune un élément :
+// Les 5 couleurs de qì portent chacune un élément :
 //   rouge = Feu, bleu = Eau, vert = Terre, jaune = Air, violet = Arcane (5e élément, hors cycle classique).
 //
 // Faiblesses (un ennemi d'un élément est vulnérable à l'élément qui le « contre ») :
@@ -40,7 +40,7 @@ export const WEAKNESS_OF_COLOR = {
 
 const norm = color => (typeof color === 'string' ? color.toLowerCase() : color);
 
-// Élément (identifiant : fire, water, earth, air, arcane) d'une couleur de mana, ou null.
+// Élément (identifiant : fire, water, earth, air, arcane) d'une couleur de qì, ou null.
 export const elementOf = color => ELEMENT_OF_COLOR[norm(color)] || null;
 
 // Libellé français de l'élément d'une couleur (« Feu », « Eau »...), ou null.
@@ -49,7 +49,7 @@ export const elementName = color => {
     return el ? ELEMENT_LABELS[el] : null;
 };
 
-// Couleur de mana contre laquelle l'ennemi de cette couleur est faible, ou null.
+// Couleur de qì contre laquelle l'ennemi de cette couleur est faible, ou null.
 export const weaknessOf = color => WEAKNESS_OF_COLOR[norm(color)] || null;
 
 // Ajuste un profil de résistances pour que la couleur faible ait la résistance la plus basse (strictement).

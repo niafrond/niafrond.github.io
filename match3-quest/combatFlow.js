@@ -16,7 +16,7 @@ export function openingStrikeCount(prep) {
     return (prep?.tags || []).filter(tag => tag === 'ambush').length;
 }
 
-/** La faiblesse de mana de l'ennemi n'est affichée que si elle a été repérée (tag 'observed' → prep.weaknessRevealed). */
+/** La faiblesse de qì de l'ennemi n'est affichée que si elle a été repérée (tag 'observed' → prep.weaknessRevealed). */
 export function isWeaknessShown(prep) {
     return Boolean(prep?.weaknessRevealed);
 }

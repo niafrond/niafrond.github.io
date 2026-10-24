@@ -27,7 +27,7 @@ export function sfxKeyFor(eventName, payload = {}) {
     }
 }
 
-/** Multiplicateur de volume à la lecture (le mana de l'ennemi est plus discret). */
+/** Multiplicateur de volume à la lecture (le qì de l'ennemi est plus discret). */
 export function sfxGainFor(eventName, payload = {}) {
     return eventName === 'manaGain' && payload.isPlayer === false ? 0.5 : 1;
 }

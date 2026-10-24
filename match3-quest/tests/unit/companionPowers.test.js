@@ -26,7 +26,7 @@ describe('pouvoirs des compagnons', () => {
         expect(MANA_COLORS).toContain(by.etincelle.color);
         expect(by.dawa.power.kind).toBe('mirage');
     });
-    test('Braise : 50 % de la jauge de rage ; Jian : 5 % ; Tou : ne vole que du mana présent', () => {
+    test('Braise : 50 % de la jauge de rage ; Jian : 5 % ; Tou : ne vole que du qì présent', () => {
         expect(COMPANION_POWERS.braise.ragePct).toBe(0.5);
         expect(rollCompanionPowers(['braise'], hero, () => 0)[0].amount).toBe(0.5);
         expect(COMPANION_POWERS.jian.chance).toBe(0.05);

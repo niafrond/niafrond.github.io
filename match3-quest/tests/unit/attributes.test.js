@@ -11,7 +11,7 @@ describe('attributs de niveau et bonus de couleur', () => {
         expect(new Set(colors).size).toBe(5);
     });
 
-    test('Bleu (intelligence) : un match de 3 donne 4 mana bleu au lieu de 3', () => {
+    test('Bleu (intelligence) : un match de 3 donne 4 qì bleu au lieu de 3', () => {
         expect(manaPerMatch('intelligence', 0, 3)).toBe(3);
         expect(manaPerMatch('intelligence', 1, 3)).toBe(4);
         expect(manaPerMatch('intelligence', 2, 3)).toBe(5);
@@ -23,8 +23,8 @@ describe('attributs de niveau et bonus de couleur', () => {
         const d = describeAttributeChoice(hero({ intelligence: 1 }), 'intelligence');
         expect(d.points).toBe(1);
         expect(d.nextPoints).toBe(2);
-        expect(d.lines.join(' ')).toMatch(/donne 5 mana bleu au lieu de 4/);
-        expect(d.lines.join(' ')).toMatch(/\+1 mana bleu en début de combat/);
+        expect(d.lines.join(' ')).toMatch(/donne 5 qì bleu au lieu de 4/);
+        expect(d.lines.join(' ')).toMatch(/\+1 qì bleu en début de combat/);
         expect(describeAttributeChoice(hero(), 'agility').lines[0]).toMatch(/\+1 défense/);
     });
 

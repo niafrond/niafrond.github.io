@@ -12,7 +12,7 @@ const SLOT_LABEL = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: '
 const costTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
 const costText = sp => typeof sp.cost === 'number' ? `${sp.cost} ${sp.color || ''}`.trim() : Object.entries(sp.cost || {}).map(([c, n]) => `${n} ${c}`).join(' + ');
 
-// Coût en gomettes : un disque de la couleur du mana avec la quantité écrite dedans (ex. gomette rouge « 5 »).
+// Coût en gomettes : un disque de la couleur du qì avec la quantité écrite dedans (ex. gomette rouge « 5 »).
 const costBadges = sp => {
     const entries = typeof sp.cost === 'number' ? [[sp.color, sp.cost]] : Object.entries(sp.cost || {});
     return entries.map(([color, n]) => `<span class="cost-badge${color === 'yellow' ? ' cost-badge-light' : ''}" style="background:${MANA_HEX[color] || '#888'}" title="${esc(color)}">${esc(n)}</span>`).join('');

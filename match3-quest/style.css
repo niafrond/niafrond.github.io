@@ -2524,7 +2524,7 @@ body.dark-mode .tutorial-card {
     .tab-btn .ic { font-size: 22px; }
     .stats-container { margin: 2px 0; gap: 4px; }
     #player-stats, #enemy-stats { padding: 4px 6px; font-size: 0.95em; flex: 1 1 0; min-width: 0; box-sizing: border-box; }
-    /* mana + points d'action sur une même ligne, resserrés pour tenir dans la carte */
+    /* qì + points d'action sur une même ligne, resserrés pour tenir dans la carte */
     #player-stats .mana-dots, #enemy-stats .mana-dots { flex-wrap: wrap; font-size: 0.95em; row-gap: 2px; }
     #player-stats .mana-dot, #enemy-stats .mana-dot { width: 0.7em; height: 0.7em; margin-right: 2px; }
     #player-stats .mana-dots > span:not(.mana-dot):not(.pa-stat), #enemy-stats .mana-dots > span:not(.mana-dot):not(.pa-stat) { margin-right: 2px; }
@@ -3176,7 +3176,7 @@ input, textarea, [contenteditable="true"] {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Mana qui rejoint la banque du joueur (manaFlight.js) : décoratif, ne capte aucun clic */
+/* Qì qui rejoint la banque du joueur (manaFlight.js) : décoratif, ne capte aucun clic */
 .mana-fly-dot {
     position: fixed;
     width: 12px;
@@ -3404,7 +3404,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .rage-bar-container.ultimate-ready { cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; }
 .rage-bar-container.ultimate-ready .rage-text { letter-spacing: 0.15em; color: #fff3c4; }
 .rage-bar-container.ultimate-ready:hover, .rage-bar-container.ultimate-ready:focus-visible { filter: brightness(1.2); }
-/* Mini-barre de mana de l'ultime, collée sous la jauge : un tronçon par couleur requise (vide = couleur manquante). */
+/* Mini-barre de qì de l'ultime, collée sous la jauge : un tronçon par couleur requise (vide = couleur manquante). */
 .ult-mana-bar { display: flex; gap: 2px; height: 5px; margin-top: 1px; pointer-events: none; }
 .ult-mana-seg { position: relative; min-width: 8px; border-radius: 2px; background: rgba(255,255,255,0.12); outline: 1px dashed var(--seg-c); outline-offset: -1px; overflow: hidden; }
 .ult-mana-seg::before { content: ''; position: absolute; inset: 0; width: var(--seg-fill); background: var(--seg-c); }
@@ -3451,7 +3451,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 /* Tri des listes d'armes et d'objets */
 .sort-bar { display: flex; align-items: center; gap: 8px; margin: 6px 0 10px; font-size: .9em; }
 .sort-bar select { font: inherit; padding: 2px 6px; }
-/* Mana du héros et de l'ennemi en gomettes (zone de stats) */
+/* Qì du héros et de l'ennemi en gomettes (zone de stats) */
 #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .85em; margin-right: 3px; }
 
 /* Menu Options : temps de jeu (aujourd'hui, hier, semaine, total) */

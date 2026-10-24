@@ -185,7 +185,7 @@ const ids = list => (Array.isArray(list) ? list.map(x => x?.id).filter(Boolean) 
 /**
  * Extrait de l'objet joueur ce qui compose réellement la partie : héros, stats, équipement,
  * progression (monstres vaincus, quêtes, coffres, régions). Le catalogue (armes, sorts) n'est
- * stocké que par identifiant ; mana, effets de combat, caches et valeurs dérivées sont exclus.
+ * stocké que par identifiant ; qì, effets de combat, caches et valeurs dérivées sont exclus.
  * @param {Object} player - L'objet joueur
  * @returns {Object}
  */
@@ -321,7 +321,7 @@ function validateAndRestorePlayer(player) {
         // Anciennes sauvegardes : la recharge en combat (x tours) vient du catalogue.
         if (item.type === 'reusable') {
             const ref = allItems.find(i => i.id === item.id);
-            // Les valeurs (soin, mana, charges, délai) viennent toujours du catalogue : un rééquilibrage s'applique aux anciennes parties.
+            // Les valeurs (soin, qì, charges, délai) viennent toujours du catalogue : un rééquilibrage s'applique aux anciennes parties.
             if (ref) {
                 Object.assign(item, { effect: { ...ref.effect }, description: ref.description, chargesPerCycle: ref.chargesPerCycle, rechargeTurns: ref.rechargeTurns });
                 if (ref.actionPoints) item.actionPoints = ref.actionPoints;

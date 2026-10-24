@@ -13,7 +13,7 @@ lance un sous-agent sur une tâche de ce domaine.
 | Animation pixel art | [animation-pixel-art.md](animation-pixel-art.md) | Sprites, cycles d'animation, effets visuels |
 | Level design | [level-design.md](level-design.md) | Cartes, villages, zones sauvages, coffres, énigmes |
 | Terrain | [terrain.md](terrain.md) | Connexions de bordure, barrières de bord (eau, rochers, arbres) selon le biome |
-| Équilibrage | [equilibrage.md](equilibrage.md) | Courbes de niveau, dégâts, mana, économie, difficulté IA |
+| Équilibrage | [equilibrage.md](equilibrage.md) | Courbes de niveau, dégâts, qì, économie, difficulté IA |
 | UI / UX | [ui-ux.md](ui-ux.md) | Interface, mobile, accessibilité, tutoriel, textes d'interface |
 | QA / Tests | [qa-tests.md](qa-tests.md) | Tests Jest, Playwright, non-régression, performance |
 

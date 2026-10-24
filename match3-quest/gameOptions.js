@@ -1,5 +1,5 @@
 // Options d'affichage et de performance (menu Options), mémorisées par appareil dans localStorage.
-//  - manaFlight : particules de mana qui rejoignent la banque (manaFlight.js) ;
+//  - manaFlight : particules de qì qui rejoignent la banque (manaFlight.js) ;
 //  - effects    : 'auto' | 'low' | 'normal' | 'high' — niveau d'effets visuels ('auto' se règle sur l'appareil) ;
 //  - speed      : 'slow' | 'normal' | 'fast' — durée des animations de combat et pauses entre les tours.
 // Purement visuel : aucune de ces options ne change les règles du jeu.
@@ -49,7 +49,7 @@ export function effectsLevel() {
 // Multiplicateur appliqué aux durées d'animation et aux pauses (1 = normal).
 export function animationFactor() { return SPEED_FACTOR[current.speed] || 1; }
 
-// Nombre maximal de particules de mana par match, selon le niveau d'effets.
+// Nombre maximal de particules de qì par match, selon le niveau d'effets.
 export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
 
 export function applyOptions() {

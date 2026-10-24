@@ -1,7 +1,7 @@
 // Bestiaire du carnet : force, faiblesse et notice mythologique de chaque gabarit d'ennemi (enemies.catalog.json).
 // Module pur (aucun DOM) : le catalogue est passé en argument, l'interface est dans explorationView.js (onglet « Bestiaire »).
 //
-// Force    = couleur de mana la mieux encaissée (résistance la plus haute du profil, sinon couleur dominante des sorts)
+// Force    = couleur de qì la mieux encaissée (résistance la plus haute du profil, sinon couleur dominante des sorts)
 //            et trait de combat tiré des multiplicateurs (robuste, frappe fort, carapace) et de la classe de combat.
 // Faiblesse = table des éléments (elements.js `weaknessOf`, même règle qu'en combat).
 // Créatures connues : celles croisées en combat ou observées sur la carte (`session.data.bestiary`, exploration.js).

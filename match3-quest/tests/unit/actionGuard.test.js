@@ -67,7 +67,7 @@ describe('branchement du garde dans game.js / board.js', () => {
     });
 });
 
-describe('jokers : ×2 mana / actions / crânes quand ils sont combinés', () => {
+describe('jokers : ×2 qì / actions / crânes quand ils sont combinés', () => {
     const info = (type, len, jokerCount) => ({ type, len, color: type === 'color' ? 'blue' : null, jokerCount });
     test('multiplicateur ×2 dès qu\'un joker participe (non cumulé)', () => {
         expect(getJokerMatchMultiplier(info('color', 3, 0))).toBe(1);
@@ -103,7 +103,7 @@ describe('XP bonus des belles combinaisons', () => {
         expect(board).toContain("playSfx('skullHit'");
         expect(board).toContain("playSfx('manaGain'");
     });
-    test('les recettes de sons (outil de build) définissent les sons de coup et de mana', () => {
+    test('les recettes de sons (outil de build) définissent les sons de coup et de qì', () => {
         const snd = fs.readFileSync(new URL('../../tools/audio/sfxRecipes.js', import.meta.url), 'utf8');
         for (const k of ["'weaponHit'", "'spellHit'", "'spellCast'", "'skullHit'", "'manaGain'"]) expect(snd).toContain(`case ${k}`);
     });

@@ -59,7 +59,7 @@ function runTests(){
         assert(hasExactRun(matches, [0, 1, 2], 'color', 'blue'), 'Case joker,blue,blue non detecte');
         const match = findExactRun(matches, [0, 1, 2], 'color', 'blue');
         assert(match && match.info.jokerCount === 1, 'Le match joker,blue,blue devrait compter 1 joker');
-        assert(getColorMatchManaBaseGain(match.info) === 5, 'Le joker devrait compter comme 3 mana bleus dans joker,blue,blue');
+        assert(getColorMatchManaBaseGain(match.info) === 5, 'Le joker devrait compter comme 3 qì bleus dans joker,blue,blue');
         assert(checkForMatchesOnly(board) === true, 'checkForMatchesOnly devrait etre true pour joker,blue,blue');
         const atJoker = checkMatchAtPosition(board, 0);
         assert(atJoker && atJoker.type === 'color' && atJoker.length >= 3, 'checkMatchAtPosition sur joker devrait trouver un match couleur');
@@ -112,7 +112,7 @@ function runTests(){
         const match = findExactRun(matches, [base, base + 1, base + 2], 'color', 'blue');
         assert(match, 'Case joker,blue,joker non detectee');
         assert(match.info.jokerCount === 2, 'Le match joker,blue,joker devrait compter 2 jokers');
-        assert(getColorMatchManaBaseGain(match.info) === 7, 'Deux jokers devraient valoir 7 mana au total sur joker,blue,joker');
+        assert(getColorMatchManaBaseGain(match.info) === 7, 'Deux jokers devraient valoir 7 qì au total sur joker,blue,joker');
     });
 
     for(let i = 0; i < tests.length; i++){

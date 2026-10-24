@@ -133,7 +133,7 @@ export function getWeaponIcon(weaponType){
     return svgIcon(WEAPON_ICONS[weaponType] || 'sword');
 }
 
-// Menu secret : tant qu'actif, les sorts du joueur ne coûtent aucun mana.
+// Menu secret : tant qu'actif, les sorts du joueur ne coûtent aucun qì.
 // Indicateur porté par le joueur, non énumérable (jamais sauvegardé) : canEntityCastSpell doit rester autonome.
 export function setCheatFreeSpells(on){ Object.defineProperty(player, 'cheatFreeSpells', { value: !!on, enumerable: false, writable: true, configurable: true }); }
 export function isCheatFreeSpells(){ return player.cheatFreeSpells === true; }
@@ -182,7 +182,7 @@ export function addBonusTurn(entity, amount = 1){
     return entity.bonusTurn;
 }
 
-// Couleurs de mana d'un sort : une (coût simple) ou plusieurs (coût multi-mana).
+// Couleurs de qì d'un sort : une (coût simple) ou plusieurs (coût multi-mana).
 export function spellColorsOf(spell){
     if(!spell) return [];
     if(spell.cost && typeof spell.cost === 'object') return Object.keys(spell.cost);
@@ -199,7 +199,7 @@ function spellCostEntries(sp){
     return [];
 }
 
-// Mini-barre collée à la jauge de rage : un tronçon par couleur de mana requise, rempli selon le mana possédé
+// Mini-barre collée à la jauge de rage : un tronçon par couleur de qì requise, rempli selon le qì possédé
 // (tronçon vide / pointillé = couleur manquante).
 function ultimateManaBarHtml(entity, spell){
     const parts = spellCostEntries(spell).map(([color, need]) => {
@@ -211,18 +211,18 @@ function ultimateManaBarHtml(entity, spell){
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
 
-// Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en mana avec le mana possédé, effet.
+// Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
 function getUltimateTooltipHtml(entity, spell){
     const cost = spellCostEntries(spell).map(([color, need]) => {
         const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
     }).join(' ');
     return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
-        + `<div class="spell-tooltip-line">Mana : ${cost}</div>`
+        + `<div class="spell-tooltip-line">Qì : ${cost}</div>`
         + getSpellTooltipHtml(spell);
 }
 
-// Gomette de coût : disque de la couleur du mana avec la quantité écrite dedans.
+// Gomette de coût : disque de la couleur du qì avec la quantité écrite dedans.
 const costBadge = (color, text) => `<span class="cost-badge mana-${color}${color === 'yellow' ? ' cost-badge-light' : ''}" title="${color}">${text}</span>`;
 export function spellCostHtml(sp, entity = null){
     // Avec un lanceur : chaque couleur du coût d'un sort multi-mana est marquée atteinte (`met`) ou manquante (`unmet`).
@@ -358,7 +358,7 @@ export function applyDamage(target, damage, options = {}){
         log(`${player.equipment?.leftHand?.name || 'Votre bouclier'} absorbe ${absorbedByShield} dégâts.`);
     }
 
-    // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de mana.
+    // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de qì.
     if(target === player && normalizedDamage > 0) {
         const manaShield = player.statusEffects?.manaShield;
         const shieldColor = manaShield?.color;
@@ -369,12 +369,12 @@ export function applyDamage(target, damage, options = {}){
             if(absorbed > 0) {
                 player.mana[shieldColor] = availableMana - absorbed;
                 normalizedDamage -= absorbed;
-                log(`Bouclier de mana (${shieldColor}) absorbe ${absorbed} dégâts.`);
+                log(`Bouclier de qì (${shieldColor}) absorbe ${absorbed} dégâts.`);
             }
 
             if(player.mana[shieldColor] <= 0) {
                 delete player.statusEffects.manaShield;
-                log(`Le bouclier de mana se dissipe.`);
+                log(`Le bouclier de qì se dissipe.`);
             }
         }
     }
@@ -427,7 +427,7 @@ export function applyDamage(target, damage, options = {}){
             }
             const drained = drainAmount - remaining;
             if(drained > 0) {
-                log(`Flèches Sifflantes drainent ${drained} mana ennemi.`);
+                log(`Flèches Sifflantes drainent ${drained} qì ennemi.`);
             }
         }
     }
@@ -993,7 +993,7 @@ export function restartCombat({ keepHp = false } = {}){
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
     enemy.bonusTurn = 0;
-    // Réinitialiser le mana à 0
+    // Réinitialiser le qì à 0
     player.mana = { ...EMPTY_MANA_POOL };
     enemy.mana = { ...EMPTY_MANA_POOL };
     // Réinitialiser les bonus temporaires
@@ -1147,17 +1147,17 @@ export function abandonCombat(){
 
 // bibliothèque des aptitudes
 export const allAbilities = [
-    {id:"fireAffinity", name:"Affinité de Feu", description:"Commence le combat avec 10 mana rouge", startMana:{red:10}},
-    {id:"iceAffinity", name:"Affinité de Glace", description:"Commence le combat avec 10 mana bleu", startMana:{blue:10}},
-    {id:"natureAffinity", name:"Affinité de Nature", description:"Commence le combat avec 10 mana vert", startMana:{green:10}},
-    {id:"stormAffinity", name:"Affinité de Foudre", description:"Commence le combat avec 10 mana jaune", startMana:{yellow:10}},
-    {id:"shadowAffinity", name:"Affinité d'Ombre", description:"Commence le combat avec 10 mana violet", startMana:{purple:10}},
-    {id:"elementalist", name:"Maître des Cinq Éléments", description:"Commence le combat avec 5 mana de chaque couleur", startMana:{red:5, blue:5, green:5, yellow:5, purple:5}},
-    {id:"fireMastery", name:"Maîtrise du Feu", description:"+2 mana rouge par match (5 au lieu de 3)"},
-    {id:"iceMastery", name:"Maîtrise de la Glace", description:"+2 mana bleu par match (5 au lieu de 3)"},
-    {id:"natureMastery", name:"Maîtrise de la Nature", description:"+2 mana vert par match (5 au lieu de 3)"},
-    {id:"stormMastery", name:"Maîtrise de la Foudre", description:"+2 mana jaune par match (5 au lieu de 3)"},
-    {id:"shadowMastery", name:"Maîtrise de l'Ombre", description:"+2 mana violet par match (5 au lieu de 3)"}
+    {id:"fireAffinity", name:"Affinité de Feu", description:"Commence le combat avec 10 qì rouge", startMana:{red:10}},
+    {id:"iceAffinity", name:"Affinité de Glace", description:"Commence le combat avec 10 qì bleu", startMana:{blue:10}},
+    {id:"natureAffinity", name:"Affinité de Nature", description:"Commence le combat avec 10 qì vert", startMana:{green:10}},
+    {id:"stormAffinity", name:"Affinité de Foudre", description:"Commence le combat avec 10 qì jaune", startMana:{yellow:10}},
+    {id:"shadowAffinity", name:"Affinité d'Ombre", description:"Commence le combat avec 10 qì violet", startMana:{purple:10}},
+    {id:"elementalist", name:"Maître des Cinq Éléments", description:"Commence le combat avec 5 qì de chaque couleur", startMana:{red:5, blue:5, green:5, yellow:5, purple:5}},
+    {id:"fireMastery", name:"Maîtrise du Feu", description:"+2 qì rouge par match (5 au lieu de 3)"},
+    {id:"iceMastery", name:"Maîtrise de la Glace", description:"+2 qì bleu par match (5 au lieu de 3)"},
+    {id:"natureMastery", name:"Maîtrise de la Nature", description:"+2 qì vert par match (5 au lieu de 3)"},
+    {id:"stormMastery", name:"Maîtrise de la Foudre", description:"+2 qì jaune par match (5 au lieu de 3)"},
+    {id:"shadowMastery", name:"Maîtrise de l'Ombre", description:"+2 qì violet par match (5 au lieu de 3)"}
 ];
 
 // bibliothèque des sorts (source: spells.json via spells.js)
@@ -1474,7 +1474,7 @@ export function updateStats(){
                     }
                 };
             }
-            // Fiche (nom, mana requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
+            // Fiche (nom, qì requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
             bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = getUltimateTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
         }
 
@@ -1787,7 +1787,7 @@ export function updatePlayerStatsTab(){
                 <span class="stat-value">${player.maxHp}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">${svgIcon('spark')} Mana Maximum:</span>
+                <span class="stat-label">${svgIcon('spark')} Qì Maximum:</span>
                 <span class="stat-value">${player.maxMana}</span>
             </div>
             <div class="stat-line">
@@ -1800,7 +1800,7 @@ export function updatePlayerStatsTab(){
             <h3>Bonus de couleur (niveaux)</h3>
             ${summarizeColorBonuses(player).map(c => `<div class="stat-line">
                 <span class="stat-label">${manaIcon(c.color)} ${c.colorLabel[0].toUpperCase() + c.colorLabel.slice(1)} (${c.points} pt) :</span>
-                <span class="stat-effect">match de 3 = ${c.perMatch3} mana · +${c.initial} au départ · réserve ${c.cap}</span>
+                <span class="stat-effect">match de 3 = ${c.perMatch3} qì · +${c.initial} au départ · réserve ${c.cap}</span>
             </div>`).join('')}
         </div>
 
@@ -2052,7 +2052,7 @@ export function castSpell(spellId){
     if(rejectRushedAction()) return;
     // Blocage tutoriel : interdire les sorts avant l'étape 4
     if(isTutorialActive() && getTutorialStep() < 4){
-        log("Générez d'abord du mana avec des alignements de gâteaux de lune colorés !");
+        log("Générez d'abord du qì avec des alignements de gâteaux de lune colorés !");
         return;
     }
     const spell=player.activeSpells.find(s=>s.id===spellId);
@@ -2062,7 +2062,7 @@ export function castSpell(spellId){
     
     if(!canEntityCastSpell(player, spell)){
         const missingColor = getMissingManaColor(player, spell);
-        log(missingColor ? `Pas assez de mana ${missingColor} !` : "Pas assez de mana !");
+        log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
     actionGuard.markPlayerAction();
@@ -2100,7 +2100,7 @@ export function castSpell(spellId){
     finishPlayerTurn();
 }
 
-// Lance un ultime : jauge de rage pleine + mana requis ; la jauge retombe à 0. La cinématique plein écran éventuelle
+// Lance un ultime : jauge de rage pleine + qì requis ; la jauge retombe à 0. La cinématique plein écran éventuelle
 // (voir `playUltimateCinematic`) se joue avant l'effet.
 export async function castUltimate(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
@@ -2112,7 +2112,7 @@ export async function castUltimate(spellId){
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
     if(!canEntityCastSpell(player, spell)){
         const missingColor = getMissingManaColor(player, spell);
-        log(missingColor ? `Pas assez de mana ${missingColor} !` : "Pas assez de mana !");
+        log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
     actionGuard.markPlayerAction();
@@ -2200,7 +2200,7 @@ export function forcePlayerTurnForCheat(){
     }
 }
 
-// Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, mana, mirage). Renvoie { skipEnemy, enemyDown }.
+// Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Étincelle', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
 function applyCompanionPowers(){
     const outcome = { skipEnemy: false, enemyDown: false, boardChanged: false };
@@ -2217,7 +2217,7 @@ function applyCompanionPowers(){
             if(enemy.hp <= 0) outcome.enemyDown = true;
         } else if(power.kind === 'mana'){
             const r = addManaForColor(player, color, amount, { applyGainBonus: false });
-            log(`${power.name} : +${r.gained ?? amount} mana ${MANA_COLOR_LABELS[color] || color}.`);
+            log(`${power.name} : +${r.gained ?? amount} qì ${MANA_COLOR_LABELS[color] || color}.`);
         } else if(power.kind === 'mirage'){
             outcome.skipEnemy = true;
         } else if(power.kind === 'rage'){
@@ -2230,7 +2230,7 @@ function applyCompanionPowers(){
             const stolen = Math.max(0, Math.floor(enemy.mana[color] || 0));
             enemy.mana[color] = 0;
             const r = addManaForColor(player, color, stolen, { applyGainBonus: false });
-            log(`${power.name} : ${stolen} mana ${MANA_COLOR_LABELS[color] || color} volé à ${enemy.name} (+${r.gained} pour vous).`);
+            log(`${power.name} : ${stolen} qì ${MANA_COLOR_LABELS[color] || color} volé à ${enemy.name} (+${r.gained} pour vous).`);
         }
     });
     return outcome;
@@ -2430,7 +2430,7 @@ export function enemyTurn(){
             logActiveAction(`lance le sort ${spell.name}`);
 
             if(!canEntityCastSpell(enemy, spell)) {
-                log(`${enemy.name} n'a plus assez de mana pour ${spell.name}.`);
+                log(`${enemy.name} n'a plus assez de qì pour ${spell.name}.`);
                 finishEnemyTurn();
                 return;
             }
@@ -2632,7 +2632,7 @@ export function finishEnemyTurn(){
             player.statusEffects.manaShield.turns--;
             if(player.statusEffects.manaShield.turns <= 0) {
                 delete player.statusEffects.manaShield;
-                log(`Le bouclier de mana se dissipe.`);
+                log(`Le bouclier de qì se dissipe.`);
             }
         }
         // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
@@ -2901,8 +2901,8 @@ export function showAttributeMenu(){
     if(subtitle) {
         const remainingPoints = player.unspentLevelPoints || 0;
         subtitle.textContent = remainingPoints > 1
-            ? `Choisissez un attribut à améliorer (${remainingPoints} points restants). Chaque point améliore une statistique ET la couleur de mana associée.`
-            : 'Choisissez un attribut à améliorer. Chaque point améliore une statistique ET la couleur de mana associée.';
+            ? `Choisissez un attribut à améliorer (${remainingPoints} points restants). Chaque point améliore une statistique ET la couleur de qì associée.`
+            : 'Choisissez un attribut à améliorer. Chaque point améliore une statistique ET la couleur de qì associée.';
     }
     renderLevelUpHud();
     buildAttributeCards();
@@ -2939,7 +2939,7 @@ function selectAttribute(attr) {
     player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
     applyAttributeBonus(attr);
     const d = describeAttributeChoice(player, attr);
-    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, mana ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
+    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, qì ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
     updateLevelHud();
     updatePlayerStatsTab();
     saveUpdate();
@@ -3569,7 +3569,7 @@ export function unequipSpell(spellId){
 // -------------------------------------
 // Applique les aptitudes de début de combat pour le joueur et l'ennemi
 export function applyStartingAbilities(){
-    // Réinitialiser le mana à 0
+    // Réinitialiser le qì à 0
     player.mana = { ...EMPTY_MANA_POOL };
     enemy.mana = { ...EMPTY_MANA_POOL };
 
@@ -3665,7 +3665,7 @@ export function newEnemy(selectedEnemy = null){
     } else {
         log(`${enemy.name} (Niveau ${enemy.level}) apparaît !`);
     }
-    // Réinitialiser le mana de l'ennemi à 0 puis appliquer ses aptitudes
+    // Réinitialiser le qì de l'ennemi à 0 puis appliquer ses aptitudes
     enemy.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
     applyStartingAbilities();
     log(`Un nouvel ennemi: ${enemy.name}`);

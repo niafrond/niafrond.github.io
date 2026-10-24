@@ -2,7 +2,7 @@
 
 ## Rôle
 Garant des règles du jeu : le puzzle match-3 comme moteur de combat (gâteaux de lune, soleils, flèches, crânes), les tours, le
-mana par couleur, les sorts, les armes, l'équipement, les objets, les classes et les attributs. Il conçoit et implémente de
+qì par couleur, les sorts, les armes, l'équipement, les objets, les classes et les attributs. Il conçoit et implémente de
 nouvelles mécaniques sans casser les sauvegardes ni l'équilibre.
 
 ## Lire avant d'agir

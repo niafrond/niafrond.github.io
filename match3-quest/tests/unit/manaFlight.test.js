@@ -36,7 +36,7 @@ describe('flyManaToCounter', () => {
         expect(document.querySelectorAll('.mana-fly-dot')).toHaveLength(0);
     });
 
-    test('ennemi : particules vers son compteur de mana', () => {
+    test('ennemi : particules vers son compteur de qì', () => {
         flyManaToCounter([0, 1, 2], 'red', { isPlayer: false });
         expect(document.querySelectorAll('.mana-fly-dot')).toHaveLength(3);
     });

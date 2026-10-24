@@ -35,7 +35,7 @@ export function applicableTips(ctx = {}) {
         tips.push('Tentez des ennemis plus faibles pour vous aguerrir et gagner de l\'or avant de revenir.');
     }
     if ((Number(ctx.unspentPoints) || 0) > 0) {
-        tips.push('Vous avez des points d\'attribut à dépenser : ils améliorent vos statistiques et votre mana.');
+        tips.push('Vous avez des points d\'attribut à dépenser : ils améliorent vos statistiques et votre qì.');
     }
     if ((Number(ctx.gold) || 0) >= 100) {
         tips.push('Vous avez de l\'or : achetez d\'autres armes, boucliers ou reliques auprès des marchands des villages.');

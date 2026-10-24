@@ -258,7 +258,7 @@ export function evaluateSpells() {
         // SORTS DE DEBUFF - Priorité si le joueur est dangereux
         if (spell.debuff) {
             if (context.playerManaAvailable > 20) {
-                score += 60; // Le joueur a beaucoup de mana, il faut le ralentir
+                score += 60; // Le joueur a beaucoup de qì, il faut le ralentir
                 reason = "ralentir le joueur";
             } else {
                 score += 20;
@@ -345,7 +345,7 @@ export function evaluateBoardMove() {
     // Augmenter le score si l'ennemi a besoin de ressources
     if (context.enemyManaAvailable < 10) {
         score += 40;
-        reason = "besoin de mana";
+        reason = "besoin de qì";
     }
 
     if (!context.hasUsableSpells && context.enemyCombatPoints < 5) {

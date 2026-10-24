@@ -1,10 +1,10 @@
 // Attributs du joueur : source unique des effets (appliqués par game.js) et de leur description affichée.
 // Module pur (aucun accès au DOM) pour rester testable.
 
-// Règles paramétrables : un attribut influence la couleur de mana associée.
-//  initial : mana de cette couleur au début de chaque combat, par point
-//  gain    : mana en plus à chaque match de cette couleur, par point (3 tuiles => 3 + gain)
-//  max     : plafond de mana de cette couleur, par point
+// Règles paramétrables : un attribut influence la couleur de qì associée.
+//  initial : qì de cette couleur au début de chaque combat, par point
+//  gain    : qì en plus à chaque match de cette couleur, par point (3 tuiles => 3 + gain)
+//  max     : plafond de qì de cette couleur, par point
 export const ATTRIBUTE_MANA_RULES = {
     strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 2 } },
     agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 2 } },
@@ -63,13 +63,13 @@ export function getAttributePoints(entity, attr) {
     return Math.max(0, Math.floor(entity?.attributes?.[attr] || 0));
 }
 
-// Bonus de mana d'une couleur pour un nombre de points donné.
+// Bonus de qì d'une couleur pour un nombre de points donné.
 export function manaBonusFor(attr, points, type) {
     const rule = ATTRIBUTE_MANA_RULES[attr];
     return (rule?.bonuses?.[type] || 0) * Math.max(0, Math.floor(points || 0));
 }
 
-// Mana obtenu pour un match de `len` tuiles de la couleur de l'attribut, avec `points` points.
+// Qì obtenu pour un match de `len` tuiles de la couleur de l'attribut, avec `points` points.
 export function manaPerMatch(attr, points, len = 3) {
     return len + manaBonusFor(attr, points, "gain");
 }
@@ -87,9 +87,9 @@ export function describeAttributeChoice(entity, attr) {
     const b = rule.bonuses;
     const lines = [
         stat.line,
-        `Couleur ${color} : un match de 3 tuiles ${color}s donne ${manaPerMatch(attr, next)} mana ${color} au lieu de ${manaPerMatch(attr, pts)}.`,
-        `Un match de 4 donne ${manaPerMatch(attr, next, 4)} mana ${color} (tour bonus) ; de 5, ${manaPerMatch(attr, next, 5)}.`,
-        `+${b.initial} mana ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de mana ${color} +${b.max} (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`
+        `Couleur ${color} : un match de 3 tuiles ${color}s donne ${manaPerMatch(attr, next)} qì ${color} au lieu de ${manaPerMatch(attr, pts)}.`,
+        `Un match de 4 donne ${manaPerMatch(attr, next, 4)} qì ${color} (tour bonus) ; de 5, ${manaPerMatch(attr, next, 5)}.`,
+        `+${b.initial} qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de qì ${color} +${b.max} (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`
     ];
     return {
         attr,
@@ -110,7 +110,7 @@ export const totalAttributePoints = entity => ATTRIBUTE_ORDER.reduce((sum, attr)
 /**
  * Remet à zéro tous les points d'attribut dépensés et les rend à dépenser (menu « Réinitialiser les points ») : retire l'effet direct
  * de chaque point (attaque pour Battle, défense pour Agilité et Moral, PV max pour Endurance) et rend les points dans
- * `unspentLevelPoints`. Les bonus de couleur de mana disparaissent avec les points (ils se calculent d'après eux). Hors combat seulement :
+ * `unspentLevelPoints`. Les bonus de couleur de qì disparaissent avec les points (ils se calculent d'après eux). Hors combat seulement :
  * l'appelant vérifie. Renvoie { refunded } (nombre de points rendus).
  */
 export function respecAttributes(entity) {

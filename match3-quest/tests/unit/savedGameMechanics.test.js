@@ -237,7 +237,7 @@ describe('sauvegarde : aller-retour fichier à chaque jalon', () => {
         expect(relu.inventory[1].chargesLeft).toBe(p.inventory[1].chargesPerCycle);
     });
 
-    test('ce qui est propre au combat n\'est pas écrit : mana, effets de statut, sorts débloqués, plafonds', async () => {
+    test('ce qui est propre au combat n\'est pas écrit : qì, effets de statut, sorts débloqués, plafonds', async () => {
         const p = forgeLateGame();
         p.mana.red = 33;
         p.tempAttack = 15;
@@ -536,7 +536,7 @@ describe('progression des joueurs sauvegardés', () => {
         expect(p.unspentLevelPoints).toBe(0);
     });
 
-    test('bonus de couleur : +1 mana par point à chaque match, réserve +maxPerPoint par point', () => {
+    test('bonus de couleur : +1 qì par point à chaque match, réserve +maxPerPoint par point', () => {
         const p = forgeMidGame('templar');
         summarizeColorBonuses(p).forEach(row => {
             const rule = ATTRIBUTE_MANA_RULES[row.attr];
@@ -956,7 +956,7 @@ describe('objets réutilisables des joueurs sauvegardés', () => {
         expect(relu.itemBuffs).toBeDefined();
     });
 
-    test('pierre d\'énergie : mana de chaque couleur, plafonné à la réserve du joueur', () => {
+    test('pierre d\'énergie : qì de chaque couleur, plafonné à la réserve du joueur', () => {
         const p = forgeLateGame();
         const stone = p.inventory.find(i => i.id === 'energy_stone');
         p.mana.red = BASE_MANA_CAP - 1;

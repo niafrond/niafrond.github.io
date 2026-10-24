@@ -314,7 +314,7 @@
       "effect": "sweepRow",
       "minLevel": 8,
       "dmgPerTile": 4,
-      "description": "Choisissez une ligne : elle est détruite, vous récupérez son mana et l'ennemi subit 4 dégâts par case des couleurs du sort"
+      "description": "Choisissez une ligne : elle est détruite, vous récupérez son qì et l'ennemi subit 4 dégâts par case des couleurs du sort"
     },
     {
       "id": "brasierSeals",
@@ -358,7 +358,7 @@
       "minLevel": 10,
       "columns": 3,
       "dmgPerTile": 3,
-      "description": "Choisissez 3 colonnes à détruire (aperçu avant destruction), récupère leur mana et inflige 3 dégâts par case bleue, jaune ou verte détruite"
+      "description": "Choisissez 3 colonnes à détruire (aperçu avant destruction), récupère leur qì et inflige 3 dégâts par case bleue, jaune ou verte détruite"
     },
     {
       "id": "dragonCross",
@@ -380,7 +380,7 @@
       "effect": "sweepCross",
       "minLevel": 11,
       "dmgPerTile": 4,
-      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (mana récupéré, 4 dégâts par case des couleurs du sort)"
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (qì récupéré, 4 dégâts par case des couleurs du sort)"
     },
     {
       "id": "thunderPrison",
@@ -401,7 +401,7 @@
       "minLevel": 11,
       "duration": 2,
       "manaDrain": 6,
-      "description": "Étourdit l'ennemi 2 tours et lui retire 6 mana de chaque couleur"
+      "description": "Étourdit l'ennemi 2 tours et lui retire 6 qì de chaque couleur"
     },
     {
       "id": "jadeBreath",
@@ -449,7 +449,7 @@
       "rows": 2,
       "columns": 2,
       "dmgPerTile": 3,
-      "description": "Choisissez 2 lignes puis 2 colonnes à détruire : mana récupéré et 3 dégâts par case des couleurs du sort"
+      "description": "Choisissez 2 lignes puis 2 colonnes à détruire : qì récupéré et 3 dégâts par case des couleurs du sort"
     },
     {
       "id": "fiveHarmony",
@@ -475,7 +475,7 @@
       "dmg": 100,
       "heal": 40,
       "manaDrain": 5,
-      "description": "Inflige 100 dégâts, vous soigne de 40 PV et retire 5 mana de chaque couleur à l'ennemi"
+      "description": "Inflige 100 dégâts, vous soigne de 40 PV et retire 5 qì de chaque couleur à l'ennemi"
     },
     {
       "id": "twinDragonsStrike",
@@ -697,7 +697,7 @@
       "effect": "sweepRow",
       "minLevel": 2,
       "dmgPerTile": 3,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 3 dégâts par case rouge"
+      "description": "Choisissez une ligne : elle est détruite, qì récupéré, 3 dégâts par case rouge"
     },
     {
       "id": "frostCleave",
@@ -711,7 +711,7 @@
       "effect": "sweepCol",
       "minLevel": 2,
       "dmgPerTile": 3,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 3 dégâts par case bleue"
+      "description": "Choisissez une colonne : elle est détruite, qì récupéré, 3 dégâts par case bleue"
     },
     {
       "id": "galeSlash",
@@ -725,7 +725,7 @@
       "effect": "sweepCol",
       "minLevel": 4,
       "dmgPerTile": 4,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 4 dégâts par case jaune"
+      "description": "Choisissez une colonne : elle est détruite, qì récupéré, 4 dégâts par case jaune"
     },
     {
       "id": "voidRift",
@@ -739,7 +739,7 @@
       "effect": "sweepRow",
       "minLevel": 6,
       "dmgPerTile": 4,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 4 dégâts par case violette"
+      "description": "Choisissez une ligne : elle est détruite, qì récupéré, 4 dégâts par case violette"
     },
     {
       "id": "crimsonPurge",
@@ -753,7 +753,7 @@
       "effect": "clearColor",
       "minLevel": 5,
       "dmgPerTile": 2,
-      "description": "Détruit toutes les gemmes rouges du plateau : mana récupéré, 2 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes rouges du plateau : qì récupéré, 2 dégâts par gemme détruite"
     },
     {
       "id": "tidalPurge",
@@ -767,7 +767,7 @@
       "effect": "clearColor",
       "minLevel": 5,
       "dmgPerTile": 2,
-      "description": "Détruit toutes les gemmes bleues du plateau : mana récupéré, 2 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes bleues du plateau : qì récupéré, 2 dégâts par gemme détruite"
     },
     {
       "id": "jadePurge",
@@ -781,7 +781,7 @@
       "effect": "clearColor",
       "minLevel": 5,
       "dmgPerTile": 2,
-      "description": "Détruit toutes les gemmes vertes du plateau : mana récupéré, 2 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes vertes du plateau : qì récupéré, 2 dégâts par gemme détruite"
     },
     {
       "id": "stormPurge",
@@ -795,7 +795,7 @@
       "effect": "clearColor",
       "minLevel": 6,
       "dmgPerTile": 2,
-      "description": "Détruit toutes les gemmes jaunes du plateau : mana récupéré, 2 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes jaunes du plateau : qì récupéré, 2 dégâts par gemme détruite"
     },
     {
       "id": "shadowPurge",
@@ -809,7 +809,7 @@
       "effect": "clearColor",
       "minLevel": 7,
       "dmgPerTile": 2,
-      "description": "Détruit toutes les gemmes violettes du plateau : mana récupéré, 2 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes violettes du plateau : qì récupéré, 2 dégâts par gemme détruite"
     },
     {
       "id": "emberGoldCross",
@@ -827,7 +827,7 @@
       "effect": "sweepCross",
       "minLevel": 9,
       "dmgPerTile": 3,
-      "description": "Choisissez une case : sa ligne et sa colonne sont détruites, mana récupéré, 3 dégâts par case rouge ou jaune"
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites, qì récupéré, 3 dégâts par case rouge ou jaune"
     },
     {
       "id": "jadeCurtain",
@@ -845,7 +845,7 @@
       "effect": "sweepCol",
       "minLevel": 8,
       "dmgPerTile": 4,
-      "description": "Choisissez une colonne : elle est détruite, mana récupéré, 4 dégâts par case verte ou bleue"
+      "description": "Choisissez une colonne : elle est détruite, qì récupéré, 4 dégâts par case verte ou bleue"
     },
     {
       "id": "purpleRazor",
@@ -863,7 +863,7 @@
       "effect": "sweepRow",
       "minLevel": 10,
       "dmgPerTile": 4,
-      "description": "Choisissez une ligne : elle est détruite, mana récupéré, 4 dégâts par case jaune ou violette"
+      "description": "Choisissez une ligne : elle est détruite, qì récupéré, 4 dégâts par case jaune ou violette"
     },
     {
       "id": "burningTide",
@@ -881,7 +881,7 @@
       "effect": "clearColor",
       "minLevel": 12,
       "dmgPerTile": 3,
-      "description": "Détruit toutes les gemmes rouges et bleues du plateau : mana récupéré, 3 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes rouges et bleues du plateau : qì récupéré, 3 dégâts par gemme détruite"
     },
     {
       "id": "seasonsPurge",
@@ -899,7 +899,7 @@
       "effect": "clearColor",
       "minLevel": 14,
       "dmgPerTile": 3,
-      "description": "Détruit toutes les gemmes vertes et jaunes du plateau : mana récupéré, 3 dégâts par gemme détruite"
+      "description": "Détruit toutes les gemmes vertes et jaunes du plateau : qì récupéré, 3 dégâts par gemme détruite"
     }
   ],
   "sorcererSpells": [
@@ -914,7 +914,7 @@
       "minLevel": 1,
       "effect": "scaleWithBlue",
       "baseDmg": 10,
-      "description": "Inflige 10 dégâts +1 pour chaque 3 mana bleu possédés"
+      "description": "Inflige 10 dégâts +1 pour chaque 3 qì bleu possédés"
     },
     {
       "id": "wildMana",
@@ -949,7 +949,7 @@
       },
       "minLevel": 5,
       "effect": "destroyColor",
-      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur mana"
+      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur qì"
     },
     {
       "id": "flameBolts",
@@ -960,7 +960,7 @@
       },
       "minLevel": 5,
       "effect": "yellowBolts",
-      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
+      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 qì jaune, puis vide le qì jaune"
     },
     {
       "id": "iceShield",
@@ -971,7 +971,7 @@
       },
       "minLevel": 6,
       "effect": "damageToMana",
-      "description": "Les dégâts sont appliqués au mana bleu au lieu des PV"
+      "description": "Les dégâts sont appliqués au qì bleu au lieu des PV"
     },
     {
       "id": "flameblade",
@@ -982,7 +982,7 @@
       },
       "minLevel": 6,
       "effect": "enchantWeapon",
-      "description": "Ajoute tout le mana rouge au prochain coup d'arme, puis vide le mana rouge"
+      "description": "Ajoute tout le qì rouge au prochain coup d'arme, puis vide le qì rouge"
     },
     {
       "id": "weakness",
@@ -1030,7 +1030,7 @@
       },
       "minLevel": 8,
       "effect": "destroyArea",
-      "description": "Détruit une zone du plateau et donne le mana correspondant"
+      "description": "Détruit une zone du plateau et donne le qì correspondant"
     },
     {
       "id": "stoneskin",
@@ -1093,7 +1093,7 @@
       "minLevel": 8,
       "effect": "drainMana",
       "manaSteal": 10,
-      "description": "Absorbe 10 mana ennemi (toutes couleurs)"
+      "description": "Absorbe 10 qì ennemi (toutes couleurs)"
     },
     {
       "id": "manaBlast",
@@ -1107,7 +1107,7 @@
       },
       "minLevel": 15,
       "dmg": 150,
-      "description": "Grande attaque des cinq éléments consommant beaucoup de mana"
+      "description": "Grande attaque des cinq éléments consommant beaucoup de qì"
     },
     {
       "id": "tigerEye",
@@ -1159,7 +1159,7 @@
       "minLevel": 5,
       "effect": "reduceManaGain",
       "duration": 4,
-      "description": "L'ennemi ne gagne que 1 mana par combinaison pendant 4 tours"
+      "description": "L'ennemi ne gagne que 1 qì par combinaison pendant 4 tours"
     },
     {
       "id": "stealth",
@@ -1170,7 +1170,7 @@
       },
       "minLevel": 6,
       "effect": "damageToManaPurple",
-      "description": "Les dégâts sont appliqués au mana violet au lieu de la vie"
+      "description": "Les dégâts sont appliqués au qì violet au lieu de la vie"
     },
     {
       "id": "poisonBlade",
@@ -1298,7 +1298,7 @@
       },
       "minLevel": 7,
       "effect": "stunEnemy",
-      "description": "L'ennemi perd 2 tours +1 par 7 mana jaune"
+      "description": "L'ennemi perd 2 tours +1 par 7 qì jaune"
     },
     {
       "id": "counterAttack",
@@ -1347,7 +1347,7 @@
       },
       "minLevel": 10,
       "effect": "defenseToMana",
-      "description": "Génère du mana selon la défense (1 mana jaune par 5 défense)"
+      "description": "Génère du qì selon la défense (1 qì jaune par 5 défense)"
     },
     {
       "id": "holdTheLine",
@@ -1441,7 +1441,7 @@
       "minLevel": 5,
       "effect": "giveRedMana",
       "manaGain": 20,
-      "description": "Donne +20 mana rouge"
+      "description": "Donne +20 qì rouge"
     },
     {
       "id": "summonTempest",
@@ -1481,7 +1481,7 @@
       "effect": "drainOnHit",
       "manaDrain": 5,
       "duration": 5,
-      "description": "Réduit le mana ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
+      "description": "Réduit le qì ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
     },
     {
       "id": "deathbringer",
@@ -1495,7 +1495,7 @@
       },
       "minLevel": 14,
       "effect": "redToSkullsHalf",
-      "description": "Crée des soleils ardents = ½ du mana rouge possédé"
+      "description": "Crée des soleils ardents = ½ du qì rouge possédé"
     },
     {
       "id": "revenant",
@@ -1537,7 +1537,7 @@
       "minLevel": 1,
       "effect": "scaleWithBlue",
       "baseDmg": 10,
-      "description": "Inflige 10 dégâts +1 pour chaque 3 mana bleu possédés"
+      "description": "Inflige 10 dégâts +1 pour chaque 3 qì bleu possédés"
     },
     {
       "id": "wildMana",
@@ -1572,7 +1572,7 @@
       },
       "minLevel": 5,
       "effect": "destroyColor",
-      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur mana"
+      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur qì"
     },
     {
       "id": "flameBolts",
@@ -1583,7 +1583,7 @@
       },
       "minLevel": 5,
       "effect": "yellowBolts",
-      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
+      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 qì jaune, puis vide le qì jaune"
     },
     {
       "id": "iceShield",
@@ -1594,7 +1594,7 @@
       },
       "minLevel": 6,
       "effect": "damageToMana",
-      "description": "Les dégâts sont appliqués au mana bleu au lieu des PV"
+      "description": "Les dégâts sont appliqués au qì bleu au lieu des PV"
     },
     {
       "id": "flameblade",
@@ -1605,7 +1605,7 @@
       },
       "minLevel": 6,
       "effect": "enchantWeapon",
-      "description": "Ajoute tout le mana rouge au prochain coup d'arme, puis vide le mana rouge"
+      "description": "Ajoute tout le qì rouge au prochain coup d'arme, puis vide le qì rouge"
     },
     {
       "id": "weakness",
@@ -1653,7 +1653,7 @@
       },
       "minLevel": 8,
       "effect": "destroyArea",
-      "description": "Détruit une zone du plateau et donne le mana correspondant"
+      "description": "Détruit une zone du plateau et donne le qì correspondant"
     },
     {
       "id": "stoneskin",
@@ -1716,7 +1716,7 @@
       "minLevel": 8,
       "effect": "drainMana",
       "manaSteal": 10,
-      "description": "Absorbe 10 mana ennemi (toutes couleurs)"
+      "description": "Absorbe 10 qì ennemi (toutes couleurs)"
     },
     {
       "id": "manaBlast",
@@ -1730,7 +1730,7 @@
       },
       "minLevel": 15,
       "dmg": 150,
-      "description": "Grande attaque des cinq éléments consommant beaucoup de mana"
+      "description": "Grande attaque des cinq éléments consommant beaucoup de qì"
     },
     {
       "id": "sneakAttack",
@@ -1767,7 +1767,7 @@
       "minLevel": 5,
       "effect": "reduceManaGain",
       "duration": 4,
-      "description": "L'ennemi ne gagne que 1 mana par combinaison pendant 4 tours"
+      "description": "L'ennemi ne gagne que 1 qì par combinaison pendant 4 tours"
     },
     {
       "id": "stealth",
@@ -1778,7 +1778,7 @@
       },
       "minLevel": 6,
       "effect": "damageToManaPurple",
-      "description": "Les dégâts sont appliqués au mana violet au lieu de la vie"
+      "description": "Les dégâts sont appliqués au qì violet au lieu de la vie"
     },
     {
       "id": "poisonBlade",
@@ -1877,7 +1877,7 @@
       },
       "minLevel": 7,
       "effect": "stunEnemy",
-      "description": "L'ennemi perd 2 tours +1 par 7 mana jaune"
+      "description": "L'ennemi perd 2 tours +1 par 7 qì jaune"
     },
     {
       "id": "counterAttack",
@@ -1926,7 +1926,7 @@
       },
       "minLevel": 10,
       "effect": "defenseToMana",
-      "description": "Génère du mana selon la défense (1 mana jaune par 5 défense)"
+      "description": "Génère du qì selon la défense (1 qì jaune par 5 défense)"
     },
     {
       "id": "holdTheLine",
@@ -2003,7 +2003,7 @@
       "minLevel": 5,
       "effect": "giveRedMana",
       "manaGain": 20,
-      "description": "Donne +20 mana rouge"
+      "description": "Donne +20 qì rouge"
     },
     {
       "id": "summonTempest",
@@ -2043,7 +2043,7 @@
       "effect": "drainOnHit",
       "manaDrain": 5,
       "duration": 5,
-      "description": "Réduit le mana ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
+      "description": "Réduit le qì ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
     },
     {
       "id": "deathbringer",
@@ -2057,7 +2057,7 @@
       },
       "minLevel": 14,
       "effect": "redToSkullsHalf",
-      "description": "Crée des soleils ardents = ½ du mana rouge possédé"
+      "description": "Crée des soleils ardents = ½ du qì rouge possédé"
     },
     {
       "id": "revenant",

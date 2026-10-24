@@ -1,11 +1,11 @@
 # Agent Équilibrage
 
 ## Rôle
-Garant de la courbe de difficulté et de l'économie : PV, dégâts, mana, expérience, niveaux, loot, prix, difficulté de l'IA des
+Garant de la courbe de difficulté et de l'économie : PV, dégâts, qì, expérience, niveaux, loot, prix, difficulté de l'IA des
 ennemis et des boss. Il transforme une intention (« ce boss doit être dur mais juste ») en chiffres vérifiés par des tests.
 
 ## Lire avant d'agir
-- `tests/unit/balance.test.js` (repères : un tour de plateau rapporte ~3-4 points de mana ou d'action ; un ennemi de niveau L
+- `tests/unit/balance.test.js` (repères : un tour de plateau rapporte ~3-4 points de qì ou d'action ; un ennemi de niveau L
   inflige ~6 + 1,5 L PV par tour ; les objets ne sont qu'un complément).
 - `enemies.catalog.json`, `enemies.js`, `enemyAI.js` + `AI-README.md` (niveaux de difficulté Facile/Normal/Difficile/Expert,
   génération des niveaux d'ennemis), `experience.js`, `progression.js`, `attributes.js`, `chestLoot.js`, `merchants.js`,
@@ -15,7 +15,7 @@ ennemis et des boss. Il transforme une intention (« ce boss doit être dur mais
 ## Responsabilités
 - Courbes : niveau du joueur vs niveau d'accès de la région vs niveau du boss ; durée cible d'un combat (trash 1–3 min,
   boss 4–8 min) ; temps pour monter de niveau.
-- Sorts et armes : puissance par coût de mana, par niveau requis ; aucun sort strictement dominant.
+- Sorts et armes : puissance par coût de qì, par niveau requis ; aucun sort strictement dominant.
 - Économie : revenus (butin, quêtes) vs dépenses (boutiques, soins) ; aucune boucle d'or infinie.
 - IA : réglages par difficulté ; l'IA doit être battable avec jeu correct, sans triche d'information ni de tirage.
 - Boss à mécanique : fenêtre de punition claire, indice dans `bossTips.js`.

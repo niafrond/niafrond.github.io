@@ -268,7 +268,7 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
         }
     });
 
-    const refillManaBtn = createCheatButton('Ajouter +25 mana (toutes couleurs)');
+    const refillManaBtn = createCheatButton('Ajouter +25 qì (toutes couleurs)');
     refillManaBtn.addEventListener('click', async () => {
         if(!isEnabled()) return;
 
@@ -282,7 +282,7 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
             });
             game.updateStats();
             game.saveUpdate();
-            game.log('Cheat: +25 mana sur toutes les couleurs.');
+            game.log('Cheat: +25 qì sur toutes les couleurs.');
             notifyCheatApplied();
         } catch {
             // no-op
