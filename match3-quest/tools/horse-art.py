@@ -125,7 +125,7 @@ def front(phase=0, w=40, h=28, back=False, head=True, body=True):
         d = ImageDraw.Draw(L)
         _leg(d, 13, 17 + bob, 27, 0, lf[0], sock=not back)
         _leg(d, 24, 17 + bob, 27, 0, lf[1], sock=not back)
-        d.ellipse([9, 10 + bob, 30, 23 + bob], fill=COAT)
+        d.ellipse([11, 10 + bob, 28, 23 + bob], fill=COAT)
         if back:
             _poly(d, [(18, 12 + bob), (22, 12 + bob), (23, 22 + bob), (20, 26 + bob), (17, 22 + bob)], MANE)                  # queue
             d.rectangle([13, 10 + bob, 26, 13 + bob], fill=PAL['g'])                                                          # couverture sur la croupe
@@ -133,8 +133,7 @@ def front(phase=0, w=40, h=28, back=False, head=True, body=True):
     if head and not back:
         H = Image.new('RGBA', (w, h), (0, 0, 0, 0))
         d = ImageDraw.Draw(H)
-        _poly(d, [(15, 8 + bob), (11, 12 + bob), (10, 20 + bob), (17, 18 + bob)], COAT)                                      # épaule gauche
-        _poly(d, [(24, 8 + bob), (28, 12 + bob), (29, 20 + bob), (22, 18 + bob)], COAT)                                      # épaule droite
+        _poly(d, [(17, 12 + bob), (22, 12 + bob), (24, 22 + bob), (15, 22 + bob)], COAT)                                      # encolure étroite jusqu'au poitrail
         _poly(d, [(15, 4 + bob), (24, 4 + bob), (23, 14 + bob), (19, 18 + bob), (16, 14 + bob)], COAT)                      # tête vue de face, museau en bas
         _poly(d, [(14, 4 + bob), (13, 0 + bob), (17, 3 + bob)], COAT_SHADE)                                                  # oreilles
         _poly(d, [(25, 4 + bob), (26, 0 + bob), (22, 3 + bob)], COAT_SHADE)
