@@ -1,3 +1,11 @@
+## [2.131.0](https://github.com/niafrond/niafrond.github.io/compare/v2.130.0...v2.131.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** agrandir et zoomer les cartes de la soluce au clic ([60610b1](https://github.com/niafrond/niafrond.github.io/commit/60610b1164df3d00c7ea13e395018ee2f2587a93))
+* **match3-quest:** ajouter une soluce complète en HTML non liée depuis le jeu ([57665b1](https://github.com/niafrond/niafrond.github.io/commit/57665b16256f6c68c8893aaf85eec16e9a58cf58))
+* **match3-quest:** illustrer la soluce de captures de cartes avec cercles rouges ([f6cb31d](https://github.com/niafrond/niafrond.github.io/commit/f6cb31d225e2960821193ebfdaf004b66a793f5b))
+
 ## [2.130.0](https://github.com/niafrond/niafrond.github.io/compare/v2.129.0...v2.130.0) (2026-10-24)
 
 ### Features
