@@ -1,3 +1,9 @@
+## [2.130.0](https://github.com/niafrond/niafrond.github.io/compare/v2.129.0...v2.130.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** rappeler de faire une pause après 1 h de jeu puis toutes les 30 min ([de157cf](https://github.com/niafrond/niafrond.github.io/commit/de157cf6be4c310081766efde4d0bab693ecc430))
+
 ## [2.129.0](https://github.com/niafrond/niafrond.github.io/compare/v2.128.0...v2.129.0) (2026-10-24)
 
 ### Features
