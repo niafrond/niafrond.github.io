@@ -1,3 +1,9 @@
+## [2.128.0](https://github.com/niafrond/niafrond.github.io/compare/v2.127.0...v2.128.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** ajouter un bouton pour offrir un café dans les options ([66f677b](https://github.com/niafrond/niafrond.github.io/commit/66f677b6c2d4f0ae6dbdc7a34ce0421493e1ed36))
+
 ## [2.127.0](https://github.com/niafrond/niafrond.github.io/compare/v2.126.0...v2.127.0) (2026-10-24)
 
 ### Features
