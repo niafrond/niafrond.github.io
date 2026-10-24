@@ -86,7 +86,7 @@ describe('biomes', () => {
         expect(res.cleared).toEqual([3]);
         expect(st.cells[3]).toBeUndefined();
     });
-    test('marais : case dorée mana ×10, sanctuaire +2 mana', () => {
+    test('marais : case dorée qì ×10, sanctuaire +2 qì', () => {
         const mud = createBiomeState(); mud.cells[1] = { kind: 'jackpot', ttl: 4 };
         expect(resolveBiomeMatch(mud, BIOME_RULES.swamp, [0, 1, 2]).manaMultiplier).toBe(10);
         const sac = createBiomeState(); sac.cells[1] = { kind: 'sacred', ttl: 4 };

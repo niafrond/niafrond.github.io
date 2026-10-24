@@ -1,5 +1,5 @@
-// Animation purement décorative : de petits points de la couleur du mana volent des tuiles combinées
-// vers le compteur de mana du joueur (option « Particules de mana », nombre selon les effets visuels). N'influence jamais la logique (aucun état, aucune attente).
+// Animation purement décorative : de petits points de la couleur du qì volent des tuiles combinées
+// vers le compteur de qì du joueur (option « Particules de qì », nombre selon les effets visuels). N'influence jamais la logique (aucun état, aucune attente).
 
 const FLIGHT_MS = 650;
 import { getOption, maxManaParticles } from './gameOptions.js';
@@ -8,14 +8,14 @@ const COLORS = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1
 // Matchs non colorés : flèches (points d'action) et crânes (dégâts).
 const TYPE_COLORS = { combat: '#e67e22', skull: '#ecf0f1' };
 
-// Élément DOM visé : compteur de mana (couleur), compteur de PA (flèches) ou zone de stats (crânes) du camp concerné.
+// Élément DOM visé : compteur de qì (couleur), compteur de PA (flèches) ou zone de stats (crânes) du camp concerné.
 function findTarget(side, type, color) {
     if (type === 'combat') return document.querySelector(`#${side}-stats .pa-stat`) || document.getElementById(`${side}-stats`);
     if (type === 'skull') return document.getElementById(`${side}-stats`);
     return document.getElementById(`${side}-mana-${color}`);
 }
 
-// type : 'color' (défaut, `color` = couleur de mana), 'combat' (flèches/épées) ou 'skull' (crânes).
+// type : 'color' (défaut, `color` = couleur de qì), 'combat' (flèches/épées) ou 'skull' (crânes).
 // isPlayer=false : particules vers le compteur de l'ennemi.
 export function flyManaToCounter(tileIndices, color, { isPlayer = true, type = 'color' } = {}) {
     try {
@@ -90,7 +90,7 @@ function flyDots(fromEl, toEl, color, count, { scatter = false } = {}) {
 
 const sideOf = isPlayer => (isPlayer ? 'player' : 'enemy');
 
-// Sort payé : les pilules quittent le compteur de mana et sont consommées par le lanceur, ou rejoignent le sort
+// Sort payé : les pilules quittent le compteur de qì et sont consommées par le lanceur, ou rejoignent le sort
 // (élément `[data-spell-id]` désigné par `toSpellId`). `cost` = { couleur: quantité }.
 export function flyManaSpend(isPlayer, cost, { toSpellId = null } = {}) {
     try {
@@ -102,7 +102,7 @@ export function flyManaSpend(isPlayer, cost, { toSpellId = null } = {}) {
     } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
 
-// Mana reçu d'un sort ou d'un objet : les pilules partent du lanceur (ou de la zone `fromBoard` du plateau,
+// Qì reçu d'un sort ou d'un objet : les pilules partent du lanceur (ou de la zone `fromBoard` du plateau,
 // ou de l'élément `fromId` — ex. le bouton d'objet) vers son compteur.
 export function flyManaGain(isPlayer, gains, { fromBoard = false, fromId = null } = {}) {
     try {
@@ -115,7 +115,7 @@ export function flyManaGain(isPlayer, gains, { fromBoard = false, fromId = null 
     } catch (e) { /* décoratif : jamais bloquant (ex. sans DOM) */ }
 }
 
-// Mana volé : du compteur de la victime vers celui du voleur.
+// Qì volé : du compteur de la victime vers celui du voleur.
 export function flyManaSteal(thiefIsPlayer, gains) {
     try {
         const thief = sideOf(thiefIsPlayer);

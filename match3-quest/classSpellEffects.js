@@ -39,7 +39,7 @@ function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
 }
 
 // Flèches (points de combat) et crânes (dégâts) détruits par un sort de lignes/colonnes : ils comptent comme lors d'un match
-// (1 point de combat par flèche, dégâts de crâne du lanceur contre son adversaire), en plus du mana des gemmes.
+// (1 point de combat par flèche, dégâts de crâne du lanceur contre son adversaire), en plus du qì des gemmes.
 function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
     const arrows = destroyedTiles.filter(t => t === 'combat').length;
     const skulls = destroyedTiles.filter(t => t === 'skull').length;
@@ -65,7 +65,7 @@ export function snapshotBoard() {
 
 // Fin du tour après un sort de classe qui a réussi. Si le sort a modifié le plateau (cases détruites ou transformées, avec
 // régénération partielle ou complète), on NE passe PAS la main tout de suite : on attend la fin de la régénération, puis les
-// combinaisons déclenchées par la chute se résolvent encore pendant le tour de celui qui a lancé le sort (mana, dégâts, tours
+// combinaisons déclenchées par la chute se résolvent encore pendant le tour de celui qui a lancé le sort (qì, dégâts, tours
 // bonus lui reviennent). `checkMatches` termine le tour du joueur quand plus rien ne bouge.
 export function endPlayerSpellTurn(before) {
     const changed = Array.isArray(before) && board.some((tile, i) => tile !== before[i]);
@@ -288,8 +288,8 @@ function applyDarkChannels(spell) {
                     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
                     // renderBoard applique la gravite (descente) puis genere les nouvelles tuiles.
                     renderBoard();
-                    showCombatAnimation({ icon: 'swirl', title: "MÉRIDIENS OBSCURS", damage: `${count} gâteaux de lune détruits`, target: `+${manaCollected.total} mana récupéré` }, true);
-                    log(`Méridiens Obscurs détruit ${count} gâteaux de lune ${targetColor} et ${caster.name} récupère ${manaCollected.total} mana.`);
+                    showCombatAnimation({ icon: 'swirl', title: "MÉRIDIENS OBSCURS", damage: `${count} gâteaux de lune détruits`, target: `+${manaCollected.total} qì récupéré` }, true);
+                    log(`Méridiens Obscurs détruit ${count} gâteaux de lune ${targetColor} et ${caster.name} récupère ${manaCollected.total} qì.`);
                     saveUpdate();
                     checkMatches(true);
                     return;
@@ -327,15 +327,15 @@ function applyFlameBolts(spell) {
         log(`Talismans Enflammés tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
         return true;
     }
-    log(`Pas assez de mana jaune pour tirer des projectiles`);
+    log(`Pas assez de qì jaune pour tirer des projectiles`);
     return false;
 }
 
 function applyIceShield(spell) {
     const turns = spell.duration || 1;
     player.statusEffects.manaShield = { color: 'blue', turns };
-    showCombatAnimation({ icon: 'snow', title: "BARRIÈRE DE GIVRE", damage: 'Dégâts -> mana bleu', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
-    log(`Rempart de Jade de Givre actif: les prochains dégâts sont absorbés par le mana bleu.`);
+    showCombatAnimation({ icon: 'snow', title: "BARRIÈRE DE GIVRE", damage: 'Dégâts -> qì bleu', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
+    log(`Rempart de Jade de Givre actif: les prochains dégâts sont absorbés par le qì bleu.`);
     return true;
 }
 
@@ -429,8 +429,8 @@ function applyChasm(spell) {
 
             setBoardTargetingMode(null);
             renderBoard();
-            showCombatAnimation({ icon: 'fire', title: "FISSURE DU FLEUVE JAUNE", damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} mana récupéré` }, true);
-            log(`Abîme détruit une zone 5×5 et ${caster.name} récupère ${manaCollected.total} mana.`);
+            showCombatAnimation({ icon: 'fire', title: "FISSURE DU FLEUVE JAUNE", damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} qì récupéré` }, true);
+            log(`Abîme détruit une zone 5×5 et ${caster.name} récupère ${manaCollected.total} qì.`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -465,8 +465,8 @@ function applyFireballArea(spell) {
             setBoardTargetingMode(null);
             applyDamage(enemy, spell.dmg, { sourceSpell: spell });
             renderBoard();
-            showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${spell.dmg} dégâts`, target: `+${manaCollected.total} mana récupéré` }, true);
-            log(`Sphère de Flammes détruit une zone 3×3, inflige ${spell.dmg} dégâts et fait récupérer ${manaCollected.total} mana à ${caster.name}.`);
+            showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${spell.dmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
+            log(`Sphère de Flammes détruit une zone 3×3, inflige ${spell.dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -541,8 +541,8 @@ function applyManaSiphon(spell) {
     });
 
     flyManaSteal(true, stolen);
-    showCombatAnimation({ icon: 'swirl', title: "ASPIRATION DU QI", damage: `-${drained} mana ennemi`, target: '→ Vous' }, true);
-    log(`Aspiration du Qi absorbe ${drained} mana ennemi.`);
+    showCombatAnimation({ icon: 'swirl', title: "ASPIRATION DU QI", damage: `-${drained} qì ennemi`, target: '→ Vous' }, true);
+    log(`Aspiration du Qi absorbe ${drained} qì ennemi.`);
     return true;
 }
 
@@ -573,16 +573,16 @@ function applySwiftStrike(spell) {
 
 function applyConfuse(spell) {
     enemy.statusEffects.confused = spell.duration;
-    showCombatAnimation({ icon: 'dizzy', title: "FLÈCHE DE BRUME", damage: '−mana/combo', target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
-    log(`Flèche de Brume : l'ennemi ne gagne que 1 mana par combinaison pendant ${spell.duration} tours !`);
+    showCombatAnimation({ icon: 'dizzy', title: "FLÈCHE DE BRUME", damage: '−qì/combo', target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
+    log(`Flèche de Brume : l'ennemi ne gagne que 1 qì par combinaison pendant ${spell.duration} tours !`);
     return true;
 }
 
 function applyStealth(spell) {
     const turns = spell.duration || 1;
     player.statusEffects.manaShield = { color: 'purple', turns };
-    showCombatAnimation({ icon: 'eye', title: "VOILE DE BRUME", damage: 'Dégâts -> mana violet', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
-    log(`Voile de Brume active: les prochains dégâts sont absorbés par le mana violet.`);
+    showCombatAnimation({ icon: 'eye', title: "VOILE DE BRUME", damage: 'Dégâts -> qì violet', target: `→ Vous (${turns} tour${turns > 1 ? 's' : ''})` }, true);
+    log(`Voile de Brume active: les prochains dégâts sont absorbés par le qì violet.`);
     return true;
 }
 
@@ -610,7 +610,7 @@ function applyShadowStrike(spell) {
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: 'moon', title: "FLÈCHE D'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Flèche d'Ombre détruit ${count} gâteaux de lune violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} mana à ${caster.name}.`);
+    log(`Flèche d'Ombre détruit ${count} gâteaux de lune violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
     return true;
 }
 
@@ -646,7 +646,7 @@ function applyDefensiveWall(spell) {
     player.defense = (player.defense || 0) + defenseGain;
     renderBoard();
     showCombatAnimation({ icon: 'shield', title: "MURAILLE IMPÉRIALE", heal: `+${defenseGain} défense`, target: '→ Vous' }, true);
-    log(`Muraille Impériale détruit ${count} gâteaux de lune violettes: +${defenseGain} défense et +${manaCollected.total} mana pour ${caster.name}.`);
+    log(`Muraille Impériale détruit ${count} gâteaux de lune violettes: +${defenseGain} défense et +${manaCollected.total} qì pour ${caster.name}.`);
     return true;
 }
 
@@ -759,14 +759,14 @@ function applyDivinePower(spell) {
     const defense = Math.max(0, Math.floor(player.defense || 0));
     const yellowGain = Math.floor(defense / 5);
     if(yellowGain <= 0) {
-        log(`Défense insuffisante pour générer du mana jaune.`);
+        log(`Défense insuffisante pour générer du qì jaune.`);
         return false;
     }
 
     player.mana.yellow = Math.min(getManaCap('yellow'), player.mana.yellow + yellowGain);
     flyManaGain(true, { yellow: yellowGain });
-    showCombatAnimation({ icon: 'star', title: "MANDAT DU CIEL", heal: `+${yellowGain} mana jaune`, target: '→ Vous' }, true);
-    log(`Mandat du Ciel convertit la défense en +${yellowGain} mana jaune.`);
+    showCombatAnimation({ icon: 'star', title: "MANDAT DU CIEL", heal: `+${yellowGain} qì jaune`, target: '→ Vous' }, true);
+    log(`Mandat du Ciel convertit la défense en +${yellowGain} qì jaune.`);
     return true;
 }
 
@@ -828,7 +828,7 @@ function applyCleave(spell) {
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: 'axe', title: "ENTAILLE DE LA HORDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Entaille de la Horde détruit ${count} gâteaux de lune jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} mana pour ${caster.name}.`);
+    log(`Entaille de la Horde détruit ${count} gâteaux de lune jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} qì pour ${caster.name}.`);
     return true;
 }
 
@@ -849,8 +849,8 @@ function applyThrowAxe(spell) {
 function applyBloodlust(spell) {
     player.mana.red = Math.min(getManaCap('red'), player.mana.red + spell.manaGain);
     flyManaGain(true, { red: spell.manaGain });
-    showCombatAnimation({ icon: 'blood', title: "SOIF DE BATAILLE", heal: `+${spell.manaGain} mana rouge`, target: '→ Vous' }, true);
-    log(`Soif de Bataille donne +${spell.manaGain} mana rouge !`);
+    showCombatAnimation({ icon: 'blood', title: "SOIF DE BATAILLE", heal: `+${spell.manaGain} qì rouge`, target: '→ Vous' }, true);
+    log(`Soif de Bataille donne +${spell.manaGain} qì rouge !`);
     return true;
 }
 
@@ -887,7 +887,7 @@ function previewIndices(spell, indices) {
     }, PREVIEW_MS));
 }
 
-// Détruit les cases `indices` : récupère le mana des gemmes de couleur et inflige `dmgPerTile` par case détruite
+// Détruit les cases `indices` : récupère le qì des gemmes de couleur et inflige `dmgPerTile` par case détruite
 // dont la couleur est l'une de celles du sort (les autres cases sont détruites sans dégâts).
 function destroyIndices(spell, indices, title, label) {
     const caster = getCurrentCaster();
@@ -902,8 +902,8 @@ function destroyIndices(spell, indices, title, label) {
     const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
     renderBoard();
     const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
-    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} mana${extras}` }, true);
-    log(`${spell.name} : ${label}, ${hits} case(s) de la couleur du sort, ${dmg} dégâts, +${manaCollected.total} mana récupéré.`);
+    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} qì${extras}` }, true);
+    log(`${spell.name} : ${label}, ${hits} case(s) de la couleur du sort, ${dmg} dégâts, +${manaCollected.total} qì récupéré.`);
     return { count: unique.length, hits, dmg, mana: manaCollected.total };
 }
 
@@ -977,7 +977,7 @@ function applySweepLines(spell, shape) {
     return false;
 }
 
-// Détruit toutes les gemmes des couleurs du sort (aperçu des cases visées, puis mana récupéré et dégâts par gemme).
+// Détruit toutes les gemmes des couleurs du sort (aperçu des cases visées, puis qì récupéré et dégâts par gemme).
 async function applyClearColor(spell) {
     const hitColors = spellDamageColors(spell);
     const indices = [];
@@ -1023,8 +1023,8 @@ function applyCageEnemy(spell) {
         const amount = Math.min(drain, enemy.mana?.[color] || 0);
         if(amount > 0) { enemy.mana[color] -= amount; drained += amount; }
     });
-    showCombatAnimation({ icon: 'snow', title: spell.name.toUpperCase(), damage: `Étourdi ${turns} tours`, target: `→ ${enemy.name} • -${drained} mana` }, true);
-    log(`${spell.name} étourdit l'ennemi ${turns} tours et lui retire ${drained} mana.`);
+    showCombatAnimation({ icon: 'snow', title: spell.name.toUpperCase(), damage: `Étourdi ${turns} tours`, target: `→ ${enemy.name} • -${drained} qì` }, true);
+    log(`${spell.name} étourdit l'ennemi ${turns} tours et lui retire ${drained} qì.`);
     return true;
 }
 
@@ -1059,8 +1059,8 @@ function applyHarmony(spell) {
     player.hp = Math.min(player.maxHp, player.hp + heal);
     flyHeal(true, heal);
     MANA_COLORS.forEach(color => { enemy.mana[color] = Math.max(0, (enemy.mana[color] || 0) - drain); });
-    showCombatAnimation({ icon: 'yinyang', title: spell.name.toUpperCase(), damage: `-${dmg} dégâts`, heal: `+${heal} PV`, target: `→ ${enemy.name} • -${drain} mana de chaque couleur` }, true);
-    log(`${spell.name} inflige ${dmg} dégâts, vous soigne de ${heal} PV et vide ${drain} mana de chaque couleur à l'ennemi.`);
+    showCombatAnimation({ icon: 'yinyang', title: spell.name.toUpperCase(), damage: `-${dmg} dégâts`, heal: `+${heal} PV`, target: `→ ${enemy.name} • -${drain} qì de chaque couleur` }, true);
+    log(`${spell.name} inflige ${dmg} dégâts, vous soigne de ${heal} PV et vide ${drain} qì de chaque couleur à l'ennemi.`);
     return true;
 }
 
@@ -1092,8 +1092,8 @@ async function applySummonTempest(spell) {
     const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
 
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} mana récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
-    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${caster.name} récupère ${manaCollected.total} mana.`);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} qì récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
+    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${caster.name} récupère ${manaCollected.total} qì.`);
     return true;
 }
 
@@ -1116,8 +1116,8 @@ function applySingingBlades(spell) {
     const manaDrain = Math.max(1, Math.floor(spell.manaDrain || 1));
     player.statusEffects.drainOnHit = turns;
     player.statusEffects.drainOnHitAmount = manaDrain;
-    showCombatAnimation({ icon: 'music', title: "FLÈCHES SIFFLANTES", damage: `-${manaDrain} mana / coup`, target: `→ ${enemy.name} (${turns} tours)` }, true);
-    log(`Flèches Sifflantes active un drain de ${manaDrain} mana par coup pendant ${turns} tours.`);
+    showCombatAnimation({ icon: 'music', title: "FLÈCHES SIFFLANTES", damage: `-${manaDrain} qì / coup`, target: `→ ${enemy.name} (${turns} tours)` }, true);
+    log(`Flèches Sifflantes active un drain de ${manaDrain} qì par coup pendant ${turns} tours.`);
     return true;
 }
 
@@ -1125,7 +1125,7 @@ function applyDeathbringer(spell) {
     const redMana = Math.max(0, Math.floor(player.mana.red || 0));
     const skullsToCreate = Math.floor(redMana / 2);
     if(skullsToCreate <= 0) {
-        log(`Pas assez de mana rouge pour créer des crânes.`);
+        log(`Pas assez de qì rouge pour créer des crânes.`);
         return false;
     }
 
@@ -1150,7 +1150,7 @@ function applyDeathbringer(spell) {
     renderBoard();
     // une fois l'animation du sort terminée, on montre où les crânes sont apparus
     showCombatAnimation({ icon: 'poison', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true, { onContinue: () => flashTiles(created) });
-    log(`Porte-Soleil crée ${count} crânes (basé sur le mana rouge).`);
+    log(`Porte-Soleil crée ${count} crânes (basé sur le qì rouge).`);
     return true;
 }
 

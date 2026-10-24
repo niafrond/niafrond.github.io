@@ -10,7 +10,7 @@ import { colorName, weaknessLabel, buildPrep } from '../../terrain.js';
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const catalog = JSON.parse(fs.readFileSync(path.join(dir, '../../enemies.catalog.json'), 'utf8'));
 
-describe('éléments de mana', () => {
+describe('éléments de qì', () => {
     test('chaque couleur a un élément et un libellé français', () => {
         MANA_COLORS.forEach(c => {
             expect(typeof elementOf(c)).toBe('string');

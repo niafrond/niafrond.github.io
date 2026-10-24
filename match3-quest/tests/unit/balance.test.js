@@ -1,5 +1,5 @@
 // Équilibrage : garde-fous chiffrés contre le « bourrinage » (spammer la même action sans réfléchir).
-// Repères : un tour de plateau rapporte ~3-4 points de mana ou d'action ; un ennemi de niveau L inflige
+// Repères : un tour de plateau rapporte ~3-4 points de qì ou d'action ; un ennemi de niveau L inflige
 // ~6 + 1,5 L PV par tour ; les objets (infinis, rechargeables) ne doivent être qu'un complément.
 import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { allWeapons } from '../../weapons.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allGeneric = JSON.parse(readFileSync(join(root, 'spells.json'), 'utf8')).allSpells;
-const spells = allGeneric.filter(s => !s.playerOnly);      // sorts courants (budget de mana de base)
+const spells = allGeneric.filter(s => !s.playerOnly);      // sorts courants (budget de qì de base)
 const multiSpells = allGeneric.filter(s => s.playerOnly);  // sorts multimana de haut niveau (niv. 16 à 70)
 const reusables = allItems.filter(i => i.type === 'reusable');
 const enemyDamagePerTurn = level => 6 + 1.5 * level;
@@ -25,7 +25,7 @@ describe('objets rechargeables : puissance par tour', () => {
         });
 
     test.each(reusables.filter(i => i.effect.mana || i.effect.randomMana).map(i => [i.id, i]))(
-        '%s : mana moyen par tour ≤ 8 (tous coloris confondus)', (_, i) => {
+        '%s : qì moyen par tour ≤ 8 (tous coloris confondus)', (_, i) => {
             const total = (i.effect.mana || 0) * COLORS + (i.effect.randomMana || 0);
             expect(total * i.chargesPerCycle / i.rechargeTurns).toBeLessThanOrEqual(8);
         });
@@ -69,7 +69,7 @@ describe('effets de combat : pas de cumul', () => {
         expect(useItem('phoenixFeather', player, null, 0).success).toBe(false);
     });
 
-    test('soins et mana restent utilisables à chaque recharge', () => {
+    test('soins et qì restent utilisables à chaque recharge', () => {
         const potion = { ...allItems.find(i => i.id === 'healthPotion'), chargesLeft: 1 };
         const player = makePlayer([potion]);
         expect(useItem('healthPotion', player, null, 0).success).toBe(true);
@@ -82,18 +82,18 @@ describe('effets de combat : pas de cumul', () => {
 const totalCost = s => (typeof s.cost === 'number' ? s.cost : Object.values(s.cost).reduce((a, b) => a + b, 0));
 
 describe('sorts', () => {
-    test('les soins sont moins rentables que les dégâts (≤ 2,1 PV par mana)', () => {
+    test('les soins sont moins rentables que les dégâts (≤ 2,1 PV par qì)', () => {
         spells.filter(s => s.type === 'heal').forEach(s => expect(s.heal / totalCost(s)).toBeLessThanOrEqual(2.1));
     });
 
-    test('les dégâts rapportent 2,2 à 2,6 par mana', () => {
+    test('les dégâts rapportent 2,2 à 2,6 par qì', () => {
         spells.filter(s => s.type === 'damage').forEach(s => {
             expect(s.dmg / totalCost(s)).toBeGreaterThanOrEqual(2.2);
             expect(s.dmg / totalCost(s)).toBeLessThanOrEqual(2.6);
         });
     });
 
-    test('des sorts génériques utilisent deux couleurs de mana, et chaque couleur du jeu en a un', () => {
+    test('des sorts génériques utilisent deux couleurs de qì, et chaque couleur du jeu en a un', () => {
         const multi = spells.filter(s => typeof s.cost === 'object' && s.type !== 'advanced');
         expect(multi.length).toBeGreaterThanOrEqual(6);
         multi.forEach(s => {
@@ -105,7 +105,7 @@ describe('sorts', () => {
         ['red', 'blue', 'green', 'yellow', 'purple'].forEach(c => expect(multi.some(s => c in s.cost)).toBe(true));
     });
 
-    test('sorts avancés : 3 à 5 couleurs, effet implémenté, budget de mana respecté', () => {
+    test('sorts avancés : 3 à 5 couleurs, effet implémenté, budget de qì respecté', () => {
         const effects = readFileSync(join(root, 'classSpellEffects.js'), 'utf8');
         const advanced = spells.filter(s => s.type === 'advanced');
         expect(advanced.length).toBeGreaterThanOrEqual(6);
@@ -120,7 +120,7 @@ describe('sorts', () => {
         expect(advanced.some(s => Object.keys(s.cost).length === 4)).toBe(true);
     });
 
-    test('aucun sort ne coûte plus que la réserve de mana de base (50)', () => {
+    test('aucun sort ne coûte plus que la réserve de qì de base (50)', () => {
         spells.forEach(s => expect(totalCost(s)).toBeLessThanOrEqual(50));
     });
 });
@@ -139,7 +139,7 @@ describe('sorts multimana', () => {
         });
     });
 
-    test('dégâts : 2,7 à 4,3 par mana, plus rentables aux hauts niveaux', () => {
+    test('dégâts : 2,7 à 4,3 par qì, plus rentables aux hauts niveaux', () => {
         const dmg = multiSpells.filter(s => s.type === 'damage').sort((a, b) => a.minLevel - b.minLevel);
         dmg.forEach(s => {
             expect(s.dmg / totalCost(s)).toBeGreaterThanOrEqual(2.7);
@@ -148,7 +148,7 @@ describe('sorts multimana', () => {
         dmg.slice(1).forEach((s, i) => expect(s.dmg).toBeGreaterThan(dmg[i].dmg));
     });
 
-    test('soins : ≤ 2,1 PV par mana', () => {
+    test('soins : ≤ 2,1 PV par qì', () => {
         multiSpells.filter(s => s.type === 'heal').forEach(s => expect(s.heal / totalCost(s)).toBeLessThanOrEqual(2.1));
     });
 });

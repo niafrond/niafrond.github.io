@@ -162,7 +162,7 @@ describe('Save Manager', () => {
             expect(res.metadata.progress).toContain('2 monstres vaincus');
         });
 
-        it('n\'exporte ni mana, ni effets temporaires, ni valeurs dérivées', async () => {
+        it('n\'exporte ni qì, ni effets temporaires, ni valeurs dérivées', async () => {
             Object.assign(testPlayer, {
                 mana: { red: 5 }, manaCaps: { red: 20 }, tempAttack: 3, statusEffects: { poison: 2 },
                 combatPoints: 4, availableSpells: [{ id: 'x' }], availableWeapons: [{ id: 'y' }], xpToNextLevel: 100

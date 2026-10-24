@@ -73,7 +73,7 @@ L'IA analyse le contexte du combat et évalue chaque action possible :
 
 #### Analyse du contexte
 - Pourcentage de HP du joueur et de l'ennemi
-- Mana disponible pour les deux parties
+- Qì disponible pour les deux parties
 - Points de combat disponibles
 - Vulnérabilité du joueur
 - État critique de l'ennemi
@@ -90,7 +90,7 @@ L'IA analyse le contexte du combat et évalue chaque action possible :
 - Considère les points de combat disponibles
 
 #### Évaluation du plateau
-- Priorité si manque de ressources (mana/combat points)
+- Priorité si manque de ressources (qì/combat points)
 - Score augmenté si aucun sort utilisable
 
 ### 3. Personnalités d'ennemis

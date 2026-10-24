@@ -1,4 +1,4 @@
-// Menu secret : 6 clics sur « Particules de mana » (Options) l'ouvrent pour toute la session (jamais sauvegardé).
+// Menu secret : 6 clics sur « Particules de qì » (Options) l'ouvrent pour toute la session (jamais sauvegardé).
 // Permet de s'attribuer tous les stuffs, tous les sorts, toutes les armes et n'importe quel niveau.
 import { player, saveUpdate, log, updateStats, updateAvailableSpells, updateAvailableWeapons, createSpellButtons, createWeaponButton, updatePlayerStatsTab, grantStuffPiece, setCheatAllSpells, setCheatOneShot, isCheatOneShot, setCheatFreeSpells, isCheatFreeSpells, setCheatMaxRage, isCheatMaxRage } from "./game.js";
 import { allStuff } from "./stuff.js";
@@ -42,7 +42,7 @@ function buildModal() {
         <div class="options-row"><span>Toutes les armes</span><button id="secret-weapons-btn">Obtenir</button></div>
         <div class="options-row"><span>Tous les sorts</span><button id="secret-spells-btn">Débloquer</button></div>
         <div class="options-row"><span>One shot les ennemis</span><button id="secret-oneshot-btn" aria-pressed="false">Non</button></div>
-        <div class="options-row"><span>Sorts gratuits (sans mana)</span><button id="secret-free-btn" aria-pressed="false">Non</button></div>
+        <div class="options-row"><span>Sorts gratuits (sans qì)</span><button id="secret-free-btn" aria-pressed="false">Non</button></div>
         <div class="options-row"><span>Rage toujours au max</span><button id="secret-rage-btn" aria-pressed="false">Non</button></div>
         <div class="modal-actions"><button class="primary" id="secret-close-btn">Fermer</button></div>
     </div>`;
@@ -110,7 +110,7 @@ export function openSecretMenu() {
     modal.classList.add('active');
 }
 
-// Branche le déclencheur : 6 clics sur le bouton « Particules de mana ».
+// Branche le déclencheur : 6 clics sur le bouton « Particules de qì ».
 export function bindSecretTrigger(button) {
     if(!button) return;
     const hit = createClickCounter();

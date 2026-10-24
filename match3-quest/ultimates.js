@@ -1,5 +1,5 @@
 // Sorts ultimes (« rage ») : une jauge se charge quand le joueur subit des dégâts ; pleine, elle permet de lancer un
-// ultime (2 par classe, hors limite des 4 sorts équipés). Les ultimes coûtent beaucoup de mana.
+// ultime (2 par classe, hors limite des 4 sorts équipés). Les ultimes coûtent beaucoup de qì.
 import { ultimateSpells } from './spells.js';
 
 export const RAGE_MAX = 100;

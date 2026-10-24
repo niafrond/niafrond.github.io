@@ -37,7 +37,7 @@ export function spellFxDurationMs(idOrTitle) {
     return e ? Math.round(e.frames / (e.fps || 10) * 1000) : 0;
 }
 
-// Sorts très coûteux en mana (paliers 4 et 5) : l'animation s'étale sur le plateau (palier 5 : tout le plateau, palier 4 : ~75 %).
+// Sorts très coûteux en qì (paliers 4 et 5) : l'animation s'étale sur le plateau (palier 5 : tout le plateau, palier 4 : ~75 %).
 export const BIG_TIER = 4;
 const BOARD_FILL = { 4: 0.75, 5: 1 };
 

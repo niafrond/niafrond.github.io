@@ -110,5 +110,5 @@ export function icon(name, cls = '') {
 export const iconSvg = name => PATHS[name]
     ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">${PATHS[name]}</svg>` : '';
 
-// Pastille de mana d'une couleur (rouge, bleu…).
+// Pastille de qì d'une couleur (rouge, bleu…).
 export const manaIcon = color => icon(`mana_${color}`) || icon('mana');

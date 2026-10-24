@@ -65,7 +65,7 @@ export function advanceBiomeTurn(){
     // Protégé par un collier : les cases nuisibles n'apparaissent plus (la lave, elle, apparaît encore pour être utilisée, mais ne brûle plus).
     const rule = biomeProtected && !biomeRule.burnDamage ? { ...biomeRule, spawn: 0, drift: false } : biomeRule;
     const res = advanceBiome(biomeState, rule, boardSize);
-    if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'jackpot' ? 'dorée(s) (mana ×10)' : 'sacrée(s)'}.`);
+    if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'jackpot' ? 'dorée(s) (qì ×10)' : 'sacrée(s)'}.`);
     if(res.expired.length) log(`${biomeRule.label} : ${res.expired.length} case(s) se libèrent.`);
     if(res.drifted !== null){
         const before = [...board];
@@ -134,11 +134,11 @@ function applyPlayerMatchExtras(indices, info){
             if(res.manaDelta < 0) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
             if(res.manaMultiplier > 1){
                 addManaForColor(player, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
-                log(`${biomeRule.label} : tuile dorée, mana ×${res.manaMultiplier} !`);
+                log(`${biomeRule.label} : tuile dorée, qì ×${res.manaMultiplier} !`);
             }
-            if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} mana.`);
+            if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} qì.`);
         } else if(info.type === 'combat' || info.type === 'skull'){
-            // Crânes et flèches : le bonus de la case s'applique à leur gain (dégâts ou points de combat) au lieu du mana.
+            // Crânes et flèches : le bonus de la case s'applique à leur gain (dégâts ou points de combat) au lieu du qì.
             const isSkull = info.type === 'skull';
             const base = getEffectiveMatchLength(info) * (isSkull ? skullDamage + skullStrengthBonus(player) : 1);
             const bonus = Math.round(res.manaDelta + base * (res.manaMultiplier - 1));
@@ -867,7 +867,7 @@ export function checkMatches(forceFullBoard = false){
         const currentPlayer = currentTurn === 'player' ? player : enemy;
         // apply effects
         if(info.type==='color'){
-            // Gain de mana : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
+            // Gain de qì : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
             const enemyIsConfused = currentPlayer === enemy && (enemy.statusEffects?.confused || 0) > 0;
             const manaBaseGain = enemyIsConfused ? 1 : getColorMatchManaBaseGain(info);
             const manaResult = addManaForColor(currentPlayer, info.color, manaBaseGain);
@@ -877,7 +877,7 @@ export function checkMatches(forceFullBoard = false){
                 const generatedMana = manaResult.gained;
                 if(generatedMana > 0){
                     grantManaGeneratedXP(generatedMana);
-                    log(`+${generatedMana} XP (mana généré)`);
+                    log(`+${generatedMana} XP (qì généré)`);
                 }
                 // Notifier le tutoriel d'un match de couleur du joueur
                 tutorialCallbacks.onMatch?.('color', info.color, info.len);
@@ -946,7 +946,7 @@ export function checkMatches(forceFullBoard = false){
 
         if(currentTurn === 'player') applyPlayerMatchExtras(indices, info);
 
-        // Sons : crânes = coup porté ; couleur = mana récolté (scintillement magique) ; épées = son de match classique.
+        // Sons : crânes = coup porté ; couleur = qì récolté (scintillement magique) ; épées = son de match classique.
         const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
         if(info.type === 'skull') playSfx('skullHit', sfxPayload);
         else if(info.type === 'color') playSfx('manaGain', sfxPayload);

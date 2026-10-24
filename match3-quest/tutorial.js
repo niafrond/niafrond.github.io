@@ -93,8 +93,8 @@ const STEPS = [
     {
         step: 3,
         icon: 'spark',
-        title: 'Générer du mana',
-        desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du mana. Faites <strong>l\'échange en surbrillance</strong> : le mana est nécessaire pour lancer des sorts puissants !',
+        title: 'Générer du qì',
+        desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du qì. Faites <strong>l\'échange en surbrillance</strong> : le qì est nécessaire pour lancer des sorts puissants !',
     },
     {
         step: 4,
@@ -333,7 +333,7 @@ function _activateStep(step) {
     _installHooks(step);
 
     if (step === 4) {
-        // Le joueur doit avoir assez de mana pour lancer le sort demandé
+        // Le joueur doit avoir assez de qì pour lancer le sort demandé
         const spell = _tutoSpell;
         let extra = '';
         if (spell) {
@@ -341,10 +341,10 @@ function _activateStep(step) {
             if ((m.player.mana[spell.color] || 0) < spell.cost) {
                 m.player.mana[spell.color] = spell.cost;
                 m.updateStats();
-                m.log(`Tutoriel : votre maître vous offre le mana ${spell.color} nécessaire pour lancer ${spell.name} !`);
+                m.log(`Tutoriel : votre maître vous offre le qì ${spell.color} nécessaire pour lancer ${spell.name} !`);
             }
             m.createSpellButtons(); // Mettre à jour l'affichage (bouton actif)
-            extra = `Vous avez du mana ${icon('mana_' + spell.color)} ! Cliquez sur le bouton du sort <strong>"${spell.name}"</strong> en bas pour le lancer et infliger des dégâts à votre adversaire. Les échanges de tuiles sont suspendus.`;
+            extra = `Vous avez du qì ${icon('mana_' + spell.color)} ! Cliquez sur le bouton du sort <strong>"${spell.name}"</strong> en bas pour le lancer et infliger des dégâts à votre adversaire. Les échanges de tuiles sont suspendus.`;
         }
         _updateOverlay(step, extra);
         setTimeout(() => _highlightSpellButtons(), 400);
@@ -421,7 +421,7 @@ function _completeTutorial() {
 const _feedbackMessages = {
     1: 'Bravo ! Vous avez échangé deux tuiles !',
     2: 'Excellent ! Les crânes encaissent vos coups !',
-    3: 'Parfait ! Les gâteaux de lune vous ont donné du mana !',
+    3: 'Parfait ! Les gâteaux de lune vous ont donné du qì !',
     4: 'Super ! Votre flèche a atteint sa cible !',
 };
 

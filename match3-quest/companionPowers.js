@@ -2,7 +2,7 @@
 //
 // À la fin de chaque tour du joueur, chaque compagnon présent dans le groupe peut déclencher son pouvoir (`chance`), une fois par tour.
 //   kind : 'extraMove' (Xiao Gui : coup supplémentaire sur le plateau, géré à part par game.js), 'heal', 'splash', 'mana', 'mirage',
-//          'rage' (+ part de la jauge de rage), 'arrows' (toutes les tuiles d'une couleur deviennent des flèches), 'steal' (vole le mana d'une couleur à l'ennemi).
+//          'rage' (+ part de la jauge de rage), 'arrows' (toutes les tuiles d'une couleur deviennent des flèches), 'steal' (vole le qì d'une couleur à l'ennemi).
 export const COMPANION_POWERS = {
     xiao_gui: { name: 'Coup de renard', kind: 'extraMove', chance: 0.30, text: '30 % : joue un coup supplémentaire sur le plateau.' },
     zhi: { name: 'Souffle de Zhi', kind: 'heal', chance: 0.25, healPct: 0.10, text: '25 % : rend 10 % des PV max au héros.' },
@@ -10,8 +10,8 @@ export const COMPANION_POWERS = {
     yu: { name: "Jet d'eau de Yu", kind: 'splash', chance: 0.25, base: 4, perLevel: 1, text: "25 % : un jet d'eau blesse l'ennemi (4 + niveau du héros)." },
     braise: { name: 'Colère de Braise', kind: 'rage', chance: 0.15, ragePct: 0.5, text: '15 % : remplit 50 % de la jauge de rage.' },
     jian: { name: 'Volée de Jian', kind: 'arrows', chance: 0.05, text: '5 % : toutes les tuiles d\'une couleur au hasard deviennent des flèches.' },
-    tou: { name: 'Larcin de Tou', kind: 'steal', chance: 0.30, text: "30 % : vole tout le mana d'une couleur au hasard à l'ennemi." },
-    etincelle: { name: "Étincelle d'Étincelle", kind: 'mana', chance: 0.30, amount: 4, text: '30 % : +4 mana dans une couleur au hasard.' }
+    tou: { name: 'Larcin de Tou', kind: 'steal', chance: 0.30, text: "30 % : vole tout le qì d'une couleur au hasard à l'ennemi." },
+    etincelle: { name: "Étincelle d'Étincelle", kind: 'mana', chance: 0.30, amount: 4, text: '30 % : +4 qì dans une couleur au hasard.' }
 };
 
 export const MANA_COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];

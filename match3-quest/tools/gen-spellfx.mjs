@@ -3,7 +3,7 @@
  * gen-spellfx.mjs — Génère une mini-animation pixel art par sort via Pixel Lab.
  *
  * Pour chaque sort de spells.json : image clé (PixFlux) puis animation (animate-with-text-v3).
- * Plus le sort coûte cher (somme des mana), plus l'animation est grande, longue et détaillée (voir TIERS).
+ * Plus le sort coûte cher (somme des qì), plus l'animation est grande, longue et détaillée (voir TIERS).
  *
  * Sortie : sprites/spellfx/<id>.png (planche horizontale, une frame par colonne) + sprites/spellfx/index.json
  *          { id: { frames, size, fps, tier } }. Les sorts déjà générés sont sautés (reprise possible).

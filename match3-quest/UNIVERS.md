@@ -91,7 +91,7 @@ quête annexe de la région. Les ids FIXES ci-dessus ne changent pas.
 
 ## 5. Tuiles du plateau (art dans `sprites/tiles/*.svg`)
 
-Les gemmes deviennent des **gâteaux de lune** (cinq saveurs = cinq couleurs de mana) ; les deux tuiles spéciales sont
+Les gemmes deviennent des **gâteaux de lune** (cinq saveurs = cinq couleurs de qì) ; les deux tuiles spéciales sont
 rethématisées :
 
 | Classe CSS | Ancien rôle | Nouveau visuel |

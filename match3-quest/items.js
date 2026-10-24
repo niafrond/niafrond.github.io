@@ -22,7 +22,7 @@ export const allItems = [
     {id:"protective_sachet", name:"Sachet d'Encens Protecteur", type:"reusable", minLevel:6, rarity:"uncommon", chargesPerCycle:1, rechargeTurns:5,
      description:"Augmente la défense de 5 pour ce combat, sans cumul (rechargé en 5 tours)", effect:{tempDefense:5}},
     {id:"energy_stone", name:"Pierre d'Énergie Ravivante", type:"reusable", minLevel:8, rarity:"rare", chargesPerCycle:2, rechargeTurns:8,
-     description:"Restaure 6 mana de chaque couleur (2 usages, puis rechargé en 8 tours)", effect:{mana:6}},
+     description:"Restaure 6 qì de chaque couleur (2 usages, puis rechargé en 8 tours)", effect:{mana:6}},
     {id:"power_talisman", name:"Talisman de Puissance", type:"reusable", minLevel:12, rarity:"rare", chargesPerCycle:1, rechargeTurns:6,
      description:"Augmente l'attaque de 15 pour ce combat, sans cumul (rechargé en 6 tours)", effect:{tempAttack:15}},
 
@@ -30,7 +30,7 @@ export const allItems = [
     {id:"healthPotion", name:"Élixir de Vie", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
      description:"Restaure 25 HP (rechargé en 6 tours)", effect:{heal:25}},
     {id:"manaPotion", name:"Pilule de Qi", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
-     description:"Restaure 4 mana de chaque couleur (rechargé en 6 tours)", effect:{mana:4}},
+     description:"Restaure 4 qì de chaque couleur (rechargé en 6 tours)", effect:{mana:4}},
     {id:"strengthPotion", name:"Pilule de Vigueur", type:"reusable", minLevel:3, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
      description:"Augmente l'attaque de 10 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempAttack:10}},
     
@@ -38,7 +38,7 @@ export const allItems = [
     {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
      description:"Restaure 45 HP (rechargé en 8 tours)", effect:{heal:45}},
     {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:7,
-     description:"Restaure 7 mana de chaque couleur (rechargé en 7 tours)", effect:{mana:7}},
+     description:"Restaure 7 qì de chaque couleur (rechargé en 7 tours)", effect:{mana:7}},
     {id:"defensePotion", name:"Talisman de Garde", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
      description:"Augmente la défense de 8 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempDefense:8}},
     
@@ -58,7 +58,7 @@ export const allItems = [
     
     // Objets légendaires (niveau 15+)
     {id:"crownOfTheArchmage", name:"Couronne de Perles de l'Immortel", type:"artifact", minLevel:15, rarity:"legendary",
-     description:"Augmente mana max de 20 (permanent)", effect:{permMaxMana:20}},
+     description:"Augmente le qì max de 20 (permanent)", effect:{permMaxMana:20}},
     {id:"dragonHeart", name:"Perle du Dragon", type:"artifact", minLevel:17, rarity:"legendary",
      description:"Augmente HP max de 50 et attaque de 10 (permanent)", effect:{permMaxHp:50, permAttack:10}},
 
@@ -69,7 +69,7 @@ export const allItems = [
  description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
 
 {id:"orbOfWisdom", name:"Orbe de Jade de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
- description:"Augmente mana max de 10 (permanent)", effect:{permMaxMana:10}},
+ description:"Augmente le qì max de 10 (permanent)", effect:{permMaxMana:10}},
  {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"reusable", minLevel:11, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
  description:"Jouez immédiatement un tour supplémentaire (rechargé en 8 tours)", effect:{extraTurn:1}},
 
@@ -77,12 +77,12 @@ export const allItems = [
  description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat, sans cumul (rechargé en 5 tours)", effect:{lifesteal:0.3}},
 
 {id:"arcaneSurgePotion", name:"Élixir de Déferlement du Qi", type:"reusable", minLevel:12, rarity:"rare", actionPoints:3, chargesPerCycle:1, rechargeTurns:8,
- description:"Double le mana gagné pendant 3 tours (rechargé en 8 tours)", effect:{manaMultiplier:2, duration:3}},
+ description:"Double le qì gagné pendant 3 tours (rechargé en 8 tours)", effect:{manaMultiplier:2, duration:3}},
  {id:"berserkPotion", name:"Vin de la Fureur", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
  description:"Augmente attaque de 15 mais réduit défense de 8 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempAttack:15, tempDefense:-8}},
 
 {id:"clarityPotion", name:"Thé de Clarté d'Esprit", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:5,
- description:"Restaure 12 mana d'une couleur aléatoire (rechargé en 5 tours)", effect:{randomMana:12}},
+ description:"Restaure 12 qì d'une couleur aléatoire (rechargé en 5 tours)", effect:{randomMana:12}},
 
 {id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"reusable", minLevel:7, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
  description:"Réduit les dégâts subis de 20% pour ce combat, sans cumul (rechargé en 4 tours)", effect:{damageReduction:0.2}},
@@ -205,7 +205,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
             const manaCap = player.manaCaps?.[color] ?? player.maxMana;
             player.mana[color] = Math.min(manaCap, player.mana[color] + item.effect.mana);
         });
-        message += `Vous gagnez ${item.effect.mana} mana de chaque couleur. `;
+        message += `Vous gagnez ${item.effect.mana} qì de chaque couleur. `;
     }
     if(item.effect.tempAttack) {
         player.tempAttack = (player.tempAttack || 0) + item.effect.tempAttack;
@@ -238,7 +238,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         flyManaGain(true, { [chosenColor]: item.effect.randomMana }, { fromId: 'item-button' });
         const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;
         player.mana[chosenColor] = Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana);
-        message += `Vous gagnez ${item.effect.randomMana} mana ${chosenColor}. `;
+        message += `Vous gagnez ${item.effect.randomMana} qì ${chosenColor}. `;
     }
     if(item.effect.regen) {
         player.regenEffect = { hp: item.effect.regen, turnsLeft: item.effect.duration || 3 };
@@ -250,7 +250,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     }
     if(item.effect.manaMultiplier) {
         player.manaMultiplier = { mult: item.effect.manaMultiplier, turnsLeft: item.effect.duration || 3 };
-        message += `Gain de mana ×${item.effect.manaMultiplier} pendant ${item.effect.duration || 3} tours. `;
+        message += `Gain de qì ×${item.effect.manaMultiplier} pendant ${item.effect.duration || 3} tours. `;
     }
     if(item.effect.damageReduction) {
         player.damageReduction = (player.damageReduction || 0) + item.effect.damageReduction;

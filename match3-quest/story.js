@@ -1659,7 +1659,7 @@ const BASE_QUESTS = [
         hint: ["L'œuf est dans le coin nord-ouest des monts, entre les rochers. Aucun ennemi ne le garde."],
         complete: [
             "Il éclot ! Une petite étincelle sur quatre pattes. Elle vous a choisi, archer : elle a mordu votre carquois et ne le lâche plus.",
-            "Elle s'appelle Étincelle. Elle fait de la lumière de ce qu'on lui donne à manger, c'est-à-dire de la mana. Prenez ces pièces, et gardez-la loin de ma poudre."
+            "Elle s'appelle Étincelle. Elle fait de la lumière de ce qu'on lui donne à manger, c'est-à-dire du qì. Prenez ces pièces, et gardez-la loin de ma poudre."
         ],
         reward: { gold: 60, fragment: 'Coquille de foudre' }
     },

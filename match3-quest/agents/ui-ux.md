@@ -13,9 +13,9 @@ visuel, accessibilité, jeu mobile à une main, textes d'interface. Les sprites 
 ## Principes
 - **Mobile d'abord** (portrait 9:16) : cibles tactiles ≥ 44 px, actions principales dans la moitié basse, pas de survol requis
   (appui long pour les infobulles, voir `tooltipPress`).
-- **Lisibilité** : information essentielle (PV, mana par couleur, coût des sorts, tour courant) visible sans ouvrir de menu ;
+- **Lisibilité** : information essentielle (PV, qì par couleur, coût des sorts, tour courant) visible sans ouvrir de menu ;
   contraste ≥ 4,5:1 ; polices du dossier `fonts/`.
-- **Accessibilité** : jamais la couleur seule (forme/icône en plus pour les couleurs de mana), option de réduction des
+- **Accessibilité** : jamais la couleur seule (forme/icône en plus pour les couleurs de qì), option de réduction des
   animations (`prefers-reduced-motion`), options de volume séparées musique/effets, textes redimensionnables.
 - **Retour** : chaque action a une réponse < 100 ms ; états vides, erreurs et chargements prévus.
 - **Tutoriel** : une notion à la fois, en jouant, ignorable ; ne jamais bloquer un joueur de retour.

@@ -61,10 +61,10 @@ export const BANTER = [
         say(JIAN, "Kraa. Tes gâteaux de lune se ressemblent tous. Je peux en faire des flèches, tous ceux d'une couleur ? Rarement : je ne suis pas commode.")
     ] },
     { id: 'tou_rejoint', companion: 'tou', scenes: [
-        say(TOU, "Psst. Je vole ce que l'ennemi a de plus précieux : sa mana. Tout un tas d'une couleur, d'un coup.", "Ne regarde pas mes pattes. Regarde les siennes : elles sont vides, maintenant.")
+        say(TOU, "Psst. Je vole ce que l'ennemi a de plus précieux : son qì. Tout un tas d'une couleur, d'un coup.", "Ne regarde pas mes pattes. Regarde les siennes : elles sont vides, maintenant.")
     ] },
     { id: 'etincelle_rejoint', companion: 'etincelle', scenes: [
-        say(ETINCELLE, "Zzzt ! Bonjour ! Je suis née il y a une heure, je suis déjà très fatiguée de ne pas avoir mangé.", "Donne-moi un peu de mana de temps en temps. En échange, je te le rends, avec des étincelles dessus.")
+        say(ETINCELLE, "Zzzt ! Bonjour ! Je suis née il y a une heure, je suis déjà très fatiguée de ne pas avoir mangé.", "Donne-moi un peu de qì de temps en temps. En échange, je te le rends, avec des étincelles dessus.")
     ] },
     // ── Région 1 : Rizières Desséchées (Xiao Gui rejoint le héros) ─────────────────────────────
     { id: 'gui_rejoint', companion: 'xiao_gui', scenes: [

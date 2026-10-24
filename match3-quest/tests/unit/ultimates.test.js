@@ -20,7 +20,7 @@ describe('catalogue', () => {
         expect(ultimateSpells).toHaveLength(12);
         expect(ultimateSpells.filter(sp => !isQuestUltimate(sp))).toHaveLength(8);
     });
-    test('très gourmands en mana et très puissants', () => {
+    test('très gourmands en qì et très puissants', () => {
         for (const sp of ultimateSpells) {
             const total = Object.values(sp.cost).reduce((a, b) => a + b, 0);
             expect(total).toBeGreaterThanOrEqual(50);
