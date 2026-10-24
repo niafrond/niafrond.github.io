@@ -129,14 +129,25 @@ function applyPlayerMatchExtras(indices, info){
         const rule = biomeRule;
         const res = resolveBiomeMatch(biomeState, biomeRule, indices);
         res.cleared.forEach(i => floatCellText(i, cellBanner(rule, rule.matchEffect)));
-        if(res.manaDelta > 0 && info.color) addManaForColor(player, info.color, res.manaDelta);
-        if(res.manaDelta < 0 && info.color) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
-        if(res.damage){ applyDamage(enemy, res.damage); log(`Case brûlante : -${res.damage} PV pour l'ennemi.`); }
-        if(res.manaMultiplier > 1 && info.color){
-            addManaForColor(player, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
-            log(`${biomeRule.label} : tuile dorée, mana ×${res.manaMultiplier} !`);
+        if(info.type === 'color' && info.color){
+            if(res.manaDelta > 0) addManaForColor(player, info.color, res.manaDelta);
+            if(res.manaDelta < 0) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
+            if(res.manaMultiplier > 1){
+                addManaForColor(player, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
+                log(`${biomeRule.label} : tuile dorée, mana ×${res.manaMultiplier} !`);
+            }
+            if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} mana.`);
+        } else if(info.type === 'combat' || info.type === 'skull'){
+            // Crânes et flèches : le bonus de la case s'applique à leur gain (dégâts ou points de combat) au lieu du mana.
+            const isSkull = info.type === 'skull';
+            const base = getEffectiveMatchLength(info) * (isSkull ? skullDamage + skullStrengthBonus(player) : 1);
+            const bonus = Math.round(res.manaDelta + base * (res.manaMultiplier - 1));
+            if(bonus){
+                if(isSkull){ if(bonus > 0) applyDamage(enemy, bonus); }
+                else player.combatPoints = Math.max(0, player.combatPoints + bonus);
+                if(bonus > 0 || !isSkull) log(`${biomeRule.label} : ${bonus > 0 ? '+' : ''}${bonus} ${isSkull ? 'dégâts' : 'points de combat'}${res.manaMultiplier > 1 ? ` (×${res.manaMultiplier})` : ''}.`);
+            }
         }
-        if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} mana.`);
     }
 }
 
