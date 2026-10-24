@@ -1,3 +1,9 @@
+## [2.124.0](https://github.com/niafrond/niafrond.github.io/compare/v2.123.0...v2.124.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** ajouter les early birds Jo et Arnaud au générique ([2240fea](https://github.com/niafrond/niafrond.github.io/commit/2240fead1d2a0b75b4dbc8f6e9215e27566fd136))
+
 ## [2.123.0](https://github.com/niafrond/niafrond.github.io/compare/v2.122.1...v2.123.0) (2026-10-24)
 
 ### Features
