@@ -2632,9 +2632,19 @@
    "h": "5cb614902a"
   },
   {
+   "p": "sprites/ultimates/combatend_defeat-seq.png",
+   "s": 266543,
+   "h": "d27c771700"
+  },
+  {
+   "p": "sprites/ultimates/combatend_victory-seq.png",
+   "s": 237087,
+   "h": "f1efdc0946"
+  },
+  {
    "p": "sprites/ultimates/index.json",
-   "s": 6382,
-   "h": "0ff67801c4"
+   "s": 6665,
+   "h": "9341f69848"
   },
   {
    "p": "sprites/ultimates/ultimateAzureDragon-seq.png",

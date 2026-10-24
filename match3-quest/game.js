@@ -27,7 +27,7 @@ import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttri
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
-import { preloadUltimateCinematic } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
+import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
@@ -831,6 +831,33 @@ function showCombatResultScreen(isVictory){
     screen.classList.add('active');
 }
 
+// Boucles pixel art plein écran derrière le mot (tools/gen-combat-end.py, planches `combatend_<issue>-seq`) : un feu d'artifice pour la
+// victoire, un cœur qui ne bat presque plus pour la défaite. Sans la planche (hors ligne, pas encore chargée), le mot reste sur fond noir.
+const COMBAT_END_SEQUENCES = { victory: 'combatend_victory', defeat: 'combatend_defeat' };
+export function preloadCombatEndSequences(){
+    Object.values(COMBAT_END_SEQUENCES).forEach(id => loadSequence(id).catch(() => null));
+}
+function playCombatEndLoop(fade, isVictory, reduced){
+    loadSequence(COMBAT_END_SEQUENCES[isVictory ? 'victory' : 'defeat']).then(seq => {
+        if(!seq || !fade.isConnected) return;
+        const canvas = document.createElement('canvas');
+        canvas.className = 'combat-end-loop';
+        canvas.width = seq.size[0];
+        canvas.height = seq.size[1];
+        fade.prepend(canvas);
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        ctx.imageSmoothingEnabled = false;
+        const start = performance.now();
+        const draw = () => {
+            const [sx, sy, sw, sh] = sequenceRect(seq, reduced ? 0 : ((performance.now() - start) / 1000 * seq.fps) % seq.frames);
+            ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            if(!reduced && fade.isConnected) requestAnimationFrame(draw);
+        };
+        draw();
+    }).catch(() => {});
+}
+
 // Fin de combat : écran noir avec le mot « Victoire » / « Défaite » (la musique de l'issue démarre avec lui), qui s'efface ensuite
 // sur l'écran de résultat. Rappelle `reveal` quand l'écran est plein : c'est là que le résultat se met en place, sous le mot.
 export const COMBAT_END_BANNER_MS = 2600;
@@ -845,6 +872,7 @@ function playCombatEndBanner(isVictory, reveal){
     fade.style.pointerEvents = 'none';
     fade.style.animationDuration = `${total}ms`;
     document.body.appendChild(fade);
+    playCombatEndLoop(fade, isVictory, reduced);
     setTimeout(reveal, total * 0.7);
     setTimeout(() => fade.remove(), total);
 }
@@ -1056,6 +1084,7 @@ export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
     document.body.classList.remove('combat-ended');
     delete document.body.dataset.combatEnd;
+    preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
     gameState.combatState = 'active';
     window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
     ensureCombatUsableActiveItem();

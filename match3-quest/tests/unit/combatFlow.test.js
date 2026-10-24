@@ -224,3 +224,24 @@ describe('début de combat : jingles avant l\'animation, nom de l\'adversaire pl
         expect(main).toMatch(/e\.detail\?\.boss \? 0 : Date\.now\(\) \+ COMBAT_INTRO_MS/);
     });
 });
+
+describe('écrans de fin de combat : boucles animées (feu d\'artifice / cœur qui ne bat presque plus)', () => {
+    const index = JSON.parse(readFileSync(new URL('../../sprites/ultimates/index.json', import.meta.url), 'utf8'));
+    const sheet = id => new URL(`../../sprites/ultimates/${id}-seq.png`, import.meta.url);
+
+    test.each(['combatend_victory', 'combatend_defeat'])('%s : planche rangée, en boucle, 96 images de 144×256 à 24 i/s', id => {
+        const meta = index[`${id}-seq`];
+        expect(meta).toMatchObject({ frames: 96, fps: 24, size: [144, 256], loop: true });
+        const png = readFileSync(sheet(id));
+        expect(png.readUInt32BE(16)).toBe(meta.size[0] * meta.cols);
+        expect(png.length).toBeLessThan(1_000_000);   // planche indexée (palette commune), pas un PNG de plusieurs Mo
+    });
+
+    test("le mot est joué sur la boucle de son issue, chargée d'avance, et sans elle il reste sur fond noir", () => {
+        expect(game).toMatch(/victory: 'combatend_victory', defeat: 'combatend_defeat'/);
+        expect(game).toMatch(/playCombatEndLoop\(fade, isVictory, reduced\)/);
+        expect(game).toMatch(/startNewCombat[\s\S]*?preloadCombatEndSequences\(\)/);
+        expect(game).toMatch(/if\(!seq \|\| !fade\.isConnected\) return;/);
+        expect(css).toMatch(/\.combat-end-loop \{[^}]*object-fit: cover;[^}]*z-index: -1/);
+    });
+});

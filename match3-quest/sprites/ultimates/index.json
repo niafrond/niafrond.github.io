@@ -462,5 +462,25 @@
       256
     ],
     "cols": 16
+  },
+  "combatend_victory-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "combatend_defeat-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
   }
 }
