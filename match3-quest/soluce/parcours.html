@@ -47,6 +47,21 @@ ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shotbox{cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb[hidden]{display:none}
+.lb-stage{position:absolute;left:0;top:0;transform-origin:0 0;line-height:0;cursor:grab;will-change:transform}
+.lb.drag .lb-stage{cursor:grabbing}
+.lb-stage .shotbox{border:0;border-radius:0;cursor:inherit;max-width:none!important}
+.lb-stage img{width:100%;pointer-events:none;-webkit-user-drag:none}
+.lb-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid #fff4dc;background:rgba(30,22,16,.85);color:#fff4dc;font:700 24px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lb-btn:hover,.lb-btn:focus-visible{background:#d9553f;outline:none}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+.lb-tools{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.lb-tools .lb-btn{position:static}
+.lb-cap{position:absolute;left:12px;right:70px;top:calc(14px + env(safe-area-inset-top,0px));color:#fff4dc;font:.85rem system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 3px #000}
+.lb-cap small{display:none}
+.lb-cap b{color:#ff7a6a}
 .shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
 .shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
@@ -80,7 +95,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil Ardent (Soleil) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>80 pièces d’or · 600 points d’expérience · composant de flèche : Éclat du Soleil Ardent</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/rizieres_h_wen.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du Doyen Wen"><span class="ring" style="left:75.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Maison du Doyen Wen : <b>1</b> Doyen Wen (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/rizieres.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rizières Desséchées"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rizières Desséchées : <b>1</b> Soleil Ardent (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/rizieres_h_wen.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du Doyen Wen"><span class="ring" style="left:75.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Maison du Doyen Wen : <b>1</b> Doyen Wen (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/rizieres.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rizières Desséchées"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rizières Desséchées : <b>1</b> Soleil Ardent (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-volcan.html#q-q_sun_6">Le Soleil de Magma</a>, <a href="quetes-volcan.html#q-sq_ember_pup">Le louveteau de braise</a>, <a href="quetes-volcan.html#q-sq_ore">La veine de cinabre</a>, <a href="quetes-volcan.html#q-sq_ember">La braise du phénix</a>, <a href="quetes-rizieres.html#q-sq_riz_gateau">Les lanternes de Chang'e</a>, <a href="quetes-rizieres.html#q-sq_hua_1">La colporteuse sans âge</a></dd>
   </dl>
 </article>
@@ -111,7 +126,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil de Magma (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>110 pièces d’or · 1900 points d’expérience · composant de flèche : Éclat du Soleil de Magma</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/volcan_h_yan.jpg" width="440" height="308" loading="lazy" alt="Carte : Petit temple de Yan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Petit temple de Yan : <b>1</b> Yan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Soleil de Magma (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/volcan_h_yan.jpg" width="440" height="308" loading="lazy" alt="Carte : Petit temple de Yan"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Petit temple de Yan : <b>1</b> Yan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Soleil de Magma (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-q_sun_4">Le Soleil des Mirages</a>, <a href="quetes-gobi.html#q-sq_oasis">La cache de l'oasis</a>, <a href="quetes-gobi.html#q-sq_bandits">La caravane de Ma</a>, <a href="quetes-volcan.html#q-sq_vol_obsidienne">Les soldats d'obsidienne</a></dd>
   </dl>
 </article>
@@ -146,7 +161,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil des Mirages (Soleil) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>140 pièces d’or · 3230 points d’expérience · composant de flèche : Éclat du Soleil des Mirages</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/gobi_h_dawa.jpg" width="440" height="308" loading="lazy" alt="Carte : Tente de Dawa"><span class="ring" style="left:65.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Tente de Dawa : <b>1</b> Dawa (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/gobi.jpg" width="1320" height="968" loading="lazy" alt="Carte : Désert de Gobi"><span class="ring" style="left:81.67%;top:75.00%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Désert de Gobi : <b>1</b> Soleil des Mirages (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_dawa.jpg" width="440" height="308" loading="lazy" alt="Carte : Tente de Dawa"><span class="ring" style="left:65.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Tente de Dawa : <b>1</b> Dawa (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi.jpg" width="1320" height="968" loading="lazy" alt="Carte : Désert de Gobi"><span class="ring" style="left:81.67%;top:75.00%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Désert de Gobi : <b>1</b> Soleil des Mirages (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fleuve.html#q-q_sun_2">Le Soleil des Eaux Taries</a>, <a href="quetes-fleuve.html#q-sq_golden_carp">La carpe qui voulait être dragon</a>, <a href="quetes-fleuve.html#q-sq_river_serpent">Le serpent du gué</a>, <a href="quetes-fleuve.html#q-sq_drowned">Le métier de Mei</a>, <a href="quetes-gobi.html#q-sq_gob_caravane">La caravane fantôme</a>, <a href="quetes-gobi.html#q-sq_hua_3">La carte des pas de Hua</a></dd>
   </dl>
 </article>
@@ -177,7 +192,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil des Eaux Taries (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>180 pièces d’or · 6670 points d’expérience · composant de flèche : Éclat du Soleil des Eaux Taries</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/fleuve_h_gu.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du passeur Gu"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Cabane du passeur Gu : <b>1</b> Gu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/fleuve.jpg" width="1320" height="968" loading="lazy" alt="Carte : Lit du Fleuve Jaune"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Lit du Fleuve Jaune : <b>1</b> Soleil des Eaux Taries (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:484px"><img src="img/fleuve_h_gu.jpg" width="484" height="308" loading="lazy" alt="Carte : Cabane du passeur Gu"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Cabane du passeur Gu : <b>1</b> Gu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fleuve.jpg" width="1320" height="968" loading="lazy" alt="Carte : Lit du Fleuve Jaune"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Lit du Fleuve Jaune : <b>1</b> Soleil des Eaux Taries (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-bambous.html#q-q_sun_3">Le Soleil de Cendres</a>, <a href="quetes-bambous.html#q-sq_bell">La cloche du temple</a>, <a href="quetes-bambous.html#q-sq_old_pine">Le Vieux Pin Noir</a>, <a href="quetes-fleuve.html#q-sq_fle_golem">Le colosse de l'écluse</a>, <a href="quetes-fleuve.html#q-sq_hua_2">Les mêmes babioles</a></dd>
   </dl>
 </article>
@@ -212,7 +227,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil de Cendres (Soleil) — Force : <span class="dot" style="background:#4cae5d"></span>Terre (vert) — <b>Faiblesse : <span class="dot" style="background:#e6c13a"></span>Air (jaune)</b> — très robuste, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>230 pièces d’or · 10910 points d’expérience · composant de flèche : Éclat du Soleil de Cendres</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/bambous_h_zhen.jpg" width="440" height="308" loading="lazy" alt="Carte : Cellule du moine Zhen"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cellule du moine Zhen : <b>1</b> Zhen (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/bambous.jpg" width="1320" height="968" loading="lazy" alt="Carte : Forêt de Bambous Calcinée"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Forêt de Bambous Calcinée : <b>1</b> Soleil de Cendres (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/bambous_h_zhen.jpg" width="440" height="308" loading="lazy" alt="Carte : Cellule du moine Zhen"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cellule du moine Zhen : <b>1</b> Zhen (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/bambous.jpg" width="1320" height="968" loading="lazy" alt="Carte : Forêt de Bambous Calcinée"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Forêt de Bambous Calcinée : <b>1</b> Soleil de Cendres (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-tonnerre.html#q-q_sun_5">Le Soleil des Orages</a>, <a href="quetes-tonnerre.html#q-sq_spark_egg">L'œuf de foudre</a>, <a href="quetes-tonnerre.html#q-sq_thunder_wyrm">Le dragon-serpent du tonnerre</a>, <a href="quetes-tonnerre.html#q-sq_lei_drum">Le tambour du tonnerre</a>, <a href="quetes-bambous.html#q-sq_bam_ombres">Les ombres du temple</a></dd>
   </dl>
 </article>
@@ -247,7 +262,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil des Orages (Soleil) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>290 pièces d’or · 14500 points d’expérience · composant de flèche : Éclat du Soleil des Orages</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:440px"><img src="img/tonnerre_h_lei.jpg" width="440" height="308" loading="lazy" alt="Carte : Grotte-cabane de Lei"><span class="ring" style="left:45.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Grotte-cabane de Lei : <b>1</b> Lei (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/tonnerre.jpg" width="1320" height="968" loading="lazy" alt="Carte : Monts du Tonnerre"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Monts du Tonnerre : <b>1</b> Soleil des Orages (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/tonnerre_h_lei.jpg" width="440" height="308" loading="lazy" alt="Carte : Grotte-cabane de Lei"><span class="ring" style="left:45.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Grotte-cabane de Lei : <b>1</b> Lei (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/tonnerre.jpg" width="1320" height="968" loading="lazy" alt="Carte : Monts du Tonnerre"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Monts du Tonnerre : <b>1</b> Soleil des Orages (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fauves.html#q-q_sun_7">Le Soleil des Bêtes Folles</a>, <a href="quetes-fauves.html#q-sq_tou_stash">La cachette de la belette</a>, <a href="quetes-fauves.html#q-sq_scarred_tiger">Balafré</a>, <a href="quetes-fauves.html#q-sq_zi_bell">La clochette du bélier</a>, <a href="quetes-tonnerre.html#q-sq_ton_cavaliers">Les cavaliers de l'orage</a></dd>
   </dl>
 </article>
@@ -282,7 +297,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil des Bêtes Folles (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, cogneur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>360 pièces d’or · 18120 points d’expérience · composant de flèche : Éclat du Soleil des Bêtes Folles</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Soleil des Bêtes Folles (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Soleil des Bêtes Folles (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a>, <a href="quetes-mer.html#q-sq_jian_quiver">Le carquois du corbeau</a>, <a href="quetes-mer.html#q-sq_nets">Les filets déchirés</a>, <a href="quetes-mer.html#q-sq_pearl">La perle du Roi-Dragon</a></dd>
   </dl>
 </article>
@@ -313,7 +328,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil des Marées (Soleil) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>440 pièces d’or · 21780 points d’expérience · composant de flèche : Éclat du Soleil des Marées</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/mer_h_longwang.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon de l'envoyé"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon de l'envoyé : <b>1</b> Longwang (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/mer.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rivage de la Mer Orientale"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rivage de la Mer Orientale : <b>1</b> Soleil des Marées (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/mer_h_longwang.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon de l'envoyé"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon de l'envoyé : <b>1</b> Longwang (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/mer.jpg" width="1320" height="968" loading="lazy" alt="Carte : Rivage de la Mer Orientale"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Rivage de la Mer Orientale : <b>1</b> Soleil des Marées (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_sun_9">Le Soleil Lâche</a>, <a href="quetes-fusang.html#q-sq_crane">Le nid de la grue</a>, <a href="quetes-mer.html#q-sq_mer_mazu">Le serpent de Mazu</a>, <a href="quetes-mer.html#q-sq_hua_4">Ce que la mer a gardé</a>, <a href="quetes-fusang.html#q-sq_fus_etoile">L'enfant d'étoile</a></dd>
   </dl>
 </article>
@@ -348,7 +363,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Changxi (Divinité) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — très robuste, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>600 pièces d’or · 25470 points d’expérience · composant de flèche : Larme de Changxi</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/fusang_h_grue.jpg" width="484" height="308" loading="lazy" alt="Carte : Nid de la messagère"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Nid de la messagère : <b>1</b> La Grue (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/marees.jpg" width="1320" height="968" loading="lazy" alt="Carte : Autel de Mazu"><span class="ring" style="left:91.67%;top:47.73%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Autel de Mazu : <b>1</b> Changxi, mère des douze lunes (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:484px"><img src="img/fusang_h_grue.jpg" width="484" height="308" loading="lazy" alt="Carte : Nid de la messagère"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Nid de la messagère : <b>1</b> La Grue (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/marees.jpg" width="1320" height="968" loading="lazy" alt="Carte : Autel de Mazu"><span class="ring" style="left:91.67%;top:47.73%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Autel de Mazu : <b>1</b> Changxi, mère des douze lunes (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_fengmeng">L'Archer Miroir</a></dd>
   </dl>
 </article>
@@ -383,7 +398,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Fengmeng, Rage et Désespoir (Humain) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, carapace épaisse, défenseur</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>600 pièces d’or · 25470 points d’expérience · composant de flèche : Carquois de Fengmeng</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/fusang_h_grue.jpg" width="484" height="308" loading="lazy" alt="Carte : Nid de la messagère"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Nid de la messagère : <b>1</b> La Grue (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:78.33%;top:34.09%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Pic de la Lune : <b>1</b> Fengmeng, Rage et Désespoir (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:484px"><img src="img/fusang_h_grue.jpg" width="484" height="308" loading="lazy" alt="Carte : Nid de la messagère"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Nid de la messagère : <b>1</b> La Grue (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:78.33%;top:34.09%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Pic de la Lune : <b>1</b> Fengmeng, Rage et Désespoir (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-lune.html#q-q_epilogue">Les gâteaux de lune</a>, <a href="quetes-lune.html#q-sq_hua_6">La lanterne de Xihe</a></dd>
   </dl>
 </article>
@@ -418,7 +433,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Soleil Lâche (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>540 pièces d’or · 25470 points d’expérience · composant de flèche : Éclat du Soleil Lâche</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:484px"><img src="img/fusang_h_grue.jpg" width="484" height="308" loading="lazy" alt="Carte : Nid de la messagère"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Nid de la messagère : <b>1</b> La Grue (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/fusang.jpg" width="1320" height="968" loading="lazy" alt="Carte : Cime du Fusang"><span class="ring" style="left:91.67%;top:38.64%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Cime du Fusang : <b>1</b> Soleil Lâche (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:484px"><img src="img/fusang_h_grue.jpg" width="484" height="308" loading="lazy" alt="Carte : Nid de la messagère"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Nid de la messagère : <b>1</b> La Grue (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fusang.jpg" width="1320" height="968" loading="lazy" alt="Carte : Cime du Fusang"><span class="ring" style="left:91.67%;top:38.64%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Cime du Fusang : <b>1</b> Soleil Lâche (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fusang.html#q-q_changxi">L'épreuve de Changxi</a>, <a href="quetes-fusang.html#q-sq_hua_5">Xihe, mère des dix soleils</a>, <a href="quetes-lune.html#q-sq_lune_ombres">Les ombres du miroir</a></dd>
   </dl>
 </article>
@@ -449,7 +464,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Déposer les gâteaux de lune sur l'autel (sommet du Pic de la Lune)<br><small>Lieu : Pic de la Lune (partie est de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent → Pic de la Lune</small></li></ol></dd>
     <dt>Récompense</dt><dd>800 pièces d’or · 27700 points d’expérience · composant de flèche : Gâteau de pleine lune</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:31.67%;top:43.18%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:91.67%;top:43.18%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Pic de la Lune : <b>1</b> Chang'e (donne la quête) · <b>2</b> Autel des gâteaux de lune (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:31.67%;top:43.18%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:91.67%;top:43.18%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Pic de la Lune : <b>1</b> Chang'e (donne la quête) · <b>2</b> Autel des gâteaux de lune (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -462,6 +477,89 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 
 </ul>
 </main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
+<div class="lb-stage" id="lb-stage"></div>
+<div class="lb-cap" id="lb-cap"></div>
+<button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Fermer l’aperçu">&times;</button>
+<div class="lb-tools"><button class="lb-btn" id="lb-out" type="button" aria-label="Zoom arrière">&minus;</button><button class="lb-btn" id="lb-fit" type="button" aria-label="Ajuster à l’écran" style="font-size:15px">Ajuster</button><button class="lb-btn" id="lb-in" type="button" aria-label="Zoom avant">+</button></div>
+</div>
+<script>
+(function(){
+var lb=document.getElementById('lb'),stage=document.getElementById('lb-stage'),cap=document.getElementById('lb-cap');
+var S=1,TX=0,TY=0,FIT=1,W=1,H=1,pts={},pinch=0,moved=0,lastTap=0,opener=null,onStage=false;
+function vw(){return lb.clientWidth;}function vh(){return lb.clientHeight;}
+function apply(){stage.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')';}
+function clampPan(){
+  var w=W*S,h=H*S,m=60;
+  TX=w<=vw()?(vw()-w)/2:Math.min(m,Math.max(vw()-w-m,TX));
+  TY=h<=vh()?(vh()-h)/2:Math.min(m,Math.max(vh()-h-m,TY));
+}
+function zoomAt(f,cx,cy){
+  var ns=Math.min(10,Math.max(FIT*0.95,S*f));f=ns/S;
+  TX=cx-(cx-TX)*f;TY=cy-(cy-TY)*f;S=ns;clampPan();apply();
+}
+function fit(){S=FIT;TX=(vw()-W*S)/2;TY=(vh()-H*S)/2;apply();}
+function open(box){
+  opener=box;
+  var c=box.cloneNode(true);c.removeAttribute('style');
+  var img=c.querySelector('img');
+  var fig=box.closest('figure'),t=fig&&fig.querySelector('figcaption');
+  cap.innerHTML=t?t.innerHTML:'';
+  stage.innerHTML='';stage.appendChild(c);
+  lb.hidden=false;document.body.style.overflow='hidden';
+  function go(){
+    W=img.naturalWidth||1200;H=img.naturalHeight||(W*0.5);
+    stage.style.width=W+'px';
+    FIT=Math.min(vw()/W,vh()/H)*0.96;fit();
+  }
+  if(img.complete&&img.naturalWidth)go();else{img.onload=go;W=1200;H=600;stage.style.width=W+'px';FIT=Math.min(vw()/W,vh()/H)*0.96;fit();}
+  document.getElementById('lb-close').focus();
+}
+function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow='';pts={};if(opener&&opener.scrollIntoView){}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.shotbox');if(b&&!lb.contains(b))open(b);});
+document.getElementById('lb-close').addEventListener('click',close);
+document.getElementById('lb-in').addEventListener('click',function(){zoomAt(1.5,vw()/2,vh()/2);});
+document.getElementById('lb-out').addEventListener('click',function(){zoomAt(1/1.5,vw()/2,vh()/2);});
+document.getElementById('lb-fit').addEventListener('click',fit);
+document.addEventListener('keydown',function(e){
+  if(lb.hidden)return;
+  if(e.key==='Escape')close();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.4,vw()/2,vh()/2);
+  else if(e.key==='-')zoomAt(1/1.4,vw()/2,vh()/2);
+  else if(e.key==='0')fit();
+});
+lb.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);},{passive:false});
+lb.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.lb-btn'))return;
+  onStage=!!e.target.closest('.lb-stage');pts[e.pointerId]={x:e.clientX,y:e.clientY};moved=0;lb.setPointerCapture(e.pointerId);lb.classList.add('drag');
+  var k=Object.keys(pts);if(k.length===2){var a=pts[k[0]],b=pts[k[1]];pinch=Math.hypot(a.x-b.x,a.y-b.y);}
+});
+lb.addEventListener('pointermove',function(e){
+  var p=pts[e.pointerId];if(!p)return;
+  var k=Object.keys(pts);
+  if(k.length===2){
+    var a=pts[k[0]],b=pts[k[1]];
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    var a2=pts[k[0]],b2=pts[k[1]],d=Math.hypot(a2.x-b2.x,a2.y-b2.y);
+    if(pinch>0)zoomAt(d/pinch,(a2.x+b2.x)/2,(a2.y+b2.y)/2);
+    pinch=d;moved=9;return;
+  }
+  moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);
+  TX+=e.clientX-p.x;TY+=e.clientY-p.y;pts[e.pointerId]={x:e.clientX,y:e.clientY};clampPan();apply();
+});
+function up(e){
+  var had=pts[e.pointerId];delete pts[e.pointerId];pinch=0;
+  if(!Object.keys(pts).length)lb.classList.remove('drag');
+  if(had&&moved<6&&!e.target.closest('.lb-btn')){
+    var now=Date.now();
+    if(now-lastTap<350){if(S>FIT*1.2)fit();else zoomAt(3,e.clientX,e.clientY);lastTap=0;}else lastTap=now;
+    if(!onStage)close();
+  }
+}
+lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function(e){delete pts[e.pointerId];pinch=0;lb.classList.remove('drag');});
+window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
+})();
+</script>
 <footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>

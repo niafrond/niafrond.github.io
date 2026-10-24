@@ -47,6 +47,21 @@ ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shotbox{cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb[hidden]{display:none}
+.lb-stage{position:absolute;left:0;top:0;transform-origin:0 0;line-height:0;cursor:grab;will-change:transform}
+.lb.drag .lb-stage{cursor:grabbing}
+.lb-stage .shotbox{border:0;border-radius:0;cursor:inherit;max-width:none!important}
+.lb-stage img{width:100%;pointer-events:none;-webkit-user-drag:none}
+.lb-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid #fff4dc;background:rgba(30,22,16,.85);color:#fff4dc;font:700 24px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lb-btn:hover,.lb-btn:focus-visible{background:#d9553f;outline:none}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+.lb-tools{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.lb-tools .lb-btn{position:static}
+.lb-cap{position:absolute;left:12px;right:70px;top:calc(14px + env(safe-area-inset-top,0px));color:#fff4dc;font:.85rem system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 3px #000}
+.lb-cap small{display:none}
+.lb-cap b{color:#ff7a6a}
 .shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
 .shot figcaption b{color:#ff5a4a}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
@@ -73,7 +88,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Déposer les gâteaux de lune sur l'autel (sommet du Pic de la Lune)<br><small>Lieu : Pic de la Lune (partie est de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent → Pic de la Lune</small></li></ol></dd>
     <dt>Récompense</dt><dd>800 pièces d’or · 27700 points d’expérience · composant de flèche : Gâteau de pleine lune</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:31.67%;top:43.18%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:91.67%;top:43.18%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Pic de la Lune : <b>1</b> Chang'e (donne la quête) · <b>2</b> Autel des gâteaux de lune (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune.jpg" width="1320" height="968" loading="lazy" alt="Carte : Pic de la Lune"><span class="ring" style="left:31.67%;top:43.18%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:91.67%;top:43.18%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Pic de la Lune : <b>1</b> Chang'e (donne la quête) · <b>2</b> Autel des gâteaux de lune (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -89,7 +104,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Assassin Masqué (Humain) — Force : <span class="dot" style="background:#9b62d6"></span>Arcane (violet) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — frappe fort, rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Écorce d'osmanthus</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:23.75%;top:34.09%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:8.75%;top:84.09%;width:4.50%;height:8.18%"><i>2</i></span><span class="ring" style="left:21.25%;top:47.73%;width:4.50%;height:8.18%"><i>3</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Wu Gang (donne la quête) · <b>2</b> Cache sous le givre (objectif) · <b>3</b> Ombre du miroir (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:23.75%;top:34.09%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:8.75%;top:84.09%;width:4.50%;height:8.18%"><i>2</i></span><span class="ring" style="left:21.25%;top:47.73%;width:4.50%;height:8.18%"><i>3</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Wu Gang (donne la quête) · <b>2</b> Cache sous le givre (objectif) · <b>3</b> Ombre du miroir (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -101,7 +116,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>À rapporter à</dt><dd><b>Veilleuse Yin</b> — Maison de la veilleuse (partie nord-est de l’écran)</dd>
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Porter la lanterne de Hua à la veilleuse Yin (Hameau sous la Lune)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Lanterne de Hua</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>2</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>3</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Hua (donne la quête) · <b>2</b> Veilleuse Yin (à qui la rendre) · <b>3</b> Veilleuse Yin (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>2</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>3</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Hua (donne la quête) · <b>2</b> Veilleuse Yin (à qui la rendre) · <b>3</b> Veilleuse Yin (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -113,7 +128,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la boîte à gâteaux (Hameau sous la Lune)<br><small>Lieu : Hameau sous la Lune (au centre de l’écran)</small></li><li><b>Parler à</b> : Porter un gâteau à la veilleuse Yin (maison de la veilleuse)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Pâte de lotus</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:44.23%;top:47.92%;width:6.92%;height:7.50%"><i>1</i></span><span class="ring" style="left:36.54%;top:43.75%;width:6.92%;height:7.50%"><i>2</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Gui (donne la quête) · <b>2</b> Boîte à gâteaux de lune (objectif)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Veilleuse Yin (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:44.23%;top:47.92%;width:6.92%;height:7.50%"><i>1</i></span><span class="ring" style="left:36.54%;top:43.75%;width:6.92%;height:7.50%"><i>2</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Gui (donne la quête) · <b>2</b> Boîte à gâteaux de lune (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Veilleuse Yin (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -125,7 +140,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter le Corbeau d'ombre (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li><li><b>Ouvrir</b> : Récupérer la cache de la rivière d'argent (sentier d'argent)<br><small>Lieu : Sentier d'Argent (partie sud-ouest de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Caillou d'argent</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:48.08%;top:39.58%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Vieux Shen (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:31.25%;top:70.45%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:23.75%;top:84.09%;width:4.50%;height:8.18%"><i>2</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Corbeau d'ombre (objectif) · <b>2</b> Cache de la rivière d'argent (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:48.08%;top:39.58%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Vieux Shen (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:31.25%;top:70.45%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:23.75%;top:84.09%;width:4.50%;height:8.18%"><i>2</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Corbeau d'ombre (objectif) · <b>2</b> Cache de la rivière d'argent (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -137,7 +152,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les ombres du miroir (sentier d'argent)<br><small>Lieu : Sentier d'Argent (au centre de l’écran)</small><ul class="enemy"><li>Ombre du miroir — centre</li><li>Ombre du miroir — est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</p></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Éclat de miroir</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:75.00%;top:60.42%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Lan (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:61.25%;top:56.82%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:71.25%;top:65.91%;width:4.50%;height:8.18%"><i>2</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Ombre du miroir (objectif) · <b>2</b> Ombre du miroir (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:75.00%;top:60.42%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Lan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:61.25%;top:56.82%;width:4.50%;height:8.18%"><i>1</i></span><span class="ring" style="left:71.25%;top:65.91%;width:4.50%;height:8.18%"><i>2</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Ombre du miroir (objectif) · <b>2</b> Ombre du miroir (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -149,7 +164,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la dernière page du carnet (sentier d'argent)<br><small>Lieu : Sentier d'Argent (au centre de l’écran) — itinéraire : Hameau sous la Lune → Sentier d'Argent</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Carnet complet</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:63.46%;top:43.75%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Yutu (donne la quête)</figcaption></figure><figure class="shot"><div class="shotbox" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:63.75%;top:43.18%;width:4.50%;height:8.18%"><i>1</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Dernière page du carnet (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1144px"><img src="img/lune_village.jpg" width="1144" height="1056" loading="lazy" alt="Carte : Hameau sous la Lune"><span class="ring" style="left:63.46%;top:43.75%;width:6.92%;height:7.50%"><i>1</i></span></div><figcaption>Hameau sous la Lune : <b>1</b> Yutu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/lune_wild.jpg" width="1760" height="968" loading="lazy" alt="Carte : Sentier d'Argent"><span class="ring" style="left:63.75%;top:43.18%;width:4.50%;height:8.18%"><i>1</i></span></div><figcaption>Sentier d'Argent : <b>1</b> Dernière page du carnet (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -161,11 +176,94 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Demander à la veilleuse Yin d'allumer la dernière lanterne pour Xihe (Hameau sous la Lune)<br><small>Lieu : Maison de la veilleuse (partie nord-est de l’écran) — itinéraire : Hameau sous la Lune → Maison de la veilleuse</small></li></ol></dd>
     <dt>Récompense</dt><dd>200 pièces d’or · 11540 points d’expérience · composant de flèche : Caillou d'aurore</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>2</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Hua (donne la quête) · <b>2</b> Veilleuse Yin (objectif)</figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/lune_h_veilleuse.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison de la veilleuse"><span class="ring" style="left:45.83%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span><span class="ring" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>2</i></span></div><figcaption>Maison de la veilleuse : <b>1</b> Hua (donne la quête) · <b>2</b> Veilleuse Yin (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
 </main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
+<div class="lb-stage" id="lb-stage"></div>
+<div class="lb-cap" id="lb-cap"></div>
+<button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Fermer l’aperçu">&times;</button>
+<div class="lb-tools"><button class="lb-btn" id="lb-out" type="button" aria-label="Zoom arrière">&minus;</button><button class="lb-btn" id="lb-fit" type="button" aria-label="Ajuster à l’écran" style="font-size:15px">Ajuster</button><button class="lb-btn" id="lb-in" type="button" aria-label="Zoom avant">+</button></div>
+</div>
+<script>
+(function(){
+var lb=document.getElementById('lb'),stage=document.getElementById('lb-stage'),cap=document.getElementById('lb-cap');
+var S=1,TX=0,TY=0,FIT=1,W=1,H=1,pts={},pinch=0,moved=0,lastTap=0,opener=null,onStage=false;
+function vw(){return lb.clientWidth;}function vh(){return lb.clientHeight;}
+function apply(){stage.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')';}
+function clampPan(){
+  var w=W*S,h=H*S,m=60;
+  TX=w<=vw()?(vw()-w)/2:Math.min(m,Math.max(vw()-w-m,TX));
+  TY=h<=vh()?(vh()-h)/2:Math.min(m,Math.max(vh()-h-m,TY));
+}
+function zoomAt(f,cx,cy){
+  var ns=Math.min(10,Math.max(FIT*0.95,S*f));f=ns/S;
+  TX=cx-(cx-TX)*f;TY=cy-(cy-TY)*f;S=ns;clampPan();apply();
+}
+function fit(){S=FIT;TX=(vw()-W*S)/2;TY=(vh()-H*S)/2;apply();}
+function open(box){
+  opener=box;
+  var c=box.cloneNode(true);c.removeAttribute('style');
+  var img=c.querySelector('img');
+  var fig=box.closest('figure'),t=fig&&fig.querySelector('figcaption');
+  cap.innerHTML=t?t.innerHTML:'';
+  stage.innerHTML='';stage.appendChild(c);
+  lb.hidden=false;document.body.style.overflow='hidden';
+  function go(){
+    W=img.naturalWidth||1200;H=img.naturalHeight||(W*0.5);
+    stage.style.width=W+'px';
+    FIT=Math.min(vw()/W,vh()/H)*0.96;fit();
+  }
+  if(img.complete&&img.naturalWidth)go();else{img.onload=go;W=1200;H=600;stage.style.width=W+'px';FIT=Math.min(vw()/W,vh()/H)*0.96;fit();}
+  document.getElementById('lb-close').focus();
+}
+function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow='';pts={};if(opener&&opener.scrollIntoView){}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.shotbox');if(b&&!lb.contains(b))open(b);});
+document.getElementById('lb-close').addEventListener('click',close);
+document.getElementById('lb-in').addEventListener('click',function(){zoomAt(1.5,vw()/2,vh()/2);});
+document.getElementById('lb-out').addEventListener('click',function(){zoomAt(1/1.5,vw()/2,vh()/2);});
+document.getElementById('lb-fit').addEventListener('click',fit);
+document.addEventListener('keydown',function(e){
+  if(lb.hidden)return;
+  if(e.key==='Escape')close();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.4,vw()/2,vh()/2);
+  else if(e.key==='-')zoomAt(1/1.4,vw()/2,vh()/2);
+  else if(e.key==='0')fit();
+});
+lb.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);},{passive:false});
+lb.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.lb-btn'))return;
+  onStage=!!e.target.closest('.lb-stage');pts[e.pointerId]={x:e.clientX,y:e.clientY};moved=0;lb.setPointerCapture(e.pointerId);lb.classList.add('drag');
+  var k=Object.keys(pts);if(k.length===2){var a=pts[k[0]],b=pts[k[1]];pinch=Math.hypot(a.x-b.x,a.y-b.y);}
+});
+lb.addEventListener('pointermove',function(e){
+  var p=pts[e.pointerId];if(!p)return;
+  var k=Object.keys(pts);
+  if(k.length===2){
+    var a=pts[k[0]],b=pts[k[1]];
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    var a2=pts[k[0]],b2=pts[k[1]],d=Math.hypot(a2.x-b2.x,a2.y-b2.y);
+    if(pinch>0)zoomAt(d/pinch,(a2.x+b2.x)/2,(a2.y+b2.y)/2);
+    pinch=d;moved=9;return;
+  }
+  moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);
+  TX+=e.clientX-p.x;TY+=e.clientY-p.y;pts[e.pointerId]={x:e.clientX,y:e.clientY};clampPan();apply();
+});
+function up(e){
+  var had=pts[e.pointerId];delete pts[e.pointerId];pinch=0;
+  if(!Object.keys(pts).length)lb.classList.remove('drag');
+  if(had&&moved<6&&!e.target.closest('.lb-btn')){
+    var now=Date.now();
+    if(now-lastTap<350){if(S>FIT*1.2)fit();else zoomAt(3,e.clientX,e.clientY);lastTap=0;}else lastTap=now;
+    if(!onStage)close();
+  }
+}
+lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function(e){delete pts[e.pointerId];pinch=0;lb.classList.remove('drag');});
+window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
+})();
+</script>
 <footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>
