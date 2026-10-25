@@ -43,6 +43,8 @@ export function createPuzzle(def) {
         dir: d => puzzle.apply(mode.dir?.(state, d)),
         tap: (x, y) => puzzle.apply(mode.tap?.(state, x, y)),
         undo() { if (!history.length || puzzle.won) return false; state = history.pop(); return true; },
+        /** Impose l'état suivant comme un coup (rejouer une solution) ; l'annulation le défait comme les autres. */
+        play(next) { if (puzzle.won) return false; history.push(state); state = next; return true; },
         reset() { state = mode.init(def.level); history.length = 0; }
     };
     return puzzle;

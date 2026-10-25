@@ -1,6 +1,6 @@
 import './fixtures/xhrFromDisk.js';
 import { describe, test, expect } from '@jest/globals';
-import { createPuzzle, solve, registerMode, getMode } from '../../puzzle/engine.js';
+import { createPuzzle, solve, solvePath, registerMode, getMode } from '../../puzzle/engine.js';
 import { traceBeams } from '../../puzzle/modes.js';
 import { PUZZLES, PUZZLE_SETS, puzzleDef, puzzlesOfSet, pieceOfPuzzle } from '../../puzzle/levels.js';
 import { getStuffById, stuffTotals, grantStuff, equipStuff, allStuff, ANTIQUE_ARMORS, STUFF_SLOTS, lootableStuff, describeStuff } from '../../stuff.js';
@@ -244,5 +244,19 @@ describe('paliers de difficulté', () => {
         const path = mode.solveFast(mode.init(PUZZLES.lune_miroirs.level));
         expect(mode.won(path[path.length - 1])).toBe(true);
         for (let i = 1; i < path.length; i++) expect(path[i].cells.filter((c, k) => c !== path[i - 1].cells[k])).toHaveLength(1);
+    });
+});
+
+describe('rejeu de la solution', () => {
+    test.each(Object.keys(PUZZLES))('%s : la solution la plus courte, rejouée coup par coup avec play(), gagne et s\'annule', id => {
+        const def = puzzleDef(id), path = solvePath(def);
+        expect(path.length - 1).toBe(solve(def, { maxStates: 400000 }));
+        const p = createPuzzle(def);
+        path.slice(1).forEach((s, i) => { expect(p.won).toBe(false); expect(p.play(s)).toBe(true); expect(p.moves).toBe(i + 1); });
+        expect(p.won).toBe(true);
+        expect(p.play(path[1])).toBe(false);             // énigme résolue : plus de coup
+        p.reset();
+        expect(p.won).toBe(false);
+        expect(p.moves).toBe(0);
     });
 });

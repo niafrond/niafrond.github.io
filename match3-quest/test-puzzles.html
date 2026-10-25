@@ -47,6 +47,7 @@
             if (!b) return;
             host.classList.add('open');
             const view = openPuzzle(host, b.dataset.id, {
+                solution: true,
                 onClose: () => host.classList.remove('open'),
                 onSolved: () => { solved.add(b.dataset.id); render(); }
             });
