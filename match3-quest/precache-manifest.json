@@ -84,6 +84,7 @@
   "world/barriers.js",
   "world/collars.js",
   "world/connections.js",
+  "world/etages.js",
   "world/expand.js",
   "world/index.js",
   "world/junctions.js",

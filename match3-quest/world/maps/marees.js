@@ -131,8 +131,8 @@ export default {
         ],
         chests: [
             { id: 'marees_village_nets', at: 'j', gold: 240, label: 'Filet de pêche roulé', openText: 'Dans un filet roulé sur le quai, quelques pièces mouillées et un hameçon en bronze.' },
-            { id: 'marees_village_raft', at: 'k', gold: 480, puzzle: 'marees_charrette', label: 'Caisse du radeau-marché', openText: 'Une caisse de sel et de monnaie, que Maître Tang jure ne pas avoir perdue.' },
-            { id: 'marees_village_roof', at: 'm', gold: 300, puzzle: 'marees_jarres', label: 'Jarre sur le toit', openText: 'Une jarre coincée entre deux pieux, pleine de pièces de cuivre salées.' }
+            { id: 'marees_village_raft', at: 'k', gold: 480, label: 'Caisse du radeau-marché', openText: 'Une caisse de sel et de monnaie, que Maître Tang jure ne pas avoir perdue.' },
+            { id: 'marees_village_roof', at: 'm', gold: 300, label: 'Jarre sur le toit', openText: 'Une jarre coincée entre deux pieux, pleine de pièces de cuivre salées.' }
         ]
     },
 

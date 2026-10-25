@@ -135,11 +135,11 @@ describe('coffres à énigme', () => {
         expect(session.data.solvedPuzzles).toEqual([c.puzzle]);
     });
 
-    test('quatre énigmes par famille, dans des biomes différents, chacune sur son coffre', () => {
+    test('quatre énigmes par famille, dans des régions différentes, chacune sur son coffre', () => {
         Object.keys(PUZZLE_SETS).forEach(set => {
             const ids = puzzlesOfSet(set);
             expect(ids).toHaveLength(4);
-            const biomes = ids.map(id => chestsWithPuzzle().find(x => x.c.puzzle === id).s.biome);
+            const biomes = ids.map(id => chestsWithPuzzle().find(x => x.c.puzzle === id).s.region);
             expect(new Set(biomes).size).toBeGreaterThanOrEqual(3);
             PUZZLE_SETS[set].pieces.forEach(id => expect(getStuffById(id)).toMatchObject({ armor: set, quest: true }));
         });

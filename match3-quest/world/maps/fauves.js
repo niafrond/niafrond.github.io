@@ -52,7 +52,7 @@ export default {
         chests: [
             { id: 'nomad_trunk', at: '5', gold: 105, label: 'Malle du vieux nomade', openText: 'Une malle de feutre oubliée contre la palissade : des pièces, et un morceau de fromage vénérable.' },
             { id: 'fauves_garden_a', at: '6', gold: 165, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'fauves_garden_b', at: '7', gold: 165, puzzle: 'fauves_jarres', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fauves_garden_b', at: '7', gold: 165, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'fauves_market_a', at: '8', gold: 330, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'fauves_market_b', at: '9', gold: 330, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
             { id: 'fauves_village_pier_chest', x: 27, y: 21, gold: 210 }

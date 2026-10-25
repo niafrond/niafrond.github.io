@@ -102,7 +102,7 @@ export default {
         ],
         chests: [
             { id: 'fleuve_garden_a', x: 8, y: 24, gold: 30, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'fleuve_garden_b', x: 24, y: 24, gold: 30, puzzle: 'fleuve_miroirs', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fleuve_garden_b', x: 24, y: 24, gold: 30, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'fleuve_market_a', x: 13, y: 24, gold: 60, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'fleuve_market_b', x: 18, y: 24, gold: 60, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
             { id: 'fleuve_village_cache', x: 27, y: 4, gold: 60 }
