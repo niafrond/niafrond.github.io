@@ -461,7 +461,7 @@ export function createExplorationView(cfg) {
         return new Set(events.filter(e => e.quest).map(e => e.quest.id));
     }
 
-    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression (le bestiaire est dans l'onglet Inventaire) ──────
+    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression (le bestiaire a son propre onglet) ──────
     const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
     const carnet = { tab: 'quests', filter: 'all', region: 'all', travelRegion: null };
     const STATUS_LABEL = { available: `${icon('talk')} À démarrer`, active: `${icon('target')} En cours`, ready: `${icon('check')} À rendre`, done: `${icon('flag')} Terminée` };
@@ -537,7 +537,7 @@ export function createExplorationView(cfg) {
             </div>`).join('')}</div>`;
     }
 
-    // Bestiaire (volet de l'onglet Inventaire, voir bestiaryHtml) : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
+    // Bestiaire (onglet dédié, voir bestiaryHtml) : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
     function bestiaryPanel() {
         const { entries, known, total } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);
         const head = `<p class="carnet-hint">${icon('book')} ${known}/${total} créatures connues. Combattez ou observez une créature (immobile près d'elle) pour l'inscrire.</p>`;
@@ -2035,7 +2035,7 @@ export function createExplorationView(cfg) {
 
         travelTo,
         openCarnet: tab => { if (!isBlocked()) showJournal(tab); },
-        // Volet Bestiaire de l'onglet Inventaire : les dessins des créatures connues (de toutes les régions) sont chargés avant d'afficher.
+        // Contenu de l'onglet Bestiaire : les dessins des créatures connues (de toutes les régions) sont chargés avant d'afficher.
         async bestiaryHtml() {
             ensureSession();
             const { entries } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);

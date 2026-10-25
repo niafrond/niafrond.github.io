@@ -45,12 +45,14 @@ describe('Bestiaire du carnet', () => {
         expect(createSession({ bestiary: ['nian', 'nian', 3] }).data.bestiary).toEqual(['nian']);
     });
 
-    test("le bestiaire est un volet de l'onglet Inventaire (plus du carnet) et le combat inscrit la créature", () => {
+    test("le bestiaire a son propre onglet (ni le carnet, ni l'Inventaire) et le combat inscrit la créature", () => {
         const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
         expect(view).not.toMatch(/tab\('bestiary'/);   // plus d'onglet dans le carnet
         expect(view).toMatch(/async bestiaryHtml\(\)/);
         const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
-        expect(html).toMatch(/id="tab-items"[\s\S]*data-inv-sub="bag"[\s\S]*data-inv-sub="bestiary"[\s\S]*id="inv-bestiary"/);
+        expect(html).not.toMatch(/data-inv-sub/);
+        expect(html).toMatch(/switchTab\('bestiary'\)/);
+        expect(html).toMatch(/id="tab-bestiary"[\s\S]*id="bestiary-content"/);
         expect(readFileSync(new URL('../../main.js', import.meta.url), 'utf8')).toMatch(/exploration\.bestiaryHtml\(\)/);
         expect(view).toMatch(/X\.recordBestiary\(session, enc\.templateId\)/);
         const save = readFileSync(new URL('../../saveManager.js', import.meta.url), 'utf8');
