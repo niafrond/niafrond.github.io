@@ -542,24 +542,12 @@ function init() {
         window.addEventListener('pagehide', touchLastPlayed);
     });
     
-    // Onglet Inventaire : deux volets, Sac et Bestiaire (créatures connues, force, faiblesse, notice mythologique).
-    const invSubtab = () => document.querySelector('.inv-subtabs .carnet-tab.on')?.dataset.invSub || 'bag';
-    const showInventoryPane = async () => {
-        const bestiary = invSubtab() === 'bestiary';
-        document.getElementById('inv-bag').style.display = bestiary ? 'none' : '';
-        const pane = document.getElementById('inv-bestiary');
-        pane.style.display = bestiary ? '' : 'none';
-        if(bestiary) { const html = await exploration.bestiaryHtml(); if(invSubtab() === 'bestiary') pane.innerHTML = html; }
-    };
-    document.querySelector('.inv-subtabs')?.addEventListener('click', e => {
-        const btn = e.target.closest('[data-inv-sub]');
-        if(!btn) return;
-        primeAudioFromGesture();
-        playSfx('uiClick');
-        document.querySelectorAll('.inv-subtabs .carnet-tab').forEach(b => b.classList.toggle('on', b === btn));
-        showInventoryPane();
+    // Onglet Bestiaire : créatures connues, force, faiblesse, notice mythologique (rafraîchi à chaque ouverture).
+    document.addEventListener('bestiary-tab-open', async () => {
+        const html = await exploration.bestiaryHtml();
+        const pane = document.getElementById('bestiary-content');
+        if(pane && document.getElementById('tab-bestiary')?.classList.contains('active')) pane.innerHTML = html;
     });
-    document.addEventListener('items-tab-open', () => { if(invSubtab() === 'bestiary') showInventoryPane(); });   // nouvelles créatures inscrites depuis la dernière ouverture
 
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
     window.clearPlayerSave = clearSaveData;
