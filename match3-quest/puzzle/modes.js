@@ -1,5 +1,6 @@
 // Les trois modes d'énigme livrés : pousser des caisses (push), refléter la lumière (mirror), faire sortir un bloc (slide).
 import { registerMode, DIRS } from './engine.js';
+import { sprite, variant } from './art.js';
 
 const COLORS = { ink: '#2a1a0e', wall: '#4b3a2c', floor: '#d9c39a', floorAlt: '#cfb88c', gold: '#e8b73a', red: '#c0392b', jade: '#2f8f6b', light: '#ffe27a', sky: '#7aa6c9' };
 const BLOCK_COLORS = ['#6b7f9a', '#8a6a4b', '#5d8a6b', '#8a5d7d', '#9a8a4b', '#4b7f8a'];
@@ -59,8 +60,13 @@ const push = {
         let out = '';
         for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) out += s.walls.has(y * s.w + x) ? wallCell(x, y) : floorCell(x, y);
         s.targets.forEach(t => { const x = t % s.w, y = (t / s.w) | 0; out += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.2" fill="none" stroke="${COLORS.red}" stroke-width="0.07"/><circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.06" fill="${COLORS.red}"/>`; });
-        s.boxes.forEach(b => {
-            const x = b % s.w, y = (b / s.w) | 0, on = s.targets.includes(b);
+        s.boxes.forEach((b, i) => {
+            const x = b % s.w, y = (b / s.w) | 0, on = s.targets.includes(b), art = sprite(variant(['jarre_a', 'jarre_b'], i), x, y);
+            if (art) {
+                // jarre posée sur son socle : anneau de jade sous le dessin
+                out += (on ? `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.47" fill="none" stroke="${COLORS.jade}" stroke-width="0.09"/>` : '') + art;
+                return;
+            }
             out += `<rect x="${x + 0.1}" y="${y + 0.1}" width="0.8" height="0.8" rx="0.08" fill="${on ? COLORS.jade : COLORS.gold}" stroke="${COLORS.ink}" stroke-width="0.06"/><path d="M${x + 0.1} ${y + 0.1}L${x + 0.9} ${y + 0.9}M${x + 0.9} ${y + 0.1}L${x + 0.1} ${y + 0.9}" stroke="${COLORS.ink}" stroke-width="0.05" opacity="0.5"/>`;
         });
         const px = s.player % s.w, py = (s.player / s.w) | 0;
@@ -147,10 +153,13 @@ const mirror = {
             } else if (c === '+') {
                 out += `<rect x="${x + 0.16}" y="${y + 0.16}" width="0.68" height="0.68" rx="0.05" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" opacity="0.92"/>`;
             } else if (c === 'T') {
-                const lit = hit.has(`${x},${y}`);
+                const lit = hit.has(`${x},${y}`), art = sprite(lit ? 'recepteur_allume' : 'recepteur', x, y);
+                if (art) { out += (lit ? `<circle cx="${cx}" cy="${cy}" r="0.47" fill="none" stroke="${COLORS.light}" stroke-width="0.07" opacity="0.9"/>` : '') + art; return; }
                 out += `<circle cx="${cx}" cy="${cy}" r="0.3" fill="${lit ? COLORS.light : '#6b4f8a'}" stroke="${COLORS.ink}" stroke-width="0.06"/>${lit ? `<circle cx="${cx}" cy="${cy}" r="0.42" fill="none" stroke="${COLORS.light}" stroke-width="0.05"/>` : ''}`;
             } else if (SOURCES[c]) {
-                const [dx, dy] = SOURCES[c];
+                const [dx, dy] = SOURCES[c], art = sprite('emetteur', x, y);
+                // le soleil est rond : la direction d'émission est une pointe d'or collée au bord du dessin
+                if (art) { out += art + `<path d="M${cx + dx * 0.5} ${cy + dy * 0.5}L${cx + dx * 0.3 - dy * 0.17} ${cy + dy * 0.3 + dx * 0.17}L${cx + dx * 0.3 + dy * 0.17} ${cy + dy * 0.3 - dx * 0.17}Z" fill="${COLORS.gold}" stroke="${COLORS.ink}" stroke-width="0.05" stroke-linejoin="round"/>`; return; }
                 out += `<circle cx="${cx}" cy="${cy}" r="0.34" fill="${COLORS.gold}" stroke="${COLORS.ink}" stroke-width="0.06"/><path d="M${cx + dx * 0.3} ${cy + dy * 0.3}L${cx - dy * 0.15} ${cy + dx * 0.15}L${cx + dy * 0.15} ${cy - dx * 0.15}Z" fill="${COLORS.ink}"/>`;
             }
         });
@@ -226,7 +235,13 @@ const slide = {
         const gate = e.side === 'right' ? [s.w - 0.12, e.at, 0.12, 1] : e.side === 'left' ? [0, e.at, 0.12, 1] : e.side === 'down' ? [e.at, s.h - 0.12, 1, 0.12] : [e.at, 0, 1, 0.12];
         out += `<rect x="${gate[0]}" y="${gate[1]}" width="${gate[2]}" height="${gate[3]}" fill="${COLORS.jade}"/>`;
         s.blocks.forEach((b, i) => {
-            const sel = b.id === s.sel;
+            const sel = b.id === s.sel, len = Math.max(b.w, b.h);
+            const art = sprite(b.hero ? 'charrette_rouge' : variant(len > 2 ? ['chariot_a', 'chariot_b'] : ['charrette_a', 'charrette_b', 'charrette_c'], i), b.x, b.y, b.h > b.w ? 1 : 0);
+            if (art) {
+                // dessin de la charrette ; le bloc choisi est cerclé d'or
+                out += art + (sel ? `<rect x="${b.x + 0.04}" y="${b.y + 0.04}" width="${b.w - 0.08}" height="${b.h - 0.08}" rx="0.12" fill="none" stroke="${COLORS.light}" stroke-width="0.1"/>` : '');
+                return;
+            }
             out += `<rect x="${b.x + 0.07}" y="${b.y + 0.07}" width="${b.w - 0.14}" height="${b.h - 0.14}" rx="0.12" fill="${b.hero ? COLORS.red : b.color || BLOCK_COLORS[i % BLOCK_COLORS.length]}" stroke="${sel ? COLORS.light : COLORS.ink}" stroke-width="${sel ? 0.12 : 0.06}"/>`;
             if (b.hero) out += `<circle cx="${b.x + b.w / 2}" cy="${b.y + b.h / 2}" r="0.16" fill="${COLORS.light}" stroke="${COLORS.ink}" stroke-width="0.04"/>`;
         });

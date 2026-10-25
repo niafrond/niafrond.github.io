@@ -1,6 +1,7 @@
 // Fenêtre d'énigme (DOM) : affiche le plateau du moteur (engine.js) en SVG et relaie clavier, appuis et glissements. Hors du moteur,
 // rien ne dépend du mode : le plateau est dessiné par `mode.render`, les actions passent par `puzzle.dir` / `puzzle.tap`.
 import { createPuzzle } from './engine.js';
+import { spriteDefs } from './art.js';
 import './modes.js';
 import { puzzleDef } from './levels.js';
 
@@ -35,6 +36,9 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
     </div>`;
     host.appendChild(el);
     const svg = el.querySelector('.puzzle-board'), status = el.querySelector('.puzzle-status');
+    // Les dessins sont déclarés une fois ; seul le calque du plateau est refait à chaque coup.
+    svg.innerHTML = `<defs>${spriteDefs()}</defs><g class="layer"></g>`;
+    const layer = svg.querySelector('.layer');
     const { w, h } = puzzle.mode.size(puzzle.state);
     const stage = el.querySelector('.puzzle-stage');
     let closed = false, won = false, rot = false;
@@ -55,7 +59,7 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
         fitRotation();
         svg.setAttribute('viewBox', rot ? `0 0 ${h} ${w}` : `0 0 ${w} ${h}`);
         const inner = puzzle.mode.render(puzzle.state);
-        svg.innerHTML = rot ? `<g transform="translate(${h} 0) rotate(90)">${inner}</g>` : inner;
+        layer.innerHTML = rot ? `<g transform="translate(${h} 0) rotate(90)">${inner}</g>` : inner;
         if (puzzle.won && !won) {
             won = true;
             status.innerHTML = `Résolu en ${puzzle.moves} coup${puzzle.moves > 1 ? 's' : ''} ! <button type="button" data-act="done">Continuer</button>`;

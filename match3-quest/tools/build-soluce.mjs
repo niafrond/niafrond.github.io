@@ -17,6 +17,7 @@ import { entOf, questTargets } from './soluce-targets.mjs';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
 import { solvePath, getMode } from '../puzzle/engine.js';
 import '../puzzle/modes.js';
+import { spriteDefs } from '../puzzle/art.js';
 import { ANTIQUE_ARMORS } from '../stuff.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -557,7 +558,8 @@ ${items.join('\n')}`);
         file: 'enigmes.html', title: 'Énigmes et armures antiques', active: 'enigmes.html',
         desc: 'Les 12 énigmes à plateau, leurs solutions et les 3 armures antiques qu’elles donnent.',
         crumbs: [['soluce.html', 'Accueil'], [null, 'Énigmes et armures']],
-        body: `<h2>Énigmes et armures antiques</h2>
+        body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
+<h2>Énigmes et armures antiques</h2>
 <p class="lead">Douze coffres sont verrouillés par une énigme à plateau (4 de chaque type). Chaque énigme résolue offre une pièce d’une armure antique ; portez les 4 pièces d’une même armure pour éveiller son pouvoir.</p>
 <div class="box tip"><b class="t">Conseil</b>Quitter une énigme ne coûte rien : le coffre reste verrouillé et l’énigme se recommence quand vous voulez. Les boutons Annuler et Recommencer sont en haut de la fenêtre. Clavier : flèches ou ZQSD, Échap pour quitter.</div>
 <div class="scroll"><table><tr><th>Énigme</th><th>Type</th><th>Région</th><th>Pièce</th><th>Minimum</th></tr>${rows.join('')}</table></div>
