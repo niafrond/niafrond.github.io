@@ -35,7 +35,7 @@ export const ANTIQUE_ARMORS = {
         ]
     },
     jarres: {
-        name: 'Armure antique des Jarres', power: { turnArrowsPct: 10 }, powerText: '+10 % des flèches de l\'arme active la plus chère à chaque tour',
+        name: 'Armure antique des Jarres', power: { turnArrowsPct: 25 }, powerText: '+25 % des flèches de l\'arme active la plus chère à chaque tour',
         pieces: [
             { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 3, maxHp: 10 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
             { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 20 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },
