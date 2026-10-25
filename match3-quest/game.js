@@ -725,6 +725,8 @@ function applyLevelUpRewards(levelUpResult){
             player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
             hpRecovered = Math.max(0, player.hp - beforeHeal);
         }
+        // le nouveau niveau déverrouille des pièces : l'onglet Stuff (rendu une seule fois) doit se rafraîchir
+        document.dispatchEvent(new Event('stuff-changed'));
     }
     return { maxHpGained, hpRecovered };
 }
