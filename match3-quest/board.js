@@ -129,6 +129,10 @@ function applyPlayerMatchExtras(indices, info){
         const rule = biomeRule;
         const res = resolveBiomeMatch(biomeState, biomeRule, indices);
         res.cleared.forEach(i => floatCellText(i, cellBanner(rule, rule.matchEffect)));
+        if(res.damage > 0){
+            applyDamage(enemy, res.damage);
+            log(`${rule.label} : -${res.damage} PV pour l'ennemi.`);
+        }
         if(info.type === 'color' && info.color){
             if(res.manaDelta > 0) addManaForColor(player, info.color, res.manaDelta);
             if(res.manaDelta < 0) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
