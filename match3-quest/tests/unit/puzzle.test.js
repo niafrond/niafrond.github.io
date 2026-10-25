@@ -206,3 +206,43 @@ describe('flèches de l\'armure des Jarres', () => {
         expect(ancientArrowGain(25, [null, null])).toBe(1);
     });
 });
+
+describe('paliers de difficulté', () => {
+    test.each(Object.keys(PUZZLE_SETS))('%s : quatre niveaux de difficulté strictement croissante', set => {
+        const mins = puzzlesOfSet(set).map(id => solve(puzzleDef(id), { maxStates: 400000 }));
+        expect(mins).toHaveLength(4);
+        mins.forEach(n => expect(Number.isInteger(n)).toBe(true));
+        for (let i = 1; i < mins.length; i++) expect(mins[i]).toBeGreaterThan(mins[i - 1]);
+        expect(mins[0]).toBeLessThanOrEqual(20);        // le premier est vraiment facile
+        expect(mins[3]).toBeGreaterThanOrEqual(30);     // le dernier est vraiment difficile
+    });
+
+    test('le solveur exact des miroirs donne le même minimum que la recherche en largeur', () => {
+        const mode = getMode('mirror');
+        const bfs = s => {
+            if (mode.won(s)) return 0;
+            const seen = new Set([mode.key(s)]);
+            for (let frontier = [s], depth = 1; frontier.length; depth++) {
+                const next = [];
+                for (const a of frontier) for (const r of mode.successors(a)) {
+                    const k = mode.key(r);
+                    if (seen.has(k)) continue;
+                    if (mode.won(r)) return depth;
+                    seen.add(k); next.push(r);
+                }
+                frontier = next;
+            }
+            return null;
+        };
+        const levels = [PUZZLES.fleuve_miroirs.level, { grid: ['#####', '#>./#', '#..T#', '#####'] }, { grid: ['#####', '#.T.#', '#.*T#', '#.^.#', '#####'] }];
+        levels.forEach(level => { const s = mode.init(level); expect(mode.solveFast(s).length - 1).toBe(bfs(s)); });
+    });
+
+    test('le solveur renvoie null pour un niveau infaisable et chaque coup du chemin bascule un seul miroir', () => {
+        const mode = getMode('mirror');
+        expect(mode.solveFast(mode.init({ grid: ['#####', '#>.#T', '#####'] }))).toBeNull();
+        const path = mode.solveFast(mode.init(PUZZLES.lune_miroirs.level));
+        expect(mode.won(path[path.length - 1])).toBe(true);
+        for (let i = 1; i < path.length; i++) expect(path[i].cells.filter((c, k) => c !== path[i - 1].cells[k])).toHaveLength(1);
+    });
+});

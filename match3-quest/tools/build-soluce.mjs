@@ -504,6 +504,8 @@ ${q ? `<h3>Obtention pas à pas</h3>${mc}` : ''}
 }
 
 // ── Énigmes à plateau et armures antiques ──
+// Les quatre énigmes d'une famille montent en difficulté (le rang dans la famille = le palier).
+const TIERS = ['facile', 'moyen', 'difficile', 'très difficile'];
 const FAMILY_TEXT = {
     jarres: { type: 'Jarres à pousser', how: 'Vous êtes le petit personnage bleu. Poussez chaque jarre (caisse jaune) sur un socle rouge : une seule jarre à la fois, jamais de traction. Une jarre contre un mur ne glisse plus que le long de celui-ci.' },
     lumiere: { type: 'Miroirs et lumière', how: 'Une lanterne émet un rayon. Touchez un miroir pour le basculer entre « / » et « \\ » ; le prisme triangulaire laisse passer le rayon et en renvoie un second sur le côté (le prisme carré, lui, en fait trois : tout droit et de chaque côté). Tous les cristaux doivent s’allumer.' },
@@ -543,7 +545,7 @@ function buildPuzzles() {
             const region = found ? regionName(found.s.region) : '';
             const where = found ? `${found.s.name} (${esc(region)}) — ${esc(found.c.label || 'coffre')}, ${whereOf({ screen: found.s, ent: found.c })}` : '';
             rows.push(`<tr><td>${esc(def.title)}</td><td>${esc(info.type)}</td><td>${esc(region)}</td><td>${esc(piece.name)}</td><td>${total} ${unit}</td></tr>`);
-            return `<h4>${i + 1}. ${esc(def.title)}</h4>
+            return `<h4>${i + 1}. ${esc(def.title)} <small>— ${TIERS[i]}</small></h4>
 <dl><dt>Où</dt><dd>${where}</dd><dt>Récompense</dt><dd>${esc(piece.name)} (${esc(STUFF_SLOT_LABELS[piece.slot])}) + l’or du coffre</dd><dt>Minimum</dt><dd>${total} ${unit}</dd></dl>
 ${boardSvg(def)}
 <details><summary>Solution détaillée</summary><ol class="steps">${steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol></details>`;

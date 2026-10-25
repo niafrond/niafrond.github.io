@@ -56,6 +56,9 @@ export function solvePath(def, { maxStates = 300000 } = {}) {
     const mode = getMode(def.mode);
     const start = mode.init(def.level);
     if (mode.won(start)) return [start];
+    // Un mode peut fournir un solveur exact plus malin que la recherche en largeur (`solveFast(état, { maxNodes })` : suite d'états, null si
+    // infaisable, undefined si trop gros) : indispensable quand l'espace d'états explose (miroirs : 2^n configurations).
+    if (mode.solveFast) return mode.solveFast(start, { maxNodes: maxStates * 8 }) ?? null;
     const parent = new Map([[mode.key(start), null]]);
     const states = new Map([[mode.key(start), start]]);
     let frontier = [start];
@@ -86,6 +89,7 @@ export function solve(def, { maxStates = 300000 } = {}) {
     const mode = getMode(def.mode);
     const start = mode.init(def.level);
     if (mode.won(start)) return 0;
+    if (mode.solveFast) { const path = mode.solveFast(start, { maxNodes: maxStates * 8 }); return path ? path.length - 1 : null; }
     const seen = new Set([mode.key(start)]);
     let frontier = [start];
     for (let depth = 1; frontier.length; depth++) {

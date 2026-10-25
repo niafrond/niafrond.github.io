@@ -39,7 +39,7 @@
         function render() {
             app.innerHTML = Object.keys(PUZZLE_SETS).map(set => `<h2>${FAMILIES[set]}</h2><div class="list">${puzzlesOfSet(set).map((id, i) => {
                 const p = PUZZLES[id], min = solve({ id, ...p }, { maxStates: 400000 });
-                return `<button type="button" data-id="${id}" class="${solved.has(id) ? 'done' : ''}"><b>${i + 1}. ${p.title}</b><small>minimum : ${min} ${p.mode === 'push' ? 'pas' : 'coups'}</small></button>`;
+                return `<button type="button" data-id="${id}" class="${solved.has(id) ? 'done' : ''}"><b>${i + 1}. ${p.title}</b><small>${['facile', 'moyen', 'difficile', 'très difficile'][i]} · minimum : ${min} ${p.mode === 'push' ? 'pas' : 'coups'}</small></button>`;
             }).join('')}</div>`).join('');
         }
         app.addEventListener('click', e => {

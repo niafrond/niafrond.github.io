@@ -110,7 +110,68 @@ export function traceBeams(s) {
     return { segs, hit };
 }
 
+/**
+ * Suit les rayons avec des miroirs tournants « inconnus » (case 'M') : s'arrête au premier miroir inconnu rencontré et renvoie son index
+ * (`pending`), ou −1 si tous les rayons sont allés au bout (les cristaux atteints sont alors dans `hit`).
+ */
+function traceUntil(w, h, cells, source) {
+    const hit = new Set(), seen = new Set();
+    const cellAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? '#' : cells[y * w + x];
+    const rays = [[source.x, source.y, ...SOURCES[source.dir]]];
+    while (rays.length) {
+        let [x, y, dx, dy] = rays.pop();
+        for (let step = 0; step < 200; step++) {
+            const key = `${x},${y},${dx},${dy}`;
+            if (seen.has(key)) break;
+            seen.add(key);
+            const nx = x + dx, ny = y + dy, c = cellAt(nx, ny);
+            if (c === '#' || SOURCES[c]) break;
+            if (c === 'M') return { pending: ny * w + nx, hit };
+            x = nx; y = ny;
+            if (c === 'T') { hit.add(`${x},${y}`); break; }
+            const m = c === 'a' ? '/' : c === 'b' ? '\\' : c;
+            if (REFLECT[m]) { [dx, dy] = REFLECT[m]([dx, dy]); continue; }
+            if (c === '*' || c === '+') {
+                const [rx, ry] = REFLECT['/']([dx, dy]); rays.push([x, y, rx, ry]);
+                if (c === '+') { const [qx, qy] = REFLECT['\\']([dx, dy]); rays.push([x, y, qx, qy]); }
+            }
+        }
+    }
+    return { pending: -1, hit };
+}
+
+/**
+ * Solveur exact des miroirs : le minimum de coups est le plus petit nombre de miroirs à basculer pour éclairer tous les cristaux. On suit les rayons ;
+ * à chaque miroir tournant rencontré, on essaie ses deux orientations (la sienne d'abord), en coupant toute branche déjà plus chère que la meilleure.
+ * Seuls les miroirs touchés par un rayon comptent, d'où un arbre de trajectoires bien plus petit que les 2^n configurations.
+ * Renvoie la suite d'états (un miroir basculé par coup), null si infaisable, undefined si `maxNodes` est dépassé.
+ */
+export function solveMirrorFast(s, { maxNodes = 2000000 } = {}) {
+    const init = s.cells, cells = init.map(c => (c === '/' || c === '\\') ? 'M' : c);
+    let best = { cost: Infinity, cells: null }, nodes = 0, over = false;
+    const rec = cost => {
+        if (over || cost >= best.cost) return;
+        if (++nodes > maxNodes) { over = true; return; }
+        const r = traceUntil(s.w, s.h, cells, s.source);
+        if (r.pending < 0) {
+            if (s.targets.every(t => r.hit.has(`${t % s.w},${(t / s.w) | 0}`))) best = { cost, cells: cells.map((c, i) => (c === 'M' ? init[i] : c)) };
+            return;
+        }
+        const i = r.pending, o = init[i], f = o === '/' ? '\\' : '/';
+        cells[i] = o; rec(cost);
+        cells[i] = f; rec(cost + 1);
+        cells[i] = 'M';
+    };
+    rec(0);
+    if (over) return undefined;
+    if (!best.cells) return null;
+    const path = [s]; let cur = s;
+    best.cells.forEach((c, i) => { if (c !== init[i]) { cur = { ...cur, cells: cur.cells.map((v, k) => (k === i ? c : v)) }; path.push(cur); } });
+    return path;
+}
+
 const mirror = {
+    solveFast: solveMirrorFast,
     init(level) {
         const g = rows(level), cells = [];
         let source = null;
