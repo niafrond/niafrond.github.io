@@ -1,18 +1,19 @@
-// Rappel de pause : une popup bienveillante après 1 h de jeu continu, puis toutes les 30 min.
+// Rappel de pause : une popup bienveillante après 30 min de jeu continu, puis toutes les 15 min.
 // Le message se compose d'une accroche, d'un corps (humour ou douceur) et d'une conclusion rassurante, plus une petite phrase.
 
-export const FIRST_BREAK_SECONDS = 60 * 60;
-export const NEXT_BREAK_SECONDS = 30 * 60;
+export const FIRST_BREAK_SECONDS = 30 * 60;
+export const NEXT_BREAK_SECONDS = 15 * 60;
 
 // Prochain seuil (en secondes de jeu de la session) après `shownAt` rappels déjà affichés.
 export const breakThreshold = shownCount => FIRST_BREAK_SECONDS + shownCount * NEXT_BREAK_SECONDS;
 
-// « 1 h », « 1 h 30 », « 2 h »… arrondi à la demi-heure inférieure, pour un texte naturel.
+// « 30 min », « 45 min », « 1 h », « 1 h 15 », « 1 h 30 »… arrondi au quart d'heure inférieur, pour un texte naturel.
 export function breakDurationLabel(seconds) {
-    const halfHours = Math.max(1, Math.floor(seconds / 1800));
-    const h = Math.floor(halfHours / 2);
-    if (!h) return '30 min';
-    return halfHours % 2 ? `${h} h 30` : `${h} h`;
+    const total = Math.max(2, Math.floor(seconds / 900)) * 15;
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    if (!h) return `${m} min`;
+    return m ? `${h} h ${m}` : `${h} h`;
 }
 
 const HOOKS = [
