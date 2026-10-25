@@ -1,3 +1,9 @@
+## [2.131.2](https://github.com/niafrond/niafrond.github.io/compare/v2.131.1...v2.131.2) (2026-10-25)
+
+### Bug Fixes
+
+* **match3-quest:** rafraîchir l'onglet Stuff après un gain de niveau ([#549](https://github.com/niafrond/niafrond.github.io/issues/549)) ([c5fd215](https://github.com/niafrond/niafrond.github.io/commit/c5fd215898169eba79d54f6cb83016634d5a6775))
+
 ## [2.131.1](https://github.com/niafrond/niafrond.github.io/compare/v2.131.0...v2.131.1) (2026-10-25)
 
 ### Bug Fixes
