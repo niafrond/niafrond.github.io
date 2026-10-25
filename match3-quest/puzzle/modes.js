@@ -48,6 +48,10 @@ const push = {
         if (!dx && !dy) return null;
         return push.dir(s, Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
     },
+    describe(a, b) {
+        const d = b.player - a.player;
+        return d === 1 ? 'droite' : d === -1 ? 'gauche' : d > 0 ? 'bas' : 'haut';
+    },
     won: s => s.targets.every(t => s.boxes.includes(t)),
     key: s => `${s.player}|${[...s.boxes].sort((a, b) => a - b).join(',')}`,
     successors: s => Object.keys(DIRS).map(d => push.dir(s, d)).filter(Boolean).map(r => r.state),
@@ -112,6 +116,10 @@ const mirror = {
         const cells = s.cells.slice();
         cells[i] = c === '/' ? '\\' : '/';
         return { state: { ...s, cells }, move: true };
+    },
+    describe(a, b) {
+        const i = a.cells.findIndex((c, k) => c !== b.cells[k]);
+        return { to: b.cells[i], col: (i % a.w) + 1, row: ((i / a.w) | 0) + 1 };
     },
     won(s) { const { hit } = traceBeams(s); return s.targets.every(t => hit.has(`${t % s.w},${(t / s.w) | 0}`)); },
     key: s => s.cells.join(''),
@@ -190,6 +198,12 @@ const slide = {
         const h = s.blocks.find(b => b.hero);
         const e = s.exit;
         return e.side === 'right' ? h.x + h.w === s.w : e.side === 'left' ? h.x === 0 : e.side === 'down' ? h.y + h.h === s.h : h.y === 0;
+    },
+    describe(a, b) {
+        const i = a.blocks.findIndex((k, n) => k.x !== b.blocks[n].x || k.y !== b.blocks[n].y);
+        const k = a.blocks[i], n = b.blocks[i];
+        const dir = n.x > k.x ? 'droite' : n.x < k.x ? 'gauche' : n.y > k.y ? 'bas' : 'haut';
+        return { id: k.id, block: `${k.hero ? 'la charrette rouge' : `le bloc ${k.w > 1 ? 'horizontal' : 'vertical'} de ${k.w * k.h} cases`} en colonne ${k.x + 1}, ligne ${k.y + 1}`, dir };
     },
     key: s => s.blocks.map(b => `${b.x},${b.y}`).join(';'),
     successors(s) {

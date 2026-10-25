@@ -48,6 +48,39 @@ export function createPuzzle(def) {
     return puzzle;
 }
 
+/**
+ * Plus court enchaînement de coups, sous forme d'états successifs (le premier est l'état initial), ou null. Sert à la soluce
+ * (`mode.describe(avant, après)` met un coup en texte) et aux tests.
+ */
+export function solvePath(def, { maxStates = 300000 } = {}) {
+    const mode = getMode(def.mode);
+    const start = mode.init(def.level);
+    if (mode.won(start)) return [start];
+    const parent = new Map([[mode.key(start), null]]);
+    const states = new Map([[mode.key(start), start]]);
+    let frontier = [start];
+    while (frontier.length) {
+        const next = [];
+        for (const s of frontier) {
+            for (const res of mode.successors(s)) {
+                const k = mode.key(res);
+                if (parent.has(k)) continue;
+                parent.set(k, mode.key(s));
+                states.set(k, res);
+                if (mode.won(res)) {
+                    const path = [];
+                    for (let key = k; key !== null; key = parent.get(key)) path.unshift(states.get(key));
+                    return path;
+                }
+                if (parent.size > maxStates) return null;
+                next.push(res);
+            }
+        }
+        frontier = next;
+    }
+    return null;
+}
+
 /** Recherche en largeur du plus court enchaînement de coups (outil de test : prouve qu'un niveau est faisable). `key(state)` identifie un état. */
 export function solve(def, { maxStates = 300000 } = {}) {
     const mode = getMode(def.mode);
