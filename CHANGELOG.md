@@ -1,3 +1,9 @@
+## [2.131.1](https://github.com/niafrond/niafrond.github.io/compare/v2.131.0...v2.131.1) (2026-10-25)
+
+### Bug Fixes
+
+* **match3-quest:** donner le tour bonus de Tir Furtif à l'ennemi qui le lance ([872648d](https://github.com/niafrond/niafrond.github.io/commit/872648dc3d5bfc8cc678e55e2b6adeaf76418eca))
+
 ## [2.131.0](https://github.com/niafrond/niafrond.github.io/compare/v2.130.0...v2.131.0) (2026-10-24)
 
 ### Features
