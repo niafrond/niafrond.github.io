@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Plaine des Fauves.">
+<title>Quêtes — Plaine des Fauves — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shotbox{cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb[hidden]{display:none}
+.lb-stage{position:absolute;left:0;top:0;transform-origin:0 0;line-height:0;cursor:grab;will-change:transform}
+.lb.drag .lb-stage{cursor:grabbing}
+.lb-stage .shotbox{border:0;border-radius:0;cursor:inherit;max-width:none!important}
+.lb-stage img{width:100%;pointer-events:none;-webkit-user-drag:none}
+.lb-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid #fff4dc;background:rgba(30,22,16,.85);color:#fff4dc;font:700 24px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lb-btn:hover,.lb-btn:focus-visible{background:#d9553f;outline:none}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+.lb-tools{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.lb-tools .lb-btn{position:static}
+.lb-cap{position:absolute;left:12px;right:70px;top:calc(14px + env(safe-area-inset-top,0px));color:#fff4dc;font:.85rem system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 3px #000}
+.lb-cap small{display:none}
+.lb-cap b{color:#ff7a6a}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Plaine des Fauves</div>
+<h2>Plaine des Fauves</h2>
+<p class="lead">Région débloquée au niveau 27. 17 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_sun_7">Le Soleil des Bêtes Folles</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_tou_stash">La cachette de la belette</a></li><li><a href="#q-sq_scarred_tiger">Balafré</a></li><li><a href="#q-sq_zi_bell">La clochette du bélier</a></li><li><a href="#q-sq_legend_baihu">La chasse de l'Ouest</a></li><li><a href="#q-sq_agneau_perdu">L'agneau des jumeaux</a></li><li><a href="#q-sq_lievre_lune">Le lièvre de la Lune</a></li><li><a href="#q-sq_hure">La colère de Hure</a></li><li><a href="#q-sq_fau_cheval_1">Le cheval qui boite</a></li><li><a href="#q-sq_fau_cheval_2">Les hyènes de braise</a></li><li><a href="#q-sq_fau_cheval_3">Le cavalier sans cheval</a></li><li><a href="#q-sq_fau_feutre">Du feutre pour la bergère</a></li><li><a href="#q-sq_fau_aigle">L'aigle égaré</a></li><li><a href="#q-sq_fau_louveteau">Le louveteau et le taureau</a></li><li><a href="#q-sq_fau_excuses">Les excuses de Guang</a></li><li><a href="#q-sq_fau_berceuse">La berceuse de la Lune</a></li><li><a href="#q-sq_journal_7">La page dans l'herbe</a></li></ul></div>
+<article class="quest" id="q-q_sun_7">
+  <h3>Le Soleil des Bêtes Folles <span class="badge main">Principale</span><small>Chapitre VII — La Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-q_sun_5">Le Soleil des Orages</a></dd>
+    <dt>Donneur</dt><dd><b>Wu</b> (Chasseur) — Pavillon du chasseur Wu (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Pavillon du chasseur Wu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre la meute embrasée puis le Soleil des Bêtes Folles (sanctuaire de la Plaine des Fauves, au sud-est)<br><small>Lieu : Plaine des Fauves (partie est de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre → Plaine des Fauves</small><ul class="enemy">
+      <li><b>Soleil des Bêtes Folles</b> — niveau 35, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Plaine des Fauves (partie est de l’écran)</li>
+      <li>Espèce : Soleil des Bêtes Folles (Soleil) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>360 pièces d’or · 18120 points d’expérience · composant de flèche : Éclat du Soleil des Bêtes Folles</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:91.67%;top:52.27%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Soleil des Bêtes Folles (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-mer.html#q-q_sun_8">Le Soleil des Marées</a>, <a href="quetes-mer.html#q-sq_jian_quiver">Le carquois du corbeau</a>, <a href="quetes-mer.html#q-sq_nets">Les filets déchirés</a>, <a href="quetes-mer.html#q-sq_pearl">La perle du Roi-Dragon</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_tou_stash">
+  <h3>La cachette de la belette <span class="badge comp">Compagnon</span><small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-q_sun_5">Le Soleil des Orages</a></dd>
+    <dt>Donneur</dt><dd><b>Wu</b> (Chasseur) — Pavillon du chasseur Wu (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Pavillon du chasseur Wu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Fouiller la cachette de la belette (coin nord-ouest de la plaine)<br><small>Lieu : Plaine des Fauves (partie nord-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre → Plaine des Fauves</small></li></ol></dd>
+    <dt>Récompense</dt><dd>90 pièces d’or · 7550 points d’expérience · composant de flèche : Poil de belette · <a href="compagnon-tou.html"><strong>Tou</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:25.00%;top:15.91%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Cachette de Tou (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_scarred_tiger">
+  <h3>Balafré <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-q_sun_5">Le Soleil des Orages</a></dd>
+    <dt>Donneur</dt><dd><b>Wu</b> (Chasseur) — Pavillon du chasseur Wu (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Pavillon du chasseur Wu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Abattre Balafré, le tigre embrasé (coin nord-est de la plaine)<br><small>Lieu : Plaine des Fauves (partie nord-est de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre → Plaine des Fauves</small><ul class="enemy">
+      <li><b>Balafré, tigre embrasé</b> — niveau du héros +1, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Plaine des Fauves (partie nord-est de l’écran)</li>
+      <li>Espèce : Tigre Embrasé (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — très robuste, frappe fort, cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>130 pièces d’or · 7550 points d’expérience · composant de flèche : Croc de tigre embrasé</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:85.00%;top:15.91%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Balafré, tigre embrasé (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_zi_bell">
+  <h3>La clochette du bélier <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-q_sun_5">Le Soleil des Orages</a></dd>
+    <dt>Donneur</dt><dd><b>Zi</b> (Bergère) — Yourte de Zi (partie nord-ouest de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Yourte de Zi</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la clochette du troupeau (sud-ouest de la plaine, derrière l'enclos)<br><small>Lieu : Plaine des Fauves (partie sud-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre → Plaine des Fauves</small></li></ol></dd>
+    <dt>Récompense</dt><dd>60 pièces d’or · 7550 points d’expérience · composant de flèche : Laine de nuage</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h_zi.jpg" width="440" height="308" loading="lazy" alt="Carte : Yourte de Zi"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Yourte de Zi : <b>1</b> Zi (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves.jpg" width="1320" height="968" loading="lazy" alt="Carte : Plaine des Fauves"><span class="ring" style="left:31.67%;top:88.64%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Plaine des Fauves : <b>1</b> Clochette du bélier (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_legend_baihu">
+  <h3>La chasse de l'Ouest <small>✦ Quête secondaire (légende) — Enclos de Caoyuan</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Hu Mu la Pisteuse</b> (Chasseuse des hautes herbes) — Enclos de Caoyuan (partie sud de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la relique du Gardien (Hautes Herbes de Cendre, dans les terres au sud-est)<br><small>Lieu : Hautes Herbes de Cendre (au centre de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li><li><b>Vaincre</b> : Affronter le Gardien Céleste : Baihu, le Tigre Blanc (Hautes Herbes de Cendre)<br><small>Lieu : Hautes Herbes de Cendre (au centre de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small><ul class="enemy">
+      <li><b>Baihu, le Tigre Blanc</b> — niveau 33, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Hautes Herbes de Cendre (au centre de l’écran)</li>
+      <li>Espèce : Baihu (Bête) — Force : <span class="dot" style="background:#e6c13a"></span>Air (jaune) — <b>Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</b> — très robuste, frappe fort, carapace épaisse, lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>166 pièces d’or · 7550 points d’expérience · <strong>Chasse du Tigre Blanc</strong> (sort ultime)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Enclos de Caoyuan"><span class="ring" style="left:51.56%;top:80.36%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Enclos de Caoyuan : <b>1</b> Hu Mu la Pisteuse (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:51.04%;top:47.92%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:59.38%;top:47.92%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Griffe d'argent (objectif) · <b>2</b> Baihu, le Tigre Blanc (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_agneau_perdu">
+  <h3>L'agneau des jumeaux <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Les jumeaux Mu</b> (Enfants-bergers) — Enclos de Caoyuan (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Chasser le loup de braise qui poursuit l'agneau (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie sud-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small><ul class="enemy">
+      <li><b>Loup chapardeur de braise</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Hautes Herbes de Cendre (partie sud-ouest de l’écran)</li>
+      <li>Espèce : Loup de Braise (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — frappe fort, rapide et sournois</li>
+    </ul></li><li><b>Ouvrir</b> : Retrouver l'agneau dans l'enclos oublié (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie sud-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>160 pièces d’or · 7550 points d’expérience · composant de flèche : Toison de nuage</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Enclos de Caoyuan"><span class="ring" style="left:42.19%;top:37.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Enclos de Caoyuan : <b>1</b> Les jumeaux Mu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:13.54%;top:85.42%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:7.29%;top:81.25%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Loup chapardeur de braise (objectif) · <b>2</b> Enclos oublié (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_lievre_lune">
+  <h3>Le lièvre de la Lune <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Fengpo</b> (Chamane des vents) — Tente de la chamane (partie nord de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Tente de la chamane</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au lièvre Tuzi (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie nord-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>165 pièces d’or · 7550 points d’expérience · composant de flèche : Plume lunaire</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_chaman.jpg" width="528" height="352" loading="lazy" alt="Carte : Tente de la chamane"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Tente de la chamane : <b>1</b> Fengpo (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:23.96%;top:31.25%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Tuzi (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-fauves.html#q-sq_hure">La colère de Hure</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_hure">
+  <h3>La colère de Hure <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-sq_lievre_lune">Le lièvre de la Lune</a></dd>
+    <dt>Donneur</dt><dd><b>Dame Sa</b> (Marchande de lait caillé) — Fromagerie de Dame Sa (au centre de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Fromagerie de Dame Sa</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Chasser Hure, le sanglier de flammes, des pâturages (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie sud de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small><ul class="enemy">
+      <li><b>Hure, sanglier de flammes</b> — niveau du héros +1, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Hautes Herbes de Cendre (partie sud de l’écran)</li>
+      <li>Espèce : Sanglier de Flammes (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 7550 points d’expérience · composant de flèche : Croc de sanglier</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h_fromage.jpg" width="440" height="308" loading="lazy" alt="Carte : Fromagerie de Dame Sa"><span class="ring" style="left:45.00%;top:50.00%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Fromagerie de Dame Sa : <b>1</b> Dame Sa (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:51.04%;top:85.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Hure, sanglier de flammes (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_cheval_1">
+  <h3>Le cheval qui boite <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Mafu</b> (Maréchal-ferrant) — Forge du maréchal Mafu (partie nord de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents → Forge du maréchal Mafu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Consulter Tian (écurie des chevaux célestes)<br><small>Lieu : Écurie des chevaux célestes (partie est de l’écran) — itinéraire : Enclos de Caoyuan → Écurie des chevaux célestes</small></li></ol></dd>
+    <dt>Récompense</dt><dd>120 pièces d’or · 7550 points d’expérience · composant de flèche : Fer de cheval</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h2_marechal.jpg" width="440" height="308" loading="lazy" alt="Carte : Forge du maréchal Mafu"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Forge du maréchal Mafu : <b>1</b> Mafu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_chevaux.jpg" width="528" height="352" loading="lazy" alt="Carte : Écurie des chevaux célestes"><span class="ring" style="left:87.50%;top:43.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Écurie des chevaux célestes : <b>1</b> Tian (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-fauves.html#q-sq_fau_cheval_2">Les hyènes de braise</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_cheval_2">
+  <h3>Les hyènes de braise <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-sq_fau_cheval_1">Le cheval qui boite</a></dd>
+    <dt>Donneur</dt><dd><b>Mafu</b> (Maréchal-ferrant) — Forge du maréchal Mafu (partie nord de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents → Forge du maréchal Mafu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les hyènes de braise (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie ouest de l’écran)</small><ul class="enemy"><li>Hyène de braise — ouest</li><li>Hyène de braise — ouest</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 7550 points d’expérience · composant de flèche : Clochette de cheval</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h2_marechal.jpg" width="440" height="308" loading="lazy" alt="Carte : Forge du maréchal Mafu"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Forge du maréchal Mafu : <b>1</b> Mafu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:26.04%;top:35.42%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:28.13%;top:56.25%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Hyène de braise (objectif) · <b>2</b> Hyène de braise (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-fauves.html#q-sq_fau_cheval_3">Le cavalier sans cheval</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_cheval_3">
+  <h3>Le cavalier sans cheval <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fauves.html#q-sq_fau_cheval_2">Les hyènes de braise</a></dd>
+    <dt>Donneur</dt><dd><b>Mafu</b> (Maréchal-ferrant) — Forge du maréchal Mafu (partie nord de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents → Forge du maréchal Mafu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter Jiang (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie sud-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li><li><b>Ouvrir</b> : Ouvrir le tumulus du cavalier (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie sud-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 7550 points d’expérience · composant de flèche : Bride du cavalier</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h2_marechal.jpg" width="440" height="308" loading="lazy" alt="Carte : Forge du maréchal Mafu"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Forge du maréchal Mafu : <b>1</b> Mafu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:19.79%;top:81.25%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:23.96%;top:85.42%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Jiang (objectif) · <b>2</b> Tumulus du cavalier (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_feutre">
+  <h3>Du feutre pour la bergère <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Zhan</b> (Feutrière) — Yourte d'Zhan la feutrière (partie nord de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents → Yourte d'Zhan la feutrière</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Livrer le feutre à Zi (Yourte de Zi)<br><small>Lieu : Yourte de Zi (partie nord-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Yourte de Zi</small></li><li><b>Parler à</b> : Livrer le feutre à Dame Sa (Fromagerie de Dame Sa)<br><small>Lieu : Fromagerie de Dame Sa (au centre de l’écran) — itinéraire : Enclos de Caoyuan → Fromagerie de Dame Sa</small></li></ol></dd>
+    <dt>Récompense</dt><dd>155 pièces d’or · 7550 points d’expérience · composant de flèche : Feutre argenté</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h2_feutre.jpg" width="440" height="308" loading="lazy" alt="Carte : Yourte d'Zhan la feutrière"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Yourte d'Zhan la feutrière : <b>1</b> Zhan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h_zi.jpg" width="440" height="308" loading="lazy" alt="Carte : Yourte de Zi"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Yourte de Zi : <b>1</b> Zi (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h_fromage.jpg" width="440" height="308" loading="lazy" alt="Carte : Fromagerie de Dame Sa"><span class="ring" style="left:45.00%;top:50.00%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Fromagerie de Dame Sa : <b>1</b> Dame Sa (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_aigle">
+  <h3>L'aigle égaré <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Xiaoying</b> (Petit dresseur d'aigle) — Campement des Vents (partie ouest de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Se rendre à</b> : Gagner les hautes herbes de cendre<br><small>Lieu : Hautes Herbes de Cendre — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li><li><b>Ouvrir</b> : Retrouver la bague au perchoir de l'aigle (Campement des Vents)<br><small>Lieu : Campement des Vents (partie ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents</small></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 7550 points d’expérience · composant de flèche : Plume d'aigle</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Campement des Vents"><span class="ring" style="left:23.21%;top:52.27%;width:6.43%;height:8.18%"><i>1</i></span><span class="ring" style="left:8.93%;top:47.73%;width:6.43%;height:8.18%"><i>2</i></span></div><figcaption>Campement des Vents : <b>1</b> Xiaoying (donne la quête) · <b>2</b> Perchoir de l'aigle (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_louveteau">
+  <h3>Le louveteau et le taureau <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Wu</b> (Chasseur) — Pavillon du chasseur Wu (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Pavillon du chasseur Wu</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter le louveteau Xiaolang (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie est de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li><li><b>Vaincre</b> : Chasser le taureau de braise (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie est de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small><ul class="enemy">
+      <li><b>Taureau de braise</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Hautes Herbes de Cendre (partie est de l’écran)</li>
+      <li>Espèce : Taureau de braise (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — cogneur</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>170 pièces d’or · 7550 points d’expérience · composant de flèche : Poil de louve</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:92.71%;top:43.75%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:90.63%;top:56.25%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Xiaolang (objectif) · <b>2</b> Taureau de braise (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_excuses">
+  <h3>Les excuses de Guang <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Guang</b> (Ancien bandit repenti) — Enclos de Caoyuan (partie ouest de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Présenter les excuses de Guang à Wu (Pavillon du chasseur Wu)<br><small>Lieu : Pavillon du chasseur Wu (partie nord-est de l’écran) — itinéraire : Enclos de Caoyuan → Pavillon du chasseur Wu</small></li><li><b>Parler à</b> : Présenter les excuses de Guang à Zi (Yourte de Zi)<br><small>Lieu : Yourte de Zi (partie nord-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Yourte de Zi</small></li><li><b>Parler à</b> : Présenter les excuses de Guang à Dame Sa (Fromagerie de Dame Sa)<br><small>Lieu : Fromagerie de Dame Sa (au centre de l’écran) — itinéraire : Enclos de Caoyuan → Fromagerie de Dame Sa</small></li></ol></dd>
+    <dt>Récompense</dt><dd>185 pièces d’or · 7550 points d’expérience · composant de flèche : Bijou de remords</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Enclos de Caoyuan"><span class="ring" style="left:29.69%;top:62.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Enclos de Caoyuan : <b>1</b> Guang (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_wu.jpg" width="528" height="352" loading="lazy" alt="Carte : Pavillon du chasseur Wu"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Pavillon du chasseur Wu : <b>1</b> Wu (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h_zi.jpg" width="440" height="308" loading="lazy" alt="Carte : Yourte de Zi"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Yourte de Zi : <b>1</b> Zi (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/fauves_h_fromage.jpg" width="440" height="308" loading="lazy" alt="Carte : Fromagerie de Dame Sa"><span class="ring" style="left:45.00%;top:50.00%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Fromagerie de Dame Sa : <b>1</b> Dame Sa (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_fau_berceuse">
+  <h3>La berceuse de la Lune <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Grand-mère Jinhua</b> (Chanteuse des berceuses) — Campement des Vents (au centre de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Hautes Herbes de Cendre → Campement des Vents</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Bai (place de Caoyuan)<br><small>Lieu : Enclos de Caoyuan (au centre de l’écran)</small></li><li><b>Parler à</b> : Interroger le lièvre Tuzi (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie nord-ouest de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>200 pièces d’or · 7550 points d’expérience · composant de flèche : Plume de berceuse</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Campement des Vents"><span class="ring" style="left:41.07%;top:47.73%;width:6.43%;height:8.18%"><i>1</i></span></div><figcaption>Campement des Vents : <b>1</b> Grand-mère Jinhua (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Enclos de Caoyuan"><span class="ring" style="left:60.94%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Enclos de Caoyuan : <b>1</b> Bai (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:23.96%;top:31.25%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Tuzi (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_journal_7">
+  <h3>La page dans l'herbe <small>Plaine des Fauves</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-tonnerre.html#q-sq_journal_5">Une page entre deux rochers</a></dd>
+    <dt>Donneur</dt><dd><b>Fengpo</b> (Chamane des vents) — Tente de la chamane (partie nord de l’écran)<br><small>Itinéraire depuis le village : Enclos de Caoyuan → Tente de la chamane</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page dans l'herbe (hautes herbes de cendre)<br><small>Lieu : Hautes Herbes de Cendre (partie est de l’écran) — itinéraire : Enclos de Caoyuan → Hautes Herbes de Cendre</small></li></ol></dd>
+    <dt>Récompense</dt><dd>155 pièces d’or · 7550 points d’expérience · composant de flèche : Page du carnet (VII)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/fauves_h_chaman.jpg" width="528" height="352" loading="lazy" alt="Carte : Tente de la chamane"><span class="ring" style="left:45.83%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Tente de la chamane : <b>1</b> Fengpo (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Hautes Herbes de Cendre"><span class="ring" style="left:86.46%;top:56.25%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Hautes Herbes de Cendre : <b>1</b> Page accrochée à une herbe (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_journal_8">La page du récif</a></dd>
+  </dl>
+</article>
+</main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
+<div class="lb-stage" id="lb-stage"></div>
+<div class="lb-cap" id="lb-cap"></div>
+<button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Fermer l’aperçu">&times;</button>
+<div class="lb-tools"><button class="lb-btn" id="lb-out" type="button" aria-label="Zoom arrière">&minus;</button><button class="lb-btn" id="lb-fit" type="button" aria-label="Ajuster à l’écran" style="font-size:15px">Ajuster</button><button class="lb-btn" id="lb-in" type="button" aria-label="Zoom avant">+</button></div>
+</div>
+<script>
+(function(){
+var lb=document.getElementById('lb'),stage=document.getElementById('lb-stage'),cap=document.getElementById('lb-cap');
+var S=1,TX=0,TY=0,FIT=1,W=1,H=1,pts={},pinch=0,moved=0,lastTap=0,opener=null,onStage=false;
+function vw(){return lb.clientWidth;}function vh(){return lb.clientHeight;}
+function apply(){stage.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')';}
+function clampPan(){
+  var w=W*S,h=H*S,m=60;
+  TX=w<=vw()?(vw()-w)/2:Math.min(m,Math.max(vw()-w-m,TX));
+  TY=h<=vh()?(vh()-h)/2:Math.min(m,Math.max(vh()-h-m,TY));
+}
+function zoomAt(f,cx,cy){
+  var ns=Math.min(10,Math.max(FIT*0.95,S*f));f=ns/S;
+  TX=cx-(cx-TX)*f;TY=cy-(cy-TY)*f;S=ns;clampPan();apply();
+}
+function fit(){S=FIT;TX=(vw()-W*S)/2;TY=(vh()-H*S)/2;apply();}
+function open(box){
+  opener=box;
+  var c=box.cloneNode(true);c.removeAttribute('style');
+  var img=c.querySelector('img');
+  var fig=box.closest('figure'),t=fig&&fig.querySelector('figcaption');
+  cap.innerHTML=t?t.innerHTML:'';
+  stage.innerHTML='';stage.appendChild(c);
+  lb.hidden=false;document.body.style.overflow='hidden';
+  function go(){
+    W=img.naturalWidth||1200;H=img.naturalHeight||(W*0.5);
+    stage.style.width=W+'px';
+    FIT=Math.min(vw()/W,vh()/H)*0.96;fit();
+  }
+  if(img.complete&&img.naturalWidth)go();else{img.onload=go;W=1200;H=600;stage.style.width=W+'px';FIT=Math.min(vw()/W,vh()/H)*0.96;fit();}
+  document.getElementById('lb-close').focus();
+}
+function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow='';pts={};if(opener&&opener.scrollIntoView){}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.shotbox');if(b&&!lb.contains(b))open(b);});
+document.getElementById('lb-close').addEventListener('click',close);
+document.getElementById('lb-in').addEventListener('click',function(){zoomAt(1.5,vw()/2,vh()/2);});
+document.getElementById('lb-out').addEventListener('click',function(){zoomAt(1/1.5,vw()/2,vh()/2);});
+document.getElementById('lb-fit').addEventListener('click',fit);
+document.addEventListener('keydown',function(e){
+  if(lb.hidden)return;
+  if(e.key==='Escape')close();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.4,vw()/2,vh()/2);
+  else if(e.key==='-')zoomAt(1/1.4,vw()/2,vh()/2);
+  else if(e.key==='0')fit();
+});
+lb.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);},{passive:false});
+lb.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.lb-btn'))return;
+  onStage=!!e.target.closest('.lb-stage');pts[e.pointerId]={x:e.clientX,y:e.clientY};moved=0;lb.setPointerCapture(e.pointerId);lb.classList.add('drag');
+  var k=Object.keys(pts);if(k.length===2){var a=pts[k[0]],b=pts[k[1]];pinch=Math.hypot(a.x-b.x,a.y-b.y);}
+});
+lb.addEventListener('pointermove',function(e){
+  var p=pts[e.pointerId];if(!p)return;
+  var k=Object.keys(pts);
+  if(k.length===2){
+    var a=pts[k[0]],b=pts[k[1]];
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    var a2=pts[k[0]],b2=pts[k[1]],d=Math.hypot(a2.x-b2.x,a2.y-b2.y);
+    if(pinch>0)zoomAt(d/pinch,(a2.x+b2.x)/2,(a2.y+b2.y)/2);
+    pinch=d;moved=9;return;
+  }
+  moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);
+  TX+=e.clientX-p.x;TY+=e.clientY-p.y;pts[e.pointerId]={x:e.clientX,y:e.clientY};clampPan();apply();
+});
+function up(e){
+  var had=pts[e.pointerId];delete pts[e.pointerId];pinch=0;
+  if(!Object.keys(pts).length)lb.classList.remove('drag');
+  if(had&&moved<6&&!e.target.closest('.lb-btn')){
+    var now=Date.now();
+    if(now-lastTap<350){if(S>FIT*1.2)fit();else zoomAt(3,e.clientX,e.clientY);lastTap=0;}else lastTap=now;
+    if(!onStage)close();
+  }
+}
+lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function(e){delete pts[e.pointerId];pinch=0;lb.classList.remove('drag');});
+window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
+})();
+</script>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

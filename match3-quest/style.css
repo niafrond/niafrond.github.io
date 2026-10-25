@@ -3521,3 +3521,5 @@ body.dark-mode .slot-badge { color: #f2c14e; }
 body.dark-mode .locked-group > summary { color: #bbb; }
 body.dark-mode .stuff-tile, body.dark-mode .stuff-row { background: #2b2b33; border-color: #444; }
 body.dark-mode .stuff-tile:not(.slot-empty) { background: #4a3f1c; }
+.options-row .coffee-link { display: inline-block; padding: 4px 10px; border: 2px solid #2b1b17; border-radius: 6px; background: #ffdd00; color: #2b1b17; font: inherit; text-decoration: none; }
+.options-row .coffee-link:hover, .options-row .coffee-link:focus-visible { filter: brightness(1.08); }

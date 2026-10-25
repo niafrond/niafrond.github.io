@@ -1,3 +1,41 @@
+## [2.131.2](https://github.com/niafrond/niafrond.github.io/compare/v2.131.1...v2.131.2) (2026-10-25)
+
+### Bug Fixes
+
+* **match3-quest:** rafraîchir l'onglet Stuff après un gain de niveau ([#549](https://github.com/niafrond/niafrond.github.io/issues/549)) ([c5fd215](https://github.com/niafrond/niafrond.github.io/commit/c5fd215898169eba79d54f6cb83016634d5a6775))
+
+## [2.131.1](https://github.com/niafrond/niafrond.github.io/compare/v2.131.0...v2.131.1) (2026-10-25)
+
+### Bug Fixes
+
+* **match3-quest:** donner le tour bonus de Tir Furtif à l'ennemi qui le lance ([872648d](https://github.com/niafrond/niafrond.github.io/commit/872648dc3d5bfc8cc678e55e2b6adeaf76418eca))
+
+## [2.131.0](https://github.com/niafrond/niafrond.github.io/compare/v2.130.0...v2.131.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** agrandir et zoomer les cartes de la soluce au clic ([60610b1](https://github.com/niafrond/niafrond.github.io/commit/60610b1164df3d00c7ea13e395018ee2f2587a93))
+* **match3-quest:** ajouter une soluce complète en HTML non liée depuis le jeu ([57665b1](https://github.com/niafrond/niafrond.github.io/commit/57665b16256f6c68c8893aaf85eec16e9a58cf58))
+* **match3-quest:** illustrer la soluce de captures de cartes avec cercles rouges ([f6cb31d](https://github.com/niafrond/niafrond.github.io/commit/f6cb31d225e2960821193ebfdaf004b66a793f5b))
+
+## [2.130.0](https://github.com/niafrond/niafrond.github.io/compare/v2.129.0...v2.130.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** rappeler de faire une pause après 1 h de jeu puis toutes les 30 min ([de157cf](https://github.com/niafrond/niafrond.github.io/commit/de157cf6be4c310081766efde4d0bab693ecc430))
+
+## [2.129.0](https://github.com/niafrond/niafrond.github.io/compare/v2.128.0...v2.129.0) (2026-10-24)
+
+### Features
+
+* **site:** ajouter la mesure d'audience GoatCounter ([b2171a6](https://github.com/niafrond/niafrond.github.io/commit/b2171a6e21bfad3e81d9866fc74628bccccbff0a))
+
+## [2.128.0](https://github.com/niafrond/niafrond.github.io/compare/v2.127.0...v2.128.0) (2026-10-24)
+
+### Features
+
+* **match3-quest:** ajouter un bouton pour offrir un café dans les options ([66f677b](https://github.com/niafrond/niafrond.github.io/commit/66f677b6c2d4f0ae6dbdc7a34ce0421493e1ed36))
+
 ## [2.127.0](https://github.com/niafrond/niafrond.github.io/compare/v2.126.0...v2.127.0) (2026-10-24)
 
 ### Features

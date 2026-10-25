@@ -2067,6 +2067,9 @@ export function createExplorationView(cfg) {
             return X.currentScreen(session).region;
         },
 
+        // Vrai quand le joueur explore librement : ni combat, ni dialogue, ni marchand, ni fenêtre ouverte.
+        isIdle() { return Boolean(session && active && root.style.display !== 'none' && !isBlocked()); },
+
         // Scène musicale de l'écran courant (null hors exploration, p. ex. en combat).
         getSceneInfo() {
             if (!session || !active || root.style.display === 'none' || inCombat) return null;

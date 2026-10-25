@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce des quêtes de la région Désert de Gobi.">
+<title>Quêtes — Désert de Gobi — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.shotbox{cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb[hidden]{display:none}
+.lb-stage{position:absolute;left:0;top:0;transform-origin:0 0;line-height:0;cursor:grab;will-change:transform}
+.lb.drag .lb-stage{cursor:grabbing}
+.lb-stage .shotbox{border:0;border-radius:0;cursor:inherit;max-width:none!important}
+.lb-stage img{width:100%;pointer-events:none;-webkit-user-drag:none}
+.lb-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid #fff4dc;background:rgba(30,22,16,.85);color:#fff4dc;font:700 24px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lb-btn:hover,.lb-btn:focus-visible{background:#d9553f;outline:none}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+.lb-tools{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.lb-tools .lb-btn{position:static}
+.lb-cap{position:absolute;left:12px;right:70px;top:calc(14px + env(safe-area-inset-top,0px));color:#fff4dc;font:.85rem system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 3px #000}
+.lb-cap small{display:none}
+.lb-cap b{color:#ff7a6a}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="stuff.html">Stuff d’exception</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Désert de Gobi</div>
+<h2>Désert de Gobi</h2>
+<p class="lead">Région débloquée au niveau 6. 17 quêtes.</p>
+<div class="box"><b class="t">Sommaire</b><ul><li><a href="#q-q_sun_4">Le Soleil des Mirages</a> <span class="badge main">Principale</span></li><li><a href="#q-sq_oasis">La cache de l'oasis</a></li><li><a href="#q-sq_bandits">La caravane de Ma</a></li><li><a href="#q-jq_dernier_puits">Une gourde pour les dunes</a></li><li><a href="#q-sq_lettre_bao_3">La lettre prend le large</a></li><li><a href="#q-sq_carte_vraie">La carte qui ne ment pas</a></li><li><a href="#q-sq_golems_puits">Les colosses du puits</a></li><li><a href="#q-sq_gob_chameau_1">Le chameau de Ma</a></li><li><a href="#q-sq_gob_chameau_2">Le voleur de chameaux</a></li><li><a href="#q-sq_gob_chameau_3">Le butin des brigands</a></li><li><a href="#q-sq_gob_puits">Qui boit l'eau du puits ?</a></li><li><a href="#q-sq_gob_tapis">Le tapis volant de Meihua</a></li><li><a href="#q-sq_gob_caravane">La caravane fantôme</a></li><li><a href="#q-sq_gob_pelerin">La femme du pèlerin</a></li><li><a href="#q-sq_gob_cuisine">La soupe à l'oasis</a></li><li><a href="#q-sq_journal_4">La carte vendue</a></li><li><a href="#q-sq_hua_3">La carte des pas de Hua</a></li></ul></div>
+<article class="quest" id="q-q_sun_4">
+  <h3>Le Soleil des Mirages <span class="badge main">Principale</span><small>Chapitre III — Le Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-q_sun_6">Le Soleil de Magma</a></dd>
+    <dt>Donneur</dt><dd><b>Dawa</b> (Guide du désert) — Tente de Dawa (partie nord de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Tente de Dawa</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Trouver et abattre le vrai Soleil des Mirages parmi ses doubles (Désert de Gobi)<br><small>Lieu : Désert de Gobi (partie sud-est de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées → Désert de Gobi</small><ul class="enemy">
+      <li><b>Soleil des Mirages</b> — niveau 14, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Désert de Gobi (partie sud-est de l’écran)</li>
+      <li>Espèce : Soleil des Mirages (Soleil) — Force : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — lanceur de sorts</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>140 pièces d’or · 3230 points d’expérience · composant de flèche : Éclat du Soleil des Mirages</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_dawa.jpg" width="440" height="308" loading="lazy" alt="Carte : Tente de Dawa"><span class="ring" style="left:65.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Tente de Dawa : <b>1</b> Dawa (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi.jpg" width="1320" height="968" loading="lazy" alt="Carte : Désert de Gobi"><span class="ring" style="left:81.67%;top:75.00%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Désert de Gobi : <b>1</b> Soleil des Mirages (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-fleuve.html#q-q_sun_2">Le Soleil des Eaux Taries</a>, <a href="quetes-fleuve.html#q-sq_golden_carp">La carpe qui voulait être dragon</a>, <a href="quetes-fleuve.html#q-sq_river_serpent">Le serpent du gué</a>, <a href="quetes-fleuve.html#q-sq_drowned">Le métier de Mei</a>, <a href="quetes-gobi.html#q-sq_gob_caravane">La caravane fantôme</a>, <a href="quetes-gobi.html#q-sq_hua_3">La carte des pas de Hua</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_oasis">
+  <h3>La cache de l'oasis <span class="badge comp">Compagnon</span><small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-q_sun_6">Le Soleil de Magma</a></dd>
+    <dt>Donneur</dt><dd><b>Dawa</b> (Guide du désert) — Tente de Dawa (partie nord de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Tente de Dawa</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la cache de l'oasis (coin nord-ouest du Gobi, près des tentes)<br><small>Lieu : Désert de Gobi (partie nord-ouest de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées → Désert de Gobi</small></li></ol></dd>
+    <dt>Récompense</dt><dd>45 pièces d’or · 1350 points d’expérience · composant de flèche : Rosée d'oasis · <a href="compagnon-dawa.html"><strong>Dawa</strong></a> rejoint le groupe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_dawa.jpg" width="440" height="308" loading="lazy" alt="Carte : Tente de Dawa"><span class="ring" style="left:65.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Tente de Dawa : <b>1</b> Dawa (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi.jpg" width="1320" height="968" loading="lazy" alt="Carte : Désert de Gobi"><span class="ring" style="left:21.67%;top:34.09%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Désert de Gobi : <b>1</b> Cache de l'oasis (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_bandits">
+  <h3>La caravane de Ma <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-q_sun_6">Le Soleil de Magma</a></dd>
+    <dt>Donneur</dt><dd><b>Ma</b> (Marchand de caravane) — Entrepôt du marchand Ma (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Entrepôt du marchand Ma</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Chasser les 2 brigands du Gobi (sud-ouest du désert, sur la piste des caravanes)<br><small>Lieu : Désert de Gobi (partie sud-ouest de l’écran)</small><ul class="enemy"><li>Brigand du Gobi — sud-ouest</li><li>Lame masquée du Gobi — sud</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>85 pièces d’or · 1350 points d’expérience · composant de flèche : Verre du désert</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_ma.jpg" width="528" height="352" loading="lazy" alt="Carte : Entrepôt du marchand Ma"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Entrepôt du marchand Ma : <b>1</b> Ma (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi.jpg" width="1320" height="968" loading="lazy" alt="Carte : Désert de Gobi"><span class="ring" style="left:31.67%;top:70.45%;width:6.00%;height:8.18%"><i>1</i></span><span class="ring" style="left:48.33%;top:79.55%;width:6.00%;height:8.18%"><i>2</i></span></div><figcaption>Désert de Gobi : <b>1</b> Brigand du Gobi (objectif) · <b>2</b> Lame masquée du Gobi (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-jq_dernier_puits">
+  <h3>Une gourde pour les dunes <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Capitaine Yaer</b> (Gardien du dernier puits) — Caravansérail de Yueya (partie est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Rapporter</b> : Rapporter une gourde de source scellée (Gorges du Volcan, dans les terres au sud-est)</li></ol></dd>
+    <dt>Récompense</dt><dd>88 pièces d’or · 1350 points d’expérience · composant de flèche : Cuir de gourde</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Caravansérail de Yueya"><span class="ring" style="left:92.19%;top:48.21%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Caravansérail de Yueya : <b>1</b> Capitaine Yaer (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_lettre_bao_3">
+  <h3>La lettre prend le large <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fleuve.html#q-sq_lettre_bao_2">La lettre fait escale</a></dd>
+    <dt>Donneur</dt><dd><b>Hua</b> (Colporteuse aux mille babioles) — Caravansérail de Yueya (au centre de l’écran)</dd>
+    <dt>À rapporter à</dt><dd><b>Bao</b> — Maison du marin Bao (partie nord de l’écran)</dd>
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Remettre la lettre de Petit Bao à son père, le marin Bao (Port aux Perles de Haiyan, Mer Orientale)<br><small>Lieu : Maison du marin Bao (partie nord de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>90 pièces d’or · 1350 points d’expérience · composant de flèche : Vent de marin</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Caravansérail de Yueya"><span class="ring" style="left:39.06%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Caravansérail de Yueya : <b>1</b> Hua (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/mer_h_marin.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du marin Bao"><span class="ring" style="left:65.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span><span class="ring" style="left:65.00%;top:21.43%;width:18.00%;height:25.71%"><i>2</i></span></div><figcaption>Maison du marin Bao : <b>1</b> Bao (à qui la rendre) · <b>2</b> Bao (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_marin_reponse">La réponse du marin</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_carte_vraie">
+  <h3>La carte qui ne ment pas <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Yuan</b> (Cartographe optimiste) — Atelier du cartographe (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Atelier du cartographe</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Écouter l'esprit Haishi (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie nord-ouest de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small></li><li><b>Ouvrir</b> : Ouvrir le vrai coffre parmi les mirages (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (au centre de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 1350 points d’expérience · composant de flèche : Sable étoilé</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_cartes.jpg" width="440" height="308" loading="lazy" alt="Carte : Atelier du cartographe"><span class="ring" style="left:75.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Atelier du cartographe : <b>1</b> Yuan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:19.79%;top:27.08%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:46.88%;top:43.75%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Haishi (objectif) · <b>2</b> Coffre mirage (le vrai !) (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_golems_puits">
+  <h3>Les colosses du puits <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Quan</b> (Gardienne de la citerne) — Maison des eaux (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Maison des eaux</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Abattre les deux colosses de sable qui boivent l'eau de la citerne (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (au centre de l’écran)</small><ul class="enemy"><li>Colosse des dunes — centre</li><li>Colosse des dunes — centre</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#e0533d"></span>Feu (rouge)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>110 pièces d’or · 1350 points d’expérience · composant de flèche : Larme de citerne</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_bains.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison des eaux"><span class="ring" style="left:87.50%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Maison des eaux : <b>1</b> Quan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:38.54%;top:60.42%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:57.29%;top:64.58%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Colosse des dunes (objectif) · <b>2</b> Colosse des dunes (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_chameau_1">
+  <h3>Le chameau de Ma <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Ma</b> (Marchand de caravane) — Entrepôt du marchand Ma (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Entrepôt du marchand Ma</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Tuotuo (écurie des chameaux)<br><small>Lieu : Écurie des chameaux (partie est de l’écran) — itinéraire : Caravansérail de Yueya → Écurie des chameaux</small></li></ol></dd>
+    <dt>Récompense</dt><dd>70 pièces d’or · 1350 points d’expérience · composant de flèche : Cordon de chameau</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_ma.jpg" width="528" height="352" loading="lazy" alt="Carte : Entrepôt du marchand Ma"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Entrepôt du marchand Ma : <b>1</b> Ma (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_chameaux.jpg" width="528" height="352" loading="lazy" alt="Carte : Écurie des chameaux"><span class="ring" style="left:79.17%;top:43.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Écurie des chameaux : <b>1</b> Tuotuo (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-sq_gob_chameau_2">Le voleur de chameaux</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_chameau_2">
+  <h3>Le voleur de chameaux <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-gobi.html#q-sq_gob_chameau_1">Le chameau de Ma</a></dd>
+    <dt>Donneur</dt><dd><b>Ma</b> (Marchand de caravane) — Entrepôt du marchand Ma (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Entrepôt du marchand Ma</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre</b> : Retrouver le voleur de chameaux (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie nord-est de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small><ul class="enemy">
+      <li><b>Voleur de chameaux</b> — niveau du héros +0, ne réapparaît pas, immobile (sentinelle)</li>
+      <li>Lieu : Dunes des Voix Sablées (partie nord-est de l’écran)</li>
+      <li>Espèce : Assassin Masqué (Humain) — Force : <span class="dot" style="background:#9b62d6"></span>Arcane (violet) — <b>Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</b> — frappe fort, rapide et sournois</li>
+    </ul></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 1350 points d’expérience · composant de flèche : Selle usée</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_ma.jpg" width="528" height="352" loading="lazy" alt="Carte : Entrepôt du marchand Ma"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Entrepôt du marchand Ma : <b>1</b> Ma (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:67.71%;top:27.08%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Voleur de chameaux (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-gobi.html#q-sq_gob_chameau_3">Le butin des brigands</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_chameau_3">
+  <h3>Le butin des brigands <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-gobi.html#q-sq_gob_chameau_2">Le voleur de chameaux</a></dd>
+    <dt>Donneur</dt><dd><b>Ma</b> (Marchand de caravane) — Entrepôt du marchand Ma (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Entrepôt du marchand Ma</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Fouiller la cache des brigands (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie sud de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>130 pièces d’or · 1350 points d’expérience · composant de flèche : Soie noire</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_ma.jpg" width="528" height="352" loading="lazy" alt="Carte : Entrepôt du marchand Ma"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Entrepôt du marchand Ma : <b>1</b> Ma (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:38.54%;top:89.58%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Cache des brigands (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_puits">
+  <h3>Qui boit l'eau du puits ? <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Wen</b> (Puisatier) — Maison du puisatier Wen (partie nord de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Dunes des Voix Sablées → Oasis de Yuquan → Maison du puisatier Wen</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Quan la gardienne (Maison des eaux)<br><small>Lieu : Maison des eaux (partie nord-est de l’écran) — itinéraire : Caravansérail de Yueya → Maison des eaux</small></li><li><b>Parler à</b> : Interroger Ahe (place du caravansérail)<br><small>Lieu : Caravansérail de Yueya (au centre de l’écran)</small></li><li><b>Parler à</b> : Interroger Tuotuo (écurie des chameaux)<br><small>Lieu : Écurie des chameaux (partie est de l’écran) — itinéraire : Caravansérail de Yueya → Écurie des chameaux</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 1350 points d’expérience · composant de flèche : Poulie de puits</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h2_puits.jpg" width="440" height="308" loading="lazy" alt="Carte : Maison du puisatier Wen"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Maison du puisatier Wen : <b>1</b> Wen (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_bains.jpg" width="528" height="352" loading="lazy" alt="Carte : Maison des eaux"><span class="ring" style="left:87.50%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Maison des eaux : <b>1</b> Quan (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Caravansérail de Yueya"><span class="ring" style="left:60.94%;top:51.79%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Caravansérail de Yueya : <b>1</b> Ahe (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_chameaux.jpg" width="528" height="352" loading="lazy" alt="Carte : Écurie des chameaux"><span class="ring" style="left:79.17%;top:43.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Écurie des chameaux : <b>1</b> Tuotuo (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_tapis">
+  <h3>Le tapis volant de Meihua <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Meihua</b> (Marchande de tapis) — Boutique de tapis de Meihua (partie nord de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Dunes des Voix Sablées → Oasis de Yuquan → Boutique de tapis de Meihua</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Ouvrir le coffre sous les tapis (boutique de Meihua)<br><small>Lieu : Boutique de tapis de Meihua (partie est de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées → Oasis de Yuquan → Boutique de tapis de Meihua</small></li><li><b>Parler à</b> : Proposer le tapis à Ma (entrepôt de Ma)<br><small>Lieu : Entrepôt du marchand Ma (partie nord-est de l’écran) — itinéraire : Caravansérail de Yueya → Entrepôt du marchand Ma</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 1350 points d’expérience · composant de flèche : Fil de tapis volant</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h2_tapis.jpg" width="440" height="308" loading="lazy" alt="Carte : Boutique de tapis de Meihua"><span class="ring" style="left:45.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span><span class="ring" style="left:85.00%;top:64.29%;width:18.00%;height:25.71%"><i>2</i></span></div><figcaption>Boutique de tapis de Meihua : <b>1</b> Meihua (donne la quête) · <b>2</b> Coffre sous les tapis (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/gobi_h_ma.jpg" width="528" height="352" loading="lazy" alt="Carte : Entrepôt du marchand Ma"><span class="ring" style="left:79.17%;top:31.25%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Entrepôt du marchand Ma : <b>1</b> Ma (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_caravane">
+  <h3>La caravane fantôme <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-gobi.html#q-q_sun_4">Le Soleil des Mirages</a></dd>
+    <dt>Donneur</dt><dd><b>Dawa</b> (Guide du désert) — Tente de Dawa (partie nord de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Tente de Dawa</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Vaincre le groupe</b> : Libérer les caravaniers squelettes (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie sud-est de l’écran)</small><ul class="enemy"><li>Caravanier squelette — sud-est</li><li>Caravanier squelette — sud-est</li></ul><p class="dim">Faiblesse : <span class="dot" style="background:#4cae5d"></span>Terre (vert)</p></li></ol></dd>
+    <dt>Récompense</dt><dd>120 pièces d’or · 1350 points d’expérience · composant de flèche : Drapeau de caravane</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_dawa.jpg" width="440" height="308" loading="lazy" alt="Carte : Tente de Dawa"><span class="ring" style="left:65.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Tente de Dawa : <b>1</b> Dawa (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:67.71%;top:68.75%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:71.88%;top:72.92%;width:3.75%;height:7.50%"><i>2</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Caravanier squelette (objectif) · <b>2</b> Caravanier squelette (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_pelerin">
+  <h3>La femme du pèlerin <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Dawa</b> (Guide du désert) — Tente de Dawa (partie nord de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Tente de Dawa</small></dd>
+    <dt>À rapporter à</dt><dd><b>Ren</b> — Dunes des Voix Sablées (partie ouest de l’écran)</dd>
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Parler au fennec Lili (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie est de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small></li><li><b>Parler à</b> : Rejoindre le pèlerin Ren (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie ouest de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>110 pièces d’or · 1350 points d’expérience · composant de flèche : Larme du désert</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_dawa.jpg" width="440" height="308" loading="lazy" alt="Carte : Tente de Dawa"><span class="ring" style="left:65.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Tente de Dawa : <b>1</b> Dawa (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:32.29%;top:52.08%;width:3.75%;height:7.50%"><i>1</i></span><span class="ring" style="left:76.04%;top:56.25%;width:3.75%;height:7.50%"><i>2</i></span><span class="ring" style="left:32.29%;top:52.08%;width:3.75%;height:7.50%"><i>3</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Ren (à qui la rendre) · <b>2</b> Lili (objectif) · <b>3</b> Ren (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_gob_cuisine">
+  <h3>La soupe à l'oasis <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd>Aucun, disponible dès l’arrivée.</dd>
+    <dt>Donneur</dt><dd><b>Lu</b> (Cuisinier de caravane) — Caravansérail de Yueya (partie est de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Chercher des dattes à l'oasis (Oasis de Yuquan)<br><small>Lieu : Oasis de Yuquan (partie sud-ouest de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées → Oasis de Yuquan</small></li><li><b>Parler à</b> : Demander de l'eau fraîche à Ahe (place du caravansérail)<br><small>Lieu : Caravansérail de Yueya (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>90 pièces d’or · 1350 points d’expérience · composant de flèche : Piment sacré</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Caravansérail de Yueya"><span class="ring" style="left:73.44%;top:58.93%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:60.94%;top:51.79%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Caravansérail de Yueya : <b>1</b> Lu (donne la quête) · <b>2</b> Ahe (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_hamlet.jpg" width="1232" height="968" loading="lazy" alt="Carte : Oasis de Yuquan"><span class="ring" style="left:19.64%;top:79.55%;width:6.43%;height:8.18%"><i>1</i></span></div><figcaption>Oasis de Yuquan : <b>1</b> Panier de dattes (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    
+  </dl>
+</article>
+<article class="quest" id="q-sq_journal_4">
+  <h3>La carte vendue <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-volcan.html#q-sq_journal_6">La page brûlée</a></dd>
+    <dt>Donneur</dt><dd><b>Yuan</b> (Cartographe optimiste) — Atelier du cartographe (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Caravansérail de Yueya → Atelier du cartographe</small></dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la page ensablée (dunes des Voix Sablées)<br><small>Lieu : Dunes des Voix Sablées (partie nord de l’écran) — itinéraire : Caravansérail de Yueya → Dunes des Voix Sablées</small></li></ol></dd>
+    <dt>Récompense</dt><dd>90 pièces d’or · 1350 points d’expérience · composant de flèche : Page du carnet (IV)</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_cartes.jpg" width="440" height="308" loading="lazy" alt="Carte : Atelier du cartographe"><span class="ring" style="left:75.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Atelier du cartographe : <b>1</b> Yuan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_wild.jpg" width="2112" height="1056" loading="lazy" alt="Carte : Dunes des Voix Sablées"><span class="ring" style="left:46.88%;top:10.42%;width:3.75%;height:7.50%"><i>1</i></span></div><figcaption>Dunes des Voix Sablées : <b>1</b> Page prise dans le sable (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-fleuve.html#q-sq_journal_2">Le carnet dans la vase</a></dd>
+  </dl>
+</article>
+<article class="quest" id="q-sq_hua_3">
+  <h3>La carte des pas de Hua <small>Désert de Gobi</small></h3>
+  <dl>
+    <dt>Prérequis</dt><dd><a href="quetes-fleuve.html#q-sq_hua_2">Les mêmes babioles</a>, <a href="quetes-gobi.html#q-q_sun_4">Le Soleil des Mirages</a></dd>
+    <dt>Donneur</dt><dd><b>Yun</b> (Conteur de caravane) — Caravansérail de Yueya (au centre de l’écran)</dd>
+    
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Faire tracer par Yuan le trajet de Hua sur sa carte (campement des cartographes)<br><small>Lieu : Atelier du cartographe (partie nord-est de l’écran) — itinéraire : Caravansérail de Yueya → Atelier du cartographe</small></li><li><b>Parler à</b> : Demander à Hua pourquoi elle vous suit (oasis)<br><small>Lieu : Caravansérail de Yueya (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>100 pièces d’or · 1350 points d’expérience · composant de flèche : Sable de miroir</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/gobi_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Caravansérail de Yueya"><span class="ring" style="left:45.31%;top:44.64%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring" style="left:39.06%;top:44.64%;width:5.63%;height:6.43%"><i>2</i></span></div><figcaption>Caravansérail de Yueya : <b>1</b> Yun (donne la quête) · <b>2</b> Hua (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/gobi_h_cartes.jpg" width="440" height="308" loading="lazy" alt="Carte : Atelier du cartographe"><span class="ring" style="left:75.00%;top:35.71%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Atelier du cartographe : <b>1</b> Yuan (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Débloque</dt><dd><a href="quetes-mer.html#q-sq_hua_4">Ce que la mer a gardé</a></dd>
+  </dl>
+</article>
+</main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
+<div class="lb-stage" id="lb-stage"></div>
+<div class="lb-cap" id="lb-cap"></div>
+<button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Fermer l’aperçu">&times;</button>
+<div class="lb-tools"><button class="lb-btn" id="lb-out" type="button" aria-label="Zoom arrière">&minus;</button><button class="lb-btn" id="lb-fit" type="button" aria-label="Ajuster à l’écran" style="font-size:15px">Ajuster</button><button class="lb-btn" id="lb-in" type="button" aria-label="Zoom avant">+</button></div>
+</div>
+<script>
+(function(){
+var lb=document.getElementById('lb'),stage=document.getElementById('lb-stage'),cap=document.getElementById('lb-cap');
+var S=1,TX=0,TY=0,FIT=1,W=1,H=1,pts={},pinch=0,moved=0,lastTap=0,opener=null,onStage=false;
+function vw(){return lb.clientWidth;}function vh(){return lb.clientHeight;}
+function apply(){stage.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')';}
+function clampPan(){
+  var w=W*S,h=H*S,m=60;
+  TX=w<=vw()?(vw()-w)/2:Math.min(m,Math.max(vw()-w-m,TX));
+  TY=h<=vh()?(vh()-h)/2:Math.min(m,Math.max(vh()-h-m,TY));
+}
+function zoomAt(f,cx,cy){
+  var ns=Math.min(10,Math.max(FIT*0.95,S*f));f=ns/S;
+  TX=cx-(cx-TX)*f;TY=cy-(cy-TY)*f;S=ns;clampPan();apply();
+}
+function fit(){S=FIT;TX=(vw()-W*S)/2;TY=(vh()-H*S)/2;apply();}
+function open(box){
+  opener=box;
+  var c=box.cloneNode(true);c.removeAttribute('style');
+  var img=c.querySelector('img');
+  var fig=box.closest('figure'),t=fig&&fig.querySelector('figcaption');
+  cap.innerHTML=t?t.innerHTML:'';
+  stage.innerHTML='';stage.appendChild(c);
+  lb.hidden=false;document.body.style.overflow='hidden';
+  function go(){
+    W=img.naturalWidth||1200;H=img.naturalHeight||(W*0.5);
+    stage.style.width=W+'px';
+    FIT=Math.min(vw()/W,vh()/H)*0.96;fit();
+  }
+  if(img.complete&&img.naturalWidth)go();else{img.onload=go;W=1200;H=600;stage.style.width=W+'px';FIT=Math.min(vw()/W,vh()/H)*0.96;fit();}
+  document.getElementById('lb-close').focus();
+}
+function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow='';pts={};if(opener&&opener.scrollIntoView){}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.shotbox');if(b&&!lb.contains(b))open(b);});
+document.getElementById('lb-close').addEventListener('click',close);
+document.getElementById('lb-in').addEventListener('click',function(){zoomAt(1.5,vw()/2,vh()/2);});
+document.getElementById('lb-out').addEventListener('click',function(){zoomAt(1/1.5,vw()/2,vh()/2);});
+document.getElementById('lb-fit').addEventListener('click',fit);
+document.addEventListener('keydown',function(e){
+  if(lb.hidden)return;
+  if(e.key==='Escape')close();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.4,vw()/2,vh()/2);
+  else if(e.key==='-')zoomAt(1/1.4,vw()/2,vh()/2);
+  else if(e.key==='0')fit();
+});
+lb.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);},{passive:false});
+lb.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.lb-btn'))return;
+  onStage=!!e.target.closest('.lb-stage');pts[e.pointerId]={x:e.clientX,y:e.clientY};moved=0;lb.setPointerCapture(e.pointerId);lb.classList.add('drag');
+  var k=Object.keys(pts);if(k.length===2){var a=pts[k[0]],b=pts[k[1]];pinch=Math.hypot(a.x-b.x,a.y-b.y);}
+});
+lb.addEventListener('pointermove',function(e){
+  var p=pts[e.pointerId];if(!p)return;
+  var k=Object.keys(pts);
+  if(k.length===2){
+    var a=pts[k[0]],b=pts[k[1]];
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    var a2=pts[k[0]],b2=pts[k[1]],d=Math.hypot(a2.x-b2.x,a2.y-b2.y);
+    if(pinch>0)zoomAt(d/pinch,(a2.x+b2.x)/2,(a2.y+b2.y)/2);
+    pinch=d;moved=9;return;
+  }
+  moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);
+  TX+=e.clientX-p.x;TY+=e.clientY-p.y;pts[e.pointerId]={x:e.clientX,y:e.clientY};clampPan();apply();
+});
+function up(e){
+  var had=pts[e.pointerId];delete pts[e.pointerId];pinch=0;
+  if(!Object.keys(pts).length)lb.classList.remove('drag');
+  if(had&&moved<6&&!e.target.closest('.lb-btn')){
+    var now=Date.now();
+    if(now-lastTap<350){if(S>FIT*1.2)fit();else zoomAt(3,e.clientX,e.clientY);lastTap=0;}else lastTap=now;
+    if(!onStage)close();
+  }
+}
+lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function(e){delete pts[e.pointerId];pinch=0;lb.classList.remove('drag');});
+window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
+})();
+</script>
+<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

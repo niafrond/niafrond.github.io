@@ -17,6 +17,7 @@ import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
 import { playTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
+import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
 import { getWeaponById } from "./weapons.js";
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
@@ -415,7 +416,11 @@ function init() {
         playTimeEl.innerHTML = [['Aujourd\'hui', t.today], ['Hier', t.yesterday], ['Cette semaine', t.week], ['Total', t.total]]
             .map(([label, sec]) => `<span class="playtime-line"><span>${label}</span><b>${formatDuration(sec)}</b></span>`).join('');
     };
-    startPlayTimeTracking(renderPlayTime);
+    // Rappel de pause : 1 h de jeu, puis toutes les 30 min, hors combat et fenêtres ouvertes (breakReminder.js)
+    const breakTick = createBreakWatcher({
+        isCalm: () => Boolean(exploration.isIdle?.()),
+    });
+    startPlayTimeTracking(() => { renderPlayTime(); breakTick(); });
     ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', renderPlayTime));
 
     // Options d'affichage / performance (gameOptions.js)
