@@ -14,7 +14,7 @@ describe('moteur d\'énigmes', () => {
     test('chaque énigme déclarée a un mode connu, un titre et un texte', () => {
         Object.entries(PUZZLES).forEach(([id, p]) => {
             expect(getMode(p.mode)).not.toBeNull();
-            expect(p.title && p.intro && p.hint).toBeTruthy();
+            expect(p.title).toBeTruthy();
             expect(id).toMatch(/^[a-z_]+$/);
         });
     });

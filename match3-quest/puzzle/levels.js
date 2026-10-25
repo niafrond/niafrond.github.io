@@ -1,12 +1,10 @@
-// Énigmes du jeu : { id, title, mode, intro, hint, level }. Un coffre les référence par `puzzle: '<id>'` (carte du monde) ; la liste est
+// Énigmes du jeu : { title, mode, set (famille d'armure), level }. Un coffre les référence par `puzzle: '<id>'` (carte du monde) ; la liste est
 // la seule chose à compléter pour en ajouter une (le mode doit exister dans modes.js). Chaque niveau est prouvé faisable par un test.
 export const PUZZLES = {
     riz_jarres: {
         title: 'Les jarres du grenier',
         mode: 'push',
         set: 'jarres',
-        intro: 'Le coffret est calé derrière des jarres. Poussez chaque jarre sur son socle rouge ; on ne pousse qu\'une jarre à la fois et on ne peut jamais la tirer.',
-        hint: 'Une jarre collée à un mur ne peut plus que glisser le long de celui-ci : n\'en coincez pas dans un angle.',
         level: {
             grid: [
                 '#########',
@@ -24,8 +22,6 @@ export const PUZZLES = {
         title: 'Les jarres du caravansérail',
         mode: 'push',
         set: 'jarres',
-        intro: 'Des jarres d\'eau encombrent la réserve du caravansérail. Poussez chaque jarre sur son socle rouge ; on ne pousse qu\'une jarre à la fois et on ne peut jamais la tirer.',
-        hint: 'Une jarre collée à un mur ne peut plus que glisser le long de celui-ci : n\'en coincez pas dans un angle.',
         level: {
             grid: [
                 '#########',
@@ -43,8 +39,6 @@ export const PUZZLES = {
         title: 'Les jarres du marché aux fauves',
         mode: 'push',
         set: 'jarres',
-        intro: 'Les jarres de grain du marché cachent le coffret. Poussez chaque jarre sur son socle rouge ; on ne pousse qu\'une jarre à la fois et on ne peut jamais la tirer.',
-        hint: 'Une jarre collée à un mur ne peut plus que glisser le long de celui-ci : n\'en coincez pas dans un angle.',
         level: {
             grid: [
                 '#########',
@@ -62,8 +56,6 @@ export const PUZZLES = {
         title: 'Les miroirs du cratère',
         mode: 'mirror',
         set: 'lumiere',
-        intro: 'Une lanterne au fond du cratère fait briller le coffret... à condition d\'éclairer les deux cristaux. Touchez un miroir pour le faire basculer et éclairez tous les cristaux ; le prisme laisse passer le rayon et en renvoie un second sur le côté.',
-        hint: 'Suivez le rayon depuis la lanterne, miroir après miroir ; le prisme sépare le rayon en deux, un pour chaque cristal.',
         level: {
             grid: [
                 '#############',
@@ -82,8 +74,6 @@ export const PUZZLES = {
         title: 'Les miroirs du lutrin',
         mode: 'mirror',
         set: 'lumiere',
-        intro: 'Une lanterne éclairait jadis le lutrin du fleuve. Touchez un miroir pour le faire basculer et éclairez tous les cristaux ; le prisme laisse passer le rayon et en renvoie un second sur le côté.',
-        hint: 'Suivez le rayon depuis la lanterne, miroir après miroir ; le prisme sépare le rayon en deux, un pour chaque cristal.',
         level: {
             grid: [
                 '#############',
@@ -102,8 +92,6 @@ export const PUZZLES = {
         title: 'Les miroirs du Palais froid',
         mode: 'mirror',
         set: 'lumiere',
-        intro: 'La lumière de la lune, bien reflétée, ouvrira le coffret. Touchez un miroir pour le faire basculer et éclairez tous les cristaux ; le prisme laisse passer le rayon et en renvoie un second sur le côté.',
-        hint: 'Suivez le rayon depuis la lanterne, miroir après miroir ; le prisme sépare le rayon en deux, un pour chaque cristal.',
         level: {
             grid: [
                 '#############',
@@ -122,8 +110,6 @@ export const PUZZLES = {
         title: 'La charrette bloquée',
         mode: 'slide',
         set: 'charrette',
-        intro: 'Une charrette barre la ruelle de bambous. Faites sortir la charrette rouge par l\'ouverture verte : chaque bloc ne glisse que dans le sens de sa longueur. Touchez un bloc pour le choisir, puis une case libre dans son axe.',
-        hint: 'Libérez d\'abord la rangée de la charrette rouge, en commençant par le bloc qui la gêne le plus tôt.',
         level: {
             w: 6, h: 6, exit: { side: 'right', at: 2 },
             blocks: [
@@ -142,8 +128,6 @@ export const PUZZLES = {
         title: 'La charrette du col',
         mode: 'slide',
         set: 'charrette',
-        intro: 'Une charrette d\'orage s\'est coincée dans le col. Faites sortir la charrette rouge par l\'ouverture verte : chaque bloc ne glisse que dans le sens de sa longueur. Touchez un bloc pour le choisir, puis une case libre dans son axe.',
-        hint: 'Libérez d\'abord la rangée de la charrette rouge, en commençant par le bloc qui la gêne le plus tôt.',
         level: {
             w: 6, h: 6, exit: { side: 'right', at: 2 },
             blocks: [
@@ -166,8 +150,6 @@ export const PUZZLES = {
         title: 'La charrette du port',
         mode: 'slide',
         set: 'charrette',
-        intro: 'Un amas de charrettes encombre le quai du port. Faites sortir la charrette rouge par l\'ouverture verte : chaque bloc ne glisse que dans le sens de sa longueur. Touchez un bloc pour le choisir, puis une case libre dans son axe.',
-        hint: 'Libérez d\'abord la rangée de la charrette rouge, en commençant par le bloc qui la gêne le plus tôt.',
         level: {
             w: 6, h: 6, exit: { side: 'right', at: 2 },
             blocks: [
@@ -191,8 +173,6 @@ export const PUZZLES = {
         title: 'Les jarres du toit flottant',
         mode: 'push',
         set: 'jarres',
-        intro: 'Une jarre coincée entre deux pieux cache le coffret. Poussez chaque jarre sur son socle rouge ; on ne pousse qu\'une jarre à la fois et on ne peut jamais la tirer.',
-        hint: 'Une jarre collée à un mur ne peut plus que glisser le long de celui-ci : n\'en coincez pas dans un angle.',
         level: {
             grid: [
                 '#########',
@@ -210,8 +190,6 @@ export const PUZZLES = {
         title: 'Les miroirs de Fusang',
         mode: 'mirror',
         set: 'lumiere',
-        intro: 'Les feuilles de Fusang renvoient la lumière du matin. Touchez un miroir pour le faire basculer et éclairez tous les cristaux ; le prisme laisse passer le rayon et en renvoie un second sur le côté.',
-        hint: 'Suivez le rayon depuis la lanterne, miroir après miroir ; le prisme sépare le rayon en deux, un pour chaque cristal.',
         level: {
             grid: [
                 '#############',
@@ -230,8 +208,6 @@ export const PUZZLES = {
         title: 'La charrette du radeau-marché',
         mode: 'slide',
         set: 'charrette',
-        intro: 'Le radeau-marché est encombré de charrettes. Faites sortir la charrette rouge par l\'ouverture verte : chaque bloc ne glisse que dans le sens de sa longueur. Touchez un bloc pour le choisir, puis une case libre dans son axe.',
-        hint: 'Libérez d\'abord la rangée de la charrette rouge, en commençant par le bloc qui la gêne le plus tôt.',
         level: {
             w: 6, h: 6, exit: { side: 'right', at: 2 },
             blocks: [

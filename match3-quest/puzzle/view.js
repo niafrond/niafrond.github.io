@@ -27,10 +27,8 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
             <div class="puzzle-buttons">
                 <button type="button" data-act="undo">Annuler</button>
                 <button type="button" data-act="reset">Recommencer</button>
-                <button type="button" data-act="hint">Indice</button>
                 <button type="button" data-act="close">Quitter</button>
             </div>
-            <div class="puzzle-intro">${esc(def.intro)}</div>
         </div>
         <div class="puzzle-stage"><svg class="puzzle-board" aria-hidden="true"></svg></div>
         ${isDirMode ? `<div class="puzzle-pad">${['up', 'left', 'down', 'right'].map(d => `<button type="button" data-dir="${d}" aria-label="${d}">${{ up: '&#9650;', left: '&#9664;', down: '&#9660;', right: '&#9654;' }[d]}</button>`).join('')}</div>` : ''}
@@ -94,7 +92,6 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
         switch (b.dataset.act) {
             case 'undo': puzzle.undo(); refresh(); break;
             case 'reset': puzzle.reset(); refresh(); break;
-            case 'hint': status.textContent = def.hint || 'Observez bien le plateau.'; break;
             case 'close': close(false); break;
             case 'done': close(true); break;
         }
