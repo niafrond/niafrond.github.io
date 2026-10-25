@@ -1,3 +1,9 @@
+## [2.133.1](https://github.com/niafrond/niafrond.github.io/compare/v2.133.0...v2.133.1) (2026-10-25)
+
+### Bug Fixes
+
+* **match3-quest:** appliquer les -6 PV de l'ennemi sur case brûlante ([#552](https://github.com/niafrond/niafrond.github.io/issues/552)) ([bffadc6](https://github.com/niafrond/niafrond.github.io/commit/bffadc6910d489fb102fc0ed75986e851de9972e))
+
 ## [2.133.0](https://github.com/niafrond/niafrond.github.io/compare/v2.132.0...v2.133.0) (2026-10-25)
 
 ### Features
