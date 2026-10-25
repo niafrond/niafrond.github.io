@@ -35,7 +35,7 @@
 //    L'eau et la lave (`screen.liquids`, franchissables avec le Pas de Yu ou en écran aquatique) agissent comme des buissons :
 //    mêmes tirages, table des herbes de la carte ou, à défaut, de la carte sauvage de la région (encounterOf / isEncounterCell).
 
-import { PUZZLES, PUZZLE_SETS, isSetComplete, puzzlesOfSet } from './puzzle/levels.js';
+import { PUZZLES, PUZZLE_SETS, isSetComplete, puzzlesOfSet, pieceOfPuzzle } from './puzzle/levels.js';
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { COMPANIONS, BANTER } from './companions.js';
 import { REGION_LEVEL } from './world/index.js';
@@ -1250,14 +1250,20 @@ export function openChest(session, chestId) {
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 
-/** Marque l'énigme résolue. Renvoie { set, stuff, label } quand elle achève sa famille (trois énigmes) pour la première fois : pièce d'armure antique à remettre. */
+/**
+ * Marque l'énigme résolue. Renvoie, à la première victoire, { label, stuff: [ids de pièces d'armure antique à remettre], complete } :
+ * la pièce de l'énigme, plus la pièce finale quand elle achève sa famille. Renvoie null si l'énigme était déjà résolue.
+ */
 export function solvePuzzle(session, puzzleId) {
     const d = session.data;
-    if (!d.solvedPuzzles.includes(puzzleId)) d.solvedPuzzles.push(puzzleId);
+    if (d.solvedPuzzles.includes(puzzleId)) return null;
+    d.solvedPuzzles.push(puzzleId);
     const set = PUZZLES[puzzleId]?.set;
-    if (!set || d.puzzleSetsDone.includes(set) || !isSetComplete(set, d.solvedPuzzles)) return null;
-    d.puzzleSetsDone.push(set);
-    return { set, stuff: PUZZLE_SETS[set].stuff, label: PUZZLE_SETS[set].label };
+    if (!set) return null;
+    const stuff = [pieceOfPuzzle(puzzleId)].filter(Boolean);
+    const complete = isSetComplete(set, d.solvedPuzzles) && !d.puzzleSetsDone.includes(set);
+    if (complete) { d.puzzleSetsDone.push(set); stuff.push(PUZZLE_SETS[set].finale); }
+    return { set, label: PUZZLE_SETS[set].label, stuff, complete };
 }
 
 export const puzzleSet = puzzleId => PUZZLES[puzzleId]?.set || null;

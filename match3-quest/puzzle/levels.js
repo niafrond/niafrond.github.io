@@ -179,15 +179,18 @@ export const PUZZLES = {
     }
 };
 
-// Familles d'énigmes : quand les trois énigmes d'une famille sont résolues, le héros reçoit la pièce d'armure antique correspondante (stuff.js).
+// Familles d'énigmes = armures antiques (ANTIQUE_ARMORS dans stuff.js, même clé) : chaque énigme résolue donne la pièce de même rang
+// (`pieces`, dans l'ordre de `puzzlesOfSet`), et la famille entière donne la dernière (`finale`) : quatre pièces en tout.
 export const PUZZLE_SETS = {
-    jarres: { label: 'Jarres', stuff: 'brassard_antique_des_jarres' },
-    lumiere: { label: 'Lumière', stuff: 'heaume_antique_du_prisme' },
-    charrette: { label: 'Charrette', stuff: 'gorgerin_antique_de_la_charrette' }
+    jarres: { label: 'Jarres', pieces: ['jarres_heaume', 'jarres_gorgerin', 'jarres_brassard'], finale: 'jarres_anneau' },
+    lumiere: { label: 'Lumière', pieces: ['prisme_heaume', 'prisme_gorgerin', 'prisme_brassard'], finale: 'prisme_anneau' },
+    charrette: { label: 'Charrette', pieces: ['charrette_heaume', 'charrette_gorgerin', 'charrette_brassard'], finale: 'charrette_anneau' }
 };
 
 export const puzzlesOfSet = set => Object.keys(PUZZLES).filter(id => PUZZLES[id].set === set);
 /** Famille complète (toutes ses énigmes résolues) ? `solved` = ids résolus. */
 export const isSetComplete = (set, solved) => puzzlesOfSet(set).every(id => solved.includes(id));
+/** Pièce d'armure antique offerte par une énigme (ou null). */
+export const pieceOfPuzzle = id => { const set = PUZZLES[id]?.set; return set ? PUZZLE_SETS[set].pieces[puzzlesOfSet(set).indexOf(id)] || null : null; };
 
 export const puzzleDef = id => PUZZLES[id] ? { id, ...PUZZLES[id] } : null;

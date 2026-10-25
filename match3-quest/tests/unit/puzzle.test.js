@@ -2,8 +2,8 @@ import './fixtures/xhrFromDisk.js';
 import { describe, test, expect } from '@jest/globals';
 import { createPuzzle, solve, registerMode, getMode } from '../../puzzle/engine.js';
 import { traceBeams } from '../../puzzle/modes.js';
-import { PUZZLES, PUZZLE_SETS, puzzleDef, puzzlesOfSet } from '../../puzzle/levels.js';
-import { getStuffById, stuffTotals, grantStuff, equipStuff } from '../../stuff.js';
+import { PUZZLES, PUZZLE_SETS, puzzleDef, puzzlesOfSet, pieceOfPuzzle } from '../../puzzle/levels.js';
+import { getStuffById, stuffTotals, grantStuff, equipStuff, allStuff, ANTIQUE_ARMORS, STUFF_SLOTS, lootableStuff, describeStuff } from '../../stuff.js';
 import { createSession, openChest, solvePuzzle, puzzleSetProgress } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 
@@ -140,26 +140,51 @@ describe('coffres à énigme', () => {
             expect(ids).toHaveLength(3);
             const biomes = ids.map(id => chestsWithPuzzle().find(x => x.c.puzzle === id).s.biome);
             expect(new Set(biomes).size).toBe(3);
-            expect(getStuffById(PUZZLE_SETS[set].stuff)).toMatchObject({ ancient: true, quest: true });
+            [...PUZZLE_SETS[set].pieces, PUZZLE_SETS[set].finale].forEach(id => expect(getStuffById(id)).toMatchObject({ armor: set, quest: true }));
         });
     });
 
-    test('la pièce d\'armure antique n\'est remise qu\'à la troisième énigme de la famille', () => {
+    test('chaque énigme donne sa pièce, la famille complète donne la dernière', () => {
         const session = createSession(null);
         const ids = puzzlesOfSet('lumiere');
-        expect(solvePuzzle(session, ids[0])).toBeNull();
-        expect(solvePuzzle(session, ids[1])).toBeNull();
+        expect(solvePuzzle(session, ids[0])).toEqual({ set: 'lumiere', label: 'Lumière', stuff: ['prisme_heaume'], complete: false });
+        expect(solvePuzzle(session, ids[1]).stuff).toEqual(['prisme_gorgerin']);
         expect(puzzleSetProgress(session, ids[0])).toEqual({ done: 2, total: 3 });
-        expect(solvePuzzle(session, ids[2])).toEqual({ set: 'lumiere', stuff: 'heaume_antique_du_prisme', label: 'Lumière' });
+        expect(solvePuzzle(session, ids[2])).toEqual({ set: 'lumiere', label: 'Lumière', stuff: ['prisme_brassard', 'prisme_anneau'], complete: true });
         expect(solvePuzzle(session, ids[2])).toBeNull();           // une seule remise
+        expect(pieceOfPuzzle(ids[1])).toBe('prisme_gorgerin');
     });
 });
 
 describe('armures antiques', () => {
     const hero = () => ({ level: 40, hp: 100, maxHp: 100, stuffOwned: [], stuff: {}, statusEffects: {} });
-    test('les trois pouvoirs se cumulent dans les totaux du stuff porté', () => {
+    const wear = (h, ids) => ids.forEach(id => { grantStuff(h, id); expect(equipStuff(h, id).ok).toBe(true); });
+
+    test('12 pièces : 3 armures de 4 pièces (une par emplacement), hors boutique et butin', () => {
+        const pieces = allStuff.filter(s => s.armor);
+        expect(pieces).toHaveLength(12);
+        Object.entries(ANTIQUE_ARMORS).forEach(([k, a]) => {
+            expect(pieces.filter(p => p.armor === k).map(p => p.slot).sort()).toEqual([...STUFF_SLOTS].sort());
+            expect(a.powerText).toBeTruthy();
+        });
+        pieces.forEach(p => expect(lootableStuff()).not.toContain(p));
+        expect(describeStuff(getStuffById('prisme_heaume'))).toContain('Armure antique du Prisme');
+    });
+
+    test('le pouvoir n\'existe que si les quatre pièces de la même armure sont portées', () => {
         const h = hero();
-        ['heaume_antique_du_prisme', 'brassard_antique_des_jarres', 'gorgerin_antique_de_la_charrette'].forEach(id => { grantStuff(h, id); expect(equipStuff(h, id).ok).toBe(true); });
-        expect(stuffTotals(h)).toMatchObject({ turnHealPct: 10, turnArrowsPct: 10, reflectPct: 50 });
+        wear(h, ['prisme_heaume', 'prisme_gorgerin', 'prisme_brassard']);
+        expect(stuffTotals(h)).toMatchObject({ turnHealPct: 0, armors: [] });
+        wear(h, ['jarres_anneau']);                                  // une pièce d'une autre armure ne complète rien
+        expect(stuffTotals(h).turnHealPct).toBe(0);
+        wear(h, ['prisme_anneau']);
+        expect(stuffTotals(h)).toMatchObject({ turnHealPct: 10, turnArrowsPct: 0, reflectPct: 0, armors: ['lumiere'] });
+    });
+
+    test('jarres : +10 % de flèches, charrette : 50 % de dégâts renvoyés', () => {
+        const a = hero(); wear(a, ANTIQUE_ARMORS.jarres.pieces.map(p => p.id));
+        expect(stuffTotals(a)).toMatchObject({ turnArrowsPct: 10, reflectPct: 0 });
+        const b = hero(); wear(b, ANTIQUE_ARMORS.charrette.pieces.map(p => p.id));
+        expect(stuffTotals(b)).toMatchObject({ reflectPct: 50, turnHealPct: 0 });
     });
 });
