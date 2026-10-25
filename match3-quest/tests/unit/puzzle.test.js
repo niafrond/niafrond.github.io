@@ -2,8 +2,9 @@ import './fixtures/xhrFromDisk.js';
 import { describe, test, expect } from '@jest/globals';
 import { createPuzzle, solve, registerMode, getMode } from '../../puzzle/engine.js';
 import { traceBeams } from '../../puzzle/modes.js';
-import { PUZZLES, puzzleDef } from '../../puzzle/levels.js';
-import { createSession, openChest, solvePuzzle } from '../../exploration.js';
+import { PUZZLES, PUZZLE_SETS, puzzleDef, puzzlesOfSet } from '../../puzzle/levels.js';
+import { getStuffById, stuffTotals, grantStuff, equipStuff } from '../../stuff.js';
+import { createSession, openChest, solvePuzzle, puzzleSetProgress } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 
 const make = id => createPuzzle(puzzleDef(id));
@@ -28,7 +29,7 @@ describe('moteur d\'énigmes', () => {
     });
 
     test('annuler et recommencer', () => {
-        const p = make('riz_caisses');
+        const p = make('riz_jarres');
         const start = p.state;
         expect(p.dir('left') || p.dir('up')).toBe(true);
         expect(p.moves).toBe(1);
@@ -131,5 +132,34 @@ describe('coffres à énigme', () => {
         expect(openChest(session, c.id).type).toBe('chestOpened');
         expect(session.data.openedChests).toContain(c.id);
         expect(session.data.solvedPuzzles).toEqual([c.puzzle]);
+    });
+
+    test('trois énigmes par famille, dans des biomes différents, chacune sur son coffre', () => {
+        Object.keys(PUZZLE_SETS).forEach(set => {
+            const ids = puzzlesOfSet(set);
+            expect(ids).toHaveLength(3);
+            const biomes = ids.map(id => chestsWithPuzzle().find(x => x.c.puzzle === id).s.biome);
+            expect(new Set(biomes).size).toBe(3);
+            expect(getStuffById(PUZZLE_SETS[set].stuff)).toMatchObject({ ancient: true, quest: true });
+        });
+    });
+
+    test('la pièce d\'armure antique n\'est remise qu\'à la troisième énigme de la famille', () => {
+        const session = createSession(null);
+        const ids = puzzlesOfSet('lumiere');
+        expect(solvePuzzle(session, ids[0])).toBeNull();
+        expect(solvePuzzle(session, ids[1])).toBeNull();
+        expect(puzzleSetProgress(session, ids[0])).toEqual({ done: 2, total: 3 });
+        expect(solvePuzzle(session, ids[2])).toEqual({ set: 'lumiere', stuff: 'heaume_antique_du_prisme', label: 'Lumière' });
+        expect(solvePuzzle(session, ids[2])).toBeNull();           // une seule remise
+    });
+});
+
+describe('armures antiques', () => {
+    const hero = () => ({ level: 40, hp: 100, maxHp: 100, stuffOwned: [], stuff: {}, statusEffects: {} });
+    test('les trois pouvoirs se cumulent dans les totaux du stuff porté', () => {
+        const h = hero();
+        ['heaume_antique_du_prisme', 'brassard_antique_des_jarres', 'gorgerin_antique_de_la_charrette'].forEach(id => { grantStuff(h, id); expect(equipStuff(h, id).ok).toBe(true); });
+        expect(stuffTotals(h)).toMatchObject({ turnHealPct: 10, turnArrowsPct: 10, reflectPct: 50 });
     });
 });

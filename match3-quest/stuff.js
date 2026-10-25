@@ -50,6 +50,12 @@ export const allStuff = [
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
     piece('collier_braise_d_orage', 'neck', 'Collier de braise d\'orage', 22, 'rare', 'Une braise captive dans le cristal : le givre n\'y accroche pas.', { biomeProtect: 'snow', maxHp: 20, quest: true }),
     piece('collier_voile_d_ombre', 'neck', 'Collier du voile d\'ombre', 37, 'legendary', 'Un fil d\'ombre tressé aux racines de Fusang : les regards glissent sur vous.', { stealth: true, maxHp: 30, quest: true }),
+    // Armure antique : une pièce par famille d'énigmes à plateau (puzzle/levels.js), remise quand les trois énigmes de la famille sont résolues.
+    // Pouvoirs : `turnHealPct` (% des PV max rendus à chaque tour), `turnArrowsPct` (% des flèches max, soit le coût de l'arme, gagné à chaque tour),
+    // `reflectPct` (% des dégâts reçus renvoyés à l'ennemi).
+    piece('heaume_antique_du_prisme', 'head', 'Heaume antique du Prisme', 15, 'legendary', 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière : chaque tour vous rend un dixième de vos forces.', { defBonus: 6, turnHealPct: 10, quest: true, ancient: true }),
+    piece('brassard_antique_des_jarres', 'wrist', 'Brassard antique des Jarres', 15, 'legendary', 'Un brassard d\'archer ancien, gravé de jarres alignées : le carquois s\'y remplit de lui-même, un peu plus à chaque tour.', { atkBonus: 6, turnArrowsPct: 10, quest: true, ancient: true }),
+    piece('gorgerin_antique_de_la_charrette', 'neck', 'Gorgerin antique de la Charrette', 15, 'legendary', 'Un gorgerin de bronze aux roues rivetées : la moitié de chaque coup reçu retourne à celui qui l\'a porté.', { maxHp: 30, reflectPct: 50, quest: true, ancient: true }),
     piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true })
 ];
 
@@ -62,6 +68,13 @@ export const lootableStuff = () => allStuff.filter(s => !s.quest);
 // Collier de quête qui protège d'un biome donné.
 export const collarForBiome = biome => allStuff.find(s => s.biomeProtect === biome) || null;
 
+// Pouvoirs des armures antiques, en texte (stuff porté ou total des pièces portées).
+export const powerLines = s => [
+    s.turnHealPct ? `Soigne ${s.turnHealPct} % des PV max à chaque tour` : '',
+    s.turnArrowsPct ? `+${s.turnArrowsPct} % des flèches max à chaque tour` : '',
+    s.reflectPct ? `Renvoie ${s.reflectPct} % des dégâts reçus` : ''
+].filter(Boolean);
+
 export function describeStuff(stuff) {
     if (!stuff) return '';
     return [
@@ -69,6 +82,7 @@ export function describeStuff(stuff) {
         stuff.defBonus ? `Déf +${stuff.defBonus}` : '',
         stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
         stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
+        ...powerLines(stuff),
         stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',
         stuff.stealth ? 'Indétectable : évite les combats (sauf boss)' : ''
     ].filter(Boolean).join(' • ');
@@ -103,16 +117,20 @@ export function wornStuff(hero) {
 
 // Totaux des bonus portés : { atk, def, maxHp, poisonResist (0–100), biomes: Set }.
 export function stuffTotals(hero) {
-    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, stealth: false, biomes: new Set() };
+    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, turnHealPct: 0, turnArrowsPct: 0, reflectPct: 0, stealth: false, biomes: new Set() };
     wornStuff(hero).forEach(s => {
         totals.atk += s.atkBonus || 0;
         totals.def += s.defBonus || 0;
         totals.maxHp += s.maxHp || 0;
         totals.poisonResist += s.poisonResist || 0;
+        totals.turnHealPct += s.turnHealPct || 0;
+        totals.turnArrowsPct += s.turnArrowsPct || 0;
+        totals.reflectPct += s.reflectPct || 0;
         if (s.biomeProtect) totals.biomes.add(s.biomeProtect);
         if (s.stealth) totals.stealth = true;
     });
     totals.poisonResist = Math.min(100, totals.poisonResist);
+    totals.reflectPct = Math.min(100, totals.reflectPct);
     return totals;
 }
 

@@ -50,7 +50,7 @@ export default {
         ],
         chests: [
             { id: 'tonnerre_garden_a', x: 26, y: 19, gold: 105, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'tonnerre_garden_b', x: 4, y: 24, gold: 105, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'tonnerre_garden_b', x: 4, y: 24, gold: 105, puzzle: 'tonnerre_charrette', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'tonnerre_market_a', x: 18, y: 23, gold: 210, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'tonnerre_market_b', x: 21, y: 23, gold: 210, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
             { id: 'tonnerre_village_niche', x: 29, y: 8, gold: 150 }

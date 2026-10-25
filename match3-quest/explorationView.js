@@ -806,7 +806,17 @@ export function createExplorationView(cfg) {
                     puzzleView = openPuzzle(root, chest.puzzleId, {
                         sfx: n => playSfx(n),
                         onClose: () => { puzzleView = null; },
-                        onSolved: () => { X.solvePuzzle(session, chest.puzzleId); cfg.onSave(); const opened = X.openChest(session, res.chestId); if (opened) processEvents(opened.events); }
+                        onSolved: () => {
+                            const reward = X.solvePuzzle(session, chest.puzzleId);
+                            const { done, total } = X.puzzleSetProgress(session, chest.puzzleId);
+                            const opened = X.openChest(session, res.chestId);
+                            if (opened) processEvents(opened.events);
+                            if (reward) {
+                                const name = cfg.onAncientArmor?.(reward.stuff);
+                                openDialog({ ...NARRATOR, icon: 'shield', title: 'Armure antique' }, [`Les ${total} énigmes de la famille « ${reward.label} » sont résolues. Un bout d'armure antique se révèle : ${name || 'une relique'} !`]);
+                            } else if (total > 1) toast(`Énigmes de la famille « ${PUZZLE_SETS[X.puzzleSet(chest.puzzleId)].label} » : ${done}/${total}`, 4000);
+                            cfg.onSave();
+                        }
                     });
                     if (!puzzleView) toast('Le coffre ne bouge pas.', 3000);
                 } else if (chest) processEvents(chest.events);

@@ -52,7 +52,7 @@ export default {
         chests: [
             { id: 'basalt_pot', x: 2, y: 11, gold: 90, label: 'Pot de basalte enfoui', openText: 'Un pot de basalte encore tiède, rempli de pièces noircies par la suie.' },
             { id: 'volcan_garden_a', x: 26, y: 4, gold: 135, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'volcan_garden_b', x: 5, y: 25, gold: 135, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'volcan_garden_b', x: 5, y: 25, gold: 135, puzzle: 'volcan_miroirs', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'volcan_market_a', x: 20, y: 23, gold: 270, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'volcan_market_b', x: 23, y: 23, gold: 270, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
             { id: 'volcan_village_slag_jar', x: 5, y: 3, gold: 180 }

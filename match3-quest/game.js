@@ -9,7 +9,7 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor, convertRandomColorToArrows, checkMatches } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
-import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
+import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
@@ -389,6 +389,15 @@ export function applyDamage(target, damage, options = {}){
     }
 
     if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
+        // Gorgerin antique de la Charrette : une part des dégâts reçus retourne à l'ennemi.
+        const ancientReflect = stuffTotals(player).reflectPct;
+        if(ancientReflect > 0) {
+            const reflected = Math.floor((normalizedDamage * ancientReflect) / 100);
+            if(reflected > 0) {
+                enemy.hp = Math.max(0, enemy.hp - reflected);
+                log(`Gorgerin antique : ${reflected} dégâts renvoyés à ${enemy.name}.`);
+            }
+        }
         const reflectTurns = Math.max(0, Math.floor(player.statusEffects?.reflectDamage || 0));
         const reflectPercent = Math.max(0, Math.floor(player.statusEffects?.reflectDamagePercent || 0));
         if(reflectTurns > 0 && reflectPercent > 0) {
@@ -2485,6 +2494,23 @@ export function enemyTurn(){
     }, decision.thinkingTime);
 }
 
+// Armures antiques, au début de chaque tour du joueur : soin en % des PV max, flèches en % des flèches max (le coût de l'arme portée, au moins +1).
+export function applyAncientTurnPowers(){
+    const { turnHealPct, turnArrowsPct } = stuffTotals(player);
+    if(turnHealPct > 0 && player.hp > 0 && player.hp < player.maxHp){
+        const heal = Math.min(player.maxHp - player.hp, Math.max(1, Math.round(player.maxHp * turnHealPct / 100)));
+        player.hp += heal;
+        flyHeal(true, heal);
+        log(`Heaume antique : +${heal} PV.`);
+    }
+    if(turnArrowsPct > 0){
+        const maxArrows = Math.max(1, player.equippedWeapon?.actionPoints || 0);
+        const gain = Math.max(1, Math.round(maxArrows * turnArrowsPct / 100));
+        player.combatPoints = (player.combatPoints || 0) + gain;
+        log(`Brassard antique : +${gain} flèche${gain > 1 ? 's' : ''}.`);
+    }
+}
+
 // Fonction pour terminer le tour de l'ennemi
 export function finishEnemyTurn(){
     if(gameState.combatState !== 'active'){
@@ -2546,6 +2572,7 @@ export function finishEnemyTurn(){
             updateStats();
             if(player.hp <= 0){ handlePlayerDeath(); return; }
         }
+        applyAncientTurnPowers();
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);

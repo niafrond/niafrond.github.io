@@ -164,6 +164,7 @@ function init() {
             const stuff = drop && grantStuffPiece(drop.id, 'Trouvé dans un coffre');
             return stuff ? [...labels, stuff] : labels;
         },
+        onAncientArmor: id => { const name = grantStuffPiece(id, 'Armure antique'); saveUpdate(); return name; },
         onQuestReward: ev => {
             if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête');
             if(ev.reward?.ultimate) grantUltimate(ev.reward.ultimate);   // ultime de légende : toutes classes (ultimates.js)

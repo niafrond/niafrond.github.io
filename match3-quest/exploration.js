@@ -35,6 +35,7 @@
 //    L'eau et la lave (`screen.liquids`, franchissables avec le Pas de Yu ou en écran aquatique) agissent comme des buissons :
 //    mêmes tirages, table des herbes de la carte ou, à défaut, de la carte sauvage de la région (encounterOf / isEncounterCell).
 
+import { PUZZLES, PUZZLE_SETS, isSetComplete, puzzlesOfSet } from './puzzle/levels.js';
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { COMPANIONS, BANTER } from './companions.js';
 import { REGION_LEVEL } from './world/index.js';
@@ -208,6 +209,7 @@ function defaultData() {
         y: start.spawn.y,
         defeated: [],
         openedChests: [],
+        puzzleSetsDone: [],      // familles d'énigmes dont l'armure antique a été remise
         solvedPuzzles: [],       // énigmes à plateau résolues (puzzle/levels.js) : un coffre à énigme ne s'ouvre qu'ensuite
         quests: {},
         visitedScreens: [],
@@ -230,6 +232,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.defeated = Array.isArray(data.defeated) ? data.defeated : [];
     data.openedChests = Array.isArray(data.openedChests) ? data.openedChests : [];
     data.solvedPuzzles = Array.isArray(data.solvedPuzzles) ? data.solvedPuzzles : [];
+    data.puzzleSetsDone = Array.isArray(data.puzzleSetsDone) ? data.puzzleSetsDone : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
@@ -1247,8 +1250,22 @@ export function openChest(session, chestId) {
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 
+/** Marque l'énigme résolue. Renvoie { set, stuff, label } quand elle achève sa famille (trois énigmes) pour la première fois : pièce d'armure antique à remettre. */
 export function solvePuzzle(session, puzzleId) {
-    if (!session.data.solvedPuzzles.includes(puzzleId)) session.data.solvedPuzzles.push(puzzleId);
+    const d = session.data;
+    if (!d.solvedPuzzles.includes(puzzleId)) d.solvedPuzzles.push(puzzleId);
+    const set = PUZZLES[puzzleId]?.set;
+    if (!set || d.puzzleSetsDone.includes(set) || !isSetComplete(set, d.solvedPuzzles)) return null;
+    d.puzzleSetsDone.push(set);
+    return { set, stuff: PUZZLE_SETS[set].stuff, label: PUZZLE_SETS[set].label };
+}
+
+export const puzzleSet = puzzleId => PUZZLES[puzzleId]?.set || null;
+
+/** Avancement d'une famille : { done, total } (pour les messages « énigme 2/3 »). */
+export function puzzleSetProgress(session, puzzleId) {
+    const ids = puzzlesOfSet(PUZZLES[puzzleId]?.set);
+    return { done: ids.filter(id => session.data.solvedPuzzles.includes(id)).length, total: ids.length };
 }
 
 function findNpcScreen(session, npcId) {

@@ -34,7 +34,7 @@ export function compareRows(kind, o) {
     ];
     if (kind === 'stuff') return [
         t('Emplacement', SLOT_LABEL[o.slot]), t('Rareté', RARITY_LABEL[o.rarity]),
-        n('Attaque', o.atkBonus), n('Défense', o.defBonus), n('PV max', o.maxHp), n('Résistance poison (%)', o.poisonResist),
+        n('Attaque', o.atkBonus), n('Défense', o.defBonus), n('PV max', o.maxHp), n('Résistance poison (%)', o.poisonResist), n('Soin par tour (% PV max)', o.turnHealPct), n('Flèches par tour (%)', o.turnArrowsPct), n('Dégâts renvoyés (%)', o.reflectPct),
         n('Niveau requis', o.minLevel || 1, 'low'), t('Protège', o.biomeProtect)
     ];
     if (kind === 'item') return [

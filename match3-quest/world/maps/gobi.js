@@ -50,7 +50,7 @@ export default {
         chests: [
             { id: 'caravan_stash', at: '9', gold: 60, label: 'Cachette de caravanier', openText: 'Une bourse de cuir enterrée dans le sable : le péage d\'un caravanier prudent.' },
             { id: 'gobi_garden_a', at: 'j', gold: 75, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'gobi_garden_b', at: 'k', gold: 75, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'gobi_garden_b', at: 'k', gold: 75, puzzle: 'gobi_jarres', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'gobi_market_a', at: 'm', gold: 150, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'gobi_market_b', at: 'n', gold: 150, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]

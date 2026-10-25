@@ -46,7 +46,7 @@ export default {
         chests: [
             { id: 'moon_cake_tin', at: 'i', gold: 150 },
             { id: 'lune_garden_a', at: 'j', gold: 240, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'lune_garden_b', at: 'k', gold: 240, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'lune_garden_b', at: 'k', gold: 240, puzzle: 'lune_miroirs', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'lune_market_a', at: 'm', gold: 480, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'lune_market_b', at: 'n', gold: 480, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
             { id: 'lune_village_hollow', at: 'o', gold: 300 }
