@@ -20,18 +20,20 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', def.title);
     const isDirMode = Boolean(puzzle.mode.dir);
+    // Haut de l'écran : titre, coups et boutons ; milieu : le plateau (tout l'espace restant) ; bas : croix directionnelle (au pouce).
     el.innerHTML = `<div class="puzzle-card">
-        <div class="puzzle-title">${esc(def.title)}</div>
-        <div class="puzzle-intro">${esc(def.intro)}</div>
-        <svg class="puzzle-board" aria-hidden="true"></svg>
-        <div class="puzzle-status" role="status" aria-live="polite"></div>
-        ${isDirMode ? `<div class="puzzle-pad">${['up', 'left', 'down', 'right'].map(d => `<button type="button" data-dir="${d}" aria-label="${d}">${{ up: '&#9650;', left: '&#9664;', down: '&#9660;', right: '&#9654;' }[d]}</button>`).join('')}</div>` : ''}
-        <div class="puzzle-buttons">
-            <button type="button" data-act="undo">Annuler</button>
-            <button type="button" data-act="reset">Recommencer</button>
-            <button type="button" data-act="hint">Indice</button>
-            <button type="button" data-act="close">Quitter</button>
+        <div class="puzzle-top">
+            <div class="puzzle-head"><div class="puzzle-title">${esc(def.title)}</div><div class="puzzle-status" role="status" aria-live="polite"></div></div>
+            <div class="puzzle-buttons">
+                <button type="button" data-act="undo">Annuler</button>
+                <button type="button" data-act="reset">Recommencer</button>
+                <button type="button" data-act="hint">Indice</button>
+                <button type="button" data-act="close">Quitter</button>
+            </div>
+            <div class="puzzle-intro">${esc(def.intro)}</div>
         </div>
+        <div class="puzzle-stage"><svg class="puzzle-board" aria-hidden="true"></svg></div>
+        ${isDirMode ? `<div class="puzzle-pad">${['up', 'left', 'down', 'right'].map(d => `<button type="button" data-dir="${d}" aria-label="${d}">${{ up: '&#9650;', left: '&#9664;', down: '&#9660;', right: '&#9654;' }[d]}</button>`).join('')}</div>` : ''}
     </div>`;
     host.appendChild(el);
     const svg = el.querySelector('.puzzle-board'), status = el.querySelector('.puzzle-status');
