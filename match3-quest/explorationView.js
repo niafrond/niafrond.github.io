@@ -813,7 +813,7 @@ export function createExplorationView(cfg) {
                             if (opened) processEvents(opened.events);
                             if (reward?.stuff.length) {
                                 const names = reward.stuff.map(id => cfg.onAncientArmor?.(id)).filter(Boolean);
-                                openDialog({ ...NARRATOR, icon: 'shield', title: 'Armure antique' }, [`${names.join(' et ')} : ${names.length > 1 ? 'des pièces' : 'une pièce'} d'armure antique ${names.length > 1 ? 'se révèlent' : 'se révèle'} !${reward.complete ? ` Les ${total} énigmes de la famille « ${reward.label} » sont résolues : l'armure est au complet, portez ses quatre pièces ensemble pour éveiller son pouvoir.` : ` Énigmes de la famille « ${reward.label} » : ${done}/${total}.`}`]);
+                                openDialog({ ...NARRATOR, icon: 'shield', title: 'Armure antique' }, [`${names.join(' et ')} : une pièce d'armure antique se révèle !${reward.complete ? ` Les ${total} énigmes de la famille « ${reward.label} » sont résolues : l'armure est au complet, portez ses quatre pièces ensemble pour éveiller son pouvoir.` : ` Énigmes de la famille « ${reward.label} » : ${done}/${total}.`}`]);
                             }
                             cfg.onSave();
                         }

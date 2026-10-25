@@ -1251,8 +1251,8 @@ export function openChest(session, chestId) {
 }
 
 /**
- * Marque l'énigme résolue. Renvoie, à la première victoire, { label, stuff: [ids de pièces d'armure antique à remettre], complete } :
- * la pièce de l'énigme, plus la pièce finale quand elle achève sa famille. Renvoie null si l'énigme était déjà résolue.
+ * Marque l'énigme résolue. Renvoie, à la première victoire, { set, label, stuff: [id de la pièce d'armure antique de l'énigme], complete } ;
+ * `complete` : la quatrième pièce de l'armure vient d'être obtenue. Renvoie null si l'énigme était déjà résolue.
  */
 export function solvePuzzle(session, puzzleId) {
     const d = session.data;
@@ -1260,10 +1260,9 @@ export function solvePuzzle(session, puzzleId) {
     d.solvedPuzzles.push(puzzleId);
     const set = PUZZLES[puzzleId]?.set;
     if (!set) return null;
-    const stuff = [pieceOfPuzzle(puzzleId)].filter(Boolean);
     const complete = isSetComplete(set, d.solvedPuzzles) && !d.puzzleSetsDone.includes(set);
-    if (complete) { d.puzzleSetsDone.push(set); stuff.push(PUZZLE_SETS[set].finale); }
-    return { set, label: PUZZLE_SETS[set].label, stuff, complete };
+    if (complete) d.puzzleSetsDone.push(set);
+    return { set, label: PUZZLE_SETS[set].label, stuff: [pieceOfPuzzle(puzzleId)].filter(Boolean), complete };
 }
 
 export const puzzleSet = puzzleId => PUZZLES[puzzleId]?.set || null;

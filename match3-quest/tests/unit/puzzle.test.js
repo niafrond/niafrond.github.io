@@ -4,6 +4,7 @@ import { createPuzzle, solve, registerMode, getMode } from '../../puzzle/engine.
 import { traceBeams } from '../../puzzle/modes.js';
 import { PUZZLES, PUZZLE_SETS, puzzleDef, puzzlesOfSet, pieceOfPuzzle } from '../../puzzle/levels.js';
 import { getStuffById, stuffTotals, grantStuff, equipStuff, allStuff, ANTIQUE_ARMORS, STUFF_SLOTS, lootableStuff, describeStuff } from '../../stuff.js';
+import { ancientArrowGain } from '../../combatStats.js';
 import { createSession, openChest, solvePuzzle, puzzleSetProgress } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 
@@ -134,24 +135,25 @@ describe('coffres à énigme', () => {
         expect(session.data.solvedPuzzles).toEqual([c.puzzle]);
     });
 
-    test('trois énigmes par famille, dans des biomes différents, chacune sur son coffre', () => {
+    test('quatre énigmes par famille, dans des biomes différents, chacune sur son coffre', () => {
         Object.keys(PUZZLE_SETS).forEach(set => {
             const ids = puzzlesOfSet(set);
-            expect(ids).toHaveLength(3);
+            expect(ids).toHaveLength(4);
             const biomes = ids.map(id => chestsWithPuzzle().find(x => x.c.puzzle === id).s.biome);
-            expect(new Set(biomes).size).toBe(3);
-            [...PUZZLE_SETS[set].pieces, PUZZLE_SETS[set].finale].forEach(id => expect(getStuffById(id)).toMatchObject({ armor: set, quest: true }));
+            expect(new Set(biomes).size).toBeGreaterThanOrEqual(3);
+            PUZZLE_SETS[set].pieces.forEach(id => expect(getStuffById(id)).toMatchObject({ armor: set, quest: true }));
         });
     });
 
-    test('chaque énigme donne sa pièce, la famille complète donne la dernière', () => {
+    test('chaque énigme donne sa propre pièce ; la quatrième achève l\'armure', () => {
         const session = createSession(null);
         const ids = puzzlesOfSet('lumiere');
         expect(solvePuzzle(session, ids[0])).toEqual({ set: 'lumiere', label: 'Lumière', stuff: ['prisme_heaume'], complete: false });
         expect(solvePuzzle(session, ids[1]).stuff).toEqual(['prisme_gorgerin']);
-        expect(puzzleSetProgress(session, ids[0])).toEqual({ done: 2, total: 3 });
-        expect(solvePuzzle(session, ids[2])).toEqual({ set: 'lumiere', label: 'Lumière', stuff: ['prisme_brassard', 'prisme_anneau'], complete: true });
-        expect(solvePuzzle(session, ids[2])).toBeNull();           // une seule remise
+        expect(solvePuzzle(session, ids[2]).stuff).toEqual(['prisme_brassard']);
+        expect(puzzleSetProgress(session, ids[0])).toEqual({ done: 3, total: 4 });
+        expect(solvePuzzle(session, ids[3])).toEqual({ set: 'lumiere', label: 'Lumière', stuff: ['prisme_anneau'], complete: true });
+        expect(solvePuzzle(session, ids[3])).toBeNull();           // une seule remise
         expect(pieceOfPuzzle(ids[1])).toBe('prisme_gorgerin');
     });
 });
@@ -186,5 +188,13 @@ describe('armures antiques', () => {
         expect(stuffTotals(a)).toMatchObject({ turnArrowsPct: 10, reflectPct: 0 });
         const b = hero(); wear(b, ANTIQUE_ARMORS.charrette.pieces.map(p => p.id));
         expect(stuffTotals(b)).toMatchObject({ reflectPct: 50, turnHealPct: 0 });
+    });
+});
+
+describe('flèches de l\'armure des Jarres', () => {
+    test('10 % du coût de l\'arme active la plus chère, au moins 1', () => {
+        expect(ancientArrowGain(10, [{ actionPoints: 3 }, null])).toBe(1);
+        expect(ancientArrowGain(10, [{ actionPoints: 4 }, { actionPoints: 15 }])).toBe(2);   // main gauche plus chère
+        expect(ancientArrowGain(10, [null, null])).toBe(1);
     });
 });

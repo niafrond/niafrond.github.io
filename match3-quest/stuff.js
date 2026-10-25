@@ -23,7 +23,7 @@ export const BIOME_PROTECTION_TEXT = {
 export const BIOME_PROTECTION_LABEL = { volcano: 'Volcan', bamboo: 'Bambous', snow: 'Neige', sea: 'Mer' };
 
 // Armures antiques : { pièces (id, emplacement, nom, bonus), pouvoir de l'ensemble complet }. Pouvoirs : `turnHealPct` (% des PV max rendus à
-// chaque tour), `turnArrowsPct` (% des flèches max, soit le coût de l'arme, gagné à chaque tour), `reflectPct` (% des dégâts reçus renvoyés).
+// chaque tour), `turnArrowsPct` (% des flèches nécessaires à l'arme active la plus chère, au moins 1, gagné à chaque tour), `reflectPct` (% des dégâts reçus renvoyés).
 export const ANTIQUE_ARMORS = {
     lumiere: {
         name: 'Armure antique du Prisme', power: { turnHealPct: 10 }, powerText: 'Soigne 10 % des PV max à chaque tour',
@@ -35,7 +35,7 @@ export const ANTIQUE_ARMORS = {
         ]
     },
     jarres: {
-        name: 'Armure antique des Jarres', power: { turnArrowsPct: 10 }, powerText: '+10 % des flèches max à chaque tour',
+        name: 'Armure antique des Jarres', power: { turnArrowsPct: 10 }, powerText: '+10 % des flèches de l\'arme active la plus chère à chaque tour',
         pieces: [
             { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 3, maxHp: 10 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
             { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 20 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },

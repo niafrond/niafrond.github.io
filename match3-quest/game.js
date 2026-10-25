@@ -30,7 +30,7 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
-import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs } from "./combatStats.js";
+import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -2494,7 +2494,7 @@ export function enemyTurn(){
     }, decision.thinkingTime);
 }
 
-// Armures antiques, au début de chaque tour du joueur : soin en % des PV max, flèches en % des flèches max (le coût de l'arme portée, au moins +1).
+// Armures antiques, au début de chaque tour du joueur : soin en % des PV max, flèches en % du coût de l'arme active la plus chère (au moins +1).
 export function applyAncientTurnPowers(){
     const { turnHealPct, turnArrowsPct } = stuffTotals(player);
     if(turnHealPct > 0 && player.hp > 0 && player.hp < player.maxHp){
@@ -2504,8 +2504,8 @@ export function applyAncientTurnPowers(){
         log(`Heaume antique : +${heal} PV.`);
     }
     if(turnArrowsPct > 0){
-        const maxArrows = Math.max(1, player.equippedWeapon?.actionPoints || 0);
-        const gain = Math.max(1, Math.round(maxArrows * turnArrowsPct / 100));
+        // Référence : flèches nécessaires à l'arme active la plus chère (main droite ou gauche).
+        const gain = ancientArrowGain(turnArrowsPct, [player.equippedWeapon, getLeftHandWeapon()]);
         player.combatPoints = (player.combatPoints || 0) + gain;
         log(`Brassard antique : +${gain} flèche${gain > 1 ? 's' : ''}.`);
     }

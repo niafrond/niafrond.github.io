@@ -48,6 +48,12 @@ export function gearBonus(entity, stat) {
 
 // Bonus temporaires (sorts, `entity.statBuffs = { attack: { amount, turns }, defense: { amount, turns } }`) : ils ne modifient pas
 // entity.attack / entity.defense, expirent d'eux-mêmes (tickStatBuffs, une fois par tour du porteur) et disparaissent en fin de combat.
+/** Flèches gagnées par tour grâce à l'armure antique des Jarres : `pct` % du coût en flèches de l'arme active la plus chère, au moins 1. */
+export function ancientArrowGain(pct, weapons) {
+    const costliest = Math.max(0, ...weapons.filter(Boolean).map(w => w.actionPoints || 0));
+    return Math.max(1, Math.round(costliest * pct / 100));
+}
+
 export function statBuffAmount(entity, stat) {
     const buff = entity?.statBuffs?.[stat];
     return buff && buff.turns > 0 ? Math.max(0, Math.floor(buff.amount || 0)) : 0;
