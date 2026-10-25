@@ -50,7 +50,7 @@ export default {
         ],
         chests: [
             { id: 'rizieres_garden_a', x: 6, y: 23, gold: 15, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'rizieres_garden_b', x: 28, y: 6, gold: 15, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'rizieres_garden_b', x: 28, y: 6, gold: 15, puzzle: 'riz_caisses', label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
             { id: 'rizieres_market_a', x: 19, y: 23, gold: 30, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
             { id: 'rizieres_market_b', x: 23, y: 23, gold: 30, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' },
             { id: 'rizieres_village_cache', x: 3, y: 15, gold: 30 }

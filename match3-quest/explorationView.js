@@ -17,6 +17,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
+import { openPuzzle } from './puzzle/view.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
@@ -201,13 +202,14 @@ export function createExplorationView(cfg) {
         toastTimer = setTimeout(() => els.toast.classList.remove('visible'), ms);
     }
 
+    let puzzleView = null;   // énigme à plateau ouverte (puzzle/view.js), au-dessus de la carte
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
     const isOnScreen = () => root.getClientRects().length > 0;
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -799,7 +801,15 @@ export function createExplorationView(cfg) {
             }
             case 'chest': {
                 const chest = X.openChest(session, res.chestId);
-                if (chest) processEvents(chest.events);
+                if (chest?.type === 'puzzle') {
+                    // Coffre verrouillé par une énigme : la victoire l'ouvre aussitôt ; quitter la laisse intacte.
+                    puzzleView = openPuzzle(root, chest.puzzleId, {
+                        sfx: n => playSfx(n),
+                        onClose: () => { puzzleView = null; },
+                        onSolved: () => { X.solvePuzzle(session, chest.puzzleId); cfg.onSave(); const opened = X.openChest(session, res.chestId); if (opened) processEvents(opened.events); }
+                    });
+                    if (!puzzleView) toast('Le coffre ne bouge pas.', 3000);
+                } else if (chest) processEvents(chest.events);
                 break;
             }
             case 'observed': {

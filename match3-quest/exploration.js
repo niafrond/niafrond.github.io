@@ -208,6 +208,7 @@ function defaultData() {
         y: start.spawn.y,
         defeated: [],
         openedChests: [],
+        solvedPuzzles: [],       // énigmes à plateau résolues (puzzle/levels.js) : un coffre à énigme ne s'ouvre qu'ensuite
         quests: {},
         visitedScreens: [],
         introSeen: false,
@@ -228,6 +229,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     const data = { ...defaultData(), ...(saved && typeof saved === 'object' ? saved : {}) };
     data.defeated = Array.isArray(data.defeated) ? data.defeated : [];
     data.openedChests = Array.isArray(data.openedChests) ? data.openedChests : [];
+    data.solvedPuzzles = Array.isArray(data.solvedPuzzles) ? data.solvedPuzzles : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
@@ -1233,6 +1235,8 @@ export const questItemsOf = session => session.data.questItems.map(i => ({ ...i 
 export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
+    // Coffre verrouillé par une énigme : la vue ouvre l'énigme, puis rappelle openChest une fois `solvePuzzle` appelé.
+    if (chest.puzzle && !session.data.solvedPuzzles.includes(chest.puzzle)) return { type: 'puzzle', puzzleId: chest.puzzle, chest, events: [] };
     const qi = chest.questItem;
     // Le coffre d'un objet de quête s'ouvre à tout moment : avant la quête, le texte et la description de l'objet restent évasifs.
     const early = Boolean(qi) && session.data.quests[qi.quest] !== 'active' && session.data.quests[qi.quest] !== 'done';
@@ -1241,6 +1245,10 @@ export function openChest(session, chestId) {
     const { region, kind } = currentScreen(session);
     const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, early, screen: { region, kind } }, ...checkAutoQuests(session)];
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
+}
+
+export function solvePuzzle(session, puzzleId) {
+    if (!session.data.solvedPuzzles.includes(puzzleId)) session.data.solvedPuzzles.push(puzzleId);
 }
 
 function findNpcScreen(session, npcId) {
