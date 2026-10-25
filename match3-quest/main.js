@@ -416,7 +416,7 @@ function init() {
         playTimeEl.innerHTML = [['Aujourd\'hui', t.today], ['Hier', t.yesterday], ['Cette semaine', t.week], ['Total', t.total]]
             .map(([label, sec]) => `<span class="playtime-line"><span>${label}</span><b>${formatDuration(sec)}</b></span>`).join('');
     };
-    // Rappel de pause : 1 h de jeu, puis toutes les 30 min, hors combat et fenêtres ouvertes (breakReminder.js)
+    // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
     const breakTick = createBreakWatcher({
         isCalm: () => Boolean(exploration.isIdle?.()),
     });
