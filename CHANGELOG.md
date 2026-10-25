@@ -1,3 +1,9 @@
+## [2.133.0](https://github.com/niafrond/niafrond.github.io/compare/v2.132.0...v2.133.0) (2026-10-25)
+
+### Features
+
+* **match3-quest:** avancer le rappel de pause à 30 min puis toutes les 15 min ([#551](https://github.com/niafrond/niafrond.github.io/issues/551)) ([49f42fa](https://github.com/niafrond/niafrond.github.io/commit/49f42fae5d101d096129dee2aa22e66074b0f02f))
+
 ## [2.132.0](https://github.com/niafrond/niafrond.github.io/compare/v2.131.2...v2.132.0) (2026-10-25)
 
 ### Features
