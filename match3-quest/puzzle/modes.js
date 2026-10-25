@@ -71,7 +71,8 @@ const push = {
 
 // ── Miroirs : orienter des miroirs pour que le rayon atteigne toutes les cibles ────────────────────────────
 // Grille : # mur · . vide · > < ^ v source (direction d'émission) · T cible · / \ miroir tournant (un appui le bascule)
-//          a b miroirs fixes (/ et \) · * séparateur (le rayon continue et un second part en « / »)
+//          a b miroirs fixes (/ et \) · * prisme triangulaire : 2 rayons (le rayon continue et un second part en « / »)
+//          + prisme carré : 3 rayons (le rayon continue, un part de chaque côté)
 const REFLECT = { '/': ([dx, dy]) => [-dy, -dx], '\\': ([dx, dy]) => [dy, dx] };
 const SOURCES = { '>': [1, 0], '<': [-1, 0], '^': [0, -1], v: [0, 1] };
 
@@ -94,7 +95,10 @@ export function traceBeams(s) {
             if (c === 'T') { hit.add(`${x},${y}`); break; }
             const m = c === 'a' ? '/' : c === 'b' ? '\\' : c;
             if (REFLECT[m]) { [dx, dy] = REFLECT[m]([dx, dy]); continue; }
-            if (c === '*') { const [rx, ry] = REFLECT['/']([dx, dy]); rays.push([x, y, rx, ry]); }
+            if (c === '*' || c === '+') {
+                const [rx, ry] = REFLECT['/']([dx, dy]); rays.push([x, y, rx, ry]);
+                if (c === '+') { const [qx, qy] = REFLECT['\\']([dx, dy]); rays.push([x, y, qx, qy]); }
+            }
         }
     }
     return { segs, hit };
@@ -138,7 +142,9 @@ const mirror = {
                 const slash = c === '/' || c === 'a', fixed = c === 'a' || c === 'b';
                 out += `<line x1="${x + (slash ? 0.15 : 0.15)}" y1="${y + (slash ? 0.85 : 0.15)}" x2="${x + 0.85}" y2="${y + (slash ? 0.15 : 0.85)}" stroke="${fixed ? '#8a8a8a' : '#bfe6ff'}" stroke-width="0.16" stroke-linecap="round"/><line x1="${x + 0.15}" y1="${y + (slash ? 0.85 : 0.15)}" x2="${x + 0.85}" y2="${y + (slash ? 0.15 : 0.85)}" stroke="${COLORS.ink}" stroke-width="0.04"/>`;
             } else if (c === '*') {
-                out += `<rect x="${x + 0.2}" y="${y + 0.2}" width="0.6" height="0.6" transform="rotate(45 ${cx} ${cy})" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" opacity="0.9"/>`;
+                out += `<polygon points="${cx},${y + 0.14} ${x + 0.86},${y + 0.8} ${x + 0.14},${y + 0.8}" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" stroke-linejoin="round" opacity="0.92"/>`;
+            } else if (c === '+') {
+                out += `<rect x="${x + 0.16}" y="${y + 0.16}" width="0.68" height="0.68" rx="0.05" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" opacity="0.92"/>`;
             } else if (c === 'T') {
                 const lit = hit.has(`${x},${y}`);
                 out += `<circle cx="${cx}" cy="${cy}" r="0.3" fill="${lit ? COLORS.light : '#6b4f8a'}" stroke="${COLORS.ink}" stroke-width="0.06"/>${lit ? `<circle cx="${cx}" cy="${cy}" r="0.42" fill="none" stroke="${COLORS.light}" stroke-width="0.05"/>` : ''}`;

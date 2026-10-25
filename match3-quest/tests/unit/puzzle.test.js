@@ -84,6 +84,14 @@ describe('mode mirror', () => {
         const miss = createPuzzle({ mode: 'mirror', level: { grid: ['#####', '#.T.#', '#.*.#', '#.^T#', '#####'] } });
         expect(miss.won).toBe(false);
     });
+    test('le prisme carré fait trois rayons : tout droit et de chaque côté', () => {
+        const three = createPuzzle({ mode: 'mirror', level: { grid: ['#####', '#T.T#', '#.T.#', '#.+.#', '#.^.#', '#####'] } });
+        expect(three.won).toBe(false);                // la cible du milieu est devant, mais celles de côté sont en haut
+        const side = createPuzzle({ mode: 'mirror', level: { grid: ['#####', '#.T.#', '#T+T#', '#.^.#', '#####'] } });
+        expect(side.won).toBe(true);                  // tout droit + gauche + droite
+        const tri = createPuzzle({ mode: 'mirror', level: { grid: ['#####', '#.T.#', '#T*T#', '#.^.#', '#####'] } });
+        expect(tri.won).toBe(false);                  // le prisme triangulaire n'envoie qu'un côté
+    });
     test('un rayon bouclé ne fait pas planter', () => {
         const p = createPuzzle({ mode: 'mirror', level: { grid: ['#####', '#>.\\#', '#.T.#', '#####'] } });
         expect(() => traceBeams(p.state)).not.toThrow();
