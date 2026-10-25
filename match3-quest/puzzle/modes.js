@@ -142,7 +142,8 @@ const mirror = {
                 const slash = c === '/' || c === 'a', fixed = c === 'a' || c === 'b';
                 out += `<line x1="${x + (slash ? 0.15 : 0.15)}" y1="${y + (slash ? 0.85 : 0.15)}" x2="${x + 0.85}" y2="${y + (slash ? 0.15 : 0.85)}" stroke="${fixed ? '#8a8a8a' : '#bfe6ff'}" stroke-width="0.16" stroke-linecap="round"/><line x1="${x + 0.15}" y1="${y + (slash ? 0.85 : 0.15)}" x2="${x + 0.85}" y2="${y + (slash ? 0.15 : 0.85)}" stroke="${COLORS.ink}" stroke-width="0.04"/>`;
             } else if (c === '*') {
-                out += `<polygon points="${cx},${y + 0.14} ${x + 0.86},${y + 0.8} ${x + 0.14},${y + 0.8}" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" stroke-linejoin="round" opacity="0.92"/>`;
+                // Triangle rectangle : son hypoténuse, la face semi-réfléchissante, suit la diagonale « / » (c'est elle qui renvoie le second rayon).
+                out += `<polygon points="${x + 0.14},${y + 0.86} ${x + 0.86},${y + 0.14} ${x + 0.86},${y + 0.86}" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" stroke-linejoin="round" opacity="0.92"/><line x1="${x + 0.14}" y1="${y + 0.86}" x2="${x + 0.86}" y2="${y + 0.14}" stroke="#ffffff" stroke-width="0.06" stroke-linecap="round"/>`;
             } else if (c === '+') {
                 out += `<rect x="${x + 0.16}" y="${y + 0.16}" width="0.68" height="0.68" rx="0.05" fill="#dff3ff" stroke="${COLORS.ink}" stroke-width="0.05" opacity="0.92"/>`;
             } else if (c === 'T') {
