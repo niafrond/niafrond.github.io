@@ -18,6 +18,7 @@ Collection de mini-applications web en HTML/CSS/JavaScript, accessibles sur [nia
 | 📝 [Générateur de recette](generateur-recette.html) | Extraction et formatage de recettes depuis texte ou URL |
 | 🎤 [Karaoke Playlist](karaoke-playlist/) | App deux écrans (vidéo plein écran + contrôle style Karafun) pour piloter une soirée karaoké via YouTube |
 | ⏰ [Réveil Xtrem](reveil-xtrem/) | Réveil façon Alarm Clock Xtreme — alarmes nommées et répétables, snooze, "passer la prochaine", calcul aléatoire (facile/moyen/difficile) obligatoire pour désactiver. APK Android via `reveil-xtrem-android/` |
+| 🖨️ [Impression N-up](print-nup-android/) | Application Android pour imprimer un PDF en 2, 4, 6… pages par feuille sur une Epson (sélection de pages, qualité, orientation, recto-verso). APK via `print-nup-android/` |
 
 ## Notes
 

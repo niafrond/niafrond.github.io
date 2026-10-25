@@ -1,0 +1,119 @@
+name: Build Impression N-up APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    tags: ['**']
+    paths:
+      - 'print-nup-android/**'
+      - '.github/workflows/apk-printnup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Impression N-up APK
+    runs-on: ubuntu-latest
+
+    env:
+      KEYSTORE_PASS: ${{ secrets.PRINTNUP_KEYSTORE_PASSWORD || 'printnup_ci_build' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: 12266719
+          packages: 'platform-tools'
+
+      - name: Install SDK components
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Set app version
+        run: |
+          read -r VERSION VERSION_CODE < <(node -e "
+            const c = require('fs').readFileSync('version.js','utf8');
+            const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
+            const [,maj,min,pat] = m;
+            process.stdout.write(maj+'.'+min+'.'+pat+' '+(Number(maj)*1000000 + Number(min)*1000 + Number(pat))+'\n');
+          ")
+          GRADLE="print-nup-android/app/build.gradle"
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" "$GRADLE"
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION\"/" "$GRADLE"
+          echo "Set versionName=$VERSION versionCode=$VERSION_CODE"
+
+      # Pour pouvoir réinstaller l'APK par-dessus une version précédente, stocker un
+      # keystore persistant en secret PRINTNUP_KEYSTORE_BASE64 (+ PRINTNUP_KEYSTORE_PASSWORD) :
+      #   keytool -genkeypair -keystore print-nup.keystore -alias print-nup \
+      #           -keyalg RSA -keysize 2048 -validity 10000 \
+      #           -dname "CN=Impression N-up, O=Niafrond, C=FR" \
+      #           -storepass <password> -keypass <password>
+      #   base64 -w 0 print-nup.keystore
+      - name: Restore or generate keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PRINTNUP_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > print-nup-android/print-nup.keystore
+          else
+            keytool -genkeypair -v \
+              -keystore print-nup-android/print-nup.keystore \
+              -alias print-nup \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Impression N-up, O=Niafrond, C=FR" \
+              -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
+            echo "WARNING: keystore éphémère -- ajouter le secret PRINTNUP_KEYSTORE_BASE64 pour une signature stable."
+          fi
+
+      - name: Build release APK
+        working-directory: print-nup-android
+        run: gradle assembleRelease --no-daemon
+
+      - name: Sign APK
+        run: |
+          OUT="print-nup-android/app/build/outputs/apk/release"
+          export PATH="$ANDROID_SDK_ROOT/build-tools/35.0.0:$PATH"
+          apksigner sign \
+            --ks print-nup-android/print-nup.keystore \
+            --ks-key-alias print-nup \
+            --ks-pass "pass:$KEYSTORE_PASS" \
+            --key-pass "pass:$KEYSTORE_PASS" \
+            --out "$OUT/print-nup.apk" \
+            "$OUT/app-release-unsigned.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: print-nup-apk
+          path: print-nup-android/app/build/outputs/apk/release/print-nup.apk
+          retention-days: 30
+
+      - name: Attach APK to latest GitHub release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK_PATH="print-nup-android/app/build/outputs/apk/release/print-nup.apk"
+          RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          if [ -n "$RELEASE_TAG" ]; then
+            gh release upload "$RELEASE_TAG" "$APK_PATH#print-nup.apk" --clobber
+          else
+            echo "Aucune release, APK disponible uniquement comme artefact du workflow"
+          fi
