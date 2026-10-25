@@ -38,11 +38,26 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
     host.appendChild(el);
     const svg = el.querySelector('.puzzle-board'), status = el.querySelector('.puzzle-status');
     const { w, h } = puzzle.mode.size(puzzle.state);
-    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-    let closed = false, won = false;
+    const stage = el.querySelector('.puzzle-stage');
+    let closed = false, won = false, rot = false;
+
+    // Plateau pivoté d'un quart de tour quand sa forme est à l'opposé de celle de la zone libre (téléphone en portrait, plateau large) : il remplit
+    // alors la zone. Un point (x, y) du plateau s'affiche en (h − y, x) ; les directions du clavier, de la croix et du glissement suivent l'écran.
+    const ROT_DIR = { up: 'left', down: 'right', left: 'down', right: 'up' };
+    const gameDir = d => (rot ? ROT_DIR[d] : d);
+    function fitRotation() {
+        const r = stage.getBoundingClientRect();
+        const want = r.width > 0 && w !== h && (r.height > r.width) !== (h > w);
+        if (want === rot) return false;
+        rot = want;
+        return true;
+    }
 
     function refresh() {
-        svg.innerHTML = puzzle.mode.render(puzzle.state);
+        fitRotation();
+        svg.setAttribute('viewBox', rot ? `0 0 ${h} ${w}` : `0 0 ${w} ${h}`);
+        const inner = puzzle.mode.render(puzzle.state);
+        svg.innerHTML = rot ? `<g transform="translate(${h} 0) rotate(90)">${inner}</g>` : inner;
         if (puzzle.won && !won) {
             won = true;
             status.innerHTML = `Résolu en ${puzzle.moves} coup${puzzle.moves > 1 ? 's' : ''} ! <button type="button" data-act="done">Continuer</button>`;
@@ -54,6 +69,7 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
         if (closed) return;
         closed = true;
         window.removeEventListener('keydown', onKey, true);
+        window.removeEventListener('resize', onResize);
         el.remove();
         onClose?.();
         if (solved) onSolved?.();
@@ -64,15 +80,17 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
         if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { puzzle.undo(); refresh(); e.preventDefault(); e.stopPropagation(); return; }
         if (!d) return;
         e.preventDefault(); e.stopPropagation();       // le héros ne doit pas marcher derrière la fenêtre
-        if (puzzle.dir(d)) refresh();
+        if (puzzle.dir(gameDir(d))) refresh();
     }
     window.addEventListener('keydown', onKey, true);
+    const onResize = () => { if (fitRotation()) refresh(); };
+    window.addEventListener('resize', onResize);
 
     el.addEventListener('click', e => {
         const b = e.target.closest('button');
         if (!b) return;
         e.stopPropagation();
-        if (b.dataset.dir) { if (puzzle.dir(b.dataset.dir)) refresh(); return; }
+        if (b.dataset.dir) { if (puzzle.dir(gameDir(b.dataset.dir))) refresh(); return; }
         switch (b.dataset.act) {
             case 'undo': puzzle.undo(); refresh(); break;
             case 'reset': puzzle.reset(); refresh(); break;
@@ -85,9 +103,11 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx } = {}) {
     let down = null;
     const cellOf = e => {
         const r = svg.getBoundingClientRect();
-        const k = Math.min(r.width / w, r.height / h);           // le viewBox est centré dans le cadre (preserveAspectRatio)
-        const ox = (r.width - k * w) / 2, oy = (r.height - k * h) / 2;
-        return { fx: (e.clientX - r.left - ox) / k, fy: (e.clientY - r.top - oy) / k };
+        const dw = rot ? h : w, dh = rot ? w : h;                  // taille affichée (le plateau pivoté échange largeur et hauteur)
+        const k = Math.min(r.width / dw, r.height / dh);          // le viewBox est centré dans le cadre (preserveAspectRatio)
+        const ox = (r.width - k * dw) / 2, oy = (r.height - k * dh) / 2;
+        const X = (e.clientX - r.left - ox) / k, Y = (e.clientY - r.top - oy) / k;
+        return rot ? { fx: Y, fy: h - X } : { fx: X, fy: Y };       // retour dans le repère du plateau
     };
     svg.addEventListener('pointerdown', e => { down = cellOf(e); down.id = e.pointerId; });
     svg.addEventListener('pointerup', e => {
