@@ -94,6 +94,64 @@ export const allItems = [
 
 {id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"reusable", minLevel:3, rarity:"common", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
  description:"Restaure 8 HP par tour pendant 3 tours (rechargé en 6 tours)", effect:{regen:8, duration:3}},
+
+    // === OBJETS DE HAUT NIVEAU (au-delà du niveau 18) ===
+    // L'attaque et la défense étant des chances plafonnées à 98 %, les paliers misent sur les PV, le qì, les soins et la réduction de dégâts.
+    // Boucliers
+    {id:"qilin_shield", name:"Rondache du Qilin", type:"shield", minLevel:28, rarity:"rare",
+     description:"Un bouclier orné du Qilin, défense +45, critique +8, absorbe 150 dégâts", defense:45, atkBonus:8, absorbDamage:150},
+    {id:"golden_tortoise_aegis", name:"Égide de la Tortue d'Or", type:"shield", minLevel:45, rarity:"legendary",
+     description:"L'égide de la Tortue d'Or, défense +55, critique +12, absorbe 300 dégâts", defense:55, atkBonus:12, absorbDamage:300},
+    {id:"celestial_mandate_shield", name:"Bouclier du Mandat Céleste", type:"shield", minLevel:60, rarity:"legendary",
+     description:"Le bouclier du Mandat Céleste, défense +65, critique +15, absorbe 500 dégâts", defense:65, atkBonus:15, absorbDamage:500},
+
+    // Soins, qì et effets de combat
+    {id:"celestial_jade_elixir", name:"Élixir de Jade Céleste", type:"reusable", minLevel:25, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Restaure 90 HP (rechargé en 8 tours)", effect:{heal:90}},
+    {id:"celestial_qi_pill", name:"Pilule de Qi Céleste", type:"reusable", minLevel:28, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:7,
+     description:"Restaure 14 qì de chaque couleur (rechargé en 7 tours)", effect:{mana:14}},
+    {id:"tiger_eye_infusion", name:"Infusion de l'Œil du Tigre", type:"reusable", minLevel:30, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:4,
+     description:"Augmente les chances de critique de 25% pour ce combat, sans cumul (rechargé en 4 tours)", effect:{critChance:25}},
+    {id:"thousand_springs_tisane", name:"Tisane des Mille Printemps", type:"reusable", minLevel:32, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
+     description:"Restaure 25 HP par tour pendant 3 tours (rechargé en 6 tours)", effect:{regen:25, duration:3}},
+    {id:"diamond_skin_pill", name:"Pilule de Peau de Diamant", type:"reusable", minLevel:35, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
+     description:"Réduit les dégâts subis de 35% pour ce combat, sans cumul (rechargé en 5 tours)", effect:{damageReduction:0.35}},
+    {id:"celestial_swiftness_pill", name:"Pilule de Célérité Céleste", type:"reusable", minLevel:38, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:5,
+     description:"Accorde 3 points d'action supplémentaires ce tour (rechargé en 5 tours)", effect:{gainActionPoints:3}},
+    {id:"imperial_cinnabar_elixir", name:"Élixir de Cinabre Impérial", type:"reusable", minLevel:40, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Restaure 140 HP (rechargé en 8 tours)", effect:{heal:140}},
+    {id:"imperial_crimson_wine", name:"Vin Écarlate Impérial", type:"reusable", minLevel:42, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
+     description:"Vous récupérez 50% des dégâts infligés en HP pour ce combat, sans cumul (rechargé en 5 tours)", effect:{lifesteal:0.5}},
+    {id:"golden_phoenix_feather", name:"Plume de Fenghuang Dorée", type:"reusable", minLevel:45, rarity:"legendary", actionPoints:1, chargesPerCycle:1, rechargeTurns:8,
+     description:"Ressuscite avec 80% HP si vous mourrez, une fois par combat (rechargé en 8 tours)", effect:{revive:0.8}},
+    {id:"frozen_time_pill", name:"Pilule du Temps Figé", type:"reusable", minLevel:48, rarity:"legendary", actionPoints:1, chargesPerCycle:1, rechargeTurns:8,
+     description:"Jouez immédiatement un tour supplémentaire (rechargé en 8 tours)", effect:{extraTurn:1}},
+    {id:"nine_heavens_pill", name:"Pilule des Neuf Cieux", type:"reusable", minLevel:50, rarity:"legendary", actionPoints:2, chargesPerCycle:1, rechargeTurns:9,
+     description:"Restaure 20 qì de chaque couleur (rechargé en 9 tours)", effect:{mana:20}},
+    {id:"immortals_nectar", name:"Nectar des Immortels", type:"reusable", minLevel:55, rarity:"legendary", actionPoints:2, chargesPerCycle:1, rechargeTurns:9,
+     description:"Restaure 200 HP (rechargé en 9 tours)", effect:{heal:200}},
+    {id:"imperial_jade_armor_pill", name:"Pilule d'Armure de Jade Impériale", type:"reusable", minLevel:60, rarity:"legendary", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
+     description:"Réduit les dégâts subis de 45% pour ce combat, sans cumul (rechargé en 6 tours)", effect:{damageReduction:0.45}},
+
+    // Reliques permanentes
+    {id:"ancient_jade_heart", name:"Cœur de Jade Antique", type:"artifact", minLevel:22, rarity:"rare",
+     description:"Augmente HP max de 60 (permanent)", effect:{permMaxHp:60}},
+    {id:"azure_dragon_pendant", name:"Pendentif du Dragon Azur", type:"artifact", minLevel:26, rarity:"rare",
+     description:"Augmente le qì max de 25 (permanent)", effect:{permMaxMana:25}},
+    {id:"red_phoenix_ring", name:"Anneau du Phénix Rouge", type:"artifact", minLevel:30, rarity:"rare",
+     description:"Augmente HP max de 90 (permanent)", effect:{permMaxHp:90}},
+    {id:"celestial_tortoise_seal", name:"Sceau de la Tortue Céleste", type:"artifact", minLevel:34, rarity:"rare",
+     description:"Augmente défense de 12 (permanent)", effect:{permDefense:12}},
+    {id:"piercing_eye_ring", name:"Bague de l'Œil Perçant", type:"artifact", minLevel:38, rarity:"rare",
+     description:"Augmente les chances de critique de 10% (permanent)", effect:{permCritChance:10}},
+    {id:"imperial_jade_crown", name:"Couronne de Jade Impériale", type:"artifact", minLevel:45, rarity:"legendary",
+     description:"Augmente HP max de 150 et le qì max de 40 (permanent)", effect:{permMaxHp:150, permMaxMana:40}},
+    {id:"dragon_emperor_pearl", name:"Perle de l'Empereur Dragon", type:"artifact", minLevel:55, rarity:"legendary",
+     description:"Augmente HP max de 220 et défense de 10 (permanent)", effect:{permMaxHp:220, permDefense:10}},
+    {id:"golden_clouds_boots", name:"Bottes des Nuages Dorés", type:"artifact", minLevel:60, rarity:"legendary",
+     description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
+    {id:"heaven_seal", name:"Sceau du Ciel", type:"artifact", minLevel:65, rarity:"legendary",
+     description:"Augmente HP max de 300, le qì max de 60 et les chances de critique de 10% (permanent)", effect:{permMaxHp:300, permMaxMana:60, permCritChance:10}},
 ];
 
 // Chances de drop selon la rareté
@@ -112,8 +170,11 @@ export function getRandomItem(playerLevel) {
     );
     
     if(availableItems.length === 0) {
-        // Fallback sur les objets de niveau 1
-        return allItems.find(item => item.id === "healthPotion");
+        // Rien dans la fenêtre de niveau : les meilleurs objets que le joueur peut utiliser (sinon un élixir de niveau 1)
+        const usable = allItems.filter(item => item.minLevel <= playerLevel + 2);
+        const top = Math.max(0, ...usable.map(item => item.minLevel));
+        const best = usable.filter(item => item.minLevel === top);
+        return best.length ? best[Math.floor(Math.random() * best.length)] : allItems.find(item => item.id === "healthPotion");
     }
     
     // Calculer le poids total selon la rareté

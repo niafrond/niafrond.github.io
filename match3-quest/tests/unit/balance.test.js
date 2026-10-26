@@ -5,7 +5,7 @@ import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { allItems, useItem, isCombatLongEffect } from '../../items.js';
+import { allItems, useItem, isCombatLongEffect, getRandomItem } from '../../items.js';
 import { allWeapons } from '../../weapons.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -174,5 +174,17 @@ describe('armes : rendement par point d\'action', () => {
         const e = (w.damage + 15) / w.actionPoints;
         expect(e).toBeLessThanOrEqual(12 + 0.35 * w.minLevel);
         expect(e).toBeGreaterThanOrEqual(6.5 + 0.25 * w.minLevel);
+    });
+});
+
+describe('objets de haut niveau (au-delà du niveau 18)', () => {
+    test('chaque niveau jusqu\'à 70 a au moins un objet dans la fenêtre de butin', () => {
+        for (let level = 19; level <= 70; level++) {
+            const inWindow = allItems.filter(i => i.minLevel <= level + 2 && i.minLevel >= level - 3);
+            expect(inWindow.length).toBeGreaterThan(0);
+        }
+    });
+    test('getRandomItem ne retombe plus sur l\'élixir de niveau 1 quand la fenêtre est vide', () => {
+        for (let n = 0; n < 30; n++) expect(getRandomItem(70).minLevel).toBeGreaterThanOrEqual(60);
     });
 });
