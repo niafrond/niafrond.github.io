@@ -29,4 +29,15 @@ describe('coups de Xiao Gui', () => {
         expect(neededColorOf({ red: 5, blue: 0, green: 3, yellow: 2, purple: 9 })).toBe('blue');
         expect(neededColorOf(null)).toBeNull();
     });
+    test('Monte-Carlo : tuiles retombées tirées par refill, plateau intact, résultat reproductible', () => {
+        const b = base();
+        [0, 1, 3].forEach(i => { b[i] = 'skull'; }); b[boardSize + 2] = 'skull';
+        const snap = [...b];
+        const mk = () => { let x = 1; return () => { x = (x * 16807) % 2147483647; return ['red', 'blue', 'green', 'yellow', 'purple', 'skull'][x % 6]; }; };
+        const move = { from: 2, to: boardSize + 2 };
+        const a = scoreMove(b, move, { refill: mk(), samples: 10 });
+        expect(scoreMove(b, move, { refill: mk(), samples: 10 })).toBe(a);
+        expect(a).toBeGreaterThanOrEqual(scoreMove(b, move));   // les cascades de hasard ne font qu'ajouter
+        expect(b).toEqual(snap);
+    });
 });

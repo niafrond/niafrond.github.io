@@ -1,7 +1,9 @@
 // Choix « ultra smart » du coup supplémentaire de Xiao Gui (logique pure, sans DOM ; appliqué par board.js : foxMakeRandomMove).
 //
-// Pour chaque échange valide, on simule le coup sur une copie du plateau : alignements, tuiles retirées, gravité, puis cascades
-// sur les tuiles déjà présentes (les tuiles qui retombent du haut sont inconnues : on ne les devine pas). Le coup au meilleur score gagne.
+// Pour chaque échange valide, on simule le coup sur une copie du plateau : alignements, tuiles retirées, gravité, puis cascades.
+// Les tuiles qui retombent du haut sont inconnues : si `opts.refill` (tirage d'une tuile, mêmes probabilités que le jeu) est fourni,
+// on joue `opts.samples` simulations de Monte-Carlo et on garde la moyenne ; sinon, cascades sur les seules tuiles présentes.
+// Le coup au meilleur score gagne.
 import { colors, boardSize } from "./constants.js";
 import { collectMatches, getEffectiveMatchLength } from "./matchMechanics.js";
 import { shouldCreateJokerFromMatchLength } from "./joker.js";
@@ -24,8 +26,8 @@ export function neededColorOf(mana){
     return best;
 }
 
-// Retire les cases `removed` et fait retomber les tuiles restantes (cases vides = null en haut des colonnes).
-function collapse(board, removed){
+// Retire les cases `removed` et fait retomber les tuiles restantes (cases vides = null en haut des colonnes, ou tirées par `refill`).
+function collapse(board, removed, refill){
     removed.forEach(i => { board[i] = null; });
     for(let col = 0; col < boardSize; col++){
         let write = boardSize - 1;
@@ -36,12 +38,22 @@ function collapse(board, removed){
             if(write !== row) board[row * boardSize + col] = null;
             write--;
         }
-        for(; write >= 0; write--) board[write * boardSize + col] = null;
+        for(; write >= 0; write--) board[write * boardSize + col] = refill ? refill() : null;
     }
 }
 
+export const MONTE_CARLO_SAMPLES = 24;
+
 // Valeur d'un échange from↔to ; `opts.mana` = réserve de qì du héros. Le plateau fourni n'est pas modifié.
 export function scoreMove(board, move, opts = {}){
+    if(!opts.refill) return simulateOnce(board, move, opts, null);
+    const n = Math.max(1, opts.samples || MONTE_CARLO_SAMPLES);
+    let total = 0;
+    for(let k = 0; k < n; k++) total += simulateOnce(board, move, opts, opts.refill);
+    return total / n;
+}
+
+function simulateOnce(board, move, opts, refill){
     const W = { ...SMART_WEIGHTS, ...(opts.weights || {}) };
     const need = neededColorOf(opts.mana);
     const sim = board.slice();
@@ -61,7 +73,7 @@ export function scoreMove(board, move, opts = {}){
             if(shouldCreateJokerFromMatchLength(info.len)) score += W.joker;
             indices.forEach(i => removed.add(i));
         });
-        collapse(sim, removed);
+        collapse(sim, removed, refill);
     }
     return score;
 }

@@ -1454,7 +1454,7 @@ export function foxMakeRandomMove(){
     const possibleMoves = getSortedPossibleMoves();
     if(possibleMoves.length === 0){ finishPlayerTurn(); return; }
 
-    const move = pickSmartMove(board, possibleMoves, { mana: player.mana }) || possibleMoves[0];
+    const move = pickSmartMove(board, possibleMoves, { mana: player.mana, refill: () => generateRandomTile() }) || possibleMoves[0];
     setTimeout(() => {
         animateFoxSwap(move.from, move.to, () => {
             swapTiles(move.from, move.to);
