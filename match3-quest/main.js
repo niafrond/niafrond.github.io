@@ -421,7 +421,8 @@ function init() {
     };
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
     const breakTick = createBreakWatcher({
-        isCalm: () => Boolean(exploration.isIdle?.()),
+        // Calme : exploration libre et aucune cinématique / transition de combat à l'écran (elles ne sont pas des .modal).
+        isCalm: () => Boolean(exploration.isIdle?.()) && !document.querySelector('.cine-overlay, .title-screen, .battle-transition, .bt-title'),
     });
     startPlayTimeTracking(() => { renderPlayTime(); breakTick(); });
     ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', renderPlayTime));
