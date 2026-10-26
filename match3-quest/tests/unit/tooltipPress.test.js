@@ -23,3 +23,10 @@ describe('armes des anciennes sauvegardes', () => {
         expect(src).toMatch(/const catalogWeapon = w => \(w\?\.id \? getWeaponById\(w\.id\) : null\);/);
     });
 });
+
+describe('bouclier et arme à deux mains', () => {
+    it('equipGear range l\'arme à deux mains au lieu de refuser sans rien dire', () => {
+        expect(src).toMatch(/const freedWeapon = player\.equipment\.rightHand\?\.twoHanded/);
+        expect(src).toMatch(/if\(freedWeapon\) createWeaponButton\(\);/);
+    });
+});

@@ -105,6 +105,12 @@ export function rawDefense(entity) {
     return Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense');
 }
 
+// Attaque affichée : attaque brute moins le malus d'affaiblissement en cours (Sceau d'Affaiblissement).
+export function displayAttack(entity) {
+    const weakened = (entity?.statusEffects?.weakened || 0) > 0 ? Math.max(0, Math.floor(entity.statusEffects.weakenedAmount || 0)) : 0;
+    return Math.max(0, rawAttack(entity) - weakened);
+}
+
 // Chances réelles (plafonnées à 98 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
 export function critChance(entity, weakened = 0) {
     return clampChance(levelEdgeBonus(entity, rawAttack(entity)) - Math.max(0, Math.floor(weakened || 0)));
@@ -142,12 +148,14 @@ export function skullStrengthBonus(entity) {
 // Attaque (arme ou crânes) complète : critique puis blocage de la cible. Renvoie { damage, crit, block }.
 export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, weakened = 0 } = {}) {
     let damage = Math.max(0, Math.floor(rawDamage || 0));
-    // Fureur des Steppes : bonus fixe sur chaque dégât infligé par le lanceur (crânes, armes, sorts), avant critique.
-    if (damage > 0 && (attacker?.statusEffects?.enraged || 0) > 0) damage += Math.max(0, Math.floor(attacker.statusEffects.enragedBonus || 0));
+    // Fureur des Steppes : bonus fixe ajouté à chaque dégât infligé par le lanceur (crânes, armes, sorts). Il suit le critique
+    // de l'attaque (même jet), mais échappe au blocage : l'attaque peut être parée ou bloquée, pas le bonus.
+    const enrageBonus = damage > 0 && (attacker?.statusEffects?.enraged || 0) > 0 ? Math.max(0, Math.floor(attacker.statusEffects.enragedBonus || 0)) : 0;
     const crit = rollCrit(attacker, rng, weakened);
     if (crit) damage = applyCrit(damage);
+    const bonus = crit ? applyCrit(enrageBonus) : enrageBonus;
     const block = rollBlock(target, rng);
-    damage = applyBlock(damage, block);
+    damage = applyBlock(damage, block) + bonus;
     return { damage, crit, block };
 }
 

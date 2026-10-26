@@ -11,7 +11,7 @@ export function activeStatuses(entity) {
     const se = entity?.statusEffects || {};
     const add = (id, icon, label, kind, text, t) => out.push({ id, icon, label, kind, text, turns: t });
 
-    if (n(se.enraged) > 0) add('enraged', 'anger', 'Fureur des Steppes', 'buff', `Ajoute +${n(se.enragedBonus)} à chaque dégât infligé (crânes, armes, sorts).`, n(se.enraged));
+    if (n(se.enraged) > 0) add('enraged', 'anger', 'Fureur des Steppes', 'buff', `Ajoute +${n(se.enragedBonus)} dégâts inblocables à chaque attaque (crânes, armes, sorts).`, n(se.enraged));
     if (n(se.strength) > 0) add('strength', 'muscle', 'Force du Tigre', 'buff', `+${n(se.strengthBonus)} attaque.`, n(se.strength));
     if (n(se.barrier) > 0) add('barrier', 'shield', 'Rempart de Jade', 'buff', `+${n(se.barrierDefense)} défense.`, n(se.barrier));
     if (n(se.stoneskin) > 0) add('stoneskin', 'rock', 'Peau de Jade', 'buff', `+${n(se.stoneskinDefense)} défense.`, n(se.stoneskin));
@@ -53,4 +53,13 @@ export function statusTooltipHtml(status) {
     return `<div class="spell-tooltip-title">${icon(status.icon)} ${esc(status.label)}</div>`
         + `<div class="spell-tooltip-line">${esc(status.text)}</div>`
         + `<div class="spell-tooltip-line"><strong>${status.kind === 'buff' ? 'Bonus' : 'Malus'}</strong>${status.turns ? ` · ${turns(status.turns)} restant${status.turns > 1 ? 's' : ''}` : ' · jusqu\'à utilisation'}</div>`;
+}
+
+/** Lignes de l'infobulle d'un combattant : un bonus/malus par ligne (vide si aucun effet). */
+export function statusLinesHtml(entity) {
+    const list = activeStatuses(entity);
+    if (!list.length) return '';
+    return list.map(s =>
+        `<div class="spell-tooltip-line status-line ${s.kind}">${icon(s.icon)} <strong>${esc(s.label)}</strong> — ${esc(s.text)}${s.turns ? ` (${turns(s.turns)})` : ''}</div>`
+    ).join('');
 }

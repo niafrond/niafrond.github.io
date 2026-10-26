@@ -32,8 +32,8 @@ import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById,
 import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 import { itemGroupKey, toggleSellTag } from "./merchants.js";
-import { activeStatuses, statusBadgesHtml, statusTooltipHtml } from "./statusBadges.js";
-import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
+import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
+import { resolveStrike, blockLabel, displayAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -1455,6 +1455,12 @@ export function updateStats(){
     if(playerDiv && !playerDiv.dataset.gearTipBound){
         playerDiv.dataset.gearTipBound = '1';
         bindTooltip(playerDiv, () => showPlayerGearTooltip(playerDiv), hideSpellTooltip);
+        // Un clic / toucher sur le joueur affiche aussi son équipement et ses bonus/malus, quelques secondes.
+        playerDiv.addEventListener('click', () => {
+            showPlayerGearTooltip(playerDiv);
+            clearTimeout(playerTapTimer);
+            playerTapTimer = setTimeout(hideSpellTooltip, ENEMY_TAP_TOOLTIP_MS);
+        });
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
@@ -1480,7 +1486,7 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat"><strong>Atk:</strong> ${displayAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1538,7 +1544,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${rawAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat"><strong>Atk:</strong> ${displayAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -1803,7 +1809,7 @@ export function updatePlayerStatsTab(){
             <h3>Statistiques de combat</h3>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de coup critique (arme, crânes) — plafonnée à 98 %">${svgIcon('sword')} Attaque (critique):</span>
-                <span class="stat-value">${rawAttack(player)}</span>
+                <span class="stat-value">${displayAttack(player)}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
@@ -3326,7 +3332,7 @@ function getPlayerGearTooltipHtml() {
         const piece = getStuffById(player.stuff[slot]);
         html += line(label, piece ? piece.name : '—');
     });
-    return html;
+    return html + statusLinesHtml(player);
 }
 
 function showPlayerGearTooltip(targetEl) {
@@ -3406,6 +3412,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
         }
     }
 
+    lines.push(statusLinesHtml(enemyEntity));
     return lines.join('');
 }
 
@@ -3413,6 +3420,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
 // qui se referme seule après quelques secondes. Lié une seule fois : le panneau est reconstruit à chaque updateStats.
 const ENEMY_TAP_TOOLTIP_MS = 3500;
 let enemyTapTimer = null;
+let playerTapTimer = null;
 function bindEnemyCardTap(enemyDiv){
     if(!enemyDiv || enemyDiv.dataset.tapBound) return;
     enemyDiv.dataset.tapBound = '1';
@@ -4130,7 +4138,7 @@ export function updateWeaponsTab(){
     const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
     if(left) equippedDiv.insertAdjacentHTML('beforeend', weaponCardHtml(left, { hand: 'left' }));
     else if(right?.twoHanded) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `Occupée : ${escapeHtml(right.name)} se tient à deux mains.`));
-    else if(shield) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `${escapeHtml(shield.name)} (bouclier, onglet Objets).`));
+    else if(shield) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `${escapeHtml(shield.name)} (bouclier, ci-dessous).`));
     else equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', 'Vide : une arme à une main peut s\'y ajouter.'));
 
     // Armes disponibles : celles du sac (hors mains), utilisables d'abord, puis « Niveau trop bas » repliées.
@@ -4150,7 +4158,8 @@ export function updateWeaponsTab(){
             + (locked.length ? `<details class="locked-group"${lockedWasOpen ? ' open' : ''}><summary>Niveau trop bas (${locked.length})</summary>${locked.map(w => weaponCardHtml(w)).join('')}</details>` : '');
     }
 
-    renderGearList(document.getElementById('gear-list'));
+    renderGearList(document.getElementById('shield-list'), 'shield');
+    renderGearList(document.getElementById('gear-list'), 'reusable');
     updateInventoryTab();
     updateItemButton();
 }
@@ -4158,19 +4167,20 @@ export function updateWeaponsTab(){
 
 const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
 
-// Boucliers (main gauche) et objets rechargeables (objet actif) : affichés dès l'achat,
+// Boucliers (main gauche, onglet Armes) ou objets rechargeables (objet actif, onglet Objets) : affichés dès l'achat,
 // non sélectionnables tant que le niveau requis n'est pas atteint.
-function renderGearList(container){
+function renderGearList(container, kind){
     if(!container) return;
     container.innerHTML = '';
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
     const inventory = player.inventory || [];
     const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    const shields = sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort');
-    const reusables = sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable'), 'items-sort');
-    if(!wornShield && shields.length === 0 && reusables.length === 0) return;
+    const withShields = kind === 'shield';
+    const shields = withShields ? sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort') : [];
+    const reusables = withShields ? [] : sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable'), 'items-sort');
+    if(!(withShields && wornShield) && shields.length === 0 && reusables.length === 0) return;
     const section = document.createElement('div');
-    section.innerHTML = '<h3 class="shop-section-title">Boucliers et objets</h3>';
+    section.innerHTML = `<h3 class="shop-section-title">${withShields ? 'Boucliers' : 'Objets rechargeables'}</h3>`;
     const row = (it, details, action) => {
         const div = document.createElement('div');
         div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.current ? ' is-equipped' : '');
@@ -4181,14 +4191,14 @@ function renderGearList(container){
                 <span class="weapon-stats">${details}</span>
                 <span class="weapon-description">${it.description || ''}</span>
             </div>
-            <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
+            <button class="weapon-action" ${action.disabled ? 'disabled' : ''}${action.title ? ` title="${escapeHtml(action.title)}"` : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('item', it.id));
         section.appendChild(div);
     };
-    if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
+    if(withShields && wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
-        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
     });
     reusables.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
@@ -4205,9 +4215,17 @@ export function equipGear(inventoryIndex){
     if(!it || it.type !== 'shield') return;
     if(player.level < (it.minLevel || 1)){ log(`Nécessite niveau ${it.minLevel} pour équiper ${it.name}.`); return; }
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    // Une arme à deux mains occupe la main gauche : on la range pour libérer la main (comme l'inverse, qui renvoie le bouclier).
+    const freedWeapon = player.equipment.rightHand?.twoHanded ? player.equipment.rightHand : null;
+    if(freedWeapon){
+        player.equippedWeapon = null;
+        player.equipment.rightHand = null;
+        log(`${freedWeapon.name} se manie à deux mains : elle est retirée pour équiper ${it.name}.`);
+    }
     const previous = player.equipment.leftHand;
     const result = equipGearSlot(player, it, 'leftHand');
     if(!result.success){ log(result.message || `${it.name} ne peut pas être équipé.`); return; }
+    if(freedWeapon) createWeaponButton();
     player.inventory.splice(inventoryIndex, 1);
     if(previous?.type === 'shield'){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
     if(it.defense) player.defense = (player.defense || 0) + it.defense;
