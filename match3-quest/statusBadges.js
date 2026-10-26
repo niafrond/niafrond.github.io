@@ -11,7 +11,7 @@ export function activeStatuses(entity) {
     const se = entity?.statusEffects || {};
     const add = (id, icon, label, kind, text, t) => out.push({ id, icon, label, kind, text, turns: t });
 
-    if (n(se.enraged) > 0) add('enraged', 'anger', 'Fureur des Steppes', 'buff', `Ajoute +${n(se.enragedBonus)} à chaque dégât infligé (crânes, armes, sorts).`, n(se.enraged));
+    if (n(se.enraged) > 0) add('enraged', 'anger', 'Fureur des Steppes', 'buff', `Ajoute +${n(se.enragedBonus)} dégâts inblocables à chaque attaque (crânes, armes, sorts).`, n(se.enraged));
     if (n(se.strength) > 0) add('strength', 'muscle', 'Force du Tigre', 'buff', `+${n(se.strengthBonus)} attaque.`, n(se.strength));
     if (n(se.barrier) > 0) add('barrier', 'shield', 'Rempart de Jade', 'buff', `+${n(se.barrierDefense)} défense.`, n(se.barrier));
     if (n(se.stoneskin) > 0) add('stoneskin', 'rock', 'Peau de Jade', 'buff', `+${n(se.stoneskinDefense)} défense.`, n(se.stoneskin));
