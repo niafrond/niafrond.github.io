@@ -3,7 +3,8 @@ import { gridsOf, rectGrid } from '../../explorationGrids.js';
 
 // Les grilles en cache doivent donner exactement les mêmes réponses que le parcours des rectangles qu'elles remplacent.
 const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
-const inBuilding = (s, x, y) => (s.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
+const inBuilding = (s, x, y) => (s.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) ||
+    (s.structures || []).some(b => !b.cross && x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);   // les structures (world/structures.js) se dessinent à part
 const screens = Object.values(SCREENS);
 
 describe('explorationGrids', () => {
