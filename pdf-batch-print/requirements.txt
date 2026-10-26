@@ -1,4 +1,0 @@
-pypdf
-pymupdf
-pillow
-pywin32
