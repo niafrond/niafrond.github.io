@@ -499,6 +499,7 @@ export function isShielded(session, def) {
 // franchissables compris), il faut le battre. Les piliers disparaissent avec lui. Calcul mis en cache par définition de boss.
 const sealCache = new WeakMap();
 export function sealCellsOf(screen, def) {
+    if (Array.isArray(def?.wall)) return def.wall;   // piliers d'un boss de porte (world/junctions.js `wallGuard`)
     if (!def?.seal) return [];
     let cells = sealCache.get(def);
     if (!cells) {
@@ -515,13 +516,16 @@ export function sealCellsOf(screen, def) {
     return cells;
 }
 
-// Cases des murs des boss encore en jeu sur l'écran courant.
-export function bossWallCells(session) {
+// Murs des boss encore en jeu sur l'écran courant : { x, y, def } par case. Les murs d'un Soleil (`sun_N`) sont des flammes (`fire`), les autres des piliers.
+export function bossWallsOf(session) {
     const screen = currentScreen(session);
     return screen.enemies
-        .filter(def => def.seal && isEnemyAlive(session, def.id) && isEntityVisible(session, def))
-        .flatMap(def => sealCellsOf(screen, def));
+        .filter(def => (def.seal || def.wall) && isEnemyAlive(session, def.id) && isEntityVisible(session, def))
+        .flatMap(def => sealCellsOf(screen, def).map(([x, y]) => ({ x, y, def, fire: /^sun_\d+$/.test(def.id) })));
 }
+
+// Cases des murs des boss encore en jeu sur l'écran courant.
+export const bossWallCells = session => bossWallsOf(session).map(w => [w.x, w.y]);
 
 export function entityAt(session, x, y) {
     if (bossWallCells(session).some(([wx, wy]) => wx === x && wy === y)) return { type: 'wall' };

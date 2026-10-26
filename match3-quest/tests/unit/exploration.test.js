@@ -546,9 +546,12 @@ describe('cartes (story.js)', () => {
             s.enemies.filter(e => e.kind === 'patrol').forEach(e => buildRoute(e.patrol).forEach(p => bodies.add(`${p.x},${p.y}`)));
             bodies.delete(`${s.spawn.x},${s.spawn.y}`);
             const doorGuards = s.enemies.filter(e => e.guardsDoor);
+            const walls = new Set(doorGuards.flatMap(g => sealCellsOf(s, g)).map(([x, y]) => `${x},${y}`));   // piliers / flammes du boss, tant qu'il est en jeu
+            walls.forEach(k => bodies.add(k));
             // sans le corps du boss de porte, la sortie est atteignable (ses piliers ne ferment que sa rangée)
             const open = new Set(bodies);
             doorGuards.forEach(e => open.delete(`${e.x},${e.y}`));
+            walls.forEach(k => open.delete(k));
             expect([id, reachable(s, s.spawn, open).has(`${east.x},${east.y}`)]).toEqual([id, true]);
             // avec le boss en place, impossible de passer derrière lui
             doorGuards.forEach(g => exitsOf(s, SCREENS).filter(e => e.requires === g.id).forEach(door => {
