@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
-    skullStrengthBonus, levelEdgeBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
+    skullStrengthBonus, levelEdgeBonus, addStatBuff, stackStatusEffect, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
@@ -84,17 +84,29 @@ describe('équipement et sorts', () => {
         Object.keys(WEAPON_STAT_BONUSES).forEach(id => expect(allWeapons.some(w => w.id === id)).toBe(true));
     });
 
-    test('bonus de sort temporaire : sans cumul, expire après N tours', () => {
+    test('bonus de sort temporaire : cumulable, chaque lancer garde sa durée', () => {
         const e = { attack: 5, defense: 5 };
         addStatBuff(e, { attack: 20, defense: 10, turns: 2 });
         addStatBuff(e, { attack: 10, turns: 3 });
-        expect(rawAttack(e)).toBe(25);
+        expect(rawAttack(e)).toBe(35);
         expect(rawDefense(e)).toBe(15);
         expect(tickStatBuffs(e)).toEqual([]);
-        expect(tickStatBuffs(e)).toEqual(['defense']);
+        expect(tickStatBuffs(e)).toEqual(['defense']);   // le bonus de défense (2 tours) expire
         expect(statBuffAmount(e, 'defense')).toBe(0);
+        expect(statBuffAmount(e, 'attack')).toBe(10);    // seul le +20 (2 tours) est parti
         expect(tickStatBuffs(e)).toEqual(['attack']);
         expect(rawAttack(e)).toBe(5);
+    });
+
+    test('stackStatusEffect : bonus additionnés, durée la plus longue', () => {
+        const fx = {};
+        expect(stackStatusEffect(fx, 'stoneskin', 'stoneskinDefense', 3, 10)).toBe(10);
+        expect(stackStatusEffect(fx, 'stoneskin', 'stoneskinDefense', 2, 15)).toBe(15);
+        expect(fx).toEqual({ stoneskin: 3, stoneskinDefense: 25 });
+        expect(stackStatusEffect(fx, 'reflect', 'pct', 2, 80, 100) + stackStatusEffect(fx, 'reflect', 'pct', 2, 80, 100)).toBe(100);
+        fx.stoneskin = 0;   // expiré : repart de zéro
+        expect(stackStatusEffect(fx, 'stoneskin', 'stoneskinDefense', 1, 5)).toBe(5);
+        expect(fx.stoneskinDefense).toBe(5);
     });
 
     test('nouveaux sorts de bonus temporaire', () => {

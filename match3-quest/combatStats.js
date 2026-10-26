@@ -59,7 +59,8 @@ export function statBuffAmount(entity, stat) {
     return buff && buff.turns > 0 ? Math.max(0, Math.floor(buff.amount || 0)) : 0;
 }
 
-// Pose un bonus temporaire d'Atk et/ou de Déf pour `turns` tours (pas de cumul : on garde le meilleur bonus et la plus longue durée).
+// Pose un bonus temporaire d'Atk et/ou de Déf pour `turns` tours. Les lancers se CUMULENT : chacun garde sa propre durée
+// (`stacks`), `amount` est la somme des bonus encore actifs et `turns` la durée restante la plus longue.
 export function addStatBuff(entity, { attack = 0, defense = 0, turns = 1 } = {}) {
     if (!entity.statBuffs) entity.statBuffs = {};
     const duration = Math.max(1, Math.floor(turns || 1));
@@ -67,11 +68,25 @@ export function addStatBuff(entity, { attack = 0, defense = 0, turns = 1 } = {})
         const value = Math.max(0, Math.floor(amount || 0));
         if (value <= 0) continue;
         const current = entity.statBuffs[stat];
-        entity.statBuffs[stat] = current && current.turns > 0
-            ? { amount: Math.max(current.amount, value), turns: Math.max(current.turns, duration) }
-            : { amount: value, turns: duration };
+        const stacks = current && current.turns > 0 ? [...(current.stacks || [{ amount: current.amount, turns: current.turns }]), { amount: value, turns: duration }] : [{ amount: value, turns: duration }];
+        entity.statBuffs[stat] = summarizeStacks(stacks);
     }
     return entity.statBuffs;
+}
+
+const summarizeStacks = stacks => ({ amount: stacks.reduce((n, st) => n + st.amount, 0), turns: Math.max(...stacks.map(st => st.turns)), stacks });
+
+/**
+ * Effet de statut à durée cumulable (Peau de Jade, Force, Rempart, Fureur, Miroir…) : le bonus s'ajoute à celui encore actif (plafonné par `cap`),
+ * la durée restante devient la plus longue des deux. L'expiration retire alors la somme. Renvoie le bonus ajouté réellement.
+ */
+export function stackStatusEffect(effects, turnKey, valueKey, turns, value, cap = Infinity) {
+    const active = (effects[turnKey] || 0) > 0;
+    const before = active ? Math.max(0, Math.floor(effects[valueKey] || 0)) : 0;
+    const total = Math.min(cap, before + Math.max(0, Math.floor(value || 0)));
+    effects[turnKey] = Math.max(active ? effects[turnKey] : 0, Math.max(1, Math.floor(turns || 1)));
+    effects[valueKey] = total;
+    return total - before;
 }
 
 // Décompte d'un tour : renvoie les stats ('attack' | 'defense') dont le bonus vient de se terminer.
@@ -80,8 +95,8 @@ export function tickStatBuffs(entity) {
     for (const stat of ['attack', 'defense']) {
         const buff = entity?.statBuffs?.[stat];
         if (!buff) continue;
-        buff.turns -= 1;
-        if (buff.turns <= 0) { delete entity.statBuffs[stat]; expired.push(stat); }
+        const stacks = (buff.stacks || [{ amount: buff.amount, turns: buff.turns }]).map(st => ({ ...st, turns: st.turns - 1 })).filter(st => st.turns > 0);
+        if (stacks.length === 0) { delete entity.statBuffs[stat]; expired.push(stat); } else entity.statBuffs[stat] = summarizeStacks(stacks);
     }
     return expired;
 }

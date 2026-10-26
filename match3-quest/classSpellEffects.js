@@ -4,7 +4,7 @@ import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, lastSpellDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from "./board.js";
 import { colors, boardSize } from "./constants.js";
-import { addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
+import { stackStatusEffect, addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { playSfx } from "./sound.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker, skullValue } from "./joker.js";
 
@@ -517,8 +517,7 @@ function applyStatBuffSpell(spell) {
 function applyStoneskin(spell) {
     const bonus = Math.max(0, Math.floor(spell.defenseBonus || 0));
     const turns = Math.max(1, Math.floor(spell.duration || 1));
-    player.statusEffects.stoneskin = turns;
-    player.statusEffects.stoneskinDefense = bonus;
+    stackStatusEffect(player.statusEffects, 'stoneskin', 'stoneskinDefense', turns, bonus);
     player.defense = (player.defense || 0) + bonus;
     showCombatAnimation({ icon: 'rock', title: "PEAU DE JADE", heal: `+${bonus} défense`, target: `→ Vous (${turns} tours)` }, true);
     log(`Peau de Jade augmente la défense de ${bonus} pendant ${turns} tours.`);
@@ -528,8 +527,7 @@ function applyStoneskin(spell) {
 function applyStrength(spell) {
     const bonus = Math.max(0, Math.floor(spell.atkBonus || 0));
     const turns = Math.max(1, Math.floor(spell.duration || 1));
-    player.statusEffects.strength = turns;
-    player.statusEffects.strengthBonus = bonus;
+    stackStatusEffect(player.statusEffects, 'strength', 'strengthBonus', turns, bonus);
     player.attack += bonus;
     showCombatAnimation({ icon: 'muscle', title: "FORCE DU TIGRE", damage: `+${bonus} attaque`, target: `→ Vous (${turns} tours)` }, true);
     log(`Force augmente l'attaque physique de ${bonus} pendant ${turns} tours.`);
@@ -539,8 +537,7 @@ function applyStrength(spell) {
 function applyMirrorShield(spell) {
     const percent = Math.max(0, Math.floor(spell.reflectPercent || 0));
     const turns = Math.max(1, Math.floor(spell.duration || 1));
-    player.statusEffects.reflectDamage = turns;
-    player.statusEffects.reflectDamagePercent = percent;
+    stackStatusEffect(player.statusEffects, 'reflectDamage', 'reflectDamagePercent', turns, percent, 100);
     showCombatAnimation({ icon: 'mirror', title: "MIROIR DE BRONZE", damage: `${percent}% renvoyés`, target: `→ Vous (${turns} tours)` }, true);
     log(`Miroir de Bronze renverra ${percent}% des dégâts pendant ${turns} tours.`);
     return true;
@@ -780,8 +777,7 @@ function applyReinforce(spell) {
 }
 
 function applyBarrier(spell) {
-    player.statusEffects.barrier = spell.duration;
-    player.statusEffects.barrierDefense = spell.defenseBonus;
+    stackStatusEffect(player.statusEffects, 'barrier', 'barrierDefense', spell.duration, spell.defenseBonus);
     player.defense = (player.defense || 0) + spell.defenseBonus;
     showCombatAnimation({ icon: 'shield', title: "REMPART DE JADE", heal: `+${spell.defenseBonus} défense`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`Rempart de Jade augmente la défense de ${spell.defenseBonus} pendant ${spell.duration} tours !`);
@@ -837,8 +833,7 @@ function applyHeavensWrath(spell) {
 
 // BARBARIAN SPELLS
 function applyEnrage(spell) {
-    player.statusEffects.enraged = spell.duration;
-    player.statusEffects.enragedBonus = spell.atkBonus;
+    stackStatusEffect(player.statusEffects, 'enraged', 'enragedBonus', spell.duration, spell.atkBonus);
     addBonusTurn(player);
     showCombatAnimation({ icon: 'anger', title: "FUREUR DES STEPPES", damage: `+${spell.atkBonus} dégâts`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`Fureur des Steppes augmente de ${spell.atkBonus} tous vos dégâts (crânes, armes, sorts) pendant ${spell.duration} tours !`);
@@ -1213,8 +1208,7 @@ function applyUltimate(spell) {
     }
     if(spell.defBuff) addStatBuff(player, { defense: spell.defBuff, turns: spell.duration || 1 });
     if(spell.weakenAmount) {
-        enemy.statusEffects.weakened = Math.max(1, Math.floor(spell.duration || 1));
-        enemy.statusEffects.weakenedAmount = spell.weakenAmount;
+        stackStatusEffect(enemy.statusEffects, 'weakened', 'weakenedAmount', spell.duration, spell.weakenAmount);
         log(`${enemy.name} est affaibli (-${spell.weakenAmount} attaque).`);
     }
     return true;
