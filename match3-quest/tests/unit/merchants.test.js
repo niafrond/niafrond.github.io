@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
     MERCHANTS, MERCHANT_IDS, REGION_LEVEL, PRICE_MULT, merchantStock, merchantNpc, availableOffers, buyOffer, offerObject,
-    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf
+    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf, toggleSellTag, surplusEntries, sellSurplus
 } from '../../merchants.js';
 import { REGION_LEVEL as WORLD_LEVEL, REGION_ORDER } from '../../world/index.js';
 import { SCREENS } from '../../story.js';
@@ -183,5 +183,35 @@ describe('revente aux marchands', () => {
     test('les objets spéciaux de quête (exploration.questItems) ne sont jamais proposés à la vente', () => {
         const h = { ...hero(), exploration: { questItems: [{ id: 'qi_x', name: 'Sceau', quest: 'q' }] } };
         expect(sellableEntries(h).some(e => /Sceau|qi_x/.test(e.obj.name + e.obj.id))).toBe(false);
+    });
+});
+
+
+describe('excédent à vendre (tag bouton pièce)', () => {
+    const potion = { id: 'p1', name: 'Potion', type: 'consumable', rarity: 'common', minLevel: 1 };
+    const mk = (n, extra = {}) => ({ gold: 0, weapons: [], inventory: Array.from({ length: n }, () => ({ ...potion })), activeInventoryIndex: null, ...extra });
+
+    test('tag basculant ; un exemplaire est toujours gardé', () => {
+        const h = mk(3);
+        expect(surplusEntries(h)).toEqual([]);
+        expect(toggleSellTag(h, 'p1')).toBe(true);
+        const [e] = surplusEntries(h);
+        expect(e.qty).toBe(2);
+        const res = sellSurplus(h, 'p1');
+        expect(res.ok).toBe(true);
+        expect(h.inventory).toHaveLength(1);
+        expect(h.gold).toBe(sellPriceOf('item', potion) * 2);
+        expect(h.sellTags).toEqual([]);
+        expect(toggleSellTag(h, 'p1')).toBe(true);
+        expect(toggleSellTag(h, 'p1')).toBe(false);
+    });
+
+    test('un exemplaire actif compte comme celui gardé', () => {
+        const h = mk(3, { activeInventoryIndex: 1 });
+        toggleSellTag(h, 'p1');
+        expect(surplusEntries(h)[0].qty).toBe(2);
+        sellSurplus(h, 'p1');
+        expect(h.inventory).toHaveLength(1);
+        expect(h.activeInventoryIndex).toBe(0);
     });
 });

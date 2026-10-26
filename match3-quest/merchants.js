@@ -247,3 +247,43 @@ export function sellEntry(hero, key) {
     hero.gold = (hero.gold || 0) + entry.price;
     return { ok: true, message: `${entry.obj.name} vendu pour ${entry.price} pièces d'or.`, entry };
 }
+
+
+// ── Excédent à vendre ───────────────────────────────────────────────────────
+// Le joueur tague (bouton pièce de l'onglet Objets) un objet possédé en plusieurs exemplaires : à la prochaine
+// boutique, tous les exemplaires en trop (un est toujours gardé) sont proposés à la vente. Tags dans `hero.sellTags` (ids).
+export const itemGroupKey = it => it.id || it.name;
+
+/** Bascule le tag « à vendre » d'un objet ; renvoie vrai si l'objet est désormais tagué. */
+export function toggleSellTag(hero, id) {
+    const tags = hero.sellTags = Array.isArray(hero.sellTags) ? hero.sellTags : [];
+    const at = tags.indexOf(id);
+    if (at >= 0) { tags.splice(at, 1); return false; }
+    tags.push(id);
+    return true;
+}
+
+/** Excédents tagués vendables : [{ id, obj, qty, price, indices }] (un exemplaire gardé, jamais un objet verrouillé). */
+export function surplusEntries(hero) {
+    const inv = hero.inventory || [];
+    return (hero.sellTags || []).map(id => {
+        const all = inv.map((it, index) => ({ it, index })).filter(({ it }) => itemGroupKey(it) === id);
+        if (all.length < 2) return null;
+        const free = all.filter(({ it, index }) => !sellLockReason(hero, 'item', it, index));
+        const keep = all.length - free.length >= 1 ? null : free[0];   // un exemplaire verrouillé suffit à « garder » l'objet
+        const indices = free.filter(e => e !== keep).map(e => e.index);
+        if (!indices.length) return null;
+        const obj = all[0].it;
+        return { id, obj, qty: indices.length, price: sellPriceOf('item', obj), rarity: obj.rarity || 'common', indices };
+    }).filter(Boolean);
+}
+
+/** Vend l'excédent tagué d'un objet (du dernier index au premier) et retire le tag. */
+export function sellSurplus(hero, id) {
+    const entry = surplusEntries(hero).find(e => e.id === id);
+    if (!entry) return { ok: false, message: 'Plus rien à vendre.' };
+    [...entry.indices].sort((a, b) => b - a).forEach(i => sellEntry(hero, `inv:${i}`));
+    hero.sellTags = (hero.sellTags || []).filter(t => t !== id);
+    const gain = entry.price * entry.qty;
+    return { ok: true, message: `${entry.obj.name} x ${entry.qty} vendu pour ${gain} pièces d'or.`, entry, gain };
+}

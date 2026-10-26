@@ -27,6 +27,7 @@
   "enemies.catalog.json",
   "enemies.js",
   "enemyAI.js",
+  "equipPreview.js",
   "equipment.js",
   "experience.js",
   "exploration.js",
