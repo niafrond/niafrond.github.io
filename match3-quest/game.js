@@ -4185,14 +4185,14 @@ function renderGearList(container){
                 <span class="weapon-stats">${details}</span>
                 <span class="weapon-description">${it.description || ''}</span>
             </div>
-            <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
+            <button class="weapon-action" ${action.disabled ? 'disabled' : ''}${action.title ? ` title="${escapeHtml(action.title)}"` : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('item', it.id));
         section.appendChild(div);
     };
     if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
-        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
     });
     reusables.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
@@ -4209,9 +4209,17 @@ export function equipGear(inventoryIndex){
     if(!it || it.type !== 'shield') return;
     if(player.level < (it.minLevel || 1)){ log(`Nécessite niveau ${it.minLevel} pour équiper ${it.name}.`); return; }
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    // Une arme à deux mains occupe la main gauche : on la range pour libérer la main (comme l'inverse, qui renvoie le bouclier).
+    const freedWeapon = player.equipment.rightHand?.twoHanded ? player.equipment.rightHand : null;
+    if(freedWeapon){
+        player.equippedWeapon = null;
+        player.equipment.rightHand = null;
+        log(`${freedWeapon.name} se manie à deux mains : elle est retirée pour équiper ${it.name}.`);
+    }
     const previous = player.equipment.leftHand;
     const result = equipGearSlot(player, it, 'leftHand');
     if(!result.success){ log(result.message || `${it.name} ne peut pas être équipé.`); return; }
+    if(freedWeapon) createWeaponButton();
     player.inventory.splice(inventoryIndex, 1);
     if(previous?.type === 'shield'){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
     if(it.defense) player.defense = (player.defense || 0) + it.defense;
