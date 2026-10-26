@@ -194,10 +194,10 @@ const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
 
 // Répartition FIXE des tuiles, identique pour le plateau initial et pour chaque
-// nouvelle ligne qui tombe après un match : ~67 % gâteaux de lune, 17 % flèches, 15 % crânes.
+// nouvelle ligne qui tombe après un match : ~63 % gâteaux de lune, 17 % flèches, 19 % crânes.
 // Le reste (~1 %) est absorbé par les gemmes (dont le joker, très rare).
 const BOARD_DROP_PROBABILITIES = Object.freeze({
-    skullProb: 0.15,
+    skullProb: 0.19,
     combatProb: 0.17,
     jokerProb: 0.0035
 });
