@@ -1,3 +1,36 @@
+## [2.138.0](https://github.com/niafrond/niafrond.github.io/compare/v2.137.0...v2.138.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter une minimap en mode exploration ([2514b2c](https://github.com/niafrond/niafrond.github.io/commit/2514b2c47f9aba7527e40e485d48223942b29d8d))
+
+### Bug Fixes
+
+* **match3-quest:** ignorer les clics sur la minimap ([61e8bad](https://github.com/niafrond/niafrond.github.io/commit/61e8bad613bbe32640b7d39ffd89fd144698e8d9))
+
+## [2.137.0](https://github.com/niafrond/niafrond.github.io/compare/v2.136.0...v2.137.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** passer le plateau à 10×10 contre les boss et ajouter les crânes +5 ([f4b023a](https://github.com/niafrond/niafrond.github.io/commit/f4b023a8163bbc027da32727bf146d128aa56708))
+
+### Bug Fixes
+
+* **match3-quest:** nettoyer le détourage du forgeron de lave ([803c358](https://github.com/niafrond/niafrond.github.io/commit/803c358f2ea43877ddf3dadb11f68e7328620097))
+
+## [2.136.0](https://github.com/niafrond/niafrond.github.io/compare/v2.135.0...v2.136.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** augmenter la probabilité de drop des crânes à 19 % ([#556](https://github.com/niafrond/niafrond.github.io/issues/556)) ([4ad4f62](https://github.com/niafrond/niafrond.github.io/commit/4ad4f62e6a2beb67a5df6a8de2f5846520757acc))
+
+## [2.135.0](https://github.com/niafrond/niafrond.github.io/compare/v2.134.0...v2.135.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter musiques, intro et écran de victoire des énigmes ainsi que les quêtes d'armure antique ([7ba6b16](https://github.com/niafrond/niafrond.github.io/commit/7ba6b16676368d2cd6919c3c806f3ee6e22c1f3e))
+* **match3-quest:** refaire le décor des maisons avec parquet, tapis, mobilier cohérent et sprites pixel art ([a29d723](https://github.com/niafrond/niafrond.github.io/commit/a29d723fbb1b1b15dca3da726abeb053af943e22))
+
 ## [2.134.0](https://github.com/niafrond/niafrond.github.io/compare/v2.133.1...v2.134.0) (2026-10-26)
 
 ### Features

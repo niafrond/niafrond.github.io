@@ -38,11 +38,22 @@ jobs:
           ref: main
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      # Le site ne sert pas tout le dépôt : on copie dans _site ce qui est réellement chargé et on laisse de côté les sources de
+      # génération (séquences vidéo et images intermédiaires des ultimes de match3-quest, ≈ 1,1 Go, que seuls les outils lisent),
+      # les outils, les tests et la documentation. Le jeu ne charge que sprites/ultimates (voir tools/precache-manifest.mjs).
+      - name: Build site
+        run: |
+          mkdir _site
+          rsync -a ./ _site/ \
+            --exclude='/_site' --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='test-results' \
+            --exclude='/match3-quest/sprites/ultimates-seq' --exclude='/match3-quest/sprites/ultimates-comfy' \
+            --exclude='/match3-quest/sprites/ultimates-sdxl' --exclude='/match3-quest/sprites/house/cand' \
+            --exclude='/match3-quest/tools' --exclude='/match3-quest/tests' --exclude='/match3-quest/docs'
+          du -sh _site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: '_site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

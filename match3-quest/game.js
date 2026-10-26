@@ -1,6 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { colors, boardSize, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
+import { colors, boardSize, setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
@@ -1103,6 +1103,7 @@ export function startNewCombat(selectedEnemy = null){
     delete document.body.dataset.combatEnd;
     preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
     gameState.combatState = 'active';
+    setBoardSize(selectedEnemy?.isBoss ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon
     window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
     ensureCombatUsableActiveItem();
     resetCombatRewards();

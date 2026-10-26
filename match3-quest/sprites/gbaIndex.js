@@ -131,7 +131,7 @@ export const GBA_FILES = {
     flutist_chuan: 'flutist_chuan.b86eb857.js',
     foreman_han: 'foreman_han.2ed2f322.js',
     forge_spirit: 'forge_spirit.e016a708.js',
-    forgeron_lave: 'forgeron_lave.e8ecab82.js',
+    forgeron_lave: 'forgeron_lave.9814cc8c.js',
     forgeron_magma: 'forgeron_magma.869af0b3.js',
     fortune_sha: 'fortune_sha.9256905c.js',
     foudre_garde: 'foudre_garde.7aff127e.js',

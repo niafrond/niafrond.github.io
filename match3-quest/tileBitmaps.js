@@ -4,7 +4,7 @@
 // Les 8 SVG sont donc rastérisés une seule fois en PNG à la taille exacte d'affichage (taille CSS × densité de pixels) et servent de fond à leur place.
 // Le SVG reste en place tant que le bitmap n'est pas prêt, et en cas d'échec (pas de canvas, image illisible).
 
-export const TILE_NAMES = ['red', 'blue', 'green', 'yellow', 'purple', 'combat', 'skull', 'joker'];
+export const TILE_NAMES = ['red', 'blue', 'green', 'yellow', 'purple', 'combat', 'skull', 'skull5', 'joker'];
 export const STYLE_ID = 'tile-bitmaps';
 const MIN_PX = 16, MAX_PX = 256;
 const RESIZE_DELAY_MS = 250;   // pendant un redimensionnement, on attend que la taille se stabilise avant de refaire les 8 bitmaps
