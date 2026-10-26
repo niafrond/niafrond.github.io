@@ -1,3 +1,10 @@
+## [2.140.1](https://github.com/niafrond/niafrond.github.io/compare/v2.140.0...v2.140.1) (2026-10-26)
+
+### Bug Fixes
+
+* **match3-quest:** afficher le rappel de pause à la fin d'un combat ([f3055e3](https://github.com/niafrond/niafrond.github.io/commit/f3055e3fcd6ea5f07fc0b753fa804c621ed82eae))
+* **match3-quest:** différer le rappel de pause après les animations en cours ([e6752fd](https://github.com/niafrond/niafrond.github.io/commit/e6752fd0465476ecb79b1ba14ddcea837c15c17a))
+
 ## [2.140.0](https://github.com/niafrond/niafrond.github.io/compare/v2.139.0...v2.140.0) (2026-10-26)
 
 ### Features
