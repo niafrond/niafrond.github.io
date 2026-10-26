@@ -929,6 +929,7 @@ export function createExplorationView(cfg) {
     function onCanvasPointerDown(ev) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
+        if (overMinimap(ev)) return;   // la minimap n'est qu'un indicateur : elle ne réagit pas aux clics
         stopHoldRepeat();
         holdPointer = { id: ev.pointerId, clientX: ev.clientX, clientY: ev.clientY };
         holdTimer = setInterval(() => {
@@ -1751,7 +1752,76 @@ export function createExplorationView(cfg) {
             }
         });
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
-        if (screen.dark) drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight);
+        if (screen.dark) { miniRect = null; drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight); }
+        else drawMinimap(screen, biome, P(vis.px + 0.5, vis.py + 0.5), { ox, oy, tile, vw, vh, dpr });
+    }
+
+    // Minimap : coin bas droit, glisse à gauche quand le héros s'approche de ce coin (pour ne pas le cacher).
+    // Le fond (sol, chemins, obstacles, liquides) est peint une fois par écran à 1 px par case, puis agrandi.
+    const miniCache = new WeakMap();
+    let miniShift = 0;   // 0 = à droite, 1 = à gauche (animé)
+    let miniRect = null; // zone occupée à l'écran (px CSS du canvas) lors du dernier dessin
+    function overMinimap(ev) {
+        if (!miniRect) return false;
+        const r = canvas.getBoundingClientRect();
+        const x = ev.clientX - r.left, y = ev.clientY - r.top;
+        return x >= miniRect.x && x <= miniRect.x + miniRect.w && y >= miniRect.y && y <= miniRect.y + miniRect.h;
+    }
+    function miniBase(screen, biome) {
+        const hit = miniCache.get(screen);
+        if (hit && hit.biome === biome) return hit.canvas;
+        const off = document.createElement('canvas');
+        off.width = screen.w;
+        off.height = screen.h;
+        const g = off.getContext('2d');
+        const img = g.createImageData(screen.w, screen.h);
+        const rgb = hex => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+        const [fa, fp, fc, fl] = [biome.a, biome.path, biome.cliff, biome.liquid].map(rgb);
+        const grids = gridsOf(screen);
+        for (let i = 0; i < screen.w * screen.h; i++) {
+            const c = grids.liq[i] ? fl : grids.obst[i] ? fc : grids.path[i] ? fp : fa;
+            img.data[i * 4] = c[0]; img.data[i * 4 + 1] = c[1]; img.data[i * 4 + 2] = c[2]; img.data[i * 4 + 3] = 255;
+        }
+        g.putImageData(img, 0, 0);
+        miniCache.set(screen, { biome, canvas: off });
+        return off;
+    }
+
+    function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
+        miniRect = null;
+        if (!screen.w || !screen.h) return;
+        const MARGIN = 8;
+        const scale = Math.max(1, Math.floor(Math.min(vw * 0.3 / screen.w, vh * 0.28 / screen.h, 4) * 2) / 2);
+        const mw = Math.round(screen.w * scale), mh = Math.round(screen.h * scale);
+        if (mw < 24 || mh < 16) return;
+        // le héros est « dans le coin » s'il est sous la minimap placée à droite (plus une case de garde)
+        const rightX = vw - MARGIN - mw, y0 = vh - MARGIN - mh;
+        const nearCorner = hero.x > rightX - tile && hero.y > y0 - tile;
+        miniShift += ((nearCorner ? 1 : 0) - miniShift) * 0.2;
+        if (Math.abs(miniShift - (nearCorner ? 1 : 0)) < 0.01) miniShift = nearCorner ? 1 : 0;
+        const x0 = Math.round(rightX + (MARGIN - rightX) * miniShift);
+        miniRect = { x: x0 - 2, y: y0 - 2, w: mw + 4, h: mh + 4 };
+        ctx.save();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalAlpha = 0.88;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x0 - 2, y0 - 2, mw + 4, mh + 4);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(miniBase(screen, biome), x0, y0, mw, mh);
+        const dot = (cx, cy, color, r) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(x0 + cx * scale - r, y0 + cy * scale - r, r * 2, r * 2);
+        };
+        screen.npcs.forEach(n => dot(n.x + 0.5, n.y + 0.5, '#5ab0ff', 1.5));
+        X.aliveEnemies(session).forEach(e => dot(e.x + 0.5, e.y + 0.5, '#ff4a3a', 1.5));
+        // zone visible à l'écran
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.lineWidth = 1;
+        const vx = Math.max(0, -ox / tile), vy = Math.max(0, -oy / tile);
+        const vwT = Math.min(screen.w - vx, (vw - Math.max(0, ox)) / tile), vhT = Math.min(screen.h - vy, (vh - Math.max(0, oy)) / tile);
+        ctx.strokeRect(x0 + vx * scale + 0.5, y0 + vy * scale + 0.5, Math.max(1, vwT * scale - 1), Math.max(1, vhT * scale - 1));
+        dot(vis.px + 0.5, vis.py + 0.5, '#ffe14a', 2);
+        ctx.restore();
     }
 
     // Souterrain : tout est noir sauf un halo autour du héros (étroit à tâtons, large et vacillant avec la torche).
