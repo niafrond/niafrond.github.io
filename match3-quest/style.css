@@ -3573,3 +3573,14 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 @media (prefers-reduced-motion: reduce) { .puzzle-victory, .puzzle-victory-piece { animation: none; } }
 .puzzle-intro-icon svg { width: 1.1em; height: 1.1em; fill: currentColor; color: #f0c860; }
 .puzzle-victory-glyph svg { width: 44px; height: 44px; fill: currentColor; }
+
+/* Pastilles de bonus / malus actifs sur la carte d'un combattant */
+.status-badges { display: flex; flex-wrap: wrap; gap: 3px; margin: 2px 0; }
+.status-badge {
+    display: inline-flex; align-items: center; gap: 1px;
+    padding: 0 4px; border-radius: 999px;
+    font-size: 0.8em; line-height: 1.5; cursor: help;
+    border: 1px solid #4caf50; background: rgba(76, 175, 80, 0.2);
+}
+.status-badge.debuff { border-color: #e53935; background: rgba(229, 57, 53, 0.22); }
+.status-badge small { font-size: 0.75em; font-weight: bold; }

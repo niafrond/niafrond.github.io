@@ -30,6 +30,7 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
+import { activeStatuses, statusBadgesHtml, statusTooltipHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
@@ -1453,6 +1454,7 @@ export function updateStats(){
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
             <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span>${bonusTurnBadge(player)}</div>
+            ${statusBadgesHtml(player)}
             <div class="stat">
                 <div class="hp-bar-container">
                     <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
@@ -1503,6 +1505,7 @@ export function updateStats(){
 
         // Ajouter/retirer classe pour liseré selon le tour actuel
         playerDiv.classList.toggle('active-turn', currentTurn === 'player');
+        bindStatusBadges(playerDiv, player);
     });
     
     const enemyDiv=document.getElementById('enemy-stats');
@@ -1518,6 +1521,7 @@ export function updateStats(){
     
     enemyDiv.innerHTML = `
         <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
+        ${statusBadgesHtml(enemy)}
         <div class="stat">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
@@ -1534,6 +1538,7 @@ export function updateStats(){
                 <span id="enemy-mana-purple" class="cost-badge mana-purple" title="purple">${targetEnemyMana.purple}</span>
             </div>
         </div>`;
+    bindStatusBadges(enemyDiv, enemy);
     // Animer les compteurs ennemi
     const enemyProgressEl = enemyDiv.querySelector('.hp-bar-container progress');
     _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
@@ -3165,6 +3170,22 @@ export function createSpellButtons(){
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
 // (un appui bref sert à utiliser l'élément et ne doit pas afficher l'infobulle).
 export const TOOLTIP_LONG_PRESS_MS = 400;
+// Pastilles de bonus/malus : survol ou appui long = explication de l'effet.
+function bindStatusBadges(container, entity) {
+    const list = activeStatuses(entity);
+    container.querySelectorAll('.status-badge').forEach(el => {
+        const status = list.find(x => x.id === el.dataset.status);
+        if(!status) return;
+        el.removeAttribute('title');
+        bindTooltip(el, () => {
+            const tooltip = ensureSpellTooltip();
+            tooltip.innerHTML = statusTooltipHtml(status);
+            tooltip.classList.add('visible');
+            placeTooltip(tooltip, el, 260);
+        }, hideSpellTooltip);
+    });
+}
+
 function bindTooltip(el, show, hide) {
     let timer = null;
     let shownByPress = false;

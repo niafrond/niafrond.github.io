@@ -205,3 +205,15 @@ describe('écart de niveau : avantage caché du plus haut niveau', () => {
         expect(rawDefense(strong)).toBe(6);
     });
 });
+
+describe('statusBadges', () => {
+    test('liste les bonus et malus actifs avec leur explication', async () => {
+        const { activeStatuses, statusBadgesHtml } = await import('../../statusBadges.js');
+        expect(activeStatuses({ statusEffects: {} })).toEqual([]);
+        expect(statusBadgesHtml({})).toBe('');
+        const list = activeStatuses({ statusEffects: { enraged: 2, enragedBonus: 10, poisoned: 1, poisonDamage: 3 } });
+        expect(list.map(s => [s.id, s.kind, s.turns])).toEqual([['enraged', 'buff', 2], ['poisoned', 'debuff', 1]]);
+        expect(list[0].text).toContain('+10');
+        expect(statusBadgesHtml({ statusEffects: { enraged: 2, enragedBonus: 10 } })).toContain('data-status="enraged"');
+    });
+});
