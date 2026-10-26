@@ -1,3 +1,11 @@
+## [2.144.0](https://github.com/niafrond/niafrond.github.io/compare/v2.143.0...v2.144.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** afficher les bonus et malus au clic et l'attaque affaiblie ([6ae033e](https://github.com/niafrond/niafrond.github.io/commit/6ae033edc625a6e3292a80ea6a035fc374ddc3bc))
+* **match3-quest:** déclencher les effets des crânes détruits par les sorts ([6c69140](https://github.com/niafrond/niafrond.github.io/commit/6c69140caddefcf26ca060e039d97fb646af2d70))
+* **match3-quest:** rendre le bonus de fureur des steppes inblocable ([4f19dfb](https://github.com/niafrond/niafrond.github.io/commit/4f19dfb26d78eb64e94308baf984e5fbc275fe93))
+
 ## [2.143.0](https://github.com/niafrond/niafrond.github.io/compare/v2.142.0...v2.143.0) (2026-10-26)
 
 ### Features
