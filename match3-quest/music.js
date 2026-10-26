@@ -30,7 +30,8 @@ const CACHE_SIZE = 3;         // pistes décodées gardées en mémoire (courant
 const SCENE_LABELS = {
     title: 'Écran titre', menu: 'Menus', village: 'Village', house: 'Maison', wild: 'Terres sauvages',
     sanctuary: 'Sanctuaire', moon: 'Pic de la Lune', ending: 'Épilogue', combat: 'Combat', boss: 'Boss',
-    victory: 'Victoire', defeat: 'Défaite'
+    victory: 'Victoire', defeat: 'Défaite',
+    'puzzle-push': 'Énigme des jarres', 'puzzle-mirror': 'Énigme des miroirs', 'puzzle-slide': 'Énigme des charrettes'
 };
 
 export function getSceneList() {

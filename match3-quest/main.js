@@ -211,6 +211,8 @@ function init() {
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
+        const puzzle = document.querySelector('.puzzle-overlay');
+        if(puzzle) return puzzle.dataset.won ? ['victory'] : [`puzzle-${puzzle.dataset.mode}`];   // énigme à plateau : une piste par type (push, mirror, slide)
         if(document.querySelector('.battle-transition')) return null;
         if(document.body.dataset.combatEnd) return [document.body.dataset.combatEnd];   // Victoire / Défaite : la musique de l'issue démarre avec le mot plein écran et boucle jusqu'au retour à l'exploration
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.

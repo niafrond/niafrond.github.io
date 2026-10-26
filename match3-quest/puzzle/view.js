@@ -3,9 +3,13 @@
 import { createPuzzle, solvePath } from './engine.js';
 import { spriteDefs, setHeroSprite } from './art.js';
 import './modes.js';
-import { puzzleDef } from './levels.js';
+import { puzzleDef, pieceOfPuzzle, PUZZLE_SETS } from './levels.js';
+import { icon } from '../icons.js';
+import { getStuffById, STUFF_SLOT_LABELS, describeStuff } from '../stuff.js';
 
 const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', z: 'up', q: 'left' };
+const SLOT_ICON = { head: 'crown', neck: 'stone', wrist: 'shield', ring: 'star' };   // icône de l'emplacement de la pièce gagnée (aucune police chinoise embarquée)
+const INTRO_ICON = { push: 'box', mirror: 'mirror', slide: 'cart' };
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 /**
@@ -20,6 +24,7 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false,
     const puzzle = createPuzzle(def);
     const el = document.createElement('div');
     el.className = 'puzzle-overlay';
+    el.dataset.mode = def.mode;   // choisit la musique (main.js) et l'animation d'intro (retro.css)
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', def.title);
     const isDirMode = Boolean(puzzle.mode.dir);
@@ -38,6 +43,14 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false,
         ${isDirMode ? `<div class="puzzle-pad">${['up', 'left', 'down', 'right'].map(d => `<button type="button" data-dir="${d}" aria-label="${d}">${{ up: '&#9650;', left: '&#9664;', down: '&#9660;', right: '&#9654;' }[d]}</button>`).join('')}</div>` : ''}
     </div>`;
     host.appendChild(el);
+    // Intro (~1,4 s) : bandeau du type d'énigme sur le plateau qui se déploie ; retiré tout seul, sans bloquer les commandes.
+    const intro = document.createElement('div');
+    intro.className = 'puzzle-intro';
+    intro.setAttribute('aria-hidden', 'true');
+    intro.innerHTML = `<span class="puzzle-intro-icon">${icon(INTRO_ICON[def.mode] || 'puzzle')}</span><span class="puzzle-intro-title">${esc(def.title)}</span>`;
+    el.appendChild(intro);
+    intro.addEventListener('animationend', () => intro.remove());
+    setTimeout(() => intro.remove(), 2200);   // filet : animations coupées (économie d'énergie, préférence de mouvement réduit)
     const svg = el.querySelector('.puzzle-board'), status = el.querySelector('.puzzle-status');
     // Les dessins sont déclarés une fois ; seul le calque du plateau est refait à chaque coup.
     svg.innerHTML = `<defs>${spriteDefs()}</defs><g class="layer"></g>`;
@@ -58,6 +71,27 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false,
         return true;
     }
 
+    // Écran de victoire : coups joués, pièce d'armure antique gagnée (nom, emplacement, bonus, histoire) et bouton « Continuer ».
+    function showVictory() {
+        const piece = getStuffById(pieceOfPuzzle(id));
+        const set = PUZZLE_SETS[def.set];
+        const card = piece ? `<div class="puzzle-victory-piece">
+                <div class="puzzle-victory-glyph">${icon(SLOT_ICON[piece.slot] || 'shield')}</div>
+                <div class="puzzle-victory-name">${esc(piece.name)}</div>
+                <div class="puzzle-victory-slot">${esc(STUFF_SLOT_LABELS[piece.slot])} · armure antique « ${esc(set.label)} »</div>
+                <div class="puzzle-victory-bonus">${esc(describeStuff(piece).split(' • ').filter(t => !/^armure antique/i.test(t)).join(' • '))}</div>
+                <div class="puzzle-victory-desc">${esc(piece.description)}</div>
+            </div>` : '';
+        const v = document.createElement('div');
+        v.className = 'puzzle-victory';
+        v.setAttribute('role', 'status');
+        v.innerHTML = `<div class="puzzle-victory-title">Énigme résolue !</div>
+            <div class="puzzle-victory-moves">${puzzle.moves} coup${puzzle.moves > 1 ? 's' : ''}</div>${card}
+            <button type="button" data-act="done">Continuer</button>`;
+        el.appendChild(v);
+        v.querySelector('button')?.focus();
+    }
+
     function refresh() {
         fitRotation();
         svg.setAttribute('viewBox', rot ? `0 0 ${h} ${w}` : `0 0 ${w} ${h}`);
@@ -66,8 +100,10 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false,
         if (puzzle.won) {
             if (!won) {
                 won = true;
-                status.innerHTML = `Résolu en ${puzzle.moves} coup${puzzle.moves > 1 ? 's' : ''} ! <button type="button" data-act="done">Continuer</button>`;
-                sfx?.('turnBonus');
+                el.dataset.won = '1';   // main.js : la musique de victoire remplace celle de l'énigme
+                status.textContent = `Résolu en ${puzzle.moves} coup${puzzle.moves > 1 ? 's' : ''} !`;
+                showVictory();
+                sfx?.('victory');
             }
         } else { won = false; status.textContent = `Coups : ${puzzle.moves}`; }
         el.querySelectorAll('[data-act="undo"],[data-act="reset"],[data-dir]').forEach(b => { b.disabled = won || Boolean(replay); });

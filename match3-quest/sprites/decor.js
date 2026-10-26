@@ -1,6 +1,8 @@
 // Éléments de décor de la carte d'exploration et icônes de régions (carte du monde) : petits dessins SVG
 // (viewBox 64x64, contour #2b1b17, base vers y = 58) qui remplacent les anciens emojis. decorSprite(nom) → chaîne SVG.
 
+import { HOUSE_SPRITES } from './house.js';
+
 const K = '#2b1b17';
 const O = `stroke="${K}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;
 const N = 'stroke="none"';
@@ -97,6 +99,28 @@ const D = {
         `<path d="M50 34 Q60 32 58 22 L54 24 Q55 30 49 30" fill="#2f6f73"/><path d="M14 36 Q4 36 6 46 Q8 50 14 48" fill="none" stroke-width="3"/>` +
         `<path d="M26 26 Q26 18 32 18 Q38 18 38 26" fill="#3f8a8e"/><circle cx="32" cy="16" r="3" fill="#f2c14e"/>` +
         `<path d="M22 40 Q32 44 42 40" fill="none" stroke="#f2c14e" stroke-width="2"/><path d="M60 16 Q58 10 62 6" fill="none" stroke="#c8d0d8" stroke-width="2"/>`,
+    // Mobilier des maisons : posé contre un mur (étagère, armoire, lit) ou au milieu de la pièce (table basse, jarre, panier, plante, coussin).
+    shelf: () => `<rect x="8" y="6" width="48" height="52" rx="2" fill="#8a4a2a"/><rect x="12" y="10" width="40" height="44" fill="#4a2a18"/>` +
+        `<rect x="10" y="26" width="44" height="4" fill="#a8683a"/><rect x="10" y="42" width="44" height="4" fill="#a8683a"/>` +
+        `<rect x="14" y="14" width="6" height="12" rx="1" fill="#c45a4a"/><rect x="21" y="16" width="5" height="10" rx="1" fill="#2f6f73"/><rect x="27" y="13" width="6" height="13" rx="1" fill="#c9a448"/>` +
+        `<rect x="38" y="16" width="12" height="10" rx="3" fill="#f4ecd8"/><path d="M38 21 L50 21" fill="none" stroke-width="1.4"/>` +
+        `<path d="M16 38 Q16 31 22 31 Q28 31 28 38Z" fill="#c9883a"/><rect x="33" y="31" width="7" height="7" rx="1" fill="#6a9a4a"/><rect x="42" y="32" width="8" height="6" rx="1" fill="#f2c14e"/>` +
+        `<rect x="14" y="46" width="12" height="8" rx="1" fill="#f4ecd8"/><rect x="29" y="47" width="9" height="7" rx="1" fill="#f4ecd8"/><rect x="41" y="46" width="9" height="8" rx="1" fill="#c9883a"/>`,
+    cabinet: () => `<rect x="10" y="10" width="44" height="48" rx="2" fill="#a8683a"/><rect x="8" y="6" width="48" height="7" rx="2" fill="#8a4a2a"/>` +
+        `<rect x="14" y="16" width="14" height="13" rx="1" fill="#b87a46" stroke-width="1.4"/><rect x="36" y="16" width="14" height="13" rx="1" fill="#b87a46" stroke-width="1.4"/>` +
+        `<rect x="14" y="36" width="14" height="16" rx="1" fill="#b87a46" stroke-width="1.4"/><rect x="36" y="36" width="14" height="16" rx="1" fill="#b87a46" stroke-width="1.4"/>` +
+        `<circle cx="28" cy="22" r="1.8" fill="#f2c14e"/><circle cx="36" cy="22" r="1.8" fill="#f2c14e"/><circle cx="28" cy="44" r="1.8" fill="#f2c14e"/><circle cx="36" cy="44" r="1.8" fill="#f2c14e"/>`,
+    table: () => `<path d="M12 34 L12 56 M52 34 L52 56 M22 38 L22 54 M42 38 L42 54" fill="none" stroke="#6a3a20" stroke-width="4"/>` +
+        `<rect x="6" y="28" width="52" height="9" rx="2" fill="#a8683a"/><rect x="8" y="29" width="48" height="3" rx="1.5" fill="#c8884a" ${N}/>` +
+        `<path d="M14 28 Q14 18 22 18 Q30 18 30 28Z" fill="#2f6f73"/><path d="M30 22 Q36 20 36 25" fill="none" stroke-width="1.6"/><circle cx="22" cy="16" r="2" fill="#f2c14e"/>` +
+        `<path d="M38 28 Q38 22 46 22 Q54 22 54 28Z" fill="#f4ecd8"/>`,
+    basket: () => `<path d="M12 28 L52 28 L48 56 Q32 60 16 56Z" fill="#c9a448"/><path d="M14 36 L50 36 M15 44 L49 44 M16 51 L48 51" fill="none" stroke="#8a6a20" stroke-width="1.6"/>` +
+        `<path d="M20 28 L22 56 M32 28 L32 58 M44 28 L42 56" fill="none" stroke="#8a6a20" stroke-width="1.4"/>` +
+        `<ellipse cx="32" cy="28" rx="20" ry="5" fill="#8a6a20"/><circle cx="22" cy="25" r="3.4" fill="#f4ecd8"/><circle cx="31" cy="23" r="3.4" fill="#f4ecd8"/><circle cx="40" cy="25" r="3.4" fill="#f4ecd8"/><circle cx="27" cy="27" r="3.2" fill="#e8dcb8"/><circle cx="36" cy="27" r="3.2" fill="#e8dcb8"/>`,
+    plant: () => `<path d="M18 38 L46 38 L42 58 L22 58Z" fill="#c9883a"/><rect x="16" y="34" width="32" height="6" rx="2" fill="#d9983a"/>` +
+        `<path d="M32 36 Q20 28 18 14 Q30 16 32 30 Q34 16 46 14 Q44 28 32 36Z" fill="#5a9a3a"/><path d="M32 36 L32 20" fill="none" stroke="#3a6a24" stroke-width="1.6"/><circle cx="40" cy="22" r="2.6" fill="#e8a03a" ${N}/>`,
+    cushion: () => `<path d="M10 44 Q10 34 32 34 Q54 34 54 44 Q54 56 32 56 Q10 56 10 44Z" fill="#c45a4a"/>` +
+        `<path d="M16 44 Q32 38 48 44" fill="none" stroke="#f2c14e" stroke-width="2"/><circle cx="32" cy="45" r="3" fill="#f2c14e"/>`,
     // Autel de pierre : vide, ou orné de gâteaux de lune et d'une lanterne une fois l'offrande déposée.
     altar: () => `<rect x="12" y="40" width="40" height="18" rx="2" fill="#d8d6cc"/><rect x="8" y="34" width="48" height="8" rx="2" fill="#ece8e0"/>` +
         `<path d="M18 46 L46 46 M18 52 L46 52" fill="none" stroke="#a8a49a" stroke-width="1.4"/>` +
@@ -120,6 +144,7 @@ export const DECOR_NAMES = [...Object.keys(D), 'deadtree'];
 const cache = new Map();
 export function decorSprite(name) {
     if (!D[name]) return null;
+    if (HOUSE_SPRITES[name]) return HOUSE_SPRITES[name].uri;   // mobilier de maison en pixel art (tools/gen-house-sprites.mjs), sinon le dessin SVG
     if (!cache.has(name)) cache.set(name, wrap(D[name]()));
     return cache.get(name);
 }

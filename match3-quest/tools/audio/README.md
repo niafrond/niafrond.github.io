@@ -11,7 +11,7 @@ rendus une fois pour toutes, puis simplement lus (`music.js`, `sound.js`). Aucun
   (`OfflineAudioContext`), puis ffmpeg encode en MP3 mono (48 kbps pour la musique, 64 kbps pour les effets).
 * Chaque piste de musique est une boucle sans raccord (la queue de résonance est repliée sur le début), d'environ 30 s.
 * Clés de pistes (voir `musicTracks.js`) : `title`, `menu`, `house`, `sanctuary`, `moon`, `ending`, `village-<biome>`,
-  `wild-<biome>`, `combat-0..4`, `boss-<nom-du-boss>` (un thème par boss, d'après `story.js`) et `boss-a0..7` (thèmes d'archétype,
+  `puzzle-push|mirror|slide` (énigmes à plateau), `wild-<biome>`, `combat-0..4`, `boss-<nom-du-boss>` (un thème par boss, d'après `story.js`) et `boss-a0..7` (thèmes d'archétype,
   repli pour un boss sans piste dédiée). Clés d'effets : `sfxCatalog.js`.
 * Ajouter un boss dans `story.js` : relancer `render.mjs --music` (ou `--only=boss-<nom>`) ; le test `music.test.js` signale
   toute piste manquante.

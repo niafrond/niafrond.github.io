@@ -75,7 +75,7 @@ function roundCorner(R, corner, r, outside, edge) {
 // `isPath(x, y)` / `isLiquid(x, y)` : appartenance d'une case (hors carte = faux pour l'eau, vrai pour les chemins).
 // `tiled` : sol de salle (intérieur, arène) en dalles biseautées plutôt qu'en herbe.
 // `isTall(x, y)` : case de hautes herbes (rencontres aléatoires, exploration.js > grassOf), dessinée en touffes sombres par-dessus le sol.
-export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid, tiled = false, biomeId = '', isTall = null }) {
+export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid, tiled = false, biomeId = '', isTall = null, rug = null }) {
     const u = tile / TILE_GRID;
     const R = (ux, uy, uw, uh, fill) => unitRect(g, px, py, u, ux, uy, uw, uh, fill);
     const grass = () => paintGrass(R, biome, x, y, biomeId);
@@ -95,7 +95,7 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
         if (tall) paintTallGrass(R, biome, x, y, isTall);
         return;
     }
-    if (tiled) { paintFlagstone(R, biome, x, y); return; }
+    if (tiled) { if (biomeId === 'house') paintPlanks(R, biome, x, y); else paintFlagstone(R, biome, x, y); if (rug) paintRug(R, rug, x, y); return; }
     grass();
     if (tall) paintTallGrass(R, biome, x, y, isTall);
     // coins concaves : l'herbe s'arrondit autour d'un chemin ou d'un étang qui la longe sur deux côtés
@@ -350,6 +350,34 @@ function paintWater(R, biome, x, y, isLiquid, biomeId = '') {
     if (!S && !E) roundCorner(R, 'br', 6, land, out);
 }
 
+// Parquet de maison : lattes de bois horizontales, joints décalés d'une rangée à l'autre, nœuds et veines discrets.
+function paintPlanks(R, biome, x, y) {
+    const base = shade(biome.a, (cellHash(x, y, 81) - 0.5) * 10);
+    R(0, 0, 16, 16, base);
+    for (let i = 0; i < 16; i += 8) {
+        R(0, i, 16, 1, shade(base, -34));
+        R(0, i + 1, 16, 1, shade(base, 14));
+        const j = Math.floor(cellHash(x, y + i, 82) * 12) + 2;   // joint vertical décalé
+        R(j, i, 1, 8, shade(base, -30));
+        if (cellHash(x, y + i, 83) < 0.5) R(3 + Math.floor(cellHash(y, x + i, 84) * 8), i + 4, 4, 1, shade(base, -14));
+    }
+}
+
+// Tapis tissé : fond rouge, liseré doré sur le pourtour, losange doré en damier au centre, franges aux deux extrémités.
+function paintRug(R, rug, x, y) {
+    const cx = x - rug.x, cy = y - rug.y;
+    if (cx < 0 || cy < 0 || cx >= rug.w || cy >= rug.h) return;
+    const west = cx === 0, east = cx === rug.w - 1, north = cy === 0, south = cy === rug.h - 1;
+    R(0, 0, 16, 16, (x + y) % 2 ? '#a83a32' : '#9c3530');
+    if (north) { R(0, 0, 16, 2, '#f0c860'); R(0, 2, 16, 1, '#6a2420'); }
+    if (south) { R(0, 14, 16, 2, '#f0c860'); R(0, 13, 16, 1, '#6a2420'); }
+    if (west) { R(0, 0, 2, 16, '#f0c860'); R(2, 0, 1, 16, '#6a2420'); }
+    if (east) { R(14, 0, 2, 16, '#f0c860'); R(13, 0, 1, 16, '#6a2420'); }
+    if (west) for (let i = 1; i < 16; i += 3) R(0, i, 1, 1, '#f4ecd8');
+    if (east) for (let i = 1; i < 16; i += 3) R(15, i, 1, 1, '#f4ecd8');
+    if ((cx + cy) % 2 === 0) { R(7, 4, 2, 8, '#f0c860'); R(4, 7, 8, 2, '#f0c860'); R(6, 6, 4, 4, '#2f6f73'); R(7, 7, 2, 2, '#f4ecd8'); }
+}
+
 // Dalle de salle : teinte propre à chaque dalle, biseau, veines, joints foncés.
 function paintFlagstone(R, biome, x, y) {
     const t = (cellHash(x, y, 80) - 0.5) * 14;
@@ -525,7 +553,13 @@ export function drawBoulder(g, tile, px, py) {
 }
 
 // Murs d'intérieur : planches en relief, plinthe sombre sous le mur du haut, ombre portée sur le sol.
-export function drawWallTile(g, biome, tile, px, py, top) {
+// Décor du mur du fond d'une maison : 1 = fenêtre à treillis de bois, 2 = rouleau peint, 0 = mur nu (jamais sur les coins ni la porte).
+export function wallDecoOf(x, w) {
+    if (x < 2 || x > w - 3) return 0;
+    return [1, 0, 2, 0, 1, 0, 2, 0][x % 8];
+}
+
+export function drawWallTile(g, biome, tile, px, py, top, deco = 0) {
     const u = tile / TILE_GRID;
     const R = (ux, uy, uw, uh, fill) => unitRect(g, px, py, u, ux, uy, uw, uh, fill);
     const base = shade(biome.cliff, 0);
@@ -536,6 +570,13 @@ export function drawWallTile(g, biome, tile, px, py, top) {
     }
     R(0, 0, 16, 2, shade(b, 34));
     if (top) { R(0, 12, 16, 4, shade(b, -34)); R(0, 15, 16, 1, OUTLINE); } else R(0, 15, 16, 1, shade(b, -30));
+    if (deco === 1) {   // fenêtre : cadre de bois, papier huilé, croisillons
+        R(2, 2, 12, 9, '#5a3a24'); R(3, 3, 10, 7, '#f1dfae');
+        R(7, 3, 2, 7, '#7a5232'); R(3, 6, 10, 1, '#7a5232');
+    } else if (deco === 2) {   // rouleau vertical : baguettes, papier, idéogramme
+        R(4, 1, 8, 1, '#5a3a24'); R(5, 2, 6, 9, '#efe3c0'); R(4, 11, 8, 1, '#5a3a24');
+        R(7, 3, 2, 6, '#2b1b17'); R(6, 5, 4, 1, '#2b1b17');
+    }
 }
 
 // ── Bâtiments ──────────────────────────────────────────────────────────────

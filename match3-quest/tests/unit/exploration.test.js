@@ -7,9 +7,10 @@ import {
     encounterFor, enemyLevel, bossEase, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
     isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, nearWaypoint, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
-    AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
+    AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath, solvePuzzle
 } from '../../exploration.js';
 import { exitsOf, crossExit } from './fixtures/gates.js';
+import { PUZZLE_SETS, puzzlesOfSet } from '../../puzzle/levels.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
@@ -290,6 +291,7 @@ function playQuest(s, id) {
             else if (o.type === 'item') openChestAt(s, Object.values(s.screens).flatMap(sc => sc.chests).find(c => c.questItem?.id === o.target).id);
             else if (o.type === 'talk') talkTo(s, o.target);
             else if (o.type === 'visit') travel(s, o.target);
+            else if (o.type === 'puzzleSet') puzzlesOfSet(o.target).forEach(pid => { solvePuzzle(s, pid); checkAutoQuests(s); });
         }
         if (s.data.quests[id] !== 'done' && q.turnIn) talkTo(s, q.turnIn);
         if (s.data.quests[id] !== 'done') throw new Error(`quête ${id} non terminée (état : ${s.data.quests[id]})`);
@@ -640,7 +642,7 @@ describe('quêtes (story.js)', () => {
         q.requires.forEach(r => expect(questIds.has(r)).toBe(true));
         expect(q.objectives.length).toBeGreaterThan(0);
         q.objectives.forEach(o => {
-            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, item: new Set(Object.values(SCREENS).flatMap(sc => sc.chests).map(c => c.questItem?.id).filter(Boolean)), talk: npcIds, visit: new Set(Object.keys(SCREENS)) }[o.type];
+            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, item: new Set(Object.values(SCREENS).flatMap(sc => sc.chests).map(c => c.questItem?.id).filter(Boolean)), talk: npcIds, visit: new Set(Object.keys(SCREENS)), puzzleSet: new Set(Object.keys(PUZZLE_SETS)) }[o.type];
             expect([q.id, o.type, Boolean(pool)]).toEqual([q.id, o.type, true]);
             expect([q.id, o.target, pool.has(o.target)]).toEqual([q.id, o.target, true]);
             if (o.type === 'talk') expect(o.lines?.length).toBeGreaterThan(0);   // la cible a une réplique à dire
@@ -1191,7 +1193,7 @@ describe('histoire complète', () => {
 });
 
 describe('quêtes secondaires', () => {
-    const side = QUESTS.filter(q => q.side);
+    const side = QUESTS.filter(q => q.side && q.giver);   // hors quêtes d'armure antique (sans donneur, world/armorQuests.js)
     const main = QUESTS.filter(q => !q.side);
     const allEnemies = screens.flatMap(s => s.enemies);
     const regionOf = q => screens.find(sc => sc.npcs.some(n => n.id === q.giver)).region;
@@ -2287,5 +2289,31 @@ describe('soleils : gardes du sanctuaire et affaiblissement par l\'exploration',
             expect(e.boss).toBeTruthy();
             e.weakenedBy.forEach(c => expect(ids.has(c)).toBe(true));
         });
+    });
+});
+
+describe('quêtes des armures antiques', () => {
+    const quest = QUESTS.find(q => q.id === 'sq_armure_jarres');
+    const jarres = puzzlesOfSet('jarres');
+
+    test('la quête n\'existe qu\'après la première pièce, et ne désigne aucun lieu', () => {
+        const s = createSession({});
+        checkAutoQuests(s);
+        expect(questStatus(s, quest)).toBe('locked');
+        expect(journalEntries(s).some(e => e.quest.id === quest.id)).toBe(false);
+        solvePuzzle(s, jarres[0]);
+        checkAutoQuests(s);
+        const entry = journalEntries(s).find(e => e.quest.id === quest.id);
+        expect(entry.status).toBe('active');
+        expect(entry.where).toBe('');
+        expect(entry.objectives[0].text).toContain(`(1/${jarres.length})`);
+        expect(questDirection(s)).toBeNull();
+    });
+
+    test('elle se termine d\'elle-même quand l\'armure est complète', () => {
+        const s = createSession({});
+        jarres.forEach(id => solvePuzzle(s, id));
+        checkAutoQuests(s);
+        expect(questStatus(s, quest)).toBe('done');
     });
 });

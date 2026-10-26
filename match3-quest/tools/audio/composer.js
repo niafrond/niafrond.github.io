@@ -103,6 +103,33 @@ const SCENES = {
         pad: { inst: 'xiao', bars: 4, vel: 0.1 },
         perc: 'none', gliss: 0.15
     },
+    // Énigmes à plateau (puzzle/) : une piste par type, plus posées que l'exploration pour laisser réfléchir.
+    'puzzle-push': {
+        label: 'Énigme des jarres', description: 'Patient et terrien : guzheng pincé, xiao, tambour feutré (pousser les jarres).',
+        root: 2, scale: 'gong', bpm: 76, lo: 62, hi: 88,
+        melody: { inst: 'guzheng', vel: 0.58, cells: [...MID, ...WALTZ.slice(0, 3)], rest: 0.3, orn: 0.2, bend: 0.1 },
+        hetero: { inst: 'xiao', oct: 0, vel: 0.25 },
+        accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.22, keep: 0.6, lo: 43 },
+        pad: { inst: 'sheng', bars: 4, vel: 0.14 },
+        perc: 'sway'
+    },
+    'puzzle-mirror': {
+        label: 'Énigme des miroirs', description: 'Scintillant et limpide : harpe, cloches, xiao (jeux de lumière).',
+        root: 7, scale: 'zhi', bpm: 68, lo: 70, hi: 96,
+        melody: { inst: 'harp', vel: 0.5, cells: [...SLOW, ...SYNC.slice(0, 3)], rest: 0.35, orn: 0.15, bend: 0.1 },
+        hetero: { inst: 'bell', oct: 12, vel: 0.28 },
+        accomp: { kind: 'arp', inst: 'yangqin', vel: 0.2, keep: 0.5, lo: 48 },
+        pad: { inst: 'xiao', bars: 4, vel: 0.12 },
+        perc: 'bells', bells: { prob: 0.55, vel: 0.38 }, gliss: 0.3
+    },
+    'puzzle-slide': {
+        label: 'Énigme des charrettes', description: 'Cahotant et malicieux : pipa, dizi, claquoirs de caravane (pousser les charrettes).',
+        root: 4, scale: 'shang', bpm: 92, lo: 62, hi: 90,
+        melody: { inst: 'pipa', vel: 0.55, cells: [...SYNC, ...MID.slice(0, 4)], rest: 0.22, orn: 0.2, bend: 0.1 },
+        hetero: { inst: 'dizi', oct: 12, vel: 0.25 },
+        accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.2, keep: 0.5, lo: 43 },
+        perc: 'caravan'
+    },
     wild: {
         label: 'Terres sauvages', description: 'Mystérieux : tambour lointain, erhu, tension modérée.', biomes: true,
         root: 4, scale: 'yu', bpm: 62, lo: 62, hi: 88,
