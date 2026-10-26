@@ -1,7 +1,7 @@
 // Gestion des effets spéciaux des sorts de classe
 
 import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
-import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage } from "./game.js";
+import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, lastSpellDamage, addBonusTurn, addManaForColor, skullDamage } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 import { addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
@@ -195,8 +195,9 @@ export function applyClassSpellEffect(spell) {
 function applyMageStrike(spell) {
     const blueMana = player.mana.blue;
     const bonusDmg = Math.floor(blueMana / 3);
-    const totalDmg = spell.baseDmg + bonusDmg;
+    let totalDmg = spell.baseDmg + bonusDmg;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
+    totalDmg = lastSpellDamage(totalDmg);
     showCombatAnimation({ icon: 'fire', title: "FRAPPE DU MAÎTRE TAOÏSTE", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Frappe du Maître Taoïste inflige ${totalDmg} dégâts (${spell.baseDmg} base + ${bonusDmg} bonus)`);
     return true;
@@ -319,9 +320,10 @@ function applyDarkChannels(spell) {
 function applyFlameBolts(spell) {
     const yellowMana = player.mana.yellow;
     const projectiles = Math.floor(yellowMana / 5);
-    const totalDmg = projectiles * 5;
+    let totalDmg = projectiles * 5;
     if(projectiles > 0) {
         applyDamage(enemy, totalDmg, { sourceSpell: spell });
+        totalDmg = lastSpellDamage(totalDmg);
         player.mana.yellow = 0;
         showCombatAnimation({ icon: 'bolt', title: "TALISMANS ENFLAMMÉS", damage: `${projectiles} × 5 = ${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
         log(`Talismans Enflammés tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
@@ -464,9 +466,10 @@ function applyFireballArea(spell) {
 
             setBoardTargetingMode(null);
             applyDamage(enemy, spell.dmg, { sourceSpell: spell });
+            const sphereDmg = lastSpellDamage(spell.dmg);
             renderBoard();
-            showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${spell.dmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
-            log(`Sphère de Flammes détruit une zone 3×3, inflige ${spell.dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
+            showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${sphereDmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
+            log(`Sphère de Flammes détruit une zone 3×3, inflige ${sphereDmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -549,9 +552,10 @@ function applyManaSiphon(spell) {
 // ASSASSIN SPELLS
 function applySneakAttack(spell) {
     applyDamage(enemy, spell.dmg, { sourceSpell: spell });
+    const sneakDmg = lastSpellDamage(spell.dmg);
     addBonusTurn(player);
-    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${spell.dmg} dégâts · TOUR BONUS`, target: `→ ${enemy.name} · vous rejouez !` }, true);
-    log(`Tir Furtif inflige ${spell.dmg} dégâts et vous donne un tour bonus !`);
+    showCombatAnimation({ icon: 'sword', title: "TIR FURTIF", damage: `-${sneakDmg} dégâts · TOUR BONUS`, target: `→ ${enemy.name} · vous rejouez !` }, true);
+    log(`Tir Furtif inflige ${sneakDmg} dégâts et vous donne un tour bonus !`);
     return true;
 }
 
@@ -563,8 +567,9 @@ function applySwiftStrike(spell) {
             count++;
         }
     }
-    const dmg = count * 2;
+    let dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
+    dmg = lastSpellDamage(dmg);
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: "TIR RAPIDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Tir Rapide convertit ${count} gâteaux de lune jaunes et inflige ${dmg} dégâts !`);
@@ -606,8 +611,9 @@ function applyShadowStrike(spell) {
         }
     }
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
-    const dmg = count * 2;
+    let dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
+    dmg = lastSpellDamage(dmg);
     renderBoard();
     showCombatAnimation({ icon: 'moon', title: "FLÈCHE D'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Flèche d'Ombre détruit ${count} gâteaux de lune violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
@@ -622,8 +628,9 @@ function applyDualShot(spell) {
     }
 
     const sorted = [...weapons].sort((a, b) => (b.damage || 0) - (a.damage || 0));
-    const totalDmg = Math.max(1, Math.floor((sorted[0].damage || 0) + (sorted[1].damage || 0)));
+    let totalDmg = Math.max(1, Math.floor((sorted[0].damage || 0) + (sorted[1].damage || 0)));
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
+    totalDmg = lastSpellDamage(totalDmg);
     showCombatAnimation({ icon: 'target', title: "FLÈCHES JUMELLES", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Flèches Jumelles inflige ${totalDmg} dégâts (2 meilleures armes + attaque).`);
     return true;
@@ -653,8 +660,9 @@ function applyDefensiveWall(spell) {
 function applyShieldBash(spell) {
     const defense = player.defense || 0;
     const bonusDmg = Math.floor(defense / 3);
-    const totalDmg = spell.baseDmg + bonusDmg;
+    let totalDmg = spell.baseDmg + bonusDmg;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
+    totalDmg = lastSpellDamage(totalDmg);
     // Retirer les statuts négatifs
     delete player.statusEffects.poisoned;
     delete player.statusEffects.stunned;
@@ -788,13 +796,14 @@ function applyHeavensWrath(spell) {
     }
 
     const dmgPerGem = Math.max(1, Math.floor(spell.dmgPerGem || 1));
-    const totalDmg = count * dmgPerGem;
+    let totalDmg = count * dmgPerGem;
     if(totalDmg <= 0) {
         log(`Aucune Action Gem à faire exploser.`);
         return false;
     }
 
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
+    totalDmg = lastSpellDamage(totalDmg);
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: "COURROUX DU CIEL", damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Courroux du Ciel fait exploser ${count} Action Gem(s) pour ${totalDmg} dégâts.`);
@@ -823,8 +832,9 @@ function applyCleave(spell) {
         }
     }
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
-    const dmg = count * 2;
+    let dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
+    dmg = lastSpellDamage(dmg);
     renderBoard();
     showCombatAnimation({ icon: 'axe', title: "ENTAILLE DE LA HORDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Entaille de la Horde détruit ${count} gâteaux de lune jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} qì pour ${caster.name}.`);
@@ -838,8 +848,9 @@ function applyThrowAxe(spell) {
             skullCount += skullValue(board[i]);
         }
     }
-    const totalDmg = spell.baseDmg + skullCount * 2;
+    let totalDmg = spell.baseDmg + skullCount * 2;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
+    totalDmg = lastSpellDamage(totalDmg);
     showCombatAnimation({ icon: 'axe', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + 2 × ${skullCount} crânes) !`);
     return true;
@@ -896,8 +907,8 @@ function destroyIndices(spell, indices, title, label) {
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
     const hitColors = spellDamageColors(spell);
     const hits = destroyedTiles.filter(t => hitColors.includes(t)).length;
-    const dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
-    if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
+    let dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
+    if(dmg > 0) { applyDamage(enemy, dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
     const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
     renderBoard();
     const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
@@ -1051,10 +1062,11 @@ async function applyStarRain(spell) {
 }
 
 function applyHarmony(spell) {
-    const dmg = Math.max(0, Math.floor(spell.dmg || 0));
+    let dmg = Math.max(0, Math.floor(spell.dmg || 0));
     const heal = Math.max(0, Math.floor(spell.heal || 0));
     const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
     applyDamage(enemy, dmg, { sourceSpell: spell });
+    dmg = lastSpellDamage(dmg);
     player.hp = Math.min(player.maxHp, player.hp + heal);
     flyHeal(true, heal);
     MANA_COLORS.forEach(color => { enemy.mana[color] = Math.max(0, (enemy.mana[color] || 0) - drain); });
@@ -1086,8 +1098,8 @@ async function applySummonTempest(spell) {
     // Seules les cases des couleurs du sort infligent des dégâts (sorts sans couleur propre : toutes les cases comptent).
     let hits = destroyedTiles.length;
     if(spell.colors?.length || spell.color) hits = destroyedTiles.filter(t => spellDamageColors(spell).includes(t)).length;
-    const dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
-    if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
+    let dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
+    if(dmg > 0) { applyDamage(enemy, dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
     const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
 
     renderBoard();
@@ -1162,9 +1174,9 @@ function applyRevenant(spell) {
 
 // Ultime : gros dégâts + effet annexe selon le sort (soin, étourdissement, bonus de défense, affaiblissement).
 function applyUltimate(spell) {
-    showCombatAnimation({ icon: 'fire', title: spell.name.toUpperCase(), damage: `ULTIME ! -${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`ULTIME — ${spell.name} !`);
     applyDamage(enemy, spell.dmg, { sourceSpell: spell });
+    showCombatAnimation({ icon: 'fire', title: spell.name.toUpperCase(), damage: `ULTIME ! -${lastSpellDamage(spell.dmg)} dégâts`, target: `→ ${enemy.name}` }, true);
     if(spell.healPercent) {
         const heal = Math.floor(player.maxHp * spell.healPercent / 100);
         player.hp = Math.min(player.maxHp, player.hp + heal);
