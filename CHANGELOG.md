@@ -1,3 +1,14 @@
+## [2.151.0](https://github.com/niafrond/niafrond.github.io/compare/v2.150.0...v2.151.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter les décors, sols et bordures des biomes ([1e28952](https://github.com/niafrond/niafrond.github.io/commit/1e2895277e6fb7e34d80ac590039f9bd937e3409))
+* **match3-quest:** poser des structures à leur échelle dans les zones sauvages ([b423ab4](https://github.com/niafrond/niafrond.github.io/commit/b423ab4e4c837235fd6531cbb7b59871abfb2081))
+
+### Bug Fixes
+
+* **match3-quest:** refaire le sprite de Baihu et murer l'eau le long des piliers de boss ([1a6fee8](https://github.com/niafrond/niafrond.github.io/commit/1a6fee8d5e208452757d277260ba4ae999f6bb60))
+
 ## [2.150.0](https://github.com/niafrond/niafrond.github.io/compare/v2.149.0...v2.150.0) (2026-10-26)
 
 ### Features
