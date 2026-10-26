@@ -261,6 +261,9 @@ function getMaxTileSizeFromViewport(boardDiv){
     return Math.floor(usableHeight / boardSize);
 }
 
+// Plus petite tuile que le filet de hauteur (portrait) accepte : en dessous, la page défile plutôt que de rendre la grille illisible.
+const MIN_PORTRAIT_TILE = 30;
+
 function syncBoardTileSize(){
     if(typeof window === 'undefined') return;
     const boardDiv = document.getElementById('board');
@@ -316,8 +319,16 @@ function syncBoardTileSize(){
     const docWidth = document.documentElement.clientWidth || viewportWidth;
     const limit = Math.min(parentWidth > 0 ? parentWidth : Infinity, docWidth > 0 ? docWidth - 2 : Infinity);
     const overflow = Math.max(boardDiv.getBoundingClientRect().width, boardDiv.scrollWidth) - limit;   // scrollWidth : le CSS plafonne la boîte à 100 %, pas son contenu
-    if(Number.isFinite(limit) && overflow > 0.5){
-        const fitted = Math.max(10, tileSize - Math.ceil(overflow / boardSize));
+    let fitted = tileSize;
+    if(Number.isFinite(limit) && overflow > 0.5) fitted = Math.max(10, fitted - Math.ceil(overflow / boardSize));
+    // Portrait : si la page déborde encore en hauteur (la pastille de niveau en bas n'est plus visible), on rogne aussi les tuiles.
+    if(fullWidth){
+        if(fitted !== tileSize) boardDiv.style.setProperty('--tile-size', `${fitted}px`);
+        const doc = document.documentElement;
+        const tall = doc.scrollHeight - doc.clientHeight;
+        if(tall > 1) fitted = Math.max(MIN_PORTRAIT_TILE, fitted - Math.ceil(tall / boardSize));
+    }
+    if(fitted !== tileSize){
         boardDiv.style.setProperty('--tile-size', `${fitted}px`);
         requestTileBitmaps(fitted);
         return;
