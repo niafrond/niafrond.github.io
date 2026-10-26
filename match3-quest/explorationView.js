@@ -2190,6 +2190,10 @@ export function createExplorationView(cfg) {
         // Vrai quand le joueur explore librement : ni combat, ni dialogue, ni marchand, ni fenêtre ouverte.
         isIdle() { return Boolean(session && active && root.style.display !== 'none' && !isBlocked()); },
 
+        // Vrai quand le joueur n'est ni en combat, ni en dialogue, ni chez un marchand, même si la carte n'est pas affichée
+        // (autre onglet : Armes, Objets, Sorts…) : sert au rappel de pause, qui ne doit pas attendre le retour sur la carte.
+        isFree() { return Boolean(session && !isDialogOpen() && !puzzleView && !inCombat && !journalEl && !merchantEl && isRegionReady()); },
+
         // Scène musicale de l'écran courant (null hors exploration, p. ex. en combat).
         getSceneInfo() {
             if (!session || !active || root.style.display === 'none' || inCombat) return null;
