@@ -226,6 +226,22 @@ function cmdApprove(opts) {
     console.log(`OK ${key} ← ${ver}${alt ? ` + variante ${alt}` : ''} (seed ${meta.seed}). Fichier + paramètres conservés dans approved/.`);
 }
 
+/** Début (s) du premier passage intense : première fenêtre de 0,5 s dont le niveau RMS est à moins de 1,5 dB de la moyenne, tenue 2 s (max 20 s) ; 0 si la piste démarre déjà fort. */
+function punchyStart(file) {
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-i', file, '-af', 'asetnsamples=n=22050:p=0,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-', '-f', 'null', '-'], { encoding: 'utf8' });
+    const lv = (r.stdout.match(/RMS_level=(-?[\d.]+|-inf)/g) || []).map(x => parseFloat(x.split('=')[1])).map(v => (Number.isFinite(v) ? v : -90));
+    if (lv.length < 8) return 0;
+    const avg = 10 * Math.log10(lv.reduce((a, v) => a + 10 ** (v / 10), 0) / lv.length);
+    const i = lv.findIndex((v, k) => lv.slice(k + 4, k + 8).every(u => u >= avg - 1.5));   // le fichier installé démarre 2 s après (fondu de boucle) : on juge les 4 fenêtres suivantes
+    return i <= 0 ? 0 : Math.min(i * 0.5, 20);
+}
+
+/** Écart (dB) entre le niveau moyen d'un fichier et celui de ses 1,5 premières secondes (positif = intro plus faible). */
+function introGap(file) {
+    const mean = t => parseFloat((spawnSync('ffmpeg', ['-t', String(t), '-i', file, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr.match(/mean_volume: (-?[\d.]+)/) || [0, -90])[1]);
+    return mean(999) - mean(1.5);
+}
+
 function cmdInstall(opts) {
     const approved = readJson(APPROVED_DB, {});
     const keys = opts._.length > 1 ? selectKeys(opts._.slice(1)) : Object.keys(approved);
@@ -238,15 +254,24 @@ function cmdInstall(opts) {
         if (!parts.includes(`${k}${ALT_SUFFIX}`)) fs.rmSync(path.join(GAME_MUSIC, `${k}${ALT_SUFFIX}.mp3`), { force: true });
         for (const name of parts) {
             const src = path.join(APPROVED, `${name}.mp3`), dst = path.join(GAME_MUSIC, `${name}.mp3`);
-            const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], { encoding: 'utf8' });
-            const total = parseFloat(probe.stdout) || 0;
-            // mono comme le reste du jeu ; boucle sans coupure : la fin est fondue (sinus carré) dans le début, puis le fichier
-            // reprend après ce début, donc le saut fin -> début du lecteur (`source.loop`) est continu et sans clic
-            const c = Math.min(LOOP_FADE_S, total / 4), body = total - c;
-            const graph = total > 0
-                ? `[0:a]atrim=0:${c},asetpts=PTS-STARTPTS[h];[0:a]atrim=${c}:${body},asetpts=PTS-STARTPTS[m];[0:a]atrim=${body}:${total},asetpts=PTS-STARTPTS[t];[t][h]acrossfade=d=${c}:c1=qsin:c2=qsin[x];[m][x]concat=n=2:v=0:a=1[o]`
-                : '[0:a]anull[o]';
-            const r = spawnSync('ffmpeg', ['-y', '-v', 'error', '-i', src, '-filter_complex', graph, '-map', '[o]', '-ac', '1', '-ar', '32000', '-b:a', MUSIC_BITRATE, dst]);
+            const combat = /^(combat|boss)-/.test(k);
+            let head = combat ? punchyStart(src) : 0;   // combats : pas d'intro douce, la piste démarre au premier passage intense
+            const duration = parseFloat(spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], { encoding: 'utf8' }).stdout) || 0;
+            let total, c, r;
+            for (;;) {
+                total = duration - head;
+                // mono comme le reste du jeu ; boucle sans coupure : la fin est fondue (sinus carré) dans le début, puis le fichier
+                // reprend après ce début, donc le saut fin -> début du lecteur (`source.loop`) est continu et sans clic
+                c = Math.min(LOOP_FADE_S, total / 4);
+                const body = total - c;
+                const graph = total > 0
+                    ? `[0:a]atrim=0:${c},asetpts=PTS-STARTPTS[h];[0:a]atrim=${c}:${body},asetpts=PTS-STARTPTS[m];[0:a]atrim=${body}:${total},asetpts=PTS-STARTPTS[t];[t][h]acrossfade=d=${c}:c1=qsin:c2=qsin[x];[m][x]concat=n=2:v=0:a=1[o]`
+                    : '[0:a]anull[o]';
+                r = spawnSync('ffmpeg', ['-y', '-v', 'error', ...(head ? ['-ss', String(head)] : []), '-i', src, '-filter_complex', graph, '-map', '[o]', '-ac', '1', '-ar', '32000', '-b:a', MUSIC_BITRATE, dst]);
+                // contrôle du fichier installé : intro à plus de 2,5 dB sous la moyenne -> 1 s de plus coupée (max 25 s)
+                if (r.status !== 0 || !combat || head >= 25 || introGap(dst) <= 2.5) break;
+                head += 1;
+            }
             if (r.status !== 0) { console.error(`✗ ${name} : ${r.stderr}`); continue; }
             const kb = Math.round(fs.statSync(dst).size / 1024);
             if (name === k) manifest.music[k] = { seconds: Math.round((total - c) * 10) / 10, sections: manifest.music[k]?.sections ?? 1 };

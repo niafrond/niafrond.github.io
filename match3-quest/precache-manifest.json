@@ -485,9 +485,9 @@
    "h": "d131916fdc"
   },
   {
-   "p": "sprites/gba/changxi.1ee0855c.js",
-   "s": 85197,
-   "h": "1ee0855c23"
+   "p": "sprites/gba/changxi.75549f24.js",
+   "s": 41521,
+   "h": "75549f247e"
   },
   {
    "p": "sprites/gba/chaofeng.c54f9fa2.js",
@@ -855,9 +855,9 @@
    "h": "e016a708fb"
   },
   {
-   "p": "sprites/gba/forgeron_lave.9814cc8c.js",
-   "s": 34349,
-   "h": "9814cc8c06"
+   "p": "sprites/gba/forgeron_lave.38795c98.js",
+   "s": 9773,
+   "h": "38795c9881"
   },
   {
    "p": "sprites/gba/forgeron_magma.869af0b3.js",
@@ -4256,63 +4256,63 @@
   },
   {
    "p": "audio/music/combat-0-b.mp3",
-   "s": 464481,
-   "h": "677dbca490"
+   "s": 588609,
+   "h": "8da8167c82"
   },
   {
    "p": "audio/music/combat-0.mp3",
-   "s": 464481,
-   "h": "d7a7540b67"
+   "s": 646497,
+   "h": "1212eadcb7"
   },
   {
    "p": "audio/music/combat-1-b.mp3",
-   "s": 464481,
-   "h": "df467ac2b8"
+   "s": 676593,
+   "h": "c6ff800424"
   },
   {
    "p": "audio/music/combat-1.mp3",
-   "s": 464481,
-   "h": "a012c7d696"
+   "s": 670545,
+   "h": "0094fa7f0f"
   },
   {
    "p": "audio/music/combat-2-b.mp3",
-   "s": 464481,
-   "h": "18c9588544"
+   "s": 646497,
+   "h": "6309b8b0ad"
   },
   {
    "p": "audio/music/combat-2.mp3",
-   "s": 464481,
-   "h": "ba81c93693"
+   "s": 658593,
+   "h": "dfc4ea8e1d"
   },
   {
    "p": "audio/music/combat-3-b.mp3",
-   "s": 464481,
-   "h": "3d0e395777"
+   "s": 664497,
+   "h": "92a592eef0"
   },
   {
    "p": "audio/music/combat-3.mp3",
-   "s": 464481,
-   "h": "0431d3fd30"
+   "s": 644625,
+   "h": "fa07320892"
   },
   {
    "p": "audio/music/combat-4-b.mp3",
-   "s": 464481,
-   "h": "6ead901547"
+   "s": 592497,
+   "h": "31996a7599"
   },
   {
    "p": "audio/music/combat-4.mp3",
-   "s": 464481,
-   "h": "a2faee5ee8"
+   "s": 622593,
+   "h": "35b82a3ae8"
   },
   {
    "p": "audio/music/combat-tides-b.mp3",
-   "s": 464481,
-   "h": "75b70f7cc3"
+   "s": 646497,
+   "h": "2402493b8e"
   },
   {
    "p": "audio/music/combat-tides.mp3",
-   "s": 464481,
-   "h": "03fbe3c83a"
+   "s": 644625,
+   "h": "c2f724436b"
   },
   {
    "p": "audio/music/defeat-b.mp3",

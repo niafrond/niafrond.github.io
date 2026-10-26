@@ -113,23 +113,23 @@
    "sections": 1
   },
   "combat-0": {
-   "seconds": 118,
+   "seconds": 163.5,
    "sections": 2
   },
   "combat-1": {
-   "seconds": 118,
+   "seconds": 169.5,
    "sections": 2
   },
   "combat-2": {
-   "seconds": 118,
+   "seconds": 166.5,
    "sections": 2
   },
   "combat-3": {
-   "seconds": 118,
+   "seconds": 163,
    "sections": 2
   },
   "combat-4": {
-   "seconds": 118,
+   "seconds": 157.5,
    "sections": 2
   },
   "boss-fengmeng-le-disciple": {
@@ -357,7 +357,7 @@
    "sections": 1
   },
   "combat-tides": {
-   "seconds": 118,
+   "seconds": 163,
    "sections": 1
   },
   "puzzle-push": {

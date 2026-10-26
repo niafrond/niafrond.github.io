@@ -9,7 +9,7 @@
  * Écrit sprites/generated.js (même format que gen-sprites.mjs) et sprites/png/<id>_<dir>.png.
  * Ne touche ni aux créatures déjà complètes ni aux animations d'attaque (gen-attacks.mjs, Pixel Lab).
  *
- * Usage (WSL, Node 22) : node tools/gen-sprites-gm.mjs [--only=a,b] [--force] [--steps=25] [--cfg=7] [--lora=1] [--host=<ip>]
+ * Usage (WSL, Node 22) : node tools/gen-sprites-gm.mjs [--only=a,b] [--force] [--steps=25] [--cfg=7] [--lora=1] [--desc=texte_ajouté_au_prompt] [--host=<ip>]
  * Le fichier est réécrit après chaque créature : on peut interrompre et relancer (les créatures complètes sont sautées).
  * Puis : node tools/build-bestiary.mjs (ajoute au catalogue et aux hautes herbes celles qui ont leurs sprites).
  */
@@ -199,7 +199,7 @@ console.log(`${todo.length} créature(s) à générer`);
 
 let ok = 0, fail = 0;
 for (const entry of todo) {
-  const [id, , , , color, , , baseDesc] = entry, bible = biblePrompt(entry), desc = bible ? baseDesc + ", " + bible : baseDesc;   // bible graphique : motifs de l'iconographie ancienne
+  const [id, , , , color, , , baseDesc] = entry, bible = biblePrompt(entry), desc = (bible ? baseDesc + ", " + bible : baseDesc) + (args.desc ? ", " + String(args.desc).replace(/_/g, " ") : "");   // bible graphique : motifs de l'iconographie ancienne
   const t0 = Date.now();
   try {
     const bg = args.bg ? String(args.bg).replace(/_/g, ' ') : 'flat medium gray (#808080)';
