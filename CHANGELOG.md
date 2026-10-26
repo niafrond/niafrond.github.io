@@ -1,3 +1,10 @@
+## [2.148.2](https://github.com/niafrond/niafrond.github.io/compare/v2.148.1...v2.148.2) (2026-10-26)
+
+### Bug Fixes
+
+* **match3-quest:** empêcher le plateau de combat de dépasser à droite sur mobile ([511bbf8](https://github.com/niafrond/niafrond.github.io/commit/511bbf8ad6134708139055d46aac88e296f28bc8))
+* **match3-quest:** rogner les tuiles en portrait quand la page déborde en hauteur ([decc5fd](https://github.com/niafrond/niafrond.github.io/commit/decc5fdbddd40934c2469920d42f71a81e4ebc33))
+
 ## [2.148.1](https://github.com/niafrond/niafrond.github.io/compare/v2.148.0...v2.148.1) (2026-10-26)
 
 ### Bug Fixes
