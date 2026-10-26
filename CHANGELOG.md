@@ -1,3 +1,9 @@
+## [2.136.0](https://github.com/niafrond/niafrond.github.io/compare/v2.135.0...v2.136.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** augmenter la probabilité de drop des crânes à 19 % ([#556](https://github.com/niafrond/niafrond.github.io/issues/556)) ([4ad4f62](https://github.com/niafrond/niafrond.github.io/commit/4ad4f62e6a2beb67a5df6a8de2f5846520757acc))
+
 ## [2.135.0](https://github.com/niafrond/niafrond.github.io/compare/v2.134.0...v2.135.0) (2026-10-26)
 
 ### Features
