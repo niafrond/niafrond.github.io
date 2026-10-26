@@ -1,3 +1,15 @@
+## [2.140.0](https://github.com/niafrond/niafrond.github.io/compare/v2.139.0...v2.140.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** évaluer les coups de Xiao Gui par Monte-Carlo sur les tuiles qui retombent ([902876c](https://github.com/niafrond/niafrond.github.io/commit/902876c9f97353300b1b8eceb83d1b9d0e75d6e5))
+* **match3-quest:** faire jouer à Xiao Gui le meilleur coup par simulation des cascades ([081bbdc](https://github.com/niafrond/niafrond.github.io/commit/081bbdc7ce92fac1ffb8dc2310cbe96629ebc66a))
+
+### Bug Fixes
+
+* **match3-quest:** aligner le test perf mobile sur les 9 types de tuiles ([217adb6](https://github.com/niafrond/niafrond.github.io/commit/217adb66dcfb2e57887bacecf1d74e00777cb375))
+* **match3-quest:** corriger le test Monte-Carlo (arrondi) et retirer une flèche du commentaire ([469ecb1](https://github.com/niafrond/niafrond.github.io/commit/469ecb12ce69fad525174b125ee117fb4c0ea502))
+
 ## [2.139.0](https://github.com/niafrond/niafrond.github.io/compare/v2.138.0...v2.139.0) (2026-10-26)
 
 ### Features
