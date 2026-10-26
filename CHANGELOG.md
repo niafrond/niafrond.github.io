@@ -1,3 +1,10 @@
+## [2.139.0](https://github.com/niafrond/niafrond.github.io/compare/v2.138.0...v2.139.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** afficher les bonus et malus actifs sur les combattants ([16d11d0](https://github.com/niafrond/niafrond.github.io/commit/16d11d026166841a9e4fe81108a1e7c94968c04e))
+* **match3-quest:** fureur des steppes ajoute 10 à tous les dégâts du lanceur ([42c9539](https://github.com/niafrond/niafrond.github.io/commit/42c95395eaa5d38d9943d11186b20cdfe1456198))
+
 ## [2.138.0](https://github.com/niafrond/niafrond.github.io/compare/v2.137.0...v2.138.0) (2026-10-26)
 
 ### Features
