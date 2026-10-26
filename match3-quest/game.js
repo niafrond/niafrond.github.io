@@ -33,7 +33,7 @@ import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 import { itemGroupKey, toggleSellTag } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
-import { resolveStrike, blockLabel, displayAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
+import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -1486,7 +1486,7 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat"><strong>Atk:</strong> ${displayAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat"><strong>Atk:</strong> ${statValueHtml(player, 'attack')} <strong>Def:</strong> ${statValueHtml(player, 'defense')} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1544,7 +1544,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${displayAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat"><strong>Atk:</strong> ${statValueHtml(enemy, 'attack')} <strong>Def:</strong> ${statValueHtml(enemy, 'defense')} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -1809,11 +1809,11 @@ export function updatePlayerStatsTab(){
             <h3>Statistiques de combat</h3>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de coup critique (arme, crânes) — plafonnée à 98 %">${svgIcon('sword')} Attaque (critique):</span>
-                <span class="stat-value">${displayAttack(player)}</span>
+                <span class="stat-value">${statValueHtml(player, 'attack')}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
-                <span class="stat-value">${rawDefense(player)}</span>
+                <span class="stat-value">${statValueHtml(player, 'defense')}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label" title="Agilité (points d'Agilité et de Moral) : joue en premier quand elle dépasse celle de l'ennemi (initiative) ; chaque point ajoute aussi 1 de défense">${svgIcon('runner')} Agilité (initiative):</span>
@@ -4272,6 +4272,15 @@ export function toggleSellSurplus(id){
     toggleSellTag(player, id);
     updateInventoryTab();
     saveUpdate();
+}
+
+// Valeur d'Attaque / de Défense : verte si un sort ou un effet l'augmente, rouge s'il la diminue.
+function statValueHtml(entity, stat){
+    const value = stat === 'attack' ? displayAttack(entity) : rawDefense(entity);
+    const mod = statModifier(entity, stat);
+    if(!mod) return String(value);
+    const title = `${mod > 0 ? '+' : '−'}${Math.abs(mod)} grâce aux effets en cours`;
+    return `<span class="${mod > 0 ? 'stat-up' : 'stat-down'}" title="${title}">${value}</span>`;
 }
 
 export function updateInventoryTab(){

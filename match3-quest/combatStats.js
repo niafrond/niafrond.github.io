@@ -111,6 +111,19 @@ export function displayAttack(entity) {
     return Math.max(0, rawAttack(entity) - weakened);
 }
 
+// Part temporaire (sorts, effets) comprise dans la valeur affichée d'Attaque / de Défense : > 0 bonus (affiché en vert), < 0 malus (en rouge).
+// Reprend ce que rawAttack / rawDefense additionnent (bonus de sorts), ce que Force / Peau de Jade ajoutent directement à la stat de base, et l'affaiblissement.
+export function statModifier(entity, stat) {
+    const fx = entity?.statusEffects || {};
+    const on = key => (fx[key] || 0) > 0;
+    if (stat === 'attack') {
+        const weakened = on('weakened') ? Math.max(0, Math.floor(fx.weakenedAmount || 0)) : 0;
+        return statBuffAmount(entity, 'attack') + Math.max(0, Math.floor(entity?.tempCritChance || 0)) + Math.floor(entity?.tempAttack || 0)
+            + (on('strength') ? Math.floor(fx.strengthBonus || 0) : 0) - weakened;
+    }
+    return statBuffAmount(entity, 'defense') + Math.floor(entity?.tempDefense || 0) + (on('stoneskin') ? Math.floor(fx.stoneskinDefense || 0) : 0);
+}
+
 // Chances réelles (plafonnées à 98 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
 export function critChance(entity, weakened = 0) {
     return clampChance(levelEdgeBonus(entity, rawAttack(entity)) - Math.max(0, Math.floor(weakened || 0)));

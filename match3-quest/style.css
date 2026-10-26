@@ -3601,3 +3601,7 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 .preview-panel .primary { width: 100%; margin-top: 6px; }
 .preview-panel .delta-up { color: #27ae60; font-weight: bold; }
 .preview-panel .delta-down { color: #e74c3c; font-weight: bold; }
+
+/* Attaque / Défense modifiées par un sort ou un effet en cours */
+.stat-up { color: #2e9e5b; font-weight: bold; }
+.stat-down { color: #d93f31; font-weight: bold; }
