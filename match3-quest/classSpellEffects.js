@@ -1,10 +1,11 @@
 // Gestion des effets spéciaux des sorts de classe
 
 import { flyManaGain, flyManaSteal, flyHeal } from "./manaFlight.js";
-import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, lastSpellDamage, addBonusTurn, addManaForColor, skullDamage } from "./game.js";
+import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, lastSpellDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 import { addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
+import { playSfx } from "./sound.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker, skullValue } from "./joker.js";
 
 function getManaCap(color) {
@@ -15,7 +16,14 @@ function getCurrentCaster() {
     return currentTurn === 'enemy' ? enemy : player;
 }
 
+// Qì des gemmes détruites, plus effets des flèches et crânes détruits (comme s'ils avaient été combinés).
 function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
+    const result = collectDestroyedManaOnly(caster, destroyedTiles);
+    result.special = collectDestroyedSpecialTiles(caster, destroyedTiles);
+    return result;
+}
+
+function collectDestroyedManaOnly(caster, destroyedTiles = []) {
     if(!caster || !caster.mana) return { total: 0, byColor: {} };
 
     const byColor = { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 };
@@ -50,10 +58,27 @@ function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
     let skullDmg = 0;
     if(skulls > 0) {
         const opponent = caster === player ? enemy : player;
-        const strike = resolveStrike(skulls * (skullDamage + skullStrengthBonus(caster)), caster, opponent);
+        const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
+        const strike = resolveStrike(skulls * (skullDamage + skullStrengthBonus(caster)), caster, opponent, { weakened });
         skullDmg = strike.damage;
+        if(skullDmg > 0 && opponent === player && player.damageReduction > 0) {
+            skullDmg = Math.max(1, Math.floor(skullDmg * (1 - player.damageReduction)));
+        }
+        playFighterAttack(caster === player);
+        playSfx('skullHit', { matchType: 'skull', length: skulls, isPlayer: caster === player });
         if(skullDmg > 0) applyDamage(opponent, skullDmg);
-        log(`${skulls} crâne(s) détruit(s) : -${skullDmg} PV pour ${opponent.name}.`);
+        log(`${skulls} crâne(s) détruit(s) : -${skullDmg} PV pour ${opponent.name}.${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
+        // Comme un match de 4+ crânes : tour bonus, et XP des belles combinaisons pour le joueur.
+        if(skulls >= 4) {
+            addBonusTurn(caster);
+            playSfx('turnBonus');
+            log(`${skulls} crânes détruits : tour bonus gagné par ${caster === player ? 'le joueur' : "l'ennemi"}`);
+            showCombatAnimation({ icon: 'gift', title: 'TOUR BONUS !', damage: `${skulls} crânes détruits`, target: caster === player ? 'Vous rejouez !' : "L'ennemi rejoue !" }, caster === player);
+            if(caster === player) {
+                const bonusXp = grantBigMatchXP(skulls);
+                if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
+            }
+        }
     }
     return { arrows, skulls, skullDmg };
 }
@@ -909,7 +934,7 @@ function destroyIndices(spell, indices, title, label) {
     const hits = destroyedTiles.filter(t => hitColors.includes(t)).length;
     let dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
     if(dmg > 0) { applyDamage(enemy, dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
-    const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
+    const special = manaCollected.special;
     renderBoard();
     const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
     showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} qì${extras}` }, true);
@@ -1100,7 +1125,7 @@ async function applySummonTempest(spell) {
     if(spell.colors?.length || spell.color) hits = destroyedTiles.filter(t => spellDamageColors(spell).includes(t)).length;
     let dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
     if(dmg > 0) { applyDamage(enemy, dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
-    const special = collectDestroyedSpecialTiles(caster, destroyedTiles);
+    const special = manaCollected.special;
 
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} qì récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);

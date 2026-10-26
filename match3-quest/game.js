@@ -30,8 +30,8 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
-import { activeStatuses, statusBadgesHtml, statusTooltipHtml } from "./statusBadges.js";
-import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
+import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
+import { resolveStrike, blockLabel, displayAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -1451,6 +1451,12 @@ export function updateStats(){
     if(playerDiv && !playerDiv.dataset.gearTipBound){
         playerDiv.dataset.gearTipBound = '1';
         bindTooltip(playerDiv, () => showPlayerGearTooltip(playerDiv), hideSpellTooltip);
+        // Un clic / toucher sur le joueur affiche aussi son équipement et ses bonus/malus, quelques secondes.
+        playerDiv.addEventListener('click', () => {
+            showPlayerGearTooltip(playerDiv);
+            clearTimeout(playerTapTimer);
+            playerTapTimer = setTimeout(hideSpellTooltip, ENEMY_TAP_TOOLTIP_MS);
+        });
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
@@ -1476,7 +1482,7 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat"><strong>Atk:</strong> ${rawAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat"><strong>Atk:</strong> ${displayAttack(player)} <strong>Def:</strong> ${rawDefense(player)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1534,7 +1540,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${rawAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat"><strong>Atk:</strong> ${displayAttack(enemy)} <strong>Def:</strong> ${rawDefense(enemy)} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -1799,7 +1805,7 @@ export function updatePlayerStatsTab(){
             <h3>Statistiques de combat</h3>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de coup critique (arme, crânes) — plafonnée à 98 %">${svgIcon('sword')} Attaque (critique):</span>
-                <span class="stat-value">${rawAttack(player)}</span>
+                <span class="stat-value">${displayAttack(player)}</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
@@ -3322,7 +3328,7 @@ function getPlayerGearTooltipHtml() {
         const piece = getStuffById(player.stuff[slot]);
         html += line(label, piece ? piece.name : '—');
     });
-    return html;
+    return html + statusLinesHtml(player);
 }
 
 function showPlayerGearTooltip(targetEl) {
@@ -3402,6 +3408,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
         }
     }
 
+    lines.push(statusLinesHtml(enemyEntity));
     return lines.join('');
 }
 
@@ -3409,6 +3416,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
 // qui se referme seule après quelques secondes. Lié une seule fois : le panneau est reconstruit à chaque updateStats.
 const ENEMY_TAP_TOOLTIP_MS = 3500;
 let enemyTapTimer = null;
+let playerTapTimer = null;
 function bindEnemyCardTap(enemyDiv){
     if(!enemyDiv || enemyDiv.dataset.tapBound) return;
     enemyDiv.dataset.tapBound = '1';
