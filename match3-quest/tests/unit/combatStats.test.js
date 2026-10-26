@@ -3,7 +3,7 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
-    STAT_CHANCE_CAP, critChance, blockChance, rawAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
+    STAT_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
     skullStrengthBonus, levelEdgeBonus, addStatBuff, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
@@ -55,6 +55,13 @@ describe('blocage', () => {
         expect(resolveStrike(10, { attack: 100, statusEffects: enraged.statusEffects }, target, { rng: () => 0 }).damage).toBe(30);
         // Attaque bloquée entièrement : seul le bonus passe.
         expect(resolveStrike(10, enraged, { defense: 100 }, { rng: seq(0.99, 0.1, 0.1) })).toEqual({ damage: 10, crit: false, block: 'total' });
+    });
+
+    test('displayAttack : l\'attaque affichée tient compte du malus d\'affaiblissement', () => {
+        expect(displayAttack({ attack: 30 })).toBe(30);
+        expect(displayAttack({ attack: 30, statusEffects: { weakened: 2, weakenedAmount: 12 } })).toBe(18);
+        expect(displayAttack({ attack: 5, statusEffects: { weakened: 2, weakenedAmount: 12 } })).toBe(0);
+        expect(displayAttack({ attack: 30, statusEffects: { weakened: 0, weakenedAmount: 12 } })).toBe(30);
     });
 
     test('l\'affaiblissement retire des points d\'attaque', () => {
@@ -219,5 +226,8 @@ describe('statusBadges', () => {
         expect(list.map(s => [s.id, s.kind, s.turns])).toEqual([['enraged', 'buff', 2], ['poisoned', 'debuff', 1]]);
         expect(list[0].text).toContain('+10');
         expect(statusBadgesHtml({ statusEffects: { enraged: 2, enragedBonus: 10 } })).toContain('data-status="enraged"');
+        const { statusLinesHtml } = await import('../../statusBadges.js');
+        expect(statusLinesHtml({ statusEffects: {} })).toBe('');
+        expect(statusLinesHtml({ statusEffects: { poisoned: 2, poisonDamage: 3 } })).toContain('Poison');
     });
 });

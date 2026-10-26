@@ -105,6 +105,12 @@ export function rawDefense(entity) {
     return Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense');
 }
 
+// Attaque affichée : attaque brute moins le malus d'affaiblissement en cours (Sceau d'Affaiblissement).
+export function displayAttack(entity) {
+    const weakened = (entity?.statusEffects?.weakened || 0) > 0 ? Math.max(0, Math.floor(entity.statusEffects.weakenedAmount || 0)) : 0;
+    return Math.max(0, rawAttack(entity) - weakened);
+}
+
 // Chances réelles (plafonnées à 98 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
 export function critChance(entity, weakened = 0) {
     return clampChance(levelEdgeBonus(entity, rawAttack(entity)) - Math.max(0, Math.floor(weakened || 0)));

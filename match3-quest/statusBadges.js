@@ -54,3 +54,12 @@ export function statusTooltipHtml(status) {
         + `<div class="spell-tooltip-line">${esc(status.text)}</div>`
         + `<div class="spell-tooltip-line"><strong>${status.kind === 'buff' ? 'Bonus' : 'Malus'}</strong>${status.turns ? ` · ${turns(status.turns)} restant${status.turns > 1 ? 's' : ''}` : ' · jusqu\'à utilisation'}</div>`;
 }
+
+/** Lignes de l'infobulle d'un combattant : un bonus/malus par ligne (vide si aucun effet). */
+export function statusLinesHtml(entity) {
+    const list = activeStatuses(entity);
+    if (!list.length) return '';
+    return list.map(s =>
+        `<div class="spell-tooltip-line status-line ${s.kind}">${icon(s.icon)} <strong>${esc(s.label)}</strong> — ${esc(s.text)}${s.turns ? ` (${turns(s.turns)})` : ''}</div>`
+    ).join('');
+}
