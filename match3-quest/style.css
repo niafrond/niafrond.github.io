@@ -3667,3 +3667,11 @@ body.dark-mode #enemy-stats.active-turn { border-color: #e74c3c; }
 #player-stats .status-badge svg, #enemy-stats .status-badge svg { width: 1.1em; height: 1.1em; }
 #player-stats .status-badge small, #enemy-stats .status-badge small { font-size: .85em; }
 body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border-color: var(--rt-ink); border-radius: 4px; }
+/* Beaucoup d'altérations : pastilles compactes pour rester sur une ou deux lignes courtes sans agrandir la fiche */
+#player-stats .status-badges, #enemy-stats .status-badges { gap: 2px; }
+#player-stats .status-badge, #enemy-stats .status-badge { font-size: .85em; padding: 0 3px; gap: 1px; }
+#player-stats .status-badge::before, #enemy-stats .status-badge::before { font-size: .6em; }
+#player-stats .status-badge svg, #enemy-stats .status-badge svg { width: 1em; height: 1em; }
+/* Les pastilles ne passent pas sous le portrait (même réserve que la ligne du nom) */
+#player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 56px; }
+@media (max-height: 520px) and (orientation: landscape) { #player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 38px; } }
