@@ -1,3 +1,13 @@
+## [2.137.0](https://github.com/niafrond/niafrond.github.io/compare/v2.136.0...v2.137.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** passer le plateau à 10×10 contre les boss et ajouter les crânes +5 ([f4b023a](https://github.com/niafrond/niafrond.github.io/commit/f4b023a8163bbc027da32727bf146d128aa56708))
+
+### Bug Fixes
+
+* **match3-quest:** nettoyer le détourage du forgeron de lave ([803c358](https://github.com/niafrond/niafrond.github.io/commit/803c358f2ea43877ddf3dadb11f68e7328620097))
+
 ## [2.136.0](https://github.com/niafrond/niafrond.github.io/compare/v2.135.0...v2.136.0) (2026-10-26)
 
 ### Features
