@@ -78,7 +78,7 @@ for (const [b, d] of Object.entries(BIOMES)) {
 }
 
 /* Ton épique commun aux combats et aux boss : grand ensemble, taiko, mélodie héroïque, montées dynamiques. */
-const EPIC = 'epic cinematic orchestral battle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant';
+const EPIC = 'epic cinematic orchestral battle, NO intro, starts instantly at full intensity on the very first beat with taiko drums and full ensemble already playing, no soft opening, no fade-in, calmer passage only later in the middle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant';
 
 /* ───────────── Combats (5 styles, progression sans jamais sonner « boss final ») ───────────── */
 [
@@ -87,7 +87,7 @@ const EPIC = 'epic cinematic orchestral battle, huge taiko war drums, soaring he
     ['tense fight, rapid pipa arrows, snare-like woodblocks, rising dizi figure', 128],
     ['fierce fight, pulse-wave arpeggios, powerful Chinese drums, erhu lead with the Hou Yi motif fragment', 136],
     ['relentless fight, urgent pipa and square-wave ostinato, brass-like pulse stabs, bold erhu line', 144]
-].forEach(([s, bpm], i) => T(`combat-${i}`, `epic battle theme, ${EPIC}, ${s}, readable memorable melody, short loop`, { bpm: bpm + 8, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 45, motif: i >= 3 ? 'houyi' : null }));
+].forEach(([s, bpm], i) => T(`combat-${i}`, `epic battle theme, ${EPIC}, ${s}, readable memorable melody, short loop`, { bpm: bpm + 8, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 80, motif: i >= 3 ? 'houyi' : null }));
 
 /* Ambiance commune à tous les boss : la menace doit s'entendre dès la première mesure. */
 const BOSS_PERC = 'aggressive war drums, hard woodblocks, crashing cymbals';
@@ -166,7 +166,7 @@ for (const [k, [s, bpm, key]] of Object.entries(CELESTIAL)) T(`boss-${k}`, `lege
 
 /* ───────────── Combats des Hautes-Eaux : « Tourbillon des Eaux » (biome `tides`, musicTracks.js `combat-tides`) ───────────── */
 T('combat-tides', `epic battle theme, ${EPIC}, whirlpool sea battle at night, rolling 6/8 swell feel, fast pipa tremolo, descending guzheng arpeggios, big tangu drum and gongs, erhu cries, suona answering phrases, bass wave ostinato, readable memorable melody, short loop`,
-    { bpm: 132, keyScale: 'D minor' });
+    { bpm: 132, keyScale: 'D minor', dur: 80 });
 
 /* ───────────── Boss : Changxi, mère des douze lunes (Hautes-Eaux, world/PLAN-MAREES.md §6) : épreuve de bravoure, plus solennelle que menaçante ───────────── */
 T('boss-changxi-mere-des-douze-lunes', `epic cinematic trial boss battle, Changxi mother of twelve moons testing the hero's courage on a moonlit sea altar, slow ceremonial gongs, xiao flute, muted wordless choir, deep guqin pulse, ${I.pipa}, ${BOSS_PERC}, solemn and majestic rather than cruel, tidal swells, tension then release, readable heroic melody`,
