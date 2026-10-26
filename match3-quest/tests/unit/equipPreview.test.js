@@ -33,4 +33,12 @@ describe('aperçu d\'équipement chez le marchand', () => {
         expect(isComparable('item', { type: 'artifact' })).toBe(false);
         expect(isComparable('item', { type: 'shield' })).toBe(true);
     });
+
+    test('qì max : une ligne par couleur qui change', () => {
+        const rows = previewEquip(hero(), 'weapon', { id: 'q', atkBonus: 3, manaMax: { green: 12, yellow: 12 } });
+        expect(by(rows, 'Qì max vert')).toMatchObject({ before: 50, after: 62, delta: 12 });
+        expect(by(rows, 'Qì max jaune').delta).toBe(12);
+        expect(by(rows, 'Qì max rouge')).toBeUndefined();
+        expect(by(previewEquip(hero(), 'weapon', { id: 'z' }), 'Qì max')).toMatchObject({ before: 50, after: 50 });
+    });
 });

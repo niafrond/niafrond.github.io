@@ -6,6 +6,7 @@ import { getRarityIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus } from './merchants.js';
+import { describeManaMax } from './manaGear.js';
 import { previewEquip, equippedCounterpart, isComparable } from './equipPreview.js';
 import { compareButtonHtml } from './compareView.js';
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
@@ -33,7 +34,7 @@ function offerRow(offer, gold) {
         : offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
         : offer.kind === 'stuff' ? `${STUFF_SLOT_LABELS[obj.slot]} • ${describeStuff(obj)}`
         : offer.kind === 'weapon'
-        ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}`
+        ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}${describeManaMax(obj) ? ` • ${describeManaMax(obj)}` : ''}`
         : obj.type === 'shield' ? `Déf. +${obj.defense} %`
             : obj.type === 'reusable' ? `${obj.actionPoints || 2} ${svgIcon('arrow')} • ${obj.chargesPerCycle} charge${obj.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${obj.rechargeTurns || 4} tours`
                 : 'Relique passive';

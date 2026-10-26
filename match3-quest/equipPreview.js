@@ -3,6 +3,7 @@
 
 import { rawAttack, rawDefense } from './combatStats.js';
 import { getStuffById } from './stuff.js';
+import { MANA_COLORS, MANA_LABELS, gearManaBonus } from './manaGear.js';
 
 /** Pièce actuellement portée à l'emplacement que `obj` occuperait (null si vide ou si la pièce n'est pas équipable). */
 export function equippedCounterpart(hero, kind, obj) {
@@ -14,14 +15,13 @@ export function equippedCounterpart(hero, kind, obj) {
 
 export const isComparable = (kind, obj) => kind === 'stuff' || kind === 'weapon' || (kind === 'item' && obj?.type === 'shield');
 
-// Qì max apporté par une pièce (champ `maxMana`, aucune pièce actuelle n'en donne : la ligne reste à l'identique).
-const manaOf = piece => Math.max(0, Math.floor(piece?.maxMana || 0));
+const manaCaps = entity => Object.fromEntries(MANA_COLORS.map(c => [c, Math.max(0, Math.floor(entity.maxMana ?? 50)) + gearManaBonus(entity, c)]));
 
-/** Stats globales après avoir équipé `obj` : { attack, defense, maxHp, maxMana }. */
+/** Stats globales après avoir équipé `obj` : { attack, defense, maxHp, mana: { couleur: qì max } }. */
 export function statsWith(hero, kind, obj) {
     const clone = { ...hero, equipment: { ...(hero.equipment || {}) }, stuff: { ...(hero.stuff || {}) } };
     const current = equippedCounterpart(hero, kind, obj);
-    let maxHp = hero.maxHp || 0, maxMana = hero.maxMana || 0;
+    let maxHp = hero.maxHp || 0;
     if (kind === 'stuff') {
         clone.stuff[obj.slot] = obj.id;
         maxHp += (obj.maxHp || 0) - (current?.maxHp || 0);
@@ -33,14 +33,18 @@ export function statsWith(hero, kind, obj) {
         // La défense de base d'un bouclier est ajoutée à `defense` à l'équipement (game.js : equipGear).
         clone.defense = Math.max(0, (hero.defense || 0) - (current?.defense || 0) + (obj.defense || 0));
     }
-    maxMana += manaOf(obj) - manaOf(current);
-    return { attack: rawAttack(clone), defense: rawDefense(clone), maxHp, maxMana };
+    return { attack: rawAttack(clone), defense: rawDefense(clone), maxHp, mana: manaCaps(clone) };
 }
 
 /** Lignes { label, before, after, delta } sur les stats globales du héros. */
 export function previewEquip(hero, kind, obj) {
-    const before = { attack: rawAttack(hero), defense: rawDefense(hero), maxHp: hero.maxHp || 0, maxMana: hero.maxMana || 0 };
+    const before = { attack: rawAttack(hero), defense: rawDefense(hero), maxHp: hero.maxHp || 0, mana: manaCaps(hero) };
     const after = statsWith(hero, kind, obj);
-    const row = (label, key) => ({ label, before: before[key], after: after[key], delta: after[key] - before[key] });
-    return [row('Attaque', 'attack'), row('Défense', 'defense'), row('PV max', 'maxHp'), row('Qì max', 'maxMana')];
+    const row = (label, b, a) => ({ label, before: b, after: a, delta: a - b });
+    // Qì max : une ligne par couleur qui change, sinon une seule ligne (inchangé).
+    const changed = MANA_COLORS.filter(c => before.mana[c] !== after.mana[c]);
+    const manaRows = changed.length
+        ? changed.map(c => row(`Qì max ${MANA_LABELS[c]}`, before.mana[c], after.mana[c]))
+        : [row('Qì max', before.mana.red, after.mana.red)];
+    return [row('Attaque', before.attack, after.attack), row('Défense', before.defense, after.defense), row('PV max', before.maxHp, after.maxHp), ...manaRows];
 }

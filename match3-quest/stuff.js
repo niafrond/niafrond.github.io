@@ -10,6 +10,10 @@
 //
 // Le héros garde `stuffOwned` (ids possédés) et `stuff` ({ head, neck, wrist, ring } : id porté ou null).
 
+import { describeManaMax } from './manaGear.js';   // cycle assumé : utilisé seulement à l'exécution
+
+const allColors = n => ({ red: n, blue: n, green: n, yellow: n, purple: n });
+
 export const STUFF_SLOTS = ['head', 'neck', 'wrist', 'ring'];
 export const STUFF_SLOT_LABELS = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: 'Bague' };
 
@@ -77,6 +81,12 @@ export const allStuff = [
     piece('bague_de_cuivre', 'ring', 'Bague de cuivre rouge', 5, 'uncommon', 'Un anneau de cuivre rouge gravé d\'une flèche.', { atkBonus: 2, maxHp: 8 }),
     piece('bague_de_sagesse', 'ring', 'Bague du lettré', 15, 'rare', 'Le sceau d\'un lettré : le calme avant le tir.', { defBonus: 3, maxHp: 25 }),
     piece('bague_de_l_immortel', 'ring', 'Bague de l\'immortel', 32, 'legendary', 'Une bague d\'ambre où dort un souffle d\'immortel.', { atkBonus: 6, defBonus: 6, maxHp: 40, poisonResist: 30 }),
+    // Qì max (`manaMax`) : une couleur, deux couleurs, ou les cinq.
+    piece('bague_du_souffle_rouge', 'ring', 'Bague du souffle rouge', 4, 'uncommon', 'Un anneau de cinabre : le qì du feu s\'y accumule.', { manaMax: { red: 8 } }),
+    piece('collier_de_la_source', 'neck', 'Collier de la source', 9, 'uncommon', 'Une perle de jade bleu-vert, fraîche comme une source de montagne.', { manaMax: { blue: 8, green: 8 }, maxHp: 8 }),
+    piece('bague_de_l_orage_pourpre', 'ring', 'Bague de l\'orage pourpre', 13, 'rare', 'Une améthyste où gronde un orage lointain.', { manaMax: { yellow: 12, purple: 12 }, defBonus: 2 }),
+    piece('bracelet_des_cinq_souffles', 'wrist', 'Bracelet des cinq souffles', 18, 'rare', 'Cinq perles, une par élément, enfilées sur un fil de soie.', { manaMax: allColors(5), atkBonus: 2 }),
+    piece('casque_du_sage_celeste', 'head', 'Diadème du sage céleste', 26, 'legendary', 'Un diadème d\'argent que seuls portent les maîtres des cinq éléments.', { manaMax: allColors(10), maxHp: 20, defBonus: 4 }),
     // Colliers de biome : uniquement en récompense de leur quête (world/collars.js), jamais en boutique ni en butin.
     piece('collier_obsidienne', 'neck', 'Collier d\'obsidienne froide', 4, 'rare', 'Une obsidienne qui ne chauffe jamais : la lave vous est indifférente.', { biomeProtect: 'volcano', maxHp: 10, quest: true }),
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
@@ -107,6 +117,7 @@ export function describeStuff(stuff) {
         stuff.atkBonus ? `Atk +${stuff.atkBonus}` : '',
         stuff.defBonus ? `Déf +${stuff.defBonus}` : '',
         stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
+        describeManaMax(stuff),
         stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
         stuff.armor ? `${ANTIQUE_ARMORS[stuff.armor].name} (4 pièces : ${ANTIQUE_ARMORS[stuff.armor].powerText.toLowerCase()})` : '',
         stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',

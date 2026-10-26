@@ -1,5 +1,7 @@
 // Bibliothèque complète des armes du jeu
 
+import { describeManaMax } from './manaGear.js';
+
 // Types d'armes
 export const WeaponType = {
     BOW: 'bow'
@@ -415,6 +417,52 @@ export const allWeapons = [
         biome: "fusang",
         rarity: WeaponRarity.LEGENDARY,
         description: "Un arc légendaire qui amplifie toute magie"
+    },
+
+    // Armes qui augmentent le qì max (`manaMax` : une, deux ou cinq couleurs).
+    {
+        id: "arc_de_braise_de_qi",
+        name: "Arc de Braise de Qi",
+        type: WeaponType.BOW,
+        damage: 22,
+        actionPoints: 3,
+        minLevel: 6,
+        rarity: WeaponRarity.UNCOMMON,
+        manaMax: { red: 10 },
+        description: "Un arc de bois de cinabre dont la corde garde la chaleur du feu"
+    },
+    {
+        id: "arc_des_eaux_calmes",
+        name: "Arc des Eaux Calmes",
+        type: WeaponType.BOW,
+        damage: 26,
+        actionPoints: 3,
+        minLevel: 8,
+        rarity: WeaponRarity.UNCOMMON,
+        manaMax: { blue: 10 },
+        description: "Un arc de roseau laqué, serein comme un étang sans vent"
+    },
+    {
+        id: "arc_des_deux_souffles",
+        name: "Arc des Deux Souffles",
+        type: WeaponType.BOW,
+        damage: 44,
+        actionPoints: 4,
+        minLevel: 12,
+        rarity: WeaponRarity.RARE,
+        manaMax: { green: 12, yellow: 12 },
+        description: "Un arc où se mêlent la sève et la foudre, de part et d'autre de la poignée"
+    },
+    {
+        id: "arc_des_cinq_vents",
+        name: "Arc des Cinq Vents",
+        type: WeaponType.BOW,
+        damage: 70,
+        actionPoints: 5,
+        minLevel: 20,
+        rarity: WeaponRarity.LEGENDARY,
+        manaMax: { red: 8, blue: 8, green: 8, yellow: 8, purple: 8 },
+        description: "Cinq vents soufflent dans ses branches, un par élément"
     }
 ];
 
@@ -478,7 +526,7 @@ export const WEAPON_STAT_BONUSES = {
 
 // Texte court des bonus d'une arme ou d'un bouclier (« Atk +5 • Déf +3 »), vide s'il n'en a pas.
 export function describeStatBonuses(piece) {
-    return [piece?.atkBonus ? `Atk +${piece.atkBonus}` : '', piece?.defBonus ? `Déf +${piece.defBonus}` : ''].filter(Boolean).join(' • ');
+    return [piece?.atkBonus ? `Atk +${piece.atkBonus}` : '', piece?.defBonus ? `Déf +${piece.defBonus}` : '', describeManaMax(piece)].filter(Boolean).join(' • ');
 }
 
 /**

@@ -30,6 +30,7 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
+import { gearManaBonus } from "./manaGear.js";
 import { itemGroupKey, toggleSellTag } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, rawAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
@@ -86,7 +87,7 @@ export function getAttributeManaBonus(entity, color, bonusType){
 
 export function getManaCapForColor(entity, color){
     const baseCap = Math.max(0, Math.floor(entity?.maxMana ?? BASE_MANA_CAP));
-    return baseCap + getAttributeManaBonus(entity, color, "max");
+    return baseCap + getAttributeManaBonus(entity, color, "max") + gearManaBonus(entity, color);
 }
 
 export function recalculateManaCaps(entity){
