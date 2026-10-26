@@ -7,7 +7,7 @@ import {
     encounterFor, enemyLevel, bossEase, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
     isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, nearWaypoint, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
-    AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath, solvePuzzle
+    AGGRO_RADIUS, aggroOf, sealCellsOf, bossWallCells, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath, solvePuzzle
 } from '../../exploration.js';
 import { exitsOf, crossExit } from './fixtures/gates.js';
 import { PUZZLE_SETS, puzzlesOfSet } from '../../puzzle/levels.js';
@@ -170,8 +170,10 @@ function walkTo(s, x, y) {
     const fights = [];
     for (let attempt = 0; attempt < 30; attempt++) {
         let path = findPath(s, x, y);
-        if (!path) {   // rangée de piliers d'un boss de porte : on le vainc d'abord
-            s.screens[s.data.screenId].enemies.filter(e => e.guardsDoor).forEach(e => markEnemyDefeated(s, e.id));
+        // colonne de piliers de Fengmeng, puis rangée de piliers d'un boss de porte : on vainc le boss qui barre la route
+        for (const barrier of [e => e.seal, e => e.guardsDoor]) {
+            if (path) break;
+            s.screens[s.data.screenId].enemies.filter(barrier).forEach(e => markEnemyDefeated(s, e.id));
             path = findPath(s, x, y);
         }
         if (!path) throw new Error(`aucun chemin vers (${x},${y}) sur ${s.data.screenId} depuis (${s.data.x},${s.data.y})`);
@@ -521,11 +523,18 @@ describe('cartes (story.js)', () => {
     test.each(FORCED)('%s : Fengmeng barre le défilé, mais sans bloquer physiquement la route vers l\'est', id => {
         const s = SCREENS[id];
         const east = exitsOf(s, SCREENS).find(e => e.x === s.w - 1);
-        // c'est un boss : aucune zone de vigilance, il faut aller le chercher...
+        // c'est un boss, mais sa zone de détection (1 case, à 360°) couvre les 3 cases du défilé : impossible de l'esquiver...
         const fengmeng = s.enemies.find(e => e.id.startsWith('fengmeng_'));
         expect(fengmeng).toBeDefined();
-        expect(aggroOf(fengmeng)).toBe(0);
-        // ... et sa tuile ne ferme pas à elle seule le passage
+        expect(aggroOf(fengmeng)).toBe(1);
+        expect(fengmeng.allAround).toBe(true);
+        const aura = new Set();
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) aura.add(`${fengmeng.x + dx},${fengmeng.y + dy}`);
+        // ... et des piliers ferment toute sa colonne (roseaux franchissables compris) : même hors de sa zone, aucun détour
+        const walls = new Set(sealCellsOf(s, fengmeng).map(([x, y]) => `${x},${y}`));
+        expect(walls.size).toBeGreaterThan(0);
+        expect(reachable(s, s.spawn, new Set([...walls, `${fengmeng.x},${fengmeng.y}`])).has(`${east.x},${east.y}`)).toBe(false);
+        // ... mais la route passe par sa tuile : elle ne ferme pas à elle seule le passage
         expect(reachable(s, s.spawn, new Set([`${fengmeng.x},${fengmeng.y}`])).has(`${east.x},${east.y}`)).toBe(true);
     });
 
@@ -1002,12 +1011,26 @@ describe('déplacement et zones de vigilance', () => {
         expect(teleportToScreen(s, 'nulle-part')).toBe(false);
     });
 
+    test('les piliers de Fengmeng bloquent le passage tant qu\'il est en jeu, puis disparaissent avec lui', () => {
+        const s = fresh({ screenId: 'rizieres', x: 3, y: 4 });
+        const walls = bossWallCells(s);
+        expect(walls.length).toBeGreaterThan(0);
+        const [wx, wy] = walls[0];
+        expect(entityAt(s, wx, wy)).toEqual({ type: 'wall' });
+        s.data.x = wx - 1; s.data.y = wy;
+        expect(tryMove(s, 1, 0).type).toBe('blocked');
+        s.data.defeated.push('fengmeng_1');
+        expect(bossWallCells(s)).toEqual([]);
+        expect(entityAt(s, wx, wy)).toBeNull();
+    });
+
     test('les zones de vigilance sont exposées pour l\'affichage', () => {
         const s = fresh({ screenId: 'rizieres', x: 3, y: 4 });
         const aura = getAuraTiles(s);
-        expect(aura.has('6,4')).toBe(true);   // Fengmeng en (6,4) : boss, sa seule case
-        expect(aura.has('5,3')).toBe(false);
-        expect(aura.has('7,5')).toBe(false);
+        expect(aura.has('6,4')).toBe(true);   // Fengmeng en (6,4) : boss à zone de détection explicite (1 case, à 360°)
+        expect(aura.has('5,3')).toBe(true);
+        expect(aura.has('7,5')).toBe(true);
+        expect(aura.has('8,4')).toBe(false);
     });
 
     test('la progression est sérialisable en JSON et se recharge', () => {

@@ -1484,6 +1484,7 @@ export function createExplorationView(cfg) {
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
         const items = grids.blocks.slice();   // décors fixes mis en cache (voir gridsOf)
         (screen.buildings || []).forEach(b => items.push({ depth: b.y + b.h - 0.5, kind: 'building', b, x: b.x, y: b.y }));
+        X.bossWallCells(session).forEach(([wx, wy]) => items.push({ depth: wy, kind: 'pillar', x: wx, y: wy }));   // piliers qui ferment le défilé d'un boss, retirés à sa mort
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
