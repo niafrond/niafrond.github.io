@@ -421,8 +421,10 @@ function init() {
     };
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
     const breakTick = createBreakWatcher({
-        // Calme : exploration libre et aucune cinématique / transition de combat à l'écran (elles ne sont pas des .modal).
-        isCalm: () => Boolean(exploration.isIdle?.()) && !document.querySelector('.cine-overlay, .title-screen, .battle-transition, .bt-title'),
+        // Calme : exploration libre, ou combat terminé (écran Victoire / Défaite, dont l'arène enchaîne sans repasser par la carte),
+        // sans cinématique ni transition de combat (ce ne sont pas des .modal) ni fenêtre ouverte.
+        isCalm: () => (Boolean(exploration.isIdle?.()) || (Boolean(document.body.dataset.combatEnd) && !document.querySelector('.modal.active, #levelup-modal[style*="flex"]')))
+            && !document.querySelector('.cine-overlay, .title-screen, .battle-transition, .bt-title'),
     });
     startPlayTimeTracking(() => { renderPlayTime(); breakTick(); });
     ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', renderPlayTime));
