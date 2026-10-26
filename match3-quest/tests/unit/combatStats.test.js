@@ -45,6 +45,14 @@ describe('blocage', () => {
         expect(resolveStrike(10, { attack: 0 }, { defense: 100 }, { rng: seq(0.5, 0.1, 0.1) }).damage).toBe(0);
     });
 
+    test('resolveStrike : Fureur des Steppes ajoute un bonus fixe aux dégâts du lanceur, avant critique', () => {
+        const target = { defense: 0 };
+        const enraged = { attack: 0, statusEffects: { enraged: 2, enragedBonus: 10 } };
+        expect(resolveStrike(5, enraged, target, { rng: () => 0.99 }).damage).toBe(15);
+        expect(resolveStrike(5, { attack: 0, statusEffects: {} }, target, { rng: () => 0.99 }).damage).toBe(5);
+        expect(resolveStrike(0, enraged, target, { rng: () => 0.99 }).damage).toBe(0);
+    });
+
     test('l\'affaiblissement retire des points d\'attaque', () => {
         expect(critChance({ attack: 30 }, 12)).toBe(18);
     });

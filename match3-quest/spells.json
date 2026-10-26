@@ -1402,7 +1402,7 @@
       "effect": "damageBoost",
       "atkBonus": 10,
       "duration": 3,
-      "description": "Augmente les dégâts de 10 pendant 3 tours et ne termine pas le tour"
+      "description": "Ajoute 10 à chaque dégât que vous infligez (crânes, armes, sorts) pendant 3 tours et ne termine pas le tour"
     },
     {
       "id": "cleave",
@@ -1964,7 +1964,7 @@
       "effect": "damageBoost",
       "atkBonus": 10,
       "duration": 3,
-      "description": "Augmente les dégâts de 10 pendant 3 tours et ne termine pas le tour"
+      "description": "Ajoute 10 à chaque dégât que vous infligez (crânes, armes, sorts) pendant 3 tours et ne termine pas le tour"
     },
     {
       "id": "cleave",

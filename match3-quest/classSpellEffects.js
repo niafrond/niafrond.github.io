@@ -805,10 +805,9 @@ function applyHeavensWrath(spell) {
 function applyEnrage(spell) {
     player.statusEffects.enraged = spell.duration;
     player.statusEffects.enragedBonus = spell.atkBonus;
-    player.attack += spell.atkBonus;
     addBonusTurn(player);
-    showCombatAnimation({ icon: 'anger', title: "FUREUR DES STEPPES", damage: `+${spell.atkBonus} attaque`, target: `→ Vous (${spell.duration} tours)` }, true);
-    log(`Rage augmente l'attaque de ${spell.atkBonus} pendant ${spell.duration} tours !`);
+    showCombatAnimation({ icon: 'anger', title: "FUREUR DES STEPPES", damage: `+${spell.atkBonus} dégâts`, target: `→ Vous (${spell.duration} tours)` }, true);
+    log(`Fureur des Steppes augmente de ${spell.atkBonus} tous vos dégâts (crânes, armes, sorts) pendant ${spell.duration} tours !`);
     return true;
 }
 

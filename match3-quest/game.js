@@ -2614,11 +2614,9 @@ export function finishEnemyTurn(){
         if((player.statusEffects?.enraged || 0) > 0) {
             player.statusEffects.enraged--;
             if(player.statusEffects.enraged <= 0) {
-                const bonus = Math.max(0, Math.floor(player.statusEffects.enragedBonus || 0));
-                player.attack = Math.max(0, (player.attack || 0) - bonus);
                 delete player.statusEffects.enraged;
                 delete player.statusEffects.enragedBonus;
-                log(`Fureur des Steppes se dissipe (-${bonus} attaque).`);
+                log(`Fureur des Steppes se dissipe.`);
             }
         }
         if((player.statusEffects?.strength || 0) > 0) {
