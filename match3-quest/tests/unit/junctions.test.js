@@ -209,3 +209,25 @@ describe('piliers des boss de porte', () => {
         expect(bossWallsOf(createSession({ screenId: sun.s.id }, SCREENS)).find(w => w.def === sun.e).fire).toBe(true);
     });
 });
+
+describe('piliers de boss et eau (Pas de Yu)', () => {
+    test('la rangée murée d\'un boss traverse aussi l\'eau : on ne contourne pas le boss à pied sur l\'eau', () => {
+        let checked = 0;
+        Object.values(SCREENS).forEach(s => {
+            const liq = new Set();
+            (s.liquids || []).forEach(([rx, ry, rw, rh]) => { for (let x = rx; x < rx + rw; x++) for (let y = ry; y < ry + rh; y++) liq.add(`${x},${y}`); });
+            const entities = new Set([...s.npcs, ...s.chests, ...s.enemies, ...s.exits].map(e => `${e.x},${e.y}`));
+            (s.enemies || []).filter(e => e.wall && e.wall.length).forEach(e => {
+                const wall = new Set(e.wall.map(([x, y]) => `${x},${y}`));
+                const onRow = e.wall.filter(([, y]) => y === e.y).length, onCol = e.wall.filter(([x]) => x === e.x).length;
+                const horizontal = onRow >= onCol;
+                const line = horizontal ? Array.from({ length: s.w }, (_, x) => [x, e.y]) : Array.from({ length: s.h }, (_, y) => [e.x, y]);
+                line.forEach(([x, y]) => {
+                    const k = `${x},${y}`;
+                    if (liq.has(k) && !entities.has(k)) { expect([s.id, e.id, k, wall.has(k)]).toEqual([s.id, e.id, k, true]); checked++; }
+                });
+            });
+        });
+        expect(checked).toBeGreaterThan(0);
+    });
+});

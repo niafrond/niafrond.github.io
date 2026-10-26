@@ -3,19 +3,19 @@
 // comme des hautes herbes, avec leurs rencontres aléatoires, au lieu de barrer le passage.
 
 export const BIOME_DECOR = {
-    paddy: ['rice', 'deadtree', 'rice'],
-    riverbed: ['rock', 'rice', 'rock'],
-    bamboo: ['bamboo', 'deadtree', 'bamboo'],
-    gobi: ['cactus', 'rock', 'cactus'],
-    storm: ['crag', 'deadtree', 'crag'],
-    volcano: ['spire', 'rock', 'spire'],
-    savanna: ['rice', 'rock', 'rice'],
-    coast: ['shell', 'rock', 'conch'],
-    tides: ['rock', 'shell', 'rock'],
-    fusang: ['tree', 'deadtree', 'tree'],
+    paddy: ['rice', 'deadreed', 'stump', 'rice', 'rock', 'fence', 'scarecrow', 'basket', 'tools', 'brokenjar', 'rice', 'deadtree', 'strawhat', 'wiltedlotus', 'sluice'],
+    riverbed: ['rock', 'rice', 'mudrock', 'driftlog', 'clayblock', 'rice', 'fossil', 'rock'],
+    bamboo: ['bamboo', 'deadtree', 'bamboo', 'fallenlog', 'mossrock', 'shoot', 'mushroom', 'stonelantern'],
+    gobi: ['cactus', 'rock', 'cactus', 'thornbush', 'standingstone', 'drygrass', 'bones'],
+    storm: ['crag', 'deadtree', 'crag', 'blastedtree', 'brokenpost', 'fallenbranch', 'mushroom'],
+    volcano: ['basalt', 'rock', 'vcrystal', 'charred', 'basalt', 'bones', 'glowmush', 'rock', 'embers', 'obsidian', 'dragonstatue'],
+    savanna: ['rice', 'rock', 'rice', 'thornbush', 'acacia', 'termite', 'bones', 'drygrass'],
+    coast: ['shell', 'rock', 'conch', 'driftwood', 'crab', 'starfish', 'seaweed'],
+    tides: ['rock', 'shell', 'rock', 'kelp', 'anemone', 'hermit', 'tidestone', 'driftwood'],
+    fusang: ['tree', 'deadtree', 'tree', 'sunflower', 'fusroot', 'goldleaves', 'blackfeather'],
     house: ['shelf', 'cabinet', 'bed', 'table', 'jar', 'basket', 'plant', 'cushion'],
     cave: ['rock', 'stalagmite', 'rock'],
-    moon: ['rock', 'deadtree', 'rock']
+    moon: ['rock', 'deadtree', 'rock', 'meteorite', 'mooncrystal', 'brokenpillar', 'moonflower', 'whiterabbit']
 };
 
 // Décors franchissables : touffes de roseaux, trop basses pour arrêter un héros.
@@ -35,6 +35,7 @@ export function isLowObstacle(screen, x, y) {
     if (screen.interior || screen.aquatic || screen.arena || screen.kind === 'arena') return false;
     if (x <= 0 || y <= 0 || x >= screen.w - 1 || y >= screen.h - 1) return false;
     if ((screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h)) return false;
+    if ((screen.structures || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h)) return false;
     if ((screen.pillars || []).some(([px, py]) => px === x && py === y)) return false;
     const list = BIOME_DECOR[screen.biome];
     return Boolean(list) && LOW_DECOR.has(pickDecor(list, x, y));

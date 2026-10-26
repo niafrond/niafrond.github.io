@@ -14,9 +14,10 @@ export function rectGrid(screen, rects) {
 /** @returns {{ obst: Uint8Array, liq: Uint8Array, path: Uint8Array, blocks: Array<{depth:number, kind:'pillar'|'block', x:number, y:number}> }} */
 export function gridsOf(screen) {
     let g = gridCache.get(screen);
-    if (!g || g.obstacles !== screen.obstacles || g.liquids !== screen.liquids || g.paths !== screen.paths || g.pillars !== screen.pillars || g.buildings !== screen.buildings) {
+    if (!g || g.obstacles !== screen.obstacles || g.liquids !== screen.liquids || g.paths !== screen.paths || g.pillars !== screen.pillars || g.buildings !== screen.buildings || g.structures !== screen.structures) {
         const obst = rectGrid(screen, screen.obstacles), liq = rectGrid(screen, screen.liquids), path = rectGrid(screen, screen.paths);
-        const inBuilding = (x, y) => (screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
+        const inBuilding = (x, y) => (screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) ||
+            (screen.structures || []).some(b => !b.cross && x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);   // les structures (world/structures.js) se dessinent à part
         const pillarCells = new Set((screen.pillars || []).map(([px, py]) => `${px},${py}`));
         const blocks = [];   // décors fixes (piliers, rochers) dans l'ordre colonne puis ligne, à trier par profondeur au dessin
         for (let x = 0; x < screen.w; x++) {
@@ -25,7 +26,7 @@ export function gridsOf(screen) {
                 if (obst[y * screen.w + x] === 1 && !inBuilding(x, y)) blocks.push({ depth: y, kind: 'block', x, y });
             }
         }
-        g = { obstacles: screen.obstacles, liquids: screen.liquids, paths: screen.paths, pillars: screen.pillars, buildings: screen.buildings, obst, liq, path, blocks };
+        g = { obstacles: screen.obstacles, liquids: screen.liquids, paths: screen.paths, pillars: screen.pillars, buildings: screen.buildings, structures: screen.structures, obst, liq, path, blocks };
         gridCache.set(screen, g);
     }
     return g;

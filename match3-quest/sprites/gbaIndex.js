@@ -16,7 +16,7 @@ export const GBA_FILES = {
     bai_she: 'bai_she.440dc493.js',
     bai_ze: 'bai_ze.977f9081.js',
     bai_ze_savant: 'bai_ze_savant.a622880f.js',
-    baihu: 'baihu.97dd7064.js',
+    baihu: 'baihu.849bd8a6.js',
     bailong: 'bailong.14dc6092.js',
     bambous_hamlet_old_lamplighter: 'bambous_hamlet_old_lamplighter.587e8d4a.js',
     bambous_road_old_pilgrim: 'bambous_road_old_pilgrim.423147f0.js',

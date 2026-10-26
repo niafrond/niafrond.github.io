@@ -26,6 +26,7 @@ import { withLoadingScreen, trackProgress } from './loader.js';
 import { loadSequence } from './ultimateCinematics.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
+import { archiSprite } from './sprites/archi.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
 import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
@@ -1486,6 +1487,7 @@ export function createExplorationView(cfg) {
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
         const items = grids.blocks.slice();   // décors fixes mis en cache (voir gridsOf)
         (screen.buildings || []).forEach(b => items.push({ depth: b.y + b.h - 0.5, kind: 'building', b, x: b.x, y: b.y }));
+        (screen.structures || []).forEach(st => items.push({ depth: st.cross ? st.y - 0.4 : st.y + st.h - 0.5, kind: 'structure', st, x: st.x, y: st.y }));   // bâtiments, tours, ponts… à leur échelle (world/structures.js)
         X.bossWallsOf(session).forEach(w => items.push({ depth: w.y, kind: w.fire ? 'fire' : 'pillar', x: w.x, y: w.y }));   // piliers (flammes pour un Soleil) qui ferment le passage d'un boss, retirés à sa mort
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
@@ -1497,7 +1499,7 @@ export function createExplorationView(cfg) {
         });
         items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
         items.sort((a, b) => a.depth - b.depth);
-        const drawItems = items.filter(it => it.kind === 'player' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : inView(it.x, it.y, 1, 1, 3)));
+        const drawItems = items.filter(it => it.kind === 'player' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : it.kind === 'structure' ? inView(it.st.x, it.st.y, it.st.w, it.st.h, 3) : inView(it.x, it.y, 1, 1, 3)));
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
         const houseMk = X.houseMarkers(session);
@@ -1525,6 +1527,17 @@ export function createExplorationView(cfg) {
                     if (hm) {
                         const top = P(it.b.x + it.b.w / 2, it.b.y);
                         drawMarker(top.x, top.y - tile * 0.28 - 4 * Math.abs(Math.sin(now / 300)), hm.marker, tile, 1.35);
+                    }
+                    break;
+                }
+                case 'structure': {
+                    const cv = archiSprite(it.st.id);
+                    if (it.st.cross) { const q = P(it.st.x, it.st.y); ctx.fillStyle = biome.liquid; ctx.fillRect(Math.round(q.x), Math.round(q.y), Math.round(it.st.w * tile), Math.round(it.st.h * tile)); }   // l'eau sous le pont
+                    if (cv) {
+                        const p = P(it.st.x, it.st.y), was = ctx.imageSmoothingEnabled;
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(cv, Math.round(p.x), Math.round(p.y), Math.round(it.st.w * tile), Math.round(it.st.h * tile));
+                        ctx.imageSmoothingEnabled = was;
                     }
                     break;
                 }
