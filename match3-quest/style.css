@@ -3605,3 +3605,38 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 /* Attaque / Défense modifiées par un sort ou un effet en cours */
 .stat-up { color: #2e9e5b; font-weight: bold; }
 .stat-down { color: #d93f31; font-weight: bold; }
+
+/* ── Fiches de combat (joueur / ennemi) : contraste et lisibilité ───────────── */
+#player-stats, #enemy-stats { color: #1a1a1a; }
+.level-pill {
+    flex: none; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+    font-size: 1.05em; font-weight: 800; white-space: nowrap;
+    background: #263238; color: #fff; border: 2px solid rgba(0,0,0,.55);
+}
+.level-pill-danger { background: #b71c1c; color: #fff; }
+#player-stats .hp-bar-container progress, #enemy-stats .hp-bar-container progress { height: 24px; }
+#player-stats .hp-text, #enemy-stats .hp-text {
+    font-size: 15px; font-weight: 800; color: #fff;
+    text-shadow: 0 0 2px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.stat-row { flex-wrap: wrap; gap: 4px; }
+.stat-chip {
+    display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 6px;
+    background: rgba(0,0,0,.12); border: 1px solid rgba(0,0,0,.25);
+    font-size: 1.1em; font-weight: 800; white-space: nowrap;
+}
+.stat-chip strong { width: auto; font-weight: 700; opacity: .8; }
+.stat-chip.pa-stat { margin-left: 0; background: #fff3c4; border-color: #b8860b; color: #3a2a00; }
+.stat-chip .stat-up { color: #0a7a35; } .stat-chip .stat-down { color: #c62828; }
+#player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: 1em; min-width: 1.9em; height: 1.9em; }
+body.dark-mode #player-stats, body.dark-mode #enemy-stats { color: #f1f5f9; }
+body.dark-mode .stat-chip { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); }
+body.dark-mode .stat-chip.pa-stat { background: #5a4a20; border-color: #ffd54f; color: #fff3c4; }
+body.dark-mode .stat-chip .stat-up { color: #69f0ae; } body.dark-mode .stat-chip .stat-down { color: #ff8a80; }
+@media (max-width: 700px) {
+    .level-pill { font-size: .95em; padding: 0 5px; }
+    #player-stats .hp-bar-container progress, #enemy-stats .hp-bar-container progress { height: 20px; }
+    #player-stats .hp-text, #enemy-stats .hp-text { font-size: 13px; }
+    .stat-chip { font-size: 1em; padding: 0 4px; }
+    #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .9em; min-width: 1.7em; height: 1.7em; }
+}

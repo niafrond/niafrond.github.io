@@ -1469,7 +1469,7 @@ export function updateStats(){
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span>${bonusTurnBadge(player)}</div>
+            <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span class="level-pill" title="Niveau ${player.level}">Niv. ${player.level}</span>${bonusTurnBadge(player)}</div>
             ${statusBadgesHtml(player)}
             <div class="stat">
                 <div class="hp-bar-container">
@@ -1486,7 +1486,7 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat"><strong>Atk:</strong> ${statValueHtml(player, 'attack')} <strong>Def:</strong> ${statValueHtml(player, 'defense')} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action">${svgIcon('arrow')} <strong>PA</strong> ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1532,8 +1532,8 @@ export function updateStats(){
     
     // Afficher un indicateur visuel si l'ennemi est plus fort
     const levelIndicator = enemy.level > player.level ? 
-        `<span style="color: #ff4444; font-weight: bold;"> Niv.${enemy.level}</span>` : 
-        `<span style="color: #888;"> ${enemy.level}</span>`;
+        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">Niv. ${enemy.level}</span>` : 
+        `<span class="level-pill" title="Niveau ${enemy.level}">Niv. ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
         <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
@@ -1544,7 +1544,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${statValueHtml(enemy, 'attack')} <strong>Def:</strong> ${statValueHtml(enemy, 'defense')} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action">${svgIcon('arrow')} <strong>PA</strong> ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
