@@ -13,7 +13,7 @@ export const BIOME_DECOR = {
     coast: ['shell', 'rock', 'conch'],
     tides: ['rock', 'shell', 'rock'],
     fusang: ['tree', 'deadtree', 'tree'],
-    house: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'],
+    house: ['shelf', 'cabinet', 'bed', 'table', 'jar', 'basket', 'plant', 'cushion'],
     cave: ['rock', 'stalagmite', 'rock'],
     moon: ['rock', 'deadtree', 'rock']
 };
@@ -38,4 +38,35 @@ export function isLowObstacle(screen, x, y) {
     if ((screen.pillars || []).some(([px, py]) => px === x && py === y)) return false;
     const list = BIOME_DECOR[screen.biome];
     return Boolean(list) && LOW_DECOR.has(pickDecor(list, x, y));
+}
+
+// ── Maisons ───────────────────────────────────────────────────────────────
+// Un intérieur n'est pas tiré au hasard : le mobilier haut (étagère, armoire, lit) s'adosse au mur du fond, deux obstacles contigus
+// forment une table basse, les obstacles isolés sont des objets domestiques (jarre, panier, plante, coussin) : plus de lanternes ni de
+// théières posées par terre. `isObst(x, y)` : la case est un obstacle (le pourtour est un mur).
+const WALL_FURNITURE = ['shelf', 'cabinet', 'bed', 'shelf'];
+const FLOOR_OBJECTS = ['jar', 'basket', 'plant', 'cushion', 'jar'];
+
+export function houseDecor(isObst, x, y) {
+    if (y === 1) return WALL_FURNITURE[Math.floor(hash(x, y) * WALL_FURNITURE.length)];
+    if (isObst(x - 1, y) || isObst(x + 1, y) || isObst(x, y - 1) || isObst(x, y + 1)) return 'table';
+    return FLOOR_OBJECTS[Math.floor(hash(x, y) * FLOOR_OBJECTS.length)];
+}
+
+// Tapis de la pièce : plus grand rectangle (jusqu'à 5×3, minimum 2×2) libre de tout obstacle, hors rangée du fond et rangée de la porte,
+// au plus près du centre. `blocked(x, y)` : obstacle ou sortie. Retourne { x, y, w, h } ou null si la pièce est trop encombrée.
+export function houseRug(blocked, w, h) {
+    let best = null;
+    for (let rw = Math.min(5, w - 4); rw >= 2 && !best; rw--) {
+        for (let rh = Math.min(3, h - 4); rh >= 2 && !best; rh--) {
+            let bestD = Infinity;
+            for (let ry = 2; ry + rh <= h - 2; ry++) for (let rx = 1; rx + rw <= w - 1; rx++) {
+                let free = true;
+                for (let i = 0; i < rw && free; i++) for (let j = 0; j < rh && free; j++) if (blocked(rx + i, ry + j)) free = false;
+                const d = Math.abs(rx + rw / 2 - w / 2) + Math.abs(ry + rh / 2 - h / 2);
+                if (free && d < bestD) { bestD = d; best = { x: rx, y: ry, w: rw, h: rh }; }
+            }
+        }
+    }
+    return best;
 }

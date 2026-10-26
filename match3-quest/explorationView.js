@@ -30,9 +30,9 @@ import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
 import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
-import { BIOME_DECOR, pickDecor, hash } from './decor.js';
+import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
-import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
+import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
 
 // Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
 const COVERED_DRAW_MS = 250;
@@ -1127,6 +1127,8 @@ export function createExplorationView(cfg) {
         const isLiquid = (x, y) => inMap(x, y) && (grids.liq[y * screen.w + x] === 1 || (screen.aquatic && grids.obst[y * screen.w + x] === 1));
         const isPath = (x, y) => !inMap(x, y) || (grids.path[y * screen.w + x] === 1 && !isLiquid(x, y));
         const tiled = !!(screen.interior || screen.kind === 'arena');
+        // maison : un tapis au centre de la pièce, sur des cases libres (ni meuble ni sortie)
+        const rug = screen.interior ? houseRug((x, y) => grids.obst[y * screen.w + x] === 1 || (screen.exits || []).some(e => e.x === x && e.y === y), screen.w, screen.h) : null;
         // hautes herbes (rencontres aléatoires) : touffes sombres peintes dans le calque de sol
         const grassCells = X.grassOf(screen)?.cells || [];
         const grassGrid = grassCells.length ? rectGrid(screen, grassCells) : null;
@@ -1135,7 +1137,7 @@ export function createExplorationView(cfg) {
         return (y0, y1) => {
             for (let y = y0; y < y1; y++) {
                 for (let x = 0; x < screen.w; x++) {
-                    paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: tileBiomeId(screen), isTall });
+                    paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: tileBiomeId(screen), isTall, rug });
                 }
             }
         };
@@ -1588,7 +1590,8 @@ export function createExplorationView(cfg) {
                 case 'block': {
                     const px = c.x - tile / 2, py = c.y - tile / 2;
                     if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
-                        drawCachedObject(`wall:${screen.biome}:${it.y === 0}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0));
+                        const deco = screen.biome === 'house' && it.y === 0 ? wallDecoOf(it.x, screen.w) : 0;   // fenêtre à treillis ou rouleau au mur du fond
+                        drawCachedObject(`wall:${screen.biome}:${it.y === 0}:${deco}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0, deco));
                         break;
                     }
                     const depth = Math.min(it.x, it.y, screen.w - 1 - it.x, screen.h - 1 - it.y);
@@ -1600,7 +1603,7 @@ export function createExplorationView(cfg) {
                             (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
                         break;
                     }
-                    const decor = pickDecor(biome.decor, it.x, it.y);
+                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y) : pickDecor(biome.decor, it.x, it.y);
                     if (decor === 'rock') {
                         drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
                         break;

@@ -1,6 +1,6 @@
 // Obstacles bas (roseaux, decor.js) : franchissables comme des hautes herbes, avec rencontres aléatoires.
 import { SCREENS } from '../../story.js';
-import { isLowObstacle, BIOME_DECOR, pickDecor, LOW_DECOR } from '../../decor.js';
+import { isLowObstacle, BIOME_DECOR, pickDecor, LOW_DECOR, houseDecor, houseRug } from '../../decor.js';
 import { createSession, tryMove, isTerrainBlocked, isEncounterCell, encounterOf, findPath } from '../../exploration.js';
 
 const cellsOf = screen => {
@@ -57,5 +57,33 @@ describe('obstacles bas', () => {
         const bld = fake({ buildings: [{ x: 1, y: 1, w: 8, h: 8 }] });
         expect(cellsOf(bld).some(([x, y]) => isLowObstacle(bld, x, y))).toBe(false);
         expect(isLowObstacle(fake(), 0, 5)).toBe(false);
+    });
+});
+
+describe('mobilier des maisons', () => {
+    
+    const house = SCREENS.rizieres_h_wen;
+    const obst = new Set(cellsOf(house).map(([x, y]) => `${x},${y}`));
+    const isObst = (x, y) => obst.has(`${x},${y}`);
+
+    test('plus de lanterne ni de théière posées par terre ; étagères et lits contre le mur du fond', () => {
+        const names = cellsOf(house).map(([x, y]) => houseDecor(isObst, x, y));
+        expect(names.some(n => ['lantern', 'teapot', 'books', 'chair'].includes(n))).toBe(false);
+        cellsOf(house).filter(([, y]) => y === 1).forEach(([x, y]) => expect(['shelf', 'cabinet', 'bed']).toContain(houseDecor(isObst, x, y)));
+    });
+
+    test('deux obstacles contigus au milieu de la pièce forment une table, un obstacle isolé un objet domestique', () => {
+        const pair = (x, y) => (x === 4 && y === 3) || (x === 5 && y === 3);
+        expect(houseDecor(pair, 4, 3)).toBe('table');
+        expect(['jar', 'basket', 'plant', 'cushion']).toContain(houseDecor((x, y) => x === 4 && y === 3, 4, 3));
+    });
+
+    test('le tapis tient sur des cases libres, hors rangée de la porte', () => {
+        const rug = houseRug(isObst, house.w, house.h);
+        expect(rug).not.toBeNull();
+        expect(rug.w * rug.h).toBeGreaterThanOrEqual(4);
+        for (let i = 0; i < rug.w; i++) for (let j = 0; j < rug.h; j++) expect(isObst(rug.x + i, rug.y + j)).toBe(false);
+        expect(rug.y + rug.h).toBeLessThanOrEqual(house.h - 2);
+        expect(houseRug(() => true, 10, 7)).toBeNull();
     });
 });
