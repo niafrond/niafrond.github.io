@@ -174,8 +174,8 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         const first = await measure();
         expect(first.side).toBe(first.expected);
         expect(first.side).toBeGreaterThan(40);
-        // Les 8 saveurs ont leur règle
-        expect(await page.evaluate(() => document.getElementById('tile-bitmaps').textContent.match(/background-image/g).length)).toBe(8);
+        // Les 9 saveurs (dont le crâne +5) ont leur règle
+        expect(await page.evaluate(() => document.getElementById('tile-bitmaps').textContent.match(/background-image/g).length)).toBe(9);
 
         // Un redimensionnement (rotation, fenêtre) refait les bitmaps à la nouvelle taille
         await page.setViewportSize({ width: 300, height: 640 });

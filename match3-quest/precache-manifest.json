@@ -16,6 +16,7 @@
   "classes.js",
   "combatFlow.js",
   "combatStats.js",
+  "companionMoves.js",
   "companionPowers.js",
   "companions.js",
   "compareView.js",
