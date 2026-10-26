@@ -82,7 +82,7 @@ function previewPanel(offer) {
     const current = equippedCounterpart(player, offer.kind, obj);
     const rows = previewEquip(player, offer.kind, obj).map(r => `
         <tr><th scope="row">${r.label}</th><td>${r.before}</td><td>${r.after}</td>
-        <td class="${r.delta > 0 ? 'delta-up' : r.delta < 0 ? 'delta-down' : ''}">${r.delta > 0 ? '+' : r.delta < 0 ? '−' : ''}${r.delta ? Math.abs(r.delta) : '='}</td></tr>`).join('');
+        <td class="${!r.delta ? '' : (r.delta > 0) === (r.better !== 'low') ? 'delta-up' : 'delta-down'}">${r.delta > 0 ? '+' : r.delta < 0 ? '−' : ''}${r.delta ? Math.abs(r.delta) : '='}</td></tr>`).join('');
     return `
         <div class="preview-panel" role="dialog" aria-label="Comparaison avec l'équipé">
             <h4>${escapeHtml(obj.name)} <em>contre</em> ${current ? escapeHtml(current.name) : 'aucune pièce équipée'}</h4>
@@ -153,6 +153,8 @@ export function renderMerchant(npc, card, hooks = {}) {
         if (prev) { previewKey = prev.dataset.preview; draw(); return; }
         if (ev.target.closest('[data-preview-close]')) { previewKey = null; draw(); return; }
         const refresh = () => {
+            updateAvailableWeapons();
+            createWeaponButton?.();
             updateInventoryTab?.();
             updateItemButton?.();
             saveUpdate();

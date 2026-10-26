@@ -2,12 +2,13 @@ import { previewEquip, equippedCounterpart, isComparable } from '../../equipPrev
 import { lootableStuff } from '../../stuff.js';
 
 describe('aperçu d\'équipement chez le marchand', () => {
-    const hero = () => ({ attack: 10, defense: 5, maxHp: 100, maxMana: 50, stuff: {}, equipment: { leftHand: null }, equippedWeapon: { id: 'a', atkBonus: 3, defBonus: 0 } });
+    const hero = () => ({ attack: 10, defense: 5, maxHp: 100, maxMana: 50, stuff: {}, equipment: { leftHand: null }, equippedWeapon: { id: 'a', atkBonus: 3, defBonus: 0, actionPoints: 2 } });
     const by = (rows, label) => rows.find(r => r.label === label);
 
     test('arme : remplace l\'arme en main droite', () => {
-        const rows = previewEquip(hero(), 'weapon', { id: 'b', atkBonus: 8, defBonus: 2 });
+        const rows = previewEquip(hero(), 'weapon', { id: 'b', atkBonus: 8, defBonus: 2, actionPoints: 4 });
         expect(by(rows, 'Attaque')).toMatchObject({ before: 13, after: 18, delta: 5 });
+        expect(by(rows, 'Coût en PA')).toMatchObject({ before: 2, after: 4, delta: 2, better: 'low' });
         expect(by(rows, 'Défense')).toMatchObject({ before: 5, after: 7, delta: 2 });
     });
 
@@ -24,6 +25,7 @@ describe('aperçu d\'équipement chez le marchand', () => {
         const piece = lootableStuff()[0];
         const h = hero();
         const rows = previewEquip(h, 'stuff', piece);
+        expect(by(rows, 'Coût en PA')).toBeUndefined();
         expect(by(rows, 'PV max').after).toBe(100 + (piece.maxHp || 0));
         expect(by(rows, 'Attaque').delta).toBe(piece.atkBonus || 0);
         expect(h.stuff).toEqual({});

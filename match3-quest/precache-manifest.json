@@ -22,6 +22,7 @@
   "compareView.js",
   "constants.js",
   "decor.js",
+  "dialogState.js",
   "duel.js",
   "elements.js",
   "enemies.catalog.json",

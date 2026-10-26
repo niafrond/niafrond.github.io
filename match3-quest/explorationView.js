@@ -18,6 +18,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
+import { dialogFlags } from './dialogState.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
@@ -289,7 +290,7 @@ export function createExplorationView(cfg) {
         }
         const entry = dialogQueue[0];
         const text = entry.lines[dialogIndex];
-        const last = dialogIndex >= entry.lines.length - 1 && dialogQueue.length === 1;
+        const { showChoices, closing } = dialogFlags(entry, dialogIndex, dialogQueue.length);
         const speaker = entry.speaker || {};
         box.innerHTML = `
             <div class="explore-dialog-portrait">${speaker.gba
@@ -300,9 +301,9 @@ export function createExplorationView(cfg) {
             <div class="explore-dialog-body">
                 <div class="explore-dialog-name">${escapeHtml(speaker.name || '')}${speaker.title ? ` <span>— ${escapeHtml(speaker.title)}</span>` : ''}</div>
                 <div class="explore-dialog-text">${escapeHtml(text)}</div>
-                ${entry.choices && last
+                ${showChoices
                     ? `<div class="explore-dialog-choices">${entry.choices.map((c, i) => `<button type="button" class="explore-choice" data-choice="${i}">${escapeHtml(c.label)}</button>`).join('')}</div>`
-                    : `<div class="explore-dialog-next">${last ? 'Fermer' : 'Suivant ►'} <small>(Entrée / clic)</small></div>`}
+                    : `<div class="explore-dialog-next">${closing ? 'Fermer' : 'Suivant ►'} <small>(Entrée / clic)</small></div>`}
             </div>`;
         box.classList.add('visible');
     }
@@ -324,7 +325,9 @@ export function createExplorationView(cfg) {
         } else {
             dialogQueue.shift();
             dialogIndex = 0;
-            entry.after?.();
+            // Même si `after` échoue, la boîte est redessinée d'après la file (sinon elle resterait affichée, file vide, sans pouvoir se fermer).
+            try { entry.after?.(); } finally { renderDialog(); }
+            return;
         }
         renderDialog();
     }
@@ -1039,8 +1042,7 @@ export function createExplorationView(cfg) {
                 const choice = entry.choices[Number(btn.dataset.choice)];
                 dialogQueue.shift();
                 dialogIndex = 0;
-                choice?.run?.();
-                renderDialog();
+                try { choice?.run?.(); } finally { renderDialog(); }
                 return;
             }
             advanceDialog();

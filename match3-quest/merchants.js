@@ -263,18 +263,29 @@ export function toggleSellTag(hero, id) {
     return true;
 }
 
-/** Excédents tagués vendables : [{ id, obj, qty, price, indices }] (un exemplaire gardé, jamais un objet verrouillé). */
+/**
+ * Pièces tagguées vendables : [{ id, kind, obj, qty, price, indices }].
+ * Objet ordinaire : l'excédent (un exemplaire gardé, jamais un objet verrouillé). Arme (tag `weapon:<id>`) et bouclier : la pièce entière,
+ * même sans doublon (sauf si elle est équipée, donc verrouillée).
+ */
 export function surplusEntries(hero) {
     const inv = hero.inventory || [];
     return (hero.sellTags || []).map(id => {
+        if (id.startsWith('weapon:')) {
+            const w = (hero.weapons || []).find(x => `weapon:${x.id}` === id);
+            if (!w || sellLockReason(hero, 'weapon', w)) return null;
+            return { id, kind: 'weapon', obj: w, qty: 1, price: sellPriceOf('weapon', w), rarity: weaponRarity(w), indices: [] };
+        }
         const all = inv.map((it, index) => ({ it, index })).filter(({ it }) => itemGroupKey(it) === id);
-        if (all.length < 2) return null;
+        if (!all.length) return null;
+        const shield = all[0].it.type === 'shield';
+        if (!shield && all.length < 2) return null;
         const free = all.filter(({ it, index }) => !sellLockReason(hero, 'item', it, index));
-        const keep = all.length - free.length >= 1 ? null : free[0];   // un exemplaire verrouillé suffit à « garder » l'objet
+        const keep = shield || all.length - free.length >= 1 ? null : free[0];   // un exemplaire verrouillé suffit à « garder » l'objet
         const indices = free.filter(e => e !== keep).map(e => e.index);
         if (!indices.length) return null;
         const obj = all[0].it;
-        return { id, obj, qty: indices.length, price: sellPriceOf('item', obj), rarity: obj.rarity || 'common', indices };
+        return { id, kind: 'item', obj, qty: indices.length, price: sellPriceOf('item', obj), rarity: obj.rarity || 'common', indices };
     }).filter(Boolean);
 }
 
@@ -282,7 +293,8 @@ export function surplusEntries(hero) {
 export function sellSurplus(hero, id) {
     const entry = surplusEntries(hero).find(e => e.id === id);
     if (!entry) return { ok: false, message: 'Plus rien à vendre.' };
-    [...entry.indices].sort((a, b) => b - a).forEach(i => sellEntry(hero, `inv:${i}`));
+    if (entry.kind === 'weapon') sellEntry(hero, entry.id);
+    else [...entry.indices].sort((a, b) => b - a).forEach(i => sellEntry(hero, `inv:${i}`));
     hero.sellTags = (hero.sellTags || []).filter(t => t !== id);
     const gain = entry.price * entry.qty;
     return { ok: true, message: `${entry.obj.name} x ${entry.qty} vendu pour ${gain} pièces d'or.`, entry, gain };

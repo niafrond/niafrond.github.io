@@ -40,11 +40,14 @@ export function statsWith(hero, kind, obj) {
 export function previewEquip(hero, kind, obj) {
     const before = { attack: rawAttack(hero), defense: rawDefense(hero), maxHp: hero.maxHp || 0, mana: manaCaps(hero) };
     const after = statsWith(hero, kind, obj);
-    const row = (label, b, a) => ({ label, before: b, after: a, delta: a - b });
+    const row = (label, b, a, better = 'high') => ({ label, before: b, after: a, delta: a - b, better });
     // Qì max : une ligne par couleur qui change, sinon une seule ligne (inchangé).
     const changed = MANA_COLORS.filter(c => before.mana[c] !== after.mana[c]);
     const manaRows = changed.length
         ? changed.map(c => row(`Qì max ${MANA_LABELS[c]}`, before.mana[c], after.mana[c]))
         : [row('Qì max', before.mana.red, after.mana.red)];
-    return [row('Attaque', before.attack, after.attack), row('Défense', before.defense, after.defense), row('PV max', before.maxHp, after.maxHp), ...manaRows];
+    // Coût en PA (armes seulement) : plus bas = mieux.
+    const current = equippedCounterpart(hero, kind, obj);
+    const paRows = kind === 'weapon' ? [row('Coût en PA', current?.actionPoints || 0, obj.actionPoints || 0, 'low')] : [];
+    return [...paRows, row('Attaque', before.attack, after.attack), row('Défense', before.defense, after.defense), row('PV max', before.maxHp, after.maxHp), ...manaRows];
 }
