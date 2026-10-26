@@ -1,3 +1,31 @@
+## [2.134.0](https://github.com/niafrond/niafrond.github.io/compare/v2.133.1...v2.134.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** afficher les énigmes en plein écran avec les commandes en haut ([86c4c59](https://github.com/niafrond/niafrond.github.io/commit/86c4c59d0031f9bae58bcc602368ae36491d44ef))
+* **match3-quest:** ajouter 9 énigmes et les armures antiques des trois familles ([388eea3](https://github.com/niafrond/niafrond.github.io/commit/388eea3bc61beaa92b0fab8aaf998cd3f5c4e1d3))
+* **match3-quest:** ajouter un bouton Solution à la page de test des énigmes ([7bca70b](https://github.com/niafrond/niafrond.github.io/commit/7bca70b095ad572be81277cb9db3e4d9f15a0708))
+* **match3-quest:** ajouter un lecteur de solution avec pause dans la soluce des énigmes ([9996c25](https://github.com/niafrond/niafrond.github.io/commit/9996c2502b365c75d3332f26921dd8ad9844f43e))
+* **match3-quest:** ajouter un moteur d'énigmes à plateau (pousser, miroirs, glisser) ([264b680](https://github.com/niafrond/niafrond.github.io/commit/264b680ce0d4e213481fb44c3d30317f4c477643))
+* **match3-quest:** ajouter une page de test des énigmes ([9ecd748](https://github.com/niafrond/niafrond.github.io/commit/9ecd74821c3b9489666accf2af738adde0fd012f))
+* **match3-quest:** allonger les énigmes de miroirs 3 et 4 à 12 et 13 coups ([7b8828d](https://github.com/niafrond/niafrond.github.io/commit/7b8828d027eb94e6141ba5a345a683d0a0617253))
+* **match3-quest:** cacher les coffres à énigme à l'étage de douze maisons ([b66b45b](https://github.com/niafrond/niafrond.github.io/commit/b66b45ba44aa428d876130308d161978f14efe98))
+* **match3-quest:** dessiner le prisme en triangle et ajouter le prisme carré à trois rayons ([e6f2ed3](https://github.com/niafrond/niafrond.github.io/commit/e6f2ed30b1f92484c2808d8e8640c3048ef89cd0))
+* **match3-quest:** équilibrer les armures antiques et dessiner l'escalier des maisons à étage ([d3a915f](https://github.com/niafrond/niafrond.github.io/commit/d3a915f5d49be2f62f3caf897d4f7de48a289db6))
+* **match3-quest:** générer et afficher les sprites des énigmes (émetteur, récepteur, jarres, charrettes) ([64a9130](https://github.com/niafrond/niafrond.github.io/commit/64a9130d4498c785ded81040b3204e3c12963b41))
+* **match3-quest:** passer à quatre énigmes par type et basculer les flèches de l'armure sur l'arme la plus chère ([b41e850](https://github.com/niafrond/niafrond.github.io/commit/b41e85088b74c32c6a8ee492af641eac693fb312))
+* **match3-quest:** pivoter le plateau des énigmes en portrait pour remplir la zone ([9cd3d01](https://github.com/niafrond/niafrond.github.io/commit/9cd3d016ff8a26cc8a06eab611b485f88d3f60a3))
+* **match3-quest:** porter les flèches de l'armure des Jarres à 25 % ([f4d6828](https://github.com/niafrond/niafrond.github.io/commit/f4d682817ebb5198954476f1af18eebb4a46328e))
+* **match3-quest:** redessiner les charrettes avec un sprite par orientation et par taille ([55615a0](https://github.com/niafrond/niafrond.github.io/commit/55615a0be84e8d01fadb6bb54ed6877ad1f0eb60))
+* **match3-quest:** refondre la génération des miroirs et fixer quatre paliers de difficulté par énigme ([6807d83](https://github.com/niafrond/niafrond.github.io/commit/6807d83ad92f254b88283362dffc3df239e00b02))
+* **match3-quest:** remplacer les pièces uniques par trois armures antiques de quatre pièces ([a382b46](https://github.com/niafrond/niafrond.github.io/commit/a382b46d7ead428313872eb707e64c675158992f))
+* **match3-quest:** rendre les douze énigmes beaucoup plus complexes ([6d6db96](https://github.com/niafrond/niafrond.github.io/commit/6d6db96dea07d1d9c71f757793ad87ed7fc0bdd1))
+* **match3-quest:** utiliser la jarre du décor dans les énigmes à pousser ([d3dc760](https://github.com/niafrond/niafrond.github.io/commit/d3dc76066cf0e7153dbeed56ef395df4bfc3445e))
+
+### Bug Fixes
+
+* **match3-quest:** nettoyer le détourage des charrettes horizontales, afficher le héros dans les jarres et situer les coffres dans la soluce ([c4b35b8](https://github.com/niafrond/niafrond.github.io/commit/c4b35b85737f14d4b790d9c770975ba5669dd7c8))
+
 ## [2.133.1](https://github.com/niafrond/niafrond.github.io/compare/v2.133.0...v2.133.1) (2026-10-25)
 
 ### Bug Fixes
