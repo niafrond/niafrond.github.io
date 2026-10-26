@@ -1486,7 +1486,7 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action">${svgIcon('arrow')} <strong>PA</strong> ${player.combatPoints}</span></div>
+            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> <strong>PA</strong> ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1544,7 +1544,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action">${svgIcon('arrow')} <strong>PA</strong> ${enemy.combatPoints}</span></div>
+        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> <strong>PA</strong> ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>

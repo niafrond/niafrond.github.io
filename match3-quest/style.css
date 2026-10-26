@@ -3675,3 +3675,7 @@ body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border
 /* Les pastilles ne passent pas sous le portrait (même réserve que la ligne du nom) */
 #player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 56px; }
 @media (max-height: 520px) and (orientation: landscape) { #player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 38px; } }
+
+/* Pastilles sans bordure épaisse ; PA = sprite des doubles flèches */
+#player-stats .stat-chip, #enemy-stats .stat-chip, #player-stats .status-badge, #enemy-stats .status-badge { border: 0; }
+.pa-ic { width: 1.5em; height: 1.5em; margin: -2px 0; image-rendering: pixelated; }

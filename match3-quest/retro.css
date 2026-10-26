@@ -733,3 +733,4 @@ body.rt #enemy-stats, body.rt #enemy-spells { background: var(--team-enemy-bg); 
 body.rt #player-stats.active-turn { border-color: #00c853; }
 body.rt #enemy-stats.active-turn { border-color: #ff1744; }
 body.rt #player-spells, body.rt #enemy-spells { border-width: 3px; box-shadow: 0 4px 0 var(--rt-ink); }
+body.rt .stat-chip, body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border: 0; }
