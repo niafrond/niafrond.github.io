@@ -113,6 +113,7 @@
   "world/maps/tonnerre.js",
   "world/maps/volcan.js",
   "world/spots.js",
+  "world/structures.js",
   "world/text/bambous.js",
   "world/text/extra/bambous.js",
   "world/text/extra/fauves.js",
@@ -137,6 +138,9 @@
   "world/text/tonnerre.js",
   "world/text/volcan.js",
   "world/underground.js",
+  "sprites/archi.js",
+  "sprites/biomeArchi.js",
+  "sprites/biomeSvg.js",
   "sprites/biomeTint.js",
   "sprites/creatures.js",
   "sprites/deadtrees.js",
@@ -283,9 +287,9 @@
    "h": "a622880f2b"
   },
   {
-   "p": "sprites/gba/baihu.97dd7064.js",
-   "s": 10605,
-   "h": "97dd70640e"
+   "p": "sprites/gba/baihu.849bd8a6.js",
+   "s": 41589,
+   "h": "849bd8a66b"
   },
   {
    "p": "sprites/gba/bailong.14dc6092.js",
