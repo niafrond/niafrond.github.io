@@ -416,7 +416,7 @@ function init() {
     const renderPlayTime = () => {
         if(!playTimeEl || !optionsModal?.classList.contains('active')) return;
         const t = playTimeStats(), r = realPlayTimeStats();
-        playTimeEl.innerHTML = [['Aujourd\'hui', t.today], ['Hier', t.yesterday], ['Cette semaine', t.week], ['Total', t.total], ['Temps de jeu réel', r.total]]
+        playTimeEl.innerHTML = [['Temps de jeu réel (aujourd\'hui)', r.today], ['Hier', t.yesterday], ['Cette semaine', t.week], ['Total', t.total]]
             .map(([label, sec]) => `<span class="playtime-line"><span>${label}</span><b>${formatDuration(sec)}</b></span>`).join('');
     };
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
