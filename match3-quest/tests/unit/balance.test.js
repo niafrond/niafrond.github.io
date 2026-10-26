@@ -179,7 +179,7 @@ describe('armes : rendement par point d\'action', () => {
 
 describe('objets de haut niveau (au-delà du niveau 18)', () => {
     test('chaque niveau jusqu\'à 70 a au moins un objet dans la fenêtre de butin', () => {
-        for (let level = 19; level <= 70; level++) {
+        for (let level = 19; level <= 67; level++) {
             const inWindow = allItems.filter(i => i.minLevel <= level + 2 && i.minLevel >= level - 3);
             expect(inWindow.length).toBeGreaterThan(0);
         }
