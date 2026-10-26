@@ -1,3 +1,9 @@
+## [2.142.0](https://github.com/niafrond/niafrond.github.io/compare/v2.141.0...v2.142.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter un bord doré autour de la minimap ([a9623d3](https://github.com/niafrond/niafrond.github.io/commit/a9623d374c7ff759252c8cf82ede593ce7c7373e))
+
 ## [2.141.0](https://github.com/niafrond/niafrond.github.io/compare/v2.140.2...v2.141.0) (2026-10-26)
 
 ### Features
