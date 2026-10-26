@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import { TILE_NAMES, STYLE_ID, tileBitmapPx, tileBitmapRules, createTileBitmaps } from '../../tileBitmaps.js';
 
-// Les 8 SVG des tuiles sont rastérisés une fois en PNG à la taille d'affichage et servent de fond (voir tileBitmaps.js).
+// Les 9 SVG des tuiles sont rastérisés une fois en PNG à la taille d'affichage et servent de fond (voir tileBitmaps.js).
 
 function makeEnv({ dpr = 2, failDecode = null, noContext = false } = {}) {
     const created = { images: [], canvases: [] };
@@ -63,18 +63,18 @@ describe('tileBitmapPx / tileBitmapRules', () => {
         const urls = Object.fromEntries(TILE_NAMES.map(n => [n, `data:image/png;base64,${n}`]));
         const css = tileBitmapRules(urls);
         TILE_NAMES.forEach(n => expect(css).toContain(`body.rt .tile.${n}{background-image:url("data:image/png;base64,${n}")}`));
-        expect(css.match(/\{/g).length).toBe(8);
+        expect(css.match(/\{/g).length).toBe(TILE_NAMES.length);
         expect(tileBitmapRules({ red: 'x' })).toBe('body.rt .tile.red{background-image:url("x")}');
     });
 });
 
 describe('createTileBitmaps', () => {
-    test('première demande : les 8 tuiles sont rastérisées tout de suite à la taille exacte, dans un seul <style> ajouté au <head>', async () => {
+    test('première demande : les 9 tuiles sont rastérisées tout de suite à la taille exacte, dans un seul <style> ajouté au <head>', async () => {
         const { env, tb, style } = setup({ dpr: 2 });
         tb.request(45);
         expect(await tb.ready()).toBe(true);
         expect(tb.currentPx).toBe(90);
-        expect(env.created.canvases.length).toBe(8);
+        expect(env.created.canvases.length).toBe(TILE_NAMES.length);
         env.created.canvases.forEach(c => { expect([c.width, c.height]).toEqual([90, 90]); expect(c.draws[0].slice(1)).toEqual([0, 0, 90, 90]); });
         expect(env.created.images.map(i => i.src)).toEqual(TILE_NAMES.map(n => `sprites/tiles/tile-${n}.svg?v=1`));
         const css = style().textContent;
@@ -107,11 +107,11 @@ describe('createTileBitmaps', () => {
         await tb.ready();
         const first = style().textContent;
         tb.request(44); tb.request(43); tb.request(40);   // redimensionnement en cours
-        expect(env.created.canvases.length).toBe(8);      // rien de refait pendant le geste
+        expect(env.created.canvases.length).toBe(TILE_NAMES.length);      // rien de refait pendant le geste
         expect(timers.filter(t => t.live).length).toBe(1);
         await fire();
         expect(tb.currentPx).toBe(80);
-        expect(env.created.canvases.length).toBe(16);
+        expect(env.created.canvases.length).toBe(2 * TILE_NAMES.length);
         expect(style().textContent).not.toBe(first);
         expect(style().textContent).toContain('80x80');
         expect(env.head.children.filter(e => e.id === STYLE_ID).length).toBe(1);
@@ -125,7 +125,7 @@ describe('createTileBitmaps', () => {
         tb.request(45);
         expect(timers.filter(t => t.live).length).toBe(0);
         await fire();
-        expect(env.created.canvases.length).toBe(8);
+        expect(env.created.canvases.length).toBe(TILE_NAMES.length);
     });
 
     test('une image illisible : aucun style n\'est écrit (les SVG d\'origine restent), et pas de nouvel essai en boucle pour cette taille', async () => {

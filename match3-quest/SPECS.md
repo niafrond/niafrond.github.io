@@ -445,3 +445,5 @@ Spécifications et journal de session de `match3-quest/`.
 - 2026-10-26 (minimap d'exploration) : à la demande de l'utilisateur. `explorationView.js` dessine une minimap dans le canvas, en bas à droite (`drawMinimap`) : sol, chemins, obstacles et liquides de l'écran (calque 1 px par case mis en cache), PNJ en bleu, ennemis vivants en rouge, cadre blanc de la zone visible, héros en jaune. Si le héros est dans le coin bas droit (sous la minimap, plus une case de garde), elle glisse avec animation vers le bas gauche pour ne pas le cacher. Masquée dans les écrans sombres (souterrains).
 
 - 2026-10-26 (minimap non cliquable) : à la demande de l'utilisateur. Un clic / toucher sur la minimap est ignoré (`overMinimap` dans `explorationView.js`) : le héros ne se déplace pas.
+
+- 2026-10-26 (test tileBitmaps) : le test `tileBitmaps.test.js` attendait 8 tuiles alors que `TILE_NAMES` en compte 9 depuis l'ajout de `skull5` ; les comptes s'appuient désormais sur `TILE_NAMES.length`.
