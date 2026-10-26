@@ -4,6 +4,7 @@
 // Logique pure, sans DOM ; appliquée par `assembleWorld` après l'agrandissement des cartes (world/expand.js).
 
 import { isLowObstacle } from '../decor.js';
+import { toSet, toRects } from './expand.js';
 
 const key = (x, y) => `${x},${y}`;
 const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
@@ -262,6 +263,27 @@ export function sealLineAtGuard(screen, door, guard) {
     return placed;
 }
 
+/**
+ * Piliers (et rochers qui ferment la rangée) d'un boss qui garde un passage : posés par `addPillarsAroundGuard` et `sealLineAtGuard`,
+ * puis détachés du terrain et rangés dans `enemy.wall` : le moteur (`bossWallCells`, exploration.js) les fait exister tant que le boss
+ * est en jeu, ils disparaissent à sa défaite.
+ */
+export function wallGuard(screen, door, enemy) {
+    const owned = () => new Set([...(screen.pillars || []), ...(screen.sealed || [])].map(([px, py]) => key(px, py)));
+    const before = owned();
+    addPillarsAroundGuard(screen, door, enemy);
+    sealLineAtGuard(screen, door, enemy);
+    const cells = [...owned()].filter(k => !before.has(k));
+    if (!cells.length) return;
+    const gone = new Set(cells);
+    const obst = toSet(screen.obstacles);
+    cells.forEach(k => obst.delete(k));
+    screen.obstacles = toRects(obst);
+    screen.pillars = (screen.pillars || []).filter(([px, py]) => !gone.has(key(px, py)));
+    screen.sealed = (screen.sealed || []).filter(([px, py]) => !gone.has(key(px, py)));
+    enemy.wall = cells.map(k => k.split(',').map(Number));
+}
+
 // Première case libre près d'un passage : à côté de la bouche du passage (écart latéral ≥ 2), 1 à 3 pas à l'intérieur.
 function placeNearGate(screen, gate, occ, depths, laterals) {
     const [ix, iy] = inward(gate), [ax, ay] = along(gate);
@@ -340,11 +362,11 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
             const occ = occupancy(from, screens);
             const pos = guardCellFor(from, gate, occ, [3, 4, 5, 6], [0, 1, -1, 2, -2]);
             if (!pos) throw new Error(`jonction ${j.id} : pas de place pour le gardien`);
-            from.enemies.push({
+            const guardEnemy = {
                 id: j.enemy.id, templateId: j.enemy.templateId, name: j.enemy.name, kind: 'sentinel', offset: 2, permanent: true, aggro: 2, x: pos.x, y: pos.y
-            });
-            addPillarsAroundGuard(from, gate, pos);
-            sealLineAtGuard(from, gate, pos);
+            };
+            from.enemies.push(guardEnemy);
+            wallGuard(from, gate, guardEnemy);
             requires = j.enemy.id;
         }
         // le verrou couvre toutes les cases du passage ; le chemin de retour reste libre
@@ -380,8 +402,7 @@ export function guardLockedGates(screens) {
                     if (pos) { enemy.x = pos.x; enemy.y = pos.y; }
                 }
             }
-            addPillarsAroundGuard(screen, door, enemy);
-            sealLineAtGuard(screen, door, enemy);
+            wallGuard(screen, door, enemy);
         });
     });
 }

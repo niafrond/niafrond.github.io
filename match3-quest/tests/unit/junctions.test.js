@@ -2,7 +2,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS, QUESTS } from '../../story.js';
 import { JUNCTIONS } from '../../world/junctions.js';
-import { aggroOf } from '../../exploration.js';
+import { aggroOf, bossWallsOf } from '../../exploration.js';
 import {
     createSession, tryMove, isExitLocked, talkToNpc, openChest, markEnemyDefeated, questStatus, isTerrainBlocked
 } from '../../exploration.js';
@@ -145,10 +145,12 @@ describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => 
 
 describe('barrage devant un passage fermé', () => {
     test('un gardien de porte se tient à 2 cases du passage, au centre, flanqué de piliers qui sont des obstacles', () => {
-        const withPillars = Object.values(SCREENS).filter(s => s.pillars?.length);
+        // les piliers d'un boss de porte (`enemy.wall`) ne sont plus des obstacles du terrain : ils existent tant que le boss est en jeu
+        const withPillars = Object.values(SCREENS).filter(s => s.pillars?.length || s.enemies.some(e => e.wall?.length));
         expect(withPillars.length).toBeGreaterThanOrEqual(10);
         withPillars.forEach(s => {
-            s.pillars.forEach(([x, y]) => expect(isTerrainBlocked(s, x, y)).toBe(true));
+            (s.pillars || []).forEach(([x, y]) => expect(isTerrainBlocked(s, x, y)).toBe(true));
+            s.enemies.filter(e => e.wall).forEach(e => e.wall.filter(([x, y]) => x > 2 && y > 2 && x < s.w - 3 && y < s.h - 3).forEach(([x, y]) => expect([s.id, x, y, isTerrainBlocked(s, x, y)]).toEqual([s.id, x, y, false])));
             const doors = exitsOf(s, SCREENS).filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
             const inFront = d => {
                 const [ix, iy] = d.edge === 'west' ? [1, 0] : d.edge === 'east' ? [-1, 0] : d.edge === 'north' ? [0, 1] : [0, -1];
@@ -189,5 +191,21 @@ describe('quête qui ouvre sa porte dès les objectifs remplis (unlockOnReady)',
         const quest = QUESTS.find(q => q.id === 'sq_sceau_racines');
         expect(questStatus(s, quest)).toBe('available');
         expect(isExitLocked(s, { requires: 'sq_sceau_racines' })).toBe(false);
+    });
+});
+
+describe('piliers des boss de porte', () => {
+    test('chaque boss qui garde une porte a des piliers (flammes pour un Soleil) qui disparaissent avec lui', () => {
+        const guards = Object.values(SCREENS).flatMap(s => s.enemies.filter(e => e.guardsDoor && e.wall).map(e => ({ s, e })));
+        expect(guards.length).toBeGreaterThan(0);
+        guards.forEach(({ s, e }) => {
+            const session = createSession({ screenId: s.id }, SCREENS);
+            expect(bossWallsOf(session).filter(w => w.def === e).length).toBe(e.wall.length);
+            session.data.defeated.push(e.id);
+            expect(bossWallsOf(session).filter(w => w.def === e)).toEqual([]);
+        });
+        const sun = guards.find(({ e }) => /^sun_\d+$/.test(e.id));
+        expect(sun).toBeDefined();
+        expect(bossWallsOf(createSession({ screenId: sun.s.id }, SCREENS)).find(w => w.def === sun.e).fire).toBe(true);
     });
 });

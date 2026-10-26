@@ -375,7 +375,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Duel d'entraînement : Fengmeng garde la digue, seul passage vers l'est (corridor de 3 tuiles de large).
-            { id: 'fengmeng_1', templateId: 'fengmeng_1', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
+            { id: 'fengmeng_1', templateId: 'fengmeng_1', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4, scaledAggro: 3, sight: 1, allAround: true, seal: 'x',
               permanent: true, boss: { name: 'Fengmeng, le Disciple', level: 4 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_1'),
@@ -877,7 +877,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Embuscade : Fengmeng tient le défilé (corridor de 3 tuiles), seul passage vers l'est.
-            { id: 'fengmeng_2', templateId: 'fengmeng_2', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
+            { id: 'fengmeng_2', templateId: 'fengmeng_2', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3, sight: 1, allAround: true, seal: 'x',
               permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 8 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),

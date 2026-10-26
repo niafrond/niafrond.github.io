@@ -154,8 +154,8 @@ describe('redisposition : le contenu des cartes agrandies occupe toute la surfac
         });
     });
 
-    test('la zone de vigilance reste de 1 case (0 pour un boss), même sur les cartes agrandies', () => {
-        scaled.forEach(s => s.enemies.forEach(e => expect([e.id, aggroOf(e)]).toEqual([e.id, e.boss || e.guardsDoor ? 0 : 1])));
+    test('la zone de vigilance reste de 1 case (0 pour un boss, sauf `sight` explicite : Fengmeng), même sur les cartes agrandies', () => {
+        scaled.forEach(s => s.enemies.forEach(e => expect([e.id, aggroOf(e)]).toEqual([e.id, e.guardsDoor || (e.boss && e.sight === undefined) ? 0 : (e.sight ?? 1)])));
     });
 });
 

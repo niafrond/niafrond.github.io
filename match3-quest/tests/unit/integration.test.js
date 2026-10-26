@@ -23,7 +23,12 @@ const enter = (s, key) => {
 // Marche jusqu'à (x, y); les combats sont immédiatement gagnés
 function walkTo(s, x, y) {
     for (let attempt = 0; attempt < 30; attempt++) {
-        const path = findPath(s, x, y);
+        let path = findPath(s, x, y);
+        // colonne de piliers d'un boss qui barre un défilé (Fengmeng) : on le vainc, ses piliers disparaissent
+        if (!path) {
+            s.screens[s.data.screenId].enemies.filter(e => e.seal).forEach(e => markEnemyDefeated(s, e.id));
+            path = findPath(s, x, y);
+        }
         if (!path) throw new Error(`no path to (${x},${y}) on ${s.data.screenId}`);
         let last = { type: 'moved' };
         let interrupted = false;

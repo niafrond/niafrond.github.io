@@ -48,8 +48,9 @@ import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaD
 
 export const AGGRO_RADIUS = 1;
 // Rayon de vigilance d'un ennemi : 1 case pour un ennemi normal, 0 pour un boss (ou le gardien d'une porte) : il faut alors
-// aller le chercher explicitement (le toucher). Valable sur toutes les cartes, agrandies ou non.
-export const aggroOf = def => (def?.boss || def?.guardsDoor ? 0 : (def?.sight ?? AGGRO_RADIUS));
+// aller le chercher explicitement (le toucher). Valable sur toutes les cartes, agrandies ou non. Exception : un boss qui déclare
+// explicitement `sight` (Fengmeng, qui barre un défilé de 3 cases) a une zone de détection pour qu'on ne puisse pas l'esquiver.
+export const aggroOf = def => (def?.guardsDoor ? 0 : (def?.sight ?? (def?.boss ? 0 : AGGRO_RADIUS)));
 export const PATROL_STEP_MS = 650;
 export const START_SCREEN = SCREENS.rizieres_village ? 'rizieres_village' : 'rizieres';
 // Nombre de déplacements pendant lesquels les zones de vigilance sont ignorées après une
@@ -493,7 +494,41 @@ export function isShielded(session, def) {
     return members.length > 0 && !members.every(e => session.data.defeated.includes(e.def.id));
 }
 
+// Murs d'un boss (`seal: 'x' | 'y'` dans sa définition) : tant qu'il est en jeu, toute la colonne (`'x'`) ou la rangée (`'y'`) qui passe par lui
+// est fermée par des piliers (hors terrain déjà infranchissable, sorties et entités) : on ne peut pas l'esquiver par un détour (roseaux
+// franchissables compris), il faut le battre. Les piliers disparaissent avec lui. Calcul mis en cache par définition de boss.
+const sealCache = new WeakMap();
+export function sealCellsOf(screen, def) {
+    if (Array.isArray(def?.wall)) return def.wall;   // piliers d'un boss de porte (world/junctions.js `wallGuard`)
+    if (!def?.seal) return [];
+    let cells = sealCache.get(def);
+    if (!cells) {
+        const taken = new Set([...screen.npcs, ...screen.chests, ...screen.enemies, ...screen.exits, screen.spawn, screen.waypoint].filter(Boolean).map(e => `${e.x},${e.y}`));
+        cells = [];
+        const along = def.seal === 'y' ? screen.w : screen.h;
+        for (let t = 0; t < along; t++) {
+            const x = def.seal === 'y' ? t : def.x, y = def.seal === 'y' ? def.y : t;
+            if (isTerrainBlocked(screen, x, y) || taken.has(`${x},${y}`)) continue;
+            cells.push([x, y]);
+        }
+        sealCache.set(def, cells);
+    }
+    return cells;
+}
+
+// Murs des boss encore en jeu sur l'écran courant : { x, y, def } par case. Les murs d'un Soleil (`sun_N`) sont des flammes (`fire`), les autres des piliers.
+export function bossWallsOf(session) {
+    const screen = currentScreen(session);
+    return screen.enemies
+        .filter(def => (def.seal || def.wall) && isEnemyAlive(session, def.id) && isEntityVisible(session, def))
+        .flatMap(def => sealCellsOf(screen, def).map(([x, y]) => ({ x, y, def, fire: /^sun_\d+$/.test(def.id) })));
+}
+
+// Cases des murs des boss encore en jeu sur l'écran courant.
+export const bossWallCells = session => bossWallsOf(session).map(w => [w.x, w.y]);
+
 export function entityAt(session, x, y) {
+    if (bossWallCells(session).some(([wx, wy]) => wx === x && wy === y)) return { type: 'wall' };
     const npc = visibleNpcs(session).find(n => n.x === x && n.y === y);
     if (npc) return { type: 'npc', npc };
     const chest = visibleChests(session).find(c => c.x === x && c.y === y);
@@ -638,6 +673,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
 
     const ent = entityAt(session, nx, ny);
     if (ent) {
+        if (ent.type === 'wall') return { type: 'blocked' };
         if (ent.type === 'npc') return { type: 'talk', npcId: ent.npc.id };
         if (ent.type === 'chest') return ent.opened ? { type: 'blocked' } : { type: 'chest', chestId: ent.chest.id };
         if (ent.type === 'waypoint') return activateWaypoint(session, ent.screenId);
@@ -784,6 +820,7 @@ export function findPath(session, tx, ty) {
     visibleNpcs(session).forEach(n => occupied.add(key(n.x, n.y)));
     visibleChests(session).forEach(c => occupied.add(key(c.x, c.y)));
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
+    bossWallCells(session).forEach(([wx, wy]) => occupied.add(key(wx, wy)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
     // Passages de bord (connexions) : y poser le pied dans le sens de sortie déclenche la transition, donc jamais un point de passage
