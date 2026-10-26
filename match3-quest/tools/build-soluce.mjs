@@ -579,7 +579,7 @@ ${items.join('\n')}`);
 <div class="box tip"><b class="t">Conseil</b>Quitter une énigme ne coûte rien : le coffre reste verrouillé et l’énigme se recommence quand vous voulez. Les boutons Annuler et Recommencer sont en haut de la fenêtre. Clavier : flèches ou ZQSD, Échap pour quitter.</div>
 <div class="scroll"><table><tr><th>Énigme</th><th>Type</th><th>Région</th><th>Pièce</th><th>Minimum</th></tr>${rows.join('')}</table></div>
 ${cards.join('\n')}
-<div class="box warn"><b class="t">Flèches de l’armure des Jarres</b>Le gain par tour vaut 25 % du coût en flèches de l’arme active la plus chère (main droite ou gauche), arrondi, au moins 1.</div>
+<div class="box warn"><b class="t">Flèches de l’armure des Jarres</b>Le gain par tour vaut 100 % du coût en flèches de l’arme active la plus chère (main droite ou gauche), arrondi, au moins 1.</div>
 ${playerScript()}`
     }));
 }

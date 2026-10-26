@@ -191,9 +191,9 @@ describe('armures antiques', () => {
         expect(stuffTotals(h)).toMatchObject({ turnHealPct: 10, turnArrowsPct: 0, reflectPct: 0, armors: ['lumiere'] });
     });
 
-    test('jarres : +25 % de flèches, charrette : 50 % de dégâts renvoyés', () => {
+    test('jarres : 100 % des flèches, charrette : 50 % de dégâts renvoyés', () => {
         const a = hero(); wear(a, ANTIQUE_ARMORS.jarres.pieces.map(p => p.id));
-        expect(stuffTotals(a)).toMatchObject({ turnArrowsPct: 25, reflectPct: 0 });
+        expect(stuffTotals(a)).toMatchObject({ turnArrowsPct: 100, reflectPct: 0 });
         const b = hero(); wear(b, ANTIQUE_ARMORS.charrette.pieces.map(p => p.id));
         expect(stuffTotals(b)).toMatchObject({ reflectPct: 50, turnHealPct: 0 });
     });
@@ -201,9 +201,9 @@ describe('armures antiques', () => {
 
 describe('flèches de l\'armure des Jarres', () => {
     test('25 % du coût de l\'arme active la plus chère, au moins 1', () => {
-        expect(ancientArrowGain(25, [{ actionPoints: 3 }, null])).toBe(1);
-        expect(ancientArrowGain(25, [{ actionPoints: 4 }, { actionPoints: 15 }])).toBe(4);   // main gauche plus chère
-        expect(ancientArrowGain(25, [null, null])).toBe(1);
+        expect(ancientArrowGain(100, [{ actionPoints: 3 }, null])).toBe(3);
+        expect(ancientArrowGain(100, [{ actionPoints: 4 }, { actionPoints: 15 }])).toBe(15);   // main gauche plus chère
+        expect(ancientArrowGain(100, [null, null])).toBe(1);
     });
 });
 

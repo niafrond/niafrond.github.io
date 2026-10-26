@@ -28,28 +28,28 @@ export const ANTIQUE_ARMORS = {
     lumiere: {
         name: 'Armure antique du Prisme', power: { turnHealPct: 10 }, powerText: 'Soigne 10 % des PV max à chaque tour',
         pieces: [
-            { id: 'prisme_heaume', slot: 'head', name: 'Heaume du Prisme', bonus: { defBonus: 3, maxHp: 10 }, description: 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière.' },
-            { id: 'prisme_gorgerin', slot: 'neck', name: 'Gorgerin du Prisme', bonus: { maxHp: 20 }, description: 'Un gorgerin de verre fumé : la lumière le traverse sans l\'user.' },
-            { id: 'prisme_brassard', slot: 'wrist', name: 'Brassard du Prisme', bonus: { atkBonus: 3 }, description: 'Un brassard dont les facettes renvoient chaque rayon vers sa cible.' },
-            { id: 'prisme_anneau', slot: 'ring', name: 'Anneau du Prisme', bonus: { atkBonus: 2, defBonus: 2 }, description: 'Un anneau où dort un éclat de lumière : il manque à l\'armure pour s\'éveiller.' }
+            { id: 'prisme_heaume', slot: 'head', name: 'Heaume du Prisme', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière.' },
+            { id: 'prisme_gorgerin', slot: 'neck', name: 'Gorgerin du Prisme', bonus: { maxHp: 60 }, description: 'Un gorgerin de verre fumé : la lumière le traverse sans l\'user.' },
+            { id: 'prisme_brassard', slot: 'wrist', name: 'Brassard du Prisme', bonus: { atkBonus: 5 }, description: 'Un brassard dont les facettes renvoient chaque rayon vers sa cible.' },
+            { id: 'prisme_anneau', slot: 'ring', name: 'Anneau du Prisme', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau où dort un éclat de lumière : il manque à l\'armure pour s\'éveiller.' }
         ]
     },
     jarres: {
-        name: 'Armure antique des Jarres', power: { turnArrowsPct: 25 }, powerText: '+25 % des flèches de l\'arme active la plus chère à chaque tour',
+        name: 'Armure antique des Jarres', power: { turnArrowsPct: 100 }, powerText: '100 % du coût en flèches de l\'arme à flèches active la plus coûteuse, une fois par tour',
         pieces: [
-            { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 3, maxHp: 10 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
-            { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 20 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },
-            { id: 'jarres_brassard', slot: 'wrist', name: 'Brassard des Jarres', bonus: { atkBonus: 3 }, description: 'Un brassard d\'archer ancien : la corde y claque comme sur un tambour.' },
-            { id: 'jarres_anneau', slot: 'ring', name: 'Anneau des Jarres', bonus: { atkBonus: 2, defBonus: 2 }, description: 'Un anneau d\'argile où dort le carquois sans fond de l\'armure.' }
+            { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
+            { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 60 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },
+            { id: 'jarres_brassard', slot: 'wrist', name: 'Brassard des Jarres', bonus: { atkBonus: 5 }, description: 'Un brassard d\'archer ancien : la corde y claque comme sur un tambour.' },
+            { id: 'jarres_anneau', slot: 'ring', name: 'Anneau des Jarres', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau d\'argile où dort le carquois sans fond de l\'armure.' }
         ]
     },
     charrette: {
         name: 'Armure antique de la Charrette', power: { reflectPct: 50 }, powerText: 'Renvoie 50 % des dégâts reçus',
         pieces: [
-            { id: 'charrette_heaume', slot: 'head', name: 'Heaume de la Charrette', bonus: { defBonus: 3, maxHp: 10 }, description: 'Un heaume de bronze aux rivets en forme de moyeux.' },
-            { id: 'charrette_gorgerin', slot: 'neck', name: 'Gorgerin de la Charrette', bonus: { maxHp: 20 }, description: 'Un gorgerin de bronze aux roues rivetées.' },
-            { id: 'charrette_brassard', slot: 'wrist', name: 'Brassard de la Charrette', bonus: { atkBonus: 3 }, description: 'Un brassard à essieu : chaque coup reçu y fait tourner une roue.' },
-            { id: 'charrette_anneau', slot: 'ring', name: 'Anneau de la Charrette', bonus: { atkBonus: 2, defBonus: 2 }, description: 'Un anneau en forme de roue : celui qui l\'achève rend les coups.' }
+            { id: 'charrette_heaume', slot: 'head', name: 'Heaume de la Charrette', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume de bronze aux rivets en forme de moyeux.' },
+            { id: 'charrette_gorgerin', slot: 'neck', name: 'Gorgerin de la Charrette', bonus: { maxHp: 60 }, description: 'Un gorgerin de bronze aux roues rivetées.' },
+            { id: 'charrette_brassard', slot: 'wrist', name: 'Brassard de la Charrette', bonus: { atkBonus: 5 }, description: 'Un brassard à essieu : chaque coup reçu y fait tourner une roue.' },
+            { id: 'charrette_anneau', slot: 'ring', name: 'Anneau de la Charrette', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau en forme de roue : celui qui l\'achève rend les coups.' }
         ]
     }
 };

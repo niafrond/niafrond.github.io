@@ -38,7 +38,7 @@ export function applyEtages(region, interiors) {
             id: et.id, floorOf: i.id, grid: GRIDS[et.mode], name: et.name, arrival: et.arrival,
             chests: [{ id: `${et.id}_chest`, at: '2', gold: et.gold, puzzle: et.puzzle, label: et.label, openText: et.openText }]
         });
-        return { ...i, grid, exits: [...(i.exits || []), { at: '9', to: et.id, label: et.name }] };
+        return { ...i, grid, exits: [...(i.exits || []), { at: '9', to: et.id, label: et.name, stairs: 'up' }] };
     });
     return [...patched, ...floors];
 }

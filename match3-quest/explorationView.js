@@ -1386,6 +1386,23 @@ export function createExplorationView(cfg) {
                 cell(ex.x, ex.y, `rgba(255,236,150,${(0.28 + 0.2 * pulse).toFixed(3)})`, tile * 0.1);
                 return;
             }
+            if (ex.stairs) {
+                // escalier (étage caché) : volée de marches lumineuse et flèche ; vers le haut dans la maison, vers le bas à l'étage
+                const p = P(ex.x, ex.y), up = ex.stairs === 'up';
+                for (let k = 0; k < 5; k++) {
+                    const t = up ? k : 4 - k;
+                    ctx.fillStyle = `rgb(${150 + t * 14},${104 + t * 10},${60 + t * 6})`;
+                    ctx.fillRect(p.x + tile * 0.1, p.y + tile * (0.12 + k * 0.17), tile * 0.8, tile * 0.15);
+                }
+                ctx.fillStyle = `rgba(255,236,150,${(0.2 + 0.2 * pulse).toFixed(3)})`;
+                ctx.fillRect(p.x, p.y, tile, tile);
+                ctx.fillStyle = '#5a3e1b';
+                ctx.font = `bold ${Math.round(tile * 0.4)}px system-ui, sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(up ? '▲' : '▼', p.x + tile / 2, p.y + tile / 2);
+                drawLabel(p.x + tile / 2, p.y - tile * 0.35, up ? 'Étage' : 'Escalier', '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+                return;
+            }
             if (screen.interior) {
                 // sortie d'une maison : porte de bois dans le mur du bas
                 const p = P(ex.x, ex.y);

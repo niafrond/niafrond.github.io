@@ -163,7 +163,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             const parent = i.floorOf ? screens[i.floorOf] : where === 'hamlet' && hamlet ? hamlet : where === 'sanctuary' ? sanctuary : village;
             const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [...(i.exits || [])] }, helpers);
             const a = anchorOf(i.grid, 'v');
-            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: i.floorOf ? 'Escalier' : 'Sortie' });
+            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: i.floorOf ? 'Escalier' : 'Sortie', ...(i.floorOf ? { stairs: 'down' } : {}) });
             screens[i.id] = interior;
         });
 
