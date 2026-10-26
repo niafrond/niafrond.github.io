@@ -958,6 +958,7 @@ function objectiveDone(session, obj) {
     if (obj.type === 'talk') return session.data.talked.includes(obj.target);
     if (obj.type === 'item') return session.data.questItems.some(i => i.id === obj.target);
     if (obj.type === 'visit') return session.data.visitedScreens.includes(obj.target);
+    if (obj.type === 'puzzleSet') return isSetComplete(obj.target, session.data.solvedPuzzles);
     if (obj.type === 'killGroup') {
         const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === obj.target);
         return members.length > 0 && members.every(e => session.data.defeated.includes(e.def.id));
@@ -969,6 +970,8 @@ export function questStatus(session, quest) {
     const stored = session.data.quests[quest.id];
     if (stored === 'done') return 'done';
     if (stored === 'active') return quest.objectives.every(o => objectiveDone(session, o)) ? 'ready' : 'active';
+    // `startWhen.puzzleSet` : la quête n'existe qu'une fois une énigme de la famille résolue (première pièce d'armure antique)
+    if (quest.startWhen?.puzzleSet && !puzzlesOfSet(quest.startWhen.puzzleSet).some(id => session.data.solvedPuzzles.includes(id))) return 'locked';
     const unlocked = (quest.requires || []).every(id => session.data.quests[id] === 'done');
     return unlocked ? 'available' : 'locked';
 }
@@ -1439,7 +1442,7 @@ export function journalEntries(session) {
                 giverName: giverNpc?.name || '',
                 giverPlace: giverScreen?.name || '',
                 where: target ? session.screens[target.screenId]?.name || '' : '',
-                objectives: e.quest.objectives.map(o => ({ text: o.text, done: objectiveDone(session, o) }))
+                objectives: e.quest.objectives.map(o => ({ text: o.type === 'puzzleSet' ? `${o.text} (${puzzlesOfSet(o.target).filter(id => session.data.solvedPuzzles.includes(id)).length}/${puzzlesOfSet(o.target).length})` : o.text, done: objectiveDone(session, o) }))
             };
         });
 }

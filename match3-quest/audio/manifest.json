@@ -359,6 +359,18 @@
   "combat-tides": {
    "seconds": 118,
    "sections": 1
+  },
+  "puzzle-push": {
+   "seconds": 50.5,
+   "sections": 2
+  },
+  "puzzle-mirror": {
+   "seconds": 56.5,
+   "sections": 2
+  },
+  "puzzle-slide": {
+   "seconds": 41.7,
+   "sections": 2
   }
  },
  "sfx": {

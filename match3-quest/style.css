@@ -3541,3 +3541,35 @@ body.dark-mode .stuff-tile:not(.slot-empty) { background: #4a3f1c; }
 .puzzle-pad button:disabled, .puzzle-buttons button:disabled { opacity: 0.45; cursor: default; }
 .puzzle-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .puzzle-buttons button { flex: 1 1 auto; padding: 4px 4px; font-size: 0.9em; white-space: nowrap; }
+
+/* Intro des énigmes : le plateau se déploie, un bandeau annonce le type d'énigme (puzzle/view.js, ~1,4 s). */
+.puzzle-overlay .puzzle-card { animation: puzzle-card-in 0.55s ease-out both; }
+.puzzle-intro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; pointer-events: none; background: rgba(42, 26, 14, 0.82); color: #fff8e1; text-align: center; animation: puzzle-intro 1.4s ease-in-out both; }
+.puzzle-intro-icon { font-size: 3.4em; animation: puzzle-intro-icon 1.4s ease-out both; }
+.puzzle-intro-title { font-size: 1.3em; font-weight: bold; letter-spacing: 0.04em; padding: 6px 18px; border-top: 2px solid #f0c860; border-bottom: 2px solid #f0c860; }
+.puzzle-overlay[data-mode="mirror"] .puzzle-intro-icon { animation-name: puzzle-intro-glint; }
+.puzzle-overlay[data-mode="slide"] .puzzle-intro-icon { animation-name: puzzle-intro-roll; }
+@keyframes puzzle-card-in { from { transform: scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes puzzle-intro { 0% { opacity: 0; } 18% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes puzzle-intro-icon { 0% { transform: translateY(-40px) scale(0.6); } 40% { transform: translateY(0) scale(1.15); } 55% { transform: scale(1); } 100% { transform: scale(1); } }
+@keyframes puzzle-intro-glint { 0% { transform: rotate(-30deg) scale(0.5); filter: brightness(2.2); } 45% { transform: rotate(0) scale(1.15); filter: brightness(1.6); } 100% { transform: rotate(0) scale(1); filter: none; } }
+@keyframes puzzle-intro-roll { 0% { transform: translateX(-120px); } 50% { transform: translateX(0); } 58% { transform: translateX(6px); } 100% { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .puzzle-overlay .puzzle-card, .puzzle-intro, .puzzle-intro-icon { animation: none; } .puzzle-intro { display: none; } }
+body.fx-low .puzzle-intro-icon { animation: none; }
+
+/* Écran de victoire d'une énigme : la pièce d'armure antique gagnée (puzzle/view.js, musique « victory » pendant l'affichage). */
+.puzzle-victory { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; background: radial-gradient(circle at 50% 38%, rgba(240, 200, 96, 0.35), rgba(42, 26, 14, 0.94) 70%); color: #fff8e1; text-align: center; animation: puzzle-victory-in 0.6s ease-out both; }
+.puzzle-victory-title { font-size: 1.6em; font-weight: bold; color: #f0c860; text-shadow: 0 2px 0 #2b1b17; }
+.puzzle-victory-moves { opacity: 0.85; }
+.puzzle-victory-piece { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 320px; padding: 14px 16px; border: 2px solid #f0c860; border-radius: 12px; background: rgba(42, 26, 14, 0.7); animation: puzzle-victory-piece 0.9s 0.35s ease-out both; }
+.puzzle-victory-glyph { width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; font-size: 3em; line-height: 1; color: #2b1b17; border-radius: 50%; border: 3px solid #fff8e1; background: radial-gradient(circle at 35% 30%, #fff1b8, #f0c860 55%, #b88a2a); box-shadow: 0 0 22px rgba(240, 200, 96, 0.8); }
+.puzzle-victory-name { font-size: 1.2em; font-weight: bold; }
+.puzzle-victory-slot { font-size: 0.85em; color: #f0c860; }
+.puzzle-victory-bonus { font-weight: bold; }
+.puzzle-victory-desc { font-size: 0.85em; opacity: 0.85; font-style: italic; }
+.puzzle-victory button { min-height: 44px; padding: 6px 22px; border: 2px solid #5a3e1b; border-radius: 10px; background: #fff8e1; color: #3b2a20; font: inherit; font-weight: bold; cursor: pointer; }
+@keyframes puzzle-victory-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes puzzle-victory-piece { 0% { opacity: 0; transform: translateY(24px) scale(0.7); } 60% { opacity: 1; transform: translateY(0) scale(1.08); } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .puzzle-victory, .puzzle-victory-piece { animation: none; } }
+.puzzle-intro-icon svg { width: 1.1em; height: 1.1em; fill: currentColor; color: #f0c860; }
+.puzzle-victory-glyph svg { width: 44px; height: 44px; fill: currentColor; }

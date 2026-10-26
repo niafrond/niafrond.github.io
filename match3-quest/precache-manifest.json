@@ -83,6 +83,7 @@
   "puzzle/sprites.js",
   "puzzle/view.js",
   "world/aquatic.js",
+  "world/armorQuests.js",
   "world/barriers.js",
   "world/collars.js",
   "world/connections.js",
@@ -136,6 +137,7 @@
   "sprites/deadtrees.js",
   "sprites/decor.js",
   "sprites/gbaIndex.js",
+  "sprites/house.js",
   "sprites/index.js",
   "sprites/packContents.js",
   "sprites/packs.js",
@@ -4358,6 +4360,21 @@
    "p": "audio/music/moon.mp3",
    "s": 464481,
    "h": "54f0b69146"
+  },
+  {
+   "p": "audio/music/puzzle-mirror.mp3",
+   "s": 339381,
+   "h": "17932b6f77"
+  },
+  {
+   "p": "audio/music/puzzle-push.mp3",
+   "s": 303741,
+   "h": "77c6b42455"
+  },
+  {
+   "p": "audio/music/puzzle-slide.mp3",
+   "s": 251037,
+   "h": "fbb96fe32d"
   },
   {
    "p": "audio/music/sanctuary-b.mp3",

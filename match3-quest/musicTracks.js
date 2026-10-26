@@ -8,7 +8,7 @@
  *        boss-<nom du boss en minuscules, tirets> (un thème par boss) · boss-a<0..7> (thème d'archétype, repli).
  */
 
-export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat'];
+export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat', 'puzzle-push', 'puzzle-mirror', 'puzzle-slide'];
 export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'tides', 'fusang', 'moon'];
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;

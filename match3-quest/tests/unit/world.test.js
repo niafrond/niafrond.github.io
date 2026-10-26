@@ -1,3 +1,4 @@
+import { PUZZLE_SETS } from '../../puzzle/levels.js';
 // Grand Monde : villages, zones sauvages, maisons, pierres de voyage, quêtes annexes (world/ + exploration.js).
 import { readFileSync } from 'fs';
 import { SCREENS, QUESTS, REGION_ENTRY_SCREEN } from '../../story.js';
@@ -377,7 +378,7 @@ describe('Grand Monde : textes et quêtes', () => {
             expect(q.title).toBeTruthy();
             expect(q.offer?.length).toBeGreaterThan(0);
             expect(q.complete?.length).toBeGreaterThan(0);
-            expect(npcIds.has(q.giver)).toBe(true);
+            if (q.giver || !q.autoStart) expect(npcIds.has(q.giver)).toBe(true);   // sans donneur : quête automatique (armures antiques)
             if (q.turnIn) expect(npcIds.has(q.turnIn)).toBe(true);
             (q.requires || []).forEach(r => expect(questIds.has(r)).toBe(true));
             expect(q.objectives.length).toBeGreaterThan(0);
@@ -389,6 +390,7 @@ describe('Grand Monde : textes et quêtes', () => {
                 else if (o.type === 'item') expect(Object.values(SCREENS).flatMap(sc => sc.chests).some(c => c.questItem?.id === o.target)).toBe(true);
                 else if (o.type === 'talk') { expect(npcIds.has(o.target)).toBe(true); expect(o.lines?.length).toBeGreaterThan(0); }
                 else if (o.type === 'visit') expect(SCREENS[o.target]).toBeTruthy();
+                else if (o.type === 'puzzleSet') expect(PUZZLE_SETS[o.target]).toBeTruthy();
                 else throw new Error(`type d'objectif inconnu : ${o.type}`);
             });
         });
