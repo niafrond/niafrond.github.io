@@ -22,6 +22,38 @@ export const BIOME_PROTECTION_TEXT = {
 };
 export const BIOME_PROTECTION_LABEL = { volcano: 'Volcan', bamboo: 'Bambous', snow: 'Neige', sea: 'Mer' };
 
+// Armures antiques : { pièces (id, emplacement, nom, bonus), pouvoir de l'ensemble complet }. Pouvoirs : `turnHealPct` (% des PV max rendus à
+// chaque tour), `turnArrowsPct` (% des flèches nécessaires à l'arme active la plus chère, au moins 1, gagné à chaque tour), `reflectPct` (% des dégâts reçus renvoyés).
+export const ANTIQUE_ARMORS = {
+    lumiere: {
+        name: 'Armure antique du Prisme', power: { turnHealPct: 10 }, powerText: 'Soigne 10 % des PV max à chaque tour',
+        pieces: [
+            { id: 'prisme_heaume', slot: 'head', name: 'Heaume du Prisme', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière.' },
+            { id: 'prisme_gorgerin', slot: 'neck', name: 'Gorgerin du Prisme', bonus: { maxHp: 60 }, description: 'Un gorgerin de verre fumé : la lumière le traverse sans l\'user.' },
+            { id: 'prisme_brassard', slot: 'wrist', name: 'Brassard du Prisme', bonus: { atkBonus: 5 }, description: 'Un brassard dont les facettes renvoient chaque rayon vers sa cible.' },
+            { id: 'prisme_anneau', slot: 'ring', name: 'Anneau du Prisme', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau où dort un éclat de lumière : il manque à l\'armure pour s\'éveiller.' }
+        ]
+    },
+    jarres: {
+        name: 'Armure antique des Jarres', power: { turnArrowsPct: 100 }, powerText: '100 % du coût en flèches de l\'arme à flèches active la plus coûteuse, une fois par tour',
+        pieces: [
+            { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
+            { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 60 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },
+            { id: 'jarres_brassard', slot: 'wrist', name: 'Brassard des Jarres', bonus: { atkBonus: 5 }, description: 'Un brassard d\'archer ancien : la corde y claque comme sur un tambour.' },
+            { id: 'jarres_anneau', slot: 'ring', name: 'Anneau des Jarres', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau d\'argile où dort le carquois sans fond de l\'armure.' }
+        ]
+    },
+    charrette: {
+        name: 'Armure antique de la Charrette', power: { reflectPct: 50 }, powerText: 'Renvoie 50 % des dégâts reçus',
+        pieces: [
+            { id: 'charrette_heaume', slot: 'head', name: 'Heaume de la Charrette', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume de bronze aux rivets en forme de moyeux.' },
+            { id: 'charrette_gorgerin', slot: 'neck', name: 'Gorgerin de la Charrette', bonus: { maxHp: 60 }, description: 'Un gorgerin de bronze aux roues rivetées.' },
+            { id: 'charrette_brassard', slot: 'wrist', name: 'Brassard de la Charrette', bonus: { atkBonus: 5 }, description: 'Un brassard à essieu : chaque coup reçu y fait tourner une roue.' },
+            { id: 'charrette_anneau', slot: 'ring', name: 'Anneau de la Charrette', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau en forme de roue : celui qui l\'achève rend les coups.' }
+        ]
+    }
+};
+
 const piece = (id, slot, name, minLevel, rarity, description, bonus = {}) => ({ id, type: 'stuff', slot, name, minLevel, rarity, description, ...bonus });
 
 export const allStuff = [
@@ -50,6 +82,10 @@ export const allStuff = [
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
     piece('collier_braise_d_orage', 'neck', 'Collier de braise d\'orage', 22, 'rare', 'Une braise captive dans le cristal : le givre n\'y accroche pas.', { biomeProtect: 'snow', maxHp: 20, quest: true }),
     piece('collier_voile_d_ombre', 'neck', 'Collier du voile d\'ombre', 37, 'legendary', 'Un fil d\'ombre tressé aux racines de Fusang : les regards glissent sur vous.', { stealth: true, maxHp: 30, quest: true }),
+    // Armures antiques : trois armures de quatre pièces (ANTIQUE_ARMORS), gagnées en résolvant les énigmes à plateau (puzzle/levels.js).
+    // Chaque pièce est un stuff ordinaire ; portées toutes les quatre, elles déclenchent le pouvoir de l'armure (voir stuffTotals).
+    ...Object.entries(ANTIQUE_ARMORS).flatMap(([armor, a]) => a.pieces.map(p => piece(p.id, p.slot, p.name, 15, 'legendary', p.description, { ...p.bonus, quest: true, armor })))
+,
     piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true })
 ];
 
@@ -62,6 +98,9 @@ export const lootableStuff = () => allStuff.filter(s => !s.quest);
 // Collier de quête qui protège d'un biome donné.
 export const collarForBiome = biome => allStuff.find(s => s.biomeProtect === biome) || null;
 
+// Armures antiques complètes (`totals.armors`) en texte : « Armure antique du Prisme : soigne … ».
+export const powerLines = totals => (totals.armors || []).map(k => `${ANTIQUE_ARMORS[k].name} : ${ANTIQUE_ARMORS[k].powerText.toLowerCase()}`);
+
 export function describeStuff(stuff) {
     if (!stuff) return '';
     return [
@@ -69,6 +108,7 @@ export function describeStuff(stuff) {
         stuff.defBonus ? `Déf +${stuff.defBonus}` : '',
         stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
         stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
+        stuff.armor ? `${ANTIQUE_ARMORS[stuff.armor].name} (4 pièces : ${ANTIQUE_ARMORS[stuff.armor].powerText.toLowerCase()})` : '',
         stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',
         stuff.stealth ? 'Indétectable : évite les combats (sauf boss)' : ''
     ].filter(Boolean).join(' • ');
@@ -103,7 +143,7 @@ export function wornStuff(hero) {
 
 // Totaux des bonus portés : { atk, def, maxHp, poisonResist (0–100), biomes: Set }.
 export function stuffTotals(hero) {
-    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, stealth: false, biomes: new Set() };
+    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, turnHealPct: 0, turnArrowsPct: 0, reflectPct: 0, stealth: false, armors: [], biomes: new Set() };
     wornStuff(hero).forEach(s => {
         totals.atk += s.atkBonus || 0;
         totals.def += s.defBonus || 0;
@@ -113,6 +153,11 @@ export function stuffTotals(hero) {
         if (s.stealth) totals.stealth = true;
     });
     totals.poisonResist = Math.min(100, totals.poisonResist);
+    // Armure antique complète (ses quatre pièces portées) : pouvoir de l'ensemble.
+    const worn = wornStuff(hero);
+    totals.armors = Object.keys(ANTIQUE_ARMORS).filter(k => worn.filter(s => s.armor === k).length >= ANTIQUE_ARMORS[k].pieces.length);
+    totals.armors.forEach(k => Object.entries(ANTIQUE_ARMORS[k].power).forEach(([f, v]) => { totals[f] += v; }));
+    totals.reflectPct = Math.min(100, totals.reflectPct);
     return totals;
 }
 

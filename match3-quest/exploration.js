@@ -35,6 +35,7 @@
 //    L'eau et la lave (`screen.liquids`, franchissables avec le Pas de Yu ou en écran aquatique) agissent comme des buissons :
 //    mêmes tirages, table des herbes de la carte ou, à défaut, de la carte sauvage de la région (encounterOf / isEncounterCell).
 
+import { PUZZLES, PUZZLE_SETS, isSetComplete, puzzlesOfSet, pieceOfPuzzle } from './puzzle/levels.js';
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { COMPANIONS, BANTER } from './companions.js';
 import { REGION_LEVEL } from './world/index.js';
@@ -208,6 +209,8 @@ function defaultData() {
         y: start.spawn.y,
         defeated: [],
         openedChests: [],
+        puzzleSetsDone: [],      // familles d'énigmes dont l'armure antique a été remise
+        solvedPuzzles: [],       // énigmes à plateau résolues (puzzle/levels.js) : un coffre à énigme ne s'ouvre qu'ensuite
         quests: {},
         visitedScreens: [],
         introSeen: false,
@@ -228,6 +231,8 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     const data = { ...defaultData(), ...(saved && typeof saved === 'object' ? saved : {}) };
     data.defeated = Array.isArray(data.defeated) ? data.defeated : [];
     data.openedChests = Array.isArray(data.openedChests) ? data.openedChests : [];
+    data.solvedPuzzles = Array.isArray(data.solvedPuzzles) ? data.solvedPuzzles : [];
+    data.puzzleSetsDone = Array.isArray(data.puzzleSetsDone) ? data.puzzleSetsDone : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
@@ -1233,6 +1238,8 @@ export const questItemsOf = session => session.data.questItems.map(i => ({ ...i 
 export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
+    // Coffre verrouillé par une énigme : la vue ouvre l'énigme, puis rappelle openChest une fois `solvePuzzle` appelé.
+    if (chest.puzzle && !session.data.solvedPuzzles.includes(chest.puzzle)) return { type: 'puzzle', puzzleId: chest.puzzle, chest, events: [] };
     const qi = chest.questItem;
     // Le coffre d'un objet de quête s'ouvre à tout moment : avant la quête, le texte et la description de l'objet restent évasifs.
     const early = Boolean(qi) && session.data.quests[qi.quest] !== 'active' && session.data.quests[qi.quest] !== 'done';
@@ -1241,6 +1248,29 @@ export function openChest(session, chestId) {
     const { region, kind } = currentScreen(session);
     const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, early, screen: { region, kind } }, ...checkAutoQuests(session)];
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
+}
+
+/**
+ * Marque l'énigme résolue. Renvoie, à la première victoire, { set, label, stuff: [id de la pièce d'armure antique de l'énigme], complete } ;
+ * `complete` : la quatrième pièce de l'armure vient d'être obtenue. Renvoie null si l'énigme était déjà résolue.
+ */
+export function solvePuzzle(session, puzzleId) {
+    const d = session.data;
+    if (d.solvedPuzzles.includes(puzzleId)) return null;
+    d.solvedPuzzles.push(puzzleId);
+    const set = PUZZLES[puzzleId]?.set;
+    if (!set) return null;
+    const complete = isSetComplete(set, d.solvedPuzzles) && !d.puzzleSetsDone.includes(set);
+    if (complete) d.puzzleSetsDone.push(set);
+    return { set, label: PUZZLE_SETS[set].label, stuff: [pieceOfPuzzle(puzzleId)].filter(Boolean), complete };
+}
+
+export const puzzleSet = puzzleId => PUZZLES[puzzleId]?.set || null;
+
+/** Avancement d'une famille : { done, total } (pour les messages « énigme 2/3 »). */
+export function puzzleSetProgress(session, puzzleId) {
+    const ids = puzzlesOfSet(PUZZLES[puzzleId]?.set);
+    return { done: ids.filter(id => session.data.solvedPuzzles.includes(id)).length, total: ids.length };
 }
 
 function findNpcScreen(session, npcId) {

@@ -436,7 +436,8 @@ describe('cartes (story.js)', () => {
             screens.filter(h => h.kind === 'house' && h.region === id).forEach(h => {
                 expect(h.enemies).toEqual([]);
                 const out = exitsOf(h, SCREENS).find(e => e.door === false);
-                expect(exitsOf(SCREENS[out.to], SCREENS).some(e => e.to === h.id && e.door === true)).toBe(true);
+                // Une maison est atteinte par une porte du village ; un étage (world/etages.js) par l'escalier de sa maison.
+                expect(exitsOf(SCREENS[out.to], SCREENS).some(e => e.to === h.id && (e.door === true || SCREENS[out.to].kind === 'house'))).toBe(true);
             });
         });
     });

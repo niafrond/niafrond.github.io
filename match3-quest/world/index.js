@@ -14,6 +14,7 @@
 //  - entités en `x`/`y` explicites, patrouilles en [x, y], `"` = hautes herbes (`screen.grass`, avec `grass: { rate, safeSteps, table }`).
 // options.connections : liste de connexions de bordure (défaut : world/connections.js ; les tests de fixtures passent []).
 
+import { applyEtages } from './etages.js';
 import { merchantNpc } from '../merchants.js';
 import { getXPCostForLevel } from '../experience.js';
 import { buildZone, arrivalFor, freeNeighbor, applyNativeSanctuary } from './mapKit.js';
@@ -83,6 +84,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         const map = maps[region];
         if (!map) return;
         const text = texts[region] || {};
+        const interiors = applyEtages(region, map.interiors || []);
         const helpers = {
             npcDef: id => {
                 const merchant = merchantNpc(id);
@@ -93,7 +95,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
                 return { id, ...(base || {}), ...(t || {}) };
             },
             chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),
-            screenText: id => text.screens?.[id] || {}
+            screenText: id => text.screens?.[id] || interiors.find(i => i.id === id) || {}
         };
         const prev = REGION_ORDER.slice(0, index).reverse().find(id => maps[id]);   // région précédente qui a une carte
         const regionRank = id => REGION_ORDER.indexOf(id);
@@ -103,7 +105,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         // Maisons : chaque intérieur est rattaché au village (par défaut) ou au hameau (`in: 'hamlet'`) via sa lettre.
         const housesOf = zone => {
             const houses = {};
-            (map.interiors || []).filter(i => (i.in || 'village') === zone)
+            interiors.filter(i => !i.floorOf && (i.in || 'village') === zone)
                 .forEach(i => { houses[i.house] = { to: i.id, name: text.screens?.[i.id]?.name }; });
             return houses;
         };
@@ -155,17 +157,18 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         screens[village.id] = village;
         screens[wild.id] = wild;
         if (road) screens[road.id] = road;
-        (map.interiors || []).forEach(i => {
+        interiors.forEach(i => {
             const where = i.in || 'village';
-            const parent = where === 'hamlet' && hamlet ? hamlet : where === 'sanctuary' ? sanctuary : village;
-            const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [] }, helpers);
+            // un étage (`floorOf`) se rattache à sa maison, dont l'escalier est une sortie déclarée dans ses `exits`
+            const parent = i.floorOf ? screens[i.floorOf] : where === 'hamlet' && hamlet ? hamlet : where === 'sanctuary' ? sanctuary : village;
+            const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [...(i.exits || [])] }, helpers);
             const a = anchorOf(i.grid, 'v');
-            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: 'Sortie' });
+            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: i.floorOf ? 'Escalier' : 'Sortie', ...(i.floorOf ? { stairs: 'down' } : {}) });
             screens[i.id] = interior;
         });
 
         // Sanctuaire existant : plus de PNJ de village (relogés), ses sorties passent par la zone sauvage / le village suivant.
-        const placedNpcs = [village, wild, ...(road ? [road] : []), ...(hamlet ? [hamlet] : []), ...(map.interiors || []).map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
+        const placedNpcs = [village, wild, ...(road ? [road] : []), ...(hamlet ? [hamlet] : []), ...interiors.map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
         placedNpcs.forEach(id => relocated.add(id));
         sanctuary.exits.forEach(exit => {
             if (prev && regionRank(exit.to) >= 0 && regionRank(exit.to) < index) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }

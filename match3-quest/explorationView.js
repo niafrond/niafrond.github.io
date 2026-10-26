@@ -17,6 +17,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
+import { openPuzzle } from './puzzle/view.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
@@ -201,13 +202,14 @@ export function createExplorationView(cfg) {
         toastTimer = setTimeout(() => els.toast.classList.remove('visible'), ms);
     }
 
+    let puzzleView = null;   // énigme à plateau ouverte (puzzle/view.js), au-dessus de la carte
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
     const isOnScreen = () => root.getClientRects().length > 0;
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -799,7 +801,26 @@ export function createExplorationView(cfg) {
             }
             case 'chest': {
                 const chest = X.openChest(session, res.chestId);
-                if (chest) processEvents(chest.events);
+                if (chest?.type === 'puzzle') {
+                    // Coffre verrouillé par une énigme : la victoire l'ouvre aussitôt ; quitter la laisse intacte.
+                    puzzleView = openPuzzle(root, chest.puzzleId, {
+                        sfx: n => playSfx(n),
+                        hero: gbaSprite(cfg.getHero().classId, 'front') || undefined,
+                        onClose: () => { puzzleView = null; },
+                        onSolved: () => {
+                            const reward = X.solvePuzzle(session, chest.puzzleId);
+                            const { done, total } = X.puzzleSetProgress(session, chest.puzzleId);
+                            const opened = X.openChest(session, res.chestId);
+                            if (opened) processEvents(opened.events);
+                            if (reward?.stuff.length) {
+                                const names = reward.stuff.map(id => cfg.onAncientArmor?.(id)).filter(Boolean);
+                                openDialog({ ...NARRATOR, icon: 'shield', title: 'Armure antique' }, [`${names.join(' et ')} : une pièce d'armure antique se révèle !${reward.complete ? ` Les ${total} énigmes de la famille « ${reward.label} » sont résolues : l'armure est au complet, portez ses quatre pièces ensemble pour éveiller son pouvoir.` : ` Énigmes de la famille « ${reward.label} » : ${done}/${total}.`}`]);
+                            }
+                            cfg.onSave();
+                        }
+                    });
+                    if (!puzzleView) toast('Le coffre ne bouge pas.', 3000);
+                } else if (chest) processEvents(chest.events);
                 break;
             }
             case 'observed': {
@@ -1363,6 +1384,23 @@ export function createExplorationView(cfg) {
             if (ex.door) {
                 // porte de maison : tapis lumineux devant la porte du bâtiment (dessinée avec lui)
                 cell(ex.x, ex.y, `rgba(255,236,150,${(0.28 + 0.2 * pulse).toFixed(3)})`, tile * 0.1);
+                return;
+            }
+            if (ex.stairs) {
+                // escalier (étage caché) : volée de marches lumineuse et flèche ; vers le haut dans la maison, vers le bas à l'étage
+                const p = P(ex.x, ex.y), up = ex.stairs === 'up';
+                for (let k = 0; k < 5; k++) {
+                    const t = up ? k : 4 - k;
+                    ctx.fillStyle = `rgb(${150 + t * 14},${104 + t * 10},${60 + t * 6})`;
+                    ctx.fillRect(p.x + tile * 0.1, p.y + tile * (0.12 + k * 0.17), tile * 0.8, tile * 0.15);
+                }
+                ctx.fillStyle = `rgba(255,236,150,${(0.2 + 0.2 * pulse).toFixed(3)})`;
+                ctx.fillRect(p.x, p.y, tile, tile);
+                ctx.fillStyle = '#5a3e1b';
+                ctx.font = `bold ${Math.round(tile * 0.4)}px system-ui, sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(up ? '▲' : '▼', p.x + tile / 2, p.y + tile / 2);
+                drawLabel(p.x + tile / 2, p.y - tile * 0.35, up ? 'Étage' : 'Escalier', '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
                 return;
             }
             if (screen.interior) {

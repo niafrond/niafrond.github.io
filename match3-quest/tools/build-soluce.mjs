@@ -14,6 +14,11 @@ import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry } from '../bestiary.js';
 import { entOf, questTargets } from './soluce-targets.mjs';
+import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
+import { solvePath, getMode } from '../puzzle/engine.js';
+import '../puzzle/modes.js';
+import { spriteDefs } from '../puzzle/art.js';
+import { ANTIQUE_ARMORS } from '../stuff.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
@@ -146,7 +151,7 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
-ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;border:1px solid var(--line);border-radius:6px}details{margin:8px 0}summary{cursor:pointer;color:var(--gold);font-weight:600}ol.steps{padding-left:22px}ol.steps li{margin:6px 0}.pl-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.pl-bar[hidden]{display:none}.pl-bar button,.pl-bar select{font:inherit;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--ink);cursor:pointer}.pl-bar .pl-play{background:var(--gold);color:var(--bg);font-weight:700;min-width:7.5em}.pl-bar label{display:flex;gap:6px;align-items:center;color:var(--dim)}.pl-status{margin:6px 0;font-weight:600;min-height:2.8em}.pl ol.steps li{cursor:pointer;padding:2px 6px;border-radius:4px}.pl ol.steps li.done{opacity:.55}.pl ol.steps li.cur{background:var(--panel2);outline:2px solid var(--gold);opacity:1}.pl details{max-height:none}
 .shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
@@ -179,7 +184,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['bases.html', 'Bases du combat'],
-    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['stuff.html', 'Stuff d’exception']
+    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures']
 ];
 
 
@@ -328,20 +333,21 @@ function objectiveHtml(o, region) {
 
 
 // Captures annotées : la carte de l'écran (soluce/img, voir build-soluce-shots.mjs) avec un cercle rouge par case citée par la quête.
-const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif' };
+const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre' };
 function shotsHtml(q) {
     const byScreen = new Map();
     for (const t of questTargets(q)) byScreen.set(t.screenId, [...(byScreen.get(t.screenId) || []), t]);
-    const figs = [];
-    for (const [sid, list] of byScreen) {
-        if (!existsSync(join(IMG, `${sid}.jpg`))) continue;
-        const sc = SCREENS[sid];
-        const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
-        const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
-        const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
-        figs.push(`<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend} <small>(cliquer pour agrandir)</small></figcaption></figure>`);
-    }
-    return figs.join('');
+    return [...byScreen].map(([sid, list]) => shotFigure(sid, list)).join('');
+}
+
+/** Carte de l'écran `sid` avec un cercle rouge numéroté par case de `list` ([{ x, y, name, role }]) ; vide si la capture manque. */
+function shotFigure(sid, list) {
+    if (!existsSync(join(IMG, `${sid}.jpg`))) return '';
+    const sc = SCREENS[sid];
+    const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
+    const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
+    const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
+    return `<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend} <small>(cliquer pour agrandir)</small></figcaption></figure>`;
 }
 
 function questHtml(q) {
@@ -447,6 +453,7 @@ ${q ? questHtml(q) : ''}`
 }
 
 const SOURCE_TEXT = s => {
+    if (s.armor) return 'Récompense d’une énigme à plateau (voir la page Énigmes et armures antiques).';
     if (s.quest) return 'Récompense unique de quête : jamais en boutique ni en butin.';
     const buy = `Boutiques des marchands (à partir du niveau ${Math.max(1, s.minLevel - 4)})`;
     const drops = Object.entries(CHEST_STUFF_DROP).filter(([, d]) => d.rarity[s.rarity]).map(([t]) => t);
@@ -495,6 +502,86 @@ ${q ? `<h3>Obtention pas à pas</h3>${mc}` : ''}
 <ul>${mine.map(o => `<li><a href="stuff-${o.id}.html">${esc(o.name)}</a> — ${esc(describeStuff(o))}</li>`).join('')}</ul>`
         }));
     }
+}
+
+// ── Énigmes à plateau et armures antiques ──
+// Les quatre énigmes d'une famille montent en difficulté (le rang dans la famille = le palier).
+const TIERS = ['facile', 'moyen', 'difficile', 'très difficile'];
+const FAMILY_TEXT = {
+    jarres: { type: 'Jarres à pousser', how: 'Vous êtes le héros. Poussez chaque jarre sur un socle rouge : une seule jarre à la fois, jamais de traction. Une jarre contre un mur ne glisse plus que le long de celui-ci.' },
+    lumiere: { type: 'Miroirs et lumière', how: 'Une lanterne émet un rayon. Touchez un miroir pour le basculer entre « / » et « \\ » ; le prisme triangulaire laisse passer le rayon et en renvoie un second sur le côté (le prisme carré, lui, en fait trois : tout droit et de chaque côté). Tous les cristaux doivent s’allumer.' },
+    charrette: { type: 'Charrettes (Rush Hour)', how: 'Faites sortir la charrette rouge par l’ouverture verte, à droite. Chaque bloc ne glisse que dans le sens de sa longueur : touchez-le pour le choisir, puis une case libre dans son axe (ou les flèches).' }
+};
+
+/** Plateau de départ en SVG, avec les numéros de colonnes (haut) et de lignes (gauche) cités par la solution. */
+function boardSvg(def) {
+    const mode = getMode(def.mode), st = mode.init(def.level), { w, h } = mode.size(st);
+    const labels = [...Array(w)].map((_, i) => `<text x="${i + 0.5}" y="-0.15" text-anchor="middle">${i + 1}</text>`).join('') + [...Array(h)].map((_, i) => `<text x="-0.25" y="${i + 0.68}" text-anchor="middle">${i + 1}</text>`).join('');
+    return `<svg class="board" viewBox="-0.6 -0.6 ${w + 0.6} ${h + 0.6}" role="img" aria-label="Plateau de départ"><style>text{font:0.42px system-ui,sans-serif;fill:#7a6a4a}</style>${labels}${mode.render(st)}</svg>`;
+}
+
+/** Solution minimale en texte : un coup par étape, avec la même phrase que le lecteur animé (`mode.say`). */
+function solutionSteps(def) {
+    const mode = getMode(def.mode), path = solvePath(def);
+    return path ? path.slice(1).map((s, i) => mode.say(path[i], s)) : [];
+}
+
+/**
+ * Lecteur de solution : plateau animé, Début / Précédent / Lecture-Pause / Suivant, vitesse, et liste des étapes cliquable. Les boutons sont
+ * masqués (`hidden`) tant que le script de la page ne les a pas activés : sans JavaScript, il reste le plateau de départ et la liste des étapes.
+ */
+const playerHtml = (def, steps) => `<div class="pl" data-puzzle="${def.id}">
+${boardSvg(def)}
+<div class="pl-bar" hidden>
+<button type="button" data-act="start">Début</button>
+<button type="button" data-act="prev">Précédent</button>
+<button type="button" data-act="play" class="pl-play">Lecture</button>
+<button type="button" data-act="next">Suivant</button>
+<label>Vitesse <select class="pl-speed" aria-label="Vitesse de lecture"><option value="1500">Lente</option><option value="800" selected>Normale</option><option value="300">Rapide</option></select></label>
+</div>
+<div class="pl-status" role="status" aria-live="polite">Départ : appuyez sur Lecture, ou avancez coup par coup avec Suivant.</div>
+<details><summary>Liste des étapes (${steps.length})</summary><ol class="steps">${steps.map((t, i) => `<li data-step="${i + 1}">${esc(t)}</li>`).join('')}</ol></details>
+</div>`;
+
+// Code du lecteur : moteur, dessins, modes et niveaux du jeu (modules sans import ni export) puis tools/soluce-player.js.
+const stripModule = s => s.replace(/^[ \t]*import [^;]*;[ \t]*$/gm, '').replace(/^export \{[^}]*\};\s*$/gm, '').replace(/^export (const|function|let|class)/gm, '$1');
+const playerScript = () => `<script type="module">\n${['engine', 'sprites', 'art', 'modes', 'levels'].map(f => stripModule(readFileSync(join(ROOT, 'puzzle', `${f}.js`), 'utf8'))).join('\n')}\n${readFileSync(join(ROOT, 'tools', 'soluce-player.js'), 'utf8')}\n</script>`;
+
+function buildPuzzles() {
+    const chestOf = id => Object.values(SCREENS).flatMap(s => (s.chests || []).filter(c => c.puzzle === id).map(c => ({ s, c }))).find(Boolean);
+    const rows = [], cards = [];
+    for (const fam of Object.keys(PUZZLE_SETS)) {
+        const info = FAMILY_TEXT[fam], armor = ANTIQUE_ARMORS[fam];
+        const items = puzzlesOfSet(fam).map((id, i) => {
+            const def = { id, ...PUZZLES[id] }, found = chestOf(id), piece = armor.pieces[i];
+            const steps = solutionSteps(def), total = solvePath(def).length - 1, unit = def.mode === 'push' ? 'pas' : 'coups';
+            const region = found ? regionName(found.s.region) : '';
+            const where = found ? `${found.s.name} (${esc(region)}) — ${esc(found.c.label || 'coffre')}, ${whereOf({ screen: found.s, ent: found.c })}` : '';
+            rows.push(`<tr><td>${esc(def.title)}</td><td>${esc(info.type)}</td><td>${esc(region)}</td><td>${esc(piece.name)}</td><td>${total} ${unit}</td></tr>`);
+            return `<h4>${i + 1}. ${esc(def.title)} <small>— ${TIERS[i]}</small></h4>
+<dl><dt>Où</dt><dd>${where}</dd><dt>Récompense</dt><dd>${esc(piece.name)} (${esc(STUFF_SLOT_LABELS[piece.slot])}) + l’or du coffre</dd><dt>Minimum</dt><dd>${total} ${unit}</dd></dl>
+${found ? shotFigure(found.s.id, [{ x: found.c.x, y: found.c.y, name: found.c.label || 'coffre', role: 'chest' }]) : ''}
+${playerHtml(def, steps)}`;
+        });
+        cards.push(`<h3 id="${fam}">${esc(armor.name)}</h3>
+<p>${esc(info.how)}</p>
+<div class="box info"><b class="t">Pouvoir de l’armure complète (4 pièces portées)</b>${esc(armor.powerText)}.</div>
+<table><tr><th>Pièce</th><th>Emplacement</th><th>Obtenue avec</th><th>Bonus seul</th></tr>${armor.pieces.map((p, i) => `<tr><td><a href="stuff-${p.id}.html">${esc(p.name)}</a></td><td>${esc(STUFF_SLOT_LABELS[p.slot])}</td><td>${esc(PUZZLES[puzzlesOfSet(fam)[i]].title)}</td><td>${esc(describeStuff(allStuff.find(s => s.id === p.id)).split(' • ').filter(t => !/^Armure antique/.test(t)).join(' • '))}</td></tr>`).join('')}</table>
+${items.join('\n')}`);
+    }
+    write('enigmes.html', page({
+        file: 'enigmes.html', title: 'Énigmes et armures antiques', active: 'enigmes.html',
+        desc: 'Les 12 énigmes à plateau, leurs solutions et les 3 armures antiques qu’elles donnent.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Énigmes et armures']],
+        body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
+<h2>Énigmes et armures antiques</h2>
+<p class="lead">Douze coffres sont verrouillés par une énigme à plateau (4 de chaque type). Chaque énigme résolue offre une pièce d’une armure antique ; portez les 4 pièces d’une même armure pour éveiller son pouvoir.</p>
+<div class="box tip"><b class="t">Conseil</b>Quitter une énigme ne coûte rien : le coffre reste verrouillé et l’énigme se recommence quand vous voulez. Les boutons Annuler et Recommencer sont en haut de la fenêtre. Clavier : flèches ou ZQSD, Échap pour quitter.</div>
+<div class="scroll"><table><tr><th>Énigme</th><th>Type</th><th>Région</th><th>Pièce</th><th>Minimum</th></tr>${rows.join('')}</table></div>
+${cards.join('\n')}
+<div class="box warn"><b class="t">Flèches de l’armure des Jarres</b>Le gain par tour vaut 100 % du coût en flèches de l’arme active la plus chère (main droite ou gauche), arrondi, au moins 1.</div>
+${playerScript()}`
+    }));
 }
 
 function buildBases() {
@@ -561,6 +648,7 @@ function buildHub() {
     const index = [
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
         ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
+        ...Object.entries(PUZZLES).map(([id, p]) => ({ t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' })),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
     write('soluce.html', page({
@@ -576,6 +664,7 @@ function buildHub() {
 <a class="card" href="soluce/bases.html"><b>Bases du combat</b><span>Éléments, pouvoirs, biomes</span></a>
 <a class="card" href="soluce/compagnons.html"><b>Compagnons</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
+<a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).length} énigmes, 3 armures antiques</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
 <h3>Par où commencer ?</h3>
@@ -608,6 +697,7 @@ buildQuests();
 buildCompanions();
 buildStuff();
 buildBases();
+buildPuzzles();
 buildParcours();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');
