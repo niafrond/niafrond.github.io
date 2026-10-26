@@ -45,6 +45,14 @@ describe('blocage', () => {
         expect(resolveStrike(10, { attack: 0 }, { defense: 100 }, { rng: seq(0.5, 0.1, 0.1) }).damage).toBe(0);
     });
 
+    test('resolveStrike : Fureur des Steppes ajoute un bonus fixe aux dégâts du lanceur, avant critique', () => {
+        const target = { defense: 0 };
+        const enraged = { attack: 0, statusEffects: { enraged: 2, enragedBonus: 10 } };
+        expect(resolveStrike(5, enraged, target, { rng: () => 0.99 }).damage).toBe(15);
+        expect(resolveStrike(5, { attack: 0, statusEffects: {} }, target, { rng: () => 0.99 }).damage).toBe(5);
+        expect(resolveStrike(0, enraged, target, { rng: () => 0.99 }).damage).toBe(0);
+    });
+
     test('l\'affaiblissement retire des points d\'attaque', () => {
         expect(critChance({ attack: 30 }, 12)).toBe(18);
     });
@@ -195,5 +203,17 @@ describe('écart de niveau : avantage caché du plus haut niveau', () => {
         expect(blockChance(strong)).toBeGreaterThan(blockChance(plain) * 3);
         expect(rawAttack(strong)).toBe(12);
         expect(rawDefense(strong)).toBe(6);
+    });
+});
+
+describe('statusBadges', () => {
+    test('liste les bonus et malus actifs avec leur explication', async () => {
+        const { activeStatuses, statusBadgesHtml } = await import('../../statusBadges.js');
+        expect(activeStatuses({ statusEffects: {} })).toEqual([]);
+        expect(statusBadgesHtml({})).toBe('');
+        const list = activeStatuses({ statusEffects: { enraged: 2, enragedBonus: 10, poisoned: 1, poisonDamage: 3 } });
+        expect(list.map(s => [s.id, s.kind, s.turns])).toEqual([['enraged', 'buff', 2], ['poisoned', 'debuff', 1]]);
+        expect(list[0].text).toContain('+10');
+        expect(statusBadgesHtml({ statusEffects: { enraged: 2, enragedBonus: 10 } })).toContain('data-status="enraged"');
     });
 });
