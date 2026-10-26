@@ -448,3 +448,5 @@ Spécifications et journal de session de `match3-quest/`.
 - 2026-10-26 (minimap non cliquable) : à la demande de l'utilisateur. Un clic / toucher sur la minimap est ignoré (`overMinimap` dans `explorationView.js`) : le héros ne se déplace pas.
 
 - 2026-10-26 (test tileBitmaps) : le test `tileBitmaps.test.js` attendait 8 tuiles alors que `TILE_NAMES` en compte 9 depuis l'ajout de `skull5` ; les comptes s'appuient désormais sur `TILE_NAMES.length`.
+
+- 2026-10-26 (Fureur des Steppes sur l'affichage des sorts) : à la demande de l'utilisateur. Le +10 était déjà appliqué aux PV une fois par sort via `applyDamage`/`resolveStrike`, mais l'animation et le journal de la plupart des sorts (dont Entaille du Vent, sorts de lignes/colonnes/zone) affichaient le dégât d'avant bonus. `game.js` exporte `lastSpellDamage(fallback)` (dégâts réels du dernier sort : bonus, critique, blocage) et `classSpellEffects.js` l'utilise pour l'affichage et le journal. Le bonus reste unique par sort (pas par case/ligne) et nul si le sort n'inflige aucun dégât (aucune case de la couleur détruite).

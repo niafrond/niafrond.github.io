@@ -321,6 +321,11 @@ function applyEnemyColorAffinityModifier(target, damage, sourceColor){
 // Résultat { damage, crit, block } du dernier sort de dégâts résolu par applyDamage (pour l'animation et le journal).
 let lastSpellStrike = null;
 
+// Dégâts réellement infligés par le dernier sort (bonus, critique et blocage inclus), `fallback` si aucun jet n'a eu lieu.
+export function lastSpellDamage(fallback){
+    return lastSpellStrike ? lastSpellStrike.damage : fallback;
+}
+
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
