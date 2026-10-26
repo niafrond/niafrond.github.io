@@ -16,7 +16,7 @@ import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenComplete
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, setOption, applyOptions } from "./gameOptions.js";
-import { playTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
+import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
 import { getWeaponById } from "./weapons.js";
@@ -415,8 +415,8 @@ function init() {
     const playTimeEl = document.getElementById('playtime-stats');
     const renderPlayTime = () => {
         if(!playTimeEl || !optionsModal?.classList.contains('active')) return;
-        const t = playTimeStats();
-        playTimeEl.innerHTML = [['Aujourd\'hui', t.today], ['Hier', t.yesterday], ['Cette semaine', t.week], ['Total', t.total]]
+        const r = realPlayTimeStats();
+        playTimeEl.innerHTML = [['Aujourd\'hui', r.today], ['Hier', r.yesterday], ['Cette semaine', r.week], ['Total', r.total]]
             .map(([label, sec]) => `<span class="playtime-line"><span>${label}</span><b>${formatDuration(sec)}</b></span>`).join('');
     };
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
