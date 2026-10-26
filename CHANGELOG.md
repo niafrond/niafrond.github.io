@@ -1,3 +1,9 @@
+## [2.148.1](https://github.com/niafrond/niafrond.github.io/compare/v2.148.0...v2.148.1) (2026-10-26)
+
+### Bug Fixes
+
+* **match3-quest:** afficher le rappel de pause hors de l'onglet carte ([9c9abf4](https://github.com/niafrond/niafrond.github.io/commit/9c9abf4deabcd6075b7165d9d6cd8fe9cd844d81))
+
 ## [2.148.0](https://github.com/niafrond/niafrond.github.io/compare/v2.147.0...v2.148.0) (2026-10-26)
 
 ### Features
