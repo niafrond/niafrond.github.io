@@ -66,7 +66,7 @@ const push = {
         for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) out += s.walls.has(y * s.w + x) ? wallCell(x, y) : floorCell(x, y);
         s.targets.forEach(t => { const x = t % s.w, y = (t / s.w) | 0; out += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.2" fill="none" stroke="${COLORS.red}" stroke-width="0.07"/><circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.06" fill="${COLORS.red}"/>`; });
         s.boxes.forEach((b, i) => {
-            const x = b % s.w, y = (b / s.w) | 0, on = s.targets.includes(b), art = sprite(variant(['jarre_a', 'jarre_b'], i), x, y);
+            const x = b % s.w, y = (b / s.w) | 0, on = s.targets.includes(b), art = sprite('jarre_a', x, y, rot ? 3 : 0);
             if (art) {
                 // jarre posée sur son socle : anneau de jade sous le dessin
                 out += (on ? `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.47" fill="none" stroke="${COLORS.jade}" stroke-width="0.09"/>` : '') + art;

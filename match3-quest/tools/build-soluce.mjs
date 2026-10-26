@@ -508,7 +508,7 @@ ${q ? `<h3>Obtention pas à pas</h3>${mc}` : ''}
 // Les quatre énigmes d'une famille montent en difficulté (le rang dans la famille = le palier).
 const TIERS = ['facile', 'moyen', 'difficile', 'très difficile'];
 const FAMILY_TEXT = {
-    jarres: { type: 'Jarres à pousser', how: 'Vous êtes le petit personnage bleu. Poussez chaque jarre (caisse jaune) sur un socle rouge : une seule jarre à la fois, jamais de traction. Une jarre contre un mur ne glisse plus que le long de celui-ci.' },
+    jarres: { type: 'Jarres à pousser', how: 'Vous êtes le héros. Poussez chaque jarre sur un socle rouge : une seule jarre à la fois, jamais de traction. Une jarre contre un mur ne glisse plus que le long de celui-ci.' },
     lumiere: { type: 'Miroirs et lumière', how: 'Une lanterne émet un rayon. Touchez un miroir pour le basculer entre « / » et « \\ » ; le prisme triangulaire laisse passer le rayon et en renvoie un second sur le côté (le prisme carré, lui, en fait trois : tout droit et de chaque côté). Tous les cristaux doivent s’allumer.' },
     charrette: { type: 'Charrettes (Rush Hour)', how: 'Faites sortir la charrette rouge par l’ouverture verte, à droite. Chaque bloc ne glisse que dans le sens de sa longueur : touchez-le pour le choisir, puis une case libre dans son axe (ou les flèches).' }
 };

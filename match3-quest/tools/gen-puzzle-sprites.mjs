@@ -58,10 +58,8 @@ const SPRITES = [
     derive: { from: 'recepteur_allume', darken: 0.45 }, desc: '' },
   { id: 'recepteur_allume', w: 1, gen: [512, 512],
     view: 'front view', desc: 'a single bright glowing golden yellow crystal orb resting on a small round bronze stand, shining with light, simple', seedOf: 'recepteur' },
-  { id: 'jarre_a', w: 1, gen: [512, 512],
-    desc: 'round clay storage jar seen from above, sealed with a red cloth and a cord around the neck, glazed brown pottery, Han dynasty grain jar' },
-  { id: 'jarre_b', w: 1, gen: [512, 512],
-    desc: 'round green glazed ceramic jar with a flat lid, seen from above, simple' },
+  // Jarre : celle du décor du jeu (sprites/decor.js, « jar », pixellisée à 32 px), conservée telle quelle dans puzzle/sprites.js, jamais générée.
+  { id: 'jarre_a', w: 1, keep: true, desc: '' },
   ...CARTS
 ];
 
@@ -244,7 +242,7 @@ if (args.use) {   // --use=cart_v2_a:3,cart_v2_b:0 : copie la variante choisie d
   save(sprites); process.exit(0);
 }
 const NCAND = Number(args.cand || 0);
-const todo = SPRITES.filter(s => !s.derive && (!ONLY || ONLY.includes(s.id)) && (NCAND || args.force || !sprites[s.id]));
+const todo = SPRITES.filter(s => !s.derive && !s.keep && (!ONLY || ONLY.includes(s.id)) && (NCAND || args.force || !sprites[s.id]));
 console.log(`${todo.length} sprite(s) à générer`);
 
 let ok = 0, fail = 0;
