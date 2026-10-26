@@ -1,3 +1,10 @@
+## [2.135.0](https://github.com/niafrond/niafrond.github.io/compare/v2.134.0...v2.135.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter musiques, intro et écran de victoire des énigmes ainsi que les quêtes d'armure antique ([7ba6b16](https://github.com/niafrond/niafrond.github.io/commit/7ba6b16676368d2cd6919c3c806f3ee6e22c1f3e))
+* **match3-quest:** refaire le décor des maisons avec parquet, tapis, mobilier cohérent et sprites pixel art ([a29d723](https://github.com/niafrond/niafrond.github.io/commit/a29d723fbb1b1b15dca3da726abeb053af943e22))
+
 ## [2.134.0](https://github.com/niafrond/niafrond.github.io/compare/v2.133.1...v2.134.0) (2026-10-26)
 
 ### Features
