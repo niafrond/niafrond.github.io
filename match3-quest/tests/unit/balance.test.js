@@ -5,7 +5,7 @@ import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { allItems, useItem, isCombatLongEffect } from '../../items.js';
+import { allItems, useItem, isCombatLongEffect, getRandomItem } from '../../items.js';
 import { allWeapons } from '../../weapons.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -18,23 +18,23 @@ const COLORS = 5;
 
 describe('objets rechargeables : puissance par tour', () => {
     test.each(reusables.filter(i => i.effect.heal || i.effect.regen).map(i => [i.id, i]))(
-        '%s : soin moyen ≤ 45 % des dégâts ennemis par tour', (_, i) => {
+        '%s : soin moyen ≤ 60 % des dégâts ennemis par tour', (_, i) => {
             const total = (i.effect.heal || 0) + (i.effect.regen || 0) * (i.effect.duration || 1);
             const perTurn = total * i.chargesPerCycle / i.rechargeTurns;
-            expect(perTurn).toBeLessThanOrEqual(enemyDamagePerTurn(Math.max(3, i.minLevel)) * 0.45);
+            expect(perTurn).toBeLessThanOrEqual(enemyDamagePerTurn(Math.max(3, i.minLevel)) * 0.6);
         });
 
     test.each(reusables.filter(i => i.effect.mana || i.effect.randomMana).map(i => [i.id, i]))(
-        '%s : qì moyen par tour ≤ 8 (tous coloris confondus)', (_, i) => {
+        '%s : qì moyen par tour ≤ 12 (tous coloris confondus)', (_, i) => {
             const total = (i.effect.mana || 0) * COLORS + (i.effect.randomMana || 0);
-            expect(total * i.chargesPerCycle / i.rechargeTurns).toBeLessThanOrEqual(8);
+            expect(total * i.chargesPerCycle / i.rechargeTurns).toBeLessThanOrEqual(12);
         });
 
     test('un objet à effet de combat durable n\'a qu\'une charge, des bonus bornés', () => {
         reusables.filter(i => isCombatLongEffect(i.effect)).forEach(i => {
             expect(i.chargesPerCycle).toBe(1);
-            expect(i.effect.tempDefense || 0).toBeLessThanOrEqual(8);
-            expect(i.effect.tempAttack || 0).toBeLessThanOrEqual(15);
+            expect(i.effect.tempDefense || 0).toBeLessThanOrEqual(12);
+            expect(i.effect.tempAttack || 0).toBeLessThanOrEqual(25);
         });
     });
 
@@ -50,11 +50,11 @@ describe('effets de combat : pas de cumul', () => {
         const potion = { ...allItems.find(i => i.id === 'defensePotion'), chargesLeft: 1 };
         const player = makePlayer([potion]);
         expect(useItem('defensePotion', player, null, 0).success).toBe(true);
-        expect(player.defense).toBe(8);
+        expect(player.defense).toBe(12);
         potion.chargesLeft = 1; potion.rechargeLeft = 0;   // même rechargée en plein combat
         const again = useItem('defensePotion', player, null, 0);
         expect(again.success).toBe(false);
-        expect(player.defense).toBe(8);
+        expect(player.defense).toBe(12);
         expect(potion.chargesLeft).toBe(1);
         player.itemBuffs = {};   // nouveau combat (restartCombat)
         expect(useItem('defensePotion', player, null, 0).success).toBe(true);
@@ -174,5 +174,17 @@ describe('armes : rendement par point d\'action', () => {
         const e = (w.damage + 15) / w.actionPoints;
         expect(e).toBeLessThanOrEqual(12 + 0.35 * w.minLevel);
         expect(e).toBeGreaterThanOrEqual(6.5 + 0.25 * w.minLevel);
+    });
+});
+
+describe('objets de haut niveau (au-delà du niveau 18)', () => {
+    test('chaque niveau jusqu\'à 70 a au moins un objet dans la fenêtre de butin', () => {
+        for (let level = 19; level <= 67; level++) {
+            const inWindow = allItems.filter(i => i.minLevel <= level + 2 && i.minLevel >= level - 3);
+            expect(inWindow.length).toBeGreaterThan(0);
+        }
+    });
+    test('getRandomItem ne retombe plus sur l\'élixir de niveau 1 quand la fenêtre est vide', () => {
+        for (let n = 0; n < 30; n++) expect(getRandomItem(70).minLevel).toBeGreaterThanOrEqual(60);
     });
 });

@@ -4159,7 +4159,6 @@ export function updateWeaponsTab(){
     }
 
     renderGearList(document.getElementById('shield-list'), 'shield');
-    renderGearList(document.getElementById('gear-list'), 'reusable');
     updateInventoryTab();
     updateItemButton();
 }
@@ -4177,10 +4176,9 @@ function renderGearList(container, kind){
     const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
     const withShields = kind === 'shield';
     const shields = withShields ? sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort') : [];
-    const reusables = withShields ? [] : sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable'), 'items-sort');
-    if(!(withShields && wornShield) && shields.length === 0 && reusables.length === 0) return;
+    if(!(withShields && wornShield) && shields.length === 0) return;
     const section = document.createElement('div');
-    section.innerHTML = `<h3 class="shop-section-title">${withShields ? 'Boucliers' : 'Objets rechargeables'}</h3>`;
+    section.innerHTML = '<h3 class="shop-section-title">Boucliers</h3>';
     const row = (it, details, action) => {
         const div = document.createElement('div');
         div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.current ? ' is-equipped' : '');
@@ -4199,12 +4197,6 @@ function renderGearList(container, kind){
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
         row(it, shieldStats(it), { sellTag: true, locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
-    });
-    reusables.forEach(({ it, index }) => {
-        const locked = player.level < (it.minLevel || 1);
-        const isActive = index === player.activeInventoryIndex;
-        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • ${describeRecharge(it)} • Niv. ${it.minLevel} • Objet`;
-        row(it, details, { locked, current: isActive, disabled: locked || isActive, label: isActive ? 'Objet actif' : locked ? `Niv. ${it.minLevel} requis` : 'Choisir', onclick: `window.setActiveInventoryItem(${index})` });
     });
     container.appendChild(section);
 }
@@ -4298,29 +4290,8 @@ export function updateInventoryTab(){
 
     inventoryList.innerHTML = '';
 
-    // Boucliers : celui qui est porté (main gauche) puis ceux du sac, sans quoi ils n'apparaîtraient nulle part ici.
-    const wornShield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    const bagShieldEntries = groupInventoryEntries((player.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => it?.type === 'shield'));
-    const bagShields = bagShieldEntries;
-    if(wornShield || bagShields.length > 0){
-        const section = document.createElement('div');
-        section.innerHTML = '<h3 class="shop-section-title">Bouclier</h3>';
-        const card = (it, badge, count = 1, taggable = false) => {
-            const div = document.createElement('div');
-            div.className = 'item-card artifact-item';
-            div.style.borderLeft = `4px solid ${getRarityColor(it.rarity)}`;
-            div.innerHTML = `
-                <div class="item-header"><span class="item-name">${svgIcon('shield')} ${it.name}${countLabel(count)}</span><div class="item-actions">${badge}${taggable ? sellTagButton(it, count) : ''}</div></div>
-                <div class="item-description">${shieldStats(it)}${it.description ? ` — ${it.description}` : ''}</div>`;
-            section.appendChild(div);
-        };
-        if(wornShield) card(wornShield, '<span class="artifact-badge">Équipé</span>');
-        bagShields.forEach(({ it, count }) => card(it, '<span class="artifact-badge">Dans le sac</span>', count, true));
-        inventoryList.appendChild(section);
-    }
-
+    // Les boucliers (portés ou en réserve) sont gérés dans l'onglet Armes : le sac ne liste que les objets, une seule fois chacun.
     if(!player.inventory || !player.inventory.some(item => item.type !== 'shield')){
-        if(wornShield || bagShields.length > 0) return;
         inventoryList.innerHTML = `
             <div class="inventory-slot inventory-slot-empty">
                 <span class="slot-icon">${svgIcon('box')}</span>
@@ -4351,7 +4322,7 @@ export function updateInventoryTab(){
                     <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
             </div>
-            <div class="item-description">${item.description}${item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
+            <div class="item-description">${item.description}${item.type === 'reusable' ? ` <em>(${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} charges)</em>` : ''}${item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
         `;
         inventoryList.appendChild(div);
     });
