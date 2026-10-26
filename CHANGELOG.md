@@ -1,3 +1,10 @@
+## [2.147.0](https://github.com/niafrond/niafrond.github.io/compare/v2.146.0...v2.147.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter des armes et stuffs qui augmentent le qì max ([f7933e9](https://github.com/niafrond/niafrond.github.io/commit/f7933e91908ce7afc67faf730afd5fa1588cf4b2))
+* **match3-quest:** grouper les objets identiques, vendre l'excédent et comparer chez le marchand ([0246f96](https://github.com/niafrond/niafrond.github.io/commit/0246f96bb4fcdeadaafd0ef4212e2cc58521dc5c))
+
 ## [2.146.0](https://github.com/niafrond/niafrond.github.io/compare/v2.145.0...v2.146.0) (2026-10-26)
 
 ### Features
