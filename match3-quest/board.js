@@ -288,7 +288,8 @@ function syncBoardTileSize(){
     const paddingLeft = parseFloat(styles.paddingLeft || '0') || 0;
     const paddingRight = parseFloat(styles.paddingRight || '0') || 0;
     const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
-    const usableWidth = widthBudget - paddingLeft - paddingRight - (gap * (boardSize - 1));
+    const borderX = (parseFloat(styles.borderLeftWidth || '0') || 0) + (parseFloat(styles.borderRightWidth || '0') || 0);
+    const usableWidth = widthBudget - paddingLeft - paddingRight - borderX - (gap * (boardSize - 1));
     if(usableWidth <= 0) return;
 
     const tileSizeFromWidth = Math.floor(usableWidth / boardSize);
@@ -310,6 +311,17 @@ function syncBoardTileSize(){
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
     const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
+    // Filet : si la grille dépasse encore la largeur visible (bordures, marges, mesure faite avant un changement de mise en page),
+    // on rogne les tuiles plutôt que d'obliger à faire défiler la page vers la droite.
+    const docWidth = document.documentElement.clientWidth || viewportWidth;
+    const limit = Math.min(parentWidth > 0 ? parentWidth : Infinity, docWidth > 0 ? docWidth - 2 : Infinity);
+    const overflow = Math.max(boardDiv.getBoundingClientRect().width, boardDiv.scrollWidth) - limit;   // scrollWidth : le CSS plafonne la boîte à 100 %, pas son contenu
+    if(Number.isFinite(limit) && overflow > 0.5){
+        const fitted = Math.max(10, tileSize - Math.ceil(overflow / boardSize));
+        boardDiv.style.setProperty('--tile-size', `${fitted}px`);
+        requestTileBitmaps(fitted);
+        return;
+    }
     requestTileBitmaps(tileSize);   // fonds des tuiles rastérisés à la taille d'affichage (tileBitmaps.js)
 }
 
