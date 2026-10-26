@@ -3654,3 +3654,16 @@ body.dark-mode #player-stats, body.dark-mode #player-spells { background: var(--
 body.dark-mode #enemy-stats, body.dark-mode #enemy-spells { background: var(--team-enemy-bg); border-color: var(--team-enemy-edge); }
 body.dark-mode #player-stats.active-turn { border-color: #2ecc71; }
 body.dark-mode #enemy-stats.active-turn { border-color: #e74c3c; }
+
+/* Altérations d'état : pastilles pleines, lisibles sur les fonds bleu / rouge des fiches (bonus = vert, malus = rouge sombre + ▼) */
+#player-stats .status-badges, #enemy-stats .status-badges { gap: 4px; margin: 3px 0; }
+#player-stats .status-badge, #enemy-stats .status-badge {
+    font-size: 1em; padding: 1px 6px; gap: 3px; border-width: 2px; font-weight: 800;
+    color: #fff; background: #2e7d32; border-color: #0f3d14; text-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+#player-stats .status-badge.debuff, #enemy-stats .status-badge.debuff { background: #b71c1c; border-color: #4a0a0a; }
+#player-stats .status-badge.debuff::before, #enemy-stats .status-badge.debuff::before { content: "▼"; font-size: .7em; }
+#player-stats .status-badge.buff::before, #enemy-stats .status-badge.buff::before { content: "▲"; font-size: .7em; }
+#player-stats .status-badge svg, #enemy-stats .status-badge svg { width: 1.1em; height: 1.1em; }
+#player-stats .status-badge small, #enemy-stats .status-badge small { font-size: .85em; }
+body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border-color: var(--rt-ink); border-radius: 4px; }
