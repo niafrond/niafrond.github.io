@@ -151,7 +151,7 @@ th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:
 .badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
 .badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
 dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
-svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;border:1px solid var(--line);border-radius:6px}details{margin:8px 0}summary{cursor:pointer;color:var(--gold);font-weight:600}ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;border:1px solid var(--line);border-radius:6px}details{margin:8px 0}summary{cursor:pointer;color:var(--gold);font-weight:600}ol.steps{padding-left:22px}ol.steps li{margin:6px 0}.pl-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.pl-bar[hidden]{display:none}.pl-bar button,.pl-bar select{font:inherit;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--ink);cursor:pointer}.pl-bar .pl-play{background:var(--gold);color:var(--bg);font-weight:700;min-width:7.5em}.pl-bar label{display:flex;gap:6px;align-items:center;color:var(--dim)}.pl-status{margin:6px 0;font-weight:600;min-height:2.8em}.pl ol.steps li{cursor:pointer;padding:2px 6px;border-radius:4px}.pl ol.steps li.done{opacity:.55}.pl ol.steps li.cur{background:var(--panel2);outline:2px solid var(--gold);opacity:1}.pl details{max-height:none}
 .shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
@@ -519,20 +519,32 @@ function boardSvg(def) {
     return `<svg class="board" viewBox="-0.6 -0.6 ${w + 0.6} ${h + 0.6}" role="img" aria-label="Plateau de départ"><style>text{font:0.42px system-ui,sans-serif;fill:#7a6a4a}</style>${labels}${mode.render(st)}</svg>`;
 }
 
-/** Solution minimale en texte : la liste des coups (coups identiques consécutifs regroupés). */
+/** Solution minimale en texte : un coup par étape, avec la même phrase que le lecteur animé (`mode.say`). */
 function solutionSteps(def) {
     const mode = getMode(def.mode), path = solvePath(def);
-    if (!path) return [];
-    const moves = path.slice(1).map((s, i) => mode.describe(path[i], s));
-    if (def.mode === 'mirror') return moves.map(m => `Basculez le miroir de la colonne ${m.col}, ligne ${m.row}, en « ${m.to} »`);
-    const groups = [];
-    moves.forEach(m => {
-        const last = groups[groups.length - 1], same = def.mode === 'push' ? last?.m === m : last && last.m.id === m.id && last.m.dir === m.dir;
-        if (same) last.n++; else groups.push({ m, n: 1 });
-    });
-    if (def.mode === 'push') return groups.map(g => `${g.n} × ${g.m}`);
-    return groups.map(g => `Faites glisser ${g.m.block} de ${g.n} case${g.n > 1 ? 's' : ''} vers la ${g.m.dir}`);
+    return path ? path.slice(1).map((s, i) => mode.say(path[i], s)) : [];
 }
+
+/**
+ * Lecteur de solution : plateau animé, Début / Précédent / Lecture-Pause / Suivant, vitesse, et liste des étapes cliquable. Les boutons sont
+ * masqués (`hidden`) tant que le script de la page ne les a pas activés : sans JavaScript, il reste le plateau de départ et la liste des étapes.
+ */
+const playerHtml = (def, steps) => `<div class="pl" data-puzzle="${def.id}">
+${boardSvg(def)}
+<div class="pl-bar" hidden>
+<button type="button" data-act="start">Début</button>
+<button type="button" data-act="prev">Précédent</button>
+<button type="button" data-act="play" class="pl-play">Lecture</button>
+<button type="button" data-act="next">Suivant</button>
+<label>Vitesse <select class="pl-speed" aria-label="Vitesse de lecture"><option value="1500">Lente</option><option value="800" selected>Normale</option><option value="300">Rapide</option></select></label>
+</div>
+<div class="pl-status" role="status" aria-live="polite">Départ : appuyez sur Lecture, ou avancez coup par coup avec Suivant.</div>
+<details><summary>Liste des étapes (${steps.length})</summary><ol class="steps">${steps.map((t, i) => `<li data-step="${i + 1}">${esc(t)}</li>`).join('')}</ol></details>
+</div>`;
+
+// Code du lecteur : moteur, dessins, modes et niveaux du jeu (modules sans import ni export) puis tools/soluce-player.js.
+const stripModule = s => s.replace(/^[ \t]*import [^;]*;[ \t]*$/gm, '').replace(/^export \{[^}]*\};\s*$/gm, '').replace(/^export (const|function|let|class)/gm, '$1');
+const playerScript = () => `<script type="module">\n${['engine', 'sprites', 'art', 'modes', 'levels'].map(f => stripModule(readFileSync(join(ROOT, 'puzzle', `${f}.js`), 'utf8'))).join('\n')}\n${readFileSync(join(ROOT, 'tools', 'soluce-player.js'), 'utf8')}\n</script>`;
 
 function buildPuzzles() {
     const chestOf = id => Object.values(SCREENS).flatMap(s => (s.chests || []).filter(c => c.puzzle === id).map(c => ({ s, c }))).find(Boolean);
@@ -547,8 +559,7 @@ function buildPuzzles() {
             rows.push(`<tr><td>${esc(def.title)}</td><td>${esc(info.type)}</td><td>${esc(region)}</td><td>${esc(piece.name)}</td><td>${total} ${unit}</td></tr>`);
             return `<h4>${i + 1}. ${esc(def.title)} <small>— ${TIERS[i]}</small></h4>
 <dl><dt>Où</dt><dd>${where}</dd><dt>Récompense</dt><dd>${esc(piece.name)} (${esc(STUFF_SLOT_LABELS[piece.slot])}) + l’or du coffre</dd><dt>Minimum</dt><dd>${total} ${unit}</dd></dl>
-${boardSvg(def)}
-<details><summary>Solution détaillée</summary><ol class="steps">${steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol></details>`;
+${playerHtml(def, steps)}`;
         });
         cards.push(`<h3 id="${fam}">${esc(armor.name)}</h3>
 <p>${esc(info.how)}</p>
@@ -566,7 +577,8 @@ ${items.join('\n')}`);
 <div class="box tip"><b class="t">Conseil</b>Quitter une énigme ne coûte rien : le coffre reste verrouillé et l’énigme se recommence quand vous voulez. Les boutons Annuler et Recommencer sont en haut de la fenêtre. Clavier : flèches ou ZQSD, Échap pour quitter.</div>
 <div class="scroll"><table><tr><th>Énigme</th><th>Type</th><th>Région</th><th>Pièce</th><th>Minimum</th></tr>${rows.join('')}</table></div>
 ${cards.join('\n')}
-<div class="box warn"><b class="t">Flèches de l’armure des Jarres</b>Le gain par tour vaut 25 % du coût en flèches de l’arme active la plus chère (main droite ou gauche), arrondi, au moins 1.</div>`
+<div class="box warn"><b class="t">Flèches de l’armure des Jarres</b>Le gain par tour vaut 25 % du coût en flèches de l’arme active la plus chère (main droite ou gauche), arrondi, au moins 1.</div>
+${playerScript()}`
     }));
 }
 

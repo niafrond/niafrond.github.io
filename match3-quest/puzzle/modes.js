@@ -53,6 +53,11 @@ const push = {
         const d = b.player - a.player;
         return d === 1 ? 'droite' : d === -1 ? 'gauche' : d > 0 ? 'bas' : 'haut';
     },
+    /** Le coup de `a` à `b` en une phrase (soluce et lecteur de solution). */
+    say(a, b) {
+        const pushed = b.boxes.some((v, i) => v !== a.boxes[i]), to = { haut: 'le haut', bas: 'le bas', gauche: 'la gauche', droite: 'la droite' }[push.describe(a, b)];
+        return `${pushed ? 'Poussez la jarre' : 'Avancez'} vers ${to}`;
+    },
     won: s => s.targets.every(t => s.boxes.includes(t)),
     key: s => `${s.player}|${[...s.boxes].sort((a, b) => a - b).join(',')}`,
     successors: s => Object.keys(DIRS).map(d => push.dir(s, d)).filter(Boolean).map(r => r.state),
@@ -192,6 +197,10 @@ const mirror = {
         const i = a.cells.findIndex((c, k) => c !== b.cells[k]);
         return { to: b.cells[i], col: (i % a.w) + 1, row: ((i / a.w) | 0) + 1 };
     },
+    say(a, b) {
+        const d = mirror.describe(a, b);
+        return `Basculez le miroir de la colonne ${d.col}, ligne ${d.row} (il devient « ${d.to} »)`;
+    },
     won(s) { const { hit } = traceBeams(s); return s.targets.every(t => hit.has(`${t % s.w},${(t / s.w) | 0}`)); },
     key: s => s.cells.join(''),
     successors: s => s.cells.flatMap((c, i) => (c === '/' || c === '\\') ? [mirror.tap(s, i % s.w, (i / s.w) | 0).state] : []),
@@ -281,6 +290,10 @@ const slide = {
         const k = a.blocks[i], n = b.blocks[i];
         const dir = n.x > k.x ? 'droite' : n.x < k.x ? 'gauche' : n.y > k.y ? 'bas' : 'haut';
         return { id: k.id, block: `${k.hero ? 'la charrette rouge' : `le bloc ${k.w > 1 ? 'horizontal' : 'vertical'} de ${k.w * k.h} cases`} en colonne ${k.x + 1}, ligne ${k.y + 1}`, dir };
+    },
+    say(a, b) {
+        const d = slide.describe(a, b);
+        return `Faites glisser ${d.block} d'une case vers ${{ haut: 'le haut', bas: 'le bas', gauche: 'la gauche', droite: 'la droite' }[d.dir]}`;
     },
     key: s => s.blocks.map(b => `${b.x},${b.y}`).join(';'),
     successors(s) {

@@ -260,3 +260,14 @@ describe('rejeu de la solution', () => {
         expect(p.moves).toBe(0);
     });
 });
+
+describe('phrases de la solution (soluce)', () => {
+    test.each(Object.keys(PUZZLES))('%s : chaque coup de la solution a une phrase lisible', id => {
+        const def = puzzleDef(id), mode = getMode(def.mode), path = solvePath(def);
+        path.slice(1).forEach((s, i) => {
+            const text = mode.say(path[i], s);
+            expect(text).toMatch(/^(Avancez|Poussez|Basculez|Faites glisser) /);
+            expect(text).not.toMatch(/undefined|NaN|\[object/);
+        });
+    });
+});
