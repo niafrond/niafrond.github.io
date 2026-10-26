@@ -157,6 +157,7 @@
   "sprites/tiles/tile-purple.svg",
   "sprites/tiles/tile-red.svg",
   "sprites/tiles/tile-skull.svg",
+  "sprites/tiles/tile-skull5.svg",
   "sprites/tiles/tile-yellow.svg",
   "fonts/pixelify-sans-400.woff2",
   "fonts/pixelify-sans-700.woff2",
@@ -852,9 +853,9 @@
    "h": "e016a708fb"
   },
   {
-   "p": "sprites/gba/forgeron_lave.e8ecab82.js",
-   "s": 34189,
-   "h": "e8ecab823f"
+   "p": "sprites/gba/forgeron_lave.9814cc8c.js",
+   "s": 34349,
+   "h": "9814cc8c06"
   },
   {
    "p": "sprites/gba/forgeron_magma.869af0b3.js",

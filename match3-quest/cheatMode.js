@@ -236,7 +236,7 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
     const tileColorSelect = document.createElement('select');
     styleSelectForReadability(tileColorSelect);
 
-    ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'combat', 'joker'].forEach((tileType) => {
+    ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'skull5', 'combat', 'joker'].forEach((tileType) => {
         const opt = document.createElement('option');
         opt.value = tileType;
         opt.textContent = tileType;

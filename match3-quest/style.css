@@ -17,7 +17,7 @@ body {
 }
 #board {
     display: grid;
-    grid-template-columns: repeat(8, var(--tile-size));
+    grid-template-columns: repeat(var(--board-cols, 8), var(--tile-size));
     grid-gap: 6px;
     margin: 15px auto;
     max-width: min(100%, 980px);
@@ -193,6 +193,7 @@ body {
     filter: grayscale(100%) brightness(0.3);
     text-shadow: 0 0 3px #000000;
 }
+.tile.skull5 { background: #1a1a1a; color: #000000; filter: grayscale(100%) brightness(0.3); text-shadow: 0 0 3px #000000; }
 .tile.combat { background: #95a5a6; }
 .tile.joker { 
     background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
