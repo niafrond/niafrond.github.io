@@ -726,3 +726,10 @@ body.rt .stat-chip { background: rgba(0,0,0,.1); border: 2px solid var(--rt-ink)
 body.rt .stat-chip strong { margin-left: 0; opacity: .85; }
 body.rt .stat-chip.pa-stat { background: #fff0b3; color: #3a2a00; border-color: var(--rt-ink); }
 body.rt.dark-mode .stat-chip.pa-stat { background: #5a4a20; color: #fff0b3; }
+
+/* Couleurs d'équipe (thème rétro) : le cadre reste noir, seul le fond change */
+body.rt #player-stats, body.rt #player-spells { background: var(--team-player-bg); border-color: var(--rt-ink); }
+body.rt #enemy-stats, body.rt #enemy-spells { background: var(--team-enemy-bg); border-color: var(--rt-ink); }
+body.rt #player-stats.active-turn { border-color: #00c853; }
+body.rt #enemy-stats.active-turn { border-color: #ff1744; }
+body.rt #player-spells, body.rt #enemy-spells { border-width: 3px; box-shadow: 0 4px 0 var(--rt-ink); }

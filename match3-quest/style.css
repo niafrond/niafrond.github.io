@@ -3640,3 +3640,17 @@ body.dark-mode .stat-chip .stat-up { color: #69f0ae; } body.dark-mode .stat-chip
     .stat-chip { font-size: 1em; padding: 0 4px; }
     #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .9em; min-width: 1.7em; height: 1.7em; }
 }
+
+/* ── Couleurs d'équipe : joueur = bleu, ennemi = rouge (fiche + colonne armes/sorts/stuff) ── */
+:root { --team-player-bg: #d6e6ff; --team-player-edge: #1e5fd1; --team-enemy-bg: #ffdcd8; --team-enemy-edge: #c62828; }
+body.dark-mode { --team-player-bg: #1b2d4d; --team-player-edge: #5fa0ff; --team-enemy-bg: #4a1f24; --team-enemy-edge: #ff6b6b; }
+#player-stats, #player-spells { background: var(--team-player-bg); border-color: var(--team-player-edge); }
+#enemy-stats, #enemy-spells { background: var(--team-enemy-bg); border-color: var(--team-enemy-edge); }
+#player-spells, #enemy-spells { border-width: 3px; border-style: solid; }
+#player-stats:not(.active-turn), #enemy-stats:not(.active-turn) { border-color: var(--team-edge, transparent); }
+#player-stats:not(.active-turn) { --team-edge: var(--team-player-edge); }
+#enemy-stats:not(.active-turn) { --team-edge: var(--team-enemy-edge); }
+body.dark-mode #player-stats, body.dark-mode #player-spells { background: var(--team-player-bg); border-color: var(--team-player-edge); }
+body.dark-mode #enemy-stats, body.dark-mode #enemy-spells { background: var(--team-enemy-bg); border-color: var(--team-enemy-edge); }
+body.dark-mode #player-stats.active-turn { border-color: #2ecc71; }
+body.dark-mode #enemy-stats.active-turn { border-color: #e74c3c; }
