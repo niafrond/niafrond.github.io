@@ -214,4 +214,20 @@ describe('excédent à vendre (tag bouton pièce)', () => {
         expect(h.inventory).toHaveLength(1);
         expect(h.activeInventoryIndex).toBe(0);
     });
+
+    test('armes et boucliers : taggables même sans doublon, jamais équipés', () => {
+        const sword = { id: 'rusty_sword', name: 'Sabre', type: 'sword', damage: 10, actionPoints: 3, minLevel: 1 };
+        const axe = { id: 'wood_axe', name: 'Hache', type: 'axe', damage: 12, actionPoints: 3, minLevel: 2 };
+        const shield = { id: 'sh', name: 'Targe', type: 'shield', rarity: 'common', minLevel: 1, defense: 2 };
+        const h = { gold: 0, weapons: [sword, axe], equippedWeapon: sword, equipment: { rightHand: sword, leftHand: null, item: null }, inventory: [shield], activeInventoryIndex: null };
+        toggleSellTag(h, 'weapon:wood_axe');
+        toggleSellTag(h, 'weapon:rusty_sword');   // équipée : ignorée
+        toggleSellTag(h, 'sh');
+        expect(surplusEntries(h).map(e => e.id).sort()).toEqual(['sh', 'weapon:wood_axe']);
+        expect(sellSurplus(h, 'weapon:wood_axe').ok).toBe(true);
+        expect(sellSurplus(h, 'sh').ok).toBe(true);
+        expect(h.weapons).toEqual([sword]);
+        expect(h.inventory).toEqual([]);
+        expect(h.gold).toBeGreaterThan(0);
+    });
 });

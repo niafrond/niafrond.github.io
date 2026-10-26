@@ -4116,7 +4116,7 @@ function weaponCardHtml(weapon, { hand } = {}){
                 ${deltas ? `<span class="card-deltas" title="Par rapport à l'arme en main droite">${deltas}</span>` : ''}
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            ${cardActionsHtml(compareButtonHtml('weapon', weapon.id), actions)}
+            ${cardActionsHtml(compareButtonHtml('weapon', weapon.id) + (hand ? '' : weaponSellTagButton(weapon)), actions)}
         </div>`;
 }
 
@@ -4192,13 +4192,13 @@ function renderGearList(container, kind){
                 <span class="weapon-description">${it.description || ''}</span>
             </div>
             <button class="weapon-action" ${action.disabled ? 'disabled' : ''}${action.title ? ` title="${escapeHtml(action.title)}"` : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
-        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('item', it.id));
+        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('item', it.id) + (action.sellTag ? sellTagButton(it, 1) : ''));
         section.appendChild(div);
     };
     if(withShields && wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
     shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
-        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
+        row(it, shieldStats(it), { sellTag: true, locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
     });
     reusables.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
@@ -4263,14 +4263,21 @@ function groupInventoryEntries(entries){
     return [...groups.values()];
 }
 const countLabel = count => count > 1 ? ` x ${count}` : '';
-const sellTagButton = (it, count) => {
-    if(count < 2) return '';
-    const on = (player.sellTags || []).includes(itemGroupKey(it));
-    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'Excédent à vendre au prochain marchand (cliquer pour annuler)' : 'Marquer l\'excédent à vendre au prochain marchand'}" onclick="window.toggleSellSurplus('${String(itemGroupKey(it)).replace(/'/g, "\\'")}')">${svgIcon('coin')}</button>`;
+// Bouton pièce : tague une pièce à vendre au prochain marchand. Armes et boucliers : toujours (la pièce entière, même sans doublon) ;
+// autres objets : seulement quand il y en a plusieurs (l'excédent).
+const sellTagButtonFor = (tag, title) => {
+    const on = (player.sellTags || []).includes(tag);
+    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'À vendre au prochain marchand (cliquer pour annuler)' : title}" onclick="window.toggleSellSurplus('${String(tag).replace(/'/g, "\\'")}')">${svgIcon('coin')}</button>`;
 };
+const sellTagButton = (it, count) => {
+    if(it.type === 'shield') return sellTagButtonFor(itemGroupKey(it), 'Marquer ce bouclier à vendre au prochain marchand');
+    if(count < 2) return '';
+    return sellTagButtonFor(itemGroupKey(it), 'Marquer l\'excédent à vendre au prochain marchand');
+};
+const weaponSellTagButton = weapon => sellTagButtonFor(`weapon:${weapon.id}`, 'Marquer cette arme à vendre au prochain marchand');
 export function toggleSellSurplus(id){
     toggleSellTag(player, id);
-    updateInventoryTab();
+    updateWeaponsTab();   // redessine aussi l'onglet Objets
     saveUpdate();
 }
 
@@ -4298,17 +4305,17 @@ export function updateInventoryTab(){
     if(wornShield || bagShields.length > 0){
         const section = document.createElement('div');
         section.innerHTML = '<h3 class="shop-section-title">Bouclier</h3>';
-        const card = (it, badge, count = 1) => {
+        const card = (it, badge, count = 1, taggable = false) => {
             const div = document.createElement('div');
             div.className = 'item-card artifact-item';
             div.style.borderLeft = `4px solid ${getRarityColor(it.rarity)}`;
             div.innerHTML = `
-                <div class="item-header"><span class="item-name">${svgIcon('shield')} ${it.name}${countLabel(count)}</span><div class="item-actions">${badge}${sellTagButton(it, count)}</div></div>
+                <div class="item-header"><span class="item-name">${svgIcon('shield')} ${it.name}${countLabel(count)}</span><div class="item-actions">${badge}${taggable ? sellTagButton(it, count) : ''}</div></div>
                 <div class="item-description">${shieldStats(it)}${it.description ? ` — ${it.description}` : ''}</div>`;
             section.appendChild(div);
         };
         if(wornShield) card(wornShield, '<span class="artifact-badge">Équipé</span>');
-        bagShields.forEach(({ it, count }) => card(it, '<span class="artifact-badge">Dans le sac</span>', count));
+        bagShields.forEach(({ it, count }) => card(it, '<span class="artifact-badge">Dans le sac</span>', count, true));
         inventoryList.appendChild(section);
     }
 

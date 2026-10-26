@@ -153,6 +153,8 @@ export function renderMerchant(npc, card, hooks = {}) {
         if (prev) { previewKey = prev.dataset.preview; draw(); return; }
         if (ev.target.closest('[data-preview-close]')) { previewKey = null; draw(); return; }
         const refresh = () => {
+            updateAvailableWeapons();
+            createWeaponButton?.();
             updateInventoryTab?.();
             updateItemButton?.();
             saveUpdate();
