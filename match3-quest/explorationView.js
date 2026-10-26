@@ -1800,12 +1800,15 @@ export function createExplorationView(cfg) {
         miniShift += ((nearCorner ? 1 : 0) - miniShift) * 0.2;
         if (Math.abs(miniShift - (nearCorner ? 1 : 0)) < 0.01) miniShift = nearCorner ? 1 : 0;
         const x0 = Math.round(rightX + (MARGIN - rightX) * miniShift);
-        miniRect = { x: x0 - 2, y: y0 - 2, w: mw + 4, h: mh + 4 };
+        miniRect = { x: x0 - 4, y: y0 - 4, w: mw + 8, h: mh + 8 };
         ctx.save();
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.globalAlpha = 0.88;
-        ctx.fillStyle = '#000';
+        // bord différenciant : liseré doré, filet sombre, puis la carte
+        ctx.fillStyle = '#f2c94c';
+        ctx.fillRect(x0 - 4, y0 - 4, mw + 8, mh + 8);
+        ctx.fillStyle = '#1a0f0a';
         ctx.fillRect(x0 - 2, y0 - 2, mw + 4, mh + 4);
+        ctx.globalAlpha = 0.88;
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(miniBase(screen, biome), x0, y0, mw, mh);
         const dot = (cx, cy, color, r) => {
