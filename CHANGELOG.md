@@ -1,3 +1,10 @@
+## [2.143.0](https://github.com/niafrond/niafrond.github.io/compare/v2.142.0...v2.143.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** rendre Fengmeng inesquivable avec zone de détection et piliers retirés à sa défaite ([ab74013](https://github.com/niafrond/niafrond.github.io/commit/ab7401379d885eb0e80c3619678085051817b5cd))
+* **match3-quest:** retirer les piliers des boss de porte à leur défaite et les remplacer par du feu pour les soleils ([da45d22](https://github.com/niafrond/niafrond.github.io/commit/da45d2221945735128e6375dd96bf9a5110767bd))
+
 ## [2.142.0](https://github.com/niafrond/niafrond.github.io/compare/v2.141.0...v2.142.0) (2026-10-26)
 
 ### Features
