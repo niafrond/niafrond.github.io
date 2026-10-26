@@ -44,7 +44,7 @@ function collapse(board, removed, refill){
 
 export const MONTE_CARLO_SAMPLES = 24;
 
-// Valeur d'un échange from↔to ; `opts.mana` = réserve de qì du héros. Le plateau fourni n'est pas modifié.
+// Valeur d'un échange from-to ; `opts.mana` = réserve de qì du héros. Le plateau fourni n'est pas modifié.
 export function scoreMove(board, move, opts = {}){
     if(!opts.refill) return simulateOnce(board, move, opts, null);
     const n = Math.max(1, opts.samples || MONTE_CARLO_SAMPLES);

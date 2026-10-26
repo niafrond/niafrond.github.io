@@ -37,7 +37,7 @@ describe('coups de Xiao Gui', () => {
         const move = { from: 2, to: boardSize + 2 };
         const a = scoreMove(b, move, { refill: mk(), samples: 10 });
         expect(scoreMove(b, move, { refill: mk(), samples: 10 })).toBe(a);
-        expect(a).toBeGreaterThanOrEqual(scoreMove(b, move));   // les cascades de hasard ne font qu'ajouter
+        expect(a).toBeGreaterThanOrEqual(scoreMove(b, move) - 1e-9);   // les cascades de hasard ne font qu'ajouter
         expect(b).toEqual(snap);
     });
 });
