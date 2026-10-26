@@ -1,3 +1,13 @@
+## [2.138.0](https://github.com/niafrond/niafrond.github.io/compare/v2.137.0...v2.138.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter une minimap en mode exploration ([2514b2c](https://github.com/niafrond/niafrond.github.io/commit/2514b2c47f9aba7527e40e485d48223942b29d8d))
+
+### Bug Fixes
+
+* **match3-quest:** ignorer les clics sur la minimap ([61e8bad](https://github.com/niafrond/niafrond.github.io/commit/61e8bad613bbe32640b7d39ffd89fd144698e8d9))
+
 ## [2.137.0](https://github.com/niafrond/niafrond.github.io/compare/v2.136.0...v2.137.0) (2026-10-26)
 
 ### Features
