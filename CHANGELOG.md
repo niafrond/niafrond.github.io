@@ -1,3 +1,9 @@
+## [2.149.0](https://github.com/niafrond/niafrond.github.io/compare/v2.148.2...v2.149.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** unifier l'inventaire, rééquilibrer les objets et en ajouter pour les niveaux 22 à 65 ([#575](https://github.com/niafrond/niafrond.github.io/issues/575)) ([b7da95a](https://github.com/niafrond/niafrond.github.io/commit/b7da95ace9090bcd8384e091c06262e88aeed599))
+
 ## [2.148.2](https://github.com/niafrond/niafrond.github.io/compare/v2.148.1...v2.148.2) (2026-10-26)
 
 ### Bug Fixes
