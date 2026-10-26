@@ -1,3 +1,11 @@
+## [2.146.0](https://github.com/niafrond/niafrond.github.io/compare/v2.145.0...v2.146.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** allonger les musiques de combat à 2 min 30 ([693f9ff](https://github.com/niafrond/niafrond.github.io/commit/693f9ff54a6fe409934977218865f70ff1cbd635))
+* **match3-quest:** régénérer Changxi en 64 px et le forgeron de lave ([66e3a55](https://github.com/niafrond/niafrond.github.io/commit/66e3a5533beeac3e900334c44f7d4b2a3c08205b))
+* **match3-quest:** régénérer les musiques de combat sans intro douce ([9b0f614](https://github.com/niafrond/niafrond.github.io/commit/9b0f61488cf8d45f3f778a3e259a5ce9d86570aa))
+
 ## [2.145.0](https://github.com/niafrond/niafrond.github.io/compare/v2.144.0...v2.145.0) (2026-10-26)
 
 ### Features
