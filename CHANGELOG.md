@@ -1,3 +1,15 @@
+## [2.150.0](https://github.com/niafrond/niafrond.github.io/compare/v2.149.0...v2.150.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** améliorer la lisibilité des fiches de combat joueur et ennemi ([fdc9329](https://github.com/niafrond/niafrond.github.io/commit/fdc93290ebbca2cfc79067341bfe9d66baeb26f0))
+* **match3-quest:** colorer joueur et ennemi pour distinguer fiches et colonnes de sorts ([c36cead](https://github.com/niafrond/niafrond.github.io/commit/c36cead699854879c5f22d0c744bf74c1212cbd7))
+* **match3-quest:** rendre les altérations d'état plus lisibles sur les fiches de combat ([da3a488](https://github.com/niafrond/niafrond.github.io/commit/da3a488309fe8f047ae49e439c5556788127c454))
+
+### Bug Fixes
+
+* **match3-quest:** compacter les altérations d'état et les écarter du portrait ([28c0091](https://github.com/niafrond/niafrond.github.io/commit/28c0091c236f321c971c6aa1eb186e925d60605f))
+
 ## [2.149.0](https://github.com/niafrond/niafrond.github.io/compare/v2.148.2...v2.149.0) (2026-10-26)
 
 ### Features
