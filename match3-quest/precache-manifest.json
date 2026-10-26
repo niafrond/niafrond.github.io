@@ -4256,58 +4256,63 @@
   },
   {
    "p": "audio/music/combat-0-b.mp3",
-   "s": 456561,
-   "h": "9bb046f1a4"
+   "s": 588609,
+   "h": "8da8167c82"
   },
   {
    "p": "audio/music/combat-0.mp3",
-   "s": 404577,
-   "h": "e66b479318"
+   "s": 646497,
+   "h": "1212eadcb7"
   },
   {
    "p": "audio/music/combat-1-b.mp3",
-   "s": 436545,
-   "h": "c6cd927859"
+   "s": 676593,
+   "h": "c6ff800424"
   },
   {
    "p": "audio/music/combat-1.mp3",
-   "s": 376497,
-   "h": "65aa2336d4"
+   "s": 670545,
+   "h": "0094fa7f0f"
   },
   {
    "p": "audio/music/combat-2-b.mp3",
-   "s": 408465,
-   "h": "e5cb67d882"
+   "s": 646497,
+   "h": "6309b8b0ad"
   },
   {
    "p": "audio/music/combat-2.mp3",
-   "s": 398529,
-   "h": "d925b0d1d8"
+   "s": 658593,
+   "h": "dfc4ea8e1d"
   },
   {
    "p": "audio/music/combat-3-b.mp3",
-   "s": 440577,
-   "h": "74a7d6192b"
+   "s": 664497,
+   "h": "92a592eef0"
   },
   {
    "p": "audio/music/combat-3.mp3",
-   "s": 428481,
-   "h": "652b7343f4"
+   "s": 644625,
+   "h": "fa07320892"
   },
   {
    "p": "audio/music/combat-4-b.mp3",
-   "s": 380529,
-   "h": "19ef7435fe"
+   "s": 592497,
+   "h": "31996a7599"
   },
   {
    "p": "audio/music/combat-4.mp3",
-   "s": 380529,
-   "h": "0f0cc1011a"
+   "s": 622593,
+   "h": "35b82a3ae8"
+  },
+  {
+   "p": "audio/music/combat-tides-b.mp3",
+   "s": 646497,
+   "h": "2402493b8e"
   },
   {
    "p": "audio/music/combat-tides.mp3",
-   "s": 434529,
-   "h": "a38ea39d4d"
+   "s": 644625,
+   "h": "c2f724436b"
   },
   {
    "p": "audio/music/defeat-b.mp3",
