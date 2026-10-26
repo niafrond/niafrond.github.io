@@ -3585,3 +3585,19 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 }
 .status-badge.debuff { border-color: #e53935; background: rgba(229, 57, 53, 0.22); }
 .status-badge small { font-size: 0.75em; font-weight: bold; }
+
+/* Excédent à vendre : bouton pièce de l'onglet Objets et popup du marchand */
+.item-sell-tag { display: inline-flex; align-items: center; gap: 4px; }
+.item-sell-tag.on { background: #f1c40f; border-color: #b7950b; color: #3b2f00; }
+.surplus-popup { border: 2px solid #f1c40f; border-radius: 6px; padding: 8px 10px; margin: 8px 0; background: rgba(241, 196, 15, 0.12); }
+.surplus-popup h4 { margin: 0 0 6px; }
+.surplus-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.surplus-name { flex: 1 1 140px; font-weight: bold; }
+.surplus-popup > .primary { width: 100%; margin-top: 4px; }
+
+/* Comparaison avec l'équipé chez le marchand */
+.preview-panel { border: 2px solid #3498db; border-radius: 6px; padding: 8px 10px; margin: 8px 0; background: rgba(52, 152, 219, 0.1); }
+.preview-panel h4 { margin: 0 0 6px; }
+.preview-panel .primary { width: 100%; margin-top: 6px; }
+.preview-panel .delta-up { color: #27ae60; font-weight: bold; }
+.preview-panel .delta-down { color: #e74c3c; font-weight: bold; }

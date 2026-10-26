@@ -30,6 +30,8 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
+import { gearManaBonus } from "./manaGear.js";
+import { itemGroupKey, toggleSellTag } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, displayAttack, rawDefense, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -85,7 +87,7 @@ export function getAttributeManaBonus(entity, color, bonusType){
 
 export function getManaCapForColor(entity, color){
     const baseCap = Math.max(0, Math.floor(entity?.maxMana ?? BASE_MANA_CAP));
-    return baseCap + getAttributeManaBonus(entity, color, "max");
+    return baseCap + getAttributeManaBonus(entity, color, "max") + gearManaBonus(entity, color);
 }
 
 export function recalculateManaCaps(entity){
@@ -583,6 +585,7 @@ export let player = {
     defense: 0,  // défense du joueur
     inventory: [],  // inventaire des objets possédés
     activeInventoryIndex: null,  // index de l'objet actuellement actif
+    sellTags: [],  // ids des objets dont l'excédent est à vendre au prochain marchand
     tempAttack: 0,  // bonus d'attaque temporaire
     tempDefense: 0,  // bonus de défense temporaire
     hasRevive: false,  // possède un effet de résurrection
@@ -1241,6 +1244,7 @@ export function loadGameData() {
             player.mount = loaded.mount === 'horse' ? 'horse' : null;
             player.torch = loaded.torch === true;
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
+            player.sellTags = Array.isArray(loaded.sellTags) ? loaded.sellTags.filter(t => typeof t === 'string') : [];
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
             player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)
                 ? loaded.defeatedBossTiers
@@ -4247,6 +4251,29 @@ export function unequipGear(slot){
 // (Boutique déplacée dans shop.js)
 // =====================================
 
+// Regroupe les exemplaires identiques ({ it, index } → { it, index, count }) : l'index retenu est l'objet actif du groupe, sinon le premier.
+function groupInventoryEntries(entries){
+    const groups = new Map();
+    entries.forEach(e => {
+        const key = itemGroupKey(e.it);
+        const g = groups.get(key);
+        if(!g) groups.set(key, { ...e, count: 1 });
+        else { g.count++; if(e.index === player.activeInventoryIndex) g.index = e.index; }
+    });
+    return [...groups.values()];
+}
+const countLabel = count => count > 1 ? ` x ${count}` : '';
+const sellTagButton = (it, count) => {
+    if(count < 2) return '';
+    const on = (player.sellTags || []).includes(itemGroupKey(it));
+    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'Excédent à vendre au prochain marchand (cliquer pour annuler)' : 'Marquer l\'excédent à vendre au prochain marchand'}" onclick="window.toggleSellSurplus('${String(itemGroupKey(it)).replace(/'/g, "\\'")}')">${svgIcon('coin')}</button>`;
+};
+export function toggleSellSurplus(id){
+    toggleSellTag(player, id);
+    updateInventoryTab();
+    saveUpdate();
+}
+
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
     if(!inventoryList) return;
@@ -4257,21 +4284,22 @@ export function updateInventoryTab(){
 
     // Boucliers : celui qui est porté (main gauche) puis ceux du sac, sans quoi ils n'apparaîtraient nulle part ici.
     const wornShield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    const bagShields = (player.inventory || []).filter(item => item?.type === 'shield');
+    const bagShieldEntries = groupInventoryEntries((player.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => it?.type === 'shield'));
+    const bagShields = bagShieldEntries;
     if(wornShield || bagShields.length > 0){
         const section = document.createElement('div');
         section.innerHTML = '<h3 class="shop-section-title">Bouclier</h3>';
-        const card = (it, badge) => {
+        const card = (it, badge, count = 1) => {
             const div = document.createElement('div');
             div.className = 'item-card artifact-item';
             div.style.borderLeft = `4px solid ${getRarityColor(it.rarity)}`;
             div.innerHTML = `
-                <div class="item-header"><span class="item-name">${svgIcon('shield')} ${it.name}</span><div class="item-actions">${badge}</div></div>
+                <div class="item-header"><span class="item-name">${svgIcon('shield')} ${it.name}${countLabel(count)}</span><div class="item-actions">${badge}${sellTagButton(it, count)}</div></div>
                 <div class="item-description">${shieldStats(it)}${it.description ? ` — ${it.description}` : ''}</div>`;
             section.appendChild(div);
         };
         if(wornShield) card(wornShield, '<span class="artifact-badge">Équipé</span>');
-        bagShields.forEach(it => card(it, '<span class="artifact-badge">Dans le sac</span>'));
+        bagShields.forEach(({ it, count }) => card(it, '<span class="artifact-badge">Dans le sac</span>', count));
         inventoryList.appendChild(section);
     }
 
@@ -4286,7 +4314,7 @@ export function updateInventoryTab(){
         return;
     }
 
-    sortedEntries(player.inventory.map((item, index) => ({ it: item, index })).filter(({ it }) => it.type !== 'shield'), 'items-sort').forEach(({ it: item, index }) => {
+    groupInventoryEntries(sortedEntries(player.inventory.map((item, index) => ({ it: item, index })).filter(({ it }) => it.type !== 'shield'), 'items-sort')).forEach(({ it: item, index, count }) => {
         const isActive = index === player.activeInventoryIndex;
         const rarityEmoji = getRarityIcon(item.rarity);
         const rarityColor = getRarityColor(item.rarity);
@@ -4300,8 +4328,9 @@ export function updateInventoryTab(){
         const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : '';
         div.innerHTML = `
             <div class="item-header">
-                <span class="item-name">${rarityEmoji} ${item.name}${paInfo}</span>
+                <span class="item-name">${rarityEmoji} ${item.name}${countLabel(count)}${paInfo}</span>
                 <div class="item-actions">
+                    ${sellTagButton(item, count)}
                     ${isActive ? '<span class="artifact-badge">Actif</span>' : `<button class="item-discard-btn" ${levelLocked || inCombat ? 'disabled' : ''} title="${activateTitle}" onclick="window.setActiveInventoryItem(${index})">${levelLocked ? `Niv. ${item.minLevel} requis` : 'Activer'}</button>`}
                     <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
@@ -4457,4 +4486,5 @@ window.equipGear = equipGear;
 window.unequipGear = unequipGear;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
+window.toggleSellSurplus = toggleSellSurplus;
 window.setActiveInventoryItem = setActiveInventoryItem;

@@ -219,6 +219,7 @@ function sanitizePlayer(player) {
         stuff: compact(player.stuff || {}),
         activeInventoryIndex: player.activeInventoryIndex,
         merchantSold: player.merchantSold,
+        sellTags: player.sellTags,
         defeatedBossTiers: player.defeatedBossTiers,
         bossLossStreak: player.bossLossStreak,
         visitedZoneIds: player.worldMap?.visitedZoneIds,
