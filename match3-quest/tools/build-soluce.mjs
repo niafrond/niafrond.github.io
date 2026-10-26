@@ -333,20 +333,21 @@ function objectiveHtml(o, region) {
 
 
 // Captures annotées : la carte de l'écran (soluce/img, voir build-soluce-shots.mjs) avec un cercle rouge par case citée par la quête.
-const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif' };
+const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre' };
 function shotsHtml(q) {
     const byScreen = new Map();
     for (const t of questTargets(q)) byScreen.set(t.screenId, [...(byScreen.get(t.screenId) || []), t]);
-    const figs = [];
-    for (const [sid, list] of byScreen) {
-        if (!existsSync(join(IMG, `${sid}.jpg`))) continue;
-        const sc = SCREENS[sid];
-        const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
-        const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
-        const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
-        figs.push(`<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend} <small>(cliquer pour agrandir)</small></figcaption></figure>`);
-    }
-    return figs.join('');
+    return [...byScreen].map(([sid, list]) => shotFigure(sid, list)).join('');
+}
+
+/** Carte de l'écran `sid` avec un cercle rouge numéroté par case de `list` ([{ x, y, name, role }]) ; vide si la capture manque. */
+function shotFigure(sid, list) {
+    if (!existsSync(join(IMG, `${sid}.jpg`))) return '';
+    const sc = SCREENS[sid];
+    const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
+    const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
+    const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
+    return `<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend} <small>(cliquer pour agrandir)</small></figcaption></figure>`;
 }
 
 function questHtml(q) {
@@ -559,6 +560,7 @@ function buildPuzzles() {
             rows.push(`<tr><td>${esc(def.title)}</td><td>${esc(info.type)}</td><td>${esc(region)}</td><td>${esc(piece.name)}</td><td>${total} ${unit}</td></tr>`);
             return `<h4>${i + 1}. ${esc(def.title)} <small>— ${TIERS[i]}</small></h4>
 <dl><dt>Où</dt><dd>${where}</dd><dt>Récompense</dt><dd>${esc(piece.name)} (${esc(STUFF_SLOT_LABELS[piece.slot])}) + l’or du coffre</dd><dt>Minimum</dt><dd>${total} ${unit}</dd></dl>
+${found ? shotFigure(found.s.id, [{ x: found.c.x, y: found.c.y, name: found.c.label || 'coffre', role: 'chest' }]) : ''}
 ${playerHtml(def, steps)}`;
         });
         cards.push(`<h3 id="${fam}">${esc(armor.name)}</h3>

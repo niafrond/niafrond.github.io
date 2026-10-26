@@ -49,6 +49,7 @@ async function worker(queue) {
         await page.waitForTimeout(2500);
         const cur = await page.evaluate(() => JSON.parse(localStorage.getItem('player')).exploration.screenId);
         if (cur !== id) { console.log(`ÉCHEC ${id} : le jeu est sur ${cur}`); continue; }
+        await page.addStyleTag({ content: '.explore-objective{visibility:hidden!important}' });   // le bandeau d'objectif masque le haut de la carte
         await page.screenshot({ path: join(OUT, `${id}.png`), clip: { x: 0, y: HUD_TOP, width: s.w * TILE, height: s.h * TILE } });
         console.log('ok', id);
     }

@@ -805,6 +805,7 @@ export function createExplorationView(cfg) {
                     // Coffre verrouillé par une énigme : la victoire l'ouvre aussitôt ; quitter la laisse intacte.
                     puzzleView = openPuzzle(root, chest.puzzleId, {
                         sfx: n => playSfx(n),
+                        hero: gbaSprite(cfg.getHero().classId, 'front') || undefined,
                         onClose: () => { puzzleView = null; },
                         onSolved: () => {
                             const reward = X.solvePuzzle(session, chest.puzzleId);

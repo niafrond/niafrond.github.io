@@ -30,6 +30,10 @@
         import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from './puzzle/levels.js';
         import { openPuzzle } from './puzzle/view.js';
         import { solve } from './puzzle/engine.js';
+        import { gbaSprite, loadGbaSprites } from './sprites/index.js';
+
+        // Héros de la page de test : l'archer, comme dans le jeu (sprite de face).
+        loadGbaSprites(['archer']).catch(() => {});
 
         const FAMILIES = { jarres: 'Jarres (pousser)', lumiere: 'Lumière (miroirs)', charrette: 'Charrette (Rush Hour)' };
         const solved = new Set();
@@ -48,6 +52,7 @@
             host.classList.add('open');
             const view = openPuzzle(host, b.dataset.id, {
                 solution: true,
+                hero: gbaSprite('archer', 'front') || undefined,
                 onClose: () => host.classList.remove('open'),
                 onSolved: () => { solved.add(b.dataset.id); render(); }
             });

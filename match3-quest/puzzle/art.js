@@ -3,18 +3,22 @@
 // à chaque coup ne recharge donc aucune image. Si un dessin manque, `sprite` renvoie '' et le mode garde son dessin géométrique.
 import { PUZZLE_SPRITES } from './sprites.js';
 
+const SPRITES = { ...PUZZLE_SPRITES };
 const ID = name => `pz-${name}`;
 const PIXELATED = 'image-rendering:crisp-edges;image-rendering:pixelated';
 
-export const hasSprite = name => Boolean(PUZZLE_SPRITES[name]);
+export const hasSprite = name => Boolean(SPRITES[name]);
+
+/** Dessin du héros du joueur (data URI d une case), posé par le jeu : remplace le pion bleu de l’énigme des jarres. */
+export const setHeroSprite = uri => { if (uri) SPRITES.hero = { w: 1, h: 1, uri }; else delete SPRITES.hero; };
 
 /** `<image>` de chaque dessin, à placer dans un `<defs>` (une unité de repère = une case ; largeur et hauteur = nombre de cases du dessin). */
-export const spriteDefs = () => Object.entries(PUZZLE_SPRITES)
+export const spriteDefs = () => Object.entries(SPRITES)
     .map(([name, s]) => `<image id="${ID(name)}" width="${s.w}" height="${s.h || 1}" preserveAspectRatio="none" style="${PIXELATED}" href="${s.uri}"/>`).join('');
 
 /** Dessin `name` placé dans la case (x, y) ; `turn` = quarts de tour horaires (un dessin horizontal de `w` cases devient vertical à 1). */
 export function sprite(name, x, y, turn = 0) {
-    const s = PUZZLE_SPRITES[name];
+    const s = SPRITES[name];
     if (!s) return '';
     if (!turn) return `<use href="#${ID(name)}" x="${x}" y="${y}"/>`;
     // rotation autour du coin haut gauche, puis recalage : (u, v) → (−v, u) pour 1 quart de tour, etc.

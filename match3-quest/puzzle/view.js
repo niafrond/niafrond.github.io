@@ -1,7 +1,7 @@
 // Fenêtre d'énigme (DOM) : affiche le plateau du moteur (engine.js) en SVG et relaie clavier, appuis et glissements. Hors du moteur,
 // rien ne dépend du mode : le plateau est dessiné par `mode.render`, les actions passent par `puzzle.dir` / `puzzle.tap`.
 import { createPuzzle, solvePath } from './engine.js';
-import { spriteDefs } from './art.js';
+import { spriteDefs, setHeroSprite } from './art.js';
 import './modes.js';
 import { puzzleDef } from './levels.js';
 
@@ -13,9 +13,10 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
  * `onClose()` à chaque fermeture (abandon compris). `solution: true` ajoute un bouton qui rejoue lentement la solution la plus courte
  * (page de test, pas le jeu). Renvoie { close } ou null si l'énigme est inconnue.
  */
-export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false } = {}) {
+export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false, hero } = {}) {
     const def = puzzleDef(id);
     if (!def) return null;
+    setHeroSprite(hero);   // data URI du héros du joueur (énigme des jarres) ; absent : pion bleu
     const puzzle = createPuzzle(def);
     const el = document.createElement('div');
     el.className = 'puzzle-overlay';
@@ -60,7 +61,7 @@ export function openPuzzle(host, id, { onSolved, onClose, sfx, solution = false 
     function refresh() {
         fitRotation();
         svg.setAttribute('viewBox', rot ? `0 0 ${h} ${w}` : `0 0 ${w} ${h}`);
-        const inner = puzzle.mode.render(puzzle.state);
+        const inner = puzzle.mode.render(puzzle.state, { rot });
         layer.innerHTML = rot ? `<g transform="translate(${h} 0) rotate(90)">${inner}</g>` : inner;
         if (puzzle.won) {
             if (!won) {

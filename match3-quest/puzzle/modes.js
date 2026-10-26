@@ -1,6 +1,6 @@
 // Les trois modes d'énigme livrés : pousser des caisses (push), refléter la lumière (mirror), faire sortir un bloc (slide).
 import { registerMode, DIRS } from './engine.js';
-import { sprite, variant } from './art.js';
+import { sprite, variant, hasSprite } from './art.js';
 
 const COLORS = { ink: '#2a1a0e', wall: '#4b3a2c', floor: '#d9c39a', floorAlt: '#cfb88c', gold: '#e8b73a', red: '#c0392b', jade: '#2f8f6b', light: '#ffe27a', sky: '#7aa6c9' };
 const BLOCK_COLORS = ['#6b7f9a', '#8a6a4b', '#5d8a6b', '#8a5d7d', '#9a8a4b', '#4b7f8a'];
@@ -61,7 +61,7 @@ const push = {
     won: s => s.targets.every(t => s.boxes.includes(t)),
     key: s => `${s.player}|${[...s.boxes].sort((a, b) => a - b).join(',')}`,
     successors: s => Object.keys(DIRS).map(d => push.dir(s, d)).filter(Boolean).map(r => r.state),
-    render(s) {
+    render(s, { rot = false } = {}) {
         let out = '';
         for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) out += s.walls.has(y * s.w + x) ? wallCell(x, y) : floorCell(x, y);
         s.targets.forEach(t => { const x = t % s.w, y = (t / s.w) | 0; out += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.2" fill="none" stroke="${COLORS.red}" stroke-width="0.07"/><circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.06" fill="${COLORS.red}"/>`; });
@@ -75,6 +75,7 @@ const push = {
             out += `<rect x="${x + 0.1}" y="${y + 0.1}" width="0.8" height="0.8" rx="0.08" fill="${on ? COLORS.jade : COLORS.gold}" stroke="${COLORS.ink}" stroke-width="0.06"/><path d="M${x + 0.1} ${y + 0.1}L${x + 0.9} ${y + 0.9}M${x + 0.9} ${y + 0.1}L${x + 0.1} ${y + 0.9}" stroke="${COLORS.ink}" stroke-width="0.05" opacity="0.5"/>`;
         });
         const px = s.player % s.w, py = (s.player / s.w) | 0;
+        if (hasSprite('hero')) return out + sprite('hero', px, py, rot ? 3 : 0);   // le héros du joueur (reste debout quand le plateau est pivoté)
         out += `<circle cx="${px + 0.5}" cy="${py + 0.5}" r="0.32" fill="${COLORS.sky}" stroke="${COLORS.ink}" stroke-width="0.06"/><circle cx="${px + 0.4}" cy="${py + 0.44}" r="0.05" fill="${COLORS.ink}"/><circle cx="${px + 0.6}" cy="${py + 0.44}" r="0.05" fill="${COLORS.ink}"/>`;
         return out;
     }

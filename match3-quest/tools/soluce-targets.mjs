@@ -31,4 +31,8 @@ export function questTargets(q) {
 }
 
 // Écrans à photographier : ceux qui portent au moins une case à entourer.
-export const shotScreens = () => [...new Set(QUESTS.flatMap(q => questTargets(q).map(t => t.screenId)))];
+// Plus les étages cachés, dont le coffre est verrouillé par une énigme (page des énigmes).
+export const shotScreens = () => [...new Set([
+    ...QUESTS.flatMap(q => questTargets(q).map(t => t.screenId)),
+    ...Object.values(SCREENS).filter(s => (s.chests || []).some(c => c.puzzle)).map(s => s.id)
+])];
