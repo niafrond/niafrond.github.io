@@ -8,9 +8,9 @@ const PIXELATED = 'image-rendering:crisp-edges;image-rendering:pixelated';
 
 export const hasSprite = name => Boolean(PUZZLE_SPRITES[name]);
 
-/** `<image>` de chaque dessin, à placer dans un `<defs>` (une unité de repère = une case ; largeur = nombre de cases du dessin). */
+/** `<image>` de chaque dessin, à placer dans un `<defs>` (une unité de repère = une case ; largeur et hauteur = nombre de cases du dessin). */
 export const spriteDefs = () => Object.entries(PUZZLE_SPRITES)
-    .map(([name, s]) => `<image id="${ID(name)}" width="${s.w}" height="1" preserveAspectRatio="none" style="${PIXELATED}" href="${s.uri}"/>`).join('');
+    .map(([name, s]) => `<image id="${ID(name)}" width="${s.w}" height="${s.h || 1}" preserveAspectRatio="none" style="${PIXELATED}" href="${s.uri}"/>`).join('');
 
 /** Dessin `name` placé dans la case (x, y) ; `turn` = quarts de tour horaires (un dessin horizontal de `w` cases devient vertical à 1). */
 export function sprite(name, x, y, turn = 0) {

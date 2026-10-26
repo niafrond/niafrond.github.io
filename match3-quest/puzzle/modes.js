@@ -310,7 +310,9 @@ const slide = {
         out += `<rect x="${gate[0]}" y="${gate[1]}" width="${gate[2]}" height="${gate[3]}" fill="${COLORS.jade}"/>`;
         s.blocks.forEach((b, i) => {
             const sel = b.id === s.sel, len = Math.max(b.w, b.h);
-            const art = sprite(b.hero ? 'charrette_rouge' : variant(len > 2 ? ['chariot_a', 'chariot_b'] : ['charrette_a', 'charrette_b', 'charrette_c'], i), b.x, b.y, b.h > b.w ? 1 : 0);
+            // un dessin par orientation (h : vue de côté, v : vue de derrière) et par taille (2 ou 3 cases), jamais une rotation d'un autre
+            const o = b.h > b.w ? 'v' : 'h', name = b.hero ? `cart_hero_${o}` : variant(['a', 'b', 'c'].map(k => `cart_${o}${len}_${k}`), i);
+            const art = len > 1 ? sprite(name, b.x, b.y) : '';
             if (art) {
                 // dessin de la charrette ; le bloc choisi est cerclé d'or
                 out += art + (sel ? `<rect x="${b.x + 0.04}" y="${b.y + 0.04}" width="${b.w - 0.08}" height="${b.h - 0.08}" rx="0.12" fill="none" stroke="${COLORS.light}" stroke-width="0.1"/>` : '');
