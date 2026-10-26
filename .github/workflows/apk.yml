@@ -4,10 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches: ['**']
-    tags: ['**']
+    # Pas de déclencheur `tags` : les filtres `paths` ne s'appliquent pas aux tags,
+    # ce qui reconstruirait l'APK à chaque release même sans changement du dossier.
     paths:
       - 'flash-guess/**'
       - 'flash-guess-android/**'
+      - '.github/workflows/apk.yml'
 
 permissions:
   contents: write
