@@ -1,3 +1,9 @@
+## [2.140.2](https://github.com/niafrond/niafrond.github.io/compare/v2.140.1...v2.140.2) (2026-10-26)
+
+### Bug Fixes
+
+* **match3-quest:** afficher les dégâts réels des sorts avec la fureur des steppes ([bf80511](https://github.com/niafrond/niafrond.github.io/commit/bf80511675ef558920a391bb9af435af23b4c0cf))
+
 ## [2.140.1](https://github.com/niafrond/niafrond.github.io/compare/v2.140.0...v2.140.1) (2026-10-26)
 
 ### Bug Fixes
