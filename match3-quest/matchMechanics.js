@@ -1,6 +1,9 @@
 import { colors, boardSize } from "./constants.js";
 import {
     isJokerTile,
+    baseTile,
+    SKULL5_TILE,
+    SKULL5_BONUS,
     analyzeMatchWindowWithJoker,
     tileMatchesTargetWithJoker
 } from "./joker.js";
@@ -10,9 +13,9 @@ export function hasMatches(board){
     for(let i = 0; i < boardSize; i++){
         for(let j = 0; j < boardSize; j++){
             const idx = i * boardSize + j;
-            const color = board[idx];
-            if(j <= boardSize - 3 && board[idx + 1] === color && board[idx + 2] === color) return true;
-            if(i <= boardSize - 3 && board[idx + boardSize] === color && board[idx + 2 * boardSize] === color) return true;
+            const color = baseTile(board[idx]);
+            if(j <= boardSize - 3 && baseTile(board[idx + 1]) === color && baseTile(board[idx + 2]) === color) return true;
+            if(i <= boardSize - 3 && baseTile(board[idx + boardSize]) === color && baseTile(board[idx + 2 * boardSize]) === color) return true;
         }
     }
     return false;
@@ -61,7 +64,7 @@ export function checkMatchAtPosition(board, idx){
             const t = board[row * boardSize + c];
             const ok = targetType === 'color'
                 ? (isJokerTile(t) || t === targetColor)
-                : (isJokerTile(t) || t === targetType);
+                : (isJokerTile(t) || baseTile(t) === targetType);
             if(!ok) break;
             count++;
         }
@@ -70,7 +73,7 @@ export function checkMatchAtPosition(board, idx){
             const t = board[row * boardSize + c];
             const ok = targetType === 'color'
                 ? (isJokerTile(t) || t === targetColor)
-                : (isJokerTile(t) || t === targetType);
+                : (isJokerTile(t) || baseTile(t) === targetType);
             if(!ok) break;
             count++;
         }
@@ -85,7 +88,7 @@ export function checkMatchAtPosition(board, idx){
             const t = board[r * boardSize + col];
             const ok = targetType === 'color'
                 ? (isJokerTile(t) || t === targetColor)
-                : (isJokerTile(t) || t === targetType);
+                : (isJokerTile(t) || baseTile(t) === targetType);
             if(!ok) break;
             count++;
         }
@@ -94,7 +97,7 @@ export function checkMatchAtPosition(board, idx){
             const t = board[r * boardSize + col];
             const ok = targetType === 'color'
                 ? (isJokerTile(t) || t === targetColor)
-                : (isJokerTile(t) || t === targetType);
+                : (isJokerTile(t) || baseTile(t) === targetType);
             if(!ok) break;
             count++;
         }
@@ -213,7 +216,7 @@ export function getJokerMatchMultiplier(info){
 
 /** Nombre de tuiles « comptées » d'un alignement (longueur × 2 si un joker y participe). */
 export function getEffectiveMatchLength(info){
-    return Math.max(0, Math.floor(info?.len || 0)) * getJokerMatchMultiplier(info);
+    return (Math.max(0, Math.floor(info?.len || 0)) + SKULL5_BONUS * Math.max(0, Math.floor(info?.skull5Count || 0))) * getJokerMatchMultiplier(info);
 }
 
 export function getColorMatchManaBaseGain(info){
@@ -283,11 +286,13 @@ export function collectMatches(board){
         const jokerCount = indices.reduce((count, index) => {
             return count + (isJokerTile(board[index]) ? 1 : 0);
         }, 0);
+        const skull5Count = target.type === 'skull' ? indices.filter(index => board[index] === SKULL5_TILE).length : 0;   // chaque crâne +5 vaut 5 crânes
         matches.push({
             indices,
             info: {
                 type: target.type,
                 len: indices.length,
+                skull5Count,
                 color: target.color || null,
                 jokerCount
             }

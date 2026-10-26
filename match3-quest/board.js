@@ -22,7 +22,9 @@ import {
     isJokerTile,
     shouldCreateJokerFromMatchLength,
     pickRandomNonJokerIndex,
-    rollTileWithJoker
+    rollTileWithJoker,
+    baseTile,
+    maybeSkull5
 } from "./joker.js";
 import { actionGuard } from "./actionGuard.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
@@ -181,6 +183,7 @@ const TILE_LABELS = {
     yellow: 'Gâteau de lune au jaune d\'œuf salé',
     purple: 'Gâteau de lune au taro',
     skull: 'Crâne : dégâts',
+    skull5: 'Crâne +5 : vaut 5 crânes',
     combat: 'Flèche : points de combat',
     joker: 'Pleine lune : joker'
 };
@@ -416,7 +419,7 @@ function createsImmediateMatchAt(index, tile){
     if(col >= 2){
         const left1 = index - 1;
         const left2 = index - 2;
-        if(board[left1] === tile && board[left2] === tile){
+        if(baseTile(board[left1]) === tile && baseTile(board[left2]) === tile){
             return true;
         }
     }
@@ -424,7 +427,7 @@ function createsImmediateMatchAt(index, tile){
     if(row >= 2){
         const up1 = index - boardSize;
         const up2 = index - boardSize * 2;
-        if(board[up1] === tile && board[up2] === tile){
+        if(baseTile(board[up1]) === tile && baseTile(board[up2]) === tile){
             return true;
         }
     }
@@ -473,7 +476,7 @@ function pickWeightedTileForInitialBoard(index){
 function generateInitialBoardWithoutMatches(){
     board = [];
     for(let i = 0; i < boardSize * boardSize; i++){
-        board[i] = pickWeightedTileForInitialBoard(i);
+        board[i] = maybeSkull5(pickWeightedTileForInitialBoard(i));
     }
 }
 
@@ -566,6 +569,7 @@ export function generateBoard(){
         return;
     }
     boardDiv.innerHTML="";
+    boardDiv.style.setProperty('--board-cols', boardSize);   // 8 colonnes, 10 contre un boss
     for(let i=0;i<boardSize*boardSize;i++){
         const tile=document.createElement('div');
         tile.className=`tile ${board[i]}`;

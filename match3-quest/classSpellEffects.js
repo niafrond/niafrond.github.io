@@ -5,7 +5,7 @@ import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finis
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 import { addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
-import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
+import { JOKER_TILE, isJokerTile, isTransformableToJoker, skullValue } from "./joker.js";
 
 function getManaCap(color) {
     return player.manaCaps?.[color] ?? player.maxMana;
@@ -42,7 +42,7 @@ function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
 // (1 point de combat par flèche, dégâts de crâne du lanceur contre son adversaire), en plus du qì des gemmes.
 function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
     const arrows = destroyedTiles.filter(t => t === 'combat').length;
-    const skulls = destroyedTiles.filter(t => t === 'skull').length;
+    const skulls = destroyedTiles.reduce((n, t) => n + skullValue(t), 0);   // un crâne +5 vaut 5 crânes
     if(arrows > 0) {
         caster.combatPoints = (caster.combatPoints || 0) + arrows;
         log(`+${arrows} point(s) de combat (flèches détruites) pour ${caster.name}.`);
@@ -835,8 +835,8 @@ function applyCleave(spell) {
 function applyThrowAxe(spell) {
     let skullCount = 0;
     for(let i = 0; i < board.length; i++) {
-        if(board[i] === 'skull') {
-            skullCount++;
+        if(skullValue(board[i]) > 0) {
+            skullCount += skullValue(board[i]);
         }
     }
     const totalDmg = spell.baseDmg + skullCount * 2;
