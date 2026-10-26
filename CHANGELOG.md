@@ -1,3 +1,14 @@
+## [2.141.0](https://github.com/niafrond/niafrond.github.io/compare/v2.140.2...v2.141.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** afficher hier, semaine et total en temps de jeu réel ([2c9933e](https://github.com/niafrond/niafrond.github.io/commit/2c9933e6f43f7fe486a51da30f8693ae5ce28287))
+* **match3-quest:** ajouter le temps de jeu réel dans les options ([cff7c59](https://github.com/niafrond/niafrond.github.io/commit/cff7c59e26be93d67305f12fad2f210704c56258))
+
+### Bug Fixes
+
+* **match3-quest:** remplacer le compteur d'aujourd'hui par le temps de jeu réel ([7501396](https://github.com/niafrond/niafrond.github.io/commit/7501396a1061fd9c327229296797248ac51c4afc))
+
 ## [2.140.2](https://github.com/niafrond/niafrond.github.io/compare/v2.140.1...v2.140.2) (2026-10-26)
 
 ### Bug Fixes
