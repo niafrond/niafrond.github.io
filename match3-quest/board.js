@@ -16,6 +16,7 @@ import {
     getEffectiveMatchLength,
     getJokerMatchMultiplier
 } from "./matchMechanics.js";
+import { pickSmartMove } from "./companionMoves.js";
 import { playSfx } from "./sound.js";
 import {
     JOKER_TILE,
@@ -1445,7 +1446,7 @@ export function enemyMakeRandomMove(){
     }, 800);
 }
 
-// Xiao Gui joue un coup au hasard pendant le tour du joueur (currentTurn reste 'player').
+// Xiao Gui joue le meilleur coup (simulation des cascades, voir companionMoves.js) pendant le tour du joueur (currentTurn reste 'player').
 export function foxMakeRandomMove(){
     clearSuggestionTimer();
     clearSuggestion();
@@ -1453,7 +1454,7 @@ export function foxMakeRandomMove(){
     const possibleMoves = getSortedPossibleMoves();
     if(possibleMoves.length === 0){ finishPlayerTurn(); return; }
 
-    const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    const move = pickSmartMove(board, possibleMoves, { mana: player.mana }) || possibleMoves[0];
     setTimeout(() => {
         animateFoxSwap(move.from, move.to, () => {
             swapTiles(move.from, move.to);
