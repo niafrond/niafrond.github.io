@@ -1,3 +1,15 @@
+## [2.148.0](https://github.com/niafrond/niafrond.github.io/compare/v2.147.0...v2.148.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** afficher le coût en PA dans la comparaison du marchand ([9636542](https://github.com/niafrond/niafrond.github.io/commit/96365421243a293188c9f49223701f5f55e62873))
+* **match3-quest:** ajouter le bouton pièce sur les armes et boucliers, même sans doublon ([43c0031](https://github.com/niafrond/niafrond.github.io/commit/43c0031a1eea6ad96ff533c3f1ef64f217a89463))
+* **match3-quest:** rendre cumulables les sorts à durée qui modifient les stats ([601257f](https://github.com/niafrond/niafrond.github.io/commit/601257f9a7764bedbf56e26c7a7294470923a8f6))
+
+### Bug Fixes
+
+* **match3-quest:** débloquer les dialogues à choix en file et colorer Atk/Déf modifiées ([484234e](https://github.com/niafrond/niafrond.github.io/commit/484234e16c8ccf9a009dff187491c51362778d54))
+
 ## [2.147.0](https://github.com/niafrond/niafrond.github.io/compare/v2.146.0...v2.147.0) (2026-10-26)
 
 ### Features
