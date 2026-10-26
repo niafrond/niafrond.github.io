@@ -1,3 +1,13 @@
+## [2.145.0](https://github.com/niafrond/niafrond.github.io/compare/v2.144.0...v2.145.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** déplacer les boucliers dans l'onglet armes ([22cd75b](https://github.com/niafrond/niafrond.github.io/commit/22cd75b81614f030744b2b9d3e0d09e0389632a6))
+
+### Bug Fixes
+
+* **match3-quest:** ranger l'arme à deux mains en équipant un bouclier ([67e6b63](https://github.com/niafrond/niafrond.github.io/commit/67e6b635fd606adb177b8c4346cfbbb611340562))
+
 ## [2.144.0](https://github.com/niafrond/niafrond.github.io/compare/v2.143.0...v2.144.0) (2026-10-26)
 
 ### Features
