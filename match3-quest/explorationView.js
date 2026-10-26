@@ -929,6 +929,7 @@ export function createExplorationView(cfg) {
     function onCanvasPointerDown(ev) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
+        if (overMinimap(ev)) return;   // la minimap n'est qu'un indicateur : elle ne réagit pas aux clics
         stopHoldRepeat();
         holdPointer = { id: ev.pointerId, clientX: ev.clientX, clientY: ev.clientY };
         holdTimer = setInterval(() => {
@@ -1751,7 +1752,7 @@ export function createExplorationView(cfg) {
             }
         });
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
-        if (screen.dark) drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight);
+        if (screen.dark) { miniRect = null; drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight); }
         else drawMinimap(screen, biome, P(vis.px + 0.5, vis.py + 0.5), { ox, oy, tile, vw, vh, dpr });
     }
 
@@ -1759,6 +1760,13 @@ export function createExplorationView(cfg) {
     // Le fond (sol, chemins, obstacles, liquides) est peint une fois par écran à 1 px par case, puis agrandi.
     const miniCache = new WeakMap();
     let miniShift = 0;   // 0 = à droite, 1 = à gauche (animé)
+    let miniRect = null; // zone occupée à l'écran (px CSS du canvas) lors du dernier dessin
+    function overMinimap(ev) {
+        if (!miniRect) return false;
+        const r = canvas.getBoundingClientRect();
+        const x = ev.clientX - r.left, y = ev.clientY - r.top;
+        return x >= miniRect.x && x <= miniRect.x + miniRect.w && y >= miniRect.y && y <= miniRect.y + miniRect.h;
+    }
     function miniBase(screen, biome) {
         const hit = miniCache.get(screen);
         if (hit && hit.biome === biome) return hit.canvas;
@@ -1780,6 +1788,7 @@ export function createExplorationView(cfg) {
     }
 
     function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
+        miniRect = null;
         if (!screen.w || !screen.h) return;
         const MARGIN = 8;
         const scale = Math.max(1, Math.floor(Math.min(vw * 0.3 / screen.w, vh * 0.28 / screen.h, 4) * 2) / 2);
@@ -1791,6 +1800,7 @@ export function createExplorationView(cfg) {
         miniShift += ((nearCorner ? 1 : 0) - miniShift) * 0.2;
         if (Math.abs(miniShift - (nearCorner ? 1 : 0)) < 0.01) miniShift = nearCorner ? 1 : 0;
         const x0 = Math.round(rightX + (MARGIN - rightX) * miniShift);
+        miniRect = { x: x0 - 2, y: y0 - 2, w: mw + 4, h: mh + 4 };
         ctx.save();
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.globalAlpha = 0.88;
