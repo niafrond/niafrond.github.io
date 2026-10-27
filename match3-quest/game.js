@@ -4259,7 +4259,7 @@ const countLabel = count => count > 1 ? ` x ${count}` : '';
 // autres objets : seulement quand il y en a plusieurs (l'excédent).
 const sellTagButtonFor = (tag, title) => {
     const on = (player.sellTags || []).includes(tag);
-    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'À vendre au prochain marchand (cliquer pour annuler)' : title}" onclick="window.toggleSellSurplus('${String(tag).replace(/'/g, "\\'")}')">${svgIcon('coin')}</button>`;
+    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'À vendre au prochain marchand (cliquer pour annuler)' : title}" onclick="window.toggleSellSurplus('${String(tag).replace(/'/g, "\\'")}')">${svgIcon('coin')}<span class="item-sell-tag-label">À vendre</span></button>`;
 };
 const sellTagButton = (it, count) => {
     if(it.type === 'shield') return sellTagButtonFor(itemGroupKey(it), 'Marquer ce bouclier à vendre au prochain marchand');
