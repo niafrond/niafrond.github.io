@@ -1,3 +1,9 @@
+## [2.152.0](https://github.com/niafrond/niafrond.github.io/compare/v2.151.1...v2.152.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** régénérer la bande-son en pistes longues stéréo et ajouter des outils de contrôle ([f3198e0](https://github.com/niafrond/niafrond.github.io/commit/f3198e03dac809220d74c60aa8eb5bce91516e94))
+
 ## [2.151.1](https://github.com/niafrond/niafrond.github.io/compare/v2.151.0...v2.151.1) (2026-10-27)
 
 ### Bug Fixes
