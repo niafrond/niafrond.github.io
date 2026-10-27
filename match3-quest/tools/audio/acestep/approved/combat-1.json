@@ -1,29 +1,29 @@
 {
   "key": "combat-1",
-  "version": "v015",
-  "date": "2026-10-26T17:04:10.789Z",
-  "seed": "3059447063",
+  "version": "v021",
+  "date": "2026-10-27T11:22:44.130Z",
+  "seed": "55117855",
   "request": {
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, epic battle theme, epic cinematic orchestral battle, NO intro, starts instantly at full intensity on the very first beat with taiko drums and full ensemble already playing, no soft opening, no fade-in, calmer passage only later in the middle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant, steady fight, driving pipa pattern, firm triangle bass, erhu counter-melody, readable memorable melody, short loop",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, epic battle theme, epic cinematic orchestral battle, NO intro, starts instantly at full intensity on the very first beat with taiko drums and full ensemble already playing, no soft opening, no fade-in, calmer passage only later in the middle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant, high intensity version of a fast skirmish, driving pipa ostinato, quick dizi, hard woodblock hits, powerful Chinese drums, firm triangle bass, loud and energetic, non-stop continuous drum groove, constant driving rhythm, no breaks, no stops, no rests, no silence, no drum fills that drop out, readable memorable melody, short loop",
     "lyrics": "[Instrumental]",
     "vocal_language": "unknown",
     "audio_format": "mp3",
-    "audio_duration": 175,
+    "audio_duration": 180,
     "batch_size": 2,
     "thinking": false,
-    "bpm": 128,
-    "key_scale": "E minor",
+    "bpm": 136,
+    "key_scale": "D minor",
     "time_signature": "4",
     "use_random_seed": true
   },
   "motifFile": null,
   "metas": {
-    "bpm": 128,
-    "duration": 175,
+    "bpm": 136,
+    "duration": 180,
     "genres": "N/A",
-    "keyscale": "E minor",
+    "keyscale": "D minor",
     "timesignature": "4",
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, epic battle theme, epic cinematic orchestral battle, NO intro, starts instantly at full intensity on the very first beat with taiko drums and full ensemble already playing, no soft opening, no fade-in, calmer passage only later in the middle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant, steady fight, driving pipa pattern, firm triangle bass, erhu counter-melody, readable memorable melody, short loop",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, epic battle theme, epic cinematic orchestral battle, NO intro, starts instantly at full intensity on the very first beat with taiko drums and full ensemble already playing, no soft opening, no fade-in, calmer passage only later in the middle, huge taiko war drums, soaring heroic erhu and pipa lead, powerful full ensemble with layered strings and brass, driving rhythm, grand dynamic crescendos, triumphant, high intensity version of a fast skirmish, driving pipa ostinato, quick dizi, hard woodblock hits, powerful Chinese drums, firm triangle bass, loud and energetic, non-stop continuous drum groove, constant driving rhythm, no breaks, no stops, no rests, no silence, no drum fills that drop out, readable memorable melody, short loop",
     "lyrics": "[Instrumental]"
   }
 }

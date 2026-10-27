@@ -58,6 +58,14 @@ T('victory', `triumphant victory theme after a sun has fallen, ${I.dizi} and ${I
 T('defeat', `somber defeat theme, fragments of the Hou Yi motif on lonely ${I.xiao} and soft ${I.erhu}, slow, hollow, unresolved suspended harmony, sparse low drum, quiet and sorrowful but not bleak, a slow repeating phrase that loops seamlessly`,
     { bpm: 54, keyScale: 'D minor', dur: 60, motif: 'houyi' });
 
+/* ───────────── Énigmes : un thème par type, calme et réfléchi (aucune urgence), boucle discrète ───────────── */
+T('puzzle-push', `puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, soft ${I.xiao} answering, muted felt drum on the beat, curious and patient mood, gentle repeating phrase, no tension, no climax`,
+    { bpm: 76, keyScale: 'G major', dur: 180 });
+T('puzzle-mirror', `puzzle theme for aligning mirrors of light, crystalline harp-like plucks and small bells, airy and spacious, slow arpeggios, soft ${I.sheng} pad, mysterious and calm, silence between phrases, no drums, no tension, no climax`,
+    { bpm: 68, keyScale: 'E minor', dur: 180 });
+T('puzzle-slide', `puzzle theme for sliding carts along caravan tracks, light rolling rhythm, ${I.pipa} gently plucked, ${I.dizi} playful melody, small caravan clappers and woodblock, lightly bouncy and cheerful, relaxed pace, no tension, no climax`,
+    { bpm: 92, keyScale: 'A minor', dur: 180 });
+
 /* ───────────── Biomes : village (chaleureux) / sauvage (dispersé) ───────────── */
 const BIOMES = {
     paddy:    { place: 'dried rice paddies and straw huts', village: `${I.dizi}, ${I.guzheng}`, wild: `${I.dizi} and sparse ${I.guqin}`, bpm: 80, key: 'D major' },
@@ -65,7 +73,7 @@ const BIOMES = {
     bamboo:   { place: 'scorched bamboo forest', village: `wooden flute dizi, ${I.guqin}, woodblock`, wild: `${I.xiao}, crackling woodblock, pipa tremolo`, bpm: 74, key: 'E minor' },
     gobi:     { place: 'Gobi desert with mirages', village: `${I.pipa}, ${I.dizi}, caravan rhythm`, wild: `shimmering detuned pulses, ${I.xiao}, mirage illusion`, bpm: 68, key: 'A minor' },
     storm:    { place: 'Thunder Mountains', village: `${I.erhu}, steady drums, mountain smithy hammer rhythm`, wild: `${I.sheng}, distant thunder drums, ${I.pipa}`, bpm: 84, key: 'F# minor' },
-    volcano:  { place: 'volcano gorges and magma', village: `low ${I.pipa}, ${I.erhu}, ember glow`, wild: `slow low pulse, ${I.pipa} tremolo, heat haze`, bpm: 78, key: 'C minor' },
+    volcano:  { place: 'volcano gorges and magma', village: `warm low-register plucked guzheng, deep soft guqin, mellow low erhu, soft low xiao, dark rounded timbres, ember glow, consonant simple harmony, perfectly in tune`, avoid: 'no high-pitched instruments, no shrill, no piercing, no bright treble, no dissonance, no detuned notes, no flute above the middle register', wild: `slow low pulse, ${I.pipa} tremolo, heat haze`, bpm: 78, key: 'C minor' },
     savanna:  { place: 'golden dry plain of beasts', village: `${I.dizi}, lively hand drums, ${I.guzheng}`, wild: `${I.xiao}, restless drums, wind`, bpm: 88, key: 'C major' },
     coast:    { place: 'Eastern Sea shore', village: `${I.guzheng} like gentle waves, ${I.dizi}`, wild: `${I.guzheng} arpeggios, ${I.xiao}, sea wind`, bpm: 72, key: 'F major' },
     tides:    { place: 'moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts', village: `${I.guzheng} glissandi like gentle waves, ${I.xiao}, soft bronze chimes, lantern glow`, wild: `slow ${I.guzheng} wave glissandi, ${I.xiao} open melody, discreet ${I.erhu}, deep sea pulse, three rising notes and one falling`, bpm: 70, key: 'E minor' },
@@ -73,7 +81,7 @@ const BIOMES = {
     moon:     { place: 'silver Moon Peak at night', village: `crystalline plucked strings, ${I.xiao}, hushed`, wild: `very sparse crystalline notes, ${I.guqin}, silence`, bpm: 56, key: 'A minor' }
 };
 for (const [b, d] of Object.entries(BIOMES)) {
-    T(`village-${b}`, `${d.place}, village theme, warm and slow, clear melody, ${d.village}, ${I.perc} very soft, hope under a harsh sky`, { bpm: d.bpm, keyScale: d.key, dur: 55 });
+    T(`village-${b}`, `${d.place}, village theme, warm and slow, clear melody, ${d.village}, ${I.perc} very soft, hope under a harsh sky${d.avoid ? ', ' + d.avoid : ''}`, { bpm: d.bpm, keyScale: d.key, dur: 55 });
     T(`wild-${b}`, `${d.place}, exploration theme, scattered phrases, gentle tension, ${d.wild}, spacious, lonely journey of Hou Yi`, { bpm: d.bpm - 8, keyScale: d.key, dur: 50, motif: b === 'moon' ? null : null });
 }
 
@@ -88,6 +96,12 @@ const EPIC = 'epic cinematic orchestral battle, NO intro, starts instantly at fu
     ['fierce fight, pulse-wave arpeggios, powerful Chinese drums, erhu lead with the Hou Yi motif fragment', 136],
     ['relentless fight, urgent pipa and square-wave ostinato, brass-like pulse stabs, bold erhu line', 144]
 ].forEach(([s, bpm], i) => T(`combat-${i}`, `epic battle theme, ${EPIC}, ${s}, readable memorable melody, short loop`, { bpm: bpm + 8, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 175, motif: i >= 3 ? 'houyi' : null }));
+
+/* Combats 2 et 3 (combat-1, combat-2) réécrits en variations plus dures des combats 1 et 4 (combat-0, combat-3), jugés trop doux. */
+T('combat-1', `epic battle theme, ${EPIC}, high intensity version of a fast skirmish, driving pipa ostinato, quick dizi, hard woodblock hits, powerful Chinese drums, firm triangle bass, loud and energetic, non-stop continuous drum groove, constant driving rhythm, no breaks, no stops, no rests, no silence, no drum fills that drop out, readable memorable melody, short loop`,
+    { bpm: 136, keyScale: 'D minor', dur: 175 });
+T('combat-2', `epic battle theme, ${EPIC}, double-time war march, dense hammering taiko and snare-like woodblocks on every beat, fast aggressive guzheng strums, tremolo erhu stabbing melody, distorted pulse-wave lead, low brass-like unison riff, gong crashes on the downbeat, staccato driving rhythm, high energy, loud and relentless from the first bar to the last, no quiet passages, no breakdown, no soft sections, readable memorable melody, short loop`,
+    { bpm: 152, keyScale: 'E minor', dur: 175 });
 
 /* Ambiance commune à tous les boss : la menace doit s'entendre dès la première mesure. */
 const BOSS_PERC = 'aggressive war drums, hard woodblocks, crashing cymbals';
