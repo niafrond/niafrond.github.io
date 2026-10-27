@@ -2065,7 +2065,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     dmg = strike.damage;
 
     applyDamage(enemy, dmg);
-    playSfx('weaponHit', { isPlayer: true });
+    playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
     if(player.lifesteal > 0) {
@@ -2104,7 +2104,7 @@ export function castSpell(spellId){
     }
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
-    playSfx('spellCast', { isPlayer: true });
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     
     // Gérer les sorts avec effet spécial
     if(spell.effect) {
@@ -2155,7 +2155,7 @@ export async function castUltimate(spellId){
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
     resetRage(player);
-    playSfx('spellCast', { isPlayer: true });
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     logActiveAction(`lance l'ultime ${spell.name}`);
     updateStats();
     await playUltimateCinematic(spell);
@@ -2195,7 +2195,7 @@ export async function castSpellForCheat(spellId, options = {}){
         return false;
     }
 
-    playSfx('spellCast', { isPlayer: true });
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     logActiveAction(`simule le sort ${spell.name} (cheat)`);
 
     if(spell.effect){
@@ -2473,6 +2473,7 @@ export function enemyTurn(){
             }
 
             consumeSpellMana(enemy, spell);
+            playSfx('spellCast', { isPlayer: false, spellId: spell.id });
             applyStandardSpellEffects(enemy, player, spell, false);
             
             // Vérifier l'état après l'action
@@ -2493,7 +2494,7 @@ export function enemyTurn(){
                 const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
                 log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
             }
-            playSfx('weaponHit', { isPlayer: false });
+            playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);

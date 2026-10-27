@@ -16,6 +16,13 @@ rendus une fois pour toutes, puis simplement lus (`music.js`, `sound.js`). Aucun
 * Ajouter un boss dans `story.js` : relancer `render.mjs --music` (ou `--only=boss-<nom>`) ; le test `music.test.js` signale
   toute piste manquante.
 
+## Effets de sorts et de coups d'arme
+
+Chaque sort a son petit clip (`audio/sfx/spell-<id>.mp3`) et chaque rareté d'arme son coup d'arc (`weaponHit-<rareté>-p|e`) ; ils sont
+produits par `spellFx` / `bowHitFx` (`sfxRecipes.js`). Régénérer un sort : `node match3-quest/tools/audio/render.mjs --sfx --only=spell-<id>`.
+Ajouter un sort dans `spells.json` : ajouter son id à `SPELL_SFX_IDS` (`sfxCatalog.js`) puis rendre son clip (le test `music.test.js` signale l'oubli).
+Pendant ces effets, `duckMusic` (`music.js`) baisse la musique d'environ 40 % le temps du clip.
+
 ## Jingles composés par ACE-Step
 
 Les 7 jingles les plus audibles (`introJingle`, `endingJingle`, `battleStart`, `combatStart`, `bossStart`, `victory`, `defeat`) sont composés par

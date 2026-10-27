@@ -1,7 +1,8 @@
 import { icon } from "./icons.js";
 import { createCheatModeSection } from "./cheatMode.js";
 import { getMatch3Version } from "./version.js";
-import { sfxKeyFor, sfxGainFor, sfxVariants, sfxUrl, SFX_PLAY_GAIN } from "./sfxCatalog.js";
+import { sfxKeyFor, sfxGainFor, sfxFallbackKey, sfxDuckFor, sfxVariants, sfxUrl, SFX_PLAY_GAIN } from "./sfxCatalog.js";
+import { duckMusic } from "./music.js";
 
 // ===============================
 // CONSTANTES
@@ -320,11 +321,14 @@ export function playSfx(eventName, payload = {}) {
     preloadSfx();
     const key = sfxKeyFor(eventName, payload);
     const volume = clampVolume(getSfxVolume(), defaultSettings.sfxVolume) * SFX_PLAY_GAIN * sfxGainFor(eventName, payload);
+    const duck = sfxDuckFor(eventName);
+    if (duck) duckMusic(duck.factor, duck.ms);   // la musique s'efface un instant derrière le sort / le coup
     const buffer = sfxBuffers.get(key);
     if (buffer) { playBuffer(ctx, buffer, volume); return; }
-    // Pas encore chargé (tout premier son) : on le joue dès qu'il arrive, s'il n'est pas trop tard.
+    // Pas encore chargé (tout premier son) : on le joue dès qu'il arrive, s'il n'est pas trop tard ; sans clip propre, clip générique.
     const asked = Date.now();
-    loadSfx(ctx, key).then(buf => { if (buf && Date.now() - asked < 800 && !isSfxMuted()) playBuffer(ctx, buf, volume); });
+    const fallback = sfxFallbackKey(key);
+    loadSfx(ctx, key).then(buf => (buf || !fallback ? buf : loadSfx(ctx, fallback))).then(buf => { if (buf && Date.now() - asked < 800 && !isSfxMuted()) playBuffer(ctx, buf, volume); });
 }
 
 // ===============================
