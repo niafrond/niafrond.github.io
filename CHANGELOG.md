@@ -1,3 +1,10 @@
+## [2.155.0](https://github.com/niafrond/niafrond.github.io/compare/v2.154.0...v2.155.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** afficher le libellé « À vendre » sur le bouton pièce ([6e54655](https://github.com/niafrond/niafrond.github.io/commit/6e54655c61aae3a487b7cd57463c8dc9c20140b0))
+* **match3-quest:** avertir quand tous les boucliers sont marqués à vendre ([b343e5a](https://github.com/niafrond/niafrond.github.io/commit/b343e5a86bca1f361475ad3093539d2211c8d087))
+
 ## [2.154.0](https://github.com/niafrond/niafrond.github.io/compare/v2.153.0...v2.154.0) (2026-10-27)
 
 ### Features
