@@ -1,375 +1,375 @@
 {
  "music": {
   "title": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 1
   },
   "menu": {
-   "seconds": 118,
+   "seconds": 170.2,
    "sections": 2
   },
   "house": {
-   "seconds": 118,
+   "seconds": 170,
    "sections": 1
   },
   "sanctuary": {
-   "seconds": 118,
+   "seconds": 160.1,
    "sections": 2
   },
   "moon": {
-   "seconds": 118,
+   "seconds": 169.1,
    "sections": 1
   },
   "ending": {
-   "seconds": 118,
+   "seconds": 171.4,
    "sections": 1
   },
   "victory": {
-   "seconds": 118,
+   "seconds": 171.4,
    "sections": 2
   },
   "defeat": {
-   "seconds": 118,
+   "seconds": 172.5,
    "sections": 1
   },
   "village-paddy": {
-   "seconds": 118,
+   "seconds": 168.8,
    "sections": 2
   },
   "village-riverbed": {
-   "seconds": 118,
+   "seconds": 174.4,
    "sections": 2
   },
   "village-bamboo": {
-   "seconds": 118,
+   "seconds": 174.8,
    "sections": 2
   },
   "village-gobi": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 2
   },
   "village-storm": {
-   "seconds": 118,
+   "seconds": 167.9,
    "sections": 2
   },
   "village-volcano": {
-   "seconds": 118,
+   "seconds": 165.4,
    "sections": 2
   },
   "village-savanna": {
-   "seconds": 118,
+   "seconds": 172.3,
    "sections": 2
   },
   "village-coast": {
-   "seconds": 118,
+   "seconds": 159.7,
    "sections": 2
   },
   "village-fusang": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 2
   },
   "village-moon": {
-   "seconds": 118,
+   "seconds": 169.8,
    "sections": 2
   },
   "wild-paddy": {
-   "seconds": 118,
+   "seconds": 164,
    "sections": 1
   },
   "wild-riverbed": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 1
   },
   "wild-bamboo": {
-   "seconds": 118,
+   "seconds": 173,
    "sections": 1
   },
   "wild-gobi": {
-   "seconds": 118,
+   "seconds": 175.3,
    "sections": 1
   },
   "wild-storm": {
-   "seconds": 118,
+   "seconds": 170,
    "sections": 1
   },
   "wild-volcano": {
-   "seconds": 118,
+   "seconds": 162.6,
    "sections": 1
   },
   "wild-savanna": {
-   "seconds": 118,
+   "seconds": 172.5,
    "sections": 1
   },
   "wild-coast": {
-   "seconds": 118,
+   "seconds": 169.8,
    "sections": 1
   },
   "wild-fusang": {
-   "seconds": 118,
+   "seconds": 173.2,
    "sections": 1
   },
   "wild-moon": {
-   "seconds": 118,
+   "seconds": 168.4,
    "sections": 1
   },
   "combat-0": {
-   "seconds": 163.5,
+   "seconds": 166.9,
    "sections": 2
   },
   "combat-1": {
-   "seconds": 169.5,
+   "seconds": 158.2,
    "sections": 2
   },
   "combat-2": {
-   "seconds": 166.5,
+   "seconds": 154.1,
    "sections": 2
   },
   "combat-3": {
-   "seconds": 163,
+   "seconds": 152.2,
    "sections": 2
   },
   "combat-4": {
-   "seconds": 157.5,
+   "seconds": 153.9,
    "sections": 2
   },
   "boss-fengmeng-le-disciple": {
-   "seconds": 118,
+   "seconds": 155,
    "sections": 2
   },
   "boss-soleil-ardent": {
-   "seconds": 118,
+   "seconds": 158,
    "sections": 2
   },
   "boss-soleil-des-eaux-taries": {
-   "seconds": 118,
+   "seconds": 157.3,
    "sections": 2
   },
   "boss-soleil-de-cendres": {
-   "seconds": 118,
+   "seconds": 149.8,
    "sections": 2
   },
   "boss-soleil-des-mirages": {
-   "seconds": 118,
+   "seconds": 156.3,
    "sections": 3
   },
   "boss-soleil-des-orages": {
-   "seconds": 118,
+   "seconds": 165.3,
    "sections": 2
   },
   "boss-fengmeng-l-archer-presse": {
-   "seconds": 118,
+   "seconds": 151.4,
    "sections": 2
   },
   "boss-soleil-de-magma": {
-   "seconds": 118,
+   "seconds": 160.2,
    "sections": 2
   },
   "boss-soleil-des-betes-folles": {
-   "seconds": 118,
+   "seconds": 159.8,
    "sections": 2
   },
   "boss-soleil-des-marees": {
-   "seconds": 118,
+   "seconds": 163.9,
    "sections": 2
   },
   "boss-soleil-lache": {
-   "seconds": 118,
+   "seconds": 168.9,
    "sections": 2
   },
   "boss-fengmeng-l-archer-miroir": {
-   "seconds": 118,
+   "seconds": 150,
    "sections": 2
   },
   "boss-fengmeng-rage-et-desespoir": {
-   "seconds": 118,
+   "seconds": 151.1,
    "sections": 2
   },
   "boss-gardien-de-la-digue": {
-   "seconds": 118,
+   "seconds": 153.7,
    "sections": 3
   },
   "boss-colosse-de-l-ecluse": {
-   "seconds": 118,
+   "seconds": 154.6,
    "sections": 2
   },
   "boss-gardien-des-cendres": {
-   "seconds": 118,
+   "seconds": 149.1,
    "sections": 2
   },
   "boss-chef-de-dune-bras-de-sable": {
-   "seconds": 118,
+   "seconds": 165.4,
    "sections": 3
   },
   "boss-lion-gardien-fendu": {
-   "seconds": 118,
+   "seconds": 161.1,
    "sections": 2
   },
   "boss-forgeron-de-lave": {
-   "seconds": 118,
+   "seconds": 153.9,
    "sections": 3
   },
   "boss-tigre-alpha-griffe-de-feu": {
-   "seconds": 118,
+   "seconds": 163.5,
    "sections": 2
   },
   "boss-serpent-de-maree": {
-   "seconds": 118,
+   "seconds": 157.2,
    "sections": 2
   },
   "boss-garde-solaire-des-racines": {
-   "seconds": 118,
+   "seconds": 155.1,
    "sections": 2
   },
   "boss-pretresse-de-givre": {
-   "seconds": 118,
+   "seconds": 155.3,
    "sections": 2
   },
   "boss-maitresse-tong-la-lame-de-bronze": {
-   "seconds": 118,
+   "seconds": 149.1,
    "sections": 3
   },
   "boss-maitre-hong-gang-le-gong-de-cuivre": {
-   "seconds": 118,
+   "seconds": 158.1,
    "sections": 2
   },
   "boss-maitre-tie-bi-le-bras-de-fer": {
-   "seconds": 118,
+   "seconds": 151.2,
    "sections": 2
   },
   "boss-dame-yin-yue-la-lune-d-argent": {
-   "seconds": 118,
+   "seconds": 151.2,
    "sections": 2
   },
   "boss-seigneur-jin-long-le-dragon-d-or": {
-   "seconds": 118,
+   "seconds": 149.5,
    "sections": 2
   },
   "boss-dame-bi-yu-la-main-de-jade": {
-   "seconds": 118,
+   "seconds": 154.6,
    "sections": 2
   },
   "boss-immortel-yun-zhong-celui-des-nuees": {
-   "seconds": 118,
+   "seconds": 159.4,
    "sections": 2
   },
   "boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches": {
-   "seconds": 118,
+   "seconds": 156.3,
    "sections": 3
   },
   "boss-a0": {
-   "seconds": 118,
+   "seconds": 163.1,
    "sections": 3
   },
   "boss-a1": {
-   "seconds": 118,
+   "seconds": 154.6,
    "sections": 3
   },
   "boss-a2": {
-   "seconds": 118,
+   "seconds": 143.8,
    "sections": 2
   },
   "boss-a3": {
-   "seconds": 118,
+   "seconds": 162.6,
    "sections": 2
   },
   "boss-a4": {
-   "seconds": 118,
+   "seconds": 160.8,
    "sections": 3
   },
   "boss-a5": {
-   "seconds": 118,
+   "seconds": 148,
    "sections": 2
   },
   "boss-a6": {
-   "seconds": 118,
+   "seconds": 148.2,
    "sections": 3
   },
   "boss-a7": {
-   "seconds": 118,
+   "seconds": 144.8,
    "sections": 2
   },
   "boss-gardien-de-la-forge-noire": {
-   "seconds": 118,
+   "seconds": 152.6,
    "sections": 2
   },
   "boss-capitaine-noye-des-limons": {
-   "seconds": 118,
+   "seconds": 149.5,
    "sections": 2
   },
   "boss-lion-cendre-gardien-du-sutra": {
-   "seconds": 118,
+   "seconds": 158.1,
    "sections": 2
   },
   "boss-colosse-des-caravanes-ensevelies": {
-   "seconds": 118,
+   "seconds": 148.7,
    "sections": 2
   },
   "boss-jiangshi-du-cassia-lunaire": {
-   "seconds": 118,
+   "seconds": 152.5,
    "sections": 2
   },
   "boss-vieux-saule-des-boues-gardien-du-terrier": {
-   "seconds": 118,
+   "seconds": 144.4,
    "sections": 2
   },
   "boss-long-du-tonnerre-sourd": {
-   "seconds": 118,
+   "seconds": 173.2,
    "sections": 2
   },
   "boss-tigre-blanc-des-ancetres": {
-   "seconds": 118,
+   "seconds": 152.7,
    "sections": 2
   },
   "boss-serpent-des-marees-noires": {
-   "seconds": 118,
+   "seconds": 157.1,
    "sections": 2
   },
   "boss-immortel-dechu-des-branches": {
-   "seconds": 118,
+   "seconds": 151.2,
    "sections": 2
   },
   "boss-zhuque-l-oiseau-vermillon": {
-   "seconds": 118,
+   "seconds": 153.9,
    "sections": 1
   },
   "boss-xuanwu-la-tortue-noire": {
-   "seconds": 118,
+   "seconds": 145.9,
    "sections": 1
   },
   "boss-baihu-le-tigre-blanc": {
-   "seconds": 118,
+   "seconds": 159.1,
    "sections": 1
   },
   "boss-qinglong-le-dragon-d-azur": {
-   "seconds": 118,
+   "seconds": 161.6,
    "sections": 1
   },
   "boss-changxi-mere-des-douze-lunes": {
-   "seconds": 118,
+   "seconds": 165.1,
    "sections": 1
   },
   "village-tides": {
-   "seconds": 118,
+   "seconds": 170.2,
    "sections": 1
   },
   "wild-tides": {
-   "seconds": 118,
+   "seconds": 83.9,
    "sections": 1
   },
   "combat-tides": {
-   "seconds": 163,
+   "seconds": 176,
    "sections": 1
   },
   "puzzle-push": {
-   "seconds": 50.5,
+   "seconds": 167.2,
    "sections": 2
   },
   "puzzle-mirror": {
-   "seconds": 56.5,
+   "seconds": 169.3,
    "sections": 2
   },
   "puzzle-slide": {
-   "seconds": 41.7,
+   "seconds": 171.6,
    "sections": 2
   }
  },

@@ -28,7 +28,7 @@ node generate.mjs generate boss-soleil-ardent boss-fengmeng-le-disciple   # thè
 node generate.mjs generate "village-*" "wild-*" "combat-*"                # puis le reste
 node generate.mjs status                          # avancement
 node generate.mjs approve title v007 v008         # 2e version = variante title-b (le jeu en joue une au hasard)
-node generate.mjs install                         # approved/ -> audio/music/*.mp3 (mono 32 kbps, fin fondue dans le début = boucle) + manifest.json
+node generate.mjs install                         # approved/ -> audio/music/*.mp3 (stéréo 96 kbps, fin tronquée au dernier passage plein puis fondue dans le début = boucle) + manifest.json
 ```
 
 ## Régénérer facilement
@@ -39,6 +39,10 @@ node generate.mjs install                         # approved/ -> audio/music/*.m
 - Mieux structuré : `--thinking`. Durée : `--duration 45`. Champ brut de l'API : `--param guidance_scale=5`.
 - Prompt d'une piste à refaire en dur : éditer son `style` dans `catalog.mjs`. Mélodie d'un leitmotiv : `leitmotifs.json` puis `motifs`.
 - `--dry-run` affiche les requêtes sans appeler le serveur ; `--host` / `ACESTEP_URL` pour un autre serveur, `ACESTEP_API_KEY` si clé.
+
+## Contrôler une piste sans l'écouter
+- `python3 tonality.py out/<clé>/vNNN.mp3` (WSL, numpy + librosa) : tonalité lue dans le `.json` voisin ; liste les fenêtres de 4 s dont plus de 30 % de l'énergie est hors gamme (fausse note, instrument à côté) ou désaccordées de plus de 30 centièmes, avec leur horodatage. Code de sortie 1 s'il y a des passages suspects. `--key "D minor"`, `--win`, `--limit` pour forcer. Les harmoniques naturelles font qu'environ 15 à 25 % d'énergie hors gamme est normal : comparer les variantes entre elles plutôt que viser zéro.
+- `node breaks.mjs <fichiers>` : creux de rythme et passages doux (voir l'en-tête du script).
 
 ## Fichiers
 - `catalog.mjs` : style global + prompt, tempo, tonalité, durée et leitmotiv de chaque piste.
