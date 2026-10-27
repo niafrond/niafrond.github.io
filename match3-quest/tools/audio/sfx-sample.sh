@@ -3,6 +3,7 @@
 # N'écrit rien dans le jeu : les clips et une page d'écoute vont dans audio/sfx-sample/<modèle>/ (ouvrir index.html dans un navigateur).
 #
 #   tools/audio/sfx-sample.sh [modèle] [options]
+#   tools/audio/sfx-sample.sh gm                    (commande `gm studio sfx generate` de game-maker : MMAudio ; --gm-project=NOM)
 #   tools/audio/sfx-sample.sh audioldm2-large
 #   tools/audio/sfx-sample.sh audioldm2 --caption=long --candidates=6
 #   tools/audio/sfx-sample.sh cmd --cmd "mon_outil --prompt {prompt} --seconds {secs} --out {out}"

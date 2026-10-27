@@ -8,6 +8,8 @@ Un seul script pour tous les modèles texte -> son : on change `--model`, rien d
 Les wrappers `sfx-sample.sh` et `sfx-all.sh` (même dossier) préparent l'environnement et appellent ce script.
 
 Modèles (`--model`) :
+  gm                 la commande `gm studio sfx generate` de game-maker (MMAudio, poids non commerciaux) : projet `match3-sfx` (`--gm-project=NOM`), un
+                     appel par clip, GPU rendu à chaque sortie ; chaque clip est aussi versionné comme asset du projet game-maker
   audioldm2          cvssp/audioldm2             diffusers, libre d'accès (licence CC BY-NC-SA 4.0)
   audioldm2-large    cvssp/audioldm2-large       idem, plus gros
   audioldm           cvssp/audioldm-l-full       idem, version 1
@@ -165,6 +167,35 @@ class DiffusersBackend(Backend):
         return max(wavs, key=lambda w: float(np.abs(w[: len(w) // 3]).mean()))
 
 
+class GmBackend(Backend):
+    """`gm studio sfx generate <projet> <id> "<légende>"` (MMAudio) : un sous-processus par clip, le WAV est relu dans les assets du projet."""
+
+    def __init__(self):
+        self.gm = Path(os.environ.get("GAME_MAKER_DIR", "/mnt/c/Users/Niafrond/dev/game-maker")) / "gm"
+        self.project = str(args.get("gm-project", "match3-sfx"))
+        if not self.gm.exists():
+            raise SystemExit(f"gm introuvable ({self.gm}) : définir GAME_MAKER_DIR")
+        subprocess.run([str(self.gm), "studio", "project", "create", self.project], capture_output=True)   # sans effet s'il existe déjà
+
+    def generate(self, prompt: str, secs: float, seed: int, key: str = "clip"):
+        import numpy as np
+        sid = re.sub(r"[^a-z0-9-]+", "-", key.lower()).strip("-")
+        cmd = [str(self.gm), "studio", "--json", "sfx", "generate", self.project, sid, prompt, "--duration", str(min(8.0, secs + 1.5)),
+               "--seed", str(seed), "--negative", "music, speech, voice, noise", "--force"]
+        run = subprocess.run(cmd, capture_output=True, text=True)
+        wavs = sorted((self.gm.parent / "projects" / self.project).rglob(f"{sid}.wav"), key=lambda f: f.stat().st_mtime)
+        err = re.search(r'"error":\s*"([^"]+)"', run.stdout)
+        if run.returncode != 0 or not wavs or err:
+            hint = ""
+            if err and "écrêtage" in err.group(1):
+                hint = (" -> MMAudio rend parfois un signal > 0 dBFS : le contrôle d'écrêtage de game-maker (asset_processing/audio.py, validate_wav) "
+                        "rejette le clip. Normaliser la crête avant l'enregistrement dans scripts/mmaudio_sfx.py "
+                        "(wav = wav / max(1.0, float(wav.abs().max())) * 0.95).")
+            raise RuntimeError(f"gm studio sfx generate a échoué pour {sid} : {err.group(1) if err else run.stderr[-300:]}{hint}")
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(wavs[-1]), "-f", "f32le", "-ac", "1", "-ar", "44100", "-"], capture_output=True, check=True).stdout
+        return np.frombuffer(raw, dtype=np.float32).copy(), 44100
+
+
 class CmdBackend(Backend):
     def __init__(self, template: str):
         self.template = template
@@ -226,14 +257,14 @@ def main() -> int:
     install = "install" in args and "sample" not in args and "out" not in args
     out_dir = SFX_DIR if install else Path(str(args.get("out", GAME / "audio" / ("sfx-sample" if "sample" in args else "sfx-test") / model.replace(":", "_").replace("/", "_"))))
     out_dir.mkdir(parents=True, exist_ok=True)
-    backend = CmdBackend(str(args["cmd"])) if model == "cmd" else DiffusersBackend(model)
+    backend = CmdBackend(str(args["cmd"])) if model == "cmd" else GmBackend() if model == "gm" else DiffusersBackend(model)
     manifest = json.loads(MANIFEST.read_text(encoding="utf8")) if install else None
     rows = []
     for n, (key, meta) in enumerate(keys, 1):
         text = overrides.get(key) or caption(key, meta, kind)
         secs, fade = target_seconds(key, meta)
         seed = int(args.get("seed", 7)) + n
-        samples, sr = backend.generate(text, secs, seed, key) if model == "cmd" else backend.generate(text, secs, seed)
+        samples, sr = backend.generate(text, secs, seed, key) if model in ("cmd", "gm") else backend.generate(text, secs, seed)
         real = encode(samples, sr, key, secs, fade, out_dir)
         if manifest is not None:
             manifest["sfx"][key] = {"seconds": real}
