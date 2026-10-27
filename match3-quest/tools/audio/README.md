@@ -19,9 +19,9 @@ rendus une fois pour toutes, puis simplement lus (`music.js`, `sound.js`). Aucun
 ## Effets de sorts et de coups d'arme
 
 Chaque sort a son petit clip (`audio/sfx/spell-<id>.mp3`) et chaque rareté d'arme son coup d'arc (`weaponHit-<rareté>-p|e`) ; ils sont
-produits par `spellFx` / `bowHitFx` (`sfxRecipes.js`). Régénérer un sort : `node match3-quest/tools/audio/render.mjs --sfx --only=spell-<id>`.
+produits par `spellFx` / `bowHitFx` (`sfxRecipes.js`). Les clips actuels viennent d'ACE-Step (`acestep/jingles.mjs install sfx-spell-<id>`, voir `acestep/README.md`) ; `render.mjs --sfx --only=spell-<id>` rend la version synthétisée de repli.
 Ajouter un sort dans `spells.json` : ajouter son id à `SPELL_SFX_IDS` (`sfxCatalog.js`) puis rendre son clip (le test `music.test.js` signale l'oubli).
-Pendant ces effets, `duckMusic` (`music.js`) baisse la musique d'environ 40 % le temps du clip.
+Pendant ces effets, `duckMusic` (`music.js`) baisse la musique d'environ 40 % le temps du clip (1,5 s pour un sort, 1,1 s pour un coup).
 
 ## Jingles composés par ACE-Step
 

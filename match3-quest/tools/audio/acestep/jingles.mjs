@@ -24,8 +24,9 @@ const GAME = path.resolve(HERE, '../../..');
 const SFX_DIR = path.join(GAME, 'audio', 'sfx'), MANIFEST = path.join(GAME, 'audio', 'manifest.json');
 const PEAK_DB = -6;   // SFX_RENDER_GAIN = 0,5 (sfxCatalog.js) : crête à −6 dBFS
 
-const keys = Object.keys(CATALOG).filter(k => CATALOG[k].jingle);
-const sfxKeyOf = k => k.replace(/^jingle-/, '');
+const keys = Object.keys(CATALOG).filter(k => CATALOG[k].jingle || CATALOG[k].sfx);
+const specOf = k => CATALOG[k].jingle || CATALOG[k].sfx;
+const sfxKeyOf = k => k.replace(/^(?:jingle|sfx)-/, '');
 const die = msg => { console.error(msg); process.exit(1); };
 const run = (cmd, args) => spawnSync(cmd, args, { encoding: 'utf8' });
 if (run('ffmpeg', ['-version']).error) die('ffmpeg introuvable dans le PATH.');
@@ -57,7 +58,7 @@ function durationOf(file) {
 }
 
 function cmdList() {
-    keys.forEach(k => console.log(`${sfxKeyOf(k).padEnd(14)} ${String(CATALOG[k].jingle.target).padStart(4)} s  ${variantsOf(k).length} variante(s)`));
+    keys.forEach(k => console.log(`${sfxKeyOf(k).padEnd(14)} ${String(specOf(k).target).padStart(4)} s  ${variantsOf(k).length} variante(s)`));
 }
 
 function cmdInstall(args) {
@@ -69,7 +70,7 @@ function cmdInstall(args) {
     const todo = keys.filter(k => !wanted.length || wanted.includes(sfxKeyOf(k)) || wanted.includes(k));
     const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
     for (const key of todo) {
-        const spec = CATALOG[key].jingle, files = variantsOf(key).filter(f => !from || path.basename(f, '.mp3') >= from);
+        const spec = specOf(key), files = variantsOf(key).filter(f => !from || path.basename(f, '.mp3') >= from);
         if (!files.length) { console.log(`· ${sfxKeyOf(key)} : aucune variante dans out/${key}/`); continue; }
         const scored = files.map(f => ({ f, s: stats(f, spec) })).filter(x => x.s);
         // la plus énergique dans sa durée (niveau moyen le plus haut) : un jingle doit « sonner » d'emblée

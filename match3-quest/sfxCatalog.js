@@ -40,7 +40,7 @@ const SPELL_SET = new Set(SPELL_SFX_IDS);
 export const WEAPON_RARITIES = ['common', 'uncommon', 'rare', 'legendary'];
 
 /** Sons qui baissent légèrement la musique le temps de leur lecture : facteur appliqué au volume de la musique et durée (ms). */
-export const SFX_DUCK = { spellCast: { factor: 0.55, ms: 750 }, weaponHit: { factor: 0.6, ms: 450 } };
+export const SFX_DUCK = { spellCast: { factor: 0.55, ms: 1500 }, weaponHit: { factor: 0.6, ms: 1100 } };
 
 const lenBucket = (payload) => Math.max(3, Math.min(5, Math.round(Number(payload?.length) || 3)));
 const side = (payload) => (payload?.isPlayer === false ? 'e' : 'p');

@@ -486,394 +486,394 @@
    "seconds": 0.49
   },
   "weaponHit-rare-p": {
-   "seconds": 0.43
+   "seconds": 1.3
   },
   "spell-fireball": {
-   "seconds": 0.41
+   "seconds": 1.4
   },
   "spell-heal": {
-   "seconds": 0.4
+   "seconds": 1.37
   },
   "weaponHit-common-p": {
-   "seconds": 0.37
+   "seconds": 1.04
   },
   "weaponHit-uncommon-p": {
-   "seconds": 0.37
+   "seconds": 1.15
   },
   "weaponHit-legendary-p": {
-   "seconds": 0.59
+   "seconds": 1.55
   },
   "weaponHit-common-e": {
-   "seconds": 0.37
+   "seconds": 1.04
   },
   "weaponHit-uncommon-e": {
-   "seconds": 0.37
+   "seconds": 1.15
   },
   "weaponHit-rare-e": {
-   "seconds": 0.43
+   "seconds": 1.3
   },
   "weaponHit-legendary-e": {
-   "seconds": 0.59
+   "seconds": 1.55
   },
   "spell-flameStrike": {
-   "seconds": 0.5
+   "seconds": 1.62
   },
   "spell-inferno": {
-   "seconds": 0.65
+   "seconds": 1.94
   },
   "spell-meteor": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-ice": {
-   "seconds": 0.54
+   "seconds": 1.44
   },
   "spell-frostNova": {
-   "seconds": 0.56
+   "seconds": 1.66
   },
   "spell-blizzard": {
-   "seconds": 0.67
+   "seconds": 2.02
   },
   "spell-iceAge": {
-   "seconds": 0.69
+   "seconds": 2.05
   },
   "spell-greatHeal": {
-   "seconds": 0.48
+   "seconds": 1.58
   },
   "spell-revitalize": {
-   "seconds": 0.62
+   "seconds": 1.84
   },
   "spell-miracle": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-bolt": {
-   "seconds": 0.44
+   "seconds": 1.51
   },
   "spell-thunderBolt": {
-   "seconds": 0.59
+   "seconds": 1.73
   },
   "spell-lightningStorm": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-stormOfGods": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-vaporBurst": {
-   "seconds": 0.46
+   "seconds": 1.55
   },
   "spell-goldenDew": {
-   "seconds": 0.47
+   "seconds": 1.51
   },
   "spell-lotusPoison": {
-   "seconds": 0.58
+   "seconds": 1.62
   },
   "spell-emberStorm": {
-   "seconds": 0.61
+   "seconds": 1.8
   },
   "spell-shadowFlame": {
-   "seconds": 0.61
+   "seconds": 1.73
   },
   "spell-springRain": {
-   "seconds": 0.53
+   "seconds": 1.73
   },
   "spell-frostLightning": {
-   "seconds": 0.69
+   "seconds": 2.05
   },
   "spell-voidChill": {
-   "seconds": 0.75
+   "seconds": 2.05
   },
   "spell-bladeWinds": {
-   "seconds": 0.51
+   "seconds": 1.58
   },
   "spell-brasierSeals": {
-   "seconds": 0.52
+   "seconds": 1.66
   },
   "spell-threeDragons": {
-   "seconds": 0.53
+   "seconds": 1.66
   },
   "spell-dragonCross": {
-   "seconds": 0.63
+   "seconds": 1.87
   },
   "spell-thunderPrison": {
-   "seconds": 0.52
+   "seconds": 1.66
   },
   "spell-jadeBreath": {
-   "seconds": 0.66
+   "seconds": 1.98
   },
   "spell-starRain": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-fiveHarmony": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-twinDragonsStrike": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-vermilionBirdDive": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-azureDragonRoar": {
-   "seconds": 0.69
+   "seconds": 2.05
   },
   "spell-whiteTigerClaw": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-thunderDukeWrath": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-fiveElementsSeal": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-heavenlyRiverFlood": {
-   "seconds": 0.69
+   "seconds": 2.05
   },
   "spell-nineSunsFall": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-kunlunMountainFall": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-pangusAxe": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-jadeEmperorDecree": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-heavenTribulationEnd": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-jadeSpringBlessing": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-immortalPeach": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-queenMotherElixir": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-emberScythe": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-frostCleave": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-galeSlash": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-voidRift": {
-   "seconds": 0.46
+   "seconds": 1.37
   },
   "spell-crimsonPurge": {
-   "seconds": 0.49
+   "seconds": 1.51
   },
   "spell-tidalPurge": {
-   "seconds": 0.49
+   "seconds": 1.51
   },
   "spell-jadePurge": {
-   "seconds": 0.49
+   "seconds": 1.51
   },
   "spell-stormPurge": {
-   "seconds": 0.49
+   "seconds": 1.51
   },
   "spell-shadowPurge": {
-   "seconds": 0.54
+   "seconds": 1.55
   },
   "spell-emberGoldCross": {
-   "seconds": 0.51
+   "seconds": 1.58
   },
   "spell-jadeCurtain": {
-   "seconds": 0.5
+   "seconds": 1.55
   },
   "spell-purpleRazor": {
-   "seconds": 0.51
+   "seconds": 1.58
   },
   "spell-burningTide": {
-   "seconds": 0.54
+   "seconds": 1.73
   },
   "spell-seasonsPurge": {
-   "seconds": 0.61
+   "seconds": 1.8
   },
   "spell-mageStrike": {
-   "seconds": 0.39
+   "seconds": 1.37
   },
   "spell-wildMana": {
-   "seconds": 0.43
+   "seconds": 1.4
   },
   "spell-shadowCurse": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-darkChannels": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-flameBolts": {
-   "seconds": 0.4
+   "seconds": 1.33
   },
   "spell-iceShield": {
-   "seconds": 0.44
+   "seconds": 1.37
   },
   "spell-flameblade": {
-   "seconds": 0.46
+   "seconds": 1.33
   },
   "spell-weakness": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-handOfIce": {
-   "seconds": 0.49
+   "seconds": 1.37
   },
   "spell-fingerOfDeath": {
-   "seconds": 0.47
+   "seconds": 1.37
   },
   "spell-chasm": {
-   "seconds": 0.52
+   "seconds": 1.62
   },
   "spell-stoneskin": {
-   "seconds": 0.39
+   "seconds": 1.37
   },
   "spell-strength": {
-   "seconds": 0.4
+   "seconds": 1.33
   },
   "spell-flameSphere": {
-   "seconds": 0.49
+   "seconds": 1.37
   },
   "spell-mirrorShield": {
-   "seconds": 0.44
+   "seconds": 1.4
   },
   "spell-manaSiphon": {
-   "seconds": 0.46
+   "seconds": 1.37
   },
   "spell-manaBlast": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-tigerEye": {
-   "seconds": 0.4
+   "seconds": 1.33
   },
   "spell-sneakAttack": {
-   "seconds": 0.42
+   "seconds": 1.33
   },
   "spell-swiftStrike": {
-   "seconds": 0.42
+   "seconds": 1.44
   },
   "spell-confuse": {
-   "seconds": 0.44
+   "seconds": 1.44
   },
   "spell-stealth": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-poisonBlade": {
-   "seconds": 0.41
+   "seconds": 1.33
   },
   "spell-shadowStrike": {
-   "seconds": 0.49
+   "seconds": 1.44
   },
   "spell-dualShot": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-shadowStep": {
-   "seconds": 0.38
+   "seconds": 1.33
   },
   "spell-sharpenedBlade": {
-   "seconds": 0.41
+   "seconds": 1.4
   },
   "spell-defensiveWall": {
-   "seconds": 0.38
+   "seconds": 1.37
   },
   "spell-shieldBash": {
-   "seconds": 0.38
+   "seconds": 1.37
   },
   "spell-focus": {
-   "seconds": 0.44
+   "seconds": 1.33
   },
   "spell-intimidate": {
-   "seconds": 0.45
+   "seconds": 1.33
   },
   "spell-rush": {
-   "seconds": 0.41
+   "seconds": 1.4
   },
   "spell-counterAttack": {
-   "seconds": 0.42
+   "seconds": 1.37
   },
   "spell-reinforce": {
-   "seconds": 0.46
+   "seconds": 1.37
   },
   "spell-barrier": {
-   "seconds": 0.45
+   "seconds": 1.4
   },
   "spell-divinePower": {
-   "seconds": 0.38
+   "seconds": 1.33
   },
   "spell-holdTheLine": {
-   "seconds": 0.48
+   "seconds": 1.44
   },
   "spell-heavensWrath": {
-   "seconds": 0.44
+   "seconds": 1.51
   },
   "spell-commandAura": {
-   "seconds": 0.49
+   "seconds": 1.4
   },
   "spell-enrage": {
-   "seconds": 0.39
+   "seconds": 1.37
   },
   "spell-cleave": {
-   "seconds": 0.47
+   "seconds": 1.51
   },
   "spell-throwAxe": {
-   "seconds": 0.44
+   "seconds": 1.51
   },
   "spell-bloodlust": {
-   "seconds": 0.45
+   "seconds": 1.51
   },
   "spell-summonTempest": {
-   "seconds": 0.51
+   "seconds": 1.58
   },
   "spell-berserkerRage": {
-   "seconds": 0.43
+   "seconds": 1.48
   },
   "spell-singingBlades": {
-   "seconds": 0.44
+   "seconds": 1.51
   },
   "spell-deathbringer": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-revenant": {
-   "seconds": 0.68
+   "seconds": 2.05
   },
   "spell-warCry": {
-   "seconds": 0.37
+   "seconds": 1.33
   },
   "spell-ultimateFiveElements": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateHeavenlyThunder": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateThousandArrows": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateSunPiercer": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateImperialDragon": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateEternalBastion": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateThousandRiders": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateSkyWolf": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateVermilionBird": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateBlackTortoise": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateWhiteTiger": {
-   "seconds": 0.98
+   "seconds": 2.66
   },
   "spell-ultimateAzureDragon": {
-   "seconds": 0.98
+   "seconds": 2.66
   }
  }
 }
