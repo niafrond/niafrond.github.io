@@ -1,3 +1,9 @@
+## [2.157.0](https://github.com/niafrond/niafrond.github.io/compare/v2.156.0...v2.157.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** faire gagner 3 tours à la pilule du temps suspendu ([#584](https://github.com/niafrond/niafrond.github.io/issues/584)) ([f46a8a8](https://github.com/niafrond/niafrond.github.io/commit/f46a8a8067b78aba99845cf33cb6e714674f5773))
+
 ## [2.156.0](https://github.com/niafrond/niafrond.github.io/compare/v2.155.0...v2.156.0) (2026-10-27)
 
 ### Features
