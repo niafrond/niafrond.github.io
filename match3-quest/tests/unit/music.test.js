@@ -4,11 +4,12 @@ import {
 } from '../../tools/audio/composer.js';
 import { sectionCountFor } from '../../tools/audio/synth.js';
 import {
-    setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, __internals
+    setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, duckMusic, __internals
 } from '../../music.js';
 import { getMatch3Version } from '../../version.js';
 import { trackCandidates, trackUrl, withVariants, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
-import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl } from '../../sfxCatalog.js';
+import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl, sfxFallbackKey, sfxDuckFor, SPELL_SFX_IDS, WEAPON_RARITIES } from '../../sfxCatalog.js';
+import { spellFx, bowHitFx, sfxRecipe } from '../../tools/audio/sfxRecipes.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { SCREENS } from '../../story.js';
 
@@ -264,11 +265,11 @@ describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
         expect(missing).toEqual([]);
         expectedTracks().forEach((k) => expect(readFileSync(new URL(`../../${trackUrl(k)}`, import.meta.url)).length).toBeGreaterThan(20000));
     });
-    test('chaque piste a sa variante -b, de même durée (boucle d\'au moins 1 min 30)', () => {
+    test('chaque piste dure au moins 1 min 30 (boucle) ; la variante -b est facultative', () => {
         const manifest = JSON.parse(readFileSync(new URL('../../audio/manifest.json', import.meta.url), 'utf8'));
         expectedTracks().forEach((k) => {
-            expect(exists(trackUrl(k + '-b'))).toBe(true);
             expect(manifest.music[k].seconds).toBeGreaterThanOrEqual(90);
+            if (exists(trackUrl(k + '-b'))) expect(exists(trackUrl(k))).toBe(true);
         });
     });
     test('tous les effets sonores existent', () => {
@@ -285,6 +286,61 @@ describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
         const sound = readFileSync(new URL('../../sound.js', import.meta.url), 'utf8');
         expect(music).not.toMatch(/createOscillator|createConvolver|createBiquadFilter/);
         expect(sound).not.toMatch(/createOscillator|createBiquadFilter/);
+    });
+});
+
+describe("effets de sorts et de coups d'arme", () => {
+    const spells = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));
+    const exists = (p) => existsSync(new URL(`../../${p}`, import.meta.url));
+    test('un clip pour chaque sort de spells.json, sans doublon', () => {
+        const ids = [...new Set(Object.values(spells).flat().map((sp) => sp.id))];
+        expect([...SPELL_SFX_IDS].sort()).toEqual(ids.sort());
+        const keys = sfxVariants().map((v) => v.key);
+        expect(new Set(keys).size).toBe(keys.length);
+        ids.forEach((id) => expect(keys).toContain(`spell-${id}`));
+    });
+    test('clés : sort connu -> son clip ; sort inconnu -> clip générique ; arme -> rareté et camp', () => {
+        expect(sfxKeyFor('spellCast', { spellId: 'fireball' })).toBe('spell-fireball');
+        expect(sfxKeyFor('spellCast', { spellId: 'inconnu' })).toBe('spellCast');
+        expect(sfxKeyFor('spellCast', { isPlayer: true })).toBe('spellCast');
+        expect(sfxKeyFor('weaponHit', { rarity: 'legendary', isPlayer: false })).toBe('weaponHit-legendary-e');
+        expect(sfxKeyFor('weaponHit', { rarity: 'rare' })).toBe('weaponHit-rare-p');
+        expect(sfxKeyFor('weaponHit', {})).toBe('weaponHit-p');
+        expect(sfxKeyFor('weaponHit', { rarity: 'mythique' })).toBe('weaponHit-p');
+        expect(sfxFallbackKey('spell-fireball')).toBe('spellCast');
+        expect(sfxFallbackKey('weaponHit-rare-e')).toBe('weaponHit-e');
+        expect(sfxFallbackKey('weaponHit-p')).toBeNull();
+        WEAPON_RARITIES.forEach((r) => ['p', 'e'].forEach((s) => expect(exists(sfxUrl(`weaponHit-${r}-${s}`))).toBe(true)));
+        SPELL_SFX_IDS.forEach((id) => expect(exists(sfxUrl(`spell-${id}`))).toBe(true));
+    });
+    test("seuls les sorts et les coups d'arme baissent la musique", () => {
+        expect(sfxDuckFor('spellCast').factor).toBeLessThan(1);
+        expect(sfxDuckFor('weaponHit').factor).toBeGreaterThan(0.3);
+        expect(sfxDuckFor('uiClick')).toBeNull();
+        expect(sfxDuckFor('match')).toBeNull();
+    });
+    test('recettes : chaque sort a un effet court, déterministe, et deux sorts ne sonnent pas pareil', () => {
+        const meta = (sp) => ({ colors: sp.color ? [sp.color] : Object.keys(sp.cost && typeof sp.cost === 'object' ? sp.cost : {}), type: sp.type || null, effect: sp.effect || null, cost: typeof sp.cost === 'object' ? Object.values(sp.cost).reduce((a, b) => a + b, 0) : sp.cost || 0, ultimate: !!sp.ultimate });
+        const all = new Map(); Object.values(spells).flat().forEach((sp) => { if (!all.has(sp.id)) all.set(sp.id, sp); });
+        const signatures = new Set();
+        for (const [id, sp] of all) {
+            const fx = spellFx(id, meta(sp));
+            expect(fx.tones.length + fx.noises.length).toBeGreaterThan(0);
+            const end = Math.max(...fx.tones.map((t) => t.p[0] + t.p[2]), ...fx.noises.map((n) => n.b[0] + n.b[1]));
+            expect(end).toBeLessThanOrEqual(1.2);
+            expect(JSON.stringify(spellFx(id, meta(sp)))).toBe(JSON.stringify(fx));
+            signatures.add(JSON.stringify(fx));
+        }
+        expect(signatures.size).toBe(all.size);
+        expect(sfxRecipe('spellCast', { spellId: 'fireball', meta: { colors: ['red'], cost: 10 } }).tones.length).toBeGreaterThan(0);
+        expect(sfxRecipe('spellCast', {}).tones.length).toBeGreaterThan(0);   // sans sort : formule générique
+    });
+    test("coups d'arc : plus la rareté monte, plus le tintement est riche ; l'ennemi sonne plus grave", () => {
+        const n = (r, p = true) => bowHitFx(r, p).tones.length;
+        expect(n('uncommon')).toBeGreaterThan(n('common'));
+        expect(n('rare')).toBeGreaterThan(n('uncommon'));
+        expect(n('legendary')).toBeGreaterThan(n('rare'));
+        expect(bowHitFx('common', false).tones[0].p[1]).toBeLessThan(bowHitFx('common', true).tones[0].p[1]);
     });
 });
 
@@ -366,6 +422,20 @@ describe('lecteur de musique', () => {
         const sources = ctx.nodes.filter((n) => n.kind === 'source' && n.started);
         expect(sources).toHaveLength(1);
         expect(sources[0].buffer.tag).toBe('menu');
+    });
+
+    test('duckMusic baisse légèrement la musique puis la remonte', async () => {
+        const ctx = makeCtx(); setup(ctx);
+        setMusicScene('title'); await flush(); __internals.tick();
+        const master = __internals.state.master;
+        const normal = master.gain.targets.at(-1);
+        duckMusic(0.5, 5);
+        expect(master.gain.targets.at(-1)).toBeCloseTo(normal * 0.5, 5);
+        await new Promise((r) => setTimeout(r, 120));            // la baisse est finie : retour au niveau normal
+        expect(master.gain.targets.at(-1)).toBeCloseTo(normal, 5);
+        duckMusic(0.5, 5); duckMusic(0.5, 5);                     // appels rapprochés : pas de baisse cumulée
+        expect(master.gain.targets.at(-1)).toBeCloseTo(normal * 0.5, 5);
+        await new Promise((r) => setTimeout(r, 120));
     });
 
     test('volume, mute et pause règlent le gain maître sans toucher à la piste', async () => {

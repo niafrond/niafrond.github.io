@@ -16,6 +16,13 @@ rendus une fois pour toutes, puis simplement lus (`music.js`, `sound.js`). Aucun
 * Ajouter un boss dans `story.js` : relancer `render.mjs --music` (ou `--only=boss-<nom>`) ; le test `music.test.js` signale
   toute piste manquante.
 
+## Effets de sorts et de coups d'arme
+
+Chaque sort a son petit clip (`audio/sfx/spell-<id>.mp3`) et chaque rareté d'arme son coup d'arc (`weaponHit-<rareté>-p|e`) ; ils sont
+produits par `spellFx` / `bowHitFx` (`sfxRecipes.js`). Les clips actuels viennent d'AudioLDM2 (`sfx_audioldm2.py --only=spell-<id>`, en-tête du script pour l'environnement) : légendes de sons réels (tonnerre, feu, glace, lames…). `render.mjs --sfx --only=spell-<id>` rend la version synthétisée de repli ; ACE-Step n'est pas fait pour les bruitages.
+Ajouter un sort dans `spells.json` : ajouter son id à `SPELL_SFX_IDS` (`sfxCatalog.js`) puis rendre son clip (le test `music.test.js` signale l'oubli).
+Pendant ces effets, `duckMusic` (`music.js`) baisse la musique d'environ 40 % le temps du clip (1,5 s pour un sort, 1,1 s pour un coup).
+
 ## Jingles composés par ACE-Step
 
 Les 7 jingles les plus audibles (`introJingle`, `endingJingle`, `battleStart`, `combatStart`, `bossStart`, `victory`, `defeat`) sont composés par

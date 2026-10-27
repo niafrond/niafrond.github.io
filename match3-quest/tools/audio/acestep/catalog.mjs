@@ -6,6 +6,10 @@
  * leitmotiv de `leitmotifs.json` (audio de référence envoyé à ACE-Step).
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /**
  * Références musicales voulues (ambiance seulement, mélodies 100 % originales) : la bande-son de Final Fantasy IX
  * (chaleur mélodique, lyrisme médiéval-féerique, thèmes très chantants) et celle des Pokémon GBA
@@ -200,6 +204,61 @@ const JINGLES = {
 };
 for (const [k, [s, bpm, key, dur, target, fade]] of Object.entries(JINGLES)) T(`jingle-${k}`, s, { bpm, keyScale: key, dur, jingle: { target, fade } });
 
+/* ───────────── Effets de sorts et de coups d'arc (audio/sfx/spell-<id>.mp3, weaponHit-<rareté>-<p|e>.mp3), voir jingles.mjs ───────────── */
+// Clés `sfx-spell-<id>` et `sfx-weaponHit-<rareté>-<p|e>`. ACE-Step génère 10 s au minimum : `sfx.target` (≥ 1 s) = durée gardée.
+const SFX_STYLE = 'single short video game sound effect, instrumental, Chinese instruments, one clear immediate hit with a quick decay, no melody loop, no vocals, no drums beat, clean punchy production';
+const SPELL_ELEMENT = {
+    red:    'crackling fire whoosh, hot roaring flame swell, deep taiko hit, sawtooth growl',
+    blue:   'water droplets and glassy ice chimes, crystalline shimmer, cold flowing glissando',
+    green:  'wind rushing through bamboo, plucked guzheng notes, rustling leaves, wooden knock',
+    yellow: 'bronze gong strike, metallic bell ring, earthy low thud, golden shimmer',
+    purple: 'dark detuned drone, bowed erhu glissando, whispering shadow, ominous low rumble'
+};
+const GESTURE = {
+    heal:  'soft warm harp glissando rising, gentle bells, healing glow, calm and bright',
+    buff:  'bright rising chime and shimmer, protective aura, two rising notes, steady and confident',
+    sweep: 'long sweeping whoosh across the whole field, rising then fading',
+    strike: 'sharp blade swish followed by a heavy impact and a short ring'
+};
+const wordsOfId = (id) => id.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^ultimate /, '').toLowerCase();
+function spellSfxStyle(id, sp) {
+    const cost = sp.cost && typeof sp.cost === 'object' ? sp.cost : null;
+    const colors = sp.color ? [sp.color] : cost ? Object.keys(cost).filter(c => cost[c] > 0) : [];
+    const total = cost ? Object.values(cost).reduce((a, b) => a + b, 0) : Number(sp.cost) || 0;
+    const power = Math.min(1, Math.max(0.15, total / 40));
+    const ult = !!sp.ultimate;
+    const heal = sp.type === 'heal' || /heal|elixir|peach|blessing|breath|dew|miracle|revitalize/i.test(id);
+    const buff = !heal && (/^(statBuff|increase|enchant|reflect|reduceEnemy|preventItems|createJoker|createActionGem|harmony|bonusTurn)/.test(sp.effect || '') || /shield|barrier|stealth|focus|wall|aura|strength|stoneskin|reinforce|cry|enrage|hold/i.test(id));
+    const sweep = /^(sweep|destroy|clearColor|fireballArea)/.test(sp.effect || '');
+    const parts = [`"${wordsOfId(id)}" spell cast`];
+    if (heal) parts.push(GESTURE.heal);
+    else if (colors[0] && SPELL_ELEMENT[colors[0]]) parts.push(SPELL_ELEMENT[colors[0]]);
+    else if (buff) parts.push(GESTURE.buff);
+    else parts.push(GESTURE.strike);
+    if (colors[1] && SPELL_ELEMENT[colors[1]] && !heal) parts.push(`with a touch of ${SPELL_ELEMENT[colors[1]].split(',')[0]}`);
+    if (sweep) parts.push(GESTURE.sweep);
+    if (ult) parts.push('huge cinematic impact, thunderous taiko boom, soaring swell, epic and majestic, long resonant tail');
+    else if (power > 0.6) parts.push('powerful, big low boom');
+    else if (power < 0.3) parts.push('small and light');
+    const target = ult ? 2.6 : Math.round((1.15 + power * 0.85) * 100) / 100;   // 1,15 à 2 s (≥ 1 s), 2,6 s pour un ultime
+    return { style: parts.join(', '), target, fade: ult ? 0.6 : 0.3 };
+}
+{
+    const spellData = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../spells.json'), 'utf8'));
+    const seen = new Set();
+    for (const list of Object.values(spellData)) for (const sp of list) {
+        if (seen.has(sp.id)) continue;
+        seen.add(sp.id);
+        const { style, target, fade } = spellSfxStyle(sp.id, sp);
+        T(`sfx-spell-${sp.id}`, style, { dur: 10, sfx: { target, fade } });
+    }
+    const BOW = { common: 'plain wooden bow', uncommon: 'good bow with a small metallic ring', rare: 'fine bow with a clear ringing metal tone', legendary: 'legendary bow with a bright shimmering magical ring and a deep resonant boom' };
+    const TARGET = { common: 1.0, uncommon: 1.1, rare: 1.25, legendary: 1.5 };
+    for (const [r, d] of Object.entries(BOW)) for (const [side, who] of [['p', 'the hero'], ['e', 'an enemy, lower and darker']]) {
+        T(`sfx-weaponHit-${r}-${side}`, `arrow shot from ${d} by ${who}: bowstring twang, arrow whistling through the air, then a heavy impact thud`, { dur: 10, sfx: { target: TARGET[r], fade: 0.25 } });
+    }
+}
+
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [
     'brute, heavy stomping drums and low erhu', 'swift hunter, fast pipa runs and dizi', 'mystic, sheng pads and guqin with eerie xiao',
@@ -216,6 +275,7 @@ const isEpic = (track) => /^(combat|boss)-/.test(track.key);
 const EPIC_STYLE = GLOBAL_STYLE.replace('no cinematic orchestral bombast', 'big cinematic orchestral power').replace('compact arrangement with limited polyphony', 'rich layered arrangement, full ensemble');
 
 export function buildCaption(track, extra = '') {
+    if (track.sfx) return [track.style, SFX_STYLE, extra].filter(Boolean).join(', ');   // effets : un seul coup net, pas de brief de boucle
     if (track.jingle) return [track.style, JINGLE_STYLE, extra].filter(Boolean).join(', ');   // jingles : pas de brief de boucle ni de références de style
     return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
 }

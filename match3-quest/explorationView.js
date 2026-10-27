@@ -22,6 +22,7 @@ import { dialogFlags } from './dialogState.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
+import { createTrail, recordHero, stepCompanion } from './companionTrail.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { loadSequence } from './ultimateCinematics.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
@@ -172,7 +173,7 @@ export function createExplorationView(cfg) {
 
     function syncVisual(snap) {
         const st = session.data;
-        if (snap) { vis.px = st.x; vis.py = st.y; vis.cx = st.x; vis.cy = st.y; }
+        if (snap) { vis.px = st.x; vis.py = st.y; vis.cx = st.x; vis.cy = st.y; vis.trail = null; }
         X.aliveEnemies(session).forEach(e => {
             if (snap || !vis.enemies[e.def.id]) vis.enemies[e.def.id] = { x: e.x, y: e.y };
         });
@@ -1092,6 +1093,13 @@ export function createExplorationView(cfg) {
         if (dist > 3) { vis.px = session.data.x; vis.py = session.data.y; }
         else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; }
         else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
+        // Compagnon actif : il suit la piste du héros, toujours derrière lui (companionTrail.js)
+        if (X.activeCompanionOf(session)) {
+            const heroDir = viewDir(session.rt.facing);
+            if (!vis.trail) vis.trail = createTrail();
+            recordHero(vis.trail, vis.px, vis.py, heroDir);
+            stepCompanion(vis.trail, { x: vis.px, y: vis.py }, dt, heroDir);
+        } else vis.trail = null;
         // Caméra : suit le héros avec un léger amorti (indépendant du pas), pour absorber les à-coups du défilement.
         if (vis.cx === undefined || Math.hypot(vis.px - vis.cx, vis.py - vis.cy) > 6) { vis.cx = vis.px; vis.cy = vis.py; }
         const kc = 1 - Math.exp(-dt / 90);
@@ -1498,8 +1506,9 @@ export function createExplorationView(cfg) {
             items.push({ depth: v.y + 0.2, kind: 'enemy', e, x: v.x, y: v.y });
         });
         items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
+        if (vis.trail && vis.trail.x !== null && X.activeCompanionOf(session)) items.push({ depth: vis.trail.y + 0.29, kind: 'companion', x: vis.trail.x, y: vis.trail.y });
         items.sort((a, b) => a.depth - b.depth);
-        const drawItems = items.filter(it => it.kind === 'player' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : it.kind === 'structure' ? inView(it.st.x, it.st.y, it.st.w, it.st.h, 3) : inView(it.x, it.y, 1, 1, 3)));
+        const drawItems = items.filter(it => it.kind === 'player' || it.kind === 'companion' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : it.kind === 'structure' ? inView(it.st.x, it.st.y, it.st.w, it.st.h, 3) : inView(it.x, it.y, 1, 1, 3)));
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
         const houseMk = X.houseMarkers(session);
@@ -1705,6 +1714,30 @@ export function createExplorationView(cfg) {
                     drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? 'Bouclier · ' : boss ? 'Boss · ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
                     break;
                 }
+                case 'companion': {
+                    // Compagnon actif : sprite animé `companion_<id>` (4 directions, 3 images de marche) s'il est chargé, sinon son PNJ figé qui sautille.
+                    const comp = X.activeCompanionOf(session);
+                    const tr = vis.trail;
+                    if (!comp || !tr) break;
+                    const key = `companion_${comp.id}`;
+                    const scale = comp.size || 0.8;
+                    const feet = c.y + tile * 0.4;
+                    const hover = comp.hover ? -tile * 0.16 + Math.sin(now / 260) * tile * 0.025 : 0;
+                    const tick = Math.floor(tr.phase), blend = tr.phase - tick;
+                    const walkView = tr.moving && gbaWalkSprite(key, tr.dir, tick);
+                    const idleView = gbaSprite(key, tr.dir);
+                    drawShadow(c.x, feet, tile * 0.2 * scale + tile * 0.06, tile * 0.07);
+                    if (walkView || idleView) {
+                        const view = walkView || idleView, y = feet + hover + tile * 0.04;
+                        drawSprite(view, c.x, y, tile * scale * 1.06);
+                        const next = tr.moving ? gbaWalkSprite(key, tr.dir, tick + 1) : null;
+                        if (next && next !== view) { ctx.save(); ctx.globalAlpha = blend; drawSprite(next, c.x, y, tile * scale * 1.06); ctx.restore(); }
+                    } else {
+                        const hop = tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
+                        drawSprite(npcSprite(comp.id === 'xiao_gui' ? 'xiao_gui' : comp.npc), c.x, feet + hop + hover + tile * 0.04, tile * scale * 0.85);
+                    }
+                    break;
+                }
                 case 'player': {
                     const moving = now - (vis.lastMoveAt || -1e9) < 130 || Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
                     const walkPhase = vis.walkPhase || 0;
@@ -1736,13 +1769,6 @@ export function createExplorationView(cfg) {
                     // fondu entre l'image de marche courante et la suivante (progression fractionnaire de la phase)
                     const nextView = moving ? gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase) + 1) : null;
                     const blend = walkPhase - Math.floor(walkPhase);
-
-                    // Xiao Gui (renard compagnon) : visible derrière le héros quand il a rejoint le groupe.
-                    const companion = X.activeCompanionOf(session);
-                    if (companion) {
-                        const foxHop = moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
-                        drawSprite(npcSprite(companion.id === 'xiao_gui' ? 'xiao_gui' : companion.npc), c.x + tile * 0.38, feet + foxHop + tile * 0.08, tile * 0.68);
-                    }
 
                     const mountKey = `${hero.classId}_horse`;
                     const mountView = riding() && ((moving && gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase))) || gbaSprite(mountKey, heroDir));

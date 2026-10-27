@@ -20,6 +20,19 @@ const { BIOMES, COMBAT_STYLE_COUNT, BOSS_ARCHETYPE_COUNT, bossSlug, bossArchetyp
 const { sfxVariants } = await import(pathToFileURL(join(GAME, 'sfxCatalog.js')));
 const { SCREENS } = await import(pathToFileURL(join(GAME, 'story.js')));
 
+// Métadonnées des sorts pour leurs effets sonores (couleurs de qì, type, effet, coût total, ultime) : lues dans spells.json.
+const spellMeta = (() => {
+    const data = JSON.parse(readFileSync(join(GAME, 'spells.json'), 'utf8'));
+    const out = {};
+    for (const list of Object.values(data)) for (const s of list) {
+        if (out[s.id]) continue;
+        const cost = s.cost && typeof s.cost === 'object' ? s.cost : null;
+        const colors = s.color ? [s.color] : cost ? Object.keys(cost).filter(c => cost[c] > 0) : [];
+        out[s.id] = { colors, type: s.type || null, effect: s.effect || null, cost: cost ? Object.values(cost).reduce((a, b) => a + b, 0) : Number(s.cost) || 0, ultimate: !!s.ultimate };
+    }
+    return out;
+})();
+
 // ── Liste des pistes ────────────────────────────────────────────────────────
 export function trackList() {
     const tracks = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending', 'victory', 'defeat', 'puzzle-push', 'puzzle-mirror', 'puzzle-slide'].map(key => ({ key, scene: key, opts: {} }));
@@ -76,10 +89,11 @@ if (wantMusic) {
 }
 if (wantSfx) {
     for (const v of sfxVariants().filter(v => keep(v.key))) {
+        const payload = v.payload.spellId ? { ...v.payload, meta: spellMeta[v.payload.spellId] || {} } : v.payload;
         const res = await page.evaluate(async ({ event, payload, origin }) => {
             const m = await import(`${origin}/match3-quest/tools/audio/browser.js`);
             return m.renderSfx(event, payload);
-        }, { event: v.event, payload: v.payload, origin });
+        }, { event: v.event, payload, origin });
         encodeMp3(res.pcm, res.sampleRate, '64k', join(GAME, 'audio', 'sfx', `${v.key}.mp3`));
         manifest.sfx[v.key] = { seconds: Math.round(res.seconds * 100) / 100 };
         console.log(`sfx   ${v.key.padEnd(34)} ${res.seconds.toFixed(2)} s`);

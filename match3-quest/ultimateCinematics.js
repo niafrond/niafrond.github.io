@@ -217,7 +217,7 @@ export function playUltimateScene(spell) {
                 if (reduced && !title.classList.contains('show')) { title.classList.add('show'); setTimeout(close, 1800); }
                 const [w, h] = ULTIMATE_SIZE, [sx, sy, sw, sh] = sequenceRect(seq, t * seq.fps);
                 const step = Math.floor(t / total * 4);
-                if (step !== lastPlan) { lastPlan = step; if (step === 1 || step === 3) playSfx('spellCast', { isPlayer: true }); }
+                if (step !== lastPlan) { lastPlan = step; if (step === 1 || step === 3) playSfx('spellCast', { isPlayer: true, spellId: id }); }
                 ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, w, h);
                 if (!reduced && t < 0.5) { ctx.globalAlpha = 1 - t / 0.5; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1; }
                 if (t >= total * 0.75) title.classList.add('show');
@@ -231,7 +231,7 @@ export function playUltimateScene(spell) {
             const lt = t - plan * ULTIMATE_PLAN_SECONDS;
             if (plan !== lastPlan) {
                 lastPlan = plan;
-                if (plan === 1 || plan === 3) playSfx('spellCast', { isPlayer: true });
+                if (plan === 1 || plan === 3) playSfx('spellCast', { isPlayer: true, spellId: id });
             }
             // zoom progressif au plan 3 (attaque), léger au plan 2, tremblement à l'impact
             const zoom = plan === 2 ? 1 + lt / ULTIMATE_PLAN_SECONDS * 0.3 : plan === 1 ? 1 + lt / ULTIMATE_PLAN_SECONDS * 0.08 : 1;

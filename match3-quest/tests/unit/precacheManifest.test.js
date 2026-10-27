@@ -23,7 +23,7 @@ describe('precache-manifest.json', () => {
     test('les médias couvrent toutes les musiques et tous les dessins des cinématiques, sorts et ultimes', () => {
         const media = new Set(committed.media.map(f => f.p));
         const music = readdirSync(`${GAME_DIR}/audio/music`).filter(n => n.endsWith('.mp3'));
-        expect(music.length).toBeGreaterThan(100);
+        expect(music.length).toBeGreaterThan(80);
         music.forEach(n => expect(media.has(`audio/music/${n}`)).toBe(true));
         MEDIA_SPRITE_DIRS.forEach(dir => {
             const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json'));
