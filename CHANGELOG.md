@@ -1,3 +1,9 @@
+## [2.158.0](https://github.com/niafrond/niafrond.github.io/compare/v2.157.0...v2.158.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** exiger le qì collecté ×1,5 pour l'ultime et corriger sa barre sur deux lignes ([#585](https://github.com/niafrond/niafrond.github.io/issues/585)) ([530526f](https://github.com/niafrond/niafrond.github.io/commit/530526f8e81b6cfc486dda2d6e455ce7a1e8881d))
+
 ## [2.157.0](https://github.com/niafrond/niafrond.github.io/compare/v2.156.0...v2.157.0) (2026-10-27)
 
 ### Features
