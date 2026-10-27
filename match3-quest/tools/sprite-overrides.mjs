@@ -11,6 +11,11 @@ const NAMED = Object.entries(NAMED_ENEMIES).map(([id, { desc }]) => [id, id, 'Hu
 
 export const OVERRIDES = [
     ...NAMED,
+  // Créatures dont l'ancien dessin était informe (refait en 64 px, voir tools/gen-sprites-gm.mjs --px=64).
+  ['hundun', 'Hundun', 'Bête', 'Chaos primordial', 'orange', 'tonnerre', 'e',
+    'Hundun, primordial chaos creature, a round shaggy faceless body like a stuffed bag, dark brown fur with glowing orange cracks, six short legs and four small wings, no face'],
+  ['gui_esprit', 'Esprit errant', 'Spectre', '', 'purple', 'rizieres', 'e',
+    'wandering ghost spirit of ancient China, tattered hooded gray-violet robe fading into a wispy tail, two glowing pale eyes in the dark hood, thin skeletal hands, ethereal floating'],
   ['assassin_masque', 'Assassin Masqué', 'Humain', 'Lame du Voile Noir', 'purple', 'rizieres', 'e',
     'ancient Chinese hired killer of the Warring States, wearing a carved bronze nuo ritual mask with bulging round eyes and fangs, ' +
     'bare head with black hair in a topknot held by a bronze hairpin, no hood, no headscarf, no cloth over the face, ' +
