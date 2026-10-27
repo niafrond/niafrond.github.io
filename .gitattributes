@@ -2,3 +2,5 @@ match3-quest/inspiration/** filter=lfs diff=lfs merge=lfs -text
 pdf-batch-print/dist/*.exe filter=lfs diff=lfs merge=lfs -text
 pdf-reader-lite/dist/*.exe filter=lfs diff=lfs merge=lfs -text
 pdf-reader-lite/*.zip filter=lfs diff=lfs merge=lfs -text
+match3-quest/tools/audio/*.sh text eol=lf
+match3-quest/tools/audio/*.py text eol=lf
