@@ -3,6 +3,7 @@
 // COMPANIONS : personnages qui rejoignent le héros pendant l'aventure.
 //   { id, name, title, npc, joinWhen }
 //     - npc      : id d'un PNJ existant dont on réutilise le dessin pour le portrait de dialogue ;
+//     - size / hover : taille du compagnon suiveur en exploration (fraction d'une case) et vol (flotte au-dessus du sol) ;
 //     - joinWhen : condition d'avancement (id de quête terminée, d'ennemi vaincu, de coffre ouvert ou de PNJ parlé) ; absente = d'emblée.
 //
 // BANTER : répliques de groupe, jouées UNE FOIS (exploration.js : collectBanter), quand le héros entre dans un lieu ou après un événement.
@@ -39,14 +40,14 @@ const say = (speaker, ...lines) => ({ speaker, lines });
 const wardens = n => [`sun${n}_wardens_a`, `sun${n}_wardens_b`];
 
 export const COMPANIONS = [
-    { id: 'xiao_gui', name: 'Xiao Gui', title: 'Démon-renard repenti', npc: 'huli_xia', joinWhen: 'sq_rice_thief' },
-    { id: 'zhi', name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi', joinWhen: 'sq_bell' },
-    { id: 'dawa', name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa', joinWhen: 'sq_oasis' },
-    { id: 'yu', name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin', joinWhen: 'sq_golden_carp' },
-    { id: 'etincelle', name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg' },
-    { id: 'braise', name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_baatar', joinWhen: 'sq_ember_pup' },
-    { id: 'jian', name: 'Jian', title: 'Corbeau-carquois', npc: 'crow_wing', joinWhen: 'sq_jian_quiver' },
-    { id: 'tou', name: 'Tou', title: 'Belette chapardeuse', npc: 'huang_xian', joinWhen: 'sq_tou_stash' }
+    { id: 'xiao_gui', name: 'Xiao Gui', title: 'Démon-renard repenti', npc: 'huli_xia', joinWhen: 'sq_rice_thief', size: 0.8 },
+    { id: 'zhi', name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi', joinWhen: 'sq_bell', size: 1 },
+    { id: 'dawa', name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa', joinWhen: 'sq_oasis', size: 1 },
+    { id: 'yu', name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin', joinWhen: 'sq_golden_carp', size: 0.75, hover: true },
+    { id: 'etincelle', name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg', size: 0.7, hover: true },
+    { id: 'braise', name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_baatar', joinWhen: 'sq_ember_pup', size: 0.78 },
+    { id: 'jian', name: 'Jian', title: 'Corbeau-carquois', npc: 'crow_wing', joinWhen: 'sq_jian_quiver', size: 0.65, hover: true },
+    { id: 'tou', name: 'Tou', title: 'Belette chapardeuse', npc: 'huang_xian', joinWhen: 'sq_tou_stash', size: 0.72 }
 ];
 
 export const BANTER = [

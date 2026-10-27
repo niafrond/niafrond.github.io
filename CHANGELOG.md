@@ -1,3 +1,12 @@
+## [2.154.0](https://github.com/niafrond/niafrond.github.io/compare/v2.153.0...v2.154.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** ajouter un effet sonore par sort et par coup d'arme avec baisse de la musique ([59ba89b](https://github.com/niafrond/niafrond.github.io/commit/59ba89b814b34c02e6bb45f932c5cf77bfdb0c19))
+* **match3-quest:** animer les compagnons et les faire suivre le héros à la trace en exploration ([13c957f](https://github.com/niafrond/niafrond.github.io/commit/13c957f036e82008b76d8d6e380f87317b1bfb8f))
+* **match3-quest:** composer les effets de sorts et de coups d'arc avec ACE-Step (1 s minimum) ([83723c4](https://github.com/niafrond/niafrond.github.io/commit/83723c48c739eb401bad8e17e67a5eda1f55b11d))
+* **match3-quest:** générer des bruitages réalistes pour les sorts et coups d'arc avec AudioLDM2 ([2e64e02](https://github.com/niafrond/niafrond.github.io/commit/2e64e02b23560c31b5cf9afed826a4466494f395))
+
 ## [2.153.0](https://github.com/niafrond/niafrond.github.io/compare/v2.152.0...v2.153.0) (2026-10-27)
 
 ### Features

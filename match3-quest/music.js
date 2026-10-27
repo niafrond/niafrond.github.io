@@ -51,7 +51,8 @@ const S = {
     cache: new Map(),     // clé de piste -> AudioBuffer (ordre = récence)
     loading: new Map(),   // clé de piste -> Promise<AudioBuffer|null>
     failed: new Map(),    // clé de piste -> instant du dernier échec
-    paused: false, timerId: null, lastTarget: -1
+    paused: false, timerId: null, lastTarget: -1,
+    duckFactor: 1, duckUntil: 0   // baisse passagère (voir duckMusic)
 };
 
 export function setMusicEnvironment(env = {}) {
@@ -175,9 +176,10 @@ function tickInner() {
         const vol = clamp(Number(safe(() => S.env.getVolume(), 0)) || 0, 0, 1);
         const muted = Boolean(safe(() => S.env.isMuted(), false));
         const hold = muted || S.paused || vol <= 0 || !isForeground();
-        const target = hold ? 0 : vol * MUSIC_GAIN;
+        const ducked = S.duckUntil > now();
+        const target = hold ? 0 : vol * MUSIC_GAIN * (ducked ? S.duckFactor : 1);
         if (Math.abs(target - S.lastTarget) > 0.001) {
-            safe(() => S.master.gain.setTargetAtTime(target, ctx.currentTime, hold ? 0.08 : 0.15));
+            safe(() => S.master.gain.setTargetAtTime(target, ctx.currentTime, hold ? 0.08 : ducked ? 0.03 : 0.2));   // baisse vive, remontée douce
             S.lastTarget = target;
         }
     }
@@ -214,6 +216,17 @@ export function stopMusic({ fadeMs = 1200 } = {}) {
     else if (S.current) safe(() => S.current.source.stop());
     S.current = null;
     stopTimer();
+}
+
+/**
+ * Baisse légèrement la musique (× `factor`, 0..1) pendant `ms` millisecondes, puis la remonte en douceur : à appeler quand un
+ * effet sonore important (sort, coup d'arme) joue. Plusieurs appels rapprochés prolongent la baisse sans l'accentuer.
+ */
+export function duckMusic(factor = 0.6, ms = 500) {
+    S.duckFactor = clamp(Number(factor) || 1, 0.05, 1);
+    S.duckUntil = Math.max(S.duckUntil, now() + Math.max(0, Number(ms) || 0));
+    tick();
+    safe(() => { const id = setTimeout(tick, Math.max(0, Number(ms) || 0) + 40); if (id && typeof id.unref === 'function') id.unref(); });   // remontée sans attendre le tick suivant
 }
 
 export function pauseMusic() { S.paused = true; tick(); }
