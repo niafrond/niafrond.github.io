@@ -74,6 +74,7 @@ export const allStuff = [
     // Bracelets
     piece('bracelet_de_cuivre', 'wrist', 'Bracelet de cuivre', 2, 'common', 'Un jonc de cuivre poli.', { atkBonus: 2 }),
     piece('bracelet_de_tendon', 'wrist', 'Bracelet de tendon', 7, 'uncommon', 'Du tendon de buffle tressé : il raffermit le poignet.', { atkBonus: 3, defBonus: 2 }),
+    piece('bracelet_de_jade_vital', 'wrist', 'Bracelet de Jade Vital', 8, 'rare', 'Un jonc de jade vif, tiède comme une peau vivante : il fortifie le corps.', { maxHp: 40 }),
     piece('bracelet_antidote', 'wrist', 'Bracelet d\'antidote', 12, 'rare', 'Des graines d\'angélique dans un bracelet de jade.', { defBonus: 3, poisonResist: 60 }),
     piece('bracelet_de_foudre', 'wrist', 'Bracelet de foudre', 24, 'legendary', 'Un cercle de fer d\'orage qui crépite au moindre tir.', { atkBonus: 8, defBonus: 4 }),
     // Bagues

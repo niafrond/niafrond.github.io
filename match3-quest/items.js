@@ -49,8 +49,6 @@ export const allItems = [
      description:"Ressuscite avec 50% HP si vous mourrez, une fois par combat (rechargé en 8 tours)", effect:{revive:0.5}},
     
     // Reliques permanentes (niveau 8+)
-    {id:"ringOfVitality", name:"Bracelet de Jade Vital", type:"artifact", minLevel:8, rarity:"rare",
-     description:"Augmente HP max de 40 (permanent)", effect:{permMaxHp:40}},
     {id:"amuletOfPower", name:"Amulette du Tigre Blanc", type:"artifact", minLevel:10, rarity:"rare",
      description:"Augmente attaque de 8 (permanent)", effect:{permAttack:8}},
     {id:"shieldCharm", name:"Charme de la Tortue Noire", type:"artifact", minLevel:12, rarity:"rare",
