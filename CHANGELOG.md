@@ -1,3 +1,9 @@
+## [2.151.1](https://github.com/niafrond/niafrond.github.io/compare/v2.151.0...v2.151.1) (2026-10-27)
+
+### Bug Fixes
+
+* **match3-quest:** refaire en chibi les sprites de créatures ratés ([08ff2d8](https://github.com/niafrond/niafrond.github.io/commit/08ff2d86f83ef5727f883f708c22bc7a0f4c5302))
+
 ## [2.151.0](https://github.com/niafrond/niafrond.github.io/compare/v2.150.0...v2.151.0) (2026-10-26)
 
 ### Features
