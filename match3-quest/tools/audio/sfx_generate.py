@@ -25,12 +25,16 @@ la liste RULES ci-dessous (mots-clés de l'identifiant du sort -> légende). `--
 
 Autres options : --only=spell-ice,spell-bolt   --candidates=N (candidats par clip, le meilleur est gardé : classement CLAP pour AudioLDM,
 énergie du début sinon)   --steps=N   --seed=N   --out=DIR   --install   --no-html   --list
+--resume : ne génère que les clips pas encore faits par CE modèle (journal audio/sfx-models.json, écrit à chaque clip installé) ; --since=AAAA-MM-JJTHH:MM
+compte aussi comme faits les clips écrits depuis cet instant (pour reprendre une génération lancée avant l'existence du journal). Un clip en échec
+(erreur du modèle) est signalé et la génération continue : relancer avec --resume pour reprendre les échecs.
 
 Environnement : `sfx-sample.sh` / `sfx-all.sh` s'en chargent (venv d'ACE-Step de game-maker + transformers 4.45.2 / diffusers 0.31.0 installés à part pour AudioLDM,
 car AudioLDM2 plante avec transformers ≥ 4.50). Durées : toujours ≥ 1 s (1,15 à 2 s selon le coût du sort, 2,6 s pour un ultime, 1 à 1,5 s pour un coup d'arc).
 """
 import base64
 import html
+from datetime import datetime
 import json
 import os
 import re
@@ -43,6 +47,7 @@ from pathlib import Path
 GAME = Path(__file__).resolve().parent.parent.parent
 SFX_DIR = GAME / "audio" / "sfx"
 MANIFEST = GAME / "audio" / "manifest.json"
+STATE = GAME / "audio" / "sfx-models.json"   # journal : clé -> modèle qui a généré le clip installé (utilisé par --resume)
 PEAK_DB = -6.0
 args = {a.split("=")[0][2:]: (a.split("=", 1)[1] if "=" in a else True) for a in sys.argv[1:] if a.startswith("--")}
 
@@ -52,13 +57,13 @@ SAMPLE = ["spell-ice", "spell-fireball", "spell-bolt", "spell-thunderBolt", "spe
 
 # ── légendes de son : (mots-clés de l'identifiant) -> (légende courte, légende longue). Le premier motif qui correspond gagne. ───────────
 RULES = [
-    (r"meteor|nineSuns|inferno|ember|flame|fire|burn|brasier|vermilion|blaze|scythe|sunPiercer|sunFall",
+    (r"meteor|inferno|ember|flame|fire|burn|brasier|vermilion|blaze|scythe|sun",
      "a dragon breathing fire, flame whoosh and crackling", "a big fire blast roaring and burning with crackling flames"),
     (r"frost|ice|blizzard|chill|freez|handOfIce",
      "ice cracking and shattering", "ice cracking and shattering with a cold freezing wind"),
     (r"thunder|lightning|bolt|storm|tribulation|wrath|tempest",
      "thunder and lightning crack", "a very loud thunder crack with crackling electric lightning and a rolling rumble"),
-    (r"flood|tide|tidal|river|spring|rain|dew|vapor|wave|torrent|azure|dragonCross|twinDragons|threeDragons",
+    (r"flood|tide|tidal|river|spring|rain|dew|vapor|wave|torrent",
      "water splashing and rushing waves", "a big water splash and rushing waves"),
     (r"wolf", "a wolf howling", "a wolf howling and growling"),
     (r"tiger|whiteTiger", "a tiger roaring", "a tiger roaring with a deep growl"),
@@ -69,7 +74,7 @@ RULES = [
      "a sword swish and metal slash", "a fast sword swish slashing through the air with a metal ring"),
     (r"mountain|kunlun|chasm|stone|rock|earth|pangu|quake|rush|bash|wall|barrier|bastion|tortoise",
      "rocks crashing and rumbling", "heavy rocks crashing and the earth rumbling with a deep boom"),
-    (r"shield|aura|stealth|focus|strength|reinforce|hold|command|cry|enrage|bloodlust|berserker|rage|intimidate|divinePower|sharpened|tigerEye",
+    (r"shield|aura|stealth|focus|strength|reinforce|hold|command|cry|enrage|bloodlust|berserker|rage|intimidate|divine|sharpened|eye",
      "a magical power up shimmer", "a powerful magical power-up with a bright metallic shimmer and a low hum"),
     (r"heal|revitalize|miracle|peach|elixir|blessing|breath|jade|harmony|lotus|golden",
      "magic chimes sparkling", "gentle magical glittering chimes and a soft warm sparkle"),
@@ -92,7 +97,9 @@ def caption(key: str, meta: dict, kind: str = "short") -> str:
         base = f"a bow and arrow shot hitting a target, {tail}" if kind == "short" else f"a bow string twang and an arrow whistling through the air then hitting a target with {tail}"
         return base + ("" if side == "p" else ", low and heavy")
     sid = key[len("spell-"):]
-    text = next((r[idx] for r in RULES if re.search(r[0], sid, re.I)), None) or BY_COLOR.get((meta.get("colors") or [None])[0]) or "a magical spell whoosh"
+    # mots de l'identifiant (camelCase) : « bladeWinds » = blade + winds, pas « dew » caché dans « bladeWinds » ; un mot-clé s'accorde au DÉBUT d'un mot
+    words = [w.lower() for w in re.findall("[A-Z]?[a-z]+", sid)]
+    text = next((r[idx] for r in RULES if any(re.match("(?:" + r[0] + ")", w) for w in words)), None) or BY_COLOR.get((meta.get("colors") or [None])[0]) or "a magical spell whoosh"
     if meta.get("ultimate"):
         text += ", huge and epic" + (", with a long booming echo" if kind == "long" else "")
     return text
@@ -259,18 +266,42 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     backend = CmdBackend(str(args["cmd"])) if model == "cmd" else GmBackend() if model == "gm" else DiffusersBackend(model)
     manifest = json.loads(MANIFEST.read_text(encoding="utf8")) if install else None
-    rows = []
+    state = json.loads(STATE.read_text(encoding="utf8")) if STATE.exists() else {}   # clé -> modèle qui a généré le clip installé
+    since = datetime.fromisoformat(str(args["since"])).timestamp() if "since" in args else None
+
+    def done(key: str) -> bool:
+        """--resume : clip déjà généré par CE modèle (journal) ou, avec --since=AAAA-MM-JJTHH:MM, fichier écrit depuis cet instant."""
+        f = out_dir / f"{key}.mp3"
+        return f.exists() and (state.get(key) == model or (since is not None and f.stat().st_mtime >= since))
+
+    rows, failed, skipped = [], [], 0
     for n, (key, meta) in enumerate(keys, 1):
+        if "resume" in args and done(key):
+            skipped += 1
+            print(f"[{n}/{len(keys)}] {key:38s} déjà fait, ignoré", flush=True)
+            continue
         text = overrides.get(key) or caption(key, meta, kind)
         secs, fade = target_seconds(key, meta)
         seed = int(args.get("seed", 7)) + n
-        samples, sr = backend.generate(text, secs, seed, key) if model in ("cmd", "gm") else backend.generate(text, secs, seed)
-        real = encode(samples, sr, key, secs, fade, out_dir)
+        try:
+            samples, sr = backend.generate(text, secs, seed, key) if model in ("cmd", "gm") else backend.generate(text, secs, seed)
+            real = encode(samples, sr, key, secs, fade, out_dir)
+        except Exception as exc:   # un clip raté ne doit pas arrêter des heures de génération : on continue et on relance --resume ensuite
+            failed.append(key)
+            print(f"[{n}/{len(keys)}] {key:38s} ÉCHEC : {str(exc)[:300]}", flush=True)
+            continue
         if manifest is not None:
             manifest["sfx"][key] = {"seconds": real}
             MANIFEST.write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf8")
+        if install:
+            state[key] = model
+            STATE.write_text(json.dumps(state, indent=1, sort_keys=True) + "\n", encoding="utf8")
         rows.append((key, meta.get("name", key), text, real))
         print(f"[{n}/{len(keys)}] {key:38s} {real:4.2f}s  {text}", flush=True)
+    if skipped:
+        print(f"{skipped} clip(s) déjà fait(s) ignoré(s)")
+    if failed:
+        print(f"\n{len(failed)} échec(s) : {', '.join(failed)}\nRelancer avec --resume pour les reprendre.")
     if "no-html" not in args and not install:
         write_html(out_dir, rows, model)
         print(f"\nÀ écouter : {out_dir / 'index.html'}")
