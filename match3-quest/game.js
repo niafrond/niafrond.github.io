@@ -28,7 +28,7 @@ import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPTo
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
+import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, withUltimateCost, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
@@ -120,6 +120,7 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
     entity.mana[color] = after;
+    if(entity === player) addUltimateMana(entity, color, totalGain);
     recalculateManaCaps(entity);
 
     return {
@@ -205,8 +206,8 @@ function spellCostEntries(sp){
 // Mini-barre collée à la jauge de rage : un tronçon par couleur de qì requise, rempli selon le qì possédé
 // (tronçon vide / pointillé = couleur manquante).
 function ultimateManaBarHtml(entity, spell){
-    const parts = spellCostEntries(spell).map(([color, need]) => {
-        const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
+    const parts = ultimateCostEntries(spell).map(([color, need]) => {
+        const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
         const label = `${color} ${Math.min(have, need)}/${need}`;
         return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"></span>`;
@@ -216,8 +217,8 @@ function ultimateManaBarHtml(entity, spell){
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
 function getUltimateTooltipHtml(entity, spell){
-    const cost = spellCostEntries(spell).map(([color, need]) => {
-        const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
+    const cost = ultimateCostEntries(spell).map(([color, need]) => {
+        const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
     }).join(' ');
     return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
@@ -1015,6 +1016,7 @@ export function restartCombat({ keepHp = false } = {}){
     player.combatPoints = 0;
     player.bonusTurn = 0;
     resetRage(player);
+    resetUltimateMana(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
     enemy.bonusTurn = 0;
@@ -2147,13 +2149,13 @@ export async function castUltimate(spellId){
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
-    if(!canEntityCastSpell(player, spell)){
-        const missingColor = getMissingManaColor(player, spell);
-        log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
+    if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
+        const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
+        log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
         return;
     }
     actionGuard.markPlayerAction();
-    consumeSpellMana(player, spell);
+    if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
     resetRage(player);
     playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     logActiveAction(`lance l'ultime ${spell.name}`);
@@ -3544,7 +3546,7 @@ function updateUltimatePicker(){
         div.innerHTML = `
             <div class="spell-content">
                 <div class="spell-name">${sp.name}</div>
-                <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
+                <div class="spell-cost">${spellCostHtml(withUltimateCost(sp))} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
             ${cardActionsHtml('', action)}`;
         list.appendChild(div);

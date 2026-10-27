@@ -95,3 +95,39 @@ export async function playUltimateCinematic(spell){
     const play = spell && ultimateCinematics.get(spell.cinematic);
     if(typeof play === 'function') await play(spell);
 }
+
+// Qì requis pour un ultime : le coût du sort multiplié par 1,5 (arrondi au-dessus). Il se mesure sur le qì COLLECTÉ pendant le combat
+// (`entity.ultimateMana`, alimenté à chaque gain de qì), même s'il a déjà été dépensé en sorts ; lancer l'ultime n'en consomme pas.
+export const ULTIMATE_COST_FACTOR = 1.5;
+
+export function ultimateCostEntries(spell){
+    const raw = typeof spell?.cost === 'number' ? { [spell.color]: spell.cost }
+        : (spell?.cost && typeof spell.cost === 'object' ? spell.cost : {});
+    return Object.entries(raw).map(([color, amount]) => [color, Math.ceil(amount * ULTIMATE_COST_FACTOR)]);
+}
+
+/** Copie du sort avec son coût multiplié (pour réutiliser les affichages de coût). */
+export const withUltimateCost = spell => ({ ...spell, cost: Object.fromEntries(ultimateCostEntries(spell)) });
+
+export function resetUltimateMana(entity){
+    if(entity) entity.ultimateMana = {};
+}
+
+export function addUltimateMana(entity, color, amount){
+    if(!entity || !(amount > 0)) return;
+    if(!entity.ultimateMana || typeof entity.ultimateMana !== 'object') entity.ultimateMana = {};
+    entity.ultimateMana[color] = (entity.ultimateMana[color] || 0) + amount;
+}
+
+export const collectedUltimateMana = (entity, color) => Math.max(0, Math.floor(entity?.ultimateMana?.[color] || 0));
+
+export function canCastUltimateMana(entity, spell){
+    return ultimateCostEntries(spell).every(([color, need]) => collectedUltimateMana(entity, color) >= need);
+}
+
+/** Retire le qì requis du compteur collecté (le surplus reste pour l'ultime suivant). */
+export function spendUltimateMana(entity, spell){
+    ultimateCostEntries(spell).forEach(([color, need]) => {
+        entity.ultimateMana[color] = Math.max(0, collectedUltimateMana(entity, color) - need);
+    });
+}
