@@ -5,7 +5,8 @@ import {
     RAGE_MAX, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull,
     registerUltimateCinematic, playUltimateCinematic,
     isQuestUltimate, getQuestUltimates, getSelectableUltimates, getEquippedUltimate, getLockedQuestUltimates,
-    unlockUltimate, normalizeUnlockedUltimates, isUltimateUnlocked
+    unlockUltimate, normalizeUnlockedUltimates, isUltimateUnlocked,
+    ultimateCostEntries, addUltimateMana, canCastUltimateMana, spendUltimateMana, resetUltimateMana
 } from '../../ultimates.js';
 import { ultimateSpells, getSpellsByClass } from '../../spells.js';
 import { playerClasses } from '../../classes.js';
@@ -134,5 +135,19 @@ describe('ultimes de légende (gagnés par quête, toutes classes)', () => {
 
     test('menu secret : tous les ultimes, légendes comprises', () => {
         expect(getSelectableUltimates({ class: 'sorcerer', level: 1, cheatAllUltimates: true })).toHaveLength(12);
+    });
+
+    test('qì collecté : coût ×1,5 (arrondi au-dessus), même si le qì a été dépensé, surplus conservé', () => {
+        const spell = { cost: { red: 25, blue: 25, green: 25 } };
+        expect(ultimateCostEntries(spell)).toEqual([['red', 38], ['blue', 38], ['green', 38]]);
+        const hero = { mana: { red: 0, blue: 0, green: 0 } };
+        ['red', 'blue', 'green'].forEach(c => addUltimateMana(hero, c, 30));
+        expect(canCastUltimateMana(hero, spell)).toBe(false);
+        ['red', 'blue', 'green'].forEach(c => addUltimateMana(hero, c, 10));
+        expect(canCastUltimateMana(hero, spell)).toBe(true);
+        spendUltimateMana(hero, spell);
+        expect(hero.ultimateMana).toEqual({ red: 2, blue: 2, green: 2 });
+        resetUltimateMana(hero);
+        expect(canCastUltimateMana(hero, spell)).toBe(false);
     });
 });
