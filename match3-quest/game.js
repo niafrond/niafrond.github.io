@@ -31,7 +31,7 @@ import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimate
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
-import { itemGroupKey, toggleSellTag } from "./merchants.js";
+import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -4268,7 +4268,8 @@ const sellTagButton = (it, count) => {
 };
 const weaponSellTagButton = weapon => sellTagButtonFor(`weapon:${weapon.id}`, 'Marquer cette arme à vendre au prochain marchand');
 export function toggleSellSurplus(id){
-    toggleSellTag(player, id);
+    const tagged = toggleSellTag(player, id);
+    if(tagged && allShieldsTagged(player)) log('Attention : tous vos boucliers sont marqués à vendre, vous n\'en aurez plus aucun après la vente.');
     updateWeaponsTab();   // redessine aussi l'onglet Objets
     saveUpdate();
 }
