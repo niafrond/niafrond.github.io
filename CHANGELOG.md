@@ -1,3 +1,11 @@
+## [2.156.0](https://github.com/niafrond/niafrond.github.io/compare/v2.155.0...v2.156.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** ajouter les scripts de génération des bruitages (échantillon et complet) à modèle interchangeable ([fb18905](https://github.com/niafrond/niafrond.github.io/commit/fb189052d5c7d25ca8997de51020aa4724f3fc98))
+* **match3-quest:** brancher la commande gm studio sfx generate dans le script d'échantillon ([aceb463](https://github.com/niafrond/niafrond.github.io/commit/aceb463eda3c36f3e70fd6a3640fe42ed3e901d9))
+* **match3-quest:** remplacer les bruitages des sorts et coups d'arc par ceux de MMAudio et ajouter la reprise de génération ([22d3898](https://github.com/niafrond/niafrond.github.io/commit/22d38987316ca3dec30e00a6bb451498903156bd))
+
 ## [2.155.0](https://github.com/niafrond/niafrond.github.io/compare/v2.154.0...v2.155.0) (2026-10-27)
 
 ### Features
