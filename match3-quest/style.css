@@ -3589,6 +3589,7 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 /* Excédent à vendre : bouton pièce de l'onglet Objets et popup du marchand */
 .item-sell-tag { display: inline-flex; align-items: center; gap: 4px; }
 .item-sell-tag.on { background: #f1c40f; border-color: #b7950b; color: #3b2f00; }
+.item-sell-tag-label { font-size: 0.8em; }
 .surplus-popup { border: 2px solid #f1c40f; border-radius: 6px; padding: 8px 10px; margin: 8px 0; background: rgba(241, 196, 15, 0.12); }
 .surplus-popup h4 { margin: 0 0 6px; }
 .surplus-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }

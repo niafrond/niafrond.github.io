@@ -263,6 +263,14 @@ export function toggleSellTag(hero, id) {
     return true;
 }
 
+/** Vrai si le héros ne porte aucun bouclier et que tous ceux de son sac sont tagués à vendre (il n'en aurait plus aucun). */
+export function allShieldsTagged(hero) {
+    if (hero.equipment?.leftHand?.type === 'shield') return false;
+    const shields = (hero.inventory || []).filter(it => it.type === 'shield');
+    const tags = hero.sellTags || [];
+    return shields.length > 0 && shields.every(it => tags.includes(itemGroupKey(it)));
+}
+
 /**
  * Pièces tagguées vendables : [{ id, kind, obj, qty, price, indices }].
  * Objet ordinaire : l'excédent (un exemplaire gardé, jamais un objet verrouillé). Arme (tag `weapon:<id>`) et bouclier : la pièce entière,

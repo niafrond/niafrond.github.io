@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
     MERCHANTS, MERCHANT_IDS, REGION_LEVEL, PRICE_MULT, merchantStock, merchantNpc, availableOffers, buyOffer, offerObject,
-    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf, toggleSellTag, surplusEntries, sellSurplus
+    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf, toggleSellTag, allShieldsTagged, surplusEntries, sellSurplus
 } from '../../merchants.js';
 import { REGION_LEVEL as WORLD_LEVEL, REGION_ORDER } from '../../world/index.js';
 import { SCREENS } from '../../story.js';
@@ -229,5 +229,16 @@ describe('excédent à vendre (tag bouton pièce)', () => {
         expect(h.weapons).toEqual([sword]);
         expect(h.inventory).toEqual([]);
         expect(h.gold).toBeGreaterThan(0);
+    });
+
+    test('allShieldsTagged : vrai seulement si tous les boucliers du sac sont tagués et aucun n\'est porté', () => {
+        const mkShield = id => ({ id, name: id, type: 'shield', rarity: 'common', minLevel: 1 });
+        const h = { weapons: [], equipment: { leftHand: null }, inventory: [mkShield('a'), mkShield('b')], sellTags: ['a'] };
+        expect(allShieldsTagged(h)).toBe(false);
+        h.sellTags.push('b');
+        expect(allShieldsTagged(h)).toBe(true);
+        h.equipment.leftHand = mkShield('c');
+        expect(allShieldsTagged(h)).toBe(false);
+        expect(allShieldsTagged({ inventory: [], sellTags: [] })).toBe(false);
     });
 });
