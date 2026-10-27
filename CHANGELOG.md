@@ -1,3 +1,9 @@
+## [2.153.0](https://github.com/niafrond/niafrond.github.io/compare/v2.152.0...v2.153.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** régénérer wild-tides en version longue jusqu'à passer le contrôle de tonalité ([2305c2b](https://github.com/niafrond/niafrond.github.io/commit/2305c2b967f3ffc0a3d47fbda856cefd73871dcb))
+
 ## [2.152.0](https://github.com/niafrond/niafrond.github.io/compare/v2.151.1...v2.152.0) (2026-10-27)
 
 ### Features
