@@ -18,6 +18,7 @@
   "combatStats.js",
   "companionMoves.js",
   "companionPowers.js",
+  "companionTrail.js",
   "companions.js",
   "compareView.js",
   "constants.js",
@@ -675,6 +676,46 @@
    "p": "sprites/gba/cloud_sweeper_yun.0fe4bd30.js",
    "s": 1376,
    "h": "0fe4bd3091"
+  },
+  {
+   "p": "sprites/gba/companion_braise.9b231cf1.js",
+   "s": 34415,
+   "h": "9b231cf11e"
+  },
+  {
+   "p": "sprites/gba/companion_dawa.a04cab4b.js",
+   "s": 29047,
+   "h": "a04cab4be7"
+  },
+  {
+   "p": "sprites/gba/companion_etincelle.30eff963.js",
+   "s": 41895,
+   "h": "30eff963c4"
+  },
+  {
+   "p": "sprites/gba/companion_jian.6649d612.js",
+   "s": 40763,
+   "h": "6649d612f4"
+  },
+  {
+   "p": "sprites/gba/companion_tou.d6fc3111.js",
+   "s": 29435,
+   "h": "d6fc311171"
+  },
+  {
+   "p": "sprites/gba/companion_xiao_gui.d7725b58.js",
+   "s": 36447,
+   "h": "d7725b5824"
+  },
+  {
+   "p": "sprites/gba/companion_yu.fea8218d.js",
+   "s": 36671,
+   "h": "fea8218d97"
+  },
+  {
+   "p": "sprites/gba/companion_zhi.e32338d6.js",
+   "s": 27535,
+   "h": "e32338d67f"
   },
   {
    "p": "sprites/gba/cook_dada.e1852e6d.js",
