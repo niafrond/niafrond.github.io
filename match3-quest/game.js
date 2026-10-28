@@ -211,7 +211,7 @@ function ultimateManaBarHtml(entity, spell){
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
         const label = `${color} ${Math.min(have, need)}/${need}`;
-        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"></span>`;
+        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}/${need}</span></span>`;
     });
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
