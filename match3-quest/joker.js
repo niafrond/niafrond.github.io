@@ -78,3 +78,32 @@ export function rollTileWithJoker(probabilities, availableColors, options = {}, 
     if(allowJoker && r < skullProb + combatProb + jokerProb) return JOKER_TILE;
     return availableColors[Math.floor(randomFn() * availableColors.length)];
 }
+
+// Tirage d'une tuile qui tombe en comblant les trous : la répartition cible (`probabilities`) doit tenir sur TOUT le plateau après la chute,
+// pas seulement sur les tuiles neuves. Chaque catégorie (crâne, flèche, chaque couleur) reçoit sa probabilité de base plus son déficit
+// par rapport à l'effectif attendu sur le plateau ; le joker, rare, garde sa seule probabilité de base.
+export function rollBalancedTile(board, probabilities, availableColors, options = {}, randomFn = Math.random){
+    const skullProb = Math.max(0, probabilities.skullProb || 0);
+    const combatProb = Math.max(0, probabilities.combatProb || 0);
+    const jokerProb = options.allowJoker === false ? 0 : Math.max(0, probabilities.jokerProb || 0);
+    const colorProb = Math.max(0, 1 - skullProb - combatProb - jokerProb) / Math.max(1, availableColors.length);
+    const counts = new Map();
+    let total = 0;
+    for(const tile of board){
+        if(tile === null || tile === undefined) continue;
+        const key = tile === SKULL5_TILE ? 'skull' : tile;
+        counts.set(key, (counts.get(key) || 0) + 1);
+        total++;
+    }
+    const size = Math.max(board.length, 1);
+    const categories = [['skull', skullProb], ['combat', combatProb], ...availableColors.map(c => [c, colorProb])];
+    const weights = categories.map(([key, p]) => p * 0.25 + 3 * Math.max(0, p * size - (counts.get(key) || 0)) / size);
+    if(jokerProb > 0) { categories.push([JOKER_TILE, jokerProb]); weights.push(jokerProb); }
+    let r = randomFn() * weights.reduce((a, b) => a + b, 0);
+    let picked = categories[categories.length - 1][0];
+    for(let i = 0; i < weights.length; i++){
+        r -= weights[i];
+        if(r < 0){ picked = categories[i][0]; break; }
+    }
+    return maybeSkull5(picked, randomFn);
+}

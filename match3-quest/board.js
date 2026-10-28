@@ -24,6 +24,7 @@ import {
     shouldCreateJokerFromMatchLength,
     pickRandomNonJokerIndex,
     rollTileWithJoker,
+    rollBalancedTile,
     baseTile,
     maybeSkull5
 } from "./joker.js";
@@ -536,6 +537,14 @@ function generateRandomTile(options = {}){
     return rollTileWithJoker(boardDropProbabilities, colors, options);
 }
 
+// Tuile qui tombe pour combler un trou : tirée pour que la répartition cible tienne sur tout le plateau après la chute.
+function generateBalancedDropTile(){
+    if(!boardDropProbabilities){
+        refreshBoardDropProbabilities();
+    }
+    return rollBalancedTile(board, boardDropProbabilities, colors);
+}
+
 // Compacte la colonne vers le bas et comble les trous par de nouvelles tuiles ; renvoie les tuiles qui glissent
 // (indice d'arrivée → nombre de rangées parcourues) et le nombre de nouvelles tuiles en haut.
 function fillColumnByGravity(col){
@@ -560,7 +569,7 @@ function fillColumnByGravity(col){
     const newCount = writeRow + 1;
     while(writeRow >= 0){
         const writeIdx = writeRow * boardSize + col;
-        board[writeIdx] = generateRandomTile();
+        board[writeIdx] = generateBalancedDropTile();
         writeRow--;
     }
     return { moved, newCount };
@@ -1134,7 +1143,7 @@ function dropTiles(removedIndices = []){
         // Ajouter des nouvelles tuiles en haut.
         while(writeRow >= 0){
             const idx = writeRow * boardSize + col;
-            board[idx] = generateRandomTile();
+            board[idx] = generateBalancedDropTile();
             writeRow--;
         }
     }
