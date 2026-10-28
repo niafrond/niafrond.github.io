@@ -1,3 +1,9 @@
+## [2.159.0](https://github.com/niafrond/niafrond.github.io/compare/v2.158.1...v2.159.0) (2026-10-28)
+
+### Features
+
+* **match3-quest:** équilibrer la chute des tuiles sur l'ensemble du plateau ([#587](https://github.com/niafrond/niafrond.github.io/issues/587)) ([fb674f0](https://github.com/niafrond/niafrond.github.io/commit/fb674f01034e4e5f4e544a1d53110e558c7badb3))
+
 ## [2.158.1](https://github.com/niafrond/niafrond.github.io/compare/v2.158.0...v2.158.1) (2026-10-28)
 
 ### Bug Fixes
