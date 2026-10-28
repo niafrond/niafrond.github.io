@@ -1,3 +1,9 @@
+## [2.158.1](https://github.com/niafrond/niafrond.github.io/compare/v2.158.0...v2.158.1) (2026-10-28)
+
+### Bug Fixes
+
+* **match3-quest:** bracelet de jade vital dans le stuff et annonce des pouvoirs de compagnons ([#586](https://github.com/niafrond/niafrond.github.io/issues/586)) ([71763f4](https://github.com/niafrond/niafrond.github.io/commit/71763f46e136d6c876e14748e7854828ae44908e))
+
 ## [2.158.0](https://github.com/niafrond/niafrond.github.io/compare/v2.157.0...v2.158.0) (2026-10-27)
 
 ### Features
