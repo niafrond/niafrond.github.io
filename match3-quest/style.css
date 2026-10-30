@@ -3399,7 +3399,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .rage-bar-container { position: relative; width: 100%; }
 .rage-bar { display: block; width: 100%; height: 14px; accent-color: #d9452e; }
 .rage-bar-container .rage-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; text-shadow: 0 0 2px #000; pointer-events: none; }
-.rage-bar-container.full .rage-bar { animation: rage-pulse 0.9s ease-in-out infinite; }
+.rage-bar-container.full.mana-reached .rage-bar { animation: rage-pulse 0.9s ease-in-out infinite; }   /* clignote seulement quand rage ET qì collecté sont atteints */
 @keyframes rage-pulse { 50% { filter: brightness(1.6); } }
 /* Jauge pleine : « ULTIME » cliquable (la barre devient un bouton doré) */
 .rage-bar-container.ultimate-ready { cursor: pointer; border-radius: 4px; box-shadow: 0 0 8px #f2c14e; outline: 1px solid #f2c14e; }
@@ -3420,7 +3420,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
   .rage-bar-container.ultimate-ready .rage-bar { height: 44px; }
   .rage-bar-container.ultimate-ready .rage-text { font-size: 1em; }
 }
-@media (prefers-reduced-motion: reduce) { .rage-bar-container.full .rage-bar { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rage-bar-container.full.mana-reached .rage-bar { animation: none; } }
 #ultimate-spells-list .ultimate-spell { border: 1px solid #d9452e; }
 #spell-buttons .ultimate-spell { border: 1px solid #d9452e; background: linear-gradient(135deg, rgba(217,69,46,0.25), rgba(242,193,78,0.2)); }
 #spell-buttons .ultimate-spell.ready { box-shadow: 0 0 8px #f2c14e; animation: rage-pulse 0.9s ease-in-out infinite; }
