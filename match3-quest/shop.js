@@ -15,6 +15,7 @@ const SECTION_TITLES = {
     gear: 'Équipement',
     mount: 'Monture',
     stall: 'Étal',
+    standard: 'Fournitures',
     stuff: 'Parures',
     rare: 'Pièces rares',
     exceptional: 'Pièce d\'exception'
