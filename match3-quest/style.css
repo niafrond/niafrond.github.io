@@ -3412,6 +3412,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .ult-mana-seg { position: relative; display: flex; align-items: center; justify-content: center; min-width: 26px; border-radius: 2px; background: rgba(255,255,255,0.12); outline: 1px dashed var(--seg-c); outline-offset: -1px; overflow: hidden; }
 .ult-mana-seg::before { content: ''; position: absolute; inset: 0; width: var(--seg-fill); background: var(--seg-c); }
 .ult-mana-seg.ok { outline: none; }
+.ult-mana-seg.light .ult-mana-num { color: #3a2a00; text-shadow: 0 0 2px rgba(255,255,255,.7); }   /* jaune clair : chiffres sombres */
 .ult-mana-num { position: relative; font-size: 9px; line-height: 1; font-weight: bold; color: #fff; text-shadow: 0 0 2px #000, 0 0 1px #000; white-space: nowrap; }
 .spell-tooltip-line .ult-cost.missing { color: #ff8a7a; font-weight: bold; }
 /* Mobile / tactile : la barre devient une vraie cible tactile (≥ 44 px), sans zoom au double-tap ni surbrillance native. */
