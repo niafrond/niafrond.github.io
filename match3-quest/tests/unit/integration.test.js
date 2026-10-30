@@ -53,7 +53,7 @@ function nextExit(s, from, to) {
     const queue = [from];
     while (queue.length && !prev.has(to)) {
         const id = queue.shift();
-        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea).forEach(e => {
+        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea && !e.rememberReturn && !e.returnToSaved).forEach(e => {
             if (!prev.has(e.to)) {
                 prev.set(e.to, { id, exit: e });
                 queue.push(e.to);
@@ -242,7 +242,7 @@ describe('integration: full game playthrough', () => {
 
             const screen = SCREENS[screenId];
             exitsOf(screen, SCREENS).forEach(exit => {
-                if (!visited.has(exit.to) && !isExitLocked(s, exit)) {
+                if (!visited.has(exit.to) && !isExitLocked(s, exit) && !exit.rememberReturn && !exit.returnToSaved) {
                     toVisit.push(exit.to);
                 }
             });
@@ -255,7 +255,7 @@ describe('integration: full game playthrough', () => {
         const s = createSession({});
 
         const permanentEnemies = screens
-            .flatMap(sc => sc.enemies.filter(e => e.permanent))
+            .filter(sc => !sc.event).flatMap(sc => sc.enemies.filter(e => e.permanent))
             .map(e => e.id);
 
         permanentEnemies.forEach(enemyId => {

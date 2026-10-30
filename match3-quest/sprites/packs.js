@@ -78,5 +78,8 @@ export const ENEMY_PACK = {
     sun_9: 'suns',
     tigre_embrase: 'suns',
     wen_shen: 'enemies-1',
+    ws_gardien_jugement: 'souls',
+    ws_huli_jing: 'souls',
+    ws_jiangshi_patrouille: 'souls',
     yinglong: 'enemies-1'
 };

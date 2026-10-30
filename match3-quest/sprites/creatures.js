@@ -58,7 +58,9 @@ export const CREATURE_BY_ID = {
     root_elder: { kind: 'tree' },
     moon_rabbit_yutu: { kind: 'rabbit', pestle: true },
     moon_crow_wu: { kind: 'crow', moon: true },
-    jade_hare: { kind: 'rabbit', jade: true }
+    jade_hare: { kind: 'rabbit', jade: true },
+    ws_ame_guide: { kind: 'ghost' },
+    ws_fantome_affame: { kind: 'ghost' }   // événement « La Nuit des âmes errantes » (events/wanderingSouls/)
 };
 
 export const creatureKind = id => CREATURE_BY_ID[id]?.kind || null;

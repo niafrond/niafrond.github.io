@@ -1997,6 +1997,8 @@ const WORLD = assembleWorld(BASE_SCREENS, BASE_QUESTS);
 export const SCREENS = { ...WORLD.screens, ...buildArenaScreens() };
 export const QUESTS = WORLD.quests;
 // Monde à l'ancienne (cartes à leur taille d'origine, sans agrandissement ni jonctions) : réservé aux tests de mécanique du moteur.
+// Monde assemblé avec des options (p. ex. `{ events: { wanderingSouls: { enabled: false } } }` : voir events/config.js) : réservé aux tests.
+export const buildWorld = (options = {}) => assembleWorld(BASE_SCREENS, BASE_QUESTS, undefined, undefined, options);
 export const buildLegacyWorld = () => assembleWorld(BASE_SCREENS, BASE_QUESTS, undefined, undefined, { legacy: true });
 
 // Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.

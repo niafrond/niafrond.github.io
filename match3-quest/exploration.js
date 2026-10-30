@@ -25,6 +25,10 @@
 //    carryHp / chainedFrom (ennemi suivant) : le héros garde ses PV, et une défaite annule la victoire sur `chainedFrom` ;
 //  - duel : règles de duel recopiées dans la rencontre (miroir, héros affaibli, tirs rapides, pièges : duel.js) ;
 //  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
+//  - exit.closedWhen : sortie refermée dès que la condition est remplie (message : exit.closedMessage) ; sert aux événements (events/) ;
+//  - exit.rememberReturn : { x, y } ; en franchissant la sortie, mémorise l'écran d'origine et cette case (data.eventReturn) ;
+//    exit.returnToSaved : la sortie ramène à cette case mémorisée (sinon à exit.arrive) : un écran d'événement accessible de partout ;
+//  - screen.eventNotice : { id, title, lines } annonce affichée une seule fois à la première arrivée (data.eventNotices) ;
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés) ;
 //  - arène (arena.js) : écrans `kind: 'arena'`, `data.arena` = { cleared, best, wins, returnTo } ; entrée par
 //    enterArena (point de retour mémorisé), sortie à tout moment par leaveArena (bouton du HUD, sortie
@@ -215,6 +219,8 @@ function defaultData() {
         quests: {},
         visitedScreens: [],
         introSeen: false,
+        eventNotices: [],        // annonces d'événements déjà lues (une seule fois chacune : screen.eventNotice)
+        eventReturn: null,       // écran et case d'où le héros est entré dans un écran d'événement (sortie exit.returnToSaved)
         ended: false,
         ngPlus: 0,
         talked: [],
@@ -244,6 +250,8 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
     data.questItems = Array.isArray(data.questItems) ? data.questItems.filter(i => i && typeof i.id === 'string') : [];
+    data.eventNotices = Array.isArray(data.eventNotices) ? data.eventNotices.filter(id => typeof id === 'string') : [];
+    data.eventReturn = data.eventReturn && typeof data.eventReturn.screenId === 'string' && Number.isInteger(data.eventReturn.x) && Number.isInteger(data.eventReturn.y) ? { screenId: data.eventReturn.screenId, x: data.eventReturn.x, y: data.eventReturn.y } : null;
     data.bestiary = Array.isArray(data.bestiary) ? [...new Set(data.bestiary.filter(id => typeof id === 'string' && id))] : [];
     data.observed = data.observed && typeof data.observed === 'object' && !Array.isArray(data.observed) ? data.observed : {};
 
@@ -628,7 +636,8 @@ const readyUnlocks = (session, id) => {
     const status = questStatus(session, quest);
     return status === 'ready' || (status === 'available' && quest.objectives.every(o => objectiveDone(session, o)));
 };
-export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires);
+const isExitClosed = (session, exit) => Boolean(exit.closedWhen) && progressReached(session, exit.closedWhen);
+export const isExitLocked = (session, exit) => isExitClosed(session, exit) || (Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires));
 
 // Transition vers une autre carte (sortie explicite ou connexion de bordure) : alerte de niveau, texte d'arrivée, quêtes.
 function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
@@ -644,6 +653,12 @@ function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
     // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
     if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
     if (warning) res.warning = warning;
+    // Annonce d'événement : une seule fois par partie (data.eventNotices), à la première arrivée dans l'écran qui la porte.
+    const notice = target.eventNotice;
+    if (notice && !session.data.eventNotices.includes(notice.id)) {
+        session.data.eventNotices.push(notice.id);
+        res.notice = notice;
+    }
     return res;
 }
 
@@ -693,10 +708,17 @@ export function tryMove(session, dx, dy, ctx = {}) {
         if (isExitLocked(session, exit)) {
             return {
                 type: 'exitBlocked', reason: 'quest', label: exit.label, regionName: target.name,
-                message: exit.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
+                message: (isExitClosed(session, exit) ? exit.closedMessage : null) || exit.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
             };
         }
-        return transitionTo(session, screen, exit.to, exit.arrive, playerLevel, { door: Boolean(exit.door) });
+        // Écran d'événement accessible de partout : on retient d'où l'on vient, et la sortie y ramène (sinon case d'arrivée par défaut).
+        if (exit.rememberReturn) session.data.eventReturn = { screenId: screen.id, x: exit.rememberReturn.x, y: exit.rememberReturn.y };
+        let arrive = exit.arrive;
+        if (exit.returnToSaved) {
+            const saved = session.data.eventReturn, back = saved && session.screens[saved.screenId];
+            if (back && !back.arena && !isTerrainBlocked(back, saved.x, saved.y)) { arrive = { x: saved.x, y: saved.y }; return transitionTo(session, screen, saved.screenId, arrive, playerLevel, { door: Boolean(exit.door) }); }
+        }
+        return transitionTo(session, screen, exit.to, arrive, playerLevel, { door: Boolean(exit.door) });
     }
 
     // Dernière case d'un passage de bord : poser le pied dessus déclenche la transition (pas besoin de sortir de la carte).

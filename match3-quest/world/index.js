@@ -26,6 +26,9 @@ import { applyCollarQuests } from './collars.js';
 import { applyArmorQuests } from './armorQuests.js';
 import { applyLegendQuests } from './legends.js';
 import { applyUnderground } from './underground.js';
+import { applyEvents } from '../events/engine.js';
+import { EVENTS } from '../events/config.js';
+import { EVENT_MODULES } from '../events/registry.js';
 import { applyConnections, migrateEdgeExits } from '../mapConnections.js';
 import { CONNECTIONS } from './connections.js';
 import { addBorderBarriers } from './barriers.js';
@@ -235,6 +238,8 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         applyLegendQuests(screens, quests);   // Gardiens Célestes : relique + boss unique + quête qui rapporte un ultime de légende (ultimates.js)
         Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
         applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)
+        // Événements temporaires activés par events/config.js (commit Git) : contenu facultatif ajouté au monde permanent.
+        applyEvents(screens, quests, { modules: options.eventModules || EVENT_MODULES, events: options.events || EVENTS });
 
     }
 

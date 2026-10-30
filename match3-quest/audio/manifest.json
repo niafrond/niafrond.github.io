@@ -371,6 +371,14 @@
   "puzzle-slide": {
    "seconds": 171.6,
    "sections": 2
+  },
+  "event-wandering-souls": {
+   "seconds": 168.2,
+   "sections": 1
+  },
+  "boss-gardien-du-jugement": {
+   "seconds": 155.7,
+   "sections": 1
   }
  },
  "sfx": {

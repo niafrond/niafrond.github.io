@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -121,7 +121,7 @@ jobs:
 
   match3-quest-perf:
     name: Match3 Quest - perf mobile
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

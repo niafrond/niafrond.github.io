@@ -139,6 +139,11 @@
   "world/text/tonnerre.js",
   "world/text/volcan.js",
   "world/underground.js",
+  "events/config.js",
+  "events/engine.js",
+  "events/registry.js",
+  "events/wanderingSouls/data.js",
+  "events/wanderingSouls/index.js",
   "sprites/archi.js",
   "sprites/biomeArchi.js",
   "sprites/biomeSvg.js",
@@ -152,6 +157,8 @@
   "sprites/packContents.js",
   "sprites/packs.js",
   "sprites/side.js",
+  "sprites/souls-decor.js",
+  "sprites/soulsFloor.js",
   "sprites/villagers.js",
   "sprites/cn/actors-a.js",
   "sprites/cn/actors-b.js",
@@ -159,6 +166,7 @@
   "sprites/cn/enemies-2.js",
   "sprites/cn/legends.js",
   "sprites/cn/marees.js",
+  "sprites/cn/souls.js",
   "sprites/cn/suns.js",
   "sprites/tiles/tile-blue.svg",
   "sprites/tiles/tile-combat.svg",
@@ -4019,6 +4027,11 @@
    "h": "f39f84c0bd"
   },
   {
+   "p": "audio/music/boss-gardien-du-jugement.mp3",
+   "s": 1869576,
+   "h": "629bb1e28f"
+  },
+  {
    "p": "audio/music/boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches.mp3",
    "s": 1876472,
    "h": "ce25e629a5"
@@ -4202,6 +4215,11 @@
    "p": "audio/music/ending.mp3",
    "s": 2057344,
    "h": "91f35d07a3"
+  },
+  {
+   "p": "audio/music/event-wandering-souls.mp3",
+   "s": 2018787,
+   "h": "ef37e23078"
   },
   {
    "p": "audio/music/house.mp3",

@@ -53,7 +53,7 @@ export function addStructures(screens) {
         const { w, h } = screen, seed = seedOf(screen.id);
         const obst = toSet(screen.obstacles), liq = toSet(screen.liquids);
         const taken = new Set([...buildingCells(screen), ...entityCells(screen), key(screen.spawn.x, screen.spawn.y)]);
-        (screen.exits || []).forEach(e => taken.add(key(e.x, e.y)));
+        (screen.exits || []).forEach(e => { taken.add(key(e.x, e.y)); if (e.rememberReturn) taken.add(key(e.rememberReturn.x, e.rememberReturn.y)); });   // case de retour d'une entrée d'événement comprise
         (screen.enemies || []).filter(e => e.patrol).forEach(e => routeCells(e.patrol).forEach(c => taken.add(key(c.x, c.y))));
         (screen.pillars || []).concat(screen.sealed || []).forEach(([px, py]) => taken.add(key(px, py)));
         (screen.spots || []).forEach(sp => taken.add(key(sp.x, sp.y)));

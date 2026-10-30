@@ -11,7 +11,7 @@ import { occupancy, placeInLand } from './junctions.js';
  * Comme placeInLand, mais refuse une case qui emmurerait une autre entité ou une sortie : tout doit rester atteignable à pied depuis
  * l'apparition, les entités posées (hors gardiens de porte) comptant comme obstacles. Les cases candidates qui isoleraient quelque chose sont écartées (placeInLand, paramètre `accept`).
  */
-function placeSafely(screen, screens, id) {
+export function placeSafely(screen, screens, id) {
     // l'occupation et les isolements déjà présents ne dépendent pas de la case essayée : calculés une fois par placement
     const occ = occupancy(screen, screens);
     const before = unreachedWith(screen, occ, null);

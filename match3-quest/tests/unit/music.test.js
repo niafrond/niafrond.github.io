@@ -257,7 +257,8 @@ describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
         for (let i = 0; i < COMBAT_STYLE_COUNT; i++) keys.push(`combat-${i}`);
         keys.push('combat-tides');   // « Tourbillon des Eaux » : combats des Hautes-Eaux
         for (let i = 0; i < BOSS_ARCHETYPE_COUNT; i++) keys.push(`boss-a${i}`);
-        Object.values(SCREENS).forEach((sc) => (sc.enemies || []).forEach((e) => { if (e.boss?.name) keys.push(`boss-${bossSlug(e.boss.name)}`); }));
+        // (les boss des écrans d'événement n'ont pas de thème propre : ils retombent sur le thème d'archétype boss-aN, trackCandidates)
+        Object.values(SCREENS).forEach((sc) => (sc.enemies || []).forEach((e) => { if (e.boss?.name && !sc.event) keys.push(`boss-${bossSlug(e.boss.name)}`); }));
         return [...new Set(keys)];
     };
     test('toutes les pistes de musique existent (dont un thème par boss) et ne sont pas vides', () => {

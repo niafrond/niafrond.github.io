@@ -235,6 +235,8 @@ function sanitizePlayer(player) {
             waypoints: ex.waypoints,
             tracked: ex.tracked,
             introSeen: ex.introSeen,
+            eventNotices: ex.eventNotices,
+            eventReturn: ex.eventReturn,
             ended: ex.ended,
             ngPlus: ex.ngPlus,
             bestiary: ex.bestiary,

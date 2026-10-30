@@ -1,0 +1,29 @@
+{
+  "key": "boss-gardien-du-jugement",
+  "version": "v001",
+  "date": "2026-10-30T11:14:05.334Z",
+  "seed": "3078861698",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, judge of the dead boss battle in the Chinese underworld, solemn and relentless, slow heavy ritual drums, deep gong, sparse guqin (ancient wisdom, restraint) and agile plucked pipa ostinato (martial tension, arrows) tremolo, sustained sheng pads (celestial presence) pad, stern bureaucratic dread, ledger pages turning, not a western devil, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, readable melody",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 96,
+    "key_scale": "D minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 96,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D minor",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, judge of the dead boss battle in the Chinese underworld, solemn and relentless, slow heavy ritual drums, deep gong, sparse guqin (ancient wisdom, restraint) and agile plucked pipa ostinato (martial tension, arrows) tremolo, sustained sheng pads (celestial presence) pad, stern bureaucratic dread, ledger pages turning, not a western devil, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, readable melody",
+    "lyrics": "[Instrumental]"
+  }
+}

@@ -266,6 +266,14 @@ function spellSfxStyle(id, sp) {
     'fire spirit, crackling woodblock and pulse waves', 'ancient guardian, slow ritual drums and sheng chords'
 ].forEach((s, i) => T(`boss-a${i}`, `boss battle archetype, ${s}, ${BOSS_MOOD}, strong melody, short loop`, { bpm: 108 + i * 3, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'C minor', 'F major', 'C minor', 'D minor'][i], dur: 50 }));
 
+
+/* ───────────── Événement « La Nuit des âmes errantes » (events/wanderingSouls/) ───────────── */
+// Thème du royaume (écrans d'événement, musicTracks.js : `event-wandering-souls`) et thème du Gardien du jugement.
+T('event-wandering-souls', `Chinese ghost festival night, drifting mist and floating red paper lanterns, ${I.guqin} with sparse bell-like plucks, soft ${I.xiao} and ${I.sheng} pad, slow ritual temple bell, hollow wooden fish woodblock, eerie but gentle and respectful of the dead, not scary, not horror, haunting pentatonic melody, spacious with silence between phrases`,
+    { bpm: 62, keyScale: 'E minor', dur: 60 });
+T('boss-gardien-du-jugement', `judge of the dead boss battle in the Chinese underworld, solemn and relentless, slow heavy ritual drums, deep gong, ${I.guqin} and ${I.pipa} tremolo, ${I.sheng} pad, stern bureaucratic dread, ledger pages turning, not a western devil, ${BOSS_MOOD}, readable melody`,
+    { bpm: 96, keyScale: 'D minor', dur: 60 });
+
 export const CATALOG = TRACKS;
 export const MOTIF_NAMES = ['houyi', 'fengmeng', 'suns'];
 

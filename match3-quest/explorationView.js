@@ -85,7 +85,9 @@ const BIOMES = {
     house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: BIOME_DECOR.house },
     cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: BIOME_DECOR.cave },
     moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: BIOME_DECOR.moon },
-    ...ARENA_BIOMES   // parvis et salles de l'Arène des Mille Flèches (arena.js)
+    // Royaume des âmes errantes (événement) : pierre grise, noir encre, brume bleu nuit, chemin d'or vieilli (palette de la spec)
+    wandering_souls: { a: '#686a70', b: '#5f6167', path: '#8c7b55', cliff: '#171a24', liquid: '#273b59', sky: ['#171a24', '#273b59'], decor: BIOME_DECOR.wandering_souls },
+    ...ARENA_BIOMES  // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 
 const shade = (hex, amt) => {
@@ -874,6 +876,8 @@ export function createExplorationView(cfg) {
                 const zone = res.firstVisit && !screen.interior && screen.region !== ARENA_REGION
                     && X.regionVisitCount(session, screen.region) === 1
                     ? worldZones.find(z => z.id === screen.region) : null;
+                // Annonce d'événement (une seule fois par partie) : s'affiche avant le texte d'ambiance de l'écran.
+                if (res.notice) openDialog({ ...NARRATOR, title: res.notice.title }, res.notice.lines);
                 const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
                 if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
                 if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
@@ -2242,7 +2246,7 @@ export function createExplorationView(cfg) {
             if (!session || !active || root.style.display === 'none' || inCombat) return null;
             const screen = X.currentScreen(session);
             // Souterrains (biome « cave ») : musique du biome de leur région (celui de sa zone sauvage).
-            const biome = screen.underground ? (session.screens[`${screen.region}_wild`]?.biome || screen.biome) : screen.biome;
+            const biome = screen.underground && !screen.event ? (session.screens[`${screen.region}_wild`]?.biome || screen.biome) : screen.biome;   // écran d'événement : son propre biome (musique propre)
             return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome, region: screen.region };
         },
 
