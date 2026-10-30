@@ -1,3 +1,15 @@
+## [2.163.0](https://github.com/niafrond/niafrond.github.io/compare/v2.162.1...v2.163.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** ajouter une énigme de niveau moyen au royaume des âmes errantes ([#602](https://github.com/niafrond/niafrond.github.io/issues/602)) ([a23b991](https://github.com/niafrond/niafrond.github.io/commit/a23b991d60c48b0c3aeb09257aac53ca76d3c48c))
+
+## [2.162.1](https://github.com/niafrond/niafrond.github.io/compare/v2.162.0...v2.162.1) (2026-10-30)
+
+### Bug Fixes
+
+* **match3-quest:** retirer les dates de l'événement des âmes errantes et garder les dialogues diégétiques ([#601](https://github.com/niafrond/niafrond.github.io/issues/601)) ([14ef95a](https://github.com/niafrond/niafrond.github.io/commit/14ef95ab71653a1d8fd4976c60de794be3b4c80a))
+
 ## [2.162.0](https://github.com/niafrond/niafrond.github.io/compare/v2.161.0...v2.162.0) (2026-10-30)
 
 ### Features

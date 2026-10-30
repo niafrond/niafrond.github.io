@@ -28,7 +28,7 @@ function buildRealm() {
             chestAt(D.SEAL.chest, D.SEAL.chest.at, 2, { questItem: { ...D.SEAL.item, quest: D.QUEST_IDS.sceaux } }),
             chestAt(D.BELL.chest, D.BELL.chest.at, 2, { questItem: { ...D.BELL.item, quest: D.QUEST_IDS.lanternes } }),
             chestAt(D.OFFERING, D.OFFERING.at, 2, { showWhen: D.OFFERING.showWhen }),
-            ...D.PUZZLE_LIST.map(p => chestAt(p.chest, p.chest.at, 3, { puzzle: p.id, questItem: { ...p.item, quest: D.QUEST_IDS.lanternes } })),
+            ...D.PUZZLE_LIST.map(p => chestAt(p.chest, p.chest.at, p.tier || 3, { puzzle: p.id, questItem: { ...p.item, quest: D.QUEST_IDS.lanternes } })),
             chestAt(D.JADE.chest, D.JADE.chest.at, 3, { questItem: { ...D.JADE.item, quest: D.QUEST_IDS.sceaux } })
         ],
         enemies: D.ENEMIES.map(([id, at, templateId, name, kind, offset, patrol, boss, extra]) => ({
