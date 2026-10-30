@@ -146,6 +146,13 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(index[`biome_${D.BIOME}-seq`]).toMatchObject({ loop: true, size: [144, 256] });
     });
 
+    test('le royaume joue une animation de découverte à la première entrée (clip de biome ou scène procédurale)', async () => {
+        expect(realm.biomeIntro).toMatchObject({ id: D.BIOME, name: D.REALM.name });
+        const { readFileSync } = await import('fs');
+        const index = JSON.parse(readFileSync(new URL('../../sprites/ultimates/index.json', import.meta.url), 'utf8'));
+        expect(index[`biome_${D.BIOME}-seq`]).toMatchObject({ loop: true, size: [144, 256] });
+    });
+
     test('la sortie du royaume ramène à l\'entrée empruntée, quelle que soit la région', () => {
         const back = realm.exits.find(e => e.to === D.HOST.wild);
         expect(back).toMatchObject({ returnToSaved: true, x: 0 });

@@ -44,6 +44,7 @@ const VIEWS = {
 const NEGATIVE = '3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres, ' +
   'multiple characters, multiple views, sprite sheet, character sheet, reference sheet, turnaround, collage, grid, color palette, swatches, ' +
   'cropped, cut off, ground shadow, floor, scenery, landscape, frame, border, white background, gray background';
+const NEG_BIPED = ', standing on two legs, bipedal, upright, anthropomorphic, humanoid animal, hands, arms, realistic proportions, long legs, tall body';
 
 async function findHost() {
   const cands = [args.host, process.env.COMFY_HOST, '127.0.0.1'].filter(Boolean);
@@ -60,7 +61,7 @@ const workflow = (prompt, seed) => ({
   1: { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: 'sd_xl_base_1.0.safetensors' } },
   2: { class_type: 'LoraLoader', inputs: { model: ['1', 0], clip: ['1', 1], lora_name: 'pixel-art-xl.safetensors', strength_model: LORA, strength_clip: LORA } },
   3: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: prompt } },
-  4: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: NEGATIVE } },
+  4: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: /four paws/.test(prompt) ? NEGATIVE + NEG_BIPED : NEGATIVE } },
   5: { class_type: 'EmptyLatentImage', inputs: { width: SIZE, height: SIZE, batch_size: 1 } },
   6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
   7: { class_type: 'VAEDecode', inputs: { samples: ['6', 0], vae: ['1', 2] } },
