@@ -124,7 +124,7 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(wild.exits.some(e => e.to === D.REALM_ID)).toBe(true);
     });
 
-    test('la sortie du royaume ramène à l'entrée empruntée, quelle que soit la région', () => {
+    test('la sortie du royaume ramène à l\'entrée empruntée, quelle que soit la région', () => {
         const back = realm.exits.find(e => e.to === D.HOST.wild);
         expect(back).toMatchObject({ returnToSaved: true, x: 0 });
         expect(isTerrainBlocked(wild, back.arrive.x, back.arrive.y)).toBe(false);
@@ -141,7 +141,7 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         });
     });
 
-    test('l'annonce de la fête (Halloween / Toussaint) ne s'affiche qu'une fois, à la première arrivée', () => {
+    test('l\'annonce de la fête (Halloween / Toussaint) ne s\'affiche qu\'une fois, à la première arrivée', () => {
         expect(realm.eventNotice).toEqual(D.REALM.notice);
         const text = D.REALM.notice.lines.join(' ');
         expect(text).toMatch(/Halloween/);

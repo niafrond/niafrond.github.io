@@ -192,12 +192,13 @@ function walkTo(s, x, y) {
 }
 
 // Première sortie à prendre pour aller de `from` à `to` (plus court chemin en nombre d'écrans).
+// (les entrées/sorties d'événement à retour mémorisé ne sont pas des raccourcis : elles ramènent à leur point de départ)
 function nextExit(s, from, to) {
     const prev = new Map([[from, null]]);
     const queue = [from];
     while (queue.length && !prev.has(to)) {
         const id = queue.shift();
-        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea).forEach(e => { if (!prev.has(e.to)) { prev.set(e.to, { id, exit: e }); queue.push(e.to); } });
+        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea && !e.rememberReturn && !e.returnToSaved).forEach(e => { if (!prev.has(e.to)) { prev.set(e.to, { id, exit: e }); queue.push(e.to); } });
     }
     if (!prev.has(to)) throw new Error(`aucune route de ${from} vers ${to}`);
     let node = to;

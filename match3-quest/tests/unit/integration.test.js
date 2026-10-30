@@ -53,7 +53,7 @@ function nextExit(s, from, to) {
     const queue = [from];
     while (queue.length && !prev.has(to)) {
         const id = queue.shift();
-        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea).forEach(e => {
+        exitsOf(s.screens[id], SCREENS).filter(e => !e.sea && !e.rememberReturn && !e.returnToSaved).forEach(e => {
             if (!prev.has(e.to)) {
                 prev.set(e.to, { id, exit: e });
                 queue.push(e.to);
