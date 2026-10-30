@@ -1487,7 +1487,7 @@ export function updateStats(){
             ${equippedUltimate ? `
             <div class="stat rage-stat">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
-                    <progress class="rage-bar" value="${Math.floor(player.rage || 0)}" max="${RAGE_MAX}"></progress>
+                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="width:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
                     <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}`}</span>
                 </div>
                 ${ultimateManaBarHtml(player, equippedUltimate)}
