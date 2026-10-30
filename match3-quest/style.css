@@ -3397,7 +3397,9 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 /* Jauge de rage et sorts ultimes */
 .rage-stat { flex-direction: column; align-items: stretch; }
 .rage-bar-container { position: relative; width: 100%; }
-.rage-bar { display: block; width: 100%; height: 14px; accent-color: #d9452e; }
+.rage-bar { display: block; width: 100%; height: 18px; box-sizing: border-box; background: #3a2a30; border-radius: 6px; overflow: hidden; }
+.rage-fill { height: 100%; background: linear-gradient(180deg, #a8283f, #7a1428 60%, #520b1b); border-radius: 6px; transition: width .3s ease; }
+.rage-bar-container.full .rage-fill { background: linear-gradient(180deg, #d63a5a, #a8153a 60%, #6e0c26); }
 .rage-bar-container .rage-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; text-shadow: 0 0 2px #000; pointer-events: none; }
 .rage-bar-container.full.mana-reached .rage-bar { animation: rage-pulse 0.9s ease-in-out infinite; }   /* clignote seulement quand rage ET qì collecté sont atteints */
 @keyframes rage-pulse { 50% { filter: brightness(1.6); } }
@@ -3410,6 +3412,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .ult-mana-seg { position: relative; display: flex; align-items: center; justify-content: center; min-width: 26px; border-radius: 2px; background: rgba(255,255,255,0.12); outline: 1px dashed var(--seg-c); outline-offset: -1px; overflow: hidden; }
 .ult-mana-seg::before { content: ''; position: absolute; inset: 0; width: var(--seg-fill); background: var(--seg-c); }
 .ult-mana-seg.ok { outline: none; }
+.ult-mana-seg.light .ult-mana-num { color: #3a2a00; text-shadow: 0 0 2px rgba(255,255,255,.7); }   /* jaune clair : chiffres sombres */
 .ult-mana-num { position: relative; font-size: 9px; line-height: 1; font-weight: bold; color: #fff; text-shadow: 0 0 2px #000, 0 0 1px #000; white-space: nowrap; }
 .spell-tooltip-line .ult-cost.missing { color: #ff8a7a; font-weight: bold; }
 /* Mobile / tactile : la barre devient une vraie cible tactile (≥ 44 px), sans zoom au double-tap ni surbrillance native. */
@@ -3418,6 +3421,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 @media (pointer: coarse), (max-width: 820px) {
   .rage-bar-container.ultimate-ready { min-height: 44px; }
   .rage-bar-container.ultimate-ready .rage-bar { height: 44px; }
+  .rage-bar-container.ultimate-ready .rage-text { line-height: 1; }
   .rage-bar-container.ultimate-ready .rage-text { font-size: 1em; }
 }
 @media (prefers-reduced-motion: reduce) { .rage-bar-container.full.mana-reached .rage-bar { animation: none; } }

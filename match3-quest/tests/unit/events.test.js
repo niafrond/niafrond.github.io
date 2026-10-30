@@ -8,6 +8,7 @@ import { EVENTS, isEventEnabled } from '../../events/config.js';
 import { applyEvents, activeModules, eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
 import * as D from '../../events/wanderingSouls/data.js';
+import * as TR from '../../events/wanderingSouls/terrains.js';
 import '../../puzzle/modes.js';   // enregistre les modes d'énigme (push, mirror…)
 import { PUZZLES, puzzleDef } from '../../puzzle/levels.js';
 import { createPuzzle, solve } from '../../puzzle/engine.js';
@@ -83,7 +84,7 @@ describe('La Nuit des âmes errantes : événement désactivé', () => {
     });
 
     test('le reste du monde est identique à celui de l\'événement activé (hors contenu de l\'événement)', () => {
-        const ids = o => Object.keys(o).filter(id => id !== D.REALM_ID).sort();
+        const ids = o => Object.keys(o).filter(id => id !== D.REALM_ID && !TR.TERRAIN_IDS.includes(id)).sort();
         expect(ids(off.screens)).toEqual(ids(SCREENS).filter(id => !SCREENS[id].arena));
         expect(off.quests.length).toBe(QUESTS.length - Object.keys(D.QUEST_IDS).length);
     });
@@ -107,11 +108,11 @@ describe('La Nuit des âmes errantes : événement activé', () => {
 
     test('le royaume est un écran hors carte marqué comme appartenant à l\'événement', () => {
         expect(realm).toMatchObject({ event: D.ID, underground: true, region: D.HOST.region, biome: D.BIOME, name: D.REALM.name });
-        expect(eventScreens(SCREENS, D.ID).map(s => s.id)).toEqual([D.REALM_ID]);
+        expect(eventScreens(SCREENS, D.ID).map(s => s.id).sort()).toEqual([D.REALM_ID, ...TR.TERRAIN_IDS].sort());
         QUESTS.filter(q => q.event === D.ID).forEach(q => expect(Object.values(D.QUEST_IDS)).toContain(q.id));
     });
 
-    const hosts = () => Object.values(SCREENS).filter(s => s.exits.some(e => e.to === D.REALM_ID));
+    const hosts = () => Object.values(SCREENS).filter(s => !s.event && s.exits.some(e => e.to === D.REALM_ID));   // zones sauvages d'accueil (les terrains du royaume ont seulement un retour)
 
     test('le royaume est accessible depuis la zone sauvage de chaque région, sans condition', () => {
         const regions = new Set(hosts().map(h => h.region));
@@ -199,9 +200,9 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(new Set(cells).size).toBe(cells.length);
     });
 
-    test('la chaîne de quêtes est facultative, en trois étapes, avec des objectifs qui pointent sur des entités existantes', () => {
+    test('la chaîne de quêtes est facultative, en quatre étapes, avec des objectifs qui pointent sur des entités existantes', () => {
         const ids = Object.values(D.QUEST_IDS);
-        expect(ids.map(id => questOf(id).requires)).toEqual([[], [ids[0]], [ids[1]]]);
+        expect(ids.map(id => questOf(id).requires)).toEqual([[], [ids[0]], [ids[1]], [ids[2]]]);
         const everything = new Set([
             ...Object.values(SCREENS).flatMap(s => [...s.npcs, ...s.chests, ...s.enemies].map(e => e.id)),
             ...Object.values(SCREENS).flatMap(s => s.chests.map(c => c.questItem?.id).filter(Boolean))
@@ -288,10 +289,24 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(D.PUZZLE.item.id);
     });
 
+    test('énigme du cortège : niveau moyen (21 coups), coffre de palier 2', () => {
+        const P = D.PUZZLE_CORTEGE;
+        expect(PUZZLES[P.id]).toBe(P.def);
+        expect(solve(puzzleDef(P.id))).toBe(21);
+        expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
+        expect(realm.chests.find(c => c.id === P.chest.id)).toMatchObject({ puzzle: P.id, lootTier: 2 });
+        const session = createSession(null);
+        teleportToScreen(session, D.REALM_ID);
+        expect(openChest(session, P.chest.id)).toMatchObject({ type: 'puzzle', puzzleId: P.id });
+        solvePuzzle(session, P.id);
+        expect(openChest(session, P.chest.id).events.some(e => e.type === 'chestOpened')).toBe(true);
+        expect(session.data.questItems.map(i => i.id)).toContain(P.item.id);
+    });
+
     test('énigme des urnes : faisable en 13 coups, verrouille son coffre', () => {
         const P = D.PUZZLE_BLOCKS;
         expect(PUZZLES[P.id]).toBe(P.def);
-        expect(D.PUZZLE_LIST.map(p => p.id)).toEqual(['ws_miroirs', 'ws_urnes']);
+        expect(D.PUZZLE_LIST.map(p => p.id)).toEqual(['ws_miroirs', 'ws_urnes', 'ws_cortege']);
         expect(solve(puzzleDef(P.id))).toBe(13);
         expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
         const session = createSession(null);
@@ -314,14 +329,16 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(lit()).toEqual(['ws_lanterne_1', 'ws_lanterne_2', 'ws_lanterne_3']);
     });
 
-    test('à la fin de la chaîne, le passage se referme : plus d\'entrée, mais la sortie reste libre', () => {
+    test('à la fin du voyage, le passage se referme : plus d\'entrée, mais la sortie reste libre', () => {
         const door = wild.exits.find(e => e.to === D.REALM_ID);
         const back = realm.exits.find(e => e.to === D.HOST.wild);
-        expect(door.closedWhen).toBe(D.QUEST_IDS.sceaux);
+        expect(door.closedWhen).toBe(D.QUEST_IDS.diyu);
         expect(back.closedWhen).toBeUndefined();
         const session = createSession({ openedChests: [D.TALISMAN.chest.id], questItems: [{ id: D.TALISMAN.item.id, name: D.TALISMAN.item.name }] });
         expect(isExitLocked(session, door)).toBe(false);
         session.data.quests[D.QUEST_IDS.sceaux] = 'done';
+        expect(isExitLocked(session, door)).toBe(false);   // la route des âmes est encore à parcourir : la porte reste ouverte
+        session.data.quests[D.QUEST_IDS.diyu] = 'done';
         expect(isExitLocked(session, door)).toBe(true);
         teleportToScreen(session, D.REALM_ID);
         expect(isExitLocked(session, back)).toBe(false);
@@ -399,6 +416,141 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(questStatus(session, q3)).toBe('ready');
         expect(talkToNpc(session, D.ZHONG_KUI.id).events.some(e => e.type === 'questCompleted' && e.quest.id === q3.id)).toBe(true);
         expect(questStatus(session, q3)).toBe('done');
+    });
+
+
+    // ── Les six terrains au-delà de la salle d'entrée ───────────────────────────────────────────────────────────────
+
+    const TERRAINS = () => TR.TERRAIN_IDS.map(id => SCREENS[id]);
+    // Écrans de l'événement atteignables par les portes internes (la sortie vers le monde des vivants n'est pas suivie), conditions ignorées.
+    const reach = from => {
+        const seen = new Set([from]), queue = [from];
+        while (queue.length) SCREENS[queue.shift()].exits.forEach(e => {
+            if (!e.returnToSaved && SCREENS[e.to]?.event === D.ID && !seen.has(e.to)) { seen.add(e.to); queue.push(e.to); }
+        });
+        return seen;
+    };
+
+    test('le royaume est agrandi : six terrains reliés à la salle d\'entrée, bien plus vastes qu\'elle, tous marqués comme événement', () => {
+        expect(TR.TERRAIN_IDS).toHaveLength(6);
+        TERRAINS().forEach(s => expect(s).toMatchObject({ event: D.ID, underground: true, region: D.HOST.region, biome: D.BIOME }));
+        const area = s => s.w * s.h;
+        expect(TERRAINS().reduce((n, s) => n + area(s), 0)).toBeGreaterThan(8 * area(realm));
+        TR.TERRAIN_IDS.forEach(id => expect(reach(D.REALM_ID).has(id)).toBe(true));
+    });
+
+    test('les portes entre terrains sont symétriques, sur des cases libres, et l\'arrivée touche la porte de retour', () => {
+        [realm, ...TERRAINS()].forEach(s => s.exits.filter(e => SCREENS[e.to]?.event === D.ID).forEach(e => {
+            const t = SCREENS[e.to];
+            expect(isTerrainBlocked(s, e.x, e.y)).toBe(false);
+            expect(isTerrainBlocked(t, e.arrive.x, e.arrive.y)).toBe(false);
+            const back = t.exits.find(b => b.to === s.id);
+            expect({ from: s.id, to: e.to, back: Boolean(back) }).toEqual({ from: s.id, to: e.to, back: true });
+            expect(Math.abs(back.x - e.arrive.x) + Math.abs(back.y - e.arrive.y)).toBe(1);
+        }));
+    });
+
+    test('tout est atteignable à pied dans chaque terrain : PNJ, coffres, ennemis, patrouilles et portes', () => {
+        TERRAINS().forEach(s => {
+            const key = (x, y) => `${x},${y}`;
+            const seen = new Set([key(s.spawn.x, s.spawn.y)]), queue = [[s.spawn.x, s.spawn.y]];
+            while (queue.length) {
+                const [x, y] = queue.shift();
+                [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+                    const nx = x + dx, ny = y + dy;
+                    if (!seen.has(key(nx, ny)) && !isTerrainBlocked(s, nx, ny)) { seen.add(key(nx, ny)); queue.push([nx, ny]); }
+                });
+            }
+            const touches = e => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(e.x + dx, e.y + dy)));
+            const ents = [...s.npcs, ...s.chests, ...s.enemies];
+            ents.forEach(e => { expect({ s: s.id, id: e.id, blocked: isTerrainBlocked(s, e.x, e.y) }).toEqual({ s: s.id, id: e.id, blocked: false }); expect({ s: s.id, id: e.id, ok: touches(e) }).toEqual({ s: s.id, id: e.id, ok: true }); });
+            expect(new Set(ents.map(e => key(e.x, e.y))).size).toBe(ents.length);
+            s.enemies.flatMap(e => e.patrol || []).forEach(([x, y]) => expect(seen.has(key(x, y))).toBe(true));
+            s.exits.forEach(e => expect({ s: s.id, to: e.to, ok: seen.has(key(e.x, e.y)) }).toEqual({ s: s.id, to: e.to, ok: true }));
+        });
+    });
+
+    test('chaque terrain a sa particularité liée au monde des morts chinois', () => {
+        const [src, ter, pont, fen, mir, roue] = [TR.SOURCES, TR.TERRASSE, TR.PONT, TR.FENGDU, TR.MIROIR, TR.ROUE].map(id => SCREENS[id]);
+        expect(src.grass.table.length).toBeGreaterThan(2);   // Sources Jaunes : feux follets dans les hautes herbes, deux rivières
+        expect(src.liquids.length).toBeGreaterThan(0);
+        const mirages = ter.enemies.filter(e => e.illusion);   // Terrasse : mirages du pays natal, dissipés par la cloche
+        expect(mirages).toHaveLength(3);
+        mirages.forEach(e => expect(e.hideWhen).toBe(D.BELL.chest.id));
+        expect(ter.chests.find(c => c.id === 'ws_souvenir').puzzle).toBe('ws_souvenirs');
+        expect(pont.npcs.map(n => n.id)).toContain('ws_meng_po');   // Pont Naihe : Meng Po et sa soupe d'oubli
+        expect(pont.liquids.length).toBeGreaterThan(0);
+        expect(fen.enemies.filter(e => e.templateId === 'heibai_wuchang').map(e => e.id).sort()).toEqual(['ws_wuchang_blanc', 'ws_wuchang_noir']);   // Fengdu
+        expect(fen.npcs.map(n => n.id)).toContain('ws_marchande_papier');
+        expect(mir.enemies.find(e => e.id === 'ws_reflet_peche')).toMatchObject({ weakenedBy: ['ws_reliquaire_karma'], boss: expect.any(Object) });   // Miroir du karma
+        expect(mir.chests.find(c => c.id === 'ws_reliquaire_karma').puzzle).toBe('ws_miroir_karma');
+        expect(roue.enemies.find(e => e.id === 'ws_yanluo').boss).toBeDefined();   // Roue des six voies
+        expect(roue.chests.find(c => c.id === 'ws_tresor_six_voies').lootTier).toBeGreaterThanOrEqual(3);
+        TERRAINS().forEach(s => expect(s.arrival.length).toBeGreaterThan(0));
+    });
+
+    test('les portes gardées : Meng Po pour la Roue, les messagers Bai et Hei Wuchang pour le tribunal du Miroir', () => {
+        const toRoue = SCREENS[TR.PONT].exits.find(e => e.to === TR.ROUE);
+        const toMiroir = SCREENS[TR.FENGDU].exits.find(e => e.to === TR.MIROIR);
+        const session = createSession(null);
+        expect(isExitLocked(session, toRoue)).toBe(true);
+        expect(toRoue.lockedMessage).toMatch(/Meng Po/);
+        teleportToScreen(session, TR.PONT);
+        openChest(session, 'ws_bol_meng_po');   // prendre le bol de Meng Po (sans le boire) ouvre la porte de la Roue
+        expect(isExitLocked(session, toRoue)).toBe(false);
+        expect(isExitLocked(session, toMiroir)).toBe(true);
+        markEnemyDefeated(session, 'ws_wuchang_blanc');
+        expect(isExitLocked(session, toMiroir)).toBe(true);   // les deux messagers, pas un seul
+        markEnemyDefeated(session, 'ws_wuchang_noir');
+        expect(isExitLocked(session, toMiroir)).toBe(false);
+        // les retours ne sont jamais gardés
+        [SCREENS[TR.ROUE], SCREENS[TR.MIROIR]].forEach(s => s.exits.forEach(e => expect(e.requires).toBeUndefined()));
+    });
+
+    test('énigmes des terrains : solubles, sans armure antique, et leur coffre ne s\'ouvre qu\'une fois résolues', () => {
+        expect(TR.TERRAIN_PUZZLES.map(p => p.id)).toEqual(['ws_souvenirs', 'ws_miroir_karma']);
+        TR.TERRAIN_PUZZLES.forEach(p => { expect(PUZZLES[p.id]).toBe(p.def); expect(PUZZLES[p.id].set).toBeUndefined(); expect(createPuzzle(puzzleDef(p.id)).won).toBe(false); });
+        expect(solve(puzzleDef('ws_souvenirs'))).toBe(18);
+        expect(solve(puzzleDef('ws_miroir_karma'))).toBe(4);
+        const session = createSession(null);
+        teleportToScreen(session, TR.TERRASSE);
+        expect(openChest(session, 'ws_souvenir')).toMatchObject({ type: 'puzzle', puzzleId: 'ws_souvenirs' });
+        solvePuzzle(session, 'ws_souvenirs');
+        expect(openChest(session, 'ws_souvenir').events.some(e => e.type === 'chestOpened')).toBe(true);
+        expect(session.data.questItems.map(i => i.id)).toContain('qi_ws_souvenir');
+    });
+
+    test('Miroir du karma : l\'énigme résolue retire un niveau au Reflet du pécheur', () => {
+        const boss = SCREENS[TR.MIROIR].enemies.find(e => e.id === 'ws_reflet_peche');
+        const session = createSession(null);
+        teleportToScreen(session, TR.MIROIR);
+        expect(bossEase(session, boss)).toBe(0);
+        solvePuzzle(session, 'ws_miroir_karma');
+        openChest(session, 'ws_reliquaire_karma');
+        expect(bossEase(session, boss)).toBe(1);
+    });
+
+    test('quête finale : route des âmes (Meng Po, souvenir, reflet, roi Yanluo), puis la porte se referme', () => {
+        const q = questOf(D.QUEST_IDS.diyu);
+        const session = createSession({ quests: { [D.QUEST_IDS.talisman]: 'done', [D.QUEST_IDS.lanternes]: 'done', [D.QUEST_IDS.sceaux]: 'done' } });
+        const door = wild.exits.find(e => e.to === D.REALM_ID);
+        expect(questStatus(session, q)).toBe('available');
+        teleportToScreen(session, D.REALM_ID);
+        expect(talkToNpc(session, D.ZHONG_KUI.id).events.some(e => e.type === 'questStarted' && e.quest.id === q.id)).toBe(true);
+        teleportToScreen(session, TR.PONT);
+        talkToNpc(session, 'ws_meng_po');
+        expect(questStatus(session, q)).toBe('active');
+        teleportToScreen(session, TR.TERRASSE);
+        solvePuzzle(session, 'ws_souvenirs');
+        openChest(session, 'ws_souvenir');
+        markEnemyDefeated(session, 'ws_reflet_peche');
+        expect(questStatus(session, q)).toBe('active');   // le roi Yanluo reste à affronter
+        markEnemyDefeated(session, 'ws_yanluo');
+        expect(questStatus(session, q)).toBe('ready');
+        teleportToScreen(session, D.REALM_ID);
+        expect(isExitLocked(session, door)).toBe(false);
+        expect(talkToNpc(session, D.ZHONG_KUI.id).events.some(e => e.type === 'questCompleted' && e.quest.id === q.id)).toBe(true);
+        expect(isExitLocked(session, door)).toBe(true);
     });
 
     test('la deuxième quête ne démarre pas avant la première', () => {

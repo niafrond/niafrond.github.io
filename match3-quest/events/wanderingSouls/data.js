@@ -18,7 +18,7 @@ export const REALM = {
     name: 'Le Royaume des âmes errantes',
     entrance: 'Sanctuaire des âmes errantes',
     exitLabel: 'Quitter le royaume',
-    closedMessage: 'Les sceaux ont été restaurés et le vieux sanctuaire est refermé. Les âmes y reposent en paix : laissez-les dormir.',
+    closedMessage: 'Le chemin des âmes est rétabli et le vieux sanctuaire est refermé. Les morts y marchent en paix : laissez-les dormir.',
     // Annonce affichée une seule fois, à la première arrivée dans le royaume (data.eventNotices).
     notice: {
         id: 'wanderingSouls',
@@ -36,7 +36,8 @@ export const REALM = {
     ]
 };
 
-// 22 × 13. « < » : sortie ouest ; « = » : dalles décoratives ; chiffres et « j » : ancres des entités.
+// 22 × 13. « < » : sortie ouest (vers les vivants) ; « > » : sortie est (Route des Sources Jaunes) ; « v » : sortie sud (Fengdu) ;
+// « = » : dalles décoratives ; chiffres et lettres : ancres des entités.
 export const GRID = [
     '######################',
     '#.........p.......q..#',
@@ -44,16 +45,16 @@ export const GRID = [
     '#.#..r...#....n......#',
     '#...j..##....##......#',
     '#..................7.#',
-    '<..1...==.....==.....#',
+    '<..1...==.....==.....>',
     '#..........2.....#...#',
     '#.##..#.......##....k#',
     '#.#...5.....6......o.#',
     '#...8.....##...9...0.#',
-    '#..m.................#',
-    '######################'
+    '#..m...........s.....#',
+    '############v#########'
 ];
 
-export const QUEST_IDS = { talisman: 'sq_ws_talisman', lanternes: 'sq_ws_lanternes', sceaux: 'sq_ws_sceaux' };
+export const QUEST_IDS = { talisman: 'sq_ws_talisman', lanternes: 'sq_ws_lanternes', sceaux: 'sq_ws_sceaux', diyu: 'sq_ws_diyu' };
 
 // Talisman de passage : posé dans la zone sauvage, il ouvre le sanctuaire (la sortie exige que ce coffre ait été ouvert).
 export const TALISMAN = {
@@ -181,10 +182,10 @@ export const QUESTS = {
         id: QUEST_IDS.sceaux, title: 'Le gardien du jugement',
         offer: [
             'Au fond de la salle veille le Gardien du jugement, celui qui pèse les noms du registre. Les sceaux brisés l\'ont rendu soupçonneux : il prend les vivants pour des fugitifs.',
-            'Affrontez-le, archer, puis rapportez le jade des âmes caché derrière lui. Je le remettrai à sa place, et le passage se refermera de lui-même.'
+            'Affrontez-le, archer, puis rapportez le jade des âmes caché derrière lui. Je le remettrai à sa place : alors seulement les routes du royaume s\'ouvriront devant vous.'
         ],
         hint: ['Le Gardien du jugement se tient au fond du royaume. Le jade des âmes repose dans une niche derrière lui.'],
-        complete: ['Le registre est de nouveau en ordre et la porte peut se refermer. Gardez le jade : il vous protégera des malédictions des vivants, aussi.', 'On dira dans les villages que le passage des âmes errantes s\'est apaisé. Ce sera à votre mérite.'],
+        complete: ['Le registre est de nouveau en ordre. Gardez le jade : il vous protégera des malédictions des vivants, aussi.', 'Mais le royaume est vaste, archer : d\'autres âmes attendent plus loin, sur la route des Sources Jaunes. Si vous avez du courage, suivez-les jusqu\'à la Roue.'],
         objectives: {
             boss: 'Affronter le Gardien du jugement (royaume des âmes errantes)',
             jade: 'Rapporter le jade des âmes caché derrière le gardien'
@@ -239,5 +240,32 @@ export const PUZZLE_BLOCKS = {
     chest: { id: 'ws_cache_urnes', at: 'r', label: 'Cache des archives', openText: 'Les deux urnes reposent sur leurs dalles, et une trappe s\'ouvre dans le mur : la clé d\'un sanctuaire, enveloppée de papier de riz.' },
     item: { id: 'qi_ws_cle', name: 'Clé d\'un sanctuaire', description: 'Une petite clé de bronze, usée par les mains qui l\'ont tenue. Elle n\'ouvre plus rien ici, mais on la garde.', earlyDescription: 'Une clé de bronze.' }
 };
+
+// Énigme du cortège (mode « slide », niveau moyen : 21 coups minimum, entre les charrettes des bambous, 12, et du col, 26) : il faut
+// faire sortir la charrette funéraire (le bloc rouge) du cortège d'offrandes. Récompense de même rang : coffre de palier 2, comme l'offrande
+// et le sceau, un cran sous les énigmes faciles (palier 3 = coffre des miroirs / urnes). Pas de famille d'armure.
+export const PUZZLE_CORTEGE = {
+    id: 'ws_cortege',
+    tier: 2,
+    def: {
+        title: 'Le cortège des offrandes',
+        mode: 'slide',
+        level: {
+            w: 6, h: 6, exit: { side: 'right', at: 2 },
+            blocks: [
+                { id: 'H', x: 0, y: 2, w: 2, h: 1, hero: true },
+                { id: 'b1', x: 0, y: 3, w: 3, h: 1 },
+                { id: 'b2', x: 2, y: 4, w: 1, h: 2 },
+                { id: 'b3', x: 3, y: 3, w: 1, h: 2 },
+                { id: 'b4', x: 5, y: 0, w: 1, h: 2 },
+                { id: 'b5', x: 4, y: 0, w: 1, h: 3 },
+                { id: 'b6', x: 4, y: 4, w: 2, h: 1 },
+                { id: 'b7', x: 0, y: 5, w: 2, h: 1 }
+            ]
+        }
+    },
+    chest: { id: 'ws_cache_cortege', at: 's', label: 'Cache du cortège', openText: 'La charrette funéraire franchit enfin la porte du cortège, et les porteurs de papier s\'écartent. Sous sa bâche, une liasse de monnaie des morts, encore tiède des mains qui l\'ont pliée.' },
+    item: { id: 'qi_ws_monnaie', name: 'Monnaie de l\'au-delà', description: 'Une liasse de papier-monnaie des offrandes, que l\'on brûle pour payer le passage des défunts.', earlyDescription: 'Une liasse de papier doré.' }
+};
 // Toutes les énigmes de l'événement, déclarées dans PUZZLES par le module d'événement.
-export const PUZZLE_LIST = [PUZZLE, PUZZLE_BLOCKS];
+export const PUZZLE_LIST = [PUZZLE, PUZZLE_BLOCKS, PUZZLE_CORTEGE];

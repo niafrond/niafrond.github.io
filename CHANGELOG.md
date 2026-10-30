@@ -1,3 +1,27 @@
+## [2.164.0](https://github.com/niafrond/niafrond.github.io/compare/v2.163.1...v2.164.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** agrandir le royaume des âmes errantes en six terrains et animer sa porte ([#604](https://github.com/niafrond/niafrond.github.io/issues/604)) ([bf4f3ca](https://github.com/niafrond/niafrond.github.io/commit/bf4f3caf24758bb4eea8cde18a030eb9eb7c1582))
+
+## [2.163.1](https://github.com/niafrond/niafrond.github.io/compare/v2.163.0...v2.163.1) (2026-10-30)
+
+### Bug Fixes
+
+* **match3-quest:** corriger la barre de rage et lisibilité des fiches de combat ([#603](https://github.com/niafrond/niafrond.github.io/issues/603)) ([7bdb842](https://github.com/niafrond/niafrond.github.io/commit/7bdb8420a4f17c2ed7fa2d20fd051e0b5df95e4a))
+
+## [2.163.0](https://github.com/niafrond/niafrond.github.io/compare/v2.162.1...v2.163.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** ajouter une énigme de niveau moyen au royaume des âmes errantes ([#602](https://github.com/niafrond/niafrond.github.io/issues/602)) ([a23b991](https://github.com/niafrond/niafrond.github.io/commit/a23b991d60c48b0c3aeb09257aac53ca76d3c48c))
+
+## [2.162.1](https://github.com/niafrond/niafrond.github.io/compare/v2.162.0...v2.162.1) (2026-10-30)
+
+### Bug Fixes
+
+* **match3-quest:** retirer les dates de l'événement des âmes errantes et garder les dialogues diégétiques ([#601](https://github.com/niafrond/niafrond.github.io/issues/601)) ([14ef95a](https://github.com/niafrond/niafrond.github.io/commit/14ef95ab71653a1d8fd4976c60de794be3b4c80a))
+
 ## [2.162.0](https://github.com/niafrond/niafrond.github.io/compare/v2.161.0...v2.162.0) (2026-10-30)
 
 ### Features

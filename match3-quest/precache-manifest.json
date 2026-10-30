@@ -144,6 +144,7 @@
   "events/registry.js",
   "events/wanderingSouls/data.js",
   "events/wanderingSouls/index.js",
+  "events/wanderingSouls/terrains.js",
   "sprites/archi.js",
   "sprites/biomeArchi.js",
   "sprites/biomeSvg.js",
