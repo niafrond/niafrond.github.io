@@ -409,7 +409,8 @@ describe('cartes (story.js)', () => {
             }
         });
         // toutes les sorties de tous les écrans (portes comprises) ont une sortie de retour adjacente à leur arrivée
-        screens.forEach(s => exitsOf(s, SCREENS).forEach(e => {
+        // (les entrées à retour mémorisé de l'événement, exit.rememberReturn, sont symétriques par la sortie returnToSaved du royaume : events.test.js)
+        screens.forEach(s => exitsOf(s, SCREENS).filter(e => !e.rememberReturn).forEach(e => {
             const target = SCREENS[e.to];
             expect([s.id, e.to, Boolean(target)]).toEqual([s.id, e.to, true]);
             expect(isTerrainBlocked(target, e.arrive.x, e.arrive.y)).toBe(false);

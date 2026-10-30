@@ -166,7 +166,8 @@ describe('Grand Monde : cartes', () => {
     });
 
     test('sorties appariées et tuiles d\'arrivée libres', () => {
-        screens.forEach(s => exitsOf(s, SCREENS).forEach(e => {
+        // (entrées à retour mémorisé de l'événement : symétriques par la sortie returnToSaved du royaume, voir events.test.js)
+        screens.forEach(s => exitsOf(s, SCREENS).filter(e => !e.rememberReturn).forEach(e => {
             const target = SCREENS[e.to];
             expect(target).toBeTruthy();
             expect(exitsOf(target, SCREENS).some(back => back.to === s.id)).toBe(true);

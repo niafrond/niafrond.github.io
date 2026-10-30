@@ -3,11 +3,12 @@ import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'fs';
 import './fixtures/xhrFromDisk.js';
 import { SCREENS, QUESTS, buildWorld } from '../../story.js';
-import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
+import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, enterScreen, tryMove, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
 import { EVENTS, isEventEnabled } from '../../events/config.js';
 import { applyEvents, activeModules, eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
 import * as D from '../../events/wanderingSouls/data.js';
+import '../../puzzle/modes.js';   // enregistre les modes d'énigme (push, mirror…)
 import { PUZZLES, puzzleDef } from '../../puzzle/levels.js';
 import { createPuzzle, solve } from '../../puzzle/engine.js';
 
@@ -105,15 +106,59 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         QUESTS.filter(q => q.event === D.ID).forEach(q => expect(Object.values(D.QUEST_IDS)).toContain(q.id));
     });
 
-    test('entrée scellée dans la zone sauvage des Bambous et sortie symétrique', () => {
-        const door = wild.exits.find(e => e.to === D.REALM_ID);
+    const hosts = () => Object.values(SCREENS).filter(s => s.exits.some(e => e.to === D.REALM_ID));
+
+    test('le royaume est accessible depuis la zone sauvage de chaque région, sans condition', () => {
+        const regions = new Set(hosts().map(h => h.region));
+        ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'].forEach(r => expect(regions.has(r)).toBe(true));
+        hosts().forEach(h => {
+            expect(h.id).toMatch(/_wild$/);
+            const door = h.exits.find(e => e.to === D.REALM_ID);
+            expect(door.requires).toBeUndefined();
+            expect(door.rememberReturn).toBeDefined();
+            expect(isTerrainBlocked(h, door.x, door.y)).toBe(false);
+            expect(isTerrainBlocked(h, door.rememberReturn.x, door.rememberReturn.y)).toBe(false);
+            expect(isTerrainBlocked(realm, door.arrive.x, door.arrive.y)).toBe(false);
+            expect(Math.max(Math.abs(door.x - door.rememberReturn.x), Math.abs(door.y - door.rememberReturn.y))).toBe(1);
+        });
+        expect(wild.exits.some(e => e.to === D.REALM_ID)).toBe(true);
+    });
+
+    test('la sortie du royaume ramène à l'entrée empruntée, quelle que soit la région', () => {
         const back = realm.exits.find(e => e.to === D.HOST.wild);
-        expect(door && back).toBeTruthy();
-        expect(door.requires).toBe(D.TALISMAN.chest.id);
-        expect(door.lockedMessage).toBe(D.REALM.lockedMessage);
-        expect(isTerrainBlocked(wild, door.x, door.y)).toBe(false);
+        expect(back).toMatchObject({ returnToSaved: true, x: 0 });
         expect(isTerrainBlocked(wild, back.arrive.x, back.arrive.y)).toBe(false);
-        expect(isTerrainBlocked(realm, door.arrive.x, door.arrive.y)).toBe(false);
+        hosts().forEach(h => {
+            const door = h.exits.find(e => e.to === D.REALM_ID);
+            const session = createSession(null);
+            enterScreen(session, h.id, door.rememberReturn);
+            const step = tryMove(session, door.x - door.rememberReturn.x, door.y - door.rememberReturn.y);
+            expect({ host: h.id, to: step.to }).toEqual({ host: h.id, to: D.REALM_ID });
+            // retour : un pas vers l'ouest depuis l'apparition
+            const out = tryMove(session, -1, 0);
+            expect({ host: h.id, to: out.to }).toEqual({ host: h.id, to: h.id });
+            expect({ x: session.data.x, y: session.data.y }).toEqual(door.rememberReturn);
+        });
+    });
+
+    test('l'annonce de la fête (Halloween / Toussaint) ne s'affiche qu'une fois, à la première arrivée', () => {
+        expect(realm.eventNotice).toEqual(D.REALM.notice);
+        const text = D.REALM.notice.lines.join(' ');
+        expect(text).toMatch(/Halloween/);
+        expect(text).toMatch(/Toussaint/);
+        const door = wild.exits.find(e => e.to === D.REALM_ID);
+        const session = createSession(null);
+        enterScreen(session, wild.id, door.rememberReturn);
+        const first = tryMove(session, door.x - door.rememberReturn.x, door.y - door.rememberReturn.y);
+        expect(first.notice).toEqual(D.REALM.notice);
+        expect(session.data.eventNotices).toEqual([D.REALM.notice.id]);
+        tryMove(session, -1, 0);   // retour
+        enterScreen(session, wild.id, door.rememberReturn);
+        const second = tryMove(session, door.x - door.rememberReturn.x, door.y - door.rememberReturn.y);
+        expect(second.notice).toBeUndefined();
+        // l'annonce lue survit à une sauvegarde
+        const reloaded = createSession(JSON.parse(JSON.stringify(session.data)));
+        expect(reloaded.data.eventNotices).toEqual([D.REALM.notice.id]);
     });
 
     test('les ennemis sont des modèles connus, le gardien est un boss permanent', () => {
@@ -266,12 +311,12 @@ describe('La Nuit des âmes errantes : événement activé', () => {
     test('parcours complet : talisman, lanternes, apaisement du fantôme, gardien, jade', () => {
         const session = createSession(null);
         const q1 = questOf(D.QUEST_IDS.talisman), q2 = questOf(D.QUEST_IDS.lanternes), q3 = questOf(D.QUEST_IDS.sceaux);
-        const door = () => wild.exits.find(e => e.to === D.REALM_ID);
+        const door = () => wild.exits.find(e => e.to === D.REALM_ID);   // ouverte sans condition (le talisman ne sert qu'à Zhong Kui)
 
         teleportToScreen(session, D.HOST.village);
         expect(talkToNpc(session, D.GIVER.id).events.some(e => e.type === 'questStarted' && e.quest.id === q1.id)).toBe(true);
         teleportToScreen(session, D.HOST.wild);
-        expect(isExitLocked(session, door())).toBe(true);
+        expect(isExitLocked(session, door())).toBe(false);
         expect(openChest(session, D.TALISMAN.chest.id).events.some(e => e.type === 'chestOpened')).toBe(true);
         expect(isExitLocked(session, door())).toBe(false);
         expect(questStatus(session, q1)).toBe('ready');

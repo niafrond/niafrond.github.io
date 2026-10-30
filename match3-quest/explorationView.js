@@ -874,6 +874,8 @@ export function createExplorationView(cfg) {
                 const zone = res.firstVisit && !screen.interior && screen.region !== ARENA_REGION
                     && X.regionVisitCount(session, screen.region) === 1
                     ? worldZones.find(z => z.id === screen.region) : null;
+                // Annonce d'événement (une seule fois par partie) : s'affiche avant le texte d'ambiance de l'écran.
+                if (res.notice) openDialog({ ...NARRATOR, title: res.notice.title }, res.notice.lines);
                 const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
                 if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
                 if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);

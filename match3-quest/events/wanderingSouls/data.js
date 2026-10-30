@@ -8,7 +8,8 @@ export const ID = 'wanderingSouls';
 export const REALM_ID = 'wandering_souls_realm';
 export const BIOME = 'wandering_souls';
 
-// L'entrée est cachée dans la zone sauvage des Bambous ; la gardienne des rites vit dans son village.
+// Le royaume est accessible depuis la zone sauvage de n'importe quelle région (une entrée par biome, sans condition) ; le talisman et la
+// gardienne des rites, qui lancent la chaîne de quêtes, se trouvent dans la région des Bambous.
 export const HOST = { region: 'bambous', wild: 'bambous_wild', village: 'bambous_village', level: 17 };
 
 export const REALM = {
@@ -16,7 +17,15 @@ export const REALM = {
     entrance: 'Sanctuaire des âmes errantes',
     exitLabel: 'Quitter le royaume',
     closedMessage: 'Les sceaux ont été restaurés et le vieux sanctuaire est refermé. Les âmes y reposent en paix : laissez-les dormir.',
-    lockedMessage: 'Un sceau de papier clôt la porte du vieux sanctuaire. Sans talisman pour le rompre, mieux vaut ne pas fâcher ce qui dort derrière.',
+    // Annonce affichée une seule fois, à la première arrivée dans le royaume (data.eventNotices).
+    notice: {
+        id: 'wanderingSouls',
+        title: 'La Nuit des âmes errantes',
+        lines: [
+            'Ce royaume est un clin d\'œil à la saison : en France, Halloween (31 octobre) puis la Toussaint (1er novembre) sont les jours où l\'on pense aux disparus et où l\'on fête, un peu en frissonnant, les fantômes.',
+            'Le jeu y répond à sa façon, avec le folklore chinois : lanternes, offrandes, talismans, Zhong Kui et la fête des fantômes. Rien n\'est obligatoire : c\'est un bonus, sans limite de temps, et rien n\'est perdu si vous passez votre chemin.'
+        ]
+    },
     arrival: [
         'La porte cède sans un bruit. De l\'autre côté, la brume monte des dalles et des lanternes rouges flottent sans fil, comme si quelqu\'un les tenait de très loin.',
         'Ici, la frontière entre les vivants et les morts est fine comme du papier de riz. Marchez doucement : tous les esprits ne sont pas vos ennemis.'
@@ -45,7 +54,7 @@ export const QUEST_IDS = { talisman: 'sq_ws_talisman', lanternes: 'sq_ws_lantern
 // Talisman de passage : posé dans la zone sauvage, il ouvre le sanctuaire (la sortie exige que ce coffre ait été ouvert).
 export const TALISMAN = {
     chest: { id: 'ws_talisman_porte', label: 'Talisman de papier', openText: 'Sous une pierre plate, un talisman de papier jauni, couvert de signes qu\'aucun livre ne connaît. Il est tiède, comme s\'il venait d\'être écrit.' },
-    item: { id: 'qi_ws_talisman', name: 'Talisman du sanctuaire', description: 'Un talisman de papier qui rompt le sceau du vieux sanctuaire des Bambous.', earlyDescription: 'Un papier jauni couvert de signes inconnus.' }
+    item: { id: 'qi_ws_talisman', name: 'Talisman du sanctuaire', description: 'Un talisman de papier qui protège celui qui le porte parmi les esprits du royaume des âmes errantes.', earlyDescription: 'Un papier jauni couvert de signes inconnus.' }
 };
 
 export const GIVER = {
@@ -139,13 +148,13 @@ export const ENEMIES = [
 
 export const QUESTS = {
     talisman: {
-        id: QUEST_IDS.talisman, title: 'Le sceau du vieux sanctuaire',
+        id: QUEST_IDS.talisman, title: 'Le talisman de protection',
         offer: [
-            'Voyageur, une porte de pierre dort dans la forêt de bambous, au fond de la zone sauvage. Elle est scellée depuis des siècles, et cette nuit-là, les sceaux ont craqué.',
-            'Je ne peux plus marcher jusque là-bas. Trouvez le talisman que j\'ai caché sous une pierre plate, au sud-est : il rompt le sceau sans réveiller ceux qui ne doivent pas l\'être.'
+            'Voyageur, savez-vous que des portes s\'entrouvrent un peu partout cette nuit-là ? Elles mènent au royaume des âmes errantes, là où les sceaux ont craqué : n\'importe quel sentier sauvage peut vous y conduire.',
+            'Je ne peux plus marcher jusque là-bas. Trouvez le talisman que j\'ai caché sous une pierre plate, dans la zone sauvage des Bambous, au sud-est : sans lui, Zhong Kui, le gardien du royaume, ne vous confiera rien.'
         ],
-        hint: ['Le talisman est caché sous une pierre plate, dans la zone sauvage des Bambous. La porte du sanctuaire est plus loin dans la forêt.'],
-        complete: ['Le papier est tiède, c\'est bon signe. La porte vous laissera passer.', 'Dans le royaume, cherchez Zhong Kui : lui seul sait comment rallumer les lanternes.'],
+        hint: ['Le talisman est caché sous une pierre plate, dans la zone sauvage des Bambous. Une fois en poche, entrez dans le royaume par n\'importe quel sentier sauvage.'],
+        complete: ['Le papier est tiède, c\'est bon signe. Les esprits vous laisseront parler.', 'Dans le royaume, cherchez Zhong Kui : lui seul sait comment rallumer les lanternes.'],
         objective: 'Rapporter le talisman caché sous une pierre plate (zone sauvage des Bambous, au sud-est)',
         fragment: 'Talisman du sanctuaire'
     },
@@ -177,7 +186,7 @@ export const QUESTS = {
             jade: 'Rapporter le jade des âmes caché derrière le gardien'
         },
         fragment: 'Jade des âmes',
-        reward: { gold: 220, xp: 240 }
+        reward: { gold: 200, xp: 240 }
     }
 };
 
