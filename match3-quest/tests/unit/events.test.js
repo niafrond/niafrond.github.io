@@ -13,6 +13,8 @@ import { PUZZLES, puzzleDef } from '../../puzzle/levels.js';
 import { createPuzzle, solve } from '../../puzzle/engine.js';
 import { trackCandidates, EVENT_TRACKS } from '../../musicTracks.js';
 import { BIOME_DECOR } from '../../decor.js';
+import { SOULS_FLOOR } from '../../sprites/soulsFloor.js';
+import { borderKindOf, paintGroundTile } from '../../tilePainter.js';
 import { decorSprite, DECOR_NAMES } from '../../sprites/decor.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
@@ -323,6 +325,25 @@ describe('La Nuit des âmes errantes : événement activé', () => {
             const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
             expect([png.readUInt32BE(16), png.readUInt32BE(20), png.readUInt8(25)]).toEqual([32, 32, 6]);   // 32×32, RGBA (fond transparent)
         });
+    });
+
+    test('sol et bordure du biome : trois dalles 16×16 sur la palette du biome, bordure en racines noires', () => {
+        expect(SOULS_FLOOR.tiles).toHaveLength(3);
+        SOULS_FLOOR.tiles.forEach(rows => {
+            expect(rows).toHaveLength(16);
+            rows.forEach(r => expect(r).toMatch(/^[0-9a-f]{16}$/));
+            rows.forEach(r => [...r].forEach(ch => expect(parseInt(ch, 16)).toBeLessThan(SOULS_FLOOR.palette.length)));
+        });
+        SOULS_FLOOR.palette.forEach(c => expect(c).toMatch(/^#[0-9a-f]{6}$/));
+        expect(borderKindOf(D.BIOME)).toBe('souls');
+        // la dalle se dessine sans erreur et couvre tout le carré de 16×16 (une case = au moins 16 rangées de rectangles)
+        const rects = [];
+        const g = { fillStyle: '', fillRect: (x, y, w, h) => rects.push([x, y, w, h, g.fillStyle]) };
+        paintGroundTile(g, { a: '#686a70', b: '#5f6167', path: '#8c7b55' }, 16, 0, 0, 3, 4, { isPath: () => false, isLiquid: () => false, biomeId: D.BIOME });
+        expect(rects.length).toBeGreaterThanOrEqual(16);
+        expect(rects.every(([x, y, w, h]) => x >= 0 && y >= 0 && x + w <= 16 && y + h <= 16)).toBe(true);
+        const drawn = new Set(); rects.forEach(([x, y, w, h]) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) drawn.add(`${i},${j}`); });
+        expect(drawn.size).toBe(256);
     });
 
     test('aucune pénalité ni pression : pas de compte à rebours, pas de limite de temps dans les quêtes', () => {

@@ -158,6 +158,7 @@
   "sprites/packs.js",
   "sprites/side.js",
   "sprites/souls-decor.js",
+  "sprites/soulsFloor.js",
   "sprites/villagers.js",
   "sprites/cn/actors-a.js",
   "sprites/cn/actors-b.js",

@@ -7,6 +7,8 @@
 // douces au sol (vers le bas-droite), bruit continu d'une tuile à l'autre (jamais de motif répété case par case),
 // coordonnées arrondies au pixel de l'écran pour garder des bords nets.
 
+import { SOULS_FLOOR } from './sprites/soulsFloor.js';
+
 export const OUTLINE = '#2b1b17';
 export const TILE_GRID = 16;
 
@@ -290,9 +292,10 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             return true;
         }
         case 'wandering_souls': {                                           // Royaume des âmes errantes : joints de dalles, fentes, rares lueurs de flamme spectrale
-            R(0, 7, 16, 1, shade(base, -20)); R(7, 0, 1, 16, shade(base, -20));
-            for (let i = 0; i < 2; i++) R(1 + at(300 + i, 12), 1 + at(310 + i, 12), 3, 1, shade(base, 14));
-            if (h(320) < 0.4) { let cx = 2 + at(321, 8), cy = 2 + at(322, 8); for (let s = 0; s < 5; s++) { R(cx, cy, 2, 1, shade(base, -38)); cx += h(330 + s) < 0.5 ? 2 : 1; cy += h(340 + s) < 0.6 ? 1 : 0; if (cx > 14) break; } }
+            // dalle de pierre générée (tools/gen-souls-floor.mjs, sprites/soulsFloor.js) : 16×16, une des variantes au hasard stable selon la case
+            SOULS_FLOOR.tiles[at(300, SOULS_FLOOR.tiles.length)].forEach((row, ry) => {
+                for (let rx = 0, end; rx < 16; rx = end) { end = rx + 1; while (end < 16 && row[end] === row[rx]) end++; R(rx, ry, end - rx, 1, SOULS_FLOOR.palette[parseInt(row[rx], 16)]); }
+            });
             if (h(350) < 0.12) { const gx = 3 + at(351, 9), gy = 3 + at(352, 9); R(gx, gy, 2, 2, '#315f54'); R(gx, gy, 1, 1, '#78b8a0'); }
             return true;
         }
@@ -481,7 +484,8 @@ export function drawPine(g, tile, px, py, { leaf = '#2f7a3a', trunk = '#6b3d22',
 
 export const BORDER_KIND = {
     paddy: 'fence', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
-    savanna: 'acacia', coast: 'palm', fusang: 'goldtree', moon: 'crystal', cave: 'stalagmite'
+    savanna: 'acacia', coast: 'palm', fusang: 'goldtree', moon: 'crystal', cave: 'stalagmite',
+    wandering_souls: 'souls'   // Royaume des âmes errantes (événement) : racines noires
 };
 export const borderKindOf = biomeId => BORDER_KIND[biomeId] || 'pine';
 
@@ -531,6 +535,14 @@ export function drawBorderTree(g, tile, px, py, kind, opts = {}) {
                 const len = Math.abs(dx) || 2; for (let j = 0; j <= len; j++) { const fx = tx + (dx > 0 ? j : dx < 0 ? -j : 0), fy = 3 - dy * (j / len * 3) + (dy > 0 ? j * 0.4 : 0); R(fx - 0.5, fy - 0.5, 2, 2, j % 2 ? '#3f8a3a' : '#5aa84a'); }
             });
             R(tx - 1, 3, 3, 2, '#7a5a2a');
+            break;
+        }
+        case 'souls': {   // racines noires torsadées et brume : tronc d'encre, branches nues, lueur vert fantôme
+            const ink = '#1d2130', mid = '#4a5270';
+            R(5, 4, 6, 12, OUTLINE); R(6, 5, 4, 11, ink); R(6, 5, 1, 11, mid); R(8, 7, 1, 7, mid);
+            [[3, 4, 4, 2], [1, 2, 3, 2], [9, 3, 4, 2], [12, 1, 3, 2], [5, 1, 2, 4], [10, 0, 2, 3]].forEach(([bx, by, bw, bh]) => { R(bx - 1, by - 1, bw + 2, bh + 2, OUTLINE); R(bx, by, bw, bh, ink); });
+            R(3, 14, 4, 2, ink); R(9, 14, 5, 2, ink);
+            R(8, 8, 1, 1, '#78b8a0'); R(4, 4, 1, 1, '#78b8a0'); R(12, 2, 1, 1, '#78b8a0'); R(7, 12, 1, 1, '#315f54');
             break;
         }
         case 'acacia': {
