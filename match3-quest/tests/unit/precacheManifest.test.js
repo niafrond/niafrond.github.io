@@ -22,8 +22,10 @@ describe('precache-manifest.json', () => {
 
     test('les médias couvrent toutes les musiques et tous les dessins des cinématiques, sorts et ultimes', () => {
         const media = new Set(committed.media.map(f => f.p));
-        const music = readdirSync(`${GAME_DIR}/audio/music`).filter(n => n.endsWith('.mp3'));
+        const music = readdirSync(`${GAME_DIR}/audio/music`).filter(n => n.endsWith('.mp3') && !n.endsWith('-b.mp3'));   // les variantes -b se chargent à la demande
         expect(music.length).toBeGreaterThan(80);
+        expect(music.every(n => !n.endsWith("-b.mp3"))).toBe(true);
+        expect(committed.media.some(f => f.p.endsWith("-b.mp3"))).toBe(false);   // variantes traditionnelles : rangées par le service worker à la première lecture
         music.forEach(n => expect(media.has(`audio/music/${n}`)).toBe(true));
         MEDIA_SPRITE_DIRS.forEach(dir => {
             const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json'));
@@ -61,6 +63,6 @@ describe('precache-manifest.json', () => {
         });
         const total = committed.media.reduce((sum, f) => sum + f.s, 0);
         expect(total).toBeGreaterThan(50e6);
-        expect(total).toBeLessThan(450e6);   // garde-fou : un dossier de sources ajouté par erreur ferait exploser le téléchargement
+        expect(total).toBeLessThan(270e6);   // garde-fou : un dossier de sources ajouté par erreur ferait exploser le téléchargement
     });
 });

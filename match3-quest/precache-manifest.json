@@ -3902,19 +3902,9 @@
    "h": "35f3ace6bf"
   },
   {
-   "p": "audio/music/boss-a0-b.mp3",
-   "s": 1875218,
-   "h": "a9d6f3d50d"
-  },
-  {
    "p": "audio/music/boss-a0.mp3",
    "s": 1957347,
    "h": "97b900d7d0"
-  },
-  {
-   "p": "audio/music/boss-a1-b.mp3",
-   "s": 1862053,
-   "h": "5504c2df16"
   },
   {
    "p": "audio/music/boss-a1.mp3",
@@ -3922,19 +3912,9 @@
    "h": "ccf8b182ac"
   },
   {
-   "p": "audio/music/boss-a2-b.mp3",
-   "s": 2020041,
-   "h": "fdb185ff17"
-  },
-  {
    "p": "audio/music/boss-a2.mp3",
    "s": 1726007,
    "h": "16d1a84710"
-  },
-  {
-   "p": "audio/music/boss-a3-b.mp3",
-   "s": 2027251,
-   "h": "d11fc379d2"
   },
   {
    "p": "audio/music/boss-a3.mp3",
@@ -3942,19 +3922,9 @@
    "h": "58ab911bea"
   },
   {
-   "p": "audio/music/boss-a4-b.mp3",
-   "s": 2068316,
-   "h": "f66101fdc5"
-  },
-  {
    "p": "audio/music/boss-a4.mp3",
    "s": 1930389,
    "h": "85cc7eb88b"
-  },
-  {
-   "p": "audio/music/boss-a5-b.mp3",
-   "s": 1897475,
-   "h": "ab5a5912ae"
   },
   {
    "p": "audio/music/boss-a5.mp3",
@@ -3962,19 +3932,9 @@
    "h": "fef3866148"
   },
   {
-   "p": "audio/music/boss-a6-b.mp3",
-   "s": 1921925,
-   "h": "68591be367"
-  },
-  {
    "p": "audio/music/boss-a6.mp3",
    "s": 1779297,
    "h": "91f5338752"
-  },
-  {
-   "p": "audio/music/boss-a7-b.mp3",
-   "s": 1759862,
-   "h": "6a25a62b8c"
   },
   {
    "p": "audio/music/boss-a7.mp3",
@@ -3982,19 +3942,9 @@
    "h": "8940087123"
   },
   {
-   "p": "audio/music/boss-baihu-le-tigre-blanc-b.mp3",
-   "s": 1887757,
-   "h": "aead806d3e"
-  },
-  {
    "p": "audio/music/boss-baihu-le-tigre-blanc.mp3",
    "s": 1910014,
    "h": "a4a5504bec"
-  },
-  {
-   "p": "audio/music/boss-capitaine-noye-des-limons-b.mp3",
-   "s": 1949197,
-   "h": "af125db8e2"
   },
   {
    "p": "audio/music/boss-capitaine-noye-des-limons.mp3",
@@ -4002,19 +3952,9 @@
    "h": "f6f2286375"
   },
   {
-   "p": "audio/music/boss-changxi-mere-des-douze-lunes-b.mp3",
-   "s": 1872397,
-   "h": "6bb0ff9c3b"
-  },
-  {
    "p": "audio/music/boss-changxi-mere-des-douze-lunes.mp3",
    "s": 1982111,
    "h": "022926c2c2"
-  },
-  {
-   "p": "audio/music/boss-chef-de-dune-bras-de-sable-b.mp3",
-   "s": 1844812,
-   "h": "e15f8c8d09"
   },
   {
    "p": "audio/music/boss-chef-de-dune-bras-de-sable.mp3",
@@ -4022,19 +3962,9 @@
    "h": "62b3c9266f"
   },
   {
-   "p": "audio/music/boss-colosse-de-l-ecluse-b.mp3",
-   "s": 2004368,
-   "h": "fdfab58f37"
-  },
-  {
    "p": "audio/music/boss-colosse-de-l-ecluse.mp3",
    "s": 1855470,
    "h": "f79005c07e"
-  },
-  {
-   "p": "audio/music/boss-colosse-des-caravanes-ensevelies-b.mp3",
-   "s": 1817227,
-   "h": "997ea845bf"
   },
   {
    "p": "audio/music/boss-colosse-des-caravanes-ensevelies.mp3",
@@ -4042,19 +3972,9 @@
    "h": "2c13c5adf6"
   },
   {
-   "p": "audio/music/boss-dame-bi-yu-la-main-de-jade-b.mp3",
-   "s": 2047000,
-   "h": "2e77efffe2"
-  },
-  {
    "p": "audio/music/boss-dame-bi-yu-la-main-de-jade.mp3",
    "s": 1856410,
    "h": "561a250141"
-  },
-  {
-   "p": "audio/music/boss-dame-yin-yue-la-lune-d-argent-b.mp3",
-   "s": 2014399,
-   "h": "ec6d0141d7"
   },
   {
    "p": "audio/music/boss-dame-yin-yue-la-lune-d-argent.mp3",
@@ -4062,19 +3982,9 @@
    "h": "10f37fbbbd"
   },
   {
-   "p": "audio/music/boss-fengmeng-l-archer-miroir-b.mp3",
-   "s": 1850141,
-   "h": "9879252ab1"
-  },
-  {
    "p": "audio/music/boss-fengmeng-l-archer-miroir.mp3",
    "s": 1800613,
    "h": "a6a8c90e23"
-  },
-  {
-   "p": "audio/music/boss-fengmeng-l-archer-presse-b.mp3",
-   "s": 2041357,
-   "h": "b779a0c243"
   },
   {
    "p": "audio/music/boss-fengmeng-l-archer-presse.mp3",
@@ -4082,19 +3992,9 @@
    "h": "337bfb4007"
   },
   {
-   "p": "audio/music/boss-fengmeng-le-disciple-b.mp3",
-   "s": 2033834,
-   "h": "475aa3cd82"
-  },
-  {
    "p": "audio/music/boss-fengmeng-le-disciple.mp3",
    "s": 1861112,
    "h": "e72043e9fd"
-  },
-  {
-   "p": "audio/music/boss-fengmeng-rage-et-desespoir-b.mp3",
-   "s": 1820048,
-   "h": "a362c38c30"
   },
   {
    "p": "audio/music/boss-fengmeng-rage-et-desespoir.mp3",
@@ -4102,19 +4002,9 @@
    "h": "7e685bcbad"
   },
   {
-   "p": "audio/music/boss-forgeron-de-lave-b.mp3",
-   "s": 1914089,
-   "h": "1df08d0377"
-  },
-  {
    "p": "audio/music/boss-forgeron-de-lave.mp3",
    "s": 1847633,
    "h": "c627fab2b9"
-  },
-  {
-   "p": "audio/music/boss-garde-solaire-des-racines-b.mp3",
-   "s": 1825377,
-   "h": "be150ba3ef"
   },
   {
    "p": "audio/music/boss-garde-solaire-des-racines.mp3",
@@ -4122,29 +4012,14 @@
    "h": "e6cae7c8e7"
   },
   {
-   "p": "audio/music/boss-gardien-de-la-digue-b.mp3",
-   "s": 2055150,
-   "h": "31c8afa75b"
-  },
-  {
    "p": "audio/music/boss-gardien-de-la-digue.mp3",
    "s": 1844812,
    "h": "1493f9d131"
   },
   {
-   "p": "audio/music/boss-gardien-de-la-forge-noire-b.mp3",
-   "s": 1987127,
-   "h": "1deb8aab33"
-  },
-  {
    "p": "audio/music/boss-gardien-de-la-forge-noire.mp3",
    "s": 1831333,
    "h": "a553b8ed43"
-  },
-  {
-   "p": "audio/music/boss-gardien-des-cendres-b.mp3",
-   "s": 1944809,
-   "h": "a4c0076ab4"
   },
   {
    "p": "audio/music/boss-gardien-des-cendres.mp3",
@@ -4157,19 +4032,9 @@
    "h": "629bb1e28f"
   },
   {
-   "p": "audio/music/boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b.mp3",
-   "s": 1797791,
-   "h": "367dc779c6"
-  },
-  {
    "p": "audio/music/boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches.mp3",
    "s": 1876472,
    "h": "ce25e629a5"
-  },
-  {
-   "p": "audio/music/boss-immortel-dechu-des-branches-b.mp3",
-   "s": 1852335,
-   "h": "8483902c38"
   },
   {
    "p": "audio/music/boss-immortel-dechu-des-branches.mp3",
@@ -4177,19 +4042,9 @@
    "h": "b8c447361e"
   },
   {
-   "p": "audio/music/boss-immortel-yun-zhong-celui-des-nuees-b.mp3",
-   "s": 1864874,
-   "h": "25347b108d"
-  },
-  {
    "p": "audio/music/boss-immortel-yun-zhong-celui-des-nuees.mp3",
    "s": 1914089,
    "h": "8f9af3bb27"
-  },
-  {
-   "p": "audio/music/boss-jiangshi-du-cassia-lunaire-b.mp3",
-   "s": 1881488,
-   "h": "c4497b79f6"
   },
   {
    "p": "audio/music/boss-jiangshi-du-cassia-lunaire.mp3",
@@ -4197,19 +4052,9 @@
    "h": "3b8c7ce772"
   },
   {
-   "p": "audio/music/boss-lion-cendre-gardien-du-sutra-b.mp3",
-   "s": 2058598,
-   "h": "f1ea1f40ea"
-  },
-  {
    "p": "audio/music/boss-lion-cendre-gardien-du-sutra.mp3",
    "s": 1898415,
    "h": "69a11f1012"
-  },
-  {
-   "p": "audio/music/boss-lion-gardien-fendu-b.mp3",
-   "s": 1977723,
-   "h": "4b619cf2b7"
   },
   {
    "p": "audio/music/boss-lion-gardien-fendu.mp3",
@@ -4217,19 +4062,9 @@
    "h": "5b1c1597db"
   },
   {
-   "p": "audio/music/boss-long-du-tonnerre-sourd-b.mp3",
-   "s": 2057971,
-   "h": "72689f7829"
-  },
-  {
    "p": "audio/music/boss-long-du-tonnerre-sourd.mp3",
    "s": 2078660,
    "h": "d5f830578a"
-  },
-  {
-   "p": "audio/music/boss-maitre-hong-gang-le-gong-de-cuivre-b.mp3",
-   "s": 2057344,
-   "h": "8449c7c643"
   },
   {
    "p": "audio/music/boss-maitre-hong-gang-le-gong-de-cuivre.mp3",
@@ -4237,19 +4072,9 @@
    "h": "039f4fc5fe"
   },
   {
-   "p": "audio/music/boss-maitre-tie-bi-le-bras-de-fer-b.mp3",
-   "s": 1833527,
-   "h": "77845e9b8e"
-  },
-  {
    "p": "audio/music/boss-maitre-tie-bi-le-bras-de-fer.mp3",
    "s": 1815346,
    "h": "39c8c01c12"
-  },
-  {
-   "p": "audio/music/boss-maitresse-tong-la-lame-de-bronze-b.mp3",
-   "s": 1893713,
-   "h": "8b4a9e70cd"
   },
   {
    "p": "audio/music/boss-maitresse-tong-la-lame-de-bronze.mp3",
@@ -4257,19 +4082,9 @@
    "h": "9af78433b6"
   },
   {
-   "p": "audio/music/boss-pretresse-de-givre-b.mp3",
-   "s": 1820048,
-   "h": "30dfa5f537"
-  },
-  {
    "p": "audio/music/boss-pretresse-de-givre.mp3",
    "s": 1863934,
    "h": "26dc545a73"
-  },
-  {
-   "p": "audio/music/boss-qinglong-le-dragon-d-azur-b.mp3",
-   "s": 2057031,
-   "h": "0ca4c52aa9"
   },
   {
    "p": "audio/music/boss-qinglong-le-dragon-d-azur.mp3",
@@ -4277,19 +4092,9 @@
    "h": "805aa0e2c6"
   },
   {
-   "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or-b.mp3",
-   "s": 1983679,
-   "h": "8b1ce0d7cf"
-  },
-  {
    "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or.mp3",
    "s": 1795284,
    "h": "37a0af8da0"
-  },
-  {
-   "p": "audio/music/boss-serpent-de-maree-b.mp3",
-   "s": 1838543,
-   "h": "fad7165ef6"
   },
   {
    "p": "audio/music/boss-serpent-de-maree.mp3",
@@ -4297,19 +4102,9 @@
    "h": "18bf0ace33"
   },
   {
-   "p": "audio/music/boss-serpent-des-marees-noires-b.mp3",
-   "s": 1817854,
-   "h": "6a719c7350"
-  },
-  {
    "p": "audio/music/boss-serpent-des-marees-noires.mp3",
    "s": 1886190,
    "h": "266419ee8c"
-  },
-  {
-   "p": "audio/music/boss-soleil-ardent-b.mp3",
-   "s": 1938226,
-   "h": "db95a80629"
   },
   {
    "p": "audio/music/boss-soleil-ardent.mp3",
@@ -4317,19 +4112,9 @@
    "h": "3c34ab6221"
   },
   {
-   "p": "audio/music/boss-soleil-de-cendres-b.mp3",
-   "s": 2080541,
-   "h": "233fdaa2e3"
-  },
-  {
    "p": "audio/music/boss-soleil-de-cendres.mp3",
    "s": 1798418,
    "h": "10c08c1d51"
-  },
-  {
-   "p": "audio/music/boss-soleil-de-magma-b.mp3",
-   "s": 1828198,
-   "h": "b90864cf5b"
   },
   {
    "p": "audio/music/boss-soleil-de-magma.mp3",
@@ -4337,19 +4122,9 @@
    "h": "8241906ea1"
   },
   {
-   "p": "audio/music/boss-soleil-des-betes-folles-b.mp3",
-   "s": 2039163,
-   "h": "5477d0c06d"
-  },
-  {
    "p": "audio/music/boss-soleil-des-betes-folles.mp3",
    "s": 1918477,
    "h": "837ccdffba"
-  },
-  {
-   "p": "audio/music/boss-soleil-des-eaux-taries-b.mp3",
-   "s": 1928822,
-   "h": "2f2c2c2ae1"
   },
   {
    "p": "audio/music/boss-soleil-des-eaux-taries.mp3",
@@ -4357,19 +4132,9 @@
    "h": "05d5142565"
   },
   {
-   "p": "audio/music/boss-soleil-des-marees-b.mp3",
-   "s": 1924120,
-   "h": "ab4123fd8c"
-  },
-  {
    "p": "audio/music/boss-soleil-des-marees.mp3",
    "s": 1967065,
    "h": "433fe0754f"
-  },
-  {
-   "p": "audio/music/boss-soleil-des-mirages-b.mp3",
-   "s": 1919104,
-   "h": "707ed5616b"
   },
   {
    "p": "audio/music/boss-soleil-des-mirages.mp3",
@@ -4377,19 +4142,9 @@
    "h": "05671e792c"
   },
   {
-   "p": "audio/music/boss-soleil-des-orages-b.mp3",
-   "s": 1825377,
-   "h": "427858358f"
-  },
-  {
    "p": "audio/music/boss-soleil-des-orages.mp3",
    "s": 1984619,
    "h": "cf9962a586"
-  },
-  {
-   "p": "audio/music/boss-soleil-lache-b.mp3",
-   "s": 1885876,
-   "h": "775cc54f28"
   },
   {
    "p": "audio/music/boss-soleil-lache.mp3",
@@ -4397,19 +4152,9 @@
    "h": "01b888881f"
   },
   {
-   "p": "audio/music/boss-tigre-alpha-griffe-de-feu-b.mp3",
-   "s": 1828198,
-   "h": "050479761f"
-  },
-  {
    "p": "audio/music/boss-tigre-alpha-griffe-de-feu.mp3",
    "s": 1962676,
    "h": "db71d6d5f3"
-  },
-  {
-   "p": "audio/music/boss-tigre-blanc-des-ancetres-b.mp3",
-   "s": 1933524,
-   "h": "5e55548ca4"
   },
   {
    "p": "audio/music/boss-tigre-blanc-des-ancetres.mp3",
@@ -4417,19 +4162,9 @@
    "h": "6ecefa7a3c"
   },
   {
-   "p": "audio/music/boss-vieux-saule-des-boues-gardien-du-terrier-b.mp3",
-   "s": 1828198,
-   "h": "1a4dc059bb"
-  },
-  {
    "p": "audio/music/boss-vieux-saule-des-boues-gardien-du-terrier.mp3",
    "s": 1733530,
    "h": "8b17f5a8c0"
-  },
-  {
-   "p": "audio/music/boss-xuanwu-la-tortue-noire-b.mp3",
-   "s": 1822869,
-   "h": "7817875b6a"
   },
   {
    "p": "audio/music/boss-xuanwu-la-tortue-noire.mp3",
@@ -4437,19 +4172,9 @@
    "h": "6542c9bb97"
   },
   {
-   "p": "audio/music/boss-zhuque-l-oiseau-vermillon-b.mp3",
-   "s": 1939793,
-   "h": "1eafdb4009"
-  },
-  {
    "p": "audio/music/boss-zhuque-l-oiseau-vermillon.mp3",
    "s": 1847320,
    "h": "76f414f3c6"
-  },
-  {
-   "p": "audio/music/combat-0-b.mp3",
-   "s": 2007816,
-   "h": "2c52b9ea78"
   },
   {
    "p": "audio/music/combat-0.mp3",
@@ -4457,19 +4182,9 @@
    "h": "8999a3c0ca"
   },
   {
-   "p": "audio/music/combat-1-b.mp3",
-   "s": 1944495,
-   "h": "438b4d56e4"
-  },
-  {
    "p": "audio/music/combat-1.mp3",
    "s": 1899356,
    "h": "36e63e4ab3"
-  },
-  {
-   "p": "audio/music/combat-2-b.mp3",
-   "s": 1891519,
-   "h": "6b3d714d82"
   },
   {
    "p": "audio/music/combat-2.mp3",
@@ -4477,19 +4192,9 @@
    "h": "bd5bf26d6f"
   },
   {
-   "p": "audio/music/combat-3-b.mp3",
-   "s": 1781491,
-   "h": "c5b36662d4"
-  },
-  {
    "p": "audio/music/combat-3.mp3",
    "s": 1827571,
    "h": "603ce9d6a8"
-  },
-  {
-   "p": "audio/music/combat-4-b.mp3",
-   "s": 2029759,
-   "h": "6f2d3fc4e1"
   },
   {
    "p": "audio/music/combat-4.mp3",
@@ -4497,29 +4202,14 @@
    "h": "fb400e4084"
   },
   {
-   "p": "audio/music/combat-tides-b.mp3",
-   "s": 1945749,
-   "h": "1872d5aaee"
-  },
-  {
    "p": "audio/music/combat-tides.mp3",
    "s": 2112201,
    "h": "395dd0690e"
   },
   {
-   "p": "audio/music/defeat-b.mp3",
-   "s": 2002174,
-   "h": "7abc0aa536"
-  },
-  {
    "p": "audio/music/defeat.mp3",
    "s": 2071137,
    "h": "35736e803c"
-  },
-  {
-   "p": "audio/music/ending-b.mp3",
-   "s": 2098409,
-   "h": "d960257390"
   },
   {
    "p": "audio/music/ending.mp3",
@@ -4532,19 +4222,9 @@
    "h": "ef37e23078"
   },
   {
-   "p": "audio/music/house-b.mp3",
-   "s": 2087437,
-   "h": "015a93efbd"
-  },
-  {
    "p": "audio/music/house.mp3",
    "s": 2040730,
    "h": "9b01c77bb9"
-  },
-  {
-   "p": "audio/music/menu-b.mp3",
-   "s": 2026938,
-   "h": "cab9634281"
   },
   {
    "p": "audio/music/menu.mp3",
@@ -4552,19 +4232,9 @@
    "h": "c89cec99f2"
   },
   {
-   "p": "audio/music/moon-b.mp3",
-   "s": 2062673,
-   "h": "1f275d46a2"
-  },
-  {
    "p": "audio/music/moon.mp3",
    "s": 2029759,
    "h": "4ced3befda"
-  },
-  {
-   "p": "audio/music/puzzle-mirror-b.mp3",
-   "s": 2071137,
-   "h": "b122f9792d"
   },
   {
    "p": "audio/music/puzzle-mirror.mp3",
@@ -4572,19 +4242,9 @@
    "h": "77c109c7f4"
   },
   {
-   "p": "audio/music/puzzle-push-b.mp3",
-   "s": 2068316,
-   "h": "22be9cc77f"
-  },
-  {
    "p": "audio/music/puzzle-push.mp3",
    "s": 2007503,
    "h": "de12b13281"
-  },
-  {
-   "p": "audio/music/puzzle-slide-b.mp3",
-   "s": 2062673,
-   "h": "179d25515e"
   },
   {
    "p": "audio/music/puzzle-slide.mp3",
@@ -4592,19 +4252,9 @@
    "h": "0290028fdb"
   },
   {
-   "p": "audio/music/sanctuary-b.mp3",
-   "s": 2015966,
-   "h": "2c60361750"
-  },
-  {
    "p": "audio/music/sanctuary.mp3",
    "s": 1922239,
    "h": "ba5df15872"
-  },
-  {
-   "p": "audio/music/title-b.mp3",
-   "s": 2062673,
-   "h": "f84b249536"
   },
   {
    "p": "audio/music/title.mp3",
@@ -4612,19 +4262,9 @@
    "h": "e576d2fde0"
   },
   {
-   "p": "audio/music/victory-b.mp3",
-   "s": 2024116,
-   "h": "5eaa751d60"
-  },
-  {
    "p": "audio/music/victory.mp3",
    "s": 2057344,
    "h": "410bafc4a0"
-  },
-  {
-   "p": "audio/music/village-bamboo-b.mp3",
-   "s": 2082108,
-   "h": "24c93ef32f"
   },
   {
    "p": "audio/music/village-bamboo.mp3",
@@ -4632,19 +4272,9 @@
    "h": "e84b8f51ba"
   },
   {
-   "p": "audio/music/village-coast-b.mp3",
-   "s": 2018787,
-   "h": "daef46b5d1"
-  },
-  {
    "p": "audio/music/village-coast.mp3",
    "s": 1916596,
    "h": "b0592bbd0c"
-  },
-  {
-   "p": "audio/music/village-fusang-b.mp3",
-   "s": 2090258,
-   "h": "79fd5f06be"
   },
   {
    "p": "audio/music/village-fusang.mp3",
@@ -4652,19 +4282,9 @@
    "h": "bc3d3c0806"
   },
   {
-   "p": "audio/music/village-gobi-b.mp3",
-   "s": 2026938,
-   "h": "69475455fb"
-  },
-  {
    "p": "audio/music/village-gobi.mp3",
    "s": 2062673,
    "h": "bc54ba5ab6"
-  },
-  {
-   "p": "audio/music/village-moon-b.mp3",
-   "s": 2098409,
-   "h": "aa3a922146"
   },
   {
    "p": "audio/music/village-moon.mp3",
@@ -4672,19 +4292,9 @@
    "h": "dfcfcb7666"
   },
   {
-   "p": "audio/music/village-paddy-b.mp3",
-   "s": 2084616,
-   "h": "cb2682e823"
-  },
-  {
    "p": "audio/music/village-paddy.mp3",
    "s": 2026938,
    "h": "a6c2049e55"
-  },
-  {
-   "p": "audio/music/village-riverbed-b.mp3",
-   "s": 2068316,
-   "h": "9ada3ce361"
   },
   {
    "p": "audio/music/village-riverbed.mp3",
@@ -4692,19 +4302,9 @@
    "h": "2ada4d41ba"
   },
   {
-   "p": "audio/music/village-savanna-b.mp3",
-   "s": 2093080,
-   "h": "2cd81ab813"
-  },
-  {
    "p": "audio/music/village-savanna.mp3",
    "s": 2068316,
    "h": "3be316fe0f"
-  },
-  {
-   "p": "audio/music/village-storm-b.mp3",
-   "s": 2048880,
-   "h": "065fefd285"
   },
   {
    "p": "audio/music/village-storm.mp3",
@@ -4712,19 +4312,9 @@
    "h": "53d379df64"
   },
   {
-   "p": "audio/music/village-tides-b.mp3",
-   "s": 2071137,
-   "h": "f111463cdf"
-  },
-  {
    "p": "audio/music/village-tides.mp3",
    "s": 2043551,
    "h": "f6f944bac3"
-  },
-  {
-   "p": "audio/music/village-volcano-b.mp3",
-   "s": 2068316,
-   "h": "bde7b17d1e"
   },
   {
    "p": "audio/music/village-volcano.mp3",
@@ -4732,19 +4322,9 @@
    "h": "d1cb38ac46"
   },
   {
-   "p": "audio/music/wild-bamboo-b.mp3",
-   "s": 2018787,
-   "h": "b310a6665c"
-  },
-  {
    "p": "audio/music/wild-bamboo.mp3",
    "s": 2076466,
    "h": "20a71fd476"
-  },
-  {
-   "p": "audio/music/wild-coast-b.mp3",
-   "s": 2046059,
-   "h": "c8d7739436"
   },
   {
    "p": "audio/music/wild-coast.mp3",
@@ -4752,19 +4332,9 @@
    "h": "4c17af5894"
   },
   {
-   "p": "audio/music/wild-fusang-b.mp3",
-   "s": 2059852,
-   "h": "0e70e91db2"
-  },
-  {
    "p": "audio/music/wild-fusang.mp3",
    "s": 2079287,
    "h": "8dde568a61"
-  },
-  {
-   "p": "audio/music/wild-gobi-b.mp3",
-   "s": 2087437,
-   "h": "60495964cb"
   },
   {
    "p": "audio/music/wild-gobi.mp3",
@@ -4772,19 +4342,9 @@
    "h": "e8f9bf7a4a"
   },
   {
-   "p": "audio/music/wild-moon-b.mp3",
-   "s": 2029759,
-   "h": "438d55ee1f"
-  },
-  {
    "p": "audio/music/wild-moon.mp3",
    "s": 2021295,
    "h": "7f334bd3b7"
-  },
-  {
-   "p": "audio/music/wild-paddy-b.mp3",
-   "s": 2037909,
-   "h": "15ec1ee755"
   },
   {
    "p": "audio/music/wild-paddy.mp3",
@@ -4792,19 +4352,9 @@
    "h": "a959df999d"
   },
   {
-   "p": "audio/music/wild-riverbed-b.mp3",
-   "s": 2123486,
-   "h": "dd032ef123"
-  },
-  {
    "p": "audio/music/wild-riverbed.mp3",
    "s": 2062673,
    "h": "aebd5cf6aa"
-  },
-  {
-   "p": "audio/music/wild-savanna-b.mp3",
-   "s": 2032267,
-   "h": "c98374d0a9"
   },
   {
    "p": "audio/music/wild-savanna.mp3",
@@ -4812,29 +4362,14 @@
    "h": "ffc93797c2"
   },
   {
-   "p": "audio/music/wild-storm-b.mp3",
-   "s": 2048880,
-   "h": "b45217a993"
-  },
-  {
    "p": "audio/music/wild-storm.mp3",
    "s": 2040730,
    "h": "9bf62838ed"
   },
   {
-   "p": "audio/music/wild-tides-b.mp3",
-   "s": 2051702,
-   "h": "4301059d21"
-  },
-  {
    "p": "audio/music/wild-tides.mp3",
    "s": 2018787,
    "h": "2555e31f82"
-  },
-  {
-   "p": "audio/music/wild-volcano-b.mp3",
-   "s": 2087437,
-   "h": "6cbee887f8"
   },
   {
    "p": "audio/music/wild-volcano.mp3",
