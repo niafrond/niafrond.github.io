@@ -24,7 +24,7 @@ import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
 import { rollCompanionPowers, COMPANION_POWERS } from "./companionPowers.js";
 import { COMPANIONS } from "./companions.js";
-import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints, agilityScore } from "./attributes.js";
+import { startingRage, boostedRageGain, MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints, agilityScore } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
@@ -395,7 +395,7 @@ export function applyDamage(target, damage, options = {}){
 
     // Jauge de rage : se charge quand le joueur perd des PV en combat.
     if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {
-        addRage(player, rageFromDamage(currentHp - nextHp, player.maxHp));
+        addRage(player, boostedRageGain(player, rageFromDamage(currentHp - nextHp, player.maxHp)));
     }
 
     if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
@@ -1020,6 +1020,7 @@ export function restartCombat({ keepHp = false } = {}){
     player.combatPoints = 0;
     player.bonusTurn = 0;
     resetRage(player);
+    addRage(player, startingRage(player));
     resetUltimateMana(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;

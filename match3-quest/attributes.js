@@ -22,6 +22,13 @@ export const ATTRIBUTE_STAT_EFFECTS = {
     morale: { stat: "defense", amount: 1 } // le moral donne de l'agilité (défense et initiative), pas de l'attaque
 };
 
+// Jauge de rage (ultimes) : un point de Battle donne de la rage dès le début du combat (quantité), un point de Moral accélère
+// son accumulation (la rage gagnée en perdant des PV est majorée de ce pourcentage).
+export const ATTRIBUTE_RAGE_RULES = {
+    strength: { initial: 3 },
+    morale: { gainPct: 5 }
+};
+
 export const ATTRIBUTE_ORDER = ["strength", "agility", "intelligence", "stamina", "morale"];
 
 export const MANA_COLOR_LABELS = { red: "rouge", blue: "bleu", green: "vert", yellow: "jaune", purple: "violet" };
@@ -69,6 +76,20 @@ export function manaBonusFor(attr, points, type) {
     return (rule?.bonuses?.[type] || 0) * Math.max(0, Math.floor(points || 0));
 }
 
+// Rage de départ (sur 100) et majoration (%) de la rage gagnée pour `points` points d'un attribut.
+export const rageInitialFor = (attr, points) => (ATTRIBUTE_RAGE_RULES[attr]?.initial || 0) * Math.max(0, Math.floor(points || 0));
+export const rageGainPctFor = (attr, points) => (ATTRIBUTE_RAGE_RULES[attr]?.gainPct || 0) * Math.max(0, Math.floor(points || 0));
+
+/** Rage dont le héros dispose au début de chaque combat (points de Battle). */
+export const startingRage = entity => rageInitialFor("strength", getAttributePoints(entity, "strength"));
+
+/** Rage gagnée `base` après majoration par le Moral (arrondie, jamais inférieure à `base`). */
+export function boostedRageGain(entity, base) {
+    const gain = Math.max(0, Math.floor(base || 0));
+    if (gain <= 0) return 0;
+    return Math.round(gain * (1 + rageGainPctFor("morale", getAttributePoints(entity, "morale")) / 100));
+}
+
 // Qì obtenu pour un match de `len` tuiles de la couleur de l'attribut, avec `points` points.
 export function manaPerMatch(attr, points, len = 3) {
     return len + manaBonusFor(attr, points, "gain");
@@ -85,11 +106,17 @@ export function describeAttributeChoice(entity, attr) {
     const color = MANA_COLOR_LABELS[rule.color];
     const stat = STAT_TEXT[attr](eff.amount);
     const b = rule.bonuses;
+    const rageLines = [];
+    const rageInit = ATTRIBUTE_RAGE_RULES[attr]?.initial;
+    const rageGain = ATTRIBUTE_RAGE_RULES[attr]?.gainPct;
+    if (rageInit) rageLines.push(`Rage : +${rageInit} de jauge dès le début du combat (${rageInitialFor(attr, next)} au total).`);
+    if (rageGain) rageLines.push(`Rage : +${rageGain} % de rage gagnée en perdant des PV (${rageGainPctFor(attr, next)} % au total).`);
     const lines = [
         stat.line,
         `Couleur ${color} : un match de 3 tuiles ${color}s donne ${manaPerMatch(attr, next)} qì ${color} au lieu de ${manaPerMatch(attr, pts)}.`,
         `Un match de 4 donne ${manaPerMatch(attr, next, 4)} qì ${color} (tour bonus) ; de 5, ${manaPerMatch(attr, next, 5)}.`,
-        `+${b.initial} qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de qì ${color} +${b.max} (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`
+        `+${b.initial} qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de qì ${color} +${b.max} (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`,
+        ...rageLines
     ];
     return {
         attr,

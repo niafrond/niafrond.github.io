@@ -1,4 +1,4 @@
-import {
+import { startingRage, boostedRageGain, ATTRIBUTE_RAGE_RULES,
     ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, ATTRIBUTE_STAT_EFFECTS, agilityScore, describeAttributeChoice, manaPerMatch, summarizeColorBonuses
 } from '../../attributes.js';
 import { getColorMatchManaBaseGain } from '../../matchMechanics.js';
@@ -98,5 +98,20 @@ describe('le Moral (violet) donne de l\'agilité, pas de l\'attaque', () => {
     test("l'initiative compte les points de Moral comme ceux d'Agilité", () => {
         expect(agilityScore(hero({ agility: 2, morale: 3 }))).toBe(5);
         expect(agilityScore(hero({ strength: 4 }))).toBe(0);
+    });
+});
+
+describe('la rage dépend des attributs de montée de niveau', () => {
+    test('Battle donne de la rage dès le début du combat (quantité)', () => {
+        expect(startingRage(hero())).toBe(0);
+        expect(startingRage(hero({ strength: 4 }))).toBe(4 * ATTRIBUTE_RAGE_RULES.strength.initial);
+        expect(describeAttributeChoice(hero({ strength: 1 }), 'strength').lines.join(' ')).toMatch(/Rage : \+3 de jauge/);
+    });
+
+    test("le Moral accélère l'accumulation de la rage", () => {
+        expect(boostedRageGain(hero(), 20)).toBe(20);
+        expect(boostedRageGain(hero({ morale: 4 }), 20)).toBe(24);
+        expect(boostedRageGain(hero({ morale: 4 }), 0)).toBe(0);
+        expect(describeAttributeChoice(hero(), 'morale').lines.join(' ')).toMatch(/\+5 % de rage gagnée/);
     });
 });
