@@ -277,12 +277,89 @@ T('boss-gardien-du-jugement', `judge of the dead boss battle in the Chinese unde
 export const CATALOG = TRACKS;
 export const MOTIF_NAMES = ['houyi', 'fengmeng', 'suns'];
 
+/* ───────────── Morceaux traditionnels chinois (variantes `-b` du jeu de base) ───────────── */
+// Interprétations acoustiques inspirées de pièces du répertoire traditionnel (brief : ace_step_prompts_musique_chinoise.txt). Elles n'utilisent PAS le
+// préfixe GBA/chiptune (`raw`) et se jouent en alternance avec la piste de même scène : `<clé>-b.mp3` (voir musicTracks.js `withVariants`).
+// Le texte seul ne garantit pas la fidélité mélodique : pour une reprise note pour note, fournir une partition ou un MIDI vérifié.
+const TRAD = 'authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music';
+T('combat-0-b', `traditional Chinese classical instrumental inspired by the ancient piece "Ambush on Ten Sides" (Shi Mian Mai Fu), virtuosic solo Chinese pipa in the foreground with rapid repeated-note figures, tremolo, ascending and descending runs and dramatic sequences, A pentatonic Yu mode, free-rhythm tense introduction then fast strongly articulated binary martial sections with traditional Chinese war drums and restrained gongs, accelerations, building to a powerful virtuosic climax and a decisive ending, epic martial tense imperial China, ${TRAD}`,
+    { bpm: 128, keyScale: 'A minor', dur: 180, raw: true });
+T('moon-b', `traditional Chinese classical instrumental inspired by Hua Yanjun "Erquan Yingyue" (Reflection of the Moon on the Second Spring), expressive solo erhu dominant with sustained notes, expressive vibrato, delicate portamento and slides, lyrical descending phrases, very subtle guzheng and occasional xiao, D minor pentatonic Yu mode, slow flexible rubato without percussion, restrained intimate introduction, ornamented variations, deeply expressive climax, quiet contemplative ending, profound melancholy and nostalgia, solitary moonlit lake in ancient China, intimate acoustic recording, ${TRAD}`,
+    { bpm: 62, keyScale: 'D minor', dur: 180, raw: true });
+T('wild-bamboo-b', `ancient Chinese guqin instrumental inspired by "Yangguan Sandie" (Three Variations on Yang Pass), solo guqin dominant with sliding notes, harmonics and natural string resonance, delicate dizi and occasional xiao, D pentatonic Shang mode, free rhythm with rubato and spacious pauses, one theme stated three times with growing ornamentation, peaceful ending, literati farewell, nostalgia, distant mountains and misty landscapes, intimate acoustic, ${TRAD}`,
+    { bpm: 56, keyScale: 'D major', dur: 180, raw: true });
+T('village-paddy-b', `traditional Chinese folk instrumental inspired by "Fengyang Huagu" (Fengyang Flower Drum), lively 2/4 folk dance pulse, flower drums with syncopated accents, hand percussion, dizi bamboo flute carrying a repetitive pentatonic folk melody with call-and-response, plucked pipa and yangqin dulcimer, G pentatonic Gong mode, playful variations and a festive final section, joyful communal rural celebration, ${TRAD}`,
+    { bpm: 115, keyScale: 'G major', dur: 180, raw: true });
+
+// Vague 2 : dix pièces anciennes (Dix grandes mélodies anciennes et airs populaires), nouvelles interprétations en variantes `-b`.
+T('title-b', `traditional Chinese instrumental inspired by the ancient piece "Gao Shan Liu Shui (High Mountains, Flowing Water)", solo guqin and guzheng stating a noble ascending theme for the mountains then rippling cascades for flowing water, soft dizi, dignified heroic and friendly, slow stately introduction building to a flowing climax, ${TRAD}`,
+    { bpm: 76, keyScale: 'D major', dur: 180, raw: true });
+T('menu-b', `traditional Chinese instrumental inspired by the ancient piece "Mei Hua San Nong (Three Variations on the Plum Blossom)", dizi bamboo flute and guqin, one gentle theme repeated three times with growing ornaments, plum blossoms in winter snow, pure calm inviting, ${TRAD}`,
+    { bpm: 68, keyScale: 'G major', dur: 180, raw: true });
+T('house-b', `traditional Chinese instrumental inspired by the ancient piece "Yu Qiao Wen Da (Dialogue of the Fisherman and the Woodcutter)", guqin with xiao in a relaxed carefree conversation, warm cozy leisurely, bright playful phrases answering each other, rustic and serene, ${TRAD}`,
+    { bpm: 72, keyScale: 'G major', dur: 180, raw: true });
+T('sanctuary-b', `traditional Chinese instrumental inspired by the ancient piece "Guangling San (The Guangling Melody)", solemn guqin with deep bass strings, ritual sacred atmosphere, slow severe opening and fierce dramatic middle with strong plucked strokes, low temple drum and bell, stern and ominous, ${TRAD}`,
+    { bpm: 64, keyScale: 'D minor', dur: 180, raw: true });
+T('ending-b', `traditional Chinese instrumental inspired by the ancient piece "Han Gong Qiu Yue (Autumn Moon over the Han Palace)", erhu and pipa lament, slow sorrowful rubato, long sustained notes, falling leaves and a pale autumn moon, loneliness and farewell, quiet restrained ending, ${TRAD}`,
+    { bpm: 56, keyScale: 'A minor', dur: 180, raw: true });
+T('victory-b', `very festive traditional Chinese celebration music inspired by the piece "Jin She Kuang Wu" (Golden Snake Dance), exuberant Chinese New Year lion dance and dragon dance energy, fast joyful tempo, bright crashing Chinese cymbals, resonant gongs and driving festival drums, suona and dizi playing a catchy accelerating melody with rapid ornaments, pipa and yangqin sparkling runs, call and response, accelerando building to an ecstatic triumphant finish, jubilant and triumphant, ${TRAD}`,
+    { bpm: 132, keyScale: 'D major', dur: 120, raw: true });
+T('wild-gobi-b', `traditional Chinese instrumental inspired by the ancient piece "Hujia Shiba Pai (Eighteen Songs of a Nomad Flute)", lonely hujia-like bamboo flute and sparse guqin, wide empty desert steppe, wind, sorrowful long lines, distant frame drum, melancholy and endurance, ${TRAD}`,
+    { bpm: 60, keyScale: 'E minor', dur: 180, raw: true });
+T('wild-riverbed-b', `traditional Chinese instrumental inspired by the ancient piece "Ping Sha Luo Yan (Wild Geese Descending on the Sandbar)", guqin and a touch of xiao, geese gliding down to a river sandbar, calm autumn river landscape, spacious unhurried phrases, peaceful and slightly wistful, ${TRAD}`,
+    { bpm: 64, keyScale: 'G major', dur: 180, raw: true });
+T('village-bamboo-b', `traditional Chinese instrumental inspired by the ancient piece "Yang Chun Bai Xue (White Snow in Early Spring)", bright dizi and guzheng with light plucked pipa, elegant refined spring melody, clear lively and graceful, bamboo grove village in the morning, ${TRAD}`,
+    { bpm: 92, keyScale: 'D major', dur: 180, raw: true });
+T('puzzle-mirror-b', `traditional Chinese instrumental inspired by the ancient piece "Mo Li Hua (Jasmine Flower) folk song", tender dizi carrying the well-known jasmine flower folk melody, soft yangqin plucks and light guzheng, pure delicate pentatonic charm, thoughtful and gentle, steady calm pulse, ${TRAD}`,
+    { bpm: 84, keyScale: 'G major', dur: 180, raw: true });
+
+// Vague 3 : variante traditionnelle `-b` de TOUTES les autres musiques (villages, zones sauvages, combats, énigmes, défaite, boss). Générée à
+// partir de l'entrée existante de chaque piste (lieu, humeur, tempo, tonalité) et d'une pièce ancienne tirée dans un lot selon la catégorie.
+const TRAD_PIECES = {
+    village: [
+        ['"Chun Jiang Hua Yue Ye" (Spring River, Flower and Moon Night)', 'plucked pipa and flowing guzheng with soft dizi'],
+        ['"Lao Liu Ban" (Jiangnan sizhu silk and bamboo ensemble)', 'dizi, erhu, yangqin and pipa in a lively interlocking ensemble'],
+        ['"Zi Zhu Diao" (Purple Bamboo Tune)', 'sizhu silk and bamboo ensemble with dizi, erhu and yangqin'],
+        ['"Xiao Tao Hong" (Little Peach Blossom) folk tune', 'bright dizi, yangqin and light hand percussion']
+    ],
+    wild: [
+        ['"Xiao Xiang Shui Yun" (Mist and Clouds over the Xiao and Xiang Rivers)', 'guqin with sliding notes and distant xiao'],
+        ['"Liu Shui" (Flowing Water)', 'guqin and guzheng with rippling glissandi'],
+        ['"Chang Men Yuan" (Lament of the Long Gate Palace)', 'sparse guqin and erhu with long silences'],
+        ['"Gu Yuan" (Ancient Plain) wandering melody', 'dizi and guzheng with open spacious phrases']
+    ],
+    combat: [
+        ['"Ba Wang Xie Jia" (The Overlord Removes His Armor)', 'virtuosic pipa with tremolo, war drums and gongs'],
+        ['"Jiang Jun Ling" (The General\'s Command)', 'pipa and suona fanfares with driving martial drums'],
+        ['"Ye Shen Chen" (Deep in the Night) Beijing opera percussion style', 'jinghu fiddle, clappers, drums and gongs'],
+        ['dragon boat festival drumming "Long Zhou"', 'big war drums, cymbals, suona and dizi']
+    ],
+    boss: [
+        ['"Ba Wang Xie Jia" (The Overlord Removes His Armor)', 'pipa, giant war drums, deep gongs and suona'],
+        ['"Jiang Jun Ling" (The General\'s Command)', 'suona fanfares, pipa tremolo and thundering taiko-like Chinese drums'],
+        ['"Guangling San" fierce section', 'guqin and pipa strokes with heavy ritual drums and erhu'],
+        ['"Ye Shen Chen" (Deep in the Night)', 'jinghu, gongs, cymbals and relentless drums'],
+        ['"Shi Mian Mai Fu" final battle section', 'pipa virtuosity, war drums and cymbal crashes']
+    ]
+};
+const TRAD_SCOPE = /^(village|wild|combat|boss|puzzle)-|^defeat$/;
+Object.keys(TRACKS).filter(k => TRAD_SCOPE.test(k) && !k.endsWith('-b') && !TRACKS[`${k}-b`] && !/^boss-gardien-du-jugement$/.test(k)).forEach((k, n) => {
+    const t = TRACKS[k], cat = /^(village|wild|combat|boss)-/.exec(k)?.[1];
+    const pool = TRAD_PIECES[cat];
+    const place = t.style.split(',').slice(0, 3).join(',').replace(/\$\{[^}]*\}/g, '');
+    const detail = pool ? `inspired by the ancient piece ${pool[n % pool.length][0]}, ${pool[n % pool.length][1]}, ` : '';
+    const mood = cat === 'combat' || cat === 'boss' ? 'intense epic martial, building to a powerful climax' : cat === 'village' ? 'warm lively welcoming' : k === 'defeat' ? 'sorrowful slow lament, quiet ending' : 'thoughtful gentle';
+    T(`${k}-b`, `traditional Chinese instrumental ${detail}${place}, ${mood}, ${TRAD}`,
+        { bpm: t.bpm, keyScale: t.keyScale, dur: cat === 'combat' || cat === 'boss' ? 120 : k === 'defeat' ? 60 : 150, raw: true });
+});
+
 /** Description textuelle complète envoyée à ACE-Step (caption). `extra` = retouche libre pour une régénération. */
 /** Combats et boss : le brief « pas de bombast, arrangement compact » est levé pour laisser place à l'épique. */
 const isEpic = (track) => /^(combat|boss)-/.test(track.key);
 const EPIC_STYLE = GLOBAL_STYLE.replace('no cinematic orchestral bombast', 'big cinematic orchestral power').replace('compact arrangement with limited polyphony', 'rich layered arrangement, full ensemble');
 
 export function buildCaption(track, extra = '') {
+    if (track.raw) return [track.style, extra].filter(Boolean).join(', ');   // morceaux traditionnels : aucun préfixe de style jeu vidéo
     if (track.sfx) return [track.style, SFX_STYLE, extra].filter(Boolean).join(', ');   // effets : un seul coup net, pas de brief de boucle
     if (track.jingle) return [track.style, JINGLE_STYLE, extra].filter(Boolean).join(', ');   // jingles : pas de brief de boucle ni de références de style
     return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');

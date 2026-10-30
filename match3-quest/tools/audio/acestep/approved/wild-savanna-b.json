@@ -1,0 +1,29 @@
+{
+  "key": "wild-savanna-b",
+  "version": "v001",
+  "date": "2026-10-30T14:30:51.362Z",
+  "seed": "3806428664",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, golden dry plain of beasts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 80,
+    "key_scale": "C major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 80,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "C major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, golden dry plain of beasts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

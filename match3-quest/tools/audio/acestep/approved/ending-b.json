@@ -1,0 +1,29 @@
+{
+  "key": "ending-b",
+  "version": "v001",
+  "date": "2026-10-30T14:03:27.036Z",
+  "seed": "4288949519",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Han Gong Qiu Yue (Autumn Moon over the Han Palace)\", erhu and pipa lament, slow sorrowful rubato, long sustained notes, falling leaves and a pale autumn moon, loneliness and farewell, quiet restrained ending, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 56,
+    "key_scale": "A minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 56,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "A minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Han Gong Qiu Yue (Autumn Moon over the Han Palace)\", erhu and pipa lament, slow sorrowful rubato, long sustained notes, falling leaves and a pale autumn moon, loneliness and farewell, quiet restrained ending, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

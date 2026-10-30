@@ -1,0 +1,29 @@
+{
+  "key": "moon-b",
+  "version": "v001",
+  "date": "2026-10-30T13:23:17.054Z",
+  "seed": "2230968979",
+  "request": {
+    "prompt": "traditional Chinese classical instrumental inspired by Hua Yanjun \"Erquan Yingyue\" (Reflection of the Moon on the Second Spring), expressive solo erhu dominant with sustained notes, expressive vibrato, delicate portamento and slides, lyrical descending phrases, very subtle guzheng and occasional xiao, D minor pentatonic Yu mode, slow flexible rubato without percussion, restrained intimate introduction, ornamented variations, deeply expressive climax, quiet contemplative ending, profound melancholy and nostalgia, solitary moonlit lake in ancient China, intimate acoustic recording, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 62,
+    "key_scale": "D minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 62,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese classical instrumental inspired by Hua Yanjun \"Erquan Yingyue\" (Reflection of the Moon on the Second Spring), expressive solo erhu dominant with sustained notes, expressive vibrato, delicate portamento and slides, lyrical descending phrases, very subtle guzheng and occasional xiao, D minor pentatonic Yu mode, slow flexible rubato without percussion, restrained intimate introduction, ornamented variations, deeply expressive climax, quiet contemplative ending, profound melancholy and nostalgia, solitary moonlit lake in ancient China, intimate acoustic recording, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

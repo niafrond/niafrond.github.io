@@ -1,0 +1,29 @@
+{
+  "key": "wild-riverbed-b",
+  "version": "v001",
+  "date": "2026-10-30T14:06:42.610Z",
+  "seed": "3085990435",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ping Sha Luo Yan (Wild Geese Descending on the Sandbar)\", guqin and a touch of xiao, geese gliding down to a river sandbar, calm autumn river landscape, spacious unhurried phrases, peaceful and slightly wistful, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 64,
+    "key_scale": "G major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 64,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ping Sha Luo Yan (Wild Geese Descending on the Sandbar)\", guqin and a touch of xiao, geese gliding down to a river sandbar, calm autumn river landscape, spacious unhurried phrases, peaceful and slightly wistful, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

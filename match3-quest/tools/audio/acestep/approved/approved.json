@@ -568,5 +568,563 @@
     "seed": "3078861698",
     "date": "2026-10-30T11:14:49.704Z",
     "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, judge of the dead boss battle in the Chinese underworld, solemn and relentless, slow heavy ritual drums, deep gong, sparse guqin (ancient wisdom, restraint) and agile plucked pipa ostinato (martial tension, arrows) tremolo, sustained sheng pads (celestial presence) pad, stern bureaucratic dread, ledger pages turning, not a western devil, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, readable melody"
+  },
+  "combat-0-b": {
+    "version": "v001",
+    "seed": "1003356094",
+    "date": "2026-10-30T13:29:04.361Z",
+    "prompt": "traditional Chinese classical instrumental inspired by the ancient piece \"Ambush on Ten Sides\" (Shi Mian Mai Fu), virtuosic solo Chinese pipa in the foreground with rapid repeated-note figures, tremolo, ascending and descending runs and dramatic sequences, A pentatonic Yu mode, free-rhythm tense introduction then fast strongly articulated binary martial sections with traditional Chinese war drums and restrained gongs, accelerations, building to a powerful virtuosic climax and a decisive ending, epic martial tense imperial China, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "moon-b": {
+    "version": "v001",
+    "seed": "2230968979",
+    "date": "2026-10-30T13:29:04.462Z",
+    "prompt": "traditional Chinese classical instrumental inspired by Hua Yanjun \"Erquan Yingyue\" (Reflection of the Moon on the Second Spring), expressive solo erhu dominant with sustained notes, expressive vibrato, delicate portamento and slides, lyrical descending phrases, very subtle guzheng and occasional xiao, D minor pentatonic Yu mode, slow flexible rubato without percussion, restrained intimate introduction, ornamented variations, deeply expressive climax, quiet contemplative ending, profound melancholy and nostalgia, solitary moonlit lake in ancient China, intimate acoustic recording, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-bamboo-b": {
+    "version": "v001",
+    "seed": "3237535052",
+    "date": "2026-10-30T13:29:04.569Z",
+    "prompt": "ancient Chinese guqin instrumental inspired by \"Yangguan Sandie\" (Three Variations on Yang Pass), solo guqin dominant with sliding notes, harmonics and natural string resonance, delicate dizi and occasional xiao, D pentatonic Shang mode, free rhythm with rubato and spacious pauses, one theme stated three times with growing ornamentation, peaceful ending, literati farewell, nostalgia, distant mountains and misty landscapes, intimate acoustic, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-paddy-b": {
+    "version": "v001",
+    "seed": "489134029",
+    "date": "2026-10-30T13:29:04.674Z",
+    "prompt": "traditional Chinese folk instrumental inspired by \"Fengyang Huagu\" (Fengyang Flower Drum), lively 2/4 folk dance pulse, flower drums with syncopated accents, hand percussion, dizi bamboo flute carrying a repetitive pentatonic folk melody with call-and-response, plucked pipa and yangqin dulcimer, G pentatonic Gong mode, playful variations and a festive final section, joyful communal rural celebration, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "title-b": {
+    "version": "v001",
+    "seed": "2727951986",
+    "date": "2026-10-30T14:03:58.325Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gao Shan Liu Shui (High Mountains, Flowing Water)\", solo guqin and guzheng stating a noble ascending theme for the mountains then rippling cascades for flowing water, soft dizi, dignified heroic and friendly, slow stately introduction building to a flowing climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "menu-b": {
+    "version": "v001",
+    "seed": "1978000602",
+    "date": "2026-10-30T14:03:58.481Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Mei Hua San Nong (Three Variations on the Plum Blossom)\", dizi bamboo flute and guqin, one gentle theme repeated three times with growing ornaments, plum blossoms in winter snow, pure calm inviting, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "house-b": {
+    "version": "v001",
+    "seed": "221820077",
+    "date": "2026-10-30T14:03:58.612Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Yu Qiao Wen Da (Dialogue of the Fisherman and the Woodcutter)\", guqin with xiao in a relaxed carefree conversation, warm cozy leisurely, bright playful phrases answering each other, rustic and serene, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "sanctuary-b": {
+    "version": "v001",
+    "seed": "2006054277",
+    "date": "2026-10-30T14:03:58.775Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San (The Guangling Melody)\", solemn guqin with deep bass strings, ritual sacred atmosphere, slow severe opening and fierce dramatic middle with strong plucked strokes, low temple drum and bell, stern and ominous, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "ending-b": {
+    "version": "v001",
+    "seed": "4288949519",
+    "date": "2026-10-30T14:03:58.965Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Han Gong Qiu Yue (Autumn Moon over the Han Palace)\", erhu and pipa lament, slow sorrowful rubato, long sustained notes, falling leaves and a pale autumn moon, loneliness and farewell, quiet restrained ending, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "victory-b": {
+    "version": "v002",
+    "seed": "2710459804",
+    "date": "2026-10-30T15:18:53.405Z",
+    "prompt": "very festive traditional Chinese celebration music inspired by the piece \"Jin She Kuang Wu\" (Golden Snake Dance), exuberant Chinese New Year lion dance and dragon dance energy, fast joyful tempo, bright crashing Chinese cymbals, resonant gongs and driving festival drums, suona and dizi playing a catchy accelerating melody with rapid ornaments, pipa and yangqin sparkling runs, call and response, accelerando building to an ecstatic triumphant finish, jubilant and triumphant, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-gobi-b": {
+    "version": "v001",
+    "seed": "1199450693",
+    "date": "2026-10-30T14:07:20.643Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Hujia Shiba Pai (Eighteen Songs of a Nomad Flute)\", lonely hujia-like bamboo flute and sparse guqin, wide empty desert steppe, wind, sorrowful long lines, distant frame drum, melancholy and endurance, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-riverbed-b": {
+    "version": "v001",
+    "seed": "3085990435",
+    "date": "2026-10-30T14:07:20.754Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ping Sha Luo Yan (Wild Geese Descending on the Sandbar)\", guqin and a touch of xiao, geese gliding down to a river sandbar, calm autumn river landscape, spacious unhurried phrases, peaceful and slightly wistful, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-bamboo-b": {
+    "version": "v001",
+    "seed": "3861619989",
+    "date": "2026-10-30T14:07:20.867Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Yang Chun Bai Xue (White Snow in Early Spring)\", bright dizi and guzheng with light plucked pipa, elegant refined spring melody, clear lively and graceful, bamboo grove village in the morning, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "puzzle-mirror-b": {
+    "version": "v001",
+    "seed": "3007404346",
+    "date": "2026-10-30T14:07:20.970Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Mo Li Hua (Jasmine Flower) folk song\", tender dizi carrying the well-known jasmine flower folk melody, soft yangqin plucks and light guzheng, pure delicate pentatonic charm, thoughtful and gentle, steady calm pulse, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "defeat-b": {
+    "version": "v001",
+    "seed": "1747126178",
+    "date": "2026-10-30T14:28:39.387Z",
+    "prompt": "traditional Chinese instrumental somber defeat theme, fragments of the Hou Yi motif on lonely soft xiao (solitude, destiny, sorrowful slow lament, quiet ending, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "puzzle-push-b": {
+    "version": "v001",
+    "seed": "2502419114",
+    "date": "2026-10-30T14:28:39.485Z",
+    "prompt": "traditional Chinese instrumental puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "puzzle-slide-b": {
+    "version": "v001",
+    "seed": "4144921452",
+    "date": "2026-10-30T14:28:39.584Z",
+    "prompt": "traditional Chinese instrumental puzzle theme for sliding carts along caravan tracks, light rolling rhythm, agile plucked pipa ostinato (martial tension, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-paddy-b": {
+    "version": "v001",
+    "seed": "3887330345",
+    "date": "2026-10-30T14:28:39.683Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, dried rice paddies and straw huts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-riverbed-b": {
+    "version": "v001",
+    "seed": "1354539105",
+    "date": "2026-10-30T14:28:39.783Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Chun Jiang Hua Yue Ye\" (Spring River, Flower and Moon Night), plucked pipa and flowing guzheng with soft dizi, cracked dry Yellow River bed, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-gobi-b": {
+    "version": "v001",
+    "seed": "985299493",
+    "date": "2026-10-30T14:28:39.887Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Lao Liu Ban\" (Jiangnan sizhu silk and bamboo ensemble), dizi, erhu, yangqin and pipa in a lively interlocking ensemble, Gobi desert with mirages, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-storm-b": {
+    "version": "v001",
+    "seed": "2584535428",
+    "date": "2026-10-30T14:30:51.471Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Zi Zhu Diao\" (Purple Bamboo Tune), sizhu silk and bamboo ensemble with dizi, erhu and yangqin, Thunder Mountains, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-storm-b": {
+    "version": "v001",
+    "seed": "4230724987",
+    "date": "2026-10-30T14:30:51.572Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, Thunder Mountains, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-volcano-b": {
+    "version": "v001",
+    "seed": "2305254816",
+    "date": "2026-10-30T14:30:51.674Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Chun Jiang Hua Yue Ye\" (Spring River, Flower and Moon Night), plucked pipa and flowing guzheng with soft dizi, volcano gorges and magma, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-volcano-b": {
+    "version": "v001",
+    "seed": "2968164908",
+    "date": "2026-10-30T14:30:51.778Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Liu Shui\" (Flowing Water), guqin and guzheng with rippling glissandi, volcano gorges and magma, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-savanna-b": {
+    "version": "v001",
+    "seed": "602227944",
+    "date": "2026-10-30T14:30:51.879Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Zi Zhu Diao\" (Purple Bamboo Tune), sizhu silk and bamboo ensemble with dizi, erhu and yangqin, golden dry plain of beasts, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-savanna-b": {
+    "version": "v001",
+    "seed": "3806428664",
+    "date": "2026-10-30T14:30:51.985Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, golden dry plain of beasts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-coast-b": {
+    "version": "v001",
+    "seed": "3026811995",
+    "date": "2026-10-30T14:33:03.083Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Chun Jiang Hua Yue Ye\" (Spring River, Flower and Moon Night), plucked pipa and flowing guzheng with soft dizi, Eastern Sea shore, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-coast-b": {
+    "version": "v001",
+    "seed": "2141026013",
+    "date": "2026-10-30T14:33:03.182Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Liu Shui\" (Flowing Water), guqin and guzheng with rippling glissandi, Eastern Sea shore, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-tides-b": {
+    "version": "v001",
+    "seed": "1975769144",
+    "date": "2026-10-30T14:33:03.284Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Zi Zhu Diao\" (Purple Bamboo Tune), sizhu silk and bamboo ensemble with dizi, erhu and yangqin, moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-tides-b": {
+    "version": "v001",
+    "seed": "3261419641",
+    "date": "2026-10-30T14:33:03.384Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-fusang-b": {
+    "version": "v001",
+    "seed": "2891052538",
+    "date": "2026-10-30T14:33:03.486Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Chun Jiang Hua Yue Ye\" (Spring River, Flower and Moon Night), plucked pipa and flowing guzheng with soft dizi, golden summit of the mythical Fusang tree, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-fusang-b": {
+    "version": "v001",
+    "seed": "351020831",
+    "date": "2026-10-30T14:33:03.589Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Liu Shui\" (Flowing Water), guqin and guzheng with rippling glissandi, golden summit of the mythical Fusang tree, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "village-moon-b": {
+    "version": "v001",
+    "seed": "543351132",
+    "date": "2026-10-30T14:35:13.616Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Zi Zhu Diao\" (Purple Bamboo Tune), sizhu silk and bamboo ensemble with dizi, erhu and yangqin, silver Moon Peak at night, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "wild-moon-b": {
+    "version": "v001",
+    "seed": "1776533334",
+    "date": "2026-10-30T14:35:13.716Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, silver Moon Peak at night, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "combat-1-b": {
+    "version": "v001",
+    "seed": "4133668658",
+    "date": "2026-10-30T14:35:13.819Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), virtuosic pipa with tremolo, war drums and gongs, epic battle theme, epic cinematic orchestral battle, NO intro, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "combat-2-b": {
+    "version": "v001",
+    "seed": "3734200593",
+    "date": "2026-10-30T14:35:13.919Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), pipa and suona fanfares with driving martial drums, epic battle theme, epic cinematic orchestral battle, NO intro, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "combat-3-b": {
+    "version": "v001",
+    "seed": "4188272397",
+    "date": "2026-10-30T14:35:14.016Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night) Beijing opera percussion style, jinghu fiddle, clappers, drums and gongs, epic battle theme, epic cinematic orchestral battle, NO intro, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "combat-4-b": {
+    "version": "v001",
+    "seed": "4163318694",
+    "date": "2026-10-30T14:35:14.114Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece dragon boat festival drumming \"Long Zhou\", big war drums, cymbals, suona and dizi, epic battle theme, epic cinematic orchestral battle, NO intro, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-ardent-b": {
+    "version": "v001",
+    "seed": "3979168102",
+    "date": "2026-10-30T14:37:26.766Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle against the Ardent Sun, ten suns celestial motif full strength, first sun, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-des-eaux-taries-b": {
+    "version": "v001",
+    "seed": "2757686678",
+    "date": "2026-10-30T14:37:26.876Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, boss battle against the Sun of the Dried Waters, ten suns celestial motif slightly weakened, dry parched feel, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-de-cendres-b": {
+    "version": "v001",
+    "seed": "2497853672",
+    "date": "2026-10-30T14:37:26.977Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, boss battle against the Sun of Ashes, ten suns celestial motif weakening, ash and smoke, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-des-mirages-b": {
+    "version": "v001",
+    "seed": "1357079776",
+    "date": "2026-10-30T14:37:27.076Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, boss battle against the Sun of Mirages, ten suns celestial motif fragmenting, illusions, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-des-orages-b": {
+    "version": "v001",
+    "seed": "2799549352",
+    "date": "2026-10-30T14:37:27.175Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, boss battle against the Sun of Storms, ten suns celestial motif fragmenting, thunder drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-de-magma-b": {
+    "version": "v001",
+    "seed": "2890971193",
+    "date": "2026-10-30T14:37:27.274Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle against the Sun of Magma, ten suns celestial motif losing dominance, heavy low pipa and drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-des-betes-folles-b": {
+    "version": "v001",
+    "seed": "3538712919",
+    "date": "2026-10-30T14:39:40.712Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, boss battle against the Sun of Frenzied Beasts, ten suns celestial motif losing dominance, stampeding drum rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-des-marees-b": {
+    "version": "v001",
+    "seed": "4266928762",
+    "date": "2026-10-30T14:39:40.811Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, boss battle against the Sun of Tides, ten suns celestial motif nearly gone, surging guzheng waves, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-soleil-lache-b": {
+    "version": "v001",
+    "seed": "550576800",
+    "date": "2026-10-30T14:39:40.910Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, boss battle against the Cowardly Sun, ten suns celestial motif almost silent, precision duel, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-fengmeng-le-disciple-b": {
+    "version": "v001",
+    "seed": "3335351010",
+    "date": "2026-10-30T14:39:41.007Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, duel with Feng Meng the disciple, dangerous rival, aggressive low pipa figures, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-fengmeng-l-archer-presse-b": {
+    "version": "v001",
+    "seed": "866597080",
+    "date": "2026-10-30T14:39:41.106Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, ambush duel of archers, Feng Meng vicious and impatient, epic cinematic boss battle, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-fengmeng-l-archer-miroir-b": {
+    "version": "v001",
+    "seed": "2633644743",
+    "date": "2026-10-30T14:39:41.205Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, final boss phase one, The Mirror Archer, Feng Meng's motif collides with and crushes Hou Yi's heroic motif, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-fengmeng-rage-et-desespoir-b": {
+    "version": "v001",
+    "seed": "1375415836",
+    "date": "2026-10-30T14:41:55.319Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, final boss phase two, Rage and Despair, epic cinematic boss battle, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-gardien-de-la-digue-b": {
+    "version": "v001",
+    "seed": "4058766440",
+    "date": "2026-10-30T14:41:55.424Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, river dam guardian, heavy slow stone steps, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-colosse-de-l-ecluse-b": {
+    "version": "v001",
+    "seed": "1210660777",
+    "date": "2026-10-30T14:41:55.525Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, sluice gate colossus, water and iron, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-gardien-des-cendres-b": {
+    "version": "v001",
+    "seed": "1326922323",
+    "date": "2026-10-30T14:41:55.625Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, ash guardian, smouldering low pulse, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-chef-de-dune-bras-de-sable-b": {
+    "version": "v001",
+    "seed": "1642554945",
+    "date": "2026-10-30T14:41:55.723Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, dangerous boss battle, sand dune chieftain, caravan war drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-lion-gardien-fendu-b": {
+    "version": "v001",
+    "seed": "2125042145",
+    "date": "2026-10-30T14:41:55.823Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, cracked stone guardian lion, ritual drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-forgeron-de-lave-b": {
+    "version": "v001",
+    "seed": "1835327452",
+    "date": "2026-10-30T14:44:10.067Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, lava blacksmith, anvil woodblock rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-tigre-alpha-griffe-de-feu-b": {
+    "version": "v001",
+    "seed": "3554612957",
+    "date": "2026-10-30T14:44:10.166Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, alpha tiger with fiery claws, prowling rhythm then pounce, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-serpent-de-maree-b": {
+    "version": "v001",
+    "seed": "3821148881",
+    "date": "2026-10-30T14:44:10.268Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, tide serpent, undulating guzheng glissandi, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-garde-solaire-des-racines-b": {
+    "version": "v001",
+    "seed": "2838341732",
+    "date": "2026-10-30T14:44:10.370Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, dangerous boss battle, solar guard of the roots, sheng pads, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-pretresse-de-givre-b": {
+    "version": "v001",
+    "seed": "1731725238",
+    "date": "2026-10-30T14:44:10.469Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, frost priestess, icy crystalline plucks, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-maitresse-tong-la-lame-de-bronze-b": {
+    "version": "v001",
+    "seed": "3630977064",
+    "date": "2026-10-30T14:44:10.571Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, mistress Tong the bronze blade, elegant fast pipa, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-maitre-hong-gang-le-gong-de-cuivre-b": {
+    "version": "v001",
+    "seed": "2866731786",
+    "date": "2026-10-30T14:46:24.062Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, master Hong Gang the copper gong, big gong strokes, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-maitre-tie-bi-le-bras-de-fer-b": {
+    "version": "v001",
+    "seed": "4205833515",
+    "date": "2026-10-30T14:46:24.161Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, master Tie Bi the iron arm, heavy hammering rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-dame-yin-yue-la-lune-d-argent-b": {
+    "version": "v001",
+    "seed": "686044917",
+    "date": "2026-10-30T14:46:24.261Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, dangerous boss battle, lady Yin Yue the silver moon, graceful crystalline guzheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-seigneur-jin-long-le-dragon-d-or-b": {
+    "version": "v001",
+    "seed": "821511910",
+    "date": "2026-10-30T14:46:24.361Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, lord Jin Long the golden dragon, majestic sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-dame-bi-yu-la-main-de-jade-b": {
+    "version": "v001",
+    "seed": "1166929954",
+    "date": "2026-10-30T14:46:24.464Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, lady Bi Yu the jade hand, polished guzheng runs, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-immortel-yun-zhong-celui-des-nuees-b": {
+    "version": "v001",
+    "seed": "4081891539",
+    "date": "2026-10-30T14:46:24.565Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, immortal Yun Zhong of the clouds, floating sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b": {
+    "version": "v001",
+    "seed": "612232433",
+    "date": "2026-10-30T14:48:39.422Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, grand master Qian Jian the thousand-arrow archer, the Hou Yi motif answered in canon, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-gardien-de-la-forge-noire-b": {
+    "version": "v001",
+    "seed": "404867233",
+    "date": "2026-10-30T14:48:39.522Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, dangerous boss battle, guardian of the black forge, iron pulse, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-capitaine-noye-des-limons-b": {
+    "version": "v001",
+    "seed": "4074630545",
+    "date": "2026-10-30T14:48:39.625Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, drowned captain of the river silt, deep watery guqin, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-lion-cendre-gardien-du-sutra-b": {
+    "version": "v001",
+    "seed": "1840289195",
+    "date": "2026-10-30T14:48:39.725Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, ash lion guardian of the sutra, ritual chant-like erhu, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-colosse-des-caravanes-ensevelies-b": {
+    "version": "v001",
+    "seed": "2376339780",
+    "date": "2026-10-30T14:48:39.827Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, colossus of buried caravans, sand-heavy slow march, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-jiangshi-du-cassia-lunaire-b": {
+    "version": "v001",
+    "seed": "2065740198",
+    "date": "2026-10-30T14:48:39.928Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, hopping jiangshi of the lunar cassia tree, axe chopping rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-vieux-saule-des-boues-gardien-du-terrier-b": {
+    "version": "v001",
+    "seed": "2463909838",
+    "date": "2026-10-30T14:50:54.264Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, dangerous boss battle, mud turtle guardian of the burrow, slow muddy bass, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-long-du-tonnerre-sourd-b": {
+    "version": "v001",
+    "seed": "2684881310",
+    "date": "2026-10-30T14:50:54.366Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, dragon of the muffled thunder, rumbling distant drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-tigre-blanc-des-ancetres-b": {
+    "version": "v001",
+    "seed": "2191215005",
+    "date": "2026-10-30T14:50:54.469Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, white tiger of the ancestors, solemn noble guqin and drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-serpent-des-marees-noires-b": {
+    "version": "v001",
+    "seed": "4063252700",
+    "date": "2026-10-30T14:50:54.575Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, serpent of the black tides, dark guzheng glissandi, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-immortel-dechu-des-branches-b": {
+    "version": "v001",
+    "seed": "2076495664",
+    "date": "2026-10-30T14:50:54.675Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, fallen immortal of the branches, broken celestial sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-zhuque-l-oiseau-vermillon-b": {
+    "version": "v001",
+    "seed": "953943823",
+    "date": "2026-10-30T14:50:54.783Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, legendary celestial guardian boss battle, Zhuque the Vermilion Bird of the South, blazing fire, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-xuanwu-la-tortue-noire-b": {
+    "version": "v001",
+    "seed": "1833962176",
+    "date": "2026-10-30T14:53:09.399Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, legendary celestial guardian boss battle, Xuanwu the Black Tortoise and serpent of the North, deep watery guqin, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-baihu-le-tigre-blanc-b": {
+    "version": "v001",
+    "seed": "101627961",
+    "date": "2026-10-30T14:53:09.518Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, legendary celestial guardian boss battle, Baihu the White Tiger of the West, prowling metallic rhythm then violent pounce, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-qinglong-le-dragon-d-azur-b": {
+    "version": "v001",
+    "seed": "250151878",
+    "date": "2026-10-30T14:53:09.618Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, legendary celestial guardian boss battle, Qinglong the Azure Dragon of the East, storm winds, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "combat-tides-b": {
+    "version": "v001",
+    "seed": "3011228589",
+    "date": "2026-10-30T14:53:09.722Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), pipa and suona fanfares with driving martial drums, epic battle theme, epic cinematic orchestral battle, NO intro, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-changxi-mere-des-douze-lunes-b": {
+    "version": "v001",
+    "seed": "695943482",
+    "date": "2026-10-30T14:53:09.834Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, epic cinematic trial boss battle, Changxi mother of twelve moons testing the hero's courage on a moonlit sea altar, slow ceremonial gongs, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a0-b": {
+    "version": "v001",
+    "seed": "661869078",
+    "date": "2026-10-30T14:53:09.951Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, boss battle archetype, brute, heavy stomping drums and low erhu, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a1-b": {
+    "version": "v001",
+    "seed": "2793720703",
+    "date": "2026-10-30T14:55:24.287Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, boss battle archetype, swift hunter, fast pipa runs and dizi, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a2-b": {
+    "version": "v001",
+    "seed": "1732576126",
+    "date": "2026-10-30T14:55:24.387Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, boss battle archetype, mystic, sheng pads and guqin with eerie xiao, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a3-b": {
+    "version": "v001",
+    "seed": "371129290",
+    "date": "2026-10-30T14:55:24.486Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle archetype, armored warrior, brass-like square waves and big gong, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a4-b": {
+    "version": "v001",
+    "seed": "3213032301",
+    "date": "2026-10-30T14:55:24.587Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, boss battle archetype, beast, savage drum patterns and pipa slides, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a5-b": {
+    "version": "v001",
+    "seed": "322721662",
+    "date": "2026-10-30T14:55:24.689Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, boss battle archetype, water spirit, guzheng arpeggios and flowing erhu, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a6-b": {
+    "version": "v001",
+    "seed": "386235543",
+    "date": "2026-10-30T14:55:24.793Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, boss battle archetype, fire spirit, crackling woodblock and pulse waves, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "boss-a7-b": {
+    "version": "v001",
+    "seed": "886094927",
+    "date": "2026-10-30T14:56:03.760Z",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, boss battle archetype, ancient guardian, slow ritual drums and sheng chords, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
   }
 }
