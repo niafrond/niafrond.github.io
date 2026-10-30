@@ -495,8 +495,8 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         const session = createSession(null);
         expect(isExitLocked(session, toRoue)).toBe(true);
         expect(toRoue.lockedMessage).toMatch(/Meng Po/);
-        teleportToScreen(session, TR.PONT);   // on ne parle qu'à un PNJ de l'écran où l'on se trouve
-        talkToNpc(session, 'ws_meng_po');
+        teleportToScreen(session, TR.PONT);
+        openChest(session, 'ws_bol_meng_po');   // prendre le bol de Meng Po (sans le boire) ouvre la porte de la Roue
         expect(isExitLocked(session, toRoue)).toBe(false);
         expect(isExitLocked(session, toMiroir)).toBe(true);
         markEnemyDefeated(session, 'ws_wuchang_blanc');

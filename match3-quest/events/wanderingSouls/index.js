@@ -103,7 +103,7 @@ function buildQuests() {
         side({
             id: Q.id, title: Q.title, giver: D.ZHONG_KUI.id, turnIn: D.ZHONG_KUI.id, requires: [D.QUEST_IDS.sceaux],
             objectives: [
-                { type: 'talk', target: 'ws_meng_po', text: Q.objectives.talk },
+                { type: 'talk', target: 'ws_meng_po', text: Q.objectives.talk, lines: Q.talkLines },
                 { type: 'item', target: 'qi_ws_souvenir', text: Q.objectives.souvenir },
                 { type: 'kill', target: 'ws_reflet_peche', text: Q.objectives.reflet },
                 { type: 'kill', target: 'ws_yanluo', text: Q.objectives.yanluo }

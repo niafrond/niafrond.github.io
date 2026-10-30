@@ -48,8 +48,8 @@ export const TERRAINS = [
             ['#', 6, 5, 2, 2], ['#', 9, 10, 2, 1], ['#', 21, 6, 3, 1], ['#', 22, 10, 2, 1], ['#', 33, 6, 2, 1], ['#', 34, 10, 3, 1]
         ],
         grass: { rate: 0.14, safeSteps: 3, table: [
-            { templateId: 'gui_esprit', weight: 4, offset: 0 }, { templateId: 'wangliang', weight: 3, offset: 0 },
-            { templateId: 'mu_gui', weight: 2, offset: 1 }, { templateId: 'shui_gui', weight: 2, offset: 1 }
+            { templateId: 'gui_esprit', name: 'Feu follet', weight: 4, offset: 0 }, { templateId: 'wangliang', name: 'Esprit des herbes', weight: 3, offset: 0 },
+            { templateId: 'mu_gui', name: 'Fantôme des arbres morts', weight: 2, offset: 1 }, { templateId: 'shui_gui', name: 'Noyé de la rivière jaune', weight: 2, offset: 1 }
         ] },
         npcs: [
             npc('ws_passeur', 'Passeur des sources', 'Ombre sans visage', [
@@ -96,11 +96,11 @@ export const TERRAINS = [
             { id: 'ws_coffre_terrasse', x: 24, y: 17, label: 'Lanterne de la terrasse', tier: 2, openText: 'Une lanterne de papier encore chaude, avec quelques pièces dans son socle : on a laissé de quoi payer le voyage.' }
         ],
         enemies: [
-            { id: 'ws_ombre_pays_1', x: 6, y: 7, templateId: 'nu_gui', name: 'Ombre du pays natal', kind: 'sentinel', offset: 1, illusion: true, hideWhen: D.BELL.chest.id,
+            { id: 'ws_ombre_pays_1', x: 6, y: 7, templateId: 'nu_gui', name: 'Ombre du pays natal', kind: 'sentinel', offset: 1, illusion: true, spriteKey: 'nu_gui', hideWhen: D.BELL.chest.id,
               illusionLines: ['Une cour, un puits, quelqu\'un qui vous appelle par votre nom d\'enfant. Vous tendez la main : il n\'y a que la brume.', 'Un mirage du pays natal : il se dissipe de lui-même, et se reforme plus loin.'] },
-            { id: 'ws_ombre_pays_2', x: 21, y: 7, templateId: 'nu_gui', name: 'Ombre du pays natal', kind: 'sentinel', offset: 1, illusion: true, hideWhen: D.BELL.chest.id,
+            { id: 'ws_ombre_pays_2', x: 21, y: 7, templateId: 'nu_gui', name: 'Ombre du pays natal', kind: 'sentinel', offset: 1, illusion: true, spriteKey: 'nu_gui', hideWhen: D.BELL.chest.id,
               illusionLines: ['Une table dressée pour un repas qu\'on ne finira pas. L\'image se défait quand vous cherchez à la toucher.'] },
-            { id: 'ws_ombre_pays_3', x: 14, y: 13, templateId: 'nu_gui', name: 'Ombre du pays natal', kind: 'sentinel', offset: 1, illusion: true, hideWhen: D.BELL.chest.id,
+            { id: 'ws_ombre_pays_3', x: 14, y: 13, templateId: 'nu_gui', name: 'Ombre du pays natal', kind: 'sentinel', offset: 1, illusion: true, spriteKey: 'nu_gui', hideWhen: D.BELL.chest.id,
               illusionLines: ['Un champ de riz vert sous un ciel de printemps. Puis plus rien : la brume a repris sa place.'] },
             { id: 'ws_veilleuse_pays', x: 8, y: 16, templateId: 'yuan_gui', name: 'Veilleuse du pays', kind: 'sentinel', offset: 2 },
             { id: 'ws_pendu_terrasse', x: 4, y: 17, templateId: 'diaosi_gui', name: 'Pendu de la terrasse', kind: 'patrol', offset: 1, patrol: [[4, 17], [10, 17]] }
@@ -120,7 +120,7 @@ export const TERRAINS = [
             npc('ws_meng_po', 'Meng Po', 'Vieille dame de la soupe d\'oubli', [
                 'Une louche, et le chagrin s\'en va ; une autre, et le nom s\'en va aussi. Les gens ont le choix : ils choisissent presque toujours d\'oublier.',
                 'Vous, archer, vous n\'êtes pas venu pour boire. Je le vois à vos mains : elles se souviennent trop bien de la corde.',
-                'Passez. La Roue est au bout, et tout le monde y passe un jour. Même ceux qui visent le soleil.'
+                'Prenez le bol que j\'ai posé là-bas, sans le boire : c\'est mon laissez-passer. La Roue est au bout, et tout le monde y passe un jour. Même ceux qui visent le soleil.'
             ], { x: 37, y: 5, talkDone: ['« Gardez vos souvenirs, archer. C\'est ce qui vous rend dangereux. »'] })
         ],
         chests: [
@@ -238,8 +238,8 @@ export const LINKS = [
     { from: D.REALM_ID, side: 'E', to: SOURCES, label: 'Route des Sources Jaunes' },
     { from: SOURCES, side: 'E', to: TERRASSE, label: 'Terrasse du Regard vers le pays' },
     { from: TERRASSE, side: 'E', to: PONT, label: 'Pont Naihe' },
-    { from: PONT, side: 'E', to: ROUE, label: 'Roue des six voies', requires: ['ws_meng_po'],
-      lockedMessage: 'Meng Po garde la fin du pont : il faut lui parler avant de continuer vers la Roue.' },
+    { from: PONT, side: 'E', to: ROUE, label: 'Roue des six voies', requires: ['ws_bol_meng_po'],
+      lockedMessage: 'Meng Po garde la fin du pont : acceptez son bol de soupe (sans le boire) avant de continuer vers la Roue.' },
     { from: D.REALM_ID, side: 'S', to: FENGDU, label: 'Fengdu, la cité fantôme' },
     { from: FENGDU, side: 'E', to: MIROIR, label: 'Miroir du Karma', requires: ['ws_wuchang_blanc', 'ws_wuchang_noir'],
       lockedMessage: 'Les messagers Bai et Hei Wuchang gardent la porte du tribunal : il faut les vaincre pour passer.' }
@@ -279,10 +279,15 @@ export const QUEST_DIYU = {
         'Vous avez rendu l\'ordre au registre, archer. Mais un registre ne sert à rien si les âmes ne savent pas où aller.',
         'Suivez la route des Sources Jaunes jusqu\'au pont Naihe, parlez à Meng Po, rapportez le souvenir d\'une âme de la terrasse, brisez le reflet du tribunal et, si vous l\'osez, tenez tête au roi Yanluo. Quand le chemin sera rétabli, le vieux sanctuaire pourra se refermer.'
     ],
-    hint: ['À l\'est : les Sources Jaunes, la Terrasse, le pont Naihe (Meng Po). Au sud : Fengdu, puis le tribunal du Miroir (vainquez les messagers Bai et Hei Wuchang). La Roue des six voies est au bout du pont.'],
+    hint: ['À l\'est : les Sources Jaunes, la Terrasse, le pont Naihe (Meng Po : prenez son bol pour passer). Au sud : Fengdu, puis le tribunal du Miroir (vainquez les messagers Bai et Hei Wuchang). La Roue des six voies est au bout du pont.'],
     complete: [
         'Les âmes ont retrouvé leur chemin, et la Roue tourne de nouveau sans heurt. Vous avez fait en une nuit ce que les vivants appellent un pèlerinage.',
         'La porte peut se refermer, maintenant : elle ne s\'ouvrira que l\'an prochain, pour d\'autres curieux. Allez, archer. L\'aube est loin, mais elle vous attend.'
+    ],
+    // Réplique jouée quand on parle à Meng Po pour la quête (objectif « parler »).
+    talkLines: [
+        'Vous vous asseyez en face de la vieille dame, sans toucher à la marmite. Elle vous regarde longtemps, comme on regarde un enfant qui a trop grandi.',
+        '« Vous avez gardé vos souvenirs, archer. Beaucoup viennent me supplier de les leur ôter. Vous, vous êtes le premier à me demander la permission de les garder. Allez : ils vous serviront là-bas. »'
     ],
     objectives: {
         talk: 'Parler à Meng Po, au bout du pont Naihe',
@@ -300,7 +305,7 @@ export const TERRAIN_IDS = TERRAINS.map(t => t.id);
 export const PARTICULARITY = {
     [SOURCES]: 'Route de terre jaune de la tradition (黃泉路) bordée de fleurs rouges : deux rivières à franchir par des ponts, et des hautes herbes où rôdent des feux follets (combats aléatoires).',
     [TERRASSE]: 'Terrasse d\'où les morts regardent leur pays (望鄉台) : trois mirages du pays natal que la cloche d\'exorcisme dissipe, des fantômes pendus et vengeurs, et l\'énigme des urnes qui garde le souvenir.',
-    [PONT]: 'Pont Naihe (奈何橋) : un pont étroit gardé par des soldats gui, des noyés sur les rives, et Meng Po (孟婆), dont la soupe d\'oubli donne son nom au lieu. La porte de la Roue ne s\'ouvre qu\'après lui avoir parlé.',
+    [PONT]: 'Pont Naihe (奈何橋) : un pont étroit gardé par des soldats gui, des noyés sur les rives, et Meng Po (孟婆), dont la soupe d\'oubli donne son nom au lieu. La porte de la Roue ne s\'ouvre qu\'après avoir pris son bol (sans le boire).',
     [FENGDU]: 'Fengdu (酆都), capitale des morts : un dédale de rues, le marché des fantômes (鬼市) et les messagers Bai et Hei Wuchang qui gardent le tribunal. La porte du Miroir ne s\'ouvre qu\'après les avoir vaincus tous les deux.',
     [MIROIR]: 'Miroir du Karma (孽鏡台) : le grand miroir montre les fautes des morts ; l\'énigme des miroirs du reliquaire trouble le reflet du pécheur et lui retire un niveau.',
     [ROUE]: 'Roue des six voies (六道輪迴) : fin du voyage, où le roi Yanluo (閻羅王) pèse les noms au pied de la roue, et où dort le trésor des six voies.'

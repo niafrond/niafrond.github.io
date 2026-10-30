@@ -765,7 +765,7 @@ ${realmShot}
 <li><b>Le sceau des esprits</b> (${esc(at(WS.SEAL.chest.id, ['chest']))}) : retire un niveau au Gardien du jugement. <b>La cloche d’exorcisme</b> (${esc(at(WS.BELL.chest.id, ['chest']))}) dissipe pour de bon les faux passages de la renarde.</li>
 <li><b>Les énigmes</b> (ci-dessous), facultatives mais généreuses.</li>
 <li><b>Le Gardien du jugement</b>, puis le <b>jade des âmes</b> derrière lui (${esc(at(WS.JADE.chest.id, ['chest']))}). Rapportez le jade à Zhong Kui : la quête suivante s’ouvre.</li>
-<li><b>La route des âmes</b> (quête finale) : parlez à Meng Po au bout du pont Naihe, rapportez le souvenir de la terrasse, brisez le Reflet du pécheur au Miroir du Karma, puis tenez tête au roi Yanluo à la Roue des six voies. Rendez la quête à Zhong Kui : la porte se referme.</li>
+<li><b>La route des âmes</b> (quête finale) : parlez à Meng Po au bout du pont Naihe (prenez son bol pour ouvrir la porte de la Roue), rapportez le souvenir de la terrasse, brisez le Reflet du pécheur au Miroir du Karma, puis tenez tête au roi Yanluo à la Roue des six voies. Rendez la quête à Zhong Kui : la porte se referme.</li>
 </ol>
 
 <h3>Carte du royaume</h3>

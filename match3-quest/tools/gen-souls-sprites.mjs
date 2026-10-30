@@ -11,7 +11,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 
 const GAME = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const IDS = (process.argv[2] ? process.argv[2].split(',') : ['ws_gardien_jugement', 'ws_jiangshi_patrouille', 'ws_huli_jing']);
+// Trois ennemis propres à l'événement (64×64), puis les gabarits des terrains agrandis (Wuchang, fantômes) qui n'avaient pas de dessin de carte.
+const IDS = (process.argv[2] ? process.argv[2].split(',') : ['ws_gardien_jugement', 'ws_jiangshi_patrouille', 'ws_huli_jing', 'heibai_wuchang', 'yuan_gui', 'nu_gui', 'diaosi_gui', 'shui_gui', 'mu_gui', 'wangliang']);
 const lines = ['// Dessins de carte des ennemis du royaume des âmes errantes (events/wanderingSouls/).',
     '// Fichier généré par tools/gen-souls-sprites.mjs (PNG pixel art issus de gen-sprites-gm.mjs) — ne pas modifier à la main.',
     'export const SOULS_SPRITES = {'];
