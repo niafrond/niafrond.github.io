@@ -1,0 +1,29 @@
+{
+  "key": "boss-fengmeng-rage-et-desespoir-b",
+  "version": "v001",
+  "date": "2026-10-30T14:40:21.587Z",
+  "seed": "1375415836",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, final boss phase two, Rage and Despair, epic cinematic boss battle, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 146,
+    "key_scale": "D minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 146,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, final boss phase two, Rage and Despair, epic cinematic boss battle, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

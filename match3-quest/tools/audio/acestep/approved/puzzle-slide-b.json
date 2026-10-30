@@ -1,0 +1,29 @@
+{
+  "key": "puzzle-slide-b",
+  "version": "v001",
+  "date": "2026-10-30T14:27:41.763Z",
+  "seed": "4144921452",
+  "request": {
+    "prompt": "traditional Chinese instrumental puzzle theme for sliding carts along caravan tracks, light rolling rhythm, agile plucked pipa ostinato (martial tension, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 92,
+    "key_scale": "A minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 92,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "A minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental puzzle theme for sliding carts along caravan tracks, light rolling rhythm, agile plucked pipa ostinato (martial tension, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

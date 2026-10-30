@@ -1,0 +1,29 @@
+{
+  "key": "boss-immortel-yun-zhong-celui-des-nuees-b",
+  "version": "v001",
+  "date": "2026-10-30T14:46:23.959Z",
+  "seed": "4081891539",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, immortal Yun Zhong of the clouds, floating sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 104,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 104,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, immortal Yun Zhong of the clouds, floating sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

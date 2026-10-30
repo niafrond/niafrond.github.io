@@ -22,6 +22,11 @@ import { ANTIQUE_ARMORS } from '../stuff.js';
 import { LEGENDS } from '../world/legends.js';
 import { playerClasses } from '../classes.js';
 import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
+import * as WS from '../events/wanderingSouls/data.js';
+
+// Événement « La Nuit des âmes errantes » : page dédiée seulement s'il est actif dans le monde assemblé (events/config.js).
+const EVENT_ON = Boolean(SCREENS[WS.REALM_ID]);
+const EVENT_PUZZLE_IDS = new Set(WS.PUZZLE_LIST.map(p => p.id));
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
@@ -188,7 +193,8 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['bases.html', 'Bases du combat'],
-    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures']
+    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
+    ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : [])
 ];
 
 
@@ -549,7 +555,8 @@ ${boardSvg(def)}
 
 // Code du lecteur : moteur, dessins, modes et niveaux du jeu (modules sans import ni export) puis tools/soluce-player.js.
 const stripModule = s => s.replace(/^[ \t]*import [^;]*;[ \t]*$/gm, '').replace(/^export \{[^}]*\};\s*$/gm, '').replace(/^export (const|function|let|class)/gm, '$1');
-const playerScript = () => `<script type="module">\n${['engine', 'sprites', 'art', 'modes', 'levels'].map(f => stripModule(readFileSync(join(ROOT, 'puzzle', `${f}.js`), 'utf8'))).join('\n')}\n${readFileSync(join(ROOT, 'tools', 'soluce-player.js'), 'utf8')}\n</script>`;
+// `extra` : énigmes déclarées hors de puzzle/levels.js (événement), ajoutées à PUZZLES dans la page.
+const playerScript = (extra = {}) => `<script type="module">\n${['engine', 'sprites', 'art', 'modes', 'levels'].map(f => stripModule(readFileSync(join(ROOT, 'puzzle', `${f}.js`), 'utf8'))).join('\n')}\n${Object.keys(extra).length ? `Object.assign(PUZZLES, ${JSON.stringify(extra)});\n` : ''}${readFileSync(join(ROOT, 'tools', 'soluce-player.js'), 'utf8')}\n</script>`;
 
 function buildPuzzles() {
     const chestOf = id => Object.values(SCREENS).flatMap(s => (s.chests || []).filter(c => c.puzzle === id).map(c => ({ s, c }))).find(Boolean);
@@ -689,12 +696,75 @@ ${sections}`
     }));
 }
 
+// Page du royaume des âmes errantes (événement) : accès depuis chaque région, étapes dans l'ordre, énigmes avec solution, boss, récompenses.
+function buildEvent() {
+    if (!EVENT_ON) return;
+    const realm = SCREENS[WS.REALM_ID];
+    const at = (id, kinds) => { const e = entOf(id, kinds); return e ? whereOf(e) : ''; };
+    const doors = Object.values(SCREENS).filter(s => (s.exits || []).some(e => e.to === WS.REALM_ID))
+        .sort((a, b) => REGION_ORDER.indexOf(a.region) - REGION_ORDER.indexOf(b.region));
+    const doorRows = doors.map(s => {
+        const d = s.exits.find(e => e.to === WS.REALM_ID);
+        const c = compass(d.x, d.y, s.w, s.h);
+        return `<tr><td>${esc(regionName(s.region))}</td><td>${esc(s.name)}</td><td>${c === 'centre' ? 'au centre' : `partie ${c}`} de l’écran</td></tr>`;
+    }).join('');
+    const quests = QUESTS.filter(q => q.event === WS.ID).sort((a, b) => Object.values(WS.QUEST_IDS).indexOf(a.id) - Object.values(WS.QUEST_IDS).indexOf(b.id));
+    const puzzles = WS.PUZZLE_LIST.map(p => {
+        const def = { id: p.id, ...PUZZLES[p.id] }, steps = solutionSteps(def), total = solvePath(def).length - 1, unit = def.mode === 'push' ? 'pas' : 'coups';
+        return `<h4>${esc(def.title)} <small>— ${total} ${unit} au minimum</small></h4>
+<dl><dt>Où</dt><dd>${esc(at(p.chest.id, ['chest']))} — ${esc(p.chest.label)}</dd><dt>Récompense</dt><dd>${esc(p.item.name)} (objet spécial) + l’or du coffre</dd></dl>
+${playerHtml(def, steps)}`;
+    }).join('\n');
+    const lanterns = WS.LANTERNS.map((l, i) => `<li><b>${esc(l.label)}</b> (n°${i + 1}) : ${esc(at(l.id, ['chest']))}.${i ? ' Elle n’apparaît qu’une fois la précédente allumée.' : ' Allumée, elle révèle l’âme guide et l’offrande cachées.'}</li>`).join('');
+    write('royaume-des-ames.html', page({
+        file: 'royaume-des-ames.html', title: 'Royaume des âmes errantes', active: 'royaume-des-ames.html',
+        desc: 'Soluce de l’événement « La Nuit des âmes errantes » : accès, quêtes, énigmes, boss et récompenses.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Royaume des âmes errantes']],
+        body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
+<h2>${esc(realm.name)}</h2>
+<p class="lead">Événement temporaire « La Nuit des âmes errantes », un clin d’œil au 31 octobre et à la Toussaint : un royaume facultatif, accessible depuis toutes les régions, avec ${quests.length} quêtes, 2 énigmes et un boss. Il n’est pas nécessaire pour finir le jeu.</p>
+<div class="box info"><b class="t">Événement activable</b>Le royaume n’existe que si l’événement est activé dans <code>events/config.js</code> (activation et retrait par un simple commit). S’il manque dans votre version, il est désactivé.</div>
+<div class="box warn"><b class="t">Il se referme</b>Une fois la quête « ${esc(quests[2]?.title || '')} » terminée, le passage se ferme pour de bon. Faites d’abord tout ce que vous voulez dans le royaume : objets, énigmes, lanternes.</div>
+
+<h3>Comment y entrer</h3>
+<p>Une porte s’ouvre dans la <b>zone sauvage</b> de chaque région (sans condition d’entrée) : « ${esc(WS.REALM.entrance)} ». En sortant du royaume, on revient exactement à la porte empruntée. Un message d’annonce s’affiche à la première arrivée, une seule fois.</p>
+<div class="scroll"><table><tr><th>Région</th><th>Zone</th><th>Position de la porte</th></tr>${doorRows}</table></div>
+
+<h3>Ordre conseillé</h3>
+<ol class="steps">
+<li><b>Le talisman.</b> Parlez à ${esc(WS.GIVER.name)} (${esc(at(WS.GIVER.id, ['npc']))}). Le talisman est caché sous une pierre plate : ${esc(at(WS.TALISMAN.chest.id, ['chest']))}.</li>
+<li><b>Entrez</b> dans le royaume par n’importe quelle porte et parlez à ${esc(WS.ZHONG_KUI.name)} (${esc(at(WS.ZHONG_KUI.id, ['npc']))}) pour recevoir la quête des lanternes.</li>
+<li><b>Les trois lanternes</b>, dans l’ordre :<ul>${lanterns}</ul></li>
+<li><b>Le fantôme affamé</b> (${esc(at(WS.HUNGRY_GHOST.id, ['npc']))}) : ne le frappez pas, parlez-lui. Cela vaut un objectif de la quête et affaiblit le boss d’un niveau.</li>
+<li><b>Le sceau des esprits</b> (${esc(at(WS.SEAL.chest.id, ['chest']))}) : retire un niveau au Gardien du jugement. <b>La cloche d’exorcisme</b> (${esc(at(WS.BELL.chest.id, ['chest']))}) dissipe pour de bon les faux passages de la renarde.</li>
+<li><b>Les deux énigmes</b> (ci-dessous), facultatives mais généreuses.</li>
+<li><b>Le Gardien du jugement</b>, puis le <b>jade des âmes</b> derrière lui (${esc(at(WS.JADE.chest.id, ['chest']))}). Rapportez le jade à ${esc(WS.GIVER.name)}.</li>
+</ol>
+
+<h3>Le Gardien du jugement</h3>
+<div class="box tip"><b class="t">Trois façons de l’affronter</b>
+Il est protégé par les deux Jiangshi du sanctuaire : <b>soit</b> vous les battez, <b>soit</b> vous finissez la quête des lanternes (les sceaux se taisent). Le sceau des esprits et l’apaisement du fantôme affamé retirent chacun un niveau au boss (deux au maximum).</div>
+<p>La <b>renarde des faux chemins</b> pose des mirages : un faux passage se dissipe au contact et réapparaît ailleurs, sans combat. La cloche d’exorcisme les supprime.</p>
+
+<h3>Quêtes</h3>
+${quests.map(questHtml).join('\n')}
+
+<h3>Énigmes</h3>
+<p>Deux énigmes à plateau verrouillent un coffre chacune. Elles ne font partie d’aucune armure antique ; le lecteur ci-dessous montre la solution la plus courte.</p>
+${puzzles}
+${playerScript(Object.fromEntries(WS.PUZZLE_LIST.map(p => [p.id, PUZZLES[p.id]])))}`
+    }));
+}
+
 function buildHub() {
     const total = QUESTS.length;
     const index = [
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
         ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
-        ...Object.entries(PUZZLES).map(([id, p]) => ({ t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' })),
+        ...Object.entries(PUZZLES).map(([id, p]) => EVENT_PUZZLE_IDS.has(id)
+            ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
+            : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
+        ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement halloween toussaint fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
     write('soluce.html', page({
@@ -710,7 +780,8 @@ function buildHub() {
 <a class="card" href="soluce/bases.html"><b>Bases du combat</b><span>Éléments, pouvoirs, biomes</span></a>
 <a class="card" href="soluce/compagnons.html"><b>Compagnons</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
-<a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).length} énigmes, 3 armures antiques</span></a>
+<a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).filter(id => !EVENT_PUZZLE_IDS.has(id)).length} énigmes, 3 armures antiques</span></a>
+${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des âmes</b><span>Événement : ${QUESTS.filter(q => q.event === WS.ID).length} quêtes, 2 énigmes, 1 boss</span></a>` : ''}
 <a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
@@ -747,5 +818,6 @@ buildBases();
 buildPuzzles();
 buildUltimes();
 buildParcours();
+buildEvent();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');

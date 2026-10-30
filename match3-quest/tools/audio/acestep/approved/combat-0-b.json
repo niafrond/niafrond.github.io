@@ -1,0 +1,29 @@
+{
+  "key": "combat-0-b",
+  "version": "v001",
+  "date": "2026-10-30T13:22:58.852Z",
+  "seed": "1003356094",
+  "request": {
+    "prompt": "traditional Chinese classical instrumental inspired by the ancient piece \"Ambush on Ten Sides\" (Shi Mian Mai Fu), virtuosic solo Chinese pipa in the foreground with rapid repeated-note figures, tremolo, ascending and descending runs and dramatic sequences, A pentatonic Yu mode, free-rhythm tense introduction then fast strongly articulated binary martial sections with traditional Chinese war drums and restrained gongs, accelerations, building to a powerful virtuosic climax and a decisive ending, epic martial tense imperial China, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 128,
+    "key_scale": "A minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 128,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "A minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese classical instrumental inspired by the ancient piece \"Ambush on Ten Sides\" (Shi Mian Mai Fu), virtuosic solo Chinese pipa in the foreground with rapid repeated-note figures, tremolo, ascending and descending runs and dramatic sequences, A pentatonic Yu mode, free-rhythm tense introduction then fast strongly articulated binary martial sections with traditional Chinese war drums and restrained gongs, accelerations, building to a powerful virtuosic climax and a decisive ending, epic martial tense imperial China, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

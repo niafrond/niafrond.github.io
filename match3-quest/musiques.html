@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Musiques de Hou Yi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Page générée par tools/gen-musiques-page.mjs (ne pas modifier à la main). Lecteur en haut, liste groupée dessous ; laque noire, vermillon = piste active, jade = repères. */
+:root{
+  --bg:#14110f; --panel:#1d1815; --line:#33291f; --ink:#efe6d6; --mute:#a89a85;
+  --accent:#d6452b; --jade:#6fb59a;
+  --display:"Noto Serif SC","Songti SC",serif; --body:"Sora",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)}
+body{min-height:100%;padding:24px 16px 48px}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{margin:0;font-family:var(--display);font-size:1.5rem;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--mute);font-size:.9rem}
+.player{position:sticky;top:0;z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.now-zh{font-family:var(--display);font-size:1.7rem;line-height:1.1}
+.now-fr{color:var(--mute);font-size:.9rem;margin-top:4px}
+.seek{display:flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums;color:var(--mute);font-size:.8rem}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--line);border-radius:2px;flex:1;accent-color:var(--accent)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--accent);cursor:pointer}
+.controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,input[type=search]{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+button{cursor:pointer}
+button:hover{border-color:var(--mute)}
+button:focus-visible,li:focus-visible,input:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+button.play{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;min-width:96px}
+button[aria-pressed=true]{border-color:var(--jade);color:var(--jade)}
+.vol{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:.8rem}
+.vol input{width:96px;flex:none}
+input[type=search]{width:100%;border-radius:10px}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+li{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+li:hover{background:var(--panel)}
+li[aria-current=true]{background:var(--panel);border-color:var(--accent)}
+.n{color:var(--mute);font-variant-numeric:tabular-nums;text-align:right}
+li[aria-current=true] .n{color:var(--accent)}
+.t-zh{font-family:var(--display)}
+.t-fr{color:var(--mute);font-size:.82rem}
+.scene{color:var(--jade);font-size:.75rem;text-align:right}
+.group{color:var(--mute);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 8px}
+@media (max-width:480px){.scene{display:none}.vol input{width:72px}li{grid-template-columns:28px 1fr}}
+@media (prefers-reduced-motion:no-preference){li{transition:background .15s}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Musiques de Hou Yi</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <section class="player" aria-label="Lecteur">
+    <div>
+      <div class="now-zh" id="nowZh"></div>
+      <div class="now-fr" id="nowFr"></div>
+    </div>
+    <div class="seek">
+      <span id="cur">0:00</span>
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position">
+      <span id="dur">0:00</span>
+    </div>
+    <div class="controls">
+      <div class="btns">
+        <button id="prev" aria-label="Piste précédente">Précédent</button>
+        <button id="play" class="play">Lecture</button>
+        <button id="next" aria-label="Piste suivante">Suivant</button>
+      </div>
+      <div class="btns">
+        <button id="auto" aria-pressed="true">Enchaîner</button>
+        <button id="shuf" aria-pressed="false">Aléatoire</button>
+        <label class="vol">Volume <input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <input type="search" id="q" placeholder="Filtrer : boss, village, guqin, Gobi" aria-label="Filtrer les pistes">
+    <div id="lists"></div>
+  </section>
+  <audio id="a" preload="metadata"></audio>
+</main>
+<script>
+// [clé, groupe, scène, titre chinois, titre de la pièce]
+const T = [["moon-b","Scènes","Pic de la Lune","二泉映月","Erquan Yingyue"],["title-b","Scènes","Écran titre","高山流水","Gao Shan Liu Shui"],["menu-b","Scènes","Menu","梅花三弄","Mei Hua San Nong"],["house-b","Scènes","Maison","渔樵问答","Yu Qiao Wen Da"],["sanctuary-b","Scènes","Sanctuaire","广陵散","Guangling San"],["ending-b","Scènes","Fin","汉宫秋月","Han Gong Qiu Yue"],["victory-b","Scènes","Victoire","金蛇狂舞","Jin She Kuang Wu"],["puzzle-mirror-b","Scènes","Énigme des miroirs","茉莉花","Mo Li Hua"],["defeat-b","Scènes","Défaite","","Défaite"],["puzzle-push-b","Scènes","Énigme des jarres","","Énigme des jarres"],["puzzle-slide-b","Scènes","Énigme des chariots","","Énigme des chariots"],["village-paddy-b","Villages","Village, Rizières","凤阳花鼓","Fengyang Huagu"],["village-bamboo-b","Villages","Village, Bambous","阳春白雪","Yang Chun Bai Xue"],["village-riverbed-b","Villages","Village, Lit du fleuve","春江花月夜","Chun Jiang Hua Yue Ye"],["village-gobi-b","Villages","Village, Gobi","老六板","Lao Liu Ban"],["village-storm-b","Villages","Village, Tonnerre","紫竹调","Zi Zhu Diao"],["village-volcano-b","Villages","Village, Volcan","春江花月夜","Chun Jiang Hua Yue Ye"],["village-savanna-b","Villages","Village, Savane","紫竹调","Zi Zhu Diao"],["village-coast-b","Villages","Village, Côte","春江花月夜","Chun Jiang Hua Yue Ye"],["village-tides-b","Villages","Village, Hautes-Eaux","紫竹调","Zi Zhu Diao"],["village-fusang-b","Villages","Village, Fusang","春江花月夜","Chun Jiang Hua Yue Ye"],["village-moon-b","Villages","Village, Lune","紫竹调","Zi Zhu Diao"],["wild-bamboo-b","Zones sauvages","Exploration, Bambous","阳关三叠","Yangguan Sandie"],["wild-gobi-b","Zones sauvages","Exploration, Gobi","胡笳十八拍","Hujia Shiba Pai"],["wild-riverbed-b","Zones sauvages","Exploration, Lit du fleuve","平沙落雁","Ping Sha Luo Yan"],["wild-paddy-b","Zones sauvages","Exploration, Rizières","古原","Gu Yuan"],["wild-storm-b","Zones sauvages","Exploration, Tonnerre","古原","Gu Yuan"],["wild-volcano-b","Zones sauvages","Exploration, Volcan","流水","Liu Shui"],["wild-savanna-b","Zones sauvages","Exploration, Savane","古原","Gu Yuan"],["wild-coast-b","Zones sauvages","Exploration, Côte","流水","Liu Shui"],["wild-tides-b","Zones sauvages","Exploration, Hautes-Eaux","古原","Gu Yuan"],["wild-fusang-b","Zones sauvages","Exploration, Fusang","流水","Liu Shui"],["wild-moon-b","Zones sauvages","Exploration, Lune","古原","Gu Yuan"],["combat-0-b","Combats","Combat, style 1","十面埋伏","Shi Mian Mai Fu"],["combat-1-b","Combats","Combat, style 2","霸王卸甲","Ba Wang Xie Jia"],["combat-2-b","Combats","Combat, style 3","将军令","Jiang Jun Ling"],["combat-3-b","Combats","Combat, style 4","夜深沉","Ye Shen Chen"],["combat-4-b","Combats","Combat, style 5","龙舟","Long Zhou"],["combat-tides-b","Combats","Combat, Hautes-Eaux","将军令","Jiang Jun Ling"],["boss-soleil-ardent-b","Boss","Soleil ardent","十面埋伏","Shi Mian Mai Fu"],["boss-soleil-des-eaux-taries-b","Boss","Soleil des eaux taries","霸王卸甲","Ba Wang Xie Jia"],["boss-soleil-de-cendres-b","Boss","Soleil de cendres","将军令","Jiang Jun Ling"],["boss-soleil-des-mirages-b","Boss","Soleil des mirages","广陵散","Guangling San"],["boss-soleil-des-orages-b","Boss","Soleil des orages","夜深沉","Ye Shen Chen"],["boss-soleil-de-magma-b","Boss","Soleil de magma","十面埋伏","Shi Mian Mai Fu"],["boss-soleil-des-betes-folles-b","Boss","Soleil des betes folles","霸王卸甲","Ba Wang Xie Jia"],["boss-soleil-des-marees-b","Boss","Soleil des marees","将军令","Jiang Jun Ling"],["boss-soleil-lache-b","Boss","Soleil lache","广陵散","Guangling San"],["boss-fengmeng-le-disciple-b","Boss","Fengmeng le disciple","夜深沉","Ye Shen Chen"],["boss-fengmeng-l-archer-presse-b","Boss","Fengmeng l archer presse","十面埋伏","Shi Mian Mai Fu"],["boss-fengmeng-l-archer-miroir-b","Boss","Fengmeng l archer miroir","霸王卸甲","Ba Wang Xie Jia"],["boss-fengmeng-rage-et-desespoir-b","Boss","Fengmeng rage et desespoir","将军令","Jiang Jun Ling"],["boss-gardien-de-la-digue-b","Boss","Gardien de la digue","广陵散","Guangling San"],["boss-colosse-de-l-ecluse-b","Boss","Colosse de l ecluse","夜深沉","Ye Shen Chen"],["boss-gardien-des-cendres-b","Boss","Gardien des cendres","十面埋伏","Shi Mian Mai Fu"],["boss-chef-de-dune-bras-de-sable-b","Boss","Chef de dune bras de sable","霸王卸甲","Ba Wang Xie Jia"],["boss-lion-gardien-fendu-b","Boss","Lion gardien fendu","将军令","Jiang Jun Ling"],["boss-forgeron-de-lave-b","Boss","Forgeron de lave","广陵散","Guangling San"],["boss-tigre-alpha-griffe-de-feu-b","Boss","Tigre alpha griffe de feu","夜深沉","Ye Shen Chen"],["boss-serpent-de-maree-b","Boss","Serpent de maree","十面埋伏","Shi Mian Mai Fu"],["boss-garde-solaire-des-racines-b","Boss","Garde solaire des racines","霸王卸甲","Ba Wang Xie Jia"],["boss-pretresse-de-givre-b","Boss","Pretresse de givre","将军令","Jiang Jun Ling"],["boss-maitresse-tong-la-lame-de-bronze-b","Boss","Maitresse tong la lame de bronze","广陵散","Guangling San"],["boss-maitre-hong-gang-le-gong-de-cuivre-b","Boss","Maitre hong gang le gong de cuivre","夜深沉","Ye Shen Chen"],["boss-maitre-tie-bi-le-bras-de-fer-b","Boss","Maitre tie bi le bras de fer","十面埋伏","Shi Mian Mai Fu"],["boss-dame-yin-yue-la-lune-d-argent-b","Boss","Dame yin yue la lune d argent","霸王卸甲","Ba Wang Xie Jia"],["boss-seigneur-jin-long-le-dragon-d-or-b","Boss","Seigneur jin long le dragon d or","将军令","Jiang Jun Ling"],["boss-dame-bi-yu-la-main-de-jade-b","Boss","Dame bi yu la main de jade","广陵散","Guangling San"],["boss-immortel-yun-zhong-celui-des-nuees-b","Boss","Immortel yun zhong celui des nuees","夜深沉","Ye Shen Chen"],["boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b","Boss","Grand maitre qian jian l archer aux mille fleches","十面埋伏","Shi Mian Mai Fu"],["boss-gardien-de-la-forge-noire-b","Boss","Gardien de la forge noire","霸王卸甲","Ba Wang Xie Jia"],["boss-capitaine-noye-des-limons-b","Boss","Capitaine noye des limons","将军令","Jiang Jun Ling"],["boss-lion-cendre-gardien-du-sutra-b","Boss","Lion cendre gardien du sutra","广陵散","Guangling San"],["boss-colosse-des-caravanes-ensevelies-b","Boss","Colosse des caravanes ensevelies","夜深沉","Ye Shen Chen"],["boss-jiangshi-du-cassia-lunaire-b","Boss","Jiangshi du cassia lunaire","十面埋伏","Shi Mian Mai Fu"],["boss-vieux-saule-des-boues-gardien-du-terrier-b","Boss","Vieux saule des boues gardien du terrier","霸王卸甲","Ba Wang Xie Jia"],["boss-long-du-tonnerre-sourd-b","Boss","Long du tonnerre sourd","将军令","Jiang Jun Ling"],["boss-tigre-blanc-des-ancetres-b","Boss","Tigre blanc des ancetres","广陵散","Guangling San"],["boss-serpent-des-marees-noires-b","Boss","Serpent des marees noires","夜深沉","Ye Shen Chen"],["boss-immortel-dechu-des-branches-b","Boss","Immortel dechu des branches","十面埋伏","Shi Mian Mai Fu"],["boss-zhuque-l-oiseau-vermillon-b","Boss","Zhuque l oiseau vermillon","霸王卸甲","Ba Wang Xie Jia"],["boss-xuanwu-la-tortue-noire-b","Boss","Xuanwu la tortue noire","将军令","Jiang Jun Ling"],["boss-baihu-le-tigre-blanc-b","Boss","Baihu le tigre blanc","广陵散","Guangling San"],["boss-qinglong-le-dragon-d-azur-b","Boss","Qinglong le dragon d azur","夜深沉","Ye Shen Chen"],["boss-changxi-mere-des-douze-lunes-b","Boss","Changxi mere des douze lunes","霸王卸甲","Ba Wang Xie Jia"],["boss-a0-b","Boss","Boss, archétype 1","将军令","Jiang Jun Ling"],["boss-a1-b","Boss","Boss, archétype 2","广陵散","Guangling San"],["boss-a2-b","Boss","Boss, archétype 3","夜深沉","Ye Shen Chen"],["boss-a3-b","Boss","Boss, archétype 4","十面埋伏","Shi Mian Mai Fu"],["boss-a4-b","Boss","Boss, archétype 5","霸王卸甲","Ba Wang Xie Jia"],["boss-a5-b","Boss","Boss, archétype 6","将军令","Jiang Jun Ling"],["boss-a6-b","Boss","Boss, archétype 7","广陵散","Guangling San"],["boss-a7-b","Boss","Boss, archétype 8","夜深沉","Ye Shen Chen"]];
+const BASE = "audio/music/";
+const el = id => document.getElementById(id), a = el('a'), lists = el('lists');
+let i = 0, auto = true, shuffle = false;
+const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
+el('sub').textContent = T.length + ' interprétations inspirées de pièces anciennes, à alterner avec la bande-son du jeu.';
+const items = [];
+let lastGroup = null, ol = null;
+T.forEach((t, k) => {
+  if (t[1] !== lastGroup) {
+    lastGroup = t[1];
+    const h = document.createElement('p'); h.className = 'group'; h.textContent = lastGroup; h.dataset.group = lastGroup; lists.appendChild(h);
+    ol = document.createElement('ol'); lists.appendChild(ol);
+  }
+  const li = document.createElement('li');
+  li.tabIndex = 0;
+  li.innerHTML = '<span class="n">' + (k + 1) + '</span><span><div class="t-zh">' + (t[3] || t[4]) + '</div><div class="t-fr">' + (t[3] ? t[4] + ' · ' : '') + t[2] + '</div></span><span class="scene">' + t[1] + '</span>';
+  li.addEventListener('click', () => load(k, true));
+  li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); load(k, true); } });
+  ol.appendChild(li);
+  items.push(li);
+});
+function load(k, play) {
+  i = k;
+  const t = T[k];
+  a.src = BASE + t[0] + '.mp3';
+  el('nowZh').textContent = t[3] || t[4];
+  el('nowFr').textContent = (t[3] ? t[4] + ' · ' : '') + t[2];
+  items.forEach((li, j) => j === k ? li.setAttribute('aria-current', 'true') : li.removeAttribute('aria-current'));
+  el('seek').value = 0; el('cur').textContent = '0:00'; el('dur').textContent = '0:00';
+  if (play) a.play().catch(() => {});
+}
+function step(d) {
+  if (shuffle && d > 0) {
+    let k;
+    do { k = Math.floor(Math.random() * T.length); } while (k === i && T.length > 1);
+    load(k, true);
+    return;
+  }
+  load((i + d + T.length) % T.length, true);
+}
+el('q').oninput = e => {
+  const q = e.target.value.trim().toLowerCase();
+  items.forEach((li, k) => { li.hidden = q && (T[k].join(' ').toLowerCase().indexOf(q) < 0); });
+  [...lists.querySelectorAll('ol')].forEach(o => { o.previousElementSibling.hidden = [...o.children].every(c => c.hidden); });
+};
+el('play').onclick = () => { a.paused ? a.play().catch(() => {}) : a.pause(); };
+el('prev').onclick = () => step(-1);
+el('next').onclick = () => step(1);
+el('auto').onclick = e => { auto = !auto; e.currentTarget.setAttribute('aria-pressed', auto); };
+el('shuf').onclick = e => { shuffle = !shuffle; e.currentTarget.setAttribute('aria-pressed', shuffle); };
+el('vol').oninput = e => { a.volume = e.target.value / 100; };
+a.volume = 0.8;
+a.onplay = () => { el('play').textContent = 'Pause'; };
+a.onpause = () => { el('play').textContent = 'Lecture'; };
+a.onloadedmetadata = () => { el('dur').textContent = fmt(a.duration); };
+a.ontimeupdate = () => { el('cur').textContent = fmt(a.currentTime); if (a.duration) el('seek').value = a.currentTime / a.duration * 1000; };
+el('seek').oninput = e => { if (a.duration) a.currentTime = e.target.value / 1000 * a.duration; };
+a.onended = () => { if (auto) step(1); };
+load(0, false);
+</script>
+</body>
+</html>
