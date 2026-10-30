@@ -54,6 +54,7 @@ export function buildManifest(root = GAME_DIR) {
         ...list(root, 'puzzle', ext('.js')),
         ...listDeep(root, 'world', ext('.js')),
         ...listDeep(root, 'events', ext('.js')),
+        ...list(root, 'icons', ext('.png')),   // icônes de l'application (manifest.json, apple-touch-icon)
         ...list(root, 'sprites', ext('.js')).filter(p => p !== GBA_SOURCE),
         ...list(root, 'sprites/cn', ext('.js')),
         ...list(root, 'sprites/tiles', ext('.svg')),

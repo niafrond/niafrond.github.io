@@ -11,7 +11,7 @@ describe('precache-manifest.json', () => {
 
     test('le cœur contient index.html, les feuilles de style, les polices, les données et tous les modules de l\'import map', () => {
         const core = new Set(committed.core);
-        ['index.html', 'style.css', 'retro.css', 'manifest.json', 'icon.svg', 'spells.json', 'enemies.catalog.json', 'audio/manifest.json',
+        ['index.html', 'style.css', 'retro.css', 'manifest.json', 'icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'spells.json', 'enemies.catalog.json', 'audio/manifest.json',
             'fonts/pixelify-sans-400.woff2', 'fonts/press-start-2p.woff2', 'sprites/gbaIndex.js', 'world/index.js'].forEach(p => expect(core.has(p)).toBe(true));
         const modules = /var map = \{\};\s*\n\s*(\[[^\n]*?\])\.forEach/.exec(html);
         expect(modules).not.toBeNull();
