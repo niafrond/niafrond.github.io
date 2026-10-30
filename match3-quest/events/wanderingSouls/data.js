@@ -49,7 +49,7 @@ export const GRID = [
     '#.##..#.......##....k#',
     '#.#...5.....6......o.#',
     '#...8.....##...9...0.#',
-    '#..m.................#',
+    '#..m...........s.....#',
     '######################'
 ];
 
@@ -239,5 +239,32 @@ export const PUZZLE_BLOCKS = {
     chest: { id: 'ws_cache_urnes', at: 'r', label: 'Cache des archives', openText: 'Les deux urnes reposent sur leurs dalles, et une trappe s\'ouvre dans le mur : la clé d\'un sanctuaire, enveloppée de papier de riz.' },
     item: { id: 'qi_ws_cle', name: 'Clé d\'un sanctuaire', description: 'Une petite clé de bronze, usée par les mains qui l\'ont tenue. Elle n\'ouvre plus rien ici, mais on la garde.', earlyDescription: 'Une clé de bronze.' }
 };
+
+// Énigme du cortège (mode « slide », niveau moyen : 21 coups minimum, entre les charrettes des bambous, 12, et du col, 26) : il faut
+// faire sortir la charrette funéraire (le bloc rouge) du cortège d'offrandes. Récompense de même rang : coffre de palier 2, comme l'offrande
+// et le sceau, un cran sous les énigmes faciles (palier 3 = coffre des miroirs / urnes). Pas de famille d'armure.
+export const PUZZLE_CORTEGE = {
+    id: 'ws_cortege',
+    tier: 2,
+    def: {
+        title: 'Le cortège des offrandes',
+        mode: 'slide',
+        level: {
+            w: 6, h: 6, exit: { side: 'right', at: 2 },
+            blocks: [
+                { id: 'H', x: 0, y: 2, w: 2, h: 1, hero: true },
+                { id: 'b1', x: 0, y: 3, w: 3, h: 1 },
+                { id: 'b2', x: 2, y: 4, w: 1, h: 2 },
+                { id: 'b3', x: 3, y: 3, w: 1, h: 2 },
+                { id: 'b4', x: 5, y: 0, w: 1, h: 2 },
+                { id: 'b5', x: 4, y: 0, w: 1, h: 3 },
+                { id: 'b6', x: 4, y: 4, w: 2, h: 1 },
+                { id: 'b7', x: 0, y: 5, w: 2, h: 1 }
+            ]
+        }
+    },
+    chest: { id: 'ws_cache_cortege', at: 's', label: 'Cache du cortège', openText: 'La charrette funéraire franchit enfin la porte du cortège, et les porteurs de papier s\'écartent. Sous sa bâche, une liasse de monnaie des morts, encore tiède des mains qui l\'ont pliée.' },
+    item: { id: 'qi_ws_monnaie', name: 'Monnaie de l\'au-delà', description: 'Une liasse de papier-monnaie des offrandes, que l\'on brûle pour payer le passage des défunts.', earlyDescription: 'Une liasse de papier doré.' }
+};
 // Toutes les énigmes de l'événement, déclarées dans PUZZLES par le module d'événement.
-export const PUZZLE_LIST = [PUZZLE, PUZZLE_BLOCKS];
+export const PUZZLE_LIST = [PUZZLE, PUZZLE_BLOCKS, PUZZLE_CORTEGE];

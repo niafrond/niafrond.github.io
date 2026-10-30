@@ -288,10 +288,24 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(D.PUZZLE.item.id);
     });
 
+    test('énigme du cortège : niveau moyen (21 coups), coffre de palier 2', () => {
+        const P = D.PUZZLE_CORTEGE;
+        expect(PUZZLES[P.id]).toBe(P.def);
+        expect(solve(puzzleDef(P.id))).toBe(21);
+        expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
+        expect(realm.chests.find(c => c.id === P.chest.id)).toMatchObject({ puzzle: P.id, lootTier: 2 });
+        const session = createSession(null);
+        teleportToScreen(session, D.REALM_ID);
+        expect(openChest(session, P.chest.id)).toMatchObject({ type: 'puzzle', puzzleId: P.id });
+        solvePuzzle(session, P.id);
+        expect(openChest(session, P.chest.id).events.some(e => e.type === 'chestOpened')).toBe(true);
+        expect(session.data.questItems.map(i => i.id)).toContain(P.item.id);
+    });
+
     test('énigme des urnes : faisable en 13 coups, verrouille son coffre', () => {
         const P = D.PUZZLE_BLOCKS;
         expect(PUZZLES[P.id]).toBe(P.def);
-        expect(D.PUZZLE_LIST.map(p => p.id)).toEqual(['ws_miroirs', 'ws_urnes']);
+        expect(D.PUZZLE_LIST.map(p => p.id)).toEqual(['ws_miroirs', 'ws_urnes', 'ws_cortege']);
         expect(solve(puzzleDef(P.id))).toBe(13);
         expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
         const session = createSession(null);
