@@ -10,11 +10,11 @@ const manifest = JSON.parse(read('manifest.json'));
 const pngSize = f => { const b = readFileSync(new URL(f, dir)); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
 
 describe('manifeste de la PWA', () => {
-    test('l\'application s\'appelle Match Quest', () => {
+    test('l\'application s\'appelle Hou Yi et les 10 Soleils', () => {
         expect(manifest.name).toBe('Hou Yi et les 10 Soleils');
         expect(manifest.short_name).toBe('Hou Yi');
         expect(manifest.short_name.length).toBeLessThanOrEqual(12);   // reste lisible sous l'icône de l'écran d'accueil
-        expect(read('index.html')).toMatch(/<title>Match Quest<\/title>/);
+        expect(read('index.html')).toMatch(/<title>Hou Yi et les 10 Soleils<\/title>/);
         expect(read('index.html')).toMatch(/apple-mobile-web-app-title" content="Hou Yi"/);
     });
 
