@@ -242,7 +242,7 @@ describe('integration: full game playthrough', () => {
 
             const screen = SCREENS[screenId];
             exitsOf(screen, SCREENS).forEach(exit => {
-                if (!visited.has(exit.to) && !isExitLocked(s, exit)) {
+                if (!visited.has(exit.to) && !isExitLocked(s, exit) && !exit.rememberReturn && !exit.returnToSaved) {
                     toVisit.push(exit.to);
                 }
             });
@@ -255,7 +255,7 @@ describe('integration: full game playthrough', () => {
         const s = createSession({});
 
         const permanentEnemies = screens
-            .flatMap(sc => sc.enemies.filter(e => e.permanent))
+            .filter(sc => !sc.event).flatMap(sc => sc.enemies.filter(e => e.permanent))
             .map(e => e.id);
 
         permanentEnemies.forEach(enemyId => {

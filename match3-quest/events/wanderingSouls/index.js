@@ -78,7 +78,8 @@ const cheb = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 // Case de l'entrée : terre ferme libre, à bonne distance des sorties (placeInLand), de l'apparition et de tout ennemi (patrouilles comprises).
 function placeEntrance(host, screens) {
     const danger = host.enemies.flatMap(e => [{ x: e.x, y: e.y }, ...(e.patrol || []).map(p => (Array.isArray(p) ? { x: p[0], y: p[1] } : p))]);
-    const clear = pos => cheb(pos, host.spawn) >= 4 && danger.every(d => cheb(pos, d) >= 4);
+    const wall = host.enemies.flatMap(e => (e.wall || []).map(([x, y]) => ({ x, y })));   // lignes de piliers d'un boss : jamais sur la porte ni à côté
+    const clear = pos => cheb(pos, host.spawn) >= 4 && danger.every(d => cheb(pos, d) >= 4) && wall.every(w => cheb(pos, w) >= 2);
     return placeInLand(host, occupancy(host, screens), `${D.REALM_ID}_porte_${host.id}`, clear);
 }
 

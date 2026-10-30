@@ -339,7 +339,7 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         // la dalle se dessine sans erreur et couvre tout le carré de 16×16 (une case = au moins 16 rangées de rectangles)
         const rects = [];
         const g = { fillStyle: '', fillRect: (x, y, w, h) => rects.push([x, y, w, h, g.fillStyle]) };
-        paintGroundTile(g, { a: '#686a70', b: '#5f6167', path: '#8c7b55' }, 16, 0, 0, 3, 4, { isPath: () => false, isLiquid: () => false, biomeId: D.BIOME });
+        paintGroundTile(g, { a: '#686a70', b: '#5f6167', path: '#8c7b55', liquid: '#273b59' }, 16, 0, 0, 3, 4, { isPath: () => false, isLiquid: () => false, biomeId: D.BIOME });
         expect(rects.length).toBeGreaterThanOrEqual(16);
         expect(rects.every(([x, y, w, h]) => x >= 0 && y >= 0 && x + w <= 16 && y + h <= 16)).toBe(true);
         const drawn = new Set(); rects.forEach(([x, y, w, h]) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) drawn.add(`${i},${j}`); });
