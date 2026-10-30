@@ -3,8 +3,9 @@ import './fixtures/playerForge.js';
 import { describe, test, expect } from '@jest/globals';
 import {
     allStuff, STUFF_SLOTS, getStuffById, grantStuff, equipStuff, unequipStuff, stuffTotals, protectsFromBiome, inflictPoison,
-    lootableStuff, rollStuffDrop, CHEST_STUFF_DROP, collarForBiome, normalizeStuff, describeStuff
+    lootableStuff, rollStuffDrop, CHEST_STUFF_DROP, collarForBiome, normalizeStuff, describeStuff, relicsOf
 } from '../../stuff.js';
+import { allItems } from '../../items.js';
 import { gearBonus } from '../../combatStats.js';
 import { BIOME_RULES } from '../../terrain.js';
 import { merchantStock, availableOffers, buyOffer, sellableEntries, sellEntry, MERCHANT_IDS } from '../../merchants.js';
@@ -139,4 +140,23 @@ describe('quêtes des colliers', () => {
             expect(boss).toMatchObject({ permanent: true });
             expect(getStuffById(collar).biomeProtect).toBeTruthy();
         });
+});
+
+describe('reliques du sac (objets sans emplacement)', () => {
+    const relic = { id: 'ringOfPrecision', name: 'Bague d\'Archer en Jade', type: 'artifact' };
+    const potion = { id: 'healthPotion', name: 'Élixir de Vie', type: 'reusable' };
+    const shield = { id: 'jade_shield', name: 'Bouclier de Jade', type: 'shield' };
+
+    test('relicsOf ne garde que les reliques permanentes du sac', () => {
+        expect(relicsOf({ inventory: [potion, relic, shield] })).toEqual([relic]);
+        expect(relicsOf({ inventory: [] })).toEqual([]);
+        expect(relicsOf({})).toEqual([]);
+        expect(relicsOf(null)).toEqual([]);
+    });
+
+    test('toute relique du butin est listée dans l\'onglet Stuff (aucun objet annoncé sans destination)', () => {
+        const owned = allItems.filter(i => i.type === 'artifact');
+        expect(owned.length).toBeGreaterThan(10);
+        expect(relicsOf({ inventory: owned.map(i => ({ ...i })) }).map(r => r.id)).toEqual(owned.map(i => i.id));
+    });
 });
