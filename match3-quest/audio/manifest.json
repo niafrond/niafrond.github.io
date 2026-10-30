@@ -1317,6 +1317,195 @@
   },
   "spell-worldEnder": {
    "seconds": 0.68
+  },
+  "spell-awakenQi": {
+   "seconds": 0.47
+  },
+  "spell-moonSpring": {
+   "seconds": 0.46
+  },
+  "spell-spiritFlow": {
+   "seconds": 0.48
+  },
+  "spell-stormTide": {
+   "seconds": 0.52
+  },
+  "spell-immortalFury": {
+   "seconds": 0.59
+  },
+  "spell-daoHeart": {
+   "seconds": 0.62
+  },
+  "spell-celestialAwakening": {
+   "seconds": 0.66
+  },
+  "spell-cinnabarTransmute": {
+   "seconds": 0.37
+  },
+  "spell-rageAlchemy": {
+   "seconds": 0.44
+  },
+  "spell-wrathElixir": {
+   "seconds": 0.54
+  },
+  "spell-innerCrucible": {
+   "seconds": 0.46
+  },
+  "spell-emotionFurnace": {
+   "seconds": 0.5
+  },
+  "spell-celestialDistill": {
+   "seconds": 0.53
+  },
+  "spell-philosopherStone": {
+   "seconds": 0.61
+  },
+  "spell-furyBolt": {
+   "seconds": 0.43
+  },
+  "spell-wrathLightning": {
+   "seconds": 0.56
+  },
+  "spell-innerThunder": {
+   "seconds": 0.55
+  },
+  "spell-etherLance": {
+   "seconds": 0.62
+  },
+  "spell-immortalStorm": {
+   "seconds": 0.67
+  },
+  "spell-skyJudgement": {
+   "seconds": 0.69
+  },
+  "spell-daoCataclysm": {
+   "seconds": 0.69
+  },
+  "spell-bloodThirst": {
+   "seconds": 0.38
+  },
+  "spell-silentHunt": {
+   "seconds": 0.41
+  },
+  "spell-shadowTrack": {
+   "seconds": 0.45
+  },
+  "spell-hunterThrill": {
+   "seconds": 0.49
+  },
+  "spell-bladeFever": {
+   "seconds": 0.59
+  },
+  "spell-tigerAppetite": {
+   "seconds": 0.62
+  },
+  "spell-slayerRapture": {
+   "seconds": 0.66
+  },
+  "spell-furyTheft": {
+   "seconds": 0.45
+  },
+  "spell-shadowSiphon": {
+   "seconds": 0.47
+  },
+  "spell-wrathLarceny": {
+   "seconds": 0.51
+  },
+  "spell-innerPlunder": {
+   "seconds": 0.54
+  },
+  "spell-celestialRapine": {
+   "seconds": 0.58
+  },
+  "spell-nightTithe": {
+   "seconds": 0.61
+  },
+  "spell-voidTribute": {
+   "seconds": 0.65
+  },
+  "spell-spiteStrike": {
+   "seconds": 0.41
+  },
+  "spell-vengefulBlade": {
+   "seconds": 0.46
+  },
+  "spell-furiousLunge": {
+   "seconds": 0.51
+  },
+  "spell-bloodEclipse": {
+   "seconds": 0.62
+  },
+  "spell-thousandBladesDance": {
+   "seconds": 0.67
+  },
+  "spell-absoluteShadowBlow": {
+   "seconds": 0.68
+  },
+  "spell-instantDeath": {
+   "seconds": 0.68
+  },
+  "spell-battleOath": {
+   "seconds": 0.45
+  },
+  "spell-righteousAnger": {
+   "seconds": 0.5
+  },
+  "spell-imperialIndignation": {
+   "seconds": 0.54
+  },
+  "spell-guardFervor": {
+   "seconds": 0.58
+  },
+  "spell-mandateWrath": {
+   "seconds": 0.63
+  },
+  "spell-celestialZeal": {
+   "seconds": 0.67
+  },
+  "spell-sacredGuardianRage": {
+   "seconds": 0.72
+  },
+  "spell-wrathOffering": {
+   "seconds": 0.37
+  },
+  "spell-jadeSacrifice": {
+   "seconds": 0.4
+  },
+  "spell-furiousIncense": {
+   "seconds": 0.44
+  },
+  "spell-furyAltar": {
+   "seconds": 0.46
+  },
+  "spell-warriorPrayer": {
+   "seconds": 0.5
+  },
+  "spell-imperialRite": {
+   "seconds": 0.53
+  },
+  "spell-furiousBlessing": {
+   "seconds": 0.61
+  },
+  "spell-righteousStrike": {
+   "seconds": 0.49
+  },
+  "spell-imperialPunishment": {
+   "seconds": 0.55
+  },
+  "spell-guardSentence": {
+   "seconds": 0.61
+  },
+  "spell-jadeHammer": {
+   "seconds": 0.67
+  },
+  "spell-celestialVerdict": {
+   "seconds": 0.73
+  },
+  "spell-mandateJudgement": {
+   "seconds": 0.75
+  },
+  "spell-throneWrath": {
+   "seconds": 0.75
   }
  }
 }

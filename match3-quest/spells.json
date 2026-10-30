@@ -1121,6 +1121,265 @@
       "atkBuff": 30,
       "duration": 3,
       "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
+    },
+    {
+      "id": "awakenQi",
+      "name": "Éveil du Qi",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 35,
+      "description": "Le sang bout : +35 de rage"
+    },
+    {
+      "id": "moonSpring",
+      "name": "Source Lunaire",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 11
+      },
+      "minLevel": 20,
+      "effect": "rageGain",
+      "rageGain": 45,
+      "description": "Le sang bout : +45 de rage"
+    },
+    {
+      "id": "spiritFlow",
+      "name": "Flux Spirituel",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 16
+      },
+      "minLevel": 30,
+      "effect": "rageGain",
+      "rageGain": 55,
+      "description": "Le sang bout : +55 de rage"
+    },
+    {
+      "id": "stormTide",
+      "name": "Marée d'Orage",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 65,
+      "description": "Le sang bout : +65 de rage"
+    },
+    {
+      "id": "immortalFury",
+      "name": "Fureur des Immortels",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 26
+      },
+      "minLevel": 50,
+      "effect": "rageGain",
+      "rageGain": 75,
+      "description": "Le sang bout : +75 de rage"
+    },
+    {
+      "id": "daoHeart",
+      "name": "Cœur du Dao",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 31
+      },
+      "minLevel": 60,
+      "effect": "rageGain",
+      "rageGain": 85,
+      "description": "Le sang bout : +85 de rage"
+    },
+    {
+      "id": "celestialAwakening",
+      "name": "Éveil Céleste",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 36
+      },
+      "minLevel": 70,
+      "effect": "rageGain",
+      "rageGain": 95,
+      "description": "Le sang bout : +95 de rage"
+    },
+    {
+      "id": "cinnabarTransmute",
+      "name": "Conversion du Cinabre",
+      "class": "sorcerer",
+      "cost": {
+        "green": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.1,
+      "description": "Transforme toute la rage en qì : 1 qì de chaque couleur par 10 de rage"
+    },
+    {
+      "id": "rageAlchemy",
+      "name": "Alchimie de Rage",
+      "class": "sorcerer",
+      "cost": {
+        "green": 8
+      },
+      "minLevel": 20,
+      "effect": "rageToMana",
+      "manaPerRage": 0.13,
+      "description": "Transforme toute la rage en qì : 13 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "wrathElixir",
+      "name": "Élixir de Colère",
+      "class": "sorcerer",
+      "cost": {
+        "green": 12
+      },
+      "minLevel": 30,
+      "effect": "rageToMana",
+      "manaPerRage": 0.16,
+      "description": "Transforme toute la rage en qì : 16 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "innerCrucible",
+      "name": "Creuset Intérieur",
+      "class": "sorcerer",
+      "cost": {
+        "green": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.19,
+      "description": "Transforme toute la rage en qì : 19 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "emotionFurnace",
+      "name": "Fourneau d'Émotion",
+      "class": "sorcerer",
+      "cost": {
+        "green": 20
+      },
+      "minLevel": 50,
+      "effect": "rageToMana",
+      "manaPerRage": 0.22,
+      "description": "Transforme toute la rage en qì : 22 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "celestialDistill",
+      "name": "Distillation Céleste",
+      "class": "sorcerer",
+      "cost": {
+        "green": 24
+      },
+      "minLevel": 60,
+      "effect": "rageToMana",
+      "manaPerRage": 0.25,
+      "description": "Transforme toute la rage en qì : 25 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "philosopherStone",
+      "name": "Pierre Philosophale",
+      "class": "sorcerer",
+      "cost": {
+        "green": 28
+      },
+      "minLevel": 70,
+      "effect": "rageToMana",
+      "manaPerRage": 0.28,
+      "description": "Transforme toute la rage en qì : 28 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furyBolt",
+      "name": "Éclair de Fureur",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6,
+        "purple": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage en un coup : 3 dégâts par point de rage"
+    },
+    {
+      "id": "wrathLightning",
+      "name": "Foudre Courroucée",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 10,
+        "purple": 7
+      },
+      "minLevel": 20,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage en un coup : 4 dégâts par point de rage"
+    },
+    {
+      "id": "innerThunder",
+      "name": "Tonnerre Intérieur",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 14,
+        "purple": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 5,
+      "description": "Libère toute la rage en un coup : 5 dégâts par point de rage"
+    },
+    {
+      "id": "etherLance",
+      "name": "Lance d'Éther",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 18,
+        "purple": 13
+      },
+      "minLevel": 40,
+      "effect": "rageToDamage",
+      "dmgPerRage": 6,
+      "description": "Libère toute la rage en un coup : 6 dégâts par point de rage"
+    },
+    {
+      "id": "immortalStorm",
+      "name": "Orage des Immortels",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 22,
+        "purple": 16
+      },
+      "minLevel": 50,
+      "effect": "rageToDamage",
+      "dmgPerRage": 7,
+      "description": "Libère toute la rage en un coup : 7 dégâts par point de rage"
+    },
+    {
+      "id": "skyJudgement",
+      "name": "Jugement du Ciel",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 26,
+        "purple": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 8,
+      "description": "Libère toute la rage en un coup : 8 dégâts par point de rage"
+    },
+    {
+      "id": "daoCataclysm",
+      "name": "Cataclysme du Dao",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 30,
+        "purple": 22
+      },
+      "minLevel": 70,
+      "effect": "rageToDamage",
+      "dmgPerRage": 9,
+      "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
     }
   ],
   "assassinSpells": [
@@ -1237,6 +1496,265 @@
       "atkBuff": 35,
       "duration": 3,
       "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
+    },
+    {
+      "id": "bloodThirst",
+      "name": "Soif de Sang",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 35,
+      "description": "Le sang bout : +35 de rage"
+    },
+    {
+      "id": "silentHunt",
+      "name": "Chasse Silencieuse",
+      "class": "assassin",
+      "cost": {
+        "yellow": 11
+      },
+      "minLevel": 20,
+      "effect": "rageGain",
+      "rageGain": 45,
+      "description": "Le sang bout : +45 de rage"
+    },
+    {
+      "id": "shadowTrack",
+      "name": "Traque de l'Ombre",
+      "class": "assassin",
+      "cost": {
+        "yellow": 16
+      },
+      "minLevel": 30,
+      "effect": "rageGain",
+      "rageGain": 55,
+      "description": "Le sang bout : +55 de rage"
+    },
+    {
+      "id": "hunterThrill",
+      "name": "Frisson du Chasseur",
+      "class": "assassin",
+      "cost": {
+        "yellow": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 65,
+      "description": "Le sang bout : +65 de rage"
+    },
+    {
+      "id": "bladeFever",
+      "name": "Fièvre de la Lame",
+      "class": "assassin",
+      "cost": {
+        "yellow": 26
+      },
+      "minLevel": 50,
+      "effect": "rageGain",
+      "rageGain": 75,
+      "description": "Le sang bout : +75 de rage"
+    },
+    {
+      "id": "tigerAppetite",
+      "name": "Appétit du Tigre",
+      "class": "assassin",
+      "cost": {
+        "yellow": 31
+      },
+      "minLevel": 60,
+      "effect": "rageGain",
+      "rageGain": 85,
+      "description": "Le sang bout : +85 de rage"
+    },
+    {
+      "id": "slayerRapture",
+      "name": "Ivresse du Meurtre",
+      "class": "assassin",
+      "cost": {
+        "yellow": 36
+      },
+      "minLevel": 70,
+      "effect": "rageGain",
+      "rageGain": 95,
+      "description": "Le sang bout : +95 de rage"
+    },
+    {
+      "id": "furyTheft",
+      "name": "Vol de Fureur",
+      "class": "assassin",
+      "cost": {
+        "purple": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.1,
+      "description": "Transforme toute la rage en qì : 1 qì de chaque couleur par 10 de rage"
+    },
+    {
+      "id": "shadowSiphon",
+      "name": "Siphon d'Ombre",
+      "class": "assassin",
+      "cost": {
+        "purple": 8
+      },
+      "minLevel": 20,
+      "effect": "rageToMana",
+      "manaPerRage": 0.13,
+      "description": "Transforme toute la rage en qì : 13 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "wrathLarceny",
+      "name": "Larcin de Colère",
+      "class": "assassin",
+      "cost": {
+        "purple": 12
+      },
+      "minLevel": 30,
+      "effect": "rageToMana",
+      "manaPerRage": 0.16,
+      "description": "Transforme toute la rage en qì : 16 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "innerPlunder",
+      "name": "Pillage Intérieur",
+      "class": "assassin",
+      "cost": {
+        "purple": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.19,
+      "description": "Transforme toute la rage en qì : 19 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "celestialRapine",
+      "name": "Rapine Céleste",
+      "class": "assassin",
+      "cost": {
+        "purple": 20
+      },
+      "minLevel": 50,
+      "effect": "rageToMana",
+      "manaPerRage": 0.22,
+      "description": "Transforme toute la rage en qì : 22 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "nightTithe",
+      "name": "Dîme de la Nuit",
+      "class": "assassin",
+      "cost": {
+        "purple": 24
+      },
+      "minLevel": 60,
+      "effect": "rageToMana",
+      "manaPerRage": 0.25,
+      "description": "Transforme toute la rage en qì : 25 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "voidTribute",
+      "name": "Tribut du Vide",
+      "class": "assassin",
+      "cost": {
+        "purple": 28
+      },
+      "minLevel": 70,
+      "effect": "rageToMana",
+      "manaPerRage": 0.28,
+      "description": "Transforme toute la rage en qì : 28 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "spiteStrike",
+      "name": "Frappe de Rancœur",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6,
+        "red": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage en un coup : 3 dégâts par point de rage"
+    },
+    {
+      "id": "vengefulBlade",
+      "name": "Lame Vengeresse",
+      "class": "assassin",
+      "cost": {
+        "yellow": 10,
+        "red": 7
+      },
+      "minLevel": 20,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage en un coup : 4 dégâts par point de rage"
+    },
+    {
+      "id": "furiousLunge",
+      "name": "Estocade Furieuse",
+      "class": "assassin",
+      "cost": {
+        "yellow": 14,
+        "red": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 5,
+      "description": "Libère toute la rage en un coup : 5 dégâts par point de rage"
+    },
+    {
+      "id": "bloodEclipse",
+      "name": "Éclipse Sanglante",
+      "class": "assassin",
+      "cost": {
+        "yellow": 18,
+        "red": 13
+      },
+      "minLevel": 40,
+      "effect": "rageToDamage",
+      "dmgPerRage": 6,
+      "description": "Libère toute la rage en un coup : 6 dégâts par point de rage"
+    },
+    {
+      "id": "thousandBladesDance",
+      "name": "Danse des Mille Lames",
+      "class": "assassin",
+      "cost": {
+        "yellow": 22,
+        "red": 16
+      },
+      "minLevel": 50,
+      "effect": "rageToDamage",
+      "dmgPerRage": 7,
+      "description": "Libère toute la rage en un coup : 7 dégâts par point de rage"
+    },
+    {
+      "id": "absoluteShadowBlow",
+      "name": "Coup de l'Ombre Absolue",
+      "class": "assassin",
+      "cost": {
+        "yellow": 26,
+        "red": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 8,
+      "description": "Libère toute la rage en un coup : 8 dégâts par point de rage"
+    },
+    {
+      "id": "instantDeath",
+      "name": "Mort Instantanée",
+      "class": "assassin",
+      "cost": {
+        "yellow": 30,
+        "red": 22
+      },
+      "minLevel": 70,
+      "effect": "rageToDamage",
+      "dmgPerRage": 9,
+      "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
     }
   ],
   "templarSpells": [
@@ -1387,6 +1905,265 @@
       "defBuff": 20,
       "duration": 3,
       "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
+    },
+    {
+      "id": "battleOath",
+      "name": "Serment de Combat",
+      "class": "templar",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 35,
+      "description": "Le sang bout : +35 de rage"
+    },
+    {
+      "id": "righteousAnger",
+      "name": "Colère Juste",
+      "class": "templar",
+      "cost": {
+        "purple": 11
+      },
+      "minLevel": 20,
+      "effect": "rageGain",
+      "rageGain": 45,
+      "description": "Le sang bout : +45 de rage"
+    },
+    {
+      "id": "imperialIndignation",
+      "name": "Indignation Impériale",
+      "class": "templar",
+      "cost": {
+        "purple": 16
+      },
+      "minLevel": 30,
+      "effect": "rageGain",
+      "rageGain": 55,
+      "description": "Le sang bout : +55 de rage"
+    },
+    {
+      "id": "guardFervor",
+      "name": "Ferveur du Garde",
+      "class": "templar",
+      "cost": {
+        "purple": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 65,
+      "description": "Le sang bout : +65 de rage"
+    },
+    {
+      "id": "mandateWrath",
+      "name": "Courroux du Mandat",
+      "class": "templar",
+      "cost": {
+        "purple": 26
+      },
+      "minLevel": 50,
+      "effect": "rageGain",
+      "rageGain": 75,
+      "description": "Le sang bout : +75 de rage"
+    },
+    {
+      "id": "celestialZeal",
+      "name": "Zèle Céleste",
+      "class": "templar",
+      "cost": {
+        "purple": 31
+      },
+      "minLevel": 60,
+      "effect": "rageGain",
+      "rageGain": 85,
+      "description": "Le sang bout : +85 de rage"
+    },
+    {
+      "id": "sacredGuardianRage",
+      "name": "Rage du Gardien Sacré",
+      "class": "templar",
+      "cost": {
+        "purple": 36
+      },
+      "minLevel": 70,
+      "effect": "rageGain",
+      "rageGain": 95,
+      "description": "Le sang bout : +95 de rage"
+    },
+    {
+      "id": "wrathOffering",
+      "name": "Offrande de Colère",
+      "class": "templar",
+      "cost": {
+        "green": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.1,
+      "description": "Transforme toute la rage en qì : 1 qì de chaque couleur par 10 de rage"
+    },
+    {
+      "id": "jadeSacrifice",
+      "name": "Sacrifice de Jade",
+      "class": "templar",
+      "cost": {
+        "green": 8
+      },
+      "minLevel": 20,
+      "effect": "rageToMana",
+      "manaPerRage": 0.13,
+      "description": "Transforme toute la rage en qì : 13 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furiousIncense",
+      "name": "Encens Rageur",
+      "class": "templar",
+      "cost": {
+        "green": 12
+      },
+      "minLevel": 30,
+      "effect": "rageToMana",
+      "manaPerRage": 0.16,
+      "description": "Transforme toute la rage en qì : 16 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furyAltar",
+      "name": "Autel de Fureur",
+      "class": "templar",
+      "cost": {
+        "green": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.19,
+      "description": "Transforme toute la rage en qì : 19 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "warriorPrayer",
+      "name": "Prière Guerrière",
+      "class": "templar",
+      "cost": {
+        "green": 20
+      },
+      "minLevel": 50,
+      "effect": "rageToMana",
+      "manaPerRage": 0.22,
+      "description": "Transforme toute la rage en qì : 22 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "imperialRite",
+      "name": "Rite Impérial",
+      "class": "templar",
+      "cost": {
+        "green": 24
+      },
+      "minLevel": 60,
+      "effect": "rageToMana",
+      "manaPerRage": 0.25,
+      "description": "Transforme toute la rage en qì : 25 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furiousBlessing",
+      "name": "Bénédiction Rageuse",
+      "class": "templar",
+      "cost": {
+        "green": 28
+      },
+      "minLevel": 70,
+      "effect": "rageToMana",
+      "manaPerRage": 0.28,
+      "description": "Transforme toute la rage en qì : 28 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "righteousStrike",
+      "name": "Frappe du Juste",
+      "class": "templar",
+      "cost": {
+        "purple": 6,
+        "red": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage en un coup : 3 dégâts par point de rage"
+    },
+    {
+      "id": "imperialPunishment",
+      "name": "Châtiment Impérial",
+      "class": "templar",
+      "cost": {
+        "purple": 10,
+        "red": 7
+      },
+      "minLevel": 20,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage en un coup : 4 dégâts par point de rage"
+    },
+    {
+      "id": "guardSentence",
+      "name": "Sentence du Garde",
+      "class": "templar",
+      "cost": {
+        "purple": 14,
+        "red": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 5,
+      "description": "Libère toute la rage en un coup : 5 dégâts par point de rage"
+    },
+    {
+      "id": "jadeHammer",
+      "name": "Marteau de Jade",
+      "class": "templar",
+      "cost": {
+        "purple": 18,
+        "red": 13
+      },
+      "minLevel": 40,
+      "effect": "rageToDamage",
+      "dmgPerRage": 6,
+      "description": "Libère toute la rage en un coup : 6 dégâts par point de rage"
+    },
+    {
+      "id": "celestialVerdict",
+      "name": "Verdict Céleste",
+      "class": "templar",
+      "cost": {
+        "purple": 22,
+        "red": 16
+      },
+      "minLevel": 50,
+      "effect": "rageToDamage",
+      "dmgPerRage": 7,
+      "description": "Libère toute la rage en un coup : 7 dégâts par point de rage"
+    },
+    {
+      "id": "mandateJudgement",
+      "name": "Jugement du Mandat",
+      "class": "templar",
+      "cost": {
+        "purple": 26,
+        "red": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 8,
+      "description": "Libère toute la rage en un coup : 8 dégâts par point de rage"
+    },
+    {
+      "id": "throneWrath",
+      "name": "Colère du Trône",
+      "class": "templar",
+      "cost": {
+        "purple": 30,
+        "red": 22
+      },
+      "minLevel": 70,
+      "effect": "rageToDamage",
+      "dmgPerRage": 9,
+      "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
     }
   ],
   "barbarianSpells": [
@@ -1782,623 +2559,6 @@
       "effect": "rageToDamage",
       "dmgPerRage": 9,
       "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
-    }
-  ],
-  "allClassSpells": [
-    {
-      "id": "mageStrike",
-      "name": "Frappe du Maître Taoïste",
-      "class": "sorcerer",
-      "cost": {
-        "red": 3,
-        "blue": 5
-      },
-      "minLevel": 1,
-      "effect": "scaleWithBlue",
-      "baseDmg": 10,
-      "description": "Inflige 10 dégâts +1 pour chaque 3 qì bleu possédés"
-    },
-    {
-      "id": "wildMana",
-      "name": "Qi Sauvage",
-      "class": "sorcerer",
-      "cost": {
-        "blue": 5,
-        "green": 5
-      },
-      "minLevel": 3,
-      "effect": "createJoker",
-      "description": "Transforme un gâteau de lune en pleine lune (joker x2) ou augmente le multiplicateur d'un joker (+2, max x7)"
-    },
-    {
-      "id": "shadowCurse",
-      "name": "Talisman de Scellement",
-      "class": "sorcerer",
-      "cost": {
-        "purple": 4
-      },
-      "minLevel": 4,
-      "effect": "preventItems",
-      "duration": 3,
-      "description": "Empêche l'ennemi d'utiliser des objets pendant 3 tours"
-    },
-    {
-      "id": "darkChannels",
-      "name": "Méridiens Obscurs",
-      "class": "sorcerer",
-      "cost": {
-        "purple": 6
-      },
-      "minLevel": 5,
-      "effect": "destroyColor",
-      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur qì"
-    },
-    {
-      "id": "flameBolts",
-      "name": "Talismans Enflammés",
-      "class": "sorcerer",
-      "cost": {
-        "red": 5
-      },
-      "minLevel": 5,
-      "effect": "yellowBolts",
-      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 qì jaune, puis vide le qì jaune"
-    },
-    {
-      "id": "iceShield",
-      "name": "Barrière de Givre",
-      "class": "sorcerer",
-      "cost": {
-        "blue": 8
-      },
-      "minLevel": 6,
-      "effect": "damageToMana",
-      "description": "Les dégâts sont appliqués au qì bleu au lieu des PV"
-    },
-    {
-      "id": "flameblade",
-      "name": "Lame de Feu Pourpre",
-      "class": "sorcerer",
-      "cost": {
-        "red": 6
-      },
-      "minLevel": 6,
-      "effect": "enchantWeapon",
-      "description": "Ajoute tout le qì rouge au prochain coup d'arme, puis vide le qì rouge"
-    },
-    {
-      "id": "weakness",
-      "name": "Sceau d'Affaiblissement",
-      "class": "sorcerer",
-      "cost": {
-        "purple": 5
-      },
-      "minLevel": 5,
-      "effect": "reduceEnemyAtk",
-      "reduction": 5,
-      "duration": 4,
-      "description": "Réduit la puissance offensive de l'ennemi de 5 pendant 4 tours"
-    },
-    {
-      "id": "handOfIce",
-      "name": "Paume de Givre",
-      "class": "sorcerer",
-      "cost": {
-        "blue": 7
-      },
-      "minLevel": 6,
-      "effect": "freezeEnemy",
-      "duration": 2,
-      "description": "Gel ou ralentissement de l'ennemi pendant 2 tours"
-    },
-    {
-      "id": "fingerOfDeath",
-      "name": "Doigt Solaire",
-      "class": "sorcerer",
-      "cost": {
-        "purple": 8
-      },
-      "minLevel": 7,
-      "effect": "createSkull",
-      "description": "Transforme un gâteau de lune en soleil ardent +5 (attaque forte)"
-    },
-    {
-      "id": "chasm",
-      "name": "Fissure du Fleuve Jaune",
-      "class": "sorcerer",
-      "cost": {
-        "red": 10,
-        "blue": 10
-      },
-      "minLevel": 8,
-      "effect": "destroyArea",
-      "description": "Détruit une zone du plateau et donne le qì correspondant"
-    },
-    {
-      "id": "stoneskin",
-      "name": "Peau de Jade",
-      "class": "sorcerer",
-      "cost": {
-        "green": 8
-      },
-      "minLevel": 7,
-      "effect": "increaseDefense",
-      "defenseBonus": 15,
-      "duration": 4,
-      "description": "Augmente la défense de 15 pendant 4 tours"
-    },
-    {
-      "id": "strength",
-      "name": "Force du Tigre",
-      "class": "sorcerer",
-      "cost": {
-        "red": 6
-      },
-      "minLevel": 5,
-      "effect": "increasePhysical",
-      "atkBonus": 8,
-      "duration": 4,
-      "description": "Augmente temporairement les dégâts physiques de 8 pendant 4 tours"
-    },
-    {
-      "id": "flameSphere",
-      "name": "Sphère de Flammes",
-      "class": "sorcerer",
-      "cost": {
-        "red": 8
-      },
-      "minLevel": 8,
-      "effect": "fireballArea",
-      "dmg": 20,
-      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 20 dégâts"
-    },
-    {
-      "id": "mirrorShield",
-      "name": "Miroir de Bronze",
-      "class": "sorcerer",
-      "cost": {
-        "blue": 10
-      },
-      "minLevel": 9,
-      "effect": "reflectDamage",
-      "reflectPercent": 30,
-      "duration": 5,
-      "description": "Renvoie 30% des dégâts subis pendant 5 tours"
-    },
-    {
-      "id": "manaSiphon",
-      "name": "Aspiration du Qi",
-      "class": "sorcerer",
-      "cost": {
-        "purple": 7
-      },
-      "minLevel": 8,
-      "effect": "drainMana",
-      "manaSteal": 10,
-      "description": "Absorbe 10 qì ennemi (toutes couleurs)"
-    },
-    {
-      "id": "manaBlast",
-      "name": "Explosion des Cinq Éléments",
-      "class": "sorcerer",
-      "cost": {
-        "red": 15,
-        "blue": 15,
-        "green": 15,
-        "yellow": 15
-      },
-      "minLevel": 15,
-      "dmg": 150,
-      "description": "Grande attaque des cinq éléments consommant beaucoup de qì"
-    },
-    {
-      "id": "sneakAttack",
-      "name": "Tir Furtif",
-      "class": "assassin",
-      "cost": {
-        "blue": 5
-      },
-      "minLevel": 1,
-      "dmg": 6,
-      "effect": "bonusTurn",
-      "description": "6 dégâts et vous donne un tour bonus"
-    },
-    {
-      "id": "swiftStrike",
-      "name": "Tir Rapide",
-      "class": "assassin",
-      "cost": {
-        "yellow": 8,
-        "red": 4
-      },
-      "minLevel": 3,
-      "effect": "yellowToPurple",
-      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 2 dégâts par gâteau converti"
-    },
-    {
-      "id": "confuse",
-      "name": "Flèche de Brume",
-      "class": "assassin",
-      "cost": {
-        "blue": 5,
-        "green": 6
-      },
-      "minLevel": 5,
-      "effect": "reduceManaGain",
-      "duration": 4,
-      "description": "L'ennemi ne gagne que 1 qì par combinaison pendant 4 tours"
-    },
-    {
-      "id": "stealth",
-      "name": "Voile de Brume",
-      "class": "assassin",
-      "cost": {
-        "purple": 6
-      },
-      "minLevel": 6,
-      "effect": "damageToManaPurple",
-      "description": "Les dégâts sont appliqués au qì violet au lieu de la vie"
-    },
-    {
-      "id": "poisonBlade",
-      "name": "Flèche Empoisonnée",
-      "class": "assassin",
-      "cost": {
-        "green": 6
-      },
-      "minLevel": 7,
-      "effect": "applyPoison",
-      "poisonDmg": 3,
-      "duration": 5,
-      "description": "Applique un poison infligeant 3 dégâts par tour pendant 5 tours"
-    },
-    {
-      "id": "shadowStrike",
-      "name": "Flèche d'Ombre",
-      "class": "assassin",
-      "cost": {
-        "red": 4,
-        "purple": 8
-      },
-      "minLevel": 10,
-      "effect": "destroyPurple",
-      "description": "Détruit tous les gâteaux de lune violets et inflige 2 dégâts par gâteau détruit"
-    },
-    {
-      "id": "dualShot",
-      "name": "Flèches Jumelles",
-      "class": "assassin",
-      "cost": {
-        "red": 16,
-        "blue": 16,
-        "green": 16,
-        "yellow": 16
-      },
-      "minLevel": 15,
-      "effect": "dualWeaponAttack",
-      "description": "Inflige des dégâts égaux à l'attaque combinée des deux armes"
-    },
-    {
-      "id": "defensiveWall",
-      "name": "Muraille Impériale",
-      "class": "templar",
-      "cost": {
-        "green": 3,
-        "purple": 4
-      },
-      "minLevel": 1,
-      "effect": "purpleToDefense",
-      "description": "Détruit tous les gâteaux de lune violets → +5 défense par gâteau"
-    },
-    {
-      "id": "shieldBash",
-      "name": "Coup de Bouclier Rond",
-      "class": "templar",
-      "cost": {
-        "red": 7
-      },
-      "minLevel": 3,
-      "effect": "defenseAttack",
-      "baseDmg": 5,
-      "description": "5 dégâts +1 par 3 points de défense. Retire les statuts négatifs"
-    },
-    {
-      "id": "focus",
-      "name": "Concentration du Qi",
-      "class": "templar",
-      "cost": {
-        "blue": 3,
-        "yellow": 3
-      },
-      "minLevel": 4,
-      "effect": "createActionGem",
-      "description": "Transforme un gâteau de lune en flèche (point d'action)"
-    },
-    {
-      "id": "intimidate",
-      "name": "Regard Impérial",
-      "class": "templar",
-      "cost": {
-        "purple": 3
-      },
-      "minLevel": 5,
-      "effect": "stealCP",
-      "cpSteal": 5,
-      "description": "Vole 5 points d'action à l'ennemi"
-    },
-    {
-      "id": "rush",
-      "name": "Charge de Cavalerie",
-      "class": "templar",
-      "cost": {
-        "yellow": 7,
-        "green": 3
-      },
-      "minLevel": 7,
-      "effect": "stunEnemy",
-      "description": "L'ennemi perd 2 tours +1 par 7 qì jaune"
-    },
-    {
-      "id": "counterAttack",
-      "name": "Riposte du Garde",
-      "class": "templar",
-      "cost": {
-        "red": 8
-      },
-      "minLevel": 8,
-      "effect": "counterOnBlock",
-      "counterDmg": 10,
-      "duration": 4,
-      "description": "Inflige 10 dégâts lorsque tu bloques pendant 4 tours"
-    },
-    {
-      "id": "reinforce",
-      "name": "Renfort des Troupes",
-      "class": "templar",
-      "cost": {
-        "green": 7
-      },
-      "minLevel": 9,
-      "effect": "destroyActionGemHeal",
-      "healPerGem": 10,
-      "description": "Détruit les flèches d'action et soigne de 10 PV par flèche"
-    },
-    {
-      "id": "barrier",
-      "name": "Rempart de Jade",
-      "class": "templar",
-      "cost": {
-        "green": 10
-      },
-      "minLevel": 10,
-      "effect": "massiveDefense",
-      "defenseBonus": 25,
-      "duration": 3,
-      "description": "Augmente fortement la défense de 25 pendant 3 tours"
-    },
-    {
-      "id": "divinePower",
-      "name": "Mandat du Ciel",
-      "class": "templar",
-      "cost": {
-        "yellow": 6
-      },
-      "minLevel": 10,
-      "effect": "defenseToMana",
-      "description": "Génère du qì selon la défense (1 qì jaune par 5 défense)"
-    },
-    {
-      "id": "holdTheLine",
-      "name": "Formation de la Tortue",
-      "class": "templar",
-      "cost": {
-        "green": 12
-      },
-      "minLevel": 12,
-      "effect": "immunityEffects",
-      "duration": 3,
-      "description": "Immunité à plusieurs effets négatifs pendant 3 tours"
-    },
-    {
-      "id": "heavensWrath",
-      "name": "Courroux du Ciel",
-      "class": "templar",
-      "cost": {
-        "yellow": 15
-      },
-      "minLevel": 14,
-      "effect": "explodeActionGems",
-      "dmgPerGem": 8,
-      "description": "Explosion de toutes les flèches d'action infligeant 8 dégâts par flèche"
-    },
-    {
-      "id": "enrage",
-      "name": "Fureur des Steppes",
-      "class": "barbarian",
-      "cost": {
-        "green": 2,
-        "red": 6
-      },
-      "minLevel": 1,
-      "effect": "damageBoost",
-      "atkBonus": 10,
-      "duration": 3,
-      "description": "Ajoute 10 dégâts inblocables à chaque attaque que vous infligez (crânes, armes, sorts) pendant 3 tours et ne termine pas le tour"
-    },
-    {
-      "id": "cleave",
-      "name": "Entaille de la Horde",
-      "class": "barbarian",
-      "cost": {
-        "red": 9,
-        "yellow": 6
-      },
-      "minLevel": 3,
-      "effect": "yellowDamage",
-      "description": "Inflige 2 dégâts par gâteau de lune jaune, puis détruit les jaunes"
-    },
-    {
-      "id": "throwAxe",
-      "name": "Lancer de Hache",
-      "class": "barbarian",
-      "cost": {
-        "green": 6,
-        "red": 8
-      },
-      "minLevel": 5,
-      "effect": "skullBonus",
-      "baseDmg": 12,
-      "description": "12 dégâts +2 par soleil présent"
-    },
-    {
-      "id": "bloodlust",
-      "name": "Soif de Bataille",
-      "class": "barbarian",
-      "cost": {
-        "green": 5,
-        "yellow": 5,
-        "blue": 5
-      },
-      "minLevel": 5,
-      "effect": "giveRedMana",
-      "manaGain": 20,
-      "description": "Donne +20 qì rouge"
-    },
-    {
-      "id": "summonTempest",
-      "name": "Appel du Vent Céleste",
-      "class": "barbarian",
-      "cost": {
-        "red": 8,
-        "yellow": 5,
-        "blue": 5
-      },
-      "minLevel": 8,
-      "effect": "destroyColumns",
-      "columns": 2,
-      "description": "Choisissez 2 colonnes : elles sont détruites"
-    },
-    {
-      "id": "berserkerRage",
-      "name": "Fureur du Loup des Steppes",
-      "class": "barbarian",
-      "cost": {
-        "green": 5,
-        "red": 8
-      },
-      "minLevel": 10,
-      "effect": "redToSkulls",
-      "description": "Transforme les gâteaux de lune rouges en soleils ardents"
-    },
-    {
-      "id": "singingBlades",
-      "name": "Flèches Sifflantes",
-      "class": "barbarian",
-      "cost": {
-        "red": 8,
-        "yellow": 6
-      },
-      "minLevel": 11,
-      "effect": "drainOnHit",
-      "manaDrain": 5,
-      "duration": 5,
-      "description": "Réduit le qì ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
-    },
-    {
-      "id": "deathbringer",
-      "name": "Porte-Soleil",
-      "class": "barbarian",
-      "cost": {
-        "green": 8,
-        "red": 16,
-        "yellow": 8,
-        "blue": 8
-      },
-      "minLevel": 14,
-      "effect": "redToSkullsHalf",
-      "description": "Crée des soleils ardents = ½ du qì rouge possédé"
-    },
-    {
-      "id": "revenant",
-      "name": "Esprit des Ancêtres",
-      "class": "barbarian",
-      "cost": {
-        "green": 10,
-        "red": 25,
-        "yellow": 20
-      },
-      "minLevel": 15,
-      "effect": "doubleBattle",
-      "description": "Double les points d'action (flèches) pour le combat"
-    },
-    {
-      "id": "tigerEye",
-      "name": "Œil du Tigre",
-      "class": "sorcerer",
-      "cost": {
-        "blue": 6
-      },
-      "minLevel": 9,
-      "effect": "statBuff",
-      "atkBuff": 30,
-      "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
-    },
-    {
-      "id": "shadowStep",
-      "name": "Pas de l'Ombre",
-      "class": "assassin",
-      "cost": {
-        "yellow": 5
-      },
-      "minLevel": 4,
-      "effect": "statBuff",
-      "defBuff": 25,
-      "duration": 3,
-      "description": "Augmente la défense (chance de blocage) de 25 % pendant 3 tours"
-    },
-    {
-      "id": "sharpenedBlade",
-      "name": "Flèche Affûtée",
-      "class": "assassin",
-      "cost": {
-        "yellow": 6,
-        "red": 4
-      },
-      "minLevel": 8,
-      "effect": "statBuff",
-      "atkBuff": 35,
-      "duration": 3,
-      "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
-    },
-    {
-      "id": "commandAura",
-      "name": "Aura de Commandement",
-      "class": "templar",
-      "cost": {
-        "purple": 6,
-        "green": 4
-      },
-      "minLevel": 6,
-      "effect": "statBuff",
-      "atkBuff": 20,
-      "defBuff": 20,
-      "duration": 3,
-      "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
-    },
-    {
-      "id": "warCry",
-      "name": "Cri de Guerre",
-      "class": "barbarian",
-      "cost": {
-        "red": 5
-      },
-      "minLevel": 4,
-      "effect": "statBuff",
-      "atkBuff": 20,
-      "defBuff": 10,
-      "duration": 3,
-      "description": "Augmente l'attaque de 20 % et la défense de 10 % pendant 3 tours"
     }
   ],
   "ultimateSpells": [
