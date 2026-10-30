@@ -19,11 +19,15 @@ import { solvePath, getMode } from '../puzzle/engine.js';
 import '../puzzle/modes.js';
 import { spriteDefs } from '../puzzle/art.js';
 import { ANTIQUE_ARMORS } from '../stuff.js';
+import { LEGENDS } from '../world/legends.js';
+import { playerClasses } from '../classes.js';
+import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
 const IMG = join(OUT, 'img');
 const CATALOG = JSON.parse(readFileSync(join(ROOT, 'enemies.catalog.json'), 'utf8'));
+const ultimateSpells = JSON.parse(readFileSync(join(ROOT, 'spells.json'), 'utf8')).ultimateSpells;
 const TEMPLATE = Object.fromEntries(CATALOG.map(t => [t.id, t]));
 
 // ───────────────────────── Utilitaires ─────────────────────────
@@ -184,7 +188,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['bases.html', 'Bases du combat'],
-    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures']
+    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures']
 ];
 
 
@@ -607,6 +611,48 @@ function buildBases() {
     }));
 }
 
+function buildUltimes() {
+    const costText = sp => ultimateCostEntries(sp).map(([c, n]) => `${n} ${esc(COLOR_FR[c] || c)}`).join(', ');
+    const effects = sp => [
+        `${sp.dmg} dégâts`,
+        sp.healPercent ? `soigne ${sp.healPercent} % des PV max` : '',
+        sp.defBuff ? `+${sp.defBuff} de défense pendant ${sp.duration} tours` : '',
+        sp.weakenAmount ? `attaque ennemie −${sp.weakenAmount} pendant ${sp.duration} tours` : '',
+        sp.stunTurns ? `étourdit ${sp.stunTurns} tours` : ''
+    ].filter(Boolean).join(' · ');
+    const row = sp => `<tr><td><b>${esc(sp.name)}</b></td><td>${sp.minLevel}</td><td>${costText(sp)}</td><td>${esc(effects(sp))}</td></tr>`;
+    const head = '<tr><th>Ultime</th><th>Niveau</th><th>Qì collecté requis</th><th>Effet</th></tr>';
+    const byClass = Object.entries(playerClasses).map(([id, c]) => {
+        const list = ultimateSpells.filter(sp => sp.class === id);
+        return list.length ? `<h3>${esc(c.name)}</h3><div class="scroll"><table>${head}${list.map(row).join('')}</table></div>` : '';
+    }).join('');
+    const legends = LEGENDS.map(l => {
+        const sp = ultimateSpells.find(x => x.id === l.ultimate);
+        return `<tr><td><b>${esc(sp.name)}</b></td><td><a href="${regionSlug(l.region)}#${questAnchor(l.questId)}">${esc(l.title)}</a><br><small>${esc(regionName(l.region))} · ${esc(l.giver.name)}</small></td><td>${esc(l.enemy.name)}<br><small>relique : ${esc(l.chest.label)}</small></td><td>${sp.minLevel}</td><td>${costText(sp)}</td><td>${esc(effects(sp))}</td></tr>`;
+    }).join('');
+    write('ultimes.html', page({
+        file: 'ultimes.html', title: 'Ultimes', active: 'ultimes.html',
+        desc: 'Comment fonctionnent les sorts ultimes, ceux de chaque classe et les quatre ultimes de légende.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Ultimes']],
+        body: `<h2>Les sorts ultimes</h2>
+<p class="lead">Un ultime est une attaque très puissante, lancée quand la jauge de rage est pleine. Il ne compte pas parmi les 4 sorts équipés.</p>
+<h3>Comment ça marche</h3>
+<ol class="steps">
+<li><b>La rage monte quand vous encaissez.</b> Chaque coup reçu remplit la jauge (0 à ${RAGE_MAX}) en proportion des PV perdus : perdre les deux tiers de vos PV max suffit à la remplir. Le compagnon Braise l’accélère.</li>
+<li><b>Il faut aussi du qì.</b> Le coût de l’ultime, multiplié par ${String(ULTIMATE_COST_FACTOR).replace('.', ',')}, se mesure sur le qì <i>collecté</i> pendant le combat, même s’il a déjà été dépensé en sorts. Lancer l’ultime retire ce coût de ce compteur seulement, pas de votre réserve pour les sorts ; le surplus reste pour l’ultime suivant.</li>
+<li><b>Un seul ultime à la fois.</b> Choisissez-le dans l’onglet Sorts ; à défaut, le premier débloqué est utilisé. Une cinématique plein écran précède l’effet.</li>
+<li><b>Après le lancer, la rage retombe à zéro</b> : elle doit se recharger pour le coup suivant.</li>
+</ol>
+<div class="box tip"><b class="t">Astuce</b>Réservez l’ultime aux boss et aux gardes du sanctuaire. Jouez les couleurs de son coût dès le début du combat pour avoir le qì nécessaire quand la jauge sera pleine.</div>
+<h2>Ultimes de classe</h2>
+<p>Chaque classe a deux ultimes, disponibles automatiquement au niveau indiqué.</p>
+${byClass}
+<h2>Ultimes de légende</h2>
+<p>Les quatre Gardiens Célestes accordent chacun un ultime utilisable par <b>toutes les classes</b>. Il se gagne en finissant la quête du Gardien : retrouver sa relique dans la zone sauvage, puis le vaincre.</p>
+<div class="scroll"><table><tr><th>Ultime</th><th>Quête</th><th>Gardien à vaincre</th><th>Niveau</th><th>Qì collecté requis</th><th>Effet</th></tr>${legends}</table></div>`
+    }));
+}
+
 function buildParcours() {
     const main = QUESTS.filter(q => !q.side).sort((a, b) => questLevel(a) - questLevel(b) || a.id.localeCompare(b.id));
     // Ordre conseillé = ordre de déblocage des régions des quêtes principales, puis dépendances.
@@ -665,6 +711,7 @@ function buildHub() {
 <a class="card" href="soluce/compagnons.html"><b>Compagnons</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
 <a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).length} énigmes, 3 armures antiques</span></a>
+<a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
 <h3>Par où commencer ?</h3>
@@ -698,6 +745,7 @@ buildCompanions();
 buildStuff();
 buildBases();
 buildPuzzles();
+buildUltimes();
 buildParcours();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');
