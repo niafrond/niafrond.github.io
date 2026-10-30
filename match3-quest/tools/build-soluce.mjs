@@ -708,6 +708,12 @@ function buildEvent() {
         const c = compass(d.x, d.y, s.w, s.h);
         return `<tr><td>${esc(regionName(s.region))}</td><td>${esc(s.name)}</td><td>${c === 'centre' ? 'au centre' : `partie ${c}`} de l’écran</td></tr>`;
     }).join('');
+    const doorShots = doors.map(s => { const d = s.exits.find(e => e.to === WS.REALM_ID); return shotFigure(s.id, [{ x: d.x, y: d.y, name: WS.REALM.entrance, role: 'target' }]); }).join('');
+    // Carte du royaume : cercles sur les points clés (lanternes, sceau, cloche, caches des énigmes, jade).
+    const keyPoints = [...WS.LANTERNS.map(l => [l.id, l.label]), [WS.SEAL.chest.id, WS.SEAL.chest.label], [WS.BELL.chest.id, WS.BELL.chest.label],
+        ...WS.PUZZLE_LIST.map(p => [p.chest.id, p.chest.label]), [WS.JADE.chest.id, WS.JADE.chest.label]]
+        .map(([id, name]) => { const e = entOf(id, ['chest']); return e && { x: e.ent.x, y: e.ent.y, name, role: 'chest' }; }).filter(Boolean);
+    const realmShot = shotFigure(WS.REALM_ID, keyPoints);
     const quests = QUESTS.filter(q => q.event === WS.ID).sort((a, b) => Object.values(WS.QUEST_IDS).indexOf(a.id) - Object.values(WS.QUEST_IDS).indexOf(b.id));
     const puzzles = WS.PUZZLE_LIST.map(p => {
         const def = { id: p.id, ...PUZZLES[p.id] }, steps = solutionSteps(def), total = solvePath(def).length - 1, unit = def.mode === 'push' ? 'pas' : 'coups';
@@ -729,6 +735,10 @@ ${playerHtml(def, steps)}`;
 <h3>Comment y entrer</h3>
 <p>Une porte s’ouvre dans la <b>zone sauvage</b> de chaque région (sans condition d’entrée) : « ${esc(WS.REALM.entrance)} ». En sortant du royaume, on revient exactement à la porte empruntée. Un message d’annonce s’affiche à la première arrivée, une seule fois.</p>
 <div class="scroll"><table><tr><th>Région</th><th>Zone</th><th>Position de la porte</th></tr>${doorRows}</table></div>
+<details><summary>Voir les portes sur la carte (${doors.length})</summary>${doorShots}</details>
+
+<h3>Carte du royaume</h3>
+${realmShot}
 
 <h3>Ordre conseillé</h3>
 <ol class="steps">
