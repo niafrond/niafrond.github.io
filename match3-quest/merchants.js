@@ -102,8 +102,27 @@ const offerOf = (kind, obj, section, rarity) => {
     return { key: `${kind}:${obj.id}`, kind, id: obj.id, section, rarity, unique, price: Math.floor(base * (PRICE_MULT[rarity] || 2)) };
 };
 
+// Types d'objets que chaque marchand vend en permanence (une pièce « standard » de chacun, toujours rachetable).
+const STANDARD_TYPES = ['reusable', 'shield', 'artifact'];
+const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+
 /**
- * Stock d'un marchand : liste d'offres { key, kind: 'item'|'weapon', id, section: 'stall'|'rare'|'exceptional',
+ * Pièce standard d'un type pour une région de niveau L : parmi les deux plus basses raretés du type (jamais au-delà de « rare »),
+ * la plus haute de niveau ≤ L + 1 ; si le type n'en a pas encore à ce niveau, la plus accessible.
+ */
+export function standardItemFor(type, L) {
+    const ofType = allItems.filter(i => i.type === type);
+    if (!ofType.length) return null;
+    const lowest = Math.min(...ofType.map(i => RARITY_RANK[i.rarity] ?? 0));
+    const pool = ofType.filter(i => (RARITY_RANK[i.rarity] ?? 0) <= Math.min(2, lowest + 1));
+    const reachable = pool.filter(i => i.minLevel <= L + 1);
+    return reachable.length
+        ? reachable.reduce((best, i) => (i.minLevel > best.minLevel ? i : best))
+        : pool.reduce((best, i) => (i.minLevel < best.minLevel ? i : best));
+}
+
+/**
+ * Stock d'un marchand : liste d'offres { key, kind: 'item'|'weapon', id, section: 'stall'|'standard'|'rare'|'exceptional',
  * rarity, unique, price }. Déterministe (même marchand, même Nouvelle Partie + → même stock).
  */
 export function merchantStock(merchantId, ngPlus = 0) {
@@ -111,7 +130,10 @@ export function merchantStock(merchantId, ngPlus = 0) {
     if (!m) return [];
     const L = REGION_LEVEL[m.region] || 1;
     const rng = rngFor(`${merchantId}|${ngPlus}`);
-    const items = allItems.map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
+    // Une pièce standard de chaque type d'objet, en rayon en permanence : elle ne sert pas aux tirages rares ci-dessous.
+    const standards = STANDARD_TYPES.map(t => standardItemFor(t, L)).filter(Boolean);
+    const standardIds = new Set(standards.map(i => i.id));
+    const items = allItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
     const weapons = allWeapons.map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
     const all = [...items, ...weapons];
     const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;
@@ -140,6 +162,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
         ...(TORCH_MERCHANTS.includes(merchantId) ? [{ key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE }] : []),
         ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
+        ...standards.map(i => ({ ...offerOf('item', i, 'standard', i.rarity), unique: false })),
         ...stuffOffers,
         ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),
         ...exceptional.map(e => {
@@ -176,6 +199,8 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
     if (!offer) return { ok: false, message: 'Cette pièce n\'est plus en vente.' };
     const obj = offerObject(offer);
     if (!obj) return { ok: false, message: 'Marchandise introuvable.' };
+    // Une relique est un bonus permanent : la pièce standard reste en rayon, mais on n'en cumule pas deux exemplaires.
+    if (obj.type === 'artifact' && (hero.inventory || []).some(i => i.id === obj.id)) return { ok: false, message: `Vous possédez déjà ${obj.name}.` };
     if ((hero.gold || 0) < offer.price) {
         return { ok: false, message: `Pas assez d'or ! Coût : ${offer.price}, vous avez ${hero.gold || 0}.` };
     }
