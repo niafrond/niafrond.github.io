@@ -24,8 +24,8 @@ export const REALM = {
         id: 'wanderingSouls',
         title: 'La Nuit des âmes errantes',
         lines: [
-            'Ce royaume est un clin d\'œil à la saison : en France, Halloween (31 octobre) puis la Toussaint (1er novembre) sont les jours où l\'on pense aux disparus et où l\'on fête, un peu en frissonnant, les fantômes.',
-            'Le jeu y répond à sa façon, avec le folklore chinois : lanternes, offrandes, talismans, Zhong Kui et la fête des fantômes. Rien n\'est obligatoire : c\'est un bonus, sans limite de temps, et rien n\'est perdu si vous passez votre chemin.'
+            'Dans les sentiers sauvages, on murmure que les sceaux d\'un vieux sanctuaire ont craqué. Des lanternes rouges y guident les morts vers un royaume que les vivants ne devraient pas voir.',
+            'Les anciens parlent de lanternes, d\'offrandes, de talismans, et d\'un certain Zhong Kui, pourfendeur de démons. Nul ne vous oblige à franchir cette porte, et rien ne sera perdu si vous passez votre chemin.'
         ]
     },
     // Animation de première entrée (cinematics.js playRegionDiscovery, clip `biome_wandering_souls` si présent, scène procédurale sinon).
@@ -64,7 +64,7 @@ export const TALISMAN = {
 export const GIVER = {
     id: 'ws_gardienne_rites', name: 'Dame Ruyi', title: 'Gardienne des rites oubliés',
     idle: [
-        'Chaque année, à la même nuit, je dépose un bol de riz devant la porte. Chaque année, il est vide au matin. Je ne pose pas de questions.',
+        'Chaque soir, je dépose un bol de riz devant la porte. Chaque matin, il est vide. Je ne pose pas de questions.',
         'On dit que les morts ont faim. Moi, je dis qu\'ils ont surtout envie qu\'on pense à eux.'
     ],
     talkDone: ['« Le sanctuaire est plus calme depuis votre passage. Les lanternes me le disent : elles brûlent droit, ce soir. »']
@@ -154,7 +154,7 @@ export const QUESTS = {
     talisman: {
         id: QUEST_IDS.talisman, title: 'Le talisman de protection',
         offer: [
-            'Voyageur, savez-vous que des portes s\'entrouvrent un peu partout cette nuit-là ? Elles mènent au royaume des âmes errantes, là où les sceaux ont craqué : n\'importe quel sentier sauvage peut vous y conduire.',
+            'Voyageur, savez-vous que des portes s\'entrouvrent un peu partout dans les sentiers sauvages ? Elles mènent au royaume des âmes errantes, là où les sceaux ont craqué : n\'importe quel sentier sauvage peut vous y conduire.',
             'Je ne peux plus marcher jusque là-bas. Trouvez le talisman que j\'ai caché sous une pierre plate, dans la zone sauvage des Bambous, au sud-est : sans lui, Zhong Kui, le gardien du royaume, ne vous confiera rien.'
         ],
         hint: ['Le talisman est caché sous une pierre plate, dans la zone sauvage des Bambous. Une fois en poche, entrez dans le royaume par n\'importe quel sentier sauvage.'],
@@ -184,7 +184,7 @@ export const QUESTS = {
             'Affrontez-le, archer, puis rapportez le jade des âmes caché derrière lui. Je le remettrai à sa place, et le passage se refermera de lui-même.'
         ],
         hint: ['Le Gardien du jugement se tient au fond du royaume. Le jade des âmes repose dans une niche derrière lui.'],
-        complete: ['Le registre est de nouveau en ordre et la porte peut se refermer. Gardez le jade : il vous protégera des malédictions des vivants, aussi.', 'On dira dans les villages que la nuit des âmes errantes a été douce, cette année. Ce sera à votre mérite.'],
+        complete: ['Le registre est de nouveau en ordre et la porte peut se refermer. Gardez le jade : il vous protégera des malédictions des vivants, aussi.', 'On dira dans les villages que le passage des âmes errantes s\'est apaisé. Ce sera à votre mérite.'],
         objectives: {
             boss: 'Affronter le Gardien du jugement (royaume des âmes errantes)',
             jade: 'Rapporter le jade des âmes caché derrière le gardien'

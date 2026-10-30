@@ -164,11 +164,11 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         });
     });
 
-    test('l\'annonce de la fête (Halloween / Toussaint) ne s\'affiche qu\'une fois, à la première arrivée', () => {
+    test('l\'annonce du royaume ne s\'affiche qu\'une fois, à la première arrivée', () => {
         expect(realm.eventNotice).toEqual(D.REALM.notice);
         const text = D.REALM.notice.lines.join(' ');
-        expect(text).toMatch(/Halloween/);
-        expect(text).toMatch(/Toussaint/);
+        expect(text).toMatch(/lanternes/);
+        expect(text).not.toMatch(/Halloween|Toussaint|octobre|novembre|\bjeu\b|bonus/i);   // diégétique : ni date ni monde réel
         const door = wild.exits.find(e => e.to === D.REALM_ID);
         const session = createSession(null);
         enterScreen(session, wild.id, door.rememberReturn);
