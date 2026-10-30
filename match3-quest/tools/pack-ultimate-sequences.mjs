@@ -24,7 +24,7 @@ const IDS = ['ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousan
   // ultimes de légende (Quatre Gardiens Célestes)
   'ultimateVermilionBird', 'ultimateBlackTortoise', 'ultimateWhiteTiger', 'ultimateAzureDragon',
   // mini-animations d'arrivée dans un biome (tools/gen-biome-intros.py) : `biome_<région>`
-  ...['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune'].map(r => `biome_${r}`),
+  ...['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'lune', 'wandering_souls'].map(r => `biome_${r}`),
   // boucles des écrans de fin de combat (tools/gen-combat-end.py) : `combatend_<issue>`
   'combatend_victory', 'combatend_defeat'];
 

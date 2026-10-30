@@ -39,6 +39,7 @@ const SPRITES = [
   { id: 'soul_urn', w: 1, gen: [512, 512], view: 'front view', desc: 'ancient sealed funeral urn with a lid, dark clay with a yellow paper talisman strip pasted across the lid, small pale green glow' },
   { id: 'offering_bowl', w: 1, gen: [512, 512], view: 'three-quarter view seen from slightly above', desc: 'small altar offering: a white porcelain bowl of rice with three burning incense sticks and a few golden paper coins' },
   { id: 'pale_flowers', w: 1, gen: [512, 512], view: 'front view', desc: 'cluster of pale ghostly white and pale blue spider lilies higarbana growing from dark soil, thin curved petals, faint glow' },
+  { id: 'souls_gate', w: 1, gen: [512, 512], view: 'front view', desc: 'small ghostly Chinese paifang gate, two dark stone pillars and a black curved roof lintel with a red crossbeam, two small red paper lanterns hanging on it, a swirling pale green spirit mist and pale green flames filling the open doorway, ominous portal to the realm of wandering souls' },
   { id: 'spirit_mirror', w: 1, gen: [512, 512], view: 'front view', desc: 'round ancient bronze ritual mirror on a dark wooden stand, polished surface with a pale green reflection, decorated rim' }
 ];
 

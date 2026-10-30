@@ -107,12 +107,14 @@ export function applyWanderingSouls(screens, quests) {
         }
         host.exits.push({
             x: door.x, y: door.y, to: D.REALM_ID, label: D.REALM.entrance, arrive: { ...realm.spawn },
-            rememberReturn: { x: back.x, y: back.y }, closedWhen: D.QUEST_IDS.sceaux, closedMessage: D.REALM.closedMessage
+            rememberReturn: { x: back.x, y: back.y }, closedWhen: D.QUEST_IDS.sceaux, closedMessage: D.REALM.closedMessage,
+            sprite: D.GATE_SPRITE
         });
         hostBack[host.id] = back;
     });
-    realm.exits.push({ x: 0, y: realm.spawn.y, to: wild.id, label: D.REALM.exitLabel, arrive: hostBack[wild.id], returnToSaved: true });
+    realm.exits.push({ x: 0, y: realm.spawn.y, to: wild.id, label: D.REALM.exitLabel, arrive: hostBack[wild.id], returnToSaved: true, sprite: D.GATE_SPRITE });
     realm.eventNotice = D.REALM.notice;
+    realm.biomeIntro = D.REALM.intro;
 
     const chestPos = placeSafely(wild, screens, D.TALISMAN.chest.id);
     if (!chestPos) throw new Error(`événement ${D.ID} : pas de place pour le talisman dans ${D.HOST.wild}`);

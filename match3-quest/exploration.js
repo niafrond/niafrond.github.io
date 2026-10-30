@@ -719,9 +719,10 @@ export function tryMove(session, dx, dy, ctx = {}) {
         let arrive = exit.arrive;
         if (exit.returnToSaved) {
             const saved = session.data.eventReturn, back = saved && session.screens[saved.screenId];
-            if (back && !back.arena && !isTerrainBlocked(back, saved.x, saved.y)) { arrive = { x: saved.x, y: saved.y }; return transitionTo(session, screen, saved.screenId, arrive, playerLevel, { door: Boolean(exit.door) }); }
+            if (back && !back.arena && !isTerrainBlocked(back, saved.x, saved.y)) { arrive = { x: saved.x, y: saved.y }; return transitionTo(session, screen, saved.screenId, arrive, playerLevel, { door: Boolean(exit.door), portal: 'out' }); }
         }
-        return transitionTo(session, screen, exit.to, arrive, playerLevel, { door: Boolean(exit.door) });
+        // `portal` : changement de biome par une porte d'événement, l'écran joue l'animation de passage (cinematics.js playPortalTransition).
+        return transitionTo(session, screen, exit.to, arrive, playerLevel, { door: Boolean(exit.door), ...(exit.rememberReturn ? { portal: 'in' } : exit.returnToSaved ? { portal: 'out' } : {}) });
     }
 
     // Dernière case d'un passage de bord : poser le pied dessus déclenche la transition (pas besoin de sortir de la carte).

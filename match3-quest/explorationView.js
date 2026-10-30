@@ -19,7 +19,7 @@ import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
 import { dialogFlags } from './dialogState.js';
-import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
+import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playPortalTransition, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { createTrail, recordHero, stepCompanion } from './companionTrail.js';
@@ -875,15 +875,23 @@ export function createExplorationView(cfg) {
                 // Première entrée dans une région : cinématique, puis le texte d'ambiance.
                 const zone = res.firstVisit && !screen.interior && screen.region !== ARENA_REGION
                     && X.regionVisitCount(session, screen.region) === 1
-                    ? worldZones.find(z => z.id === screen.region) : null;
-                // Annonce d'événement (une seule fois par partie) : s'affiche avant le texte d'ambiance de l'écran.
-                if (res.notice) openDialog({ ...NARRATOR, title: res.notice.title }, res.notice.lines);
-                const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
-                if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
-                if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
-                // Dans une maison, les quêtes déclenchées à l'entrée n'ouvrent pas de dialogue du Narrateur (toasts seulement).
-                if (res.events?.length) processEvents(res.events, screen.interior ? eventsSpoken(res.events) : undefined);
-                else playBanter();
+                    ? worldZones.find(z => z.id === screen.region)
+                    // Écran d'événement (royaume des âmes errantes) : même animation de découverte, à sa première visite (`screen.biomeIntro`).
+                    : (res.firstVisit && screen.biomeIntro ? screen.biomeIntro : null);
+                // Tout ce qui s'affiche après l'arrivée (annonce, texte d'ambiance, alertes, quêtes) ; pour une porte d'événement, après l'animation de passage.
+                const arrivalStory = () => {
+                    // Annonce d'événement (une seule fois par partie) : s'affiche avant le texte d'ambiance de l'écran.
+                    if (res.notice) openDialog({ ...NARRATOR, title: res.notice.title }, res.notice.lines);
+                    const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
+                    if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
+                    if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
+                    // Dans une maison, les quêtes déclenchées à l'entrée n'ouvrent pas de dialogue du Narrateur (toasts seulement).
+                    if (res.events?.length) processEvents(res.events, screen.interior ? eventsSpoken(res.events) : undefined);
+                    else playBanter();
+                };
+                // Porte d'événement (res.portal 'in' / 'out') : animation pixel art de changement de biome, puis la suite.
+                // À la première entrée, l'animation de découverte du biome (clip généré) remplace ce passage.
+                if (res.portal && !(zone && screen.biomeIntro === zone)) playPortalTransition(res.portal).then(arrivalStory, arrivalStory); else arrivalStory();
                 cfg.onSave();
                 break;
             }
@@ -1440,6 +1448,15 @@ export function createExplorationView(cfg) {
             const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
             const locked = X.isExitLocked(session, ex);
             const gated = locked || (level < minLevel && session.screens[ex.to].region !== screen.region);
+            // Porte illustrée (`exit.sprite`, ex. la porte du royaume des âmes errantes) : halo vert qui pulse, sprite posé sur la case, nom au-dessus.
+            // Fermée par une quête, elle retombe sur la case grise habituelle.
+            if (ex.sprite && !locked) {
+                const base = P(ex.x + 0.5, ex.y + 1), c = P(ex.x + 0.5, ex.y + 0.5);
+                cell(ex.x, ex.y, `rgba(120,184,160,${(0.16 + 0.16 * pulse).toFixed(3)})`, tile * 0.08);
+                drawDecor(ex.sprite, base.x, base.y + tile * 0.08, tile * 1.45);
+                drawLabel(c.x, ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.95, ex.label, '#dff5ea', '#1d3a30', Math.max(11, Math.round(tile * 0.2)));
+                return;
+            }
             cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
             cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
             // passage de bord de 3 cases : seule la case centrale porte la flèche et le nom (world/expand.js)

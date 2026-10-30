@@ -482,5 +482,15 @@
     ],
     "cols": 16,
     "loop": true
+  },
+  "biome_wandering_souls-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
   }
 }
