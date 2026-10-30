@@ -473,7 +473,10 @@ export function teleportToScreen(session, screenId) {
 }
 
 export function isEnemyAlive(session, enemyId) {
-    return !session.data.defeated.includes(enemyId);
+    if (session.data.defeated.includes(enemyId)) return false;
+    // Un mirage copie un vrai boss (`spriteKey`) : une fois celui-ci vaincu, tous ses mirages disparaissent.
+    const def = session.rt?.enemyIndex?.[enemyId]?.def;
+    return !(def?.illusion && def.spriteKey && session.data.defeated.includes(def.spriteKey));
 }
 
 // Une entité (ennemi, PNJ, coffre) n'existe que si sa condition `showWhen` est remplie et que sa
