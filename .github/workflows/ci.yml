@@ -172,7 +172,7 @@ jobs:
 
   changes-apk:
     name: Flash Guess APK - changements
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -193,7 +193,7 @@ jobs:
     needs: changes-apk
     # Ignoré (sans runner) quand la PR ne touche ni flash-guess ni flash-guess-android
     if: needs.changes-apk.outputs.apk == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
