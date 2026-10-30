@@ -1,3 +1,9 @@
+## [2.164.0](https://github.com/niafrond/niafrond.github.io/compare/v2.163.1...v2.164.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** agrandir le royaume des âmes errantes en six terrains et animer sa porte ([#604](https://github.com/niafrond/niafrond.github.io/issues/604)) ([bf4f3ca](https://github.com/niafrond/niafrond.github.io/commit/bf4f3caf24758bb4eea8cde18a030eb9eb7c1582))
+
 ## [2.163.1](https://github.com/niafrond/niafrond.github.io/compare/v2.163.0...v2.163.1) (2026-10-30)
 
 ### Bug Fixes
