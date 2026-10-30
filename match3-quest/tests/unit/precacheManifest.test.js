@@ -61,6 +61,6 @@ describe('precache-manifest.json', () => {
         });
         const total = committed.media.reduce((sum, f) => sum + f.s, 0);
         expect(total).toBeGreaterThan(50e6);
-        expect(total).toBeLessThan(300e6);   // garde-fou : un dossier de sources ajouté par erreur ferait exploser le téléchargement
+        expect(total).toBeLessThan(450e6);   // garde-fou : un dossier de sources ajouté par erreur ferait exploser le téléchargement
     });
 });

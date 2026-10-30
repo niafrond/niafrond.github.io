@@ -302,8 +302,8 @@ T('sanctuary-b', `traditional Chinese instrumental inspired by the ancient piece
     { bpm: 64, keyScale: 'D minor', dur: 180, raw: true });
 T('ending-b', `traditional Chinese instrumental inspired by the ancient piece "Han Gong Qiu Yue (Autumn Moon over the Han Palace)", erhu and pipa lament, slow sorrowful rubato, long sustained notes, falling leaves and a pale autumn moon, loneliness and farewell, quiet restrained ending, ${TRAD}`,
     { bpm: 56, keyScale: 'A minor', dur: 180, raw: true });
-T('victory-b', `traditional Chinese instrumental inspired by the ancient piece "Xiyang Xiaogu (Flute and Drum at Sunset)", pipa, dizi and soft drums, rippling river at dusk and a returning boat, relief and warmth, gradually brightening and gently triumphant, steady lively groove, ${TRAD}`,
-    { bpm: 100, keyScale: 'D major', dur: 180, raw: true });
+T('victory-b', `very festive traditional Chinese celebration music inspired by the piece "Jin She Kuang Wu" (Golden Snake Dance), exuberant Chinese New Year lion dance and dragon dance energy, fast joyful tempo, bright crashing Chinese cymbals, resonant gongs and driving festival drums, suona and dizi playing a catchy accelerating melody with rapid ornaments, pipa and yangqin sparkling runs, call and response, accelerando building to an ecstatic triumphant finish, jubilant and triumphant, ${TRAD}`,
+    { bpm: 132, keyScale: 'D major', dur: 120, raw: true });
 T('wild-gobi-b', `traditional Chinese instrumental inspired by the ancient piece "Hujia Shiba Pai (Eighteen Songs of a Nomad Flute)", lonely hujia-like bamboo flute and sparse guqin, wide empty desert steppe, wind, sorrowful long lines, distant frame drum, melancholy and endurance, ${TRAD}`,
     { bpm: 60, keyScale: 'E minor', dur: 180, raw: true });
 T('wild-riverbed-b', `traditional Chinese instrumental inspired by the ancient piece "Ping Sha Luo Yan (Wild Geese Descending on the Sandbar)", guqin and a touch of xiao, geese gliding down to a river sandbar, calm autumn river landscape, spacious unhurried phrases, peaceful and slightly wistful, ${TRAD}`,
@@ -312,6 +312,46 @@ T('village-bamboo-b', `traditional Chinese instrumental inspired by the ancient 
     { bpm: 92, keyScale: 'D major', dur: 180, raw: true });
 T('puzzle-mirror-b', `traditional Chinese instrumental inspired by the ancient piece "Mo Li Hua (Jasmine Flower) folk song", tender dizi carrying the well-known jasmine flower folk melody, soft yangqin plucks and light guzheng, pure delicate pentatonic charm, thoughtful and gentle, steady calm pulse, ${TRAD}`,
     { bpm: 84, keyScale: 'G major', dur: 180, raw: true });
+
+// Vague 3 : variante traditionnelle `-b` de TOUTES les autres musiques (villages, zones sauvages, combats, énigmes, défaite, boss). Générée à
+// partir de l'entrée existante de chaque piste (lieu, humeur, tempo, tonalité) et d'une pièce ancienne tirée dans un lot selon la catégorie.
+const TRAD_PIECES = {
+    village: [
+        ['"Chun Jiang Hua Yue Ye" (Spring River, Flower and Moon Night)', 'plucked pipa and flowing guzheng with soft dizi'],
+        ['"Lao Liu Ban" (Jiangnan sizhu silk and bamboo ensemble)', 'dizi, erhu, yangqin and pipa in a lively interlocking ensemble'],
+        ['"Zi Zhu Diao" (Purple Bamboo Tune)', 'sizhu silk and bamboo ensemble with dizi, erhu and yangqin'],
+        ['"Xiao Tao Hong" (Little Peach Blossom) folk tune', 'bright dizi, yangqin and light hand percussion']
+    ],
+    wild: [
+        ['"Xiao Xiang Shui Yun" (Mist and Clouds over the Xiao and Xiang Rivers)', 'guqin with sliding notes and distant xiao'],
+        ['"Liu Shui" (Flowing Water)', 'guqin and guzheng with rippling glissandi'],
+        ['"Chang Men Yuan" (Lament of the Long Gate Palace)', 'sparse guqin and erhu with long silences'],
+        ['"Gu Yuan" (Ancient Plain) wandering melody', 'dizi and guzheng with open spacious phrases']
+    ],
+    combat: [
+        ['"Ba Wang Xie Jia" (The Overlord Removes His Armor)', 'virtuosic pipa with tremolo, war drums and gongs'],
+        ['"Jiang Jun Ling" (The General\'s Command)', 'pipa and suona fanfares with driving martial drums'],
+        ['"Ye Shen Chen" (Deep in the Night) Beijing opera percussion style', 'jinghu fiddle, clappers, drums and gongs'],
+        ['dragon boat festival drumming "Long Zhou"', 'big war drums, cymbals, suona and dizi']
+    ],
+    boss: [
+        ['"Ba Wang Xie Jia" (The Overlord Removes His Armor)', 'pipa, giant war drums, deep gongs and suona'],
+        ['"Jiang Jun Ling" (The General\'s Command)', 'suona fanfares, pipa tremolo and thundering taiko-like Chinese drums'],
+        ['"Guangling San" fierce section', 'guqin and pipa strokes with heavy ritual drums and erhu'],
+        ['"Ye Shen Chen" (Deep in the Night)', 'jinghu, gongs, cymbals and relentless drums'],
+        ['"Shi Mian Mai Fu" final battle section', 'pipa virtuosity, war drums and cymbal crashes']
+    ]
+};
+const TRAD_SCOPE = /^(village|wild|combat|boss|puzzle)-|^defeat$/;
+Object.keys(TRACKS).filter(k => TRAD_SCOPE.test(k) && !k.endsWith('-b') && !TRACKS[`${k}-b`] && !/^boss-gardien-du-jugement$/.test(k)).forEach((k, n) => {
+    const t = TRACKS[k], cat = /^(village|wild|combat|boss)-/.exec(k)?.[1];
+    const pool = TRAD_PIECES[cat];
+    const place = t.style.split(',').slice(0, 3).join(',').replace(/\$\{[^}]*\}/g, '');
+    const detail = pool ? `inspired by the ancient piece ${pool[n % pool.length][0]}, ${pool[n % pool.length][1]}, ` : '';
+    const mood = cat === 'combat' || cat === 'boss' ? 'intense epic martial, building to a powerful climax' : cat === 'village' ? 'warm lively welcoming' : k === 'defeat' ? 'sorrowful slow lament, quiet ending' : 'thoughtful gentle';
+    T(`${k}-b`, `traditional Chinese instrumental ${detail}${place}, ${mood}, ${TRAD}`,
+        { bpm: t.bpm, keyScale: t.keyScale, dur: cat === 'combat' || cat === 'boss' ? 120 : k === 'defeat' ? 60 : 150, raw: true });
+});
 
 /** Description textuelle complète envoyée à ACE-Step (caption). `extra` = retouche libre pour une régénération. */
 /** Combats et boss : le brief « pas de bombast, arrangement compact » est levé pour laisser place à l'épique. */

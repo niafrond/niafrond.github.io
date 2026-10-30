@@ -1,0 +1,29 @@
+{
+  "key": "boss-lion-gardien-fendu-b",
+  "version": "v001",
+  "date": "2026-10-30T14:41:55.204Z",
+  "seed": "2125042145",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, cracked stone guardian lion, ritual drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 112,
+    "key_scale": "F# minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 112,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "F# minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, cracked stone guardian lion, ritual drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

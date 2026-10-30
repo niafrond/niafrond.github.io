@@ -435,6 +435,322 @@
   "puzzle-mirror-b": {
    "seconds": 172.5,
    "sections": 1
+  },
+  "defeat-b": {
+   "seconds": 166.8,
+   "sections": 1
+  },
+  "puzzle-push-b": {
+   "seconds": 172.3,
+   "sections": 1
+  },
+  "puzzle-slide-b": {
+   "seconds": 171.8,
+   "sections": 1
+  },
+  "wild-paddy-b": {
+   "seconds": 169.8,
+   "sections": 1
+  },
+  "village-riverbed-b": {
+   "seconds": 172.3,
+   "sections": 1
+  },
+  "village-gobi-b": {
+   "seconds": 168.8,
+   "sections": 1
+  },
+  "village-storm-b": {
+   "seconds": 170.7,
+   "sections": 1
+  },
+  "wild-storm-b": {
+   "seconds": 170.7,
+   "sections": 1
+  },
+  "village-volcano-b": {
+   "seconds": 172.3,
+   "sections": 1
+  },
+  "wild-volcano-b": {
+   "seconds": 173.9,
+   "sections": 1
+  },
+  "village-savanna-b": {
+   "seconds": 174.4,
+   "sections": 1
+  },
+  "wild-savanna-b": {
+   "seconds": 169.3,
+   "sections": 1
+  },
+  "village-coast-b": {
+   "seconds": 168.2,
+   "sections": 1
+  },
+  "wild-coast-b": {
+   "seconds": 170.4,
+   "sections": 1
+  },
+  "village-tides-b": {
+   "seconds": 172.5,
+   "sections": 1
+  },
+  "wild-tides-b": {
+   "seconds": 170.9,
+   "sections": 1
+  },
+  "village-fusang-b": {
+   "seconds": 174.1,
+   "sections": 1
+  },
+  "wild-fusang-b": {
+   "seconds": 171.6,
+   "sections": 1
+  },
+  "village-moon-b": {
+   "seconds": 174.8,
+   "sections": 1
+  },
+  "wild-moon-b": {
+   "seconds": 169.1,
+   "sections": 1
+  },
+  "combat-1-b": {
+   "seconds": 162,
+   "sections": 1
+  },
+  "combat-2-b": {
+   "seconds": 157.6,
+   "sections": 1
+  },
+  "combat-3-b": {
+   "seconds": 148.4,
+   "sections": 1
+  },
+  "combat-4-b": {
+   "seconds": 169.1,
+   "sections": 1
+  },
+  "boss-soleil-ardent-b": {
+   "seconds": 161.5,
+   "sections": 1
+  },
+  "boss-soleil-des-eaux-taries-b": {
+   "seconds": 160.7,
+   "sections": 1
+  },
+  "boss-soleil-de-cendres-b": {
+   "seconds": 173.3,
+   "sections": 1
+  },
+  "boss-soleil-des-mirages-b": {
+   "seconds": 159.9,
+   "sections": 1
+  },
+  "boss-soleil-des-orages-b": {
+   "seconds": 152.1,
+   "sections": 1
+  },
+  "boss-soleil-de-magma-b": {
+   "seconds": 152.3,
+   "sections": 1
+  },
+  "boss-soleil-des-betes-folles-b": {
+   "seconds": 169.9,
+   "sections": 1
+  },
+  "boss-soleil-des-marees-b": {
+   "seconds": 160.3,
+   "sections": 1
+  },
+  "boss-soleil-lache-b": {
+   "seconds": 157.1,
+   "sections": 1
+  },
+  "boss-fengmeng-le-disciple-b": {
+   "seconds": 169.4,
+   "sections": 1
+  },
+  "boss-fengmeng-l-archer-presse-b": {
+   "seconds": 170.1,
+   "sections": 1
+  },
+  "boss-fengmeng-l-archer-miroir-b": {
+   "seconds": 154.1,
+   "sections": 1
+  },
+  "boss-fengmeng-rage-et-desespoir-b": {
+   "seconds": 151.6,
+   "sections": 1
+  },
+  "boss-gardien-de-la-digue-b": {
+   "seconds": 171.2,
+   "sections": 1
+  },
+  "boss-colosse-de-l-ecluse-b": {
+   "seconds": 167,
+   "sections": 1
+  },
+  "boss-gardien-des-cendres-b": {
+   "seconds": 162,
+   "sections": 1
+  },
+  "boss-chef-de-dune-bras-de-sable-b": {
+   "seconds": 153.7,
+   "sections": 1
+  },
+  "boss-lion-gardien-fendu-b": {
+   "seconds": 164.7,
+   "sections": 1
+  },
+  "boss-forgeron-de-lave-b": {
+   "seconds": 159.4,
+   "sections": 1
+  },
+  "boss-tigre-alpha-griffe-de-feu-b": {
+   "seconds": 152.3,
+   "sections": 1
+  },
+  "boss-serpent-de-maree-b": {
+   "seconds": 153.2,
+   "sections": 1
+  },
+  "boss-garde-solaire-des-racines-b": {
+   "seconds": 152.1,
+   "sections": 1
+  },
+  "boss-pretresse-de-givre-b": {
+   "seconds": 151.6,
+   "sections": 1
+  },
+  "boss-maitresse-tong-la-lame-de-bronze-b": {
+   "seconds": 157.7,
+   "sections": 1
+  },
+  "boss-maitre-hong-gang-le-gong-de-cuivre-b": {
+   "seconds": 171.4,
+   "sections": 1
+  },
+  "boss-maitre-tie-bi-le-bras-de-fer-b": {
+   "seconds": 152.7,
+   "sections": 1
+  },
+  "boss-dame-yin-yue-la-lune-d-argent-b": {
+   "seconds": 167.8,
+   "sections": 1
+  },
+  "boss-seigneur-jin-long-le-dragon-d-or-b": {
+   "seconds": 165.2,
+   "sections": 1
+  },
+  "boss-dame-bi-yu-la-main-de-jade-b": {
+   "seconds": 170.5,
+   "sections": 1
+  },
+  "boss-immortel-yun-zhong-celui-des-nuees-b": {
+   "seconds": 155.3,
+   "sections": 1
+  },
+  "boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b": {
+   "seconds": 149.8,
+   "sections": 1
+  },
+  "boss-gardien-de-la-forge-noire-b": {
+   "seconds": 165.5,
+   "sections": 1
+  },
+  "boss-capitaine-noye-des-limons-b": {
+   "seconds": 162.4,
+   "sections": 1
+  },
+  "boss-lion-cendre-gardien-du-sutra-b": {
+   "seconds": 171.5,
+   "sections": 1
+  },
+  "boss-colosse-des-caravanes-ensevelies-b": {
+   "seconds": 151.4,
+   "sections": 1
+  },
+  "boss-jiangshi-du-cassia-lunaire-b": {
+   "seconds": 156.7,
+   "sections": 1
+  },
+  "boss-vieux-saule-des-boues-gardien-du-terrier-b": {
+   "seconds": 152.3,
+   "sections": 1
+  },
+  "boss-long-du-tonnerre-sourd-b": {
+   "seconds": 171.4,
+   "sections": 1
+  },
+  "boss-tigre-blanc-des-ancetres-b": {
+   "seconds": 161.1,
+   "sections": 1
+  },
+  "boss-serpent-des-marees-noires-b": {
+   "seconds": 151.4,
+   "sections": 1
+  },
+  "boss-immortel-dechu-des-branches-b": {
+   "seconds": 154.3,
+   "sections": 1
+  },
+  "boss-zhuque-l-oiseau-vermillon-b": {
+   "seconds": 161.6,
+   "sections": 1
+  },
+  "boss-xuanwu-la-tortue-noire-b": {
+   "seconds": 151.8,
+   "sections": 1
+  },
+  "boss-baihu-le-tigre-blanc-b": {
+   "seconds": 157.2,
+   "sections": 1
+  },
+  "boss-qinglong-le-dragon-d-azur-b": {
+   "seconds": 171.4,
+   "sections": 1
+  },
+  "combat-tides-b": {
+   "seconds": 162.1,
+   "sections": 1
+  },
+  "boss-changxi-mere-des-douze-lunes-b": {
+   "seconds": 156,
+   "sections": 1
+  },
+  "boss-a0-b": {
+   "seconds": 156.2,
+   "sections": 1
+  },
+  "boss-a1-b": {
+   "seconds": 155.1,
+   "sections": 1
+  },
+  "boss-a2-b": {
+   "seconds": 168.3,
+   "sections": 1
+  },
+  "boss-a3-b": {
+   "seconds": 168.9,
+   "sections": 1
+  },
+  "boss-a4-b": {
+   "seconds": 172.3,
+   "sections": 1
+  },
+  "boss-a5-b": {
+   "seconds": 158.1,
+   "sections": 1
+  },
+  "boss-a6-b": {
+   "seconds": 160.1,
+   "sections": 1
+  },
+  "boss-a7-b": {
+   "seconds": 146.6,
+   "sections": 1
   }
  },
  "sfx": {

@@ -1,0 +1,29 @@
+{
+  "key": "boss-seigneur-jin-long-le-dragon-d-or-b",
+  "version": "v001",
+  "date": "2026-10-30T14:45:46.120Z",
+  "seed": "821511910",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, lord Jin Long the golden dragon, majestic sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 122,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 122,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, dangerous boss battle, lord Jin Long the golden dragon, majestic sheng, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

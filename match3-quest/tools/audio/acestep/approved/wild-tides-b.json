@@ -1,0 +1,29 @@
+{
+  "key": "wild-tides-b",
+  "version": "v001",
+  "date": "2026-10-30T14:32:23.627Z",
+  "seed": "3261419641",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 62,
+    "key_scale": "E minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 62,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "E minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Gu Yuan\" (Ancient Plain) wandering melody, dizi and guzheng with open spacious phrases, moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}
