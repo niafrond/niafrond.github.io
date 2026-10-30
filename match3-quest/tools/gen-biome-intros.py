@@ -34,6 +34,7 @@ REGIONS = {
     'fauves': 'a golden savanna plain with tall grass and scattered rocks at sunset, a giant red sky, herds of beasts far away',
     'mer': 'the Eastern Sea at dawn, a calm teal ocean with Chinese junk ships, jade-green cliffs',
     'fusang': 'a giant sacred Fusang tree glowing at the edge of the world at sunrise, huge golden branches, pink and orange sky',
+    'wandering_souls': 'a haunted Chinese ghost realm at midnight, very dark blue-black night sky with no sun, bare dark gray stone courtyard and black twisted dead tree roots, pale ghostly green spirit fire flames and white mist, floating red paper lanterns, a distant ruined black temple gate, cold gray and teal colors, eerie',
     'lune': 'a high mountain peak at night under a huge full moon, silver clouds below, glowing moon-flowers',
 }
 SEEDS = {r: 3100 + i * 37 for i, r in enumerate(REGIONS)}

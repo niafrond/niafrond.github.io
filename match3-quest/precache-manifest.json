@@ -2857,6 +2857,11 @@
    "h": "5cb614902a"
   },
   {
+   "p": "sprites/ultimates/biome_wandering_souls-seq.png",
+   "s": 199645,
+   "h": "603140cca8"
+  },
+  {
    "p": "sprites/ultimates/combatend_defeat-seq.png",
    "s": 298472,
    "h": "2624a2f623"
@@ -2868,8 +2873,8 @@
   },
   {
    "p": "sprites/ultimates/index.json",
-   "s": 6665,
-   "h": "9341f69848"
+   "s": 6811,
+   "h": "81bae8ec4a"
   },
   {
    "p": "sprites/ultimates/ultimateAzureDragon-seq.png",

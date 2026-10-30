@@ -129,6 +129,22 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(wild.exits.some(e => e.to === D.REALM_ID)).toBe(true);
     });
 
+    test('chaque porte du royaume porte le sprite de porte, qui existe dans les décors', () => {
+        expect(D.GATE_SPRITE).toBe('souls_gate');
+        const doors = [...hosts().map(h => h.exits.find(e => e.to === D.REALM_ID)), realm.exits.find(e => e.returnToSaved)];
+        expect(doors).toHaveLength(hosts().length + 1);
+        doors.forEach(d => expect(d.sprite).toBe(D.GATE_SPRITE));
+        expect(decorSprite(D.GATE_SPRITE)).toMatch(/^data:image\/png;base64,/);
+        expect(DECOR_NAMES).toContain(D.GATE_SPRITE);
+    });
+
+    test('le royaume joue une animation de découverte à la première entrée (clip de biome ou scène procédurale)', async () => {
+        expect(realm.biomeIntro).toMatchObject({ id: D.BIOME, name: D.REALM.name });
+        const { readFileSync } = await import('fs');
+        const index = JSON.parse(readFileSync(new URL('../../sprites/ultimates/index.json', import.meta.url), 'utf8'));
+        expect(index[`biome_${D.BIOME}-seq`]).toMatchObject({ loop: true, size: [144, 256] });
+    });
+
     test('la sortie du royaume ramène à l\'entrée empruntée, quelle que soit la région', () => {
         const back = realm.exits.find(e => e.to === D.HOST.wild);
         expect(back).toMatchObject({ returnToSaved: true, x: 0 });
@@ -139,9 +155,11 @@ describe('La Nuit des âmes errantes : événement activé', () => {
             enterScreen(session, h.id, door.rememberReturn);
             const step = tryMove(session, door.x - door.rememberReturn.x, door.y - door.rememberReturn.y);
             expect({ host: h.id, to: step.to }).toEqual({ host: h.id, to: D.REALM_ID });
+            expect(step.portal).toBe('in');   // animation de passage vers le royaume (cinematics.js playPortalTransition)
             // retour : un pas vers l'ouest depuis l'apparition
             const out = tryMove(session, -1, 0);
             expect({ host: h.id, to: out.to }).toEqual({ host: h.id, to: h.id });
+            expect(out.portal).toBe('out');
             expect({ x: session.data.x, y: session.data.y }).toEqual(door.rememberReturn);
         });
     });

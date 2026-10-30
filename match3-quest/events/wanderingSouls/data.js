@@ -7,6 +7,8 @@
 export const ID = 'wanderingSouls';
 export const REALM_ID = 'wandering_souls_realm';
 export const BIOME = 'wandering_souls';
+// Sprite de la porte du royaume (sprites/souls-decor.js, tools/gen-souls-decor.mjs) : dessinée sur la case de chaque entrée et sur la sortie du royaume.
+export const GATE_SPRITE = 'souls_gate';
 
 // Le royaume est accessible depuis la zone sauvage de n'importe quelle région (une entrée par biome, sans condition) ; le talisman et la
 // gardienne des rites, qui lancent la chaîne de quêtes, se trouvent dans la région des Bambous.
@@ -26,6 +28,8 @@ export const REALM = {
             'Le jeu y répond à sa façon, avec le folklore chinois : lanternes, offrandes, talismans, Zhong Kui et la fête des fantômes. Rien n\'est obligatoire : c\'est un bonus, sans limite de temps, et rien n\'est perdu si vous passez votre chemin.'
         ]
     },
+    // Animation de première entrée (cinematics.js playRegionDiscovery, clip `biome_wandering_souls` si présent, scène procédurale sinon).
+    intro: { id: BIOME, kicker: 'Royaume des âmes', name: 'Le Royaume des âmes errantes', description: 'Là où les lanternes rouges guident les morts' },
     arrival: [
         'La porte cède sans un bruit. De l\'autre côté, la brume monte des dalles et des lanternes rouges flottent sans fil, comme si quelqu\'un les tenait de très loin.',
         'Ici, la frontière entre les vivants et les morts est fine comme du papier de riz. Marchez doucement : tous les esprits ne sont pas vos ennemis.'
