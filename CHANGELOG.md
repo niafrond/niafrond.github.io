@@ -1,3 +1,9 @@
+## [2.161.0](https://github.com/niafrond/niafrond.github.io/compare/v2.160.0...v2.161.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** afficher le qì collecté et requis dans la barre d'ultime ([#588](https://github.com/niafrond/niafrond.github.io/issues/588)) ([1b01285](https://github.com/niafrond/niafrond.github.io/commit/1b01285dd581a4f936bce6212d6f49854c92c097))
+
 ## [2.160.0](https://github.com/niafrond/niafrond.github.io/compare/v2.159.0...v2.160.0) (2026-10-30)
 
 ### Features
