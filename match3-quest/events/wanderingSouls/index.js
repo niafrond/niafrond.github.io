@@ -9,6 +9,9 @@ import { placeSafely } from '../../world/legends.js';
 import { occupancy, placeInLand } from '../../world/junctions.js';
 import { PUZZLES } from '../../puzzle/levels.js';
 import * as D from './data.js';
+import * as T from './terrains.js';
+
+const TERRAIN_QUEST = T.QUEST_DIYU;
 
 function buildRealm() {
     const level = D.HOST.level;
@@ -41,8 +44,35 @@ function buildRealm() {
     return zone;
 }
 
+// Case du bord d'un écran pour une porte (côté W, E, N ou S) et case intérieure d'arrivée symétrique.
+const OPPOSITE = { W: 'E', E: 'W', N: 'S', S: 'N' };
+function gateCell(screen, side) {
+    if (screen.id === D.REALM_ID) return T.HUB_GATES[side];
+    const g = screen.gates[side];
+    return { W: { x: 0, y: g }, E: { x: screen.w - 1, y: g }, N: { x: g, y: 0 }, S: { x: g, y: screen.h - 1 } }[side];
+}
+const inward = (screen, side) => { const c = gateCell(screen, side); return { x: c.x + (side === 'W') - (side === 'E'), y: c.y + (side === 'N') - (side === 'S') }; };
+
+// Un terrain du royaume : carte tracée par formes, portes creusées dans le mur, entités posées en x, y.
+function buildTerrain(t) {
+    const level = D.HOST.level;
+    const carve = Object.entries(t.gates).map(([side, v]) => ['.', ...(side === 'W' ? [0, v] : side === 'E' ? [t.w - 1, v] : side === 'N' ? [v, 0] : [v, t.h - 1])]);
+    const grid = T.makeGrid(t.w, t.h, [...t.shapes, ...carve, ['S', ...t.spawn]]);
+    const zone = buildZone({
+        id: t.id, region: D.HOST.region, biome: D.BIOME, kind: 'wild', grid,
+        ...(t.grass ? { grass: t.grass } : {}),
+        npcs: t.npcs,
+        chests: t.chests.map(({ tier, ...c }) => ({ ...c, gold: 15 * level * tier, lootTier: Math.min(3, tier) })),
+        enemies: t.enemies.map(({ boss, ...e }) => ({ permanent: true, ...e, ...(boss ? { boss: { name: e.name, level: level + e.offset + 1 } } : {}) })),
+        exits: []
+    }, { npcDef: id => ({ id }), chestDef: id => ({ id }), screenText: () => ({ name: t.name, arrival: t.arrival }) });
+    zone.underground = true;
+    zone.gates = t.gates;   // côtés et positions des portes (voir gateCell)
+    return zone;
+}
+
 function buildQuests() {
-    const T = D.QUESTS;
+    const T = D.QUESTS, Q = TERRAIN_QUEST;
     const side = q => ({ chapter: '✦ Quête secondaire — La Nuit des âmes errantes', requires: [], side: true, ...q });
     const lanternObjectives = D.LANTERNS.map((l, i) => ({ type: 'chest', target: l.id, text: T.lanternes.objectives.lantern(i + 1) }));
     return [
@@ -69,6 +99,17 @@ function buildQuests() {
             ],
             offer: T.sceaux.offer, hint: T.sceaux.hint, complete: T.sceaux.complete,
             reward: { ...T.sceaux.reward, fragment: T.sceaux.fragment }
+        }),
+        side({
+            id: Q.id, title: Q.title, giver: D.ZHONG_KUI.id, turnIn: D.ZHONG_KUI.id, requires: [D.QUEST_IDS.sceaux],
+            objectives: [
+                { type: 'talk', target: 'ws_meng_po', text: Q.objectives.talk },
+                { type: 'item', target: 'qi_ws_souvenir', text: Q.objectives.souvenir },
+                { type: 'kill', target: 'ws_reflet_peche', text: Q.objectives.reflet },
+                { type: 'kill', target: 'ws_yanluo', text: Q.objectives.yanluo }
+            ],
+            offer: Q.offer, hint: Q.hint, complete: Q.complete,
+            reward: { ...Q.reward, fragment: Q.fragment }
         })
     ];
 }
@@ -107,7 +148,7 @@ export function applyWanderingSouls(screens, quests) {
         }
         host.exits.push({
             x: door.x, y: door.y, to: D.REALM_ID, label: D.REALM.entrance, arrive: { ...realm.spawn },
-            rememberReturn: { x: back.x, y: back.y }, closedWhen: D.QUEST_IDS.sceaux, closedMessage: D.REALM.closedMessage,
+            rememberReturn: { x: back.x, y: back.y }, closedWhen: D.QUEST_IDS.diyu, closedMessage: D.REALM.closedMessage,
             sprite: D.GATE_SPRITE
         });
         hostBack[host.id] = back;
@@ -132,11 +173,20 @@ export function applyWanderingSouls(screens, quests) {
 
     // Répliques de fin de quête des habitants du royaume.
     const talkDone = (id, whenDone, lines) => { realm.npcs.find(n => n.id === id).talk = [{ whenDone, lines }]; };
-    talkDone(D.ZHONG_KUI.id, D.QUEST_IDS.sceaux, D.ZHONG_KUI.talkDone);
+    talkDone(D.ZHONG_KUI.id, D.QUEST_IDS.diyu, D.ZHONG_KUI.talkDone);
     talkDone(D.HUNGRY_GHOST.id, D.QUEST_IDS.lanternes, D.HUNGRY_GHOST.talkDone);
 
-    D.PUZZLE_LIST.forEach(p => { PUZZLES[p.id] = p.def; });   // énigmes du royaume (moteur d'énigmes existant, seulement quand l'événement est actif)
+    [...D.PUZZLE_LIST, ...T.TERRAIN_PUZZLES].forEach(p => { PUZZLES[p.id] = p.def; });   // énigmes du royaume (moteur d'énigmes existant, seulement quand l'événement est actif)
     screens[D.REALM_ID] = realm;
+
+    // Les six terrains au-delà de la salle d'entrée, reliés par des portes symétriques (certaines ne s'ouvrent qu'après un exploit : `requires`).
+    T.TERRAINS.forEach(t => { screens[t.id] = buildTerrain(t); });
+    T.LINKS.forEach(l => {
+        const A = screens[l.from], B = screens[l.to], back = OPPOSITE[l.side];
+        const a = gateCell(A, l.side), b = gateCell(B, back);
+        A.exits.push({ x: a.x, y: a.y, to: B.id, label: l.label, arrive: inward(B, back), ...(l.requires ? { requires: l.requires, lockedMessage: l.lockedMessage } : {}) });
+        B.exits.push({ x: b.x, y: b.y, to: A.id, label: A.name, arrive: inward(A, l.side) });
+    });
     quests.push(...buildQuests());
     return true;
 }
