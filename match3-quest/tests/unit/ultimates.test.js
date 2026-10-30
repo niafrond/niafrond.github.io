@@ -2,13 +2,13 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
-    RAGE_MAX, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull,
+    RAGE_MAX, rageToManaAmount, rageToDamageAmount, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull,
     registerUltimateCinematic, playUltimateCinematic,
     isQuestUltimate, getQuestUltimates, getSelectableUltimates, getEquippedUltimate, getLockedQuestUltimates,
     unlockUltimate, normalizeUnlockedUltimates, isUltimateUnlocked,
     ultimateCostEntries, addUltimateMana, canCastUltimateMana, spendUltimateMana, resetUltimateMana
 } from '../../ultimates.js';
-import { ultimateSpells, getSpellsByClass } from '../../spells.js';
+import { ultimateSpells, getSpellsByClass, barbarianSpells, sorcererSpells, assassinSpells, templarSpells } from '../../spells.js';
 import { playerClasses } from '../../classes.js';
 
 describe('catalogue', () => {
@@ -149,5 +149,37 @@ describe('ultimes de légende (gagnés par quête, toutes classes)', () => {
         expect(hero.ultimateMana).toEqual({ red: 2, blue: 2, green: 2 });
         resetUltimateMana(hero);
         expect(canCastUltimateMana(hero, spell)).toBe(false);
+    });
+});
+
+describe('sorts de rage (gain, conversion en qì, conversion en dégâts)', () => {
+    test('le catalogue barbare contient les trois effets', () => {
+        const effects = barbarianSpells.map(spell => spell.effect);
+        expect(effects).toEqual(expect.arrayContaining(['rageGain', 'rageToMana', 'rageToDamage']));
+    });
+
+    test('conversion de la rage en qì par couleur', () => {
+        expect(rageToManaAmount(100, 0.1)).toBe(10);
+        expect(rageToManaAmount(9, 0.1)).toBe(0);
+        expect(rageToManaAmount(undefined, 0.1)).toBe(0);
+    });
+
+    test('conversion de la rage en dégâts', () => {
+        expect(rageToDamageAmount(100, 3)).toBe(300);
+        expect(rageToDamageAmount(0, 3)).toBe(0);
+    });
+
+    test('chaque classe a, pour chaque effet de rage, un sort tous les 10 niveaux de 20 à 70, de plus en plus fort', () => {
+        const field = { rageGain: 'rageGain', rageToMana: 'manaPerRage', rageToDamage: 'dmgPerRage' };
+        const byClass = { barbarian: barbarianSpells, sorcerer: sorcererSpells, assassin: assassinSpells, templar: templarSpells };
+        for(const [className, list] of Object.entries(byClass)) {
+            for(const [effect, key] of Object.entries(field)) {
+                const tiers = list.filter(spell => spell.effect === effect).sort((a, b) => a.minLevel - b.minLevel);
+                for(const level of [20, 30, 40, 50, 60, 70]) expect(tiers.some(spell => spell.minLevel === level)).toBe(true);
+                tiers.forEach((spell, i) => { if(i > 0) expect(spell[key]).toBeGreaterThan(tiers[i - 1][key]); });
+                expect(tiers.length).toBeGreaterThan(0);
+                expect(getSpellsByClass(className, 70).filter(spell => spell.effect === effect)).toHaveLength(tiers.length);
+            }
+        }
     });
 });

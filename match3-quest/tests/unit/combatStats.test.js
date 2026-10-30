@@ -110,7 +110,7 @@ describe('équipement et sorts', () => {
     });
 
     test('nouveaux sorts de bonus temporaire', () => {
-        const buffs = spellsJson.allClassSpells.filter(s => s.effect === 'statBuff');
+        const buffs = [...spellsJson.sorcererSpells, ...spellsJson.assassinSpells, ...spellsJson.templarSpells, ...spellsJson.barbarianSpells].filter(s => s.effect === 'statBuff');
         expect(buffs.length).toBeGreaterThanOrEqual(4);
         buffs.forEach(s => {
             expect((s.atkBuff || 0) + (s.defBuff || 0)).toBeGreaterThan(0);

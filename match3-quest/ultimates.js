@@ -131,3 +131,7 @@ export function spendUltimateMana(entity, spell){
         entity.ultimateMana[color] = Math.max(0, collectedUltimateMana(entity, color) - need);
     });
 }
+
+// Sorts de rage : conversion de la jauge en qì (`manaPerRage` par couleur) ou en dégâts (`dmgPerRage` par point).
+export const rageToManaAmount = (rage, manaPerRage) => Math.floor(Math.max(0, Math.floor(rage || 0)) * Math.max(0, manaPerRage || 0));
+export const rageToDamageAmount = (rage, dmgPerRage) => Math.max(0, Math.floor(rage || 0)) * Math.max(0, Math.floor(dmgPerRage || 0));

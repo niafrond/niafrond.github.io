@@ -214,7 +214,7 @@ describe('identifiants de sorts uniques', () => {
     it('aucun id de sort en double dans le catalogue', async () => {
         const { readFileSync } = await import('fs');
         const cat = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));
-        const ids = [...cat.allSpells, ...cat.allClassSpells].map(s => s.id);
+        const ids = [...cat.allSpells, ...cat.sorcererSpells, ...cat.assassinSpells, ...cat.templarSpells, ...cat.barbarianSpells].map(s => s.id);
         expect(ids.length).toBeGreaterThan(50);
         const dup = ids.filter((id, i) => ids.indexOf(id) !== i);
         expect(dup).toEqual([]);

@@ -35,8 +35,7 @@ function loadSpellsCatalogSync(){
         assassinSpells: [],
         templarSpells: [],
         barbarianSpells: [],
-        ultimateSpells: [],
-        allClassSpells: []
+        ultimateSpells: []
     };
 }
 
@@ -108,14 +107,13 @@ export const ultimateSpells = Array.isArray(spellCatalog.ultimateSpells)
     ? spellCatalog.ultimateSpells.map(normalizeSpellColorAttributes)
     : [];
 
-export const allClassSpells = Array.isArray(spellCatalog.allClassSpells)
-    ? spellCatalog.allClassSpells
-    : [
-        ...sorcererSpells,
-        ...assassinSpells,
-        ...templarSpells,
-        ...barbarianSpells
-    ];
+// Toujours dérivée des listes par classe : une copie figée dans spells.json masquerait tout sort ajouté ensuite.
+export const allClassSpells = [
+    ...sorcererSpells,
+    ...assassinSpells,
+    ...templarSpells,
+    ...barbarianSpells
+];
 
 export function getSpellsByColor(color) {
     return allSpells.filter(spell => (spell.colors || [spell.color]).includes(color));
