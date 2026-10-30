@@ -11,11 +11,11 @@ const classNamePools = {
     ],
     // Commandant (Wǔjiàng)
     templar: [
-        "Zhao Yun", "Guan Tai", "Liu Shan", "Wang Gang", "Mu Lan", "Shen Bao", "Tang Rui", "Gao Heng"
+        "Zhao Lin", "Guan Tai", "Liu Kun", "Wang Gang", "Mu Rong", "Shen Bao", "Tang Rui", "Gao Heng"
     ],
     // Guerrier (Wǔshì)
     barbarian: [
-        "Batu", "Temujin", "Borte", "Subutai", "Qasar", "Hulan", "Arslan", "Jebe"
+        "Tie Shan", "Hu Meng", "Bao Lei", "Da Wei", "Gang Lie", "Hei Long", "Shi Kai", "Lei Zhen"
     ]
 };
 

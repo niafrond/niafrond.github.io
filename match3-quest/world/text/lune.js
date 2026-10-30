@@ -22,7 +22,7 @@ export default {
       talk: [{ whenDone: 'sq_lanterne_hua', lines: ['Vous l\'avez portée jusqu\'à Yin ? Merci. Je me remets en route : le monde a besoin d\'une colporteuse, même quand il se tait.'] }] },
     jade_hare: { name: 'Lièvre de jade', title: 'Pileur d\'élixir', 
       idle: ['Je pile, je pile, je pile. L\'élixir de la Reine Mère s\'est tu depuis longtemps, mais les mortiers ne le savent pas.', 'Dame Chang\'e est montée au pic avec sa fiole. Elle la serre comme on serre un enfant. Quelqu\'un la suit, dit-on, et ce quelqu\'un ne vient pas pour prier.'],
-      talk: [{ whenDone: 'fengmeng_3a', lines: ['L\'Archer Miroir est à terre, mais Fengmeng ne l\'est pas : ce qu\'il a perdu va le rendre plus dangereux. Ayez le cœur léger, archer : la colère coupe plus qu\'elle n\'éclaire.'] },
+      talk: [{ whenDone: 'fengmeng_3a', lines: ['L\'Archer Miroir est à terre, mais Fengmeng ne l\'est pas : ce qu\'il a perdu va le rendre plus dangereux.', 'Ayez le cœur léger, archer : la colère coupe plus qu\'elle n\'éclaire.'] },
         { whenDone: 'fengmeng_3b', lines: ['Fengmeng a posé son arc : on l\'a vu redescendre à pied, sans se retourner. Le pic est calme. Dame Chang\'e, dit-on, attend votre geste devant l\'autel.'] }] },
     spinner_yue: { name: 'Yue', title: 'Tisseuse d\'argent', 
       idle: ['Je file la lumière de lune. Elle est fine, froide, et pardonne tout.', 'J\'ai tissé un voile pour Chang\'e. Il est trop beau pour qu\'on l\'use. Elle l\'a mis quand même.'],

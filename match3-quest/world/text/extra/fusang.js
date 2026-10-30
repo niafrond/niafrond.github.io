@@ -23,7 +23,7 @@ export default {
   },
   npcs: {
     crane_elder_hegu: {
-      name: "Hegu",
+      name: "Dame Songhe",
       title: "Doyenne des grues messagères",
       idle: [
         "Nous portons les lettres du ciel. Certaines sont heureuses, la plupart sont des factures.",
@@ -420,7 +420,7 @@ export default {
         }
       ],
       offer: [
-        "Mes parents sont partis. Le garde solaire a pris leur lueur, je crois. Reprenez-la, s'il vous plaît !"
+        "Mes parents sont partis. Le garde solaire a pris leur lueur, je crois. Reprends-la, s'il te plaît !"
       ],
       hint: [
         "Le garde solaire se tient dans les racines et branches dorées, près d'un arbre brillant."

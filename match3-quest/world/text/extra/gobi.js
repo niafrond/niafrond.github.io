@@ -9,7 +9,7 @@ export default {
       ]
     },
     gobi_h2_puits: {
-      name: "Maison du puisatier Wen",
+      name: "Maison du puisatier Heng",
       arrival: [
         "La fraîcheur est immédiate. L'eau profonde murmure au fond du puits comme un secret bien gardé."
       ]
@@ -23,7 +23,7 @@ export default {
   },
   npcs: {
     well_digger_omar: {
-      name: "Wen",
+      name: "Heng",
       title: "Puisatier",
       idle: [
         "Je creuse depuis quarante ans. L'eau est un trésor qu'on trouve à reculons.",
@@ -55,7 +55,7 @@ export default {
       ]
     },
     date_farmer_ismail: {
-      name: "Zhen",
+      name: "Zhuo",
       title: "Cultivateur de dattes",
       idle: [
         "Mes palmiers pleurent de la datte. Je ne suis pas pressé de leur dire de s'arrêter.",
@@ -129,7 +129,7 @@ export default {
         {
           whenDone: "sun_4",
           lines: [
-            "Le sable dit : « Six soleils restent. Un seul est sage. » Je ne sais pas ce que cela veut dire."
+            "Le sable dit : « Sept soleils restent. Un seul est sage. » Je ne sais pas ce que cela veut dire."
           ]
         }
       ]
@@ -554,8 +554,8 @@ export default {
                       "target": "mapmaker_ali",
                       "text": "Faire tracer par Yuan le trajet de Hua sur sa carte (campement des cartographes)",
                       "lines": [
-                            "Je trace les pas de Hua depuis trois jours, et c'est curieux : elle ne suit pas les routes. Elle suit votre route, archer, avec une lune de retard.",
-                            "Chaque soleil que vous éteignez, elle arrive ensuite au village voisin. Jamais avant. Jamais très longtemps après."
+                            "Je trace les pas de Hua depuis trois jours, et c'est curieux : elle ne suit pas les routes. Elle suit votre route, archer, avec une étape d'avance.",
+                            "Elle est toujours au village voisin avant vous, mais jamais avant la chute du soleil précédent."
                       ]
                 },
                 {
@@ -564,7 +564,7 @@ export default {
                       "text": "Demander à Hua pourquoi elle vous suit (oasis)",
                       "lines": [
                             "Je ne vous suis pas. Je vous précède… de peu. Quelqu'un doit être là quand la lumière s'éteint, pour qu'elle ne tombe pas toute seule.",
-                            "Ne me posez pas la question à voix haute dans la prochaine région, d'accord ? Les murs y ont des oreilles."
+                            "Ne me reposez pas la question à voix haute plus loin, d'accord ? Les murs y ont des oreilles."
                       ]
                 }
           ],

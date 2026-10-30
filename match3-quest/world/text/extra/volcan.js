@@ -218,7 +218,7 @@ export default {
   quests: [
     {
       id: "sq_vol_alchimie_1",
-      title: "Le cinabre d'Occident",
+      title: "Le lingzhi de l'alchimiste",
       chapter: "✦ Quête secondaire — Gorges du Volcan",
       giver: "alchemist_dan",
       turnIn: "alchemist_dan",
