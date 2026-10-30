@@ -10,6 +10,8 @@
 
 export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat', 'puzzle-push', 'puzzle-mirror', 'puzzle-slide'];
 export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'tides', 'fusang', 'moon'];
+// Biomes d'événement (events/) → piste de musique de leur zone. Ajouter une entrée par événement qui a sa musique.
+export const EVENT_TRACKS = { wandering_souls: 'event-wandering-souls' };
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;
 export const MUSIC_DIR = 'audio/music/';
@@ -42,6 +44,8 @@ export function combatStyleIndex(variant) {
 /** Clés de pistes à essayer, de la plus précise à la plus générale. Tableau vide si la scène est inconnue. */
 export function trackCandidates(sceneId, { biome, boss, variant } = {}) {
     if (!SCENE_IDS.includes(sceneId)) return [];
+    // Écrans d'événement : piste propre à l'événement (clé `event-<id>`), repli sur la musique sauvage des Bambous si elle manque.
+    if (sceneId === 'wild' && EVENT_TRACKS[biome]) return [EVENT_TRACKS[biome], 'wild-bamboo'];
     if (sceneId === 'village' || sceneId === 'wild') return [`${sceneId}-${BIOMES.includes(biome) ? biome : 'paddy'}`];
     if (sceneId === 'combat') return [...(biome === 'tides' ? ['combat-tides'] : []), `combat-${combatStyleIndex(variant ?? 0)}`];   // Hautes-Eaux : « Tourbillon des Eaux »
     if (sceneId === 'boss') {

@@ -11,6 +11,9 @@ import * as D from '../../events/wanderingSouls/data.js';
 import '../../puzzle/modes.js';   // enregistre les modes d'énigme (push, mirror…)
 import { PUZZLES, puzzleDef } from '../../puzzle/levels.js';
 import { createPuzzle, solve } from '../../puzzle/engine.js';
+import { trackCandidates, EVENT_TRACKS } from '../../musicTracks.js';
+import { BIOME_DECOR } from '../../decor.js';
+import { decorSprite, DECOR_NAMES } from '../../sprites/decor.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
@@ -302,6 +305,24 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(isExitLocked(session, door)).toBe(true);
         teleportToScreen(session, D.REALM_ID);
         expect(isExitLocked(session, back)).toBe(false);
+    });
+
+    test('musique : le royaume a sa piste, avec repli sur la musique sauvage des Bambous ; le Gardien a son thème', () => {
+        expect(trackCandidates('wild', { biome: D.BIOME })).toEqual([EVENT_TRACKS[D.BIOME], 'wild-bamboo']);
+        expect(trackCandidates('wild', { biome: 'bamboo' })).toEqual(['wild-bamboo']);   // les autres biomes ne changent pas
+        expect(trackCandidates('boss', { boss: 'Gardien du jugement' })[0]).toBe('boss-gardien-du-jugement');
+    });
+
+    test('décors du biome : huit sprites pixel art 32×32 propres au royaume, tous dessinables', () => {
+        const names = ['red_lantern', 'stone_stele', 'guardian_lion', 'soul_urn', 'incense_burner', 'spirit_mirror', 'pale_flowers', 'offering_bowl'];
+        expect(BIOME_DECOR[D.BIOME]).toEqual(names);
+        names.forEach(n => {
+            expect(DECOR_NAMES).toContain(n);
+            const uri = decorSprite(n);
+            expect(uri.startsWith('data:image/png;base64,')).toBe(true);
+            const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
+            expect([png.readUInt32BE(16), png.readUInt32BE(20), png.readUInt8(25)]).toEqual([32, 32, 6]);   // 32×32, RGBA (fond transparent)
+        });
     });
 
     test('aucune pénalité ni pression : pas de compte à rebours, pas de limite de temps dans les quêtes', () => {

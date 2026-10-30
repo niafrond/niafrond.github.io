@@ -129,11 +129,11 @@ export const JADE = {
 export const SHIELD_GROUP = 'ws_gardes_du_sceau';
 export const ENEMIES = [
     ['ws_jiangshi_patrouille', '5', 'jiangshi', 'Jiangshi du sanctuaire', 'patrol', 0, ['5', '6'], false, { group: SHIELD_GROUP }],
-    ['ws_jiangshi_garde', '7', 'jiangshi', 'Jiangshi endormi', 'sentinel', 0, null, false, { group: SHIELD_GROUP }],
+    ['ws_jiangshi_garde', '7', 'jiangshi', 'Jiangshi endormi', 'sentinel', 0, null, false, { group: SHIELD_GROUP, spriteKey: 'ws_jiangshi_patrouille' }],
     ['ws_huli_jing', '8', 'huli_jing', 'Renarde des faux chemins', 'sentinel', 0, null],
     // Mirage de la renarde : se dissipe au contact et réapparaît ailleurs (illusion), jamais de combat.
     ['ws_faux_passage', 'k', 'huli_jing', 'Faux passage', 'sentinel', 0, null, false, {
-        illusion: true, spriteKey: 'huli_jing', hideWhen: BELL.chest.id,
+        illusion: true, spriteKey: 'ws_huli_jing', hideWhen: BELL.chest.id,
         illusionLines: ['Le couloir s\'efface comme un rideau de fumée. Quelque part, une renarde rit sans bruit.', 'Un passage de papier : la huli jing aime les décors.']
     }],
     ['ws_gardien_jugement', '9', 'gui_esprit', 'Gardien du jugement', 'sentinel', 1, null, true, {

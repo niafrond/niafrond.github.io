@@ -16,6 +16,21 @@ export const OVERRIDES = [
     'Hundun, primordial chaos creature, a round shaggy faceless body like a stuffed bag, dark brown fur with glowing orange cracks, six short legs and four small wings, no face'],
   ['gui_esprit', 'Esprit errant', 'Spectre', '', 'purple', 'rizieres', 'e',
     'wandering ghost spirit of ancient China, tattered hooded gray-violet robe fading into a wispy tail, two glowing pale eyes in the dark hood, thin skeletal hands, ethereal floating'],
+  // Événement « La Nuit des âmes errantes » (events/wanderingSouls/) : dessins propres à ses trois ennemis, clés = ids d'ennemis du royaume.
+  ['ws_gardien_jugement', 'Gardien du jugement', 'Spectre', 'Juge des registres des âmes', 'purple', 'bambous', 'e',
+    'super deformed chibi stern judge of the dead from the Chinese underworld, oversized round head about half of the total height, tiny stubby body, short little arms and legs, ' +
+    'black and crimson official robes with wide sleeves, winged black official hat futou, long black beard, big serious eyes, ' +
+    'holding an open ledger scroll in one hand and a large brush in the other, small pale jade green ghostly flames at his feet, ' +
+    'cute but stern ancient Chinese bureaucrat of the afterlife, not a western devil, no horns, no pitchfork'],
+  ['ws_jiangshi_patrouille', 'Jiangshi du sanctuaire', 'Mort-vivant', 'Revenant sauteur', 'green', 'bambous', 'e',
+    'super deformed chibi Chinese hopping vampire jiangshi, oversized round head about half of the total height, tiny stubby body, short little legs, ' +
+    'both short arms held straight out horizontally in front of the body, pale gray-green skin, big dull round eyes, ' +
+    'dark teal blue Qing dynasty official robe (not red), black official hat, a long yellow paper talisman strip with red symbols hanging down over the face from the hat, ' +
+    'cute but spooky, not a western vampire, no cape, no fangs'],
+  ['ws_huli_jing', 'Renarde des faux chemins', 'Esprit', 'Huli jing', 'green', 'bambous', 'e',
+    'super deformed chibi huli jing, Chinese fox spirit, oversized round white fox head about half of the total height, tiny stubby body on two short legs, ' +
+    'big sly eyes and a mischievous smile, two small bushy tails glowing pale jade green, ' +
+    'pale green and white robe with wide sleeves, small floating paper lantern, cute and mischievous, not a Japanese kitsune, no mask'],
   ['assassin_masque', 'Assassin Masqué', 'Humain', 'Lame du Voile Noir', 'purple', 'rizieres', 'e',
     'ancient Chinese hired killer of the Warring States, wearing a carved bronze nuo ritual mask with bulging round eyes and fangs, ' +
     'bare head with black hair in a topknot held by a bronze hairpin, no hood, no headscarf, no cloth over the face, ' +

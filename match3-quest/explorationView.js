@@ -2242,7 +2242,7 @@ export function createExplorationView(cfg) {
             if (!session || !active || root.style.display === 'none' || inCombat) return null;
             const screen = X.currentScreen(session);
             // Souterrains (biome « cave ») : musique du biome de leur région (celui de sa zone sauvage).
-            const biome = screen.underground ? (session.screens[`${screen.region}_wild`]?.biome || screen.biome) : screen.biome;
+            const biome = screen.underground && !screen.event ? (session.screens[`${screen.region}_wild`]?.biome || screen.biome) : screen.biome;   // écran d'événement : son propre biome (musique propre)
             return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome, region: screen.region };
         },
 
