@@ -1,4 +1,4 @@
-// Manifeste de l'application installable (manifest.json) : nom « Match Quest », icônes présentes aux bonnes tailles, liens de l'index.
+// Manifeste de l'application installable (manifest.json) : nom « Hou Yi et les 10 Soleils », icônes présentes aux bonnes tailles, liens de l'index.
 import { readFileSync, existsSync } from 'fs';
 import { describe, test, expect } from '@jest/globals';
 
@@ -11,11 +11,11 @@ const pngSize = f => { const b = readFileSync(new URL(f, dir)); return [b.readUI
 
 describe('manifeste de la PWA', () => {
     test('l\'application s\'appelle Match Quest', () => {
-        expect(manifest.name).toBe('Match Quest');
-        expect(manifest.short_name).toBe('Match Quest');
+        expect(manifest.name).toBe('Hou Yi et les 10 Soleils');
+        expect(manifest.short_name).toBe('Hou Yi');
         expect(manifest.short_name.length).toBeLessThanOrEqual(12);   // reste lisible sous l'icône de l'écran d'accueil
         expect(read('index.html')).toMatch(/<title>Match Quest<\/title>/);
-        expect(read('index.html')).toMatch(/apple-mobile-web-app-title" content="Match Quest"/);
+        expect(read('index.html')).toMatch(/apple-mobile-web-app-title" content="Hou Yi"/);
     });
 
     test('chaque icône existe, avec la taille annoncée', () => {
