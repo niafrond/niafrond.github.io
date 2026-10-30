@@ -539,7 +539,7 @@ function _stopHighlightLoop() {
 // Garde la surbrillance alignée sur l'échange attendu (le plateau change entre les tours, renderBoard réécrit les classes).
 function _startHighlightLoop() {
     _stopHighlightLoop();
-    _highlightTimer = setInterval(_refreshHighlight, 400);
+    _highlightTimer = setInterval(() => { if (!document.hidden) _refreshHighlight(); }, 400);
     setTimeout(_refreshHighlight, 700);
 }
 

@@ -39,6 +39,8 @@ import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder,
 
 // Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
 const COVERED_DRAW_MS = 250;
+const IDLE_DRAW_MS = 33;        // héros immobile : seules les animations d'ambiance bougent, 30 i/s suffisent (batterie)
+const IDLE_DRAW_LOW_MS = 66;    // idem en effets réduits : ~15 i/s
 // Distance (cases) à une sortie en deçà de laquelle le sol de la carte voisine est préparé, et temps (ms) alloué à chaque image.
 const PREBUILD_RANGE = 14;
 const PREBUILD_BUDGET_MS = 6;
@@ -1119,7 +1121,9 @@ export function createExplorationView(cfg) {
         // Dessin inutile (onglet caché, carte hors écran, cinématique opaque par-dessus) : on le saute. Sous un modal (voile à 70 %), la carte
         // ne bouge plus (la logique est bloquée) : 4 images/s suffisent. La logique ci-dessus reste exécutée à chaque image.
         const covered = document.hidden || !isOnScreen() || Boolean(document.querySelector('.cine-overlay'));
-        if (!covered && (now - lastDrawAt >= COVERED_DRAW_MS || !isModalOpen())) {
+        const moving = sliding || Boolean(held) || Boolean(walk);
+        const minGap = isModalOpen() ? COVERED_DRAW_MS : moving ? 0 : (document.body.classList.contains('fx-low') ? IDLE_DRAW_LOW_MS : IDLE_DRAW_MS);
+        if (!covered && now - lastDrawAt >= minGap - 2) {
             lastDrawAt = now;
             draw(now);
             if (!slide) prebuildNeighborGround();
