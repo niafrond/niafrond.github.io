@@ -103,6 +103,9 @@ export const allStuff = [
 export const getStuffById = id => allStuff.find(s => s.id === id) || null;
 export const isStuff = obj => obj?.type === 'stuff';
 
+// Reliques permanentes du sac (type `artifact`) : sans emplacement, bonus appliqué au ramassage ; l'onglet Stuff les liste (stuffView.js).
+export const relicsOf = hero => (Array.isArray(hero?.inventory) ? hero.inventory : []).filter(it => it?.type === 'artifact');
+
 // Stuff en vente ou en butin : tout sauf les colliers de quête.
 export const lootableStuff = () => allStuff.filter(s => !s.quest);
 

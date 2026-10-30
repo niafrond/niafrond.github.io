@@ -5,7 +5,7 @@ import { getRarityColor } from './items.js';
 import { compareButtonHtml, deltaBadgesHtml } from './compareView.js';
 import {
     STUFF_SLOTS, STUFF_SLOT_LABELS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL,
-    getStuffById, describeStuff, powerLines, equipStuff, unequipStuff, stuffTotals, normalizeStuff
+    getStuffById, describeStuff, powerLines, equipStuff, unequipStuff, stuffTotals, normalizeStuff, relicsOf
 } from './stuff.js';
 
 const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -76,7 +76,22 @@ export function renderStuffTab() {
     root.innerHTML = `
         <div class="stuff-summary">${summary ? `Bonus portés : ${escapeHtml(summary)}` : '<em>Aucun bonus porté.</em>'}</div>
         <h3>Porté</h3><div class="stuff-grid">${STUFF_SLOTS.map(wornTile).join('')}</div>
-        <h3>Collection${spare.length ? ` (${spare.length})` : ''}</h3>${spare.length ? spare.map(pieceRow).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}`;
+        <h3>Collection${spare.length ? ` (${spare.length})` : ''}</h3>${spare.length ? spare.map(pieceRow).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}${relicsHtml()}`;
+}
+
+// Reliques permanentes (type `artifact` : amulette, bague d'archer, sandales, couronne…) : elles n'ont pas d'emplacement, leur bonus s'applique
+// dès qu'on les ramasse. Listées ici en lecture seule pour qu'un objet annoncé par un coffre se retrouve dans l'équipement ; la vente et le rebut restent dans l'onglet Objets.
+function relicsHtml() {
+    const relics = relicsOf(player);
+    if (!relics.length) return '';
+    const rows = relics.map(r => `
+        <div class="stuff-row" style="border-left-color:${getRarityColor(r.rarity)}" title="${escapeHtml(RARITY_LABEL[r.rarity] || '')}">
+            <div class="stuff-row-main">
+                <span class="weapon-name">${escapeHtml(r.name)}</span>
+                <span class="weapon-stats"><b>Relique</b> • ${escapeHtml(r.description || '')}</span>
+            </div>
+        </div>`).join('');
+    return `<h3>Reliques (${relics.length})</h3><p class="shop-empty">Permanentes, toujours actives : sans emplacement. Vente et rebut dans l'onglet Objets.</p>${rows}`;
 }
 
 // Onglet « Spéciaux » : objets de quête rangés dans exploration.questItems (jamais dans le sac, donc invendables).

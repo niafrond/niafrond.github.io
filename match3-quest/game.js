@@ -641,7 +641,8 @@ export function grantChestLoot({ loot = [] } = {}){
             log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
         } else if(entry.kind === 'item' && entry.item) {
             player.inventory.push({ ...entry.item, applied: false });
-            labels.push(`${entry.item.name} (${rarityText})`);
+            // Une relique n'a pas d'emplacement : on dit où elle va (bonus permanent, listée dans l'onglet Stuff).
+            labels.push(entry.item.type === 'artifact' ? `${entry.item.name} (relique permanente, ${rarityText}, onglet Stuff)` : `${entry.item.name} (${rarityText})`);
             log(`${rarityIcon} Trouvé dans un coffre : ${entry.item.name} !`);
             if(entry.item.type === 'artifact') {
                 applyArtifactEffects(player);
@@ -4330,6 +4331,7 @@ function statValueHtml(entity, stat){
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
     if(!inventoryList) return;
+    document.dispatchEvent(new Event('stuff-changed'));   // les reliques du sac sont aussi listées dans l'onglet Stuff (stuffView.js)
     bindSortSelect('items-sort', updateWeaponsTab);
     normalizeActiveInventoryIndex();
 
