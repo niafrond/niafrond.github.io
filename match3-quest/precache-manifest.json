@@ -4177,6 +4177,11 @@
    "h": "76f414f3c6"
   },
   {
+   "p": "audio/music/combat-0-b.mp3",
+   "s": 2007816,
+   "h": "2c52b9ea78"
+  },
+  {
    "p": "audio/music/combat-0.mp3",
    "s": 2003427,
    "h": "8999a3c0ca"
@@ -4212,6 +4217,11 @@
    "h": "35736e803c"
   },
   {
+   "p": "audio/music/ending-b.mp3",
+   "s": 2098409,
+   "h": "d960257390"
+  },
+  {
    "p": "audio/music/ending.mp3",
    "s": 2057344,
    "h": "91f35d07a3"
@@ -4222,9 +4232,19 @@
    "h": "ef37e23078"
   },
   {
+   "p": "audio/music/house-b.mp3",
+   "s": 2087437,
+   "h": "015a93efbd"
+  },
+  {
    "p": "audio/music/house.mp3",
    "s": 2040730,
    "h": "9b01c77bb9"
+  },
+  {
+   "p": "audio/music/menu-b.mp3",
+   "s": 2026938,
+   "h": "cab9634281"
   },
   {
    "p": "audio/music/menu.mp3",
@@ -4232,9 +4252,19 @@
    "h": "c89cec99f2"
   },
   {
+   "p": "audio/music/moon-b.mp3",
+   "s": 2062673,
+   "h": "1f275d46a2"
+  },
+  {
    "p": "audio/music/moon.mp3",
    "s": 2029759,
    "h": "4ced3befda"
+  },
+  {
+   "p": "audio/music/puzzle-mirror-b.mp3",
+   "s": 2071137,
+   "h": "b122f9792d"
   },
   {
    "p": "audio/music/puzzle-mirror.mp3",
@@ -4252,9 +4282,19 @@
    "h": "0290028fdb"
   },
   {
+   "p": "audio/music/sanctuary-b.mp3",
+   "s": 2015966,
+   "h": "2c60361750"
+  },
+  {
    "p": "audio/music/sanctuary.mp3",
    "s": 1922239,
    "h": "ba5df15872"
+  },
+  {
+   "p": "audio/music/title-b.mp3",
+   "s": 2062673,
+   "h": "f84b249536"
   },
   {
    "p": "audio/music/title.mp3",
@@ -4262,9 +4302,19 @@
    "h": "e576d2fde0"
   },
   {
+   "p": "audio/music/victory-b.mp3",
+   "s": 2024116,
+   "h": "5eaa751d60"
+  },
+  {
    "p": "audio/music/victory.mp3",
    "s": 2057344,
    "h": "410bafc4a0"
+  },
+  {
+   "p": "audio/music/village-bamboo-b.mp3",
+   "s": 2082108,
+   "h": "24c93ef32f"
   },
   {
    "p": "audio/music/village-bamboo.mp3",
@@ -4290,6 +4340,11 @@
    "p": "audio/music/village-moon.mp3",
    "s": 2037909,
    "h": "dfcfcb7666"
+  },
+  {
+   "p": "audio/music/village-paddy-b.mp3",
+   "s": 2084616,
+   "h": "cb2682e823"
   },
   {
    "p": "audio/music/village-paddy.mp3",
@@ -4322,6 +4377,11 @@
    "h": "d1cb38ac46"
   },
   {
+   "p": "audio/music/wild-bamboo-b.mp3",
+   "s": 2018787,
+   "h": "b310a6665c"
+  },
+  {
    "p": "audio/music/wild-bamboo.mp3",
    "s": 2076466,
    "h": "20a71fd476"
@@ -4337,6 +4397,11 @@
    "h": "8dde568a61"
   },
   {
+   "p": "audio/music/wild-gobi-b.mp3",
+   "s": 2087437,
+   "h": "60495964cb"
+  },
+  {
    "p": "audio/music/wild-gobi.mp3",
    "s": 2104051,
    "h": "e8f9bf7a4a"
@@ -4350,6 +4415,11 @@
    "p": "audio/music/wild-paddy.mp3",
    "s": 1968946,
    "h": "a959df999d"
+  },
+  {
+   "p": "audio/music/wild-riverbed-b.mp3",
+   "s": 2123486,
+   "h": "dd032ef123"
   },
   {
    "p": "audio/music/wild-riverbed.mp3",

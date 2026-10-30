@@ -379,6 +379,62 @@
   "boss-gardien-du-jugement": {
    "seconds": 155.7,
    "sections": 1
+  },
+  "combat-0-b": {
+   "seconds": 167.2,
+   "sections": 1
+  },
+  "moon-b": {
+   "seconds": 171.8,
+   "sections": 1
+  },
+  "wild-bamboo-b": {
+   "seconds": 168.2,
+   "sections": 1
+  },
+  "village-paddy-b": {
+   "seconds": 173.7,
+   "sections": 1
+  },
+  "title-b": {
+   "seconds": 171.8,
+   "sections": 1
+  },
+  "menu-b": {
+   "seconds": 168.8,
+   "sections": 1
+  },
+  "house-b": {
+   "seconds": 173.9,
+   "sections": 1
+  },
+  "sanctuary-b": {
+   "seconds": 167.9,
+   "sections": 1
+  },
+  "ending-b": {
+   "seconds": 174.8,
+   "sections": 1
+  },
+  "victory-b": {
+   "seconds": 168.6,
+   "sections": 1
+  },
+  "wild-gobi-b": {
+   "seconds": 173.9,
+   "sections": 1
+  },
+  "wild-riverbed-b": {
+   "seconds": 176.9,
+   "sections": 1
+  },
+  "village-bamboo-b": {
+   "seconds": 173.4,
+   "sections": 1
+  },
+  "puzzle-mirror-b": {
+   "seconds": 172.5,
+   "sections": 1
   }
  },
  "sfx": {

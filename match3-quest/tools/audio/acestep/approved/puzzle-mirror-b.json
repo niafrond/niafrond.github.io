@@ -1,0 +1,29 @@
+{
+  "key": "puzzle-mirror-b",
+  "version": "v001",
+  "date": "2026-10-30T14:07:20.519Z",
+  "seed": "3007404346",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Mo Li Hua (Jasmine Flower) folk song\", tender dizi carrying the well-known jasmine flower folk melody, soft yangqin plucks and light guzheng, pure delicate pentatonic charm, thoughtful and gentle, steady calm pulse, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 84,
+    "key_scale": "G major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 84,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Mo Li Hua (Jasmine Flower) folk song\", tender dizi carrying the well-known jasmine flower folk melody, soft yangqin plucks and light guzheng, pure delicate pentatonic charm, thoughtful and gentle, steady calm pulse, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

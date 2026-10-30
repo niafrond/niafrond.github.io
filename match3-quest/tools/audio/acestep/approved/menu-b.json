@@ -1,0 +1,29 @@
+{
+  "key": "menu-b",
+  "version": "v001",
+  "date": "2026-10-30T14:02:29.271Z",
+  "seed": "1978000602",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Mei Hua San Nong (Three Variations on the Plum Blossom)\", dizi bamboo flute and guqin, one gentle theme repeated three times with growing ornaments, plum blossoms in winter snow, pure calm inviting, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 68,
+    "key_scale": "G major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 68,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Mei Hua San Nong (Three Variations on the Plum Blossom)\", dizi bamboo flute and guqin, one gentle theme repeated three times with growing ornaments, plum blossoms in winter snow, pure calm inviting, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

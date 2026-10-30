@@ -1,0 +1,29 @@
+{
+  "key": "victory-b",
+  "version": "v001",
+  "date": "2026-10-30T14:03:45.495Z",
+  "seed": "1981688051",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Xiyang Xiaogu (Flute and Drum at Sunset)\", pipa, dizi and soft drums, rippling river at dusk and a returning boat, relief and warmth, gradually brightening and gently triumphant, steady lively groove, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 100,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 100,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Xiyang Xiaogu (Flute and Drum at Sunset)\", pipa, dizi and soft drums, rippling river at dusk and a returning boat, relief and warmth, gradually brightening and gently triumphant, steady lively groove, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}
