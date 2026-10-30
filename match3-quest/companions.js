@@ -15,11 +15,11 @@
 //   Un compagnon commente un LIEU, une DÉCISION (chemin pris) ou un ÉVÉNEMENT ; jamais deux fois la même chose, bulles ≤ 160 caractères.
 //
 // Huit compagnons (Yu et Étincelle ont été ajoutés avec leur pouvoir de combat, voir companionPowers.js). Trois d’origine, trois moments, trois voix (tous facultatifs : ils dépendent de quêtes annexes) :
-//   - Xiao Gui (région 1, `sq_rice_thief`) : le démon-renard chapardeur battu aux rizières. Tutoie tout le monde, farceur, « hi hi ».
+//   - Xiao Gui (région 1, Rizières, `sq_rice_thief`) : le démon-renard chapardeur battu aux rizières. Tutoie tout le monde, farceur, « hi hi ».
 //     But : gagner ses neuf queues (il en a trois) ; il apprend que les queues se gagnent en rendant service, pas en volant.
-//   - Zhi (région 3, `sq_bell`) : le jeune moine novice de Maître Zhen. Vouvoie le héros (« seigneur »), cite son Maître, tutoie Xiao Gui.
+//   - Zhi (région 5, Forêt de Bambous, `sq_bell`) : le jeune moine novice de Maître Zhen. Vouvoie le héros (« seigneur »), cite son Maître, tutoie Xiao Gui.
 //     But : entendre la cloche sonner « l'heure qui n'existe pas encore » et savoir si la compassion s'étend aux soleils.
-//   - Dawa (région 4, `sq_oasis`) : le guide du Gobi. Vouvoie le héros, pince-sans-rire, proverbes du désert, tutoie les jeunes.
+//   - Dawa (région 3, Désert de Gobi, `sq_oasis`) : le guide du Gobi. Vouvoie le héros, pince-sans-rire, proverbes du désert, tutoie les jeunes.
 //     But : voir l'endroit où naît le jour (le Fusang), « un lieu où personne ne se perd ».
 //
 // Les chemins vers les soleils 2, 3, 5, 6, 8 et 9 (story.js : gardes abattus ou pourparlers `parley_sunN`) y sont commentés par une réplique
@@ -59,7 +59,7 @@ export const BANTER = [
         say(BRAISE, "Grrr. Pardon. Grr… non, ça, c'est de la joie. Je ne savais pas que ça ressemblait à de la colère.", "Quand on te fait mal, je le sens. Et je te le rends, en rage. Beaucoup de rage.")
     ] },
     { id: 'jian_rejoint', companion: 'jian', scenes: [
-        say(JIAN, "Kraa. Tes gâteaux de lune se ressemblent tous. Je peux en faire des flèches, tous ceux d'une couleur ? Rarement : je ne suis pas commode.")
+        say(JIAN, "Kraa. Tes gâteaux de lune se ressemblent tous. Je peux en faire des flèches : tous ceux d'une couleur, d'un coup. Mais rarement : je ne suis pas commode.")
     ] },
     { id: 'tou_rejoint', companion: 'tou', scenes: [
         say(TOU, "Psst. Je vole ce que l'ennemi a de plus précieux : son qì. Tout un tas d'une couleur, d'un coup.", "Ne regarde pas mes pattes. Regarde les siennes : elles sont vides, maintenant.")
@@ -90,7 +90,7 @@ export const BANTER = [
         say(GUI, "Pressé de quoi ? On ne court pas comme ça après ce qu'on n'a pas envie de voler.")
     ] },
 
-    // ── Région 2 : Lit du Fleuve Jaune (soleil 2 : noyés-gardes ou doyen des noyés) ───────────────
+    // ── Région 4 : Lit du Fleuve Jaune (soleil 2 : noyés-gardes ou doyen des noyés) ───────────────
     { id: 'gui_fleuve_village', companion: 'xiao_gui', screen: 'fleuve_village', scenes: [
         say(GUI,
             "Un fleuve sans eau ! C'est comme un renard sans queue. Enfin, comme moi : un renard avec peu de queues.",
@@ -124,7 +124,7 @@ export const BANTER = [
         say(GUI, "Je sais. Moi aussi, je viens de loin : d'un champ de riz. Et regarde-moi, au bord d'un fleuve !")
     ] },
 
-    // ── Région 3 : Forêt de Bambous Calcinée (Zhi rejoint ; soleil 3 : esprits de la cloche ou âme de la cloche) ──
+    // ── Région 5 : Forêt de Bambous Calcinée (Zhi rejoint ; soleil 3 : esprits de la cloche ou âme de la cloche) ──
     { id: 'zhi_rejoint', companion: 'zhi', scenes: [
         say(ZHI,
             "Seigneur archer, Maître Zhen m'envoie avec vous. « Qui ne quitte pas sa cour ne connaît que sa cour », dit-il. J'ai pris mon balai, par habitude.",
@@ -175,7 +175,7 @@ export const BANTER = [
         say(ZHI, "Elle attendait, comme moi. Je sonnerai l'heure du matin en rentrant, même si le soleil la connaît déjà.")
     ] },
 
-    // ── Région 4 : Désert de Gobi (Dawa rejoint) ──────────────────────────────────────────────
+    // ── Région 3 : Désert de Gobi (Dawa rejoint) ──────────────────────────────────────────────
     { id: 'dawa_rejoint', companion: 'dawa', scenes: [
         say(DAWA,
             "Ma cache était intacte, seigneur. Un guide paie ses dettes : je vous mène jusqu'au bout du Gobi, et plus loin si les cartes l'acceptent.",
@@ -200,7 +200,7 @@ export const BANTER = [
         say(DAWA, "Un mirage sourit toujours. Un vrai ennemi, jamais : c'est ainsi qu'on le reconnaît.")
     ] },
 
-    // ── Région 5 : Monts du Tonnerre (soleil 5 : foudre-gardes ou petite voix du tonnerre) ─────────────
+    // ── Région 6 : Monts du Tonnerre (soleil 5 : foudre-gardes ou petite voix du tonnerre) ─────────────
     // Aptitude narrative : Dawa connaît les orages du désert et suggère de chercher une voix avant de choisir l'arc.
     { id: 'dawa_tonnerre_apt', companion: 'dawa', screen: 'tonnerre', whenDone: 'sq_lei_drum', unless: 'sun5_wardens_b', scenes: [
         say(DAWA,
@@ -221,13 +221,14 @@ export const BANTER = [
     ] },
     { id: 'gui_tonnerre_soleil', companion: 'xiao_gui', screen: 'tonnerre', whenDone: 'sun_5', scenes: [
         say(GUI, "Mes poils retombent ! J'avais l'air d'un hérisson depuis trois jours."),
-        say(HERO, "Six soleils, Xiao Gui."),
-        say(GUI, "Cinq ! Il en reste quatre, tu comptes bien. Moi, je compte mes queues : toujours trois, mais je sens que ça vient.")
+        say(HERO, "Six soleils tombés, Xiao Gui."),
+        say(GUI, "Et il en reste quatre, je compte bien ! Moi, je compte mes queues : toujours trois, mais je sens que ça vient.")
     ] },
 
-    // ── Région 6 : Gorges du Volcan (Fengmeng, rencontre 2 ; soleil 6 : forgerons de magma ou vieil attiseur) ──
-    { id: 'zhi_fengmeng_2', companion: 'zhi', screen: 'volcan', whenDone: 'fengmeng_2', scenes: [
-        say(ZHI, "Il respirait comme un tambour de guerre, seigneur. Maître Zhen m'a parlé d'un jeune archer venu méditer, qui demandait un breuvage contre la mort."),
+    // ── Région 2 : Gorges du Volcan (Fengmeng, rencontre 2 ; soleil 6 : forgerons de magma ou vieil attiseur). Seul Xiao Gui y voyage au bon moment :
+    //    Zhi (région 5) et Dawa (région 3) n'y reviennent qu'en retournant sur leurs pas, leurs répliques y sont donc des souvenirs. ──
+    { id: 'zhi_fengmeng_2', companion: 'zhi', screen: 'bambous_village', whenDone: 'fengmeng_2', scenes: [
+        say(ZHI, "Seigneur, l'archer pressé dont parle Maître Zhen, c'est celui qui vous attendait aux gorges, n'est-ce pas ? Il demandait un breuvage contre la mort."),
         say(HERO, "Et que lui a répondu ton maître ?"),
         say(ZHI, "« Oui : le temps. » Il n'a pas voulu l'entendre. On guérit mal ce qu'on ne regarde pas, seigneur. Regardons-le.")
     ] },
@@ -241,25 +242,26 @@ export const BANTER = [
         say(HERO, "Et le tien, où est-il ?"),
         say(ZHI, "Dans la cour du temple, sous le balai, là où l'on apprend à ne rien posséder.")
     ] },
-    // Aptitude narrative : Zhi, qui connaît les temples, suggère de rencontrer le vieil attiseur dont parle Yan.
-    { id: 'zhi_volcan_apt', companion: 'zhi', screen: 'volcan', whenDone: 'sq_ember', unless: 'sun6_wardens_b', scenes: [
-        say(ZHI,
-            "La cendre du phénix est entre de bonnes mains, seigneur. Un feu qu'on a veillé longtemps ne s'éteint pas : il passe à quelqu'un.",
-            "Les forgerons de magma soufflent par devoir, sans savoir pourquoi. Yan parle d'un vieil attiseur de son temple. Il écoutera ceux qu'elle estime."),
-        say(HERO, "Alors j'irai lui parler avant de bander l'arc.")
+    // Aptitude narrative : Xiao Gui a retenu ce que Yan a dit en reprenant la cendre : son vieux maître, l'attiseur, veille encore près du sanctuaire.
+    { id: 'gui_volcan_apt', companion: 'xiao_gui', screen: 'volcan', whenDone: 'sq_ember', unless: 'sun6_wardens_b', scenes: [
+        say(GUI,
+            "Archer, tu as entendu Yan ? Son vieux maître, l'attiseur de son temple, veille encore près du sanctuaire.",
+            "Les forgerons de magma soufflent par habitude, pas par haine. Parle d'abord au vieux, avant de bander l'arc : les vieux aiment qu'on les écoute."),
+        say(HERO, "Alors j'irai lui parler avant de tirer."),
+        say(GUI, "Et dis-lui merci pour la cendre. Moi, j'ai volé une allumette à un attiseur, une fois. Il m'a pardonné, mais il a pris un air sévère.")
     ] },
-    { id: 'zhi_volcan_risque', companion: 'zhi', screen: 'volcan', whenDone: wardens(6), unless: 'parley_sun6', scenes: [
-        say(ZHI, "Ils soufflaient encore en tombant, seigneur. Je compte les feux que nous éteignons : aujourd'hui, deux de plus."),
-        say(HERO, "Ils ne nous laissaient pas le choix, Zhi."),
-        say(ZHI, "Peut-être. Mais je garderai ce soir une braise pour eux. Une petite, qui ne brûle personne.")
+    { id: 'gui_volcan_risque', companion: 'xiao_gui', screen: 'volcan', whenDone: wardens(6), unless: 'parley_sun6', scenes: [
+        say(GUI, "Deux forgerons de magma à terre ! Ils soufflaient encore en tombant, tu as vu ? Comme des soufflets qui ne savent plus s'arrêter."),
+        say(HERO, "Ils ne nous laissaient pas le choix."),
+        say(GUI, "Peut-être. Mais je garderai ce soir une braise pour eux. Une petite, qui ne brûle personne. Hi hi… et que je ne volerai pas.")
     ] },
-    { id: 'zhi_volcan_parley', companion: 'zhi', screen: 'volcan', whenDone: 'parley_sun6', unless: 'sun6_wardens_a', scenes: [
-        say(ZHI, "Le vieil attiseur a parlé, et les soufflets se sont tus. Yan avait raison de le respecter, seigneur."),
+    { id: 'gui_volcan_parley', companion: 'xiao_gui', screen: 'volcan', whenDone: 'parley_sun6', unless: 'sun6_wardens_a', scenes: [
+        say(GUI, "Le vieil attiseur a parlé, et les forgerons ont posé leurs soufflets ! Yan avait raison de le respecter."),
         say(HERO, "On gagne parfois plus à écouter qu'à viser."),
-        say(ZHI, "Maître Zhen le dit en moins de mots : « Le balai ne combat pas la poussière. Il lui montre la porte. »")
+        say(GUI, "Voilà. Moi, je n'écoute qu'après avoir volé. Je note, je note… un jour, j'écouterai avant.")
     ] },
     { id: 'dawa_volcan_soleil', companion: 'dawa', screen: 'volcan', whenDone: 'sun_6', scenes: [
-        say(DAWA, "La roche refroidit comme un chameau qui se couche : lentement, avec des grognements. Deux soleils, seigneur."),
+        say(DAWA, "La roche refroidit ici comme un chameau qui se couche : lentement, avec des grognements. C'était votre deuxième soleil, seigneur."),
         say(HERO, "Tu penses encore au désert ?"),
         say(DAWA, "Toujours. Mais ici, la pierre me parle moins fort que le sable. C'est moins bavard, un volcan.")
     ] },
@@ -292,7 +294,7 @@ export const BANTER = [
     ] },
     { id: 'gui_mer_risque', companion: 'xiao_gui', screen: 'mer', whenDone: wardens(8), unless: 'parley_sun8', scenes: [
         say(GUI,
-            "Splash ! Un serpent, un docteur-démon, et pas une égratignure sur toi, archer !",
+            "Splash ! Deux gardes-marée à terre, et pas une égratignure sur toi, archer !",
             "Tu as remarqué comme ils chantaient bien, avant ? Moi, ça me donnait envie de dormir."),
         say(HERO, "Ils obéissaient à un ordre."),
         say(GUI, "Et toi aussi. C'est ça, le pire avec les ordres : on ne sait plus qui est fâché contre qui.")

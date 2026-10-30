@@ -55,7 +55,7 @@ export default {
       ]
     },
     duck_fu: {
-      name: "Fu",
+      name: "Mao",
       title: "Éleveur de canards",
       idle: [
         "Mes canards savent nager, ils ne savent juste plus où. Ils tournent en rond dans la boue.",
@@ -129,7 +129,7 @@ export default {
         {
           whenDone: "sun_1",
           lines: [
-            "Les mariages se multiplient quand la pluie revient. Je vous recommande de ne pas rester seul, archer."
+            "Les mariages se multiplient quand la pluie revient. Je vous recommande, archer, de ne pas laisser Dame Chang'e seule trop longtemps."
           ]
         }
       ]

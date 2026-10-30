@@ -7,7 +7,7 @@
 import { occupancy, placeInLand } from './junctions.js';
 
 const COLLARS = [
-    { region: 'volcan', collar: 'collier_obsidienne', questId: 'sq_collar_volcan', level: 4,
+    { region: 'volcan', collar: 'collier_obsidienne', questId: 'sq_collar_volcan', level: 4, thanks: 'Prenez soin de la montagne, et elle prendra soin de vous.',
       giver: { id: 'forger_hu', name: 'Hu le Braise-Sage', title: 'Vieux forgeron des gorges',
           idle: ['Trois fois, la lave m\'a brûlé les mains. La quatrième, j\'ai compris qu\'elle me parlait. Elle dit : « Rends-moi mon cœur. »'] },
       chest: { id: 'collar_volcan_relic', label: 'Cœur d\'obsidienne', openText: 'Au fond d\'une crevasse tiède, un cœur d\'obsidienne noire, froid comme une pierre de rivière. Il n\'a jamais connu la chaleur.' },
@@ -18,8 +18,8 @@ const COLLARS = [
           'J\'ai caché un cœur d\'obsidienne dans une crevasse de la zone sauvage, avant que les soleils ne rendent fou ce pays. Un béhémoth de magma s\'en est fait une tanière. Rapportez-moi la pierre, puis chassez la bête, et je vous en taillerai un collier.'],
       hint: ['Le cœur d\'obsidienne est au sud-est de la zone sauvage des gorges. Le béhémoth de magma rôde non loin : il charge, soyez prêt.'],
       complete: ['La pierre est froide comme au premier jour… et la bête ne souffle plus. Tenez, un collier d\'obsidienne.', 'Tant que vous le porterez, les cases brûlantes ne vous feront plus aucun mal. La lave a de la mémoire : elle saura que vous êtes de la famille.'] },
-    { region: 'bambous', collar: 'collier_jade_vert', questId: 'sq_collar_bambous', level: 17,
-      giver: { id: 'jade_carver_qing', name: 'Qing le Tailleur', title: 'Sculpteur de jade vert',
+    { region: 'bambous', collar: 'collier_jade_vert', questId: 'sq_collar_bambous', level: 17, thanks: 'Prenez soin de la forêt, et elle prendra soin de vous.',
+      giver: { id: 'jade_carver_qing', name: 'Yuxi le Tailleur', title: 'Sculpteur de jade vert',
           idle: ['Le bambou pousse d\'un mètre par nuit dans cette forêt. Le jade, lui, a mis mille ans. Je préfère encore le jade.'] },
       chest: { id: 'collar_bambous_relic', label: 'Éclat de jade vert', openText: 'Dans un fourré de bambous, un éclat de jade vert, vif comme une pousse de printemps. Les bambous s\'écartent doucement autour.' },
       enemy: { id: 'collar_bambous_boss', templateId: 'shu_jing', name: 'Gardien-bambou ancestral', offset: 3 },
@@ -29,8 +29,8 @@ const COLLARS = [
           'Un gardien-bambou s\'est attaché à l\'éclat et refuse de s\'en séparer. Retrouvez l\'éclat, puis réduisez le gardien au silence : je vous sculpterai un collier qui apaise la forêt.'],
       hint: ['L\'éclat de jade dort au sud-est de la zone sauvage des Bambous. Le gardien-bambou ne s\'en éloigne guère.'],
       complete: ['L\'éclat est tiède… la forêt respire mieux. Voici votre collier de jade vert.', 'Portez-le, et les bambous cesseront d\'envahir votre chemin : ils vous prendront pour l\'un des leurs.'] },
-    { region: 'tonnerre', collar: 'collier_braise_d_orage', questId: 'sq_collar_tonnerre', level: 22,
-      giver: { id: 'storm_sage_lei', name: 'Lei l\'Attiseur', title: 'Sage des crêtes foudroyées',
+    { region: 'tonnerre', collar: 'collier_braise_d_orage', questId: 'sq_collar_tonnerre', level: 22, thanks: 'Prenez soin des crêtes, et elles prendront soin de vous.',
+      giver: { id: 'storm_sage_lei', name: 'Mingfeng l\'Attiseur', title: 'Sage des crêtes foudroyées',
           idle: ['Le givre d\'orage est le pire : il tombe sans prévenir et gèle ce qu\'il touche. Seule une braise d\'orage lui tient tête.'] },
       chest: { id: 'collar_tonnerre_relic', label: 'Braise d\'orage', openText: 'Dans une faille battue par le vent, une braise captive d\'un cristal clair : elle brûle sans consumer, et le givre fond à son approche.' },
       enemy: { id: 'collar_tonnerre_boss', templateId: 'lei_gong', name: 'Chevalier de l\'orage figé', offset: 3 },
@@ -40,7 +40,7 @@ const COLLARS = [
           'Un chevalier figé par la tempête la garde en croyant protéger son maître. Rapportez-moi la braise, puis mettez fin à sa veille : je la sertirai dans un collier.'],
       hint: ['La braise d\'orage est au sud-est des Crêtes Foudroyées. Le chevalier figé garde le secteur.'],
       complete: ['La braise est vivante… et le chevalier peut enfin se reposer. Voici votre collier.', 'Tant qu\'il pendra sur votre poitrine, le givre d\'orage ne gèlera plus une seule case. Allez, que la tempête vous reconnaisse.'] },
-    { region: 'fusang', collar: 'collier_voile_d_ombre', questId: 'sq_collar_fusang', level: 37,
+    { region: 'fusang', collar: 'collier_voile_d_ombre', questId: 'sq_collar_fusang', level: 37, thanks: 'Prenez soin de l\'arbre, et il prendra soin de vous.',
       giver: { id: 'shadow_weaver_mu', name: 'Mu la Tisseuse d\'ombre', title: 'Fileuse des racines dorées',
           idle: ['À Fusang, l\'arbre est si haut que son ombre tombe ailleurs. Je la file. Personne ne remarque jamais la fileuse : c\'est le métier.'] },
       chest: { id: 'collar_fusang_relic', label: 'Fil d\'ombre', openText: 'Entre deux racines dorées, une pelote de fil noir qui ne reflète rien. Votre ombre, elle, hésite un instant avant de vous suivre.' },
@@ -51,7 +51,7 @@ const COLLARS = [
           'Un veilleur de l\'ombre dorée la garde, par habitude plus que par méchanceté. Rapportez-moi le fil, puis délivrez le veilleur : je tresserai un collier que les yeux ne verront pas.'],
       hint: ['Le fil d\'ombre est au sud-est de la zone sauvage de Fusang. Le veilleur rôde non loin du fil.'],
       complete: ['Le fil est intact… et le veilleur peut enfin fermer les yeux. Voici votre collier du voile d\'ombre.', 'Tant que vous le porterez, aucun ennemi ne vous remarquera. Sauf ceux qui ne regardent jamais ailleurs : les maîtres des soleils.'] },
-    { region: 'mer', collar: 'collier_perle_des_marees', questId: 'sq_collar_mer', level: 32,
+    { region: 'mer', collar: 'collier_perle_des_marees', questId: 'sq_collar_mer', level: 32, thanks: 'Prenez soin de la mer, et elle prendra soin de vous.',
       giver: { id: 'pearl_diver_meihua', name: 'Mei-Hua', title: 'Plongeuse de perles',
           idle: ['Les courants changent de sens sans prévenir, ici. Mon grand-père disait que seule une perle noire les calme.'] },
       chest: { id: 'collar_mer_relic', label: 'Perle noire', openText: 'Au creux d\'un rocher, une perle noire de la taille d\'un œuf de caille. Les vagues alentour se font plus lentes.' },
@@ -77,7 +77,7 @@ export function applyCollarQuests(screens, quests) {
         if (!npcPos) throw new Error(`collier ${c.collar} : pas de place pour ${c.giver.id}`);
         village.npcs.push({
             id: c.giver.id, name: c.giver.name, title: c.giver.title, idle: c.giver.idle, x: npcPos.x, y: npcPos.y,
-            talk: [{ whenDone: c.questId, lines: [`« Ce collier vous va à ravir. Prenez soin de la montagne, et elle prendra soin de vous. »`] }]
+            talk: [{ whenDone: c.questId, lines: [`« Ce collier vous va à ravir. ${c.thanks} »`] }]
         });
         const chestPos = placeInLand(wild, occupancy(wild, screens), c.chest.id);
         if (!chestPos) throw new Error(`collier ${c.collar} : pas de place pour la relique`);

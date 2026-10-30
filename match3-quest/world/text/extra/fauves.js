@@ -9,7 +9,7 @@ export default {
       ]
     },
     fauves_h2_feutre: {
-      name: "Yourte d'Zhan la feutrière",
+      name: "Yourte de Zhan la feutrière",
       arrival: [
         "Le feutre étouffe tous les bruits. Dehors, la plaine rugit ; ici, elle murmure."
       ]

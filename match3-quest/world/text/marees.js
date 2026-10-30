@@ -21,8 +21,8 @@ export default {
     marees_road_xu: { name: "Vieux Xu", title: "Passeur de la Digue",
       idle: [
         "Plus de barque, plus de passeur. Je reste là par habitude. Vous voulez passer ? Alors ne comptez pas sur moi, comptez sur vos pieds.",
-        "J'ai vu un homme marcher sur ces eaux, il y a longtemps, avant ma jambe. Pas de barque. Trois pas devant, trois sur le côté, un derrière : une danse de boiteux. Ça venait d'une tortue, je crois. Une vieille, qui parle trop lentement.",
-        "Une tortue noire, qui vivait là où le fleuve s'est tari. Je ne sais plus le nom du village. Il y avait un quai qui donnait sur du vide, ça, je m'en souviens. Faites votre chemin, archer."],
+        "J'ai vu un homme marcher sur ces eaux, avant ma jambe. Trois pas devant, trois de côté, un derrière : une danse de boiteux. Ça venait d'une tortue, je crois.",
+        "Une tortue noire, qui vivait là où le fleuve s'est tari. Je ne sais plus le nom du village. Un quai donnait sur du vide, ça, je m'en souviens."],
       talk: [{ whenDone: "sq_pas_de_yu", lines: [
         "Vous marchez sur l'eau ? C'est donc vous, l'archer. Un conseil : ne pensez pas au pas, pensez à l'invitation. L'eau n'aime pas les gens trop sûrs d'eux."] }] },
     marees_village_ling: { name: "Ling", title: "Dresseuse de cormorans",
@@ -36,7 +36,7 @@ export default {
     marees_village_nonne_mo: { name: "Sœur Mo", title: "Gardienne de l'autel de Mazu",
       idle: [
         "Mazu protège ceux qui sont en mer. Elle protège même ceux qui ne savent pas qu'ils y sont. Les marées d'ici sont plus pieuses que les hommes.",
-        "Ma sœur aînée, Dame Mo, veille sur la baie des Coquillages. Moi, je veille sur l'autel, au bout des pontons. Il y dort quelqu'un que je ne réveille pas : elle n'est pas d'ici."],
+        "Ma sœur aînée, Dame Mo, veille sur le port de Haiyan. Moi, je veille sur l'autel, au bout des pontons. Il y dort quelqu'un que je ne réveille pas : elle n'est pas d'ici."],
       talk: [{ whenDone: "sq_offrande_mazu", lines: [
         "L'offrande a flotté jusqu'à la statue, et elle a souri. Passez, archer. Elle aime ceux qui traversent la mer pour retrouver quelqu'un."] }] },
     marees_village_canne: { name: "Vieille Canne", title: "Pêcheur aveugle",

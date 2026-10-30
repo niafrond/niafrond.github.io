@@ -53,7 +53,7 @@ export const MANIFEST2 = {
       },
       {
         id: "duck_fu",
-        name: "Fu",
+        name: "Mao",
         title: "Éleveur de canards",
         where: "hamlet",
         role: "donneur"
@@ -982,7 +982,7 @@ export const MANIFEST2 = {
       houses: [
         {
           id: "gobi_h2_puits",
-          name: "Maison du puisatier Wen",
+          name: "Maison du puisatier Heng",
           desc: "Une maison fraîche aux murs épais, construite autour d'un puits à poulie.",
           residents: [
             "well_digger_omar"
@@ -1007,7 +1007,7 @@ export const MANIFEST2 = {
     npcs: [
       {
         id: "well_digger_omar",
-        name: "Wen",
+        name: "Heng",
         title: "Puisatier",
         where: "hamlet-house:gobi_h2_puits",
         role: "donneur"
@@ -1021,7 +1021,7 @@ export const MANIFEST2 = {
       },
       {
         id: "date_farmer_ismail",
-        name: "Zhen",
+        name: "Zhuo",
         title: "Cultivateur de dattes",
         where: "hamlet",
         role: "ambiance"
@@ -1780,7 +1780,7 @@ export const MANIFEST2 = {
     quests: [
       {
         id: "sq_vol_alchimie_1",
-        title: "Le cinabre d'Occident",
+        title: "Le lingzhi de l'alchimiste",
         giver: "alchemist_dan",
         turnIn: "alchemist_dan",
         chain: null,
@@ -1937,7 +1937,7 @@ export const MANIFEST2 = {
       houses: [
         {
           id: "fauves_h2_feutre",
-          name: "Yourte d'Zhan la feutrière",
+          name: "Yourte de Zhan la feutrière",
           desc: "Une yourte tendue de feutres de toutes les couleurs, qui sent la laine mouillée et la patience.",
           residents: [
             "felt_maker_uyun"
@@ -2602,7 +2602,7 @@ export const MANIFEST2 = {
     npcs: [
       {
         id: "crane_elder_hegu",
-        name: "Hegu",
+        name: "Dame Songhe",
         title: "Doyenne des grues messagères",
         where: "hamlet-house:fusang_h2_grues",
         role: "donneur"

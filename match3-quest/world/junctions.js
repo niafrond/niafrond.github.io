@@ -425,9 +425,9 @@ export function applyLevelGuards(screens, regionLevel = {}) {
             if (!pos) return;
             const id = `level_guard_${from.id}`;
             from.npcs.push({
-                id, name: 'Sentinelle de la brume', title: `Frontière de ${to.name}`,
+                id, name: 'Sentinelle de la brume', title: `Frontière : ${to.name}`,
                 idle: [
-                    `Au-delà de ce passage s'étend ${to.name}. Les créatures y sont redoutables : mieux vaut s'y aventurer aguerri.`,
+                    `Ce passage mène à « ${to.name} ». Les créatures y sont redoutables : mieux vaut s'y aventurer aguerri.`,
                     `Je ne retiens personne, voyageur. Mais sans entraînement, la brume vous le fera regretter. Si vous vous sentez prêt, la route est à vous.`
                 ],
                 x: pos.x, y: pos.y
