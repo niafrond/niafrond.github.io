@@ -53,7 +53,7 @@ const TUTORIAL_SPELL = {
     description: 'Sort de tutoriel : une flèche enflammée qui inflige 6 dégâts de feu.',
 };
 
-// Ennemi tutoriel — mannequin d'entraînement de l'école de Hou Yi, très faible, IA aléatoire, aucun sort
+// Ennemi tutoriel — mannequin d'entraînement de la cour de Hou Yi, très faible, IA aléatoire, aucun sort
 export const TUTORIAL_ENEMY = {
     name: 'Mannequin d\'entraînement',
     level: 1,
@@ -82,7 +82,7 @@ const STEPS = [
         step: 1,
         icon: 'refresh',
         title: 'Déplacer une tuile',
-        desc: 'Bienvenue à l\'école de Hou Yi ! Cliquez sur l\'une des deux <strong>tuiles en surbrillance</strong>, puis sur l\'autre pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus : seul ce mouvement est autorisé pour l\'instant.',
+        desc: 'Bienvenue au duel d\'entraînement, archer ! Cliquez sur l\'une des deux <strong>tuiles en surbrillance</strong>, puis sur l\'autre pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus : seul ce mouvement est autorisé pour l\'instant.',
     },
     {
         step: 2,
@@ -341,7 +341,7 @@ function _activateStep(step) {
             if ((m.player.mana[spell.color] || 0) < spell.cost) {
                 m.player.mana[spell.color] = spell.cost;
                 m.updateStats();
-                m.log(`Tutoriel : votre maître vous offre le qì ${spell.color} nécessaire pour lancer ${spell.name} !`);
+                m.log(`Tutoriel : le qì ${spell.color} nécessaire pour lancer ${spell.name} vous est offert !`);
             }
             m.createSpellButtons(); // Mettre à jour l'affichage (bouton actif)
             extra = `Vous avez du qì ${icon('mana_' + spell.color)} ! Cliquez sur le bouton du sort <strong>"${spell.name}"</strong> en bas pour le lancer et infliger des dégâts à votre adversaire. Les échanges de tuiles sont suspendus.`;
@@ -410,7 +410,7 @@ function _completeTutorial() {
             localStorage.setItem(TUTORIAL_COMPLETED_KEY, '1');
         } catch (_) { /* ignore */ }
 
-        _showFeedbackBanner('Tutoriel terminé ! Que les flèches de Hou Yi vous guident !', null, true);
+        _showFeedbackBanner('Tutoriel terminé ! Que vos flèches soient justes !', null, true);
         import('./game.js').then(m => {
             m.log('Tutoriel terminé ! Vous maîtrisez les bases. Les dix soleils vous attendent !');
         });
@@ -539,7 +539,7 @@ function _stopHighlightLoop() {
 // Garde la surbrillance alignée sur l'échange attendu (le plateau change entre les tours, renderBoard réécrit les classes).
 function _startHighlightLoop() {
     _stopHighlightLoop();
-    _highlightTimer = setInterval(_refreshHighlight, 400);
+    _highlightTimer = setInterval(() => { if (!document.hidden) _refreshHighlight(); }, 400);
     setTimeout(_refreshHighlight, 700);
 }
 

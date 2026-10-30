@@ -1,375 +1,375 @@
 {
  "music": {
   "title": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 1
   },
   "menu": {
-   "seconds": 118,
+   "seconds": 170.2,
    "sections": 2
   },
   "house": {
-   "seconds": 118,
+   "seconds": 170,
    "sections": 1
   },
   "sanctuary": {
-   "seconds": 118,
+   "seconds": 160.1,
    "sections": 2
   },
   "moon": {
-   "seconds": 118,
+   "seconds": 169.1,
    "sections": 1
   },
   "ending": {
-   "seconds": 118,
+   "seconds": 171.4,
    "sections": 1
   },
   "victory": {
-   "seconds": 118,
+   "seconds": 171.4,
    "sections": 2
   },
   "defeat": {
-   "seconds": 118,
+   "seconds": 172.5,
    "sections": 1
   },
   "village-paddy": {
-   "seconds": 118,
+   "seconds": 168.8,
    "sections": 2
   },
   "village-riverbed": {
-   "seconds": 118,
+   "seconds": 174.4,
    "sections": 2
   },
   "village-bamboo": {
-   "seconds": 118,
+   "seconds": 174.8,
    "sections": 2
   },
   "village-gobi": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 2
   },
   "village-storm": {
-   "seconds": 118,
+   "seconds": 167.9,
    "sections": 2
   },
   "village-volcano": {
-   "seconds": 118,
+   "seconds": 165.4,
    "sections": 2
   },
   "village-savanna": {
-   "seconds": 118,
+   "seconds": 172.3,
    "sections": 2
   },
   "village-coast": {
-   "seconds": 118,
+   "seconds": 159.7,
    "sections": 2
   },
   "village-fusang": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 2
   },
   "village-moon": {
-   "seconds": 118,
+   "seconds": 169.8,
    "sections": 2
   },
   "wild-paddy": {
-   "seconds": 118,
+   "seconds": 164,
    "sections": 1
   },
   "wild-riverbed": {
-   "seconds": 118,
+   "seconds": 171.8,
    "sections": 1
   },
   "wild-bamboo": {
-   "seconds": 118,
+   "seconds": 173,
    "sections": 1
   },
   "wild-gobi": {
-   "seconds": 118,
+   "seconds": 175.3,
    "sections": 1
   },
   "wild-storm": {
-   "seconds": 118,
+   "seconds": 170,
    "sections": 1
   },
   "wild-volcano": {
-   "seconds": 118,
+   "seconds": 162.6,
    "sections": 1
   },
   "wild-savanna": {
-   "seconds": 118,
+   "seconds": 172.5,
    "sections": 1
   },
   "wild-coast": {
-   "seconds": 118,
+   "seconds": 169.8,
    "sections": 1
   },
   "wild-fusang": {
-   "seconds": 118,
+   "seconds": 173.2,
    "sections": 1
   },
   "wild-moon": {
-   "seconds": 118,
+   "seconds": 168.4,
    "sections": 1
   },
   "combat-0": {
-   "seconds": 163.5,
+   "seconds": 166.9,
    "sections": 2
   },
   "combat-1": {
-   "seconds": 169.5,
+   "seconds": 158.2,
    "sections": 2
   },
   "combat-2": {
-   "seconds": 166.5,
+   "seconds": 154.1,
    "sections": 2
   },
   "combat-3": {
-   "seconds": 163,
+   "seconds": 152.2,
    "sections": 2
   },
   "combat-4": {
-   "seconds": 157.5,
+   "seconds": 153.9,
    "sections": 2
   },
   "boss-fengmeng-le-disciple": {
-   "seconds": 118,
+   "seconds": 155,
    "sections": 2
   },
   "boss-soleil-ardent": {
-   "seconds": 118,
+   "seconds": 158,
    "sections": 2
   },
   "boss-soleil-des-eaux-taries": {
-   "seconds": 118,
+   "seconds": 157.3,
    "sections": 2
   },
   "boss-soleil-de-cendres": {
-   "seconds": 118,
+   "seconds": 149.8,
    "sections": 2
   },
   "boss-soleil-des-mirages": {
-   "seconds": 118,
+   "seconds": 156.3,
    "sections": 3
   },
   "boss-soleil-des-orages": {
-   "seconds": 118,
+   "seconds": 165.3,
    "sections": 2
   },
   "boss-fengmeng-l-archer-presse": {
-   "seconds": 118,
+   "seconds": 151.4,
    "sections": 2
   },
   "boss-soleil-de-magma": {
-   "seconds": 118,
+   "seconds": 160.2,
    "sections": 2
   },
   "boss-soleil-des-betes-folles": {
-   "seconds": 118,
+   "seconds": 159.8,
    "sections": 2
   },
   "boss-soleil-des-marees": {
-   "seconds": 118,
+   "seconds": 163.9,
    "sections": 2
   },
   "boss-soleil-lache": {
-   "seconds": 118,
+   "seconds": 168.9,
    "sections": 2
   },
   "boss-fengmeng-l-archer-miroir": {
-   "seconds": 118,
+   "seconds": 150,
    "sections": 2
   },
   "boss-fengmeng-rage-et-desespoir": {
-   "seconds": 118,
+   "seconds": 151.1,
    "sections": 2
   },
   "boss-gardien-de-la-digue": {
-   "seconds": 118,
+   "seconds": 153.7,
    "sections": 3
   },
   "boss-colosse-de-l-ecluse": {
-   "seconds": 118,
+   "seconds": 154.6,
    "sections": 2
   },
   "boss-gardien-des-cendres": {
-   "seconds": 118,
+   "seconds": 149.1,
    "sections": 2
   },
   "boss-chef-de-dune-bras-de-sable": {
-   "seconds": 118,
+   "seconds": 165.4,
    "sections": 3
   },
   "boss-lion-gardien-fendu": {
-   "seconds": 118,
+   "seconds": 161.1,
    "sections": 2
   },
   "boss-forgeron-de-lave": {
-   "seconds": 118,
+   "seconds": 153.9,
    "sections": 3
   },
   "boss-tigre-alpha-griffe-de-feu": {
-   "seconds": 118,
+   "seconds": 163.5,
    "sections": 2
   },
   "boss-serpent-de-maree": {
-   "seconds": 118,
+   "seconds": 157.2,
    "sections": 2
   },
   "boss-garde-solaire-des-racines": {
-   "seconds": 118,
+   "seconds": 155.1,
    "sections": 2
   },
   "boss-pretresse-de-givre": {
-   "seconds": 118,
+   "seconds": 155.3,
    "sections": 2
   },
   "boss-maitresse-tong-la-lame-de-bronze": {
-   "seconds": 118,
+   "seconds": 149.1,
    "sections": 3
   },
   "boss-maitre-hong-gang-le-gong-de-cuivre": {
-   "seconds": 118,
+   "seconds": 158.1,
    "sections": 2
   },
   "boss-maitre-tie-bi-le-bras-de-fer": {
-   "seconds": 118,
+   "seconds": 151.2,
    "sections": 2
   },
   "boss-dame-yin-yue-la-lune-d-argent": {
-   "seconds": 118,
+   "seconds": 151.2,
    "sections": 2
   },
   "boss-seigneur-jin-long-le-dragon-d-or": {
-   "seconds": 118,
+   "seconds": 149.5,
    "sections": 2
   },
   "boss-dame-bi-yu-la-main-de-jade": {
-   "seconds": 118,
+   "seconds": 154.6,
    "sections": 2
   },
   "boss-immortel-yun-zhong-celui-des-nuees": {
-   "seconds": 118,
+   "seconds": 159.4,
    "sections": 2
   },
   "boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches": {
-   "seconds": 118,
+   "seconds": 156.3,
    "sections": 3
   },
   "boss-a0": {
-   "seconds": 118,
+   "seconds": 163.1,
    "sections": 3
   },
   "boss-a1": {
-   "seconds": 118,
+   "seconds": 154.6,
    "sections": 3
   },
   "boss-a2": {
-   "seconds": 118,
+   "seconds": 143.8,
    "sections": 2
   },
   "boss-a3": {
-   "seconds": 118,
+   "seconds": 162.6,
    "sections": 2
   },
   "boss-a4": {
-   "seconds": 118,
+   "seconds": 160.8,
    "sections": 3
   },
   "boss-a5": {
-   "seconds": 118,
+   "seconds": 148,
    "sections": 2
   },
   "boss-a6": {
-   "seconds": 118,
+   "seconds": 148.2,
    "sections": 3
   },
   "boss-a7": {
-   "seconds": 118,
+   "seconds": 144.8,
    "sections": 2
   },
   "boss-gardien-de-la-forge-noire": {
-   "seconds": 118,
+   "seconds": 152.6,
    "sections": 2
   },
   "boss-capitaine-noye-des-limons": {
-   "seconds": 118,
+   "seconds": 149.5,
    "sections": 2
   },
   "boss-lion-cendre-gardien-du-sutra": {
-   "seconds": 118,
+   "seconds": 158.1,
    "sections": 2
   },
   "boss-colosse-des-caravanes-ensevelies": {
-   "seconds": 118,
+   "seconds": 148.7,
    "sections": 2
   },
   "boss-jiangshi-du-cassia-lunaire": {
-   "seconds": 118,
+   "seconds": 152.5,
    "sections": 2
   },
   "boss-vieux-saule-des-boues-gardien-du-terrier": {
-   "seconds": 118,
+   "seconds": 144.4,
    "sections": 2
   },
   "boss-long-du-tonnerre-sourd": {
-   "seconds": 118,
+   "seconds": 173.2,
    "sections": 2
   },
   "boss-tigre-blanc-des-ancetres": {
-   "seconds": 118,
+   "seconds": 152.7,
    "sections": 2
   },
   "boss-serpent-des-marees-noires": {
-   "seconds": 118,
+   "seconds": 157.1,
    "sections": 2
   },
   "boss-immortel-dechu-des-branches": {
-   "seconds": 118,
+   "seconds": 151.2,
    "sections": 2
   },
   "boss-zhuque-l-oiseau-vermillon": {
-   "seconds": 118,
+   "seconds": 153.9,
    "sections": 1
   },
   "boss-xuanwu-la-tortue-noire": {
-   "seconds": 118,
+   "seconds": 145.9,
    "sections": 1
   },
   "boss-baihu-le-tigre-blanc": {
-   "seconds": 118,
+   "seconds": 159.1,
    "sections": 1
   },
   "boss-qinglong-le-dragon-d-azur": {
-   "seconds": 118,
+   "seconds": 161.6,
    "sections": 1
   },
   "boss-changxi-mere-des-douze-lunes": {
-   "seconds": 118,
+   "seconds": 165.1,
    "sections": 1
   },
   "village-tides": {
-   "seconds": 118,
+   "seconds": 170.2,
    "sections": 1
   },
   "wild-tides": {
-   "seconds": 118,
+   "seconds": 168.2,
    "sections": 1
   },
   "combat-tides": {
-   "seconds": 163,
+   "seconds": 176,
    "sections": 1
   },
   "puzzle-push": {
-   "seconds": 50.5,
+   "seconds": 167.2,
    "sections": 2
   },
   "puzzle-mirror": {
-   "seconds": 56.5,
+   "seconds": 169.3,
    "sections": 2
   },
   "puzzle-slide": {
-   "seconds": 41.7,
+   "seconds": 171.6,
    "sections": 2
   }
  },
@@ -484,6 +484,396 @@
   },
   "manaGain-5": {
    "seconds": 0.49
+  },
+  "weaponHit-rare-p": {
+   "seconds": 1.3
+  },
+  "spell-fireball": {
+   "seconds": 1.4
+  },
+  "spell-heal": {
+   "seconds": 1.37
+  },
+  "weaponHit-common-p": {
+   "seconds": 1.04
+  },
+  "weaponHit-uncommon-p": {
+   "seconds": 1.15
+  },
+  "weaponHit-legendary-p": {
+   "seconds": 1.55
+  },
+  "weaponHit-common-e": {
+   "seconds": 1.04
+  },
+  "weaponHit-uncommon-e": {
+   "seconds": 1.15
+  },
+  "weaponHit-rare-e": {
+   "seconds": 1.3
+  },
+  "weaponHit-legendary-e": {
+   "seconds": 1.55
+  },
+  "spell-flameStrike": {
+   "seconds": 1.62
+  },
+  "spell-inferno": {
+   "seconds": 1.94
+  },
+  "spell-meteor": {
+   "seconds": 2.05
+  },
+  "spell-ice": {
+   "seconds": 1.44
+  },
+  "spell-frostNova": {
+   "seconds": 1.66
+  },
+  "spell-blizzard": {
+   "seconds": 2.02
+  },
+  "spell-iceAge": {
+   "seconds": 2.05
+  },
+  "spell-greatHeal": {
+   "seconds": 1.58
+  },
+  "spell-revitalize": {
+   "seconds": 1.84
+  },
+  "spell-miracle": {
+   "seconds": 2.05
+  },
+  "spell-bolt": {
+   "seconds": 1.51
+  },
+  "spell-thunderBolt": {
+   "seconds": 1.73
+  },
+  "spell-lightningStorm": {
+   "seconds": 2.05
+  },
+  "spell-stormOfGods": {
+   "seconds": 2.05
+  },
+  "spell-vaporBurst": {
+   "seconds": 1.55
+  },
+  "spell-goldenDew": {
+   "seconds": 1.51
+  },
+  "spell-lotusPoison": {
+   "seconds": 1.62
+  },
+  "spell-emberStorm": {
+   "seconds": 1.8
+  },
+  "spell-shadowFlame": {
+   "seconds": 1.73
+  },
+  "spell-springRain": {
+   "seconds": 1.73
+  },
+  "spell-frostLightning": {
+   "seconds": 2.05
+  },
+  "spell-voidChill": {
+   "seconds": 2.05
+  },
+  "spell-bladeWinds": {
+   "seconds": 1.58
+  },
+  "spell-brasierSeals": {
+   "seconds": 1.66
+  },
+  "spell-threeDragons": {
+   "seconds": 1.66
+  },
+  "spell-dragonCross": {
+   "seconds": 1.87
+  },
+  "spell-thunderPrison": {
+   "seconds": 1.66
+  },
+  "spell-jadeBreath": {
+   "seconds": 1.98
+  },
+  "spell-starRain": {
+   "seconds": 2.05
+  },
+  "spell-fiveHarmony": {
+   "seconds": 2.05
+  },
+  "spell-twinDragonsStrike": {
+   "seconds": 2.05
+  },
+  "spell-vermilionBirdDive": {
+   "seconds": 2.05
+  },
+  "spell-azureDragonRoar": {
+   "seconds": 2.05
+  },
+  "spell-whiteTigerClaw": {
+   "seconds": 2.05
+  },
+  "spell-thunderDukeWrath": {
+   "seconds": 2.05
+  },
+  "spell-fiveElementsSeal": {
+   "seconds": 2.05
+  },
+  "spell-heavenlyRiverFlood": {
+   "seconds": 2.05
+  },
+  "spell-nineSunsFall": {
+   "seconds": 2.05
+  },
+  "spell-kunlunMountainFall": {
+   "seconds": 2.05
+  },
+  "spell-pangusAxe": {
+   "seconds": 2.05
+  },
+  "spell-jadeEmperorDecree": {
+   "seconds": 2.05
+  },
+  "spell-heavenTribulationEnd": {
+   "seconds": 2.05
+  },
+  "spell-jadeSpringBlessing": {
+   "seconds": 2.05
+  },
+  "spell-immortalPeach": {
+   "seconds": 2.05
+  },
+  "spell-queenMotherElixir": {
+   "seconds": 2.05
+  },
+  "spell-emberScythe": {
+   "seconds": 1.33
+  },
+  "spell-frostCleave": {
+   "seconds": 1.33
+  },
+  "spell-galeSlash": {
+   "seconds": 1.33
+  },
+  "spell-voidRift": {
+   "seconds": 1.37
+  },
+  "spell-crimsonPurge": {
+   "seconds": 1.51
+  },
+  "spell-tidalPurge": {
+   "seconds": 1.51
+  },
+  "spell-jadePurge": {
+   "seconds": 1.51
+  },
+  "spell-stormPurge": {
+   "seconds": 1.51
+  },
+  "spell-shadowPurge": {
+   "seconds": 1.55
+  },
+  "spell-emberGoldCross": {
+   "seconds": 1.58
+  },
+  "spell-jadeCurtain": {
+   "seconds": 1.55
+  },
+  "spell-purpleRazor": {
+   "seconds": 1.58
+  },
+  "spell-burningTide": {
+   "seconds": 1.73
+  },
+  "spell-seasonsPurge": {
+   "seconds": 1.8
+  },
+  "spell-mageStrike": {
+   "seconds": 1.37
+  },
+  "spell-wildMana": {
+   "seconds": 1.4
+  },
+  "spell-shadowCurse": {
+   "seconds": 1.33
+  },
+  "spell-darkChannels": {
+   "seconds": 1.33
+  },
+  "spell-flameBolts": {
+   "seconds": 1.33
+  },
+  "spell-iceShield": {
+   "seconds": 1.37
+  },
+  "spell-flameblade": {
+   "seconds": 1.33
+  },
+  "spell-weakness": {
+   "seconds": 1.33
+  },
+  "spell-handOfIce": {
+   "seconds": 1.37
+  },
+  "spell-fingerOfDeath": {
+   "seconds": 1.37
+  },
+  "spell-chasm": {
+   "seconds": 1.62
+  },
+  "spell-stoneskin": {
+   "seconds": 1.37
+  },
+  "spell-strength": {
+   "seconds": 1.33
+  },
+  "spell-flameSphere": {
+   "seconds": 1.37
+  },
+  "spell-mirrorShield": {
+   "seconds": 1.4
+  },
+  "spell-manaSiphon": {
+   "seconds": 1.37
+  },
+  "spell-manaBlast": {
+   "seconds": 2.05
+  },
+  "spell-tigerEye": {
+   "seconds": 1.33
+  },
+  "spell-sneakAttack": {
+   "seconds": 1.33
+  },
+  "spell-swiftStrike": {
+   "seconds": 1.44
+  },
+  "spell-confuse": {
+   "seconds": 1.44
+  },
+  "spell-stealth": {
+   "seconds": 1.33
+  },
+  "spell-poisonBlade": {
+   "seconds": 1.33
+  },
+  "spell-shadowStrike": {
+   "seconds": 1.44
+  },
+  "spell-dualShot": {
+   "seconds": 2.05
+  },
+  "spell-shadowStep": {
+   "seconds": 1.33
+  },
+  "spell-sharpenedBlade": {
+   "seconds": 1.4
+  },
+  "spell-defensiveWall": {
+   "seconds": 1.37
+  },
+  "spell-shieldBash": {
+   "seconds": 1.37
+  },
+  "spell-focus": {
+   "seconds": 1.33
+  },
+  "spell-intimidate": {
+   "seconds": 1.33
+  },
+  "spell-rush": {
+   "seconds": 1.4
+  },
+  "spell-counterAttack": {
+   "seconds": 1.37
+  },
+  "spell-reinforce": {
+   "seconds": 1.37
+  },
+  "spell-barrier": {
+   "seconds": 1.4
+  },
+  "spell-divinePower": {
+   "seconds": 1.33
+  },
+  "spell-holdTheLine": {
+   "seconds": 1.44
+  },
+  "spell-heavensWrath": {
+   "seconds": 1.51
+  },
+  "spell-commandAura": {
+   "seconds": 1.4
+  },
+  "spell-enrage": {
+   "seconds": 1.37
+  },
+  "spell-cleave": {
+   "seconds": 1.51
+  },
+  "spell-throwAxe": {
+   "seconds": 1.51
+  },
+  "spell-bloodlust": {
+   "seconds": 1.51
+  },
+  "spell-summonTempest": {
+   "seconds": 1.58
+  },
+  "spell-berserkerRage": {
+   "seconds": 1.48
+  },
+  "spell-singingBlades": {
+   "seconds": 1.51
+  },
+  "spell-deathbringer": {
+   "seconds": 2.05
+  },
+  "spell-revenant": {
+   "seconds": 2.05
+  },
+  "spell-warCry": {
+   "seconds": 1.33
+  },
+  "spell-ultimateFiveElements": {
+   "seconds": 2.66
+  },
+  "spell-ultimateHeavenlyThunder": {
+   "seconds": 2.66
+  },
+  "spell-ultimateThousandArrows": {
+   "seconds": 2.66
+  },
+  "spell-ultimateSunPiercer": {
+   "seconds": 2.66
+  },
+  "spell-ultimateImperialDragon": {
+   "seconds": 2.66
+  },
+  "spell-ultimateEternalBastion": {
+   "seconds": 2.66
+  },
+  "spell-ultimateThousandRiders": {
+   "seconds": 2.66
+  },
+  "spell-ultimateSkyWolf": {
+   "seconds": 2.66
+  },
+  "spell-ultimateVermilionBird": {
+   "seconds": 2.66
+  },
+  "spell-ultimateBlackTortoise": {
+   "seconds": 2.66
+  },
+  "spell-ultimateWhiteTiger": {
+   "seconds": 2.66
+  },
+  "spell-ultimateAzureDragon": {
+   "seconds": 2.66
   }
  }
 }

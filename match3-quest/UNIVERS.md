@@ -211,9 +211,9 @@ Trois compagnons facultatifs rejoignent le héros quand leur condition `joinWhen
 
 | Compagnon | Rejoint (`joinWhen`) | PNJ réutilisé | Voix | But personnel | Réaction à Fengmeng |
 |---|---|---|---|---|---|
-| **Xiao Gui**, démon-renard repenti | `sq_rice_thief` (région 1) | `huli_xia` | tutoie tout le monde, farceur, « hi hi » | gagner ses neuf queues (il en a trois) en rendant service, pas en volant | voit en lui son ancien reflet : il court après ce qu'il croit lui être dû (`fengmeng_1`, `fengmeng_2`, fin) |
-| **Zhi**, jeune moine novice | `sq_bell` (région 3) | `young_monk_zhi` | vouvoie le héros (« seigneur »), cite Maître Zhen, tutoie Xiao Gui | entendre « l'heure qui n'existe pas encore » ; savoir si la compassion s'étend aux soleils | Maître Zhen a connu Fengmeng : « on guérit mal ce qu'on ne regarde pas » (`fengmeng_2`) |
-| **Dawa**, guide du désert | `sq_oasis` (région 4) | `guide_dawa` | vouvoie le héros, pince-sans-rire, proverbes du Gobi | voir le Fusang, « un endroit où personne ne se perd » | « la même soif » que celle du mirage : il courait après un élixir (fin) |
+| **Xiao Gui**, démon-renard repenti | `sq_rice_thief` (région 1, Rizières) | `huli_xia` | tutoie tout le monde, farceur, « hi hi » | gagner ses neuf queues (il en a trois) en rendant service, pas en volant | voit en lui son ancien reflet : il court après ce qu'il croit lui être dû (`fengmeng_1`, `fengmeng_2`, fin) |
+| **Zhi**, jeune moine novice | `sq_bell` (région 5, Forêt de Bambous) | `young_monk_zhi` | vouvoie le héros (« seigneur »), cite Maître Zhen, tutoie Xiao Gui | entendre « l'heure qui n'existe pas encore » ; savoir si la compassion s'étend aux soleils | Maître Zhen a connu Fengmeng : « on guérit mal ce qu'on ne regarde pas » (`fengmeng_2`) |
+| **Dawa**, guide du désert | `sq_oasis` (région 3, Gobi) | `guide_dawa` | vouvoie le héros, pince-sans-rire, proverbes du Gobi | voir le Fusang, « un endroit où personne ne se perd » | « la même soif » que celle du mirage : il courait après un élixir (fin) |
 
 Trois mécaniques :
 - **Dialogues contextuels** : lieux (`screen`), décisions (chemin pris), événements (`whenDone: 'sun_N'`, `fengmeng_N`).
@@ -222,12 +222,12 @@ Trois mécaniques :
   la quatrième queue de Xiao Gui pousse au bord de la mer si le pourparler du soleil 8 a eu lieu (`gui_mer_parley`, `gui_queues_quatre`),
   sinon il reste à trois queues et dit avoir « changé de bande » (`gui_queues_trois`).
 - **Aptitudes narratives** : un compagnon suggère le pourparler quand la quête annexe est faite et que les gardes sont debout
-  (Xiao Gui au fleuve, Zhi aux bambous et au volcan, Dawa au tonnerre et au Fusang, Xiao Gui à la mer).
+  (Xiao Gui au fleuve, Zhi aux bambous, Dawa au tonnerre et au Fusang, Xiao Gui au volcan et à la mer).
 
 Faits nouveaux : les noyés ont un doyen (Yuan) ; la cloche du temple brûlé a une âme (Tintement) dont les deux « esprits » sont des échos ;
 le tonnerre a un enfant (Rongrong) ; le temple du feu avait un attiseur (Chi, maître de Yan) ; l'escadre du Roi-Dragon a un amiral (Xie), et
 sa perle fait foi d'ordre ; les grues-lige du Fusang protègent le Dixième Soleil (Hegui, sœur de la messagère) ; Maître Zhen a reçu
-Fengmeng en méditation, Xia la renarde a sept queues.
+Fengmeng en méditation, Xia la renarde a sept queues. Précisions (relecture du 30/10/2026) : Chi est le vieux maître de Yan, et Yan le dit en reprenant la cendre du phénix ; Hua (Xihe, mère des dix soleils) précède le héros d'une étape et annonce toujours la région suivante de l'ordre réel (rizières, volcan, Gobi, fleuve, tonnerre, fauves, mer, Fusang, Lune) ; elle repasse par le Gobi après le fleuve, d'où la lettre de Petit Bao ; Zhi et Dawa ne sont pas de la partie au Volcan (ils n'y reviennent qu'en retournant sur leurs pas), c'est donc Xiao Gui qui y commente les trois chemins du soleil 6 ; la Grue annonce dès la chute du Neuvième Soleil la fuite de Chang'e (maison forcée par Fengmeng) et l'épreuve de Changxi aux Hautes-Eaux, avant le Pic de la Lune ; ce sont **dix** soleils qui ont brûlé le monde (le héros en abat neuf).
 
 ## Bordures de mer (post-Pas de Yu)
 

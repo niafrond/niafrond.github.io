@@ -74,7 +74,7 @@ const MIRROR_TALKS = {
             "Hou Yi ? Je tenais ma moitié à la fenêtre pour y voir la lune, et c'est toi que je vois. Tu as de la cendre plein le front. Pourquoi ne rentres-tu pas ? La maison est à deux cents pas."
         ] },
         { speaker: HOU_YI, lines: [
-            "Si je passe notre porte ce soir, je n'aurai plus le courage de repartir. Le fleuve m'attend à l'aube. Mais je t'entends, Chang'e. Je t'entends vraiment."
+            "Si je passe notre porte ce soir, je n'aurai plus le courage de repartir. Les Gorges du Volcan m'attendent à l'aube. Mais je t'entends, Chang'e. Je t'entends vraiment."
         ] },
         { speaker: CHANGE_MIRROR, lines: [
             "Les anciens disent qu'un miroir est une petite lune. Il faut croire que la grande se souvient de nous. Tu as mangé les gâteaux du muret, au moins ?"
@@ -120,7 +120,7 @@ const MIRROR_TALKS = {
             "Dans la forêt calcinée, la nuit sent la cendre mouillée. Hou Yi s'est adossé à un bambou noir ; ses doigts saignent encore de la corde. Il sort le miroir sans même ouvrir les yeux."
         ] },
         { speaker: CHANGE_MIRROR, lines: [
-            "Tu as la voix de quelqu'un qui n'a pas dormi depuis trois soleils. Ouvre les yeux, que je les voie… Rouges comme des braises. Mon pauvre archer."
+            "Tu as la voix de quelqu'un qui n'a pas dormi depuis trois jours. Ouvre les yeux, que je les voie… Rouges comme des braises. Mon pauvre archer."
         ] },
         { speaker: HOU_YI, lines: [
             "Ce n'est que la fumée. Parle-moi d'autre chose que du feu. N'importe quoi."
@@ -166,7 +166,7 @@ const MIRROR_TALKS = {
     ],
     sun_5: [
         { speaker: MOONLIGHT, lines: [
-            "Une pluie fine tombe sur les Monts du Tonnerre, la première depuis l'été des dix soleils. La lune passe entre deux nuages, et la voix de Chang'e arrive mouillée de rire."
+            "Une pluie fine tombe sur les Monts du Tonnerre, tiède, qui sent le fer et la terre. La lune passe entre deux nuages, et la voix de Chang'e arrive mouillée de rire."
         ] },
         { speaker: CHANGE_MIRROR, lines: [
             "Il pleut chez toi aussi ? Ici, les voisins dansent dans la boue. Il pleuvait le jour de nos noces, tu te souviens ? Ma mère criait au mauvais présage."
@@ -195,7 +195,7 @@ const MIRROR_TALKS = {
             "Je l'ai battu au défilé. Il m'a dit qu'il allait voir les miens, et je n'ai pas compris. Je rentre, Chang'e. Demain, à l'aube."
         ] },
         { speaker: CHANGE_MIRROR, lines: [
-            "Non. Il reste trois soleils, et des enfants qui n'ont jamais vu une nuit entière. Si tu rentres pour moi, ils te le pardonneront. Toi, jamais."
+            "Non. Il reste sept soleils, et des enfants qui n'ont jamais vu une nuit entière. Si tu rentres pour moi, ils te le pardonneront. Toi, jamais."
         ] },
         { speaker: HOU_YI, lines: [
             "C'est pour toi que je fais tout cela. Pour toi d'abord. Que me restera-t-il, si ce monde revit et que tu n'y es plus ?"
@@ -300,16 +300,19 @@ const BASE_SCREENS = {
               ],
               talk: [
                   { whenDone: 'fengmeng_1', lines: [
-                      "Fengmeng est rentré en riant, la poussière de la digue plein les manches. Il a même demandé une seconde part de gâteau. Vous vous êtes bien battus tous les deux, et sans vous faire de mal : c'est tout ce que je demande à un entraînement.",
+                      "Fengmeng est rentré en riant, la poussière de la digue plein les manches. Il a même demandé une seconde part de gâteau.",
+                      "Vous vous êtes bien battus tous les deux, et sans vous faire de mal : c'est tout ce que je demande à un entraînement.",
                       "Et toi, montre tes doigts. La corde t'a encore entaillé. Donne : un peu de baume, un nœud de lin, et tu pourras aller décrocher tes soleils."
                   ] },
                   { whenDone: 'sun_1', lines: [
-                      "Tu disais que tu n'aurais plus le courage de repartir, si tu passais la porte ? Te voilà pourtant. Prends ce gâteau et file aux Gorges du Volcan : la fraîcheur y manque autant que le courage.",
+                      "Tu disais que tu n'aurais plus le courage de repartir, si tu passais la porte ? Te voilà pourtant.",
+                      "Prends ce gâteau et file aux Gorges du Volcan : la fraîcheur y manque autant que le courage.",
                       "Je prie la Lune chaque soir pour qu'elle te ramène. Elle écoute, tu sais : la preuve, elle nous prête sa lumière pour nous parler."
                   ] },
                   { whenDone: 'fengmeng_2', lines: [
-                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire.",
-                      "Ne fais pas cette tête. Je ne te le dis pas pour que tu rebrousses chemin : finis ce que tu as commencé. J'ai pétri assez de pâte dans ma vie pour avoir des bras."
+                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé.",
+                      "Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire.",
+                      "Ne fais pas cette tête : je ne te le dis pas pour que tu rebrousses chemin. Finis ce que tu as commencé. J'ai pétri assez de pâte pour avoir des bras."
                   ] },
                   { whenDone: 'sun_6', lines: [
                       "Deux soleils… Mon archer, ta main tremble sur ton arc, même quand tu dors. Rentre vite.",
@@ -325,10 +328,12 @@ const BASE_SCREENS = {
                   ] },
                   { whenDone: 'sun_3', lines: [
                       "Tu as les yeux rougis par la fumée. Mange ce gâteau, il est au thé vert, comme tu les aimes. Et ne dis pas « parfait » s'il ne l'est pas.",
-                      "Je regarde parfois la fiole d'élixir sur l'autel des ancêtres. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel. Nous la garderons pour nos vieux jours, et nous la boirons à deux : une gorgée chacun, pas davantage."
+                      "Je regarde parfois la fiole d'élixir sur l'autel des ancêtres. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel.",
+                      "Nous la garderons pour nos vieux jours, et nous la boirons à deux : une gorgée chacun, pas davantage."
                   ] },
                   { whenDone: 'sun_5', lines: [
-                      "Tu sens la pluie. Donne-moi ce poignet… Voilà : un fil rouge. L'autre bout est noué au mien. Les vieilles disent que le fil des époux ne casse jamais ; il s'étire, c'est tout.",
+                      "Tu sens la pluie. Donne-moi ce poignet… Voilà : un fil rouge. L'autre bout est noué au mien.",
+                      "Les vieilles disent que le fil des époux ne casse jamais ; il s'étire, c'est tout.",
                       "Ne l'enlève pas, même pour tirer. S'il te gêne, c'est que tu penses à moi : tant mieux."
                   ] },
                   { whenDone: 'sun_7', lines: [
@@ -348,10 +353,11 @@ const BASE_SCREENS = {
               talk: [
                   { whenDone: 'sun_1', lines: [
                       "Le ciel est plus clément ; mes vieux os le sentent. Les enfants ont osé sortir jouer dans la boue.",
-                      "Poursuivez vers l'est, jusqu'au Lit du Fleuve : on dit que le passeur Gu y attend un miracle."
+                      "Poursuivez vers l'est, jusqu'aux Gorges du Volcan : on dit que la prêtresse Yan y veille encore sur les cendres d'un vieux temple."
                   ] },
                   { whenDone: 'sun_9', lines: [
-                      "Neuf soleils abattus ! Les chroniques de l'Empire parleront de vous pendant dix mille ans. Mais… la maison de Dame Chang'e est vide, la porte forcée. Les voisins parlent d'une grue blanche, et d'un archer pressé.",
+                      "Neuf soleils abattus ! Les chroniques de l'Empire parleront de vous pendant dix mille ans.",
+                      "Mais… la maison de Dame Chang'e est vide, la porte forcée. Les voisins parlent d'une grue blanche, et d'un archer pressé.",
                       "Hou Yi, faites vite."
                   ] },
                   { whenDone: 'q_epilogue', lines: [
@@ -422,11 +428,12 @@ const BASE_SCREENS = {
             { id: 'ferryman_gu', x: 3, y: 6, name: 'Gu', title: 'Passeur du fleuve', 
               idle: [
                   "Trente ans que je passe les gens d'une rive à l'autre. Maintenant il n'y a plus de rive, juste de la boue, et ma vieille barque qui rêve d'eau.",
-                  "Un jeune archer pressé est passé hier, à pied, en pestant contre la poussière. Il m'a demandé le chemin le plus court vers l'Occident. Je lui ai montré la piste des caravanes."
+                  "Un jeune archer pressé est passé hier, en pestant contre la poussière. Il voulait le chemin le plus court vers l'Occident. Je lui ai montré la piste des caravanes."
               ],
               talk: [
                   { whenDone: 'sq_river_serpent', lines: [
-                      "Plus de serpent au gué ! Les voyageurs vont pouvoir passer en chantant. Et s'ils n'ont pas de pièces, je les passerai contre des gâteaux de lune : c'est la monnaie de ce temps."
+                      "Plus de serpent au gué ! Les voyageurs vont pouvoir passer en chantant.",
+                      "Et s'ils n'ont pas de pièces, je les passerai contre des gâteaux de lune : c'est la monnaie de ce temps."
                   ] },
                   { whenDone: 'sun_2', lines: [
                       "L'eau ! Elle revient ! Je l'ai entendue avant de la voir, comme une vieille chanson. Ma barque flotte…",
@@ -519,7 +526,7 @@ const BASE_SCREENS = {
             { id: 'monk_zhen', x: 4, y: 2, name: 'Zhen', title: 'Moine du temple brûlé', 
               idle: [
                   "Paix à vous, voyageur. Je prie ce qu'il reste à prier : les cendres, le silence, et une cloche absente.",
-                  "Un jeune archer est venu méditer ici, il y a quelques jours. Il n'a pas réussi : sa respiration battait comme un tambour de guerre. Il m'a demandé s'il existe un breuvage qui épargne la mort. Je lui ai répondu : oui, le temps."
+                  "Un jeune archer est venu méditer ici, sa respiration battait comme un tambour de guerre. Il voulait un breuvage contre la mort. Je lui ai répondu : le temps."
               ],
               talk: [
                   { whenDone: 'sq_bell', lines: [
@@ -613,14 +620,14 @@ const BASE_SCREENS = {
             { id: 'merchant_ma', x: 3, y: 2, name: 'Ma', title: 'Marchand de caravane', 
               idle: [
                   "Soies, épices, thé de Pu'er ! … enfin, il me reste du thé et beaucoup d'espoir. Les affaires sont aussi sèches que le Gobi.",
-                  "Un caravanier m'a parlé d'un archer qui courait vers l'Occident sans boire ni dormir. « Il fuit quelque chose, disait-il, ou il court après. » Je ne sais pas lequel est pire."
+                  "Un caravanier a vu un archer courir vers l'Occident sans boire ni dormir. « Il fuit quelque chose, ou il court après. » Je ne sais pas lequel est pire."
               ],
               talk: [
                   { whenDone: 'sq_bandits', lines: [
                       "Ma caravane a passé le col sans une égratignure ! Je vous ferai une remise sur tout ce que je vendrai en chemin, seigneur. Même sur le thé."
                   ] },
                   { whenDone: 'sun_4', lines: [
-                      "Tout le désert est net, clair, c'est presque indécent. Mes chameaux marchent droit pour la première fois depuis des semaines, et moi, je ne sais plus sur quoi râler."
+                      "Tout le désert est net, c'est presque indécent. Mes chameaux marchent droit pour la première fois depuis des semaines, et je ne sais plus sur quoi râler."
                   ] }
               ] },
             { id: 'guide_dawa', x: 3, y: 7, name: 'Dawa', title: 'Guide du désert', 
@@ -736,7 +743,7 @@ const BASE_SCREENS = {
         npcs: [
             { id: 'smith_tie', x: 3, y: 7, name: 'Tie', title: 'Forgeron de flèches', 
               idle: [
-                  "Une flèche ne vaut que par sa pointe, et la pointe que par la main qui l'a trempée. La mienne tremble, je le reconnais : des semaines sans repos, avec ces éclairs qui n'arrêtent pas.",
+                  "Une flèche ne vaut que par sa pointe, et la pointe par la main qui l'a trempée. La mienne tremble : ces éclairs ne m'ont pas laissé dormir depuis des semaines.",
                   "Si vous trouvez de la foudre, du fer de ciel, du jade du matin, rapportez-les-moi : j'en ferai quelque chose de digne d'un archer."
               ],
               talk: [
@@ -764,7 +771,8 @@ const BASE_SCREENS = {
             { id: 'parley_sun5', x: 11, y: 9, name: 'Rongrong', title: 'Petite voix du tonnerre', showWhen: 'sq_lei_drum', hideWhen: ['sun5_wardens_a', 'sun5_wardens_b'],
               parley: { lines: [
                   "Boum ! Ne tire pas, archer. Je suis Rongrong, la petite voix du tonnerre. Le vieux Lei m'a rendu mon tambour, alors je viens dire merci.",
-                  "Le foudre-garde du col est mon grand frère, et le lion de pierre son vieux compagnon. Le soleil les nourrit d'éclairs : ils tiennent sa cage et n'écoutent plus personne.",
+                  "Le foudre-garde du col est mon grand frère, et le lion de pierre son vieux compagnon.",
+                  "Le soleil les nourrit d'éclairs : ils tiennent sa cage et n'écoutent plus personne.",
                   "Ils croient défendre la montagne. La cage ne retient qu'un soleil qui a peur d'être éteint.",
                   "Je leur dis de la lâcher. Passe, archer. Mais ne tarde pas : un orage retenu finit toujours par éclater."
               ] },
@@ -843,11 +851,12 @@ const BASE_SCREENS = {
             { id: 'priestess_yan', x: 3, y: 2, name: 'Yan', title: 'Prêtresse du feu repentie', 
               idle: [
                   "Autrefois, j'allumais un brasero à l'aube pour saluer les soleils. Je croyais qu'ils étaient des dieux. Ils n'étaient que des enfants capricieux.",
-                  "Je connais ce regard, celui de l'archer pressé qui vous suit depuis les rizières : un garçon qui croit que le monde lui doit quelque chose. J'ai eu ce regard, à seize ans, devant l'autel d'un soleil."
+                  "L'archer pressé qui vous suit depuis les rizières a ce regard-là : celui d'un garçon qui croit que le monde lui doit quelque chose. J'ai eu ce regard à seize ans."
               ],
               talk: [
                   { whenDone: 'sq_ember', lines: [
-                      "La braise est entre de bonnes mains. Elle ne brûlera plus que pour renaître, et c'est tout ce que je lui souhaite."
+                      "La braise est entre de bonnes mains. Elle ne brûlera plus que pour renaître, et c'est tout ce que je lui souhaite.",
+                      "Mon vieux maître, l'attiseur du temple, veille encore près du sanctuaire. Je lui ai fait dire que vous aviez sauvé la cendre : il vous écoutera."
                   ] },
                   { whenDone: 'sun_6', lines: [
                       "Je ne priais plus que par habitude. Aujourd'hui, je prie pour de bon : pour les soleils tombés, pour ceux qui restent, et pour vous, archer."
@@ -904,7 +913,7 @@ const BASE_SCREENS = {
               shieldLines: [
                   "Deux forgerons de magma attisent le Soleil de Magma comme une fournaise : tant qu'ils soufflent, il se rallume de lui-même.",
                   "Le basalte coule entre vous et lui en nappes d'or rouge ; les flèches fondent avant d'y toucher.",
-                  "Faites taire les soufflets et le soleil perdra son alimentation. (Les veines de cinabre et la braise d'Ember, une fois réglées, l'affaibliront.)",
+                  "Faites taire les soufflets et le soleil perdra son alimentation. (Les veines de cinabre et la cendre du phénix, une fois réglées, l'affaibliront.)",
                   "Ces forgerons soufflent sans conviction, en servants dont le temple a brûlé. Quelqu'un, dans les gorges, pourrait leur dire d'arrêter."
               ] }
         ],
@@ -1022,8 +1031,8 @@ const BASE_SCREENS = {
               ] },
             { id: 'envoy_longwang', x: 3, y: 2, name: 'Longwang', title: 'Envoyé du Roi-Dragon', 
               idle: [
-                  "Salutations, seigneur archer. Je suis Longwang, envoyé du Roi-Dragon de la Mer Orientale. Mon maître est affligé : la mer étouffe sous le soleil, et ses fils dépérissent.",
-                  "Il m'a chargé de vous dire ceci : la Reine Mère de l'Occident n'offre pas son élixir à n'importe qui. Elle sait lire dans les cœurs. Elle a vu quelque chose dans le vôtre, et quelque chose dans un autre, qu'elle n'a pas aimé."
+                  "Salutations, seigneur archer. Je suis Longwang, envoyé du Roi-Dragon. Mon maître est affligé : la mer étouffe sous le soleil, et ses fils dépérissent.",
+                  "Mon maître ajoute ceci : la Reine Mère n'offre pas son élixir à n'importe qui. Elle a vu quelque chose dans votre cœur, et dans un autre, qu'elle n'a pas aimé."
               ],
               talk: [
                   { whenDone: 'sq_pearl', lines: [
@@ -1097,7 +1106,7 @@ const BASE_SCREENS = {
             {
                 x: 13, y: 4, to: 'lune', arrive: { x: 1, y: 4 }, label: 'Pic de la Lune',
                 requires: 'sun_9',
-                lockedMessage: "Le sentier du Pic de la Lune est caché derrière le dernier soleil : abattez le Soleil Lâche."
+                lockedMessage: "La route des Hautes-Eaux, vers le Pic de la Lune, reste cachée derrière le dernier soleil : abattez le Soleil Lâche."
             }
         ],
         npcs: [
@@ -1108,12 +1117,13 @@ const BASE_SCREENS = {
               ],
               talk: [
                   { whenDone: 'sun_8', lines: [
-                      "Un jeune archer est venu frapper à la porte de la Reine Mère, il y a quelques semaines. Il demandait un élixir pour lui seul. Elle a refusé avec bonté : « Cet élixir est déjà promis. »",
+                      "Un jeune archer est venu frapper à la porte de la Reine Mère, il y a quelques semaines. Il demandait un élixir pour lui seul.",
+                      "Elle a refusé avec bonté : « Cet élixir est déjà promis. »",
                       "Je n'ai jamais vu quelqu'un pâlir ainsi, ni sourire en même temps."
                   ] },
                   { whenDone: 'sun_9', lines: [
                       "Le Dixième vous doit la vie. La Reine Mère dit que cela compte plus que la moitié des victoires.",
-                      "Hâtez-vous vers le Pic de la Lune : le temps presse, et Fengmeng ne s'arrêtera pas."
+                      "Hâtez-vous vers les Hautes-Eaux, puis vers le Pic de la Lune : le temps presse, et Fengmeng ne s'arrêtera pas."
                   ] }
               ] },
             // Le Dixième Soleil se cache derrière le Neuvième : on ne peut lui parler qu'après sa chute.
@@ -1235,12 +1245,13 @@ const BASE_SCREENS = {
                   lines: [
                       "Hou Yi… Tu es venu. Je savais que tu viendrais, avant même que la grue ne parte. Regarde-moi : la lune m'a déjà un peu changée.",
                       "J'ai la fiole contre moi. Fengmeng la veut, et il me suit depuis la digue, pas à pas. Il ne s'arrêtera jamais tant qu'il croira pouvoir l'avoir.",
-                      "Alors laissons-le croire. Je resterai là, au bord du bassin, la fiole bien en vue : je serai l'appât, et toi l'archer qui l'attend. Ne discute pas, tu n'as jamais su me faire changer d'avis.",
+                      "Alors laissons-le croire. Je resterai là, au bord du bassin, la fiole bien en vue : je serai l'appât, et toi l'archer qui l'attend.",
+                      "Ne discute pas : tu n'as jamais su me faire changer d'avis.",
                       "(Elle élève la fiole dans la lumière. Sur le sentier de l'est, un pas craque, puis un autre.)",
                       "Le voilà. Ne le hais pas, mon archer, mais ne baisse pas ta garde : entre ses flèches, il n'y aura aucun répit, et personne pour te rendre ton souffle."
                   ],
                   retry: [
-                      "Il revient, Hou Yi. Il revient toujours. Reprends ton souffle, si tu le peux : la fiole brille encore, et lui aussi vous attend.",
+                      "Il revient, Hou Yi. Il revient toujours. Reprends ton souffle, si tu le peux : la fiole brille encore, et lui aussi te guette.",
                       "(Elle élève de nouveau la fiole. Un pas craque sur le sentier de l'est.)"
                   ]
               },
@@ -1250,7 +1261,7 @@ const BASE_SCREENS = {
               talk: [
                   { whenDone: 'fengmeng_3a', lines: [
                       "(Son image vacille à la surface du bassin, plus lumineuse que jamais.)",
-                      "Je suis là, mon archer, dans la lumière, au-dessus de toi. L'élixir m'a prise, mais pas mon cœur. Fais ce que tu dois : ne le hais pas, il se déteste déjà assez."
+                      "Je suis là, mon archer, dans la lumière, au-dessus de toi. L'élixir m'a prise, pas mon cœur. Fais ce que tu dois : ne le hais pas, il se déteste déjà assez."
                   ] },
                   { whenDone: 'q_epilogue', lines: [
                       "(Le reflet se pose sur l'autel comme une main sur une épaule.)",
@@ -1348,7 +1359,7 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
-            "Le plus jeune des dix est moins un brasier qu'un vent brûlant qui court sur les rizières. Une flamme plus franche que la sienne le ferait vaciller.",
+            "Le premier des neuf est moins un brasier qu'un vent brûlant qui court sur les rizières. Une flamme plus franche que la sienne le ferait vaciller.",
             "Les maraudeurs des rizières sont de bons adversaires pour s'échauffer, et ils reviennent toujours. Les monstres se voient de loin : un cercle rouge marque leur zone de vigilance."
         ],
         complete: [
@@ -1373,7 +1384,7 @@ const BASE_QUESTS = [
             "Les pixiu de magma gardent les veines de cinabre : prudence, ils chargent la tête baissée.",
             "Trois chemins mènent au soleil. Risque : faites taire les deux forgerons de magma, au prix d'un combat, pour leur expérience et un soleil entier.",
             "Relation : sauvez la cendre du phénix pour Yan, et le vieil attiseur du temple du feu ordonnera aux forgerons de poser leurs soufflets.",
-            "Découverte : les veines de cinabre et la braise d'Ember affaiblissent le soleil.",
+            "Découverte : les veines de cinabre et la cendre du phénix affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des forgerons éteints ou endormis, un attiseur allié, un soleil moins ardent."
         ],
         complete: [
@@ -1396,7 +1407,7 @@ const BASE_QUESTS = [
         hint: [
             "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Ils lui ressemblent trait pour trait, ombre et nom compris.",
             "Quand un mirage se défait, un autre renaît ailleurs. Le vrai soleil, lui, ne quitte jamais sa place : repérez celui qui ne change pas d'un passage à l'autre.",
-            "Régler la caravane de l'oasis et trouver la carte qui ne ment pas affaiblira le vrai soleil."
+            "Retrouver la cache de l'oasis et la carte qui ne ment pas affaiblira le vrai soleil."
         ],
         complete: [
             "Le vrai soleil s'effondre ; autour de lui, tous les mirages s'évanouissent d'un coup, comme des bulles de savon. Le désert redevient simplement le désert : immense, honnête, silencieux.",
@@ -1493,7 +1504,7 @@ const BASE_QUESTS = [
         hint: [
             "Tant que la meute vit, le soleil est protégé par un bouclier de flammes : abattez d'abord les quatre bêtes qui l'entourent.",
             "Frappez-les une à une : aucune ne vous suivra loin de son maître.",
-            "Chasser le tigre balafré et rendre l'agnelle de Zi au troupeau affaiblira le soleil, une fois la meute tombée."
+            "Chasser le tigre balafré et rapporter sa clochette à la bergère Zi affaiblira le soleil, une fois la meute tombée."
         ],
         complete: [
             "La meute est tombée, puis le soleil. Les flammes qui couraient dans l'herbe s'éteignent d'un coup, et les bêtes survivantes se couchent, hagardes, comme éveillées d'un cauchemar.",
@@ -1510,7 +1521,7 @@ const BASE_QUESTS = [
         objectives: [{ type: 'kill', target: 'sun_8', text: 'Abattre le Soleil des Marées (sanctuaire du Rivage de la Mer Orientale, au sud-est)' }],
         offer: [
             "Huitième soleil : celui des Marées. Il a aspiré la mer et la tient en suspens au-dessus de la grève, comme une cloche d'eau prête à retomber. Il siège sur les rochers de l'est.",
-            "Un envoyé du Roi-Dragon attend de pouvoir vous remercier."
+            "Un envoyé du Roi-Dragon vous attend sur la grève : il a une faveur à vous demander."
         ],
         hint: [
             "Mon maître le Roi-Dragon supplie le Ciel depuis des semaines : la mer étouffe. Le Soleil des Marées est au sud-est, sur les rochers.",
@@ -1559,7 +1570,8 @@ const BASE_QUESTS = [
         giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_9'],
         objectives: [{ type: 'kill', target: 'changxi', text: "Prouver votre courage à Changxi, mère des douze lunes (Autel de Mazu, au bout des Hautes-Eaux)" }],
         offer: [
-            "La grue blanche se penche vers vous : « La Lune est montée si haut que la mer a voulu la suivre. Entre le Fusang et le Pic, il n'y a plus de sentier : seulement des pontons, et l'eau noire qui les sépare. Il faudra marcher sur l'eau. »",
+            "La grue blanche se penche vers vous : « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir vers le Pic de la Lune, et il la suit. »",
+            "« Mais la Lune est montée si haut que la mer a voulu la suivre. Entre le Fusang et le Pic, il n'y a plus de sentier : seulement des pontons, et l'eau noire qui les sépare. Il faudra marcher sur l'eau. »",
             "« Au bout, une divinité dort sur l'autel de Mazu : Changxi, mère des douze lunes. Elle seule peut porter un homme jusqu'à la Lune. Elle ne vous veut aucun mal, archer : elle veut seulement savoir si vous osez. »"
         ],
         hint: [
@@ -1577,13 +1589,13 @@ const BASE_QUESTS = [
         title: "L'Archer Miroir",
         chapter: 'Chapitre Final — Le Pic de la Lune',
         giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_changxi'],
-        objectives: [{ type: 'kill', target: 'fengmeng_3b', text: 'Affronter Fengmeng au sommet du Pic de la Lune (duel en deux phases, à l\'est du Fusang)' }],
+        objectives: [{ type: 'kill', target: 'fengmeng_3b', text: 'Affronter Fengmeng au sommet du Pic de la Lune (duel en deux phases, au bout du sentier de lumière)' }],
         offer: [
-            "La grue blanche se pose sur la plus haute branche, un rouleau dans le bec : le sceau de la Reine Mère de l'Occident. « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir. »",
-            "« Elle vous attend au Pic de la Lune, à l'est de l'Arbre : c'est le seul endroit du monde où la Reine Mère peut encore veiller sur elle. Fengmeng la suit. Allez, archer : il ne vous reste que le temps d'un soupir. »"
+            "Le sentier de lumière s'ouvre sous vos pas, et le vent vous rapporte la voix de la grue blanche, un rouleau scellé de la Reine Mère dans le bec : « Allez, archer. Dame Chang'e vous attend au Pic de la Lune, le seul endroit du monde où la Reine Mère peut encore veiller sur elle. »",
+            "« Fengmeng la suit, et il ne reculera devant rien. Il ne vous reste que le temps d'un soupir. »"
         ],
         hint: [
-            "Le Pic de la Lune est à l'est de l'Arbre. Fengmeng est un archer redoutable, et il connaît vos techniques par cœur : n'attendez pas de lui qu'il tire autrement que vous.",
+            "Le Pic de la Lune est au bout du sentier de lumière de Changxi, au-delà des Hautes-Eaux. Fengmeng est un archer redoutable, et il connaît vos techniques par cœur : n'attendez pas de lui qu'il tire autrement que vous.",
             "Ne cherchez pas à le détester. Dame Chang'e vous le dirait elle-même."
         ],
         complete: [

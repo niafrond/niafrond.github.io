@@ -29,7 +29,7 @@ export default {
       idle: ['Le linge sèche tout seul ici, sur les pierres chaudes. Le seul inconvénient, c\'est qu\'il cuit aussi, si l\'on est distraite.', 'Je lave les chemises des mineurs. Elles ne sont jamais blanches, mais elles sont fières d\'avoir été propres.'],
       talk: [{ whenDone: 'sun_6', lines: ['Mon linge est enfin tiède sans brûler. Je pense que les gorges ont retrouvé leurs bonnes manières.'] }] },
     volcan_village_lantern_maker: { name: 'Tante Zhu', title: 'Faiseuse de lanternes de basalte',
-      idle: ['Mes lanternes ne s\'éteignent jamais : elles gardent la chaleur de la roche. Les clients se plaignent qu\'elles ne dorment pas. Je leur réponds qu\'on ne dort pas mieux avec une chandelle.', 'Une lanterne de basalte, c\'est une pierre qui a décidé de briller. Il suffit de la convaincre en douceur.'],
+      idle: ['Mes lanternes ne s\'éteignent jamais : elles gardent la chaleur de la roche. Les clients se plaignent qu\'elles ne dorment pas. Une chandelle dort-elle mieux ?', 'Une lanterne de basalte, c\'est une pierre qui a décidé de briller. Il suffit de la convaincre en douceur.'],
       talk: [{ whenDone: 'sun_6', lines: ['Je vais faire des lanternes plus claires, maintenant que le grand feu est parti. Elles seront moins chaudes, plus gaies.'] }] },
     volcan_village_ember_boy: { name: 'Petit Huo', title: 'Ramasseur d\'étincelles',
       idle: ['Je ramasse les étincelles qui tombent de la forge. Maman dit que je me brûle. Moi je dis que j\'apprends.', 'Si tu t\'assois près de la forge, tu entends les étincelles rire. Elles rient très fort, pour des petites choses.'],
@@ -54,13 +54,13 @@ export default {
       talk: [{ whenDone: 'sun_6', lines: ['Un soleil de moins, c\'est un volcan qui se calme. Je suis un peu triste : mes amis les flammes dansent plus doucement.'] }] },
     hua_volcan: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
       idle: ['Gants ignifugés, éventails de pierre, tisane contre les brûlures de langue : tout est à vendre, sauf ma patience.', 'Dernièrement, j\'ai vendu une lanterne à un archer pressé. Il ne m\'a pas dit son nom, mais il avait un air de jalousie bien cuite.'],
-      talk: [{ whenDone: 'sun_6', lines: ['Je suis encore là, archer ! Le prochain arrêt, c\'est la plaine des Fauves. Je compte vendre des bergères à des moutons. Non, l\'inverse.'] }] },
+      talk: [{ whenDone: 'sun_6', lines: ['Je suis encore là, archer ! Le prochain arrêt, c\'est le Gobi. Je compte vendre du sable aux dunes. Non, l\'inverse.'] }] },
     young_miner_bo: { name: 'Bo', title: 'Jeune mineur curieux', 
       idle: ['Je viens d\'être embauché. Shan m\'a dit de ne jamais toucher une pierre rouge. Je me demande pourquoi.', 'Un jour, je découvrirai une veine de jade. Je la montrerai à tout le monde, puis je la garderai pour moi.'],
       talk: [{ whenDone: 'sun_6', lines: ['Les gorges sont plus calmes depuis que le soleil de magma est tombé. Shan dit que je peux toucher une pierre rouge, maintenant. J\'ai touché. Elle était chaude.'] }] },
     forge_spirit: { name: 'Huohui', title: 'Esprit de la forge de lave', 
       idle: ['Je suis la dernière braise de la forge. Je garde le secret de l\'enclume, et de ceux qui l\'ont frappée.', 'On m\'appelle Huohui, parce que je dors dans les cendres. Un prince viendra m\'y réveiller un jour.'],
-      talk: [{ whenDone: 'sq_cendrillon', lines: ['Dites au vieux Fei que son bain est trop chaud pour mes souvenirs. Le disciple est parti vers l\'ouest, rageur. Il a dit qu\'il reviendrait « pour l\'élixir ». Je n\'ai rien compris, moi, je suis une braise.'] }] }
+      talk: [{ whenDone: 'sq_cendrillon', lines: ['Dites au vieux Fei que son bain est trop chaud pour mes souvenirs. Le disciple est parti vers l\'ouest, rageur.', 'Il a dit qu\'il reviendrait « pour l\'élixir ». Je n\'ai rien compris, moi, je suis une braise.'] }] }
   },
   chests: {
     volcan_road_slag_pot: { label: 'Pot de scories', openText: 'Un pot de scories posé contre une colonne, comme un oubli : au fond, quelques pièces noircies par la braise.' },

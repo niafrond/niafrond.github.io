@@ -224,7 +224,11 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             R(1, 2, 1, 1, '#2a1c10'); R(14, 2, 1, 1, '#2a1c10'); R(1, 10, 1, 1, '#2a1c10'); R(14, 10, 1, 1, '#2a1c10');
             return true;
         }
-        case 'gobi': case 'coast': case 'savanna': {       // sable : rides en arcs, cailloux, brins secs
+        case 'gobi': case 'coast': case 'savanna': {       // sable : rides en arcs, cailloux, brins secs ; nappes de gravier (gobi), de galets (côte), de terre battue (savane)
+            if (noise(x / 3, y / 3, 600) > 0.68) {
+                for (let i = 0; i < 7; i++) { const gx = 1 + at(610 + i, 13), gy = 2 + at(620 + i, 12); R(gx, gy, 2, 1, shade(base, i % 2 ? -30 : 20)); if (biomeId === 'coast') R(gx, gy - 1, 1, 1, shade(base, 36)); }
+                return true;
+            }
             for (let i = 0; i < 2; i++) {
                 const rx = 1 + at(200 + i, 8), ry = 3 + at(210 + i, 9) + i * 2;
                 R(rx, ry, 5, 1, shade(base, -22)); R(rx + 1, ry + 1, 3, 1, shade(base, 18)); R(rx - 1, ry, 1, 1, shade(base, -22));
@@ -234,7 +238,12 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             if (biomeId === 'coast' && h(225) < 0.12) { const sx = 3 + at(226, 9); R(sx, 11, 3, 1, '#f4ead6'); R(sx + 1, 10, 1, 1, '#f08a7a'); }
             return true;
         }
-        case 'riverbed': {                                                  // vase humide : sillons sombres, flaques luisantes, galets mouillés
+        case 'riverbed': {                                                  // vase humide : sillons sombres, flaques luisantes, galets mouillés ; argile craquelée par nappes
+            if (noise(x / 3, y / 3, 630) > 0.66) {
+                let cx = 1 + at(640, 12), cy = 1 + at(641, 5);
+                for (let s = 0; s < 7; s++) { R(cx, cy, 2, 1, shade(base, -40)); R(cx, cy + 1, 1, 1, shade(base, 16)); cx += h(650 + s) < 0.5 ? 2 : 1; cy += h(660 + s) < 0.5 ? 1 : 2; if (cx > 14 || cy > 14) break; }
+                return true;
+            }
             for (let i = 0; i < 2; i++) {
                 const rx = 1 + at(200 + i, 8), ry = 3 + at(210 + i, 9) + i * 2;
                 R(rx, ry, 5, 1, shade(base, -20)); R(rx + 1, ry + 1, 3, 1, shade(base, 10));
@@ -243,7 +252,36 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             if (h(223) < 0.15) { const px_ = 2 + at(224, 11), py_ = 3 + at(225, 10); R(px_, py_, 2, 1, shade(base, -44)); R(px_, py_ - 1, 1, 1, shade(base, 18)); }
             return true;
         }
-        case 'volcano': {                                                   // cendres : éclats sombres, fissures de braise
+        case 'paddy': {                                                     // rizière asséchée : terre sèche, terre craquelée, boue durcie, paille (par nappes)
+            const n = noise(x / 3.5, y / 3.5, 400), kind = n < 0.3 ? 'crack' : n < 0.55 ? 'dry' : n < 0.8 ? 'mud' : 'straw';
+            if (kind === 'dry') {
+                for (let i = 0; i < 4; i++) R(1 + at(410 + i, 13), 2 + at(420 + i, 12), 2, 1, shade(base, i % 2 ? 14 : -12));
+            } else if (kind === 'crack') {                                  // plaques de terre fendillée : lignes brisées sombres, lèvres claires
+                const crack = shade(base, -46), lip = shade(base, 18);
+                for (let k = 0; k < 2; k++) {
+                    let cx = 1 + at(430 + k, 14), cy = 1 + at(435 + k, 4) + k * 6;
+                    for (let s = 0; s < 6; s++) { R(cx, cy, 2, 1, crack); R(cx, cy + 1, 1, 1, lip); cx += h(440 + k * 7 + s) < 0.5 ? 2 : 1; cy += h(450 + k * 7 + s) < 0.5 ? 1 : 2; if (cx > 14 || cy > 14) break; }
+                }
+            } else if (kind === 'mud') {                                    // boue durcie : croûte plus sombre, sillons séchés, éclats clairs
+                R(1, 3, 14, 10, shade(base, -14));
+                for (let i = 0; i < 3; i++) { const ry = 4 + i * 3 + at(460 + i, 2), rx = 2 + at(465 + i, 4); R(rx, ry, 8, 1, shade(base, -32)); R(rx + 1, ry + 1, 6, 1, shade(base, 6)); }
+                R(2 + at(470, 11), 3 + at(471, 9), 2, 1, shade(base, 28));
+            } else {                                                        // paille : brins couchés dorés
+                for (let i = 0; i < 5; i++) { const sx = 1 + at(480 + i, 11), sy = 2 + at(490 + i, 12); R(sx, sy, 4, 1, i % 2 ? '#d8b860' : '#b8963f'); R(sx + 3, sy - 1, 1, 1, '#e8cc78'); }
+            }
+            return true;
+        }
+        case 'volcano': {                                                   // cendres : éclats sombres, roche cendrée, sol fissuré, fissures de braise
+            const kind = noise(x / 3, y / 3, 500) > 0.62 ? 'ash' : noise(x / 3, y / 3, 510) > 0.66 ? 'cracked' : 'plain';
+            if (kind === 'ash') {                                           // roche cendrée : plaques grises poudreuses
+                for (let i = 0; i < 5; i++) { const ax = 1 + at(520 + i, 12), ay = 2 + at(530 + i, 12); R(ax, ay, 3, 1, shade(base, 34)); R(ax + 1, ay + 1, 2, 1, shade(base, 18)); }
+                return true;
+            }
+            if (kind === 'cracked') {                                       // sol fissuré : fentes sombres sans braise
+                let cx = 1 + at(540, 4), cy = 2 + at(541, 8);
+                for (let s = 0; s < 7; s++) { R(cx, cy, 2, 1, shade(base, -36)); R(cx, cy + 1, 1, 1, shade(base, 14)); cx += h(550 + s) < 0.5 ? 2 : 1; cy += h(560 + s) < 0.5 ? 1 : 0; if (cx > 14) break; }
+                return true;
+            }
             for (let i = 0; i < 3; i++) R(1 + at(230 + i, 12), 2 + at(240 + i, 12), 2, 1, shade(base, i ? 18 : -14));
             if (h(250) < 0.3) {
                 const cx = 2 + at(251, 8), cy = 3 + at(252, 8);
@@ -256,12 +294,18 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             if (h(280) < 0.18) { const fx = 3 + at(281, 8), fy = 5 + at(282, 7); R(fx, fy, 5, 2, '#3f4478'); R(fx + 1, fy, 2, 1, '#6a70b0'); }
             return true;
         }
-        case 'moon': {                                                      // poussière lunaire : cratères, éclats stellaires
+        case 'moon': {                                                      // poussière lunaire : cratères, éclats stellaires ; dalles de pierre de jade par nappes
+            if (noise(x / 3, y / 3, 670) > 0.7) {
+                R(1, 1, 14, 14, '#9ac8b4'); R(1, 1, 14, 1, '#c4e6d6'); R(1, 14, 14, 1, '#6a9a86'); R(7, 1, 1, 14, '#6a9a86'); R(2 + at(671, 10), 3 + at(672, 9), 3, 1, '#e4f6ee');
+                return true;
+            }
             if (h(290) < 0.3) { const cx = 3 + at(291, 8), cy = 4 + at(292, 7); R(cx, cy, 5, 1, shade(base, -26)); R(cx - 1, cy + 1, 7, 2, shade(base, -14)); R(cx, cy + 3, 5, 1, shade(base, 24)); }
             if (h(293) < 0.35) { const sx = 2 + at(294, 12), sy = 2 + at(295, 12); R(sx, sy, 1, 1, '#ffffff'); R(sx - 1, sy, 3, 1, 'rgba(255,255,255,0.55)'); R(sx, sy - 1, 1, 3, 'rgba(255,255,255,0.55)'); }
             return true;
         }
-        case 'fusang': {                                                    // sol doré : pétales tombés, herbe sèche
+        case 'fusang': {                                                    // sol doré : pétales tombés, herbe sèche, mousse lumineuse et feuilles écarlates
+            if (noise(x / 3, y / 3, 680) > 0.7) for (let i = 0; i < 4; i++) { const mx = 1 + at(690 + i, 13), my = 2 + at(700 + i, 12); R(mx, my, 2, 1, '#b8f0a0'); R(mx, my + 1, 1, 1, '#7acb78'); }
+            else if (noise(x / 3, y / 3, 710) > 0.72) for (let i = 0; i < 3; i++) { const lx = 1 + at(720 + i, 12), ly = 2 + at(730 + i, 12); R(lx, ly, 3, 1, '#d8301e'); R(lx + 1, ly + 1, 1, 1, '#a8201a'); }
             for (let i = 0; i < 3; i++) { const fx = 1 + at(300 + i, 13), fy = 2 + at(310 + i, 12); R(fx, fy, 2, 1, i % 2 ? '#e8742e' : '#fff3b0'); R(fx + 1, fy + 1, 1, 1, '#d8602a'); }
             return false;
         }
@@ -429,7 +473,7 @@ export function drawPine(g, tile, px, py, { leaf = '#2f7a3a', trunk = '#6b3d22',
 // ── Végétation de bordure par biome ────────────────────────────────────────
 
 export const BORDER_KIND = {
-    paddy: 'reed', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
+    paddy: 'fence', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
     savanna: 'acacia', coast: 'palm', fusang: 'goldtree', moon: 'crystal', cave: 'stalagmite'
 };
 export const borderKindOf = biomeId => BORDER_KIND[biomeId] || 'pine';
@@ -501,11 +545,14 @@ export function drawBorderTree(g, tile, px, py, kind, opts = {}) {
             R(2, 5, 2, 1, '#f4f2ea'); R(10, 7, 3, 1, '#f4f2ea'); R(6, 2, 4, 1, '#f4f2ea'); R(4, 10, 2, 1, '#f4f2ea');
             break;
         }
-        case 'spire': {
-            R(4, 6, 9, 10, OUTLINE); R(5, 3, 6, 4, OUTLINE); R(6, 0, 3, 4, OUTLINE);
-            R(5, 7, 7, 8, '#4a3c3a'); R(6, 4, 4, 4, '#4a3c3a'); R(7, 1, 2, 4, '#5a4a48');
-            R(5, 7, 3, 8, '#665452'); R(10, 8, 2, 7, '#2e2426');
-            R(8, 3, 1, 3, '#ff5a1f'); R(7, 8, 1, 4, '#ff7a2e'); R(9, 10, 1, 3, '#ff5a1f'); R(8, 12, 1, 1, '#ffd24a');
+        case 'spire': {   // petit volcan fumant : cône de basalte, cratère de lave, coulée orange, panache de fumée
+            blob(R, 8, 3, [4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14, 16], '#4a3c3a', '#6a5856', '#2e2426');
+            R(6, 2, 4, 1, OUTLINE); R(6, 3, 4, 1, '#ff7a2e'); R(7, 3, 2, 1, '#ffd24a'); R(5, 4, 1, 1, '#2e2426'); R(10, 4, 1, 1, '#2e2426');
+            [[9, 5], [9, 6], [10, 7], [10, 8], [10, 9], [11, 10], [11, 11], [11, 12]].forEach(([fx, fy]) => { R(fx, fy, 1, 1, '#ff5a1f'); R(fx - 1, fy, 1, 1, '#ffb030'); });
+            R(5, 9, 1, 1, '#ff7a2e'); R(4, 11, 1, 1, '#ff5a1f'); R(6, 12, 1, 1, '#ffb030');
+            R(3, 13, 2, 1, '#665452'); R(12, 13, 2, 1, '#2e2426');
+            blob(R, 9, -2, [3, 5, 5, 3], '#8a8280', '#aaa2a0', '#605a58');
+            blob(R, 6, -5, [2, 3, 2], '#a89f9c', '#c4bcb8', '#7a7270');
             break;
         }
         case 'crystal': {
@@ -525,10 +572,32 @@ export function drawBorderTree(g, tile, px, py, kind, opts = {}) {
             });
             break;
         }
-        case 'reed': {
-            for (let i = 0; i < 7; i++) { const bx = 1 + i * 2 + (i % 2), top = 2 + ((i * 5) % 6), c = i % 2 ? '#8a7a3a' : '#a89a4a';
-                R(bx, top, 1, 16 - top, OUTLINE); R(bx + (i % 2 ? 1 : 0), top + 1, 1, 15 - top, c); R(bx - 1, top, 3, 3, '#6a4a2a'); }
-            R(5, 12, 7, 3, '#7a6a34');
+        case 'fence': {   // petite barrière de bois : deux piquets pointus et deux lisses pleine largeur (les cases voisines se rejoignent)
+            const F = (ux, uy, uw, uh, fill) => unitRect(g, px, py, u, ux, uy, uw, uh, fill);
+            const wood = '#a8864a', dark = '#7a5c30', light = '#c8a468';
+            const lean = cellHash(seed, 3, 95) < 0.25 ? 1 : 0;   // un piquet de travers de temps en temps
+            F(0, 6, 16, 3, OUTLINE); F(0, 10, 16, 3, OUTLINE);
+            F(0, 7, 16, 1, wood); F(0, 8, 16, 1, dark); F(0, 11, 16, 1, wood); F(0, 12, 16, 1, dark); F(0, 7, 16, 0.5, light);
+            [[2, 0], [11, lean]].forEach(([bx, off]) => {
+                F(bx - 1 + off, 3, 5, 13, OUTLINE); F(bx + off, 2, 3, 1, OUTLINE); F(bx + 1 + off, 1, 1, 1, OUTLINE);
+                F(bx + off, 4, 3, 11, wood); F(bx + 1 + off, 3, 1, 1, wood); F(bx + off, 4, 1, 11, light); F(bx + 2 + off, 5, 1, 10, dark); F(bx + 1 + off, 8, 1, 1, dark);
+            });
+            break;
+        }
+        case 'reed': {   // gerbe de riz mûr : tiges dorées en éventail, épis lourds qui retombent, lien rouge, feuilles vertes au pied
+            const px1 = (x, y, fill) => R(Math.round(x), Math.round(y), 1, 1, fill);
+            const stalk = (x1, y1, bend, fn) => { for (let t = 0; t <= 1.001; t += 0.04) fn(8 + (x1 - 8) * t + Math.sin(t * Math.PI) * bend, 15 - (15 - y1) * t); };
+            const stalks = [[1, 2, -2], [4, -2, -1], [8, -4, 0], [12, -2, 1], [15, 2, 2], [6, 1, -1], [10, 1, 1]];
+            stalks.forEach(([x1, y1, bend]) => stalk(x1, y1, bend, (x, y) => { px1(x - 1, y, OUTLINE); px1(x + 1, y, OUTLINE); px1(x, y - 1, OUTLINE); }));
+            stalks.forEach(([x1, y1, bend], i) => stalk(x1, y1, bend, (x, y) => px1(x, y, i % 2 ? '#d8b040' : '#e8c858')));
+            stalks.forEach(([x1, y1, bend]) => {   // épi : grains pâles en grappe, plus lourds du côté où l'épi retombe
+                const dir = x1 < 8 ? -1 : 1;
+                [[0, 0], [dir, 1], [dir, 2], [0, 1], [dir * 2, 2]].forEach(([gx, gy]) => { px1(x1 + gx - 1, y1 + gy, OUTLINE); });
+                [[0, 0], [dir, 1], [dir, 2], [0, 1], [dir * 2, 2]].forEach(([gx, gy], k) => px1(x1 + gx, y1 + gy, k % 2 ? '#f6e08a' : '#fff0b0'));
+            });
+            R(5, 8, 7, 3, OUTLINE); R(6, 9, 5, 1, '#c8402e'); R(6, 9, 2, 1, '#e8604a');   // lien de paille tressée
+            R(1, 12, 6, 3, OUTLINE); R(2, 12, 4, 2, '#6a9a3a'); R(2, 12, 2, 1, '#8aba52');
+            R(10, 12, 6, 3, OUTLINE); R(11, 12, 4, 2, '#5a8a32'); R(13, 12, 2, 1, '#8aba52');
             break;
         }
         default: return drawPine(g, tile, px, py, opts);

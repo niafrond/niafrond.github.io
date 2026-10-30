@@ -45,7 +45,7 @@ export default {
       talk: [{ whenDone: 'sq_agneau_perdu', lines: ['Nuage est de retour ! Il dort déjà ! Merci, archer. On a mis un ruban rouge à son cou, pour le retrouver la prochaine fois.'] }] },
     hua_fauves: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
       idle: ['Cloches, rubans, fromages de brebis : les nomades n\'ont pas de maison, mais ils aiment les jolies choses.', 'Plus loin, j\'irai jusqu\'à la mer. Ou plus haut, jusqu\'à l\'arbre. On verra : la route décide, pas moi.'],
-      talk: [{ whenDone: 'sun_7', lines: ['Septième soleil ! Mon sac est plus léger, mon cœur aussi. La mer m\'attend, archer, et peut-être votre lettre aussi.'] }] },
+      talk: [{ whenDone: 'sun_7', lines: ['Septième soleil ! Mon sac est plus léger, mon cœur aussi. La mer m\'attend, archer, mais vous y serez avant moi.'] }] },
     hare_tuzi: { name: 'Tuzi', title: 'Lièvre du Palais lunaire', 
       idle: ['Je pile l\'élixir dans un mortier, sur la Lune. Enfin, je pilais. Là, je prends l\'air.', 'Les humains croient que l\'élixir rend immortel. Il rend surtout nostalgique. C\'est un peu la même chose.'],
       talk: [{ whenDone: 'sq_lievre_lune', lines: ['Dites à Chang\'e, un jour, que son lièvre pense à elle. Et qu\'elle ne se laisse pas convaincre par un jaloux. Je suis lièvre, mais j\'ai l\'ouïe fine.'] }] },

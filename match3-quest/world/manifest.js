@@ -490,7 +490,7 @@ export const MANIFEST = {
       { id: 'crane_envoy', where: 'house:fusang_h_grue' },
       { id: 'picker_tao', name: 'Tao', title: 'Cueilleur de pêches', where: 'house:fusang_h_cueilleur', role: 'marchand' },
       { id: 'astronomer_xing', name: 'Mère Xing', title: 'Astronome de l\'arbre', where: 'house:fusang_h_astronome', role: 'indice' },
-      { id: 'acolyte_ri', name: 'Ri', title: 'Acolyte aux neuf lanternes', where: 'house:fusang_h_temple', role: 'donneur' },
+      { id: 'acolyte_ri', name: 'Ri', title: 'Acolyte des dix lanternes', where: 'house:fusang_h_temple', role: 'donneur' },
       { id: 'teamaster_you', name: 'Maître You', title: 'Maître de thé suspendu', where: 'house:fusang_h_chambre', role: 'ambiance' },
       { id: 'hua_fusang', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'child_yuer', name: 'Yuer', title: 'Fillette qui écoute les soleils', where: 'place', role: 'indice' },

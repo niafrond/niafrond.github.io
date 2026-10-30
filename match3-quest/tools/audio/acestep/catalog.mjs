@@ -6,6 +6,10 @@
  * leitmotiv de `leitmotifs.json` (audio de référence envoyé à ACE-Step).
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /**
  * Références musicales voulues (ambiance seulement, mélodies 100 % originales) : la bande-son de Final Fantasy IX
  * (chaleur mélodique, lyrisme médiéval-féerique, thèmes très chantants) et celle des Pokémon GBA
@@ -58,6 +62,14 @@ T('victory', `triumphant victory theme after a sun has fallen, ${I.dizi} and ${I
 T('defeat', `somber defeat theme, fragments of the Hou Yi motif on lonely ${I.xiao} and soft ${I.erhu}, slow, hollow, unresolved suspended harmony, sparse low drum, quiet and sorrowful but not bleak, a slow repeating phrase that loops seamlessly`,
     { bpm: 54, keyScale: 'D minor', dur: 60, motif: 'houyi' });
 
+/* ───────────── Énigmes : un thème par type, calme et réfléchi (aucune urgence), boucle discrète ───────────── */
+T('puzzle-push', `puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, soft ${I.xiao} answering, muted felt drum on the beat, curious and patient mood, gentle repeating phrase, no tension, no climax`,
+    { bpm: 76, keyScale: 'G major', dur: 180 });
+T('puzzle-mirror', `puzzle theme for aligning mirrors of light, crystalline harp-like plucks and small bells, airy and spacious, slow arpeggios, soft ${I.sheng} pad, mysterious and calm, silence between phrases, no drums, no tension, no climax`,
+    { bpm: 68, keyScale: 'E minor', dur: 180 });
+T('puzzle-slide', `puzzle theme for sliding carts along caravan tracks, light rolling rhythm, ${I.pipa} gently plucked, ${I.dizi} playful melody, small caravan clappers and woodblock, lightly bouncy and cheerful, relaxed pace, no tension, no climax`,
+    { bpm: 92, keyScale: 'A minor', dur: 180 });
+
 /* ───────────── Biomes : village (chaleureux) / sauvage (dispersé) ───────────── */
 const BIOMES = {
     paddy:    { place: 'dried rice paddies and straw huts', village: `${I.dizi}, ${I.guzheng}`, wild: `${I.dizi} and sparse ${I.guqin}`, bpm: 80, key: 'D major' },
@@ -65,7 +77,7 @@ const BIOMES = {
     bamboo:   { place: 'scorched bamboo forest', village: `wooden flute dizi, ${I.guqin}, woodblock`, wild: `${I.xiao}, crackling woodblock, pipa tremolo`, bpm: 74, key: 'E minor' },
     gobi:     { place: 'Gobi desert with mirages', village: `${I.pipa}, ${I.dizi}, caravan rhythm`, wild: `shimmering detuned pulses, ${I.xiao}, mirage illusion`, bpm: 68, key: 'A minor' },
     storm:    { place: 'Thunder Mountains', village: `${I.erhu}, steady drums, mountain smithy hammer rhythm`, wild: `${I.sheng}, distant thunder drums, ${I.pipa}`, bpm: 84, key: 'F# minor' },
-    volcano:  { place: 'volcano gorges and magma', village: `low ${I.pipa}, ${I.erhu}, ember glow`, wild: `slow low pulse, ${I.pipa} tremolo, heat haze`, bpm: 78, key: 'C minor' },
+    volcano:  { place: 'volcano gorges and magma', village: `warm low-register plucked guzheng, deep soft guqin, mellow low erhu, soft low xiao, dark rounded timbres, ember glow, consonant simple harmony, perfectly in tune`, avoid: 'no high-pitched instruments, no shrill, no piercing, no bright treble, no dissonance, no detuned notes, no flute above the middle register', wild: `slow low pulse, ${I.pipa} tremolo, heat haze`, bpm: 78, key: 'C minor' },
     savanna:  { place: 'golden dry plain of beasts', village: `${I.dizi}, lively hand drums, ${I.guzheng}`, wild: `${I.xiao}, restless drums, wind`, bpm: 88, key: 'C major' },
     coast:    { place: 'Eastern Sea shore', village: `${I.guzheng} like gentle waves, ${I.dizi}`, wild: `${I.guzheng} arpeggios, ${I.xiao}, sea wind`, bpm: 72, key: 'F major' },
     tides:    { place: 'moonlit high sea of the Rising Moon tides with small wooden jetties and a half-drowned fishing village on stilts', village: `${I.guzheng} glissandi like gentle waves, ${I.xiao}, soft bronze chimes, lantern glow`, wild: `slow ${I.guzheng} wave glissandi, ${I.xiao} open melody, discreet ${I.erhu}, deep sea pulse, three rising notes and one falling`, bpm: 70, key: 'E minor' },
@@ -73,7 +85,7 @@ const BIOMES = {
     moon:     { place: 'silver Moon Peak at night', village: `crystalline plucked strings, ${I.xiao}, hushed`, wild: `very sparse crystalline notes, ${I.guqin}, silence`, bpm: 56, key: 'A minor' }
 };
 for (const [b, d] of Object.entries(BIOMES)) {
-    T(`village-${b}`, `${d.place}, village theme, warm and slow, clear melody, ${d.village}, ${I.perc} very soft, hope under a harsh sky`, { bpm: d.bpm, keyScale: d.key, dur: 55 });
+    T(`village-${b}`, `${d.place}, village theme, warm and slow, clear melody, ${d.village}, ${I.perc} very soft, hope under a harsh sky${d.avoid ? ', ' + d.avoid : ''}`, { bpm: d.bpm, keyScale: d.key, dur: 55 });
     T(`wild-${b}`, `${d.place}, exploration theme, scattered phrases, gentle tension, ${d.wild}, spacious, lonely journey of Hou Yi`, { bpm: d.bpm - 8, keyScale: d.key, dur: 50, motif: b === 'moon' ? null : null });
 }
 
@@ -88,6 +100,12 @@ const EPIC = 'epic cinematic orchestral battle, NO intro, starts instantly at fu
     ['fierce fight, pulse-wave arpeggios, powerful Chinese drums, erhu lead with the Hou Yi motif fragment', 136],
     ['relentless fight, urgent pipa and square-wave ostinato, brass-like pulse stabs, bold erhu line', 144]
 ].forEach(([s, bpm], i) => T(`combat-${i}`, `epic battle theme, ${EPIC}, ${s}, readable memorable melody, short loop`, { bpm: bpm + 8, keyScale: ['D minor', 'E minor', 'A minor', 'G minor', 'B minor'][i], dur: 175, motif: i >= 3 ? 'houyi' : null }));
+
+/* Combats 2 et 3 (combat-1, combat-2) réécrits en variations plus dures des combats 1 et 4 (combat-0, combat-3), jugés trop doux. */
+T('combat-1', `epic battle theme, ${EPIC}, high intensity version of a fast skirmish, driving pipa ostinato, quick dizi, hard woodblock hits, powerful Chinese drums, firm triangle bass, loud and energetic, non-stop continuous drum groove, constant driving rhythm, no breaks, no stops, no rests, no silence, no drum fills that drop out, readable memorable melody, short loop`,
+    { bpm: 136, keyScale: 'D minor', dur: 175 });
+T('combat-2', `epic battle theme, ${EPIC}, double-time war march, dense hammering taiko and snare-like woodblocks on every beat, fast aggressive guzheng strums, tremolo erhu stabbing melody, distorted pulse-wave lead, low brass-like unison riff, gong crashes on the downbeat, staccato driving rhythm, high energy, loud and relentless from the first bar to the last, no quiet passages, no breakdown, no soft sections, readable memorable melody, short loop`,
+    { bpm: 152, keyScale: 'E minor', dur: 175 });
 
 /* Ambiance commune à tous les boss : la menace doit s'entendre dès la première mesure. */
 const BOSS_PERC = 'aggressive war drums, hard woodblocks, crashing cymbals';
@@ -186,6 +204,61 @@ const JINGLES = {
 };
 for (const [k, [s, bpm, key, dur, target, fade]] of Object.entries(JINGLES)) T(`jingle-${k}`, s, { bpm, keyScale: key, dur, jingle: { target, fade } });
 
+/* ───────────── Effets de sorts et de coups d'arc (audio/sfx/spell-<id>.mp3, weaponHit-<rareté>-<p|e>.mp3), voir jingles.mjs ───────────── */
+// Clés `sfx-spell-<id>` et `sfx-weaponHit-<rareté>-<p|e>`. ACE-Step génère 10 s au minimum : `sfx.target` (≥ 1 s) = durée gardée.
+const SFX_STYLE = 'single short video game sound effect, instrumental, Chinese instruments, one clear immediate hit with a quick decay, no melody loop, no vocals, no drums beat, clean punchy production';
+const SPELL_ELEMENT = {
+    red:    'crackling fire whoosh, hot roaring flame swell, deep taiko hit, sawtooth growl',
+    blue:   'water droplets and glassy ice chimes, crystalline shimmer, cold flowing glissando',
+    green:  'wind rushing through bamboo, plucked guzheng notes, rustling leaves, wooden knock',
+    yellow: 'bronze gong strike, metallic bell ring, earthy low thud, golden shimmer',
+    purple: 'dark detuned drone, bowed erhu glissando, whispering shadow, ominous low rumble'
+};
+const GESTURE = {
+    heal:  'soft warm harp glissando rising, gentle bells, healing glow, calm and bright',
+    buff:  'bright rising chime and shimmer, protective aura, two rising notes, steady and confident',
+    sweep: 'long sweeping whoosh across the whole field, rising then fading',
+    strike: 'sharp blade swish followed by a heavy impact and a short ring'
+};
+const wordsOfId = (id) => id.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^ultimate /, '').toLowerCase();
+function spellSfxStyle(id, sp) {
+    const cost = sp.cost && typeof sp.cost === 'object' ? sp.cost : null;
+    const colors = sp.color ? [sp.color] : cost ? Object.keys(cost).filter(c => cost[c] > 0) : [];
+    const total = cost ? Object.values(cost).reduce((a, b) => a + b, 0) : Number(sp.cost) || 0;
+    const power = Math.min(1, Math.max(0.15, total / 40));
+    const ult = !!sp.ultimate;
+    const heal = sp.type === 'heal' || /heal|elixir|peach|blessing|breath|dew|miracle|revitalize/i.test(id);
+    const buff = !heal && (/^(statBuff|increase|enchant|reflect|reduceEnemy|preventItems|createJoker|createActionGem|harmony|bonusTurn)/.test(sp.effect || '') || /shield|barrier|stealth|focus|wall|aura|strength|stoneskin|reinforce|cry|enrage|hold/i.test(id));
+    const sweep = /^(sweep|destroy|clearColor|fireballArea)/.test(sp.effect || '');
+    const parts = [`"${wordsOfId(id)}" spell cast`];
+    if (heal) parts.push(GESTURE.heal);
+    else if (colors[0] && SPELL_ELEMENT[colors[0]]) parts.push(SPELL_ELEMENT[colors[0]]);
+    else if (buff) parts.push(GESTURE.buff);
+    else parts.push(GESTURE.strike);
+    if (colors[1] && SPELL_ELEMENT[colors[1]] && !heal) parts.push(`with a touch of ${SPELL_ELEMENT[colors[1]].split(',')[0]}`);
+    if (sweep) parts.push(GESTURE.sweep);
+    if (ult) parts.push('huge cinematic impact, thunderous taiko boom, soaring swell, epic and majestic, long resonant tail');
+    else if (power > 0.6) parts.push('powerful, big low boom');
+    else if (power < 0.3) parts.push('small and light');
+    const target = ult ? 2.6 : Math.round((1.15 + power * 0.85) * 100) / 100;   // 1,15 à 2 s (≥ 1 s), 2,6 s pour un ultime
+    return { style: parts.join(', '), target, fade: ult ? 0.6 : 0.3 };
+}
+{
+    const spellData = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../spells.json'), 'utf8'));
+    const seen = new Set();
+    for (const list of Object.values(spellData)) for (const sp of list) {
+        if (seen.has(sp.id)) continue;
+        seen.add(sp.id);
+        const { style, target, fade } = spellSfxStyle(sp.id, sp);
+        T(`sfx-spell-${sp.id}`, style, { dur: 10, sfx: { target, fade } });
+    }
+    const BOW = { common: 'plain wooden bow', uncommon: 'good bow with a small metallic ring', rare: 'fine bow with a clear ringing metal tone', legendary: 'legendary bow with a bright shimmering magical ring and a deep resonant boom' };
+    const TARGET = { common: 1.0, uncommon: 1.1, rare: 1.25, legendary: 1.5 };
+    for (const [r, d] of Object.entries(BOW)) for (const [side, who] of [['p', 'the hero'], ['e', 'an enemy, lower and darker']]) {
+        T(`sfx-weaponHit-${r}-${side}`, `arrow shot from ${d} by ${who}: bowstring twang, arrow whistling through the air, then a heavy impact thud`, { dur: 10, sfx: { target: TARGET[r], fade: 0.25 } });
+    }
+}
+
 /* ───────────── Boss : archétypes (repli) ───────────── */
 [
     'brute, heavy stomping drums and low erhu', 'swift hunter, fast pipa runs and dizi', 'mystic, sheng pads and guqin with eerie xiao',
@@ -202,6 +275,7 @@ const isEpic = (track) => /^(combat|boss)-/.test(track.key);
 const EPIC_STYLE = GLOBAL_STYLE.replace('no cinematic orchestral bombast', 'big cinematic orchestral power').replace('compact arrangement with limited polyphony', 'rich layered arrangement, full ensemble');
 
 export function buildCaption(track, extra = '') {
+    if (track.sfx) return [track.style, SFX_STYLE, extra].filter(Boolean).join(', ');   // effets : un seul coup net, pas de brief de boucle
     if (track.jingle) return [track.style, JINGLE_STYLE, extra].filter(Boolean).join(', ');   // jingles : pas de brief de boucle ni de références de style
     return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
 }

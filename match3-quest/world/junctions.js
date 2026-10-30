@@ -235,8 +235,8 @@ export function addPillarsAroundGuard(screen, door, guard, sealed = false) {
 }
 
 /**
- * Ferme la rangée du gardien : de part et d'autre de lui, des piliers (obstacles) prolongent la ligne jusqu'au premier mur, à l'eau ou au
- * bord de la carte, pour qu'on ne puisse pas contourner le boss et atteindre la porte sans l'avoir vaincu. Une case occupée par une
+ * Ferme la rangée du gardien : de part et d'autre de lui, des piliers (obstacles) prolongent la ligne d'un bord à l'autre de la carte, eau
+ * comprise (le Pas de Yu permet de marcher dessus), pour qu'on ne puisse pas contourner le boss et atteindre la porte sans l'avoir vaincu. Une case occupée par une
  * entité n'est pas murée (aucune entité n'est déplacée). Retourne le nombre de piliers posés.
  */
 export function sealLineAtGuard(screen, door, guard) {
@@ -250,7 +250,8 @@ export function sealLineAtGuard(screen, door, guard) {
     // au moment de la pose n'est pas définitif, on ne cherche donc pas à s'arrêter au premier obstacle.
     for (let t = 1; t < Math.max(screen.w, screen.h); t++) for (const sign of [1, -1]) {
         const x = guard.x + ax * sign * t, y = guard.y + ay * sign * t;
-        if (x < 0 || y < 0 || x >= screen.w || y >= screen.h || inRects(screen.liquids, x, y) || solid.has(key(x, y))) continue;
+        // l'eau n'est PAS épargnée : avec le Pas de Yu on la traverse à pied, un pilier y est posé aussi pour qu'on ne contourne pas le boss
+        if (x < 0 || y < 0 || x >= screen.w || y >= screen.h || solid.has(key(x, y))) continue;
         if (inRects(screen.obstacles, x, y) && !isLowObstacle(screen, x, y)) {
             // dans le couloir du passage (±1 case du gardien) le rocher devient un pilier visible, ailleurs il reste un rocher protégé du déblaiement
             if (t <= 1) screen.pillars.push([x, y]); else (screen.sealed = screen.sealed || []).push([x, y]);
@@ -424,9 +425,9 @@ export function applyLevelGuards(screens, regionLevel = {}) {
             if (!pos) return;
             const id = `level_guard_${from.id}`;
             from.npcs.push({
-                id, name: 'Sentinelle de la brume', title: `Frontière de ${to.name}`,
+                id, name: 'Sentinelle de la brume', title: `Frontière : ${to.name}`,
                 idle: [
-                    `Au-delà de ce passage s'étend ${to.name}. Les créatures y sont redoutables : mieux vaut s'y aventurer aguerri.`,
+                    `Ce passage mène à « ${to.name} ». Les créatures y sont redoutables : mieux vaut s'y aventurer aguerri.`,
                     `Je ne retiens personne, voyageur. Mais sans entraînement, la brume vous le fera regretter. Si vous vous sentez prêt, la route est à vous.`
                 ],
                 x: pos.x, y: pos.y

@@ -29,6 +29,7 @@ import { applyUnderground } from './underground.js';
 import { applyConnections, migrateEdgeExits } from '../mapConnections.js';
 import { CONNECTIONS } from './connections.js';
 import { addBorderBarriers } from './barriers.js';
+import { addStructures } from './structures.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
@@ -242,6 +243,8 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
     applyConnections(screens, options.legacy ? [] : [...migrateEdgeExits(screens), ...(options.connections || CONNECTIONS)]);
     // Bordures qui ne se traversent pas : barrière du biome (eau, rochers, arbres…), world/barriers.js.
     if (!options.legacy) addBorderBarriers(screens);
+    // Bâtiments, tours, sanctuaires, ponts et escaliers du biome posés à leur échelle dans les zones sauvages (world/structures.js).
+    if (!options.legacy) addStructures(screens);
     // Les hautes herbes ne couvrent que des cases franchissables (décor de bordure, eau, bâtiments les ont pu recouvrir).
     Object.values(screens).forEach(pruneGrass);
 

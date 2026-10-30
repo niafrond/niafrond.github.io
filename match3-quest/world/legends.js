@@ -1,7 +1,7 @@
 // Quêtes des Gardiens Célestes (ultimes de légende). Logique pure, sans DOM.
 //
 // Les quatre Gardiens des points cardinaux (Zhuque au sud, Xuanwu au nord, Baihu à l'ouest, Qinglong à l'est) ont perdu la mémoire sous la chaleur des
-// neuf soleils. Dans quatre régions, un PNJ du village demande au héros de retrouver une relique cachée dans la zone sauvage, puis d'affronter le
+// dix soleils. Dans quatre régions, un PNJ du village demande au héros de retrouver une relique cachée dans la zone sauvage, puis d'affronter le
 // Gardien, devenu boss unique : celui qui tient debout devant lui reçoit sa bénédiction, un ultime utilisable par TOUTES les classes
 // (spells.json : `unlock.quest` ; ultimates.js : getSelectableUltimates). Modèle : world/collars.js.
 
@@ -43,17 +43,19 @@ function isolatesSomething(screen, occ, before, pos) {
 
 export const LEGENDS = [
     { region: 'volcan', ultimate: 'ultimateVermilionBird', questId: 'sq_legend_zhuque', level: 10,
+      thanks: 'Zhuque veille de nouveau sur le Sud, et c\'est grâce à vous. Que sa flamme vous accompagne.',
       giver: { id: 'ember_keeper_rong', name: 'Rong la Gardienne des Braises', title: 'Veilleuse du feu du Sud',
           idle: ['Chaque matin, je compte les braises du foyer. Chaque matin, il en manque une. Je commence à soupçonner un oiseau.'] },
       chest: { id: 'legend_zhuque_relic', label: 'Plume de braise', openText: 'Sous une dalle encore tiède, une plume rouge et or qui ne brûle pas. Elle vibre dans votre main, comme si elle reconnaissait quelqu\'un.' },
       enemy: { id: 'legend_zhuque_boss', templateId: 'zhuque', name: 'Zhuque, l\'Oiseau Vermillon', offset: 3 },
       title: 'Le feu du Sud', fragment: 'Ultime : Renaissance de l\'Oiseau Vermillon',
       offer: [
-          'Archer, le Sud a un gardien : Zhuque, l\'Oiseau Vermillon. Quand les neuf soleils sont montés, il a brûlé de rage et de honte, et depuis, il ne reconnaît plus personne, pas même ses cendres.',
+          'Archer, le Sud a un gardien : Zhuque, l\'Oiseau Vermillon. Quand les dix soleils sont montés, il a brûlé de rage et de honte, et depuis, il ne reconnaît plus personne, pas même ses cendres.',
           'Retrouvez la plume de braise qu\'il a perdue dans les coulées : elle seule peut lui rappeler qui il est. Puis affrontez-le, car un gardien ne confie son feu qu\'à celui qui tient debout devant lui.'],
       hint: ['La plume de braise gît au sud-est des coulées rougeoyantes. Zhuque survole les passerelles : il frappe fort, et il renaît de ses cendres.'],
       complete: ['La plume est chaude… et l\'oiseau s\'est calmé. Il vous a reconnu.', 'Zhuque vous offre sa renaissance : quand la jauge de rage sera pleine, son feu vermillon vous relèvera. Ne la gaspillez pas.'] },
     { region: 'fleuve', ultimate: 'ultimateBlackTortoise', questId: 'sq_legend_xuanwu', level: 17,
+      thanks: 'Xuanwu a refermé sa carapace sur le fleuve, et c\'est grâce à vous. Que sa force vous accompagne.',
       giver: { id: 'ferryman_bian', name: 'Bian le Passeur', title: 'Passeur du fleuve du Nord',
           idle: ['Je passe les gens d\'une rive à l\'autre depuis quarante ans. Le fleuve, lui, passe devant moi sans me regarder.'] },
       chest: { id: 'legend_xuanwu_relic', label: 'Écaille de carapace', openText: 'Dans la vase, une écaille noire grande comme une assiette, gravée de signes que personne ici ne sait lire. Elle reste fraîche, même en plein midi.' },
@@ -65,6 +67,7 @@ export const LEGENDS = [
       hint: ['L\'écaille noire est enfouie au sud-est des méandres. Xuanwu rôde non loin, lente mais lourde : méfiez-vous de son serpent.'],
       complete: ['L\'écaille est tiède maintenant, et la vase s\'est mise à couler. Elle s\'est réveillée.', 'Xuanwu vous prête sa carapace : une fois la rage pleine, vous frapperez fort et rien ne vous entamera de quelques tours. Passez, archer.'] },
     { region: 'fauves', ultimate: 'ultimateWhiteTiger', questId: 'sq_legend_baihu', level: 33,
+      thanks: 'Baihu chasse en paix dans les herbes, et c\'est grâce à vous. Que sa vitesse vous accompagne.',
       giver: { id: 'tracker_hu_mu', name: 'Hu Mu la Pisteuse', title: 'Chasseuse des hautes herbes',
           idle: ['J\'ai pisté des cerfs, des sangliers, des loups. Une seule fois, j\'ai vu des empreintes blanches. Je n\'ai pas osé les suivre.'] },
       chest: { id: 'legend_baihu_relic', label: 'Griffe d\'argent', openText: 'Dans un creux de rocher, une griffe argentée aussi longue qu\'une dague, polie comme un miroir. Les herbes alentour se couchent toutes dans le même sens.' },
@@ -76,13 +79,14 @@ export const LEGENDS = [
       hint: ['La griffe d\'argent est au sud-est des hautes herbes, dans les rochers. Baihu chasse dans les parages : il bondit vite et frappe plus vite encore.'],
       complete: ['La griffe est à sa place, et le Tigre Blanc vous regarde comme on regarde un égal.', 'Baihu vous accorde sa chasse : une fois la rage pleine, vous bondirez sur l\'ennemi et sa force faiblira. Un conseil : ne tournez jamais le dos au vent.'] },
     { region: 'fusang', ultimate: 'ultimateAzureDragon', questId: 'sq_legend_qinglong', level: 43,
+      thanks: 'Qinglong fait pleuvoir de nouveau sur l\'Est, et c\'est grâce à vous. Que sa tempête vous accompagne.',
       giver: { id: 'monk_qing_yun', name: 'Qing Yun', title: 'Moine des terrasses',
           idle: ['Je médite sur une terrasse depuis trente ans. Le jour où la pluie reviendra, j\'aimerais bien être là pour la voir tomber.'] },
       chest: { id: 'legend_qinglong_relic', label: 'Perle d\'azur', openText: 'Dans un nœud de racines dorées, une perle d\'azur de la taille d\'un poing. En la tenant, vous entendez, très loin, le tonnerre d\'un orage qui n\'est pas encore venu.' },
       enemy: { id: 'legend_qinglong_boss', templateId: 'qinglong', name: 'Qinglong, le Dragon d\'Azur', offset: 3 },
       title: 'La tempête de l\'Est', fragment: 'Ultime : Tempête du Dragon d\'Azur',
       offer: [
-          'À l\'est, là où le soleil se lève, vit Qinglong, le Dragon d\'Azur. Il est le maître de la pluie et du tonnerre, et depuis que les neuf soleils ont tout séché, il refuse de faire pleuvoir : « À quoi bon ? » dit-il.',
+          'À l\'est, là où le soleil se lève, vit Qinglong, le Dragon d\'Azur. Il est le maître de la pluie et du tonnerre, et depuis que les dix soleils ont tout séché, il refuse de faire pleuvoir : « À quoi bon ? » dit-il.',
           'Sa perle d\'azur est cachée dans les racines de Fusang. Retrouvez-la, puis montrez-lui qu\'il reste quelque chose à sauver : un dragon ne déchaîne sa tempête que pour qui a gagné le droit de la demander.'],
       hint: ['La perle d\'azur est enfouie au sud-est des racines et des branches dorées. Qinglong plane au-dessus : il frappe du ciel, et le tonnerre l\'accompagne.'],
       complete: ['La perle brille de nouveau, et là-haut, les premiers nuages se rassemblent. Il a décidé de faire pleuvoir.', 'Qinglong vous confie sa tempête : une fois la rage pleine, il frappera, vous soignera et vous protégera quelques tours. L\'Est a retrouvé son maître du ciel.'] }
@@ -101,7 +105,7 @@ export function applyLegendQuests(screens, quests) {
         if (!npcPos) throw new Error(`légende ${l.questId} : pas de place pour ${l.giver.id}`);
         village.npcs.push({
             id: l.giver.id, name: l.giver.name, title: l.giver.title, idle: l.giver.idle, x: npcPos.x, y: npcPos.y,
-            talk: [{ whenDone: l.questId, lines: ['« Le Gardien est en paix, et c\'est grâce à vous. Que sa force vous accompagne. »'] }]
+            talk: [{ whenDone: l.questId, lines: [`« ${l.thanks} »`] }]
         });
         const chestPos = placeSafely(wild, screens, l.chest.id);
         if (!chestPos) throw new Error(`légende ${l.questId} : pas de place pour la relique`);

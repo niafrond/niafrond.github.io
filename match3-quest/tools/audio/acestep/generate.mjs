@@ -7,7 +7,7 @@
  *   node generate.mjs generate <clés…> [options]   génère de nouvelles versions (out/<clé>/v001.mp3, v001.json…)
  *   node generate.mjs status                       tableau : versions générées / version approuvée par piste
  *   node generate.mjs approve <clé> <vNNN> [<vNNN>]  marque une version retenue (+ une 2e variante, `<clé>-b`) dans approved/
- *   node generate.mjs install [clés…]              approved/ → ../../../audio/music/<clé>.mp3 (mono 48 kbps, ffmpeg)
+ *   node generate.mjs install [clés…]              approved/ → ../../../audio/music/<clé>.mp3 (stéréo 96 kbps, ffmpeg)
  *   node generate.mjs export [--dest DIR]          copie approved/ dans DIR/v<AAAA-MM-JJ_HHMM>/ (défaut : /mnt/d/GoogleDriveCFO/musicMatchQuest)
  *
  * Prérequis : serveur ACE-Step lancé en local (`acestep-api`, port 8001 par défaut) et Node ≥ 18.
@@ -41,12 +41,17 @@ const GAME_MUSIC = path.resolve(HERE, '../../../audio/music'), GAME_MANIFEST = p
 const APPROVED_DB = path.join(APPROVED, 'approved.json');
 /** Dossier de copie versionnée (chemin WSL du lecteur D:, car le script tourne dans WSL). */
 const DEFAULT_EXPORT_DIR = '/mnt/d/GoogleDriveCFO/musicMatchQuest';
-/** Durée minimale de chaque piste générée (secondes) : les pistes du jeu bouclent, 2 min évitent les boucles trop courtes. */
-const MIN_DURATION = 120;
+/** Durée minimale de chaque piste générée (secondes) : les pistes du jeu bouclent, 3 min évitent les boucles trop courtes. */
+const MIN_DURATION = 180;
 /** Suffixe de la 2e variante d'une piste (`<clé>-b.mp3`) : le jeu en tire une au hasard à chaque scène. */
 const ALT_SUFFIX = '-b';
-/** Durée (s) du raccord fondu fin -> début qui rend la boucle continue, et débit des MP3 du jeu (2 min mono ≈ 480 Ko). */
-const LOOP_FADE_S = 2, MUSIC_BITRATE = '32k';
+/** Traitements d'installation par piste. Combat 2 et 3 (trop doux) : compression + limiteur qui relève les passages calmes ; village volcan (aigus agressifs) : coupe des hautes fréquences. */
+const PUNCH_FILTER = 'acompressor=threshold=-26dB:ratio=3.5:attack=8:release=120:makeup=3.8,alimiter=limit=0.95';
+/** Pistes dont seule une première partie est gardée (fraction de la durée utile) : le reste était faux ou nasillard ; la boucle reprend alors plus tôt. */
+const KEEP_FRACTION = {};
+const POST_FILTERS = { 'combat-1': PUNCH_FILTER, 'combat-2': PUNCH_FILTER, 'village-volcano': 'lowpass=f=5000,treble=g=-4:f=2500' };
+/** Durée (s) du raccord fondu fin -> début qui rend la boucle continue, et débit des MP3 du jeu (3 min stéréo 96 kbps ≈ 2,1 Mo). */
+const LOOP_FADE_S = 2, MUSIC_BITRATE = '96k';
 
 /* ───────────── arguments ───────────── */
 function parseArgs(argv) {
@@ -153,7 +158,7 @@ async function cmdGenerate(opts) {
         const t = CATALOG[key];
         const body = {
             prompt: buildCaption(t, opts.extra), lyrics: '[Instrumental]', vocal_language: 'unknown', audio_format: 'mp3',
-            audio_duration: Math.max(t.jingle ? 10 : MIN_DURATION, Number(opts.duration ?? t.dur)), batch_size: variants, thinking: !!opts.thinking,
+            audio_duration: Math.max(t.jingle || t.sfx ? 10 : MIN_DURATION, Number(opts.duration ?? t.dur)), batch_size: variants, thinking: !!opts.thinking,
             ...(t.bpm ? { bpm: t.bpm } : {}), ...(t.keyScale ? { key_scale: t.keyScale } : {}), time_signature: '4',
             ...(opts.seed !== undefined ? { use_random_seed: false, seed: Number(opts.seed) } : { use_random_seed: true }),
             ...(opts.steps ? { inference_steps: Number(opts.steps) } : {})
@@ -236,6 +241,18 @@ function punchyStart(file) {
     return i <= 0 ? 0 : Math.min(i * 0.5, 20);
 }
 
+/** Fin utile (s) : coupe le fondu de sortie et le silence final (fenêtres de 0,25 s à plus de 4 dB sous la moyenne, max 30 s coupées), sinon la boucle fin -> début s'entend. */
+function tailEnd(file, duration) {
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-i', file, '-af', 'asetnsamples=n=11025:p=0,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-', '-f', 'null', '-'], { encoding: 'utf8' });
+    const lv = (r.stdout.match(/RMS_level=(-?[\d.]+|-inf)/g) || []).map(x => parseFloat(x.split('=')[1])).map(v => (Number.isFinite(v) ? v : -90));
+    if (lv.length < 16 || !duration) return duration;
+    const win = duration / lv.length;
+    const avg = 10 * Math.log10(lv.reduce((a, v) => a + 10 ** (v / 10), 0) / lv.length);
+    let i = lv.length - 1;
+    while (i > 0 && !(lv[i] >= avg - 4 && lv[i - 1] >= avg - 4)) i--;
+    return Math.max(duration - 30, (i + 1) * win);
+}
+
 /** Écart (dB) entre le niveau moyen d'un fichier et celui de ses 1,5 premières secondes (positif = intro plus faible). */
 function introGap(file) {
     const mean = t => parseFloat((spawnSync('ffmpeg', ['-t', String(t), '-i', file, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr.match(/mean_volume: (-?[\d.]+)/) || [0, -90])[1]);
@@ -257,17 +274,19 @@ function cmdInstall(opts) {
             const combat = /^(combat|boss)-/.test(k);
             let head = combat ? punchyStart(src) : 0;   // combats : pas d'intro douce, la piste démarre au premier passage intense
             const duration = parseFloat(spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], { encoding: 'utf8' }).stdout) || 0;
+            const end = tailEnd(src, duration) * (KEEP_FRACTION[k] ?? 1);   // fin utile : sans fondu de sortie ni silence, la boucle est invisible
             let total, c, r;
             for (;;) {
-                total = duration - head;
-                // mono comme le reste du jeu ; boucle sans coupure : la fin est fondue (sinus carré) dans le début, puis le fichier
+                total = end - head;
+                // stéréo 44,1 kHz ; boucle sans coupure : la fin est fondue (sinus carré) dans le début, puis le fichier
                 // reprend après ce début, donc le saut fin -> début du lecteur (`source.loop`) est continu et sans clic
                 c = Math.min(LOOP_FADE_S, total / 4);
                 const body = total - c;
                 const graph = total > 0
                     ? `[0:a]atrim=0:${c},asetpts=PTS-STARTPTS[h];[0:a]atrim=${c}:${body},asetpts=PTS-STARTPTS[m];[0:a]atrim=${body}:${total},asetpts=PTS-STARTPTS[t];[t][h]acrossfade=d=${c}:c1=qsin:c2=qsin[x];[m][x]concat=n=2:v=0:a=1[o]`
                     : '[0:a]anull[o]';
-                r = spawnSync('ffmpeg', ['-y', '-v', 'error', ...(head ? ['-ss', String(head)] : []), '-i', src, '-filter_complex', graph, '-map', '[o]', '-ac', '1', '-ar', '32000', '-b:a', MUSIC_BITRATE, dst]);
+                const full = POST_FILTERS[k] ? `${graph};[o]${POST_FILTERS[k]}[p]` : graph;
+                r = spawnSync('ffmpeg', ['-y', '-v', 'error', ...(head ? ['-ss', String(head)] : []), '-i', src, '-filter_complex', full, '-map', POST_FILTERS[k] ? '[p]' : '[o]', '-ac', '2', '-ar', '44100', '-b:a', MUSIC_BITRATE, dst]);
                 // contrôle du fichier installé : intro à plus de 2,5 dB sous la moyenne -> 1 s de plus coupée (max 25 s)
                 if (r.status !== 0 || !combat || head >= 25 || introGap(dst) <= 2.5) break;
                 head += 1;
@@ -275,7 +294,7 @@ function cmdInstall(opts) {
             if (r.status !== 0) { console.error(`✗ ${name} : ${r.stderr}`); continue; }
             const kb = Math.round(fs.statSync(dst).size / 1024);
             if (name === k) manifest.music[k] = { seconds: Math.round((total - c) * 10) / 10, sections: manifest.music[k]?.sections ?? 1 };
-            console.log(`OK ${name} → audio/music/${name}.mp3 (${kb} Ko${kb > 600 ? ' ATTENTION : > 600 Ko, raccourcir via --duration' : ''})`);
+            console.log(`OK ${name} → audio/music/${name}.mp3 (${kb} Ko${kb > 2400 ? ' ATTENTION : > 2,4 Mo, raccourcir via --duration' : ''})`);
         }
     }
     fs.writeFileSync(GAME_MANIFEST, JSON.stringify(manifest, null, 1) + '\n');

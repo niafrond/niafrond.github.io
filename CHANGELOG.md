@@ -1,3 +1,111 @@
+## [2.159.0](https://github.com/niafrond/niafrond.github.io/compare/v2.158.1...v2.159.0) (2026-10-28)
+
+### Features
+
+* **match3-quest:** équilibrer la chute des tuiles sur l'ensemble du plateau ([#587](https://github.com/niafrond/niafrond.github.io/issues/587)) ([fb674f0](https://github.com/niafrond/niafrond.github.io/commit/fb674f01034e4e5f4e544a1d53110e558c7badb3))
+
+## [2.158.1](https://github.com/niafrond/niafrond.github.io/compare/v2.158.0...v2.158.1) (2026-10-28)
+
+### Bug Fixes
+
+* **match3-quest:** bracelet de jade vital dans le stuff et annonce des pouvoirs de compagnons ([#586](https://github.com/niafrond/niafrond.github.io/issues/586)) ([71763f4](https://github.com/niafrond/niafrond.github.io/commit/71763f46e136d6c876e14748e7854828ae44908e))
+
+## [2.158.0](https://github.com/niafrond/niafrond.github.io/compare/v2.157.0...v2.158.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** exiger le qì collecté ×1,5 pour l'ultime et corriger sa barre sur deux lignes ([#585](https://github.com/niafrond/niafrond.github.io/issues/585)) ([530526f](https://github.com/niafrond/niafrond.github.io/commit/530526f8e81b6cfc486dda2d6e455ce7a1e8881d))
+
+## [2.157.0](https://github.com/niafrond/niafrond.github.io/compare/v2.156.0...v2.157.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** faire gagner 3 tours à la pilule du temps suspendu ([#584](https://github.com/niafrond/niafrond.github.io/issues/584)) ([f46a8a8](https://github.com/niafrond/niafrond.github.io/commit/f46a8a8067b78aba99845cf33cb6e714674f5773))
+
+## [2.156.0](https://github.com/niafrond/niafrond.github.io/compare/v2.155.0...v2.156.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** ajouter les scripts de génération des bruitages (échantillon et complet) à modèle interchangeable ([fb18905](https://github.com/niafrond/niafrond.github.io/commit/fb189052d5c7d25ca8997de51020aa4724f3fc98))
+* **match3-quest:** brancher la commande gm studio sfx generate dans le script d'échantillon ([aceb463](https://github.com/niafrond/niafrond.github.io/commit/aceb463eda3c36f3e70fd6a3640fe42ed3e901d9))
+* **match3-quest:** remplacer les bruitages des sorts et coups d'arc par ceux de MMAudio et ajouter la reprise de génération ([22d3898](https://github.com/niafrond/niafrond.github.io/commit/22d38987316ca3dec30e00a6bb451498903156bd))
+
+## [2.155.0](https://github.com/niafrond/niafrond.github.io/compare/v2.154.0...v2.155.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** afficher le libellé « À vendre » sur le bouton pièce ([6e54655](https://github.com/niafrond/niafrond.github.io/commit/6e54655c61aae3a487b7cd57463c8dc9c20140b0))
+* **match3-quest:** avertir quand tous les boucliers sont marqués à vendre ([b343e5a](https://github.com/niafrond/niafrond.github.io/commit/b343e5a86bca1f361475ad3093539d2211c8d087))
+
+## [2.154.0](https://github.com/niafrond/niafrond.github.io/compare/v2.153.0...v2.154.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** ajouter un effet sonore par sort et par coup d'arme avec baisse de la musique ([59ba89b](https://github.com/niafrond/niafrond.github.io/commit/59ba89b814b34c02e6bb45f932c5cf77bfdb0c19))
+* **match3-quest:** animer les compagnons et les faire suivre le héros à la trace en exploration ([13c957f](https://github.com/niafrond/niafrond.github.io/commit/13c957f036e82008b76d8d6e380f87317b1bfb8f))
+* **match3-quest:** composer les effets de sorts et de coups d'arc avec ACE-Step (1 s minimum) ([83723c4](https://github.com/niafrond/niafrond.github.io/commit/83723c48c739eb401bad8e17e67a5eda1f55b11d))
+* **match3-quest:** générer des bruitages réalistes pour les sorts et coups d'arc avec AudioLDM2 ([2e64e02](https://github.com/niafrond/niafrond.github.io/commit/2e64e02b23560c31b5cf9afed826a4466494f395))
+
+## [2.153.0](https://github.com/niafrond/niafrond.github.io/compare/v2.152.0...v2.153.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** régénérer wild-tides en version longue jusqu'à passer le contrôle de tonalité ([2305c2b](https://github.com/niafrond/niafrond.github.io/commit/2305c2b967f3ffc0a3d47fbda856cefd73871dcb))
+
+## [2.152.0](https://github.com/niafrond/niafrond.github.io/compare/v2.151.1...v2.152.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** régénérer la bande-son en pistes longues stéréo et ajouter des outils de contrôle ([f3198e0](https://github.com/niafrond/niafrond.github.io/commit/f3198e03dac809220d74c60aa8eb5bce91516e94))
+
+## [2.151.1](https://github.com/niafrond/niafrond.github.io/compare/v2.151.0...v2.151.1) (2026-10-27)
+
+### Bug Fixes
+
+* **match3-quest:** refaire en chibi les sprites de créatures ratés ([08ff2d8](https://github.com/niafrond/niafrond.github.io/commit/08ff2d86f83ef5727f883f708c22bc7a0f4c5302))
+
+## [2.151.0](https://github.com/niafrond/niafrond.github.io/compare/v2.150.0...v2.151.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** ajouter les décors, sols et bordures des biomes ([1e28952](https://github.com/niafrond/niafrond.github.io/commit/1e2895277e6fb7e34d80ac590039f9bd937e3409))
+* **match3-quest:** poser des structures à leur échelle dans les zones sauvages ([b423ab4](https://github.com/niafrond/niafrond.github.io/commit/b423ab4e4c837235fd6531cbb7b59871abfb2081))
+
+### Bug Fixes
+
+* **match3-quest:** refaire le sprite de Baihu et murer l'eau le long des piliers de boss ([1a6fee8](https://github.com/niafrond/niafrond.github.io/commit/1a6fee8d5e208452757d277260ba4ae999f6bb60))
+
+## [2.150.0](https://github.com/niafrond/niafrond.github.io/compare/v2.149.0...v2.150.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** améliorer la lisibilité des fiches de combat joueur et ennemi ([fdc9329](https://github.com/niafrond/niafrond.github.io/commit/fdc93290ebbca2cfc79067341bfe9d66baeb26f0))
+* **match3-quest:** colorer joueur et ennemi pour distinguer fiches et colonnes de sorts ([c36cead](https://github.com/niafrond/niafrond.github.io/commit/c36cead699854879c5f22d0c744bf74c1212cbd7))
+* **match3-quest:** rendre les altérations d'état plus lisibles sur les fiches de combat ([da3a488](https://github.com/niafrond/niafrond.github.io/commit/da3a488309fe8f047ae49e439c5556788127c454))
+
+### Bug Fixes
+
+* **match3-quest:** compacter les altérations d'état et les écarter du portrait ([28c0091](https://github.com/niafrond/niafrond.github.io/commit/28c0091c236f321c971c6aa1eb186e925d60605f))
+
+## [2.149.0](https://github.com/niafrond/niafrond.github.io/compare/v2.148.2...v2.149.0) (2026-10-26)
+
+### Features
+
+* **match3-quest:** unifier l'inventaire, rééquilibrer les objets et en ajouter pour les niveaux 22 à 65 ([#575](https://github.com/niafrond/niafrond.github.io/issues/575)) ([b7da95a](https://github.com/niafrond/niafrond.github.io/commit/b7da95ace9090bcd8384e091c06262e88aeed599))
+
+## [2.148.2](https://github.com/niafrond/niafrond.github.io/compare/v2.148.1...v2.148.2) (2026-10-26)
+
+### Bug Fixes
+
+* **match3-quest:** empêcher le plateau de combat de dépasser à droite sur mobile ([511bbf8](https://github.com/niafrond/niafrond.github.io/commit/511bbf8ad6134708139055d46aac88e296f28bc8))
+* **match3-quest:** rogner les tuiles en portrait quand la page déborde en hauteur ([decc5fd](https://github.com/niafrond/niafrond.github.io/commit/decc5fdbddd40934c2469920d42f71a81e4ebc33))
+
+## [2.148.1](https://github.com/niafrond/niafrond.github.io/compare/v2.148.0...v2.148.1) (2026-10-26)
+
+### Bug Fixes
+
+* **match3-quest:** afficher le rappel de pause hors de l'onglet carte ([9c9abf4](https://github.com/niafrond/niafrond.github.io/commit/9c9abf4deabcd6075b7165d9d6cd8fe9cd844d81))
+
 ## [2.148.0](https://github.com/niafrond/niafrond.github.io/compare/v2.147.0...v2.148.0) (2026-10-26)
 
 ### Features

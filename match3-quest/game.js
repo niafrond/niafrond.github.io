@@ -23,15 +23,16 @@ import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEff
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
 import { rollCompanionPowers, COMPANION_POWERS } from "./companionPowers.js";
+import { COMPANIONS } from "./companions.js";
 import { MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints, agilityScore } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic } from "./ultimates.js";
+import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, withUltimateCost, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
-import { itemGroupKey, toggleSellTag } from "./merchants.js";
+import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor } from "./gameOptions.js";
@@ -120,6 +121,7 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
     entity.mana[color] = after;
+    if(entity === player) addUltimateMana(entity, color, totalGain);
     recalculateManaCaps(entity);
 
     return {
@@ -205,8 +207,8 @@ function spellCostEntries(sp){
 // Mini-barre collée à la jauge de rage : un tronçon par couleur de qì requise, rempli selon le qì possédé
 // (tronçon vide / pointillé = couleur manquante).
 function ultimateManaBarHtml(entity, spell){
-    const parts = spellCostEntries(spell).map(([color, need]) => {
-        const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
+    const parts = ultimateCostEntries(spell).map(([color, need]) => {
+        const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
         const label = `${color} ${Math.min(have, need)}/${need}`;
         return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"></span>`;
@@ -216,8 +218,8 @@ function ultimateManaBarHtml(entity, spell){
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
 function getUltimateTooltipHtml(entity, spell){
-    const cost = spellCostEntries(spell).map(([color, need]) => {
-        const have = entity?.cheatFreeSpells === true ? need : (entity?.mana?.[color] || 0);
+    const cost = ultimateCostEntries(spell).map(([color, need]) => {
+        const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
     }).join(' ');
     return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
@@ -684,6 +686,7 @@ export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || [
 // Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
 let foxActedThisTurn = false;
 let companionsActedThisTurn = false; // les pouvoirs des autres compagnons (companionPowers.js) ne jouent qu'une fois par tour
+let pendingCompanionOutcome = null; // résultat des pouvoirs des compagnons, en attente de la fin de leurs annonces
 let foxPlaying = false;   // le coup de Xiao Gui est en cours : le joueur ne peut ni jouer le plateau ni utiliser armes, objets, sorts
 export const isFoxPlaying = () => foxPlaying;
 
@@ -1004,6 +1007,7 @@ export function restartCombat({ keepHp = false } = {}){
     introToken++;
     foxActedThisTurn = false;
     companionsActedThisTurn = false;
+    pendingCompanionOutcome = null;
     foxPlaying = false;
     dismissCombatIntro();
     if(pendingPlayerDeathTimeout) {
@@ -1015,6 +1019,7 @@ export function restartCombat({ keepHp = false } = {}){
     player.combatPoints = 0;
     player.bonusTurn = 0;
     resetRage(player);
+    resetUltimateMana(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
     enemy.bonusTurn = 0;
@@ -1469,7 +1474,7 @@ export function updateStats(){
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span>${bonusTurnBadge(player)}</div>
+            <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span class="level-pill" title="Niveau ${player.level}">Niv. ${player.level}</span>${bonusTurnBadge(player)}</div>
             ${statusBadgesHtml(player)}
             <div class="stat">
                 <div class="hp-bar-container">
@@ -1486,7 +1491,7 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat"><strong>Atk:</strong> ${statValueHtml(player, 'attack')} <strong>Def:</strong> ${statValueHtml(player, 'defense')} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
+            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> <strong>PA</strong> ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1532,8 +1537,8 @@ export function updateStats(){
     
     // Afficher un indicateur visuel si l'ennemi est plus fort
     const levelIndicator = enemy.level > player.level ? 
-        `<span style="color: #ff4444; font-weight: bold;"> Niv.${enemy.level}</span>` : 
-        `<span style="color: #888;"> ${enemy.level}</span>`;
+        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">Niv. ${enemy.level}</span>` : 
+        `<span class="level-pill" title="Niveau ${enemy.level}">Niv. ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
         <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
@@ -1544,7 +1549,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${statValueHtml(enemy, 'attack')} <strong>Def:</strong> ${statValueHtml(enemy, 'defense')} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
+        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> <strong>PA</strong> ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -1865,6 +1870,11 @@ export function updatePlayerStatsTab(){
 preloadSpellFx();
 
 // Portrait pixel art de Xiao Gui (le renard compagnon) pour l'annonce de son coup.
+function companionIconHtml(id){
+    const npc = COMPANIONS.find(c => c.id === id)?.npc;
+    const uri = npc ? spriteUri(npcSprite(npc)) : null;
+    return uri ? `<img class="fox-portrait" src="${uri}" alt="${COMPANION_NAMES[id] || id}" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
+}
 function foxIconHtml(){
     const uri = spriteUri(npcSprite('xiao_gui'));
     return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
@@ -2065,7 +2075,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     dmg = strike.damage;
 
     applyDamage(enemy, dmg);
-    playSfx('weaponHit', { isPlayer: true });
+    playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
     if(player.lifesteal > 0) {
@@ -2104,7 +2114,7 @@ export function castSpell(spellId){
     }
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
-    playSfx('spellCast', { isPlayer: true });
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     
     // Gérer les sorts avec effet spécial
     if(spell.effect) {
@@ -2147,15 +2157,15 @@ export async function castUltimate(spellId){
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
-    if(!canEntityCastSpell(player, spell)){
-        const missingColor = getMissingManaColor(player, spell);
-        log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
+    if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
+        const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
+        log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
         return;
     }
     actionGuard.markPlayerAction();
-    consumeSpellMana(player, spell);
+    if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
     resetRage(player);
-    playSfx('spellCast', { isPlayer: true });
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     logActiveAction(`lance l'ultime ${spell.name}`);
     updateStats();
     await playUltimateCinematic(spell);
@@ -2195,7 +2205,7 @@ export async function castSpellForCheat(spellId, options = {}){
         return false;
     }
 
-    playSfx('spellCast', { isPlayer: true });
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     logActiveAction(`simule le sort ${spell.name} (cheat)`);
 
     if(spell.effect){
@@ -2240,37 +2250,57 @@ export function forcePlayerTurnForCheat(){
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Étincelle', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
 function applyCompanionPowers(){
-    const outcome = { skipEnemy: false, enemyDown: false, boardChanged: false };
+    const outcome = { skipEnemy: false, enemyDown: false, boardChanged: false, announcements: [] };
     rollCompanionPowers([...activeCompanionIds], player, Math.random, enemy).forEach(({ id, power, amount, color }) => {
         const who = COMPANION_NAMES[id] || id;
+        const announce = text => outcome.announcements.push({ id, title: who, damage: power.name, target: text });
         if(power.kind === 'heal'){
             const healed = Math.max(0, Math.min(player.maxHp - player.hp, amount));
             player.hp += healed;
             if(healed > 0) flyHeal(true, healed);
+            announce(`+${healed} PV`);
             log(`${power.name} : ${who} rend ${healed} PV.`);
         } else if(power.kind === 'splash'){
             applyDamage(enemy, amount);
             log(`${power.name} : ${enemy.name} subit ${amount} dégâts.`);
+            announce(`${enemy.name} subit ${amount} dégâts`);
             if(enemy.hp <= 0) outcome.enemyDown = true;
         } else if(power.kind === 'mana'){
             const r = addManaForColor(player, color, amount, { applyGainBonus: false });
             log(`${power.name} : +${r.gained ?? amount} qì ${MANA_COLOR_LABELS[color] || color}.`);
+            announce(`+${r.gained ?? amount} qì ${MANA_COLOR_LABELS[color] || color}`);
         } else if(power.kind === 'mirage'){
             outcome.skipEnemy = true;
+            announce(`${enemy.name} perd son tour`);
         } else if(power.kind === 'rage'){
             const gained = addRage(player, Math.floor(RAGE_MAX * amount));
             log(`${power.name} : +${gained} rage.`);
+            announce(`+${gained} rage`);
         } else if(power.kind === 'arrows'){
             const converted = convertRandomColorToArrows();
-            if(converted){ outcome.boardChanged = true; log(`${power.name} : les tuiles ${MANA_COLOR_LABELS[converted] || converted} deviennent des flèches.`); }
+            if(converted){ outcome.boardChanged = true; log(`${power.name} : les tuiles ${MANA_COLOR_LABELS[converted] || converted} deviennent des flèches.`); announce(`Tuiles ${MANA_COLOR_LABELS[converted] || converted} → flèches`); }
         } else if(power.kind === 'steal'){
             const stolen = Math.max(0, Math.floor(enemy.mana[color] || 0));
             enemy.mana[color] = 0;
             const r = addManaForColor(player, color, stolen, { applyGainBonus: false });
             log(`${power.name} : ${stolen} qì ${MANA_COLOR_LABELS[color] || color} volé à ${enemy.name} (+${r.gained} pour vous).`);
+            announce(`${stolen} qì ${MANA_COLOR_LABELS[color] || color} volé`);
         }
     });
     return outcome;
+}
+
+// Annonce chaque pouvoir déclenché (portrait du compagnon, nom du pouvoir, effet), l'un après l'autre, comme le coup de Xiao Gui.
+function playCompanionAnnouncements(list, done){
+    const next = i => {
+        if(gameState.combatState !== 'active' || i >= list.length){ done(); return; }
+        const a = list[i];
+        showCombatAnimation({ icon: companionIconHtml(a.id), title: a.title, damage: a.damage, target: a.target }, true, {
+            autoHideMs: 1100 * animationFactor(),
+            onContinue: () => next(i + 1)
+        });
+    };
+    next(0);
 }
 
 export function finishPlayerTurn(){
@@ -2294,9 +2324,22 @@ export function finishPlayerTurn(){
         return;
     }
     // Pouvoirs des autres compagnons (Zhi, Dawa, Yu, Étincelle) : tirés une fois par tour, en fin de tour du joueur.
+    let outcome = null;
     if (!companionsActedThisTurn) {
         companionsActedThisTurn = true;
-        const outcome = applyCompanionPowers();
+        outcome = applyCompanionPowers();
+        if (outcome.announcements.length) {   // les annonces se jouent d'abord (commandes bloquées), puis finishPlayerTurn reprend avec ce résultat
+            pendingCompanionOutcome = outcome;
+            foxPlaying = true;
+            updateStats();
+            playCompanionAnnouncements(outcome.announcements, () => { foxPlaying = false; finishPlayerTurn(); });
+            return;
+        }
+    } else if (pendingCompanionOutcome) {
+        outcome = pendingCompanionOutcome;
+        pendingCompanionOutcome = null;
+    }
+    if (outcome) {
         if (outcome.enemyDown) { currentTurn = 'enemy'; updateStats(); afterPlayerAnimations(() => { if(gameState.combatState === 'active') enemyTurn(); }); return; }
         if (outcome.boardChanged) {   // le plateau se résout, puis rappelle finishPlayerTurn (les pouvoirs ne se retirent pas : flag posé)
             foxPlaying = true; updateStats(); saveUpdate(); checkMatches(true); return;
@@ -2473,6 +2516,7 @@ export function enemyTurn(){
             }
 
             consumeSpellMana(enemy, spell);
+            playSfx('spellCast', { isPlayer: false, spellId: spell.id });
             applyStandardSpellEffects(enemy, player, spell, false);
             
             // Vérifier l'état après l'action
@@ -2493,7 +2537,7 @@ export function enemyTurn(){
                 const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
                 log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
             }
-            playSfx('weaponHit', { isPlayer: false });
+            playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
@@ -3543,7 +3587,7 @@ function updateUltimatePicker(){
         div.innerHTML = `
             <div class="spell-content">
                 <div class="spell-name">${sp.name}</div>
-                <div class="spell-cost">${spellCostHtml(sp)} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
+                <div class="spell-cost">${spellCostHtml(withUltimateCost(sp))} • ${sp.dmg} ${svgIcon('skull')}${sp.description ? ` • ${sp.description}` : ''}</div>
             </div>
             ${cardActionsHtml('', action)}`;
         list.appendChild(div);
@@ -4259,7 +4303,7 @@ const countLabel = count => count > 1 ? ` x ${count}` : '';
 // autres objets : seulement quand il y en a plusieurs (l'excédent).
 const sellTagButtonFor = (tag, title) => {
     const on = (player.sellTags || []).includes(tag);
-    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'À vendre au prochain marchand (cliquer pour annuler)' : title}" onclick="window.toggleSellSurplus('${String(tag).replace(/'/g, "\\'")}')">${svgIcon('coin')}</button>`;
+    return `<button class="item-discard-btn item-sell-tag${on ? ' on' : ''}" aria-pressed="${on}" title="${on ? 'À vendre au prochain marchand (cliquer pour annuler)' : title}" onclick="window.toggleSellSurplus('${String(tag).replace(/'/g, "\\'")}')">${svgIcon('coin')}<span class="item-sell-tag-label">À vendre</span></button>`;
 };
 const sellTagButton = (it, count) => {
     if(it.type === 'shield') return sellTagButtonFor(itemGroupKey(it), 'Marquer ce bouclier à vendre au prochain marchand');
@@ -4268,7 +4312,8 @@ const sellTagButton = (it, count) => {
 };
 const weaponSellTagButton = weapon => sellTagButtonFor(`weapon:${weapon.id}`, 'Marquer cette arme à vendre au prochain marchand');
 export function toggleSellSurplus(id){
-    toggleSellTag(player, id);
+    const tagged = toggleSellTag(player, id);
+    if(tagged && allShieldsTagged(player)) log('Attention : tous vos boucliers sont marqués à vendre, vous n\'en aurez plus aucun après la vente.');
     updateWeaponsTab();   // redessine aussi l'onglet Objets
     saveUpdate();
 }

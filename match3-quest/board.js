@@ -24,6 +24,7 @@ import {
     shouldCreateJokerFromMatchLength,
     pickRandomNonJokerIndex,
     rollTileWithJoker,
+    rollBalancedTile,
     baseTile,
     maybeSkull5
 } from "./joker.js";
@@ -261,6 +262,9 @@ function getMaxTileSizeFromViewport(boardDiv){
     return Math.floor(usableHeight / boardSize);
 }
 
+// Plus petite tuile que le filet de hauteur (portrait) accepte : en dessous, la page défile plutôt que de rendre la grille illisible.
+const MIN_PORTRAIT_TILE = 30;
+
 function syncBoardTileSize(){
     if(typeof window === 'undefined') return;
     const boardDiv = document.getElementById('board');
@@ -288,7 +292,8 @@ function syncBoardTileSize(){
     const paddingLeft = parseFloat(styles.paddingLeft || '0') || 0;
     const paddingRight = parseFloat(styles.paddingRight || '0') || 0;
     const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
-    const usableWidth = widthBudget - paddingLeft - paddingRight - (gap * (boardSize - 1));
+    const borderX = (parseFloat(styles.borderLeftWidth || '0') || 0) + (parseFloat(styles.borderRightWidth || '0') || 0);
+    const usableWidth = widthBudget - paddingLeft - paddingRight - borderX - (gap * (boardSize - 1));
     if(usableWidth <= 0) return;
 
     const tileSizeFromWidth = Math.floor(usableWidth / boardSize);
@@ -310,6 +315,25 @@ function syncBoardTileSize(){
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
     const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
+    // Filet : si la grille dépasse encore la largeur visible (bordures, marges, mesure faite avant un changement de mise en page),
+    // on rogne les tuiles plutôt que d'obliger à faire défiler la page vers la droite.
+    const docWidth = document.documentElement.clientWidth || viewportWidth;
+    const limit = Math.min(parentWidth > 0 ? parentWidth : Infinity, docWidth > 0 ? docWidth - 2 : Infinity);
+    const overflow = Math.max(boardDiv.getBoundingClientRect().width, boardDiv.scrollWidth) - limit;   // scrollWidth : le CSS plafonne la boîte à 100 %, pas son contenu
+    let fitted = tileSize;
+    if(Number.isFinite(limit) && overflow > 0.5) fitted = Math.max(10, fitted - Math.ceil(overflow / boardSize));
+    // Portrait : si la page déborde encore en hauteur (la pastille de niveau en bas n'est plus visible), on rogne aussi les tuiles.
+    if(fullWidth){
+        if(fitted !== tileSize) boardDiv.style.setProperty('--tile-size', `${fitted}px`);
+        const doc = document.documentElement;
+        const tall = doc.scrollHeight - doc.clientHeight;
+        if(tall > 1) fitted = Math.max(MIN_PORTRAIT_TILE, fitted - Math.ceil(tall / boardSize));
+    }
+    if(fitted !== tileSize){
+        boardDiv.style.setProperty('--tile-size', `${fitted}px`);
+        requestTileBitmaps(fitted);
+        return;
+    }
     requestTileBitmaps(tileSize);   // fonds des tuiles rastérisés à la taille d'affichage (tileBitmaps.js)
 }
 
@@ -513,6 +537,14 @@ function generateRandomTile(options = {}){
     return rollTileWithJoker(boardDropProbabilities, colors, options);
 }
 
+// Tuile qui tombe pour combler un trou : tirée pour que la répartition cible tienne sur tout le plateau après la chute.
+function generateBalancedDropTile(){
+    if(!boardDropProbabilities){
+        refreshBoardDropProbabilities();
+    }
+    return rollBalancedTile(board, boardDropProbabilities, colors);
+}
+
 // Compacte la colonne vers le bas et comble les trous par de nouvelles tuiles ; renvoie les tuiles qui glissent
 // (indice d'arrivée → nombre de rangées parcourues) et le nombre de nouvelles tuiles en haut.
 function fillColumnByGravity(col){
@@ -537,7 +569,7 @@ function fillColumnByGravity(col){
     const newCount = writeRow + 1;
     while(writeRow >= 0){
         const writeIdx = writeRow * boardSize + col;
-        board[writeIdx] = generateRandomTile();
+        board[writeIdx] = generateBalancedDropTile();
         writeRow--;
     }
     return { moved, newCount };
@@ -1111,7 +1143,7 @@ function dropTiles(removedIndices = []){
         // Ajouter des nouvelles tuiles en haut.
         while(writeRow >= 0){
             const idx = writeRow * boardSize + col;
-            board[idx] = generateRandomTile();
+            board[idx] = generateBalancedDropTile();
             writeRow--;
         }
     }

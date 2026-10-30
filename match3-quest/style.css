@@ -3397,7 +3397,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 /* Jauge de rage et sorts ultimes */
 .rage-stat { flex-direction: column; align-items: stretch; }
 .rage-bar-container { position: relative; width: 100%; }
-.rage-bar { width: 100%; height: 14px; accent-color: #d9452e; }
+.rage-bar { display: block; width: 100%; height: 14px; accent-color: #d9452e; }
 .rage-bar-container .rage-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: #fff; text-shadow: 0 0 2px #000; pointer-events: none; }
 .rage-bar-container.full .rage-bar { animation: rage-pulse 0.9s ease-in-out infinite; }
 @keyframes rage-pulse { 50% { filter: brightness(1.6); } }
@@ -3415,7 +3415,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .rage-bar-container.ultimate-ready { touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 .rage-bar-container.ultimate-ready:active { transform: scale(0.97); }
 @media (pointer: coarse), (max-width: 820px) {
-  .rage-bar-container.ultimate-ready { min-height: 44px; display: flex; }
+  .rage-bar-container.ultimate-ready { min-height: 44px; }
   .rage-bar-container.ultimate-ready .rage-bar { height: 44px; }
   .rage-bar-container.ultimate-ready .rage-text { font-size: 1em; }
 }
@@ -3589,6 +3589,7 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 /* Excédent à vendre : bouton pièce de l'onglet Objets et popup du marchand */
 .item-sell-tag { display: inline-flex; align-items: center; gap: 4px; }
 .item-sell-tag.on { background: #f1c40f; border-color: #b7950b; color: #3b2f00; }
+.item-sell-tag-label { font-size: 0.8em; }
 .surplus-popup { border: 2px solid #f1c40f; border-radius: 6px; padding: 8px 10px; margin: 8px 0; background: rgba(241, 196, 15, 0.12); }
 .surplus-popup h4 { margin: 0 0 6px; }
 .surplus-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -3605,3 +3606,77 @@ body.fx-low .puzzle-intro-icon { animation: none; }
 /* Attaque / Défense modifiées par un sort ou un effet en cours */
 .stat-up { color: #2e9e5b; font-weight: bold; }
 .stat-down { color: #d93f31; font-weight: bold; }
+
+/* ── Fiches de combat (joueur / ennemi) : contraste et lisibilité ───────────── */
+#player-stats, #enemy-stats { color: #1a1a1a; }
+.level-pill {
+    flex: none; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+    font-size: 1.05em; font-weight: 800; white-space: nowrap;
+    background: #263238; color: #fff; border: 2px solid rgba(0,0,0,.55);
+}
+.level-pill-danger { background: #b71c1c; color: #fff; }
+#player-stats .hp-bar-container progress, #enemy-stats .hp-bar-container progress { height: 24px; }
+#player-stats .hp-text, #enemy-stats .hp-text {
+    font-size: 15px; font-weight: 800; color: #fff;
+    text-shadow: 0 0 2px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.stat-row { flex-wrap: wrap; gap: 4px; }
+.stat-chip {
+    display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 6px;
+    background: rgba(0,0,0,.12); border: 1px solid rgba(0,0,0,.25);
+    font-size: 1.1em; font-weight: 800; white-space: nowrap;
+}
+.stat-chip strong { width: auto; font-weight: 700; opacity: .8; }
+.stat-chip.pa-stat { margin-left: 0; background: #fff3c4; border-color: #b8860b; color: #3a2a00; }
+.stat-chip .stat-up { color: #0a7a35; } .stat-chip .stat-down { color: #c62828; }
+#player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: 1em; min-width: 1.9em; height: 1.9em; }
+body.dark-mode #player-stats, body.dark-mode #enemy-stats { color: #f1f5f9; }
+body.dark-mode .stat-chip { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); }
+body.dark-mode .stat-chip.pa-stat { background: #5a4a20; border-color: #ffd54f; color: #fff3c4; }
+body.dark-mode .stat-chip .stat-up { color: #69f0ae; } body.dark-mode .stat-chip .stat-down { color: #ff8a80; }
+@media (max-width: 700px) {
+    .level-pill { font-size: .95em; padding: 0 5px; }
+    #player-stats .hp-bar-container progress, #enemy-stats .hp-bar-container progress { height: 20px; }
+    #player-stats .hp-text, #enemy-stats .hp-text { font-size: 13px; }
+    .stat-chip { font-size: 1em; padding: 0 4px; }
+    #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .9em; min-width: 1.7em; height: 1.7em; }
+}
+
+/* ── Couleurs d'équipe : joueur = bleu, ennemi = rouge (fiche + colonne armes/sorts/stuff) ── */
+:root { --team-player-bg: #d6e6ff; --team-player-edge: #1e5fd1; --team-enemy-bg: #ffdcd8; --team-enemy-edge: #c62828; }
+body.dark-mode { --team-player-bg: #1b2d4d; --team-player-edge: #5fa0ff; --team-enemy-bg: #4a1f24; --team-enemy-edge: #ff6b6b; }
+#player-stats, #player-spells { background: var(--team-player-bg); border-color: var(--team-player-edge); }
+#enemy-stats, #enemy-spells { background: var(--team-enemy-bg); border-color: var(--team-enemy-edge); }
+#player-spells, #enemy-spells { border-width: 3px; border-style: solid; }
+#player-stats:not(.active-turn), #enemy-stats:not(.active-turn) { border-color: var(--team-edge, transparent); }
+#player-stats:not(.active-turn) { --team-edge: var(--team-player-edge); }
+#enemy-stats:not(.active-turn) { --team-edge: var(--team-enemy-edge); }
+body.dark-mode #player-stats, body.dark-mode #player-spells { background: var(--team-player-bg); border-color: var(--team-player-edge); }
+body.dark-mode #enemy-stats, body.dark-mode #enemy-spells { background: var(--team-enemy-bg); border-color: var(--team-enemy-edge); }
+body.dark-mode #player-stats.active-turn { border-color: #2ecc71; }
+body.dark-mode #enemy-stats.active-turn { border-color: #e74c3c; }
+
+/* Altérations d'état : pastilles pleines, lisibles sur les fonds bleu / rouge des fiches (bonus = vert, malus = rouge sombre + ▼) */
+#player-stats .status-badges, #enemy-stats .status-badges { gap: 4px; margin: 3px 0; }
+#player-stats .status-badge, #enemy-stats .status-badge {
+    font-size: 1em; padding: 1px 6px; gap: 3px; border-width: 2px; font-weight: 800;
+    color: #fff; background: #2e7d32; border-color: #0f3d14; text-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+#player-stats .status-badge.debuff, #enemy-stats .status-badge.debuff { background: #b71c1c; border-color: #4a0a0a; }
+#player-stats .status-badge.debuff::before, #enemy-stats .status-badge.debuff::before { content: "▼"; font-size: .7em; }
+#player-stats .status-badge.buff::before, #enemy-stats .status-badge.buff::before { content: "▲"; font-size: .7em; }
+#player-stats .status-badge svg, #enemy-stats .status-badge svg { width: 1.1em; height: 1.1em; }
+#player-stats .status-badge small, #enemy-stats .status-badge small { font-size: .85em; }
+body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border-color: var(--rt-ink); border-radius: 4px; }
+/* Beaucoup d'altérations : pastilles compactes pour rester sur une ou deux lignes courtes sans agrandir la fiche */
+#player-stats .status-badges, #enemy-stats .status-badges { gap: 2px; }
+#player-stats .status-badge, #enemy-stats .status-badge { font-size: .85em; padding: 0 3px; gap: 1px; }
+#player-stats .status-badge::before, #enemy-stats .status-badge::before { font-size: .6em; }
+#player-stats .status-badge svg, #enemy-stats .status-badge svg { width: 1em; height: 1em; }
+/* Les pastilles ne passent pas sous le portrait (même réserve que la ligne du nom) */
+#player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 56px; }
+@media (max-height: 520px) and (orientation: landscape) { #player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 38px; } }
+
+/* Pastilles sans bordure épaisse ; PA = sprite des doubles flèches */
+#player-stats .stat-chip, #enemy-stats .stat-chip, #player-stats .status-badge, #enemy-stats .status-badge { border: 0; }
+.pa-ic { width: 1.5em; height: 1.5em; margin: -2px 0; image-rendering: pixelated; }

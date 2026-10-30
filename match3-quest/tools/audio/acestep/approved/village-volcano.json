@@ -1,14 +1,14 @@
 {
   "key": "village-volcano",
-  "version": "v003",
-  "date": "2026-10-16T22:41:35.830Z",
-  "seed": "1406992683",
+  "version": "v010",
+  "date": "2026-10-27T12:36:23.499Z",
+  "seed": "2427708438",
   "request": {
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, volcano gorges and magma, village theme, warm and slow, clear melody, low agile plucked pipa ostinato (martial tension, arrows), expressive erhu lead (Hou Yi, courage and loneliness), ember glow, restrained Chinese drums, woodblocks and small cymbals very soft, hope under a harsh sky",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, volcano gorges and magma, village theme, warm and slow, clear melody, warm low-register plucked guzheng, deep soft guqin, mellow low erhu, soft low xiao, dark rounded timbres, ember glow, consonant simple harmony, perfectly in tune, restrained Chinese drums, woodblocks and small cymbals very soft, hope under a harsh sky, no high-pitched instruments, no shrill, no piercing, no bright treble, no dissonance, no detuned notes, no flute above the middle register",
     "lyrics": "[Instrumental]",
     "vocal_language": "unknown",
     "audio_format": "mp3",
-    "audio_duration": 120,
+    "audio_duration": 180,
     "batch_size": 2,
     "thinking": false,
     "bpm": 78,
@@ -19,11 +19,11 @@
   "motifFile": null,
   "metas": {
     "bpm": 78,
-    "duration": 120,
+    "duration": 180,
     "genres": "N/A",
     "keyscale": "C minor",
     "timesignature": "4",
-    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, volcano gorges and magma, village theme, warm and slow, clear melody, low agile plucked pipa ostinato (martial tension, arrows), expressive erhu lead (Hou Yi, courage and loneliness), ember glow, restrained Chinese drums, woodblocks and small cymbals very soft, hope under a harsh sky",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, volcano gorges and magma, village theme, warm and slow, clear melody, warm low-register plucked guzheng, deep soft guqin, mellow low erhu, soft low xiao, dark rounded timbres, ember glow, consonant simple harmony, perfectly in tune, restrained Chinese drums, woodblocks and small cymbals very soft, hope under a harsh sky, no high-pitched instruments, no shrill, no piercing, no bright treble, no dissonance, no detuned notes, no flute above the middle register",
     "lyrics": "[Instrumental]"
   }
 }

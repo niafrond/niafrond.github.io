@@ -238,7 +238,7 @@ function init() {
         musicStopped = false;
         setMusicScene(want[0], want[1]);
     };
-    setInterval(syncMusic, 400);
+    setInterval(() => { if(!document.hidden) syncMusic(); }, 400);   // inutile onglet masqué (batterie)
     // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
     // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
     // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
@@ -421,10 +421,10 @@ function init() {
     };
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
     const breakTick = createBreakWatcher({
-        // Calme : exploration libre, ou combat terminé (écran Victoire / Défaite, dont l'arène enchaîne sans repasser par la carte),
-        // sans cinématique ni transition de combat (ce ne sont pas des .modal) ni fenêtre ouverte.
-        isCalm: () => (Boolean(exploration.isIdle?.()) || (Boolean(document.body.dataset.combatEnd) && !document.querySelector('.modal.active, #levelup-modal[style*="flex"]')))
-            && !document.querySelector('.cine-overlay, .title-screen, .battle-transition, .bt-title'),
+        // Calme : hors combat, dialogue et marchand (carte affichée ou non, p. ex. onglet Armes), ou combat terminé (écran Victoire / Défaite,
+        // dont l'arène enchaîne sans repasser par la carte), sans cinématique ni transition de combat (ce ne sont pas des .modal) ni fenêtre ouverte.
+        isCalm: () => (Boolean(exploration.isFree?.()) || Boolean(document.body.dataset.combatEnd))
+            && !document.querySelector('.modal.active, #levelup-modal[style*="flex"], .cine-overlay, .title-screen, .battle-transition, .bt-title'),
     });
     startPlayTimeTracking(() => { renderPlayTime(); breakTick(); });
     ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', renderPlayTime));
@@ -543,7 +543,7 @@ function init() {
             if(isLongAbsence(lastPlayed)) showWelcomeBack(buildRecap(player, exploration.getActiveQuestSummaries?.() || []), absenceDays(lastPlayed));
         }
         touchLastPlayed();
-        setInterval(touchLastPlayed, 60000);
+        setInterval(() => { if(!document.hidden) touchLastPlayed(); }, 60000);
         document.addEventListener('visibilitychange', touchLastPlayed);
         window.addEventListener('pagehide', touchLastPlayed);
     });
