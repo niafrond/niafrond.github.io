@@ -1,3 +1,9 @@
+## [2.162.0](https://github.com/niafrond/niafrond.github.io/compare/v2.161.0...v2.162.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** ajouter la porte illustrée du royaume des âmes errantes et ses animations de passage ([#599](https://github.com/niafrond/niafrond.github.io/issues/599)) ([262e2fd](https://github.com/niafrond/niafrond.github.io/commit/262e2fd00162f45fa9c86be2e7eb29bdc11c7206))
+
 ## [2.161.0](https://github.com/niafrond/niafrond.github.io/compare/v2.160.0...v2.161.0) (2026-10-30)
 
 ### Features
