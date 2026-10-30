@@ -15,7 +15,9 @@ export const BIOME_DECOR = {
     fusang: ['tree', 'deadtree', 'tree', 'sunflower', 'fusroot', 'goldleaves', 'blackfeather'],
     house: ['shelf', 'cabinet', 'bed', 'table', 'jar', 'basket', 'plant', 'cushion'],
     cave: ['rock', 'stalagmite', 'rock'],
-    moon: ['rock', 'deadtree', 'rock', 'meteorite', 'mooncrystal', 'brokenpillar', 'moonflower', 'whiterabbit']
+    moon: ['rock', 'deadtree', 'rock', 'meteorite', 'mooncrystal', 'brokenpillar', 'moonflower', 'whiterabbit'],
+    // Royaume des âmes errantes (événement, events/wanderingSouls/) : lanternes de pierre, colonnes brisées, urnes, plumes noires.
+    wandering_souls: ['stonelantern', 'brokenpillar', 'rock', 'brokenjar', 'blackfeather', 'stonelantern', 'deadtree']
 };
 
 // Décors franchissables : touffes de roseaux, trop basses pour arrêter un héros.

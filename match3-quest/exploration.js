@@ -25,6 +25,7 @@
 //    carryHp / chainedFrom (ennemi suivant) : le héros garde ses PV, et une défaite annule la victoire sur `chainedFrom` ;
 //  - duel : règles de duel recopiées dans la rencontre (miroir, héros affaibli, tirs rapides, pièges : duel.js) ;
 //  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
+//  - exit.closedWhen : sortie refermée dès que la condition est remplie (message : exit.closedMessage) ; sert aux événements (events/) ;
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés) ;
 //  - arène (arena.js) : écrans `kind: 'arena'`, `data.arena` = { cleared, best, wins, returnTo } ; entrée par
 //    enterArena (point de retour mémorisé), sortie à tout moment par leaveArena (bouton du HUD, sortie
@@ -628,7 +629,8 @@ const readyUnlocks = (session, id) => {
     const status = questStatus(session, quest);
     return status === 'ready' || (status === 'available' && quest.objectives.every(o => objectiveDone(session, o)));
 };
-export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires);
+const isExitClosed = (session, exit) => Boolean(exit.closedWhen) && progressReached(session, exit.closedWhen);
+export const isExitLocked = (session, exit) => isExitClosed(session, exit) || (Boolean(exit.requires) && !progressReached(session, exit.requires) && !readyUnlocks(session, exit.requires));
 
 // Transition vers une autre carte (sortie explicite ou connexion de bordure) : alerte de niveau, texte d'arrivée, quêtes.
 function transitionTo(session, screen, toId, pos, playerLevel, extra = {}) {
@@ -693,7 +695,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
         if (isExitLocked(session, exit)) {
             return {
                 type: 'exitBlocked', reason: 'quest', label: exit.label, regionName: target.name,
-                message: exit.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
+                message: (isExitClosed(session, exit) ? exit.closedMessage : null) || exit.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
             };
         }
         return transitionTo(session, screen, exit.to, exit.arrive, playerLevel, { door: Boolean(exit.door) });

@@ -289,6 +289,13 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             }
             return true;
         }
+        case 'wandering_souls': {                                           // Royaume des âmes errantes : joints de dalles, fentes, rares lueurs de flamme spectrale
+            R(0, 7, 16, 1, shade(base, -20)); R(7, 0, 1, 16, shade(base, -20));
+            for (let i = 0; i < 2; i++) R(1 + at(300 + i, 12), 1 + at(310 + i, 12), 3, 1, shade(base, 14));
+            if (h(320) < 0.4) { let cx = 2 + at(321, 8), cy = 2 + at(322, 8); for (let s = 0; s < 5; s++) { R(cx, cy, 2, 1, shade(base, -38)); cx += h(330 + s) < 0.5 ? 2 : 1; cy += h(340 + s) < 0.6 ? 1 : 0; if (cx > 14) break; } }
+            if (h(350) < 0.12) { const gx = 3 + at(351, 9), gy = 3 + at(352, 9); R(gx, gy, 2, 2, '#315f54'); R(gx, gy, 1, 1, '#78b8a0'); }
+            return true;
+        }
         case 'storm': {                                                     // roche de tempête : plaques, flaques sombres, mousse grise
             for (let i = 0; i < 3; i++) { const sx = 1 + at(260 + i, 10), sy = 2 + at(270 + i, 11); R(sx, sy, 4, 1, shade(base, 16)); R(sx, sy + 1, 4, 1, shade(base, -22)); }
             if (h(280) < 0.18) { const fx = 3 + at(281, 8), fy = 5 + at(282, 7); R(fx, fy, 5, 2, '#3f4478'); R(fx + 1, fy, 2, 1, '#6a70b0'); }

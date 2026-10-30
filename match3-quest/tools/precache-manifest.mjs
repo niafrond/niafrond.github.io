@@ -53,6 +53,7 @@ export function buildManifest(root = GAME_DIR) {
         ...list(root, '', name => ext('.js', '.css', '.json', '.svg')(name) && name !== MANIFEST_FILE && name !== 'sw.js' && !name.startsWith('test-')),
         ...list(root, 'puzzle', ext('.js')),
         ...listDeep(root, 'world', ext('.js')),
+        ...listDeep(root, 'events', ext('.js')),
         ...list(root, 'sprites', ext('.js')).filter(p => p !== GBA_SOURCE),
         ...list(root, 'sprites/cn', ext('.js')),
         ...list(root, 'sprites/tiles', ext('.svg')),
