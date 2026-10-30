@@ -1,3 +1,21 @@
+## [2.160.0](https://github.com/niafrond/niafrond.github.io/compare/v2.159.0...v2.160.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** ajouter l événement La Nuit des âmes errantes ([#589](https://github.com/niafrond/niafrond.github.io/issues/589)) ([b454c52](https://github.com/niafrond/niafrond.github.io/commit/b454c522f0f0836e0a0e5b876a4b9f00aeb0ae10))
+* **match3-quest:** ajouter les musiques traditionnelles chinoises en variantes du jeu de base ([#595](https://github.com/niafrond/niafrond.github.io/issues/595)) ([e7d6830](https://github.com/niafrond/niafrond.github.io/commit/e7d68308be554330a81261c0dcf9aaa70d5ba80c))
+* **match3-quest:** vendre en permanence un objet standard de chaque type chez les marchands ([#593](https://github.com/niafrond/niafrond.github.io/issues/593)) ([9020241](https://github.com/niafrond/niafrond.github.io/commit/902024182ea741b54062eb094abf2515f03dd8ed))
+
+### Bug Fixes
+
+* **match3-quest:** corriger les dialogues incohérents et régénérer la soluce ([#591](https://github.com/niafrond/niafrond.github.io/issues/591)) ([5a38e76](https://github.com/niafrond/niafrond.github.io/commit/5a38e7645baa36f2beb09f24ac1df6db1ba62a38))
+* **match3-quest:** faire disparaître les mirages une fois le Soleil des Mirages vaincu ([#592](https://github.com/niafrond/niafrond.github.io/issues/592)) ([81f090d](https://github.com/niafrond/niafrond.github.io/commit/81f090d8a8066cc636ac34bd1264ad28c3fcf016))
+* **match3-quest:** lister les reliques dans l onglet Stuff et annoncer leur destination dans les coffres ([#597](https://github.com/niafrond/niafrond.github.io/issues/597)) ([b8d748d](https://github.com/niafrond/niafrond.github.io/commit/b8d748dae57550efbea958ee42a2422ab33209ff))
+
+### Performance Improvements
+
+* **match3-quest:** réduire la consommation de batterie ([#590](https://github.com/niafrond/niafrond.github.io/issues/590)) ([982c789](https://github.com/niafrond/niafrond.github.io/commit/982c7895ec98c1fa5b64e88e44822b1f8aca440e))
+
 ## [2.159.0](https://github.com/niafrond/niafrond.github.io/compare/v2.158.1...v2.159.0) (2026-10-28)
 
 ### Features
