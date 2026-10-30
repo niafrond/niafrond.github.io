@@ -16,8 +16,6 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..');
 const DJ_MIX_DIR = join(REPO_ROOT, 'dj-mix');
-const ANDROID_DIR = join(REPO_ROOT, 'dj-mix-android');
-const JAVA_DIR = join(ANDROID_DIR, 'src', 'main', 'java', 'io', 'github', 'niafrond', 'djmix');
 
 const originalCapacitor = window.Capacitor;
 afterEach(() => {
@@ -100,56 +98,13 @@ describe('SPEC-13.5.5 — onMediaCommand / getPendingMediaCommand', () => {
   });
 });
 
-// ── SPEC-13.5.7/.9/.11 — Contrat JS ↔ natif (régression texte) ──────────────
+// ── SPEC-13.5.11 — Contrat JS ↔ natif (régression texte) ─────────────────────
 //
-// Pas de runner Java dans ce repo (Jest uniquement) : on vérifie que les noms
-// de méthodes/événements attendus côté JS sont bien présents tels quels dans
-// les sources natives, pour détecter une dérive du contrat sans recompiler.
+// Le projet natif `dj-mix-android/` et son workflow ont été supprimés du dépôt (commit « cleanup ») : les anciens tests qui
+// lisaient ses sources Java/XML (SPEC-13.5.7, 13.5.8, 13.5.9) sont retirés. Reste le côté JS du contrat.
 
-describe('SPEC-13.5.7 — MediaSessionPlugin respecte le contrat androidAutoBridge.js', () => {
-  const pluginSource = readFileSync(join(JAVA_DIR, 'MediaSessionPlugin.java'), 'utf8');
-
-  test.each([
-    'updateMetadata',
-    'updatePlaybackState',
-    'updateQueue',
-    'getPendingCommand',
-    'mediaCommand',
-  ])('expose %s', (symbol) => {
-    expect(pluginSource).toContain(symbol);
-  });
-});
-
-describe('SPEC-13.5.8 — MediaPlaybackService relaie les actions attendues par applyMediaCommand()', () => {
-  const serviceSource = readFileSync(join(JAVA_DIR, 'MediaPlaybackService.java'), 'utf8');
-
-  test.each(['"play"', '"pause"', '"next"', '"seekTo"', '"playFromMediaId"'])(
-    'dispatch l\'action %s',
-    (action) => {
-      expect(serviceSource).toContain(action);
-    }
-  );
-});
-
-describe('SPEC-13.5.9 — Déclarations requises pour la détection Android Auto', () => {
-  test('automotive_app_desc.xml déclare <uses name="media"/>', () => {
-    const xml = readFileSync(join(ANDROID_DIR, 'src', 'main', 'res', 'xml', 'automotive_app_desc.xml'), 'utf8');
-    expect(xml).toContain('<uses name="media"/>');
-  });
-
-  test('le workflow CI patche meta-data car.application, MediaBrowserService et MediaButtonReceiver', () => {
-    const workflow = readFileSync(join(REPO_ROOT, '.github', 'workflows', 'apk-djmix.yml'), 'utf8');
-    expect(workflow).toContain('com.google.android.gms.car.application');
-    expect(workflow).toContain('android.media.browse.MediaBrowserService');
-    expect(workflow).toContain('androidx.media.session.MediaButtonReceiver');
-  });
-});
-
-describe('SPEC-13.5.11 — ApkUpdaterPlugin expose downloadAndInstall', () => {
-  test('le plugin Java définit la méthode downloadAndInstall appelée par pwa.js', () => {
-    const pluginSource = readFileSync(join(JAVA_DIR, 'ApkUpdaterPlugin.java'), 'utf8');
-    expect(pluginSource).toContain('downloadAndInstall');
-
+describe('SPEC-13.5.11 — pwa.js appelle downloadAndInstall', () => {
+  test('pwa.js référence la méthode downloadAndInstall du plugin ApkUpdater', () => {
     const pwaSource = readFileSync(join(DJ_MIX_DIR, 'pwa.js'), 'utf8');
     expect(pwaSource).toContain('downloadAndInstall');
   });
