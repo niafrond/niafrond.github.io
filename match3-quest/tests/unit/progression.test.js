@@ -1,5 +1,5 @@
 // Courbe d'XP croissante jusqu'au niveau 70, croissance innée au-delà du niveau 18, ennemis jouables jusqu'au niveau 70.
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect, jest } from '@jest/globals';
 import { MAX_LEVEL, getXPCostForLevel, getXPRequiredForLevel, addXP, normalizeXP, calculateXPGain } from '../../experience.js';
 import { growthExtras, applyGrowth, enemyDefenseForLevel } from '../../progression.js';
 import { allWeapons } from '../../weapons.js';
@@ -97,7 +97,10 @@ describe('combats jouables jusqu\'au niveau 70 (modèle : meilleure arme du nive
     });
 
     test('les ennemis générés utilisent cette défense', () => {
-        const e = createMapEnemy({ templateId: 'chiyou', level: 60, enemyId: 'x' });
+        // Aléa figé : 4 % des ennemis tirent une agilité nulle (donc une défense bien plus basse), ce qui rendait le test instable.
+        const random = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+        let e;
+        try { e = createMapEnemy({ templateId: 'chiyou', level: 60, enemyId: 'x' }); } finally { random.mockRestore(); }
         const base = enemyDefenseForLevel(60);
         expect(e.defense).toBeGreaterThanOrEqual(Math.floor(base * 0.5));
         expect(e.defense).toBeLessThanOrEqual(Math.floor(base * 1.5) + 1);
