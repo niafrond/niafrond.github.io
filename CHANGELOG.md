@@ -1,3 +1,9 @@
+## [2.165.0](https://github.com/niafrond/niafrond.github.io/compare/v2.164.0...v2.165.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** lier la rage aux attributs et ajouter des sorts de rage pour toutes les classes ([#605](https://github.com/niafrond/niafrond.github.io/issues/605)) ([e82da60](https://github.com/niafrond/niafrond.github.io/commit/e82da605c01f05cc82a3dda995823323431fab78))
+
 ## [2.164.0](https://github.com/niafrond/niafrond.github.io/compare/v2.163.1...v2.164.0) (2026-10-30)
 
 ### Features
