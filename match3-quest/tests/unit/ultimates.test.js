@@ -168,4 +168,13 @@ describe('sorts de rage (gain, conversion en qì, conversion en dégâts)', () =
         expect(rageToDamageAmount(100, 3)).toBe(300);
         expect(rageToDamageAmount(0, 3)).toBe(0);
     });
+
+    test('chaque effet de rage a un sort tous les 10 niveaux de 20 à 70, de plus en plus fort', () => {
+        const field = { rageGain: 'rageGain', rageToMana: 'manaPerRage', rageToDamage: 'dmgPerRage' };
+        for(const [effect, key] of Object.entries(field)) {
+            const tiers = barbarianSpells.filter(spell => spell.effect === effect).sort((a, b) => a.minLevel - b.minLevel);
+            for(const level of [20, 30, 40, 50, 60, 70]) expect(tiers.some(spell => spell.minLevel === level)).toBe(true);
+            tiers.forEach((spell, i) => { if(i > 0) expect(spell[key]).toBeGreaterThan(tiers[i - 1][key]); });
+        }
+    });
 });

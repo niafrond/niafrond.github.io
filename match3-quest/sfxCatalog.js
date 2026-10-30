@@ -32,7 +32,8 @@ export const SPELL_SFX_IDS = [
     'bloodlust', 'summonTempest', 'berserkerRage', 'singingBlades', 'deathbringer', 'revenant', 'warCry',
     'ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousandArrows', 'ultimateSunPiercer',
     'ultimateImperialDragon', 'ultimateEternalBastion', 'ultimateThousandRiders', 'ultimateSkyWolf',
-    'ultimateVermilionBird', 'ultimateBlackTortoise', 'ultimateWhiteTiger', 'ultimateAzureDragon'
+    'ultimateVermilionBird', 'ultimateBlackTortoise', 'ultimateWhiteTiger', 'ultimateAzureDragon',
+    'bloodBoil', 'furyToQi', 'furyBlow', 'bloodTide', 'warDrums', 'dragonBlood', 'heavenFury', 'asuraRoar', 'warGodBlood', 'wrathBreath', 'rageWell', 'angerCirculation', 'stormMind', 'fireHeart', 'rageNirvana', 'shatteredWrath', 'tigerBreaker', 'dragonRage', 'thunderFist', 'skySplitter', 'worldEnder'
 ];
 const SPELL_SET = new Set(SPELL_SFX_IDS);
 

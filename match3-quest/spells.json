@@ -1560,6 +1560,228 @@
       "effect": "rageToDamage",
       "dmgPerRage": 3,
       "description": "Libère toute la rage en un coup : 3 dégâts par point de rage"
+    },
+    {
+      "id": "bloodTide",
+      "name": "Marée de Sang",
+      "class": "barbarian",
+      "cost": {
+        "red": 11
+      },
+      "minLevel": 20,
+      "effect": "rageGain",
+      "rageGain": 45,
+      "description": "Le sang bout : +45 de rage"
+    },
+    {
+      "id": "warDrums",
+      "name": "Tambours de Guerre",
+      "class": "barbarian",
+      "cost": {
+        "red": 16
+      },
+      "minLevel": 30,
+      "effect": "rageGain",
+      "rageGain": 55,
+      "description": "Le sang bout : +55 de rage"
+    },
+    {
+      "id": "dragonBlood",
+      "name": "Sang du Dragon",
+      "class": "barbarian",
+      "cost": {
+        "red": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 65,
+      "description": "Le sang bout : +65 de rage"
+    },
+    {
+      "id": "heavenFury",
+      "name": "Fureur Céleste",
+      "class": "barbarian",
+      "cost": {
+        "red": 26
+      },
+      "minLevel": 50,
+      "effect": "rageGain",
+      "rageGain": 75,
+      "description": "Le sang bout : +75 de rage"
+    },
+    {
+      "id": "asuraRoar",
+      "name": "Rugissement d'Asura",
+      "class": "barbarian",
+      "cost": {
+        "red": 31
+      },
+      "minLevel": 60,
+      "effect": "rageGain",
+      "rageGain": 85,
+      "description": "Le sang bout : +85 de rage"
+    },
+    {
+      "id": "warGodBlood",
+      "name": "Sang du Dieu de la Guerre",
+      "class": "barbarian",
+      "cost": {
+        "red": 36
+      },
+      "minLevel": 70,
+      "effect": "rageGain",
+      "rageGain": 95,
+      "description": "Le sang bout : +95 de rage"
+    },
+    {
+      "id": "wrathBreath",
+      "name": "Souffle du Tigre Furieux",
+      "class": "barbarian",
+      "cost": {
+        "green": 8
+      },
+      "minLevel": 20,
+      "effect": "rageToMana",
+      "manaPerRage": 0.13,
+      "description": "Transforme toute la rage en qì : 13 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "rageWell",
+      "name": "Source de Fureur",
+      "class": "barbarian",
+      "cost": {
+        "green": 12
+      },
+      "minLevel": 30,
+      "effect": "rageToMana",
+      "manaPerRage": 0.16,
+      "description": "Transforme toute la rage en qì : 16 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "angerCirculation",
+      "name": "Circulation de la Colère",
+      "class": "barbarian",
+      "cost": {
+        "green": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.19,
+      "description": "Transforme toute la rage en qì : 19 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "stormMind",
+      "name": "Esprit de Tempête",
+      "class": "barbarian",
+      "cost": {
+        "green": 20
+      },
+      "minLevel": 50,
+      "effect": "rageToMana",
+      "manaPerRage": 0.22,
+      "description": "Transforme toute la rage en qì : 22 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "fireHeart",
+      "name": "Cœur de Flamme",
+      "class": "barbarian",
+      "cost": {
+        "green": 24
+      },
+      "minLevel": 60,
+      "effect": "rageToMana",
+      "manaPerRage": 0.25,
+      "description": "Transforme toute la rage en qì : 25 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "rageNirvana",
+      "name": "Nirvana Rageur",
+      "class": "barbarian",
+      "cost": {
+        "green": 28
+      },
+      "minLevel": 70,
+      "effect": "rageToMana",
+      "manaPerRage": 0.28,
+      "description": "Transforme toute la rage en qì : 28 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "shatteredWrath",
+      "name": "Colère Fracassante",
+      "class": "barbarian",
+      "cost": {
+        "red": 10,
+        "yellow": 7
+      },
+      "minLevel": 20,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage en un coup : 4 dégâts par point de rage"
+    },
+    {
+      "id": "tigerBreaker",
+      "name": "Brise-Tigre",
+      "class": "barbarian",
+      "cost": {
+        "red": 14,
+        "yellow": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 5,
+      "description": "Libère toute la rage en un coup : 5 dégâts par point de rage"
+    },
+    {
+      "id": "dragonRage",
+      "name": "Rage du Dragon",
+      "class": "barbarian",
+      "cost": {
+        "red": 18,
+        "yellow": 13
+      },
+      "minLevel": 40,
+      "effect": "rageToDamage",
+      "dmgPerRage": 6,
+      "description": "Libère toute la rage en un coup : 6 dégâts par point de rage"
+    },
+    {
+      "id": "thunderFist",
+      "name": "Poing de Tonnerre",
+      "class": "barbarian",
+      "cost": {
+        "red": 22,
+        "yellow": 16
+      },
+      "minLevel": 50,
+      "effect": "rageToDamage",
+      "dmgPerRage": 7,
+      "description": "Libère toute la rage en un coup : 7 dégâts par point de rage"
+    },
+    {
+      "id": "skySplitter",
+      "name": "Fendeur de Ciel",
+      "class": "barbarian",
+      "cost": {
+        "red": 26,
+        "yellow": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 8,
+      "description": "Libère toute la rage en un coup : 8 dégâts par point de rage"
+    },
+    {
+      "id": "worldEnder",
+      "name": "Fin des Mondes",
+      "class": "barbarian",
+      "cost": {
+        "red": 30,
+        "yellow": 22
+      },
+      "minLevel": 70,
+      "effect": "rageToDamage",
+      "dmgPerRage": 9,
+      "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
     }
   ],
   "allClassSpells": [

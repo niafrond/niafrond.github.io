@@ -1254,6 +1254,69 @@
   },
   "spell-ultimateAzureDragon": {
    "seconds": 2.66
+  },
+  "spell-bloodBoil": {
+   "seconds": 0.37
+  },
+  "spell-furyToQi": {
+   "seconds": 0.46
+  },
+  "spell-furyBlow": {
+   "seconds": 0.41
+  },
+  "spell-bloodTide": {
+   "seconds": 0.42
+  },
+  "spell-warDrums": {
+   "seconds": 0.46
+  },
+  "spell-dragonBlood": {
+   "seconds": 0.5
+  },
+  "spell-heavenFury": {
+   "seconds": 0.59
+  },
+  "spell-asuraRoar": {
+   "seconds": 0.62
+  },
+  "spell-warGodBlood": {
+   "seconds": 0.66
+  },
+  "spell-wrathBreath": {
+   "seconds": 0.44
+  },
+  "spell-rageWell": {
+   "seconds": 0.43
+  },
+  "spell-angerCirculation": {
+   "seconds": 0.46
+  },
+  "spell-stormMind": {
+   "seconds": 0.5
+  },
+  "spell-fireHeart": {
+   "seconds": 0.53
+  },
+  "spell-rageNirvana": {
+   "seconds": 0.61
+  },
+  "spell-shatteredWrath": {
+   "seconds": 0.47
+  },
+  "spell-tigerBreaker": {
+   "seconds": 0.53
+  },
+  "spell-dragonRage": {
+   "seconds": 0.62
+  },
+  "spell-thunderFist": {
+   "seconds": 0.67
+  },
+  "spell-skySplitter": {
+   "seconds": 0.68
+  },
+  "spell-worldEnder": {
+   "seconds": 0.68
   }
  }
 }
