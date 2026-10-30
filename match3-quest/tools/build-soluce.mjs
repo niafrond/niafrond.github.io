@@ -722,7 +722,7 @@ ${playerHtml(def, steps)}`;
         crumbs: [['soluce.html', 'Accueil'], [null, 'Royaume des âmes errantes']],
         body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
 <h2>${esc(realm.name)}</h2>
-<p class="lead">Événement temporaire « La Nuit des âmes errantes », un clin d’œil au 31 octobre et à la Toussaint : un royaume facultatif, accessible depuis toutes les régions, avec ${quests.length} quêtes, 2 énigmes et un boss. Il n’est pas nécessaire pour finir le jeu.</p>
+<p class="lead">Événement « La Nuit des âmes errantes » : un royaume facultatif, accessible depuis toutes les régions, avec ${quests.length} quêtes, 2 énigmes et un boss. Il n’est pas nécessaire pour finir le jeu.</p>
 <div class="box info"><b class="t">Événement activable</b>Le royaume n’existe que si l’événement est activé dans <code>events/config.js</code> (activation et retrait par un simple commit). S’il manque dans votre version, il est désactivé.</div>
 <div class="box warn"><b class="t">Il se referme</b>Une fois la quête « ${esc(quests[2]?.title || '')} » terminée, le passage se ferme pour de bon. Faites d’abord tout ce que vous voulez dans le royaume : objets, énigmes, lanternes.</div>
 
@@ -764,7 +764,7 @@ function buildHub() {
         ...Object.entries(PUZZLES).map(([id, p]) => EVENT_PUZZLE_IDS.has(id)
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
-        ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement halloween toussaint fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
+        ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
     write('soluce.html', page({
