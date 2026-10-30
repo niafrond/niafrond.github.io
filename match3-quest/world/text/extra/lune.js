@@ -51,7 +51,7 @@ export default {
       title: "Passeur d'argent",
       idle: [
         "Je fais passer les âmes sur la rivière de lune. Aujourd'hui, seulement deux. Beau temps.",
-        "Chang'e m'a demandé si l'on pouvait ne plus jamais redescendre d'ici. Je lui ai dit que la Lune ne retient que ceux qui s'y laissent porter. Elle a serré sa fiole et souri quand même."
+        "Chang'e m'a demandé si l'on pouvait ne jamais redescendre d'ici. J'ai dit que la Lune ne retient que ceux qui s'y laissent porter. Elle a souri quand même."
       ],
       talk: [
         {

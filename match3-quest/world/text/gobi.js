@@ -52,7 +52,7 @@ export default {
     gobi_road_old_drover: { name: 'Vieux Chamelier Tuo', title: 'Convoyeur à la retraite',
       idle: ['Quarante ans sur cette piste. J\'ai vu des caravanes de cent bêtes, et une seule qui savait où elle allait. Le chameau de tête.', 'Si vous voyez de l\'herbe sèche au bord de la piste, n\'y mettez pas le pied sans y penser : elle cache plus de bêtes qu\'une écurie.'],
       talk: [{ whenDone: 'sun_4', lines: ['Je ne dirais pas que la piste est paisible. Je dirais qu\'elle a cessé de crier. C\'est déjà un progrès.'] }] },
-    gobi_wild_old_caravaneer: { name: 'Vieux Gu', title: 'Caravanier égaré',
+    gobi_wild_old_caravaneer: { name: 'Vieux Kang', title: 'Caravanier égaré',
       idle: ['Je ne suis pas perdu : je suis à l\'endroit où ma caravane a eu une meilleure idée que moi.', 'Le col est tenu par un chef à bras de sable. Il n\'est pas méchant, il est cher. Ce n\'est pas la même chose, mais ça revient au même.'],
       talk: [{ whenDone: 'gobi_dune_warlord', lines: ['Le chef de dune est tombé ! Je pourrais enfin rentrer. Mais il paraît que ma caravane a déménagé. Je vais attendre qu\'elle revienne.'] }] }
   },

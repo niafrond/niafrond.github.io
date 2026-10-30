@@ -57,7 +57,7 @@ export default {
       talk: [{ whenDone: 'sun_5', lines: ['Le ciel est plus doux ! Les étincelles dansent au lieu de mordre. Je crois que le tonnerre rit un peu.'] }] },
     hua_tonnerre: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
       idle: ['Les monts, c\'est dur pour les mollets mais bon pour les affaires : on achète tout, ici, pourvu que ça ne brûle pas.', 'J\'ai croisé votre disciple, à un col. Il m\'a acheté une corde, et un miroir. Un miroir ! Un archer qui s\'interroge sur son reflet, c\'est inquiétant.'],
-      talk: [{ whenDone: 'sun_5', lines: ['Je repars pour les gorges du volcan. Si vous croisez quelqu\'un qui vend des gants ignifugés, c\'est mon cousin. Il est très prudent.'] }] },
+      talk: [{ whenDone: 'sun_5', lines: ['Je repars pour la plaine des Fauves. Les gants ignifugés des gorges du Volcan, c\'est mon cousin qui les vend. Il est très prudent.'] }] },
     cairn_spirit: { name: 'Vieux Shidui', title: 'Esprit des pierres empilées', 
       idle: ['Je suis une pile de cailloux. Chaque voyageur en pose un. Je suis la mémoire de ceux qui sont passés.', 'Une louche d\'argent ? Il m\'est arrivé d\'en garder une. Il y a beaucoup de choses sous mes pierres. Je ne les compte pas, je les garde.'],
       talk: [{ whenDone: 'sq_etincelles', lines: ['Le pot qui tenait est parti danser chez la petite Leimei, archer. Ma cache est plus légère, et moi aussi.'] }] }
@@ -82,7 +82,7 @@ export default {
         { type: 'talk', target: 'cairn_spirit', text: 'Parler au Vieux Shidui (crêtes foudroyées, au-delà du village)', lines: ['Un pot qui tient les étincelles ? Il est dans ma cache, sous la pierre la plus plate. Prends-le, mais promets d\'apprendre à ses étincelles à danser.'] },
         { type: 'chest', target: 'crest_cache', text: 'Ouvrir la cache du cairn sur les crêtes foudroyées' }],
       offer: ['Archer ! Mes pots à étincelles ne tiennent pas : les étincelles s\'échappent toujours. Le Vieux Shidui, là-haut, a un pot qui tient, paraît-il.', 'Peux-tu aller lui demander ? Moi je n\'ose pas : il a une voix de cailloux qui s\'entrechoquent.'],
-      hint: ['Le Vieux Shidui est sur les crêtes foudroyées, derrière le village. Parlez-lui, puis ouvrez sa cache.'],
+      hint: ['Le Vieux Shidui est sur les crêtes foudroyées, derrière le village. Parle-lui, puis ouvre sa cache.'],
       complete: ['Le pot ! Il brille ! Les étincelles dedans dansent en rond. Je vais l\'appeler Éclair. Merci, archer. Prends ça : une étincelle que j\'ai gardée pour toi.'],
       reward: { gold: 120, fragment: 'Étincelle en pot', xp: 200 } },
     { id: 'sq_paratonnerre', title: 'Le paratonnerre de la crête', chapter: '✦ Quête secondaire — Monts du Tonnerre', giver: 'rodman_gang', turnIn: 'rodman_gang', requires: [], side: true,
