@@ -1,3 +1,35 @@
+## [2.159.0](https://github.com/niafrond/niafrond.github.io/compare/v2.158.1...v2.159.0) (2026-10-28)
+
+### Features
+
+* **match3-quest:** équilibrer la chute des tuiles sur l'ensemble du plateau ([#587](https://github.com/niafrond/niafrond.github.io/issues/587)) ([fb674f0](https://github.com/niafrond/niafrond.github.io/commit/fb674f01034e4e5f4e544a1d53110e558c7badb3))
+
+## [2.158.1](https://github.com/niafrond/niafrond.github.io/compare/v2.158.0...v2.158.1) (2026-10-28)
+
+### Bug Fixes
+
+* **match3-quest:** bracelet de jade vital dans le stuff et annonce des pouvoirs de compagnons ([#586](https://github.com/niafrond/niafrond.github.io/issues/586)) ([71763f4](https://github.com/niafrond/niafrond.github.io/commit/71763f46e136d6c876e14748e7854828ae44908e))
+
+## [2.158.0](https://github.com/niafrond/niafrond.github.io/compare/v2.157.0...v2.158.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** exiger le qì collecté ×1,5 pour l'ultime et corriger sa barre sur deux lignes ([#585](https://github.com/niafrond/niafrond.github.io/issues/585)) ([530526f](https://github.com/niafrond/niafrond.github.io/commit/530526f8e81b6cfc486dda2d6e455ce7a1e8881d))
+
+## [2.157.0](https://github.com/niafrond/niafrond.github.io/compare/v2.156.0...v2.157.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** faire gagner 3 tours à la pilule du temps suspendu ([#584](https://github.com/niafrond/niafrond.github.io/issues/584)) ([f46a8a8](https://github.com/niafrond/niafrond.github.io/commit/f46a8a8067b78aba99845cf33cb6e714674f5773))
+
+## [2.156.0](https://github.com/niafrond/niafrond.github.io/compare/v2.155.0...v2.156.0) (2026-10-27)
+
+### Features
+
+* **match3-quest:** ajouter les scripts de génération des bruitages (échantillon et complet) à modèle interchangeable ([fb18905](https://github.com/niafrond/niafrond.github.io/commit/fb189052d5c7d25ca8997de51020aa4724f3fc98))
+* **match3-quest:** brancher la commande gm studio sfx generate dans le script d'échantillon ([aceb463](https://github.com/niafrond/niafrond.github.io/commit/aceb463eda3c36f3e70fd6a3640fe42ed3e901d9))
+* **match3-quest:** remplacer les bruitages des sorts et coups d'arc par ceux de MMAudio et ajouter la reprise de génération ([22d3898](https://github.com/niafrond/niafrond.github.io/commit/22d38987316ca3dec30e00a6bb451498903156bd))
+
 ## [2.155.0](https://github.com/niafrond/niafrond.github.io/compare/v2.154.0...v2.155.0) (2026-10-27)
 
 ### Features

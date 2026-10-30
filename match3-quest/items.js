@@ -49,8 +49,6 @@ export const allItems = [
      description:"Ressuscite avec 50% HP si vous mourrez, une fois par combat (rechargé en 8 tours)", effect:{revive:0.5}},
     
     // Reliques permanentes (niveau 8+)
-    {id:"ringOfVitality", name:"Bracelet de Jade Vital", type:"artifact", minLevel:8, rarity:"rare",
-     description:"Augmente HP max de 40 (permanent)", effect:{permMaxHp:40}},
     {id:"amuletOfPower", name:"Amulette du Tigre Blanc", type:"artifact", minLevel:10, rarity:"rare",
      description:"Augmente attaque de 8 (permanent)", effect:{permAttack:8}},
     {id:"shieldCharm", name:"Charme de la Tortue Noire", type:"artifact", minLevel:12, rarity:"rare",
@@ -71,7 +69,7 @@ export const allItems = [
 {id:"orbOfWisdom", name:"Orbe de Jade de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
  description:"Augmente le qì max de 15 (permanent)", effect:{permMaxMana:15}},
  {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"reusable", minLevel:11, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
- description:"Jouez immédiatement un tour supplémentaire (rechargé en 8 tours)", effect:{extraTurn:1}},
+ description:"Jouez immédiatement 3 tours supplémentaires (rechargé en 8 tours)", effect:{extraTurn:3}},
 
 {id:"vampiricPotion", name:"Vin Écarlate du Dragon", type:"reusable", minLevel:10, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
  description:"Vous récupérez 40% des dégâts infligés en HP pour ce combat, sans cumul (rechargé en 5 tours)", effect:{lifesteal:0.4}},
