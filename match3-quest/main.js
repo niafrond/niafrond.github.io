@@ -238,7 +238,7 @@ function init() {
         musicStopped = false;
         setMusicScene(want[0], want[1]);
     };
-    setInterval(syncMusic, 400);
+    setInterval(() => { if(!document.hidden) syncMusic(); }, 400);   // inutile onglet masqué (batterie)
     // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
     // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
     // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
@@ -543,7 +543,7 @@ function init() {
             if(isLongAbsence(lastPlayed)) showWelcomeBack(buildRecap(player, exploration.getActiveQuestSummaries?.() || []), absenceDays(lastPlayed));
         }
         touchLastPlayed();
-        setInterval(touchLastPlayed, 60000);
+        setInterval(() => { if(!document.hidden) touchLastPlayed(); }, 60000);
         document.addEventListener('visibilitychange', touchLastPlayed);
         window.addEventListener('pagehide', touchLastPlayed);
     });
