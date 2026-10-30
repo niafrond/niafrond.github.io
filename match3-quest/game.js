@@ -211,7 +211,7 @@ function ultimateManaBarHtml(entity, spell){
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
         const label = `${color} ${Math.min(have, need)}/${need}`;
-        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}/${need}</span></span>`;
+        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}${color === 'yellow' ? ' light' : ''}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}/${need}</span></span>`;
     });
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
@@ -1487,13 +1487,13 @@ export function updateStats(){
             ${equippedUltimate ? `
             <div class="stat rage-stat">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
-                    <progress class="rage-bar" value="${Math.floor(player.rage || 0)}" max="${RAGE_MAX}"></progress>
+                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="width:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
                     <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}`}</span>
                 </div>
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> <strong>PA</strong> ${player.combatPoints}</span></div>
+            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
@@ -1551,7 +1551,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> <strong>PA</strong> ${enemy.combatPoints}</span></div>
+        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>

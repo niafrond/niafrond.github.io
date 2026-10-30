@@ -1,3 +1,15 @@
+## [2.163.1](https://github.com/niafrond/niafrond.github.io/compare/v2.163.0...v2.163.1) (2026-10-30)
+
+### Bug Fixes
+
+* **match3-quest:** corriger la barre de rage et lisibilité des fiches de combat ([#603](https://github.com/niafrond/niafrond.github.io/issues/603)) ([7bdb842](https://github.com/niafrond/niafrond.github.io/commit/7bdb8420a4f17c2ed7fa2d20fd051e0b5df95e4a))
+
+## [2.163.0](https://github.com/niafrond/niafrond.github.io/compare/v2.162.1...v2.163.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** ajouter une énigme de niveau moyen au royaume des âmes errantes ([#602](https://github.com/niafrond/niafrond.github.io/issues/602)) ([a23b991](https://github.com/niafrond/niafrond.github.io/commit/a23b991d60c48b0c3aeb09257aac53ca76d3c48c))
+
 ## [2.162.1](https://github.com/niafrond/niafrond.github.io/compare/v2.162.0...v2.162.1) (2026-10-30)
 
 ### Bug Fixes
