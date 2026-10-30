@@ -1451,10 +1451,12 @@ export function createExplorationView(cfg) {
             // Porte illustrée (`exit.sprite`, ex. la porte du royaume des âmes errantes) : halo vert qui pulse, sprite posé sur la case, nom au-dessus.
             // Fermée par une quête, elle retombe sur la case grise habituelle.
             if (ex.sprite && !locked) {
-                const base = P(ex.x + 0.5, ex.y + 1), c = P(ex.x + 0.5, ex.y + 0.5);
+                const base = P(ex.x + 0.5, ex.y + 1), c = P(ex.x + 0.5, ex.y + 0.5), size = tile * GATE_SCALE;
+                drawGateAura(base.x, base.y - tile * 0.2, tile, now, 'back');
                 cell(ex.x, ex.y, `rgba(120,184,160,${(0.16 + 0.16 * pulse).toFixed(3)})`, tile * 0.08);
-                drawDecor(ex.sprite, base.x, base.y + tile * 0.08, tile * 1.45);
-                drawLabel(c.x, ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.95, ex.label, '#dff5ea', '#1d3a30', Math.max(11, Math.round(tile * 0.2)));
+                drawDecor(ex.sprite, base.x, base.y + tile * 0.1, size);
+                drawGateAura(base.x, base.y - tile * 0.2, tile, now, 'front');
+                drawLabel(c.x, ex.y === 0 ? c.y + tile * 0.75 : base.y - size * 0.92 - tile * 0.25, ex.label, '#dff5ea', '#1d3a30', Math.max(11, Math.round(tile * 0.2)));
                 return;
             }
             cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
@@ -2089,6 +2091,82 @@ export function createExplorationView(cfg) {
         ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(0,0,0,0.22)';
         ctx.fill();
+    }
+
+    // Porte d'événement : grande (GATE_SCALE cases de large, elle déborde sur les cases voisines), entourée d'une aura qui change de couleur
+    // (jade, violet, or), de flammes d'esprits en orbite, de braises qui montent et de deux lanternes qui vacillent. `layer` : 'back' (derrière le
+    // sprite) ou 'front' (devant). Sans mouvement (préférence système), l'animation est figée sur une image.
+    const GATE_SCALE = 2.8;
+    const reducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+    function drawGateAura(x, y, tile, now, layer) {
+        const t = reducedMotion() ? 0 : now;
+        const cy = y - tile * 1.25;
+        ctx.save();
+        if (layer === 'back') {
+            // aura saturée (fusion normale : « lighter » délave les fonds clairs) qui change de couleur : jade → violet → or
+            const hue = 150 + 120 * Math.sin(t / 2600) + 40 * Math.sin(t / 900);
+            const r = tile * (2.0 + 0.15 * Math.sin(t / 420));
+            const g = ctx.createRadialGradient(x, cy, tile * 0.1, x, cy, r);
+            g.addColorStop(0, `hsla(${hue},100%,55%,0.62)`);
+            g.addColorStop(0.55, `hsla(${hue + 50},100%,48%,0.34)`);
+            g.addColorStop(1, `hsla(${hue + 90},100%,40%,0)`);
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+            // cercle de runes au sol, qui tourne (tirets) et change de teinte
+            ctx.lineWidth = Math.max(2, tile * 0.07);
+            ctx.setLineDash([tile * 0.22, tile * 0.16]);
+            ctx.lineDashOffset = -t / 45;
+            ctx.strokeStyle = `hsla(${hue + 180},100%,62%,0.9)`;
+            ctx.beginPath();
+            ctx.ellipse(x, y + tile * 0.12, tile * 1.2, tile * 0.38, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalCompositeOperation = 'lighter';
+            // flammes d'esprits en orbite autour de la porte (de couleurs différentes)
+            for (let i = 0; i < 10; i++) {
+                const a = t / 1100 + (i * Math.PI * 2) / 10, rx = tile * 1.55, ry = tile * 1.75;
+                const px = x + Math.cos(a) * rx, py = cy + Math.sin(a) * ry * 0.85;
+                const behind = Math.sin(a) < 0;   // la moitié haute passe derrière la porte
+                if (!behind) continue;
+                ctx.fillStyle = `hsla(${[150, 280, 45, 190, 330][i % 5]},95%,70%,${(0.55 + 0.35 * Math.sin(t / 260 + i)).toFixed(3)})`;
+                ctx.beginPath();
+                ctx.arc(px, py, tile * (0.07 + 0.03 * Math.sin(t / 200 + i * 2)), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else {
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = 0; i < 10; i++) {
+                const a = t / 1100 + (i * Math.PI * 2) / 10;
+                if (Math.sin(a) < 0) continue;   // la moitié basse passe devant
+                const px = x + Math.cos(a) * tile * 1.55, py = cy + Math.sin(a) * tile * 1.75 * 0.85;
+                ctx.fillStyle = `hsla(${[150, 280, 45, 190, 330][i % 5]},95%,72%,${(0.6 + 0.35 * Math.sin(t / 260 + i)).toFixed(3)})`;
+                ctx.beginPath();
+                ctx.arc(px, py, tile * (0.08 + 0.03 * Math.sin(t / 200 + i * 2)), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // braises qui montent du seuil et s'éteignent
+            for (let i = 0; i < 8; i++) {
+                const k = ((t / 2200 + i / 8) % 1 + 1) % 1;
+                const px = x + Math.sin(i * 12.9 + k * 5) * tile * 0.7, py = y - k * tile * 2.6;
+                ctx.fillStyle = `hsla(${[45, 20, 150, 290][i % 4]},95%,65%,${(0.8 * (1 - k)).toFixed(3)})`;
+                ctx.fillRect(Math.round(px), Math.round(py), Math.max(2, tile * 0.06), Math.max(2, tile * 0.06));
+            }
+            // lanternes rouges qui vacillent, de chaque côté du linteau
+            for (const side of [-1, 1]) {
+                const flick = 0.55 + 0.3 * Math.sin(t / 130 + side * 2) + 0.15 * Math.sin(t / 47 + side);
+                const lx = x + side * tile * 1.0, ly = y - tile * 1.3;
+                const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, tile * 0.55);
+                lg.addColorStop(0, `rgba(255,140,60,${(0.7 * flick).toFixed(3)})`);
+                lg.addColorStop(1, 'rgba(255,60,40,0)');
+                ctx.fillStyle = lg;
+                ctx.beginPath();
+                ctx.arc(lx, ly, tile * 0.55, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
     }
 
     // Élément de décor dessiné (sprites/decor.js), base posée en baseY.

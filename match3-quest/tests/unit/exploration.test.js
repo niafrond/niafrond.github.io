@@ -263,6 +263,7 @@ function openChestAt(s, id) {
         if (s.data.openedChests.includes(id)) return null;
         const res = walkTo(s, chest.x, chest.y);
         if (res.type !== 'chest' || res.chestId !== id) throw new Error(`coffre ${id} non atteint : ${JSON.stringify(res)}`);
+        if (chest.puzzle) solvePuzzle(s, chest.puzzle);   // coffre verrouillé par une énigme : on la résout d'abord
         return openChest(s, id);
     } finally { done(); }
 }

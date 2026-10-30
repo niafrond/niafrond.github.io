@@ -138,7 +138,8 @@ describe('dessins pixellisés (PNG data URI, paquets legends, marees et souls)',
     // Hautes-Eaux (sprites/cn/marees.js, tools/gen-marees-sprites.mjs) : dessins 32×32 des ennemis aquatiques, Changxi en 64×64
     const MAREES = ['shuimu_denglong', 'baoyu_jian', 'lu_ci_gui', 'hai_ma_xing', 'changxi', 'hai_gui', 'hai_she', 'ren_yu'].map(id => `ennemi ${id}`);
     // Royaume des âmes errantes (sprites/cn/souls.js, tools/gen-souls-sprites.mjs) : trois ennemis de l'événement, 64×64
-    const SOULS = ['ws_gardien_jugement', 'ws_jiangshi_patrouille', 'ws_huli_jing'].map(id => `ennemi ${id}`);
+    const SOULS_BIG = ['ws_gardien_jugement', 'ws_jiangshi_patrouille', 'ws_huli_jing', 'diaosi_gui'].map(id => `ennemi ${id}`);   // 64×64
+    const SOULS = [...SOULS_BIG.slice(0, 3), 'heibai_wuchang', 'yuan_gui', 'nu_gui', 'diaosi_gui', 'shui_gui', 'mu_gui', 'wangliang'].map(id => id.startsWith('ennemi ') ? id : `ennemi ${id}`);   // + gabarits des terrains agrandis (32×32, Diao Si Gui en 64×64)
     test('seuls les Gardiens Célestes, les ennemis des Hautes-Eaux et ceux du royaume des âmes errantes sont dessinés ainsi', () => {
         expect(bitmaps.map(([k]) => k)).toEqual([...LEGENDS, ...MAREES, ...SOULS]);
     });
@@ -146,7 +147,7 @@ describe('dessins pixellisés (PNG data URI, paquets legends, marees et souls)',
     test.each(bitmaps)('%s : vrai PNG carré, léger, avec un sujet et un contour', (name, uri) => {
         const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
         expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
-        const side = LEGENDS.includes(name) || SOULS.includes(name) || name === 'ennemi changxi' ? 64 : 32;
+        const side = LEGENDS.includes(name) || SOULS_BIG.includes(name) || name === 'ennemi changxi' ? 64 : 32;
         expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([side, side]);
         expect(png.readUInt8(25)).toBe(6);                 // RGBA : fond transparent
         expect(uri.length).toBeLessThanOrEqual(12000);
