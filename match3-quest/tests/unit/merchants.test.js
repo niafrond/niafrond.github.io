@@ -242,3 +242,30 @@ describe('excédent à vendre (tag bouton pièce)', () => {
         expect(allShieldsTagged({ inventory: [], sellTags: [] })).toBe(false);
     });
 });
+
+describe('pièces standard : un objet de chaque type en permanence', () => {
+    const TYPES = ['reusable', 'shield', 'artifact'];
+
+    test('chaque marchand vend au moins un objet standard de chaque type, jamais retiré du rayon', () => {
+        MERCHANT_IDS.forEach(id => {
+            const standard = merchantStock(id).filter(o => o.section === 'standard');
+            expect(standard.map(o => offerObject(o).type).sort()).toEqual([...TYPES].sort());
+            standard.forEach(o => {
+                expect(o.unique).toBe(false);
+                expect(['common', 'uncommon', 'rare']).toContain(o.rarity);
+            });
+            expect(new Set(merchantStock(id).map(o => o.key)).size).toBe(merchantStock(id).length);
+        });
+    });
+
+    test('achat répété : le bouclier et l\'objet restent en rayon, la relique n\'est jamais achetée en double', () => {
+        const id = 'merchant_tonnerre';
+        const h = hero(10000000);
+        merchantStock(id).filter(o => o.section === 'standard').forEach(o => {
+            expect(buyOffer(id, o.key, h).ok).toBe(true);
+            expect(availableOffers(id, h).some(a => a.key === o.key)).toBe(true);
+            const again = buyOffer(id, o.key, h);
+            expect(again.ok).toBe(offerObject(o).type !== 'artifact');
+        });
+    });
+});

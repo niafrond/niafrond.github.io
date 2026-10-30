@@ -2,6 +2,7 @@ import './fixtures/playerForge.js';
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
 import { connectionRows } from '../../mapConnections.js';
+import { createSession, isEnemyAlive } from '../../exploration.js';
 
 describe('Désert de Gobi : vrai soleil et mur de sable', () => {
     const gobi = SCREENS.gobi;
@@ -24,5 +25,13 @@ describe('Désert de Gobi : vrai soleil et mur de sable', () => {
         const rows = connectionRows(SCREENS, gobi).filter(r => r.edge === 'east');
         expect(rows.length).toBeGreaterThan(0);
         rows.forEach(r => expect([r.requires, r.wall]).toEqual(['sun_4', 'sand']));
+    });
+
+    test('une fois le vrai soleil vaincu, tous ses mirages disparaissent', () => {
+        const session = createSession({ screenId: 'gobi', x: 1, y: 1 });
+        const mirages = gobi.enemies.filter(e => e.illusion);
+        mirages.forEach(m => expect(isEnemyAlive(session, m.id)).toBe(true));
+        session.data.defeated.push('sun_4');
+        mirages.forEach(m => expect(isEnemyAlive(session, m.id)).toBe(false));
     });
 });
