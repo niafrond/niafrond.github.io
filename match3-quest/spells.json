@@ -1523,6 +1523,43 @@
       "defBuff": 10,
       "duration": 3,
       "description": "Augmente l'attaque de 20 % et la défense de 10 % pendant 3 tours"
+    },
+    {
+      "id": "bloodBoil",
+      "name": "Sang en Ébullition",
+      "class": "barbarian",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 35,
+      "description": "Le sang bout : +35 de rage"
+    },
+    {
+      "id": "furyToQi",
+      "name": "Souffle de la Colère",
+      "class": "barbarian",
+      "cost": {
+        "green": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.1,
+      "description": "Transforme toute la rage en qì : 1 qì de chaque couleur par 10 de rage"
+    },
+    {
+      "id": "furyBlow",
+      "name": "Coup de la Fureur Brisée",
+      "class": "barbarian",
+      "cost": {
+        "red": 6,
+        "yellow": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage en un coup : 3 dégâts par point de rage"
     }
   ],
   "allClassSpells": [

@@ -2,13 +2,13 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
-    RAGE_MAX, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull,
+    RAGE_MAX, rageToManaAmount, rageToDamageAmount, getUltimatesForClass, getUltimateById, rageFromDamage, addRage, resetRage, isRageFull,
     registerUltimateCinematic, playUltimateCinematic,
     isQuestUltimate, getQuestUltimates, getSelectableUltimates, getEquippedUltimate, getLockedQuestUltimates,
     unlockUltimate, normalizeUnlockedUltimates, isUltimateUnlocked,
     ultimateCostEntries, addUltimateMana, canCastUltimateMana, spendUltimateMana, resetUltimateMana
 } from '../../ultimates.js';
-import { ultimateSpells, getSpellsByClass } from '../../spells.js';
+import { ultimateSpells, getSpellsByClass, barbarianSpells } from '../../spells.js';
 import { playerClasses } from '../../classes.js';
 
 describe('catalogue', () => {
@@ -149,5 +149,23 @@ describe('ultimes de légende (gagnés par quête, toutes classes)', () => {
         expect(hero.ultimateMana).toEqual({ red: 2, blue: 2, green: 2 });
         resetUltimateMana(hero);
         expect(canCastUltimateMana(hero, spell)).toBe(false);
+    });
+});
+
+describe('sorts de rage (gain, conversion en qì, conversion en dégâts)', () => {
+    test('le catalogue barbare contient les trois effets', () => {
+        const effects = barbarianSpells.map(spell => spell.effect);
+        expect(effects).toEqual(expect.arrayContaining(['rageGain', 'rageToMana', 'rageToDamage']));
+    });
+
+    test('conversion de la rage en qì par couleur', () => {
+        expect(rageToManaAmount(100, 0.1)).toBe(10);
+        expect(rageToManaAmount(9, 0.1)).toBe(0);
+        expect(rageToManaAmount(undefined, 0.1)).toBe(0);
+    });
+
+    test('conversion de la rage en dégâts', () => {
+        expect(rageToDamageAmount(100, 3)).toBe(300);
+        expect(rageToDamageAmount(0, 3)).toBe(0);
     });
 });

@@ -6,6 +6,8 @@ import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } f
 import { colors, boardSize } from "./constants.js";
 import { stackStatusEffect, addStatBuff, describeStatBuff, resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { playSfx } from "./sound.js";
+import { addRage, resetRage, rageToManaAmount, rageToDamageAmount } from "./ultimates.js";
+import { boostedRageGain } from "./attributes.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker, skullValue } from "./joker.js";
 
 function getManaCap(color) {
@@ -189,6 +191,12 @@ export function applyClassSpellEffect(spell) {
             return applyDeathbringer(spell);
         case 'doubleBattle': // Esprit des Ancêtres
             return applyRevenant(spell);
+        case 'rageGain': // Sang en Ébullition
+            return applyRageGain(spell);
+        case 'rageToMana': // Souffle de la Colère
+            return applyRageToMana(spell);
+        case 'rageToDamage': // Coup de la Fureur Brisée
+            return applyRageToDamage(spell);
         case 'ultimate': // Sorts ultimes (jauge de rage)
             return applyUltimate(spell);
         // Sorts avancés multi-mana (3 à 5 couleurs), génériques
@@ -1125,6 +1133,47 @@ async function applySummonTempest(spell) {
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} qì récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
     log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${caster.name} récupère ${manaCollected.total} qì.`);
+    return true;
+}
+
+// Sorts de rage : gain, conversion en qì, conversion en dégâts.
+function applyRageGain(spell) {
+    const gained = addRage(player, boostedRageGain(player, spell.rageGain));
+    showCombatAnimation({ icon: 'anger', title: (spell.name || "SANG EN ÉBULLITION").toUpperCase(), heal: `+${gained} rage`, target: '→ Vous' }, true);
+    log(`${spell.name} donne +${gained} rage.`);
+    return true;
+}
+
+function applyRageToMana(spell) {
+    const each = rageToManaAmount(player.rage, spell.manaPerRage);
+    if(each <= 0) {
+        log(`Pas assez de rage à convertir en qì.`);
+        return false;
+    }
+    const gains = {};
+    MANA_COLORS.forEach(color => {
+        const gain = Math.min(each, Math.max(0, getManaCap(color) - (player.mana[color] || 0)));
+        player.mana[color] = (player.mana[color] || 0) + gain;
+        gains[color] = gain;
+    });
+    resetRage(player);
+    flyManaGain(true, gains);
+    showCombatAnimation({ icon: 'spark', title: (spell.name || "SOUFFLE DE LA COLÈRE").toUpperCase(), heal: `+${each} qì de chaque couleur`, target: '→ Vous' }, true);
+    log(`${spell.name} convertit toute la rage en ${each} qì de chaque couleur.`);
+    return true;
+}
+
+function applyRageToDamage(spell) {
+    let dmg = rageToDamageAmount(player.rage, spell.dmgPerRage);
+    if(dmg <= 0) {
+        log(`Pas de rage à libérer.`);
+        return false;
+    }
+    resetRage(player);
+    applyDamage(enemy, dmg, { sourceSpell: spell });
+    dmg = lastSpellDamage(dmg);
+    showCombatAnimation({ icon: 'anger', title: (spell.name || "COUP DE LA FUREUR BRISÉE").toUpperCase(), damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
+    log(`${spell.name} libère toute la rage : ${dmg} dégâts.`);
     return true;
 }
 
