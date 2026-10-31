@@ -430,7 +430,8 @@ function refreshTargetingHighlights(){
 }
 
 function computeSpecialTileProbabilities(){
-    return { ...BOARD_DROP_PROBABILITIES };
+    // Tutoriel : répartition dédiée (plus de crânes, pas de flèches ni de joker) pour que les étapes aillent vite.
+    return { ...(tutorialCallbacks.dropProbabilities || BOARD_DROP_PROBABILITIES) };
 }
 
 function refreshBoardDropProbabilities(){
@@ -530,18 +531,14 @@ function generateNewBoard(){
 }
 
 function generateRandomTile(options = {}){
-    if(!boardDropProbabilities){
-        refreshBoardDropProbabilities();
-    }
+    refreshBoardDropProbabilities();   // relu à chaque tirage : la répartition change pendant le tutoriel
 
     return rollTileWithJoker(boardDropProbabilities, colors, options);
 }
 
 // Tuile qui tombe pour combler un trou : tirée pour que la répartition cible tienne sur tout le plateau après la chute.
 function generateBalancedDropTile(){
-    if(!boardDropProbabilities){
-        refreshBoardDropProbabilities();
-    }
+    refreshBoardDropProbabilities();
     return rollBalancedTile(board, boardDropProbabilities, colors);
 }
 

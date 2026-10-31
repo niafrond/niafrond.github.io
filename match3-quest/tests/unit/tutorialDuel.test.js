@@ -26,4 +26,11 @@ describe('duel-tutoriel', () => {
     test("seuls les échanges du joueur font avancer le tutoriel (pas ceux de l'adversaire)", () => {
         expect(read('board.js')).toMatch(/if\(currentTurn === 'player'\) tutorialCallbacks\.onTileSwap\?\.\(i, j, true\)/);
     });
+
+    test('le tutoriel a sa propre répartition de tuiles neuves, retirée à la fin', () => {
+        const tuto = read('tutorial.js');
+        expect(tuto).toMatch(/tutorialCallbacks\.dropProbabilities = TUTORIAL_DROP_PROBABILITIES/);
+        expect(tuto.match(/tutorialCallbacks\.dropProbabilities = null/g)).toHaveLength(2);   // quitter + terminer
+        expect(read('board.js')).toMatch(/tutorialCallbacks\.dropProbabilities \|\| BOARD_DROP_PROBABILITIES/);
+    });
 });
