@@ -2251,7 +2251,7 @@ export function forcePlayerTurnForCheat(){
 }
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
-const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Étincelle', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
+const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
 function applyCompanionPowers(){
     const outcome = { skipEnemy: false, enemyDown: false, boardChanged: false, announcements: [] };
     rollCompanionPowers([...activeCompanionIds], player, Math.random, enemy).forEach(({ id, power, amount, color }) => {
@@ -2326,7 +2326,7 @@ export function finishPlayerTurn(){
         saveUpdate();
         return;
     }
-    // Pouvoirs des autres compagnons (Zhi, Dawa, Yu, Étincelle) : tirés une fois par tour, en fin de tour du joueur.
+    // Pouvoirs des autres compagnons (Zhi, Dawa, Yu, Leigong) : tirés une fois par tour, en fin de tour du joueur.
     let outcome = null;
     if (!companionsActedThisTurn) {
         companionsActedThisTurn = true;
