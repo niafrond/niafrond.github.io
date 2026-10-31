@@ -1,3 +1,9 @@
+## [2.165.1](https://github.com/niafrond/niafrond.github.io/compare/v2.165.0...v2.165.1) (2026-10-31)
+
+### Bug Fixes
+
+* **match3-quest:** empêcher la flèche de quête de passer par le royaume des âmes ([#606](https://github.com/niafrond/niafrond.github.io/issues/606)) ([b44533f](https://github.com/niafrond/niafrond.github.io/commit/b44533fbc1d48bf89b221c5925e8aa7e584823a2))
+
 ## [2.165.0](https://github.com/niafrond/niafrond.github.io/compare/v2.164.0...v2.165.0) (2026-10-30)
 
 ### Features
