@@ -290,7 +290,7 @@ function init() {
             return;
         }
         setActiveCompanions(exploration.getActiveCompanionIds?.() || []);
-        startNewCombat(createMapEnemy(encounter));
+        startNewCombat(createMapEnemy(encounter, undefined, player.maxHp));
         generateBoard();
         consumeBoardBoost();
         renderBoard();

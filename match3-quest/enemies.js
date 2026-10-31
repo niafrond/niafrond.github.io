@@ -324,7 +324,16 @@ export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, pr
 
 // Ennemi rencontré sur la carte d'exploration (voir exploration.js > encounterFor) :
 // { templateId, level, boss?: { name, level } } → ennemi prêt pour startNewCombat.
-export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
+// PV mini d'un boss, en multiple des PV max du héros : un héros très endurci (ex. 4 000 PV au niveau 56) ne doit pas
+// balayer un boss dont les PV ne suivent que le niveau. Ne fait jamais baisser les PV d'un boss déjà plus costaud.
+export const BOSS_HERO_HP_RATIO = 1.2;
+export function bossHpFloor(heroMaxHp){
+    const hp = Math.floor(Number(heroMaxHp) || 0);
+    return hp > 0 ? Math.ceil(hp * BOSS_HERO_HP_RATIO) : 0;
+}
+
+// `heroMaxHp` (facultatif) : PV max actuels du héros, pour équilibrer les PV des boss.
+export function createMapEnemy(encounter, allWeaponsArg = allWeapons, heroMaxHp = 0){
     const catalog = loadEnemyCatalogSync();
     const template = catalog.find(t => t.id === encounter?.templateId) || pickRandom(catalog);
     const level = Math.max(1, Math.floor(encounter?.level || 1));
@@ -337,6 +346,11 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
 
     if(encounter?.boss){
         applyBossScaling(enemyEntity, template);
+        const hpFloor = bossHpFloor(heroMaxHp);
+        if(enemyEntity.maxHp < hpFloor){
+            enemyEntity.maxHp = hpFloor;
+            enemyEntity.hp = hpFloor;
+        }
         enemyEntity.bossTier = level;
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
