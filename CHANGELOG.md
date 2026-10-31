@@ -1,3 +1,9 @@
+## [2.167.1](https://github.com/niafrond/niafrond.github.io/compare/v2.167.0...v2.167.1) (2026-10-31)
+
+### Bug Fixes
+
+* **match3-quest:** corriger le tutoriel et accélérer l'apparition des tuiles ([#609](https://github.com/niafrond/niafrond.github.io/issues/609)) ([5a63d4a](https://github.com/niafrond/niafrond.github.io/commit/5a63d4af1464ab89429f308d85e8a8326ea42bca))
+
 ## [2.167.0](https://github.com/niafrond/niafrond.github.io/compare/v2.166.0...v2.167.0) (2026-10-31)
 
 ### Features
