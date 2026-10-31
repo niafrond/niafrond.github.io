@@ -150,6 +150,20 @@ describe('ennemis', () => {
         expect(createMapEnemy({ templateId: 'chiyou', level: 56 }).spellPower).toBeUndefined();
     });
 
+    test('PV et puissance magique des boss : finis, croissants et supérieurs aux ennemis normaux jusqu\'au niveau max (70) et au-delà', () => {
+        let prevHp = 0, prevPower = 0;
+        for (let lvl = 1; lvl <= 76; lvl++) {
+            const b = createMapEnemy({ templateId: 'chiyou', level: lvl, boss: { name: 'Boss test' }, enemyId: 'boss_test' });
+            const n = createMapEnemy({ templateId: 'chiyou', level: lvl });
+            expect(Number.isFinite(b.maxHp)).toBe(true);
+            expect(b.hp).toBe(b.maxHp);
+            expect(b.maxHp).toBeGreaterThan(n.maxHp);
+            expect(b.maxHp).toBeGreaterThanOrEqual(prevHp);
+            expect(b.spellPower).toBeGreaterThanOrEqual(prevPower);
+            prevHp = b.maxHp; prevPower = b.spellPower;
+        }
+    });
+
     test('agilité proportionnelle au niveau, très rarement nulle', () => {
         let zeros = 0;
         const N = 300;
