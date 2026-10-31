@@ -40,7 +40,7 @@ const SPRITES = [
   { id: 'offering_bowl', w: 1, gen: [512, 512], view: 'three-quarter view seen from slightly above', desc: 'small altar offering: a white porcelain bowl of rice with three burning incense sticks and a few golden paper coins' },
   { id: 'pale_flowers', w: 1, gen: [512, 512], view: 'front view', desc: 'cluster of pale ghostly white and pale blue spider lilies higarbana growing from dark soil, thin curved petals, faint glow' },
   // Porte du royaume : 64 × 64 (affichée à 2,8 cases, voir explorationView.js) ; `variants` = pistes comparées avec --cand=4, la retenue se fixe dans `desc` (--use=souls_gate:k)
-  { id: 'souls_gate', w: 1, cell: 64, gen: [512, 512], view: 'front view', desc: 'ornate Chinese paifang gate to the realm of wandering souls, two dark stone pillars and a black curved tiled roof lintel with a red crossbeam, two red paper lanterns, an open doorway filled with swirling pale green spirit mist',
+  { id: 'souls_gate', w: 1, cell: 64, gen: [512, 512], view: 'front view', desc: 'ornate Chinese paifang gate, two dark stone pillars carved with dragons, black curved tiled roof, two red paper lanterns, the doorway filled with swirling pale green ghostly mist and drifting translucent ghost faces, ominous',
     variants: [
       'ornate Chinese paifang gate, two dark stone pillars carved with dragons, black curved tiled roof, two red paper lanterns, the doorway filled with swirling pale green ghostly mist and drifting translucent ghost faces, ominous',
       'ornate Chinese paifang gate, two dark stone pillars, black curved tiled roof, the doorway filled with a swirling rainbow spiral vortex portal of violet cyan pink and gold light, magical',
