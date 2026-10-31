@@ -17,6 +17,7 @@ export const tutorialCallbacks = {
     onEnemyDefeated: null, // () → void
     useDumbAI: false,      // board.js lit ce flag dans enemyMakeMove
     allowSwap: null,       // (i, j, board) → bool : refuse tout échange autre que celui demandé (board.js, selectTile)
+    dropProbabilities: null, // { skullProb, combatProb, jokerProb } : répartition des tuiles neuves pendant le tutoriel (board.js)
     allowSpell: null,      // (spell) → bool : refuse tout sort autre que celui demandé (game.js, castSpell)
 };
 
@@ -25,7 +26,12 @@ const TOTAL_STEPS = 5;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : un dernier coup suffit à conclure
+const ENEMY_SPELL_HP_BUFFER = 500; // PV de l'adversaire à l'étape du sort (voir _adjustEnemyHp)
 const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les premiers coups ne l'achèvent pas
+
+// Répartition des tuiles neuves pendant le tutoriel (le reste = gâteaux de lune) : beaucoup de crânes et de qì,
+// ni flèches ni joker, pour que chaque étape se résolve en quelques coups.
+const TUTORIAL_DROP_PROBABILITIES = Object.freeze({ skullProb: 0.30, combatProb: 0.05, jokerProb: 0 });
 
 // Plateau pré-généré garanti sans match initial, avec 8+ coups possibles dont :
 //   – 1 coup crâne : échanger index 35 (4,3)=skull et index 43 (5,3)=blue → 4 crânes alignés en ligne 5
@@ -190,6 +196,7 @@ export function startTutorial(opts = {}) {
     _active = true;
     _step = 1;
     tutorialCallbacks.useDumbAI = true;
+    tutorialCallbacks.dropProbabilities = TUTORIAL_DROP_PROBABILITIES;
 
     _injectTutorialSpell().then(() => {
         _startTutorialCombat();
@@ -206,6 +213,7 @@ export function quitTutorial() {
     _hideOverlay();
     _clearHooks();
     tutorialCallbacks.useDumbAI = false;
+    tutorialCallbacks.dropProbabilities = null;
     _active = false;
     _step = 0;
     _removeTutorialSpell();
@@ -366,7 +374,9 @@ function _adjustEnemyHp(step) {
         foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (step === 4 && _tutoSpell) {
-        foe.hp = (_tutoSpell.dmg || 0) + ENEMY_FINISH_HP;
+        // Les dégâts réels du sort dépassent son `dmg` de base (attributs, arme…) : grande réserve de PV, ramenée à
+        // ENEMY_FINISH_HP juste après le lancer (hook onSpellCast), pour que le sort ne conclue jamais le duel à lui seul.
+        foe.hp = ENEMY_SPELL_HP_BUFFER;
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (step === 5) {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
@@ -401,6 +411,7 @@ function _completeTutorial() {
     _cleanupHighlights();
     _hideOverlay();
     tutorialCallbacks.useDumbAI = false;
+    tutorialCallbacks.dropProbabilities = null;
     const wasActive = _active;
     _active = false;
     _step = 0;
@@ -457,6 +468,7 @@ function _installHooks(step) {
 
     } else if (step === 4) {
         tutorialCallbacks.onSpellCast = () => {
+            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
             _advanceStep();
         };
     }
