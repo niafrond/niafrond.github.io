@@ -6,7 +6,7 @@ import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
     skullStrengthBonus, levelEdgeBonus, addStatBuff, stackStatusEffect, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
-import { createMapEnemy, createBossEnemyForTier, BOSS_HERO_HP_RATIO } from '../../enemies.js';
+import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
 import { allItems } from '../../items.js';
 import spellsJson from '../../spells.json' with { type: 'json' };
@@ -135,15 +135,11 @@ describe('force et crânes', () => {
 describe('ennemis', () => {
     const enc = (level, extra = {}) => ({ templateId: 'chiyou', level, ...extra });
 
-    test('les PV d\'un boss suivent les PV du héros (plancher), sans jamais baisser', () => {
-        const boss = { templateId: 'chiyou', level: 56, boss: { name: 'Nico' }, enemyId: 'nico' };
-        const base = createMapEnemy(boss);
-        const strong = createMapEnemy(boss, undefined, 4000);
-        expect(strong.maxHp).toBe(Math.ceil(4000 * BOSS_HERO_HP_RATIO));
-        expect(strong.hp).toBe(strong.maxHp);
-        expect(createMapEnemy(boss, undefined, 10).maxHp).toBe(base.maxHp);
-        // un ennemi normal n'est pas gonflé
-        expect(createMapEnemy({ templateId: 'chiyou', level: 56 }, undefined, 4000).maxHp).toBeLessThan(4000);
+    test('les PV des boss sont absolus (courbe de niveau, sans dépendre du héros)', () => {
+        const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Nico' }, enemyId: 'nico' });
+        expect(createMapEnemy(boss(56)).maxHp).toBe(createMapEnemy(boss(56)).maxHp);
+        expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(4000);
+        expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(createMapEnemy({ templateId: 'chiyou', level: 56 }).maxHp * 1.75);
     });
 
     test('agilité proportionnelle au niveau, très rarement nulle', () => {
