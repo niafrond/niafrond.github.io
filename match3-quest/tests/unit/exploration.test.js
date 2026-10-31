@@ -2195,6 +2195,20 @@ describe('indicateurs de quête : maisons et direction', () => {
         expect(questDirection(s)).toMatchObject({ kind: 'target' });
     });
 
+    test('la flèche de quête ne passe jamais par le royaume des âmes (portails d\'événement)', () => {
+        const s = createSession({});
+        talkTo(s, 'elder_wen');
+        Object.values(s.screens).forEach(sc => {
+            if (sc.event) return;
+            s.data.screenId = sc.id;
+            const dir = questDirection(s);
+            if (dir && dir.kind === 'exit') {
+                const ex = [...exitsOf(sc, SCREENS)].find(e => e.x === dir.x && e.y === dir.y);
+                if (ex) expect(Boolean(ex.rememberReturn)).toBe(false);
+            }
+        });
+    });
+
     test('la quête épinglée prime sur la quête principale', () => {
         const s = createSession({});
         talkTo(s, 'elder_wen');

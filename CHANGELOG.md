@@ -1,3 +1,21 @@
+## [2.165.1](https://github.com/niafrond/niafrond.github.io/compare/v2.165.0...v2.165.1) (2026-10-31)
+
+### Bug Fixes
+
+* **match3-quest:** empêcher la flèche de quête de passer par le royaume des âmes ([#606](https://github.com/niafrond/niafrond.github.io/issues/606)) ([b44533f](https://github.com/niafrond/niafrond.github.io/commit/b44533fbc1d48bf89b221c5925e8aa7e584823a2))
+
+## [2.165.0](https://github.com/niafrond/niafrond.github.io/compare/v2.164.0...v2.165.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** lier la rage aux attributs et ajouter des sorts de rage pour toutes les classes ([#605](https://github.com/niafrond/niafrond.github.io/issues/605)) ([e82da60](https://github.com/niafrond/niafrond.github.io/commit/e82da605c01f05cc82a3dda995823323431fab78))
+
+## [2.164.0](https://github.com/niafrond/niafrond.github.io/compare/v2.163.1...v2.164.0) (2026-10-30)
+
+### Features
+
+* **match3-quest:** agrandir le royaume des âmes errantes en six terrains et animer sa porte ([#604](https://github.com/niafrond/niafrond.github.io/issues/604)) ([bf4f3ca](https://github.com/niafrond/niafrond.github.io/commit/bf4f3caf24758bb4eea8cde18a030eb9eb7c1582))
+
 ## [2.163.1](https://github.com/niafrond/niafrond.github.io/compare/v2.163.0...v2.163.1) (2026-10-30)
 
 ### Bug Fixes
