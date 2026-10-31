@@ -136,14 +136,14 @@ describe('ennemis', () => {
     const enc = (level, extra = {}) => ({ templateId: 'chiyou', level, ...extra });
 
     test('les PV des boss sont absolus (courbe de niveau, sans dépendre du héros)', () => {
-        const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Nico' }, enemyId: 'nico' });
+        const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Boss test' }, enemyId: 'boss_test' });
         expect(createMapEnemy(boss(56)).maxHp).toBe(createMapEnemy(boss(56)).maxHp);
         expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(4000);
         expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(createMapEnemy({ templateId: 'chiyou', level: 56 }).maxHp * 1.75);
     });
 
     test('les boss ont une puissance magique croissante, pas les ennemis normaux', () => {
-        const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Nico' }, enemyId: 'nico' });
+        const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Boss test' }, enemyId: 'boss_test' });
         expect(createMapEnemy(boss(56)).spellPower).toBe(bossSpellPower(56));
         expect(bossSpellPower(56)).toBeGreaterThan(200);
         expect(bossSpellPower(56)).toBeGreaterThan(bossSpellPower(10));
