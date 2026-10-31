@@ -770,8 +770,8 @@ export function swapTiles(i,j){
     };
     actionGuard.beginBoardAction();
 
-    // Notifier le tutoriel qu'un échange valide a eu lieu
-    tutorialCallbacks.onTileSwap?.(i, j, true);
+    // Notifier le tutoriel qu'un échange valide du joueur a eu lieu (les échanges de l'ennemi ne comptent pas)
+    if(currentTurn === 'player') tutorialCallbacks.onTileSwap?.(i, j, true);
 
     // Il y a un match : continuer normalement
     renderBoard();

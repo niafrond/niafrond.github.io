@@ -22,4 +22,8 @@ describe('duel-tutoriel', () => {
         expect(src).toMatch(/foe\.hp = ENEMY_SPELL_HP_BUFFER/);
         expect(src).toMatch(/onSpellCast = \(\) => \{\s*if \(_game\?\.enemy\) \{ _game\.enemy\.hp = ENEMY_FINISH_HP;/);
     });
+
+    test("seuls les échanges du joueur font avancer le tutoriel (pas ceux de l'adversaire)", () => {
+        expect(read('board.js')).toMatch(/if\(currentTurn === 'player'\) tutorialCallbacks\.onTileSwap\?\.\(i, j, true\)/);
+    });
 });
