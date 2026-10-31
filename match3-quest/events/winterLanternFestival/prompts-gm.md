@@ -195,8 +195,8 @@ epic yet warm Chinese orchestral boss music, taiko drums, pipa, erhu, low horns,
 
 | Ressource finale | Substitut dans le jeu aujourd'hui |
 |---|---|
-| `wlm_gate` | `red_lantern` (`GATE_SPRITE`) |
-| Décors du biome (section 2) | `red_lantern`, `stonelantern`, `guardian_lion`, `offering_bowl`, `incense_burner`, `pale_flowers`, `jar`, `basket` |
+| `wlm_gate` | **généré** (`sprites/winter-decor.js`) |
+| Décors du biome (section 2) | **12 générés** (`snow_pine`, `snow_rock`, `stone_column_snow`, `lantern_red`, `lantern_unlit`, `snow_flowers`, `ice_block`, `guardian_statue_snow`, `bronze_bell`, `tangyuan_basket`, `hot_spring`, `wlm_gate`) ; non retenus (paysage au lieu d'un objet, à relancer avec `--only` et un autre `--seed`) : `frozen_bamboo`, `ice_crystal`, `lantern_gold` ; le reste de la liste n'est pas généré |
 | Sol du biome (section 4) | case procédurale `tilePainter.js` (`winter_lantern_mountain` : neige tassée, givre, étincelles dorées) |
 | Bordure du biome | sapins du moteur (`BORDER_KIND = 'pine'`) |
 | Renard des neiges / esprit du village | créatures `fox` et `lantern` de `sprites/creatures.js` |

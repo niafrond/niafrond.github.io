@@ -18,8 +18,8 @@ export const BIOME_DECOR = {
     moon: ['rock', 'deadtree', 'rock', 'meteorite', 'mooncrystal', 'brokenpillar', 'moonflower', 'whiterabbit'],
     // Royaume des âmes errantes (événement, events/wanderingSouls/) : lanternes de pierre, colonnes brisées, urnes, plumes noires.
     wandering_souls: ['red_lantern', 'stone_stele', 'guardian_lion', 'soul_urn', 'incense_burner', 'spirit_mirror', 'pale_flowers', 'offering_bowl'],
-    // Montagne des lanternes enneigées (événement, events/winterLanternFestival/) : décors existants en attendant les sprites hivernaux (prompts-gm.md).
-    winter_lantern_mountain: ['red_lantern', 'stonelantern', 'guardian_lion', 'offering_bowl', 'incense_burner', 'pale_flowers', 'jar', 'basket']
+    // Montagne des lanternes enneigées (événement, events/winterLanternFestival/) : sprites pixel art générés (tools/gen-winter-decor.mjs).
+    winter_lantern_mountain: ['snow_pine', 'snow_rock', 'stone_column_snow', 'lantern_red', 'snow_flowers', 'ice_block', 'guardian_statue_snow', 'bronze_bell']
 };
 
 // Décors franchissables : touffes de roseaux, trop basses pour arrêter un héros.

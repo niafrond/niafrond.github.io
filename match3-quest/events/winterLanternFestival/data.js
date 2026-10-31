@@ -8,8 +8,8 @@
 export const ID = 'winterLanternFestival';
 export const REALM_ID = 'winter_lantern_mountain';
 export const BIOME = 'winter_lantern_mountain';
-// Sprite de la porte du col (placeholder : la lanterne rouge existante, à remplacer par `wlm_gate`, voir prompts-gm.md).
-export const GATE_SPRITE = 'red_lantern';
+// Sprite de la porte du col (sprites/winter-decor.js, tools/gen-winter-decor.mjs).
+export const GATE_SPRITE = 'wlm_gate';
 
 // Entrée : l'ancien col enneigé de la zone sauvage du Tonnerre. Niveau de référence de la région (REGION_LEVEL.tonnerre).
 export const HOST = { region: 'tonnerre', wild: 'tonnerre_wild', level: 22 };
