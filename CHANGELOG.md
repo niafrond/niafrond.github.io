@@ -1,3 +1,9 @@
+## [2.167.0](https://github.com/niafrond/niafrond.github.io/compare/v2.166.0...v2.167.0) (2026-10-31)
+
+### Features
+
+* **match3-quest:** plus de hautes herbes et moins d'obstacles décoratifs ([#608](https://github.com/niafrond/niafrond.github.io/issues/608)) ([0bb2aa1](https://github.com/niafrond/niafrond.github.io/commit/0bb2aa196967f5778df6b81084b55ea130731b3d))
+
 ## [2.166.0](https://github.com/niafrond/niafrond.github.io/compare/v2.165.1...v2.166.0) (2026-10-31)
 
 ### Features
