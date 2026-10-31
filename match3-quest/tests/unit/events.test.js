@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import './fixtures/xhrFromDisk.js';
 import { SCREENS, QUESTS, buildWorld } from '../../story.js';
 import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, enterScreen, tryMove, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
-import { EVENTS, isEventEnabled } from '../../events/config.js';
+import { EVENTS, EVENTS_DEFAULT, isEventEnabled, parseEventOverrides, applyOverrides } from '../../events/config.js';
 import { applyEvents, activeModules, eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
 import * as D from '../../events/wanderingSouls/data.js';
@@ -35,6 +35,26 @@ describe('configuration des événements', () => {
     test('chaque module du registre a une entrée dans la configuration, et aucun événement n\'est activé par la date', () => {
         EVENT_MODULES.forEach(m => expect(EVENTS[m.id]).toBeDefined());
         Object.values(EVENTS).forEach(cfg => expect(Object.keys(cfg)).toEqual(['enabled']));
+    });
+});
+
+describe('surcharge des événements par l\'URL', () => {
+    test('analyse : activer, désactiver, inconnus ignorés, vide', () => {
+        expect(parseEventOverrides('winterLanternFestival,-wanderingSouls')).toEqual({ winterLanternFestival: true, wanderingSouls: false });
+        expect(parseEventOverrides('+wanderingSouls, !winterLanternFestival, nimporte')).toEqual({ wanderingSouls: true, winterLanternFestival: false });
+        expect(parseEventOverrides('')).toEqual({});
+        expect(parseEventOverrides(null)).toEqual({});
+    });
+
+    test('application pure : la configuration versionnée n\'est pas modifiée', () => {
+        const out = applyOverrides(EVENTS_DEFAULT, { winterLanternFestival: true });
+        expect(out.winterLanternFestival.enabled).toBe(true);
+        expect(EVENTS_DEFAULT.winterLanternFestival.enabled).toBe(false);
+        expect(out.wanderingSouls).toEqual(EVENTS_DEFAULT.wanderingSouls);
+    });
+
+    test('sous Node (sans URL), EVENTS reprend la configuration versionnée', () => {
+        expect(EVENTS).toEqual(EVENTS_DEFAULT);
     });
 });
 
