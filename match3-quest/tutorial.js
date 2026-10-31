@@ -25,6 +25,7 @@ const TOTAL_STEPS = 5;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : un dernier coup suffit à conclure
+const ENEMY_SPELL_HP_BUFFER = 500; // PV de l'adversaire à l'étape du sort (voir _adjustEnemyHp)
 const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les premiers coups ne l'achèvent pas
 
 // Plateau pré-généré garanti sans match initial, avec 8+ coups possibles dont :
@@ -366,7 +367,9 @@ function _adjustEnemyHp(step) {
         foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (step === 4 && _tutoSpell) {
-        foe.hp = (_tutoSpell.dmg || 0) + ENEMY_FINISH_HP;
+        // Les dégâts réels du sort dépassent son `dmg` de base (attributs, arme…) : grande réserve de PV, ramenée à
+        // ENEMY_FINISH_HP juste après le lancer (hook onSpellCast), pour que le sort ne conclue jamais le duel à lui seul.
+        foe.hp = ENEMY_SPELL_HP_BUFFER;
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (step === 5) {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
@@ -457,6 +460,7 @@ function _installHooks(step) {
 
     } else if (step === 4) {
         tutorialCallbacks.onSpellCast = () => {
+            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
             _advanceStep();
         };
     }
