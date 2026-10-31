@@ -20,8 +20,9 @@ export const BIOME_DECOR = {
     wandering_souls: ['red_lantern', 'stone_stele', 'guardian_lion', 'soul_urn', 'incense_burner', 'spirit_mirror', 'pale_flowers', 'offering_bowl']
 };
 
-// Décors franchissables : touffes de roseaux, trop basses pour arrêter un héros.
-export const LOW_DECOR = new Set(['rice']);
+// Décors franchissables : tout ce qui ressemble à de l'herbe (roseaux, jonc, herbe sèche, algues) est trop bas pour arrêter un héros ;
+// ces cases se parcourent comme des hautes herbes, avec leurs rencontres aléatoires.
+export const LOW_DECOR = new Set(['rice', 'deadreed', 'drygrass', 'seaweed', 'kelp']);
 
 export const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1;
 

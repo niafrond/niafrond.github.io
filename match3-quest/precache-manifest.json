@@ -139,6 +139,7 @@
   "world/text/tonnerre.js",
   "world/text/volcan.js",
   "world/underground.js",
+  "world/wildGrass.js",
   "events/config.js",
   "events/engine.js",
   "events/registry.js",
