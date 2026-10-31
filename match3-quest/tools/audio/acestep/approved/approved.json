@@ -1126,5 +1126,17 @@
     "seed": "886094927",
     "date": "2026-10-30T14:56:03.760Z",
     "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, boss battle archetype, ancient guardian, slow ritual drums and sheng chords, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music"
+  },
+  "event-winter-lantern": {
+    "version": "v002",
+    "seed": "3911927855",
+    "date": "2026-10-31T21:45:53.371Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, gentle Chinese winter solstice festival, snowy mountain village with glowing red and gold paper lanterns, flowing guzheng (rivers, passing time) plucked pentatonic melody, soft agile breathy dizi (living world, wind, hope) flute, warm expressive erhu lead (Hou Yi, courage and loneliness), light bells and wind chimes, cozy and magical, peaceful, slow and spacious"
+  },
+  "boss-gardien-de-la-flamme-hivernale": {
+    "version": "v001",
+    "seed": "670261227",
+    "date": "2026-10-31T21:45:53.475Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, ancient stone guardian of a sacred flame, balance of fire and ice, warm yet epic Chinese boss battle, taiko-like drums, agile plucked pipa ostinato (martial tension, arrows), expressive erhu lead (Hou Yi, courage and loneliness), low horns, crystalline bells, noble and determined, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, readable melody"
   }
 }

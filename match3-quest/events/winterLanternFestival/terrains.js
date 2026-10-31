@@ -53,9 +53,9 @@ export const TERRAINS = [
             { id: 'wlm_coffre_col', x: 37, y: 13, label: 'Panier du pèlerin', tier: 2, openText: 'Un panier de bambou rempli de tangyuan tièdes, enveloppés dans des feuilles, et d\'un peu d\'argent laissé à celui qui passerait par là. Vous prenez les deux, et vous remerciez à voix haute.' }
         ],
         enemies: [
-            { id: 'wlm_esprit_givre_1', x: 20, y: 2, templateId: 'dame_des_neiges', name: 'Esprit du givre', kind: 'sentinel', offset: 0 },
-            { id: 'wlm_oiseau_givre', x: 28, y: 9, templateId: 'xue_niao', name: 'Oiseau de givre', kind: 'patrol', offset: 0, patrol: [[28, 9], [34, 9]] },
-            { id: 'wlm_gardien_glace_col', x: 33, y: 4, templateId: 'shi_jing', name: 'Gardien de glace', kind: 'sentinel', offset: 1 }
+            { id: 'wlm_esprit_givre_1', spriteKey: 'wlm_esprit_givre', x: 20, y: 2, templateId: 'dame_des_neiges', name: 'Esprit du givre', kind: 'sentinel', offset: 0 },
+            { id: 'wlm_oiseau_givre', spriteKey: 'wlm_oiseau_givre', x: 28, y: 9, templateId: 'xue_niao', name: 'Oiseau de givre', kind: 'patrol', offset: 0, patrol: [[28, 9], [34, 9]] },
+            { id: 'wlm_gardien_glace_col', spriteKey: 'wlm_gardien_glace', x: 33, y: 4, templateId: 'shi_jing', name: 'Gardien de glace', kind: 'sentinel', offset: 1 }
         ]
     },
     {
@@ -74,10 +74,10 @@ export const TERRAINS = [
             { ...D.JADE.chest, x: 26, y: 8, tier: 3, questItem: { ...D.JADE.item, quest: D.QUEST_IDS.chaleur } }
         ],
         enemies: [
-            { id: 'wlm_gardien_glace_1', x: 17, y: 6, templateId: 'shi_jing', name: 'Gardien de glace', kind: 'sentinel', offset: 1, group: D.GUARDS_GROUP },
-            { id: 'wlm_gardien_glace_2', x: 17, y: 10, templateId: 'shi_jing', name: 'Gardien de glace', kind: 'sentinel', offset: 1, group: D.GUARDS_GROUP },
+            { id: 'wlm_gardien_glace_1', spriteKey: 'wlm_gardien_glace', x: 17, y: 6, templateId: 'shi_jing', name: 'Gardien de glace', kind: 'sentinel', offset: 1, group: D.GUARDS_GROUP },
+            { id: 'wlm_gardien_glace_2', spriteKey: 'wlm_gardien_glace', x: 17, y: 10, templateId: 'shi_jing', name: 'Gardien de glace', kind: 'sentinel', offset: 1, group: D.GUARDS_GROUP },
             {
-                id: D.BOSS.id, x: 23, y: 8, templateId: 'shan_shen', name: D.BOSS.name, kind: 'sentinel', offset: 2, boss: true,
+                id: D.BOSS.id, spriteKey: 'wlm_gardien_flamme', x: 23, y: 8, templateId: 'shan_shen', name: D.BOSS.name, kind: 'sentinel', offset: 2, boss: true,
                 shieldedBy: D.GUARDS_GROUP, unsealedBy: [D.QUEST_IDS.lanternes],
                 weakenedBy: [D.SOURCE_CHAUDE.chest.id, D.QUEST_IDS.tangyuan],   // la source chaude et les tangyuan retirent chacun un niveau au Gardien
                 shieldLines: [

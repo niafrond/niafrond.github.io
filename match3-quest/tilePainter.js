@@ -8,6 +8,7 @@
 // coordonnées arrondies au pixel de l'écran pour garder des bords nets.
 
 import { SOULS_FLOOR } from './sprites/soulsFloor.js';
+import { WINTER_FLOOR } from './sprites/winterFloor.js';
 
 export const OUTLINE = '#2b1b17';
 export const TILE_GRID = 16;
@@ -304,10 +305,10 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             if (h(280) < 0.18) { const fx = 3 + at(281, 8), fy = 5 + at(282, 7); R(fx, fy, 5, 2, '#3f4478'); R(fx + 1, fy, 2, 1, '#6a70b0'); }
             return true;
         }
-        case 'winter_lantern_mountain': {                                   // Montagne des lanternes enneigées : neige tassée, plaques de givre, rares étincelles dorées
-            for (let i = 0; i < 3; i++) R(1 + at(700 + i, 12), 2 + at(710 + i, 12), 3, 1, shade(base, i ? -10 : 8));
-            if (h(720) < 0.2) { const gx = 2 + at(721, 11), gy = 3 + at(722, 10); R(gx, gy, 2, 1, '#a5cedd'); R(gx, gy + 1, 1, 1, '#c9e2ec'); }
-            if (h(730) < 0.06) R(2 + at(731, 12), 3 + at(732, 10), 1, 1, '#d4a94e');
+        case 'winter_lantern_mountain': {                                   // Montagne des lanternes enneigées : dalle de neige générée (tools/gen-winter-floor.mjs, sprites/winterFloor.js)
+            WINTER_FLOOR.tiles[at(700, WINTER_FLOOR.tiles.length)].forEach((row, ry) => {
+                for (let rx = 0, end; rx < 16; rx = end) { end = rx + 1; while (end < 16 && row[end] === row[rx]) end++; R(rx, ry, end - rx, 1, WINTER_FLOOR.palette[parseInt(row[rx], 16)]); }
+            });
             return true;
         }
         case 'moon': {                                                      // poussière lunaire : cratères, éclats stellaires ; dalles de pierre de jade par nappes
