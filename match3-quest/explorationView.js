@@ -1750,17 +1750,14 @@ export function createExplorationView(cfg) {
                     const scale = comp.size || 0.8;
                     const feet = c.y + tile * 0.4;
                     const hover = comp.hover ? -tile * 0.16 + Math.sin(now / 260) * tile * 0.025 : 0;
-                    const tick = Math.floor(tr.phase), blend = tr.phase - tick;
-                    const walkView = tr.moving && gbaWalkSprite(key, tr.dir, tick);
-                    const idleView = gbaSprite(key, tr.dir);
-                    drawShadow(c.x, feet, tile * 0.2 * scale + tile * 0.06, tile * 0.07);
-                    if (walkView || idleView) {
-                        const view = walkView || idleView, y = feet + hover + tile * 0.04;
-                        drawSprite(view, c.x, y, tile * scale * 1.06);
-                        const next = tr.moving ? gbaWalkSprite(key, tr.dir, tick + 1) : null;
-                        if (next && next !== view) { ctx.save(); ctx.globalAlpha = blend; drawSprite(next, c.x, y, tile * scale * 1.06); ctx.restore(); }
+                    // Seules les vues gauche/droite servent (face et dos : la dernière vue latérale est conservée) ; en marche, un petit sautillement remplace le cycle des pattes.
+                    if (tr.dir === 'left' || tr.dir === 'right') vis.compSide = tr.dir;
+                    const view = gbaSprite(key, vis.compSide || 'right');
+                    const hop = comp.hover ? 0 : tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;   // les esprits volants flottent (`hover`), sans sautiller
+                    if (!comp.noShadow) drawShadow(c.x, feet, tile * 0.2 * scale + tile * 0.06, tile * 0.07);
+                    if (view) {
+                        drawSprite(view, c.x, feet + hop + hover + tile * 0.04, tile * scale * 1.06);
                     } else {
-                        const hop = tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
                         drawSprite(npcSprite(comp.id === 'xiao_gui' ? 'xiao_gui' : comp.npc), c.x, feet + hop + hover + tile * 0.04, tile * scale * 0.85);
                     }
                     break;
@@ -2146,6 +2143,30 @@ export function createExplorationView(cfg) {
                 ctx.arc(px, py, tile * (0.08 + 0.03 * Math.sin(t / 200 + i * 2)), 0, Math.PI * 2);
                 ctx.fill();
             }
+            // halo vert qui pulse dans l'ouverture de la porte, volutes de brume qui montent et couronne de lumière au-dessus du linteau
+            const pulse = 0.5 + 0.5 * Math.sin(t / 520), dy = y - tile * 0.85;
+            ctx.globalCompositeOperation = 'source-over';
+            const pg = ctx.createRadialGradient(x, dy, 0, x, dy, tile * (0.95 + 0.12 * pulse));
+            pg.addColorStop(0, `rgba(190,255,220,${(0.5 + 0.3 * pulse).toFixed(3)})`);
+            pg.addColorStop(0.5, `rgba(80,230,150,${(0.28 + 0.15 * pulse).toFixed(3)})`);
+            pg.addColorStop(1, 'rgba(40,200,120,0)');
+            ctx.fillStyle = pg;
+            ctx.beginPath();
+            ctx.ellipse(x, dy, tile * 0.95, tile * 1.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+            for (let i = 0; i < 5; i++) {
+                const k = ((t / 3200 + i / 5) % 1 + 1) % 1, mx = x + Math.sin(i * 7.3 + k * 4) * tile * 0.38, my = dy + tile * 0.7 - k * tile * 1.6;
+                ctx.fillStyle = `rgba(215,255,235,${(0.4 * Math.sin(k * Math.PI)).toFixed(3)})`;
+                ctx.beginPath();
+                ctx.ellipse(mx, my, tile * (0.16 + 0.1 * k), tile * 0.09, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineWidth = Math.max(2, tile * 0.06);
+            ctx.strokeStyle = `rgba(150,255,200,${(0.3 + 0.3 * pulse).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.ellipse(x, y - tile * 2.35, tile * (0.7 + 0.08 * pulse), tile * 0.2, 0, 0, Math.PI * 2);
+            ctx.stroke();
             // braises qui montent du seuil et s'éteignent
             for (let i = 0; i < 8; i++) {
                 const k = ((t / 2200 + i / 8) % 1 + 1) % 1;

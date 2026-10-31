@@ -3,6 +3,7 @@
 // COMPANIONS : personnages qui rejoignent le héros pendant l'aventure.
 //   { id, name, title, npc, joinWhen }
 //     - npc      : id d'un PNJ existant dont on réutilise le dessin pour le portrait de dialogue ;
+//     - noShadow : pas d'ombre au sol sous le sprite ;
 //     - size / hover : taille du compagnon suiveur en exploration (fraction d'une case) et vol (flotte au-dessus du sol) ;
 //     - joinWhen : condition d'avancement (id de quête terminée, d'ennemi vaincu, de coffre ouvert ou de PNJ parlé) ; absente = d'emblée.
 //
@@ -14,7 +15,7 @@
 //     - scenes    : [{ speaker, lines }] (speaker : { name, title?, npc?, hero? }) ; sinon `speaker` + `lines` pour une seule voix.
 //   Un compagnon commente un LIEU, une DÉCISION (chemin pris) ou un ÉVÉNEMENT ; jamais deux fois la même chose, bulles ≤ 160 caractères.
 //
-// Huit compagnons (Yu et Étincelle ont été ajoutés avec leur pouvoir de combat, voir companionPowers.js). Trois d’origine, trois moments, trois voix (tous facultatifs : ils dépendent de quêtes annexes) :
+// Huit compagnons (Yu et Leigong (id `etincelle`) ont été ajoutés avec leur pouvoir de combat, voir companionPowers.js). Trois d’origine, trois moments, trois voix (tous facultatifs : ils dépendent de quêtes annexes) :
 //   - Xiao Gui (région 1, Rizières, `sq_rice_thief`) : le démon-renard chapardeur battu aux rizières. Tutoie tout le monde, farceur, « hi hi ».
 //     But : gagner ses neuf queues (il en a trois) ; il apprend que les queues se gagnent en rendant service, pas en volant.
 //   - Zhi (région 5, Forêt de Bambous, `sq_bell`) : le jeune moine novice de Maître Zhen. Vouvoie le héros (« seigneur »), cite son Maître, tutoie Xiao Gui.
@@ -33,7 +34,7 @@ const BRAISE = { name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_ba
 const JIAN = { name: 'Jian', title: 'Corbeau-carquois', npc: 'crow_wing' };
 const TOU = { name: 'Tou', title: 'Belette chapardeuse', npc: 'huang_xian' };
 const YU = { name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin' };
-const ETINCELLE = { name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit' };
+const ETINCELLE = { name: 'Leigong', title: 'Petit dieu du tonnerre', npc: 'forge_spirit' };
 
 const say = (speaker, ...lines) => ({ speaker, lines });
 // Les deux gardes d'un sanctuaire : « les gardes sont abattus » = les deux sont vaincus.
@@ -44,8 +45,8 @@ export const COMPANIONS = [
     { id: 'zhi', name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi', joinWhen: 'sq_bell', size: 1 },
     { id: 'dawa', name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa', joinWhen: 'sq_oasis', size: 1 },
     { id: 'yu', name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin', joinWhen: 'sq_golden_carp', size: 0.75, hover: true },
-    { id: 'etincelle', name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg', size: 0.7, hover: true },
-    { id: 'braise', name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_baatar', joinWhen: 'sq_ember_pup', size: 0.78 },
+    { id: 'etincelle', name: 'Leigong', title: 'Petit dieu du tonnerre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg', size: 0.7, hover: true, noShadow: true },
+    { id: 'braise', name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_baatar', joinWhen: 'sq_ember_pup', size: 0.78, noShadow: true },
     { id: 'jian', name: 'Jian', title: 'Corbeau-carquois', npc: 'crow_wing', joinWhen: 'sq_jian_quiver', size: 0.65, hover: true },
     { id: 'tou', name: 'Tou', title: 'Belette chapardeuse', npc: 'huang_xian', joinWhen: 'sq_tou_stash', size: 0.72 }
 ];
@@ -65,7 +66,7 @@ export const BANTER = [
         say(TOU, "Psst. Je vole ce que l'ennemi a de plus précieux : son qì. Tout un tas d'une couleur, d'un coup.", "Ne regarde pas mes pattes. Regarde les siennes : elles sont vides, maintenant.")
     ] },
     { id: 'etincelle_rejoint', companion: 'etincelle', scenes: [
-        say(ETINCELLE, "Zzzt ! Bonjour ! Je suis née il y a une heure, je suis déjà très fatiguée de ne pas avoir mangé.", "Donne-moi un peu de qì de temps en temps. En échange, je te le rends, avec des étincelles dessus.")
+        say(ETINCELLE, "Zzzt ! Bonjour ! Je suis né il y a une heure, je suis déjà très fatigué de ne pas avoir mangé.", "Donne-moi un peu de qì de temps en temps. En échange, je te le rends, avec de la foudre dessus.")
     ] },
     // ── Région 1 : Rizières Desséchées (Xiao Gui rejoint le héros) ─────────────────────────────
     { id: 'gui_rejoint', companion: 'xiao_gui', scenes: [
