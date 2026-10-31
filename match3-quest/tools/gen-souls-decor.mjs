@@ -39,7 +39,14 @@ const SPRITES = [
   { id: 'soul_urn', w: 1, gen: [512, 512], view: 'front view', desc: 'ancient sealed funeral urn with a lid, dark clay with a yellow paper talisman strip pasted across the lid, small pale green glow' },
   { id: 'offering_bowl', w: 1, gen: [512, 512], view: 'three-quarter view seen from slightly above', desc: 'small altar offering: a white porcelain bowl of rice with three burning incense sticks and a few golden paper coins' },
   { id: 'pale_flowers', w: 1, gen: [512, 512], view: 'front view', desc: 'cluster of pale ghostly white and pale blue spider lilies higarbana growing from dark soil, thin curved petals, faint glow' },
-  { id: 'souls_gate', w: 1, gen: [512, 512], view: 'front view', desc: 'small ghostly Chinese paifang gate, two dark stone pillars and a black curved roof lintel with a red crossbeam, two small red paper lanterns hanging on it, a swirling pale green spirit mist and pale green flames filling the open doorway, ominous portal to the realm of wandering souls' },
+  // Porte du royaume : 64 × 64 (affichée à 2,8 cases, voir explorationView.js) ; `variants` = pistes comparées avec --cand=4, la retenue se fixe dans `desc` (--use=souls_gate:k)
+  { id: 'souls_gate', w: 1, cell: 64, gen: [512, 512], view: 'front view', desc: 'ornate Chinese paifang gate to the realm of wandering souls, two dark stone pillars and a black curved tiled roof lintel with a red crossbeam, two red paper lanterns, an open doorway filled with swirling pale green spirit mist',
+    variants: [
+      'ornate Chinese paifang gate, two dark stone pillars carved with dragons, black curved tiled roof, two red paper lanterns, the doorway filled with swirling pale green ghostly mist and drifting translucent ghost faces, ominous',
+      'ornate Chinese paifang gate, two dark stone pillars, black curved tiled roof, the doorway filled with a swirling rainbow spiral vortex portal of violet cyan pink and gold light, magical',
+      'ornate Chinese paifang gate guarded by a fierce skull-faced demon guardian carved on the lintel with fangs and glowing eyes, bone white and black stone pillars, dark purple fog filling the doorway, menacing',
+      'ornate gold and crimson red lacquered Chinese paifang gate, golden roof ornaments, red pillars with gold cloud patterns, red spider lilies lycoris flowers growing at the base, the doorway glowing with deep red and golden light'
+    ] },
   { id: 'spirit_mirror', w: 1, gen: [512, 512], view: 'front view', desc: 'round ancient bronze ritual mirror on a dark wooden stand, polished surface with a pale green reflection, decorated rim' }
 ];
 
@@ -229,16 +236,16 @@ let ok = 0, fail = 0;
 for (const s of todo) {
   const t0 = Date.now();
   try {
-    const prompt = `${STYLE(s.view)}, ${s.desc}`;
+    const prompt = `${STYLE(s.view)}, ${s.desc}`, px = s.cell || CELL;
     if (NCAND) {   // plusieurs variantes à comparer, sans modifier sprites/souls-decor.js
       mkdirSync(CAND_DIR, { recursive: true });
       for (let k = 0; k < NCAND; k++) {
         let best = null;
         for (let attempt = 0; attempt < 4 && !(best && best.q.ok); attempt++) {
-          const img = cutout(await render(base, prompt, (seedOf(s.id) + (k * 6 + attempt) * 7919) % 2147483647, s.gen)), q = checkCutout(img);
+          const img = cutout(await render(base, s.variants?.[k] ? `${STYLE(s.view)}, ${s.variants[k]}` : prompt, (seedOf(s.id) + (k * 6 + attempt) * 7919) % 2147483647, s.gen)), q = checkCutout(img);
           if (!best || q.score > best.q.score) best = { img, q };
         }
-        const out = toSprite(toCells(best.img), s.w * CELL, (s.h || 1) * CELL, s.w === 1 && !(s.h > 1), s.shadow ? SHADOW_PAD : undefined);
+        const out = toSprite(toCells(best.img), s.w * px, (s.h || 1) * px, s.w === 1 && !(s.h > 1), s.shadow ? SHADOW_PAD : undefined);
         if (s.shadow) addShadow(out);
         writeFileSync(join(CAND_DIR, s.id + '__' + k + '.png'), PNG.sync.write(out));
         console.log('CAND', s.id, k, best.q.ok ? 'ok' : best.q.why);
@@ -253,7 +260,7 @@ for (const s of todo) {
       if (!best || q.score > best.q.score) best = { img, q };
     }
     if (!best.q.ok) throw new Error(`contrôle qualité échoué (${whys.join(', ')})`);
-    const out = toSprite(toCells(best.img), s.w * CELL, (s.h || 1) * CELL, s.w === 1 && !(s.h > 1), s.shadow ? SHADOW_PAD : undefined);
+    const out = toSprite(toCells(best.img), s.w * px, (s.h || 1) * px, s.w === 1 && !(s.h > 1), s.shadow ? SHADOW_PAD : undefined);
     if (s.shadow) addShadow(out);
     sprites[s.id] = { uri: uriOf(out) };
     writeFileSync(join(PNG_DIR, `${s.id}.png`), PNG.sync.write(out));

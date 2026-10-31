@@ -39,7 +39,7 @@ export const OVERRIDES = [
   // Compagnons de route (companions.js) : sprites animés du suiveur en exploration (clé `companion_<id>`), voir tools/gen-companion-walk.mjs
   // pour les images de marche. Même univers que leur PNJ (portrait de dialogue), mais en quatre directions.
   ['companion_xiao_gui', 'Xiao Gui', 'Démon-renard', 'Compagnon', 'orange', 'rizieres', 'e',
-    'Xiao Gui, a chibi super-deformed cute fox, huge round head and tiny body, a real four-legged animal standing on all four paws on the ground, never upright, orange fur with a cream chest and muzzle, three fluffy tails with white tips, a small red scarf around the neck, pointed ears, sly friendly grin'],
+    'Xiao Gui, a chibi super-deformed cute fox, huge round head and tiny body, a real four-legged animal, long horizontal body walking on all four paws, head low, never upright, orange fur, side profile shows a long fox body with four legs and head turned sideways, cream chest and muzzle, three fluffy tails with white tips, a small red scarf around the neck, pointed ears, sly friendly grin'],
   ['companion_zhi', 'Zhi', 'Humain', 'Compagnon', 'orange', 'bambous', 'e',
     'Zhi, a chibi super-deformed young novice Buddhist monk boy of ancient China, two heads tall, huge round head, tiny body, shaved head, saffron orange robe with a maroon sash, wooden prayer beads around the neck, bare feet, small and gentle, kind smile'],
   ['companion_dawa', 'Dawa', 'Humain', 'Compagnon', 'brown', 'gobi', 'e',
@@ -53,5 +53,5 @@ export const OVERRIDES = [
   ['companion_jian', 'Jian', 'Bête', 'Compagnon', 'purple', 'fauves', 'e',
     'Jian, a chibi super-deformed cute black crow with a big round head, perched on two bird legs, glossy feathers and a sharp beak, a small leather quiver of arrows strapped on its back, bright intelligent eyes, wings folded'],
   ['companion_tou', 'Tou', 'Bête', 'Compagnon', 'yellow', 'bambous', 'e',
-    'Tou, a chibi super-deformed yellow weasel thief (huang xian), huge round head, a real four-legged animal standing on all four paws on the ground, never upright, golden-yellow fur and a cream belly, mischievous face, a small cloth sack tied on its back, on four short legs'],
+    'Tou, a chibi super-deformed yellow weasel thief (huang xian), huge round head, a real four-legged animal with a long low horizontal sausage body on all four paws, never upright, golden-yellow fur and a cream belly, mischievous face, a small cloth sack tied on its back, on four short legs'],
 ];
