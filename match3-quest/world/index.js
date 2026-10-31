@@ -17,6 +17,7 @@
 import { applyEtages } from './etages.js';
 import { merchantNpc } from '../merchants.js';
 import { getXPCostForLevel } from '../experience.js';
+import { thickenGrass } from './wildGrass.js';
 import { buildZone, arrivalFor, freeNeighbor, applyNativeSanctuary } from './mapKit.js';
 import { EXPANDED_SIZES, fitScreen, widenGates, linkGates, openPerimeter, addWaterBorder, addTreeBorder, pruneGrass } from './expand.js';
 import { applyJunctions, applyLevelGuards } from './junctions.js';
@@ -252,6 +253,8 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
     if (!options.legacy) addStructures(screens);
     // Les hautes herbes ne couvrent que des cases franchissables (décor de bordure, eau, bâtiments les ont pu recouvrir).
     Object.values(screens).forEach(pruneGrass);
+    // Zones sauvages : moins d'amas d'obstacles décoratifs, plus de hautes herbes (world/wildGrass.js).
+    if (!options.legacy) Object.values(screens).forEach(thickenGrass);
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });
