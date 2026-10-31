@@ -510,7 +510,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         const targetResistance = spellColors.length
             ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-mana : résistance moyenne
             : (target.resistances?.[spell.color] || 0);
-        let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        let dmg = Math.floor((spell.dmg + intelligenceBonus + Math.max(0, Math.floor(caster?.spellPower || 0))) * (1 - targetResistance));   // spellPower : puissance magique des boss
         if(isPlayerCaster && target.prep?.weaknessRevealed){
             dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
         }

@@ -6,7 +6,7 @@ import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
     skullStrengthBonus, levelEdgeBonus, addStatBuff, stackStatusEffect, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
-import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
+import { createMapEnemy, createBossEnemyForTier, bossSpellPower } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
 import { allItems } from '../../items.js';
 import spellsJson from '../../spells.json' with { type: 'json' };
@@ -140,6 +140,14 @@ describe('ennemis', () => {
         expect(createMapEnemy(boss(56)).maxHp).toBe(createMapEnemy(boss(56)).maxHp);
         expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(4000);
         expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(createMapEnemy({ templateId: 'chiyou', level: 56 }).maxHp * 1.75);
+    });
+
+    test('les boss ont une puissance magique croissante, pas les ennemis normaux', () => {
+        const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Nico' }, enemyId: 'nico' });
+        expect(createMapEnemy(boss(56)).spellPower).toBe(bossSpellPower(56));
+        expect(bossSpellPower(56)).toBeGreaterThan(200);
+        expect(bossSpellPower(56)).toBeGreaterThan(bossSpellPower(10));
+        expect(createMapEnemy({ templateId: 'chiyou', level: 56 }).spellPower).toBeUndefined();
     });
 
     test('agilité proportionnelle au niveau, très rarement nulle', () => {
