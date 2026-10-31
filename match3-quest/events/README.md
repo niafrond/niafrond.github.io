@@ -16,13 +16,21 @@ Dans `events/config.js` :
 
 ```js
 export const EVENTS = {
-    wanderingSouls: { enabled: true }   // false pour désactiver
+    wanderingSouls: { enabled: true },          // false pour désactiver
+    winterLanternFestival: { enabled: false }   // préparé, inactif : true puis commit pour le lancer
 };
 ```
 
 Puis committer. Désactiver n'ajoute plus aucun écran ni aucune quête de l'événement ; les sauvegardes, quêtes terminées et récompenses
 déjà acquises ne sont jamais supprimées. Une sauvegarde qui se trouvait dans un écran de l'événement revient à l'écran de départ
 (comportement de `createSession` pour tout écran inconnu) ; sa progression de quête est conservée pour une réactivation.
+
+## Événements présents
+
+| Id | Contenu | État |
+|---|---|---|
+| `wanderingSouls` | La Nuit des âmes errantes : royaume des morts, 6 terrains, 4 quêtes | actif |
+| `winterLanternFestival` | La Fête des lanternes d'hiver : village, col et sanctuaire de montagne, 6 quêtes ; prompts de ressources dans `winterLanternFestival/prompts-gm.md` | inactif |
 
 ## Ajouter un événement
 

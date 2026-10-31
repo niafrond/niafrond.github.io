@@ -61,7 +61,8 @@ export const CREATURE_BY_ID = {
     jade_hare: { kind: 'rabbit', jade: true },
     ws_ame_guide: { kind: 'ghost' },
     ws_passeur: { kind: 'ghost' }, ws_ame_nostalgique: { kind: 'ghost' }, ws_ame_marche: { kind: 'ghost' },
-    ws_fantome_affame: { kind: 'ghost' }   // événement « La Nuit des âmes errantes » (events/wanderingSouls/)
+    ws_fantome_affame: { kind: 'ghost' },   // événement « La Nuit des âmes errantes » (events/wanderingSouls/)
+    wlm_renard_neiges: { kind: 'fox' }, wlm_esprit_village: { kind: 'lantern' }   // événement « La Fête des lanternes d'hiver » (events/winterLanternFestival/)
 };
 
 export const creatureKind = id => CREATURE_BY_ID[id]?.kind || null;

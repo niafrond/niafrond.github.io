@@ -1028,7 +1028,8 @@ export const REGION_SCENES = {
     fusang: ['#5a1d3a', '#ffb06b', '#a8504a', '#4a1830', '#ffd24a'],
     marees: ['#0a2038', '#4a8fb0', '#1b4a6a', '#08172a', '#ffd9a0'],
     lune: ['#0b0b2b', '#3a3a90', '#2a2a70', '#141446', '#fff4c8'],
-    wandering_souls: ['#02100c', '#14503f', '#0b2a22', '#05140f', '#dff5ea']   // royaume des âmes errantes (événement)
+    wandering_souls: ['#02100c', '#14503f', '#0b2a22', '#05140f', '#dff5ea'],   // royaume des âmes errantes (événement)
+    winter_lantern_mountain: ['#293b59', '#a5cedd', '#e8edf0', '#1a2740', '#d4a94e']   // montagne des lanternes enneigées (événement)
 };
 
 // Passage d'une porte d'événement (exploration.js `res.portal`) : brume d'esprits en spirale autour d'une porte qui s'ouvre. 'in' vers le royaume

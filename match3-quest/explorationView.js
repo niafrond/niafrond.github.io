@@ -87,6 +87,8 @@ const BIOMES = {
     moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: BIOME_DECOR.moon },
     // Royaume des âmes errantes (événement) : pierre grise, noir encre, brume bleu nuit, chemin d'or vieilli (palette de la spec)
     wandering_souls: { a: '#686a70', b: '#5f6167', path: '#8c7b55', cliff: '#171a24', liquid: '#273b59', sky: ['#171a24', '#273b59'], decor: BIOME_DECOR.wandering_souls },
+    // Montagne des lanternes enneigées (événement) : neige blanche, glace bleue, ciel bleu nuit, chemin de pierre chaude (palette de la spec)
+    winter_lantern_mountain: { a: '#e8edf0', b: '#dde4e8', path: '#b8a98c', cliff: '#293b59', liquid: '#a5cedd', sky: ['#293b59', '#a5cedd'], decor: BIOME_DECOR.winter_lantern_mountain },
     ...ARENA_BIOMES  // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 

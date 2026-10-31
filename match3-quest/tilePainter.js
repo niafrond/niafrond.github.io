@@ -304,6 +304,12 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
             if (h(280) < 0.18) { const fx = 3 + at(281, 8), fy = 5 + at(282, 7); R(fx, fy, 5, 2, '#3f4478'); R(fx + 1, fy, 2, 1, '#6a70b0'); }
             return true;
         }
+        case 'winter_lantern_mountain': {                                   // Montagne des lanternes enneigées : neige tassée, plaques de givre, rares étincelles dorées
+            for (let i = 0; i < 3; i++) R(1 + at(700 + i, 12), 2 + at(710 + i, 12), 3, 1, shade(base, i ? -10 : 8));
+            if (h(720) < 0.2) { const gx = 2 + at(721, 11), gy = 3 + at(722, 10); R(gx, gy, 2, 1, '#a5cedd'); R(gx, gy + 1, 1, 1, '#c9e2ec'); }
+            if (h(730) < 0.06) R(2 + at(731, 12), 3 + at(732, 10), 1, 1, '#d4a94e');
+            return true;
+        }
         case 'moon': {                                                      // poussière lunaire : cratères, éclats stellaires ; dalles de pierre de jade par nappes
             if (noise(x / 3, y / 3, 670) > 0.7) {
                 R(1, 1, 14, 14, '#9ac8b4'); R(1, 1, 14, 1, '#c4e6d6'); R(1, 14, 14, 1, '#6a9a86'); R(7, 1, 1, 14, '#6a9a86'); R(2 + at(671, 10), 3 + at(672, 9), 3, 1, '#e4f6ee');
@@ -485,7 +491,8 @@ export function drawPine(g, tile, px, py, { leaf = '#2f7a3a', trunk = '#6b3d22',
 export const BORDER_KIND = {
     paddy: 'fence', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
     savanna: 'acacia', coast: 'palm', fusang: 'goldtree', moon: 'crystal', cave: 'stalagmite',
-    wandering_souls: 'souls'   // Royaume des âmes errantes (événement) : racines noires
+    wandering_souls: 'souls',   // Royaume des âmes errantes (événement) : racines noires
+    winter_lantern_mountain: 'pine'   // Montagne des lanternes enneigées (événement) : sapins enneigés
 };
 export const borderKindOf = biomeId => BORDER_KIND[biomeId] || 'pine';
 
