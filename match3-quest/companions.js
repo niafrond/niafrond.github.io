@@ -3,6 +3,7 @@
 // COMPANIONS : personnages qui rejoignent le héros pendant l'aventure.
 //   { id, name, title, npc, joinWhen }
 //     - npc      : id d'un PNJ existant dont on réutilise le dessin pour le portrait de dialogue ;
+//     - noShadow : pas d'ombre au sol sous le sprite ;
 //     - size / hover : taille du compagnon suiveur en exploration (fraction d'une case) et vol (flotte au-dessus du sol) ;
 //     - joinWhen : condition d'avancement (id de quête terminée, d'ennemi vaincu, de coffre ouvert ou de PNJ parlé) ; absente = d'emblée.
 //
@@ -44,8 +45,8 @@ export const COMPANIONS = [
     { id: 'zhi', name: 'Zhi', title: 'Jeune moine novice', npc: 'young_monk_zhi', joinWhen: 'sq_bell', size: 1 },
     { id: 'dawa', name: 'Dawa', title: 'Guide du désert', npc: 'guide_dawa', joinWhen: 'sq_oasis', size: 1 },
     { id: 'yu', name: 'Yu', title: 'Carpe dorée', npc: 'carp_jin', joinWhen: 'sq_golden_carp', size: 0.75, hover: true },
-    { id: 'etincelle', name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg', size: 0.7, hover: true },
-    { id: 'braise', name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_baatar', joinWhen: 'sq_ember_pup', size: 0.78 },
+    { id: 'etincelle', name: 'Étincelle', title: 'Petite foudre', npc: 'forge_spirit', joinWhen: 'sq_spark_egg', size: 0.7, hover: true, noShadow: true },
+    { id: 'braise', name: 'Braise', title: 'Louveteau de braise', npc: 'wolf_pup_baatar', joinWhen: 'sq_ember_pup', size: 0.78, noShadow: true },
     { id: 'jian', name: 'Jian', title: 'Corbeau-carquois', npc: 'crow_wing', joinWhen: 'sq_jian_quiver', size: 0.65, hover: true },
     { id: 'tou', name: 'Tou', title: 'Belette chapardeuse', npc: 'huang_xian', joinWhen: 'sq_tou_stash', size: 0.72 }
 ];
