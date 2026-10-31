@@ -70,7 +70,7 @@ export const GBA_FILES = {
     cloud_sweeper_yun: 'cloud_sweeper_yun.0fe4bd30.js',
     companion_braise: 'companion_braise.9898150f.js',
     companion_dawa: 'companion_dawa.c4c6c2cd.js',
-    companion_etincelle: 'companion_etincelle.3a2d3399.js',
+    companion_etincelle: 'companion_etincelle.05c4b7b1.js',
     companion_jian: 'companion_jian.ff31f9d1.js',
     companion_tou: 'companion_tou.eeca84c2.js',
     companion_xiao_gui: 'companion_xiao_gui.207f2fcf.js',

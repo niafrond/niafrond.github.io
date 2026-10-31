@@ -1753,7 +1753,7 @@ export function createExplorationView(cfg) {
                     // Seules les vues gauche/droite servent (face et dos : la dernière vue latérale est conservée) ; en marche, un petit sautillement remplace le cycle des pattes.
                     if (tr.dir === 'left' || tr.dir === 'right') vis.compSide = tr.dir;
                     const view = gbaSprite(key, vis.compSide || 'right');
-                    const hop = tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
+                    const hop = comp.hover ? 0 : tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;   // les esprits volants flottent (`hover`), sans sautiller
                     if (!comp.noShadow) drawShadow(c.x, feet, tile * 0.2 * scale + tile * 0.06, tile * 0.07);
                     if (view) {
                         drawSprite(view, c.x, feet + hop + hover + tile * 0.04, tile * scale * 1.06);

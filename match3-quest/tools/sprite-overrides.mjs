@@ -47,7 +47,7 @@ export const OVERRIDES = [
   ['companion_yu', 'Yu', 'Esprit', 'Compagnon', 'yellow', 'fleuve', 'e',
     'Yu, a chibi super-deformed cute golden koi carp spirit with a big round head and big eyes, floating in the air, shimmering gold and orange scales, long flowing translucent fins and tail, two curling whiskers, a few water droplets around it, no legs'],
   ['companion_etincelle', 'Étincelle', 'Esprit', 'Compagnon', 'yellow', 'tonnerre', 'e',
-    'Étincelle, a chibi super-deformed tiny lightning spirit, small round big-headed glowing pale yellow body with two tiny arms and big shiny eyes, a zigzag lightning-bolt tail, little sparks around it, floating'],
+    'Étincelle, a chibi super-deformed tiny Leigong thunder god spirit, eagle-headed, big round white-feathered eagle head with a yellow hooked beak and glowing cyan eyes, two small red feather tufts on a golden headband, small white and dark wings, purple scarf, white robe with a golden braided rope belt and two small round drums with gold thunder symbols, holding a small glowing thunder mallet crackling with lightning, tiny clawed bird feet, floating in the air above the ground, little sparks around it, no shadow'],
   ['companion_braise', 'Braise', 'Bête', 'Compagnon', 'red', 'volcan', 'e',
     'Braise, a chibi super-deformed playful baby wolf pup, huge round head, tiny body, a real four-legged animal standing on all four paws on the ground, never upright, dark charcoal grey fur with glowing ember-orange markings on the chest and paws, tail tip glowing like embers, big paws, large ears, on four legs'],
   ['companion_jian', 'Jian', 'Bête', 'Compagnon', 'purple', 'fauves', 'e',
