@@ -1,3 +1,9 @@
+## [2.166.0](https://github.com/niafrond/niafrond.github.io/compare/v2.165.1...v2.166.0) (2026-10-31)
+
+### Features
+
+* **match3-quest:** refaire les compagnons en chibi, renommer Leigong et refaire la porte des âmes ([#607](https://github.com/niafrond/niafrond.github.io/issues/607)) ([34bf71c](https://github.com/niafrond/niafrond.github.io/commit/34bf71c4a8a1022cb9071660060cee5f1c8813a2))
+
 ## [2.165.1](https://github.com/niafrond/niafrond.github.io/compare/v2.165.0...v2.165.1) (2026-10-31)
 
 ### Bug Fixes
