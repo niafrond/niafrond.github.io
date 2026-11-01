@@ -1,6 +1,6 @@
 // La Fête des lanternes d'hiver : applique l'événement au monde assemblé (couche A → B, voir events/README.md).
 //
-// Ajoute le Village des lanternes enneigées (écran hors carte, comme un souterrain), son entrée dans la zone sauvage du Tonnerre (l'ancien col),
+// Ajoute le Village des lanternes enneigées (écran hors carte, comme un souterrain), son entrée dans la zone sauvage des Rizières (un sentier enneigé),
 // deux terrains (le col des pins gelés, le sanctuaire de la flamme) et une chaîne de six quêtes facultatives. Appelé seulement si l'événement
 // est activé (events/config.js) ; ne retire ni ne modifie aucune donnée permanente (il n'ajoute que ses énigmes à PUZZLES).
 
@@ -9,6 +9,10 @@ import { occupancy, placeInLand } from '../../world/junctions.js';
 import { PUZZLES } from '../../puzzle/levels.js';
 import * as D from './data.js';
 import * as T from './terrains.js';
+
+// Récompenses de quêtes écrites pour le niveau 22 : ramenées au niveau de l'événement (au moins 20 %, pour rester une vraie récompense).
+const REWARD_SCALE = Math.max(0.2, D.HOST.level / D.REFERENCE_LEVEL);
+const scaled = r => ({ ...r, gold: Math.max(30, Math.round(r.gold * REWARD_SCALE)), xp: Math.max(10, Math.round(r.xp * REWARD_SCALE)) });
 
 const OPPOSITE = { W: 'E', E: 'W', N: 'S', S: 'N' };
 
@@ -73,7 +77,7 @@ function buildTerrain(t) {
 function buildQuests() {
     const Q = D.QUESTS, I = D.QUEST_IDS;
     const side = q => ({ chapter: '✦ Quête secondaire — La Fête des lanternes d\'hiver', requires: [], side: true, ...q });
-    const base = (q, giver, extra) => side({ id: q.id, title: q.title, giver, turnIn: giver, offer: q.offer, hint: q.hint, complete: q.complete, reward: { ...q.reward, fragment: q.fragment }, ...extra });
+    const base = (q, giver, extra) => side({ id: q.id, title: q.title, giver, turnIn: giver, offer: q.offer, hint: q.hint, complete: q.complete, reward: { ...scaled(q.reward), fragment: q.fragment }, ...extra });
     const item = (id, text) => ({ type: 'item', target: id, text });
     return [
         base(Q.solstice, D.ANCIEN.id, {
@@ -129,7 +133,7 @@ function addTalk(village) {
 }
 
 /**
- * Crée le village, son entrée dans la zone sauvage du Tonnerre, le col, le sanctuaire et les quêtes. Retourne `false` (sans rien modifier)
+ * Crée le village, son entrée dans la zone sauvage des Rizières, le col, le sanctuaire et les quêtes. Retourne `false` (sans rien modifier)
  * si la zone hôte est absente du monde assemblé, p. ex. dans un monde de test réduit.
  */
 export function applyWinterLanternFestival(screens, quests) {

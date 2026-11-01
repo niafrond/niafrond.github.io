@@ -82,7 +82,7 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
         expect(quests.filter(q => q.event === D.ID).map(q => q.id)).toEqual(Object.values(D.QUEST_IDS));
     });
 
-    test('l\'entrée est dans la zone sauvage du Tonnerre, libre d\'accès, et la sortie ramène à l\'entrée empruntée', () => {
+    test('l\'entrée est dans la zone sauvage des Rizières, libre d\'accès, et la sortie ramène à l\'entrée empruntée', () => {
         const door = wild.exits.find(e => e.to === D.REALM_ID);
         expect(door).toBeDefined();
         expect(door.requires).toBeUndefined();
