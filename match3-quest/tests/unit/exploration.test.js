@@ -1238,7 +1238,7 @@ describe('quêtes secondaires', () => {
             const n = side.filter(q => regionOf(q) === id).length;
             expect([id, n >= 2]).toEqual([id, true]);
         });
-        side.forEach(q => {
+        side.filter(q => !q.event).forEach(q => {   // les quêtes d'événement suivent le niveau de leur zone hôte (plafond propre)
             expect(q.reward.gold).toBeGreaterThanOrEqual(30);
             expect(q.reward.gold).toBeLessThanOrEqual(200);
             expect(q.reward.xp).toBeGreaterThan(0);
@@ -1316,6 +1316,7 @@ describe('quêtes secondaires', () => {
     // offre, objectifs (tuer / coffre / groupe / parler / visiter), remise, avec traversée des gates.
     test.each(QUESTS.map(q => [q.id]))('%s : jouable de bout en bout depuis une nouvelle partie', id => {
         const s = createSession({});
+        if (id === 'sq_wlm_tangyuan') openChestAt(s, 'wlm_lanterne_1');   // le sésame enfoui n'apparaît qu'une fois la première lanterne allumée (Lanterne céleste)
         playQuest(s, id);
         expect(s.data.quests[id]).toBe('done');
         // aucune quête n'est restée coincée « active » sans pouvoir être terminée

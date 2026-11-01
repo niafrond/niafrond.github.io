@@ -100,7 +100,7 @@ describe('La Nuit des âmes errantes : événement désactivé', () => {
         expect(off.screens[D.HOST.wild].chests.some(c => c.id === D.TALISMAN.chest.id)).toBe(false);
         expect(off.screens[D.HOST.village].npcs.some(n => n.id === D.GIVER.id)).toBe(false);
         expect(off.quests.some(q => q.event === D.ID || String(q.id).startsWith('sq_ws_'))).toBe(false);
-        expect(eventScreens(off.screens)).toEqual([]);
+        expect(eventScreens(off.screens, D.ID)).toEqual([]);
     });
 
     test('le reste du monde est identique à celui de l\'événement activé (hors contenu de l\'événement)', () => {
