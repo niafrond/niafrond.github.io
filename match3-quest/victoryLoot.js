@@ -117,3 +117,16 @@ export function rollBossLoot(owner = {}, rng = Math.random, element = null) {
     }
     return loot;
 }
+
+/**
+ * Butin de palier d'une victoire : à la première victoire sur ce boss (clé `bossLootKey`, mémorisée dans `owner.bossLootClaimed`),
+ * arme + relique + parure de son élément ; [] pour un ennemi ordinaire ou un boss déjà vaincu.
+ */
+export function claimBossLoot(owner, enemy, rng = Math.random) {
+    if (!enemy?.isBoss) return [];
+    const key = bossLootKey(enemy);
+    if (!Array.isArray(owner.bossLootClaimed)) owner.bossLootClaimed = [];
+    if (!key || owner.bossLootClaimed.includes(key)) return [];
+    owner.bossLootClaimed.push(key);
+    return rollBossLoot(owner, rng, enemy.preferredColor);
+}

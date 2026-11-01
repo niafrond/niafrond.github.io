@@ -9,7 +9,7 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor, convertRandomColorToArrows, checkMatches } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
-import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, wardAgainst, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
+import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, wardedDamage, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
@@ -18,8 +18,8 @@ import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
-import { bossStartingMana } from "./bossBalance.js";
-import { rollOverleveledLoot, rollBossLoot, bossLootKey } from "./victoryLoot.js";
+import { bossStartingMana, manaGainBonusOf } from "./bossBalance.js";
+import { rollOverleveledLoot, claimBossLoot } from "./victoryLoot.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
@@ -32,7 +32,7 @@ import { playSfx } from "./sound.js";
 import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, withUltimateCost, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
-import { gearManaBonus } from "./manaGear.js";
+import { gearManaBonus, unreachableCosts } from "./manaGear.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
@@ -118,7 +118,7 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     const applyGainBonus = options.applyGainBonus !== false;
     const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
     const manaMultAmt = (entity === player && entity.manaMultiplier && entity.manaMultiplier.turnsLeft > 0 && applyGainBonus) ? entity.manaMultiplier.mult : 1;
-    const bossBonus = applyGainBonus ? Math.max(0, Math.floor(entity.manaGainBonus || 0)) : 0;   // boss : qì gagné en plus par match (bossBalance.js)
+    const bossBonus = applyGainBonus ? manaGainBonusOf(entity) : 0;   // boss : qì gagné en plus par match (bossBalance.js)
     const totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus + bossBonus) * manaMultAmt));
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
@@ -496,7 +496,7 @@ export function consumeSpellMana(entity, spell){
     flyManaSpend(entity === player, paid, { toSpellId: entity === player ? spell.id : null });
 }
 
-function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
+export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.effect === 'statBuff' && !isPlayerCaster){
         const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
         addStatBuff(caster, buff);
@@ -517,8 +517,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
             dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
         }
         if(!isPlayerCaster){
-            const ward = wardAgainst(target, spellColors.length ? spellColors : [spell.color]);   // parure de protection élémentaire (stuff.js)
-            if(ward > 0) dmg = Math.max(1, Math.floor(dmg * (1 - ward)));
+            dmg = wardedDamage(dmg, target, spellColors.length ? spellColors : [spell.color]);   // parure de protection élémentaire (stuff.js)
         }
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
@@ -2883,11 +2882,8 @@ export function handleEnemyDefeated(){
 
     // Boss : à la première victoire, l'arme et la relique de palier sont garanties (l'équipement idéal n'est plus un tirage au sort).
     if(enemy.isBoss){
-        const lootKey = bossLootKey(enemy);
-        if(!Array.isArray(player.bossLootClaimed)) player.bossLootClaimed = [];
-        if(lootKey && !player.bossLootClaimed.includes(lootKey)){
-            player.bossLootClaimed.push(lootKey);
-            rollBossLoot(player, Math.random, enemy.preferredColor).forEach(entry => {
+        {
+            claimBossLoot(player, enemy).forEach(entry => {
                 const rarityEmoji = getRarityIcon(entry.rarity);
                 if(entry.kind === 'stuff'){
                     const label = grantStuffPiece(entry.stuff.id, 'Butin de boss : parure élémentaire');
@@ -3323,10 +3319,9 @@ function getSpellTooltipHtml(spell) {
     // Sort du héros dont le coût dépasse la réserve de qì : il faut investir dans l'attribut de cette couleur (+2 de réserve par point).
     let capHint = '';
     if(spell.cost && !enemy?.spells?.includes(spell)) {
-        const cost = typeof spell.cost === 'number' ? { [spell.color]: spell.cost } : spell.cost;
-        const short = Object.entries(cost).filter(([color, need]) => need > getManaCapForColor(player, color));
+        const short = unreachableCosts(spell, color => getManaCapForColor(player, color));
         if(short.length) {
-            capHint = `<div class="spell-tooltip-line">Réserve de qì trop petite : ${short.map(([color, need]) => `${MANA_COLOR_META[color]?.name || color} ${getManaCapForColor(player, color)}/${need}`).join(', ')}. Montez l'attribut de cette couleur (+2 de réserve par point).</div>`;
+            capHint = `<div class="spell-tooltip-line">Réserve de qì trop petite : ${short.map(([color, need, cap]) => `${MANA_COLOR_META[color]?.name || color} ${cap}/${need}`).join(', ')}. Montez l'attribut de cette couleur (+2 de réserve par point).</div>`;
         }
     }
 

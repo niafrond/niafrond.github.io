@@ -116,3 +116,13 @@ export const BOSS_EXTRA_SPELLS = [
     { id: 'bossWorldQuake', name: 'Séisme du Pilier du Monde', color: 'green', type: 'damage', cost: 38, dmg: 85, minLevel: 10, description: 'Un séisme ébranle le sol et inflige 85 dégâts' },
     { id: 'bossEarthWrath', name: 'Colère de la Terre Mère', color: 'green', type: 'damage', cost: 50, dmg: 120, minLevel: 15, description: 'La terre elle-même se dresse et inflige 120 dégâts' }
 ];
+
+/** Qì gagné en plus par match de couleur (champ `manaGainBonus` posé sur les boss, 0 pour tout autre combattant). */
+export const manaGainBonusOf = entity => Math.max(0, Math.floor(entity?.manaGainBonus || 0));
+
+/** Bonus de score d'un sort offensif dans le choix de sort de l'IA : réservé aux boss. */
+export const bossOffensiveScoreBonus = entity => (entity?.isBoss ? BOSS_OFFENSIVE_SCORE_BONUS : 0);
+
+/** Un boss qui peut payer un sort offensif le lance, avec la probabilité BOSS_CAST_PRIORITY (le choix normal de l'IA s'applique sinon). */
+export const shouldBossCast = (entity, spellEval, rng = Math.random) =>
+    Boolean(entity?.isBoss) && Boolean(spellEval) && isOffensiveSpell(spellEval.spell) && rng() < BOSS_CAST_PRIORITY;

@@ -208,6 +208,12 @@ export function wardAgainst(hero, colors) {
     return list.reduce((sum, c) => sum + (ward[c] || 0), 0) / list.length / 100;
 }
 
+// Dégâts d'un sort ennemi après la protection élémentaire du héros (au moins 1 si le sort touchait).
+export function wardedDamage(damage, hero, colors) {
+    const ward = wardAgainst(hero, colors);
+    return ward > 0 ? Math.max(1, Math.floor(damage * (1 - ward))) : damage;
+}
+
 // Collier d'ombre : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
 export const hasStealth = hero => stuffTotals(hero).stealth;
 

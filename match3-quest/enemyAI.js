@@ -3,7 +3,7 @@
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
-import { isOffensiveSpell, BOSS_CAST_PRIORITY, BOSS_OFFENSIVE_SCORE_BONUS } from "./bossBalance.js";
+import { shouldBossCast, bossOffensiveScoreBonus } from "./bossBalance.js";
 
 // ========================================
 // CONFIGURATION DES NIVEAUX D'IA
@@ -249,7 +249,7 @@ export function evaluateSpells() {
             // Bonus pour les sorts puissants
             score += Math.floor(potentialDamage / 5);
             // Un boss privilégie ses sorts offensifs (bossBalance.js) sur les envoûtements : c'est son identité élémentaire.
-            if (enemy.isBoss) score += BOSS_OFFENSIVE_SCORE_BONUS;
+            score += bossOffensiveScoreBonus(enemy);
         }
 
         // SORTS DE BUFF - Bonus en début de combat
@@ -419,7 +419,7 @@ export function makeDecision() {
     let chosenOption;
     let isStupid = false;
     // Un boss lance de préférence un sort offensif abordable (bossBalance.js) : c'est ce qui le rend redoutable.
-    const bossCast = enemy.isBoss && spellEval && isOffensiveSpell(spellEval.spell) && Math.random() < BOSS_CAST_PRIORITY
+    const bossCast = shouldBossCast(enemy, spellEval)
         ? options.find(o => o.type === 'spell') : null;
 
     // Coup stupide : l'IA ignore la meilleure option et choisit au hasard

@@ -24,3 +24,10 @@ export function describeManaMax(piece) {
     entries.forEach(([c, n]) => byAmount.set(n, [...(byAmount.get(n) || []), MANA_LABELS[c]]));
     return [...byAmount].map(([n, colors]) => `Qì max ${colors.join(' et ')} +${n}`).join(' • ');
 }
+
+/** Couleurs d'un sort dont le coût dépasse la réserve de qì : [[couleur, coût, réserve]] (vide si le sort est payable). `capOf(couleur)` = réserve. */
+export function unreachableCosts(spell, capOf) {
+    if (!spell?.cost) return [];
+    const cost = typeof spell.cost === 'number' ? { [spell.color]: spell.cost } : spell.cost;
+    return Object.entries(cost).filter(([color, need]) => need > capOf(color)).map(([color, need]) => [color, need, capOf(color)]);
+}
