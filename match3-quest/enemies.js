@@ -6,8 +6,9 @@ import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
 import { enemyDefenseForLevel } from "./progression.js";
-import { weaknessOf, applyWeaknessToResistances } from "./elements.js";
-import { bossHpMult, ensureBossOffense, bossManaGainBonus } from "./bossBalance.js";
+import { weaknessOf, applyWeaknessToResistances, elementName } from "./elements.js";
+import { bossHpMult, ensureBossOffense, bossManaGainBonus, bossResistances, bossCounterStrength, elementalCandidates, isOffensiveSpell, BOSS_EXTRA_SPELLS } from "./bossBalance.js";
+import { isVenomous } from "./stuff.js";
 import { buildPrep } from "./terrain.js";
 
 let enemyCatalog = [];
@@ -175,7 +176,14 @@ function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     takeFrom(otherGeneric, targetSpellCount);
 
     let unique = uniqueById(selected).slice(0, targetSpellCount);
-    if(fullLoadout) unique = ensureBossOffense(unique, genericSpells, targetSpellCount);   // un boss a toujours de quoi frapper fort
+    if(fullLoadout){
+        // Un boss a toujours de quoi frapper fort, et ses sorts offensifs sont de son élément (le héros s'en protège : stuff.js, parures).
+        const ownColor = resolvePreferredColor(template);
+        const bossSpells = [...genericSpells, ...BOSS_EXTRA_SPELLS.filter(sp => sp.minLevel <= enemyLevel)];
+        const pool = bossCounterStrength(enemyLevel) > 0 ? elementalCandidates(bossSpells, ownColor) : genericSpells;   // niveau minimum : bossBalance.js
+        if(pool !== genericSpells) unique = unique.filter(sp => !isOffensiveSpell(sp) || pool.includes(sp));
+        unique = ensureBossOffense(unique, pool, targetSpellCount);
+    }
     // Au moins un sort de dégâts direct : sinon l'ennemi n'aurait que des sorts de soutien.
     if(!unique.some(sp => sp.type === 'damage' || sp.dmg || sp.baseDmg)){
         const attack = [...preferredGeneric, ...otherGeneric, ...classSpells].find(sp => sp.type === 'damage' && !unique.includes(sp));
@@ -213,8 +221,8 @@ function pickBossTemplate(preferredTemplateId = null){
 
 export const BOSS_HP_QUADRATIC = 0.64;
 // Puissance magique d'un boss : dégâts fixes ajoutés à chacun de ses sorts offensifs (les sorts plafonnent à 150 de dégâts
-// dès le niveau 18, alors que le héros dépasse les 4 000 PV). Niveau 56 : +342 par sort ; niveau 10 : +15.
-export const BOSS_SPELL_POWER_QUADRATIC = 0.1;
+// dès le niveau 18, alors que le héros dépasse les 4 000 PV). Niveau 56 : +404 par sort ; niveau 10 : +17.
+export const BOSS_SPELL_POWER_QUADRATIC = 0.12;
 export const BOSS_SPELL_POWER_LINEAR = 0.5;
 export function bossSpellPower(level){
     const l = Math.max(1, Math.floor(level || 1));
@@ -302,6 +310,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
 // Renforce un ennemi pour en faire un boss (PV, attaque, défense, butin).
 function applyBossScaling(boss, template){
     boss.isBoss = true;
+    boss.resistances = bossResistances(boss.resistances || {}, boss.preferredColor, boss.weakColor, boss.level);   // résiste à tout sauf à sa faiblesse (bossBalance.js)
     boss.maxHp = Math.max(1, Math.floor(boss.maxHp * 1.75));
     boss.hp = boss.maxHp;
     boss.attack = Math.max(1, Math.floor(boss.attack * 1.35));
@@ -332,6 +341,10 @@ function revealBossWeakness(boss, existingPrep){
         prep.tags.push('observed');
         prep.lines.push(...observed.lines);
     }
+    // Menace et contre-équipement : le héros idéal change de parure et de sorts d'un boss à l'autre.
+    const element = bossCounterStrength(boss.level) > 0 ? elementName(boss.preferredColor) : null;
+    if(element) prep.lines.push(`Ses sorts sont de ${element} : une parure de ${element} réduit leurs dégâts. Il résiste aux autres éléments, sauf à sa faiblesse.`);
+    if(bossCounterStrength(boss.level) > 0 && isVenomous(boss.templateId)) prep.lines.push('Son venin empoisonne : un antidote (collier ou bracelet) est recommandé.');
     prep.weaknessRevealed = true;
     boss.prep = prep;
 }

@@ -3,6 +3,7 @@
 
 import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
+import { WARD_STUFF } from './stuff.js';
 
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary'];
 
@@ -80,7 +81,7 @@ export function bossLootKey(enemy) {
  * @param {object} owner { level, weapons: [{id}], inventory: [{id, type}] }
  * @returns {Array<{ kind: 'item'|'weapon', rarity: string, item?: object, weapon?: object }>}
  */
-export function rollBossLoot(owner = {}, rng = Math.random) {
+export function rollBossLoot(owner = {}, rng = Math.random, element = null) {
     const level = Math.max(1, owner.level || 1);
     const ownedWeapons = new Set((owner.weapons || []).map(w => w.id));
     const ownedArtifacts = new Set((owner.inventory || []).filter(i => i?.type === 'artifact').map(i => i.id));
@@ -102,6 +103,17 @@ export function rollBossLoot(owner = {}, rng = Math.random) {
         const pick = pool.filter(r => r.minLevel === topLevel);
         const item = pick[Math.floor(rng() * pick.length)];
         loot.push({ kind: 'item', rarity: item.rarity, item });
+    }
+    // Parure de l'élément du boss (palier le plus haut que le héros peut porter) : la protection contre ce type de sorts.
+    if (element) {
+        const owned = new Set(owner.stuffOwned || []);
+        const wards = WARD_STUFF.filter(s => s.ward?.[element] && s.minLevel <= level && !owned.has(s.id));
+        if (wards.length) {
+            const top = Math.max(...wards.map(s => s.minLevel));
+            const pool = wards.filter(s => s.minLevel === top);
+            const stuff = pool[Math.floor(rng() * pool.length)];
+            loot.push({ kind: 'stuff', rarity: stuff.rarity, stuff });
+        }
     }
     return loot;
 }

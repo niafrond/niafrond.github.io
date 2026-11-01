@@ -12,7 +12,7 @@
  */
 import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
-import { lootableStuff, getStuffById, baseStuffPrice, grantStuff } from './stuff.js';
+import { lootableStuff, getStuffById, baseStuffPrice, grantStuff, WARD_STUFF } from './stuff.js';
 
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
 
@@ -157,6 +157,12 @@ export function merchantStock(merchantId, ngPlus = 0) {
         .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
             price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2)) }));
 
+    // Une parure de protection élémentaire du niveau de la région (jamais la même qu'une autre offre) : de quoi se préparer à un boss.
+    const wardPool = WARD_STUFF.filter(s => s.minLevel <= L + 4 && s.minLevel >= L - 14 && !stuffOffers.some(o => o.id === s.id));
+    const wardOffers = sample(wardPool, wardPool.length ? 1 : 0, rng)
+        .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
+            price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2)) }));
+
     const mount = MOUNT_OFFERS[merchantId];
     return [
         ...(TORCH_MERCHANTS.includes(merchantId) ? [{ key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE }] : []),
@@ -164,6 +170,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
         ...standards.map(i => ({ ...offerOf('item', i, 'standard', i.rarity), unique: false })),
         ...stuffOffers,
+        ...wardOffers,
         ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),
         ...exceptional.map(e => {
             const o = offerOf(e.kind, e.obj, 'exceptional', e.rarity);

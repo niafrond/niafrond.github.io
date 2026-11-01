@@ -5,7 +5,7 @@ import { getRarityColor } from './items.js';
 import { compareButtonHtml, deltaBadgesHtml } from './compareView.js';
 import {
     STUFF_SLOTS, STUFF_SLOT_LABELS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL,
-    getStuffById, describeStuff, powerLines, equipStuff, unequipStuff, stuffTotals, normalizeStuff, relicsOf
+    getStuffById, describeStuff, describeWard, powerLines, equipStuff, unequipStuff, stuffTotals, normalizeStuff, relicsOf
 } from './stuff.js';
 
 const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -69,6 +69,7 @@ export function renderStuffTab() {
         totals.atk ? `Atk +${totals.atk}` : '', totals.def ? `Déf +${totals.def}` : '',
         totals.maxHp ? `PV max +${totals.maxHp}` : '',
         totals.poisonResist ? (totals.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${totals.poisonResist} %`) : '',
+        describeWard(totals.ward),
         ...[...totals.biomes].map(b => `Protégé : ${BIOME_PROTECTION_LABEL[b]}`),
         ...powerLines(totals),
         totals.stealth ? 'Indétectable' : ''

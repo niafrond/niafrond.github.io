@@ -9,7 +9,7 @@ import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor, convertRandomColorToArrows, checkMatches } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
-import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
+import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, wardAgainst, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
@@ -515,6 +515,10 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         let dmg = Math.floor((spell.dmg + intelligenceBonus + Math.max(0, Math.floor(caster?.spellPower || 0))) * (1 - targetResistance));   // spellPower : puissance magique des boss
         if(isPlayerCaster && target.prep?.weaknessRevealed){
             dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
+        }
+        if(!isPlayerCaster){
+            const ward = wardAgainst(target, spellColors.length ? spellColors : [spell.color]);   // parure de protection élémentaire (stuff.js)
+            if(ward > 0) dmg = Math.max(1, Math.floor(dmg * (1 - ward)));
         }
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
@@ -2883,9 +2887,12 @@ export function handleEnemyDefeated(){
         if(!Array.isArray(player.bossLootClaimed)) player.bossLootClaimed = [];
         if(lootKey && !player.bossLootClaimed.includes(lootKey)){
             player.bossLootClaimed.push(lootKey);
-            rollBossLoot(player).forEach(entry => {
+            rollBossLoot(player, Math.random, enemy.preferredColor).forEach(entry => {
                 const rarityEmoji = getRarityIcon(entry.rarity);
-                if(entry.kind === 'weapon'){
+                if(entry.kind === 'stuff'){
+                    const label = grantStuffPiece(entry.stuff.id, 'Butin de boss : parure élémentaire');
+                    if(label) combatRewards.items.push(label);
+                } else if(entry.kind === 'weapon'){
                     player.weapons.push(entry.weapon);
                     combatRewards.weapons.push(entry.weapon.name);
                     updateAvailableWeapons();

@@ -7,6 +7,7 @@ const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', l
 const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff', item: 'objet' };
 const ANOTHER = { spell: 'un autre sort', weapon: 'une autre arme', stuff: 'un autre stuff', item: 'un autre objet' };
 const ITEM_TYPE_LABEL = { shield: 'Bouclier', reusable: 'Objet rechargeable', artifact: 'Relique', consumable: 'Consommable' };
+const WARD_LABEL = { red: 'Feu', blue: 'Eau', green: 'Terre', yellow: 'Air', purple: 'Arcane' };
 const SLOT_LABEL = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: 'Bague' };
 
 const costTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
@@ -34,7 +35,7 @@ export function compareRows(kind, o) {
     ];
     if (kind === 'stuff') return [
         t('Emplacement', SLOT_LABEL[o.slot]), t('Rareté', RARITY_LABEL[o.rarity]),
-        n('Attaque', o.atkBonus), n('Défense', o.defBonus), n('PV max', o.maxHp), n('Résistance poison (%)', o.poisonResist), 
+        n('Attaque', o.atkBonus), n('Défense', o.defBonus), n('PV max', o.maxHp), n('Résistance poison (%)', o.poisonResist), t('Protection élémentaire', Object.entries(o.ward || {}).filter(([, v]) => v > 0).map(([k, v]) => `${WARD_LABEL[k] || k} −${v} %`).join(', ')), 
         n('Niveau requis', o.minLevel || 1, 'low'), t('Protège', o.biomeProtect)
     ];
     if (kind === 'item') return [

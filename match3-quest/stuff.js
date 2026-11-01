@@ -100,6 +100,25 @@ export const allStuff = [
     piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true })
 ];
 
+// ── Parures de protection élémentaire ───────────────────────────────────────
+// Chaque pièce porte `ward: { couleur: % }` : réduction (en %) des dégâts des SORTS de cette couleur (un boss a son élément : voir
+// enemies.js revealBossWeakness et bossBalance.js). Deux paliers par élément et par emplacement : talisman (rare, niveau 20, 6 %)
+// et pièce ancestrale (légendaire, niveau 46, 10 % + PV). Quatre pièces d'un même élément et d'un même palier : 24 % / 40 %.
+export const WARD_CAP = 75;
+export const WARD_TIERS = [
+    { id: 1, minLevel: 20, rarity: 'rare', ward: 6, maxHp: 0, label: '' },
+    { id: 2, minLevel: 46, rarity: 'legendary', ward: 10, maxHp: 20, label: ' ancestral' }
+];
+export const WARD_ELEMENT_NAMES = { red: 'de braise', blue: 'de marée', green: 'de roche', yellow: 'de bourrasque', purple: 'd\'arcane' };
+export const WARD_ELEMENT_LABELS = { red: 'Feu', blue: 'Eau', green: 'Terre', yellow: 'Air', purple: 'Arcane' };
+const WARD_SLOT_NAMES = { head: 'Heaume', neck: 'Collier', wrist: 'Bracelet', ring: 'Anneau' };
+
+export const WARD_STUFF = WARD_TIERS.flatMap(tier => Object.entries(WARD_ELEMENT_NAMES).flatMap(([color, adjective]) =>
+    STUFF_SLOTS.map(slot => piece(`ward_${color}_${slot}_${tier.id}`, slot, `${WARD_SLOT_NAMES[slot]}${tier.label} ${adjective}`, tier.minLevel, tier.rarity,
+        `Une protection de ${WARD_ELEMENT_LABELS[color]} : les sorts de ${WARD_ELEMENT_LABELS[color]} vous atteignent bien moins.`,
+        { ward: { [color]: tier.ward }, ...(tier.maxHp ? { maxHp: tier.maxHp } : {}) }))));
+allStuff.push(...WARD_STUFF);
+
 export const getStuffById = id => allStuff.find(s => s.id === id) || null;
 export const isStuff = obj => obj?.type === 'stuff';
 
@@ -115,6 +134,9 @@ export const collarForBiome = biome => allStuff.find(s => s.biomeProtect === bio
 // Armures antiques complètes (`totals.armors`) en texte : « Armure antique du Prisme : soigne … ».
 export const powerLines = totals => (totals.armors || []).map(k => `${ANTIQUE_ARMORS[k].name} : ${ANTIQUE_ARMORS[k].powerText.toLowerCase()}`);
 
+// « Feu −6 % » : protection élémentaire d'une pièce ou d'un total (`ward` : { couleur: % }).
+export const describeWard = ward => Object.entries(ward || {}).filter(([, n]) => n > 0).map(([c, n]) => `${WARD_ELEMENT_LABELS[c] || c} −${n} %`).join(', ');
+
 export function describeStuff(stuff) {
     if (!stuff) return '';
     return [
@@ -122,6 +144,7 @@ export function describeStuff(stuff) {
         stuff.defBonus ? `Déf +${stuff.defBonus}` : '',
         stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
         describeManaMax(stuff),
+        describeWard(stuff.ward),
         stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
         stuff.armor ? `${ANTIQUE_ARMORS[stuff.armor].name} (4 pièces : ${ANTIQUE_ARMORS[stuff.armor].powerText.toLowerCase()})` : '',
         stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',
@@ -158,12 +181,13 @@ export function wornStuff(hero) {
 
 // Totaux des bonus portés : { atk, def, maxHp, poisonResist (0–100), biomes: Set }.
 export function stuffTotals(hero) {
-    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, turnHealPct: 0, turnArrowsPct: 0, reflectPct: 0, stealth: false, armors: [], biomes: new Set() };
+    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, ward: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 }, turnHealPct: 0, turnArrowsPct: 0, reflectPct: 0, stealth: false, armors: [], biomes: new Set() };
     wornStuff(hero).forEach(s => {
         totals.atk += s.atkBonus || 0;
         totals.def += s.defBonus || 0;
         totals.maxHp += s.maxHp || 0;
         totals.poisonResist += s.poisonResist || 0;
+        Object.entries(s.ward || {}).forEach(([c, n]) => { if (c in totals.ward) totals.ward[c] = Math.min(WARD_CAP, totals.ward[c] + n); });
         if (s.biomeProtect) totals.biomes.add(s.biomeProtect);
         if (s.stealth) totals.stealth = true;
     });
@@ -174,6 +198,14 @@ export function stuffTotals(hero) {
     totals.armors.forEach(k => Object.entries(ANTIQUE_ARMORS[k].power).forEach(([f, v]) => { totals[f] += v; }));
     totals.reflectPct = Math.min(100, totals.reflectPct);
     return totals;
+}
+
+// Réduction (0–1) des dégâts d'un sort de ces couleurs pour le héros : protection élémentaire moyenne des couleurs du sort (multi-qì).
+export function wardAgainst(hero, colors) {
+    const list = (Array.isArray(colors) ? colors : [colors]).filter(Boolean);
+    if (!list.length) return 0;
+    const ward = stuffTotals(hero).ward;
+    return list.reduce((sum, c) => sum + (ward[c] || 0), 0) / list.length / 100;
 }
 
 // Collier d'ombre : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
