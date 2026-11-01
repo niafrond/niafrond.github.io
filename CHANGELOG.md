@@ -1,3 +1,9 @@
+## [2.168.0](https://github.com/niafrond/niafrond.github.io/compare/v2.167.1...v2.168.0) (2026-11-01)
+
+### Features
+
+* **match3-quest:** lancer l'événement La Fête des lanternes d'hiver ([#610](https://github.com/niafrond/niafrond.github.io/issues/610)) ([90a0b92](https://github.com/niafrond/niafrond.github.io/commit/90a0b922b52986bbd5d0de362ebdcc924fb68a73))
+
 ## [2.167.1](https://github.com/niafrond/niafrond.github.io/compare/v2.167.0...v2.167.1) (2026-10-31)
 
 ### Bug Fixes
