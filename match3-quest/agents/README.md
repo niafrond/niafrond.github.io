@@ -39,8 +39,9 @@ lance un sous-agent sur une tâche de ce domaine.
 
 11. **Aperçu en fin de génération** : chaque fois qu'on génère de l'audio (musique, effets) ou des sprites (personnages, décors, sols,
     animations), terminer en publiant un **aperçu via artefact** (page HTML autonome : images agrandies en `image-rendering: pixelated`
-    sur fond damier, directions des personnages, sol en damier, liste des pistes avec leurs choix, limites connues ; l'audio peut y être
-    intégré en `data:` si le poids reste raisonnable). Lecture du guide `pages` des artefacts avant la première publication de la
+    sur fond damier, directions des personnages, sol en damier, liste des pistes avec leurs choix, limites connues ; chaque piste ou effet généré doit avoir
+    son lecteur `<audio controls>` jouable dans la page, les fichiers mp3 étant joints à l'artefact avec `publish_files` — une simple liste
+    de noms ne suffit pas). Lecture du guide `pages` des artefacts avant la première publication de la
     session ; republier la même page (`edit_version` / `publish_version` avec `slug`) plutôt qu'en créer une nouvelle. Donner le lien à
     l'utilisateur et indiquer ce qui n'est pas satisfaisant.
 
