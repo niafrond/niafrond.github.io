@@ -6,9 +6,8 @@ import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
 import { enemyDefenseForLevel } from "./progression.js";
-import { weaknessOf, applyWeaknessToResistances, elementName } from "./elements.js";
+import { weaknessOf, applyWeaknessToResistances } from "./elements.js";
 import { bossHpMult, ensureBossOffense, bossManaGainBonus, bossResistances, bossCounterStrength, elementalCandidates, isOffensiveSpell, BOSS_EXTRA_SPELLS } from "./bossBalance.js";
-import { isVenomous } from "./stuff.js";
 import { buildPrep } from "./terrain.js";
 
 let enemyCatalog = [];
@@ -341,10 +340,6 @@ function revealBossWeakness(boss, existingPrep){
         prep.tags.push('observed');
         prep.lines.push(...observed.lines);
     }
-    // Menace et contre-équipement : le héros idéal change de parure et de sorts d'un boss à l'autre.
-    const element = bossCounterStrength(boss.level) > 0 ? elementName(boss.preferredColor) : null;
-    if(element) prep.lines.push(`Ses sorts sont de ${element} : une parure de ${element} réduit leurs dégâts. Il résiste aux autres éléments, sauf à sa faiblesse.`);
-    if(bossCounterStrength(boss.level) > 0 && isVenomous(boss.templateId)) prep.lines.push('Son venin empoisonne : un antidote (collier ou bracelet) est recommandé.');
     prep.weaknessRevealed = true;
     boss.prep = prep;
 }

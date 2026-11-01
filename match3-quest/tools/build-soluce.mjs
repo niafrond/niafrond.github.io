@@ -18,7 +18,8 @@ import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
 import { solvePath, getMode } from '../puzzle/engine.js';
 import '../puzzle/modes.js';
 import { spriteDefs } from '../puzzle/art.js';
-import { ANTIQUE_ARMORS } from '../stuff.js';
+import { ANTIQUE_ARMORS, WARD_STUFF, WARD_TIERS, WARD_ELEMENT_LABELS, VENOMOUS_TEMPLATES } from '../stuff.js';
+import { BOSS_COUNTER_FROM_LEVEL, BOSS_COUNTER_FULL_LEVEL, BOSS_OWN_RESIST, BOSS_OTHER_RESIST } from '../bossBalance.js';
 import { LEGENDS } from '../world/legends.js';
 import { playerClasses } from '../classes.js';
 import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
@@ -487,7 +488,7 @@ function buildStuff() {
         desc: 'Colliers de biome, bagues, bracelets et casques : où les trouver et ce qu’ils font.',
         crumbs: [['soluce.html', 'Accueil'], [null, 'Stuff d’exception']],
         body: `<h2>Stuff d’exception</h2>
-<p class="lead">Le stuff se porte dans l’onglet « Stuff » : un casque, un collier, un bracelet et une bague, avec bonus d’attaque, de défense, de PV max ou de résistance au poison.</p>
+<p class="lead">Le stuff se porte dans l’onglet « Stuff » : un casque, un collier, un bracelet et une bague, avec bonus d’attaque, de défense, de PV max, de résistance au poison ou de protection élémentaire contre les sorts des boss (voir <a href="bases.html">Bases du combat</a>).</p>
 <h3>Les ${collars.length} colliers de quête (introuvables ailleurs)</h3>
 <p>Chaque biome hostile du combat a son collier. Le gagner demande d’aller chercher une relique cachée dans la zone sauvage de la région <em>puis</em> de vaincre le mini-boss qui la garde.</p>
 <div class="grid">${collarCards}</div>
@@ -602,6 +603,12 @@ function buildBases() {
         const weakTo = { red: 'blue', blue: 'green', green: 'yellow', yellow: 'red', purple: 'green' }[c];
         return `<tr><td>${dot(c)}</td><td>${dot(weakTo)}</td></tr>`;
     }).join('');
+    const wardRows = ['red', 'blue', 'green', 'yellow', 'purple'].map(c => {
+        const weakTo = { red: 'blue', blue: 'green', green: 'yellow', yellow: 'red', purple: 'green' }[c];
+        const res = ['red', 'blue', 'green', 'yellow', 'purple'].map(k => `${dot(k)} ${k === c ? Math.round(BOSS_OWN_RESIST * 100) : k === weakTo ? '≤ 5' : Math.round(BOSS_OTHER_RESIST * 100)} %`).join(' · ');
+        const pieces = WARD_STUFF.filter(w => w.ward[c] && w.minLevel === WARD_TIERS[1].minLevel).map(w => `<a href="stuff-${w.id}.html">${esc(w.name)}</a>`).join(', ');
+        return `<tr><td>${dot(c)} ${esc(WARD_ELEMENT_LABELS[c])}</td><td>${dot(weakTo)}</td><td>${pieces}<br><small>et leurs versions du palier ${WARD_TIERS[0].minLevel}</small></td><td>${res}</td></tr>`;
+    }).join('');
     const pw = COMPANIONS.map(c => `<tr><td><a href="compagnon-${c.id}.html">${esc(c.name)}</a></td><td>${esc(COMPANION_POWERS[c.id]?.name)}</td><td>${esc(COMPANION_POWERS[c.id]?.text)}</td></tr>`).join('');
     const bio = allStuff.filter(s => s.biomeProtect || s.stealth).map(s => `<tr><td><a href="stuff-${s.id}.html">${esc(s.name)}</a></td><td>${esc(s.biomeProtect ? BIOME_PROTECTION_LABEL[s.biomeProtect] : 'Fusang')}</td><td>${esc(s.stealth ? 'Les ennemis ne vous détectent plus' : BIOME_PROTECTION_TEXT[s.biomeProtect])}</td></tr>`).join('');
     write('bases.html', page({
@@ -613,6 +620,18 @@ function buildBases() {
 <p>Les ennemis sont faibles à la couleur de qì qui contre leur élément. Faire des combinaisons de la couleur faible inflige davantage de dégâts. Les éléments forment un cycle : Feu → Eau → Terre → Air → Feu, l’Arcane étant faible à la Terre.</p>
 <div class="scroll"><table><tr><th>Ennemi de couleur</th><th>Faible à</th></tr>${rows}</table></div>
 <div class="box tip"><b class="t">Astuce</b>Observez l’ennemi sur la carte avant d’engager : le carnet note sa faiblesse. Les fiches de quête de cette soluce l’indiquent déjà pour chaque cible.</div>
+<h3>Boss : il faut varier sorts et stuff</h3>
+<p>Le jeu n’explique rien : on le devine en combattant. Chaque boss a un <b>élément</b> (la couleur de ses sorts offensifs) et une <b>faiblesse</b>. Il résiste fortement aux sorts de toutes les couleurs sauf à sa faiblesse : un héros qui n’a que des sorts d’une autre couleur perd environ 40 % de ses dégâts de sort. Ses propres sorts, eux, sont réduits par une <b>parure de protection élémentaire</b> de son élément.</p>
+<div class="scroll"><table><tr><th>Élément du boss</th><th>Sa faiblesse (sorts à jouer)</th><th>Parure à porter</th><th>Résistances du boss</th></tr>${wardRows}</table></div>
+<ul>
+<li><b>Résistances d’un boss</b> : ${Math.round(BOSS_OWN_RESIST * 100)} % à son propre élément, ${Math.round(BOSS_OTHER_RESIST * 100)} % aux autres couleurs, 5 % au plus à sa faiblesse. Un sort multi-couleurs compte la moyenne de ses couleurs ; les armes et les crânes ne sont pas concernés.</li>
+<li><b>Niveau minimum</b> : jusqu’au niveau ${BOSS_COUNTER_FROM_LEVEL}, un boss n’impose rien. L’exigence monte ensuite progressivement et devient entière au niveau ${BOSS_COUNTER_FULL_LEVEL}. Les parures n’existent qu’à partir du niveau ${WARD_TIERS[0].minLevel}.</li>
+<li><b>Parures</b> : ${WARD_STUFF.length} pièces, une par emplacement (casque, collier, bracelet, bague), en deux paliers : ${WARD_TIERS.map(t => `niveau ${t.minLevel} (${esc(RARITY_FR[t.rarity].toLowerCase())}, −${t.ward} % par pièce${t.maxHp ? `, +${t.maxHp} PV max` : ''})`).join(' et ')}. Les quatre pièces d’un même élément et d’un même palier réduisent de ${4 * WARD_TIERS[0].ward} % ou ${4 * WARD_TIERS[1].ward} % les sorts de cette couleur.</li>
+<li><b>Où les trouver</b> : chez les marchands (une parure du palier de leur région en plus du reste du stock) et, à la première victoire sur un boss, la parure de <i>son</i> élément est garantie en butin. Pensez à changer de stuff avant de revenir affronter un boss d’un autre élément.</li>
+<li><b>Venin</b> : les boss de ces gabarits empoisonnent : ${VENOMOUS_TEMPLATES.map(esc).join(', ')}. Portez un <a href="stuff-collier_antivenin.html">collier d’antivenin</a>, un <a href="stuff-bracelet_antidote.html">bracelet d’antidote</a> ou le <a href="stuff-collier_du_phenix.html">collier du phénix</a>.</li>
+<li><b>Le qì du boss</b> : un boss gagne plus de qì par combinaison que vous et lance ses sorts offensifs dès qu’il peut les payer. Tenir longtemps sans parure coûte cher.</li>
+</ul>
+<div class="box tip"><b class="t">Astuce</b>Repérez la couleur de ses sorts dès le premier tour : elle donne l’élément du boss, donc la parure à porter et, juste à côté dans le cycle, la couleur faible à jouer.</div>
 <h3>Pouvoirs des compagnons</h3>
 <div class="scroll"><table><tr><th>Compagnon</th><th>Pouvoir</th><th>Effet</th></tr>${pw}</table></div>
 <h3>Protections de biome</h3>

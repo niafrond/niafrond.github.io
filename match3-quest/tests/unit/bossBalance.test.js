@@ -91,7 +91,7 @@ describe('identité élémentaire', () => {
         for (const id of catalogIds) {
             const b = boss(id, 12), n = createMapEnemy({ templateId: id, level: 12 });
             expect(b.resistances).toEqual(n.resistances);
-            expect(b.prep.lines.join(' ')).not.toMatch(/parure de/);
+            expect(b.prep.lines.join(' ')).not.toMatch(/parure/);
         }
     });
 
@@ -108,9 +108,8 @@ describe('identité élémentaire', () => {
         expect(weak.size).toBeGreaterThanOrEqual(4);
     });
 
-    test('la préparation du boss annonce son élément et le contre-équipement', () => {
-        const b = boss('chiyou', 56);
-        expect(b.prep.lines.join(' ')).toMatch(/parure de/);
+    test('le jeu n\'annonce pas le contre-équipement : le joueur doit le deviner (c\'est dans la soluce)', () => {
+        for (const id of catalogIds) expect(boss(id, 56).prep.lines.join(' ')).not.toMatch(/parure|antidote|venin/i);
     });
 });
 
