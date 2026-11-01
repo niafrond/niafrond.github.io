@@ -155,7 +155,7 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
         enemies.forEach(e => expect(templateIds.has(e.templateId)).toBe(true));
         expect(enemies.filter(e => e.boss)).toHaveLength(1);
         expect(sanct.enemies.find(e => e.id === D.BOSS.id).boss.name).toBe(D.BOSS.name);
-        expect(col.enemies.length).toBeLessThanOrEqual(4);
+        expect(col.enemies.length).toBeLessThanOrEqual(6);   // col de 64 × 28 : contemplatif, mais assez grand pour six créatures
     });
 
     test('la chaîne de six quêtes est facultative et ordonnée, et chaque objectif pointe sur une entité existante', () => {

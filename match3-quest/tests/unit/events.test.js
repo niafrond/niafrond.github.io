@@ -20,7 +20,7 @@ import { decorSprite, DECOR_NAMES } from '../../sprites/decor.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
-const OFF = { wanderingSouls: { enabled: false } };
+const OFF = { wanderingSouls: { enabled: false }, winterLanternFestival: { enabled: true } };   // seule la Nuit des âmes errantes est coupée : la Fête des lanternes reste active, comme dans le monde réel
 const questOf = id => QUESTS.find(q => q.id === id);
 
 describe('configuration des événements', () => {
