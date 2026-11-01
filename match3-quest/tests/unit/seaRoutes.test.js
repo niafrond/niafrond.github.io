@@ -33,7 +33,7 @@ describe('bordures de mer', () => {
     });
 
     test("les Rizières n'ont pas de mer autour : une couronne d'arbres, et aucune bordure de mer (le Volcan non plus)", () => {
-        Object.values(SCREENS).filter(s => s.region === 'rizieres' && !s.interior && s.kind !== 'house' && s.connections && !/_(cave|crypt)$/.test(s.id)).forEach(s => {
+        Object.values(SCREENS).filter(s => s.region === 'rizieres' && !s.event && !s.interior && s.kind !== 'house' && s.connections && !/_(cave|crypt)$/.test(s.id)).forEach(s => {
             expect(s.treeBorder).toBe(true);
             for (let x = 0; x < s.w; x++) for (let y = 0; y < s.h; y++) {
                 if (Math.min(x, y, s.w - 1 - x, s.h - 1 - y) > 1) continue;

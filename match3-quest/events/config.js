@@ -9,7 +9,7 @@
 export const EVENTS_DEFAULT = {
     // La Nuit des âmes errantes : royaume facultatif accessible depuis la zone sauvage des Bambous (events/wanderingSouls/).
     wanderingSouls: { enabled: true },
-    // La Fête des lanternes d'hiver : village et sanctuaire de montagne accessibles depuis la zone sauvage du Tonnerre (events/winterLanternFestival/).
+    // La Fête des lanternes d'hiver : village et sanctuaire de montagne accessibles depuis la zone sauvage des Rizières (events/winterLanternFestival/).
     winterLanternFestival: { enabled: true }
 };
 

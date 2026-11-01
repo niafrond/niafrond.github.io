@@ -1259,7 +1259,7 @@ describe('quêtes secondaires', () => {
 
     test('les récompenses (or et XP) des quêtes secondaires croissent avec la région', () => {
         const rank = q => ORDER.indexOf(regionOf(q));
-        const byRegion = ORDER.map((_, i) => side.filter(q => rank(q) === i));
+        const byRegion = ORDER.map((_, i) => side.filter(q => !q.event && rank(q) === i));   // les quêtes d'événement ont leur propre niveau de référence
         for (let i = 1; i < ORDER.length; i++) {
             expect(Math.max(...byRegion[i].map(q => q.reward.xp))).toBeGreaterThanOrEqual(Math.max(...byRegion[i - 1].map(q => q.reward.xp)));
         }

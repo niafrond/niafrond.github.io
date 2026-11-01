@@ -11,18 +11,20 @@ export const BIOME = 'winter_lantern_mountain';
 // Sprite de la porte du col (sprites/winter-decor.js, tools/gen-winter-decor.mjs).
 export const GATE_SPRITE = 'wlm_gate';
 
-// Entrée : l'ancien col enneigé de la zone sauvage du Tonnerre. Niveau de référence de la région (REGION_LEVEL.tonnerre).
-export const HOST = { region: 'tonnerre', wild: 'tonnerre_wild', level: 22 };
+// Entrée : un sentier enneigé au bout de la zone sauvage des Rizières, accessible dès le début de l'aventure. Le contenu garde le niveau 22 (défi facultatif
+// pour un joueur qui ose monter tôt) ; si `level` change, les récompenses de quêtes suivent (REWARD_SCALE, index.js).
+export const HOST = { region: 'rizieres', wild: 'rizieres_wild', level: 22 };
+export const REFERENCE_LEVEL = 22;   // niveau pour lequel les récompenses de quêtes ci-dessous ont été écrites
 
 export const VILLAGE = {
     name: 'Le Village des lanternes enneigées',
-    entrance: 'Ancien col des lanternes',
+    entrance: 'Sentier des lanternes',
     exitLabel: 'Redescendre le col',
     notice: {
         id: 'winterLanternFestival',
         title: 'La Fête des lanternes d\'hiver',
         lines: [
-            'Au cœur de l\'hiver, un vieux col enneigé s\'est rouvert. Au-delà, un village de montagne attend le solstice, mais ses lanternes sacrées s\'éteignent une à une.',
+            'Au cœur de l\'hiver, un sentier enneigé s\'est ouvert au bout des digues. Au-delà, un village de montagne attend le solstice, mais ses lanternes sacrées s\'éteignent une à une.',
             'Nul ne vous oblige à monter, et rien ne sera perdu si vous passez votre chemin : il y a seulement, là-haut, de la soupe chaude, des gens qui ont besoin d\'un coup de main et une flamme à retrouver.'
         ]
     },
@@ -38,7 +40,7 @@ export const QUEST_IDS = {
     flamme: 'sq_wlm_flamme', chaleur: 'sq_wlm_chaleur', celebration: 'sq_wlm_celebration'
 };
 
-// 28 × 41 (le village d'origine, 28 × 13, est au centre : rangées 14 à 26). « < » : sortie ouest (vers le col du Tonnerre) ; « > » : sortie est (col des pins gelés) ; « ~ » : bassin gelé ; « = » : place dallée.
+// 28 × 41 (le village d'origine, 28 × 13, est au centre : rangées 14 à 26). « < » : sortie ouest (vers les Rizières) ; « > » : sortie est (col des pins gelés) ; « ~ » : bassin gelé ; « = » : place dallée.
 export const GRID = [
     '############################',
     '#...##..............##.....#',
