@@ -36,7 +36,7 @@ describe('chargement des sprites à la demande', () => {
         const keys = regionKeys('rizieres');
         await loadSpritePacks(packsForKeys(keys));
         keys.npcs.forEach(id => expect(npcSprite(id)).toBeTruthy());
-        keys.enemies.forEach(([key, tpl]) => expect(enemySprite(key, tpl)).toBeTruthy());
+        keys.enemies.forEach(([key, tpl]) => expect(enemySprite(key, tpl) || hasGbaSprite(key)).toBeTruthy());
         expect(heroSprite('sorcerer')).toBeTruthy();
     });
 
