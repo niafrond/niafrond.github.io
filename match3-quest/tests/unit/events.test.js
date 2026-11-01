@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import './fixtures/xhrFromDisk.js';
 import { SCREENS, QUESTS, buildWorld } from '../../story.js';
 import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, enterScreen, tryMove, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
-import { EVENTS, isEventEnabled } from '../../events/config.js';
+import { EVENTS, EVENTS_DEFAULT, isEventEnabled, parseEventOverrides, applyOverrides } from '../../events/config.js';
 import { applyEvents, activeModules, eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
 import * as D from '../../events/wanderingSouls/data.js';
@@ -20,7 +20,7 @@ import { decorSprite, DECOR_NAMES } from '../../sprites/decor.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
-const OFF = { wanderingSouls: { enabled: false } };
+const OFF = { wanderingSouls: { enabled: false }, winterLanternFestival: { enabled: true } };   // seule la Nuit des âmes errantes est coupée : la Fête des lanternes reste active, comme dans le monde réel
 const questOf = id => QUESTS.find(q => q.id === id);
 
 describe('configuration des événements', () => {
@@ -35,6 +35,26 @@ describe('configuration des événements', () => {
     test('chaque module du registre a une entrée dans la configuration, et aucun événement n\'est activé par la date', () => {
         EVENT_MODULES.forEach(m => expect(EVENTS[m.id]).toBeDefined());
         Object.values(EVENTS).forEach(cfg => expect(Object.keys(cfg)).toEqual(['enabled']));
+    });
+});
+
+describe('surcharge des événements par l\'URL', () => {
+    test('analyse : activer, désactiver, inconnus ignorés, vide', () => {
+        expect(parseEventOverrides('winterLanternFestival,-wanderingSouls')).toEqual({ winterLanternFestival: true, wanderingSouls: false });
+        expect(parseEventOverrides('+wanderingSouls, !winterLanternFestival, nimporte')).toEqual({ wanderingSouls: true, winterLanternFestival: false });
+        expect(parseEventOverrides('')).toEqual({});
+        expect(parseEventOverrides(null)).toEqual({});
+    });
+
+    test('application pure : la configuration versionnée n\'est pas modifiée', () => {
+        const out = applyOverrides(EVENTS_DEFAULT, { winterLanternFestival: false });
+        expect(out.winterLanternFestival.enabled).toBe(false);
+        expect(EVENTS_DEFAULT.winterLanternFestival.enabled).toBe(true);
+        expect(out.wanderingSouls).toEqual(EVENTS_DEFAULT.wanderingSouls);
+    });
+
+    test('sous Node (sans URL), EVENTS reprend la configuration versionnée', () => {
+        expect(EVENTS).toEqual(EVENTS_DEFAULT);
     });
 });
 
@@ -80,7 +100,7 @@ describe('La Nuit des âmes errantes : événement désactivé', () => {
         expect(off.screens[D.HOST.wild].chests.some(c => c.id === D.TALISMAN.chest.id)).toBe(false);
         expect(off.screens[D.HOST.village].npcs.some(n => n.id === D.GIVER.id)).toBe(false);
         expect(off.quests.some(q => q.event === D.ID || String(q.id).startsWith('sq_ws_'))).toBe(false);
-        expect(eventScreens(off.screens)).toEqual([]);
+        expect(eventScreens(off.screens, D.ID)).toEqual([]);
     });
 
     test('le reste du monde est identique à celui de l\'événement activé (hors contenu de l\'événement)', () => {

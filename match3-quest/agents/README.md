@@ -37,6 +37,14 @@ lance un sous-agent sur une tâche de ce domaine.
     grand toit, rochers de salle) avec l'univers chinois conservé. Chaque agent concerné applique la section « Direction Pokémon GBA » de
     `animation-pixel-art.md` ; le code de rendu des tuiles est dans `tilePainter.js` (propriétaire : Animation pixel art).
 
+11. **Aperçu en fin de génération** : chaque fois qu'on génère de l'audio (musique, effets) ou des sprites (personnages, décors, sols,
+    animations), terminer en publiant un **aperçu via artefact** (page HTML autonome : images agrandies en `image-rendering: pixelated`
+    sur fond damier, directions des personnages, sol en damier, liste des pistes avec leurs choix, limites connues ; chaque piste ou effet généré doit avoir
+    son lecteur `<audio controls>` jouable dans la page, les fichiers mp3 étant joints à l'artefact avec `publish_files` — une simple liste
+    de noms ne suffit pas). Lecture du guide `pages` des artefacts avant la première publication de la
+    session ; republier la même page (`edit_version` / `publish_version` avec `slug`) plutôt qu'en créer une nouvelle. Donner le lien à
+    l'utilisateur et indiquer ce qui n'est pas satisfaisant.
+
 ## Qui touche à quoi (matrice rapide)
 
 | Fichiers | Propriétaire principal | Consulté par |

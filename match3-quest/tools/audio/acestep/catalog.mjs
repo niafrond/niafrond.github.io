@@ -364,3 +364,11 @@ export function buildCaption(track, extra = '') {
     if (track.jingle) return [track.style, JINGLE_STYLE, extra].filter(Boolean).join(', ');   // jingles : pas de brief de boucle ni de références de style
     return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
 }
+
+
+/* ───────────── Événement « La Fête des lanternes d'hiver » (events/winterLanternFestival/) ───────────── */
+// Thème de la montagne (écrans d'événement, musicTracks.js : `event-winter-lantern`) et thème du Gardien de la flamme hivernale.
+T('event-winter-lantern', `gentle Chinese winter solstice festival, snowy mountain village with glowing red and gold paper lanterns, ${I.guzheng} plucked pentatonic melody, soft ${I.dizi} flute, warm ${I.erhu}, light bells and wind chimes, cozy and magical, peaceful, slow and spacious`,
+    { bpm: 70, keyScale: 'D major', dur: 60 });
+T('boss-gardien-de-la-flamme-hivernale', `ancient stone guardian of a sacred flame, balance of fire and ice, warm yet epic Chinese boss battle, taiko-like drums, ${I.pipa}, ${I.erhu}, low horns, crystalline bells, noble and determined, ${BOSS_MOOD}, readable melody`,
+    { bpm: 108, keyScale: 'A minor', dur: 60 });

@@ -751,6 +751,14 @@
   "boss-a7-b": {
    "seconds": 146.6,
    "sections": 1
+  },
+  "event-winter-lantern": {
+   "seconds": 166.1,
+   "sections": 1
+  },
+  "boss-gardien-de-la-flamme-hivernale": {
+   "seconds": 149.2,
+   "sections": 1
   }
  },
  "sfx": {

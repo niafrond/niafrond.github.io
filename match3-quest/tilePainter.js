@@ -8,6 +8,7 @@
 // coordonnées arrondies au pixel de l'écran pour garder des bords nets.
 
 import { SOULS_FLOOR } from './sprites/soulsFloor.js';
+import { WINTER_FLOOR } from './sprites/winterFloor.js';
 
 export const OUTLINE = '#2b1b17';
 export const TILE_GRID = 16;
@@ -160,7 +161,8 @@ function paintGrass(R, biome, x, y, biomeId = '') {
 // nappe irrégulier (1 à 2 unités) là où la case voisine n'est pas en hautes herbes ; peinte par-dessus l'herbe de base.
 function paintTallGrass(R, biome, x, y, isTall) {
     const base = biome.a;
-    const bg = shade(base, -30), mid = shade(base, -54), deep = shade(base, -78), tip = shade(base, 16);
+    const T = biome.tall;   // palette propre au biome (poudreuse blanche et bleutée de la montagne des lanternes), sinon dérivée de la teinte de base
+    const bg = T?.bg || shade(base, -30), mid = T?.mid || shade(base, -54), deep = T?.deep || shade(base, -78), tip = T?.tip || shade(base, 16);
     const N = isTall(x, y - 1), S = isTall(x, y + 1), W = isTall(x - 1, y), E = isTall(x + 1, y);
     // fond : une colonne par unité, raccourcie en haut / en bas aux bords de la nappe ; colonnes de bord éclaircies au hasard
     for (let i = 0; i < 16; i++) {
@@ -193,10 +195,11 @@ function paintTallGrass(R, biome, x, y, isTall) {
 export function drawGrassFront(g, tile, px, py, biome, now = 0, moving = false) {
     const u = tile / TILE_GRID;
     const base = biome.a;
-    const mid = shade(base, -54), deep = shade(base, -78), tip = shade(base, 16);
+    const T = biome.tall;
+    const mid = T?.mid || shade(base, -54), deep = T?.deep || shade(base, -78), tip = T?.tip || shade(base, 16);
     g.save();
     g.imageSmoothingEnabled = false;
-    g.fillStyle = shade(base, -30);
+    g.fillStyle = T?.bg || shade(base, -30);
     g.fillRect(Math.round(px + u), Math.round(py + 13.5 * u), Math.round(14 * u), Math.max(1, Math.round(2.5 * u)));
     for (let i = 0; i < 7; i++) {
         const sway = Math.sin(now / 150 + i * 1.7) * u * (moving ? 1.6 : 0.7);
@@ -302,6 +305,12 @@ function paintTerrainDetail(R, base, x, y, biomeId) {
         case 'storm': {                                                     // roche de tempête : plaques, flaques sombres, mousse grise
             for (let i = 0; i < 3; i++) { const sx = 1 + at(260 + i, 10), sy = 2 + at(270 + i, 11); R(sx, sy, 4, 1, shade(base, 16)); R(sx, sy + 1, 4, 1, shade(base, -22)); }
             if (h(280) < 0.18) { const fx = 3 + at(281, 8), fy = 5 + at(282, 7); R(fx, fy, 5, 2, '#3f4478'); R(fx + 1, fy, 2, 1, '#6a70b0'); }
+            return true;
+        }
+        case 'winter_lantern_mountain': {                                   // Montagne des lanternes enneigées : dalle de neige générée (tools/gen-winter-floor.mjs, sprites/winterFloor.js)
+            WINTER_FLOOR.tiles[at(700, WINTER_FLOOR.tiles.length)].forEach((row, ry) => {
+                for (let rx = 0, end; rx < 16; rx = end) { end = rx + 1; while (end < 16 && row[end] === row[rx]) end++; R(rx, ry, end - rx, 1, WINTER_FLOOR.palette[parseInt(row[rx], 16)]); }
+            });
             return true;
         }
         case 'moon': {                                                      // poussière lunaire : cratères, éclats stellaires ; dalles de pierre de jade par nappes
@@ -485,7 +494,8 @@ export function drawPine(g, tile, px, py, { leaf = '#2f7a3a', trunk = '#6b3d22',
 export const BORDER_KIND = {
     paddy: 'fence', riverbed: 'reed', bamboo: 'bamboo', gobi: 'cactus', storm: 'deadpine', volcano: 'spire',
     savanna: 'acacia', coast: 'palm', fusang: 'goldtree', moon: 'crystal', cave: 'stalagmite',
-    wandering_souls: 'souls'   // Royaume des âmes errantes (événement) : racines noires
+    wandering_souls: 'souls',   // Royaume des âmes errantes (événement) : racines noires
+    winter_lantern_mountain: 'pine'   // Montagne des lanternes enneigées (événement) : sapins enneigés
 };
 export const borderKindOf = biomeId => BORDER_KIND[biomeId] || 'pine';
 

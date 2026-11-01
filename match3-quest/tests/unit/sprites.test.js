@@ -64,8 +64,8 @@ describe('couverture des sprites', () => {
         expect(chestSprite(false)).not.toBe(chestSprite(true));
     });
 
-    test('chaque ennemi de la carte a un dessin (propre ou de son gabarit)', () => {
-        screens.flatMap(s => s.enemies).forEach(e => expect(enemySprite(e.spriteKey || e.id, e.templateId)).toBeTruthy());
+    test('chaque ennemi de la carte a un dessin (propre, de son gabarit ou sprite GBA généré)', () => {
+        screens.flatMap(s => s.enemies).forEach(e => expect(enemySprite(e.spriteKey || e.id, e.templateId) || (e.spriteKey && hasGbaSprite(e.spriteKey))).toBeTruthy());
     });
 
     test('chaque gabarit du catalogue a un dessin', () => {

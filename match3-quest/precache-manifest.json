@@ -146,6 +146,9 @@
   "events/wanderingSouls/data.js",
   "events/wanderingSouls/index.js",
   "events/wanderingSouls/terrains.js",
+  "events/winterLanternFestival/data.js",
+  "events/winterLanternFestival/index.js",
+  "events/winterLanternFestival/terrains.js",
   "sprites/archi.js",
   "sprites/biomeArchi.js",
   "sprites/biomeSvg.js",
@@ -162,6 +165,8 @@
   "sprites/souls-decor.js",
   "sprites/soulsFloor.js",
   "sprites/villagers.js",
+  "sprites/winter-decor.js",
+  "sprites/winterFloor.js",
   "sprites/cn/actors-a.js",
   "sprites/cn/actors-b.js",
   "sprites/cn/enemies-1.js",
@@ -2748,6 +2753,71 @@
    "h": "7f309c9762"
   },
   {
+   "p": "sprites/gba/wlm_ancien.ea493451.js",
+   "s": 28721,
+   "h": "ea49345152"
+  },
+  {
+   "p": "sprites/gba/wlm_artisan.74b5083a.js",
+   "s": 17537,
+   "h": "74b5083af8"
+  },
+  {
+   "p": "sprites/gba/wlm_cuisinier.6cfe3e14.js",
+   "s": 17121,
+   "h": "6cfe3e1448"
+  },
+  {
+   "p": "sprites/gba/wlm_enfants.489a5436.js",
+   "s": 22901,
+   "h": "489a543607"
+  },
+  {
+   "p": "sprites/gba/wlm_esprit_givre.82713a81.js",
+   "s": 26253,
+   "h": "82713a814d"
+  },
+  {
+   "p": "sprites/gba/wlm_esprit_village.09023950.js",
+   "s": 24341,
+   "h": "0902395007"
+  },
+  {
+   "p": "sprites/gba/wlm_famille.2ea48bce.js",
+   "s": 39853,
+   "h": "2ea48bce8b"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_flamme.e7e74f12.js",
+   "s": 24785,
+   "h": "e7e74f121c"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_glace.f5e2aba7.js",
+   "s": 23857,
+   "h": "f5e2aba7c1"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_sanctuaire.e98cf8d7.js",
+   "s": 20481,
+   "h": "e98cf8d7d6"
+  },
+  {
+   "p": "sprites/gba/wlm_oiseau_givre.ede8bec7.js",
+   "s": 37321,
+   "h": "ede8bec7be"
+  },
+  {
+   "p": "sprites/gba/wlm_pelerin.aa23ce8f.js",
+   "s": 21585,
+   "h": "aa23ce8fd7"
+  },
+  {
+   "p": "sprites/gba/wlm_renard_neiges.c500944e.js",
+   "s": 24933,
+   "h": "c500944eed"
+  },
+  {
    "p": "sprites/gba/wolf_pup_baatar.f6482063.js",
    "s": 1528,
    "h": "f64820631c"
@@ -4108,6 +4178,11 @@
    "h": "1493f9d131"
   },
   {
+   "p": "audio/music/boss-gardien-de-la-flamme-hivernale.mp3",
+   "s": 1791522,
+   "h": "879e3d289b"
+  },
+  {
    "p": "audio/music/boss-gardien-de-la-forge-noire.mp3",
    "s": 1831333,
    "h": "a553b8ed43"
@@ -4311,6 +4386,11 @@
    "p": "audio/music/event-wandering-souls.mp3",
    "s": 2018787,
    "h": "ef37e23078"
+  },
+  {
+   "p": "audio/music/event-winter-lantern.mp3",
+   "s": 1993710,
+   "h": "ec53f47e2d"
   },
   {
    "p": "audio/music/house.mp3",
