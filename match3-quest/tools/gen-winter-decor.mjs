@@ -20,14 +20,15 @@ const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('
 const ONLY = args.only ? String(args.only).split(',') : null;
 const STEPS = Number(args.steps || 25), CFG = Number(args.cfg || 7), LORA = Number(args.lora ?? 1), PORT = 8188;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const CELL = 32;
+const CELL = Number(args.cell || 32);   // --detail : 1024 px (grille de 128 blocs) réduits à --cell=64 (la porte est en 96), au lieu de 512 px réduits à 32
+const DETAIL = !!args.detail;
 
 const OUT = join(GAME, 'sprites', 'winter-decor.js');
 const PNG_DIR = join(GAME, 'sprites', 'winter-decor');
 
 // ── Palette et motifs : univers de Hou Yi (bronzes Shang, laque rouge, jade, corbeaux d'or des dix soleils), voir tools/bible-graphique.mjs ──
 const STYLE = (view = 'front view') => `pixel art, ${view}, one single small object alone, centered with a wide empty margin all around, plain solid flat medium gray (#808080) background, ` +
-  `clean bold dark outline, flat shading, limited color palette, warm festive Chinese winter mountain style, snow, red and gold lanterns, jade green accents, cozy and magical, video game item`;
+  `clean bold dark outline, ${DETAIL ? 'highly detailed, intricate fine details, rich texture, multi-tone shading and highlights, many small decorative elements, isolated object only, NO background, NO scenery, NO mountains, NO landscape' : 'flat shading, limited color palette'}, warm festive Chinese winter mountain style, snow, red and gold lanterns, jade green accents, cozy and magical, video game item`;
 const SUN = 'golden sun disc with a three-legged jinwu sun crow emblem';
 
 // Décors du biome « Royaume des âmes errantes » (événement, events/wanderingSouls/) : motifs de la fête des fantômes chinoise.
@@ -40,7 +41,7 @@ const SPRITES = [
   { id: 'ice_crystal', w: 1, gen: [512, 512], view: 'front view', desc: 'glowing glacier blue crystal cluster with a soft golden light inside, snow at the base' },
   { id: 'lantern_red', w: 1, gen: [512, 512], view: 'front view', desc: 'round cinnabar red paper lantern on a wooden pole, golden tassels, warm orange glow, thin cap of snow on top' },
   { id: 'lantern_gold', w: 1, gen: [512, 512], view: 'front view', desc: 'round golden yellow paper lantern on a wooden pole, red tassels, warm glow, snow on top' },
-  { id: 'lantern_unlit', w: 1, gen: [512, 512], view: 'front view', desc: 'dark unlit red paper lantern, dull dim colors, frost and a bit of snow on top, hanging from a wooden pole' },
+  { id: 'lantern_unlit', w: 1, derive: { from: 'lantern_red', darken: 0.62 } },
   { id: 'snow_flowers', w: 1, gen: [512, 512], view: 'front view', desc: 'winter plum blossoms with pink and white petals on a bare branch dusted with snow, tiny golden stamens' },
   { id: 'guardian_statue_snow', w: 1, gen: [512, 512], view: 'front view', desc: 'stone guardian lion statue on a pedestal, snow on its head and back, red silk scarf tied around its neck' },
   { id: 'bronze_bell', w: 1, gen: [512, 512], view: 'front view', desc: 'small bronze temple bell hanging from a branch covered with frost, verdigris patina, red ribbon' },
@@ -235,13 +236,13 @@ let ok = 0, fail = 0;
 for (const s of todo) {
   const t0 = Date.now();
   try {
-    const prompt = `${STYLE(s.view)}, ${s.desc}`, px = s.cell || CELL;
+    const prompt = `${STYLE(s.view)}, ${s.desc}`, px = DETAIL ? (s.cell ? Math.round(s.cell * 1.5) : CELL) : (s.cell || CELL);
     if (NCAND) {   // plusieurs variantes à comparer, sans modifier sprites/winter-decor.js
       mkdirSync(CAND_DIR, { recursive: true });
       for (let k = 0; k < NCAND; k++) {
         let best = null;
         for (let attempt = 0; attempt < 4 && !(best && best.q.ok); attempt++) {
-          const img = cutout(await render(base, s.variants?.[k] ? `${STYLE(s.view)}, ${s.variants[k]}` : prompt, (seedOf(s.id) + (k * 6 + attempt) * 7919) % 2147483647, s.gen)), q = checkCutout(img);
+          const img = cutout(await render(base, s.variants?.[k] ? `${STYLE(s.view)}, ${s.variants[k]}` : prompt, (seedOf(s.id) + (k * 6 + attempt) * 7919) % 2147483647, DETAIL ? [1024, 1024] : s.gen)), q = checkCutout(img);
           if (!best || q.score > best.q.score) best = { img, q };
         }
         const out = toSprite(toCells(best.img), s.w * px, (s.h || 1) * px, s.w === 1 && !(s.h > 1), s.shadow ? SHADOW_PAD : undefined);
@@ -254,7 +255,7 @@ for (const s of todo) {
     const seed = seedOf(s.seedOf || s.id);
     let best = null; const whys = [];
     for (let attempt = 0; attempt < 10 && !(best && best.q.ok); attempt++) {
-      const img = cutout(await render(base, prompt, (seed + attempt * 7919) % 2147483647, s.gen)), q = checkCutout(img);
+      const img = cutout(await render(base, prompt, (seed + attempt * 7919) % 2147483647, DETAIL ? [1024, 1024] : s.gen)), q = checkCutout(img);
       if (!q.ok) whys.push(q.why);
       if (!best || q.score > best.q.score) best = { img, q };
     }

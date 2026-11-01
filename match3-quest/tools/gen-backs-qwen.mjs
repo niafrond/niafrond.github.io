@@ -125,6 +125,16 @@ const dec = uri => PNG.sync.read(Buffer.from(uri.split(',')[1], 'base64'));
 if (args.use) {
   for (const pair of String(args.use).split(',')) {
     const [id, k] = pair.split(':'), png = PNG.sync.read(readFileSync(join(CAND, `${tag(id)}__${k}.png`)));
+    if (args.sides) {   // « right side view » regarde à gauche : adopté comme vue gauche du jeu, la droite en est le miroir
+      const mir = new PNG({ width: png.width, height: png.height });
+      for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) png.data.copy(mir.data, (y * png.width + x) * 4, (y * png.width + png.width - 1 - x) * 4, (y * png.width + png.width - x) * 4);
+      for (const [d, im] of [['left', png], ['right', mir]]) {
+        sprites[id][d] = 'data:image/png;base64,' + PNG.sync.write(im).toString('base64');
+        writeFileSync(join(PNG_DIR, `${id}_${d}.png`), PNG.sync.write(im));
+      }
+      console.log('adopté (profils)', id, k);
+      continue;
+    }
     sprites[id][VIEW] = 'data:image/png;base64,' + PNG.sync.write(png).toString('base64');
     writeFileSync(join(PNG_DIR, `${id}_${VIEW}.png`), PNG.sync.write(png));
     console.log('adopté', id, k);
