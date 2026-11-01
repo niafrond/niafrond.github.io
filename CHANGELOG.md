@@ -1,3 +1,15 @@
+## [2.167.1](https://github.com/niafrond/niafrond.github.io/compare/v2.167.0...v2.167.1) (2026-10-31)
+
+### Bug Fixes
+
+* **match3-quest:** corriger le tutoriel et accélérer l'apparition des tuiles ([#609](https://github.com/niafrond/niafrond.github.io/issues/609)) ([5a63d4a](https://github.com/niafrond/niafrond.github.io/commit/5a63d4af1464ab89429f308d85e8a8326ea42bca))
+
+## [2.167.0](https://github.com/niafrond/niafrond.github.io/compare/v2.166.0...v2.167.0) (2026-10-31)
+
+### Features
+
+* **match3-quest:** plus de hautes herbes et moins d'obstacles décoratifs ([#608](https://github.com/niafrond/niafrond.github.io/issues/608)) ([0bb2aa1](https://github.com/niafrond/niafrond.github.io/commit/0bb2aa196967f5778df6b81084b55ea130731b3d))
+
 ## [2.166.0](https://github.com/niafrond/niafrond.github.io/compare/v2.165.1...v2.166.0) (2026-10-31)
 
 ### Features

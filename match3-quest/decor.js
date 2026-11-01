@@ -22,8 +22,9 @@ export const BIOME_DECOR = {
     winter_lantern_mountain: ['snow_pine', 'snow_rock', 'stone_column_snow', 'lantern_red', 'snow_flowers', 'ice_block', 'guardian_statue_snow', 'bronze_bell', 'frozen_bamboo', 'fallen_log_snow', 'ice_stalagmite', 'ice_crystal', 'lantern_gold', 'lantern_white', 'lantern_jade', 'silk_ribbons', 'jade_ornament', 'snow_hare', 'glowing_crystal_lamp']
 };
 
-// Décors franchissables : touffes de roseaux, trop basses pour arrêter un héros.
-export const LOW_DECOR = new Set(['rice']);
+// Décors franchissables : tout ce qui ressemble à de l'herbe (roseaux, jonc, herbe sèche, algues) est trop bas pour arrêter un héros ;
+// ces cases se parcourent comme des hautes herbes, avec leurs rencontres aléatoires.
+export const LOW_DECOR = new Set(['rice', 'deadreed', 'drygrass', 'seaweed', 'kelp']);
 
 export const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1;
 
