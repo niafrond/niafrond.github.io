@@ -30,7 +30,7 @@ générés mais aucun écran de `data.js` ne les référence encore.
 
 ## Intérieur et terrains (ajouté le 2026-11-01)
 
-Fait : 8 meubles d'intérieur sans neige (`kang`, `brazier`, `tea_shelf`, `calligraphy_scroll`, `lacquer_chest`, `floor_rug`, `indoor_lantern`, `firewood_basket`), une maison (`wlm_maison`, bâtiment « A » du village), col 64 × 28 et sanctuaire 52 × 28 avec grandes poudreuses. Reste : un seul intérieur et sans PNJ ni coffre (les autres bâtiments du village n'existent pas), `floor_rug` non utilisé (le tapis de la pièce est dessiné par le moteur), village toujours 28 × 13, rien vérifié en jeu.
+Fait : 8 meubles d'intérieur sans neige (`kang`, `brazier`, `tea_shelf`, `calligraphy_scroll`, `lacquer_chest`, `floor_rug`, `indoor_lantern`, `firewood_basket`), une maison (`wlm_maison`, bâtiment « A » du village), col 44 × 64, sanctuaire 40 × 56 et village 28 × 41 (cartes en hauteur) avec grandes poudreuses. Reste : un seul intérieur et sans PNJ ni coffre (les autres bâtiments du village n'existent pas), `floor_rug` non utilisé (le tapis de la pièce est dessiné par le moteur), rien vérifié en jeu.
 
 ## 3. Portes et architecture (6 manquants)
 
