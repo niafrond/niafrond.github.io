@@ -17,7 +17,7 @@ function buildVillage() {
     const chestAt = (def, at, tier, extra = {}) => ({ id: def.id, at, label: def.label, openText: def.openText, gold: 15 * level * tier, lootTier: Math.min(3, tier), ...extra });
     const npcAt = n => ({ id: n.id, at: n.at, name: n.name, title: n.title, idle: n.idle, ...(n.showWhen ? { showWhen: n.showWhen } : {}) });
     return buildZone({
-        id: D.REALM_ID, region: D.HOST.region, biome: D.BIOME, kind: 'wild', grid: D.GRID,
+        id: D.REALM_ID, region: D.HOST.region, biome: D.BIOME, kind: 'wild', grid: D.GRID, houses: D.HOUSES,
         npcs: [D.ANCIEN, D.CUISINIER, D.ARTISAN, D.GARDIEN, D.ENFANTS, D.ESPRIT_VILLAGE, D.FAMILLE, { ...D.RENARD, showWhen: D.REVEALED_BY }].map(npcAt),
         chests: [
             // les lanternes s'allument dans l'ordre : chacune n'apparaît qu'une fois la précédente allumée
@@ -40,6 +40,18 @@ function gateCell(screen, side) {
     return { W: { x: 0, y: g }, E: { x: screen.w - 1, y: g } }[side];
 }
 const inward = (screen, side) => { const c = gateCell(screen, side); return { x: c.x + (side === 'W') - (side === 'E'), y: c.y }; };
+
+// Intérieur de la maison du village : mobilier d'hiver (kang, brasero, étagère à thé…), voir `furnishing` dans decor.js.
+function buildMaison() {
+    const zone = buildZone({
+        id: D.MAISON.id, region: D.HOST.region, biome: 'house', kind: 'house', interior: true, grid: D.MAISON.grid,
+        npcs: [], chests: [], enemies: [], exits: []
+    }, { npcDef: id => ({ id }), chestDef: id => ({ id }), screenText: () => ({ name: D.MAISON.name }) });
+    zone.furnishing = 'winter';
+    const v = zone.exits; const door = { x: D.MAISON.grid[6].indexOf('v'), y: 6 };
+    v.push({ x: door.x, y: door.y, to: D.REALM_ID, door: false, label: 'Sortie' });
+    return zone;
+}
 
 function buildTerrain(t) {
     const level = D.HOST.level;
@@ -140,6 +152,7 @@ export function applyWinterLanternFestival(screens, quests) {
 
     D.PUZZLE_LIST.forEach(p => { PUZZLES[p.id] = p.def; });   // énigmes de l'événement (moteur d'énigmes existant, seulement quand l'événement est actif)
     screens[D.REALM_ID] = village;
+    screens[D.MAISON.id] = buildMaison();
 
     T.TERRAINS.forEach(t => { screens[t.id] = buildTerrain(t); });
     T.LINKS.forEach(l => {

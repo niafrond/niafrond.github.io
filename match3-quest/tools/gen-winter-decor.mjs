@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * gen-winter-decor.mjs — Décors du Royaume des âmes errantes (lanterne, encensoir, stèle, lion gardien, urne, cloche, talismans, offrande, fleurs, miroir) en pixel art, généré EN LOCAL
- * (ComfyUI : SDXL + LoRA Pixel Art XL, pile game-maker lancée par `tools/gm up pixel`, dans WSL). Même chaîne que gen-puzzle-sprites.mjs :
+ * (ComfyUI : SDXL + LoRA Pixel Art XL, ou FLUX.2 Klein 4B avec --flux (recommandé), pile game-maker lancée par `tools/gm up pixel`, dans WSL). Même chaîne que gen-puzzle-sprites.mjs :
  * génération 8 px par bloc sur fond gris uni → détourage → réduction 32×32 (couleur majoritaire par bloc), contrôle qualité et re-tirage.
  * Écrit sprites/winter-decor.js (data URI, ne pas modifier à la main) et sprites/house/<id>.png (aperçus). 
  *
- * Usage (WSL, Node 22) : node tools/gen-winter-decor.mjs [--only=a,b] [--force] [--cand=4] [--use=shelf:2,bed:0] [--steps=25] [--cfg=7] [--lora=1] [--seed=0]
+ * Usage (WSL, Node 22) : node tools/gen-winter-decor.mjs [--only=a,b] [--force] [--cand=4] [--use=shelf:2,bed:0] [--steps=25] [--cfg=7] [--lora=1] [--seed=0] [--flux]
  */
 import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -35,7 +35,7 @@ const SUN = 'golden sun disc with a three-legged jinwu sun crow emblem';
 const SPRITES = [
   { id: 'snow_pine', w: 1, gen: [512, 512], view: 'front view', desc: 'tall pine tree heavily covered with thick white snow, dark green needles peeking through, small red silk ribbon tied on a low branch' },
   { id: 'frozen_bamboo', w: 1, gen: [512, 512], view: 'front view', desc: 'cluster of bamboo stalks coated in frost and ice crystals, pale jade green stems, icicles hanging from the leaves' },
-  { id: 'ice_block', w: 1, gen: [512, 512], view: 'three-quarter view seen from slightly above', desc: 'translucent glacier blue ice cube block with white cracks and a faint golden glint inside, sitting on snow' },
+  { id: 'ice_block', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG sprite, the camera at the height of the object, almost no top surface visible', desc: 'translucent glacier blue ice cube block with white cracks and a faint golden glint inside, sitting on snow' },
   { id: 'snow_rock', w: 1, gen: [512, 512], view: 'front view', desc: 'gray boulder with a thick cap of white snow, small icicles on the side, a few dry winter grass blades' },
   { id: 'stone_column_snow', w: 1, gen: [512, 512], view: 'front view', desc: 'short carved stone column with a rounded top, dragon relief pattern, snow piled on the capital, faint red paint remaining' },
   { id: 'ice_crystal', w: 1, gen: [512, 512], view: 'front view', desc: 'glowing glacier blue crystal cluster with a soft golden light inside, snow at the base' },
@@ -45,8 +45,31 @@ const SPRITES = [
   { id: 'snow_flowers', w: 1, gen: [512, 512], view: 'front view', desc: 'winter plum blossoms with pink and white petals on a bare branch dusted with snow, tiny golden stamens' },
   { id: 'guardian_statue_snow', w: 1, gen: [512, 512], view: 'front view', desc: 'stone guardian lion statue on a pedestal, snow on its head and back, red silk scarf tied around its neck' },
   { id: 'bronze_bell', w: 1, gen: [512, 512], view: 'front view', desc: 'small bronze temple bell hanging from a branch covered with frost, verdigris patina, red ribbon' },
-  { id: 'tangyuan_basket', w: 1, gen: [512, 512], view: 'three-quarter view seen from slightly above', desc: 'bamboo basket full of round glutinous rice dumplings in white, pink and golden colors, steam rising' },
-  { id: 'hot_spring', w: 1, gen: [512, 512], view: 'three-quarter view seen from slightly above', desc: 'small round stone pool of hot spring water with white steam rising, orange glow under the surface, snow around the rim' },
+  { id: 'tangyuan_basket', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG sprite, the camera at the height of the object, almost no top surface visible', desc: 'bamboo basket full of round glutinous rice dumplings in white, pink and golden colors, steam rising' },
+  { id: 'hot_spring', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG sprite, the camera at the height of the object, almost no top surface visible', desc: 'small round stone hot spring basin seen from the front, the low stone wall in front, water surface barely visible, white steam rising, warm orange glow, snow around the rim' },
+  { id: 'fallen_log_snow', w: 1, gen: [512, 512], view: 'front view', desc: 'fallen tree trunk lying sideways under snow, brown bark, small frozen mushrooms, icicles' },
+  { id: 'ice_stalagmite', w: 1, gen: [512, 512], view: 'front view', desc: 'pointed pale blue ice stalagmite cluster rising from the ground, translucent crystals, white highlights' },
+  { id: 'lantern_white', w: 1, gen: [512, 512], view: 'front view', desc: 'white paper lantern with a soft pale blue glow, silver tassels, hanging from a wooden pole, snow on top' },
+  { id: 'lantern_jade', w: 1, gen: [512, 512], view: 'front view', desc: 'jade green paper lantern with gold floral cutouts, warm soft glow, hanging from a wooden pole' },
+  { id: 'silk_ribbons', w: 1, gen: [512, 512], view: 'front view', desc: 'bundle of red and gold silk ribbons tied to a wooden post, fluttering in the wind, snow on the post' },
+  { id: 'jade_ornament', w: 1, gen: [512, 512], view: 'front view', desc: 'carved jade pendant shaped like a crane on a red cord hanging from a short stand, deep green translucent jade' },
+  { id: 'snow_hare', w: 1, gen: [512, 512], view: 'front view', desc: 'small white winter hare sitting in snow, pale blue shadow, black eyes, cute' },
+  { id: 'smoke_chimney', w: 1, gen: [512, 512], view: 'front view', desc: 'traditional Chinese tile rooftop chimney with a gentle plume of white smoke rising, snow on the tiles' },
+  { id: 'feast_table', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG interior sprite, the camera at the height of the furniture, almost no top surface visible', desc: 'low wooden festive table seen from the front, red tablecloth hanging over the front, steaming bowls and a plate of white pink and golden rice dumplings on top, chopsticks, cozy indoor furniture' },
+  { id: 'paper_cutting', w: 1, gen: [512, 512], view: 'front view', desc: 'red paper cut window decoration with a pattern of plum blossoms and a crane, stuck on a wooden lattice window' },
+  { id: 'glowing_crystal_lamp', w: 1, gen: [512, 512], view: 'front view', desc: 'small floating crystal lamp with a warm golden light, glacier blue facets, sparkles' },
+  { id: 'frozen_door', w: 1, gen: [512, 512], view: 'front view', desc: 'wooden double door of a mountain shrine covered by a thick layer of translucent ice, red paint underneath, icicles, snow' },
+  { id: 'ice_bridge', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG sprite, the camera at the height of the object, almost no top surface visible', desc: 'short fragile arched bridge of pale blue ice seen from the side, spanning a small gap, cracks across the surface, wooden handrails with frost' },
+  { id: 'slippery_ice_tile', w: 1, gen: [512, 512], view: 'top-down view', desc: 'polished translucent glacier blue ice floor tile with white reflection streaks and fine cracks' },
+  // Mobilier d'intérieur (maisons du village) : pas de neige, lumière chaude de feu et de lanterne.
+  { id: 'kang', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG interior sprite, the camera at the height of the furniture, almost no top surface visible', desc: 'compact Chinese kang seen from the front, a raised platform bench built of gray bricks and rammed adobe clay, a thick red and gold quilted mattress on top with a folded blanket and a round embroidered cushion, a small warm glowing stove opening in the brick base, cozy indoor furniture, no snow' },
+  { id: 'brazier', w: 1, gen: [512, 512], view: 'front view', desc: 'round bronze charcoal brazier on three legs with glowing orange embers and a few sparks, a copper kettle resting on a grate, indoor furniture, no snow' },
+  { id: 'tea_shelf', w: 1, gen: [512, 512], view: 'front view', desc: 'tall dark wooden shelf with several tiers holding teapots, small porcelain cups, blue and white jars and a bamboo tea scoop, indoor furniture, no snow' },
+  { id: 'calligraphy_scroll', w: 1, gen: [512, 512], view: 'front view', desc: 'hanging Chinese calligraphy scroll on cream silk with black brush characters and a red seal, wooden rods and red cords at the ends, indoor wall decoration, no snow' },
+  { id: 'lacquer_chest', w: 1, gen: [512, 512], view: 'front view, straight-on flat elevation like a classic 16-bit RPG interior sprite, the camera at the height of the furniture, almost no top surface visible', desc: 'red lacquered wooden storage chest seen from the front with gold dragon patterns and brass lock fittings, closed lid, indoor furniture, no snow' },
+  { id: 'floor_rug', w: 1, gen: [512, 512], view: 'top-down view', desc: 'round woven floor rug with a red and gold lotus and cloud pattern and a dark blue border, flat, indoor decoration, no snow' },
+  { id: 'indoor_lantern', w: 1, gen: [512, 512], view: 'front view', desc: 'hanging red silk palace lantern with gold tassels and a wooden frame, hanging from a short chain, warm soft glow, indoor decoration, no snow' },
+  { id: 'firewood_basket', w: 1, gen: [512, 512], view: 'front view', desc: 'woven bamboo basket filled with split firewood logs and a bundle of dry kindling, indoor furniture, no snow' },
   { id: 'wlm_gate', w: 1, cell: 64, gen: [512, 512], view: 'front view', desc: 'ornate Chinese mountain paifang gate, two red lacquered pillars with gold dragon patterns, curved dark tiled roof topped with snow, two glowing red paper lanterns hanging, the doorway opening onto a snowy mountain path, warm and welcoming' }
 ];
 
@@ -76,10 +99,30 @@ const workflow = (prompt, seed, [width, height]) => ({
   8: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'match3-winter-decor/s' } }
 });
 
+// Moteur FLUX.2 Klein 4B (--flux) : texte → image bien plus propre que SDXL (objet isolé, pas de décor parasite) ; même détourage et même réduction ensuite.
+const FLUX = !!args.flux;
+const workflowFlux = (prompt, seed, [width, height]) => ({
+  1: { class_type: 'UNETLoader', inputs: { unet_name: 'flux-2-klein-base-4b-fp8.safetensors', weight_dtype: 'default' } },
+  3: { class_type: 'CLIPLoaderGGUF', inputs: { clip_name: 'Qwen_Qwen3-4B-Q8_0.gguf', type: 'flux2' } },
+  4: { class_type: 'VAELoader', inputs: { vae_name: 'flux2-vae.safetensors' } },
+  8: { class_type: 'CLIPTextEncode', inputs: { clip: ['3', 0], text: prompt } },
+  9: { class_type: 'CLIPTextEncode', inputs: { clip: ['3', 0], text: NEGATIVE } },
+  12: { class_type: 'EmptyFlux2LatentImage', inputs: { width, height, batch_size: 1 } },
+  13: { class_type: 'Flux2Scheduler', inputs: { steps: Number(args.steps || 28), width, height } },
+  14: { class_type: 'CFGGuider', inputs: { model: ['1', 0], positive: ['8', 0], negative: ['9', 0], cfg: Number(args.cfg || 4) } },
+  15: { class_type: 'KSamplerSelect', inputs: { sampler_name: 'euler' } },
+  16: { class_type: 'RandomNoise', inputs: { noise_seed: seed } },
+  17: { class_type: 'SamplerCustomAdvanced', inputs: { noise: ['16', 0], guider: ['14', 0], sampler: ['15', 0], sigmas: ['13', 0], latent_image: ['12', 0] } },
+  18: { class_type: 'VAEDecode', inputs: { samples: ['17', 0], vae: ['4', 0] } },
+  19: { class_type: 'SaveImage', inputs: { images: ['18', 0], filename_prefix: 'match3-winter-decor/f' } }
+});
+const FLUX_STYLE = (view, desc) => `A single game sprite in crisp retro 16-bit pixel art style: ${desc}. ${view}. Bold dark outline, chunky visible pixels, rich shading with highlights, saturated warm festive colors. ` +
+  'The object is alone and centered, fully visible with a wide margin around it, on a perfectly flat plain solid medium gray (#808080) background, no ground, no shadow, no scenery.';
+
 const seedOf = id => ([...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 11) + Number(args.seed || 0) * 104729) % 2147483647;
 
 async function render(base, prompt, seed, size) {
-  const sub = await (await fetch(`${base}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: workflow(prompt, seed, size) }) })).json();
+  const sub = await (await fetch(`${base}/prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: (FLUX ? workflowFlux : workflow)(prompt, seed, size) }) })).json();
   if (!sub.prompt_id) throw new Error(JSON.stringify(sub).slice(0, 300));
   let entry;
   while (!(entry = (await (await fetch(`${base}/history/${sub.prompt_id}`)).json())[sub.prompt_id])) await sleep(1500);
@@ -205,7 +248,7 @@ function load() {
 }
 function save(sprites) {
   const lines = ['// Mobilier des maisons en pixel art (data URI PNG 32 × 32), utilisé par sprites/decor.js à la place des dessins SVG.',
-    '// Fichier généré par tools/gen-winter-decor.mjs (SDXL + LoRA Pixel Art XL) — ne pas modifier à la main.',
+    '// Fichier généré par tools/gen-winter-decor.mjs (FLUX.2 Klein ou SDXL + LoRA Pixel Art XL) — ne pas modifier à la main.',
     `// Dernière mise à jour : ${new Date().toISOString().slice(0, 10)}`, 'export const WINTER_DECOR = {'];
   for (const s of SPRITES) if (sprites[s.id]) lines.push(`  ${s.id}: { w: ${s.w}, h: ${s.h || 1}, uri: ${JSON.stringify(sprites[s.id].uri)} },`);
   lines.push('};', '');
@@ -236,7 +279,7 @@ let ok = 0, fail = 0;
 for (const s of todo) {
   const t0 = Date.now();
   try {
-    const prompt = `${STYLE(s.view)}, ${s.desc}`, px = DETAIL ? (s.cell ? Math.round(s.cell * 1.5) : CELL) : (s.cell || CELL);
+    const prompt = FLUX ? FLUX_STYLE(s.view, s.desc) : `${STYLE(s.view)}, ${s.desc}`, px = DETAIL ? (s.cell ? Math.round(s.cell * 1.5) : CELL) : (s.cell || CELL);
     if (NCAND) {   // plusieurs variantes à comparer, sans modifier sprites/winter-decor.js
       mkdirSync(CAND_DIR, { recursive: true });
       for (let k = 0; k < NCAND; k++) {

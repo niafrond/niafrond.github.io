@@ -19,7 +19,7 @@ export const BIOME_DECOR = {
     // Royaume des âmes errantes (événement, events/wanderingSouls/) : lanternes de pierre, colonnes brisées, urnes, plumes noires.
     wandering_souls: ['red_lantern', 'stone_stele', 'guardian_lion', 'soul_urn', 'incense_burner', 'spirit_mirror', 'pale_flowers', 'offering_bowl'],
     // Montagne des lanternes enneigées (événement, events/winterLanternFestival/) : sprites pixel art générés (tools/gen-winter-decor.mjs).
-    winter_lantern_mountain: ['snow_pine', 'snow_rock', 'stone_column_snow', 'lantern_red', 'snow_flowers', 'ice_block', 'guardian_statue_snow', 'bronze_bell']
+    winter_lantern_mountain: ['snow_pine', 'snow_rock', 'stone_column_snow', 'lantern_red', 'snow_flowers', 'ice_block', 'guardian_statue_snow', 'bronze_bell', 'frozen_bamboo', 'fallen_log_snow', 'ice_stalagmite', 'ice_crystal', 'lantern_gold', 'lantern_white', 'lantern_jade', 'silk_ribbons', 'jade_ornament', 'snow_hare', 'glowing_crystal_lamp']
 };
 
 // Décors franchissables : touffes de roseaux, trop basses pour arrêter un héros.
@@ -52,7 +52,17 @@ export function isLowObstacle(screen, x, y) {
 const WALL_FURNITURE = ['shelf', 'cabinet', 'bed', 'shelf'];
 const FLOOR_OBJECTS = ['jar', 'basket', 'plant', 'cushion', 'jar'];
 
-export function houseDecor(isObst, x, y) {
+// Maison d'hiver (`screen.furnishing === 'winter'`, sprites de tools/gen-winter-decor.mjs, sans neige) : étagère à thé et coffre laqué au fond,
+// kang pour deux obstacles contigus, brasero, panier de bois ou lanterne pour les obstacles isolés.
+const WINTER_WALL_FURNITURE = ['tea_shelf', 'lacquer_chest', 'calligraphy_scroll', 'tea_shelf'];
+const WINTER_FLOOR_OBJECTS = ['brazier', 'firewood_basket', 'indoor_lantern', 'firewood_basket'];
+
+export function houseDecor(isObst, x, y, furnishing) {
+    if (furnishing === 'winter') {
+        if (y === 1) return WINTER_WALL_FURNITURE[Math.floor(hash(x, y) * WINTER_WALL_FURNITURE.length)];
+        if (isObst(x - 1, y) || isObst(x + 1, y) || isObst(x, y - 1) || isObst(x, y + 1)) return 'kang';
+        return WINTER_FLOOR_OBJECTS[Math.floor(hash(x, y) * WINTER_FLOOR_OBJECTS.length)];
+    }
     if (y === 1) return WALL_FURNITURE[Math.floor(hash(x, y) * WALL_FURNITURE.length)];
     if (isObst(x - 1, y) || isObst(x + 1, y) || isObst(x, y - 1) || isObst(x, y + 1)) return 'table';
     return FLOOR_OBJECTS[Math.floor(hash(x, y) * FLOOR_OBJECTS.length)];

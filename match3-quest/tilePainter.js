@@ -161,7 +161,8 @@ function paintGrass(R, biome, x, y, biomeId = '') {
 // nappe irrégulier (1 à 2 unités) là où la case voisine n'est pas en hautes herbes ; peinte par-dessus l'herbe de base.
 function paintTallGrass(R, biome, x, y, isTall) {
     const base = biome.a;
-    const bg = shade(base, -30), mid = shade(base, -54), deep = shade(base, -78), tip = shade(base, 16);
+    const T = biome.tall;   // palette propre au biome (poudreuse blanche et bleutée de la montagne des lanternes), sinon dérivée de la teinte de base
+    const bg = T?.bg || shade(base, -30), mid = T?.mid || shade(base, -54), deep = T?.deep || shade(base, -78), tip = T?.tip || shade(base, 16);
     const N = isTall(x, y - 1), S = isTall(x, y + 1), W = isTall(x - 1, y), E = isTall(x + 1, y);
     // fond : une colonne par unité, raccourcie en haut / en bas aux bords de la nappe ; colonnes de bord éclaircies au hasard
     for (let i = 0; i < 16; i++) {
@@ -194,10 +195,11 @@ function paintTallGrass(R, biome, x, y, isTall) {
 export function drawGrassFront(g, tile, px, py, biome, now = 0, moving = false) {
     const u = tile / TILE_GRID;
     const base = biome.a;
-    const mid = shade(base, -54), deep = shade(base, -78), tip = shade(base, 16);
+    const T = biome.tall;
+    const mid = T?.mid || shade(base, -54), deep = T?.deep || shade(base, -78), tip = T?.tip || shade(base, 16);
     g.save();
     g.imageSmoothingEnabled = false;
-    g.fillStyle = shade(base, -30);
+    g.fillStyle = T?.bg || shade(base, -30);
     g.fillRect(Math.round(px + u), Math.round(py + 13.5 * u), Math.round(14 * u), Math.max(1, Math.round(2.5 * u)));
     for (let i = 0; i < 7; i++) {
         const sway = Math.sin(now / 150 + i * 1.7) * u * (moving ? 1.6 : 0.7);

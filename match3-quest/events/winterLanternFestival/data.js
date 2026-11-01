@@ -49,11 +49,26 @@ export const GRID = [
     '#....j.....==========..4...#',
     '#..###...............#.....#',
     '#..k.....6......7....#..m..#',
-    '#.....##.......#.....r.....#',
-    '#..5.......8.......9.#.....#',
+    '#.....##.......#.....r..AAA#',
+    '#..5.......8.......9.#..AaA#',
     '#........#.........#..0....#',
     '############################'
 ];
+
+// Maison du village (bâtiment « A » de la grille, porte « a ») : intérieur chauffé par un kang, sans neige. 10 × 7, « v » : sortie vers le village.
+export const MAISON = {
+    id: 'wlm_maison', name: 'Maison du kang',
+    grid: [
+        '##########',
+        '#.#..#.#.#',
+        '#.1......#',
+        '#.##..#..#',
+        '#........#',
+        '#...S....#',
+        '####v#####'
+    ]
+};
+export const HOUSES = { A: { to: MAISON.id, name: MAISON.name } };
 
 export const GATES = { W: { x: 0, y: 5 }, E: { x: 27, y: 5 } };
 

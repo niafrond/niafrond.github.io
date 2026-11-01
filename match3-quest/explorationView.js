@@ -88,7 +88,7 @@ const BIOMES = {
     // Royaume des âmes errantes (événement) : pierre grise, noir encre, brume bleu nuit, chemin d'or vieilli (palette de la spec)
     wandering_souls: { a: '#686a70', b: '#5f6167', path: '#8c7b55', cliff: '#171a24', liquid: '#273b59', sky: ['#171a24', '#273b59'], decor: BIOME_DECOR.wandering_souls },
     // Montagne des lanternes enneigées (événement) : neige blanche, glace bleue, ciel bleu nuit, chemin de pierre chaude (palette de la spec)
-    winter_lantern_mountain: { a: '#e8edf0', b: '#dde4e8', path: '#b8a98c', cliff: '#293b59', liquid: '#a5cedd', sky: ['#293b59', '#a5cedd'], decor: BIOME_DECOR.winter_lantern_mountain },
+    winter_lantern_mountain: { a: '#e8edf0', b: '#dde4e8', path: '#b8a98c', cliff: '#293b59', liquid: '#a5cedd', sky: ['#293b59', '#a5cedd'], decor: BIOME_DECOR.winter_lantern_mountain, tall: { bg: '#d3e1ec', mid: '#aac4d8', deep: '#7f9fba', tip: '#ffffff' } },
     ...ARENA_BIOMES  // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 
@@ -1661,7 +1661,7 @@ export function createExplorationView(cfg) {
                             (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
                         break;
                     }
-                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y) : pickDecor(biome.decor, it.x, it.y);
+                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y, screen.furnishing) : pickDecor(biome.decor, it.x, it.y);
                     if (decor === 'rock') {
                         drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
                         break;
