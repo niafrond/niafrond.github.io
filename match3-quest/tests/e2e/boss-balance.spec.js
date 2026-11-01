@@ -48,19 +48,20 @@ test.describe('match3-quest · boss : contre-équipement', () => {
         expect(errors).toEqual([]);
     });
 
-    test('le qì d\'un boss monte plus vite que celui d\'un ennemi ordinaire', async ({ page }) => {
+    test('le qì d\'un boss monte plus vite que celui d\'un ennemi ordinaire (et sans bonus d\'attribut)', async ({ page }) => {
         await startGame(page);
         await fightBoss(page);
         const gains = await page.evaluate(async () => {
             const g = await import('./game.js'), en = await import('./enemies.js');
             g.enemy.mana = { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 };
-            const bossGain = g.addManaForColor(g.enemy, 'red', 3).gained;
+            const bossGain = g.addManaForColor(g.enemy, 'green', 3).gained;
             const plain = en.createMapEnemy({ templateId: 'chiyou', level: 56 });
             plain.mana = { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 };
-            const plainGain = g.addManaForColor(plain, 'red', 3).gained;
+            const plainGain = g.addManaForColor(plain, 'green', 3).gained;   // vert : aucun bonus d'attribut pour l'ennemi ordinaire
             return { bossGain, plainGain, bonus: g.enemy.manaGainBonus };
         });
         expect(gains.bonus).toBeGreaterThan(0);
+        expect(gains.bossGain).toBe(3 + gains.bonus);
         expect(gains.bossGain).toBeGreaterThan(gains.plainGain);
     });
 

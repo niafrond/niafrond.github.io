@@ -218,10 +218,10 @@ function pickBossTemplate(preferredTemplateId = null){
     return pickRandom(topPool);
 }
 
-export const BOSS_HP_QUADRATIC = 0.64;
+export const BOSS_HP_QUADRATIC = 0;
 // Puissance magique d'un boss : dégâts fixes ajoutés à chacun de ses sorts offensifs (les sorts plafonnent à 150 de dégâts
 // dès le niveau 18, alors que le héros dépasse les 4 000 PV). Niveau 56 : +404 par sort ; niveau 10 : +17.
-export const BOSS_SPELL_POWER_QUADRATIC = 0.12;
+export const BOSS_SPELL_POWER_QUADRATIC = 0.015;
 export const BOSS_SPELL_POWER_LINEAR = 0.5;
 export function bossSpellPower(level){
     const l = Math.max(1, Math.floor(level || 1));

@@ -28,11 +28,11 @@ describe('PV des boss', () => {
         expect(bossHpMult(undefined)).toBe(1);
     });
 
-    test('au niveau 56, tout boss a entre 4 700 et 7 300 PV, quel que soit son gabarit', () => {
+    test('au niveau 56, tout boss a entre 1 200 et 1 700 PV (1,75 × (55 + 12 × niveau) × coefficient de gabarit borné), quel que soit son gabarit', () => {
         for (const id of catalogIds) {
             const b = boss(id, 56);
-            expect(b.maxHp).toBeGreaterThanOrEqual(4700);
-            expect(b.maxHp).toBeLessThanOrEqual(7300);
+            expect(b.maxHp).toBeGreaterThanOrEqual(Math.floor(727 * 1.75 * 0.99));
+            expect(b.maxHp).toBeLessThanOrEqual(Math.ceil(727 * 1.75 * BOSS_HP_MULT_MAX * 1.01));
         }
     });
 });
@@ -149,10 +149,10 @@ describe('qì des boss', () => {
         expect(createMapEnemy({ templateId: 'chiyou', level: 56 }).manaGainBonus).toBeUndefined();
     });
 
-    test('qì de départ = 75 % du coût des sorts offensifs, borné par la réserve', () => {
+    test('qì de départ = 50 % du coût des sorts offensifs, borné par la réserve', () => {
         const spells = [{ dmg: 120, cost: 50, color: 'red' }, { dmg: 96, cost: { blue: 20, yellow: 20 } }, { dmg: 0, cost: 99, color: 'green' }];
-        expect(bossStartingMana(spells)).toEqual({ red: 37, blue: 15, yellow: 15 });
-        expect(bossStartingMana(spells, () => 12)).toEqual({ red: 12, blue: 12, yellow: 12 });
+        expect(bossStartingMana(spells)).toEqual({ red: 25, blue: 10, yellow: 10 });
+        expect(bossStartingMana(spells, () => 12)).toEqual({ red: 12, blue: 10, yellow: 10 });
     });
 
     test('un sort offensif est un sort à dégâts directs ; l\'IA du boss préfère lancer', () => {
@@ -267,7 +267,8 @@ describe('courbes de PV et de puissance magique', () => {
         expect(bossSpellPower(1)).toBe(Math.round(BOSS_SPELL_POWER_QUADRATIC + 0.5));
         let prev = -1;
         for (let l = 1; l <= 76; l++) { const p = bossSpellPower(l); expect(p).toBeGreaterThanOrEqual(prev); prev = p; }
-        expect(bossSpellPower(56)).toBeGreaterThan(300);
+        expect(bossSpellPower(56)).toBeGreaterThan(bossSpellPower(30));
+        expect(bossSpellPower(56)).toBeLessThan(120);   // sorts de boss lisibles pour un héros dont les PV suivent la vraie courbe (≈ 10 × niveau)
         expect(bossSpellPower(0)).toBe(bossSpellPower(1));
     });
 

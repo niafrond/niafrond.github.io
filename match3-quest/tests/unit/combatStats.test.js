@@ -138,14 +138,14 @@ describe('ennemis', () => {
     test('les PV des boss sont absolus (courbe de niveau, sans dépendre du héros)', () => {
         const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Boss test' }, enemyId: 'boss_test' });
         expect(createMapEnemy(boss(56)).maxHp).toBe(createMapEnemy(boss(56)).maxHp);
-        expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(4000);
-        expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(createMapEnemy({ templateId: 'chiyou', level: 56 }).maxHp * 1.75);
+        expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(1200);   // courbe de la vraie progression du héros (≈ 10 PV par niveau), voir bossBalanceSim.test.js
+        expect(createMapEnemy(boss(56)).maxHp).toBeGreaterThan(createMapEnemy({ templateId: 'chiyou', level: 56 }).maxHp * 1.4);
     });
 
     test('les boss ont une puissance magique croissante, pas les ennemis normaux', () => {
         const boss = lvl => ({ templateId: 'chiyou', level: lvl, boss: { name: 'Boss test' }, enemyId: 'boss_test' });
         expect(createMapEnemy(boss(56)).spellPower).toBe(bossSpellPower(56));
-        expect(bossSpellPower(56)).toBeGreaterThan(200);
+        expect(bossSpellPower(56)).toBeGreaterThan(50);
         expect(bossSpellPower(56)).toBeGreaterThan(bossSpellPower(10));
         expect(createMapEnemy({ templateId: 'chiyou', level: 56 }).spellPower).toBeUndefined();
     });
@@ -218,7 +218,7 @@ describe('ennemis', () => {
             expect(hit).toBeGreaterThan(cap * 0.5);
             expect(hit).toBeLessThanOrEqual(cap * 1.3);
             const boss = createMapEnemy(enc(level, { enemyId: 'b', boss: { name: 'B' } }));
-            expect(boss.maxHp).toBeGreaterThan(avg(e => e.maxHp) * 1.5);
+            expect(boss.maxHp).toBeGreaterThan(avg(e => e.maxHp) * 1.4);   // coefficient de gabarit borné pour un boss (bossBalance.js)
             expect(boss.attack).toBeGreaterThan(avg(e => e.attack));
             expect(boss.spells.length).toBeLessThanOrEqual(4);
             expect(boss.spells.length).toBeGreaterThanOrEqual(Math.min(4, 2 + Math.floor(level / 3)) - 1);

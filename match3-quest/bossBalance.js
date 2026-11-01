@@ -5,7 +5,7 @@
 // du qì de départ, un gain de qì majoré et une IA qui préfère lancer un sort abordable.
 
 export const BOSS_HP_MULT_MIN = 1;
-export const BOSS_HP_MULT_MAX = 1.5;
+export const BOSS_HP_MULT_MAX = 1.25;
 /** Coefficient de PV du gabarit, borné pour un boss (×1 à ×1,5) : le héros idéal doit pouvoir le vider en 25-35 tours. */
 export const bossHpMult = mult => Math.min(BOSS_HP_MULT_MAX, Math.max(BOSS_HP_MULT_MIN, Number(mult) || 1));
 
@@ -49,11 +49,11 @@ export function ensureBossOffense(selected, candidates, slots, rng = Math.random
 }
 
 /** Qì gagné en plus à chaque match de couleur d'un boss (le héros gagne, lui, un bonus par point d'attribut). Niveau 56 : +22. */
-export const BOSS_MANA_GAIN_PER_LEVEL = 0.4;
+export const BOSS_MANA_GAIN_PER_LEVEL = 0.2;
 export const bossManaGainBonus = level => Math.max(0, Math.round((Math.max(1, Math.floor(level || 1))) * BOSS_MANA_GAIN_PER_LEVEL));
 
 /** Qì de départ d'un boss : la moitié du coût de ses sorts offensifs, couleur par couleur (jamais au-delà de la réserve `capOf(couleur)`). */
-export const BOSS_START_MANA_RATIO = 0.75;
+export const BOSS_START_MANA_RATIO = 0.5;
 export function bossStartingMana(spells, capOf = () => Infinity) {
     const mana = {};
     for (const spell of spells || []) {
@@ -119,6 +119,12 @@ export const BOSS_EXTRA_SPELLS = [
 
 /** Qì gagné en plus par match de couleur (champ `manaGainBonus` posé sur les boss, 0 pour tout autre combattant). */
 export const manaGainBonusOf = entity => Math.max(0, Math.floor(entity?.manaGainBonus || 0));
+
+/**
+ * Bonus de qì d'un match pour une couleur : le plus grand du bonus d'attribut (force de Chiyou : rouge…) et du bonus de boss. Le plus grand,
+ * pas la somme : sinon un boss aux gros attributs d'une couleur lançait ses sorts à chaque tour, les autres presque jamais.
+ */
+export const manaGainFor = (attributeBonus, entity) => Math.max(Math.max(0, Math.floor(attributeBonus || 0)), manaGainBonusOf(entity));
 
 /** Bonus de score d'un sort offensif dans le choix de sort de l'IA : réservé aux boss. */
 export const bossOffensiveScoreBonus = entity => (entity?.isBoss ? BOSS_OFFENSIVE_SCORE_BONUS : 0);

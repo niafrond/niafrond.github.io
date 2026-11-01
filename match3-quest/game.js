@@ -18,7 +18,7 @@ import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
-import { bossStartingMana, manaGainBonusOf } from "./bossBalance.js";
+import { bossStartingMana, manaGainFor } from "./bossBalance.js";
 import { rollOverleveledLoot, claimBossLoot } from "./victoryLoot.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
@@ -80,6 +80,7 @@ function getAssociatedAttributeByColor(color){
 }
 
 export function getAttributeManaBonus(entity, color, bonusType){
+    if(entity?.isBoss) return 0;   // un boss n'a pas de qì d'attribut : son qì suit bossBalance.js (même rythme pour tous les gabarits)
     const attribute = getAssociatedAttributeByColor(color);
     if(!attribute) return 0;
     const fixedBonus = ATTRIBUTE_MANA_RULES[attribute]?.bonuses?.[bonusType] || 0;
@@ -116,10 +117,9 @@ export function addManaForColor(entity, color, baseGain, options = {}){
 
     const before = Math.max(0, Math.floor(entity.mana[color] || 0));
     const applyGainBonus = options.applyGainBonus !== false;
-    const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
+    const gainBonus = getAttributeManaBonus(entity, color, "gain");
     const manaMultAmt = (entity === player && entity.manaMultiplier && entity.manaMultiplier.turnsLeft > 0 && applyGainBonus) ? entity.manaMultiplier.mult : 1;
-    const bossBonus = applyGainBonus ? manaGainBonusOf(entity) : 0;   // boss : qì gagné en plus par match (bossBalance.js)
-    const totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus + bossBonus) * manaMultAmt));
+    const totalGain = Math.max(0, Math.floor(((baseGain || 0) + (applyGainBonus ? manaGainFor(gainBonus, entity) : 0)) * manaMultAmt));   // boss : bonus de qì par match (bossBalance.js)
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
     entity.mana[color] = after;
