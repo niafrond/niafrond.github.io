@@ -65,3 +65,43 @@ export function rollOverleveledLoot(gap, owner = {}, rng = Math.random) {
     }
     return loot;
 }
+
+// Clé stable d'un boss pour ne verser son butin de palier qu'une fois : ennemi de carte, sinon maître d'arène, sinon gabarit + niveau.
+export function bossLootKey(enemy) {
+    if (!enemy) return null;
+    if (enemy.arena?.master) return `arena:${enemy.arena.tier}`;
+    if (enemy.mapEnemyId) return `map:${enemy.mapEnemyId}`;
+    return `boss:${enemy.templateId || enemy.name}:${enemy.level}`;
+}
+
+/**
+ * Butin de palier garanti à la première victoire sur un boss : l'arme la plus puissante que le héros peut manier et la relique
+ * la plus haute qu'il ne possède pas encore (jamais au-dessus de son niveau). Remplace le hasard du butin pour l'équipement idéal.
+ * @param {object} owner { level, weapons: [{id}], inventory: [{id, type}] }
+ * @returns {Array<{ kind: 'item'|'weapon', rarity: string, item?: object, weapon?: object }>}
+ */
+export function rollBossLoot(owner = {}, rng = Math.random) {
+    const level = Math.max(1, owner.level || 1);
+    const ownedWeapons = new Set((owner.weapons || []).map(w => w.id));
+    const ownedArtifacts = new Set((owner.inventory || []).filter(i => i?.type === 'artifact').map(i => i.id));
+    const loot = [];
+
+    const weapons = allWeapons.filter(w => w.minLevel <= level && !ownedWeapons.has(w.id) && weaponRarity(w) !== 'common');
+    if (weapons.length) {
+        const top = Math.max(...weapons.map(w => w.minLevel));
+        const best = weapons.filter(w => w.minLevel === top).sort((a, b) => b.damage - a.damage)[0];
+        loot.push({ kind: 'weapon', rarity: weaponRarity(best), weapon: best });
+    }
+
+    const relics = allItems.filter(i => i.type === 'artifact' && i.minLevel <= level && !ownedArtifacts.has(i.id));
+    if (relics.length) {
+        const rank = r => RARITY_ORDER.indexOf(r.rarity);
+        const top = Math.max(...relics.map(rank));
+        const pool = relics.filter(r => rank(r) === top);
+        const topLevel = Math.max(...pool.map(r => r.minLevel));
+        const pick = pool.filter(r => r.minLevel === topLevel);
+        const item = pick[Math.floor(rng() * pick.length)];
+        loot.push({ kind: 'item', rarity: item.rarity, item });
+    }
+    return loot;
+}

@@ -18,7 +18,8 @@ import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
-import { rollOverleveledLoot } from "./victoryLoot.js";
+import { bossStartingMana } from "./bossBalance.js";
+import { rollOverleveledLoot, rollBossLoot, bossLootKey } from "./victoryLoot.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { npcSprite } from "./sprites/index.js";
@@ -117,7 +118,8 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     const applyGainBonus = options.applyGainBonus !== false;
     const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
     const manaMultAmt = (entity === player && entity.manaMultiplier && entity.manaMultiplier.turnsLeft > 0 && applyGainBonus) ? entity.manaMultiplier.mult : 1;
-    const totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus) * manaMultAmt));
+    const bossBonus = applyGainBonus ? Math.max(0, Math.floor(entity.manaGainBonus || 0)) : 0;   // boss : qì gagné en plus par match (bossBalance.js)
+    const totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus + bossBonus) * manaMultAmt));
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
     entity.mana[color] = after;
@@ -597,6 +599,7 @@ export let player = {
     torch: false,  // torche achetée : éclaire les souterrains (world/underground.js)
     mount: null,  // monture achetée ('horse') : déplacements plus rapides sur les cartes
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
+    bossLootClaimed: [], // boss dont le butin de palier garanti (arme + relique) a déjà été versé (voir victoryLoot.js bossLootKey)
     pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
     worldMap: { currentZoneId: null, visitedZoneIds: [] }, // régions découvertes (carte du monde)
     exploration: null // progression sur la carte d'exploration (voir exploration.js, arène comprise), créée au premier lancement
@@ -1253,6 +1256,7 @@ export function loadGameData() {
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
             player.sellTags = Array.isArray(loaded.sellTags) ? loaded.sellTags.filter(t => typeof t === 'string') : [];
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
+            player.bossLootClaimed = Array.isArray(loaded.bossLootClaimed) ? loaded.bossLootClaimed.filter(k => typeof k === 'string') : [];
             player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)
                 ? loaded.defeatedBossTiers
                     .map(tier => Math.max(5, Math.floor(Number(tier) || 0)))
@@ -2873,6 +2877,31 @@ export function handleEnemyDefeated(){
         }
     });
 
+    // Boss : à la première victoire, l'arme et la relique de palier sont garanties (l'équipement idéal n'est plus un tirage au sort).
+    if(enemy.isBoss){
+        const lootKey = bossLootKey(enemy);
+        if(!Array.isArray(player.bossLootClaimed)) player.bossLootClaimed = [];
+        if(lootKey && !player.bossLootClaimed.includes(lootKey)){
+            player.bossLootClaimed.push(lootKey);
+            rollBossLoot(player).forEach(entry => {
+                const rarityEmoji = getRarityIcon(entry.rarity);
+                if(entry.kind === 'weapon'){
+                    player.weapons.push(entry.weapon);
+                    combatRewards.weapons.push(entry.weapon.name);
+                    updateAvailableWeapons();
+                    log(`${rarityEmoji} Butin de boss : ${entry.weapon.name} !`);
+                } else {
+                    player.inventory.push({...entry.item, applied: false});
+                    normalizeActiveInventoryIndex();
+                    combatRewards.items.push(entry.item.name);
+                    log(`${rarityEmoji} Butin de boss : ${entry.item.name} !`);
+                    applyArtifactEffects(player);
+                    log(`${entry.item.description}`);
+                }
+            });
+        }
+    }
+
     // Stuff : garanti (rare) contre un ennemi plus fort, sinon une petite chance.
     const stuffDrop = rollStuffDrop(player, levelGap > 0 ? OVERLEVELED_STUFF_DROP : VICTORY_STUFF_DROP);
     if(stuffDrop){
@@ -3284,7 +3313,17 @@ function getSpellTooltipHtml(spell) {
         effectText = `Soigne ${spell.heal} ${svgIcon('heart')}`;
     }
 
-    return `<div class="spell-tooltip-line">${effectText}</div>`;
+    // Sort du héros dont le coût dépasse la réserve de qì : il faut investir dans l'attribut de cette couleur (+2 de réserve par point).
+    let capHint = '';
+    if(spell.cost && !enemy?.spells?.includes(spell)) {
+        const cost = typeof spell.cost === 'number' ? { [spell.color]: spell.cost } : spell.cost;
+        const short = Object.entries(cost).filter(([color, need]) => need > getManaCapForColor(player, color));
+        if(short.length) {
+            capHint = `<div class="spell-tooltip-line">Réserve de qì trop petite : ${short.map(([color, need]) => `${MANA_COLOR_META[color]?.name || color} ${getManaCapForColor(player, color)}/${need}`).join(', ')}. Montez l'attribut de cette couleur (+2 de réserve par point).</div>`;
+        }
+    }
+
+    return `<div class="spell-tooltip-line">${effectText}</div>${capHint}`;
 }
 
 function getWeaponTooltipHtml(weapon) {
@@ -3719,6 +3758,13 @@ export function applyStartingAbilities(){
         });
     }
     
+    // Boss : qì de départ (la moitié du coût de ses sorts offensifs), bossBalance.js
+    if(enemy.isBoss){
+        Object.entries(bossStartingMana(enemy.spells, color => getManaCapForColor(enemy, color))).forEach(([color, amount]) => {
+            addManaForColor(enemy, color, amount, { applyGainBonus: false });
+        });
+    }
+
     // Appliquer les aptitudes de l'ennemi
     if(enemy.abilities && enemy.abilities.length > 0){
         enemy.abilities.forEach(abilityId => {

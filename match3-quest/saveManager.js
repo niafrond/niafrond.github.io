@@ -221,6 +221,7 @@ function sanitizePlayer(player) {
         merchantSold: player.merchantSold,
         sellTags: player.sellTags,
         defeatedBossTiers: player.defeatedBossTiers,
+        bossLootClaimed: player.bossLootClaimed,
         bossLossStreak: player.bossLossStreak,
         visitedZoneIds: player.worldMap?.visitedZoneIds,
         currentZoneId: player.worldMap?.currentZoneId,

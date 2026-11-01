@@ -7,6 +7,7 @@
   "attributes.js",
   "bestiary.js",
   "board.js",
+  "bossBalance.js",
   "bossTips.js",
   "breakReminder.js",
   "cheatMode.js",

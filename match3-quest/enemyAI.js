@@ -3,6 +3,7 @@
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
+import { isOffensiveSpell, BOSS_CAST_PRIORITY } from "./bossBalance.js";
 
 // ========================================
 // CONFIGURATION DES NIVEAUX D'IA
@@ -415,9 +416,14 @@ export function makeDecision() {
     // Choisir la meilleure option en tenant compte des probabilités
     let chosenOption;
     let isStupid = false;
+    // Un boss lance de préférence un sort offensif abordable (bossBalance.js) : c'est ce qui le rend redoutable.
+    const bossCast = enemy.isBoss && spellEval && isOffensiveSpell(spellEval.spell) && Math.random() < BOSS_CAST_PRIORITY
+        ? options.find(o => o.type === 'spell') : null;
 
     // Coup stupide : l'IA ignore la meilleure option et choisit au hasard
-    if (difficulty.stupidityChance > 0 && Math.random() < difficulty.stupidityChance) {
+    if (bossCast) {
+        chosenOption = bossCast;
+    } else if (difficulty.stupidityChance > 0 && Math.random() < difficulty.stupidityChance) {
         isStupid = true;
         chosenOption = options[Math.floor(Math.random() * options.length)];
     } else if (difficulty.strategicThinking) {

@@ -7,6 +7,8 @@ import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
 import { enemyDefenseForLevel } from "./progression.js";
 import { weaknessOf, applyWeaknessToResistances } from "./elements.js";
+import { bossHpMult, ensureBossOffense, bossManaGainBonus } from "./bossBalance.js";
+import { buildPrep } from "./terrain.js";
 
 let enemyCatalog = [];
 
@@ -172,7 +174,8 @@ function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     }
     takeFrom(otherGeneric, targetSpellCount);
 
-    const unique = uniqueById(selected).slice(0, targetSpellCount);
+    let unique = uniqueById(selected).slice(0, targetSpellCount);
+    if(fullLoadout) unique = ensureBossOffense(unique, genericSpells, targetSpellCount);   // un boss a toujours de quoi frapper fort
     // Au moins un sort de dégâts direct : sinon l'ennemi n'aurait que des sorts de soutien.
     if(!unique.some(sp => sp.type === 'damage' || sp.dmg || sp.baseDmg)){
         const attack = [...preferredGeneric, ...otherGeneric, ...classSpells].find(sp => sp.type === 'damage' && !unique.includes(sp));
@@ -210,8 +213,8 @@ function pickBossTemplate(preferredTemplateId = null){
 
 export const BOSS_HP_QUADRATIC = 0.64;
 // Puissance magique d'un boss : dégâts fixes ajoutés à chacun de ses sorts offensifs (les sorts plafonnent à 150 de dégâts
-// dès le niveau 18, alors que le héros dépasse les 4 000 PV). Niveau 56 : +216 par sort ; niveau 10 : +11.
-export const BOSS_SPELL_POWER_QUADRATIC = 0.06;
+// dès le niveau 18, alors que le héros dépasse les 4 000 PV). Niveau 56 : +342 par sort ; niveau 10 : +15.
+export const BOSS_SPELL_POWER_QUADRATIC = 0.1;
 export const BOSS_SPELL_POWER_LINEAR = 0.5;
 export function bossSpellPower(level){
     const l = Math.max(1, Math.floor(level || 1));
@@ -225,7 +228,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const baseHp = 55 + enemyLevel * 12 + (boss ? Math.round(BOSS_HP_QUADRATIC * enemyLevel * enemyLevel) : 0);
     const baseDef = enemyDefenseForLevel(enemyLevel);
 
-    const hp = Math.floor(baseHp * (stats.hpMult || 1));
+    const hp = Math.floor(baseHp * (boss ? bossHpMult(stats.hpMult) : (stats.hpMult || 1)));   // un boss : coefficient de gabarit borné (bossBalance.js)
     // Force et agilité proportionnelles au niveau (l'agilité n'est que très rarement nulle).
     const strength = Math.max(0, Math.round(enemyLevel * (0.3 + Math.random() * 0.5) * (stats.atkMult || 1)));
     const agility = Math.random() < 0.04 ? 0 : Math.max(1, Math.round(enemyLevel * (0.25 + Math.random() * 0.4) * (stats.defMult || 1)));
@@ -310,6 +313,7 @@ function applyBossScaling(boss, template){
     }
     boss.isOverleveledChoice = true;
     boss.spellPower = bossSpellPower(boss.level);
+    boss.manaGainBonus = bossManaGainBonus(boss.level);   // qì gagné en plus par match : il lance ses sorts (bossBalance.js)
 
     boss.dropProfile = {
         ...(boss.dropProfile || {}),
@@ -318,6 +322,18 @@ function applyBossScaling(boss, template){
         weaponChance: Math.max(0.35, toNumberOrDefault(template?.dropProfile?.weaponChance, 0.3))
     };
     return boss;
+}
+
+// Un boss laisse toujours voir sa faiblesse élémentaire (bonus de dégâts des sorts de cette couleur) : le choix du build compte.
+function revealBossWeakness(boss, existingPrep){
+    const observed = buildPrep({ observed: true, weakColor: boss.weakColor });
+    const prep = existingPrep?.tags?.length ? { ...existingPrep, tags: [...existingPrep.tags], lines: [...existingPrep.lines] } : observed;
+    if(!prep.tags.includes('observed')){
+        prep.tags.push('observed');
+        prep.lines.push(...observed.lines);
+    }
+    prep.weaknessRevealed = true;
+    boss.prep = prep;
 }
 
 export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, preferredTemplateId = null){
@@ -350,6 +366,7 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
 
     if(encounter?.boss){
         applyBossScaling(enemyEntity, template);
+        revealBossWeakness(enemyEntity, encounter.prep);
         enemyEntity.bossTier = level;
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
