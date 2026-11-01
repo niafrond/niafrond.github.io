@@ -1,3 +1,9 @@
+## [2.169.0](https://github.com/niafrond/niafrond.github.io/compare/v2.168.0...v2.169.0) (2026-11-01)
+
+### Features
+
+* **match3-quest:** rendre la fête des lanternes accessible depuis les rizières ([#611](https://github.com/niafrond/niafrond.github.io/issues/611)) ([4274049](https://github.com/niafrond/niafrond.github.io/commit/42740498d0d85484a99de757734a1aa3d86984d4))
+
 ## [2.168.0](https://github.com/niafrond/niafrond.github.io/compare/v2.167.1...v2.168.0) (2026-11-01)
 
 ### Features
