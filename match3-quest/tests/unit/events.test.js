@@ -47,9 +47,9 @@ describe('surcharge des événements par l\'URL', () => {
     });
 
     test('application pure : la configuration versionnée n\'est pas modifiée', () => {
-        const out = applyOverrides(EVENTS_DEFAULT, { winterLanternFestival: true });
-        expect(out.winterLanternFestival.enabled).toBe(true);
-        expect(EVENTS_DEFAULT.winterLanternFestival.enabled).toBe(false);
+        const out = applyOverrides(EVENTS_DEFAULT, { winterLanternFestival: false });
+        expect(out.winterLanternFestival.enabled).toBe(false);
+        expect(EVENTS_DEFAULT.winterLanternFestival.enabled).toBe(true);
         expect(out.wanderingSouls).toEqual(EVENTS_DEFAULT.wanderingSouls);
     });
 

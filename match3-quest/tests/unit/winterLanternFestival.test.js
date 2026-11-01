@@ -23,16 +23,18 @@ const ON = { winterLanternFestival: { enabled: true } };
 const OFF = { winterLanternFestival: { enabled: false } };
 
 describe('La Fête des lanternes d\'hiver : configuration', () => {
-    test('l\'événement est enregistré, désactivé par défaut, et seul le commit de la configuration l\'active', () => {
+    test('l\'événement est enregistré, activé par la configuration versionnée, et seul le commit de la configuration le change', () => {
         expect(EVENT_MODULES.map(m => m.id)).toContain(D.ID);
-        expect(EVENTS[D.ID]).toEqual({ enabled: false });
-        expect(isEventEnabled(D.ID)).toBe(false);
-        expect(isEventEnabled(D.ID, ON)).toBe(true);
+        expect(EVENTS[D.ID]).toEqual({ enabled: true });
+        expect(isEventEnabled(D.ID)).toBe(true);
+        expect(isEventEnabled(D.ID, OFF)).toBe(false);
     });
 
-    test('le monde réel (configuration par défaut) ne contient rien de l\'événement', () => {
-        expect(LIVE_QUESTS.some(q => Object.values(D.QUEST_IDS).includes(q.id))).toBe(false);
-        expect(eventScreens(buildWorld().screens, D.ID)).toEqual([]);
+    test('le monde réel (configuration par défaut) contient le village, ses quêtes et la maison', () => {
+        expect(LIVE_QUESTS.some(q => Object.values(D.QUEST_IDS).includes(q.id))).toBe(true);
+        const screens = eventScreens(buildWorld().screens, D.ID);
+        expect(screens.length).toBeGreaterThan(0);
+        expect(buildWorld().screens[D.MAISON.id].interior).toBe(true);
     });
 });
 
@@ -74,9 +76,9 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
     const session = (saved = null) => createSession(saved, screens, quests);
     const go = (s, id) => teleportToScreen(s, id);
 
-    test('trois écrans hors carte marqués comme appartenant à l\'événement, avec le biome dédié', () => {
+    test('trois écrans hors carte (et la maison) marqués comme appartenant à l\'événement, avec le biome dédié', () => {
         all.forEach(s => expect(s).toMatchObject({ event: D.ID, underground: true, region: D.HOST.region, biome: D.BIOME }));
-        expect(eventScreens(screens, D.ID).map(s => s.id).sort()).toEqual([D.REALM_ID, T.COL, T.SANCTUAIRE].sort());
+        expect(eventScreens(screens, D.ID).map(s => s.id).sort()).toEqual([D.REALM_ID, D.MAISON.id, T.COL, T.SANCTUAIRE].sort());
         expect(quests.filter(q => q.event === D.ID).map(q => q.id)).toEqual(Object.values(D.QUEST_IDS));
     });
 
@@ -94,7 +96,7 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
     });
 
     test('portes symétriques entre écrans ; la porte du sanctuaire est gelée tant que la source chaude n\'est pas libérée', () => {
-        all.forEach(s => s.exits.filter(e => screens[e.to]?.event === D.ID).forEach(e => {
+        all.forEach(s => s.exits.filter(e => !e.door && screens[e.to]?.event === D.ID).forEach(e => {
             const t = screens[e.to];
             expect(isTerrainBlocked(s, e.x, e.y)).toBe(false);
             expect(isTerrainBlocked(t, e.arrive.x, e.arrive.y)).toBe(false);
@@ -109,6 +111,15 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
         expect(isExitLocked(s, frozen)).toBe(true);
         openChest(s, D.SOURCE_CHAUDE.chest.id);
         expect(isExitLocked(s, frozen)).toBe(false);
+    });
+
+    test('la maison du village : porte du bâtiment, intérieur meublé pour l\'hiver, sortie de retour', () => {
+        const house = screens[D.MAISON.id], door = village.exits.find(e => e.to === D.MAISON.id);
+        expect(door).toMatchObject({ door: true });
+        expect(village.buildings.some(b => b.door.x === door.x && b.door.y === door.y)).toBe(true);
+        expect(house).toMatchObject({ interior: true, event: D.ID, furnishing: 'winter' });
+        expect(house.exits.find(e => e.to === D.REALM_ID)).toBeDefined();
+        ['kang', 'brazier', 'tea_shelf', 'calligraphy_scroll', 'lacquer_chest', 'indoor_lantern', 'firewood_basket'].forEach(n => expect(decorSprite(n)).toBeDefined());
     });
 
     test('tout est atteignable à pied : PNJ, coffres, ennemis, patrouilles et portes', () => {
