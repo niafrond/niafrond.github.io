@@ -4405,7 +4405,8 @@ export function updateItemButton(){
 
     const pa = item.actionPoints || 2;
     const exhausted = item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
-    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted;
+    const healUseless = isUselessHeal(item);
+    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted && !healUseless;
 
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
@@ -4454,6 +4455,12 @@ export function setActiveInventoryItem(index){
     saveUpdate();
 }
 
+// Objet de pur soin inutile quand les PV sont déjà au maximum
+function isUselessHeal(item){
+    const keys = Object.keys(item?.effect || {});
+    return keys.length === 1 && keys[0] === 'heal' && player.hp >= player.maxHp;
+}
+
 export function useInventoryItem(itemId, index){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
@@ -4472,6 +4479,7 @@ export function useInventoryItem(itemId, index){
         return;
     }
     if(!item){ log("Objet introuvable."); return; }
+    if(isUselessHeal(item)){ log("Vos PV sont déjà au maximum."); return; }
 
     const pa = item.actionPoints || 2;
     if(player.combatPoints < pa){
