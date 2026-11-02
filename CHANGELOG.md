@@ -1,3 +1,9 @@
+## [2.170.0](https://github.com/niafrond/niafrond.github.io/compare/v2.169.1...v2.170.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** générer l'animation d'arrivée de la montagne des lanternes avec FLUX ([#612](https://github.com/niafrond/niafrond.github.io/issues/612)) ([e9f7dd1](https://github.com/niafrond/niafrond.github.io/commit/e9f7dd1b9a129175aacce02ea20d733b7c49031c))
+
 ## [2.169.1](https://github.com/niafrond/niafrond.github.io/compare/v2.169.0...v2.169.1) (2026-11-02)
 
 ### Bug Fixes
