@@ -15,6 +15,7 @@
 import { getStuffById } from './stuff.js';
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
+import { vibrate } from './gameOptions.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
@@ -1945,13 +1946,13 @@ export function createExplorationView(cfg) {
         ctx.fillRect(0, 0, vw, vh);
     }
 
-    // Aura : ondes concentriques autour du héros quand une cache invisible est proche ; plus elle est proche, plus l'onde est large,
+    // Perception du qì (gǎn qì, code « aura ») : ondes concentriques autour du héros quand une cache invisible est proche ; plus elle est proche, plus l'onde est large,
     // vive et rapprochée (et le téléphone vibre). Aucune direction : à lui de chercher.
     let lastBuzz = 0, auraAnnounced = false;
     function drawAura(P, vis, tile, now) {
         const level = cfg.getPlayerLevel();
         if (!X.hasAura(level)) return;
-        if (!auraAnnounced) { auraAnnounced = true; if (!session.rt.auraSeen) { session.rt.auraSeen = true; toast('Éveil de l\'Aura : le héros ressent les trésors cachés alentour.', 4200); } }
+        if (!auraAnnounced) { auraAnnounced = true; if (!session.rt.auraSeen) { session.rt.auraSeen = true; toast('Perception du qì : le héros ressent les trésors cachés alentour.', 4200); } }
         const sig = X.auraSignal(session, level);
         if (!sig) return;
         const c = P(vis.px + 0.5, vis.py + 0.5);
@@ -1966,9 +1967,9 @@ export function createExplorationView(cfg) {
             ctx.stroke();
         }
         ctx.restore();
-        if (sig.strength > 0.12 && now - lastBuzz > period && typeof navigator !== 'undefined' && navigator.vibrate) {
+        if (sig.strength > 0.12 && now - lastBuzz > period) {
             lastBuzz = now;
-            try { navigator.vibrate(20 + Math.round(70 * sig.strength)); } catch { /* vibration indisponible */ }
+            vibrate(20 + Math.round(70 * sig.strength));   // coupée par l'option « Vibrations »
         }
     }
 

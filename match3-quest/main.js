@@ -15,7 +15,7 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, setOption, applyOptions } from "./gameOptions.js";
+import { getOption, setOption, applyOptions, vibrate } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
@@ -442,6 +442,13 @@ function init() {
     if(effectsSelect) effectsSelect.value = getOption('effects');
     if(speedSelect) speedSelect.value = getOption('speed');
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
+    const vibrationBtn = document.getElementById('opt-vibration');
+    const syncVibrationBtn = () => {
+        const on = getOption('vibration');
+        if(vibrationBtn) { vibrationBtn.textContent = on ? 'Oui' : 'Non'; vibrationBtn.setAttribute('aria-pressed', String(on)); }
+    };
+    syncVibrationBtn();
+    vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate(40); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),
         weapon: id => (player.weapons || []).find(w => w.id === id) || getWeaponById(id),

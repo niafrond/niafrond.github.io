@@ -13,14 +13,16 @@
 // Déterministe (tirage stable selon l'identifiant de la carte).
 
 import { toSet, toRects, buildingCells, routeCells } from './expand.js';
+import { isLowCell } from '../decor.js';
 
 const key = (x, y) => `${x},${y}`;
 const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const MARGIN_X = 6, MARGIN_Y = 4;     // bordure intacte : couloirs et défilés des passages de bord
-export const MIN_DETOUR = 7;         // pas de détour minimal pour revenir d'une corniche
+const MARGIN_X = 6, MARGIN_Y = 4;
+const RIM = 4;                        // couloirs de 3 cases devant les passages de bord (world/barriers.js) : jamais touchés     // bordure intacte : couloirs et défilés des passages de bord
+export const MIN_DETOUR = 20;         // pas de détour minimal pour revenir d'une corniche
 export const LEDGE_MIN = 5, LEDGE_MAX = 10;   // longueur d'une corniche
 const RING_WALLS = 1;                 // part de relief tolérée autour d'un motif
-const MAX_LEDGES = 2, MAX_MOTIFS = 2, MAX_DEFILES = 2;
+const MAX_LEDGES = 2, LEDGE_TRIES = 4000, MAX_MOTIFS = 2, MAX_DEFILES = 2;
 const TRIES = 400;                     // positions testées au plus par élément
 
 const hash = (a, b, c = 0) => Math.abs(Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453) % 1;
@@ -30,6 +32,14 @@ const seedOf = id => [...id].reduce((s, ch) => (s * 31 + ch.charCodeAt(0)) % 997
 export const isDesignable = screen =>
     screen.kind === 'wild' && !screen.interior && !screen.arena && !screen.aquatic && Boolean(screen.grass) && !screen.grass.water &&
     screen.biome !== 'tides' && /_(wild|road)$/.test(screen.id) && screen.w >= 36 && screen.h >= 14;
+
+// Cartes de plein air d'une région (village, hameau, zone sauvage, route, sanctuaire) : elles reçoivent au moins les coffres-pièges.
+export const isPopulable = screen =>
+    Boolean(screen.region) && !screen.interior && !screen.arena && !screen.aquatic && screen.kind !== 'house' && screen.biome !== 'tides' &&
+    /^[a-z]+(_(village|hamlet|wild|road))?$/.test(screen.id) && screen.id.split('_')[0] === screen.region && screen.w >= 20 && screen.h >= 12;
+
+export const CACHES_PER_MAP = 8;     // caches invisibles par route / zone sauvage
+export const MIMICS_PER_MAP = 3;     // coffres-pièges par carte de plein air
 
 // ── Motifs d'obstacles ───────────────────────────────────────────────
 // # obstacle · g haute herbe · . case laissée telle quelle (doit rester libre : couloir) · espace : ignoré.
@@ -52,8 +62,14 @@ const mirrorY = rows => [...rows].reverse();
 // ── Contexte d'une carte ─────────────────────────────────────────────
 function makeContext(screen) {
     const { w, h } = screen;
-    const prot = new Set();
-    const mark = (x, y, r) => { for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) prot.add(key(x + dx, y + dy)); };
+    const prot = new Set(), core = new Set();   // core : voisinage strict des entités (un mur de falaise peut frôler le reste de `prot`)
+    const mark = (x, y, r) => {
+        const rc = r >= 2 ? r - 1 : r;
+        for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+            prot.add(key(x + dx, y + dy));
+            if (Math.abs(dx) <= rc && Math.abs(dy) <= rc) core.add(key(x + dx, y + dy));
+        }
+    };
     [...buildingCells(screen)].forEach(k => { const [x, y] = k.split(',').map(Number); mark(x, y, 1); });
     (screen.npcs || []).forEach(e => mark(e.x, e.y, 1));
     (screen.chests || []).forEach(e => mark(e.x, e.y, 1));
@@ -67,17 +83,28 @@ function makeContext(screen) {
     if (screen.waypoint) mark(screen.waypoint.x, screen.waypoint.y, 2);
     (screen.spots || []).forEach(sp => mark(sp.x, sp.y, 1));
     (screen.pillars || []).concat(screen.sealed || []).forEach(([x, y]) => mark(x, y, 2));
-    (screen.structures || []).forEach(s => { for (let i = -2; i <= s.w + 1; i++) for (let j = -2; j <= s.h + 1; j++) prot.add(key(s.x + i, s.y + j)); });
-    const solid = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
+    (screen.structures || []).forEach(s => { for (let i = -2; i <= s.w + 1; i++) for (let j = -2; j <= s.h + 1; j++) { prot.add(key(s.x + i, s.y + j)); if (i >= -1 && j >= -1 && i <= s.w && j <= s.h) core.add(key(s.x + i, s.y + j)); } });
+    // cases exactes à ne jamais murer : entités, sorties, apparition, patrouilles, bâtiments, structures
+    const hard = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []), ...(screen.exits || []), ...(screen.waypoint ? [screen.waypoint] : []), ...(screen.spawn ? [screen.spawn] : [])].map(e => key(e.x, e.y)));
+    (screen.enemies || []).forEach(e => { if (e.patrol) routeCells(e.patrol).forEach(q => hard.add(key(q.x, q.y))); });
+    buildingCells(screen).forEach(k => hard.add(k));
+    (screen.structures || []).forEach(st => { for (let i = 0; i < st.w; i++) for (let j = 0; j < st.h; j++) hard.add(key(st.x + i, st.y + j)); });
+    const solid = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []), ...(screen.exits || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
+    // murs de boss (pilier ou rempart qui barre un couloir jusqu'à la défaite du gardien) : fermés tant qu'on les compte
+    (screen.enemies || []).forEach(e => (e.wall || []).forEach(([wx, wy]) => { solid.add(key(wx, wy)); hard.add(key(wx, wy)); }));
+    solid.delete(key(screen.spawn.x, screen.spawn.y));
+    const solidLight = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));   // détours : les seuls obstacles que tout le monde voit
     return {
-        w, h, spawn: screen.spawn, prot, solid,
-        obst: toSet(screen.obstacles), liq: toSet(screen.liquids), paths: toSet(screen.paths), grass: toSet(screen.grass.cells),
+        w, h, spawn: screen.spawn, prot, core, hard, solid, solidLight, screen,
+        obst: toSet(screen.obstacles), liq: toSet(screen.liquids), paths: toSet(screen.paths), grass: toSet(screen.grass?.cells),
         ledges: new Map()
     };
 }
 
 const inB = (c, x, y) => x >= 0 && y >= 0 && x < c.w && y < c.h;
-const isWall = (c, x, y) => !inB(c, x, y) || c.obst.has(key(x, y)) || c.liq.has(key(x, y)) || c.ledges.has(key(x, y));
+// Un décor bas (roseaux, riz, herbes sèches : decor.js) se traverse comme dans le jeu, il ne ferme rien.
+// `strict` : tout obstacle ferme (pour la connexité, plus prudente que le jeu) ; sinon comme dans le jeu (pour mesurer les détours).
+const isWall = (c, x, y, strict = false) => !inB(c, x, y) || (c.obst.has(key(x, y)) && (strict || !isLowCell(c.screen, x, y))) || c.liq.has(key(x, y)) || c.ledges.has(key(x, y));
 const isOpen = (c, x, y) => !isWall(c, x, y);
 const isFree = (c, x, y) => isOpen(c, x, y) && !c.prot.has(key(x, y)) && !c.paths.has(key(x, y));
 // case de corniche possible : ouverte, hors voisinage d'entité (un chemin peut être coupé par un rebord)
@@ -85,14 +112,14 @@ const isRoom = (c, x, y) => isOpen(c, x, y) && !c.prot.has(key(x, y)) && !c.gras
 const inMargin = (c, x, y) => x >= MARGIN_X && y >= MARGIN_Y && x < c.w - MARGIN_X && y < c.h - MARGIN_Y;
 
 // Cases atteignables à pied depuis l'apparition (corniches fermées, personnages et coffres pleins).
-function reach(c) {
+function reach(c, strict = true) {
     const seen = new Set([key(c.spawn.x, c.spawn.y)]);
     const queue = [c.spawn];
     while (queue.length) {
         const p = queue.shift();
         for (const [dx, dy] of STEPS) {
             const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-            if (seen.has(k) || isWall(c, nx, ny) || c.solid.has(k)) continue;
+            if (seen.has(k) || isWall(c, nx, ny, strict) || c.solid.has(k)) continue;
             seen.add(k); queue.push({ x: nx, y: ny });
         }
     }
@@ -109,7 +136,7 @@ function distance(c, from, to) {
             if (p.x === to.x && p.y === to.y) return d;
             for (const [dx, dy] of STEPS) {
                 const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-                if (seen.has(k) || isWall(c, nx, ny) || c.solid.has(k)) continue;
+                if (seen.has(k) || isWall(c, nx, ny) || c.solidLight.has(k)) continue;
                 seen.add(k); next.push({ x: nx, y: ny });
             }
         }
@@ -122,23 +149,57 @@ function distance(c, from, to) {
 const stillConnected = (c, base, changed) => {
     const now = reach(c);
     for (const k of base) if (!changed.has(k) && !now.has(k)) return false;
+    // chaque personnage, coffre ou pierre de voyage garde une case d'accès atteignable
+    const reachable = set => k => { const [x, y] = k.split(',').map(Number); return STEPS.some(([dx, dy]) => set.has(key(x + dx, y + dy))); };
+    const access = reachable(base), accessNow = reachable(now);
+    for (const k of c.solid) if (access(k) && !accessNow(k)) return false;
     return true;
 };
 
 const shuffled = (list, seed, salt) => list.map(p => [hash(p[0] + seed, p[1] + salt, seed), p]).sort((a, b) => a[0] - b[0]).map(e => e[1]);
 
+// Détour du retour d'une corniche (au plus court des deux bouts) : fini, atteignable depuis l'apparition des deux côtés, et d'au moins MIN_DETOUR.
+function detourOk(c, base, cells, dir) {
+    const now = reach(c);
+    const ends = [cells[0], cells[cells.length - 1], cells[Math.floor(cells.length / 2)]];
+    let best = Infinity;
+    for (const [ex, ey] of ends) {
+        const pre = { x: ex - dir[0], y: ey - dir[1] }, land = { x: ex + dir[0], y: ey + dir[1] };
+        if (!now.has(key(pre.x, pre.y)) || !now.has(key(land.x, land.y))) return false;   // les deux rives doivent être jouables sans sauter
+        best = Math.min(best, distance(c, pre, land));
+    }
+    return best >= MIN_DETOUR && best < Infinity;
+}
+
+// Les cases déblayées (obstacles retirés) restent atteignables sans sauter : pas de poche créée au-delà d'une corniche.
+function clearedReachable(c, cells) {
+    if (!cells.length) return true;
+    const now = reach(c);
+    return cells.every(([x, y]) => c.ledges.has(key(x, y)) || c.obst.has(key(x, y)) || now.has(key(x, y)));
+}
+
+// Départ et atterrissage d'une corniche : réservés (ni mur, ni motif, ni coffre ne doivent les boucher).
+function reserveLanes(c, cells, dir) {
+    cells.forEach(([x, y]) => [[x - dir[0], y - dir[1]], [x + dir[0], y + dir[1]]].forEach(([lx, ly]) => {
+        const k = key(lx, ly);
+        c.prot.add(k); c.core.add(k); c.hard.add(k);
+    }));
+}
+
 // ── 1. Corniches ─────────────────────────────────────────────────────
-// Une corniche est une ligne de LEDGE_MIN à LEDGE_MAX cases dont les deux bouts sont des murs (relief existant, sinon deux poteaux
-// d'obstacle posés pour l'occasion), avec de part et d'autre une bande libre (départ du saut, atterrissage).
+// Une corniche est le maillon d'une falaise : LEDGE_MIN à LEDGE_MAX cases franchissables d'un saut, prolongées de chaque côté par un mur
+// d'obstacles (jusqu'à EXT_MAX cases, ou jusqu'au relief existant) pour que le retour fasse un grand tour (MIN_DETOUR pas au moins).
+// De part et d'autre : une bande libre (départ du saut, atterrissage).
+const EXT_MIN = 10, EXT_MAX = 16;
+
 function ledgeCandidates(c, seed) {
     const out = [];
-    for (let x = MARGIN_X; x < c.w - MARGIN_X; x++) for (let y = MARGIN_Y; y < c.h - MARGIN_Y; y++) {
+    for (let x = RIM; x < c.w - RIM; x++) for (let y = RIM; y < c.h - RIM; y++) {
         for (const o of ['v', 'h']) {
             const [sx, sy] = o === 'v' ? [0, 1] : [1, 0];
             if (!isRoom(c, x, y)) continue;
-            if (isRoom(c, x - sx, y - sy)) continue;   // départ du plus long segment libre
             let len = 0;
-            while (len < LEDGE_MAX && isRoom(c, x + sx * len, y + sy * len) && inMargin(c, x + sx * len, y + sy * len)) len++;
+            while (len < LEDGE_MAX && isRoom(c, x + sx * len, y + sy * len)) len++;
             if (len < LEDGE_MIN) continue;
             out.push([x, y, len, o, sx, sy]);
         }
@@ -146,16 +207,35 @@ function ledgeCandidates(c, seed) {
     return shuffled(out, seed, 11);
 }
 
+// Mur prolongeant la corniche depuis (x, y) dans le sens (dx, dy) : cases libres jusqu'au relief existant ou à `max` cases.
+function wallRun(c, x, y, dx, dy, max) {
+    const run = [];
+    for (let i = 1; i <= max; i++) {
+        const px = x + dx * i, py = y + dy * i;
+        if (isWall(c, px, py)) break;                  // relief existant : ancrage
+        if (px < RIM || py < RIM || px >= c.w - RIM || py >= c.h - RIM) break;
+        if (!isOpen(c, px, py) || c.core.has(key(px, py)) || c.paths.has(key(px, py))) break;   // chemin, entité : le mur s'arrête (l'herbe, elle, est coupée)
+        run.push([px, py]);
+    }
+    return run;
+}
+
 function tryLedge(c, base, cand, seed) {
-    const [x, y, len, o, sx, sy] = cand;
+    const [x, y, len0, o, sx, sy] = cand;
     // vers l'est (raccourci vers l'avant) le plus souvent ; vers le sud pour les segments horizontaux
     const dirs = o === 'v' ? [[1, 0], [-1, 0]] : [[0, 1], [0, -1]];
-    const dir = hash(x, y, seed) < 0.7 ? dirs[0] : dirs[1];
+    if (hash(x, y, seed) >= 0.7) dirs.reverse();
+    const len = Math.min(len0, LEDGE_MIN + Math.floor(hash(y, x, seed) * (LEDGE_MAX - LEDGE_MIN + 1)));
+    for (const dir of dirs) {
+        const done = tryLedgeDir(c, base, x, y, len, sx, sy, dir, seed);
+        if (done) return done;
+    }
+    return null;
+}
+
+function tryLedgeDir(c, base, x, y, len, sx, sy, dir, seed) {
     const cells = [];
     for (let i = 0; i < len; i++) cells.push([x + sx * i, y + sy * i]);
-    if (!cells.every(([cx, cy]) => isRoom(c, cx, cy) && inMargin(c, cx, cy))) return null;
-    const posts = [[x - sx, y - sy], [x + sx * len, y + sy * len]].filter(([px, py]) => !isWall(c, px, py));
-    if (!posts.every(([px, py]) => isFree(c, px, py))) return null;
     for (const [cx, cy] of cells) {
         const pre = [cx - dir[0], cy - dir[1]], land = [cx + dir[0], cy + dir[1]];
         if (!isOpen(c, pre[0], pre[1]) || !isOpen(c, land[0], land[1])) return null;
@@ -166,14 +246,21 @@ function tryLedge(c, base, cand, seed) {
         const [lx, ly] = k.split(',').map(Number);
         if (cells.some(([cx, cy]) => Math.abs(cx - lx) + Math.abs(cy - ly) < 8)) return null;
     }
-    cells.forEach(([cx, cy]) => { c.ledges.set(key(cx, cy), dir); c.grass.delete(key(cx, cy)); });
-    posts.forEach(([px, py]) => { c.obst.add(key(px, py)); c.grass.delete(key(px, py)); });
-    const changed = new Set([...cells, ...posts].map(([cx, cy]) => key(cx, cy)));
-    const mid = cells[Math.floor(cells.length / 2)];
-    const pre = { x: mid[0] - dir[0], y: mid[1] - dir[1] }, land = { x: mid[0] + dir[0], y: mid[1] + dir[1] };
-    if (stillConnected(c, base, changed) && distance(c, pre, land) >= MIN_DETOUR) return cells;
+    const extA = EXT_MIN + Math.floor(hash(x, y, seed + 1) * (EXT_MAX - EXT_MIN + 1));
+    const extB = EXT_MIN + Math.floor(hash(y, x, seed + 2) * (EXT_MAX - EXT_MIN + 1));
+    const first = cells[0], last = cells[cells.length - 1];
+    const walls = [...wallRun(c, first[0], first[1], -sx, -sy, extA), ...wallRun(c, last[0], last[1], sx, sy, extB)];
+    const lowBefore = cells.filter(([cx, cy]) => c.obst.has(key(cx, cy)));
+    cells.forEach(([cx, cy]) => { c.ledges.set(key(cx, cy), dir); c.grass.delete(key(cx, cy)); c.obst.delete(key(cx, cy)); });
+    const grassBefore = new Set(c.grass);
+    walls.forEach(([px, py]) => { c.obst.add(key(px, py)); c.grass.delete(key(px, py)); });
+    const changed = new Set([...cells, ...walls].map(([cx, cy]) => key(cx, cy)));
+    const patchBroken = largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN;
+    if (!patchBroken && stillConnected(c, base, changed) && detourOk(c, base, cells, dir)) { reserveLanes(c, cells, dir); return cells; }
     cells.forEach(([cx, cy]) => c.ledges.delete(key(cx, cy)));
-    posts.forEach(([px, py]) => c.obst.delete(key(px, py)));
+    walls.forEach(([px, py]) => c.obst.delete(key(px, py)));
+    lowBefore.forEach(([cx, cy]) => c.obst.add(key(cx, cy)));
+    c.grass = grassBefore;
     return null;
 }
 
@@ -185,54 +272,223 @@ const GAP_MIN = 2, GAP_MAX = 5;
 
 function defileCandidates(c, seed) {
     const out = [];
-    for (let x = MARGIN_X + 2; x < c.w - MARGIN_X - 2; x++) out.push({ axis: 'col', at: x });
-    for (let y = MARGIN_Y + 1; y < c.h - MARGIN_Y - 1; y++) out.push({ axis: 'row', at: y });
+    for (let x = 5; x < c.w - 5; x++) out.push({ axis: 'col', at: x });
+    for (let y = 4; y < c.h - 4; y++) out.push({ axis: 'row', at: y });
     return shuffled(out.map(d => [d.at, d.axis === 'col' ? 0 : 1, d]), seed, 23).map(e => e[2]);
 }
 
-function tryDefile(c, base, d, taken) {
+const LEDGE_GAP = 10;   // une corniche s'ouvre à au moins 10 cases du passage le plus proche (donc un retour d'au moins 20 pas)
+
+// `wantLedge` : la haie devient une falaise ; un tronçon de LEDGE_MIN à LEDGE_MAX cases devient une corniche franchissable d'un saut,
+// à l'opposé du passage d'herbes.
+function tryDefile(c, base, d, taken, wantLedge = false, seed = 0) {
     if (taken.some(t => t.axis === d.axis && Math.abs(t.at - d.at) < 12)) return null;
     const span = d.axis === 'col' ? c.h : c.w;
     const cellAt = a => (d.axis === 'col' ? [d.at, a] : [a, d.at]);
     const open = [];
     for (let a = 0; a < span; a++) { const [x, y] = cellAt(a); if (isOpen(c, x, y)) open.push(a); }
-    if (open.length < 6) return null;
-    // les cases à ne pas fermer (chemins, voisinage d'entités) forment le passage ; sinon on le tire
-    const forced = open.filter(a => { const [x, y] = cellAt(a); return c.paths.has(key(x, y)) || c.prot.has(key(x, y)); });
-    let gap;
-    if (forced.length) {
-        const lo = Math.min(...forced), hi = Math.max(...forced);
-        if (hi - lo + 1 > GAP_MAX) return null;
-        gap = []; for (let a = lo; a <= hi; a++) gap.push(a);
-    } else {
+    if (open.length < 8) return null;
+    // les cases à ne pas fermer (voisinage d'entités) forment des passages obligés ; sans elles, le passage d'herbes est tiré
+    // (à l'opposé de la corniche s'il y en a une)
+    const gapSet = new Set(open.filter(a => { const [x, y] = cellAt(a); return c.core.has(key(x, y)); }));   // une route coupée par la falaise perd les cases murées
+    if (gapSet.size > 12) return null;
+    const forcedGaps = gapSet.size > 0;
+    let ledgeIdx = [];
+    let dir = null;
+    let clearCells = [];
+    if (wantLedge) {
+        const L = LEDGE_MIN + Math.floor(hash(d.at, span, seed + 7) * 3);
+        // tronçon de corniche : cases libres ou obstacles déblayés (hors voisinage d'entité et hors rive)
+        const ledgeable = a => {
+            const [x, y] = cellAt(a);
+            if (gapSet.has(a) || c.core.has(key(x, y)) || x < RIM || y < RIM || x >= c.w - RIM || y >= c.h - RIM) return false;
+            return isOpen(c, x, y) || (c.obst.has(key(x, y)) && !c.liq.has(key(x, y)));
+        };
+        const starts = shuffled(Array.from({ length: span }, (_, a) => [a, 0]).filter(([a]) => ledgeable(a)), seed, 53).map(e => e[0]);
+        const dirs = d.axis === 'col' ? [[1, 0], [-1, 0]] : [[0, 1], [0, -1]];
+        if (hash(d.at, 5, seed) >= 0.7) dirs.reverse();
+        for (const a0 of starts) {
+            const run = Array.from({ length: L }, (_, i) => a0 + i);
+            if (!run.every(ledgeable)) continue;
+            if (forcedGaps && [...gapSet].some(g => Math.min(Math.abs(g - run[0]), Math.abs(g - run[L - 1])) < LEDGE_GAP)) continue;
+            // un passage d'herbes tirable à l'opposé
+            if (!forcedGaps && !open.some(a => Math.min(Math.abs(a - run[0]), Math.abs(a - run[L - 1])) >= LEDGE_GAP)) continue;
+            // départ et atterrissage : cases libres, ou obstacles déblayés (un rebord ouvre une trouée dans le décor)
+            const lanes = dv => run.flatMap(a => { const [x, y] = cellAt(a); return [[x - dv[0], y - dv[1]], [x + dv[0], y + dv[1]]]; });
+            const fits = dv => lanes(dv).every(([x, y]) => !c.core.has(key(x, y)) && (isOpen(c, x, y) || (c.obst.has(key(x, y)) && x >= RIM && y >= RIM && x < c.w - RIM && y < c.h - RIM)));
+            const good = dirs.find(fits);
+            if (good) { ledgeIdx = run; dir = good; clearCells = [...lanes(good), ...run.map(cellAt)].filter(([x, y]) => c.obst.has(key(x, y))); break; }
+        }
+        if (!dir) return null;
+    }
+    if (!forcedGaps) {
+        const far = a => !ledgeIdx.length || Math.min(...ledgeIdx.map(l => Math.abs(l - a))) >= LEDGE_GAP;
         const len = GAP_MIN + Math.floor(hash(d.at, span, 3) * (GAP_MAX - GAP_MIN));
-        const start = open[Math.floor(hash(d.at, 9, 4) * Math.max(1, open.length - len))];
-        gap = []; for (let a = start; a < start + len; a++) gap.push(a);
+        const spots = shuffled(open.filter(far).map(a => [a, 0]), seed, 59).map(e => e[0]);
+        const start = spots.find(a => Array.from({ length: len }, (_, i) => a + i).every(v => open.includes(v) && far(v)));
+        if (start === undefined) return null;
+        for (let a = start; a < start + len; a++) gapSet.add(a);
     }
-    while (gap.length < GAP_MIN) gap.push(gap[gap.length - 1] + 1);
-    // le passage est un tenant de cases ouvertes
-    if (!gap.every(a => { const [x, y] = cellAt(a); return isOpen(c, x, y); })) return null;
-    const wall = open.filter(a => !gap.includes(a)).map(cellAt);
-    if (wall.some(([x, y]) => c.grass.has(key(x, y)))) return null;   // une haie ne coupe pas une nappe d'herbe
-    if (wall.length < 4) return null;
-    wall.forEach(([x, y]) => { c.obst.add(key(x, y)); c.grass.delete(key(x, y)); });
-    const changed = new Set(wall.map(([x, y]) => key(x, y)));
-    const ok = stillConnected(c, base, changed);
-    if (!ok) { wall.forEach(([x, y]) => c.obst.delete(key(x, y))); return null; }
-    // herbes : le passage et une colonne (ou rangée) de chaque côté, hors voisinage des entités
+    const gaps = [...gapSet];
+    const wallIdx = open.filter(a => !gapSet.has(a));
+    if (wallIdx.length < 4) return null;
+    const ledgeSet = new Set(ledgeIdx);
+    const inRim = ([x, y]) => x < RIM || y < RIM || x >= c.w - RIM || y >= c.h - RIM;
+    const wall = wallIdx.filter(a => !ledgeSet.has(a)).map(cellAt).filter(cell => !inRim(cell));   // le couloir de bord reste ouvert
+    const ledge = ledgeIdx.map(cellAt);
+    const grassBefore = new Set(c.grass), pathsBefore = new Set(c.paths);
+    clearCells.forEach(([x, y]) => c.obst.delete(key(x, y)));
+    wall.forEach(([x, y]) => { c.obst.add(key(x, y)); c.grass.delete(key(x, y)); c.paths.delete(key(x, y)); });
+    ledge.forEach(([x, y]) => { c.ledges.set(key(x, y), dir); c.grass.delete(key(x, y)); });
+    const undo = () => { clearCells.forEach(([x, y]) => c.obst.add(key(x, y))); wall.forEach(([x, y]) => c.obst.delete(key(x, y))); ledge.forEach(([x, y]) => c.ledges.delete(key(x, y))); c.grass = grassBefore; c.paths = pathsBefore; };
+    const changed = new Set([...wall, ...ledge].map(([x, y]) => key(x, y)));
+    if (largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN) { undo(); return null; }
+    if (!stillConnected(c, base, changed) || !clearedReachable(c, clearCells)) { undo(); return null; }
+    if (wantLedge) {
+        if (!detourOk(c, base, ledge, dir)) { undo(); return null; }
+    }
+    if (wantLedge) reserveLanes(c, ledge, dir);
+    // herbes : les passages et une colonne (ou rangée) de chaque côté, hors voisinage des entités
     const cells = [];
-    for (let k = -1; k <= 1; k++) for (const a of gap) {
+    for (let k = -1; k <= 1; k++) for (const a of gaps) {
         const [gx, gy] = d.axis === 'col' ? [d.at + k, a] : [a, d.at + k];
-        if (isOpen(c, gx, gy) && !c.grass.has(key(gx, gy)) && (!c.prot.has(key(gx, gy)) || c.paths.has(key(gx, gy)))) cells.push([gx, gy]);
+        if (isOpen(c, gx, gy) && !c.grass.has(key(gx, gy)) && !c.core.has(key(gx, gy))) cells.push([gx, gy]);
     }
-    return { cells, wall: wall.length };
+    return { cells, wall: wall.length, ledge: ledge.length };
+}
+
+// Falaise sculptée : quand le décor est trop dense pour y trouver une falaise naturelle, un module est taillé dans une zone sans entité ni
+// rive : un mur de FALAISE_LEN cases, une corniche au centre, une bande dégagée de chaque côté (le décor gênant y est déblayé).
+// Les deux extrémités du mur restent libres : c'est le détour du retour (au moins MIN_DETOUR pas).
+const FALAISE_EXT = 20;   // longueur maximale du mur de chaque côté de la corniche
+
+function carveFalaise(c, base, seed) {
+    // orientation 'h' : falaise horizontale (corniche franchie vers le sud ou le nord) ; 'v' : verticale (vers l'est ou l'ouest)
+    const spots = [];
+    for (const o of ['h', 'v']) {
+        const [alongMax, perpMax] = o === 'h' ? [c.w, c.h] : [c.h, c.w];
+        for (let along = RIM; along < alongMax - 11; along++) for (let perp = RIM; perp <= perpMax - RIM - 1; perp++) spots.push([o, along, perp]);
+    }
+    const at = (o, along, perp) => (o === 'h' ? [along, perp] : [perp, along]);
+    let tries = 0;
+    for (const [o, along, perp] of shuffled(spots.map(sp => [sp[1], sp[2], sp]), seed, 61).map(e => e[2])) {
+        if (tries >= 300) break;
+        const L = 5 + Math.floor(hash(along, perp, seed) * 2);
+        const dir = o === 'h' ? (hash(perp, along, seed) < 0.6 ? [0, 1] : [0, -1]) : (hash(perp, along, seed) < 0.6 ? [1, 0] : [-1, 0]);
+        const ledge = [];
+        for (let i = 0; i < L; i++) ledge.push(at(o, along + i, perp));
+        // seuls la corniche et ses deux bandes (départ, atterrissage) doivent être sans entité ni eau
+        const lanes = ledge.flatMap(([x, y]) => [[x - dir[0], y - dir[1]], [x + dir[0], y + dir[1]]]);
+        if ([...ledge, ...lanes].some(([x, y]) => !inB(c, x, y) || x < RIM || y < RIM || x >= c.w - RIM || y >= c.h - RIM || c.hard.has(key(x, y)) || c.liq.has(key(x, y)) || c.solid.has(key(x, y)) || c.ledges.has(key(x, y)))) continue;
+        // le mur prolonge la corniche de chaque côté jusqu'à ce qu'il rencontre une case à ne pas murer (ou FALAISE_EXT cases)
+        const blockedAt = (x, y) => x < RIM || y < RIM || x >= c.w - RIM || y >= c.h - RIM || c.hard.has(key(x, y)) || c.ledges.has(key(x, y)) || ledge.some(([lx, ly]) => lx === x && ly === y);
+        // mur droit d'abord ; sinon en escalier (la diagonale ferme le passage) pour contourner une case à ne pas murer
+        for (const jog of [false, true]) {
+            const wall = [];
+            for (const sgn of [-1, 1]) {
+                let p = perp;
+                for (let i = 1; i <= FALAISE_EXT; i++) {
+                    const a = sgn < 0 ? along - i : along + L - 1 + i;
+                    const step = (jog ? [p, p + 1, p - 1] : [p]).find(q => { const [x, y] = at(o, a, q); return !blockedAt(x, y); });
+                    if (step === undefined) break;
+                    p = step;
+                    const [x, y] = at(o, a, p);
+                    if (c.liq.has(key(x, y))) break;   // rive : le mur s'ancre à l'eau
+                    wall.push([x, y]);
+                }
+            }
+            tries++;
+            const obstBefore = new Set(c.obst), grassBefore = new Set(c.grass), pathsBefore = new Set(c.paths);
+            lanes.forEach(([x, y]) => c.obst.delete(key(x, y)));
+            ledge.forEach(([x, y]) => { c.obst.delete(key(x, y)); c.grass.delete(key(x, y)); c.ledges.set(key(x, y), dir); });
+            wall.forEach(([x, y]) => { c.obst.add(key(x, y)); c.grass.delete(key(x, y)); c.paths.delete(key(x, y)); });
+            const undo = () => { c.obst = obstBefore; c.grass = grassBefore; c.paths = pathsBefore; ledge.forEach(([x, y]) => c.ledges.delete(key(x, y))); };
+            const changed = new Set([...ledge, ...wall].map(([x, y]) => key(x, y)));
+            const patchBroken = largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN;
+            if (!patchBroken && stillConnected(c, base, changed) && clearedReachable(c, lanes.filter(([x, y]) => obstBefore.has(key(x, y)))) && detourOk(c, base, ledge, dir)) { reserveLanes(c, ledge, dir); return ledge; }
+            undo();
+        }
+    }
+    return null;
+}
+
+// Dernier recours dans une carte très serrée : corniche posée sans mur, puis le retour est rallongé en murant, un à un, des maillons du
+// chemin le plus court (le plus loin possible de la corniche) tant que tout reste atteignable, jusqu'à MIN_DETOUR pas.
+function shortestPath(c, from, to) {
+    const prev = new Map([[key(from.x, from.y), null]]);
+    let frontier = [from];
+    while (frontier.length) {
+        const next = [];
+        for (const p of frontier) {
+            if (p.x === to.x && p.y === to.y) {
+                const path = [];
+                for (let k = key(p.x, p.y); k; k = prev.get(k)) path.push(k.split(',').map(Number));
+                return path.reverse();
+            }
+            for (const [dx, dy] of STEPS) {
+                const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
+                if (prev.has(k) || isWall(c, nx, ny) || c.solidLight.has(k)) continue;
+                prev.set(k, key(p.x, p.y)); next.push({ x: nx, y: ny });
+            }
+        }
+        frontier = next;
+    }
+    return null;
+}
+
+function carveLengthened(c, base, seed) {
+    const spots = [];
+    for (const o of ['h', 'v']) for (let a = RIM; a < (o === 'h' ? c.w : c.h) - 10; a++) for (let b = RIM; b < (o === 'h' ? c.h : c.w) - RIM; b++) spots.push([o, a, b]);
+    let tries = 0;
+    for (const [o, a, b] of shuffled(spots.map(sp => [sp[1], sp[2], sp]), seed, 67).map(e => e[2])) {
+        if (tries >= 40) break;
+        const dir = o === 'h' ? [0, 1] : [1, 0];
+        const ledge = Array.from({ length: 5 }, (_, i) => (o === 'h' ? [a + i, b] : [b, a + i]));
+        const lanes = ledge.flatMap(([x, y]) => [[x - dir[0], y - dir[1]], [x + dir[0], y + dir[1]]]);
+        if ([...ledge, ...lanes].some(([x, y]) => !inB(c, x, y) || x < RIM || y < RIM || x >= c.w - RIM || y >= c.h - RIM || c.hard.has(key(x, y)) || c.liq.has(key(x, y)) || c.solid.has(key(x, y)) || c.ledges.has(key(x, y)))) continue;
+        tries++;
+        const obstBefore = new Set(c.obst), grassBefore = new Set(c.grass), pathsBefore = new Set(c.paths);
+        lanes.forEach(([x, y]) => c.obst.delete(key(x, y)));
+        ledge.forEach(([x, y]) => { c.obst.delete(key(x, y)); c.grass.delete(key(x, y)); c.ledges.set(key(x, y), dir); });
+        const added = new Set();
+        const mid = ledge[2];
+        const pre = { x: mid[0] - dir[0], y: mid[1] - dir[1] }, land = { x: mid[0] + dir[0], y: mid[1] + dir[1] };
+        const keepLanes = new Set(lanes.map(([x, y]) => key(x, y)));
+        for (let it = 0; it < 120; it++) {
+            const path = shortestPath(c, pre, land);
+            if (!path) break;
+            if (path.length - 1 >= MIN_DETOUR) break;
+            // maillon à murer : du plus loin des deux rives au plus proche
+            const order = path.slice(2, -2).map((p, i) => [Math.min(i + 2, path.length - 3 - i), p]).sort((x, y) => y[0] - x[0]);
+            let done = false;
+            for (const [, [x, y]] of order) {
+                const k = key(x, y);
+                if (c.hard.has(k) || keepLanes.has(k) || c.paths.has(k) && false) continue;
+                const hadObst = c.obst.has(k);
+                c.obst.add(k);
+                if (!isWall(c, x, y)) { if (!hadObst) c.obst.delete(k); continue; }   // décor bas : ne ferme rien
+                if (stillConnected(c, base, new Set([...added, ...ledge.map(([lx, ly]) => key(lx, ly)), k]))) { added.add(k); done = true; break; }
+                if (!hadObst) c.obst.delete(k);
+            }
+            if (!done) break;
+        }
+        const changed = new Set([...added, ...ledge.map(([x, y]) => key(x, y))]);
+        const patchBroken = largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN;
+        if (!patchBroken && stillConnected(c, base, changed) && clearedReachable(c, lanes.filter(([x, y]) => obstBefore.has(key(x, y)))) && detourOk(c, base, ledge, dir)) {
+            added.forEach(k => { c.grass.delete(k); c.paths.delete(k); });
+            reserveLanes(c, ledge, dir);
+            return ledge;
+        }
+        c.obst = obstBefore; c.grass = grassBefore; c.paths = pathsBefore; ledge.forEach(([x, y]) => c.ledges.delete(key(x, y)));
+    }
+    return null;
 }
 
 // ── 3. Motifs ────────────────────────────────────────────────────────
 function motifPositions(c, rows, seed) {
     const mh = rows.length, mw = rows[0].length;
     const out = [];
-    for (let x = MARGIN_X - 2; x + mw < c.w - MARGIN_X + 2; x += 1) for (let y = MARGIN_Y - 1; y + mh < c.h - MARGIN_Y + 1; y += 1) out.push([x, y]);
+    for (let x = RIM; x + mw <= c.w - RIM; x += 1) for (let y = RIM; y + mh <= c.h - RIM; y += 1) out.push([x, y]);
     return shuffled(out, seed, 31);
 }
 
@@ -282,55 +538,128 @@ function largestPatch(cells) {
 
 // ── Application ──────────────────────────────────────────────────────
 // ── 4. Caches invisibles et coffres mimiques ─────────────────────────
-// Par carte : une cache invisible (`hidden`, nichée contre le relief, repérable à l'aura) et un coffre-piège (`mimic`, posé près
-// d'un chemin comme un vrai coffre, au butin maigre). Récompenses proportionnelles à la région (15 · rang · palier, cf. FORMAT.md).
-function placeChests(c, screen, base, rank, seed, report) {
-    const reached = reach(c);
+// Par carte de plein air : MIMICS_PER_MAP coffres-pièges (`mimic`, posés près d'un chemin comme de vrais coffres, butin maigre) et, sur
+// les routes et zones sauvages, CACHES_PER_MAP caches invisibles (`hidden`, nichées contre le relief, repérables à l'aura).
+// Récompenses proportionnelles à la région (rang 1 à 11) ; une cache vaut bien plus qu'une dépouille de mimique.
+function placeChests(c, screen, rank, seed, report, { hidden, mimic }) {
+    const base = reach(c);
     const wallsAround = (x, y) => STEPS.filter(([dx, dy]) => isWall(c, x + dx, y + dy)).length;
-    const cands = [];
-    for (let x = MARGIN_X; x < c.w - MARGIN_X; x++) for (let y = MARGIN_Y; y < c.h - MARGIN_Y; y++) {
-        const k = key(x, y);
-        if (!reached.has(k) || c.prot.has(k) || c.paths.has(k) || c.grass.has(k) || c.solid.has(k)) continue;
-        if (Math.abs(x - c.spawn.x) + Math.abs(y - c.spawn.y) < 10) continue;
-        cands.push([x, y]);
-    }
     const nearPath = (x, y) => STEPS.some(([dx, dy]) => c.paths.has(key(x + dx, y + dy)));
-    const kinds = [
-        { kind: 'hidden', pick: list => list.filter(([x, y]) => wallsAround(x, y) >= 2) },
-        { kind: 'mimic', pick: list => { const open = list.filter(([x, y]) => wallsAround(x, y) <= 1); const tempting = open.filter(([x, y]) => nearPath(x, y)); return tempting.length ? tempting : open; } }
+    const placed = [];
+    const candidates = (mx, my) => {
+        const out = [];
+        for (let x = mx; x < c.w - mx; x++) for (let y = my; y < c.h - my; y++) {
+            const k = key(x, y);
+            if (!base.has(k) || c.prot.has(k) || c.paths.has(k) || c.grass.has(k) || c.solid.has(k) || c.obst.has(k) || !isOpen(c, x, y)) continue;
+            if (Math.abs(x - c.spawn.x) + Math.abs(y - c.spawn.y) < 8) continue;
+            out.push([x, y]);
+        }
+        return out;
+    };
+    const put = (kind, n, x, y) => {
+        const id = `${screen.id}_${kind === 'hidden' ? 'cache' : 'mimic'}_${n}`;
+        const chest = kind === 'hidden'
+            ? { id, x, y, gold: 10 * rank, tier: 1, hidden: true, label: 'Cache oubliée', openText: 'En butant contre une pierre creuse, tu découvres une cache oubliée.' }
+            : { id, x, y, gold: 30 * rank, tier: 2, mimic: true, mimicGold: 4 * rank, label: 'Coffre suspect', openText: 'Un coffre posé là, comme si on t\'attendait…' };
+        (screen.chests ||= []).push(chest);
+        c.solid.add(key(x, y));
+        placed.push([x, y]);
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) c.prot.add(key(x + dx, y + dy));
+        report[kind] = (report[kind] || 0) + 1;
+    };
+    // passes de plus en plus souples : critère de site, bordure, espacement
+    const passes = [
+        { mx: MARGIN_X, my: MARGIN_Y, gap: 6, fit: (kind, x, y) => (kind === 'hidden' ? wallsAround(x, y) >= 2 : wallsAround(x, y) <= 1 && nearPath(x, y)) },
+        { mx: MARGIN_X, my: MARGIN_Y, gap: 5, fit: (kind, x, y) => (kind === 'hidden' ? wallsAround(x, y) >= 1 : wallsAround(x, y) <= 1) },
+        { mx: RIM, my: RIM, gap: 4, fit: () => true },
+        { mx: RIM, my: RIM, gap: 2, fit: () => true }
     ];
-    kinds.forEach(({ kind, pick }) => {
-        for (const [x, y] of shuffled(pick(cands), seed, kind === 'hidden' ? 41 : 43).slice(0, 60)) {
-            if (c.prot.has(key(x, y)) || c.solid.has(key(x, y))) continue;
-            c.solid.add(key(x, y));
-            if (!stillConnected(c, base, c.solid)) { c.solid.delete(key(x, y)); continue; }
-            const id = `${screen.id}_${kind === 'hidden' ? 'cache' : 'mimic'}`;
-            const chest = kind === 'hidden'
-                ? { id, x, y, gold: 30 * rank, tier: 2, hidden: true, label: 'Cache oubliée', openText: 'En butant contre une pierre creuse, tu découvres une cache oubliée.' }
-                : { id, x, y, gold: 30 * rank, tier: 2, mimic: true, mimicGold: 4 * rank, label: 'Coffre suspect', openText: 'Un coffre posé là, comme si on t\'attendait…' };
-            (screen.chests ||= []).push(chest);
-            for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) c.prot.add(key(x + dx, y + dy));
-            report[kind] = (report[kind] || 0) + 1;
-            return;
+    [['mimic', mimic], ['hidden', hidden]].forEach(([kind, wanted]) => {
+        let n = 0;
+        for (const pass of passes) {
+            if (n >= wanted) break;
+            for (const [x, y] of shuffled(candidates(pass.mx, pass.my), seed, kind === 'hidden' ? 41 : 43)) {
+                if (n >= wanted) break;
+                if (c.prot.has(key(x, y)) || c.solid.has(key(x, y)) || !pass.fit(kind, x, y)) continue;
+                if (placed.some(([px, py]) => Math.abs(px - x) + Math.abs(py - y) < pass.gap)) continue;
+                c.solid.add(key(x, y));
+                const ok = stillConnected(c, base, c.solid);
+                c.solid.delete(key(x, y));
+                if (!ok) continue;
+                put(kind, ++n, x, y);
+            }
         }
     });
 }
 
+// Poches nées d'un saut : toute case atteignable seulement en traversant une corniche est comblée (décor), pour qu'aucune zone ne soit
+// réservée au saut. Renvoie false si une entité s'y trouve (la corniche fautive est alors abandonnée par l'appelant).
+function sealPockets(c) {
+    if (!c.ledges.size) return true;
+    const closed = reach(c, false);
+    const seen = new Set([key(c.spawn.x, c.spawn.y)]);
+    const queue = [c.spawn];
+    while (queue.length) {
+        const p = queue.shift();
+        for (const [dx, dy] of STEPS) {
+            const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
+            const wall = !inB(c, nx, ny) || (c.obst.has(k) && !isLowCell(c.screen, nx, ny)) || c.liq.has(k);
+            if (seen.has(k) || wall || c.solid.has(k)) continue;
+            seen.add(k); queue.push({ x: nx, y: ny });
+        }
+    }
+    const pockets = [...seen].filter(k => !closed.has(k) && !c.ledges.has(k));
+    if (pockets.some(k => c.hard.has(k) || c.solid.has(k))) return false;
+    // un décor bas se traverse : la poche devient alors une mare (une case d'eau qui ne se franchit pas à pied)
+    pockets.forEach(k => { const [px, py] = k.split(',').map(Number); if (isLowCell(c.screen, px, py)) { c.obst.delete(k); c.liq.add(k); } else c.obst.add(k); c.grass.delete(k); c.paths.delete(k); });
+    return true;
+}
+
 export function designLevel(screen, options = {}) {
-    if (!isDesignable(screen)) return screen;
+    const rank = Math.max(1, options.rank || 1);
+    if (!isDesignable(screen)) {
+        // villages, hameaux, sanctuaires : pas de relief retouché, mais des coffres-pièges eux aussi
+        if (isPopulable(screen)) {
+            const c = makeContext(screen);
+            const report = { motifs: [], ledges: 0, defiles: 0, hidden: 0, mimic: 0 };
+            placeChests(c, screen, rank, seedOf(screen.id), report, { hidden: 0, mimic: MIMICS_PER_MAP });
+            screen.design = report;
+        }
+        return screen;
+    }
     const c = makeContext(screen);
     const seed = seedOf(screen.id);
     const report = { motifs: [], ledges: 0, defiles: 0, hidden: 0, mimic: 0 };
 
-    // motifs d'abord (ils posent des obstacles), puis corniches, puis défilés
+    // falaises d'abord (haie percée d'un passage d'herbes et d'une corniche, elles exigent de la place), puis corniches isolées, motifs, défilés
+    const takenDefiles = [];
+    let base = reach(c);
+    let tries = 0;
+    for (const d of defileCandidates(c, seed)) {
+        if (report.ledges >= 1 || tries++ >= TRIES) break;
+        const res = tryDefile(c, reach(c), d, takenDefiles, true, seed);
+        if (!res) continue;
+        res.cells.forEach(([x, y]) => c.grass.add(key(x, y)));
+        takenDefiles.push(d);
+        report.defiles++; report.ledges++;
+    }
+    if (!report.ledges && carveFalaise(c, reach(c), seed)) report.ledges++;
+    if (!report.ledges && carveLengthened(c, reach(c), seed)) report.ledges++;
+    tries = 0;
+    for (const cand of ledgeCandidates(c, seed)) {
+        if (report.ledges >= MAX_LEDGES || tries++ >= LEDGE_TRIES) break;
+        if (tryLedge(c, base, cand, seed)) report.ledges++;
+    }
+
+    const obstSnap = new Set(c.obst), grassSnap = new Set(c.grass);
     const names = Object.keys(MOTIFS).sort((a, b) => hash(seedOf(a), seed) - hash(seedOf(b), seed));
     for (const name of names) {
         if (report.motifs.length >= MAX_MOTIFS) break;
         let rows = MOTIFS[name];
         if (hash(seed, seedOf(name), 5) < 0.5) rows = mirrorX(rows);
         if (hash(seed, seedOf(name), 6) < 0.3) rows = mirrorY(rows);
-        const base = reach(c);
-        let tries = 0;
+        base = reach(c);
+        tries = 0;
         for (const [x, y] of motifPositions(c, rows, seed + seedOf(name))) {
             if (tries++ >= TRIES) break;
             if (report.motifs.some(m => Math.abs(m.x - x) < 14 && Math.abs(m.y - y) < 8)) continue;
@@ -338,14 +667,6 @@ export function designLevel(screen, options = {}) {
         }
     }
 
-    const base = reach(c);
-    let tries = 0;
-    for (const cand of ledgeCandidates(c, seed)) {
-        if (report.ledges >= MAX_LEDGES || tries++ >= TRIES) break;
-        if (tryLedge(c, base, cand, seed)) report.ledges++;
-    }
-
-    const takenDefiles = [];
     tries = 0;
     for (const d of defileCandidates(c, seed)) {
         if (takenDefiles.length >= MAX_DEFILES || tries++ >= TRIES) break;
@@ -356,16 +677,15 @@ export function designLevel(screen, options = {}) {
         report.defiles++;
     }
 
-    // Une grande nappe d'herbe (≥ PATCH_MIN cases) existante doit survivre : sinon la carte garde son dessin d'origine.
-    if (largestPatch(toSet(screen.grass.cells)) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN) {
-        screen.design = { motifs: [], ledges: 0, defiles: 0, keep: [] };
-        return screen;
-    }
-    const before = toSet(screen.obstacles);
-    report.keep = [...c.obst].filter(k => !before.has(k)).map(k => k.split(',').map(Number)).concat([...c.ledges.keys()].map(k => k.split(',').map(Number)));
+    // Une grande nappe d'herbe (≥ PATCH_MIN cases) existante doit survivre : sinon on retire les motifs et défilés (les corniches restent).
+    const patchOk = largestPatch(toSet(screen.grass.cells)) < PATCH_MIN || largestPatch(c.grass) >= PATCH_MIN;
+    if (!patchOk) { c.obst = obstSnap; c.grass = grassSnap; report.motifs = []; report.defiles = 0; }
+    placeChests(c, screen, rank, seed, report, { hidden: CACHES_PER_MAP, mimic: MIMICS_PER_MAP });
+    if (!sealPockets(c)) { c.ledges.clear(); report.ledges = 0; }
     screen.obstacles = toRects(c.obst);
+    screen.liquids = toRects(c.liq);
+    screen.paths = toRects(c.paths);
     screen.grass = { ...screen.grass, cells: toRects(c.grass) };
-    placeChests(c, screen, reach(c), Math.max(1, options.rank || 1), seed, report);
     if (c.ledges.size) screen.ledges = [...c.ledges].map(([k, dir]) => [...k.split(',').map(Number), dir[0], dir[1]]);
     screen.design = report;
     return screen;

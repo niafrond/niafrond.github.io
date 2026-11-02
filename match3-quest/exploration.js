@@ -707,7 +707,7 @@ function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.dat
 }
 
 // ── Aura, caches invisibles et mimiques ──────────────────────────────
-// Talent « Éveil de l'Aura » (niveau AURA_LEVEL) : le héros ressent les caches invisibles (`chest.hidden`) à moins de AURA_RANGE cases
+// Talent « Perception du qì » (gǎn qì, 感氣 ; identifiants « aura » dans le code ; niveau AURA_LEVEL) : le héros ressent les caches invisibles (`chest.hidden`) à moins de AURA_RANGE cases
 // (onde de plus en plus forte à mesure qu'il s'en approche, vibration sur mobile). Sans lui, on ne les trouve qu'en butant dessus.
 // Un coffre `mimic` est une créature déguisée : l'ouvrir déclenche un combat, pour un butin maigre (`mimicGold`).
 export const AURA_LEVEL = 8;

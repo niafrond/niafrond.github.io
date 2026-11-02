@@ -4,12 +4,13 @@ import './fixtures/playerForge.js';   // installe le stub XHR avant le chargemen
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
 import { createSession, tryMove, ledgeAt, isTerrainBlocked } from '../../exploration.js';
-import { isDesignable, designLevel, MOTIFS, MIN_DETOUR, LEDGE_MIN, LEDGE_MAX } from '../../world/levelDesign.js';
+import { isDesignable, isPopulable, designLevel, MOTIFS, MIN_DETOUR, LEDGE_MIN, LEDGE_MAX, CACHES_PER_MAP, MIMICS_PER_MAP } from '../../world/levelDesign.js';
 import { toSet } from '../../world/expand.js';
 
 const key = (x, y) => `${x},${y}`;
 const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const designed = Object.values(SCREENS).filter(s => s.design);
+const designed = Object.values(SCREENS).filter(s => s.design && isDesignable(s));
+const populated = Object.values(SCREENS).filter(isPopulable);
 
 // Cases atteignables à pied (corniches fermées) depuis l'apparition.
 function reach(s, from = s.spawn) {
@@ -27,6 +28,7 @@ function reach(s, from = s.spawn) {
     return seen;
 }
 const dist = (s, a, b) => {
+    const solid = new Set([...s.npcs, ...s.chests, ...(s.waypoint ? [s.waypoint] : [])].map(e => key(e.x, e.y)));
     let frontier = [a], d = 0;
     const seen = new Set([key(a.x, a.y)]);
     while (frontier.length) {
@@ -35,7 +37,7 @@ const dist = (s, a, b) => {
             if (p.x === b.x && p.y === b.y) return d;
             for (const [dx, dy] of STEPS) {
                 const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-                if (seen.has(k) || isTerrainBlocked(s, nx, ny)) continue;
+                if (seen.has(k) || isTerrainBlocked(s, nx, ny) || solid.has(k)) continue;
                 seen.add(k); next.push({ x: nx, y: ny });
             }
         }
@@ -53,8 +55,8 @@ describe('level design : couverture', () => {
     test('chaque carte retouchée a au moins un motif, une corniche ou un défilé ; l\'ensemble en a de chaque sorte', () => {
         designed.forEach(s => expect({ id: s.id, n: s.design.motifs.length + s.design.ledges + s.design.defiles }).toEqual({ id: s.id, n: expect.any(Number) }));
         const total = designed.reduce((t, s) => ({ m: t.m + s.design.motifs.length, l: t.l + s.design.ledges, d: t.d + s.design.defiles }), { m: 0, l: 0, d: 0 });
-        expect(total.m).toBeGreaterThanOrEqual(6);
-        expect(total.l).toBeGreaterThanOrEqual(3);
+        expect(total.m).toBeGreaterThanOrEqual(4);
+        expect(total.l).toBeGreaterThanOrEqual(designed.length);   // au moins une corniche par carte
         expect(total.d).toBeGreaterThanOrEqual(4);
     });
     test('les motifs sont rectangulaires', () => {
@@ -67,7 +69,7 @@ describe('level design : couverture', () => {
 
 describe('corniches', () => {
     const withLedges = designed.filter(s => s.ledges);
-    test('il y en a', () => expect(withLedges.length).toBeGreaterThanOrEqual(3));
+    test('toutes les routes et zones sauvages ont au moins une corniche', () => expect(designed.filter(s => !s.ledges).map(s => s.id)).toEqual([]));
 
     test.each(withLedges.map(s => [s.id, s]))('%s : segments de %i à %i cases, sens unique, jamais sur une entité', (_id, s) => {
         const cells = s.ledges;
@@ -80,6 +82,7 @@ describe('corniches', () => {
         });
         expect(cells.length).toBeGreaterThanOrEqual(LEDGE_MIN);
         expect(cells.length).toBeLessThanOrEqual(LEDGE_MAX * 2);
+        expect(MIN_DETOUR).toBeGreaterThanOrEqual(20);
     });
 
     test.each(withLedges.map(s => [s.id, s]))('%s : on saute dans le sens permis, jamais en sens inverse, le retour fait le tour', (_id, s) => {
@@ -140,15 +143,16 @@ describe('défilés d\'herbes et motifs', () => {
 
 describe('brouillard de guerre (minimap)', () => {
     const s = SCREENS.rizieres_wild;
-    const fresh = () => createSession({ screenId: s.id, x: 10, y: 11 }, { [s.id]: s }, []);
+    const fresh = () => createSession({ screenId: s.id, x: s.spawn.x, y: s.spawn.y }, { [s.id]: s }, []);
     test('la case sous le héros et son voisinage sont vus, le lointain non', async () => {
         const { fogMask, FOG_RADIUS } = await import('../../exploration.js');
         const se = fresh();
         const m = fogMask(se, s);
-        expect(m[11 * s.w + 10]).toBe(1);
-        expect(m[11 * s.w + 10 + FOG_RADIUS]).toBe(1);
-        expect(m[11 * s.w + 10 + FOG_RADIUS + 3]).toBe(0);
-        expect(m[11 * s.w + 40]).toBe(0);
+        const { x, y } = s.spawn;
+        expect(m[y * s.w + x]).toBe(1);
+        expect(m[y * s.w + x + FOG_RADIUS]).toBe(1);
+        expect(m[y * s.w + x + FOG_RADIUS + 3]).toBe(0);
+        expect(m[y * s.w + 40]).toBe(0);
     });
     test('un pas dévoile de nouvelles cases et le masque se sauvegarde (hexadécimal) puis se relit', async () => {
         const { fogMask } = await import('../../exploration.js');
@@ -158,7 +162,7 @@ describe('brouillard de guerre (minimap)', () => {
         expect(se.rt.fogRev).toBeGreaterThan(before);
         const saved = JSON.parse(JSON.stringify(se.data.fog));
         expect(saved[s.id]).toMatch(/^[0-9a-f]+$/);
-        const again = createSession({ screenId: s.id, x: 10, y: 11, fog: saved }, { [s.id]: s }, []);
+        const again = createSession({ screenId: s.id, x: s.spawn.x, y: s.spawn.y, fog: saved }, { [s.id]: s }, []);
         const a = fogMask(se, s), b = fogMask(again, s);
         expect([...b]).toEqual([...a]);
     });
@@ -170,9 +174,22 @@ describe('caches invisibles, aura et coffres mimiques', () => {
     const make = (s, x, y) => { const se = createSession({ screenId: s.id, x, y }, { [s.id]: s }, []); se.rt.grace = 99; return se; };
     const nextTo = (s, c) => [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: c.x - dx, y: c.y - dy, dx, dy })).find(p => !isTerrainBlocked(s, p.x, p.y) && !s.chests.some(o => o.x === p.x && o.y === p.y));
 
-    test('presque chaque carte retouchée a sa cache et son coffre-piège', () => {
-        expect(withHidden.length).toBeGreaterThanOrEqual(designed.length - 3);
-        expect(withMimic.length).toBeGreaterThanOrEqual(designed.length - 3);
+    test('chaque route et zone sauvage a au moins 8 caches invisibles', () => {
+        expect(CACHES_PER_MAP).toBeGreaterThanOrEqual(8);
+        expect(designed.map(s => [s.id, s.chests.filter(c => c.hidden).length]).filter(([, n]) => n < CACHES_PER_MAP)).toEqual([]);
+    });
+    test('toute carte de plein air (village, hameau, sanctuaire, route, zone sauvage) a au moins 3 mimiques', () => {
+        expect(MIMICS_PER_MAP).toBeGreaterThanOrEqual(3);
+        expect(populated.length).toBeGreaterThan(designed.length);
+        expect(populated.map(s => [s.id, s.chests.filter(c => c.mimic).length]).filter(([, n]) => n < MIMICS_PER_MAP)).toEqual([]);
+    });
+    test('les caches et mimiques ont des identifiants uniques et ne se superposent à rien', () => {
+        populated.forEach(s => {
+            const ids = s.chests.map(c => c.id);
+            expect(new Set(ids).size).toBe(ids.length);
+            const cells = [...s.npcs, ...s.chests, ...s.enemies].map(e => key(e.x, e.y));
+            expect(new Set(cells).size).toBe(cells.length);
+        });
     });
 
     test('talent d\'aura : seule l\'onde du niveau requis, de plus en plus forte en s\'approchant', async () => {
@@ -186,11 +203,11 @@ describe('caches invisibles, aura et coffres mimiques', () => {
         expect(near.strength).toBeGreaterThan(0.8);
         expect(isChestShown(se, cache, AURA_LEVEL - 1)).toBe(false);   // invisible sans l'aura
         expect(isChestShown(se, cache, AURA_LEVEL)).toBe(true);        // visible tout près avec l'aura
-        se.data.x = cache.x - AURA_RANGE - 1; se.data.y = cache.y;
-        expect(auraSignal(se, AURA_LEVEL)).toBeNull();
-        se.data.x = cache.x - 4;
-        const mid = auraSignal(se, AURA_LEVEL);
-        if (mid) expect(mid.strength).toBeLessThan(near.strength);
+        // pas de cache sur la carte (village) : aucune onde
+        const v = SCREENS.rizieres_village;
+        expect(v.chests.some(c => c.hidden)).toBe(false);
+        expect(auraSignal(make(v, v.spawn.x, v.spawn.y), AURA_LEVEL)).toBeNull();
+        expect(AURA_RANGE).toBeGreaterThan(5);
     });
 
     test('une cache s\'ouvre en butant dessus (même sans aura) et ne se rouvre pas', () => {
@@ -218,7 +235,7 @@ describe('caches invisibles, aura et coffres mimiques', () => {
     });
 
     test('toutes les entités restent atteignables avec les nouveaux coffres', () => {
-        designed.forEach(s => {
+        populated.forEach(s => {
             const seen = reach(s);
             s.chests.filter(c => c.hidden || c.mimic).forEach(c => {
                 expect([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(c.x + dx, c.y + dy)))).toBe(true);

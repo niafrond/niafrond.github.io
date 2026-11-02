@@ -35,7 +35,7 @@ import { gearManaBonus } from "./manaGear.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
 import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
-import { animationFactor } from "./gameOptions.js";
+import { animationFactor, vibrate } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
@@ -392,6 +392,8 @@ export function applyDamage(target, damage, options = {}){
     const currentHp = Math.max(0, Math.floor(target.hp || 0));
     const nextHp = Math.max(0, currentHp - normalizedDamage);
     target.hp = nextHp;
+    // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
+    if(target === player && currentHp - nextHp > 0) vibrate(Math.min(220, 40 + Math.round(180 * (currentHp - nextHp) / Math.max(1, player.maxHp))));
 
     // Jauge de rage : se charge quand le joueur perd des PV en combat.
     if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {
