@@ -15,6 +15,7 @@
 import { getStuffById } from './stuff.js';
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
+import { vibrate } from './gameOptions.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
@@ -35,7 +36,7 @@ import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
-import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
+import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront, drawLedge } from './tilePainter.js';
 
 // Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
 const COVERED_DRAW_MS = 250;
@@ -831,6 +832,9 @@ export function createExplorationView(cfg) {
                         }
                     });
                     if (!puzzleView) toast('Le coffre ne bouge pas.', 3000);
+                } else if (chest?.type === 'mimic') {
+                    toast('Le coffre s\'ouvre sur une gueule pleine de dents : une mimique !', 3200);
+                    startEncounter(chest.enemyId);
                 } else if (chest) processEvents(chest.events);
                 break;
             }
@@ -1169,6 +1173,8 @@ export function createExplorationView(cfg) {
                 for (let x = 0; x < screen.w; x++) {
                     if (visible && !visible(x, y)) continue;
                     paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: tileBiomeId(screen), isTall, rug });
+                    const ledge = screen.ledges ? X.ledgeAt(screen, x, y) : null;
+                    if (ledge) drawLedge(g, biome, tile, ox + x * tile, oy + y * tile, ledge[0], ledge[1], x, y);
                 }
             }
         };
@@ -1533,7 +1539,7 @@ export function createExplorationView(cfg) {
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
-        X.visibleChests(session).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
+        X.visibleChests(session).filter(c => X.isChestShown(session, c, cfg.getPlayerLevel())).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || e;
             items.push({ depth: v.y + 0.2, kind: 'enemy', e, x: v.x, y: v.y });
@@ -1827,6 +1833,7 @@ export function createExplorationView(cfg) {
             }
         });
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
+        drawAura(P, vis, tile, now);
         if (screen.dark) { miniRect = null; drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight); }
         else drawMinimap(screen, biome, P(vis.px + 0.5, vis.py + 0.5), { ox, oy, tile, vw, vh, dpr });
     }
@@ -1862,6 +1869,26 @@ export function createExplorationView(cfg) {
         return off;
     }
 
+    // Voile du brouillard de guerre : une image w x h (cases jamais vues = noir bleuté), refaite quand le masque change.
+    const fogLayer = { screen: null, rev: -1, canvas: null };
+    function miniFog(screen) {
+        const rev = session.rt.fogRev || 0;
+        if (fogLayer.screen === screen && fogLayer.rev === rev && fogLayer.canvas) return fogLayer.canvas;
+        const mask = X.fogMask(session, screen);
+        const off = fogLayer.canvas && fogLayer.canvas.width === screen.w && fogLayer.canvas.height === screen.h ? fogLayer.canvas : document.createElement('canvas');
+        off.width = screen.w;
+        off.height = screen.h;
+        const g = off.getContext('2d');
+        const img = g.createImageData(screen.w, screen.h);
+        for (let i = 0; i < screen.w * screen.h; i++) {
+            if (mask[i]) continue;
+            img.data[i * 4] = 14; img.data[i * 4 + 1] = 16; img.data[i * 4 + 2] = 30; img.data[i * 4 + 3] = 238;
+        }
+        g.putImageData(img, 0, 0);
+        Object.assign(fogLayer, { screen, rev, canvas: off });
+        return off;
+    }
+
     function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
         miniRect = null;
         if (!screen.w || !screen.h) return;
@@ -1890,8 +1917,13 @@ export function createExplorationView(cfg) {
             ctx.fillStyle = color;
             ctx.fillRect(x0 + cx * scale - r, y0 + cy * scale - r, r * 2, r * 2);
         };
-        screen.npcs.forEach(n => dot(n.x + 0.5, n.y + 0.5, '#5ab0ff', 1.5));
-        X.aliveEnemies(session).forEach(e => dot(e.x + 0.5, e.y + 0.5, '#ff4a3a', 1.5));
+        const fog = X.fogMask(session, screen);
+        const seen = (x, y) => fog[Math.floor(y) * screen.w + Math.floor(x)] === 1;   // le brouillard cache aussi les personnages
+        screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x + 0.5, n.y + 0.5, '#5ab0ff', 1.5); });
+        X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x + 0.5, e.y + 0.5, '#ff4a3a', 1.5); });
+        ctx.globalAlpha = 1;
+        ctx.drawImage(miniFog(screen), x0, y0, mw, mh);   // brouillard de guerre : la minimap seule, le jeu n'est pas voilé
+        ctx.globalAlpha = 0.88;
         // zone visible à l'écran
         ctx.strokeStyle = 'rgba(255,255,255,0.8)';
         ctx.lineWidth = 1;
@@ -1912,6 +1944,33 @@ export function createExplorationView(cfg) {
         g.addColorStop(1, `rgba(${tint},0.97)`);
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, vw, vh);
+    }
+
+    // Perception du qì (gǎn qì, code « aura ») : ondes concentriques autour du héros quand une cache invisible est proche ; plus elle est proche, plus l'onde est large,
+    // vive et rapprochée (et le téléphone vibre). Aucune direction : à lui de chercher.
+    let lastBuzz = 0, auraAnnounced = false;
+    function drawAura(P, vis, tile, now) {
+        const level = cfg.getPlayerLevel();
+        if (!X.hasAura(level)) return;
+        if (!auraAnnounced) { auraAnnounced = true; if (!session.rt.auraSeen) { session.rt.auraSeen = true; toast('Perception du qì : le héros ressent les trésors cachés alentour.', 4200); } }
+        const sig = X.auraSignal(session, level);
+        if (!sig) return;
+        const c = P(vis.px + 0.5, vis.py + 0.5);
+        const period = 1500 - 1000 * sig.strength;   // ms par onde
+        ctx.save();
+        for (let k = 0; k < 3; k++) {
+            const t = ((now + k * period / 3) % period) / period;
+            ctx.strokeStyle = `rgba(150,230,255,${((1 - t) * (0.25 + 0.55 * sig.strength)).toFixed(3)})`;
+            ctx.lineWidth = 1.5 + 2.5 * sig.strength;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, tile * (0.5 + t * (1.2 + 2.2 * sig.strength)), 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+        if (sig.strength > 0.12 && now - lastBuzz > period) {
+            lastBuzz = now;
+            vibrate(20 + Math.round(70 * sig.strength));   // coupée par l'option « Vibrations »
+        }
     }
 
     // Indicateur de direction de la quête suivie : flèche dorée autour du héros, trait pointillé vers la cible

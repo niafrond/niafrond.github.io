@@ -37,6 +37,12 @@ const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= r
 // intérieur, une arène, une carte aquatique (récifs), un bâtiment ou un pilier : seuls les obstacles de décor en plein terrain.
 export function isLowObstacle(screen, x, y) {
     if (!screen || !inRects(screen.obstacles, x, y)) return false;
+    return isLowCell(screen, x, y);
+}
+
+// Variante sans lecture de `screen.obstacles` : un obstacle posé sur cette case serait-il un décor bas franchissable ? (world/levelDesign.js)
+export function isLowCell(screen, x, y) {
+    if (!screen) return false;
     if (screen.interior || screen.aquatic || screen.arena || screen.kind === 'arena') return false;
     if (x <= 0 || y <= 0 || x >= screen.w - 1 || y >= screen.h - 1) return false;
     if ((screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h)) return false;

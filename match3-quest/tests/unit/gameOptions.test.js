@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { getOption, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { getOption, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { readFileSync } from 'node:fs';
 import { flyManaToCounter } from '../../manaFlight.js';
 
 const rect = (l, t) => ({ left: l, top: t, width: 20, height: 20 });
@@ -42,6 +43,27 @@ describe('options d\'affichage', () => {
         window.matchMedia = () => ({ matches: true });
         expect(effectsLevel()).toBe('low');
         applyOptions();
+    });
+});
+
+describe('vibrations', () => {
+    test('activées par défaut, coupées par l\'option, sans effet si l\'appareil ne vibre pas', () => {
+        const calls = [];
+        Object.defineProperty(navigator, 'vibrate', { value: ms => { calls.push(ms); return true; }, configurable: true });
+        expect(getOption('vibration')).toBe(true);
+        expect(vibrate(50)).toBe(true);
+        expect(calls).toEqual([50]);
+        expect(setOption('vibration', false)).toBe(true);
+        expect(vibrate(50)).toBe(false);
+        expect(calls).toEqual([50]);   // rien de plus : l'option est coupée
+        expect(setOption('vibration', 'oui')).toBe(false);   // valeur invalide refusée
+        setOption('vibration', true);
+        Object.defineProperty(navigator, 'vibrate', { value: undefined, configurable: true });
+        expect(vibrate(50)).toBe(false);
+    });
+    test('l\'option figure dans le menu Options (index.html)', () => {
+        const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+        expect(html).toContain('id="opt-vibration"');
     });
 });
 

@@ -186,8 +186,19 @@ export function toggleMount(session, owned) {
 
 // Les liquides bloquent, sauf pour qui marche sur l'eau (`onWater`) ; dans un écran aquatique (`screen.aquatic`) on n'entre
 // qu'avec le Pas de Yu, ses eaux sont donc toujours franchissables.
+// Corniche (rebord à sens unique, world/levelDesign.js) : [dx, dy] du saut permis sur la case (x, y), ou null.
+const ledgeCache = new WeakMap();
+export function ledgeAt(screen, x, y) {
+    const list = screen.ledges;
+    if (!Array.isArray(list) || !list.length) return null;
+    let map = ledgeCache.get(list);
+    if (!map) { map = new Map(list.map(([lx, ly, dx, dy]) => [`${lx},${ly}`, [dx, dy]])); ledgeCache.set(list, map); }
+    return map.get(`${x},${y}`) || null;
+}
+
 export function isTerrainBlocked(screen, x, y, onWater = false) {
     if (x < 0 || y < 0 || x >= screen.w || y >= screen.h) return true;
+    if (screen.ledges && ledgeAt(screen, x, y)) return true;   // une corniche ne se marche pas : on la saute (tryMove)
     if (inRect(screen.obstacles, x, y) && !isLowObstacle(screen, x, y)) return true;   // les roseaux se traversent
     return !(onWater || screen.aquatic) && inRect(screen.liquids || [], x, y);
 }
@@ -228,6 +239,7 @@ function defaultData() {
         solvedPuzzles: [],       // énigmes à plateau résolues (puzzle/levels.js) : un coffre à énigme ne s'ouvre qu'ensuite
         quests: {},
         visitedScreens: [],
+        fog: {},                 // brouillard de guerre de la minimap : écran -> cases vues (hexadécimal, 4 cases par signe)
         introSeen: false,
         eventNotices: [],        // annonces d'événements déjà lues (une seule fois chacune : screen.eventNotice)
         eventReturn: null,       // écran et case d'où le héros est entré dans un écran d'événement (sortie exit.returnToSaved)
@@ -251,6 +263,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.solvedPuzzles = Array.isArray(data.solvedPuzzles) ? data.solvedPuzzles : [];
     data.puzzleSetsDone = Array.isArray(data.puzzleSetsDone) ? data.puzzleSetsDone : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
+    data.fog = data.fog && typeof data.fog === 'object' && !Array.isArray(data.fog) ? data.fog : {};
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
@@ -302,6 +315,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     }
     initScreenRuntime(session);
     if (!data.visitedScreens.includes(data.screenId)) data.visitedScreens.push(data.screenId);
+    revealFog(session);
     discoverVillageWaypoint(session);
     return session;
 }
@@ -419,6 +433,7 @@ export function enterScreen(session, screenId, pos) {
     initScreenRuntime(session);
     session.rt.grace = GRACE_MOVES;
     if (!session.data.visitedScreens.includes(screenId)) session.data.visitedScreens.push(screenId);
+    revealFog(session);
     discoverVillageWaypoint(session);
     return true;
 }
@@ -691,13 +706,94 @@ function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.dat
     return transitionTo(session, screen, hit.to, { x: hit.x, y: hit.y }, playerLevel, { border: true, dir: hit.dir });
 }
 
+// ── Aura, caches invisibles et mimiques ──────────────────────────────
+// Talent « Perception du qì » (gǎn qì, 感氣 ; identifiants « aura » dans le code ; niveau AURA_LEVEL) : le héros ressent les caches invisibles (`chest.hidden`) à moins de AURA_RANGE cases
+// (onde de plus en plus forte à mesure qu'il s'en approche, vibration sur mobile). Sans lui, on ne les trouve qu'en butant dessus.
+// Un coffre `mimic` est une créature déguisée : l'ouvrir déclenche un combat, pour un butin maigre (`mimicGold`).
+export const AURA_LEVEL = 8;
+export const AURA_RANGE = 9;
+export const MIMIC_NAME = 'Mimique';
+export const hasAura = playerLevel => Math.floor(playerLevel || 0) >= AURA_LEVEL;
+
+// Force de l'onde (0..1) et distance de la cache non ouverte la plus proche, ou null (pas d'aura, rien à portée).
+export function auraSignal(session, playerLevel) {
+    if (!hasAura(playerLevel)) return null;
+    const screen = currentScreen(session);
+    let best = null;
+    for (const c of screen.chests || []) {
+        if (!c.hidden || session.data.openedChests.includes(c.id) || !isEntityVisible(session, c)) continue;
+        const dist = Math.hypot(c.x - session.data.x, c.y - session.data.y);
+        if (dist <= AURA_RANGE && (!best || dist < best.dist)) best = { dist, strength: Math.max(0, Math.min(1, 1 - (dist - 1) / (AURA_RANGE - 1))) };
+    }
+    return best;
+}
+
+// Un coffre est-il dessiné ? Les caches ne se montrent qu'à qui a l'aura, une fois tout près.
+export const isChestShown = (session, chest, playerLevel) =>
+    !chest.hidden || (hasAura(playerLevel) && Math.hypot(chest.x - session.data.x, chest.y - session.data.y) <= 2.2);
+
+// ── Brouillard de guerre (minimap uniquement) ────────────────────────
+// Chaque carte garde le masque des cases vues par le héros (rayon FOG_RADIUS autour de lui à chaque pas). Le jeu principal n'est pas
+// voilé : seule la minimap grise les cases jamais vues (et cache les personnages qui s'y trouvent). Sauvegardé dans `data.fog`.
+export const FOG_RADIUS = 7;
+const fogCache = new WeakMap();   // data.fog -> { [écran]: Uint8Array }
+
+function decodeFog(text, n) {
+    const mask = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+        const nib = parseInt(text[i >> 2] || '0', 16) || 0;
+        mask[i] = (nib >> (i & 3)) & 1;
+    }
+    return mask;
+}
+function encodeFog(mask) {
+    let out = '';
+    for (let i = 0; i < mask.length; i += 4) out += ((mask[i] || 0) | (mask[i + 1] || 0) << 1 | (mask[i + 2] || 0) << 2 | (mask[i + 3] || 0) << 3).toString(16);
+    return out;
+}
+// Masque (w*h, 1 = vu) d'une carte ; créé à la demande.
+export function fogMask(session, screen = currentScreen(session)) {
+    const store = session.data.fog || (session.data.fog = {});
+    let cache = fogCache.get(store);
+    if (!cache) { cache = {}; fogCache.set(store, cache); }
+    if (!cache[screen.id]) cache[screen.id] = decodeFog(store[screen.id] || '', screen.w * screen.h);
+    return cache[screen.id];
+}
+// Dévoile les cases proches du héros ; retourne true si le masque a changé (la minimap se repeint alors).
+export function revealFog(session, radius = FOG_RADIUS) {
+    const screen = currentScreen(session);
+    if (!screen) return false;
+    const mask = fogMask(session, screen);
+    const { x: hx, y: hy } = session.data;
+    let changed = false;
+    for (let y = Math.max(0, hy - radius); y <= Math.min(screen.h - 1, hy + radius); y++) {
+        for (let x = Math.max(0, hx - radius); x <= Math.min(screen.w - 1, hx + radius); x++) {
+            const i = y * screen.w + x;
+            if (!mask[i] && (x - hx) ** 2 + (y - hy) ** 2 <= radius * radius + 1) { mask[i] = 1; changed = true; }
+        }
+    }
+    if (changed) { session.data.fog[screen.id] = encodeFog(mask); session.rt.fogRev = (session.rt.fogRev || 0) + 1; }
+    return changed;
+}
+
 export function tryMove(session, dx, dy, ctx = {}) {
     const playerLevel = Math.max(1, Math.floor(ctx.playerLevel || 1));
     const screen = currentScreen(session);
     session.rt.facing = { dx, dy };
-    const nx = session.data.x + dx;
-    const ny = session.data.y + dy;
+    let nx = session.data.x + dx;
+    let ny = session.data.y + dy;
     if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return crossMapBorder(session, screen, dx, dy, playerLevel);
+
+    // Corniche : franchissable d'un saut dans son seul sens, on atterrit sur la case d'après (libre) ; de tout autre côté, c'est un mur.
+    let jumped = false;
+    const ledge = ledgeAt(screen, nx, ny);
+    if (ledge) {
+        const lx = nx + dx, ly = ny + dy;
+        if (ledge[0] !== dx || ledge[1] !== dy || isTerrainBlocked(screen, lx, ly, canWalkOnWater(session)) || entityAt(session, lx, ly)) {
+            return { type: 'blocked', ledge: true };
+        }
+        nx = lx; ny = ly; jumped = true;
+    }
 
     const ent = entityAt(session, nx, ny);
     if (ent) {
@@ -745,11 +841,12 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.x = nx;
     session.data.y = ny;
     session.rt.stillMs = 0;
+    revealFog(session);
     if (session.rt.grace > 0) session.rt.grace--;
     // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
     const onGrass = isEncounterCell(screen, nx, ny);
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
-    return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved' };
+    return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
 }
 
 // Tirage de rencontre après un pas sur l'herbe : null (rien) ou { type: 'combat', enemyId: 'wild:<écran>:<n>', wild: true }.
@@ -1122,7 +1219,13 @@ export function regionVisitCount(session, region) {
 export function markEnemyDefeated(session, enemyId) {
     resetGrassSteps(session);   // après un combat, les pas d'herbe repartent de zéro
     // Créature d'herbe : combat non persistant (rien dans `defeated`, ni scène, ni quête) ; l'or et l'XP viennent du combat.
-    if (isWildId(enemyId)) return [];
+    if (isWildId(enemyId)) {
+        const wild = session.rt.wildDefs?.[enemyId];
+        if (!wild?.bonusGold) return [];
+        const { region, kind } = currentScreen(session);
+        const chest = { id: `${enemyId}_loot`, label: 'Dépouille de la mimique', openText: 'La mimique rend l\'âme en crachant quelques pièces.' };
+        return [{ type: 'chestOpened', chest, gold: wild.bonusGold, questItem: null, early: false, screen: { region, kind } }];
+    }
     const events = [];
     let after = [];
     let chain = null;
@@ -1154,6 +1257,7 @@ export function startNewGamePlus(session) {
     data.openedChests = [];
     data.questItems = [];
     data.visitedScreens = [];
+    data.fog = {};
     data.talked = [];
     data.banterSeen = [];
     data.waypoints = [];
@@ -1312,6 +1416,20 @@ export function talkToNpc(session, npcId) {
 // Objets spéciaux (quêtes à objet) : rangés dans `data.questItems`, jamais dans le sac, donc invendables.
 export const questItemsOf = session => session.data.questItems.map(i => ({ ...i }));
 
+// La mimique se démasque : combat d'herbe contre une créature de la carte (un cran plus forte), butin maigre à la victoire.
+function unmask(session, chest) {
+    const screen = currentScreen(session);
+    const rt = session.rt;
+    const table = grassOf(screen)?.table || grassOf(session.screens[`${screen.region}_wild`])?.table || [];
+    const entry = [...table].sort((a, b) => b.weight - a.weight)[0] || { templateId: 'shu_jing', offset: 0 };
+    const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
+    rt.wildDefs[id] = {
+        screenId: screen.id, bonusGold: chest.mimicGold || 5, bonusLabel: chest.label,
+        def: { id, templateId: entry.templateId, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
+    };
+    return { type: 'mimic', chest, enemyId: id, events: [] };
+}
+
 export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
@@ -1321,6 +1439,7 @@ export function openChest(session, chestId) {
     // Le coffre d'un objet de quête s'ouvre à tout moment : avant la quête, le texte et la description de l'objet restent évasifs.
     const early = Boolean(qi) && session.data.quests[qi.quest] !== 'active' && session.data.quests[qi.quest] !== 'done';
     session.data.openedChests.push(chestId);
+    if (chest.mimic) return unmask(session, chest);
     if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: (early ? qi.earlyDescription : qi.description) || qi.description || '', quest: qi.quest });
     const { region, kind } = currentScreen(session);
     const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, early, screen: { region, kind } }, ...checkAutoQuests(session)];
