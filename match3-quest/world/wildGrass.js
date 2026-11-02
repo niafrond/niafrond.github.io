@@ -19,7 +19,7 @@ export const isThickenable = screen =>
     screen.kind === 'wild' && !screen.interior && !screen.arena && !screen.aquatic && Boolean(screen.grass) && !screen.grass.water;
 
 export function thickenGrass(screen) {
-    if (!isThickenable(screen)) return screen;
+    if (!isThickenable(screen) || screen.design) return screen;   // déjà épaissie puis retouchée (world/levelDesign.js) : on n'y revient pas
     const { w, h } = screen;
     const obst = toSet(screen.obstacles), liq = toSet(screen.liquids), paths = toSet(screen.paths);
     const grass = toSet(screen.grass.cells);

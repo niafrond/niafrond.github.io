@@ -121,6 +121,27 @@ export function paintGroundTile(g, biome, tile, px, py, x, y, { isPath, isLiquid
     }
 }
 
+// Corniche (rebord à sens unique, exploration.js > ledgeAt) : une marche de terre dont la lèvre sombre regarde le sens du saut
+// (dx, dy), peinte par-dessus le sol. Contour sombre unique, éclairage haut-gauche.
+export function drawLedge(g, biome, tile, px, py, dx, dy, x = 0, y = 0) {
+    const u = tile / TILE_GRID;
+    const earth = shade(biome.path, -18), top = shade(biome.path, 14), deep = shade(biome.path, -48);
+    // repère local : on peint pour un saut vers le bas (0, 1) puis on tourne les rectangles
+    const rect = (ux, uy, uw, uh, fill) => {
+        let rx = ux, ry = uy, rw = uw, rh = uh;
+        if (dx === 1) { rx = TILE_GRID - uy - uh; ry = ux; rw = uh; rh = uw; }
+        else if (dx === -1) { rx = uy; ry = ux; rw = uh; rh = uw; }
+        else if (dy === -1) { ry = TILE_GRID - uy - uh; }
+        unitRect(g, px, py, u, rx, ry, rw, rh, fill);
+    };
+    rect(0, 3, 16, 10, earth);          // talus
+    rect(0, 3, 16, 3, top);             // lèvre éclairée
+    rect(0, 13, 16, 3, deep);           // ombre au pied
+    rect(0, 2, 16, 1, OUTLINE);         // contour haut
+    rect(0, 12, 16, 1, OUTLINE);        // contour bas du talus
+    for (let i = 0; i < 16; i += 2) if (cellHash(x * 16 + i, y, 71) < 0.55) rect(i, 7 + Math.floor(cellHash(x * 16 + i, y, 72) * 4), 2, 1, shade(earth, -26));
+}
+
 // Herbe : fond + nappes claires et sombres issues d'un bruit continu (blocs de 2 unités), touffes en V, fleurs rares.
 function paintGrass(R, biome, x, y, biomeId = '') {
     const base = biome.a;

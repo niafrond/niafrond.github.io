@@ -231,6 +231,7 @@ function sanitizePlayer(player) {
             questItems: ex.questItems,
             quests: ex.quests,
             visitedScreens: ex.visitedScreens,
+            fog: ex.fog,
             talked: ex.talked,
             waypoints: ex.waypoints,
             tracked: ex.tracked,

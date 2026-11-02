@@ -41,6 +41,19 @@ coffres, pierres de voyage, énigmes et verrous (`requires`).
 - Les gardes sont `permanent` et en `group` ; un chemin ne doit jamais devenir une impasse (le PNJ `parley` et les gardes restent
   atteignables sans traverser l'aura du soleil). Voir `agents/scenario.md` pour les règles narratives.
 
+## Contraintes de level design (à la Pokémon GBA)
+Catalogue de contraintes de parcours à appliquer (ou à dessiner à la main dans les grilles natives) pour que les routes ne soient pas
+des champs uniformes. Le générateur `world/levelDesign.js` en applique une partie automatiquement ; tout nouveau dessin doit les respecter.
+- **Tracé sans retour** : corniche (`screen.ledges`) franchie d'un saut dans un seul sens ; le retour impose un détour d'au moins 7 pas ;
+  jamais de zone réservée au saut (tout reste atteignable à pied).
+- **Passage obligé par les herbes** : haie percée d'un unique passage de 2 à 5 cases planté de hautes herbes ; une route tracée (`=`) reste sûre.
+- **Motifs d'obstacles** pour rompre la monotonie : chevron qui indique le sens, verger en quinconce, slalom, clairière d'herbes cernée, losange
+  à entrée, peigne d'alcôves, diagonale, escalier, haie, îlot. Couloirs de 2 cases au moins, aucune poche inatteignable.
+- **Caches invisibles** (`hidden`) nichées contre le relief, repérées par l'aura (niveau 8) ; **coffres-pièges** (`mimic`) posés près d'un chemin,
+  butin maigre : la récompense d'un vrai détour reste supérieure (30 · rang contre 4 · rang).
+- **Brouillard de guerre** : la minimap grise les cases jamais vues ; prévoir des repères visibles de loin (tours, arbres remarquables).
+- À envisager ensuite : cartes plus vastes et silhouettes non rectangulaires (grilles natives à redessiner), portes à clé de biome, ponts à sens unique.
+
 ## Livrables
 Cartes ASCII dans `world/maps/<R>.js` (jamais `world/mapKit.js`), entités référencées par des ids existants des textes
 (`world/text/<R>.js` fournis par l'agent Scénario), entrée `SPECS.md`.
