@@ -1,3 +1,9 @@
+## [2.170.1](https://github.com/niafrond/niafrond.github.io/compare/v2.170.0...v2.170.1) (2026-11-02)
+
+### Bug Fixes
+
+* **match3-quest:** garder les ennemis de la montagne des lanternes au niveau 22 ([#614](https://github.com/niafrond/niafrond.github.io/issues/614)) ([2ca31b5](https://github.com/niafrond/niafrond.github.io/commit/2ca31b5fb630d4d9e5514472114e1a925806810d))
+
 ## [2.170.0](https://github.com/niafrond/niafrond.github.io/compare/v2.169.1...v2.170.0) (2026-11-02)
 
 ### Features
