@@ -7,9 +7,10 @@ décor défile vers la gauche. Boucle parfaite : 96 images à 24 i/s (4 s), 144�
   2. panorama rendu sans couture (fondu des bords), défilement sur une période exacte, héros collé image par image → px/fNNNN.png + px/preview.gif.
 Rangement : node tools/pack-ultimate-sequences.mjs (planches sprites/ultimates/biome_<région>-seq.png, `loop: true`), lues par `playRegionDiscovery` (cinematics.js).
 Prérequis (WSL) : ComfyUI via `gm up pixel` (une seule image SDXL par région : ≈ 1 min). Pillow.
-Usage : python3 tools/gen-biome-intros.py [--only=volcan,mer] [--force] [--repano] [--seed=N]
+Option --flux : panorama par FLUX.2 Klein 4B (ComfyUI, texte → image) au lieu de SDXL : respecte bien mieux la vue de côté.
+Usage : python3 tools/gen-biome-intros.py [--only=volcan,mer] [--force] [--repano] [--seed=N] [--flux]
 """
-import sys, os, subprocess, glob, shutil
+import sys, os, subprocess, glob, shutil, json, time, urllib.request, urllib.parse
 from PIL import Image
 
 GAME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,9 +36,47 @@ REGIONS = {
     'mer': 'the Eastern Sea at dawn, a calm teal ocean with Chinese junk ships, jade-green cliffs',
     'fusang': 'a giant sacred Fusang tree glowing at the edge of the world at sunrise, huge golden branches, pink and orange sky',
     'wandering_souls': 'a haunted Chinese ghost realm at midnight, very dark blue-black night sky with no sun, bare dark gray stone courtyard and black twisted dead tree roots, pale ghostly green spirit fire flames and white mist, floating red paper lanterns, a distant ruined black temple gate, cold gray and teal colors, eerie',
+    'winter_lantern_mountain': 'a snowy Chinese mountain village at dusk seen from the side, a row of houses with curved dark tiled roofs capped with thick snow along the horizon, hundreds of glowing red and gold paper lanterns hanging on silk strings between the houses, warm orange lit windows, snow-covered pine trees, distant snowy mountains, a deep blue twilight sky with soft falling snowflakes, the flat path along the bottom is packed white snow',
     'lune': 'a high mountain peak at night under a huge full moon, silver clouds below, glowing moon-flowers',
 }
 SEEDS = {r: 3100 + i * 37 for i, r in enumerate(REGIONS)}
+
+
+FLUX_STYLE = ('A 16-bit pixel art 2D side-scrolling video game background, strictly flat orthographic SIDE view like a platformer, a straight horizontal horizon, '
+              'a flat horizontal path along the very bottom of the picture, wide empty landscape, no people, no characters, ancient China mythology, rich colors, crisp chunky pixels. ')
+
+
+def flux_image(prompt, seed, dest, size=(1344, 768)):
+    """Texte → image avec FLUX.2 Klein 4B dans ComfyUI (127.0.0.1:8188, `gm up pixel`) ; écrit le PNG dans dest."""
+    base = 'http://127.0.0.1:8188'
+    wf = {
+        '1': {'class_type': 'UNETLoader', 'inputs': {'unet_name': 'flux-2-klein-base-4b-fp8.safetensors', 'weight_dtype': 'default'}},
+        '3': {'class_type': 'CLIPLoaderGGUF', 'inputs': {'clip_name': 'Qwen_Qwen3-4B-Q8_0.gguf', 'type': 'flux2'}},
+        '4': {'class_type': 'VAELoader', 'inputs': {'vae_name': 'flux2-vae.safetensors'}},
+        '8': {'class_type': 'CLIPTextEncode', 'inputs': {'clip': ['3', 0], 'text': prompt}},
+        '9': {'class_type': 'CLIPTextEncode', 'inputs': {'clip': ['3', 0], 'text': NEGATIVE}},
+        '12': {'class_type': 'EmptyFlux2LatentImage', 'inputs': {'width': size[0], 'height': size[1], 'batch_size': 1}},
+        '13': {'class_type': 'Flux2Scheduler', 'inputs': {'steps': 28, 'width': size[0], 'height': size[1]}},
+        '14': {'class_type': 'CFGGuider', 'inputs': {'model': ['1', 0], 'positive': ['8', 0], 'negative': ['9', 0], 'cfg': 4}},
+        '15': {'class_type': 'KSamplerSelect', 'inputs': {'sampler_name': 'euler'}},
+        '16': {'class_type': 'RandomNoise', 'inputs': {'noise_seed': int(seed)}},
+        '17': {'class_type': 'SamplerCustomAdvanced', 'inputs': {'noise': ['16', 0], 'guider': ['14', 0], 'sampler': ['15', 0], 'sigmas': ['13', 0], 'latent_image': ['12', 0]}},
+        '18': {'class_type': 'VAEDecode', 'inputs': {'samples': ['17', 0], 'vae': ['4', 0]}},
+        '19': {'class_type': 'SaveImage', 'inputs': {'images': ['18', 0], 'filename_prefix': 'match3-biome-intro/f'}},
+    }
+    req = urllib.request.Request(base + '/prompt', json.dumps({'prompt': wf}).encode(), {'Content-Type': 'application/json'})
+    pid = json.load(urllib.request.urlopen(req))['prompt_id']
+    while True:
+        hist = json.load(urllib.request.urlopen(f'{base}/history/{pid}')).get(pid)
+        if hist:
+            break
+        time.sleep(2)
+    if hist['status']['status_str'] != 'success':
+        raise SystemExit(f'FLUX a échoué : {hist["status"]}')
+    img = next(i for o in hist['outputs'].values() for i in o.get('images', []))
+    q = urllib.parse.urlencode({'filename': img['filename'], 'subfolder': img.get('subfolder', ''), 'type': img.get('type', 'output')})
+    with open(dest, 'wb') as f:
+        f.write(urllib.request.urlopen(f'{base}/view?{q}').read())
 
 
 def panorama(rid, out):
@@ -46,6 +85,9 @@ def panorama(rid, out):
         return pano
     os.makedirs(out, exist_ok=True)
     prompt = f'{STYLE}, {REGIONS[rid]}'
+    if 'flux' in opts:
+        flux_image(FLUX_STYLE + REGIONS[rid], opts.get('seed', SEEDS[rid]), pano)
+        return pano
     tmp = os.path.join(out, 'raw')
     shutil.rmtree(tmp, ignore_errors=True)
     subprocess.run([os.path.join(GAME_MAKER, 'gm'), 'image', prompt, '--out', tmp, '--name', 'pano', '--size', '1344x768', '--negative', NEGATIVE,

@@ -1164,17 +1164,19 @@ export function createExplorationView(cfg) {
         const grassGrid = grassCells.length ? rectGrid(screen, grassCells) : null;
         const isTall = grassGrid ? (x, y) => inMap(x, y) && grassGrid[y * screen.w + x] === 1 : null;
         g.imageSmoothingEnabled = false;
-        return (y0, y1) => {
+        return (y0, y1, visible) => {
             for (let y = y0; y < y1; y++) {
                 for (let x = 0; x < screen.w; x++) {
+                    if (visible && !visible(x, y)) continue;
                     paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: tileBiomeId(screen), isTall, rug });
                 }
             }
         };
     }
 
-    function paintGroundCells(g, screen, biome, tile, ox, oy) {
-        groundPainter(g, screen, biome, tile, ox, oy)(0, screen.h);
+    // `visible(x, y)` (facultatif) : ne peint que les cases vues (repli sans calque, voir getGroundLayer).
+    function paintGroundCells(g, screen, biome, tile, ox, oy, visible) {
+        groundPainter(g, screen, biome, tile, ox, oy)(0, screen.h, visible);
     }
 
     let liquidCache = { screen: null, cells: [] };
@@ -1350,7 +1352,9 @@ export function createExplorationView(cfg) {
             ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
                 ground.canvas.width / dpr, ground.canvas.height / dpr);
         } else {
-            paintGroundCells(ctx, screen, biome, tile, ox, oy);
+            // Carte trop grande pour le calque (GROUND_MAX_PIXELS, p. ex. 44 × 64 cases en haute densité) : seules les cases visibles sont peintes à chaque image
+            // (peindre toute la carte, hautes herbes comprises, faisait ramer le jeu).
+            paintGroundCells(ctx, screen, biome, tile, ox, oy, (x, y) => inView(x, y));
         }
         // Parties animées : reflets des liquides et zones de vigilance qui pulsent
         const liquidCells = getLiquidCells(screen);
