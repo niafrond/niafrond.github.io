@@ -939,7 +939,8 @@ export function levelFor(session, def) {
 // Niveau de région de l'écran qui porte l'ennemi `enemyId`.
 export function enemyRegionLevel(session, enemyId) {
     const screenId = session.rt.enemyIndex[enemyId]?.screenId ?? session.rt.wildDefs?.[enemyId]?.screenId;
-    return REGION_LEVEL[session.screens[screenId]?.region] || 1;
+    const screen = session.screens[screenId];
+    return screen?.levelBase || REGION_LEVEL[screen?.region] || 1;   // `levelBase` : écran d'événement qui garde son propre niveau (events/winterLanternFestival)
 }
 
 // Préparation du terrain : approche, observation, pièges et herbes, belvédère (voir terrain.js).
