@@ -70,6 +70,7 @@ function buildTerrain(t) {
         exits: []
     }, { npcDef: id => ({ id }), chestDef: id => ({ id }), screenText: () => ({ name: t.name, arrival: t.arrival }) });
     zone.underground = true;
+    zone.levelBase = D.HOST.level;
     zone.gates = t.gates;
     return zone;
 }
@@ -149,6 +150,7 @@ export function applyWinterLanternFestival(screens, quests) {
         rememberReturn: { x: back.x, y: back.y }, sprite: D.GATE_SPRITE
     });
     village.exits.push({ x: D.GATES.W.x, y: D.GATES.W.y, to: wild.id, label: D.VILLAGE.exitLabel, arrive: back, returnToSaved: true, sprite: D.GATE_SPRITE });
+    village.levelBase = D.HOST.level;   // la région est celle des Rizières (niveau 1) mais le contenu reste de niveau 22 : ennemis, herbes et butin des coffres
     village.underground = true;   // écran hors carte : mêmes exemptions que les souterrains (agrandissement, bordure, musique de la région)
     village.biomeIntro = D.VILLAGE.intro;
     addTalk(village);

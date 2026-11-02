@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import { readFileSync } from 'fs';
 import { QUESTS as LIVE_QUESTS, buildWorld } from '../../story.js';
-import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, solvePuzzle, isShielded, visibleNpcs, visibleChests, bossEase, takeLaunchNotices } from '../../exploration.js';
+import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, solvePuzzle, isShielded, visibleNpcs, visibleChests, bossEase, levelFor, enemyRegionLevel, takeLaunchNotices } from '../../exploration.js';
 import { EVENTS, isEventEnabled } from '../../events/config.js';
 import { eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
@@ -120,6 +120,14 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
         expect(house).toMatchObject({ interior: true, event: D.ID, furnishing: 'winter' });
         expect(house.exits.find(e => e.to === D.REALM_ID)).toBeDefined();
         ['kang', 'brazier', 'tea_shelf', 'calligraphy_scroll', 'lacquer_chest', 'indoor_lantern', 'firewood_basket'].forEach(n => expect(decorSprite(n)).toBeDefined());
+    });
+
+    test('le contenu reste de niveau 22 bien que la région soit celle des Rizières : ennemis, herbes et boss', () => {
+        const s = session();
+        all.forEach(sc => expect(sc.levelBase).toBe(D.HOST.level));
+        all.flatMap(sc => sc.enemies).forEach(e => expect({ id: e.id, level: levelFor(s, e) }).toEqual({ id: e.id, level: expect.any(Number) }));
+        all.flatMap(sc => sc.enemies).forEach(e => expect(levelFor(s, e)).toBeGreaterThanOrEqual(22));
+        expect(enemyRegionLevel(s, all.flatMap(sc => sc.enemies)[0].id)).toBe(22);
     });
 
     test('tout est atteignable à pied : PNJ, coffres, ennemis, patrouilles et portes', () => {
