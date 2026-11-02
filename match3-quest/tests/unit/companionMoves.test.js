@@ -41,3 +41,15 @@ describe('coups de Xiao Gui', () => {
         expect(b).toEqual(snap);
     });
 });
+
+describe('besoins en qì de l\'IA ennemie', () => {
+    test('un qì demandé par l\'ennemi fait préférer l\'alignement de cette couleur', () => {
+        const b = base();
+        [0, 1, 3].forEach(i => { b[i] = 'red'; }); b[boardSize + 2] = 'red';
+        const move = { from: 2, to: boardSize + 2 };
+        const neutre = scoreMove(b, move, {});
+        const besoin = scoreMove(b, move, { colorNeeds: { red: 2 } });
+        expect(besoin).toBeGreaterThan(neutre);
+        expect(scoreMove(b, move, { colorNeeds: { blue: 2 } })).toBe(neutre);
+    });
+});

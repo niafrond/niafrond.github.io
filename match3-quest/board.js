@@ -17,6 +17,7 @@ import {
     getJokerMatchMultiplier
 } from "./matchMechanics.js";
 import { pickSmartMove } from "./companionMoves.js";
+import { boardMoveOptions } from "./enemyAI.js";
 import { playSfx } from "./sound.js";
 import {
     JOKER_TILE,
@@ -1444,7 +1445,9 @@ export function enemyMakeMove(){
     const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
-        const move = possibleMoves[0];
+        // IA avancée : privilégie les combinaisons qui donnent le qì dont elle a besoin
+        const aiOpts = boardMoveOptions();
+        const move = (aiOpts && pickSmartMove(board, possibleMoves, { ...aiOpts, refill: () => generateRandomTile(), samples: 8 })) || possibleMoves[0];
         log(`L'ennemi échange les tuiles...`);
         setTimeout(() => {
             animateEnemySwap(move.from, move.to, () => {

@@ -51,7 +51,8 @@ export const aiDifficulty = {
         healThreshold: 0.5,
         aggressiveThreshold: 0.5,
         stupidityChance: 0.35,
-        randomBoardMove: true,
+        randomBoardMove: false,
+        manaFocus: true,
     },
     expert: {
         name: "Expert",
@@ -64,7 +65,8 @@ export const aiDifficulty = {
         healThreshold: 0.6,
         aggressiveThreshold: 0.4,
         stupidityChance: 0.20,
-        randomBoardMove: true,
+        randomBoardMove: false,
+        manaFocus: true,                // choisit les combinaisons qui donnent le qì dont il manque
     }
 };
 
@@ -118,6 +120,7 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = n
             strategicThinking: true,
             stupidityChance: 0.02,
             randomBoardMove: false,
+            manaFocus: true,
             thinkingTimeMin: 180,
             thinkingTimeMax: 320
         };
@@ -155,6 +158,34 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = n
     console.log(`Niveau ennemi: ${enemyLevel}, Niveau joueur: ${playerLevel}, Difficulté IA: ${baseDifficulty}`);
     
     return baseDifficulty;
+}
+
+// ========================================
+// BESOINS EN QÌ
+// ========================================
+
+// Poids par couleur du qì manquant pour lancer les sorts de l'ennemi (0 si aucun manque).
+// Chaque point de qì manquant sur un sort pèse 0,35 (cumulé entre sorts), plafonné à 2,5 par tuile.
+export function enemyManaNeeds(spells = enemy.spells, mana = enemy.mana) {
+    const deficit = {};
+    for (const spell of spells || []) {
+        const cost = typeof spell.cost === 'number' ? { [spell.color]: spell.cost } : (spell.cost || {});
+        for (const [color, amount] of Object.entries(cost)) {
+            const missing = amount - ((mana && mana[color]) || 0);
+            if (missing > 0) deficit[color] = (deficit[color] || 0) + missing;
+        }
+    }
+    const needs = {};
+    for (const [color, missing] of Object.entries(deficit)) needs[color] = Math.min(2.5, missing * 0.35);
+    return needs;
+}
+
+// Options de choix de coup sur le plateau pour l'IA actuelle : null si elle n'est pas assez avancée.
+export function boardMoveOptions() {
+    if (!currentDifficulty.manaFocus) return null;
+    const colorNeeds = enemyManaNeeds();
+    if (!Object.keys(colorNeeds).length) return null;
+    return { colorNeeds, mana: enemy.mana };
 }
 
 // ========================================
