@@ -1,3 +1,9 @@
+## [2.172.0](https://github.com/niafrond/niafrond.github.io/compare/v2.171.0...v2.172.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** potions de soin grisées à PV max et IA ennemie orientée qì ([#616](https://github.com/niafrond/niafrond.github.io/issues/616)) ([b0d943c](https://github.com/niafrond/niafrond.github.io/commit/b0d943cab37db0a133152efbd81f8ff96d5a4c16))
+
 ## [2.171.0](https://github.com/niafrond/niafrond.github.io/compare/v2.170.1...v2.171.0) (2026-11-02)
 
 ### Features
