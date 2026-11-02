@@ -68,6 +68,7 @@ function simulateOnce(board, move, opts, refill){
             const len = getEffectiveMatchLength(info);
             let weight = info.type === 'skull' ? W.skull : info.type === 'combat' ? W.combat : W.color;
             if(info.type === 'color' && info.color === need) weight += W.neededColor;
+            if(info.type === 'color' && opts.colorNeeds) weight += opts.colorNeeds[info.color] || 0;   // besoins explicites (IA ennemie)
             score += len * weight * mult;
             if(info.len >= 4) score += W.longMatch;
             if(shouldCreateJokerFromMatchLength(info.len)) score += W.joker;
