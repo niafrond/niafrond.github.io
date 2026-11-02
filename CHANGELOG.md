@@ -1,3 +1,9 @@
+## [2.171.0](https://github.com/niafrond/niafrond.github.io/compare/v2.170.1...v2.171.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** annoncer la fête des lanternes au premier chargement du jeu ([#615](https://github.com/niafrond/niafrond.github.io/issues/615)) ([a3121f4](https://github.com/niafrond/niafrond.github.io/commit/a3121f4a0142a41c3fc8ca3af10e10193e5a1d28))
+
 ## [2.170.1](https://github.com/niafrond/niafrond.github.io/compare/v2.170.0...v2.170.1) (2026-11-02)
 
 ### Bug Fixes
