@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import { readFileSync } from 'fs';
 import { QUESTS as LIVE_QUESTS, buildWorld } from '../../story.js';
-import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, solvePuzzle, isShielded, visibleNpcs, visibleChests, bossEase } from '../../exploration.js';
+import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, solvePuzzle, isShielded, visibleNpcs, visibleChests, bossEase, takeLaunchNotices } from '../../exploration.js';
 import { EVENTS, isEventEnabled } from '../../events/config.js';
 import { eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
@@ -248,9 +248,17 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
         expect(trackCandidates('wild', { biome: D.BIOME })[0]).toBe('event-winter-lantern');
     });
 
-    test('annonce et animation de découverte à la première arrivée', () => {
-        expect(village.eventNotice).toMatchObject({ id: D.ID });
-        expect(village.eventNotice.lines.length).toBeGreaterThan(0);
+    test('annonce de lancement : une seule fois par partie, au premier chargement, avec l\'indice de l\'entrée', () => {
+        const s = session();
+        const first = takeLaunchNotices(s);
+        expect(first).toEqual([D.LAUNCH_NOTICE]);
+        expect(first[0].lines.join(' ')).toMatch(/Rizières/);
+        expect(takeLaunchNotices(s)).toEqual([]);
+        expect(s.data.eventNotices).toEqual([D.ID]);
+        expect(village.eventNotice).toBeUndefined();   // plus d'annonce à l'arrivée dans le village
+    });
+
+    test('animation de découverte à la première arrivée dans le village', () => {
         expect(village.biomeIntro).toMatchObject({ id: D.BIOME });
     });
 

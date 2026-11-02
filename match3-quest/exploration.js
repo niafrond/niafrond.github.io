@@ -48,6 +48,8 @@ import { weakColorOfTemplate } from './enemies.js';
 import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
+import { launchNotices } from './events/engine.js';
+import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -143,6 +145,14 @@ export function takeWildIntro(session) {
     if (!session.rt.wildIntroPending) return null;
     session.rt.wildIntroPending = false;
     return WILD_INTRO;
+}
+
+// Annonces de lancement des événements activés (events/engine.js `launchNotices`) pas encore lues dans cette partie : une seule fois chacune
+// (`data.eventNotices`), au premier chargement du jeu ; renvoie [] ensuite.
+export function takeLaunchNotices(session) {
+    const fresh = launchNotices(session.screens, EVENT_MODULES).filter(n => !session.data.eventNotices.includes(n.id));
+    fresh.forEach(n => session.data.eventNotices.push(n.id));
+    return fresh;
 }
 
 // Quête qui enseigne le « Pas de Yu » (yubu) : une fois terminée, le héros marche sur les eaux.

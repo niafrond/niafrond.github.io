@@ -20,18 +20,22 @@ export const VILLAGE = {
     name: 'Le Village des lanternes enneigées',
     entrance: 'Sentier des lanternes',
     exitLabel: 'Redescendre le col',
-    notice: {
-        id: 'winterLanternFestival',
-        title: 'La Fête des lanternes d\'hiver',
-        lines: [
-            'Au cœur de l\'hiver, un sentier enneigé s\'est ouvert au bout des digues. Au-delà, un village de montagne attend le solstice, mais ses lanternes sacrées s\'éteignent une à une.',
-            'Nul ne vous oblige à monter, et rien ne sera perdu si vous passez votre chemin : il y a seulement, là-haut, de la soupe chaude, des gens qui ont besoin d\'un coup de main et une flamme à retrouver.'
-        ]
-    },
     intro: { id: BIOME, kicker: 'Montagne des lanternes', name: 'La Montagne des lanternes enneigées', description: 'Là où la lumière revient après la nuit la plus longue' },
     arrival: [
         'Le col débouche sur un village aux toits courbés, coiffés de neige. Des fils de soie rouge courent d\'une maison à l\'autre, mais presque toutes les lanternes sont éteintes.',
         'Pourtant, de la fumée monte des cheminées et une odeur de riz sucré flotte entre les ruelles. C\'est bientôt le solstice : ici, on ne laisse personne affronter le froid seul.'
+    ]
+};
+
+// Annonce de lancement : affichée une seule fois par partie, au premier chargement du jeu tant que l'événement est actif (exploration.js `takeLaunchNotices`).
+// Elle dit OÙ chercher : l'entrée est une porte rouge à l'est de la zone sauvage des Rizières (HOST).
+export const LAUNCH_NOTICE = {
+    id: 'winterLanternFestival',
+    title: 'La Fête des lanternes d\'hiver',
+    lines: [
+        'Une rumeur court de village en village : en plein hiver, un sentier enneigé s\'est ouvert quelque part au bout des digues, dans la zone sauvage des Rizières. On y voit briller des lanternes rouges et dorées, là où il n\'y avait hier que de la boue et du riz.',
+        'Cherchez, dans la moitié est de la zone sauvage des Rizières, une porte de laque rouge, un peu à l\'écart des sentiers battus. Au-delà, un village de montagne attend le solstice : de la soupe chaude, des gens à aider, une flamme à retrouver. Rien ne vous y oblige.',
+        'Mais prenez garde : là-haut, les créatures du givre sont de niveau 22. Mieux vaut y monter bien préparé.'
     ]
 };
 
