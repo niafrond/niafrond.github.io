@@ -2267,6 +2267,12 @@ export function createExplorationView(cfg) {
                 if (!prologueAnimationPlayed()) openDialog({ icon: 'scroll', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
                 cfg.onSave();
             }
+            // Annonce d'un événement activé : une seule fois par partie, au premier chargement du jeu (après le prologue éventuel).
+            const launch = X.takeLaunchNotices(session);
+            if (launch.length) {
+                launch.forEach(n => openDialog({ ...NARRATOR, title: n.title }, n.lines, () => cfg.onSave()));
+                cfg.onSave();
+            }
             applyQueuedEvents();
             // Première créature d'herbe de la partie : une seule explication, au retour sur la carte.
             const wildIntro = X.takeWildIntro(session);
