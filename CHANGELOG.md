@@ -1,3 +1,9 @@
+## [2.169.1](https://github.com/niafrond/niafrond.github.io/compare/v2.169.0...v2.169.1) (2026-11-02)
+
+### Bug Fixes
+
+* **match3-quest:** ne peindre que les cases visibles quand la carte dépasse le calque de sol ([#613](https://github.com/niafrond/niafrond.github.io/issues/613)) ([bca4a56](https://github.com/niafrond/niafrond.github.io/commit/bca4a5634f044a6e02175811a9384f27fb45ceac))
+
 ## [2.169.0](https://github.com/niafrond/niafrond.github.io/compare/v2.168.0...v2.169.0) (2026-11-01)
 
 ### Features
