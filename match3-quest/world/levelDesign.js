@@ -12,18 +12,23 @@
 // Jamais touchés : bordures, bâtiments, structures, entités (et leur voisinage), sorties, apparition, pierres de voyage, chemins, eau.
 // Déterministe (tirage stable selon l'identifiant de la carte).
 
-import { toSet, toRects, buildingCells, routeCells } from './expand.js';
+import { toSet as toStringSet, toRects as toStringRects, buildingCells, routeCells } from './expand.js';
 import { isLowCell } from '../decor.js';
 
-const key = (x, y) => `${x},${y}`;
+// Clés de case numériques (bien plus rapides que des chaînes dans les parcours de graphe) : x < 512 ; hors carte, jamais confondues avec une case.
+const key = (x, y) => y * 512 + x;
+const unkey = k => [k & 511, k >> 9];
+const toSet = rects => { const out = new Set(); toStringSet(rects).forEach(k => { const [x, y] = k.split(',').map(Number); out.add(key(x, y)); }); return out; };
+const toRects = set => toStringRects(new Set([...set].map(k => { const [x, y] = unkey(k); return `${x},${y}`; })));
 const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const MARGIN_X = 6, MARGIN_Y = 4;
 const RIM = 4;                        // couloirs de 3 cases devant les passages de bord (world/barriers.js) : jamais touchés     // bordure intacte : couloirs et défilés des passages de bord
 export const MIN_DETOUR = 20;         // pas de détour minimal pour revenir d'une corniche
 export const LEDGE_MIN = 5, LEDGE_MAX = 10;   // longueur d'une corniche
 const RING_WALLS = 1;                 // part de relief tolérée autour d'un motif
-const MAX_LEDGES = 2, LEDGE_TRIES = 4000, MAX_MOTIFS = 2, MAX_DEFILES = 2;
-const TRIES = 400;                     // positions testées au plus par élément
+const MAX_LEDGES = 2, LEDGE_TRIES = 60, MAX_MOTIFS = 2, MAX_DEFILES = 2;
+const TRIES = 25; 
+const MOTIF_TRIES = 200;              // les motifs se rejettent d'abord sur leur seule géométrie (peu coûteux)                     // positions testées au plus par élément
 
 const hash = (a, b, c = 0) => Math.abs(Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453) % 1;
 const seedOf = id => [...id].reduce((s, ch) => (s * 31 + ch.charCodeAt(0)) % 9973, 7);
@@ -87,7 +92,7 @@ function makeContext(screen) {
     // cases exactes à ne jamais murer : entités, sorties, apparition, patrouilles, bâtiments, structures
     const hard = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []), ...(screen.exits || []), ...(screen.waypoint ? [screen.waypoint] : []), ...(screen.spawn ? [screen.spawn] : [])].map(e => key(e.x, e.y)));
     (screen.enemies || []).forEach(e => { if (e.patrol) routeCells(e.patrol).forEach(q => hard.add(key(q.x, q.y))); });
-    buildingCells(screen).forEach(k => hard.add(k));
+    buildingCells(screen).forEach(k => { const [bx, by] = k.split(',').map(Number); hard.add(key(bx, by)); });
     (screen.structures || []).forEach(st => { for (let i = 0; i < st.w; i++) for (let j = 0; j < st.h; j++) hard.add(key(st.x + i, st.y + j)); });
     const solid = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []), ...(screen.exits || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
     // murs de boss (pilier ou rempart qui barre un couloir jusqu'à la défaite du gardien) : fermés tant qu'on les compte
@@ -95,7 +100,7 @@ function makeContext(screen) {
     solid.delete(key(screen.spawn.x, screen.spawn.y));
     const solidLight = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));   // détours : les seuls obstacles que tout le monde voit
     return {
-        w, h, spawn: screen.spawn, prot, core, hard, solid, solidLight, screen,
+        w, h, spawn: screen.spawn, prot, core, hard, solid, solidLight, screen, lowMemo: new Uint8Array(w * h), origGrass: toSet(screen.grass?.cells),
         obst: toSet(screen.obstacles), liq: toSet(screen.liquids), paths: toSet(screen.paths), grass: toSet(screen.grass?.cells),
         ledges: new Map()
     };
@@ -104,7 +109,12 @@ function makeContext(screen) {
 const inB = (c, x, y) => x >= 0 && y >= 0 && x < c.w && y < c.h;
 // Un décor bas (roseaux, riz, herbes sèches : decor.js) se traverse comme dans le jeu, il ne ferme rien.
 // `strict` : tout obstacle ferme (pour la connexité, plus prudente que le jeu) ; sinon comme dans le jeu (pour mesurer les détours).
-const isWall = (c, x, y, strict = false) => !inB(c, x, y) || (c.obst.has(key(x, y)) && (strict || !isLowCell(c.screen, x, y))) || c.liq.has(key(x, y)) || c.ledges.has(key(x, y));
+// Mémoïsé par case : `isLowCell` tire un décor au hasard, trop coûteux à rejouer à chaque parcours.
+const lowAt = (c, x, y) => {
+    const i = y * c.w + x;
+    return (c.lowMemo[i] ||= isLowCell(c.screen, x, y) ? 1 : 2) === 1;
+};
+const isWall = (c, x, y, strict = false) => !inB(c, x, y) || (c.obst.has(key(x, y)) && (strict || !lowAt(c, x, y))) || c.liq.has(key(x, y)) || c.ledges.has(key(x, y));
 const isOpen = (c, x, y) => !isWall(c, x, y);
 const isFree = (c, x, y) => isOpen(c, x, y) && !c.prot.has(key(x, y)) && !c.paths.has(key(x, y));
 // case de corniche possible : ouverte, hors voisinage d'entité (un chemin peut être coupé par un rebord)
@@ -113,18 +123,22 @@ const inMargin = (c, x, y) => x >= MARGIN_X && y >= MARGIN_Y && x < c.w - MARGIN
 
 // Cases atteignables à pied depuis l'apparition (corniches fermées, personnages et coffres pleins).
 function reach(c, strict = true) {
+    const { w, h } = c;
     const seen = new Set([key(c.spawn.x, c.spawn.y)]);
-    const queue = [c.spawn];
-    while (queue.length) {
-        const p = queue.shift();
-        for (const [dx, dy] of STEPS) {
-            const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-            if (seen.has(k) || isWall(c, nx, ny, strict) || c.solid.has(k)) continue;
-            seen.add(k); queue.push({ x: nx, y: ny });
+    const queue = [c.spawn.x, c.spawn.y];
+    for (let head = 0; head < queue.length; head += 2) {
+        const px = queue[head], py = queue[head + 1];
+        for (let d = 0; d < 4; d++) {
+            const nx = px + DX[d], ny = py + DY[d];
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            const k = ny * 512 + nx;
+            if (seen.has(k) || c.solid.has(k) || isWall(c, nx, ny, strict)) continue;
+            seen.add(k); queue.push(nx, ny);
         }
     }
     return seen;
 }
+const DX = [1, -1, 0, 0], DY = [0, 0, 1, -1];
 
 // Distance à pied (en pas) entre deux cases, ou Infinity.
 function distance(c, from, to) {
@@ -150,7 +164,7 @@ const stillConnected = (c, base, changed) => {
     const now = reach(c);
     for (const k of base) if (!changed.has(k) && !now.has(k)) return false;
     // chaque personnage, coffre ou pierre de voyage garde une case d'accès atteignable
-    const reachable = set => k => { const [x, y] = k.split(',').map(Number); return STEPS.some(([dx, dy]) => set.has(key(x + dx, y + dy))); };
+    const reachable = set => k => { const [x, y] = unkey(k); return STEPS.some(([dx, dy]) => set.has(key(x + dx, y + dy))); };
     const access = reachable(base), accessNow = reachable(now);
     for (const k of c.solid) if (access(k) && !accessNow(k)) return false;
     return true;
@@ -243,7 +257,7 @@ function tryLedgeDir(c, base, x, y, len, sx, sy, dir, seed) {
     }
     // pas deux corniches collées
     for (const k of c.ledges.keys()) {
-        const [lx, ly] = k.split(',').map(Number);
+        const [lx, ly] = unkey(k);
         if (cells.some(([cx, cy]) => Math.abs(cx - lx) + Math.abs(cy - ly) < 8)) return null;
     }
     const extA = EXT_MIN + Math.floor(hash(x, y, seed + 1) * (EXT_MAX - EXT_MIN + 1));
@@ -255,7 +269,7 @@ function tryLedgeDir(c, base, x, y, len, sx, sy, dir, seed) {
     const grassBefore = new Set(c.grass);
     walls.forEach(([px, py]) => { c.obst.add(key(px, py)); c.grass.delete(key(px, py)); });
     const changed = new Set([...cells, ...walls].map(([cx, cy]) => key(cx, cy)));
-    const patchBroken = largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN;
+    const patchBroken = patchLost(c);
     if (!patchBroken && stillConnected(c, base, changed) && detourOk(c, base, cells, dir)) { reserveLanes(c, cells, dir); return cells; }
     cells.forEach(([cx, cy]) => c.ledges.delete(key(cx, cy)));
     walls.forEach(([px, py]) => c.obst.delete(key(px, py)));
@@ -342,7 +356,7 @@ function tryDefile(c, base, d, taken, wantLedge = false, seed = 0) {
     ledge.forEach(([x, y]) => { c.ledges.set(key(x, y), dir); c.grass.delete(key(x, y)); });
     const undo = () => { clearCells.forEach(([x, y]) => c.obst.add(key(x, y))); wall.forEach(([x, y]) => c.obst.delete(key(x, y))); ledge.forEach(([x, y]) => c.ledges.delete(key(x, y))); c.grass = grassBefore; c.paths = pathsBefore; };
     const changed = new Set([...wall, ...ledge].map(([x, y]) => key(x, y)));
-    if (largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN) { undo(); return null; }
+    if (patchLost(c)) { undo(); return null; }
     if (!stillConnected(c, base, changed) || !clearedReachable(c, clearCells)) { undo(); return null; }
     if (wantLedge) {
         if (!detourOk(c, base, ledge, dir)) { undo(); return null; }
@@ -372,7 +386,7 @@ function carveFalaise(c, base, seed) {
     const at = (o, along, perp) => (o === 'h' ? [along, perp] : [perp, along]);
     let tries = 0;
     for (const [o, along, perp] of shuffled(spots.map(sp => [sp[1], sp[2], sp]), seed, 61).map(e => e[2])) {
-        if (tries >= 300) break;
+        if (tries >= 30) break;
         const L = 5 + Math.floor(hash(along, perp, seed) * 2);
         const dir = o === 'h' ? (hash(perp, along, seed) < 0.6 ? [0, 1] : [0, -1]) : (hash(perp, along, seed) < 0.6 ? [1, 0] : [-1, 0]);
         const ledge = [];
@@ -404,7 +418,7 @@ function carveFalaise(c, base, seed) {
             wall.forEach(([x, y]) => { c.obst.add(key(x, y)); c.grass.delete(key(x, y)); c.paths.delete(key(x, y)); });
             const undo = () => { c.obst = obstBefore; c.grass = grassBefore; c.paths = pathsBefore; ledge.forEach(([x, y]) => c.ledges.delete(key(x, y))); };
             const changed = new Set([...ledge, ...wall].map(([x, y]) => key(x, y)));
-            const patchBroken = largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN;
+            const patchBroken = patchLost(c);
             if (!patchBroken && stillConnected(c, base, changed) && clearedReachable(c, lanes.filter(([x, y]) => obstBefore.has(key(x, y)))) && detourOk(c, base, ledge, dir)) { reserveLanes(c, ledge, dir); return ledge; }
             undo();
         }
@@ -422,7 +436,7 @@ function shortestPath(c, from, to) {
         for (const p of frontier) {
             if (p.x === to.x && p.y === to.y) {
                 const path = [];
-                for (let k = key(p.x, p.y); k; k = prev.get(k)) path.push(k.split(',').map(Number));
+                for (let k = key(p.x, p.y); k !== null && k !== undefined; k = prev.get(k)) path.push(unkey(k));
                 return path.reverse();
             }
             for (const [dx, dy] of STEPS) {
@@ -473,7 +487,7 @@ function carveLengthened(c, base, seed) {
             if (!done) break;
         }
         const changed = new Set([...added, ...ledge.map(([x, y]) => key(x, y))]);
-        const patchBroken = largestPatch(grassBefore) >= PATCH_MIN && largestPatch(c.grass) < PATCH_MIN;
+        const patchBroken = patchLost(c);
         if (!patchBroken && stillConnected(c, base, changed) && clearedReachable(c, lanes.filter(([x, y]) => obstBefore.has(key(x, y)))) && detourOk(c, base, ledge, dir)) {
             added.forEach(k => { c.grass.delete(k); c.paths.delete(k); });
             reserveLanes(c, ledge, dir);
@@ -518,6 +532,8 @@ function tryMotif(c, base, rows, x0, y0) {
 }
 
 const PATCH_MIN = 12;
+// La nappe d'herbe d'origine (≥ PATCH_MIN cases) a-t-elle été coupée ? (mesure de l'original mise en cache dans le contexte)
+const patchLost = c => (c.hadPatch ??= largestPatch(c.origGrass) >= PATCH_MIN) && largestPatch(c.grass) < PATCH_MIN;
 function largestPatch(cells) {
     const seen = new Set();
     let best = 0;
@@ -527,7 +543,7 @@ function largestPatch(cells) {
         const stack = [k];
         seen.add(k);
         while (stack.length) {
-            const [x, y] = stack.pop().split(',').map(Number);
+            const [x, y] = unkey(stack.pop());
             size++;
             for (const [dx, dy] of STEPS) { const nk = key(x + dx, y + dy); if (cells.has(nk) && !seen.has(nk)) { seen.add(nk); stack.push(nk); } }
         }
@@ -603,7 +619,7 @@ function sealPockets(c) {
         const p = queue.shift();
         for (const [dx, dy] of STEPS) {
             const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-            const wall = !inB(c, nx, ny) || (c.obst.has(k) && !isLowCell(c.screen, nx, ny)) || c.liq.has(k);
+            const wall = !inB(c, nx, ny) || (c.obst.has(k) && !lowAt(c, nx, ny)) || c.liq.has(k);
             if (seen.has(k) || wall || c.solid.has(k)) continue;
             seen.add(k); queue.push({ x: nx, y: ny });
         }
@@ -611,7 +627,7 @@ function sealPockets(c) {
     const pockets = [...seen].filter(k => !closed.has(k) && !c.ledges.has(k));
     if (pockets.some(k => c.hard.has(k) || c.solid.has(k))) return false;
     // un décor bas se traverse : la poche devient alors une mare (une case d'eau qui ne se franchit pas à pied)
-    pockets.forEach(k => { const [px, py] = k.split(',').map(Number); if (isLowCell(c.screen, px, py)) { c.obst.delete(k); c.liq.add(k); } else c.obst.add(k); c.grass.delete(k); c.paths.delete(k); });
+    pockets.forEach(k => { const [px, py] = unkey(k); if (isLowCell(c.screen, px, py)) { c.obst.delete(k); c.liq.add(k); } else c.obst.add(k); c.grass.delete(k); c.paths.delete(k); });
     return true;
 }
 
@@ -636,7 +652,7 @@ export function designLevel(screen, options = {}) {
     let base = reach(c);
     let tries = 0;
     for (const d of defileCandidates(c, seed)) {
-        if (report.ledges >= 1 || tries++ >= TRIES) break;
+        if (report.ledges >= 1 || tries++ >= 20) break;
         const res = tryDefile(c, reach(c), d, takenDefiles, true, seed);
         if (!res) continue;
         res.cells.forEach(([x, y]) => c.grass.add(key(x, y)));
@@ -661,7 +677,7 @@ export function designLevel(screen, options = {}) {
         base = reach(c);
         tries = 0;
         for (const [x, y] of motifPositions(c, rows, seed + seedOf(name))) {
-            if (tries++ >= TRIES) break;
+            if (tries++ >= MOTIF_TRIES) break;
             if (report.motifs.some(m => Math.abs(m.x - x) < 14 && Math.abs(m.y - y) < 8)) continue;
             if (tryMotif(c, base, rows, x, y)) { report.motifs.push({ name, x, y }); break; }
         }
@@ -686,7 +702,7 @@ export function designLevel(screen, options = {}) {
     screen.liquids = toRects(c.liq);
     screen.paths = toRects(c.paths);
     screen.grass = { ...screen.grass, cells: toRects(c.grass) };
-    if (c.ledges.size) screen.ledges = [...c.ledges].map(([k, dir]) => [...k.split(',').map(Number), dir[0], dir[1]]);
+    if (c.ledges.size) screen.ledges = [...c.ledges].map(([k, dir]) => [...unkey(k), dir[0], dir[1]]);
     screen.design = report;
     return screen;
 }
