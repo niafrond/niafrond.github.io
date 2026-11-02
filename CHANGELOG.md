@@ -1,3 +1,9 @@
+## [2.173.0](https://github.com/niafrond/niafrond.github.io/compare/v2.172.0...v2.173.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** level design à la Pokémon, brouillard de la minimap, perception du qì et mimiques ([#617](https://github.com/niafrond/niafrond.github.io/issues/617)) ([b3a7b0f](https://github.com/niafrond/niafrond.github.io/commit/b3a7b0f3ce9426affb93f6fbb77a2c3e8cc9c8fb))
+
 ## [2.172.0](https://github.com/niafrond/niafrond.github.io/compare/v2.171.0...v2.172.0) (2026-11-02)
 
 ### Features
