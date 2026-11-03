@@ -9,7 +9,9 @@ import { toSet } from '../../world/expand.js';
 
 const key = (x, y) => `${x},${y}`;
 const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const designed = Object.values(SCREENS).filter(s => s.design && isDesignable(s));
+const designedAll = Object.values(SCREENS).filter(s => s.design && isDesignable(s));
+const designed = designedAll.filter(s => !s.event);          // routes et zones sauvages des régions
+const eventMaps = designedAll.filter(s => s.event);            // cartes de plein air des événements (village enneigé, col, sanctuaire, royaume des âmes)
 const populated = Object.values(SCREENS).filter(isPopulable);
 
 // Cases atteignables à pied (corniches fermées) depuis l'apparition.
@@ -48,7 +50,7 @@ const dist = (s, a, b) => {
 
 describe('level design : couverture', () => {
     test('toutes les routes et zones sauvages de plein air sont retouchées', () => {
-        const expected = Object.values(SCREENS).filter(isDesignable).map(s => s.id);
+        const expected = Object.values(SCREENS).filter(s => isDesignable(s) && !s.event).map(s => s.id);
         expect(expected.length).toBeGreaterThanOrEqual(18);
         expect(designed.map(s => s.id).sort()).toEqual(expected.sort());
     });
@@ -313,5 +315,32 @@ describe('coffres refermés au retour (mimiques)', () => {
         const again = createSession(JSON.parse(JSON.stringify(se.data)), screens, []);
         expect(again.data.mimicked).toEqual(['x']);
         expect(again.data.returns[s.id]).toBe(3);
+    });
+});
+
+// Les cartes d'événement suivent les mêmes préconisations (agents/level-design.md). Les petites salles (hall d'entrée du royaume, pont, salle des miroirs)
+// n'ont pas la place d'une corniche de retour de 20 pas ni de huit caches : elles en ont au mieux.
+describe('cartes d\'événement', () => {
+    const SMALL = new Set(['wandering_souls_realm', 'ws_pont', 'ws_miroir']);
+    const big = eventMaps.filter(s => !SMALL.has(s.id));
+    test('les cartes de plein air des deux événements sont retouchées', () => {
+        ['winter_lantern_mountain', 'wlm_col', 'wlm_sanctuaire', 'wandering_souls_realm', 'ws_sources', 'ws_terrasse', 'ws_pont', 'ws_fengdu', 'ws_miroir', 'ws_roue']
+            .forEach(id => expect(eventMaps.map(s => s.id)).toContain(id));
+    });
+    test.each(eventMaps.map(s => [s.id, s]))('%s : au moins 3 coffres-pièges, tout reste atteignable', (_id, s) => {
+        expect(s.chests.filter(c => c.mimic).length).toBeGreaterThanOrEqual(MIMICS_PER_MAP);
+        const seen = reach(s);
+        const targets = [...s.npcs, ...s.chests, ...s.exits, ...(s.waypoint ? [s.waypoint] : [])];
+        const lost = targets.filter(t => ![[0, 0], ...STEPS].some(([dx, dy]) => seen.has(key(t.x + dx, t.y + dy))));
+        expect(lost.map(t => t.id || `${t.x},${t.y}`)).toEqual([]);
+    });
+    test('les grandes cartes ont une corniche, 8 caches invisibles et un contour rogné', () => {
+        expect(big.filter(s => !s.ledges).map(s => s.id)).toEqual([]);
+        expect(big.map(s => [s.id, s.chests.filter(c => c.hidden).length]).filter(([, n]) => n < CACHES_PER_MAP)).toEqual([]);
+        expect(big.filter(s => !(s.design.corners >= 1)).map(s => s.id)).toEqual([]);
+    });
+    test('les cartes sans hautes herbes d\'origine n\'en gardent pas (aucune rencontre ajoutée)', () => {
+        eventMaps.filter(s => !s.grass).forEach(s => expect(s.design.hidden).toBeGreaterThanOrEqual(0));
+        expect(Object.values(SCREENS).filter(s => s.event && s.kind === 'wild' && s.grass).every(s => Array.isArray(s.grass.table) && s.grass.table.length > 0)).toBe(true);
     });
 });
