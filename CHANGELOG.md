@@ -1,3 +1,9 @@
+## [2.174.0](https://github.com/niafrond/niafrond.github.io/compare/v2.173.0...v2.174.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** perception du qì au clic, vibrations réarmées par un geste, coffres refermés en mimiques ([#618](https://github.com/niafrond/niafrond.github.io/issues/618)) ([13eda86](https://github.com/niafrond/niafrond.github.io/commit/13eda86166c1cb2ca281f1ec57a6caa1a4d1f0ba))
+
 ## [2.173.0](https://github.com/niafrond/niafrond.github.io/compare/v2.172.0...v2.173.0) (2026-11-02)
 
 ### Features
