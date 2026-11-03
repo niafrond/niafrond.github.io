@@ -47,6 +47,8 @@ export const isPopulable = screen =>
     Boolean(screen.region) && !screen.interior && !screen.arena && !screen.aquatic && screen.kind !== 'house' && screen.biome !== 'tides' &&
     /^[a-z]+(_(village|hamlet|wild|road))?$/.test(screen.id) && screen.id.split('_')[0] === screen.region && screen.w >= 20 && screen.h >= 12;
 
+const EVENT_GRASS_POOL = { wandering_souls: ['gui_esprit', 'yuan_gui', 'nu_gui', 'mu_gui'], winter_lantern_mountain: ['dame_des_neiges', 'xue_niao', 'shan_gui'] };
+const EVENT_GRASS_NAMES = { gui_esprit: 'Esprit errant', yuan_gui: 'Âme rancunière', nu_gui: 'Esprit en colère', mu_gui: 'Esprit du bois', dame_des_neiges: 'Esprit du givre', xue_niao: 'Oiseau de givre', shan_gui: 'Esprit des cols' };
 export const CACHES_PER_MAP = 8;     // caches invisibles par route / zone sauvage
 export const MIMICS_PER_MAP = 3;     // coffres-pièges par carte de plein air
 
@@ -699,9 +701,17 @@ export function designLevel(screen, options = {}) {
         }
         return screen;
     }
-    // carte d'événement sans hautes herbes : une table vide sert le temps du dessin (passages, défilés) puis disparaît (aucune rencontre)
+    // carte d'événement sans hautes herbes : elle reçoit une table tirée de ses propres ennemis (hors boss), pour que les passages d'herbes
+    // obligés (défilés) déclenchent de vraies rencontres ; sans ennemi (village enneigé), l'herbe n'est qu'un outil de dessin et disparaît
     const syntheticGrass = !screen.grass;
-    if (syntheticGrass) screen.grass = { cells: [], rate: 0, safeSteps: 3, table: [] };
+    if (syntheticGrass) {
+        const seenT = new Set();
+        const table = (screen.enemies || []).filter(e => !e.boss && e.templateId && !seenT.has(e.templateId) && seenT.add(e.templateId))
+            .map(e => ({ templateId: e.templateId, name: e.name || e.templateId, weight: 1, offset: Number.isInteger(e.offset) ? e.offset : 0 }));
+        // au moins 3 espèces : complétées par celles du biome (esprits du royaume des âmes, créatures du givre)
+        for (const id of EVENT_GRASS_POOL[screen.biome] || []) if (table.length && table.length < 3 && !seenT.has(id)) { seenT.add(id); table.push({ templateId: id, name: EVENT_GRASS_NAMES[id] || id, weight: 1, offset: table[0].offset }); }
+        screen.grass = { cells: [], rate: 0.12, safeSteps: 3, table };
+    }
     const c = makeContext(screen);
     const seed = seedOf(screen.id);
     const report = { motifs: [], ledges: 0, defiles: 0, hidden: 0, mimic: 0, corners: 0 };
@@ -762,7 +772,7 @@ export function designLevel(screen, options = {}) {
     screen.liquids = toRects(c.liq);
     screen.paths = toRects(c.paths);
     screen.grass = { ...screen.grass, cells: toRects(c.grass) };
-    if (syntheticGrass) delete screen.grass;
+    if (syntheticGrass && !screen.grass.table.length) delete screen.grass;
     if (c.ledges.size) screen.ledges = [...c.ledges].map(([k, dir]) => [...unkey(k), dir[0], dir[1]]);
     screen.design = report;
     return screen;

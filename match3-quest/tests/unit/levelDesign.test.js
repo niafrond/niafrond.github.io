@@ -339,8 +339,18 @@ describe('cartes d\'événement', () => {
         expect(big.map(s => [s.id, s.chests.filter(c => c.hidden).length]).filter(([, n]) => n < CACHES_PER_MAP)).toEqual([]);
         expect(big.filter(s => !(s.design.corners >= 1)).map(s => s.id)).toEqual([]);
     });
-    test('les cartes sans hautes herbes d\'origine n\'en gardent pas (aucune rencontre ajoutée)', () => {
-        eventMaps.filter(s => !s.grass).forEach(s => expect(s.design.hidden).toBeGreaterThanOrEqual(0));
-        expect(Object.values(SCREENS).filter(s => s.event && s.kind === 'wild' && s.grass).every(s => Array.isArray(s.grass.table) && s.grass.table.length > 0)).toBe(true);
+    test('chaque carte d\'événement avec ennemis oblige à traverser des hautes herbes (défilé) avec de vraies rencontres', () => {
+        const withEnemies = eventMaps.filter(s => (s.enemies || []).some(e => !e.boss));
+        expect(withEnemies.length).toBeGreaterThanOrEqual(9);
+        withEnemies.forEach(s => {
+            expect({ id: s.id, defiles: s.design.defiles }).toEqual({ id: s.id, defiles: expect.any(Number) });
+            expect(s.design.defiles).toBeGreaterThanOrEqual(1);
+            expect(s.grass && s.grass.cells.length).toBeGreaterThan(0);
+            expect(s.grass.table.length).toBeGreaterThan(0);
+            expect(s.grass.rate).toBeGreaterThan(0);
+        });
+    });
+    test('le village enneigé (sans ennemi) ne reçoit pas de rencontre', () => {
+        expect(SCREENS.winter_lantern_mountain.grass).toBeUndefined();
     });
 });
