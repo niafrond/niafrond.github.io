@@ -35,7 +35,8 @@ export function playMirror(host, name, sfx = () => {}) {
 
 /** Livre des noms : habitants soignés (tous épisodes) avec le gâteau offert. Se ferme sur « Fermer » ou un toucher du fond. */
 export function openBook(host, data) {
-    const rows = EPISODES.flatMap(e => e.injured.filter(n => data.healed.includes(n.id)).map(n => ({ ...n, village: e.village })));
+    const have = new Set([...data.healed, ...(data.keep?.healed || [])]);   // pendant un rejeu, les noms déjà gagnés restent au Livre
+    const rows = EPISODES.flatMap(e => e.injured.filter(n => have.has(n.id)).map(n => ({ ...n, village: e.village })));
     const el = document.createElement('div');
     el.className = 'change-overlay change-confirm';
     el.dataset.scene = 'change-village';

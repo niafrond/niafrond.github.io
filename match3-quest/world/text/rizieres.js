@@ -13,6 +13,8 @@ export default {
     rizieres_h_etable: { name: 'Étable de Dahei', arrival: ['Une odeur de paille chaude et de sagesse bovine vous accueille.'] }
   },
   npcs: {
+    houyi_mirror: { name: 'Le miroir', title: 'Miroir de la maison',
+      idle: ['Le bronze garde le reflet des villages que Chang\'e a soignés. Y regarder, c\'est y retourner.'] },
     ping: { name: 'Ping', title: 'Épouse de Lin', 
       idle: ['Lin dit que le riz repoussera. Moi, je dis qu\'il faut d\'abord que le riz veuille bien.', 'Je garde de l\'eau de cuisson pour les plantes. Elles me disent merci, à leur manière : en ne mourant pas.'],
       talk: [{ whenDone: 'sun_1', lines: ['Ce matin, un nuage est passé. Un seul, tout timide. Lin a pleuré, les enfants ont dansé : on a eu l\'impression de recevoir de la famille.'] }] },

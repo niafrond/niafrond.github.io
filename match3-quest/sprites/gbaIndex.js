@@ -196,6 +196,7 @@ export const GBA_FILES = {
     honey_keeper_mi: 'honey_keeper_mi.16f85532.js',
     horse_tian: 'horse_tian.36f4e751.js',
     houtu: 'houtu.d6196c37.js',
+    houyi_mirror: 'houyi_mirror.af276110.js',
     hu_jing: 'hu_jing.4949fe90.js',
     hua: 'hua.11da26fe.js',
     hua_jing: 'hua_jing.8e3365cd.js',

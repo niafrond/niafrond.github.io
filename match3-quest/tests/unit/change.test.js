@@ -9,7 +9,7 @@ import { SIZE, ENERGIES, JOKER, TILE_KINDS, GAUGE_MAX, createLevel, generateBoar
 import { EPISODES, SUN_EPISODE, episodeById, episodeByScreen, ENERGY_LABEL, ambientOf } from '../../change/data.js';
 import { TILE_ART, tileSvg } from '../../change/art.js';
 import { defaultChangeData, normalizeChangeData } from '../../change/state.js';
-import { createSession, markEnemyDefeated, pendingChangeEpisode, startChangeMode, endChangeMode, inChangeMode, visibleNpcs, visibleChests, aliveEnemies, tryMove, entityAt, isTerrainBlocked, activeCompanionOf, changeProgress, currentScreen, stepChangeAmbient, changeAmbientOf } from '../../exploration.js';
+import { createSession, markEnemyDefeated, pendingChangeEpisode, startChangeMode, endChangeMode, inChangeMode, visibleNpcs, visibleChests, aliveEnemies, tryMove, entityAt, isTerrainBlocked, activeCompanionOf, changeProgress, currentScreen, stepChangeAmbient, changeAmbientOf, changeReplayOptions, changeIsReplay } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -180,7 +180,7 @@ describe('état sauvegardé et déclencheur', () => {
         expect(normalizeChangeData(undefined)).toEqual(defaultChangeData());
         expect(normalizeChangeData('x')).toEqual(defaultChangeData());
         const d = normalizeChangeData({ done: [1, 1, 9, 'a'], pending: 2, hp: { farmer_lin: 7.9, inconnu: 3, ping: -1 }, healed: ['ping', 'ping', 'zzz'] });
-        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'], return: null });
+        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'], return: null, keep: null });
         expect(normalizeChangeData({ return: { screenId: 'gobi', x: 3, y: 4 } }).return).toEqual({ screenId: 'gobi', x: 3, y: 4 });
         expect(normalizeChangeData({ return: { screenId: 'gobi', x: 'a', y: 4 } }).return).toBeNull();
         expect(normalizeChangeData({ pending: 7 }).pending).toBeNull();
@@ -375,5 +375,80 @@ describe('Chang\'e explore le village (mode dans le moteur d\'exploration)', () 
         expect(text).toContain('accident');
         Object.values(ENERGY_LABEL).forEach(l => expect(l.toLowerCase()).not.toContain('lun'));
         expect(episodeById(2).arrival).toBe(undefined);
+    });
+});
+
+describe('le miroir de la maison : rejeu des épisodes terminés', () => {
+    const all = ep => ep.injured.map(n => n.id);
+
+    test('le miroir est dans la maison de Hou Yi et Chang\'e, avec son dessin', () => {
+        const house = SCREENS.rizieres_h_houyi;
+        const mirror = house.npcs.find(n => n.id === 'houyi_mirror');
+        expect(mirror).toBeTruthy();
+        expect(mirror.name).toBe('Le miroir');
+        expect(isTerrainBlocked(house, mirror.x, mirror.y)).toBe(false);
+        expect(house.npcs.some(n => n.x === mirror.x && n.y === mirror.y && n.id !== mirror.id)).toBe(false);
+        expect(fs.readFileSync(path.join(ROOT, 'sprites/generated.js'), 'utf8')).toContain('  "houyi_mirror": {');
+    });
+
+    test('rien à revoir tant qu\'aucun épisode n\'est commencé ; ensuite le miroir propose revoir ou reprendre', () => {
+        const s = createSession(null);
+        expect(changeReplayOptions(s)).toEqual([]);
+        s.data.change.done = [1, 3]; s.data.change.pending = 2;
+        expect(changeReplayOptions(s)).toEqual([
+            { episode: 1, village: 'Hameau de Dongqiao', kind: 'replay' },
+            { episode: 2, village: 'Port-à-Sec de Hekou', kind: 'resume' },
+            { episode: 3, village: 'Enclos de Caoyuan', kind: 'replay' }
+        ]);
+    });
+
+    test('rejouer un épisode terminé : ses habitants sont de nouveau blessés, les autres soins et l\'épisode ouvert ne bougent pas', () => {
+        const s = createSession(null), ch = s.data.change, ep1 = episodeById(1), ep2 = episodeById(2);
+        ch.done = [1]; ch.pending = 2;
+        ch.healed = [...all(ep1), ep2.injured[0].id]; ch.hp = { ...Object.fromEntries(all(ep1).map(id => [id, 30])), [ep2.injured[0].id]: 34, [ep2.injured[1].id]: 9 };
+        startChangeMode(s, 1);
+        expect(changeIsReplay(s)).toBe(true);
+        expect(changeProgress(s).every(p => !p.healed)).toBe(true);        // tout le monde est blessé à nouveau
+        expect(ch.healed).toEqual([ep2.injured[0].id]);                     // l'épisode 2 n'est pas touché
+        expect(ch.hp[ep2.injured[1].id]).toBe(9);
+        expect(ch.pending).toBe(2);                                          // un rejeu n'ouvre ni ne ferme rien
+        expect(ch.done).toEqual([1]);
+        // on soigne le premier habitant pendant le rejeu, puis on quitte par le miroir
+        ch.healed.push(ep1.injured[0].id); ch.hp[ep1.injured[0].id] = ep1.injured[0].need;
+        endChangeMode(s);
+        expect(ch.keep).toBeNull();
+        all(ep1).forEach(id => expect(ch.healed).toContain(id));            // le Livre des noms n'a rien perdu
+        expect(ch.hp[ep1.injured[1].id]).toBe(30);
+        expect(ch.done).toEqual([1]);
+        expect(ch.pending).toBe(2);
+    });
+
+    test('finir un rejeu laisse l\'épisode terminé et ne ferme pas l\'épisode resté ouvert', () => {
+        const s = createSession(null), ch = s.data.change;
+        ch.done = [1]; ch.pending = 2; ch.healed = all(episodeById(1));
+        startChangeMode(s, 1);
+        endChangeMode(s, { done: true });
+        expect(ch.done).toEqual([1]);
+        expect(ch.pending).toBe(2);
+        all(episodeById(1)).forEach(id => expect(ch.healed).toContain(id));
+    });
+
+    test('une partie sauvegardée en plein rejeu rend les soins mis de côté', () => {
+        const s = createSession(null), ch = s.data.change;
+        ch.done = [1]; ch.healed = all(episodeById(1)); ch.hp = { farmer_lin: 24 };
+        startChangeMode(s, 1);
+        const saved = JSON.parse(JSON.stringify(s.data));   // sauvegarde faite pendant le rejeu
+        const loaded = createSession(saved);
+        all(episodeById(1)).forEach(id => expect(loaded.data.change.healed).toContain(id));
+        expect(loaded.data.change.hp.farmer_lin).toBe(24);
+        expect(loaded.data.change.keep).toBeNull();
+    });
+
+    test('une première fois (épisode pas encore terminé) n\'est pas un rejeu', () => {
+        const s = createSession(null);
+        startChangeMode(s, 2);
+        expect(changeIsReplay(s)).toBe(false);
+        expect(s.data.change.pending).toBe(2);
+        expect(s.data.change.keep).toBeNull();
     });
 });
