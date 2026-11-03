@@ -2029,7 +2029,14 @@ export function startChangeMode(session, episodeId) {
     const ep = episodeById(episodeId), screen = ep && session.screens[ep.screen];
     if (!ep || !screen || session.rt.changeMode) return null;
     const ch = session.data.change;
-    ch.pending = ep.id;
+    // Épisode déjà terminé : rejeu (par le miroir de la maison). Ses soins sont mis de côté (le Livre des noms les garde) et rendus à la fin ; l'épisode reste « terminé ».
+    const replay = ch.done.includes(ep.id);
+    if (replay) {
+        const ids = ep.injured.map(n => n.id);
+        ch.keep = { healed: ids.filter(id => ch.healed.includes(id)), hp: Object.fromEntries(ids.filter(id => ch.hp[id]).map(id => [id, ch.hp[id]])) };
+        ch.healed = ch.healed.filter(id => !ids.includes(id));
+        ids.forEach(id => { delete ch.hp[id]; });
+    } else ch.pending = ep.id;
     ch.return = { screenId: session.data.screenId, x: session.data.x, y: session.data.y };
     const walk = walkableFrom(screen, screen.spawn);
     const spawn = [screen.spawn.x, screen.spawn.y];
@@ -2044,7 +2051,7 @@ export function startChangeMode(session, episodeId) {
     const ambient = (ep.ambient || []).slice(0, homes.length).map((a, i) => ({
         id: a.id, name: a.name, title: 'Habitant du village', x: homes[i][0], y: homes[i][1], hx: homes[i][0], hy: homes[i][1], ambient: true, next: 700 + i * 650
     }));
-    session.rt.changeMode = { episode: ep.id, npcs, ambient, clock: 0 };
+    session.rt.changeMode = { episode: ep.id, npcs, ambient, clock: 0, replay };
     session.data.screenId = screen.id;
     session.data.x = screen.spawn.x;
     session.data.y = screen.spawn.y;
@@ -2058,8 +2065,13 @@ export function endChangeMode(session, { done = false } = {}) {
     const cm = session.rt.changeMode, ch = session.data.change;
     if (!cm) return null;
     session.rt.changeMode = null;
+    if (cm.replay && ch.keep) {   // fin d'un rejeu : on rend les soins mis de côté (plus ceux gagnés pendant le rejeu)
+        ch.healed = [...new Set([...ch.healed, ...ch.keep.healed])];
+        for (const [k, v] of Object.entries(ch.keep.hp)) if (v > (ch.hp[k] || 0)) ch.hp[k] = v;
+        ch.keep = null;
+    }
     if (done && !ch.done.includes(cm.episode)) ch.done.push(cm.episode);
-    if (done) ch.pending = null;
+    if (done && ch.pending === cm.episode) ch.pending = null;   // un rejeu ne ferme pas un autre épisode resté ouvert
     const back = ch.return && session.screens[ch.return.screenId] ? ch.return : { screenId: START_SCREEN, ...session.screens[START_SCREEN].spawn };
     ch.return = null;
     session.data.screenId = back.screenId;
@@ -2107,3 +2119,16 @@ export const changeAmbientOf = (session, npcId) => {
     const ep = changeEpisodeOf(session);
     return ep?.ambient?.find(a => a.id === npcId) || null;
 };
+
+/** Le mode en cours est-il le rejeu d'un épisode déjà terminé ? */
+export const changeIsReplay = session => Boolean(session.rt.changeMode?.replay);
+
+/**
+ * Ce que propose le miroir de la maison : les épisodes terminés (à revoir) et l'épisode resté ouvert (à reprendre).
+ * [{ episode, village, kind: 'replay' | 'resume' }], dans l'ordre des épisodes ; vide tant qu'aucun épisode n'a été commencé.
+ */
+export function changeReplayOptions(session) {
+    const ch = session.data.change;
+    const ids = [...new Set([...ch.done, ...(ch.pending ? [ch.pending] : [])])].sort((a, b) => a - b);
+    return ids.map(id => ({ episode: id, village: episodeById(id).village, kind: ch.done.includes(id) ? 'replay' : 'resume' }));
+}

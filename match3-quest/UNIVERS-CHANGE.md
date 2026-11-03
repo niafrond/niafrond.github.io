@@ -247,6 +247,14 @@ L'animation de transition retenue est le **reflet circulaire** (`sprites/change/
 - Le bouton miroir est visible dans l'interface de la campagne de Hou Yi **seulement quand un épisode est disponible** ; dans le mode Chang'e il
   est toujours visible.
 
+### 7.1 Revoir un épisode : le miroir de la maison
+
+La **maison de Hou Yi et Chang'e** (Rizières) contient un **miroir** de bronze, près de Chang'e. **Y regarder propose de retourner dans un village déjà soigné**
+(« Revoir : <village> ») ou de **reprendre** l'épisode resté ouvert (« Reprendre : <village> »). Rejeu : les cinq habitants sont de nouveau blessés, sans
+conversation d'entrée ni d'adieu (le miroir ne se coupe qu'une fois : l'épisode 3 rejoué ne rejoue pas la coupure) ; les gâteaux déjà offerts restent au Livre
+des noms ; l'épisode reste « terminé » et un épisode laissé ouvert n'est pas touché. Le miroir de la maison garde le **reflet** des villages (il fonctionne même
+après la coupure du lien : ce ne sont pas des appels, mais des souvenirs). Avant le premier épisode, Hou Yi (le héros) dit seulement : « Le miroir favori de Chang'e… Il a une lueur irréelle. »
+
 ## 8. Direction artistique et audio (pistes)
 
 - **Sprite jouable** : `change_jouable` (quatre directions, marche `walk_*`, geste de soin en `attack_*`), voir `SPECS.md`.

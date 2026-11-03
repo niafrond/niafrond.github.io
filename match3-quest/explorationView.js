@@ -497,10 +497,28 @@ export function createExplorationView(cfg) {
     async function concludeChange() {
         const ep = changeEpisode();
         if (!ep) return;
+        if (X.changeIsReplay(session)) {   // rejeu : pas de conversation avec Hou Yi (ni, à l'épisode 3, d'adieu : le miroir ne se coupe qu'une fois)
+            await narrate('Le miroir', [`Tout le monde est de nouveau sur pied à ${ep.village}. Le reflet se referme.`]);
+            await finishChange(true, true);
+            return;
+        }
         if (ep.finale) changeFarewell = true;
         await talkThroughMirror(ep.outro);
         if (ep.finale) { sfxSafe('change-cut'); await narrate('Le miroir', [ep.finale]); }
         await finishChange(true, true);
+    }
+    // Le miroir de la maison de Hou Yi et Chang'e : y regarder propose de revoir un épisode terminé ou de reprendre celui resté ouvert.
+    function openHouseMirror() {
+        const opts = X.changeReplayOptions(session);
+        if (!opts.length) {
+            // avant le premier épisode, Hou Yi lui-même s'étonne : le miroir préféré de Chang'e a quelque chose d'irréel
+            openDialog(sceneSpeaker({ hero: true }), ['Le miroir favori de Chang\'e… Il a une lueur irréelle.']);
+            return;
+        }
+        openDialog({ ...NARRATOR, title: 'Le miroir' }, ['Le bronze garde le reflet des villages que Chang\'e a soignés. Y regarder, c\'est y retourner.'], null, [
+            ...opts.map(o => ({ label: `${o.kind === 'resume' ? 'Reprendre' : 'Revoir'} : ${o.village}`, run: () => { startChangeEpisode(o.episode, { resume: true }); } })),
+            { label: 'Plus tard', run: () => {} }
+        ]);
     }
     // Ouvre le soin d'un blessé (ou rappelle son remerciement s'il est déjà soigné).
     function openHealFor(npcId) {
@@ -1129,6 +1147,7 @@ export function createExplorationView(cfg) {
                 break;
             case 'talk': {
                 if (X.inChangeMode(session)) { openHealFor(res.npcId); break; }   // mode Chang'e : un habitant à soigner
+                if (res.npcId === 'houyi_mirror') { openHouseMirror(); break; }   // miroir de la maison : rejeu d'un épisode
                 const talk = X.talkToNpc(session, res.npcId);
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);

@@ -26,6 +26,7 @@ export const MANIFEST = {
     ],
     npcs: [
       { id: 'change', where: 'house:rizieres_h_houyi' },
+      { id: 'houyi_mirror', name: 'Le miroir', title: 'Miroir de la maison', where: 'house:rizieres_h_houyi', role: 'ambiance' },
       { id: 'elder_wen', where: 'house:rizieres_h_wen' },
       { id: 'farmer_lin', where: 'house:rizieres_h_lin' },
       { id: 'ping', name: 'Ping', title: 'Épouse de Lin', where: 'house:rizieres_h_lin', role: 'ambiance' },
