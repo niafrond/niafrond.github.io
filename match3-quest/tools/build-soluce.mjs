@@ -998,88 +998,47 @@ ${body}
 
 function buildChange() {
     const sunName = id => (Object.values(SCREENS).flatMap(sc => sc.enemies || []).find(e => e.id === id)?.name) || id;
-    const phone = (file, cap) => `<figure><img src="img/${file}.jpg" loading="lazy" alt="${esc(cap)}"><figcaption>${esc(cap)}</figcaption></figure>`;
-    const dlg = lines => `<ul class="enemy">${lines.map(l => `<li><b>${l.who === 'hou' ? 'Hou Yi' : 'Chang’e'}</b> : « ${esc(l.text)} »</li>`).join('')}</ul>`;
     const total = CHANGE_EPISODES.reduce((n, e) => n + e.injured.length, 0);
     const episodes = CHANGE_EPISODES.map(ep => {
         const session = createSession(null);
         startChangeMode(session, ep.id);
-        const placed = visibleNpcs(session).filter(n => n.injured);   // places réelles des blessés dans le village
-        const pts = placed.map(n => ({ x: n.x, y: n.y, name: n.name, role: 'injured' }));
-        const map = shotFigure(ep.screen, pts);
-        const rows = ep.injured.map((n, i) => `<tr><td><b>${i + 1}. ${esc(n.name)}</b><br><small>${esc(n.state)}</small></td><td><span class="tile-ico">${tileSvg(n.color)}</span>${esc(CHANGE_ENERGY[n.color])}</td><td>${n.need} points en ${n.moves} coups</td><td>${esc(n.cake[0])}, ${esc(n.cake[1])}</td></tr>`).join('');
-        const ambient = (ep.ambient || []).map(a => esc(a.name)).join(', ');
+        const pts = visibleNpcs(session).filter(n => n.injured).map(n => ({ x: n.x, y: n.y, name: n.name, role: 'injured' }));   // places réelles des blessés
+        const rows = ep.injured.map((n, i) => `<tr><td><b>${i + 1}. ${esc(n.name)}</b><br><small>${esc(n.state)}</small></td><td><span class="tile-ico">${tileSvg(n.color)}</span>${esc(CHANGE_ENERGY[n.color])}</td><td>${n.need} points en ${n.moves} coups</td></tr>`).join('');
         return `<section id="episode-${ep.id}">
 <h3>Épisode ${ep.id} : ${esc(ep.village)}</h3>
-<dl>
-<dt>Déclencheur</dt><dd>Vous venez d’abattre <b>${esc(sunName(ep.sun))}</b>. Hou Yi parle à Chang’e à travers le miroir, puis la transition s’enclenche.</dd>
-<dt>Où</dt><dd>${esc(ep.village)} (région ${esc(regionName(ep.region))}), deux régions derrière Hou Yi.</dd>
-</dl>
-<p class="lead">La conversation d’entrée :</p>
-${dlg(ep.intro)}
-${ep.arrival ? `<p>En arrivant au village, Chang’e se confie (c’est ici que vous apprenez d’où vient son don) :</p>${dlg(ep.arrival)}` : ''}
-<h4>Où sont les blessés</h4>
-<p>Les ${ep.injured.length} blessés sont étalés sur tout le village et se touchent à pied. Les cercles ci-dessous indiquent leur place de départ ; de simples habitants se baladent entre eux (${ambient}) et vous répondent d’un mot, sans rien demander.</p>
-${map}
-<div class="wide"><img src="img/change_village_${ep.id}.jpg" loading="lazy" alt="Le village vu en jeu"><figcaption>Le village en jeu : un liseré rouge entoure chaque blessé ; il tire vers le vert à mesure des soins.</figcaption></div>
-<h4>Les ${ep.injured.length} patients</h4>
+<p>Après avoir abattu <b>${esc(sunName(ep.sun))}</b>. Allez voir les ${ep.injured.length} blessés, marqués d’un liseré rouge (les cercles de la carte indiquent où ils se trouvent).</p>
+${shotFigure(ep.screen, pts)}
 <div class="tablewrap"><table>
-<tr><th>Blessé</th><th>Énergie demandée</th><th>Objectif</th><th>Gâteau offert</th></tr>
+<tr><th>Blessé</th><th>Énergie demandée</th><th>Objectif</th></tr>
 ${rows}
 </table></div>
-<h4>La conversation de sortie</h4>
-<p>Quand les ${ep.injured.length} sont soignés, Chang’e reparle à Hou Yi :</p>
-${dlg(ep.outro)}
-${ep.finale ? `<div class="box warn"><b class="t">L’adieu</b>${esc(ep.finale)} C’est la dernière fois que vous leur parlez par le miroir : le lièvre de jade vient ensuite l’expliquer à Hou Yi, sur la carte du Fusang.</div>` : ''}
-<div class="phones">${phone(`change_entree_${ep.id}`, 'La conversation d’entrée')}${ep.arrival ? phone('change_arrivee_1', 'L’arrivée au village') : ''}${phone(`change_sortie_${ep.id}`, 'La conversation de sortie')}${ep.finale ? phone('change_adieu', 'Le miroir s’éteint') : ''}</div>
 </section>`;
     }).join('\n');
     write('change.html', page({
-        file: 'change.html', title: 'Chang’e : les trois épisodes', active: 'change.html',
-        desc: 'Soluce du mode Chang’e : trois épisodes de soin dans les villages, puzzle, patients, gâteaux et conseils.',
+        file: 'change.html', title: 'Chang’e : soigner les villageois', active: 'change.html',
+        desc: 'Soluce du mode Chang’e : aller voir les villageois blessés et les soigner.',
         crumbs: [['soluce.html', 'Accueil'], [null, 'Chang’e']],
-        body: `<h2>Chang’e : les trois épisodes</h2>
-<p class="lead">À trois moments de l’histoire, vous quittez Hou Yi pour <b>incarner Chang’e</b>. Elle explore un village comme lui, mais sans aucun ennemi : elle soigne ${total} habitants (cinq par village) en leur rendant des points de soin avec un puzzle. Rien ne peut mal tourner : aucun chronomètre, aucune attaque, personne ne meurt, et vos soins sont conservés d’une tentative à l’autre.</p>
-<div class="box info"><b class="t">Ni crâne ni flèche</b>Le plateau de soin ne contient que cinq énergies (jade, lotus, perles de nacre, eau claire, énergie argentée) et la goutte d’élixir (joker). Il n’y a jamais de tuile de dégâts.</div>
-<div class="box tip"><b class="t">Aucune récompense à rater</b>Les épisodes ne donnent ni or ni expérience : le seul « butin » est le <b>Livre des noms</b> (chaque habitant soigné y entre avec le gâteau qu’on lui a offert). Vous pouvez quitter un épisode à tout moment et le reprendre plus tard.</div>
+        body: `<h2>Chang’e : soigner les villageois</h2>
+<p class="lead">À trois moments de l’histoire, vous jouez Chang’e. Il n’y a rien à combattre : il suffit d’<b>aller voir les villageois blessés et de les soigner</b> (${total} au total, cinq par village). Rien ne peut être raté : on peut recommencer autant qu’on veut et les soins déjà faits sont conservés.</p>
 
-<h3>Quand ça se déclenche</h3>
+<h3>Quand</h3>
 <div class="tablewrap"><table>
-<tr><th>Épisode</th><th>Quand</th><th>Où joue Chang’e</th></tr>
-${CHANGE_EPISODES.map(e => `<tr><td><a href="#episode-${e.id}">Épisode ${e.id}</a></td><td>Dès que vous abattez ${esc(sunName(e.sun))}</td><td>${esc(e.village)}</td></tr>`).join('\n')}
+<tr><th>Épisode</th><th>Dès que vous abattez</th><th>Village de Chang’e</th></tr>
+${CHANGE_EPISODES.map(e => `<tr><td><a href="#episode-${e.id}">Épisode ${e.id}</a></td><td>${esc(sunName(e.sun))}</td><td>${esc(e.village)}</td></tr>`).join('\n')}
 </table></div>
-<p>Hou Yi vient d’abattre le soleil et parle un moment avec Chang’e ; quand la conversation se termine, la transition par le miroir se lance.</p>
-<div class="phones">${phone('change_entree_1', 'Hou Yi parle à Chang’e par le miroir')}<figure><img src="img/change_miroir_debut.jpg" loading="lazy" alt="Le miroir"><figcaption>Le reflet du miroir s’ouvre…</figcaption></figure><figure><img src="img/change_miroir.jpg" loading="lazy" alt="Le reflet révèle Chang’e"><figcaption>…et révèle Chang’e (touchez l’écran pour passer l’animation).</figcaption></figure></div>
 
-<h3>Comment jouer</h3>
+<h3>Quoi faire</h3>
 <ol class="steps">
-<li><b>Explorez le village.</b> Chang’e se déplace comme Hou Yi (toucher la carte ou les flèches). Il n’y a ni ennemi, ni coffre, ni hautes herbes à rencontres. Les habitants qui se baladent n’ont rien à vous demander ; seuls les <b>blessés</b> portent un <b>liseré rouge</b>.</li>
-<li><b>Allez toucher un blessé.</b> Marchez vers lui : le puzzle de soin s’ouvre. Le liseré tire vers le vert quand vous le soignez, et il devient vert plein, avec une coche, une fois guéri.</li>
-<li><b>Faites des alignements.</b> Échangez deux tuiles voisines pour aligner trois tuiles ou plus. Chaque blessé réclame <b>une énergie</b> (indiquée en haut à droite) : les tuiles de cette couleur qui disparaissent vous rendent des points de soin.</li>
-<li><b>Soignez-le avant la fin des coups.</b> Chaque tentative a un nombre de coups ; s’il tombe à zéro, rien n’est perdu : les soins obtenus sont conservés et vous réessayez avec un plateau neuf.</li>
-<li><b>Recevez son gâteau.</b> Un patient guéri vous remercie et reçoit un gâteau de lune préparé pour lui (son goût entre dans le Livre des noms).</li>
-<li><b>Quand tous sont soignés</b>, Chang’e reparle à Hou Yi, le miroir s’éclaire de nouveau et vous revenez à l’aventure principale.</li>
+<li><b>Marchez vers un blessé</b> (liseré rouge) pour ouvrir son puzzle de soin. Les autres habitants se baladent et n’ont rien à vous demander.</li>
+<li><b>Récoltez l’énergie qu’il demande</b> (indiquée en haut à droite) en alignant trois tuiles ou plus, avant la fin des coups. Un alignement de quatre ou cinq rend plus de points.</li>
+<li>Son liseré tire vers le vert à mesure des soins. Une fois guéri, passez au suivant : quand les cinq sont soignés, l’épisode se termine.</li>
 </ol>
-<div class="phones">${phone('change_puzzle', 'Le puzzle de soin')}${phone('change_victoire', 'Un patient est soigné')}${phone('change_echec', 'Plus de coups : rien n’est perdu')}</div>
+<div class="phones">
+<figure><img src="img/change_puzzle.jpg" loading="lazy" alt="Le puzzle de soin"><figcaption>Le puzzle de soin : l’énergie demandée est en haut à droite.</figcaption></figure>
+</div>
+<div class="box tip"><b class="t">Bon à savoir</b>Plus de coups ? Rien n’est perdu : réessayez, les points déjà obtenus restent. Les autres couleurs chargent une jauge : pleine, le bouton « Souffle de l’élixir » change cinq tuiles en l’énergie demandée sans dépenser de coup. Chang’e ne quitte pas le village ; le bouton miroir en haut de l’écran permet de revenir auprès de Hou Yi et de reprendre plus tard.</div>
 
-<h3>Le puzzle de soin</h3>
-<ul>
-<li><b>Points de soin</b> : chaque tuile de la couleur demandée qui disparaît rend 1 point ; un alignement de quatre en rend 1 de plus, un alignement de cinq en rend 2 de plus (et laisse une goutte d’élixir).</li>
-<li><b>Goutte d’élixir</b> : joker. Elle compte pour n’importe quelle couleur dans un alignement.</li>
-<li><b>Autres couleurs</b> : elles ne soignent pas ce patient, mais chargent la jauge du <b>souffle de l’élixir</b> (10 tuiles). Quand elle est pleine, le bouton « Souffle de l’élixir » change cinq tuiles en la couleur demandée, <b>sans dépenser de coup</b>.</li>
-<li><b>Aucun coup possible ?</b> Le plateau se mélange tout seul.</li>
-<li><b>Recommencer</b> : le bouton « Recommencer » donne un plateau neuf sans perdre les soins obtenus.</li>
-</ul>
-<div class="box tip"><b class="t">Conseils</b>Cherchez d’abord les alignements de quatre et de cinq : ce sont eux qui font la différence. Quand un patient est presque guéri, gardez le souffle de l’élixir pour la fin. Les patients de l’épisode 3 demandent beaucoup de points : ne vous découragez pas, chaque tentative avance la guérison.</div>
-
-${episodes}
-
-<h3>Quitter et reprendre</h3>
-<p>Pendant un épisode, le bouton <b>miroir</b> (la seule icône du haut de l’écran) ramène auprès de Hou Yi après confirmation : « Revenir auprès de Hou Yi ? Les soins déjà faits sont conservés ». L’épisode reste ouvert : un miroir apparaît de nouveau dans la barre du haut de l’aventure principale, et le toucher permet de reprendre où vous en étiez.</p>
-<div class="box info"><b class="t">Chang’e ne quitte pas le village</b>Si vous marchez vers une sortie ou le bord de la carte, le narrateur vous rappelle qu’il reste du monde à soigner. Cela ne bloque rien : soignez les cinq habitants, ou touchez le miroir.</div>
-
-<h3>Le Livre des noms</h3>
-<p>Le bouton « Livre des noms » (dans la fenêtre de l’épisode) liste les ${total} habitants que vous pouvez soigner avec le gâteau offert à chacun. Rien n’oblige à tous les soigner, mais c’est le cœur de ce mode : <i>Hou Yi sauve des milliers de vies. Chang’e, elle, connaît leurs noms.</i></p>`
+${episodes}`
     }));
 }
 
@@ -1095,7 +1054,7 @@ function buildHub() {
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
         ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
-        { t: 'Chang’e : les trois épisodes', k: 'chang e change soin soigner blessés village miroir puzzle gâteau livre des noms épisode', h: 'soluce/change.html', c: 'Mode Chang’e' },
+        { t: 'Chang’e : soigner les villageois', k: 'chang e change soin soigner blessés villageois village miroir puzzle épisode', h: 'soluce/change.html', c: 'Mode Chang’e' },
         ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
