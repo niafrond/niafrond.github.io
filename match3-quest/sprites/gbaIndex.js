@@ -283,6 +283,7 @@ export const GBA_FILES = {
     merchant_volcan: 'merchant_volcan.ec8df5fd.js',
     mermaid_jiaoren: 'mermaid_jiaoren.cb506a58.js',
     miller_gao: 'miller_gao.4676d4d8.js',
+    mimique: 'mimique.fd09dda5.js',
     miner_shan: 'miner_shan.afcf4c4a.js',
     ming_niao: 'ming_niao.cb5b4a13.js',
     mirage_djinn: 'mirage_djinn.dfc2fdcb.js',

@@ -742,6 +742,7 @@ function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.dat
 export const AURA_LEVEL = 8;
 export const AURA_RANGE = 9;
 export const MIMIC_NAME = 'Mimique';
+export const MIMIC_SPRITE = 'mimique';   // dessin dédié : un coffre vivant (tools/sprite-overrides.mjs)
 export const hasAura = playerLevel => Math.floor(playerLevel || 0) >= AURA_LEVEL;
 
 // La perception ne reste pas allumée : on touche le héros pour la lancer, PERCEPTION_MS durant (`rt.perceptionUntil`, jamais sauvegardé).
@@ -1192,7 +1193,7 @@ function wildEncounter(session, { def, screenId }) {
         prep: buildPrep(),
         biome: screen?.biome || null,
         enemyId: def.id,
-        spriteKey: def.templateId,
+        spriteKey: def.spriteKey || def.templateId,
         templateId: def.templateId,
         name: def.name,
         level,
@@ -1543,7 +1544,7 @@ function unmask(session, chest) {
     const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
     rt.wildDefs[id] = {
         screenId: screen.id, bonusGold: chest.mimicGold || Math.max(5, Math.round((chest.gold || 0) * 0.15)), bonusLabel: chest.label,
-        def: { id, templateId: entry.templateId, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
+        def: { id, templateId: entry.templateId, spriteKey: MIMIC_SPRITE, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
     };
     return { type: 'mimic', chest, enemyId: id, events: [] };
 }

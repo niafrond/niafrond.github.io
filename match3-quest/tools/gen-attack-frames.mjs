@@ -7,7 +7,7 @@
  * (préparation), fente vers l'avant avec étirement (frappe), maintien, retour. Pixels nets (plus proche voisin), pivot au bas du sprite.
  * Écrit les images dans sprites/generated.js (même format que gen-sprites.mjs) — les fichiers ne sont réécrits qu'une fois pour toutes.
  *
- * Usage (WSL, Node 22) : node tools/gen-attack-frames.mjs [--only=a,b] [--force]
+ * Usage (WSL, Node 22) : node tools/gen-attack-frames.mjs [--only=a,b] [--force] [--jump]
  * Par défaut : les ennemis nommés (sprite-prompts-named.js), l'Assassin Masqué, et les ennemis des Hautes-Eaux, sans animation d'attaque.
  */
 import { readFileSync, writeFileSync, renameSync } from 'fs';
@@ -33,6 +33,19 @@ const FRAMES = [
     { dx: 0, sy: 1, sx: 1 }
 ];
 
+// --jump : attaque par un saut (accroupi, bond, apex, retombée écrasante vers l'avant, relevé). `lift` = hauteur en px du sprite de 64 ;
+// la mimique, sans cornes (tools/mimique-detent.py), laisse ~13 px de marge en haut de sa case.
+const JUMP_FRAMES = [
+    { dx: 0, sy: 1, sx: 1 },
+    { dx: 0, sy: 0.9, sx: 1.05 },
+    { dx: 0, sy: 0.8, sx: 1.1 },
+    { dx: -2, sy: 1, sx: 0.96, lift: 7 },
+    { dx: -4, sy: 1, sx: 0.94, lift: 13 },
+    { dx: -6, sy: 1, sx: 0.98, lift: 7 },
+    { dx: -7, sy: 0.82, sx: 1.1 },
+    { dx: -3, sy: 0.94, sx: 1.03 }
+];
+
 function loadGenerated() {
     const m = readFileSync(GENERATED, 'utf8').match(/export const GBA_SPRITES\s*=\s*(\{[\s\S]*\});\s*$/);
     return Function(`return ${m[1]}`)();
@@ -53,12 +66,13 @@ const decode = uri => PNG.sync.read(Buffer.from(uri.slice('data:image/png;base64
 const encode = png => 'data:image/png;base64,' + PNG.sync.write(png).toString('base64');
 
 // Transforme le sprite autour de son pivot (centre bas), au plus proche voisin
-function transform(src, { dx, sy, sx }) {
+function transform(src, { dx, sy, sx, lift = 0, s = 1 }) {
+    sy *= s; sx *= s;
     const { width: w, height: h } = src;
     const out = new PNG({ width: w, height: h });
     const shift = Math.round(dx * w / 32), cx = w / 2, bottom = h - 1;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const srcX = Math.floor((x - shift - cx) / sx + cx), srcY = Math.floor(bottom - (bottom - y) / sy);
+        const srcX = Math.floor((x - shift - cx) / sx + cx), srcY = Math.floor(bottom - (bottom - lift - y) / sy);
         if (srcX < 0 || srcX >= w || srcY < 0 || srcY >= h) continue;
         const s = (srcY * w + srcX) * 4, d = (y * w + x) * 4;
         for (let k = 0; k < 4; k++) out.data[d + k] = src.data[s + k];
@@ -71,13 +85,13 @@ const ids = args.only ? String(args.only).split(',') : [...Object.keys(NAMED_ENE
 let done = 0;
 for (const id of ids) {
     const s = sprites[id];
-    const base = s?.left || s?.front;
+    const base = args.jump ? s?.front : (s?.left || s?.front);   // saut : de face (la mimique n'a que sa face)
     if (!base) { console.log(`ABSENT ${id} (pas de sprite)`); continue; }
     if (s.attack_0 && !args.force) continue;
     const src = decode(base);
-    FRAMES.forEach((f, i) => { s[`attack_${i}`] = encode(transform(src, f)); });
+    (args.jump ? JUMP_FRAMES : FRAMES).forEach((f, i) => { s[`attack_${i}`] = encode(transform(src, f)); });
     done++;
-    console.log(`OK ${id} (${src.width}×${src.height}, ${FRAMES.length} images)`);
+    console.log(`OK ${id} (${src.width}×${src.height}, ${(args.jump ? JUMP_FRAMES : FRAMES).length} images)`);
 }
 saveGenerated(sprites);
 console.log(`${done} animation(s) écrite(s)`);
