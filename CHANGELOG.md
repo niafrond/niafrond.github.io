@@ -1,3 +1,10 @@
+## [2.181.0](https://github.com/niafrond/niafrond.github.io/compare/v2.180.0...v2.181.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** adapter le manifeste PWA et l'icône à Hou Yi ([#627](https://github.com/niafrond/niafrond.github.io/issues/627)) ([0650bcd](https://github.com/niafrond/niafrond.github.io/commit/0650bcdccfb8c5cba4d475a2986456f1745eb99e))
+* **match3-quest:** mode Chang'e en trois épisodes, puzzle de soin sans crâne ni flèche ([#626](https://github.com/niafrond/niafrond.github.io/issues/626)) ([64fcd34](https://github.com/niafrond/niafrond.github.io/commit/64fcd3419cfc901a3a210570698d24fd25bf9cd0))
+
 ## [2.180.0](https://github.com/niafrond/niafrond.github.io/compare/v2.179.0...v2.180.0) (2026-11-03)
 
 ### Features
