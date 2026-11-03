@@ -352,11 +352,19 @@ export const BANTER = [
         say(GUI, "J'ai changé de bande. La dame renarde du village disait qu'on gagne ses queues en rendant service. Je me suis rendu service : je t'ai suivi.")
     ] },
 
-    // ── Région 10 : Pic de la Lune (après la victoire sur Fengmeng, avant l'autel) ───────────────
+    // ── Région 10 : Pic de la Lune (avant le duel, puis après la victoire sur Fengmeng, avant l'autel) ──
+    // Avant le duel : Xiao Gui reconnaît son ancien reflet, mais ne l'excuse pas (la blessure n'est pas une excuse).
+    { id: 'gui_lune_avant', companion: 'xiao_gui', screen: 'lune', unless: 'fengmeng_3a', scenes: [
+        say(GUI,
+            "Il arrive. Je reconnais sa démarche : c'est la mienne, avant les rizières.",
+            "Je lui dirai ce qu'on m'a dit à moi. Être blessé ne te donne pas le droit de blesser les autres."),
+        say(HERO, "Il ne t'écoutera pas."),
+        say(GUI, "Moi non plus, au début. Mais ça reste dans l'oreille, une phrase comme ça.")
+    ] },
     { id: 'gui_lune_fin', companion: 'xiao_gui', screen: 'lune', whenDone: 'fengmeng_3b', scenes: [
         say(GUI,
-            "Ton disciple redescend à pied. Je lui laisserai un gâteau sur le sentier, un vrai, que je n'aurai pas volé.",
-            "Il a manqué d'un renard pour lui dire qu'on peut changer de bande.")
+            "Ton disciple redescend à pied, sans arc. Il devra répondre de ce qu'il a fait. Moi aussi, j'ai dû, pour les rizières.",
+            "Je lui laisserai un gâteau sur le sentier, un vrai, que je n'aurai pas volé. Ce n'est pas un pardon : c'est une porte entrouverte.")
     ] },
     { id: 'zhi_lune_fin', companion: 'zhi', screen: 'lune', whenDone: 'fengmeng_3b', scenes: [
         say(ZHI, "Je sonnerai la cloche cette nuit, seigneur, à l'heure qui n'existe pas encore. Elle montera jusqu'ici, je crois.")

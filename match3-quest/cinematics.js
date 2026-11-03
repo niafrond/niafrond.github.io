@@ -371,7 +371,7 @@ const ENDING_BEAT_SECONDS = 6.5;
 // Une légende par tableau : elle explique ce qu'il advient du monde, de Fengmeng, de Chang'e et des hommes.
 export const ENDING_CAPTIONS = [
     "Le dernier soleil décline : pour la première fois depuis des lunes, la nuit tombe sur la Terre. Les fleuves regonflent, les rizières reverdissent, et l'empereur Yao fait graver le nom de Hou Yi dans le jade.",
-    "Hou Yi dépose les gâteaux de lune sur l'autel blanc, un à un, comme Chang'e le faisait. Fengmeng, lui, est redescendu à pied, son carquois laissé au pied de l'autel : il n'a plus jamais visé personne.",
+    "Hou Yi dépose les gâteaux de lune sur l'autel blanc, un à un, comme Chang'e le faisait. Fengmeng, lui, est redescendu à pied, sans arme, son carquois laissé au pied de l'autel : en bas, il devra répondre de ses actes.",
     "Là-haut, Chang'e veille. L'élixir lui a donné le ciel, mais n'a pas pris son cœur : dans le bronze, les deux moitiés du miroir ne forment plus qu'un seul cercle, et une main se lève dans la lune.",
     "Chaque automne, à la pleine lune, les hommes posent des gâteaux sur leurs toits et allument des lanternes. Et là-haut, quelqu'un leur sourit. Ainsi s'achève la légende de Hou Yi."
 ];
@@ -1633,8 +1633,8 @@ export function playPrologueAnimation() {
 // Quatre tableaux Pixel Lab (tools/gen-prologue.mjs --set=fengmeng) légendés, joués avant le combat contre
 // fengmeng_2. Même habillage que le prologue ; sans planches, rien n'est affiché (le combat enchaîne directement).
 export const FENGMENG_DUEL_CAPTIONS = [
-    "Fengmeng est parti deux jours avant vous. Il a gravi les marches du Kunlun pour demander un élixir, un seul, à la Reine Mère de l'Occident. Elle a ri, avec douceur.",
-    "« Ce n'est pas à toi. » Depuis ce jour, une flèche de braise brûle dans son carquois, et elle n'a plus rien d'un jeu.",
+    "Fengmeng est parti deux jours avant vous. Il a gravi les marches du Kunlun pour demander l'élixir à la Reine Mère de l'Occident. Elle n'en a qu'un seul véritable, et il est déjà donné.",
+    "Elle a refusé avec douceur. Il a compris en un instant qui le détenait. Depuis ce jour, une flèche de braise brûle dans son carquois, et elle n'a plus rien d'un jeu.",
     "Aux gorges du Volcan, il a trouvé le défilé : un corridor de basalte entre deux fleuves de lave, le seul chemin vers l'est. Il s'y est posté, et il attend son Maître.",
     "Deux archers, une seule corde brisée entre eux. Cette fois, Fengmeng ne retiendra plus ses coups."
 ];

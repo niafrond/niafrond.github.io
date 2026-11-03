@@ -55,7 +55,7 @@ export default {
     kids_leimei: { name: 'Leimei', title: 'Petite chasseuse d\'étincelles', 
       idle: ['Je chasse les étincelles ! Je les mets dans des pots, mais elles s\'échappent. Elles ont des jambes, c\'est sûr.', 'Papa dit qu\'il faut avoir peur du tonnerre. Moi je lui dis bonjour tous les matins. Il ne répond pas, mais il tonne poliment.'],
       talk: [{ whenDone: 'sun_5', lines: ['Le ciel est plus doux ! Les étincelles dansent au lieu de mordre. Je crois que le tonnerre rit un peu.'] }] },
-    hua_tonnerre: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_tonnerre: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Les monts, c\'est dur pour les mollets mais bon pour les affaires : on achète tout, ici, pourvu que ça ne brûle pas.', 'J\'ai croisé votre disciple, à un col. Il m\'a acheté une corde, et un miroir. Un miroir ! Un archer qui s\'interroge sur son reflet, c\'est inquiétant.'],
       talk: [{ whenDone: 'sun_5', lines: ['Je repars pour la plaine des Fauves. Les gants ignifugés des gorges du Volcan, c\'est mon cousin qui les vend. Il est très prudent.'] }] },
     cairn_spirit: { name: 'Vieux Shidui', title: 'Esprit des pierres empilées', 

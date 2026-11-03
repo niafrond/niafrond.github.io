@@ -171,7 +171,7 @@ export default {
       title: "Voyageur marchand d'épices",
       idle: [
         "Poivre, cannelle, safran ! Tout ce qui fait pleurer de joie les marmites.",
-        "J'ai croisé Hua sur la route. Elle m'a vendu mes propres épices. Je n'ai rien compris."
+        "J'ai croisé Xihe sur la route. Elle m'a vendu mes propres épices. Je n'ai rien compris."
       ],
       talk: [
         {

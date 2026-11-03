@@ -558,19 +558,19 @@ export default {
                 {
                       "type": "talk",
                       "target": "hua_fusang",
-                      "text": "Dire son vrai nom à Hua (village du Fusang)",
+                      "text": "Dire à Xihe que vous savez qui elle est (village du Fusang)",
                       "lines": [
-                            "Vous avez fini par le trouver. Oui : Xihe, mère des dix soleils. Hua est un nom qui ne fait peur à personne.",
+                            "Vous avez fini par comprendre. Oui : la Xihe des légendes, mère des dix soleils. Colporteuse est un métier qui ne fait peur à personne.",
                             "Je ne vous demande pas pardon, ni de me rendre quoi que ce soit. Seulement de me laisser aller là-haut, au pic de la Lune, quand ce sera fini. Je voudrais être là quand elle se lèvera."
                       ]
                 }
           ],
           "offer": [
                 "J'ai observé les étoiles toute ma vie, et rien ne m'a troublée comme cette colporteuse. Ses pas suivent les chutes des soleils comme l'ombre suit l'ombre.",
-                "La Racine-Ancienne a tout vu naître : demandez-lui qui est Hua. Puis dites son vrai nom, à Hua elle-même, et regardez-la."
+                "La Racine-Ancienne a tout vu naître : demandez-lui qui est vraiment cette Xihe. Puis dites-le à Xihe elle-même, et regardez-la."
           ],
           "hint": [
-                "La Racine-Ancienne est dans les racines et branches dorées. Hua se trouve au village du Fusang."
+                "La Racine-Ancienne est dans les racines et branches dorées. Xihe se trouve au village du Fusang."
           ],
           "complete": [
                 "Xihe. Mère des dix soleils. Je n'ai pas le droit de la juger, ni vous. Prenez cette plume de phénix : elle n'a jamais brûlé, parce qu'elle vient d'une mère qui n'a jamais cessé de veiller."
