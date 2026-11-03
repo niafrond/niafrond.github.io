@@ -1,3 +1,9 @@
+## [2.178.0](https://github.com/niafrond/niafrond.github.io/compare/v2.177.0...v2.178.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** refondre le scénario (Xihe, miroir coupé, fin de Fengmeng) ([#623](https://github.com/niafrond/niafrond.github.io/issues/623)) ([04f349c](https://github.com/niafrond/niafrond.github.io/commit/04f349c9ab13d3fdd694667da4892bbb49566b55))
+
 ## [2.177.0](https://github.com/niafrond/niafrond.github.io/compare/v2.176.0...v2.177.0) (2026-11-03)
 
 ### Features
