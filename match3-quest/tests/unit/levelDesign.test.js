@@ -248,6 +248,11 @@ describe('caches invisibles, aura et coffres mimiques', () => {
         const enc = encounterFor(se, res.enemyId, 10);
         expect(enc.name).toBe(MIMIC_NAME);
         expect(enc.wild).toBe(true);
+        // attaque surprise : la mimique joue en premier avec des PA en plus (terrain.js)
+        expect(enc.prep.enemyFirst).toBe(true);
+        expect(enc.prep.enemyBonusPA).toBe(2);
+        expect(enc.prep.tags).toContain('mimic');
+        expect(enc.prep.playerFirst).toBe(false);
         expect(openChest(se, mimic.id)).toBeNull();   // déjà démasquée
         const events = markEnemyDefeated(se, res.enemyId);
         expect(events[0].type).toBe('chestOpened');
