@@ -1138,5 +1138,23 @@
     "seed": "670261227",
     "date": "2026-10-31T21:45:53.475Z",
     "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, rich layered arrangement, full ensemble, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, big cinematic orchestral power, no EDM, no trap, no sub-bass, ancient stone guardian of a sacred flame, balance of fire and ice, warm yet epic Chinese boss battle, taiko-like drums, agile plucked pipa ostinato (martial tension, arrows), expressive erhu lead (Hou Yi, courage and loneliness), low horns, crystalline bells, noble and determined, epic cinematic boss battle, menacing, ominous dread, dangerous, threatening, aggressive, dissonant, tense, heavy low pulse, huge taiko war drums, massive full ensemble, soaring heroic melody, thundering crescendos, readable melody"
+  },
+  "change-village": {
+    "version": "v001",
+    "seed": "2661989607",
+    "date": "2026-11-03T21:11:28.684Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Chang'e among the villagers she heals, tender warm moonlit village theme, flowing guzheng (rivers, passing time) gentle rolling arpeggios, soft agile breathy dizi (living world, wind, hope) singing a kind simple melody, small woodblock heartbeat, slow lilting feel, comforting and hopeful, a steaming pot of soup and moon cakes, no drums, no tension, no climax"
+  },
+  "change-puzzle": {
+    "version": "v002",
+    "seed": "2857885348",
+    "date": "2026-11-03T21:34:56.756Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, calm healing puzzle theme, soft marimba-like plucks and harp, small bells like drops of moonlight, flowing steady gentle pulse, flowing guzheng (rivers, passing time) pad, soothing and focused, gentle ascending phrases, no percussion, no tension, no climax"
+  },
+  "change-farewell": {
+    "version": "v001",
+    "seed": "3914949699",
+    "date": "2026-11-03T21:11:28.883Z",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Chang'e's last conversation through the bronze mirror, tender and sorrowful goodbye, solo expressive erhu lead (Hou Yi, courage and loneliness) with sparse sparse guqin (ancient wisdom, restraint), slow, long silences, quiet resignation and love, ends softly, no drums"
   }
 }

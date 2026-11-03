@@ -51,6 +51,8 @@ import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
 import { launchNotices } from './events/engine.js';
+import { SUN_EPISODE, episodeById } from './change/data.js';
+import { defaultChangeData, normalizeChangeData } from './change/state.js';
 import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
@@ -163,7 +165,7 @@ export const canWalkOnWater = session => session?.data?.quests?.[YUBU_QUEST] ===
 
 // Cheval : `owned` = le héros possède une monture. Il est en selle tant qu'il ne l'a pas quittée (`data.mounted === false`) ;
 // il descend tout seul sur l'eau (le cheval ne marche pas sur les eaux) et remonte à la demande, sur la terre ferme.
-export const isRiding = (session, owned) => Boolean(owned) && session.data.mounted !== false;
+export const isRiding = (session, owned) => Boolean(owned) && session.data.mounted !== false && !session.rt?.changeMode;   // Chang'e va à pied
 export function isOnLiquid(session) {
     const screen = session.screens[session.data.screenId];
     return Boolean(screen) && inRect(screen.liquids || [], session.data.x, session.data.y);
@@ -256,6 +258,7 @@ function defaultData() {
         tracked: null,
         questItems: [],
         bestiary: [],            // gabarits d'ennemis croisés en combat ou observés (onglet Bestiaire du carnet, conservé en NG+)
+        change: defaultChangeData(),   // mode Chang'e (change/) : épisodes terminés, épisode en cours, soins obtenus
         arena: normalizeArenaData(null)
     };
 }
@@ -270,6 +273,8 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.fog = data.fog && typeof data.fog === 'object' && !Array.isArray(data.fog) ? data.fog : {};
     data.mimicked = Array.isArray(data.mimicked) ? data.mimicked.filter(id => typeof id === 'string') : [];
     data.returns = data.returns && typeof data.returns === 'object' && !Array.isArray(data.returns) ? data.returns : {};
+    data.change = normalizeChangeData(data.change);
+    data.change.return = null;   // le mode n'est jamais restauré à mi-chemin : Hou Yi reprend sa place, l'épisode inachevé se rouvre par le miroir
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
@@ -545,10 +550,11 @@ export function isEntityVisible(session, def) {
 
 // PNJ en route vers le héros (`arrival`) : cachés tant que la vue n'a pas lancé leur arrivée (état volatil, jamais sauvegardé).
 export const beginNpcArrival = (session, npcId) => session.rt.pendingArrivals?.delete(npcId);
-export const visibleNpcs = session => currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
-export const visibleChests = session => currentScreen(session).chests.filter(c => isEntityVisible(session, c));
+export const visibleNpcs = session => session.rt.changeMode ? [...session.rt.changeMode.npcs, ...session.rt.changeMode.ambient] : currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
+export const visibleChests = session => session.rt.changeMode ? [] : currentScreen(session).chests.filter(c => isEntityVisible(session, c));
 
 export function aliveEnemies(session) {
+    if (session.rt.changeMode) return [];   // mode Chang'e : aucun ennemi
     const screen = currentScreen(session);
     return screen.enemies
         .filter(def => isEnemyAlive(session, def.id) && isEntityVisible(session, def))
@@ -602,7 +608,7 @@ export function entityAt(session, x, y) {
     if (npc) return { type: 'npc', npc };
     const chest = visibleChests(session).find(c => c.x === x && c.y === y);
     if (chest) return { type: 'chest', chest, opened: session.data.openedChests.includes(chest.id) };
-    const wp = currentScreen(session).waypoint;
+    const wp = session.rt.changeMode ? null : currentScreen(session).waypoint;
     if (wp && wp.x === x && wp.y === y) return { type: 'waypoint', screenId: session.data.screenId };
     const enemy = aliveEnemies(session).find(e => e.x === x && e.y === y);
     if (enemy) return { type: 'enemy', enemy };
@@ -898,7 +904,8 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.rt.facing = { dx, dy };
     let nx = session.data.x + dx;
     let ny = session.data.y + dy;
-    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return crossMapBorder(session, screen, dx, dy, playerLevel);
+    const cm = session.rt.changeMode;   // mode Chang'e : on ne quitte pas le village (la vue fait dire au narrateur qu'il reste du monde)
+    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return cm ? { type: 'changeStay' } : crossMapBorder(session, screen, dx, dy, playerLevel);
 
     // Corniche : franchissable d'un saut dans son seul sens, on atterrit sur la case d'après (libre) ; de tout autre côté, c'est un mur.
     let jumped = false;
@@ -922,6 +929,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (isTerrainBlocked(screen, nx, ny, canWalkOnWater(session))) return { type: 'blocked' };
 
     const exit = screen.exits.find(e => e.x === nx && e.y === ny);
+    if (exit && cm) return { type: 'changeStay' };
     if (exit?.leaveArena) {
         if (isExitLocked(session, exit)) return { type: 'exitBlocked', reason: 'quest', label: exit.label, message: exit.lockedMessage };
         const from = screen.id;
@@ -950,6 +958,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     // Dernière case d'un passage de bord : poser le pied dessus déclenche la transition (pas besoin de sortir de la carte).
     const dir = screen.connections && dirOfStep(dx, dy);
     if (dir && screen.connections[dir] && onSide(screen, dir, nx, ny)) {
+        if (cm) return { type: 'changeStay' };
         const res = crossMapBorder(session, screen, dx, dy, playerLevel, { x: nx, y: ny });
         if (res.type !== 'blocked') return res;   // sans case d'arrivée possible, la bordure reste une case ordinaire
     }
@@ -965,7 +974,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
     const onGrass = isEncounterCell(screen, nx, ny);
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
-    const out = checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
+    const out = cm ? { type: 'moved' } : checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
     if (markerReached) out.markerReached = true;
     return out;
 }
@@ -1363,6 +1372,8 @@ export function markEnemyDefeated(session, enemyId) {
     const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
     quests.splice(lastDone + 1 || quests.length, 0, ...after);
     events.push(...quests);
+    // Mode Chang'e : la mort du soleil des régions 3, 6 et 9 ouvre un épisode (conversation par le miroir, puis transition) avant l'arrivée éventuelle d'un PNJ.
+    if (!wasDefeated && SUN_EPISODE[enemyId]) events.push({ type: 'changeEpisode', episode: SUN_EPISODE[enemyId] });
     // PNJ qui rejoint le héros en sautillant (`arrival`) : arrive une fois toutes les scènes dites, juste avant sa conversation.
     if (!wasDefeated) currentScreen(session).npcs
         .filter(n => n.arrival && n.showWhen === enemyId)
@@ -1386,6 +1397,7 @@ export function startNewGamePlus(session) {
     data.fog = {};
     data.mimicked = [];
     data.returns = {};
+    data.change = defaultChangeData();   // les trois épisodes de Chang'e se rejouent avec l'histoire
     data.talked = [];
     data.banterSeen = [];
     data.waypoints = [];
@@ -1437,6 +1449,7 @@ export const companionsOf = session => COMPANIONS.filter(c => companionJoined(se
 
 // Un seul compagnon est actif à la fois (celui qui combat et suit le héros) : `data.activeCompanion`, ou le premier recruté par défaut.
 export function activeCompanionOf(session) {
+    if (session.rt.changeMode) return null;   // Chang'e explore seule
     const joined = companionsOf(session);
     const chosen = session.data.activeCompanion;
     if (chosen === 'none') return null;
@@ -1943,3 +1956,154 @@ export function markIntroSeen(session) {
 }
 
 export { questById };
+
+// Mode Chang'e : épisode commencé et inachevé (le bouton miroir de l'interface le rouvre), ou null.
+export const pendingChangeEpisode = session => session.data.change?.pending || null;
+
+// ── Mode Chang'e : Chang'e explore son village (écran de la région, deux régions derrière Hou Yi) et soigne cinq habitants ─────────────
+// L'état de Hou Yi (écran, case) est mis de côté dans `data.change.return` ; la fin du mode le replace. Dans le village : aucun ennemi, coffre ni
+// herbe de rencontre, pas de compagnon, sorties fermées (`changeStay`) ; les cinq blessés sont des PNJ virtuels (`rt.changeMode.npcs`).
+export const inChangeMode = session => Boolean(session.rt?.changeMode);
+export const changeEpisodeOf = session => (session.rt.changeMode ? episodeById(session.rt.changeMode.episode) : null);
+
+// ── Places des blessés et des habitants de passage ──────────────────────────────────────────────────────────────────────────────
+const CHANGE_RIM = 4;   // bande de bord où se trouvent les passages vers les cartes voisines (couloirs de 3 cases) : jamais de PNJ dedans
+const FOUR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+// Pas de (x, y) vers (x + dx, y + dy) possible pour Chang'e : mêmes règles que tryMove en mode Chang'e (terrain, obstacles, sorties, passages de bord).
+function stepOpen(screen, x, y, dx, dy) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return false;
+    if (isTerrainBlocked(screen, nx, ny)) return false;
+    if ((screen.structures || []).some(st => nx >= st.x && nx < st.x + st.w && ny >= st.y && ny < st.y + st.h)) return false;
+    if (screen.exits.some(e => e.x === nx && e.y === ny)) return false;
+    const dir = screen.connections && dirOfStep(dx, dy);
+    if (dir && screen.connections[dir] && onSide(screen, dir, nx, ny)) return false;
+    return true;
+}
+
+// Cases accessibles à pied depuis le départ : { dist: Map "x,y" → pas, cells: liste dans l'ordre du parcours }.
+function walkableFrom(screen, from) {
+    const dist = new Map([[`${from.x},${from.y}`, 0]]), cells = [[from.x, from.y]];
+    for (let i = 0; i < cells.length; i++) {
+        const [x, y] = cells[i];
+        for (const [dx, dy] of FOUR) {
+            const k = `${x + dx},${y + dy}`;
+            if (dist.has(k) || !stepOpen(screen, x, y, dx, dy)) continue;
+            dist.set(k, dist.get(`${x},${y}`) + 1);
+            cells.push([x + dx, y + dy]);
+        }
+    }
+    return { dist, cells };
+}
+
+// Une case où un PNJ peut se tenir : loin des bords, sur un sol dégagé (ni haute herbe ni obstacle bas, pas sur le point de passage), avec au moins deux voisines libres.
+function standable(screen, walk, x, y) {
+    if (x < CHANGE_RIM || y < CHANGE_RIM || x >= screen.w - CHANGE_RIM || y >= screen.h - CHANGE_RIM) return false;
+    if (isGrassCell(screen, x, y) || isLowObstacle(screen, x, y)) return false;
+    if (screen.waypoint && screen.waypoint.x === x && screen.waypoint.y === y) return false;
+    return FOUR.filter(([dx, dy]) => walk.dist.has(`${x + dx},${y + dy}`)).length >= 2;
+}
+
+// `count` cases étalées sur le village : chacune maximise sa distance aux ancres (départ, cases déjà prises) ; `minSpawn` : pas du départ, `minGap` : écart aux ancres.
+function spreadCells(screen, walk, count, anchors, { minSpawn = 4, minGap = 3 } = {}) {
+    const spawn = anchors[0];
+    const cands = walk.cells.filter(([x, y]) => walk.dist.get(`${x},${y}`) >= minSpawn && standable(screen, walk, x, y));
+    const taken = [], pool = [...anchors];
+    for (let n = 0; n < count; n++) {
+        let best = null, bd = -1;
+        for (const [x, y] of cands) {
+            const d = Math.min(...pool.map(([ax, ay]) => Math.hypot(ax - x, ay - y)));
+            if (d < minGap) continue;
+            if (d > bd + 1e-9 || (Math.abs(d - bd) <= 1e-9 && (y < best[1] || (y === best[1] && x < best[0])))) { bd = d; best = [x, y]; }
+        }
+        if (!best) break;
+        taken.push(best);
+        pool.push(best);
+    }
+    return taken;
+}
+
+/** Commence l'épisode : Chang'e arrive dans le village. Renvoie l'écran ou null (épisode ou écran inconnu). */
+export function startChangeMode(session, episodeId) {
+    const ep = episodeById(episodeId), screen = ep && session.screens[ep.screen];
+    if (!ep || !screen || session.rt.changeMode) return null;
+    const ch = session.data.change;
+    ch.pending = ep.id;
+    ch.return = { screenId: session.data.screenId, x: session.data.x, y: session.data.y };
+    const walk = walkableFrom(screen, screen.spawn);
+    const spawn = [screen.spawn.x, screen.spawn.y];
+    const cells = spreadCells(screen, walk, ep.injured.length, [spawn], { minSpawn: 4, minGap: 4 });
+    if (cells.length < ep.injured.length) throw new Error(`village ${screen.id} : pas assez de cases accessibles pour ${ep.injured.length} blessés`);
+    const npcs = ep.injured.map((n, i) => {
+        const real = screen.npcs.find(r => r.id === n.id);   // son dessin et son étiquette d'origine, mais pas sa place : les blessés sont étalés sur le village
+        return { ...(real || {}), id: n.id, x: cells[i][0], y: cells[i][1], name: n.name, title: n.state, injured: true, need: n.need };
+    });
+    // Habitants de passage : ils se baladent autour de leur case d'attache, à l'écart des blessés
+    const homes = spreadCells(screen, walk, (ep.ambient || []).length, [spawn, ...cells], { minSpawn: 2, minGap: 2.5 });
+    const ambient = (ep.ambient || []).slice(0, homes.length).map((a, i) => ({
+        id: a.id, name: a.name, title: 'Habitant du village', x: homes[i][0], y: homes[i][1], hx: homes[i][0], hy: homes[i][1], ambient: true, next: 700 + i * 650
+    }));
+    session.rt.changeMode = { episode: ep.id, npcs, ambient, clock: 0 };
+    session.data.screenId = screen.id;
+    session.data.x = screen.spawn.x;
+    session.data.y = screen.spawn.y;
+    initScreenRuntime(session);
+    session.rt.facing = { dx: 0, dy: 1 };
+    return screen;
+}
+
+/** Fin du mode (épisode terminé ou quitté par le miroir) : Hou Yi retrouve sa place. `done` : tous les blessés sont soignés. */
+export function endChangeMode(session, { done = false } = {}) {
+    const cm = session.rt.changeMode, ch = session.data.change;
+    if (!cm) return null;
+    session.rt.changeMode = null;
+    if (done && !ch.done.includes(cm.episode)) ch.done.push(cm.episode);
+    if (done) ch.pending = null;
+    const back = ch.return && session.screens[ch.return.screenId] ? ch.return : { screenId: START_SCREEN, ...session.screens[START_SCREEN].spawn };
+    ch.return = null;
+    session.data.screenId = back.screenId;
+    session.data.x = back.x;
+    session.data.y = back.y;
+    initScreenRuntime(session);
+    return back;
+}
+
+/** Les blessés de l'épisode en cours : [{ id, healed }]. */
+export const changeProgress = session => {
+    const cm = session.rt.changeMode;
+    return cm ? cm.npcs.map(n => ({ id: n.id, healed: session.data.change.healed.includes(n.id) })) : [];
+};
+
+/**
+ * Fait avancer les habitants de passage de `dtMs` ms : chacun, à intervalles irréguliers, fait un pas vers une case voisine libre sans s'éloigner de plus de
+ * 4,5 cases de son attache (jamais sur un blessé, sur Chang'e, sur un autre habitant, en haute herbe ou dans un obstacle bas). Renvoie vrai si l'un d'eux a bougé.
+ */
+export function stepChangeAmbient(session, dtMs, rng = Math.random) {
+    const cm = session.rt.changeMode;
+    if (!cm || !cm.ambient.length) return false;
+    const screen = currentScreen(session);
+    cm.clock += Math.max(0, dtMs);
+    let moved = false;
+    for (const a of cm.ambient) {
+        if (cm.clock < a.next) continue;
+        a.next = cm.clock + 1400 + rng() * 2600;
+        const dirs = [...FOUR].sort(() => rng() - 0.5);
+        for (const [dx, dy] of dirs) {
+            const nx = a.x + dx, ny = a.y + dy;
+            if (Math.hypot(nx - a.hx, ny - a.hy) > 4.5 || !stepOpen(screen, a.x, a.y, dx, dy)) continue;
+            if (isGrassCell(screen, nx, ny) || isLowObstacle(screen, nx, ny)) continue;
+            if ((nx === session.data.x && ny === session.data.y) || visibleNpcs(session).some(n => n !== a && n.x === nx && n.y === ny)) continue;
+            a.x = nx; a.y = ny; a.face = { dx, dy };
+            moved = true;
+            break;
+        }
+    }
+    return moved;
+}
+
+/** Répliques des habitants de passage : { id, name, line } ou null. */
+export const changeAmbientOf = (session, npcId) => {
+    const ep = changeEpisodeOf(session);
+    return ep?.ambient?.find(a => a.id === npcId) || null;
+};

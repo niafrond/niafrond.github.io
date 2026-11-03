@@ -252,7 +252,7 @@ describe('pistes pré-enregistrées : correspondance scène → fichier (musicTr
 describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
     const exists = (p) => existsSync(new URL(`../../${p}`, import.meta.url));
     const expectedTracks = () => {
-        const keys = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending', 'victory', 'defeat'];
+        const keys = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending', 'victory', 'defeat', 'change-village', 'change-puzzle', 'change-farewell'];
         BIOMES.forEach((b) => keys.push(`village-${b}`, `wild-${b}`));
         for (let i = 0; i < COMBAT_STYLE_COUNT; i++) keys.push(`combat-${i}`);
         keys.push('combat-tides');   // « Tourbillon des Eaux » : combats des Hautes-Eaux

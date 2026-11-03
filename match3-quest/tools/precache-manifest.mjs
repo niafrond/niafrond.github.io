@@ -21,7 +21,7 @@ export const GAME_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const MANIFEST_FILE = 'precache-manifest.json';
 
 // Dossiers de dessins chargés à la demande par le jeu (cinématiques, sorts, ultimes).
-export const MEDIA_SPRITE_DIRS = ['ultimates', 'spellfx', 'prologue', 'sunfall', 'ending', 'fengmeng', 'launcher'];
+export const MEDIA_SPRITE_DIRS = ['ultimates', 'spellfx', 'prologue', 'sunfall', 'ending', 'fengmeng', 'launcher', 'change'];
 // Sprites GBA découpés par sprites/build-gba.mjs (un module par clé, chargé avec sa région) ; leur source sprites/generated.js n'est jamais
 // demandée par le jeu.
 export const GBA_SPRITE_DIR = 'sprites/gba';
@@ -52,6 +52,7 @@ export function buildManifest(root = GAME_DIR) {
         'index.html',
         ...list(root, '', name => ext('.js', '.css', '.json', '.svg')(name) && name !== MANIFEST_FILE && name !== 'sw.js' && !name.startsWith('test-')),
         ...list(root, 'puzzle', ext('.js')),
+        ...list(root, 'change', ext('.js')),
         ...listDeep(root, 'world', ext('.js')),
         ...listDeep(root, 'events', ext('.js')),
         ...list(root, 'sprites', ext('.js')).filter(p => p !== GBA_SOURCE),
@@ -64,7 +65,7 @@ export function buildManifest(root = GAME_DIR) {
     // Les variantes `-b` (musiques traditionnelles alternées avec la piste de base, musicTracks.js `withVariants`) ne sont PAS préchargées : le service
     // worker les range à leur première lecture (mediaResponse) ; hors ligne et jamais écoutée, la variante manque et music.js la saute.
     const music = list(root, 'audio/music', ext('.mp3')).filter(p => !/-b\.mp3$/.test(p));
-    const art = [...list(root, GBA_SPRITE_DIR, ext('.js')), ...MEDIA_SPRITE_DIRS.flatMap(dir => list(root, `sprites/${dir}`, ext('.png', '.json')))];
+    const art = [...list(root, GBA_SPRITE_DIR, ext('.js')), ...MEDIA_SPRITE_DIRS.flatMap(dir => list(root, `sprites/${dir}`, ext('.png', '.json', '.gif')))];
     // Ordre de téléchargement : petits fichiers de décor d'abord, musiques ensuite (la majorité des octets)
     return { version: 1, core, media: [...art, ...music].map(path => media(root, path)) };
 }

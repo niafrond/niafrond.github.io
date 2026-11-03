@@ -759,6 +759,18 @@
   "boss-gardien-de-la-flamme-hivernale": {
    "seconds": 149.2,
    "sections": 1
+  },
+  "change-village": {
+   "seconds": 172.7,
+   "sections": 1
+  },
+  "change-puzzle": {
+   "seconds": 168.6,
+   "sections": 1
+  },
+  "change-farewell": {
+   "seconds": 171.4,
+   "sections": 1
   }
  },
  "sfx": {
@@ -1514,6 +1526,27 @@
   },
   "spell-throneWrath": {
    "seconds": 0.75
+  },
+  "change-swap": {
+   "seconds": 1.04
+  },
+  "change-match": {
+   "seconds": 1.26
+  },
+  "change-heal": {
+   "seconds": 1.84
+  },
+  "change-cake": {
+   "seconds": 1.44
+  },
+  "change-breath": {
+   "seconds": 1.66
+  },
+  "change-mirror": {
+   "seconds": 6.66
+  },
+  "change-cut": {
+   "seconds": 3.06
   }
  }
 }

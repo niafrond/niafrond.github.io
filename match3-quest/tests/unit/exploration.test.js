@@ -1156,8 +1156,9 @@ describe('histoire complète', () => {
             expect(events[0].quest.id).toBe(`q_${SUN_ID[n - 1]}`);
             golds.push(events[0].gold);
             const started = events.find(e => e.type === 'questStarted');
-            // après l'interlude avec Chang'e (seul l'accourir d'un PNJ, `npcArrival`, peut encore suivre : il vient après toutes les scènes)
-            expect(events.filter(e => e.type !== 'npcArrival').indexOf(started)).toBe(events.filter(e => e.type !== 'npcArrival').length - 1);
+            // après l'interlude avec Chang'e (seuls l'épisode de Chang'e des soleils 4, 5 et 9, `changeEpisode`, et l'accourir d'un PNJ, `npcArrival`, peuvent encore suivre : ils viennent après toutes les scènes)
+            const lateEvents = new Set(['npcArrival', 'changeEpisode']);
+            expect(events.filter(e => !lateEvents.has(e.type)).indexOf(started)).toBe(events.filter(e => !lateEvents.has(e.type)).length - 1);
             expect(started.quest.id).toBe(n < 10 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);

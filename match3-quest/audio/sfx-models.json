@@ -1,4 +1,11 @@
 {
+ "change-breath": "gm",
+ "change-cake": "gm",
+ "change-cut": "gm",
+ "change-heal": "gm",
+ "change-match": "gm",
+ "change-mirror": "gm",
+ "change-swap": "gm",
  "spell-azureDragonRoar": "gm",
  "spell-barrier": "gm",
  "spell-berserkerRage": "gm",
