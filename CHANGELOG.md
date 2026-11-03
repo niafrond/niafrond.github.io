@@ -1,3 +1,9 @@
+## [2.180.0](https://github.com/niafrond/niafrond.github.io/compare/v2.179.0...v2.180.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** faire accourir le messager du miroir en sautillant ([#625](https://github.com/niafrond/niafrond.github.io/issues/625)) ([ea7daac](https://github.com/niafrond/niafrond.github.io/commit/ea7daacc03e552d7743db052a0230cb21f05a929))
+
 ## [2.179.0](https://github.com/niafrond/niafrond.github.io/compare/v2.178.0...v2.179.0) (2026-11-03)
 
 ### Features
