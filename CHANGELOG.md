@@ -1,3 +1,9 @@
+## [2.177.0](https://github.com/niafrond/niafrond.github.io/compare/v2.176.0...v2.177.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** sprite dédié de la mimique avec attaque par saut ([#621](https://github.com/niafrond/niafrond.github.io/issues/621)) ([b72d532](https://github.com/niafrond/niafrond.github.io/commit/b72d53247eb756116979357efb393b49bebc536a))
+
 ## [2.176.0](https://github.com/niafrond/niafrond.github.io/compare/v2.175.0...v2.176.0) (2026-11-03)
 
 ### Features
