@@ -203,6 +203,8 @@ export function createExplorationView(cfg) {
                 ? `Chang'e : soigner les habitants (${prog.filter(p => p.healed).length} / ${prog.length})`
                 : `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
         }
+        // Mode Chang'e : les icônes habituelles (journal, carte, arène, sac, monture) n'ont plus lieu d'être, seule l'icône miroir reste (style.css `.change-mode`).
+        root.classList.toggle('change-mode', X.inChangeMode(session));
         // Bouton miroir : visible tant qu'un épisode de Chang'e est commencé et inachevé (il le rouvre, après confirmation).
         if (els.mirrorBtn) {
             if (!els.mirrorBtn.innerHTML) els.mirrorBtn.innerHTML = icon('mirror');
@@ -1917,7 +1919,7 @@ export function createExplorationView(cfg) {
         const drawItems = items.filter(it => it.kind === 'player' || it.kind === 'companion' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : it.kind === 'structure' ? inView(it.st.x, it.st.y, it.st.w, it.st.h, 3) : inView(it.x, it.y, 1, 1, 3)));
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
-        const houseMk = X.houseMarkers(session);
+        const houseMk = X.inChangeMode(session) ? [] : X.houseMarkers(session);   // mode Chang'e : pas de « ! » de quête
         // anneaux dorés sur les cibles de la quête suivie
         X.trackedMarkers(session).forEach(t => {
             let pos = null;

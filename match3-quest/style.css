@@ -3781,3 +3781,7 @@ body.shake { animation: m3-shake .3s ease-in-out; }
 .change-finale { position: absolute; inset: 0; z-index: 18; background: #0d0a1a; color: #fff; display: flex; flex-direction: column; gap: 18px; justify-content: center; align-items: center; padding: 24px; text-align: center; font-size: 18px; line-height: 1.5; }
 @media (max-width: 520px) { .change-top { padding: 8px 10px; } .change-dialog-pic { width: 60px; } .change-dialog-text { font-size: 15px; } }
 @media (prefers-reduced-motion: reduce) { .change-tile, .change-mirror { transition: none; } }
+
+/* Mode Chang'e : seule l'icône miroir reste dans le HUD d'exploration (retour auprès de Hou Yi). */
+.change-mode .explore-hud-buttons > button:not([data-explore="mirror"]) { display: none !important; }
+.change-mode .explore-hud-buttons > [data-explore="mirror"] { display: inline-flex !important; }
