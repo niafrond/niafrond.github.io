@@ -253,7 +253,7 @@ La **maison de Hou Yi et Chang'e** (Rizières) contient un **miroir** de bronze,
 (« Revoir : <village> ») ou de **reprendre** l'épisode resté ouvert (« Reprendre : <village> »). Rejeu : les cinq habitants sont de nouveau blessés, sans
 conversation d'entrée ni d'adieu (le miroir ne se coupe qu'une fois : l'épisode 3 rejoué ne rejoue pas la coupure) ; les gâteaux déjà offerts restent au Livre
 des noms ; l'épisode reste « terminé » et un épisode laissé ouvert n'est pas touché. Le miroir de la maison garde le **reflet** des villages (il fonctionne même
-après la coupure du lien : ce ne sont pas des appels, mais des souvenirs). Avant le premier épisode, il ne renvoie que le visage du joueur.
+après la coupure du lien : ce ne sont pas des appels, mais des souvenirs). Avant le premier épisode, Hou Yi (le héros) dit seulement : « Le miroir favori de Chang'e… Il a une lueur irréelle. »
 
 ## 8. Direction artistique et audio (pistes)
 

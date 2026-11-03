@@ -511,7 +511,8 @@ export function createExplorationView(cfg) {
     function openHouseMirror() {
         const opts = X.changeReplayOptions(session);
         if (!opts.length) {
-            openDialog({ ...NARRATOR, title: 'Le miroir' }, ['Le bronze ne renvoie que votre visage. Il gardera le reflet des villages que Chang\'e aura soignés.']);
+            // avant le premier épisode, Hou Yi lui-même s'étonne : le miroir préféré de Chang'e a quelque chose d'irréel
+            openDialog(sceneSpeaker({ hero: true }), ['Le miroir favori de Chang\'e… Il a une lueur irréelle.']);
             return;
         }
         openDialog({ ...NARRATOR, title: 'Le miroir' }, ['Le bronze garde le reflet des villages que Chang\'e a soignés. Y regarder, c\'est y retourner.'], null, [
