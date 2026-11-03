@@ -682,6 +682,13 @@ export function createExplorationView(cfg) {
             mapEl.querySelector('[data-act="zoom-in"]').disabled = zoom >= MAX_ZOOM;
             mapEl.querySelector('[data-act="zoom-out"]').disabled = zoom <= 1;
         };
+        // Fond : la capture de la carte déjà produite pour la soluce (nette même zoomée), quand elle existe ; sinon la minimap agrandie.
+        let bg = null;
+        try {
+            const img = new Image();
+            img.onload = () => { if (mapEl) { bg = img; paint(); } };
+            img.src = new URL(`soluce/img/${screen.id}.jpg`, document.baseURI).href;
+        } catch { /* repli : minimap */ }
         const paint = () => {
             const g = cv.getContext('2d');
             const k = Number(cv.dataset.k) || dpr;
@@ -689,14 +696,18 @@ export function createExplorationView(cfg) {
             g.imageSmoothingEnabled = false;
             g.clearRect(0, 0, cv.width, cv.height);
             const W = screen.w * cell, H = screen.h * cell;
-            g.drawImage(miniBase(screen, biome), 0, 0, W, H);
+            g.imageSmoothingEnabled = Boolean(bg);
+            g.drawImage(bg || miniBase(screen, biome), 0, 0, W, H);
             const fog = X.fogMask(session, screen);
             const seen = (x, y) => fog[Math.floor(y) * screen.w + Math.floor(x)] === 1;
             const dot = (x, y, color, r) => { g.fillStyle = color; g.fillRect((x + 0.5) * cell - r, (y + 0.5) * cell - r, r * 2, r * 2); };
             (screen.exits || []).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#7dd3fc', Math.max(2, cell * 0.35)); });
-            screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x, n.y, '#5ab0ff', Math.max(1.5, cell * 0.28)); });
-            X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#ff4a3a', Math.max(1.5, cell * 0.28)); });
+            if (!bg) {   // la capture montre déjà les personnages et les ennemis
+                screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x, n.y, '#5ab0ff', Math.max(1.5, cell * 0.28)); });
+                X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#ff4a3a', Math.max(1.5, cell * 0.28)); });
+            }
             g.drawImage(miniFog(screen), 0, 0, W, H);   // le brouillard : cases jamais vues
+            if (bg) g.drawImage(miniFog(screen), 0, 0, W, H);   // sur la capture il doit masquer pour de bon (la minimap, elle, laisse deviner)
             const mk = X.markerOf(session);
             if (mk) {
                 const cx = (mk.x + 0.5) * cell, cy = (mk.y + 0.5) * cell, r = Math.max(5, cell * 0.9);
