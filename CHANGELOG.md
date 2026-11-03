@@ -1,3 +1,9 @@
+## [2.176.0](https://github.com/niafrond/niafrond.github.io/compare/v2.175.0...v2.176.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** zoom de la carte plein écran et page soluce de la fête des lanternes ([#620](https://github.com/niafrond/niafrond.github.io/issues/620)) ([7e24a28](https://github.com/niafrond/niafrond.github.io/commit/7e24a2879596c1373bc82e5730a127db763fea6e))
+
 ## [2.175.0](https://github.com/niafrond/niafrond.github.io/compare/v2.174.0...v2.175.0) (2026-11-03)
 
 ### Features
