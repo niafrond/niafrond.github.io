@@ -118,8 +118,9 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
     test('exploration : sur une grande zone sauvage, seul ce qui est à l\'écran est dessiné', async ({ page, context }) => {
         await openGame(page, context);
         await enterExploration(page);
-        // Zone sauvage de 48×24 cases (≈ 1 150 cases, dont beaucoup hors écran sur un téléphone) : on y place le héros puis on recharge
-        await reloadAt(page, 'rizieres_wild', 1, 11);
+        // Zone sauvage de 64×32 cases (≈ 2 000 cases, dont beaucoup hors écran sur un téléphone) : on y place le héros à son point d'arrivée puis on recharge
+        const spawn = await page.evaluate(async () => (await import('./story.js')).SCREENS.rizieres_wild.spawn);
+        await reloadAt(page, 'rizieres_wild', spawn.x, spawn.y);
         await page.waitForTimeout(2500);
         await resetCounters(page);
         await page.waitForTimeout(3000);

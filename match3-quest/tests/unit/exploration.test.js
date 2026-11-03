@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { JUNCTIONS } from '../../world/junctions.js';
+import { TURNS } from '../../world/index.js';
 import { buildLegacyWorld, SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING, STORY_INTRO, STORY_TITLE } from '../../story.js';
 import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
@@ -369,6 +370,11 @@ describe('cartes (story.js)', () => {
             expect(village.kind).toBe('village');
             expect(wild.kind).toBe('wild');
             const exitTo = (screen, to) => exitsOf(screen, SCREENS).find(e => e.to === to);
+            // parcours varié (world/index.js TURNS) : la route sort, et la zone sauvage s'ouvre, parfois par le haut ou le bas
+            const OPP = { east: 'west', west: 'east', north: 'south', south: 'north' };
+            const onEdge = (z, e, edge) => ({ east: e.x === z.w - 1, west: e.x === 0, north: e.y === 0, south: e.y === z.h - 1 })[edge];
+            const insideOf = (z, e, edge) => ({ east: e.arrive.x === z.w - 2, west: e.arrive.x === 1, north: e.arrive.y === 1, south: e.arrive.y === z.h - 2 })[edge];
+            const roadEdge = TURNS[id]?.road || 'east', wildEdge = TURNS[id]?.wild || 'west';
 
             // route d'accès : ouest = sanctuaire précédent, est = village
             if (i === 0) expect(road).toBeUndefined();
@@ -376,20 +382,20 @@ describe('cartes (story.js)', () => {
                 expect(road).toBeDefined();
                 expect(road.region).toBe(id);
                 expect(exitTo(road, ORDER[i - 1])).toMatchObject({ x: 0 });
-                expect(exitTo(road, village.id)).toMatchObject({ x: road.w - 1 });
-                expect(exitTo(road, village.id).arrive.x).toBe(1);            // un pas à l'intérieur du bord ouest du village
-                expect(exitTo(village, road.id).arrive.x).toBe(road.w - 2);   // et retour un pas à l'intérieur du bord est de la route
+                expect(onEdge(road, exitTo(road, village.id), roadEdge)).toBe(true);
+                expect(insideOf(village, exitTo(road, village.id), OPP[roadEdge])).toBe(true);   // un pas à l'intérieur du bord opposé du village
+                expect(insideOf(road, exitTo(village, road.id), roadEdge)).toBe(true);           // et retour un pas à l'intérieur du bord de la route
                 expect(new Set(exitsOf(road, SCREENS).map(e => e.to))).toEqual(new Set([ORDER[i - 1], village.id]));
             }
             // village : ouest = route d'accès (rien au départ), est = zone sauvage
             if (i === 0) expect(exitsOf(village, SCREENS).some(e => e.x === 0 && !e.door)).toBe(false);
             else {
-                expect(exitTo(village, road.id)).toMatchObject({ x: 0 });
+                expect(onEdge(village, exitTo(village, road.id), OPP[roadEdge])).toBe(true);
                 expect(exitTo(village, ORDER[i - 1])).toBeUndefined();   // plus de lien direct sanctuaire <-> village
             }
-            expect(exitTo(village, wild.id)).toMatchObject({ x: village.w - 1 });
-            // zone sauvage : ouest = village, est = sanctuaire (fermée par un gate)
-            expect(exitTo(wild, village.id)).toMatchObject({ x: 0 });
+            expect(onEdge(village, exitTo(village, wild.id), OPP[wildEdge])).toBe(true);
+            // zone sauvage : village (ouest ou haut), est = sanctuaire (fermée par un gate)
+            expect(onEdge(wild, exitTo(wild, village.id), wildEdge)).toBe(true);
             expect(exitTo(wild, id)).toMatchObject({ x: wild.w - 1 });
             // sanctuaire : ouest = zone sauvage, est = route d'accès de la région suivante (fermée par le soleil)
             const west = exitsOf(sanctuary, SCREENS).find(e => e.x === 0);

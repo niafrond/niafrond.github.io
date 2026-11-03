@@ -34,7 +34,7 @@ import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
 import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
-import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug } from './decor.js';
+import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug, decorCell } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
 import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront, drawLedge } from './tilePainter.js';
 
@@ -44,7 +44,8 @@ const IDLE_DRAW_MS = 33;        // héros immobile : seules les animations d'amb
 const IDLE_DRAW_LOW_MS = 66;    // idem en effets réduits : ~15 i/s
 // Distance (cases) à une sortie en deçà de laquelle le sol de la carte voisine est préparé, et temps (ms) alloué à chaque image.
 const PREBUILD_RANGE = 14;
-const PREBUILD_BUDGET_MS = 6;
+const PREBUILD_BUDGET_MS = 8;
+const ARRIVAL_BUDGET_MS = 24;   // à l'arrivée sur une carte dont le sol n'est pas fini : tranche par image
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -1157,7 +1158,7 @@ export function createExplorationView(cfg) {
 
     // ── Calque de sol mis en cache ─────────────────────────────────────────
     const GROUND_MARGIN = 32;                 // marge (px CSS) du calque de sol autour de la carte (plus de falaise : simple tampon)
-    const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
+    const GROUND_MAX_PIXELS = 10.5e6;         // au-delà, la densité du calque baisse (groundDpr), puis on retombe sur le dessin direct (mémoire, durée de préparation)
     let groundCache = null;
 
     // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
@@ -1217,9 +1218,16 @@ export function createExplorationView(cfg) {
     let spareCanvas = null;   // canvas de sol recyclé (évite de réallouer ~30 Mo à chaque carte)
     const sameGround = (c, screen, biome, tile, dpr) => c && c.screen === screen && c.biome === biome && c.tile === tile && c.dpr === dpr;
 
-    function groundCanvasSize(screen, tile, dpr) {
+    // Densité du calque de sol : celle de l'écran, abaissée au besoin pour que le calque tienne dans GROUND_MAX_PIXELS (les grandes cartes de 64 × 32
+    // cases dépassaient d'un rien le plafond à densité 2 et retombaient sur le dessin direct, bien plus lent). Pixel art : agrandi sans lissage.
+    function groundDpr(screen, tile, dpr) {
         const M = GROUND_MARGIN;
-        return [Math.ceil((tile * screen.w + 2 * M) * dpr), Math.ceil((tile * screen.h + 2 * M) * dpr)];
+        const css = (tile * screen.w + 2 * M) * (tile * screen.h + 2 * M);
+        return Math.max(1, Math.min(dpr, Math.sqrt(0.97 * GROUND_MAX_PIXELS / css)));   // 3 % de marge : les dimensions sont arrondies à l'entier supérieur
+    }
+    function groundCanvasSize(screen, tile, dpr) {
+        const M = GROUND_MARGIN, gd = groundDpr(screen, tile, dpr);
+        return [Math.ceil((tile * screen.w + 2 * M) * gd), Math.ceil((tile * screen.h + 2 * M) * gd)];
     }
 
     function startGroundJob(screen, biome, tile, dpr) {
@@ -1231,8 +1239,9 @@ export function createExplorationView(cfg) {
         canvas.height = h;
         const g = canvas.getContext('2d');
         if (!g) return null;
-        g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        return { screen, biome, tile, dpr, canvas, paintRows: groundPainter(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN), y: 0, done: false };
+        const gd = groundDpr(screen, tile, dpr);
+        g.setTransform(gd, 0, 0, gd, 0, 0);
+        return { screen, biome, tile, dpr, gd, canvas, paintRows: groundPainter(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN), y: 0, done: false };
     }
 
     function dropGroundJob() {
@@ -1252,10 +1261,11 @@ export function createExplorationView(cfg) {
         const c = groundCache;
         if (sameGround(c, screen, biome, tile, dpr)) return c;
         if (sameGround(groundJob, screen, biome, tile, dpr)) {
-            // la carte voisine préparée est celle où l'on arrive : on termine les lignes restantes (s'il y en a) et on l'adopte
-            if (!groundJob.done) { groundJob.paintRows(groundJob.y, screen.h); groundJob.done = true; }
+            // la carte voisine préparée est celle où l'on arrive : on l'adopte une fois terminée. Si des lignes manquent encore, elles sont peintes par tranches
+            // (le sol visible est dessiné directement en attendant) : tout finir d'un coup bloquait plus d'une demi-seconde sur une grande carte.
+            if (!groundJob.done) { stepGroundJob(groundJob, ARRIVAL_BUDGET_MS); if (!groundJob.done) return null; }
             if (c?.canvas) spareCanvas = c.canvas;
-            groundCache = { screen, biome, tile, dpr, canvas: groundJob.canvas };
+            groundCache = { screen, biome, tile, dpr, gd: groundJob.gd, canvas: groundJob.canvas };
             groundJob = null;
             return groundCache;
         }
@@ -1267,10 +1277,11 @@ export function createExplorationView(cfg) {
         canvas.height = h;
         const g = canvas.getContext('2d');
         if (!g) return null;
-        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const gd = groundDpr(screen, tile, dpr);
+        g.setTransform(gd, 0, 0, gd, 0, 0);
         // Aucune bordure : ni falaise ni ombre autour de la carte (le décor se prolonge jusqu'au bord de l'écran).
         paintGroundCells(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN);
-        groundCache = { screen, biome, tile, dpr, canvas };
+        groundCache = { screen, biome, tile, dpr, gd, canvas };
         return groundCache;
     }
 
@@ -1365,8 +1376,14 @@ export function createExplorationView(cfg) {
         // sur les vieux appareils. Rendu identique.
         const ground = getGroundLayer(screen, biome, tile, dpr);
         if (ground) {
-            ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
-                ground.canvas.width / dpr, ground.canvas.height / dpr);
+            // Seule la partie visible du calque est recopiée (le calque d'une carte de 64 × 32 cases fait ~10 millions de pixels : le recopier en entier
+            // à chaque image coûtait plus de 60 ms en rendu logiciel) ; pendant un glissement d'écran, tout le calque (la scène est décalée).
+            const gx = ox - GROUND_MARGIN, gy = oy - GROUND_MARGIN, gw = ground.canvas.width / ground.gd, gh = ground.canvas.height / ground.gd;
+            if (slideX || slideY) ctx.drawImage(ground.canvas, gx, gy, gw, gh);
+            else {
+                const x0 = Math.max(0, gx), y0 = Math.max(0, gy), x1 = Math.min(vw, gx + gw), y1 = Math.min(vh, gy + gh);
+                if (x1 > x0 && y1 > y0) ctx.drawImage(ground.canvas, (x0 - gx) * ground.gd, (y0 - gy) * ground.gd, (x1 - x0) * ground.gd, (y1 - y0) * ground.gd, x0, y0, x1 - x0, y1 - y0);
+            }
         } else {
             // Carte trop grande pour le calque (GROUND_MAX_PIXELS, p. ex. 44 × 64 cases en haute densité) : seules les cases visibles sont peintes à chaque image
             // (peindre toute la carte, hautes herbes comprises, faisait ramer le jeu).
@@ -1673,7 +1690,7 @@ export function createExplorationView(cfg) {
                         break;
                     }
                     const depth = Math.min(it.x, it.y, screen.w - 1 - it.x, screen.h - 1 - it.y);
-                    const border = depth === 0 || (screen.treeBorder && depth <= 1);   // couronne d'arbres (Rizières) : deux rangées d'arbres
+                    const border = depth === 0 || (screen.treeBorder && depth <= 1) || isRimTree(screen, it.x, it.y);   // couronne d'arbres (Rizières) : deux rangées d'arbres, et forêt hors du terrain d'une carte agrandie
                     if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
                         // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
                         const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);
@@ -1681,7 +1698,7 @@ export function createExplorationView(cfg) {
                             (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
                         break;
                     }
-                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y, screen.furnishing) : pickDecor(biome.decor, it.x, it.y);
+                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y, screen.furnishing) : pickDecor(biome.decor, ...decorCell(screen, it.x, it.y));
                     if (decor === 'rock') {
                         drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
                         break;
@@ -1899,8 +1916,11 @@ export function createExplorationView(cfg) {
         return off;
     }
 
+    // `?shot=1` (captures de la soluce, tools/build-soluce-shots.mjs) : pas de minimap, elle cacherait un coin de la carte.
+    const NO_MINIMAP = typeof location !== 'undefined' && /[?&]shot=1(&|$)/.test(location.search);
     function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
         miniRect = null;
+        if (NO_MINIMAP) return;
         if (!screen.w || !screen.h) return;
         const MARGIN = 8;
         const scale = Math.max(1, Math.floor(Math.min(vw * 0.3 / screen.w, vh * 0.28 / screen.h, 4) * 2) / 2);
@@ -2054,6 +2074,14 @@ export function createExplorationView(cfg) {
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
     // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
     // puis recopiés d'un seul appel par image (au lieu de dizaines de fillRect par objet et par image).
+    const rimCache = new WeakMap();
+    // Case de l'étendue hors terrain d'une carte agrandie (`screen.rimTrees`, world/enlarge.js) : arbre de bordure plutôt que décor isolé.
+    function isRimTree(screen, x, y) {
+        if (!screen.rimTrees) return false;
+        let grid = rimCache.get(screen.rimTrees);
+        if (!grid) { grid = rectGrid(screen, screen.rimTrees); rimCache.set(screen.rimTrees, grid); }
+        return grid[y * screen.w + x] === 1;
+    }
     const objCache = new Map();
     function drawCachedObject(key, x, y, w, h, pad, paint) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);

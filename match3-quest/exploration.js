@@ -352,14 +352,27 @@ function enemyZoneCells(screen, def) {
     return cells;
 }
 
+// Grille des cases fermées de l'écran (obstacles pleins, eau, corniches, hors carte), construite une fois : `isTerrainBlocked` parcourt des listes de
+// rectangles, bien trop lent pour être rappelé case par case sur une carte de 64 × 32 cases (calcul des ennemis qui barrent un chemin, à chaque arrivée).
+const terrainGridCache = new WeakMap();
+function terrainGrid(screen) {
+    const hit = terrainGridCache.get(screen);
+    if (hit && hit.obstacles === screen.obstacles && hit.liquids === screen.liquids && hit.ledges === screen.ledges && hit.w === screen.w && hit.h === screen.h) return hit.grid;
+    const grid = new Uint8Array(screen.w * screen.h);
+    for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (isTerrainBlocked(screen, x, y)) grid[y * screen.w + x] = 1;
+    terrainGridCache.set(screen, { obstacles: screen.obstacles, liquids: screen.liquids, ledges: screen.ledges, w: screen.w, h: screen.h, grid });
+    return grid;
+}
+
 // Composantes connexes de l'écran (terrain libre, hors cases `blocked`) : Map case → numéro de composante.
 function componentsOf(screen, blocked) {
     const comp = new Map();
+    const closed = terrainGrid(screen);
     let id = 0;
     for (let y = 0; y < screen.h; y++) {
         for (let x = 0; x < screen.w; x++) {
             const k = y * screen.w + x;
-            if (comp.has(k) || blocked.has(k) || isTerrainBlocked(screen, x, y)) continue;
+            if (comp.has(k) || blocked.has(k) || closed[k]) continue;
             id++;
             const stack = [[x, y]];
             comp.set(k, id);
@@ -367,7 +380,7 @@ function componentsOf(screen, blocked) {
                 const [cx, cy] = stack.pop();
                 for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                     const nx = cx + dx, ny = cy + dy, nk = ny * screen.w + nx;
-                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || isTerrainBlocked(screen, nx, ny)) continue;
+                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || closed[nk]) continue;
                     comp.set(nk, id);
                     stack.push([nx, ny]);
                 }
@@ -375,6 +388,17 @@ function componentsOf(screen, blocked) {
         }
     }
     return comp;
+}
+
+// Composantes de l'écran sans aucun ennemi : identiques pour tous les ennemis de l'écran, calculées une fois.
+const freeComponentsCache = new WeakMap();
+function freeComponentsOf(screen) {
+    let hit = freeComponentsCache.get(screen);
+    if (!hit || hit.obstacles !== screen.obstacles || hit.liquids !== screen.liquids) {
+        hit = { obstacles: screen.obstacles, liquids: screen.liquids, comp: componentsOf(screen, new Set()) };
+        freeComponentsCache.set(screen, hit);
+    }
+    return hit.comp;
 }
 
 const pathBlockCache = new WeakMap();
@@ -387,7 +411,7 @@ export function blocksPath(screen, def) {
     if (cache.has(def.id)) return cache.get(def.id);
     const points = [...(screen.exits || []), ...(screen.npcs || []), ...(screen.chests || []), ...(screen.spawn ? [screen.spawn] : [])]
         .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
-    const free = componentsOf(screen, new Set());
+    const free = freeComponentsOf(screen);
     const zone = enemyZoneCells(screen, def);
     const cut = componentsOf(screen, zone);
     let blocks = false;
