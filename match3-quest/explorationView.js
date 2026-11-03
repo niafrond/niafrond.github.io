@@ -642,31 +642,72 @@ export function createExplorationView(cfg) {
         mapEl = document.createElement('div');
         mapEl.className = 'explore-map';
         mapEl.innerHTML = `<div class="explore-map-card" role="dialog" aria-label="Carte de la zone">
-  <div class="explore-map-head"><b></b><span>Touchez la carte pour poser un repère</span></div>
-  <canvas class="explore-map-canvas"></canvas>
-  <div class="explore-map-actions"><button type="button" data-act="clear">Retirer le repère</button><button type="button" data-act="close">Fermer</button></div></div>`;
+  <div class="explore-map-head"><b></b><span>Touchez la carte pour poser un repère · zoomez (+/−, molette, pincement) pour viser juste</span></div>
+  <div class="explore-map-view"><canvas class="explore-map-canvas"></canvas></div>
+  <div class="explore-map-actions"><button type="button" data-act="zoom-out" aria-label="Dézoomer" disabled>−</button><button type="button" data-act="zoom-in" aria-label="Zoomer">+</button><button type="button" data-act="clear">Retirer le repère</button><button type="button" data-act="close">Fermer</button></div></div>`;
         mapEl.querySelector('b').textContent = screen.name;
         const cv = mapEl.querySelector('canvas');
-        const cell = Math.max(3, Math.min((window.innerWidth - 32) / screen.w, (window.innerHeight - 170) / screen.h));
-        cv.style.width = `${Math.round(screen.w * cell)}px`;
-        cv.style.height = `${Math.round(screen.h * cell)}px`;
+        const view = mapEl.querySelector('.explore-map-view');
+        const openedAt = performance.now();   // le relâchement du doigt qui a ouvert la carte ne doit ni la fermer ni poser de repère
+        const fit = Math.max(3, Math.min((window.innerWidth - 32) / screen.w, (window.innerHeight - 190) / screen.h));
         const dpr = Math.min(2, window.devicePixelRatio || 1);
-        cv.width = Math.round(screen.w * cell * dpr);
-        cv.height = Math.round(screen.h * cell * dpr);
+        const MAX_ZOOM = 8;
+        let zoom = 1, cell = fit;
+        const resize = (keepCenter = true) => {
+            const old = { w: cv.clientWidth || 1, h: cv.clientHeight || 1 };
+            const cx = keepCenter ? (view.scrollLeft + view.clientWidth / 2) / old.w : 0.5;
+            const cy = keepCenter ? (view.scrollTop + view.clientHeight / 2) / old.h : 0.5;
+            cell = fit * zoom;
+            cv.style.width = `${Math.round(screen.w * cell)}px`;
+            cv.style.height = `${Math.round(screen.h * cell)}px`;
+            const k = Math.min(dpr, 4096 / Math.max(screen.w * cell, screen.h * cell));
+            cv.width = Math.max(1, Math.round(screen.w * cell * k));
+            cv.height = Math.max(1, Math.round(screen.h * cell * k));
+            cv.dataset.k = String(k);
+            view.scrollLeft = cx * screen.w * cell - view.clientWidth / 2;
+            view.scrollTop = cy * screen.h * cell - view.clientHeight / 2;
+        };
+        const setZoom = (z, atX, atY) => {
+            const nz = Math.max(1, Math.min(MAX_ZOOM, z));
+            if (nz === zoom) return;
+            // garde sous le doigt (ou au centre) la case qui y était
+            const rect = cv.getBoundingClientRect(), vr = view.getBoundingClientRect();
+            const fx = atX == null ? 0.5 : (atX - rect.left) / rect.width, fy = atY == null ? 0.5 : (atY - rect.top) / rect.height;
+            const px = atX == null ? vr.width / 2 : atX - vr.left, py = atY == null ? vr.height / 2 : atY - vr.top;
+            zoom = nz;
+            resize(false);
+            view.scrollLeft = fx * screen.w * cell - px;
+            view.scrollTop = fy * screen.h * cell - py;
+            paint();
+            mapEl.querySelector('[data-act="zoom-in"]').disabled = zoom >= MAX_ZOOM;
+            mapEl.querySelector('[data-act="zoom-out"]').disabled = zoom <= 1;
+        };
+        // Fond : la capture de la carte déjà produite pour la soluce (nette même zoomée), quand elle existe ; sinon la minimap agrandie.
+        let bg = null;
+        try {
+            const img = new Image();
+            img.onload = () => { if (mapEl) { bg = img; paint(); } };
+            img.src = new URL(`soluce/img/${screen.id}.jpg`, document.baseURI).href;
+        } catch { /* repli : minimap */ }
         const paint = () => {
             const g = cv.getContext('2d');
-            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const k = Number(cv.dataset.k) || dpr;
+            g.setTransform(k, 0, 0, k, 0, 0);
             g.imageSmoothingEnabled = false;
             g.clearRect(0, 0, cv.width, cv.height);
             const W = screen.w * cell, H = screen.h * cell;
-            g.drawImage(miniBase(screen, biome), 0, 0, W, H);
+            g.imageSmoothingEnabled = Boolean(bg);
+            g.drawImage(bg || miniBase(screen, biome), 0, 0, W, H);
             const fog = X.fogMask(session, screen);
             const seen = (x, y) => fog[Math.floor(y) * screen.w + Math.floor(x)] === 1;
             const dot = (x, y, color, r) => { g.fillStyle = color; g.fillRect((x + 0.5) * cell - r, (y + 0.5) * cell - r, r * 2, r * 2); };
             (screen.exits || []).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#7dd3fc', Math.max(2, cell * 0.35)); });
-            screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x, n.y, '#5ab0ff', Math.max(1.5, cell * 0.28)); });
-            X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#ff4a3a', Math.max(1.5, cell * 0.28)); });
+            if (!bg) {   // la capture montre déjà les personnages et les ennemis
+                screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x, n.y, '#5ab0ff', Math.max(1.5, cell * 0.28)); });
+                X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#ff4a3a', Math.max(1.5, cell * 0.28)); });
+            }
             g.drawImage(miniFog(screen), 0, 0, W, H);   // le brouillard : cases jamais vues
+            if (bg) g.drawImage(miniFog(screen), 0, 0, W, H);   // sur la capture il doit masquer pour de bon (la minimap, elle, laisse deviner)
             const mk = X.markerOf(session);
             if (mk) {
                 const cx = (mk.x + 0.5) * cell, cy = (mk.y + 0.5) * cell, r = Math.max(5, cell * 0.9);
@@ -678,17 +719,44 @@ export function createExplorationView(cfg) {
             g.beginPath(); g.arc((session.data.x + 0.5) * cell, (session.data.y + 0.5) * cell, hr, 0, Math.PI * 2); g.fill(); g.stroke();
         };
         cv.addEventListener('click', ev => {
+            if (performance.now() - openedAt < 450 || pinched) return;
             const rect = cv.getBoundingClientRect();
             const x = Math.floor((ev.clientX - rect.left) / (rect.width / screen.w)), y = Math.floor((ev.clientY - rect.top) / (rect.height / screen.h));
             if (X.setMarker(session, x, y)) { closeMapOverlay(); toast('Repère posé : une flèche violette y mène.', 2600); }
             else toast('Repère impossible ici.', 1800);
         });
         mapEl.addEventListener('click', ev => {
+            if (performance.now() - openedAt < 450) return;
             const act = ev.target.closest('[data-act]')?.dataset.act;
             if (act === 'clear') { X.clearMarker(session); paint(); toast('Repère retiré.', 1500); }
+            else if (act === 'zoom-in') setZoom(zoom * 1.6);
+            else if (act === 'zoom-out') setZoom(zoom / 1.6);
             else if (act === 'close' || ev.target === mapEl) closeMapOverlay();
         });
+        view.addEventListener('wheel', ev => { ev.preventDefault(); setZoom(zoom * (ev.deltaY < 0 ? 1.25 : 0.8), ev.clientX, ev.clientY); }, { passive: false });
+        // pincement à deux doigts : zoom centré sur le milieu des doigts
+        const pts = new Map();
+        let pinchDist = 0, pinched = false, dragged = 0;
+        view.addEventListener('pointerdown', ev => { if (!pts.size) dragged = 0; pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY }); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinchDist = Math.hypot(a.x - b.x, a.y - b.y); pinched = true; } });
+        view.addEventListener('pointermove', ev => {
+            if (!pts.has(ev.pointerId)) return;
+            const prev = pts.get(ev.pointerId);
+            pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+            if (pts.size === 1) {   // glisser d'un doigt : déplacer la carte zoomée (au-delà de 6 px, ce n'est plus un toucher)
+                dragged += Math.abs(ev.clientX - prev.x) + Math.abs(ev.clientY - prev.y);
+                if (dragged > 6) { view.scrollLeft -= ev.clientX - prev.x; view.scrollTop -= ev.clientY - prev.y; pinched = true; }
+            }
+            if (pts.size === 2 && pinchDist > 0) {
+                const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+                setZoom(zoom * (d / pinchDist), (a.x + b.x) / 2, (a.y + b.y) / 2);
+                pinchDist = d;
+            }
+        });
+        const endPtr = ev => { pts.delete(ev.pointerId); if (!pts.size) setTimeout(() => { pinched = false; }, 250); };
+        view.addEventListener('pointerup', endPtr);
+        view.addEventListener('pointercancel', endPtr);
         root.appendChild(mapEl);
+        resize(false);
         paint();
     }
 
@@ -1876,6 +1944,7 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'companion': {
+                    if (NO_MINIMAP) break;
                     // Compagnon actif : sprite animé `companion_<id>` (4 directions, 3 images de marche) s'il est chargé, sinon son PNJ figé qui sautille.
                     const comp = X.activeCompanionOf(session);
                     const tr = vis.trail;
@@ -1897,6 +1966,7 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'player': {
+                    if (NO_MINIMAP) break;   // `?shot=1` : captures de la soluce et de la carte plein écran, sans le héros
                     const moving = now - (vis.lastMoveAt || -1e9) < 130 || Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
                     const walkPhase = vis.walkPhase || 0;
                     const hop = moving ? -tile * 0.07 * Math.abs(Math.sin(walkPhase * Math.PI)) : Math.sin(now / 500) * tile * 0.01;
