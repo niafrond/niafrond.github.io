@@ -1,3 +1,9 @@
+## [2.179.0](https://github.com/niafrond/niafrond.github.io/compare/v2.178.0...v2.179.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** durcir les énigmes des événements neige et halloween ([#624](https://github.com/niafrond/niafrond.github.io/issues/624)) ([5d8922a](https://github.com/niafrond/niafrond.github.io/commit/5d8922a0137d71a1117f31122504399e4ad957ef))
+
 ## [2.178.0](https://github.com/niafrond/niafrond.github.io/compare/v2.177.0...v2.178.0) (2026-11-03)
 
 ### Features
