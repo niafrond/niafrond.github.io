@@ -19,6 +19,8 @@
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
 //  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
 //    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
+//  - arrival (PNJ) : { hop? } ; avec `showWhen: <id d'un ennemi de l'écran>`, le PNJ ne surgit pas : à la victoire sur cet ennemi, un événement
+//    `npcArrival` (après toutes les scènes) le fait rejoindre le héros en sautillant, puis sa conversation s'ouvre d'elle-même ;
 //  - bait (PNJ) : { enemy, lines, retry } ; lui parler fait surgir l'ennemi `enemy` (tant qu'il n'est pas vaincu) : les lignes sont
 //    dites, puis le combat démarre (résultat `combat` de talkToNpc) ; `retry` remplace `lines` aux conversations suivantes ;
 //  - chain (ennemi) : id d'un ennemi attaqué tout de suite après sa victoire (événement `chain`, après les scènes) ;
@@ -541,7 +543,9 @@ export function isEntityVisible(session, def) {
     return true;
 }
 
-export const visibleNpcs = session => currentScreen(session).npcs.filter(n => isEntityVisible(session, n));
+// PNJ en route vers le héros (`arrival`) : cachés tant que la vue n'a pas lancé leur arrivée (état volatil, jamais sauvegardé).
+export const beginNpcArrival = (session, npcId) => session.rt.pendingArrivals?.delete(npcId);
+export const visibleNpcs = session => currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
 export const visibleChests = session => currentScreen(session).chests.filter(c => isEntityVisible(session, c));
 
 export function aliveEnemies(session) {
@@ -1346,7 +1350,8 @@ export function markEnemyDefeated(session, enemyId) {
     const events = [];
     let after = [];
     let chain = null;
-    if (!session.data.defeated.includes(enemyId)) {
+    const wasDefeated = session.data.defeated.includes(enemyId);
+    if (!wasDefeated) {
         session.data.defeated.push(enemyId);
         const def = session.rt.enemyIndex[enemyId]?.def;
         if (def?.chain) chain = { type: 'chain', enemyId: def.chain };
@@ -1358,6 +1363,10 @@ export function markEnemyDefeated(session, enemyId) {
     const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
     quests.splice(lastDone + 1 || quests.length, 0, ...after);
     events.push(...quests);
+    // PNJ qui rejoint le héros en sautillant (`arrival`) : arrive une fois toutes les scènes dites, juste avant sa conversation.
+    if (!wasDefeated) currentScreen(session).npcs
+        .filter(n => n.arrival && n.showWhen === enemyId)
+        .forEach(n => { (session.rt.pendingArrivals ||= new Set()).add(n.id); events.push({ type: 'npcArrival', npcId: n.id }); });
     if (chain) events.push(chain);   // le combat suivant démarre une fois toutes les scènes dites
     return events;
 }

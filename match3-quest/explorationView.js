@@ -221,7 +221,7 @@ export function createExplorationView(cfg) {
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => Boolean(vis.npcAnim?.blocking) || isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -432,8 +432,43 @@ export function createExplorationView(cfg) {
         // Duel en plusieurs phases : la suivante démarre dès que les scènes sont dites, sans retour libre sur la carte.
         const chain = events.find(e => e.type === 'chain');
         if (chain) afterDialogs(() => startEncounter(chain.enemyId)); else playBanter();
+        // PNJ qui accourt vers le héros en sautillant : une fois tous les dialogues dits, juste avant sa propre conversation.
+        events.filter(e => e.type === 'npcArrival').forEach(e => afterDialogs(() => playNpcArrival(e.npcId)));
         cfg.onSave();
         refreshHud();
+    }
+
+    // Arrivée d'un PNJ (`arrival`) : il part du bord de la carte, rejoint le héros en sautillant, puis sa conversation s'ouvre ;
+    // ensuite il retourne en sautillant à sa place. Position et saut sont purement visuels (vis.npcAnim), rien n'est sauvegardé.
+    const NPC_HOP_SPEED = 4.2;   // cases par seconde
+    function hopNpcTo(npc, from, to, blocking) {
+        return new Promise(resolve => {
+            vis.npcAnim = { id: npc.id, x: from.x, y: from.y, tx: to.x, ty: to.y, phase: 0, blocking, resolve };
+        });
+    }
+    async function playNpcArrival(npcId) {
+        const screen = X.currentScreen(session);
+        const npc = screen.npcs.find(n => n.id === npcId);
+        if (!npc || !isOnScreen()) { X.beginNpcArrival(session, npcId); return; }
+        const hx = session.data.x, hy = session.data.y;
+        const free = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && !X.isTerrainBlocked(screen, x, y)
+            && !X.visibleNpcs(session).some(n => n.x === x && n.y === y) && !X.aliveEnemies(session).some(e => e.x === x && e.y === y);
+        const spot = [[0, 1], [-1, 0], [1, 0], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]].map(([dx, dy]) => ({ x: hx + dx, y: hy + dy })).find(p => free(p.x, p.y))
+            || { x: npc.x, y: npc.y };
+        // Départ : à l'écart du héros, côté le plus éloigné du bord (il traverse donc l'écran en sautillant).
+        const fromLeft = hx > screen.w / 2;
+        const start = { x: fromLeft ? Math.max(0, hx - 9) : Math.min(screen.w - 1, hx + 9), y: Math.min(screen.h - 1, Math.max(0, hy + 2)) };
+        X.beginNpcArrival(session, npcId);
+        await hopNpcTo(npc, start, spot, true);
+        if (!active) { vis.npcAnim = null; return; }
+        const home = { x: npc.x, y: npc.y };
+        vis.npcAnim = { ...vis.npcAnim, x: spot.x, y: spot.y, tx: spot.x, ty: spot.y, blocking: false, resolve: null, idle: true };
+        handleResult({ type: 'talk', npcId });
+        afterDialogs(async () => {
+            if (!active) { vis.npcAnim = null; return; }
+            await hopNpcTo(npc, spot, home, false);
+            vis.npcAnim = null;
+        });
     }
 
     // Exécute `fn` quand la file de dialogues est vide (tout de suite si aucun dialogue n'est ouvert).
@@ -1305,6 +1340,13 @@ export function createExplorationView(cfg) {
             v.y += (e.y - v.y) * k;
         });
         vis.bob = now;
+        // PNJ qui accourt en sautillant (arrival) : avance vers sa cible et rebondit ; le saut s'arrête à l'arrivée.
+        const na = vis.npcAnim;
+        if (na && !na.idle) {
+            const ndx = na.tx - na.x, ndy = na.ty - na.y, nd = Math.hypot(ndx, ndy), step = dt / 1000 * NPC_HOP_SPEED;
+            if (nd <= step) { na.x = na.tx; na.y = na.ty; na.phase = 0; na.idle = true; const r = na.resolve; na.resolve = null; r?.(); }
+            else { na.x += ndx / nd * step; na.y += ndy / nd * step; na.phase += dt / 1000 * NPC_HOP_SPEED * Math.PI * 1.1; }
+        }
 
         // Dessin inutile (onglet caché, carte hors écran, cinématique opaque par-dessus) : on le saute. Sous un modal (voile à 70 %), la carte
         // ne bouge plus (la logique est bloquée) : 4 images/s suffisent. La logique ci-dessus reste exécutée à chaque image.
@@ -1728,7 +1770,10 @@ export function createExplorationView(cfg) {
         X.bossWallsOf(session).forEach(w => items.push({ depth: w.y, kind: w.fire ? 'fire' : 'pillar', x: w.x, y: w.y }));   // piliers (flammes pour un Soleil) qui ferment le passage d'un boss, retirés à sa mort
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
-        X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
+        X.visibleNpcs(session).forEach(n => {
+            const a = vis.npcAnim?.id === n.id ? vis.npcAnim : null;   // PNJ en train d'accourir : position et saut animés
+            items.push({ depth: (a ? a.y : n.y) + 0.1, kind: 'npc', n, x: a ? a.x : n.x, y: a ? a.y : n.y, hop: a && !a.idle ? Math.abs(Math.sin(a.phase)) : 0 });
+        });
         X.visibleChests(session).filter(c => X.isChestShown(session, c, cfg.getPlayerLevel(), performance.now())).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || e;
@@ -1879,7 +1924,7 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi)
+                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
                     const marker = X.npcMarker(session, it.n.id);
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
