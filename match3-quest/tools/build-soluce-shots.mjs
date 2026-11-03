@@ -2,6 +2,7 @@
 // Pour chaque écran : sauvegarde d'exploration préparée (héros sur l'apparition, prologue vu), fenêtre dimensionnée pour que la carte
 // tienne entière (tuile minimale du jeu : 44 px), puis capture du canvas. Le cercle rouge est posé ensuite par les pages de la soluce
 // (build-soluce.mjs), à partir des coordonnées des entités : une même capture sert à toutes les quêtes de l'écran.
+// Les zones de chaque région (route, village, zone sauvage, hameau, sanctuaire) et leurs intérieurs (maisons, grottes, cryptes) sont aussi photographiés pour la page « Zones et jonctions ».
 // Usage : NODE_PATH=$(npm root -g) node match3-quest/tools/build-soluce-shots.mjs [--base=http://localhost:4173] [--only=id1,id2] [--jobs=4]
 // Prérequis : un serveur statique à la racine du dépôt (ex. `python3 -m http.server 4173`) et Playwright (Chromium).
 import { createRequire } from 'node:module';
@@ -9,7 +10,7 @@ import { mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SCREENS } from '../story.js';
-import { shotScreens } from './soluce-targets.mjs';
+import { shotScreens, zoneScreens, interiorScreens } from './soluce-targets.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
 const arg = (k, d) => (process.argv.find(a => a.startsWith(`--${k}=`)) || `=${d}`).split('=')[1];
@@ -21,14 +22,15 @@ const TILE = 44, HUD_TOP = 64, HUD_BOTTOM = 8;   // mêmes constantes que explor
 mkdirSync(OUT, { recursive: true });
 
 const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
-const ids = (ONLY.length ? ONLY : shotScreens()).filter(id => SCREENS[id]);
-const browser = await chromium.launch();
+const ids = [...new Set(ONLY.length ? ONLY : [...shotScreens(), ...zoneScreens(), ...interiorScreens()])].filter(id => SCREENS[id]);
+// CHROMIUM_PATH : navigateur installé ailleurs (ex. /opt/pw-browsers/chromium dans l'environnement distant)
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH, args: ['--no-sandbox'] } : {});
 
 async function worker(queue) {
     const ctx = await browser.newContext({ viewport: { width: 800, height: 600 } });
     const page = await ctx.newPage();
     page.on('pageerror', e => console.log('erreur page :', e.message));
-    await page.goto(`${BASE}/match3-quest/`);
+    await page.goto(`${BASE}/match3-quest/?shot=1`);   // shot=1 : sans minimap (elle masquerait un coin de la carte)
     await loaded(page);
     await page.click('.class-card');
     await page.click('#confirm-class');

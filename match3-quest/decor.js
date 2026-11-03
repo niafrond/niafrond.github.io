@@ -33,6 +33,14 @@ export const pickDecor = (list, x, y) => list[Math.floor(hash(x, y) * list.lengt
 
 const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
 
+// Un décor est tiré au hasard d'après les coordonnées de la case. Une carte agrandie (world/enlarge.js, `screen.decorMap`) garde le tirage de sa
+// grille d'origine : on lit le décor aux anciennes coordonnées, pour que les décors bas franchissables (roseaux, riz…) ne changent pas de place.
+export function decorCell(screen, x, y) {
+    const m = screen?.decorMap;
+    if (!m) return [x, y];
+    return [x < m.seam + m.block ? x : x - m.block, y - m.top];
+}
+
 // L'obstacle de la case (x, y) est-il un décor bas franchissable ? Jamais le pourtour de la carte (rangée de bordure), ni un
 // intérieur, une arène, une carte aquatique (récifs), un bâtiment ou un pilier : seuls les obstacles de décor en plein terrain.
 export function isLowObstacle(screen, x, y) {
@@ -49,7 +57,7 @@ export function isLowCell(screen, x, y) {
     if ((screen.structures || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h)) return false;
     if ((screen.pillars || []).some(([px, py]) => px === x && py === y)) return false;
     const list = BIOME_DECOR[screen.biome];
-    return Boolean(list) && LOW_DECOR.has(pickDecor(list, x, y));
+    return Boolean(list) && LOW_DECOR.has(pickDecor(list, ...decorCell(screen, x, y)));
 }
 
 // ── Maisons ───────────────────────────────────────────────────────────────

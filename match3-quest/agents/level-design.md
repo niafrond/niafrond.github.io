@@ -52,6 +52,8 @@ des champs uniformes. Le générateur `world/levelDesign.js` en applique une par
 - **Caches invisibles** (`hidden`, 8 par route ou zone sauvage) nichées contre le relief, repérées par la Perception du qì (gǎn qì, niveau 8 ; « aura » est un terme occidental à éviter dans les textes) ; **coffres-pièges** (`mimic`, au moins 3 par carte de plein air, villages et sanctuaires compris) posés près d'un chemin,
   butin maigre : la récompense d'un vrai détour reste supérieure (30 · rang contre 4 · rang).
 - **Coffres refermés** : au retour sur une carte, quelques coffres déjà ouverts se referment en mimiques (jamais ceux dont dépend une quête ou une condition) ; **perception du qì** : on touche le héros, 5 s, flèche rouge vers la cache la plus proche.
+- **Cartes vastes et contour irrégulier** : routes et zones sauvages natives agrandies par `world/enlarge.js` (64 de large, excroissances et coins rognés) ; ne pas dessiner de grille native au-delà de 64×64 / 1500 cases, l'agrandissement s'applique par-dessus.
+- **Entrées et sorties variées** : `world/index.js` `TURNS` fait entrer ou sortir certaines routes par le haut ou le bas (jamais toujours ouest → est) ; un village a quatre ancres `<` `>` `^` `v`, une zone sauvage mène toujours au sanctuaire par l'est.
 - **Brouillard de guerre** : la minimap grise les cases jamais vues ; prévoir des repères visibles de loin (tours, arbres remarquables).
 - À envisager ensuite : cartes plus vastes et silhouettes non rectangulaires (grilles natives à redessiner), portes à clé de biome, ponts à sens unique.
 

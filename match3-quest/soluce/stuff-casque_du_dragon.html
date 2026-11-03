@@ -47,6 +47,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -74,7 +75,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html" class="on">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html" class="on">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
 <main>
 <div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="stuff.html">Stuff d’exception</a> › Heaume du dragon céleste</div>
 <h2>Heaume du dragon céleste <small>— Casque</small></h2>
@@ -168,6 +169,6 @@ lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function
 window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
 })();
 </script>
-<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>

@@ -9,6 +9,9 @@ import { overlapOf } from '../../mapConnections.js';
 
 const seaEdges = CONNECTIONS.filter(c => c.sea);
 const northward = seaEdges.filter(c => c.dir === 'north');
+// Un parcours varié (world/index.js TURNS) occupe parfois un bord nord ou sud : la bordure de mer cède alors la place, des deux côtés.
+const live = northward.filter(c => SCREENS[c.from].connections.north?.sea);
+const dropped = northward.filter(c => !live.includes(c));
 const regionOf = id => SCREENS[id].region;
 const cols = s => [...Array(s.w).keys()];
 
@@ -16,7 +19,12 @@ describe('bordures de mer', () => {
     test("chaque carte des régions voisines fait face à une carte de l'autre région, dans les deux sens, sur toute la largeur commune", () => {
         expect(northward).toHaveLength(16);   // 4 paires de cartes x 4 liaisons
         expect(seaEdges).toHaveLength(32);
-        northward.forEach(c => {
+        expect(live.length).toBeGreaterThanOrEqual(10);
+        dropped.forEach(c => {   // cédée des deux côtés, à un passage de parcours (jamais à une bordure à moitié)
+            expect(SCREENS[c.to].connections.south?.sea).toBeFalsy();
+            expect([SCREENS[c.from].connections.north, SCREENS[c.to].connections.south].some(x => x && !x.sea)).toBe(true);
+        });
+        live.forEach(c => {
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(regionOf(c.from)).not.toBe(regionOf(c.to));
             expect(a.connections.north).toMatchObject({ to: c.to, sea: true });
@@ -28,8 +36,9 @@ describe('bordures de mer', () => {
     });
 
     test('Mer Orientale et Fusang : chaque carte de la Mer Orientale mène au Fusang, et chaque carte du Fusang à la Mer Orientale', () => {
-        ['mer_road', 'mer_village', 'mer_wild', 'mer'].forEach(id => expect(regionOf(SCREENS[id].connections.north.to)).toBe('fusang'));
-        ['fusang_road', 'fusang_village', 'fusang_hamlet', 'fusang'].forEach(id => expect(regionOf(SCREENS[id].connections.south.to)).toBe('mer'));
+        ['mer_road', 'mer_village', 'mer_wild', 'mer'].filter(id => live.some(c => c.from === id)).forEach(id => expect(regionOf(SCREENS[id].connections.north.to)).toBe('fusang'));
+        ['fusang_road', 'fusang_village', 'fusang_hamlet', 'fusang'].filter(id => live.some(c => c.to === id)).forEach(id => expect(regionOf(SCREENS[id].connections.south.to)).toBe('mer'));
+        expect(live.filter(c => regionOf(c.from) === 'mer').length).toBeGreaterThanOrEqual(2);
     });
 
     test("les Rizières n'ont pas de mer autour : une couronne d'arbres, et aucune bordure de mer (le Volcan non plus)", () => {
@@ -49,7 +58,7 @@ describe('bordures de mer', () => {
     });
 
     test("les deux bords reliés sont de l'eau : infranchissables à pied, praticables avec le Pas de Yu (aucun couloir creusé)", () => {
-        northward.forEach(c => {
+        live.forEach(c => {
             const a = SCREENS[c.from], b = SCREENS[c.to];
             expect(cols(a).filter(x => !isTerrainBlocked(a, x, 0))).toEqual([]);
             expect(cols(b).filter(x => !isTerrainBlocked(b, x, b.h - 1))).toEqual([]);

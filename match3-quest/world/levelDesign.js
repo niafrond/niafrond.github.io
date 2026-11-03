@@ -26,7 +26,7 @@ const RIM = 4;                        // couloirs de 3 cases devant les passages
 export const MIN_DETOUR = 20;         // pas de détour minimal pour revenir d'une corniche
 export const LEDGE_MIN = 5, LEDGE_MAX = 10;   // longueur d'une corniche
 const RING_WALLS = 1;                 // part de relief tolérée autour d'un motif
-const MAX_LEDGES = 2, LEDGE_TRIES = 60, MAX_MOTIFS = 2, MAX_DEFILES = 2;
+const MAX_LEDGES = 1, LEDGE_TRIES = 60, MAX_MOTIFS = 2, MAX_DEFILES = 2;
 const TRIES = 25; 
 const MOTIF_TRIES = 200;              // les motifs se rejettent d'abord sur leur seule géométrie (peu coûteux)                     // positions testées au plus par élément
 
@@ -94,7 +94,7 @@ function makeContext(screen) {
     (screen.enemies || []).forEach(e => { if (e.patrol) routeCells(e.patrol).forEach(q => hard.add(key(q.x, q.y))); });
     buildingCells(screen).forEach(k => { const [bx, by] = k.split(',').map(Number); hard.add(key(bx, by)); });
     (screen.structures || []).forEach(st => { for (let i = 0; i < st.w; i++) for (let j = 0; j < st.h; j++) hard.add(key(st.x + i, st.y + j)); });
-    const solid = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []), ...(screen.exits || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
+    const solid = new Set([...(screen.npcs || []), ...(screen.chests || []), ...(screen.enemies || []).filter(e => !e.guardsDoor), ...(screen.exits || []), ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));   // le gardien d'une porte se contourne ou se bat : il ne ferme pas le passage
     // murs de boss (pilier ou rempart qui barre un couloir jusqu'à la défaite du gardien) : fermés tant qu'on les compte
     (screen.enemies || []).forEach(e => (e.wall || []).forEach(([wx, wy]) => { solid.add(key(wx, wy)); hard.add(key(wx, wy)); }));
     solid.delete(key(screen.spawn.x, screen.spawn.y));
@@ -122,39 +122,58 @@ const isRoom = (c, x, y) => isOpen(c, x, y) && !c.prot.has(key(x, y)) && !c.gras
 const inMargin = (c, x, y) => x >= MARGIN_X && y >= MARGIN_Y && x < c.w - MARGIN_X && y < c.h - MARGIN_Y;
 
 // Cases atteignables à pied depuis l'apparition (corniches fermées, personnages et coffres pleins).
+// Grille des cases fermées (obstacles, eau, corniches, + `extra` : cases pleines) : un parcours de graphe sur tableau est bien plus rapide que sur
+// des ensembles de clés. `strict` : tout obstacle ferme ; sinon les décors bas se traversent comme dans le jeu.
+function blockedMask(c, strict, extra) {
+    const { w, h } = c;
+    const m = new Uint8Array(w * h);
+    for (const k of c.obst) { const x = k & 511, y = k >> 9; if (x < w && y < h && (strict || !lowAt(c, x, y))) m[y * w + x] = 1; }
+    for (const k of c.liq) { const x = k & 511, y = k >> 9; if (x < w && y < h) m[y * w + x] = 1; }
+    for (const k of c.ledges.keys()) { const x = k & 511, y = k >> 9; if (x < w && y < h) m[y * w + x] = 1; }
+    for (const k of extra) { const x = k & 511, y = k >> 9; if (x < w && y < h) m[y * w + x] = 1; }
+    return m;
+}
 function reach(c, strict = true) {
     const { w, h } = c;
-    const seen = new Set([key(c.spawn.x, c.spawn.y)]);
-    const queue = [c.spawn.x, c.spawn.y];
-    for (let head = 0; head < queue.length; head += 2) {
-        const px = queue[head], py = queue[head + 1];
-        for (let d = 0; d < 4; d++) {
-            const nx = px + DX[d], ny = py + DY[d];
-            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-            const k = ny * 512 + nx;
-            if (seen.has(k) || c.solid.has(k) || isWall(c, nx, ny, strict)) continue;
-            seen.add(k); queue.push(nx, ny);
-        }
+    const m = blockedMask(c, strict, c.solid);
+    const start = c.spawn.y * w + c.spawn.x;
+    const seen = new Uint8Array(w * h);
+    seen[start] = 1;
+    const queue = [start];
+    for (let head = 0; head < queue.length; head++) {
+        const i = queue[head], x = i % w, y = (i - x) / w;
+        if (x + 1 < w && !seen[i + 1] && !m[i + 1]) { seen[i + 1] = 1; queue.push(i + 1); }
+        if (x > 0 && !seen[i - 1] && !m[i - 1]) { seen[i - 1] = 1; queue.push(i - 1); }
+        if (y + 1 < h && !seen[i + w] && !m[i + w]) { seen[i + w] = 1; queue.push(i + w); }
+        if (y > 0 && !seen[i - w] && !m[i - w]) { seen[i - w] = 1; queue.push(i - w); }
     }
-    return seen;
+    return Object.assign(new Set(queue.map(i => (i - (i % w)) / w * 512 + (i % w))), {});
 }
 const DX = [1, -1, 0, 0], DY = [0, 0, 1, -1];
 
 // Distance à pied (en pas) entre deux cases, ou Infinity.
 function distance(c, from, to) {
-    const seen = new Set([key(from.x, from.y)]);
-    let frontier = [from], d = 0;
+    const { w, h } = c;
+    const m = blockedMask(c, false, c.solidLight);
+    if (from.x < 0 || from.y < 0 || from.x >= w || from.y >= h || to.x < 0 || to.y < 0 || to.x >= w || to.y >= h) return Infinity;
+    const start = from.y * w + from.x, goal = to.y * w + to.x;
+    if (start === goal) return 0;
+    const seen = new Uint8Array(w * h);
+    seen[start] = 1;
+    let frontier = [start], d = 0;
     while (frontier.length) {
         const next = [];
-        for (const p of frontier) {
-            if (p.x === to.x && p.y === to.y) return d;
-            for (const [dx, dy] of STEPS) {
-                const nx = p.x + dx, ny = p.y + dy, k = key(nx, ny);
-                if (seen.has(k) || isWall(c, nx, ny) || c.solidLight.has(k)) continue;
-                seen.add(k); next.push({ x: nx, y: ny });
+        d++;
+        for (const i of frontier) {
+            const x = i % w, y = (i - x) / w;
+            const around = [x + 1 < w ? i + 1 : -1, x > 0 ? i - 1 : -1, y + 1 < h ? i + w : -1, y > 0 ? i - w : -1];
+            for (const j of around) {
+                if (j < 0 || seen[j] || m[j]) continue;
+                if (j === goal) return d;
+                seen[j] = 1; next.push(j);
             }
         }
-        frontier = next; d++;
+        frontier = next;
     }
     return Infinity;
 }
@@ -386,7 +405,7 @@ function carveFalaise(c, base, seed) {
     const at = (o, along, perp) => (o === 'h' ? [along, perp] : [perp, along]);
     let tries = 0;
     for (const [o, along, perp] of shuffled(spots.map(sp => [sp[1], sp[2], sp]), seed, 61).map(e => e[2])) {
-        if (tries >= 30) break;
+        if (tries >= 40) break;
         const L = 5 + Math.floor(hash(along, perp, seed) * 2);
         const dir = o === 'h' ? (hash(perp, along, seed) < 0.6 ? [0, 1] : [0, -1]) : (hash(perp, along, seed) < 0.6 ? [1, 0] : [-1, 0]);
         const ledge = [];
@@ -662,7 +681,7 @@ export function designLevel(screen, options = {}) {
     if (!report.ledges && carveFalaise(c, reach(c), seed)) report.ledges++;
     if (!report.ledges && carveLengthened(c, reach(c), seed)) report.ledges++;
     tries = 0;
-    for (const cand of ledgeCandidates(c, seed)) {
+    for (const cand of report.ledges < MAX_LEDGES ? ledgeCandidates(c, seed) : []) {
         if (report.ledges >= MAX_LEDGES || tries++ >= LEDGE_TRIES) break;
         if (tryLedge(c, base, cand, seed)) report.ledges++;
     }

@@ -13,7 +13,8 @@ import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry } from '../bestiary.js';
-import { entOf, questTargets } from './soluce-targets.mjs';
+import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
+import { overlapOf } from '../mapConnections.js';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
 import { solvePath, getMode } from '../puzzle/engine.js';
 import '../puzzle/modes.js';
@@ -167,6 +168,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -194,7 +196,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 `;
 
 const NAV = [
-    ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['bases.html', 'Bases du combat'],
+    ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['zones.html', 'Zones et jonctions'], ['bases.html', 'Bases du combat'],
     ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
     ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : [])
 ];
@@ -306,7 +308,7 @@ ${cr}
 ${body}
 </main>
 ${LIGHTBOX}
-<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>
 `;
@@ -345,7 +347,7 @@ function objectiveHtml(o, region) {
 
 
 // Captures annotées : la carte de l'écran (soluce/img, voir build-soluce-shots.mjs) avec un cercle rouge par case citée par la quête.
-const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre' };
+const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre', exit: 'passage vers une autre zone', door: 'porte' };
 function shotsHtml(q) {
     const byScreen = new Map();
     for (const t of questTargets(q)) byScreen.set(t.screenId, [...(byScreen.get(t.screenId) || []), t]);
@@ -356,8 +358,8 @@ function shotsHtml(q) {
 function shotFigure(sid, list) {
     if (!existsSync(join(IMG, `${sid}.jpg`))) return '';
     const sc = SCREENS[sid];
-    const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
-    const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
+    // `cw` / `ch` : taille du cercle en cases (un passage de bord fait 3 cases de long) ; la classe de rôle colore les passages et les portes
+    const rings = list.map((t, i) => `<span class="ring ${t.role}" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${(((t.cw || 1.8) / sc.w) * 100).toFixed(2)}%;height:${(((t.ch || 1.8) / sc.h) * 100).toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
     const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
     return `<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend} <small>(cliquer pour agrandir)</small></figcaption></figure>`;
 }
@@ -789,10 +791,120 @@ ${playerScript(Object.fromEntries(EVENT_PUZZLES.map(p => [p.id, PUZZLES[p.id]]))
     }));
 }
 
+// ───────────────────────── Zones : entrées, sorties et jonctions ─────────────────────────
+// Pour chaque région : la chaîne des zones (route d'accès, village, zone sauvage, hameau, sanctuaire) avec, pour chaque passage de bord, le côté, la
+// position sur ce côté et le côté d'arrivée dans la zone voisine ; les portes (maisons, grottes) ; les bordures de mer (Pas de Yu). Les captures
+// (soluce/img) portent des cadres bleus (passages) et orange (portes).
+const DIR_FR = { north: 'nord', south: 'sud', east: 'est', west: 'ouest' };
+const DIR_ARROW = { north: '↑', south: '↓', east: '→', west: '←' };
+const DIR_OPP = { north: 'south', south: 'north', east: 'west', west: 'east' };
+const edgeCellOf = (s, dir, a) => (dir === 'north' ? { x: a, y: 0 } : dir === 'south' ? { x: a, y: s.h - 1 } : dir === 'west' ? { x: 0, y: a } : { x: s.w - 1, y: a });
+// Position le long d'un bord, en mots : « en haut », « au milieu », « en bas » (bords ouest et est) ou « à gauche »… (bords nord et sud).
+const alongWord = (dir, a, s) => {
+    const len = dir === 'north' || dir === 'south' ? s.w : s.h, f = a / Math.max(1, len - 1);
+    const lo = dir === 'north' || dir === 'south' ? 'à gauche' : 'en haut', hi = dir === 'north' || dir === 'south' ? 'à droite' : 'en bas';
+    return f < 0.34 ? lo : f > 0.66 ? hi : 'au milieu';
+};
+const sizeText = s => `${s.w} × ${s.h} cases`;
+const KIND_FR = id => (id.endsWith('_road') ? 'Route d’accès' : id.endsWith('_village') ? 'Village' : id.endsWith('_wild') ? 'Zone sauvage' : id.endsWith('_hamlet') ? 'Hameau' : 'Sanctuaire du soleil');
+
+/** Passages de bord d'une zone : [{ dir, to, mid:{x,y}, range:[min,max], arriveDir, sea, requires, lockedMessage }], triés ouest, nord, sud, est. */
+function passagesOf(s) {
+    const order = { west: 0, north: 1, south: 2, east: 3 };
+    return Object.entries(s.connections || {}).map(([dir, c]) => {
+        const to = SCREENS[c.to], range = to && overlapOf(c, s, to);
+        if (!range) return null;
+        const a = Math.floor((range[0] + range[1]) / 2);
+        return { dir, to: c.to, mid: edgeCellOf(s, dir, a), a, range, arriveDir: DIR_OPP[dir], sea: Boolean(c.sea), requires: c.requires, lockedMessage: c.lockedMessage };
+    }).filter(Boolean).sort((p, q) => order[p.dir] - order[q.dir]);
+}
+const lockText = p => {
+    if (!p.requires) return '';
+    const r = reqText(p.requires);
+    return `fermé tant que ${p.sea ? 'le gardien' : ''} ${r.html} n’est pas ${/^vaincre/.test(r.html) ? '' : 'accompli'}`.replace('tant que vaincre', 'tant que vous n’avez pas vaincu').replace('  ', ' ');
+};
+const interiorIds = new Set(interiorScreens());
+const doorsOf = s => (s.exits || []).filter(e => !e.leaveArena && SCREENS[e.to] && Number.isFinite(e.x));
+
+function zoneHtml(s) {
+    const passages = passagesOf(s).filter(p => !p.sea);
+    const sea = passagesOf(s).filter(p => p.sea);
+    const doors = doorsOf(s);
+    const marks = [
+        ...passages.map(p => ({ x: p.mid.x, y: p.mid.y, name: `${DIR_ARROW[p.dir]} ${SCREENS[p.to].name}`, role: 'exit', cw: p.dir === 'north' || p.dir === 'south' ? 3.4 : 1.8, ch: p.dir === 'north' || p.dir === 'south' ? 1.8 : 3.4 })),
+        ...doors.map(e => ({ x: e.x, y: e.y, name: SCREENS[e.to].name, role: 'door' }))
+    ];
+    const rows = passages.map(p => {
+        const to = SCREENS[p.to];
+        const lock = lockText(p);
+        return `<tr><td><b>${DIR_ARROW[p.dir]} bord ${DIR_FR[p.dir]}</b>, ${alongWord(p.dir, p.a, s)} (case ${p.mid.x}, ${p.mid.y}) — passage de ${p.range[1] - p.range[0] + 1} cases</td><td><a href="#zone-${esc(p.to)}">${esc(to.name)}</a><br><small>${KIND_FR(p.to)} · on y arrive par le bord ${DIR_FR[p.arriveDir]}</small></td><td>${lock || 'libre'}</td></tr>`;
+    });
+    const seaRows = sea.map(p => `<tr><td><b>${DIR_ARROW[p.dir]} bord ${DIR_FR[p.dir]}</b> (tout le côté, c’est de la mer)</td><td><a href="#zone-${esc(p.to)}">${esc(SCREENS[p.to].name)}</a><br><small>on y arrive par le bord ${DIR_FR[p.arriveDir]}</small></td><td>à pied sur l’eau, avec le Pas de Yu${p.requires ? `, une fois ${reqText(p.requires).html} accompli` : ''}</td></tr>`);
+    const doorRows = doors.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${interiorIds.has(e.to) ? `<a href="#zone-${esc(e.to)}">${esc(SCREENS[e.to].name)}</a>` : esc(SCREENS[e.to].name)}</td><td>${e.requires ? esc(`fermée : ${reqText(e.requires).plain}`) : 'libre'}</td></tr>`);
+    const head = '<tr><th>Où</th><th>Mène à</th><th>Accès</th></tr>';
+    return `<h3 id="zone-${esc(s.id)}">${esc(s.name)} <small>${KIND_FR(s.id)} · ${sizeText(s)}</small></h3>
+${shotFigure(s.id, marks)}
+<div class="scroll"><table>${head}${[...rows, ...seaRows].join('') || '<tr><td colspan="3">Aucun passage de bord.</td></tr>'}</table></div>
+${doors.length ? `<details><summary>${doors.length} ${plural(doors.length, 'porte', 'portes')} (maisons, grottes, escaliers)</summary><div class="scroll"><table>${head}${doorRows.join('')}</table></div></details>` : ''}`;
+}
+
+/** Intérieur (maison, grotte, crypte, étage) : sa carte avec un cadre orange par sortie, et où elles mènent. */
+function interiorHtml(s) {
+    const exits = (s.exits || []).filter(e => !e.leaveArena && SCREENS[e.to] && Number.isFinite(e.x));
+    const marks = exits.map(e => ({ x: e.x, y: e.y, name: `${e.stairs ? 'escalier' : 'sortie'} vers ${SCREENS[e.to].name}`, role: 'door' }));
+    const rows = exits.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${interiorIds.has(e.to) || zoneIdSet.has(e.to) ? `<a href="#zone-${esc(e.to)}">${esc(SCREENS[e.to].name)}</a>` : esc(SCREENS[e.to].name)}</td><td>${e.stairs ? 'escalier' : 'porte'}</td></tr>`);
+    return `<h4 id="zone-${esc(s.id)}">${esc(s.name)} <small>${sizeText(s)}</small></h4>
+${shotFigure(s.id, marks)}
+<div class="scroll"><table><tr><th>Où</th><th>Mène à</th><th>Type</th></tr>${rows.join('') || '<tr><td colspan="3">Aucune sortie déclarée.</td></tr>'}</table></div>`;
+}
+const zoneIdSet = new Set(zoneScreens());
+
+function buildZones() {
+    const regions = REGION_ORDER.filter(r => SCREENS[r]);
+    const zonesOf = r => [`${r}_road`, `${r}_village`, `${r}_wild`, `${r}_hamlet`, r].filter(id => SCREENS[id]);
+    const spans = r => zonesOf(r).map(id => SCREENS[id]);
+    const interiorsOf = r => interiorScreens().map(id => SCREENS[id]).filter(s => s.region === r);
+    const chain = r => {
+        // Parcours de la région dans l'ordre de la progression : chaque flèche porte le côté de sortie ; la zone suivante est entrée par le côté opposé.
+        const main = [`${r}_road`, `${r}_village`, `${r}_wild`, r].filter(id => SCREENS[id]);
+        const steps = [];
+        main.forEach((id, i) => {
+            const s = SCREENS[id], next = SCREENS[main[i + 1]];
+            const p = next && passagesOf(s).find(q => q.to === next.id);
+            steps.push(`<li><a href="#zone-${esc(id)}"><b>${esc(s.name)}</b></a> <small>(${KIND_FR(id)})</small>${p ? ` — sortie par le <b>bord ${DIR_FR[p.dir]}</b> ${DIR_ARROW[p.dir]}, ${alongWord(p.dir, p.a, s)}, puis entrée dans <i>${esc(next.name)}</i> par son bord ${DIR_FR[p.arriveDir]}` : ''}</li>`);
+        });
+        const ham = SCREENS[`${r}_hamlet`], wild = SCREENS[`${r}_wild`];
+        const hp = ham && wild && passagesOf(wild).find(q => q.to === ham.id);
+        return `<ol class="steps">${steps.join('')}</ol>${hp ? `<p>Branche : le <a href="#zone-${esc(ham.id)}">${esc(ham.name)}</a> s’atteint par le bord ${DIR_FR[hp.dir]} de la zone sauvage (${alongWord(hp.dir, hp.a, wild)}).</p>` : ''}`;
+    };
+    const body = regions.map(r => `<h2 id="region-${esc(r)}">${esc(regionName(r))}</h2>
+${chain(r)}
+${spans(r).map(zoneHtml).join('\n')}
+${interiorsOf(r).length ? `<details class="interiors"><summary>${interiorsOf(r).length} intérieurs de la région (maisons, grottes, cryptes), chacun annoté</summary>${interiorsOf(r).map(interiorHtml).join('\n')}</details>` : ''}`).join('\n');
+    // Bordures de mer : une ligne par liaison (le bord nord d'une carte du sud mène au bord sud de la carte du nord).
+    const seaLinks = [];
+    Object.values(SCREENS).forEach(s => passagesOf(s).filter(p => p.sea && p.dir === 'north').forEach(p => seaLinks.push([s, p])));
+    const seaTable = seaLinks.map(([s, p]) => `<tr><td><a href="#zone-${esc(s.id)}">${esc(s.name)}</a> (${KIND_FR(s.id)})</td><td><a href="#zone-${esc(p.to)}">${esc(SCREENS[p.to].name)}</a> (${KIND_FR(p.to)})</td><td>${p.requires ? reqText(p.requires).html : '—'}</td></tr>`).join('');
+    write('zones.html', page({
+        file: 'zones.html', title: 'Zones et jonctions', active: 'zones.html',
+        desc: 'Où se trouvent les entrées, les sorties et les jonctions entre les zones de chaque région.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Zones et jonctions']],
+        body: `<h2>Zones, entrées, sorties et jonctions</h2>
+<p class="lead">Pour chaque région : l’ordre des zones, le côté par lequel on sort de l’une et on entre dans la suivante, et la position exacte des passages. Sur les cartes, les <b style="color:#1f8bff">cadres bleus</b> sont les passages vers une autre zone et les <b style="color:#d98a00">cadres orange</b> les portes (maisons, grottes). Cliquez sur une carte pour l’agrandir.</p>
+<div class="box info"><b class="t">À savoir</b>Le parcours n’est pas toujours d’ouest en est : selon la région, on quitte la route d’accès par le haut ou le bas et on entre dans le village (ou dans la zone sauvage) par le côté opposé. Un passage de bord fait 3 cases ; on le franchit en marchant dessus. La zone sauvage mène toujours au sanctuaire par son bord est.</div>
+<div class="box"><b class="t">Régions</b>${regions.map(r => `<a href="#region-${esc(r)}">${esc(regionName(r))}</a>`).join(' · ')}</div>
+${body}
+<h2 id="mer">Bordures de mer</h2>
+<p>Certaines cartes de régions voisines se touchent par la mer : le bord nord de l’une mène au bord sud de l’autre. Ces bords ne se franchissent qu’en marchant sur l’eau (Pas de Yu), une fois vaincu le gardien de la route vers la région la plus avancée des deux.</p>
+<div class="scroll"><table><tr><th>Bord nord de</th><th>Mène au bord sud de</th><th>Gardien à vaincre</th></tr>${seaTable}</table></div>`
+    }));
+}
+
 function buildHub() {
     const total = QUESTS.length;
     const index = [
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
+        ...[...zoneScreens(), ...interiorScreens()].map(id => ({ t: SCREENS[id].name, k: 'zone entrée sortie passage jonction porte carte', h: `soluce/zones.html#zone-${id}`, c: 'Zone' })),
         ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
         ...Object.entries(PUZZLES).map(([id, p]) => EVENT_PUZZLE_IDS.has(id)
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
@@ -810,6 +922,7 @@ function buildHub() {
 <div id="results"></div>
 <div class="grid">
 <a class="card" href="soluce/parcours.html"><b>Parcours principal</b><span>${QUESTS.filter(q => !q.side).length} chapitres de l’histoire</span></a>
+<a class="card" href="soluce/zones.html"><b>Zones et jonctions</b><span>Entrées, sorties et passages entre zones</span></a>
 <a class="card" href="soluce/bases.html"><b>Bases du combat</b><span>Éléments, pouvoirs, biomes</span></a>
 <a class="card" href="soluce/compagnons.html"><b>Compagnons</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
@@ -851,6 +964,7 @@ buildBases();
 buildPuzzles();
 buildUltimes();
 buildParcours();
+buildZones();
 buildEvent();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');

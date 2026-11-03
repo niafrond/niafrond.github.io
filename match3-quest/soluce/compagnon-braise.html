@@ -47,6 +47,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -74,7 +75,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html" class="on">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html" class="on">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
 <main>
 <div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="compagnons.html">Compagnons</a> › Braise</div>
 <h2>Braise <small>— Louveteau de braise</small></h2>
@@ -97,7 +98,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
       <li>Espèce : Loup de Braise (Bête) — Force : <span class="dot" style="background:#e0533d"></span>Feu (rouge) — <b>Faiblesse : <span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</b> — frappe fort, rapide et sournois</li>
     </ul></li></ol></dd>
     <dt>Récompense</dt><dd>80 pièces d’or · 790 points d’expérience · composant de flèche : Croc de braise · <a href="compagnon-braise.html"><strong>Braise</strong></a> rejoint le groupe</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:484px"><img src="img/volcan_h_shan.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Shan"><span class="ring" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Shan : <b>1</b> Shan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring" style="left:38.33%;top:70.45%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Louveteau de braise (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:484px"><img src="img/volcan_h_shan.jpg" width="484" height="308" loading="lazy" alt="Carte : Maison de Shan"><span class="ring giver" style="left:50.00%;top:21.43%;width:16.36%;height:25.71%"><i>1</i></span></div><figcaption>Maison de Shan : <b>1</b> Shan (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/volcan.jpg" width="1320" height="968" loading="lazy" alt="Carte : Gorges du Volcan"><span class="ring target" style="left:38.33%;top:70.45%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Gorges du Volcan : <b>1</b> Louveteau de braise (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
@@ -185,6 +186,6 @@ lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function
 window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
 })();
 </script>
-<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>

@@ -45,6 +45,10 @@ lance un sous-agent sur une tâche de ce domaine.
     session ; republier la même page (`edit_version` / `publish_version` avec `slug`) plutôt qu'en créer une nouvelle. Donner le lien à
     l'utilisateur et indiquer ce qui n'est pas satisfaisant.
 
+12. **Aperçu de la soluce** : toute mise à jour de la soluce (`soluce.html`, `soluce/*.html`, `soluce/img/*`, générées par `tools/build-soluce.mjs` et
+    `tools/build-soluce-shots.mjs`) se termine, comme la règle 11, par la publication de la **soluce complète via artefact** (toutes les pages et images jointes
+    avec `files`, page d'entrée qui ouvre `soluce.html`, même artefact republié) dont on donne le lien à l'utilisateur.
+
 ## Qui touche à quoi (matrice rapide)
 
 | Fichiers | Propriétaire principal | Consulté par |

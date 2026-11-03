@@ -34,7 +34,7 @@ import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
 import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
-import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug } from './decor.js';
+import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug, decorCell } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
 import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront, drawLedge } from './tilePainter.js';
 
@@ -44,7 +44,8 @@ const IDLE_DRAW_MS = 33;        // héros immobile : seules les animations d'amb
 const IDLE_DRAW_LOW_MS = 66;    // idem en effets réduits : ~15 i/s
 // Distance (cases) à une sortie en deçà de laquelle le sol de la carte voisine est préparé, et temps (ms) alloué à chaque image.
 const PREBUILD_RANGE = 14;
-const PREBUILD_BUDGET_MS = 6;
+const PREBUILD_BUDGET_MS = 8;
+const ARRIVAL_BUDGET_MS = 24;   // à l'arrivée sur une carte dont le sol n'est pas fini : tranche par image
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -148,6 +149,7 @@ export function createExplorationView(cfg) {
     let dialogIndex = 0;
     let toastTimer = null;
     let journalEl = null;
+    let mapEl = null;   // carte plein écran (clic sur la minimap) : pose d'un repère
     let merchantEl = null;
     let inCombat = false;
     let battleTransitionEl = null;
@@ -219,7 +221,7 @@ export function createExplorationView(cfg) {
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -622,6 +624,97 @@ export function createExplorationView(cfg) {
         renderCarnet();
     }
 
+    // ── Carte plein écran et repère ─────────────────────────────────────
+    // Un clic sur la minimap ouvre la carte entière (brouillard de guerre compris) ; toucher une case y pose un repère temporaire : une flèche violette
+    // (autre couleur que la quête dorée et la perception rouge) y mène, et il disparaît dès qu'on y arrive (exploration.js `setMarker`).
+    const MARKER_COLOR = '#c084fc';
+    function closeMapOverlay() {
+        if (!mapEl) return;
+        mapEl.remove();
+        mapEl = null;
+    }
+    function openMapOverlay() {
+        ensureSession();
+        if (mapEl || !session || inCombat) return;
+        held = null; walk = null; stopHoldRepeat();
+        const screen = X.currentScreen(session);
+        const biome = BIOMES[screen.biome] || BIOMES.paddy;
+        mapEl = document.createElement('div');
+        mapEl.className = 'explore-map';
+        mapEl.innerHTML = `<div class="explore-map-card" role="dialog" aria-label="Carte de la zone">
+  <div class="explore-map-head"><b></b><span>Touchez la carte pour poser un repère</span></div>
+  <canvas class="explore-map-canvas"></canvas>
+  <div class="explore-map-actions"><button type="button" data-act="clear">Retirer le repère</button><button type="button" data-act="close">Fermer</button></div></div>`;
+        mapEl.querySelector('b').textContent = screen.name;
+        const cv = mapEl.querySelector('canvas');
+        const cell = Math.max(3, Math.min((window.innerWidth - 32) / screen.w, (window.innerHeight - 170) / screen.h));
+        cv.style.width = `${Math.round(screen.w * cell)}px`;
+        cv.style.height = `${Math.round(screen.h * cell)}px`;
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        cv.width = Math.round(screen.w * cell * dpr);
+        cv.height = Math.round(screen.h * cell * dpr);
+        const paint = () => {
+            const g = cv.getContext('2d');
+            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            g.imageSmoothingEnabled = false;
+            g.clearRect(0, 0, cv.width, cv.height);
+            const W = screen.w * cell, H = screen.h * cell;
+            g.drawImage(miniBase(screen, biome), 0, 0, W, H);
+            const fog = X.fogMask(session, screen);
+            const seen = (x, y) => fog[Math.floor(y) * screen.w + Math.floor(x)] === 1;
+            const dot = (x, y, color, r) => { g.fillStyle = color; g.fillRect((x + 0.5) * cell - r, (y + 0.5) * cell - r, r * 2, r * 2); };
+            (screen.exits || []).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#7dd3fc', Math.max(2, cell * 0.35)); });
+            screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x, n.y, '#5ab0ff', Math.max(1.5, cell * 0.28)); });
+            X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#ff4a3a', Math.max(1.5, cell * 0.28)); });
+            g.drawImage(miniFog(screen), 0, 0, W, H);   // le brouillard : cases jamais vues
+            const mk = X.markerOf(session);
+            if (mk) {
+                const cx = (mk.x + 0.5) * cell, cy = (mk.y + 0.5) * cell, r = Math.max(5, cell * 0.9);
+                g.fillStyle = MARKER_COLOR; g.strokeStyle = '#2b1b17'; g.lineWidth = 2;
+                g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx + r * 0.7, cy); g.lineTo(cx, cy + r); g.lineTo(cx - r * 0.7, cy); g.closePath(); g.fill(); g.stroke();
+            }
+            g.fillStyle = '#ffe14a'; g.strokeStyle = '#2b1b17'; g.lineWidth = 2;
+            const hr = Math.max(3, cell * 0.6);
+            g.beginPath(); g.arc((session.data.x + 0.5) * cell, (session.data.y + 0.5) * cell, hr, 0, Math.PI * 2); g.fill(); g.stroke();
+        };
+        cv.addEventListener('click', ev => {
+            const rect = cv.getBoundingClientRect();
+            const x = Math.floor((ev.clientX - rect.left) / (rect.width / screen.w)), y = Math.floor((ev.clientY - rect.top) / (rect.height / screen.h));
+            if (X.setMarker(session, x, y)) { closeMapOverlay(); toast('Repère posé : une flèche violette y mène.', 2600); }
+            else toast('Repère impossible ici.', 1800);
+        });
+        mapEl.addEventListener('click', ev => {
+            const act = ev.target.closest('[data-act]')?.dataset.act;
+            if (act === 'clear') { X.clearMarker(session); paint(); toast('Repère retiré.', 1500); }
+            else if (act === 'close' || ev.target === mapEl) closeMapOverlay();
+        });
+        root.appendChild(mapEl);
+        paint();
+    }
+
+    // Flèche violette vers le repère posé, et pastille sur sa case ; rien quand le repère est tout près.
+    function drawMarkerCompass(P, vis, tile, pulse) {
+        const mk = X.markerOf(session);
+        if (!mk) return;
+        const dest = P(mk.x + 0.5, mk.y + 0.5);
+        ctx.save();
+        // pastille posée sur la case du repère
+        ctx.fillStyle = MARKER_COLOR; ctx.strokeStyle = '#2b1b17'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        const r = tile * (0.3 + 0.04 * pulse);
+        ctx.beginPath(); ctx.moveTo(dest.x, dest.y - r * 1.3); ctx.lineTo(dest.x + r, dest.y); ctx.lineTo(dest.x, dest.y + r * 1.3); ctx.lineTo(dest.x - r, dest.y); ctx.closePath(); ctx.fill(); ctx.stroke();
+        const hero = P(vis.px + 0.5, vis.py + 0.5);
+        const dx = dest.x - hero.x, dy = dest.y - hero.y;
+        if (Math.hypot(dx, dy) >= tile * 1.3) {
+            const ang = Math.atan2(dy, dx), rr = tile * (0.95 + 0.08 * pulse);
+            ctx.translate(hero.x + Math.cos(ang) * rr, hero.y + Math.sin(ang) * rr - tile * 0.1);
+            ctx.rotate(ang);
+            ctx.beginPath();
+            ctx.moveTo(tile * 0.26, 0); ctx.lineTo(-tile * 0.12, -tile * 0.2); ctx.lineTo(-tile * 0.04, 0); ctx.lineTo(-tile * 0.12, tile * 0.2); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
     // Voyage rapide vers une pierre activée (hors combat).
     function travelTo(screenId) {
         ensureSession();
@@ -791,6 +884,7 @@ export function createExplorationView(cfg) {
     }
 
     function handleResult(res) {
+        if (res?.markerReached) toast('Repère atteint.', 1800);
         if (!res) return;
         switch (res.type) {
             case 'combat':
@@ -954,7 +1048,7 @@ export function createExplorationView(cfg) {
     function onCanvasPointerDown(ev) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
-        if (overMinimap(ev)) return;   // la minimap n'est qu'un indicateur : elle ne réagit pas aux clics
+        if (overMinimap(ev)) { openMapOverlay(); return; }   // un clic sur la minimap l'ouvre en plein écran (pose d'un repère)
         // Toucher le héros lance la perception du qì (talent, 5 s) : le geste sert aussi à réarmer les vibrations.
         const tile = tileFromEvent(ev);
         if (tile.x === session.data.x && tile.y === session.data.y && X.hasAura(cfg.getPlayerLevel())) {
@@ -1025,6 +1119,7 @@ export function createExplorationView(cfg) {
         syncStealth();
         const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel() });
         lastMoveAt = performance.now();
+        if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
             walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
             handleResult(res);
@@ -1042,6 +1137,7 @@ export function createExplorationView(cfg) {
             return;
         }
         if (ev.key === 'Escape' && merchantEl) { closeMerchant(); return; }
+        if (ev.key === 'Escape' && mapEl) { closeMapOverlay(); return; }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
         if (ev.key === 'c' || ev.key === 'C') { toggleMount(); return; }
@@ -1157,7 +1253,7 @@ export function createExplorationView(cfg) {
 
     // ── Calque de sol mis en cache ─────────────────────────────────────────
     const GROUND_MARGIN = 32;                 // marge (px CSS) du calque de sol autour de la carte (plus de falaise : simple tampon)
-    const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
+    const GROUND_MAX_PIXELS = 10.5e6;         // au-delà, la densité du calque baisse (groundDpr), puis on retombe sur le dessin direct (mémoire, durée de préparation)
     let groundCache = null;
 
     // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
@@ -1217,9 +1313,16 @@ export function createExplorationView(cfg) {
     let spareCanvas = null;   // canvas de sol recyclé (évite de réallouer ~30 Mo à chaque carte)
     const sameGround = (c, screen, biome, tile, dpr) => c && c.screen === screen && c.biome === biome && c.tile === tile && c.dpr === dpr;
 
-    function groundCanvasSize(screen, tile, dpr) {
+    // Densité du calque de sol : celle de l'écran, abaissée au besoin pour que le calque tienne dans GROUND_MAX_PIXELS (les grandes cartes de 64 × 32
+    // cases dépassaient d'un rien le plafond à densité 2 et retombaient sur le dessin direct, bien plus lent). Pixel art : agrandi sans lissage.
+    function groundDpr(screen, tile, dpr) {
         const M = GROUND_MARGIN;
-        return [Math.ceil((tile * screen.w + 2 * M) * dpr), Math.ceil((tile * screen.h + 2 * M) * dpr)];
+        const css = (tile * screen.w + 2 * M) * (tile * screen.h + 2 * M);
+        return Math.max(1, Math.min(dpr, Math.sqrt(0.97 * GROUND_MAX_PIXELS / css)));   // 3 % de marge : les dimensions sont arrondies à l'entier supérieur
+    }
+    function groundCanvasSize(screen, tile, dpr) {
+        const M = GROUND_MARGIN, gd = groundDpr(screen, tile, dpr);
+        return [Math.ceil((tile * screen.w + 2 * M) * gd), Math.ceil((tile * screen.h + 2 * M) * gd)];
     }
 
     function startGroundJob(screen, biome, tile, dpr) {
@@ -1231,8 +1334,9 @@ export function createExplorationView(cfg) {
         canvas.height = h;
         const g = canvas.getContext('2d');
         if (!g) return null;
-        g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        return { screen, biome, tile, dpr, canvas, paintRows: groundPainter(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN), y: 0, done: false };
+        const gd = groundDpr(screen, tile, dpr);
+        g.setTransform(gd, 0, 0, gd, 0, 0);
+        return { screen, biome, tile, dpr, gd, canvas, paintRows: groundPainter(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN), y: 0, done: false };
     }
 
     function dropGroundJob() {
@@ -1252,10 +1356,11 @@ export function createExplorationView(cfg) {
         const c = groundCache;
         if (sameGround(c, screen, biome, tile, dpr)) return c;
         if (sameGround(groundJob, screen, biome, tile, dpr)) {
-            // la carte voisine préparée est celle où l'on arrive : on termine les lignes restantes (s'il y en a) et on l'adopte
-            if (!groundJob.done) { groundJob.paintRows(groundJob.y, screen.h); groundJob.done = true; }
+            // la carte voisine préparée est celle où l'on arrive : on l'adopte une fois terminée. Si des lignes manquent encore, elles sont peintes par tranches
+            // (le sol visible est dessiné directement en attendant) : tout finir d'un coup bloquait plus d'une demi-seconde sur une grande carte.
+            if (!groundJob.done) { stepGroundJob(groundJob, ARRIVAL_BUDGET_MS); if (!groundJob.done) return null; }
             if (c?.canvas) spareCanvas = c.canvas;
-            groundCache = { screen, biome, tile, dpr, canvas: groundJob.canvas };
+            groundCache = { screen, biome, tile, dpr, gd: groundJob.gd, canvas: groundJob.canvas };
             groundJob = null;
             return groundCache;
         }
@@ -1267,10 +1372,11 @@ export function createExplorationView(cfg) {
         canvas.height = h;
         const g = canvas.getContext('2d');
         if (!g) return null;
-        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const gd = groundDpr(screen, tile, dpr);
+        g.setTransform(gd, 0, 0, gd, 0, 0);
         // Aucune bordure : ni falaise ni ombre autour de la carte (le décor se prolonge jusqu'au bord de l'écran).
         paintGroundCells(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN);
-        groundCache = { screen, biome, tile, dpr, canvas };
+        groundCache = { screen, biome, tile, dpr, gd, canvas };
         return groundCache;
     }
 
@@ -1365,8 +1471,14 @@ export function createExplorationView(cfg) {
         // sur les vieux appareils. Rendu identique.
         const ground = getGroundLayer(screen, biome, tile, dpr);
         if (ground) {
-            ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
-                ground.canvas.width / dpr, ground.canvas.height / dpr);
+            // Seule la partie visible du calque est recopiée (le calque d'une carte de 64 × 32 cases fait ~10 millions de pixels : le recopier en entier
+            // à chaque image coûtait plus de 60 ms en rendu logiciel) ; pendant un glissement d'écran, tout le calque (la scène est décalée).
+            const gx = ox - GROUND_MARGIN, gy = oy - GROUND_MARGIN, gw = ground.canvas.width / ground.gd, gh = ground.canvas.height / ground.gd;
+            if (slideX || slideY) ctx.drawImage(ground.canvas, gx, gy, gw, gh);
+            else {
+                const x0 = Math.max(0, gx), y0 = Math.max(0, gy), x1 = Math.min(vw, gx + gw), y1 = Math.min(vh, gy + gh);
+                if (x1 > x0 && y1 > y0) ctx.drawImage(ground.canvas, (x0 - gx) * ground.gd, (y0 - gy) * ground.gd, (x1 - x0) * ground.gd, (y1 - y0) * ground.gd, x0, y0, x1 - x0, y1 - y0);
+            }
         } else {
             // Carte trop grande pour le calque (GROUND_MAX_PIXELS, p. ex. 44 × 64 cases en haute densité) : seules les cases visibles sont peintes à chaque image
             // (peindre toute la carte, hautes herbes comprises, faisait ramer le jeu).
@@ -1673,7 +1785,7 @@ export function createExplorationView(cfg) {
                         break;
                     }
                     const depth = Math.min(it.x, it.y, screen.w - 1 - it.x, screen.h - 1 - it.y);
-                    const border = depth === 0 || (screen.treeBorder && depth <= 1);   // couronne d'arbres (Rizières) : deux rangées d'arbres
+                    const border = depth === 0 || (screen.treeBorder && depth <= 1) || isRimTree(screen, it.x, it.y);   // couronne d'arbres (Rizières) : deux rangées d'arbres, et forêt hors du terrain d'une carte agrandie
                     if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
                         // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
                         const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);
@@ -1681,7 +1793,7 @@ export function createExplorationView(cfg) {
                             (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
                         break;
                     }
-                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y, screen.furnishing) : pickDecor(biome.decor, it.x, it.y);
+                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y, screen.furnishing) : pickDecor(biome.decor, ...decorCell(screen, it.x, it.y));
                     if (decor === 'rock') {
                         drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
                         break;
@@ -1843,6 +1955,7 @@ export function createExplorationView(cfg) {
             }
         });
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
+        drawMarkerCompass(P, vis, tile, pulse);
         drawAura(P, vis, tile, now);
         if (screen.dark) { miniRect = null; drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight); }
         else drawMinimap(screen, biome, P(vis.px + 0.5, vis.py + 0.5), { ox, oy, tile, vw, vh, dpr });
@@ -1899,8 +2012,11 @@ export function createExplorationView(cfg) {
         return off;
     }
 
+    // `?shot=1` (captures de la soluce, tools/build-soluce-shots.mjs) : pas de minimap, elle cacherait un coin de la carte.
+    const NO_MINIMAP = typeof location !== 'undefined' && /[?&]shot=1(&|$)/.test(location.search);
     function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
         miniRect = null;
+        if (NO_MINIMAP) return;
         if (!screen.w || !screen.h) return;
         const MARGIN = 8;
         const scale = Math.max(1, Math.floor(Math.min(vw * 0.3 / screen.w, vh * 0.28 / screen.h, 4) * 2) / 2);
@@ -1940,6 +2056,8 @@ export function createExplorationView(cfg) {
         const vx = Math.max(0, -ox / tile), vy = Math.max(0, -oy / tile);
         const vwT = Math.min(screen.w - vx, (vw - Math.max(0, ox)) / tile), vhT = Math.min(screen.h - vy, (vh - Math.max(0, oy)) / tile);
         ctx.strokeRect(x0 + vx * scale + 0.5, y0 + vy * scale + 0.5, Math.max(1, vwT * scale - 1), Math.max(1, vhT * scale - 1));
+        const mk = X.markerOf(session);
+        if (mk) dot(mk.x + 0.5, mk.y + 0.5, MARKER_COLOR, 2.5);
         dot(vis.px + 0.5, vis.py + 0.5, '#ffe14a', 2);
         ctx.restore();
     }
@@ -2054,6 +2172,14 @@ export function createExplorationView(cfg) {
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
     // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
     // puis recopiés d'un seul appel par image (au lieu de dizaines de fillRect par objet et par image).
+    const rimCache = new WeakMap();
+    // Case de l'étendue hors terrain d'une carte agrandie (`screen.rimTrees`, world/enlarge.js) : arbre de bordure plutôt que décor isolé.
+    function isRimTree(screen, x, y) {
+        if (!screen.rimTrees) return false;
+        let grid = rimCache.get(screen.rimTrees);
+        if (!grid) { grid = rectGrid(screen, screen.rimTrees); rimCache.set(screen.rimTrees, grid); }
+        return grid[y * screen.w + x] === 1;
+    }
     const objCache = new Map();
     function drawCachedObject(key, x, y, w, h, pad, paint) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);
