@@ -300,10 +300,10 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(D.BELL.item.id);
     });
 
-    test('énigme des miroirs rituels : faisable en 3 coups, sans armure antique, et le coffre ne s\'ouvre qu\'une fois résolue', () => {
+    test('énigme des miroirs rituels : difficile (13 coups), sans armure antique, et le coffre ne s\'ouvre qu\'une fois résolue', () => {
         expect(PUZZLES[D.PUZZLE.id]).toBe(D.PUZZLE.def);
         expect(PUZZLES[D.PUZZLE.id].set).toBeUndefined();
-        expect(solve(puzzleDef(D.PUZZLE.id))).toBe(3);
+        expect(solve(puzzleDef(D.PUZZLE.id))).toBe(13);
         expect(createPuzzle(puzzleDef(D.PUZZLE.id)).won).toBe(false);
 
         const session = createSession(null);
@@ -316,12 +316,12 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(D.PUZZLE.item.id);
     });
 
-    test('énigme du cortège : niveau moyen (21 coups), coffre de palier 2', () => {
+    test('énigme du cortège : niveau difficile (26 coups), coffre de palier 3', () => {
         const P = D.PUZZLE_CORTEGE;
         expect(PUZZLES[P.id]).toBe(P.def);
-        expect(solve(puzzleDef(P.id))).toBe(21);
+        expect(solve(puzzleDef(P.id))).toBe(26);
         expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
-        expect(realm.chests.find(c => c.id === P.chest.id)).toMatchObject({ puzzle: P.id, lootTier: 2 });
+        expect(realm.chests.find(c => c.id === P.chest.id)).toMatchObject({ puzzle: P.id, lootTier: 3 });
         const session = createSession(null);
         teleportToScreen(session, D.REALM_ID);
         expect(openChest(session, P.chest.id)).toMatchObject({ type: 'puzzle', puzzleId: P.id });
@@ -330,11 +330,11 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(P.item.id);
     });
 
-    test('énigme des urnes : faisable en 13 coups, verrouille son coffre', () => {
+    test('énigme des urnes : difficile (66 coups), verrouille son coffre', () => {
         const P = D.PUZZLE_BLOCKS;
         expect(PUZZLES[P.id]).toBe(P.def);
         expect(D.PUZZLE_LIST.map(p => p.id)).toEqual(['ws_miroirs', 'ws_urnes', 'ws_cortege']);
-        expect(solve(puzzleDef(P.id))).toBe(13);
+        expect(solve(puzzleDef(P.id))).toBe(66);
         expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
         const session = createSession(null);
         teleportToScreen(session, D.REALM_ID);
@@ -537,8 +537,8 @@ describe('La Nuit des âmes errantes : événement activé', () => {
     test('énigmes des terrains : solubles, sans armure antique, et leur coffre ne s\'ouvre qu\'une fois résolues', () => {
         expect(TR.TERRAIN_PUZZLES.map(p => p.id)).toEqual(['ws_souvenirs', 'ws_miroir_karma']);
         TR.TERRAIN_PUZZLES.forEach(p => { expect(PUZZLES[p.id]).toBe(p.def); expect(PUZZLES[p.id].set).toBeUndefined(); expect(createPuzzle(puzzleDef(p.id)).won).toBe(false); });
-        expect(solve(puzzleDef('ws_souvenirs'))).toBe(18);
-        expect(solve(puzzleDef('ws_miroir_karma'))).toBe(4);
+        expect(solve(puzzleDef('ws_souvenirs'))).toBe(60);
+        expect(solve(puzzleDef('ws_miroir_karma'))).toBe(13);
         const session = createSession(null);
         teleportToScreen(session, TR.TERRASSE);
         expect(openChest(session, 'ws_souvenir')).toMatchObject({ type: 'puzzle', puzzleId: 'ws_souvenirs' });

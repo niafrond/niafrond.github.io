@@ -226,7 +226,7 @@ export const SOURCE_CHAUDE = {
 
 // ── Énigmes (moteur d'énigmes existant ; absentes quand l'événement est désactivé) ───────────────────────────────
 
-// Miroirs de lumière : le rayon descend de la source (v) ; il faut basculer les miroirs pour qu'il atteigne la lanterne cible (T). Niveau facile.
+// Miroirs de lumière : le rayon descend de la source (v) ; il faut basculer les bons miroirs (13 coups minimum, parmi une vingtaine, avec un prisme qui dédouble le rayon) pour qu'il atteigne les trois lanternes cibles (T). Niveau DIFFICILE.
 export const PUZZLE_MIROIR = {
     id: 'wlm_miroirs',
     tier: 3,
@@ -235,20 +235,21 @@ export const PUZZLE_MIROIR = {
         mode: 'mirror',
         level: {
             grid: [
-                '##########',
-                '#.......v#',
-                '#..\\..T..#',
-                '#........#',
-                '#........#',
-                '#../....\\#',
-                '##########'
+                '###########',
+                '#.T..../..#',
+                '#\\bT./././#',
+                '#*..././..#',
+                '#/././.*.\\#',
+                '#./.T...\\.#',
+                '#../..<.a.#',
+                '###########'
             ]
         }
     },
     chest: { id: 'wlm_cache_miroirs', at: '9', label: 'Cache du miroir de lumière', openText: 'Le dernier miroir s\'aligne, un trait de lumière dorée traverse le coffret, et la serrure de glace se brise : un fragment de flamme repose sur du velours rouge.' },
     item: FRAGMENTS[0]
 };
-// Blocs de glace à déplacer sur les dalles marquées (mode « push »). Niveau facile à moyen.
+// Blocs de glace à déplacer sur les dalles marquées (mode « push »). Niveau DIFFICILE : 52 coups minimum, trois blocs dans un col cloisonné.
 export const PUZZLE_GLACE = {
     id: 'wlm_blocs_glace',
     tier: 3,
@@ -258,10 +259,12 @@ export const PUZZLE_GLACE = {
         level: {
             grid: [
                 '#########',
-                '#@......#',
-                '#.$..$..#',
-                '#.......#',
-                '#..*..*.#',
+                '#.....*.#',
+                '#....#.##',
+                '#.#..#..#',
+                '##.$*..##',
+                '#..$#$..#',
+                '#.*@..#.#',
                 '#########'
             ]
         }
