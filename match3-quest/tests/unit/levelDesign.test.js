@@ -192,22 +192,40 @@ describe('caches invisibles, aura et coffres mimiques', () => {
         });
     });
 
-    test('talent d\'aura : seule l\'onde du niveau requis, de plus en plus forte en s\'approchant', async () => {
-        const { auraSignal, hasAura, AURA_LEVEL, AURA_RANGE, isChestShown } = await import('../../exploration.js');
+    test('perception du qì : lancée en touchant le héros, 5 s, flèche vers la cache la plus proche', async () => {
+        const { auraSignal, hasAura, startPerception, perceptionActive, nearestHidden, AURA_LEVEL, PERCEPTION_MS, isChestShown } = await import('../../exploration.js');
         const s = withHidden[0], cache = s.chests.find(c => c.hidden);
         const spot = nextTo(s, cache);
         const se = make(s, spot.x, spot.y);
         expect(hasAura(AURA_LEVEL - 1)).toBe(false);
-        expect(auraSignal(se, AURA_LEVEL - 1)).toBeNull();
-        const near = auraSignal(se, AURA_LEVEL);
-        expect(near.strength).toBeGreaterThan(0.8);
-        expect(isChestShown(se, cache, AURA_LEVEL - 1)).toBe(false);   // invisible sans l'aura
-        expect(isChestShown(se, cache, AURA_LEVEL)).toBe(true);        // visible tout près avec l'aura
-        // pas de cache sur la carte (village) : aucune onde
+        // jamais active d'elle-même
+        expect(auraSignal(se, AURA_LEVEL, 0)).toBeNull();
+        expect(isChestShown(se, cache, AURA_LEVEL, 0)).toBe(false);
+        // sans le talent : rien ne se lance
+        expect(startPerception(se, AURA_LEVEL - 1, 0)).toEqual({ ok: false, reason: 'level' });
+        expect(perceptionActive(se, 1)).toBe(false);
+        // avec le talent : 5 secondes
+        const res = startPerception(se, AURA_LEVEL, 1000);
+        expect(res.ok).toBe(true);
+        expect(res.found).toBe(true);
+        expect(perceptionActive(se, 1000 + PERCEPTION_MS - 1)).toBe(true);
+        expect(perceptionActive(se, 1000 + PERCEPTION_MS + 1)).toBe(false);
+        const sig = auraSignal(se, AURA_LEVEL, 2000);
+        expect(sig.strength).toBeGreaterThan(0.8);
+        // la flèche pointe vers la cache la plus proche
+        const near = nearestHidden(se);
+        expect(near.chest.id).toBe(s.chests.filter(c => c.hidden).sort((a, b) => Math.hypot(a.x - spot.x, a.y - spot.y) - Math.hypot(b.x - spot.x, b.y - spot.y))[0].id);
+        expect(sig.angle).toBeCloseTo(Math.atan2(near.dy, near.dx), 6);
+        // la cache ne se dessine que perception lancée et tout près
+        expect(isChestShown(se, cache, AURA_LEVEL - 1, 2000)).toBe(false);
+        expect(isChestShown(se, cache, AURA_LEVEL, 2000)).toBe(true);
+        expect(auraSignal(se, AURA_LEVEL, 1000 + PERCEPTION_MS + 1)).toBeNull();   // éteinte au bout de 5 s
+        // plus de cache sur la carte (village) : rien à indiquer
         const v = SCREENS.rizieres_village;
         expect(v.chests.some(c => c.hidden)).toBe(false);
-        expect(auraSignal(make(v, v.spawn.x, v.spawn.y), AURA_LEVEL)).toBeNull();
-        expect(AURA_RANGE).toBeGreaterThan(5);
+        const sv = make(v, v.spawn.x, v.spawn.y);
+        expect(startPerception(sv, AURA_LEVEL, 0).found).toBe(false);
+        expect(auraSignal(sv, AURA_LEVEL, 10)).toBeNull();
     });
 
     test('une cache s\'ouvre en butant dessus (même sans aura) et ne se rouvre pas', () => {
@@ -241,5 +259,59 @@ describe('caches invisibles, aura et coffres mimiques', () => {
                 expect([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(c.x + dx, c.y + dy)))).toBe(true);
             });
         });
+    });
+});
+
+describe('coffres refermés au retour (mimiques)', () => {
+    const s = SCREENS.rizieres_wild;
+    const other = SCREENS.rizieres_village;
+    const screens = { [s.id]: s, [other.id]: other };
+    const fresh = () => createSession({ screenId: other.id, x: other.spawn.x, y: other.spawn.y }, screens, []);
+
+    test('au retour, certains coffres ouverts se referment en mimiques ; jamais à la première visite', async () => {
+        const { enterScreen, openChest, isMimicChest, RECLOSE_MAX } = await import('../../exploration.js');
+        const se = fresh();
+        const plain = s.chests.filter(c => !c.mimic && !c.questItem && !c.puzzle);
+        plain.forEach(c => se.data.openedChests.push(c.id));
+        enterScreen(se, s.id, s.spawn);                       // 1re visite de la zone : rien ne se referme
+        expect(se.data.mimicked).toEqual([]);
+        let closedTotal = [];
+        for (let i = 0; i < 8; i++) {                         // allers-retours : des coffres se referment peu à peu
+            enterScreen(se, other.id, other.spawn);
+            enterScreen(se, s.id, s.spawn);
+            closedTotal = se.data.mimicked;
+        }
+        expect(closedTotal.length).toBeGreaterThan(0);
+        expect(closedTotal.length).toBeLessThanOrEqual(plain.length);
+        const id = closedTotal[0], chest = s.chests.find(c => c.id === id);
+        expect(se.data.openedChests.includes(id)).toBe(false);   // refermé
+        expect(isMimicChest(se, chest)).toBe(true);
+        expect(RECLOSE_MAX).toBeGreaterThan(0);
+        // l'ouvrir démasque une mimique
+        const res = openChest(se, id);
+        expect(res.type).toBe('mimic');
+    });
+
+    test('les coffres cités comme condition ou d\'objet de quête ne se referment jamais', async () => {
+        const { enterScreen } = await import('../../exploration.js');
+        const se = fresh();
+        s.chests.forEach(c => se.data.openedChests.push(c.id));
+        for (let i = 0; i < 15; i++) { enterScreen(se, other.id, other.spawn); enterScreen(se, s.id, s.spawn); }
+        const refs = new Set();
+        Object.values(SCREENS).forEach(sc => [sc.npcs, sc.chests, sc.enemies, sc.exits].forEach(l => l.forEach(e => ['showWhen', 'hideWhen', 'requires'].forEach(k => [].concat(e[k] || []).forEach(v => refs.add(v))))));
+        se.data.mimicked.forEach(id => {
+            const c = s.chests.find(x => x.id === id);
+            expect(c.questItem).toBeFalsy();
+            expect(c.puzzle).toBeFalsy();
+            expect(refs.has(id)).toBe(false);
+        });
+    });
+
+    test('l\'état (coffres refermés, retours) se sauvegarde et se relit', async () => {
+        const se = fresh();
+        se.data.mimicked.push('x'); se.data.returns[s.id] = 3;
+        const again = createSession(JSON.parse(JSON.stringify(se.data)), screens, []);
+        expect(again.data.mimicked).toEqual(['x']);
+        expect(again.data.returns[s.id]).toBe(3);
     });
 });

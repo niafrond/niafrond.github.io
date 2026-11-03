@@ -15,7 +15,7 @@
 import { getStuffById } from './stuff.js';
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
-import { vibrate } from './gameOptions.js';
+import { vibrate, armVibration } from './gameOptions.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
@@ -955,6 +955,16 @@ export function createExplorationView(cfg) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
         if (overMinimap(ev)) return;   // la minimap n'est qu'un indicateur : elle ne réagit pas aux clics
+        // Toucher le héros lance la perception du qì (talent, 5 s) : le geste sert aussi à réarmer les vibrations.
+        const tile = tileFromEvent(ev);
+        if (tile.x === session.data.x && tile.y === session.data.y && X.hasAura(cfg.getPlayerLevel())) {
+            stopHoldRepeat();
+            armVibration();
+            const res = X.startPerception(session, cfg.getPlayerLevel());
+            toast(res.found ? 'Perception du qì : une flèche rouge indique le trésor caché le plus proche.' : 'Perception du qì : aucun trésor caché ici.', 2600);
+            vibrate(30);
+            return;
+        }
         stopHoldRepeat();
         holdPointer = { id: ev.pointerId, clientX: ev.clientX, clientY: ev.clientY };
         holdTimer = setInterval(() => {
@@ -1539,7 +1549,7 @@ export function createExplorationView(cfg) {
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
-        X.visibleChests(session).filter(c => X.isChestShown(session, c, cfg.getPlayerLevel())).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
+        X.visibleChests(session).filter(c => X.isChestShown(session, c, cfg.getPlayerLevel(), performance.now())).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || e;
             items.push({ depth: v.y + 0.2, kind: 'enemy', e, x: v.x, y: v.y });
@@ -1952,24 +1962,43 @@ export function createExplorationView(cfg) {
     function drawAura(P, vis, tile, now) {
         const level = cfg.getPlayerLevel();
         if (!X.hasAura(level)) return;
-        if (!auraAnnounced) { auraAnnounced = true; if (!session.rt.auraSeen) { session.rt.auraSeen = true; toast('Perception du qì : le héros ressent les trésors cachés alentour.', 4200); } }
-        const sig = X.auraSignal(session, level);
+        if (!auraAnnounced) { auraAnnounced = true; if (!session.rt.auraSeen) { session.rt.auraSeen = true; toast('Perception du qì acquise : touchez votre héros pour sentir les trésors cachés (5 s).', 5200); } }
+        const sig = X.auraSignal(session, level, now);   // null tant que la perception n'est pas lancée (clic sur le héros)
         if (!sig) return;
         const c = P(vis.px + 0.5, vis.py + 0.5);
-        const period = 1500 - 1000 * sig.strength;   // ms par onde
+        const period = 1800 - 900 * sig.strength;   // ms par onde
+        const left = Math.max(0, (session.rt.perceptionUntil - now) / X.PERCEPTION_MS);   // 1 → 0 sur 5 s
         ctx.save();
-        for (let k = 0; k < 3; k++) {
-            const t = ((now + k * period / 3) % period) / period;
-            ctx.strokeStyle = `rgba(150,230,255,${((1 - t) * (0.25 + 0.55 * sig.strength)).toFixed(3)})`;
-            ctx.lineWidth = 1.5 + 2.5 * sig.strength;
+        // ondes discrètes : deux anneaux fins, translucides, qui s'élargissent peu
+        for (let k = 0; k < 2; k++) {
+            const t = ((now + k * period / 2) % period) / period;
+            ctx.strokeStyle = `rgba(170,235,255,${((1 - t) * (0.08 + 0.22 * sig.strength)).toFixed(3)})`;
+            ctx.lineWidth = 1 + 1.2 * sig.strength;
             ctx.beginPath();
-            ctx.arc(c.x, c.y, tile * (0.5 + t * (1.2 + 2.2 * sig.strength)), 0, Math.PI * 2);
+            ctx.arc(c.x, c.y, tile * (0.45 + t * (0.7 + 1.1 * sig.strength)), 0, Math.PI * 2);
             ctx.stroke();
         }
+        // flèche rouge vers la cache la plus proche (s'efface avec le temps restant)
+        const r = tile * 1.05;
+        ctx.translate(c.x + Math.cos(sig.angle) * r, c.y + Math.sin(sig.angle) * r - tile * 0.1);
+        ctx.rotate(sig.angle);
+        ctx.globalAlpha = 0.35 + 0.65 * Math.min(1, left * 2);
+        ctx.beginPath();
+        ctx.moveTo(tile * 0.3, 0);
+        ctx.lineTo(-tile * 0.14, -tile * 0.22);
+        ctx.lineTo(-tile * 0.04, 0);
+        ctx.lineTo(-tile * 0.14, tile * 0.22);
+        ctx.closePath();
+        ctx.fillStyle = '#e53935';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2b1b17';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
         ctx.restore();
         if (sig.strength > 0.12 && now - lastBuzz > period) {
             lastBuzz = now;
-            vibrate(20 + Math.round(70 * sig.strength));   // coupée par l'option « Vibrations »
+            vibrate([60 + Math.round(60 * sig.strength)]);   // coupée par l'option « Vibrations »
         }
     }
 

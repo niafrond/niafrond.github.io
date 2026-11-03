@@ -393,7 +393,7 @@ export function applyDamage(target, damage, options = {}){
     const nextHp = Math.max(0, currentHp - normalizedDamage);
     target.hp = nextHp;
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
-    if(target === player && currentHp - nextHp > 0) vibrate(Math.min(220, 40 + Math.round(180 * (currentHp - nextHp) / Math.max(1, player.maxHp))));
+    if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
 
     // Jauge de rage : se charge quand le joueur perd des PV en combat.
     if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {

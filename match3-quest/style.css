@@ -3685,3 +3685,14 @@ body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border
 /* Pastilles sans bordure épaisse ; PA = sprite des doubles flèches */
 #player-stats .stat-chip, #enemy-stats .stat-chip, #player-stats .status-badge, #enemy-stats .status-badge { border: 0; }
 .pa-ic { width: 1.5em; height: 1.5em; margin: -2px 0; image-rendering: pixelated; }
+
+/* Secousse de l'écran quand l'appareil ne sait pas vibrer (gameOptions.js > vibrate). */
+@keyframes m3-shake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-3px, 1px); } 40% { transform: translate(3px, -1px); } 60% { transform: translate(-2px, 1px); } 80% { transform: translate(2px, 0); } }
+body.shake { animation: m3-shake .3s ease-in-out; }
+@media (prefers-reduced-motion: reduce) { body.shake { animation: none; } }
+
+/* Invitation à réactiver les vibrations bloquées par le navigateur (main.js, gameOptions.js). */
+.vibe-notice { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 9000; display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 24px);
+    padding: 8px 12px; background: #2b1b17; color: #fff3d6; border: 2px solid #f2c94c; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
+.vibe-notice button { font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid #f2c94c; background: #5a3a1c; color: #fff3d6; cursor: pointer; }
+.vibe-notice .vibe-close { padding: 2px 8px; }

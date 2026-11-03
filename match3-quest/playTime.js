@@ -21,8 +21,8 @@ function load() {
     } catch (e) { return { total: 0, days: {}, real: { total: 0, days: {} } }; }
 }
 
-function save(data) {
-    const cutoff = dayKey(new Date(Date.now() - KEEP_DAYS * 86400000));
+function save(data, now = new Date()) {
+    const cutoff = dayKey(new Date(now.getTime() - KEEP_DAYS * 86400000));   // relatif au jour enregistré (et non à l'horloge : testable)
     [data, data.real].forEach(c => Object.keys(c.days).forEach(k => { if (k < cutoff) delete c.days[k]; }));
     try { localStorage.setItem(PLAYTIME_STORAGE_KEY, JSON.stringify(data)); } catch (e) { /* ignoré */ }
 }
@@ -38,7 +38,7 @@ export function addPlayTime(seconds, now = new Date(), realSeconds = 0) {
         data.real.days[k] = (data.real.days[k] || 0) + realSeconds;
         data.real.total += realSeconds;
     }
-    save(data);
+    save(data, now);
 }
 
 // { today, yesterday, week, total } en secondes. La semaine commence le lundi.
