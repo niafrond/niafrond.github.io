@@ -239,6 +239,18 @@ describe('Chang\'e explore le village (mode dans le moteur d\'exploration)', () 
             const cells = new Set(npcs.map(n => `${n.x},${n.y}`));
             expect(cells.size).toBe(5);
             npcs.forEach(n => { expect(isTerrainBlocked(screen, n.x, n.y)).toBe(false); expect(n.injured).toBe(true); expect(entityAt(session, n.x, n.y)).toMatchObject({ type: 'npc' }); });
+            // étalés sur le village : jamais attroupés (au moins 4 cases entre deux blessés, 4 pas du départ), et tous accessibles à pied
+            const pts = npcs.map(n => [n.x, n.y]);
+            for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) expect(Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1])).toBeGreaterThanOrEqual(4);
+            pts.forEach(([x, y]) => expect(Math.hypot(x - screen.spawn.x, y - screen.spawn.y)).toBeGreaterThanOrEqual(3));
+            const seen = new Set([`${screen.spawn.x},${screen.spawn.y}`]), todo = [[screen.spawn.x, screen.spawn.y]];
+            for (let i = 0; i < todo.length; i++) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const nx = todo[i][0] + dx, ny = todo[i][1] + dy, k = `${nx},${ny}`;
+                if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || seen.has(k) || isTerrainBlocked(screen, nx, ny) || cells.has(k)) continue;
+                seen.add(k); todo.push([nx, ny]);
+            }
+            pts.forEach(([x, y]) => expect([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(`${x + dx},${y + dy}`))).toBe(true));
+            npcs.forEach(n => expect(n.need).toBeGreaterThan(0));
             expect(aliveEnemies(session)).toEqual([]);
             expect(visibleChests(session)).toEqual([]);
             expect(activeCompanionOf(session)).toBeNull();

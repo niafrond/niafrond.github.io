@@ -2058,17 +2058,22 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
+                    // mode Chang'e : liseré qui passe du rouge (blessé) au vert (soigné) à mesure des soins, en halo autour du personnage puis en anneau
+                    const careT = it.n.injured ? (session.data.change.healed.includes(it.n.id) ? 1 : Math.min(1, (session.data.change.hp[it.n.id] || 0) / (it.n.need || 1))) : 0;
+                    const careCol = it.n.injured ? `rgb(${Math.round(222 + (70 - 222) * careT)},${Math.round(56 + (200 - 56) * careT)},${Math.round(60 + (120 - 60) * careT)})` : null;
+                    if (careCol) { ctx.save(); ctx.shadowColor = careCol; ctx.shadowBlur = tile * 0.16; }
+                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));
+                    if (careCol) ctx.restore();   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
                     const marker = it.n.injured ? null : X.npcMarker(session, it.n.id);   // mode Chang'e : pas de « ! » de quête
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
                     if (it.n.injured) {   // mode Chang'e : anneau doux sous un blessé, coche verte une fois soigné
                         const healed = session.data.change.healed.includes(it.n.id);
-                        ctx.lineWidth = 3;
-                        ctx.strokeStyle = healed ? 'rgba(80,200,130,.85)' : `rgba(190,170,255,${(0.5 + 0.35 * pulse).toFixed(3)})`;
+                        ctx.lineWidth = 4;
+                        ctx.strokeStyle = careCol;
                         ctx.beginPath();
-                        ctx.ellipse(c.x, feet, tile * (0.4 + (healed ? 0 : 0.05 * pulse)), tile * 0.15, 0, 0, Math.PI * 2);
+                        ctx.ellipse(c.x, feet, tile * (0.4 + (healed ? 0 : 0.04 * pulse)), tile * 0.15, 0, 0, Math.PI * 2);
                         ctx.stroke();
                         if (healed) {   // coche verte au-dessus de la tête
                             const mx = c.x, my = c.y - tile * 0.72, r = tile * 0.13;

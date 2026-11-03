@@ -1966,16 +1966,36 @@ export const pendingChangeEpisode = session => session.data.change?.pending || n
 export const inChangeMode = session => Boolean(session.rt?.changeMode);
 export const changeEpisodeOf = session => (session.rt.changeMode ? episodeById(session.rt.changeMode.episode) : null);
 
-// Case libre pour un blessé qui n'a pas sa place sur cet écran : on parcourt les cases autour du départ, par distance, à au moins 3 cases des autres.
-function freeCellFor(session, screen, taken) {
-    const sp = screen.spawn;
-    const cells = [];
-    for (let y = 1; y < screen.h - 1; y++) for (let x = 1; x < screen.w - 1; x++) cells.push([x, y, Math.hypot(x - sp.x, y - sp.y)]);
-    cells.sort((a, b) => a[2] - b[2] || a[1] - b[1] || a[0] - b[0]);
-    const ok = (x, y) => !isTerrainBlocked(screen, x, y) && !screen.exits.some(e => e.x === x && e.y === y) && !(x === sp.x && y === sp.y)
-        && !(screen.structures || []).some(st => x >= st.x && x < st.x + st.w && y >= st.y && y < st.y + st.h);
-    const near = (x, y, d) => taken.some(t => Math.hypot(t.x - x, t.y - y) < d);
-    return cells.find(([x, y, d]) => d >= 3 && ok(x, y) && !near(x, y, 3.5)) || cells.find(([x, y]) => ok(x, y) && !near(x, y, 1.5)) || [sp.x + 1, sp.y];
+// Places des blessés : étalées sur tout le village (jamais attroupées). On explore les cases accessibles depuis le départ, puis on retient cinq cases par
+// « point le plus éloigné » (chaque nouvelle case maximise sa distance aux cases déjà prises et au départ), à l'écart des bords, des sorties et des bâtiments.
+function spreadCells(session, screen, count) {
+    const sp = screen.spawn, key = (x, y) => `${x},${y}`;
+    const solid = (x, y) => isTerrainBlocked(screen, x, y) || (screen.structures || []).some(st => x >= st.x && x < st.x + st.w && y >= st.y && y < st.y + st.h);
+    const nearExit = (x, y) => screen.exits.some(e => Math.abs(e.x - x) <= 1 && Math.abs(e.y - y) <= 1);
+    const dist = new Map([[key(sp.x, sp.y), 0]]), queue = [[sp.x, sp.y]];
+    for (let i = 0; i < queue.length; i++) {
+        const [x, y] = queue[i];
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || dist.has(key(nx, ny)) || solid(nx, ny)) continue;
+            dist.set(key(nx, ny), dist.get(key(x, y)) + 1);
+            queue.push([nx, ny]);
+        }
+    }
+    const open = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => dist.has(key(x + dx, y + dy))).length >= 2;   // au moins deux voisines libres : on peut venir le toucher
+    const cands = queue.filter(([x, y]) => x >= 1 && y >= 1 && x < screen.w - 1 && y < screen.h - 1 && !nearExit(x, y) && dist.get(key(x, y)) >= 4 && open(x, y));
+    const taken = [], anchors = [[sp.x, sp.y]];
+    for (let n = 0; n < count && cands.length; n++) {
+        let best = null, bd = -1;
+        for (const [x, y] of cands) {
+            const d = Math.min(...anchors.map(([ax, ay]) => Math.hypot(ax - x, ay - y)));
+            if (d > bd + 1e-9 || (Math.abs(d - bd) <= 1e-9 && best && (y < best[1] || (y === best[1] && x < best[0])))) { bd = d; best = [x, y]; }
+        }
+        taken.push(best);
+        anchors.push(best);
+    }
+    while (taken.length < count) taken.push([sp.x + taken.length + 1, sp.y]);   // petite carte très serrée : repli
+    return taken;
 }
 
 /** Commence l'épisode : Chang'e arrive dans le village. Renvoie l'écran ou null (épisode ou écran inconnu). */
@@ -1985,12 +2005,10 @@ export function startChangeMode(session, episodeId) {
     const ch = session.data.change;
     ch.pending = ep.id;
     ch.return = { screenId: session.data.screenId, x: session.data.x, y: session.data.y };
-    const taken = [];
-    const npcs = ep.injured.map(n => {
-        const real = screen.npcs.find(r => r.id === n.id);
-        const [x, y] = real ? [real.x, real.y] : freeCellFor(session, screen, taken);
-        taken.push({ x, y });
-        return { ...(real || {}), id: n.id, x, y, name: n.name, title: n.state, injured: true };
+    const cells = spreadCells(session, screen, ep.injured.length);
+    const npcs = ep.injured.map((n, i) => {
+        const real = screen.npcs.find(r => r.id === n.id);   // son dessin et son étiquette d'origine, mais pas sa place : les blessés sont étalés sur le village
+        return { ...(real || {}), id: n.id, x: cells[i][0], y: cells[i][1], name: n.name, title: n.state, injured: true, need: n.need };
     });
     session.rt.changeMode = { episode: ep.id, npcs };
     session.data.screenId = screen.id;
