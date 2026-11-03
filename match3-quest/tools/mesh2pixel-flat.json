@@ -1,0 +1,18 @@
+{
+  "width": 64,
+  "height": 96,
+  "supersample": 14,
+  "bands": 3,
+  "band_thresholds": [-1.0, 5.0],
+  "shadows": false,
+  "ambient": 0.99,
+  "clusters_per_role": 4,
+  "max_colors": 40,
+  "outline": true,
+  "inner_outline": true,
+  "palette_merge_tol": 14,
+  "min_cluster": 4,
+  "detail_weight": 3.0,
+  "texture_filter": "nearest",
+  "up": "y"
+}
