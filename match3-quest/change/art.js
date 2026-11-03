@@ -13,8 +13,8 @@ const ART = {
     eau: `<path d="M16 3.4 C22.5 11.4 25.6 15.6 25.6 19.8 A9.6 9.6 0 0 1 6.4 19.8 C6.4 15.6 9.5 11.4 16 3.4Z" fill="#4c9be0" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 19.6 A5.4 5.4 0 0 0 15.4 25" stroke="#bfe0ff" stroke-width="2" fill="none" stroke-linecap="round"/>`,
     // Énergie argentée : étoile à quatre branches
     argent: `<path d="M16 3 L19.2 12.8 L29 16 L19.2 19.2 L16 29 L12.8 19.2 L3 16 L12.8 12.8Z" fill="#cdd6e2" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 8 L17.6 14.4 L24 16 L17.6 17.6 L16 24 L14.4 17.6 L8 16 L14.4 14.4Z" fill="#f5f8fc"/>`,
-    // Pleine lune (joker) : disque nacré cerclé d'or, deux « mers » grises
-    lune: `<circle cx="16" cy="16" r="12.8" fill="#fff3c4" stroke="${OL}" stroke-width="1.6"/><circle cx="16" cy="16" r="10.2" fill="none" stroke="#e5b93c" stroke-width="1.6"/><circle cx="12.4" cy="12.8" r="2.4" fill="#dccf9c"/><circle cx="19.6" cy="18.8" r="3" fill="#dccf9c"/><circle cx="12.8" cy="21" r="1.4" fill="#dccf9c"/>`
+    // Goutte d'élixir (joker) : goutte ambrée lumineuse, éclat et deux étincelles. (Clé de moteur `lune` conservée ; rien de lunaire ici.)
+    lune: `<path d="M16 2.8 C22.4 10.6 25.8 15 25.8 19.6 A9.8 9.8 0 0 1 6.2 19.6 C6.2 15 9.6 10.6 16 2.8Z" fill="#f2b632" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 8 C20 13 22.4 16 22.4 19.4 A6.4 6.4 0 0 1 9.6 19.4 C9.6 16 12 13 16 8Z" fill="#ffd96a"/><path d="M11.2 19 A5 5 0 0 0 15 24.6" stroke="#fff6cf" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M25 5 L26 7.4 L28.4 8.4 L26 9.4 L25 11.8 L24 9.4 L21.6 8.4 L24 7.4Z" fill="#fff6cf" stroke="${OL}" stroke-width="0.8"/>`
 };
 
 export const TILE_ART = Object.keys(ART);

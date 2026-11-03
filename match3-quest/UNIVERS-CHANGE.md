@@ -24,6 +24,14 @@ Conséquences de cet objectif :
 - **Sa dynamique est inverse de celle de Hou Yi.** Pas d'ennemi, pas de tête de mort, pas de dégâts : les PNJ ont **peu de vie**, et c'est elle qui
   combine des tuiles pour leur en rendre.
 
+### 1.1 D'où vient son don
+
+**Chang'e a bu une goutte de l'élixir par accident**, en le rangeant : c'est ce qui lui donne le don de soigner. Elle le dit elle-même au tout début
+du premier épisode (« je n'ai pas voulu l'immortalité, et je ne l'ai pas eue »). **Ce ne sont donc pas encore des pouvoirs liés à la lune** : elle n'y est
+pas (elle n'y montera qu'en buvant le reste de l'élixir, au Pic de la Lune). Dans ce mode, rien n'est « lunaire » : les énergies s'appellent jade, lotus,
+perles de nacre, eau claire et énergie argentée, le joker est une **goutte d'élixir** et le pouvoir du plateau est le **souffle de l'élixir**. Seuls les
+**gâteaux de lune** gardent leur nom : ce sont des gâteaux, pas des pouvoirs.
+
 ### Ton
 
 Chaleureux, discret, concret. Les victoires de Chang'e sont minuscules (une soupe chaude, un nom retrouvé, un enfant qui rit) et c'est ce qui les
@@ -50,9 +58,11 @@ exclusivement dans la campagne de Hou Yi (l'élixir).
    (il lui raconte ce qui vient de se passer, elle lui dit où elle est). **Quand il a fini de parler, la transition par le miroir se lance** :
    le reflet du miroir s'ouvre en cercle et révèle Chang'e (animation « reflet circulaire » : `sprites/change/mirror-in.gif`, et `mirror-out.gif` pour le retour) et le joueur arrive chez Chang'e, dans le
    village deux régions plus tôt.
-2. **Exploration du village** : le joueur **se déplace de personne blessée en personne blessée**, **cinq blessés au plus** par village. Chang'e
-   marche dans la vue d'exploration habituelle (sprite `change_jouable`), chaque blessé est marqué (halo discret, jamais de croix rouge).
-3. **Soin** : toucher un blessé ouvre son **puzzle de soin** (§5). Un PNJ guéri se lève, remercie, reçoit son gâteau et entre dans le **Livre des noms**.
+2. **Exploration du village** : le joueur **explore la carte du village avec Chang'e, comme avec Hou Yi** (mêmes déplacements, même vue), **de personne
+   blessée en personne blessée, cinq au plus**. Pas d'ennemi, pas de coffre, pas de hautes herbes à rencontres, pas de compagnon ; chaque blessé est
+   marqué d'un anneau doux (une coche verte une fois soigné), jamais d'une croix rouge. **Chang'e reste dans le village** : si elle touche une sortie ou
+   le bord de la carte, **le narrateur rappelle qu'il reste du monde à soigner**. Au tout début de l'épisode 1, elle avoue la goutte d'élixir (§1.1).
+3. **Soin** : toucher un blessé (marcher vers lui) ouvre son **puzzle de soin** (§5). Un PNJ guéri se lève, remercie, reçoit son gâteau et entre dans le **Livre des noms**.
 4. **Fin d'épisode** : **une fois que tout le monde est soigné**, Chang'e **parle à Hou Yi** à travers le miroir (courte scène, §2.3), puis
    **retour au monde normal** (même animation à l'envers). **Épisode 3** : c'est la **dernière fois** qu'ils se parlent par le miroir ; Chang'e le
    **coupe elle-même** à la fin de la scène (§2.4).
@@ -71,19 +81,19 @@ les gens que Hou Yi a croisés (ou jamais croisés). Cinq par village. **Énergi
 | Blessé (id) | État | Énergie, X / N | Gâteau (goût, particularité) |
 |---|---|---|---|
 | Lin (`farmer_lin`) | Coup de chaleur, désespéré | Jade, 24 / 12 | Haricot rouge, un peu de gingembre (mains froides) |
-| Doyen Wen (`elder_wen`) | Épuisé d'avoir porté le village | Eau céleste, 24 / 12 | Peau de neige, sans sucre |
+| Doyen Wen (`elder_wen`) | Épuisé d'avoir porté le village | Eau claire, 24 / 12 | Peau de neige, sans sucre |
 | Ping (`ping`, épouse de Lin) | Évanouie à la rizière sèche | Lotus, 26 / 12 | Taro, une fleur de lotus |
-| Petit Bao (`xiaobao`) | Enfant déshydraté | Perles lunaires, 26 / 11 | Jaune d'œuf salé, **très petit** (il n'en a jamais fini un) |
+| Petit Bao (`xiaobao`) | Enfant déshydraté | Perles de nacre, 26 / 11 | Jaune d'œuf salé, **très petit** (il n'en a jamais fini un) |
 | Grand-mère Tao (`grandma_tao`) | Doyenne des commères, malaise | Énergie argentée, 28 / 12 | Matcha, double croûte |
 
 **Épisode 2 : Port-à-Sec de Hekou (`fleuve`)**
 
 | Blessé (id) | État | Énergie, X / N | Gâteau |
 |---|---|---|---|
-| Gu (`ferryman_gu`) | Soif, bateau échoué | Eau céleste, 34 / 12 | Peau de neige, pas de sucre |
+| Gu (`ferryman_gu`) | Soif, bateau échoué | Eau claire, 34 / 12 | Peau de neige, pas de sucre |
 | Mei (`weaver_mei`) | Fièvre de boue | Lotus, 34 / 12 | Haricot rouge, un fil de soie dans le ruban |
 | Hu (`salt_hu`) | Marchand de sel, poumons pris | Jade, 38 / 12 | Matcha, salé comme son entrepôt |
-| Lian (`girl_lian`) | Enfant fiévreuse | Perles lunaires, 36 / 11 | Taro, en forme de coquillage |
+| Lian (`girl_lian`) | Enfant fiévreuse | Perles de nacre, 36 / 11 | Taro, en forme de coquillage |
 | Vieux Rao (`fleuve_village_old_caulker`) | Calfat sans coque, épuisé | Énergie argentée, 40 / 12 | Jaune d'œuf salé, deux jaunes |
 
 **Épisode 3 : Enclos de Caoyuan (`fauves`)**
@@ -92,8 +102,8 @@ les gens que Hou Yi a croisés (ou jamais croisés). Cinq par village. **Énergi
 |---|---|---|---|
 | Zi (`shepherd_zi`) | Bergère, troupeau dispersé | Jade, 44 / 13 | Matcha, un brin de menthe sauvage |
 | Wu (`hunter_wu`) | Morsures, fièvre | Lotus, 46 / 13 | Haricot rouge, grosse part |
-| Dame Sa (`cheese_sa`) | Marchande de lait caillé, coup de chaleur | Perles lunaires, 48 / 13 | Taro, au lait |
-| Bai (`old_nomad_bayan`) | Vieux nomade, cœur fatigué | Eau céleste, 50 / 13 | Peau de neige, tout doux |
+| Dame Sa (`cheese_sa`) | Marchande de lait caillé, coup de chaleur | Perles de nacre, 48 / 13 | Taro, au lait |
+| Bai (`old_nomad_bayan`) | Vieux nomade, cœur fatigué | Eau claire, 50 / 13 | Peau de neige, tout doux |
 | Mulan (`fauves_village_khulan`) | Jeune archère mordue | Énergie argentée, 54 / 13 | Jaune d'œuf salé, un petit arc de pâte |
 
 À la fin des trois épisodes, **15 noms** sont dans le Livre des noms.
@@ -148,7 +158,7 @@ Hou Yi répond brièvement (un mot, un remerciement, une inquiétude pour elle),
 
 ### 5.1 Principe général
 
-Contrairement à Hou Yi, Chang'e **ne combat pas**. Elle utilise ses pouvoirs lunaires pour soigner les PNJ victimes des coups de chaleur
+Contrairement à Hou Yi, Chang'e **ne combat pas**. Elle utilise son don de soigner (une goutte d'élixir bue par accident, voir §1.1) pour soigner les PNJ victimes des coups de chaleur
 provoqués par les dix soleils et les créatures associées. Le gameplay reprend le principe de Puzzle Quest mais **inverse sa finalité** : les
 combinaisons de tuiles **restaurent des points de vie** au lieu d'infliger des dégâts.
 
@@ -160,10 +170,10 @@ Même grille que le jeu de base (`board.js`, `matchMechanics.js`). Les tuiles re
 |---|---|---|
 | Jade | `tile-green` | soin standard |
 | Lotus | `tile-red` | soin standard |
-| Perles lunaires | `tile-purple` | soin standard |
-| Eau céleste | `tile-blue` | soin standard |
+| Perles de nacre | `tile-purple` | soin standard |
+| Eau claire | `tile-blue` | soin standard |
 | Énergie argentée | `tile-yellow` | soin standard |
-| Pleine lune (joker) | `tile-joker` | joker ; un 5 en ligne le crée |
+| Goutte d'élixir (joker) | `tile-joker` | joker ; un 5 en ligne le crée |
 
 **Retirés** de ce mode : `tile-skull` (soleil ardent) et `tile-combat` (flèche). Il n'y a ni tuile de dégât, ni attaque d'adversaire.
 
@@ -174,7 +184,7 @@ Même grille que le jeu de base (`board.js`, `matchMechanics.js`). Les tuiles re
 
 - **3 tuiles** alignées : soin de base.
 - **4 ou 5 tuiles** : bonus (soin multiplié, tuile spéciale créée).
-- **Certaines tuiles** déclenchent un **pouvoir** : par exemple, une tuile « goutte de lune » qui soigne tous les PNJ d'un point, une tuile
+- **Certaines tuiles** déclenchent un **pouvoir** : par exemple, une tuile « goutte d'élixir » qui soigne tous les PNJ d'un point, une tuile
   « lotus » qui ajoute un coup. Les pouvoirs viennent des gâteaux déjà offerts (§4).
 
 ### 5.3 Objectif d'un niveau : les PNJ blessés
@@ -191,8 +201,8 @@ Exemples d'objectifs :
 - Soigner un personnage **particulièrement affaibli** (un seul PNJ, X élevé, N serré).
 
 Les valeurs X / N de chaque PNJ sont fixées dans le tableau de l'épisode correspondant (§2.2). **Points de soin** : chaque tuile de la couleur demandée
-retirée vaut 1 point, +1 pour un alignement de quatre et +2 pour cinq (qui laisse aussi un joker « pleine lune »). Les tuiles des autres couleurs chargent
-la jauge du **souffle lunaire** (10 tuiles) : un bouton qui convertit 5 tuiles en la couleur demandée, sans dépenser de coup. Réglage mesuré par simulation
+retirée vaut 1 point, +1 pour un alignement de quatre et +2 pour cinq (qui laisse aussi un joker « goutte d'élixir »). Les tuiles des autres couleurs chargent
+la jauge du **souffle de l'élixir** (10 tuiles) : un bouton qui convertit 5 tuiles en la couleur demandée, sans dépenser de coup. Réglage mesuré par simulation
 (joueur au hasard / joueur glouton) : épisode 1 de 78-93 % / 95-99 % de réussite par tentative, épisode 2 de 49-67 % / 79-93 %, épisode 3 de 23-45 % / 58-82 % ;
 comme les soins sont conservés entre les tentatives, aucun blessé ne reste inguérissable. Un village compte **cinq blessés**, chacun avec une barre de vie
 individuelle et une couleur imposée.
@@ -241,7 +251,7 @@ L'animation de transition retenue est le **reflet circulaire** (`sprites/change/
 
 - **Sprite jouable** : `change_jouable` (quatre directions, marche `walk_*`, geste de soin en `attack_*`), voir `SPECS.md`.
 - **Palette** : blanc nacré, argent, lilas, or ; lumière de lune. Les décors restent ceux de la campagne.
-- **Effets** : poussière de lune, pétales, anneaux argentés à chaque soin ; **jamais** de flammes ni de rouge agressif.
+- **Effets** : poussière dorée, pétales, anneaux argentés à chaque soin ; **jamais** de flammes ni de rouge agressif.
 - **Musique** : un thème doux au piano et à la flûte (agent Musique) ; **effets** : tintements de jade, souffles d'eau (agent Effets sonores).
 
 ## 9. Reste à faire
@@ -253,14 +263,18 @@ L'animation de transition retenue est le **reflet circulaire** (`sprites/change/
 
 ## 10. Implémentation (état au 2026-11-03)
 
-- **`change/engine.js`** : moteur pur du puzzle de soin (plateau 8×8, alignements avec joker, cascades, points de soin, jauge du souffle lunaire, soins conservés).
+- **`change/engine.js`** : moteur pur du puzzle de soin (plateau 8×8, alignements avec joker, cascades, points de soin, jauge du souffle de l'élixir, soins conservés).
   Les tuiles possibles sont exactement `ENERGIES` + `JOKER` : **0 % de crâne et de flèche** par construction (tirage initial, remplissage, pouvoir).
-- **`change/data.js`** : les trois épisodes (habitants réels, énergie, points et coups, gâteaux, remerciements, conversations d'entrée et de sortie, finale de l'épisode 3).
-- **`change/art.js`** : dessins SVG des cinq énergies et de la pleine lune ; **`change/state.js`** : état sauvegardé `session.data.change`
-  (`done`, `pending`, `hp`, `healed`) ; **`change/view.js`** : fenêtre (transition, village, puzzle, Livre des noms, confirmation du miroir, conversation finale).
-- **Moteur de jeu** : `exploration.js` émet l'événement `changeEpisode` à la mort de `sun_4`, `sun_5` et `sun_9` (avant l'arrivée du messager du Fusang) ;
-  `explorationView.js` joue la conversation d'entrée par le miroir, ouvre la fenêtre, puis laisse arriver le messager ; le **bouton miroir** du HUD
-  (visible tant qu'un épisode est inachevé) le rouvre après confirmation ; `saveManager.js` sauvegarde l'état ; la Nouvelle Partie + remet les épisodes à zéro.
-- **Assets** : sprite `change_jouable` (marche, geste de soin), transitions `sprites/change/mirror-in.gif` et `mirror-out.gif` (reflet circulaire et son inverse),
-  tuiles dessinées en code. Précache : `change/` et `sprites/change/` ajoutés à `tools/precache-manifest.mjs`.
-- **Tests** : `tests/unit/change.test.js` (moteur, données, déclencheur, sauvegarde) et `tests/unit/changeView.test.js` (parcours complet des trois épisodes en jsdom).
+- **`change/data.js`** : les trois épisodes (village, habitants réels, énergie, points et coups, gâteaux, remerciements, conversations d'entrée et de sortie, aveu de la goutte
+  d'élixir à l'arrivée de l'épisode 1, finale de l'épisode 3) ; **`change/art.js`** : tuiles SVG ; **`change/state.js`** : état sauvegardé `session.data.change`
+  (`done`, `pending`, `hp`, `healed`, `return` = place de Hou Yi pendant l'épisode) ; **`change/view.js`** : transition par le miroir, puzzle de soin, Livre des noms.
+- **Moteur d'exploration** (`exploration.js`) : `startChangeMode` / `endChangeMode` téléportent le héros dans l'écran du village (`rizieres_village`, `fleuve_village`,
+  `fauves_village`) et l'y enferment (`changeStay` sur toute sortie ou bord) ; ni ennemi, ni coffre, ni rencontre d'herbe, ni compagnon, ni monture ; les cinq blessés sont des PNJ
+  virtuels (`rt.changeMode.npcs`, à leur place d'origine si l'habitant est sur cet écran, sinon sur une case libre). Il émet `changeEpisode` à la mort de `sun_4`, `sun_5`, `sun_9`
+  (avant l'arrivée du messager du Fusang).
+- **Vue** (`explorationView.js`) : Chang'e est dessinée à la place du héros (`change_jouable`, marche animée) ; toucher un blessé ouvre `openHeal` ; `changeStay` fait parler le
+  narrateur ; bouton miroir du HUD (retour après confirmation, ou reprise d'un épisode inachevé) ; musique `change-village` / `change-farewell` (`main.js`).
+- **Audio** (gm) : musiques ACE-Step `change-village`, `change-puzzle`, `change-farewell` (`tools/audio/acestep/catalog.mjs`, `composer.js` pour le repli procédural) et sept effets
+  `change-swap`, `change-match`, `change-heal`, `change-cake`, `change-breath`, `change-mirror`, `change-cut` (`sfx_generate.py`, modèle gm/MMAudio, `sfxCatalog.js`).
+- **Assets** : sprite `change_jouable` (marche, geste de soin), transitions `sprites/change/mirror-in.gif` et `mirror-out.gif`, tuiles dessinées en code. Précache mis à jour.
+- **Tests** : `tests/unit/change.test.js` (moteur, données, déclencheur, sauvegarde, mode village dans le moteur d'exploration) et `tests/unit/changeView.test.js` (fenêtres, en jsdom).

@@ -19,7 +19,7 @@ import { vibrate, armVibration } from './gameOptions.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
-import { openChange } from './change/view.js';
+import { openHeal, openBook, playMirror } from './change/view.js';
 import { episodeById } from './change/data.js';
 import { dialogFlags } from './dialogState.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playPortalTransition, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
@@ -198,12 +198,15 @@ export function createExplorationView(cfg) {
         if (els.title) els.title.textContent = `${screen.name}${plus}`;
         if (els.objective) {
             const tq = X.trackedQuest(session);
-            els.objective.textContent = `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
+            const prog = X.changeProgress(session);
+            els.objective.textContent = prog.length
+                ? `Chang'e : soigner les habitants (${prog.filter(p => p.healed).length} / ${prog.length})`
+                : `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
         }
         // Bouton miroir : visible tant qu'un épisode de Chang'e est commencé et inachevé (il le rouvre, après confirmation).
         if (els.mirrorBtn) {
             if (!els.mirrorBtn.innerHTML) els.mirrorBtn.innerHTML = icon('mirror');
-            els.mirrorBtn.hidden = !X.pendingChangeEpisode(session);
+            els.mirrorBtn.hidden = !(X.inChangeMode(session) || X.pendingChangeEpisode(session));
         }
         // Dans l'arène, le bouton « Arène » (trophée) devient « Sortir » (porte) : on peut en sortir à tout moment.
         if (els.arenaBtn) {
@@ -222,7 +225,6 @@ export function createExplorationView(cfg) {
         toastTimer = setTimeout(() => els.toast.classList.remove('visible'), ms);
     }
 
-    let changeOpen = false;   // fenêtre du mode Chang'e ouverte (change/view.js) : la carte ne réagit plus
     let puzzleView = null;   // énigme à plateau ouverte (puzzle/view.js), au-dessus de la carte
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
@@ -230,7 +232,7 @@ export function createExplorationView(cfg) {
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => Boolean(vis.npcAnim?.blocking) || isDialogOpen() || Boolean(puzzleView) || changeOpen || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => Boolean(vis.npcAnim?.blocking) || isDialogOpen() || Boolean(puzzleView) || Boolean(healView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -454,6 +456,9 @@ export function createExplorationView(cfg) {
     }
 
     // ── Mode Chang'e (change/) ───────────────────────────────────────────────────────────────────────────────────────
+    // Chang'e explore le village comme Hou Yi (mêmes déplacements, même carte) mais ne peut pas le quitter : le narrateur rappelle qu'il reste du
+    // monde à soigner. Toucher un blessé ouvre son puzzle (change/view.js) ; tous soignés : conversation de sortie, retour par le miroir.
+    const sfxSafe = name => { try { playSfx(name); } catch { /* le son est facultatif */ } };
     const talkLines = (who, lines) => new Promise(resolve => openDialog(
         who === 'hou' ? sceneSpeaker({ hero: true }) : sceneSpeaker({ npc: 'change', name: "Chang'e", title: 'par le miroir' }), lines, resolve));
     // Conversation à travers le miroir : les répliques sont groupées par locuteur, dites l'une après l'autre.
@@ -465,33 +470,99 @@ export function createExplorationView(cfg) {
             i = j;
         }
     }
-    // Ouvre l'épisode `n` : conversation d'entrée (sauf reprise par le bouton miroir), transition, village de Chang'e. Se résout quand la fenêtre se ferme.
-    async function startChangeEpisode(n, { resume = false } = {}) {
-        const ep = episodeById(n);
-        if (!ep || changeOpen) return { completed: false };
-        changeOpen = true;
-        try {
-            await loadGbaSprites(['change', 'change_jouable', ...ep.injured.map(p => p.id), cfg.getHero().classId]).catch(() => {});
-            if (!resume) await talkThroughMirror(ep.intro);
-            return await new Promise(resolve => {
-                const view = openChange(root, {
-                    episode: n, data: session.data.change, save: () => cfg.onSave(), heroPortrait: gbaSprite(cfg.getHero().classId),
-                    sfx: name => { try { playSfx(name); } catch { /* le son est facultatif */ } },
-                    onFinish: res => { changeOpen = false; refreshHud(); resolve(res); }
-                });
-                if (!view) { changeOpen = false; resolve({ completed: false }); }
-            });
-        } finally { changeOpen = false; refreshHud(); }
+    const narrate = (title, lines) => new Promise(resolve => openDialog({ ...NARRATOR, title }, lines, resolve));
+    let changeEnd = null;       // résout startChangeEpisode quand le mode se termine
+    let healView = null;        // puzzle de soin ouvert (change/view.js)
+    let changeFarewell = false; // épisode 3 : musique de l'adieu pendant la dernière conversation
+    const changeEpisode = () => X.changeEpisodeOf(session);
+
+    // Remet la caméra et l'état de marche sur la case du héros (après une téléportation : arrivée au village, retour de Hou Yi).
+    function resetViewTo() {
+        vis.px = session.data.x; vis.py = session.data.y; vis.cx = vis.px; vis.cy = vis.py;
+        vis.trail = null; held = null; walk = null;
     }
-    // Bouton miroir : après confirmation, rouvre l'épisode laissé en cours.
+    async function finishChange(done, completed) {
+        await playMirror(root, 'mirror-out.gif', sfxSafe);
+        X.endChangeMode(session, { done });
+        changeFarewell = false;
+        resetViewTo();
+        await prepareRegion(X.currentScreen(session).region).catch(() => {});
+        refreshHud();
+        cfg.onSave();
+        const resolve = changeEnd; changeEnd = null;
+        resolve?.({ completed });
+    }
+    async function concludeChange() {
+        const ep = changeEpisode();
+        if (!ep) return;
+        if (ep.finale) changeFarewell = true;
+        await talkThroughMirror(ep.outro);
+        if (ep.finale) { sfxSafe('change-cut'); await narrate('Le miroir', [ep.finale]); }
+        await finishChange(true, true);
+    }
+    // Ouvre le soin d'un blessé (ou rappelle son remerciement s'il est déjà soigné).
+    function openHealFor(npcId) {
+        const ep = changeEpisode();
+        const npc = ep?.injured.find(n => n.id === npcId);
+        if (!npc || healView) return;
+        if (session.data.change.healed.includes(npcId)) {
+            openDialog(sceneSpeaker({ npc: npcId, name: npc.name }), [npc.thanks]);
+            return;
+        }
+        held = null; walk = null;
+        healView = openHeal(root, {
+            npc, data: session.data.change, save: () => cfg.onSave(), sfx: sfxSafe,
+            onClose: ({ won }) => {
+                healView = null;
+                refreshHud();
+                if (won && ep.injured.every(n => session.data.change.healed.includes(n.id))) afterDialogs(() => concludeChange());
+            }
+        });
+    }
+    // Chang'e touche une sortie du village : elle reste.
+    let stayAt = 0;
+    function changeStay() {
+        if (Date.now() - stayAt < 1500 || isDialogOpen()) return;
+        stayAt = Date.now();
+        openDialog({ ...NARRATOR, title: "Chang'e" }, ["Il reste du monde à soigner ici. Chang'e ne quittera pas le village tant que ses habitants ne seront pas remis sur pied."]);
+    }
+    // Bouton miroir : en mode Chang'e, retour auprès de Hou Yi (après confirmation, les soins sont conservés) ; sinon, reprise d'un épisode inachevé.
     function askMirror() {
+        if (healView) return;
+        if (X.inChangeMode(session)) {
+            const ep = changeEpisode();
+            openDialog({ ...NARRATOR, title: 'Le miroir' }, [`Revenir auprès de Hou Yi ? Les soins déjà faits sont conservés ; les autres habitants de ${ep.village} vous attendront.`], null, [
+                { label: 'Oui, revenir', run: () => { finishChange(false, false); } },
+                { label: 'Rester', run: () => {} }
+            ]);
+            return;
+        }
         const n = X.pendingChangeEpisode(session);
         const ep = n && episodeById(n);
-        if (!ep || changeOpen) return;
+        if (!ep) return;
         openDialog({ ...NARRATOR, title: 'Le miroir' }, [`Le bronze s'éclaire : Chang'e est à ${ep.village}, au milieu de ceux qu'elle soigne. Regarder dans le miroir ?`], null, [
             { label: 'Regarder dans le miroir', run: () => { startChangeEpisode(n, { resume: true }); } },
             { label: 'Plus tard', run: () => {} }
         ]);
+    }
+    // Ouvre l'épisode `n` : conversation d'entrée (sauf reprise par le bouton miroir), transition, arrivée de Chang'e dans le village. Se résout à la fin du mode.
+    async function startChangeEpisode(n, { resume = false } = {}) {
+        const ep = episodeById(n);
+        if (!ep || X.inChangeMode(session) || changeEnd) return { completed: false };
+        await loadGbaSprites(['change', 'change_jouable', ...ep.injured.map(p => p.id), cfg.getHero().classId]).catch(() => {});
+        if (!resume) await talkThroughMirror(ep.intro);
+        await playMirror(root, 'mirror-in.gif', sfxSafe);
+        const screen = X.startChangeMode(session, n);
+        if (!screen) return { completed: false };
+        resetViewTo();
+        await prepareRegion(screen.region).catch(() => {});
+        refreshHud();
+        cfg.onSave();
+        const done = new Promise(resolve => { changeEnd = resolve; });
+        if (!resume && ep.arrival) await talkLines('change', ep.arrival.map(l => l.text));   // épisode 1 : la goutte d'élixir qui lui donne le don de soigner
+        else toast(`Chang'e est à ${ep.village} : touchez les blessés pour les soigner.`, 4500);
+        if (ep.injured.every(p => session.data.change.healed.includes(p.id))) afterDialogs(() => concludeChange());
+        return done;
     }
 
     // Arrivée d'un PNJ (`arrival`) : il part du bord de la carte, rejoint le héros en sautillant, puis sa conversation s'ouvre ;
@@ -1049,7 +1120,11 @@ export function createExplorationView(cfg) {
             case 'combat':
                 startEncounter(res.enemyId);
                 break;
+            case 'changeStay':
+                changeStay();
+                break;
             case 'talk': {
+                if (X.inChangeMode(session)) { openHealFor(res.npcId); break; }   // mode Chang'e : un habitant à soigner
                 const talk = X.talkToNpc(session, res.npcId);
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
@@ -1335,9 +1410,9 @@ export function createExplorationView(cfg) {
             advanceDialog();
         });
         els.journalBtn?.addEventListener('click', showJournal);
-        els.mountBtn?.addEventListener('click', () => { if (!isBlocked()) toggleMount(); });
-        els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
-        els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
+        els.mountBtn?.addEventListener('click', () => { if (!isBlocked() && !X.inChangeMode(session)) toggleMount(); });
+        els.mapBtn?.addEventListener('click', () => { if (!isBlocked() && !X.inChangeMode(session)) cfg.onOpenMap?.(); });   // Chang'e reste au village
+        els.arenaBtn?.addEventListener('click', () => { if (!isBlocked() && !X.inChangeMode(session)) cfg.onOpenArena?.(); });
         els.mirrorBtn?.addEventListener('click', () => { if (!isBlocked()) askMirror(); });
         els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
     }
@@ -1982,10 +2057,24 @@ export function createExplorationView(cfg) {
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
                     drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
-                    const marker = X.npcMarker(session, it.n.id);
+                    const marker = it.n.injured ? null : X.npcMarker(session, it.n.id);   // mode Chang'e : pas de « ! » de quête
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
+                    if (it.n.injured) {   // mode Chang'e : anneau doux sous un blessé, coche verte une fois soigné
+                        const healed = session.data.change.healed.includes(it.n.id);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = healed ? 'rgba(80,200,130,.85)' : `rgba(190,170,255,${(0.5 + 0.35 * pulse).toFixed(3)})`;
+                        ctx.beginPath();
+                        ctx.ellipse(c.x, feet, tile * (0.4 + (healed ? 0 : 0.05 * pulse)), tile * 0.15, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                        if (healed) {   // coche verte au-dessus de la tête
+                            const mx = c.x, my = c.y - tile * 0.72, r = tile * 0.13;
+                            ctx.beginPath(); ctx.arc(mx, my, r, 0, Math.PI * 2); ctx.fillStyle = '#7fe0a8'; ctx.fill();
+                            ctx.lineWidth = 2; ctx.strokeStyle = '#2b2140'; ctx.stroke();
+                            ctx.beginPath(); ctx.moveTo(mx - r * 0.5, my); ctx.lineTo(mx - r * 0.1, my + r * 0.4); ctx.lineTo(mx + r * 0.55, my - r * 0.4); ctx.stroke();
+                        }
+                    }
                     break;
                 }
                 case 'chest': {
@@ -2091,13 +2180,14 @@ export function createExplorationView(cfg) {
                         }
                     }
                     const hero = cfg.getHero();
+                    const heroKey = X.inChangeMode(session) ? 'change_jouable' : hero.classId;   // mode Chang'e : c'est elle qu'on voit marcher
                     const heroBase = heroSprite(hero.classId);
                     const heroDir = viewDir(session.rt.facing);
-                    const heroView = (moving && gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase)))
-                        || gbaSprite(hero.classId, heroDir)
+                    const heroView = (moving && gbaWalkSprite(heroKey, heroDir, Math.floor(walkPhase)))
+                        || gbaSprite(heroKey, heroDir)
                         || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
                     // fondu entre l'image de marche courante et la suivante (progression fractionnaire de la phase)
-                    const nextView = moving ? gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase) + 1) : null;
+                    const nextView = moving ? gbaWalkSprite(heroKey, heroDir, Math.floor(walkPhase) + 1) : null;
                     const blend = walkPhase - Math.floor(walkPhase);
 
                     const mountKey = `${hero.classId}_horse`;
@@ -2790,6 +2880,11 @@ export function createExplorationView(cfg) {
         },
 
         isBusy: () => isBlocked(),
+        // Mode Chang'e : musique du village ou de l'adieu (main.js), et le jeu sait qu'on joue Chang'e
+        inChangeMode: () => Boolean(session && X.inChangeMode(session)),
+        getChangeScene: () => (session && X.inChangeMode(session) ? (changeFarewell ? 'change-farewell' : 'change-village') : null),
+        openChangeBook: () => openBook(root, session.data.change),
+        startChangeEpisode: (n, opts) => startChangeEpisode(n, opts),   // ouvre un épisode de Chang'e (la mort des soleils 3, 6, 9 l'appelle ; aussi pour les essais)
         toast
     };
 }

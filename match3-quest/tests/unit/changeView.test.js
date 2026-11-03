@@ -1,8 +1,8 @@
 /** @jest-environment jsdom */
-// Fenêtre du mode Chang'e (change/view.js) : parcours complet d'un épisode (transition, village, cinq puzzles, conversation, retour),
-// sortie anticipée par le bouton miroir avec confirmation, et absence de toute tuile de dégât dans le DOM.
+// Fenêtres du mode Chang'e (change/view.js) : puzzle de soin d'un blessé (victoire, échec doux, soins conservés), transition par le miroir, Livre des noms,
+// et absence de toute tuile de dégât dans le DOM. L'exploration du village elle-même est testée dans change.test.js (moteur).
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { openChange } from '../../change/view.js';
+import { openHeal, playMirror, openBook } from '../../change/view.js';
 import { defaultChangeData } from '../../change/state.js';
 import { possibleMoves, TILE_KINDS } from '../../change/engine.js';
 import { EPISODES } from '../../change/data.js';
@@ -19,11 +19,8 @@ const boardFromDom = () => [...document.body.querySelectorAll('.change-tile')].m
 
 beforeEach(() => { document.body.innerHTML = ''; document.body.classList.add('fx-low'); });
 
-async function playNpc(n, data) {
-    await waitFor(() => q(`[data-npc="${n.id}"]`) && !q('.change-mirror') && !q('.change-puzzle'), `village ${n.id}`);
-    click(q(`[data-npc="${n.id}"]`));
-    await waitFor(() => q('.change-puzzle .change-board'), `puzzle ${n.id}`);
-    for (let guard = 0; guard < 500 && !q('.change-result.win'); guard++) {
+async function playUntil(pred) {
+    for (let guard = 0; guard < 500 && !pred(); guard++) {
         if (q('.change-result.lose')) { click(q('.change-result [data-act="retry"]')); await sleep(40); continue; }
         const board = boardFromDom();
         if (board.length !== 64) { await sleep(25); continue; }
@@ -38,67 +35,68 @@ async function playNpc(n, data) {
         const br = q('[data-act="breath"]');
         if (br && !br.disabled) { click(br); await sleep(100); }
     }
-    expect(q('.change-result.win')).toBeTruthy();
-    expect(data.healed).toContain(n.id);
-    click(q('.change-result [data-act="continue"]'));
-    await sleep(60);
 }
 
-describe('fenêtre du mode Chang\'e', () => {
-    test.each(EPISODES.map(e => [e.id]))('épisode %i : transition, cinq soins, conversation finale, retour', async id => {
-        const ep = EPISODES.find(e => e.id === id), data = defaultChangeData();
-        let finished = null;
-        openChange(document.body, { episode: id, data, save: () => {}, onFinish: r => { finished = r; } });
-        expect(data.pending).toBe(id);
-        await waitFor(() => q('.change-mirror'), 'transition d\'entrée');
-        click(q('.change-mirror'));
-        await waitFor(() => !q('.change-mirror'), 'fin de la transition');
-        for (const n of ep.injured) await playNpc(n, data);
-        for (let i = 0; i < 12 && !q('.change-mirror'); i++) {
-            const nxt = q('[data-next]'); if (nxt) click(nxt);
-            const f = q('.change-finale button'); if (f) click(f);
-            await sleep(60);
-        }
-        await waitFor(() => q('.change-mirror'), 'transition de retour');
-        click(q('.change-mirror'));
-        await waitFor(() => finished, 'fermeture');
-        expect(finished).toEqual({ completed: true });
-        expect(data.done).toContain(id);
-        expect(data.pending).toBeNull();
+describe('puzzle de soin (openHeal)', () => {
+    test.each(EPISODES.flatMap(e => e.injured.map(n => [e.id, n.id])))('épisode %i : %s se soigne, le gâteau est offert', async (_ep, id) => {
+        const npc = EPISODES.flatMap(e => e.injured).find(n => n.id === id), data = defaultChangeData();
+        let closed = null;
+        openHeal(document.body, { npc, data, save: () => {}, onClose: r => { closed = r; } });
+        await waitFor(() => q('.change-puzzle .change-board'), 'puzzle');
+        expect(q('.change-overlay').dataset.scene).toBe('change-puzzle');   // musique de soin
+        await playUntil(() => q('.change-result.win'));
+        expect(q('.change-result.win').textContent).toContain(npc.cake[0]);
+        expect(data.healed).toContain(id);
+        expect(data.hp[id]).toBe(npc.need);
+        click(q('[data-act="continue"]'));
+        expect(closed).toEqual({ won: true });
         expect(q('.change-overlay')).toBeNull();
     }, 60000);
 
-    test('le bouton miroir demande confirmation, garde les soins et laisse l\'épisode en cours', async () => {
-        const data = defaultChangeData();
-        let finished = null;
-        openChange(document.body, { episode: 1, data, save: () => {}, onFinish: r => { finished = r; } });
-        await waitFor(() => q('.change-mirror'), 'entrée'); click(q('.change-mirror'));
-        await waitFor(() => !q('.change-mirror'), 'fin de la transition d\'entrée');
-        await waitFor(() => q('[data-act="mirror"]'), 'bouton miroir');
-        click(q('[data-act="mirror"]'));
-        click(await waitFor(() => q('.change-confirm [data-no]'), 'confirmation'));
-        await sleep(30);
-        expect(q('.change-overlay')).toBeTruthy();   // « Rester »
-        expect(finished).toBeNull();
-        click(q('[data-act="mirror"]'));
-        click(await waitFor(() => q('.change-confirm [data-yes]'), 'confirmation 2'));
-        await waitFor(() => q('.change-mirror'), 'transition de sortie'); click(q('.change-mirror'));
-        await waitFor(() => finished, 'sortie');
-        expect(finished).toEqual({ completed: false });
-        expect(data.pending).toBe(1);
-        expect(data.done).toEqual([]);
+    test('quitter garde les soins obtenus ; le blessé n\'est pas soigné', async () => {
+        const npc = EPISODES[0].injured[0], data = defaultChangeData();
+        let closed = null;
+        openHeal(document.body, { npc, data, save: () => {}, onClose: r => { closed = r; } });
+        await waitFor(() => q('.change-board'), 'puzzle');
+        const mv = possibleMoves(boardFromDom())[0];
+        click(document.body.querySelectorAll('.change-tile')[mv[0]]);
+        click(document.body.querySelectorAll('.change-tile')[mv[1]]);
+        await sleep(120);
+        while (q('.change-tile.clearing')) await sleep(15);
+        click(q('[data-act="close"]'));
+        expect(closed).toEqual({ won: false });
+        expect(data.healed).toEqual([]);
+        // rouvrir : les soins déjà faits sont repartis du même niveau
+        const before = data.hp[npc.id] || 0;
+        openHeal(document.body, { npc, data, save: () => {}, onClose: () => {} });
+        await waitFor(() => q('.change-board'), 'puzzle 2');
+        expect(Number(q('.change-meter').getAttribute('aria-valuenow'))).toBe(before);
+    });
+});
+
+describe('transition et Livre des noms', () => {
+    test('la transition par le miroir se passe d\'un toucher et se retire', async () => {
+        let done = false;
+        playMirror(document.body, 'mirror-in.gif').then(() => { done = true; });
+        const layer = await waitFor(() => q('.change-mirror'), 'transition');
+        expect(layer.querySelector('img').getAttribute('src')).toContain('mirror-in.gif');
+        click(layer);
+        await waitFor(() => done, 'fin');
+        expect(q('.change-mirror')).toBeNull();
     });
 
-    test('le Livre des noms liste les habitants soignés', async () => {
+    test('le Livre des noms liste les habitants soignés avec leur gâteau', () => {
         const data = defaultChangeData();
         data.healed.push('farmer_lin');
-        openChange(document.body, { episode: 1, data, save: () => {}, onFinish: () => {} });
-        await waitFor(() => q('.change-mirror'), 'entrée'); click(q('.change-mirror'));
-        await waitFor(() => !q('.change-mirror'), 'fin de la transition d\'entrée');
-        await waitFor(() => q('[data-act="book"]'), 'bouton livre');
-        click(q('[data-act="book"]'));
-        const book = await waitFor(() => q('.change-book'), 'livre');
-        expect(book.textContent).toContain('Lin');
-        expect(book.textContent).toContain('Haricot rouge');
+        openBook(document.body, data);
+        expect(q('.change-book').textContent).toContain('Lin');
+        expect(q('.change-book').textContent).toContain('Haricot rouge');
+        click(q('[data-no]'));
+        expect(q('.change-confirm')).toBeNull();
+    });
+
+    test('le Livre vide explique ce qu\'il contiendra', () => {
+        openBook(document.body, defaultChangeData());
+        expect(q('.change-confirm').textContent).toContain('Aucun nom');
     });
 });

@@ -225,7 +225,7 @@ function sanitizePlayer(player) {
         visitedZoneIds: player.worldMap?.visitedZoneIds,
         currentZoneId: player.worldMap?.currentZoneId,
         exploration: ex && compact({
-            screenId: ex.screenId,
+            screenId: ex.change?.return?.screenId || ex.screenId,   // en plein mode Chang'e, on sauvegarde la place de Hou Yi
             defeated: ex.defeated,
             openedChests: ex.openedChests,
             questItems: ex.questItems,

@@ -198,6 +198,13 @@
   "audio/sfx-models.json",
   "audio/sfx/battleStart.mp3",
   "audio/sfx/bossStart.mp3",
+  "audio/sfx/change-breath.mp3",
+  "audio/sfx/change-cake.mp3",
+  "audio/sfx/change-cut.mp3",
+  "audio/sfx/change-heal.mp3",
+  "audio/sfx/change-match.mp3",
+  "audio/sfx/change-mirror.mp3",
+  "audio/sfx/change-swap.mp3",
   "audio/sfx/combatStart.mp3",
   "audio/sfx/default.mp3",
   "audio/sfx/defeat.mp3",
@@ -4373,6 +4380,21 @@
    "p": "audio/music/boss-zhuque-l-oiseau-vermillon.mp3",
    "s": 1847320,
    "h": "76f414f3c6"
+  },
+  {
+   "p": "audio/music/change-farewell.mp3",
+   "s": 2057344,
+   "h": "bb66d504c6"
+  },
+  {
+   "p": "audio/music/change-puzzle.mp3",
+   "s": 2065494,
+   "h": "5126919bf1"
+  },
+  {
+   "p": "audio/music/change-village.mp3",
+   "s": 2073645,
+   "h": "9d090e3e17"
   },
   {
    "p": "audio/music/combat-0.mp3",

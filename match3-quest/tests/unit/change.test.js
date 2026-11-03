@@ -6,10 +6,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { SIZE, ENERGIES, JOKER, TILE_KINDS, GAUGE_MAX, createLevel, generateBoard, findRuns, possibleMoves, hasMove, playMove, useBreath } from '../../change/engine.js';
-import { EPISODES, SUN_EPISODE, episodeById, ENERGY_LABEL } from '../../change/data.js';
+import { EPISODES, SUN_EPISODE, episodeById, episodeByScreen, ENERGY_LABEL } from '../../change/data.js';
 import { TILE_ART, tileSvg } from '../../change/art.js';
 import { defaultChangeData, normalizeChangeData } from '../../change/state.js';
-import { createSession, markEnemyDefeated, pendingChangeEpisode } from '../../exploration.js';
+import { createSession, markEnemyDefeated, pendingChangeEpisode, startChangeMode, endChangeMode, inChangeMode, visibleNpcs, visibleChests, aliveEnemies, tryMove, entityAt, isTerrainBlocked, activeCompanionOf, changeProgress, currentScreen } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -180,7 +180,9 @@ describe('état sauvegardé et déclencheur', () => {
         expect(normalizeChangeData(undefined)).toEqual(defaultChangeData());
         expect(normalizeChangeData('x')).toEqual(defaultChangeData());
         const d = normalizeChangeData({ done: [1, 1, 9, 'a'], pending: 2, hp: { farmer_lin: 7.9, inconnu: 3, ping: -1 }, healed: ['ping', 'ping', 'zzz'] });
-        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'] });
+        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'], return: null });
+        expect(normalizeChangeData({ return: { screenId: 'gobi', x: 3, y: 4 } }).return).toEqual({ screenId: 'gobi', x: 3, y: 4 });
+        expect(normalizeChangeData({ return: { screenId: 'gobi', x: 'a', y: 4 } }).return).toBeNull();
         expect(normalizeChangeData({ pending: 7 }).pending).toBeNull();
     });
 
@@ -213,5 +215,101 @@ describe('état sauvegardé et déclencheur', () => {
         expect(loaded.data.change.pending).toBe(3);
         expect(loaded.data.change.hp.hunter_wu).toBe(20);
         expect(createSession({ change: 42 }).data.change).toEqual(defaultChangeData());
+    });
+});
+
+describe('Chang\'e explore le village (mode dans le moteur d\'exploration)', () => {
+    const fresh = () => { const s = createSession(null); s.data.x = 5; s.data.y = 6; return s; };
+
+    test('chaque épisode a son village, avec le sprite et les habitants', () => {
+        EPISODES.forEach(e => { expect(SCREENS[e.screen]).toBeTruthy(); expect(SCREENS[e.screen].region).toBe(e.region); expect(episodeByScreen(e.screen)).toBe(e); });
+    });
+
+    test('l\'arrivée au village : cinq blessés, aucun ennemi ni coffre, Hou Yi mis de côté', () => {
+        EPISODES.forEach(ep => {
+            const session = fresh(), before = { screenId: session.data.screenId, x: session.data.x, y: session.data.y };
+            const screen = startChangeMode(session, ep.id);
+            expect(screen.id).toBe(ep.screen);
+            expect(inChangeMode(session)).toBe(true);
+            expect(session.data.screenId).toBe(ep.screen);
+            expect(session.data.change.return).toEqual(before);
+            expect(session.data.change.pending).toBe(ep.id);
+            const npcs = visibleNpcs(session);
+            expect(npcs.map(n => n.id)).toEqual(ep.injured.map(n => n.id));
+            const cells = new Set(npcs.map(n => `${n.x},${n.y}`));
+            expect(cells.size).toBe(5);
+            npcs.forEach(n => { expect(isTerrainBlocked(screen, n.x, n.y)).toBe(false); expect(n.injured).toBe(true); expect(entityAt(session, n.x, n.y)).toMatchObject({ type: 'npc' }); });
+            expect(aliveEnemies(session)).toEqual([]);
+            expect(visibleChests(session)).toEqual([]);
+            expect(activeCompanionOf(session)).toBeNull();
+            expect(changeProgress(session)).toHaveLength(5);
+            expect(startChangeMode(session, ep.id)).toBeNull();   // pas deux fois
+        });
+    });
+
+    test('Chang\'e ne quitte pas le village : bords et sorties répondent « changeStay »', () => {
+        const session = fresh();
+        const screen = startChangeMode(session, 1);
+        session.data.x = 0; session.data.y = Math.min(screen.h - 1, 2);
+        expect(tryMove(session, -1, 0)).toEqual({ type: 'changeStay' });
+        session.data.x = screen.w - 1;
+        expect(tryMove(session, 1, 0)).toEqual({ type: 'changeStay' });
+        screen.exits.forEach(e => {
+            session.data.x = e.x; session.data.y = e.y;
+            [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+                const nx = e.x + dx, ny = e.y + dy;
+                if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return;
+                const r = tryMove(session, dx, dy);
+                expect(['moved', 'blocked', 'talk', 'changeStay']).toContain(r.type);
+            });
+        });
+        expect(session.data.screenId).toBe(screen.id);
+    });
+
+    test('marcher sur une sortie ne la franchit pas, toucher un blessé donne un « talk », aucun combat d\'herbe', () => {
+        const session = fresh();
+        const screen = startChangeMode(session, 1);
+        const e = screen.exits[0];
+        const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [e.x - dx, e.y - dy, dx, dy]).find(([x, y]) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && !isTerrainBlocked(screen, x, y) && !entityAt(session, x, y));
+        if (around) { session.data.x = around[0]; session.data.y = around[1]; expect(tryMove(session, around[2], around[3]).type).toBe('changeStay'); }
+        const npc = visibleNpcs(session)[0];
+        const step = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [npc.x - dx, npc.y - dy, dx, dy]).find(([x, y]) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && !isTerrainBlocked(screen, x, y) && !entityAt(session, x, y));
+        session.data.x = step[0]; session.data.y = step[1];
+        expect(tryMove(session, step[2], step[3])).toEqual({ type: 'talk', npcId: npc.id });
+        // des centaines de pas : jamais de rencontre
+        for (let i = 0; i < 300; i++) { const r = tryMove(session, i % 2 ? 1 : -1, 0, { random: () => 0 }); expect(['moved', 'blocked', 'talk', 'changeStay']).toContain(r.type); }
+    });
+
+    test('la fin du mode replace Hou Yi ; terminé = épisode noté fait, quitté = épisode toujours en cours', () => {
+        const session = fresh();
+        startChangeMode(session, 2);
+        const back = endChangeMode(session);
+        expect(back).toEqual({ screenId: 'rizieres_village', x: 5, y: 6 });
+        expect(inChangeMode(session)).toBe(false);
+        expect(session.data.screenId).toBe('rizieres_village');
+        expect(session.data.change.pending).toBe(2);
+        expect(session.data.change.return).toBeNull();
+        expect(visibleNpcs(session).some(n => n.injured)).toBe(false);
+        startChangeMode(session, 2);
+        endChangeMode(session, { done: true });
+        expect(session.data.change.done).toEqual([2]);
+        expect(session.data.change.pending).toBeNull();
+        expect(currentScreen(session).id).toBe('rizieres_village');
+    });
+
+    test('un chargement en plein mode ne ramène jamais la partie dans le village de Chang\'e', () => {
+        const loaded = createSession({ change: { done: [], pending: 1, hp: {}, healed: [], return: { screenId: 'gobi', x: 3, y: 3 } } });
+        expect(loaded.data.change.return).toBeNull();
+        expect(loaded.data.change.pending).toBe(1);
+        expect(inChangeMode(loaded)).toBe(false);
+    });
+
+    test('l\'épisode 1 commence par l\'aveu de la goutte d\'élixir ; aucune énergie n\'est lunaire', () => {
+        const text = episodeById(1).arrival.map(l => l.text).join(' ');
+        expect(text).toContain('goutte');
+        expect(text).toContain('élixir');
+        expect(text).toContain('accident');
+        Object.values(ENERGY_LABEL).forEach(l => expect(l.toLowerCase()).not.toContain('lun'));
+        expect(episodeById(2).arrival).toBe(undefined);
     });
 });

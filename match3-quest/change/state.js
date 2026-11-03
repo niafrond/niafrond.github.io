@@ -2,7 +2,8 @@
 // Séparé de view.js : pas de DOM, utilisable par exploration.js et les tests.
 import { EPISODES } from './data.js';
 
-export const defaultChangeData = () => ({ done: [], pending: null, hp: {}, healed: [] });
+// `return` : où se trouvait Hou Yi quand l'épisode a commencé (écran et case), tant que Chang'e explore son village ; sert à le replacer au retour (et à la sauvegarde).
+export const defaultChangeData = () => ({ done: [], pending: null, hp: {}, healed: [], return: null });
 
 /** Normalise `session.data.change` (sauvegardes anciennes ou abîmées). */
 export function normalizeChangeData(raw) {
@@ -14,6 +15,7 @@ export function normalizeChangeData(raw) {
         done: Array.isArray(d.done) ? [...new Set(d.done.filter(n => EPISODES.some(e => e.id === n)))] : [],
         pending: EPISODES.some(e => e.id === d.pending) ? d.pending : null,
         hp,
-        healed: Array.isArray(d.healed) ? [...new Set(d.healed.filter(id => ids.has(id)))] : []
+        healed: Array.isArray(d.healed) ? [...new Set(d.healed.filter(id => ids.has(id)))] : [],
+        return: d.return && typeof d.return.screenId === 'string' && Number.isInteger(d.return.x) && Number.isInteger(d.return.y) ? { screenId: d.return.screenId, x: d.return.x, y: d.return.y } : null
     };
 }

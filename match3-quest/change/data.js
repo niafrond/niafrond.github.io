@@ -3,14 +3,15 @@
 // Les habitants sont ceux de world/text/<région>.js (ids vérifiés par tests/unit/change.test.js) ; `color` = énergie demandée,
 // `need` = points de soin à recueillir (une tuile de la couleur = 1 point, +1 pour un alignement de quatre, +2 pour cinq), `moves` = coups par tentative ; les soins déjà obtenus sont conservés entre deux tentatives.
 
-export const ENERGY_LABEL = { jade: 'Jade', lotus: 'Lotus', perle: 'Perles lunaires', eau: 'Eau céleste', argent: 'Énergie argentée' };
+// Le don de soigner de Chang'e vient d'une goutte d'élixir bue par accident, PAS de la lune (elle n'y est pas encore) : aucune énergie n'est « lunaire ».
+export const ENERGY_LABEL = { jade: 'Jade', lotus: 'Lotus', perle: 'Perles de nacre', eau: 'Eau claire', argent: 'Énergie argentée', lune: 'Goutte d\'élixir' };
 
 // Soleil abattu par Hou Yi → épisode de Chang'e.
 export const SUN_EPISODE = { sun_4: 1, sun_5: 2, sun_9: 3 };
 
 export const EPISODES = [
     {
-        id: 1, sun: 'sun_4', region: 'rizieres', village: 'Hameau de Dongqiao', sky: ['#cfe6a8', '#f3e3a0'], ground: '#b9a45b',
+        id: 1, sun: 'sun_4', region: 'rizieres', screen: 'rizieres_village', village: 'Hameau de Dongqiao', sky: ['#cfe6a8', '#f3e3a0'], ground: '#b9a45b',
         intro: [
             { who: 'hou', text: 'Le Soleil des Mirages est tombé, Chang\'e. Le désert respire de nouveau.' },
             { who: 'change', text: 'Je le sens, même d\'ici. Dongqiao a encore soif, Hou Yi. Je reste auprès de ceux que tu laisses derrière toi.' },
@@ -22,6 +23,13 @@ export const EPISODES = [
             { who: 'hou', text: 'Je mangerai. Merci de t\'occuper d\'eux. Je ne sais pas leurs noms, moi.' },
             { who: 'change', text: 'Je te les dirai.' }
         ],
+        // Chang'e arrive au village : elle avoue à quoi tient son don (UNIVERS-CHANGE.md §1).
+        arrival: [
+            { who: 'change', text: 'Me voici à Dongqiao. Hou Yi ne le sait pas, mais j\'ai un secret.' },
+            { who: 'change', text: 'En rangeant l\'élixir, une goutte est tombée sur ma langue. Par accident, rien de plus : je n\'ai pas voulu l\'immortalité, et je ne l\'ai pas eue.' },
+            { who: 'change', text: 'Mais depuis ce jour, mes mains sentent le mal des gens, et savent le soulager. Ce n\'est pas un pouvoir de la lune : je n\'y suis pas, je ne suis qu\'une boulangère avec une goutte de trop.' },
+            { who: 'change', text: 'Alors je soigne. Allons les voir, un par un.' }
+        ],
         injured: [
             { id: 'farmer_lin', name: 'Lin', state: 'Coup de chaleur, désespéré', color: 'jade', need: 24, moves: 12, cake: ['Haricot rouge', 'un peu de gingembre, il a toujours les mains froides'], thanks: 'Mes mains sont chaudes, regardez ! Les semis attendront demain.' },
             { id: 'elder_wen', name: 'Doyen Wen', state: 'Épuisé d\'avoir porté le village', color: 'eau', need: 24, moves: 12, cake: ['Peau de neige', 'sans sucre'], thanks: 'Merci, ma fille. Les comptes du village tiendront encore une saison.' },
@@ -31,7 +39,7 @@ export const EPISODES = [
         ]
     },
     {
-        id: 2, sun: 'sun_5', region: 'fleuve', village: 'Port-à-Sec de Hekou', sky: ['#e6c98e', '#d4a76a'], ground: '#a07a4a',
+        id: 2, sun: 'sun_5', region: 'fleuve', screen: 'fleuve_village', village: 'Port-à-Sec de Hekou', sky: ['#e6c98e', '#d4a76a'], ground: '#a07a4a',
         intro: [
             { who: 'hou', text: 'Les orages se sont tus, Chang\'e. Les monts respirent.' },
             { who: 'change', text: 'Ici, le fleuve est à sec depuis si longtemps que personne n\'ose espérer. Hekou a besoin de mains, pas de prières.' },
@@ -52,7 +60,7 @@ export const EPISODES = [
         ]
     },
     {
-        id: 3, sun: 'sun_9', region: 'fauves', village: 'Enclos de Caoyuan', sky: ['#f6e3a1', '#efc77a'], ground: '#b79a52',
+        id: 3, sun: 'sun_9', region: 'fauves', screen: 'fauves_village', village: 'Enclos de Caoyuan', sky: ['#f6e3a1', '#efc77a'], ground: '#b79a52',
         intro: [
             { who: 'hou', text: 'J\'ai abattu l\'un des deux derniers soleils, Chang\'e. L\'autre est tout petit, il tremblait. Je l\'ai laissé vivre.' },
             { who: 'change', text: 'Je sais. Tu as bien fait. Les Fauves s\'éveillent doucement, Hou Yi, moi aussi je dois m\'en occuper.' },
@@ -75,6 +83,7 @@ export const EPISODES = [
     }
 ];
 
+export const episodeByScreen = id => EPISODES.find(e => e.screen === id) || null;
 export const episodeById = id => EPISODES.find(e => e.id === id) || null;
 export const episodeOfSun = sunId => SUN_EPISODE[sunId] || null;
 export const injuredOf = id => EPISODES.flatMap(e => e.injured.map(n => ({ ...n, episode: e.id, village: e.village }))).find(n => n.id === id) || null;
