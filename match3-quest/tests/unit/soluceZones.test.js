@@ -5,7 +5,7 @@ import './fixtures/xhrFromDisk.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
-import { zoneScreens } from '../../tools/soluce-targets.mjs';
+import { zoneScreens, interiorScreens } from '../../tools/soluce-targets.mjs';
 
 const read = f => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
 const html = read('soluce/zones.html');
@@ -18,6 +18,15 @@ describe('soluce : zones et jonctions', () => {
     test('toutes les zones de la chaîne des régions sont couvertes, avec leur capture', () => {
         expect(zones.length).toBeGreaterThanOrEqual(40);
         zones.forEach(id => {
+            expect({ id, ancre: html.includes(`id="zone-${id}"`) }).toEqual({ id, ancre: true });
+            expect({ id, capture: existsSync(new URL(`../../soluce/img/${id}.jpg`, import.meta.url)) }).toEqual({ id, capture: true });
+        });
+    });
+
+    test('tous les intérieurs (maisons, grottes, cryptes) sont annotés avec leurs sorties', () => {
+        const inside = interiorScreens();
+        expect(inside.length).toBeGreaterThanOrEqual(60);
+        inside.forEach(id => {
             expect({ id, ancre: html.includes(`id="zone-${id}"`) }).toEqual({ id, ancre: true });
             expect({ id, capture: existsSync(new URL(`../../soluce/img/${id}.jpg`, import.meta.url)) }).toEqual({ id, capture: true });
         });

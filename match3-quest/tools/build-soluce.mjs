@@ -13,7 +13,7 @@ import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry } from '../bestiary.js';
-import { entOf, questTargets, zoneScreens } from './soluce-targets.mjs';
+import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
 import { overlapOf } from '../mapConnections.js';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
 import { solvePath, getMode } from '../puzzle/engine.js';
@@ -823,6 +823,7 @@ const lockText = p => {
     const r = reqText(p.requires);
     return `fermé tant que ${p.sea ? 'le gardien' : ''} ${r.html} n’est pas ${/^vaincre/.test(r.html) ? '' : 'accompli'}`.replace('tant que vaincre', 'tant que vous n’avez pas vaincu').replace('  ', ' ');
 };
+const interiorIds = new Set(interiorScreens());
 const doorsOf = s => (s.exits || []).filter(e => !e.leaveArena && SCREENS[e.to] && Number.isFinite(e.x));
 
 function zoneHtml(s) {
@@ -839,7 +840,7 @@ function zoneHtml(s) {
         return `<tr><td><b>${DIR_ARROW[p.dir]} bord ${DIR_FR[p.dir]}</b>, ${alongWord(p.dir, p.a, s)} (case ${p.mid.x}, ${p.mid.y}) — passage de ${p.range[1] - p.range[0] + 1} cases</td><td><a href="#zone-${esc(p.to)}">${esc(to.name)}</a><br><small>${KIND_FR(p.to)} · on y arrive par le bord ${DIR_FR[p.arriveDir]}</small></td><td>${lock || 'libre'}</td></tr>`;
     });
     const seaRows = sea.map(p => `<tr><td><b>${DIR_ARROW[p.dir]} bord ${DIR_FR[p.dir]}</b> (tout le côté, c’est de la mer)</td><td><a href="#zone-${esc(p.to)}">${esc(SCREENS[p.to].name)}</a><br><small>on y arrive par le bord ${DIR_FR[p.arriveDir]}</small></td><td>à pied sur l’eau, avec le Pas de Yu${p.requires ? `, une fois ${reqText(p.requires).html} accompli` : ''}</td></tr>`);
-    const doorRows = doors.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${esc(SCREENS[e.to].name)}</td><td>${e.requires ? esc(`fermée : ${reqText(e.requires).plain}`) : 'libre'}</td></tr>`);
+    const doorRows = doors.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${interiorIds.has(e.to) ? `<a href="#zone-${esc(e.to)}">${esc(SCREENS[e.to].name)}</a>` : esc(SCREENS[e.to].name)}</td><td>${e.requires ? esc(`fermée : ${reqText(e.requires).plain}`) : 'libre'}</td></tr>`);
     const head = '<tr><th>Où</th><th>Mène à</th><th>Accès</th></tr>';
     return `<h3 id="zone-${esc(s.id)}">${esc(s.name)} <small>${KIND_FR(s.id)} · ${sizeText(s)}</small></h3>
 ${shotFigure(s.id, marks)}
@@ -847,10 +848,22 @@ ${shotFigure(s.id, marks)}
 ${doors.length ? `<details><summary>${doors.length} ${plural(doors.length, 'porte', 'portes')} (maisons, grottes, escaliers)</summary><div class="scroll"><table>${head}${doorRows.join('')}</table></div></details>` : ''}`;
 }
 
+/** Intérieur (maison, grotte, crypte, étage) : sa carte avec un cadre orange par sortie, et où elles mènent. */
+function interiorHtml(s) {
+    const exits = (s.exits || []).filter(e => !e.leaveArena && SCREENS[e.to] && Number.isFinite(e.x));
+    const marks = exits.map(e => ({ x: e.x, y: e.y, name: `${e.stairs ? 'escalier' : 'sortie'} vers ${SCREENS[e.to].name}`, role: 'door' }));
+    const rows = exits.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${interiorIds.has(e.to) || zoneIdSet.has(e.to) ? `<a href="#zone-${esc(e.to)}">${esc(SCREENS[e.to].name)}</a>` : esc(SCREENS[e.to].name)}</td><td>${e.stairs ? 'escalier' : 'porte'}</td></tr>`);
+    return `<h4 id="zone-${esc(s.id)}">${esc(s.name)} <small>${sizeText(s)}</small></h4>
+${shotFigure(s.id, marks)}
+<div class="scroll"><table><tr><th>Où</th><th>Mène à</th><th>Type</th></tr>${rows.join('') || '<tr><td colspan="3">Aucune sortie déclarée.</td></tr>'}</table></div>`;
+}
+const zoneIdSet = new Set(zoneScreens());
+
 function buildZones() {
     const regions = REGION_ORDER.filter(r => SCREENS[r]);
     const zonesOf = r => [`${r}_road`, `${r}_village`, `${r}_wild`, `${r}_hamlet`, r].filter(id => SCREENS[id]);
     const spans = r => zonesOf(r).map(id => SCREENS[id]);
+    const interiorsOf = r => interiorScreens().map(id => SCREENS[id]).filter(s => s.region === r);
     const chain = r => {
         // Parcours de la région dans l'ordre de la progression : chaque flèche porte le côté de sortie ; la zone suivante est entrée par le côté opposé.
         const main = [`${r}_road`, `${r}_village`, `${r}_wild`, r].filter(id => SCREENS[id]);
@@ -866,7 +879,8 @@ function buildZones() {
     };
     const body = regions.map(r => `<h2 id="region-${esc(r)}">${esc(regionName(r))}</h2>
 ${chain(r)}
-${spans(r).map(zoneHtml).join('\n')}`).join('\n');
+${spans(r).map(zoneHtml).join('\n')}
+${interiorsOf(r).length ? `<details class="interiors"><summary>${interiorsOf(r).length} intérieurs de la région (maisons, grottes, cryptes), chacun annoté</summary>${interiorsOf(r).map(interiorHtml).join('\n')}</details>` : ''}`).join('\n');
     // Bordures de mer : une ligne par liaison (le bord nord d'une carte du sud mène au bord sud de la carte du nord).
     const seaLinks = [];
     Object.values(SCREENS).forEach(s => passagesOf(s).filter(p => p.sea && p.dir === 'north').forEach(p => seaLinks.push([s, p])));
@@ -890,7 +904,7 @@ function buildHub() {
     const total = QUESTS.length;
     const index = [
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
-        ...zoneScreens().map(id => ({ t: SCREENS[id].name, k: 'zone entrée sortie passage jonction porte carte', h: `soluce/zones.html#zone-${id}`, c: 'Zone' })),
+        ...[...zoneScreens(), ...interiorScreens()].map(id => ({ t: SCREENS[id].name, k: 'zone entrée sortie passage jonction porte carte', h: `soluce/zones.html#zone-${id}`, c: 'Zone' })),
         ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
         ...Object.entries(PUZZLES).map(([id, p]) => EVENT_PUZZLE_IDS.has(id)
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
