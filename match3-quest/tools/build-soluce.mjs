@@ -25,11 +25,16 @@ import { playerClasses } from '../classes.js';
 import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
 import * as WS from '../events/wanderingSouls/data.js';
 import * as TR from '../events/wanderingSouls/terrains.js';
+import * as WL from '../events/winterLanternFestival/data.js';
+import * as WT from '../events/winterLanternFestival/terrains.js';
 
 // Événement « La Nuit des âmes errantes » : page dédiée seulement s'il est actif dans le monde assemblé (events/config.js).
 const EVENT_ON = Boolean(SCREENS[WS.REALM_ID]);
 const EVENT_PUZZLES = [...WS.PUZZLE_LIST, ...TR.TERRAIN_PUZZLES];   // énigmes de la salle d'entrée et des terrains
-const EVENT_PUZZLE_IDS = new Set(EVENT_PUZZLES.map(p => p.id));
+// Événement « La Fête des lanternes d'hiver » : page dédiée aussi, seulement s'il est actif.
+const WINTER_ON = Boolean(SCREENS[WL.REALM_ID]);
+const WINTER_PUZZLES = [...WL.PUZZLE_LIST, ...WT.TERRAIN_PUZZLES];
+const EVENT_PUZZLE_IDS = new Set([...EVENT_PUZZLES, ...WINTER_PUZZLES].map(p => p.id));
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
@@ -198,7 +203,8 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['zones.html', 'Zones et jonctions'], ['bases.html', 'Bases du combat'],
     ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
-    ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : [])
+    ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : []),
+    ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : [])
 ];
 
 
@@ -791,6 +797,87 @@ ${playerScript(Object.fromEntries(EVENT_PUZZLES.map(p => [p.id, PUZZLES[p.id]]))
     }));
 }
 
+// Page de la Fête des lanternes d'hiver (événement) : accès depuis les Rizières, village, col, sanctuaire, quêtes, énigmes, boss.
+function buildWinter() {
+    if (!WINTER_ON) return;
+    const realm = SCREENS[WL.REALM_ID];
+    const at = (id, kinds) => { const e = entOf(id, kinds); return e ? whereOf(e) : ''; };
+    const host = SCREENS[WL.HOST.wild];
+    const door = host.exits.find(e => e.to === WL.REALM_ID);
+    const doorShot = shotFigure(host.id, [{ x: door.x, y: door.y, name: WL.VILLAGE.entrance, role: 'target' }]);
+    const chestPt = (id, name) => { const e = entOf(id, ['chest']); return e && { x: e.ent.x, y: e.ent.y, name, role: 'chest' }; };
+    const villagePts = [...WL.LANTERNS.map(l => chestPt(l.id, l.label)), chestPt(WL.RIZ.chest.id, WL.RIZ.chest.label), chestPt(WL.SESAME.chest.id, WL.SESAME.chest.label),
+        chestPt(WL.PUZZLE_MIROIR.chest.id, WL.PUZZLE_MIROIR.chest.label),
+        ...realm.npcs.map(n => ({ x: n.x, y: n.y, name: n.name, role: 'target' }))].filter(Boolean);
+    const quests = QUESTS.filter(q => q.event === WL.ID).sort((a, b) => Object.values(WL.QUEST_IDS).indexOf(a.id) - Object.values(WL.QUEST_IDS).indexOf(b.id));
+    const puzzles = WINTER_PUZZLES.map(p => {
+        const def = { id: p.id, ...PUZZLES[p.id] }, steps = solutionSteps(def), total = solvePath(def).length - 1, unit = def.mode === 'push' ? 'pas' : 'coups';
+        const chest = Object.values(SCREENS).flatMap(sc => (sc.chests || []).filter(c => c.puzzle === p.id).map(c => ({ sc, c }))).find(Boolean);
+        return `<h4>${esc(def.title)} <small>— ${total} ${unit} au minimum</small></h4>
+<dl><dt>Où</dt><dd>${esc(chest.sc.name)} — ${esc(at(chest.c.id, ['chest']))} — ${esc(chest.c.label)}</dd><dt>Récompense</dt><dd>${esc(chest.c.questItem?.name || 'le contenu du coffre')} (fragment de la flamme céleste) + l’or du coffre</dd></dl>
+${playerHtml(def, steps)}`;
+    }).join('\n');
+    const terrainCards = WT.TERRAINS.map(t => {
+        const sc = SCREENS[t.id];
+        const l = WT.LINKS.find(k => k.to === t.id);
+        const locked = WT.LINKS.filter(k => k.from === t.id && k.requires).map(k => `<li>Porte vers « ${esc(k.label)} » : ${esc(k.lockedMessage)}</li>`).join('');
+        const points = [...sc.chests.map(c => ({ x: c.x, y: c.y, name: c.label, role: 'chest' })), ...sc.npcs.map(n => ({ x: n.x, y: n.y, name: n.name, role: 'target' })),
+            ...sc.enemies.filter(e => e.boss).map(e => ({ x: e.x, y: e.y, name: e.name, role: 'target' }))];
+        return `<h4 id="${t.id}">${esc(t.name)} <small>— ${sc.w}×${sc.h} cases</small></h4>
+<dl><dt>Accès</dt><dd>depuis « ${esc(SCREENS[l.from].name)} »${l.requires ? ' (porte gelée)' : ''}</dd><dt>Coffres</dt><dd>${sc.chests.map(c => esc(c.label)).join(', ')}</dd><dt>Ennemis</dt><dd>${[...new Set(sc.enemies.map(e => e.name))].map(esc).join(', ')}</dd></dl>
+${locked ? `<ul>${locked}</ul>` : ''}
+${shotFigure(t.id, points)}`;
+    }).join('\n');
+    const maison = SCREENS[WL.MAISON.id];
+    const lanterns = WL.LANTERNS.map((l, i) => `<li><b>${esc(l.label)}</b> (n°${i + 1}) : ${esc(at(l.id, ['chest']))}.${i ? ' Elle n’apparaît qu’une fois la précédente allumée.' : ' Allumée, elle révèle le renard des neiges et le pot de sésame noir.'}</li>`).join('');
+    const lastQuest = quests[quests.length - 1];
+    write('fete-des-lanternes.html', page({
+        file: 'fete-des-lanternes.html', title: 'Fête des lanternes d’hiver', active: 'fete-des-lanternes.html',
+        desc: 'Soluce de l’événement « La Fête des lanternes d’hiver » : accès, quêtes, énigmes, boss et récompenses.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Fête des lanternes d’hiver']],
+        body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
+<h2>${esc(realm.name)}</h2>
+<p class="lead">Événement « La Fête des lanternes d’hiver » (l’événement neige) : un village de montagne et un sanctuaire enneigés, sur ${3 + 1} cartes (village, maison, col, sanctuaire), avec ${quests.length} quêtes, ${WINTER_PUZZLES.length} énigmes et un gardien à apaiser. Contenu de niveau ${WL.HOST.level} : les créatures du givre sont dures, mais les habitants se rallient par la générosité plus que par le combat.</p>
+<div class="box info"><b class="t">Événement activable</b>Le village n’existe que si l’événement est activé dans <code>events/config.js</code> (<code>winterLanternFestival</code>). Il est actif dans cette version. Pour le tester ou le couper dans un onglet : <code>?events=winterLanternFestival</code> ou <code>?events=-winterLanternFestival</code>.</div>
+<div class="box tip"><b class="t">Fin de l’événement</b>Rien ne se referme : la dernière quête, « ${esc(lastQuest?.title || '')} », est une célébration. Terminez les autres à votre rythme.</div>
+
+<h3>Comment y entrer</h3>
+<p>Un sentier enneigé part de la <b>zone sauvage des Rizières</b> (${esc(host.name)}), ${(() => { const c = compass(door.x, door.y, host.w, host.h); return c === 'centre' ? 'au centre' : `dans la partie ${c}`; })()} de l’écran : « ${esc(WL.VILLAGE.entrance)} ». Il est accessible dès le début de l’aventure ; une annonce au premier chargement en indique l’emplacement.</p>
+${doorShot}
+
+<h3>Le village des lanternes enneigées</h3>
+<p>${esc(realm.name)} : ${realm.w}×${realm.h} cases. Sortie ouest : retour aux Rizières ; sortie est : le col des pins gelés. La maison du kang (${maison.w}×${maison.h}) s’ouvre sur la place. Personnages : ${realm.npcs.map(n => esc(n.name)).join(', ')}.</p>
+${shotFigure(WL.REALM_ID, villagePts)}
+${shotFigure(WL.MAISON.id, [])}
+
+<h3>Ordre conseillé</h3>
+<ol class="steps">
+<li><b>Les préparatifs du solstice.</b> Parlez à ${esc(WL.ANCIEN.name)} (${esc(at(WL.ANCIEN.id, ['npc']))}), puis à ${esc(WL.CUISINIER.name)} (${esc(at(WL.CUISINIER.id, ['npc']))}) et à ${esc(WL.ARTISAN.name)} (${esc(at(WL.ARTISAN.id, ['npc']))}).</li>
+<li><b>Les trois lanternes</b>, dans l’ordre :<ul>${lanterns}</ul> La première rend visible le renard des neiges (${esc(at(WL.RENARD.id, ['npc']))}).</li>
+<li><b>Les tangyuan.</b> Le sac de riz gluant (${esc(at(WL.RIZ.chest.id, ['chest']))}), le pot de sésame noir enfoui (${esc(at(WL.SESAME.chest.id, ['chest']))}, visible après la première lanterne) et la clochette de montagne (${esc(at(WL.CLOCHETTE.id, ['chest']))}).</li>
+<li><b>La source chaude</b> (${esc(at(WL.SOURCE_CHAUDE.chest.id, ['chest']))}) : la libérer fait fondre la glace de la porte du sanctuaire.</li>
+<li><b>Les trois fragments de la flamme.</b> Miroirs de lumière (${esc(at(WL.PUZZLE_MIROIR.chest.id, ['chest']))}), blocs de glace (${esc(at(WL.PUZZLE_GLACE.chest.id, ['chest']))}) et niche du sanctuaire (${esc(at(WL.SANCTUAIRE_CHEST_3.id, ['chest']))}).</li>
+<li><b>Le Gardien de la flamme hivernale</b> (${esc(at(WL.BOSS.id, ['enemy']))}), puis le jade de l’hiver derrière lui (${esc(at(WL.JADE.chest.id, ['chest']))}).</li>
+<li><b>La table du solstice.</b> Saluez la famille Lin, les enfants et l’esprit protecteur du village sur la place.</li>
+</ol>
+
+<h3>Le col et le sanctuaire</h3>
+${terrainCards}
+
+<h3>Le Gardien de la flamme hivernale</h3>
+<div class="box tip"><b class="t">Trois façons de l’affaiblir</b>
+Il est protégé par les deux gardiens de glace du sanctuaire : <b>soit</b> vous les battez, <b>soit</b> vous finissez la quête des lanternes (ils s’écartent). La <b>source chaude</b> et la <b>recette des tangyuan</b> lui retirent chacune un niveau. Arrivez avec les deux : le combat devient très abordable.</div>
+
+<h3>Quêtes</h3>
+${quests.map(questHtml).join('\n')}
+
+<h3>Énigmes</h3>
+<p>${WINTER_PUZZLES.length} énigmes à plateau verrouillent chacune un fragment de flamme. Elles ne font partie d’aucune armure antique ; le lecteur ci-dessous montre la solution la plus courte.</p>
+${puzzles}
+${playerScript(Object.fromEntries(WINTER_PUZZLES.map(p => [p.id, PUZZLES[p.id]])))}`
+    }));
+}
+
 // ───────────────────────── Zones : entrées, sorties et jonctions ─────────────────────────
 // Pour chaque région : la chaîne des zones (route d'accès, village, zone sauvage, hameau, sanctuaire) avec, pour chaque passage de bord, le côté, la
 // position sur ce côté et le côté d'arrivée dans la zone voisine ; les portes (maisons, grottes) ; les bordures de mer (Pas de Yu). Les captures
@@ -906,10 +993,13 @@ function buildHub() {
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
         ...[...zoneScreens(), ...interiorScreens()].map(id => ({ t: SCREENS[id].name, k: 'zone entrée sortie passage jonction porte carte', h: `soluce/zones.html#zone-${id}`, c: 'Zone' })),
         ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
-        ...Object.entries(PUZZLES).map(([id, p]) => EVENT_PUZZLE_IDS.has(id)
+        ...Object.entries(PUZZLES).map(([id, p]) => WINTER_PUZZLES.some(w => w.id === id)
+            ? { t: p.title, k: `énigme ${p.mode} fête des lanternes hiver neige`, h: 'soluce/fete-des-lanternes.html', c: 'Énigme' }
+            : EVENT_PUZZLE_IDS.has(id)
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
         ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
+        ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
     write('soluce.html', page({
@@ -928,6 +1018,7 @@ function buildHub() {
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
 <a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).filter(id => !EVENT_PUZZLE_IDS.has(id)).length} énigmes, 3 armures antiques</span></a>
 ${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des âmes</b><span>Événement : ${QUESTS.filter(q => q.event === WS.ID).length} quêtes, ${EVENT_PUZZLES.length} énigmes, 7 cartes</span></a>` : ''}
+${WINTER_ON ? `<a class="card" href="soluce/fete-des-lanternes.html"><b>Fête des lanternes</b><span>Événement d’hiver : ${QUESTS.filter(q => q.event === WL.ID).length} quêtes, ${WINTER_PUZZLES.length} énigmes, 4 cartes</span></a>` : ''}
 <a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
@@ -966,5 +1057,6 @@ buildUltimes();
 buildParcours();
 buildZones();
 buildEvent();
+buildWinter();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');
