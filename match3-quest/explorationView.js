@@ -481,7 +481,7 @@ export function createExplorationView(cfg) {
     // Remet la caméra et l'état de marche sur la case du héros (après une téléportation : arrivée au village, retour de Hou Yi).
     function resetViewTo() {
         vis.px = session.data.x; vis.py = session.data.y; vis.cx = vis.px; vis.cy = vis.py;
-        vis.trail = null; held = null; walk = null;
+        vis.trail = null; vis.amb = {}; held = null; walk = null;
     }
     async function finishChange(done, completed) {
         await playMirror(root, 'mirror-out.gif', sfxSafe);
@@ -506,6 +506,8 @@ export function createExplorationView(cfg) {
     function openHealFor(npcId) {
         const ep = changeEpisode();
         const npc = ep?.injured.find(n => n.id === npcId);
+        const amb = !npc && X.changeAmbientOf(session, npcId);   // habitant de passage : sa réplique, sans puzzle
+        if (amb) { openDialog(sceneSpeaker({ npc: amb.id, name: amb.name }), [amb.line]); return; }
         if (!npc || healView) return;
         if (session.data.change.healed.includes(npcId)) {
             openDialog(sceneSpeaker({ npc: npcId, name: npc.name }), [npc.thanks]);
@@ -1456,6 +1458,8 @@ export function createExplorationView(cfg) {
         if (dist > 3) { vis.px = session.data.x; vis.py = session.data.y; }
         else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; }
         else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
+        // Mode Chang'e : les habitants de passage se baladent (en pause pendant un dialogue ou un puzzle)
+        if (X.inChangeMode(session) && !isDialogOpen() && !healView) X.stepChangeAmbient(session, dt);
         // Compagnon actif : il suit la piste du héros, toujours derrière lui (companionTrail.js)
         if (X.activeCompanionOf(session)) {
             const heroDir = viewDir(session.rt.facing);
@@ -1906,6 +1910,14 @@ export function createExplorationView(cfg) {
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(session).forEach(n => {
             const a = vis.npcAnim?.id === n.id ? vis.npcAnim : null;   // PNJ en train d'accourir : position et saut animés
+            if (n.ambient) {   // habitant de passage : glisse en douceur vers sa case logique (2,2 cases par seconde), léger rebond en marchant
+                const v = ((vis.amb ||= {})[n.id] ||= { x: n.x, y: n.y, t: now });
+                const step = Math.min(100, now - v.t) / 1000 * 2.2; v.t = now;
+                const d = Math.hypot(n.x - v.x, n.y - v.y);
+                if (d <= step) { v.x = n.x; v.y = n.y; } else { v.x += (n.x - v.x) / d * step; v.y += (n.y - v.y) / d * step; }
+                items.push({ depth: v.y + 0.1, kind: 'npc', n, x: v.x, y: v.y, hop: d > 0.02 ? 0.35 * Math.abs(Math.sin(now / 110)) : 0 });
+                return;
+            }
             items.push({ depth: (a ? a.y : n.y) + 0.1, kind: 'npc', n, x: a ? a.x : n.x, y: a ? a.y : n.y, hop: a && !a.idle ? Math.abs(Math.sin(a.phase)) : 0 });
         });
         X.visibleChests(session).filter(c => X.isChestShown(session, c, cfg.getPlayerLevel(), performance.now())).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
@@ -2064,7 +2076,7 @@ export function createExplorationView(cfg) {
                     if (careCol) { ctx.save(); ctx.shadowColor = careCol; ctx.shadowBlur = tile * 0.16; }
                     drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));
                     if (careCol) ctx.restore();   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
-                    const marker = it.n.injured ? null : X.npcMarker(session, it.n.id);   // mode Chang'e : pas de « ! » de quête
+                    const marker = it.n.injured || it.n.ambient ? null : X.npcMarker(session, it.n.id);   // mode Chang'e : pas de « ! » de quête
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);

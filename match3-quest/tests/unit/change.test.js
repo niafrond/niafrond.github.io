@@ -6,10 +6,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { SIZE, ENERGIES, JOKER, TILE_KINDS, GAUGE_MAX, createLevel, generateBoard, findRuns, possibleMoves, hasMove, playMove, useBreath } from '../../change/engine.js';
-import { EPISODES, SUN_EPISODE, episodeById, episodeByScreen, ENERGY_LABEL } from '../../change/data.js';
+import { EPISODES, SUN_EPISODE, episodeById, episodeByScreen, ENERGY_LABEL, ambientOf } from '../../change/data.js';
 import { TILE_ART, tileSvg } from '../../change/art.js';
 import { defaultChangeData, normalizeChangeData } from '../../change/state.js';
-import { createSession, markEnemyDefeated, pendingChangeEpisode, startChangeMode, endChangeMode, inChangeMode, visibleNpcs, visibleChests, aliveEnemies, tryMove, entityAt, isTerrainBlocked, activeCompanionOf, changeProgress, currentScreen } from '../../exploration.js';
+import { createSession, markEnemyDefeated, pendingChangeEpisode, startChangeMode, endChangeMode, inChangeMode, visibleNpcs, visibleChests, aliveEnemies, tryMove, entityAt, isTerrainBlocked, activeCompanionOf, changeProgress, currentScreen, stepChangeAmbient, changeAmbientOf } from '../../exploration.js';
 import { SCREENS } from '../../story.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -218,6 +218,23 @@ describe('état sauvegardé et déclencheur', () => {
     });
 });
 
+// Vérité terrain : parcours en largeur avec le VRAI tryMove (obstacles, sorties, passages de bord compris), position remise à chaque essai.
+function walkFrom(session, screen) {
+    const start = [session.data.x, session.data.y], key = (x, y) => `${x},${y}`;
+    const seen = new Set([key(...start)]), todo = [start], talk = new Map();
+    for (let i = 0; i < todo.length; i++) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        session.data.x = todo[i][0]; session.data.y = todo[i][1];
+        const r = tryMove(session, dx, dy);
+        if (r.type === 'talk') { talk.set(r.npcId, [todo[i][0], todo[i][1]]); continue; }
+        if (r.type !== 'moved') continue;
+        const nx = todo[i][0] + dx, ny = todo[i][1] + dy;
+        if (session.data.screenId !== screen.id) throw new Error('Chang\'e a quitté le village');
+        if (!seen.has(key(nx, ny))) { seen.add(key(nx, ny)); todo.push([nx, ny]); }
+    }
+    session.data.x = start[0]; session.data.y = start[1];
+    return { seen, talk };
+}
+
 describe('Chang\'e explore le village (mode dans le moteur d\'exploration)', () => {
     const fresh = () => { const s = createSession(null); s.data.x = 5; s.data.y = 6; return s; };
 
@@ -234,7 +251,7 @@ describe('Chang\'e explore le village (mode dans le moteur d\'exploration)', () 
             expect(session.data.screenId).toBe(ep.screen);
             expect(session.data.change.return).toEqual(before);
             expect(session.data.change.pending).toBe(ep.id);
-            const npcs = visibleNpcs(session);
+            const npcs = visibleNpcs(session).filter(n => n.injured);
             expect(npcs.map(n => n.id)).toEqual(ep.injured.map(n => n.id));
             const cells = new Set(npcs.map(n => `${n.x},${n.y}`));
             expect(cells.size).toBe(5);
@@ -243,19 +260,54 @@ describe('Chang\'e explore le village (mode dans le moteur d\'exploration)', () 
             const pts = npcs.map(n => [n.x, n.y]);
             for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) expect(Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1])).toBeGreaterThanOrEqual(4);
             pts.forEach(([x, y]) => expect(Math.hypot(x - screen.spawn.x, y - screen.spawn.y)).toBeGreaterThanOrEqual(3));
-            const seen = new Set([`${screen.spawn.x},${screen.spawn.y}`]), todo = [[screen.spawn.x, screen.spawn.y]];
-            for (let i = 0; i < todo.length; i++) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-                const nx = todo[i][0] + dx, ny = todo[i][1] + dy, k = `${nx},${ny}`;
-                if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || seen.has(k) || isTerrainBlocked(screen, nx, ny) || cells.has(k)) continue;
-                seen.add(k); todo.push([nx, ny]);
-            }
-            pts.forEach(([x, y]) => expect([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(`${x + dx},${y + dy}`))).toBe(true));
             npcs.forEach(n => expect(n.need).toBeGreaterThan(0));
             expect(aliveEnemies(session)).toEqual([]);
             expect(visibleChests(session)).toEqual([]);
             expect(activeCompanionOf(session)).toBeNull();
             expect(changeProgress(session)).toHaveLength(5);
             expect(startChangeMode(session, ep.id)).toBeNull();   // pas deux fois
+        });
+    });
+
+    test('chaque blessé est accessible à pied (vrai tryMove, obstacles compris), loin des bords et des sorties', () => {
+        EPISODES.forEach(ep => {
+            const session = createSession(null), screen = startChangeMode(session, ep.id);
+            const { seen, talk } = walkFrom(session, screen);
+            visibleNpcs(session).filter(n => n.injured).forEach(n => {
+                expect(talk.has(n.id)).toBe(true);   // on peut le toucher
+                expect(n.x).toBeGreaterThanOrEqual(4); expect(n.y).toBeGreaterThanOrEqual(4);
+                expect(n.x).toBeLessThan(screen.w - 4); expect(n.y).toBeLessThan(screen.h - 4);
+                expect(screen.exits.some(e => e.x === n.x && e.y === n.y)).toBe(false);
+            });
+            expect(seen.size).toBeGreaterThan(100);
+        });
+    });
+
+    test('des habitants de passage se baladent : six par village, jamais sur un obstacle, un blessé ou Chang\'e, et ils restent près de leur attache', () => {
+        EPISODES.forEach(ep => {
+            const session = createSession(null), screen = startChangeMode(session, ep.id);
+            const amb = () => visibleNpcs(session).filter(n => n.ambient);
+            expect(amb()).toHaveLength(6);
+            amb().forEach(a => { expect(ambientOf(ep.id, a.id)).toBeTruthy(); expect(changeAmbientOf(session, a.id).line.length).toBeGreaterThan(20); });
+            const homes = amb().map(a => [a.hx, a.hy]);
+            let seed = 9; const rng = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+            const start = amb().map(a => `${a.x},${a.y}`).join('|');
+            let moves = 0;
+            for (let t = 0; t < 600; t++) {
+                if (stepChangeAmbient(session, 500, rng)) moves++;
+                const cells = visibleNpcs(session).map(n => `${n.x},${n.y}`);
+                expect(new Set(cells).size).toBe(cells.length);   // jamais deux PNJ sur la même case
+                amb().forEach((a, i) => {
+                    expect(isTerrainBlocked(screen, a.x, a.y)).toBe(false);
+                    expect(Math.hypot(a.x - homes[i][0], a.y - homes[i][1])).toBeLessThanOrEqual(4.5);
+                    expect(a.x === session.data.x && a.y === session.data.y).toBe(false);
+                });
+            }
+            expect(moves).toBeGreaterThan(50);
+            expect(amb().map(a => `${a.x},${a.y}`).join('|')).not.toBe(start);
+            // après la balade, les blessés restent accessibles et les habitants aussi (on les touche sans quitter le village)
+            const { talk } = walkFrom(session, screen);
+            visibleNpcs(session).filter(n => n.injured).forEach(n => expect(talk.has(n.id)).toBe(true));
         });
     });
 

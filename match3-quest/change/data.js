@@ -30,6 +30,14 @@ export const EPISODES = [
             { who: 'change', text: 'Mais depuis ce jour, mes mains sentent le mal des gens, et savent le soulager. Ce n\'est pas un pouvoir de la lune : je n\'y suis pas, je ne suis qu\'une boulangère avec une goutte de trop.' },
             { who: 'change', text: 'Alors je soigne. Allons les voir, un par un.' }
         ],
+        ambient: [
+            { id: 'rizieres_village_potter', name: 'Yun', line: 'Mes jarres sont vides, mais on dit que vos gâteaux, eux, ne le sont jamais. Courage, Chang\'e.' },
+            { id: 'rizieres_village_kid_lan', name: 'Lan', line: 'J\'ai vu Lin se redresser tout à l\'heure. Vous êtes magicienne ?' },
+            { id: 'rizieres_village_old_watch', name: 'Vieux Fang', line: 'Je veille la porte est depuis quarante ans. Aujourd\'hui, personne ne passe : tout le monde est ici, à vous attendre.' },
+            { id: 'rizieres_village_porter', name: 'Bang', line: 'Mes seaux sont vides, mais je les porte quand même. On ne sait jamais, la pluie.' },
+            { id: 'rizieres_hamlet_weaver_zhu', name: 'Zhu', line: 'Je tresse des nattes pour les malades, c\'est plus doux que la paille. Prenez-en une.' },
+            { id: 'buffalo_dahei', name: 'Dahei', line: 'Dahei lève la tête, souffle doucement, et se remet à ruminer sans bouger d\'un sabot.' }
+        ],
         injured: [
             { id: 'farmer_lin', name: 'Lin', state: 'Coup de chaleur, désespéré', color: 'jade', need: 24, moves: 12, cake: ['Haricot rouge', 'un peu de gingembre, il a toujours les mains froides'], thanks: 'Mes mains sont chaudes, regardez ! Les semis attendront demain.' },
             { id: 'elder_wen', name: 'Doyen Wen', state: 'Épuisé d\'avoir porté le village', color: 'eau', need: 24, moves: 12, cake: ['Peau de neige', 'sans sucre'], thanks: 'Merci, ma fille. Les comptes du village tiendront encore une saison.' },
@@ -50,6 +58,14 @@ export const EPISODES = [
             { who: 'change', text: 'Hu m\'a demandé si le fleuve reviendrait. Je lui ai dit que tu faisais ce qu\'il fallait. Il a ri. C\'est la première fois depuis longtemps.' },
             { who: 'hou', text: 'Dis-lui que je passerai goûter son sel.' },
             { who: 'change', text: 'Il le saura.' }
+        ],
+        ambient: [
+            { id: 'fleuve_village_kid_ming', name: 'Ming', line: 'Les barques ne bougent plus, alors je cours sur les quais. Vous soignez aussi les enfants qui courent ?' },
+            { id: 'fleuve_village_dock_clerk', name: 'Maître Qi', line: 'Cent sept barques échouées, vingt-trois familles à nourrir. Je note tout, même vos bonnes actions.' },
+            { id: 'fleuve_village_rope_maker', name: 'Dame Cho', line: 'Des cordes, il m\'en reste. Si une barque a besoin d\'être remorquée, je suis prête.' },
+            { id: 'boatman_shan', name: 'Laoshan', line: 'Un batelier sans fleuve, c\'est comme une tortue sans mare. Merci de vous occuper des nôtres.' },
+            { id: 'scribe_ou', name: 'Maître Ou', line: 'Je prends votre nom en note, madame. On oublie vite les gens qui aident.' },
+            { id: 'gui_turtle', name: 'Gui', line: 'Gui sort la tête de sa carapace, vous regarde longuement, puis la rentre sans un mot.' }
         ],
         injured: [
             { id: 'ferryman_gu', name: 'Gu', state: 'Soif, bateau échoué', color: 'eau', need: 34, moves: 12, cake: ['Peau de neige', 'pas de sucre'], thanks: 'Ma barque ne flotte pas, mais moi, si. Merci.' },
@@ -73,6 +89,14 @@ export const EPISODES = [
             { who: 'hou', text: 'Chang\'e, attends, ne…' }
         ],
         finale: 'Le miroir s\'éteint. Le bronze est froid sous vos doigts : c\'est Chang\'e qui a coupé le lien.',
+        ambient: [
+            { id: 'fauves_village_naran', name: 'Rixi', line: 'J\'ai réparé trois chaudrons ce matin. Si vous avez des gâteaux à faire cuire, je prête la braise.' },
+            { id: 'fauves_village_erdene', name: 'Zhubao', line: 'Les pâtures sont à sec, mais personne ne se dispute. C\'est bon signe.' },
+            { id: 'fauves_village_tsetseg', name: 'Huahua', line: 'Du lait fermenté pour les malades ? Il est un peu fort, mais il remet debout.' },
+            { id: 'shaman_ula', name: 'Fengpo', line: 'Les vents chuchotent votre nom, Chang\'e. Ils disent que vous restez, et que vous partirez.' },
+            { id: 'twins_mu', name: 'Les jumeaux Mu', line: 'On garde les moutons ensemble ! Mais l\'un des deux dort debout, regardez.' },
+            { id: 'horse_tian', name: 'Tian', line: 'Tian, le vieux cheval céleste, vous pousse l\'épaule du museau puis retourne brouter.' }
+        ],
         injured: [
             { id: 'shepherd_zi', f: true, name: 'Zi', state: 'Bergère, troupeau dispersé', color: 'jade', need: 44, moves: 13, cake: ['Matcha', 'un brin de menthe sauvage'], thanks: 'Mes bêtes reviendront. Elles savent mon nom, vous savez le leur.' },
             { id: 'hunter_wu', name: 'Wu', state: 'Morsures et fièvre', color: 'lotus', need: 46, moves: 13, cake: ['Haricot rouge', 'une grosse part'], thanks: 'Un chasseur qui se fait soigner par une boulangère. Ne le répétez pas.' },
@@ -83,6 +107,8 @@ export const EPISODES = [
     }
 ];
 
+// Habitants de passage (ambiance) : se baladent dans le village, ne sont jamais blessés ; toucher l'un d'eux donne sa réplique.
+export const ambientOf = (episodeId, npcId) => episodeById(episodeId)?.ambient?.find(a => a.id === npcId) || null;
 export const episodeByScreen = id => EPISODES.find(e => e.screen === id) || null;
 export const episodeById = id => EPISODES.find(e => e.id === id) || null;
 export const episodeOfSun = sunId => SUN_EPISODE[sunId] || null;

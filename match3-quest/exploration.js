@@ -550,7 +550,7 @@ export function isEntityVisible(session, def) {
 
 // PNJ en route vers le héros (`arrival`) : cachés tant que la vue n'a pas lancé leur arrivée (état volatil, jamais sauvegardé).
 export const beginNpcArrival = (session, npcId) => session.rt.pendingArrivals?.delete(npcId);
-export const visibleNpcs = session => session.rt.changeMode ? session.rt.changeMode.npcs : currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
+export const visibleNpcs = session => session.rt.changeMode ? [...session.rt.changeMode.npcs, ...session.rt.changeMode.ambient] : currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
 export const visibleChests = session => session.rt.changeMode ? [] : currentScreen(session).chests.filter(c => isEntityVisible(session, c));
 
 export function aliveEnemies(session) {
@@ -1966,35 +1966,61 @@ export const pendingChangeEpisode = session => session.data.change?.pending || n
 export const inChangeMode = session => Boolean(session.rt?.changeMode);
 export const changeEpisodeOf = session => (session.rt.changeMode ? episodeById(session.rt.changeMode.episode) : null);
 
-// Places des blessés : étalées sur tout le village (jamais attroupées). On explore les cases accessibles depuis le départ, puis on retient cinq cases par
-// « point le plus éloigné » (chaque nouvelle case maximise sa distance aux cases déjà prises et au départ), à l'écart des bords, des sorties et des bâtiments.
-function spreadCells(session, screen, count) {
-    const sp = screen.spawn, key = (x, y) => `${x},${y}`;
-    const solid = (x, y) => isTerrainBlocked(screen, x, y) || (screen.structures || []).some(st => x >= st.x && x < st.x + st.w && y >= st.y && y < st.y + st.h);
-    const nearExit = (x, y) => screen.exits.some(e => Math.abs(e.x - x) <= 1 && Math.abs(e.y - y) <= 1);
-    const dist = new Map([[key(sp.x, sp.y), 0]]), queue = [[sp.x, sp.y]];
-    for (let i = 0; i < queue.length; i++) {
-        const [x, y] = queue[i];
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-            const nx = x + dx, ny = y + dy;
-            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || dist.has(key(nx, ny)) || solid(nx, ny)) continue;
-            dist.set(key(nx, ny), dist.get(key(x, y)) + 1);
-            queue.push([nx, ny]);
+// ── Places des blessés et des habitants de passage ──────────────────────────────────────────────────────────────────────────────
+const CHANGE_RIM = 4;   // bande de bord où se trouvent les passages vers les cartes voisines (couloirs de 3 cases) : jamais de PNJ dedans
+const FOUR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+// Pas de (x, y) vers (x + dx, y + dy) possible pour Chang'e : mêmes règles que tryMove en mode Chang'e (terrain, obstacles, sorties, passages de bord).
+function stepOpen(screen, x, y, dx, dy) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return false;
+    if (isTerrainBlocked(screen, nx, ny)) return false;
+    if ((screen.structures || []).some(st => nx >= st.x && nx < st.x + st.w && ny >= st.y && ny < st.y + st.h)) return false;
+    if (screen.exits.some(e => e.x === nx && e.y === ny)) return false;
+    const dir = screen.connections && dirOfStep(dx, dy);
+    if (dir && screen.connections[dir] && onSide(screen, dir, nx, ny)) return false;
+    return true;
+}
+
+// Cases accessibles à pied depuis le départ : { dist: Map "x,y" → pas, cells: liste dans l'ordre du parcours }.
+function walkableFrom(screen, from) {
+    const dist = new Map([[`${from.x},${from.y}`, 0]]), cells = [[from.x, from.y]];
+    for (let i = 0; i < cells.length; i++) {
+        const [x, y] = cells[i];
+        for (const [dx, dy] of FOUR) {
+            const k = `${x + dx},${y + dy}`;
+            if (dist.has(k) || !stepOpen(screen, x, y, dx, dy)) continue;
+            dist.set(k, dist.get(`${x},${y}`) + 1);
+            cells.push([x + dx, y + dy]);
         }
     }
-    const open = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => dist.has(key(x + dx, y + dy))).length >= 2;   // au moins deux voisines libres : on peut venir le toucher
-    const cands = queue.filter(([x, y]) => x >= 1 && y >= 1 && x < screen.w - 1 && y < screen.h - 1 && !nearExit(x, y) && dist.get(key(x, y)) >= 4 && open(x, y));
-    const taken = [], anchors = [[sp.x, sp.y]];
-    for (let n = 0; n < count && cands.length; n++) {
+    return { dist, cells };
+}
+
+// Une case où un PNJ peut se tenir : loin des bords, sur un sol dégagé (ni haute herbe ni obstacle bas, pas sur le point de passage), avec au moins deux voisines libres.
+function standable(screen, walk, x, y) {
+    if (x < CHANGE_RIM || y < CHANGE_RIM || x >= screen.w - CHANGE_RIM || y >= screen.h - CHANGE_RIM) return false;
+    if (isGrassCell(screen, x, y) || isLowObstacle(screen, x, y)) return false;
+    if (screen.waypoint && screen.waypoint.x === x && screen.waypoint.y === y) return false;
+    return FOUR.filter(([dx, dy]) => walk.dist.has(`${x + dx},${y + dy}`)).length >= 2;
+}
+
+// `count` cases étalées sur le village : chacune maximise sa distance aux ancres (départ, cases déjà prises) ; `minSpawn` : pas du départ, `minGap` : écart aux ancres.
+function spreadCells(screen, walk, count, anchors, { minSpawn = 4, minGap = 3 } = {}) {
+    const spawn = anchors[0];
+    const cands = walk.cells.filter(([x, y]) => walk.dist.get(`${x},${y}`) >= minSpawn && standable(screen, walk, x, y));
+    const taken = [], pool = [...anchors];
+    for (let n = 0; n < count; n++) {
         let best = null, bd = -1;
         for (const [x, y] of cands) {
-            const d = Math.min(...anchors.map(([ax, ay]) => Math.hypot(ax - x, ay - y)));
-            if (d > bd + 1e-9 || (Math.abs(d - bd) <= 1e-9 && best && (y < best[1] || (y === best[1] && x < best[0])))) { bd = d; best = [x, y]; }
+            const d = Math.min(...pool.map(([ax, ay]) => Math.hypot(ax - x, ay - y)));
+            if (d < minGap) continue;
+            if (d > bd + 1e-9 || (Math.abs(d - bd) <= 1e-9 && (y < best[1] || (y === best[1] && x < best[0])))) { bd = d; best = [x, y]; }
         }
+        if (!best) break;
         taken.push(best);
-        anchors.push(best);
+        pool.push(best);
     }
-    while (taken.length < count) taken.push([sp.x + taken.length + 1, sp.y]);   // petite carte très serrée : repli
     return taken;
 }
 
@@ -2005,12 +2031,20 @@ export function startChangeMode(session, episodeId) {
     const ch = session.data.change;
     ch.pending = ep.id;
     ch.return = { screenId: session.data.screenId, x: session.data.x, y: session.data.y };
-    const cells = spreadCells(session, screen, ep.injured.length);
+    const walk = walkableFrom(screen, screen.spawn);
+    const spawn = [screen.spawn.x, screen.spawn.y];
+    const cells = spreadCells(screen, walk, ep.injured.length, [spawn], { minSpawn: 4, minGap: 4 });
+    if (cells.length < ep.injured.length) throw new Error(`village ${screen.id} : pas assez de cases accessibles pour ${ep.injured.length} blessés`);
     const npcs = ep.injured.map((n, i) => {
         const real = screen.npcs.find(r => r.id === n.id);   // son dessin et son étiquette d'origine, mais pas sa place : les blessés sont étalés sur le village
         return { ...(real || {}), id: n.id, x: cells[i][0], y: cells[i][1], name: n.name, title: n.state, injured: true, need: n.need };
     });
-    session.rt.changeMode = { episode: ep.id, npcs };
+    // Habitants de passage : ils se baladent autour de leur case d'attache, à l'écart des blessés
+    const homes = spreadCells(screen, walk, (ep.ambient || []).length, [spawn, ...cells], { minSpawn: 2, minGap: 2.5 });
+    const ambient = (ep.ambient || []).slice(0, homes.length).map((a, i) => ({
+        id: a.id, name: a.name, title: 'Habitant du village', x: homes[i][0], y: homes[i][1], hx: homes[i][0], hy: homes[i][1], ambient: true, next: 700 + i * 650
+    }));
+    session.rt.changeMode = { episode: ep.id, npcs, ambient, clock: 0 };
     session.data.screenId = screen.id;
     session.data.x = screen.spawn.x;
     session.data.y = screen.spawn.y;
@@ -2039,4 +2073,37 @@ export function endChangeMode(session, { done = false } = {}) {
 export const changeProgress = session => {
     const cm = session.rt.changeMode;
     return cm ? cm.npcs.map(n => ({ id: n.id, healed: session.data.change.healed.includes(n.id) })) : [];
+};
+
+/**
+ * Fait avancer les habitants de passage de `dtMs` ms : chacun, à intervalles irréguliers, fait un pas vers une case voisine libre sans s'éloigner de plus de
+ * 4,5 cases de son attache (jamais sur un blessé, sur Chang'e, sur un autre habitant, en haute herbe ou dans un obstacle bas). Renvoie vrai si l'un d'eux a bougé.
+ */
+export function stepChangeAmbient(session, dtMs, rng = Math.random) {
+    const cm = session.rt.changeMode;
+    if (!cm || !cm.ambient.length) return false;
+    const screen = currentScreen(session);
+    cm.clock += Math.max(0, dtMs);
+    let moved = false;
+    for (const a of cm.ambient) {
+        if (cm.clock < a.next) continue;
+        a.next = cm.clock + 1400 + rng() * 2600;
+        const dirs = [...FOUR].sort(() => rng() - 0.5);
+        for (const [dx, dy] of dirs) {
+            const nx = a.x + dx, ny = a.y + dy;
+            if (Math.hypot(nx - a.hx, ny - a.hy) > 4.5 || !stepOpen(screen, a.x, a.y, dx, dy)) continue;
+            if (isGrassCell(screen, nx, ny) || isLowObstacle(screen, nx, ny)) continue;
+            if ((nx === session.data.x && ny === session.data.y) || visibleNpcs(session).some(n => n !== a && n.x === nx && n.y === ny)) continue;
+            a.x = nx; a.y = ny; a.face = { dx, dy };
+            moved = true;
+            break;
+        }
+    }
+    return moved;
+}
+
+/** Répliques des habitants de passage : { id, name, line } ou null. */
+export const changeAmbientOf = (session, npcId) => {
+    const ep = changeEpisodeOf(session);
+    return ep?.ambient?.find(a => a.id === npcId) || null;
 };
