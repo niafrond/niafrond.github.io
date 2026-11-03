@@ -16,14 +16,14 @@ export default {
   npcs: {
     keeper_lunar: { name: 'Veilleuse Yin', title: 'Gardienne des lanternes', 
       idle: ['J\'allume les lanternes du hameau, une à une. Chacune éclaire un souvenir de quelqu\'un qui est monté là-haut.', 'Chang\'e est arrivée il y a peu. Elle a demandé une lanterne, pour guider quelqu\'un. Je crois que c\'était pour vous.'],
-      talk: [{ whenDone: 'sq_lanterne_hua', lines: ['La lanterne de Hua brille. C\'est la plus petite, mais elle éclaire le plus loin. Montez, archer : elle vous suivra.'] }] },
-    hua_lune: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+      talk: [{ whenDone: 'sq_lanterne_hua', lines: ['La lanterne de Xihe brille. C\'est la plus petite, mais elle éclaire le plus loin. Montez, archer : elle vous suivra.'] }] },
+    hua_lune: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Eh oui, me voilà ! Je suis venue à pied, à dos de grue, à dos de nuage. Pas de moyen sans mon sac.', 'J\'ai tout vendu, sauf une lanterne. Elle n\'est pas à vendre : elle est pour la veilleuse. Et un peu pour vous.'],
       talk: [{ whenDone: 'sq_lanterne_hua', lines: ['Vous l\'avez portée jusqu\'à Yin ? Merci. Je me remets en route : le monde a besoin d\'une colporteuse, même quand il se tait.'] }] },
     jade_hare: { name: 'Lièvre de jade', title: 'Pileur d\'élixir', 
       idle: ['Je pile, je pile, je pile. L\'élixir de la Reine Mère s\'est tu depuis longtemps, mais les mortiers ne le savent pas.', 'Dame Chang\'e est montée au pic avec sa fiole. Elle la serre comme on serre un enfant. Quelqu\'un la suit, dit-on, et ce quelqu\'un ne vient pas pour prier.'],
       talk: [{ whenDone: 'fengmeng_3a', lines: ['L\'Archer Miroir est à terre, mais Fengmeng ne l\'est pas : ce qu\'il a perdu va le rendre plus dangereux.', 'Ayez le cœur léger, archer : la colère coupe plus qu\'elle n\'éclaire.'] },
-        { whenDone: 'fengmeng_3b', lines: ['Fengmeng a posé son arc : on l\'a vu redescendre à pied, sans se retourner. Le pic est calme. Dame Chang\'e, dit-on, attend votre geste devant l\'autel.'] }] },
+        { whenDone: 'fengmeng_3b', lines: ['Fengmeng a posé son arc et son carquois : on l\'a vu redescendre à pied, sans arme, vers ceux à qui il devra rendre des comptes. Le pic est calme. Dame Chang\'e, dit-on, attend votre geste devant l\'autel.'] }] },
     spinner_yue: { name: 'Yue', title: 'Tisseuse d\'argent', 
       idle: ['Je file la lumière de lune. Elle est fine, froide, et pardonne tout.', 'J\'ai tissé un voile pour Chang\'e. Il est trop beau pour qu\'on l\'use. Elle l\'a mis quand même.'],
       talk: [{ whenDone: 'fengmeng_3a', lines: ['Un fil s\'est rompu dans mon rouet à l\'instant. C\'est signe qu\'un combat se déroule. Mais je ne sais pas qui le gagne.'] },
@@ -75,11 +75,11 @@ export default {
       hint: ['La cache de Wu Gang est sous le givre, sur le sentier d\'argent. L\'ombre du miroir rôde dans les parages.'],
       complete: ['Ma cache est vide, l\'ombre s\'est dissipée. Je coupe en paix. Prenez cette écorce d\'osmanthus : elle sent la nostalgie et la cannelle.'],
       reward: { gold: 200, fragment: 'Écorce d\'osmanthus', xp: 400 } },
-    { id: 'sq_lanterne_hua', title: 'La dernière lanterne de Hua', chapter: '✦ Quête secondaire — Pic de la Lune', giver: 'hua_lune', turnIn: 'keeper_lunar', requires: [], side: true,
-      objectives: [{ type: 'talk', target: 'keeper_lunar', text: 'Porter la lanterne de Hua à la veilleuse Yin (Hameau sous la Lune)', lines: ['Une lanterne de Hua ? La plus petite que j\'aie vue. La plus lumineuse aussi. Merci, archer.'] }],
+    { id: 'sq_lanterne_hua', title: 'La dernière lanterne de Xihe', chapter: '✦ Quête secondaire — Pic de la Lune', giver: 'hua_lune', turnIn: 'keeper_lunar', requires: [], side: true,
+      objectives: [{ type: 'talk', target: 'keeper_lunar', text: 'Porter la lanterne de Xihe à la veilleuse Yin (Hameau sous la Lune)', lines: ['Une lanterne de Xihe ? La plus petite que j\'aie vue. La plus lumineuse aussi. Merci, archer.'] }],
       offer: ['J\'ai fait un long chemin pour livrer une dernière lanterne à la veilleuse Yin. Mes pieds n\'iront pas plus loin.', 'Portez-la-lui, voulez-vous ? Vous avez passé la mienne en chemin, quelque part, je crois.'],
       hint: ['La veilleuse Yin est dans sa maison, au cœur du Hameau sous la Lune.'],
       complete: ['Yin lève la lanterne, qui projette sa lumière sur les murs. Les ombres dansent. « C\'est exactement celle que j\'attendais », murmure-t-elle.'],
-      reward: { gold: 200, fragment: 'Lanterne de Hua', xp: 400 } }
+      reward: { gold: 200, fragment: 'Lanterne de Xihe', xp: 400 } }
   ]
 };

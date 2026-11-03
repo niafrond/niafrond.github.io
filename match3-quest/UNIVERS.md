@@ -11,8 +11,13 @@ Yao charge Hou Yi, archer sans égal, d'abattre **neuf** soleils et d'en épargn
 Hou Yi traverse **neuf régions** dévastées, chacune sous l'emprise d'un Soleil-Boss. Il aide les villageois, récolte des
 composants (eau sacrée, vent céleste, pierre de glace…) pour de meilleures flèches, puis affronte le soleil de la région.
 Son disciple **Fengmeng**, jaloux, le suit comme un rival récurrent. Chang'e garde à la maison l'Élixir d'Immortalité, offert
-par la Reine Mère de l'Occident, que Fengmeng convoite. Après le neuvième soleil, Fengmeng trahit. Chang'e boit l'élixir pour
-le sauver de ses mains et s'envole vers la Lune. Épilogue tragique : Hou Yi dépose des gâteaux de lune au sommet d'une
+par la Reine Mère de l'Occident, qui n'en possède **qu'un seul véritable** : Fengmeng, qui est monté au Kunlun réclamer le même, s'est
+vu refuser et a compris que Chang'e le détenait. Au neuvième soleil, Hou Yi abat un soleil et épargne l'autre **par compassion** (ils sont
+ensemble au sanctuaire). Le miroir se tait alors : **c'est Chang'e qui a coupé le lien**, sachant qu'elle devra partir, pour que Fengmeng ne
+la retrouve pas par lui ; un messager (le lièvre de jade, `moon_messenger`) vient l'expliquer au héros sur la carte du Fusang. Au Pic de la
+Lune, comprenant que Fengmeng ne reculera devant rien et que son époux est en danger de mort, Chang'e boit l'élixir avant qu'il ne s'en
+empare : elle ne sacrifie pas sa vie mais sa présence auprès de son mari, et s'envole vers la Lune. Fengmeng, vaincu, avoue son besoin de
+reconnaissance mais ne s'en sert pas d'excuse : il redescend à pied, **sans arme**, pour répondre de ses actes. Épilogue tragique : Hou Yi dépose des gâteaux de lune au sommet d'une
 montagne sous la pleine lune. Un générique de fin défile, puis le joueur continue sa partie ou exporte sa sauvegarde pour la **Nouvelle Partie +** (histoire rejouée, équipement gardé, arène ouverte dès le début).
 
 Ton : épique, poétique, mélancolique ; humour léger chez les villageois ; tout public (pas de gore). Vouvoiement pour les
@@ -34,7 +39,7 @@ Une région = **un écran** (14×10) contenant un coin village (PNJ, quêtes) et
 | 6 | `tonnerre` | Monts du Tonnerre | 22 | `storm` | `sun_5` Soleil des Orages | Forgeron, ermite |
 | 7 | `fauves` | Plaine des Fauves | 27 | `savanna` | `sun_7` Soleil des Bêtes Folles | Meutes embrasées : le soleil est **protégé** tant que la meute n'est pas abattue |
 | 8 | `mer` | Rivage de la Mer Orientale | 32 | `coast` | `sun_8` Soleil des Marées | Pêcheurs, envoyé du Roi-Dragon |
-| 9 | `fusang` | Cime du Fusang | 37 | `fusang` | `sun_9` Soleil Lâche | Il utilise le 10ᵉ soleil (PNJ `sun_ten`) comme bouclier : tir de précision, **ne pas toucher le dernier soleil** |
+| 9 | `fusang` | Cime du Fusang | 37 | `fusang` | `sun_9` Soleil Lâche | Il se serre contre le 10ᵉ soleil (PNJ `sun_ten`) : tir de précision, **ne pas toucher le dernier soleil**. Hou Yi n'en tue qu'un et l'explique par la compassion ; le bronze du miroir se tait ensuite (voir `moon_messenger`) |
 | 9 bis | `marees` | Hautes-Eaux de la Lune Montante | 38 | `coast` | `changxi` Changxi, mère des douze lunes (épreuve de bravoure, pas de soleil) | Région **marine** : digue, pontons de bois, village de pêcheurs sur pilotis (Shuiyu-sous-l'Eau). Toute l'eau déclenche des rencontres aquatiques et ne se franchit qu'avec le Pas de Yu (`sq_pas_de_yu`) ; le Vieux Xu, sur la digue, en donne un indice incomplet. Dossier : `world/PLAN-MAREES.md` |
 | 10 | `lune` | Pic de la Lune | 40 | `moon` | — | Finale : Chang'e, **Fengmeng, boss final en 2 phases**, autel des gâteaux de lune, épilogue, NG+ |
 
@@ -45,7 +50,7 @@ souterrains en proportion.
 
 ### Fengmeng (rival, ids d'ennemis FIXES)
 - `fengmeng_1` : rencontre 1, duel d'entraînement à `rizieres` (le disciple agressif, jaloux).
-- `fengmeng_2` : rencontre 2, embuscade à l'entrée de `volcan` (duel d'archers, il veut devancer Hou Yi).
+- `fengmeng_2` : rencontre 2, embuscade à l'entrée de `volcan` (duel d'archers, il veut devancer Hou Yi). Il avoue avoir réclamé l'élixir à la Reine Mère (un seul véritable, déjà donné) et en déduit que Chang'e le détient.
 - `fengmeng_3a` : boss final, phase 1 « L'Archer Miroir », à `lune` (il veut l'élixir ; mêmes techniques d'arc que le joueur).
 - `fengmeng_3b` : phase 2 « Rage et Désespoir », n'apparaît qu'**après** la défaite de `fengmeng_3a` (scène : Chang'e boit
   l'élixir pour le sauver et s'envole vers la Lune ; Fengmeng entre en fureur, tirs rapides, pièges de zone).
@@ -62,7 +67,7 @@ souterrains en proportion.
 | `volcan` | `miner_shan` (mineur), `priestess_yan` (prêtresse du feu repentie) |
 | `fauves` | `hunter_wu` (chasseur), `shepherd_zi` (bergère aux troupeaux enfuis) |
 | `mer` | `fisher_hai` (pêcheur), `envoy_longwang` (envoyé du Roi-Dragon de la Mer Orientale) |
-| `fusang` | `crane_envoy` (grue messagère de la Reine Mère de l'Occident), `sun_ten` (le Dixième Soleil, terrorisé, un petit être lumineux) |
+| `fusang` | `crane_envoy` (grue messagère de la Reine Mère de l'Occident), `sun_ten` (le Dixième Soleil, terrorisé, un petit être lumineux, ensemble avec `sun_9` : le héros n'en abat qu'un, par compassion), `moon_messenger` (lièvre de jade, messager de la Lune : visible près du sanctuaire après `sun_9`, il explique que Chang'e a coupé elle-même le miroir ; dessin de `jade_hare`) |
 | `lune` | `change_moon` (Chang'e à la Lune, vêtue de lumière lunaire) |
 
 Les sanctuaires 2, 3, 5, 6, 8 et 9 abritent en plus un **PNJ de pourparlers** `parley_sunN` (ajouté, voir §9) ; il n'apparaît qu'après une
@@ -227,7 +232,7 @@ Trois mécaniques :
 Faits nouveaux : les noyés ont un doyen (Yuan) ; la cloche du temple brûlé a une âme (Tintement) dont les deux « esprits » sont des échos ;
 le tonnerre a un enfant (Rongrong) ; le temple du feu avait un attiseur (Chi, maître de Yan) ; l'escadre du Roi-Dragon a un amiral (Xie), et
 sa perle fait foi d'ordre ; les grues-lige du Fusang protègent le Dixième Soleil (Hegui, sœur de la messagère) ; Maître Zhen a reçu
-Fengmeng en méditation, Xia la renarde a sept queues. Précisions (relecture du 30/10/2026) : Chi est le vieux maître de Yan, et Yan le dit en reprenant la cendre du phénix ; Hua (Xihe, mère des dix soleils) précède le héros d'une étape et annonce toujours la région suivante de l'ordre réel (rizières, volcan, Gobi, fleuve, tonnerre, fauves, mer, Fusang, Lune) ; elle repasse par le Gobi après le fleuve, d'où la lettre de Petit Bao ; Zhi et Dawa ne sont pas de la partie au Volcan (ils n'y reviennent qu'en retournant sur leurs pas), c'est donc Xiao Gui qui y commente les trois chemins du soleil 6 ; la Grue annonce dès la chute du Neuvième Soleil la fuite de Chang'e (maison forcée par Fengmeng) et l'épreuve de Changxi aux Hautes-Eaux, avant le Pic de la Lune ; ce sont **dix** soleils qui ont brûlé le monde (le héros en abat neuf).
+Fengmeng en méditation, Xia la renarde a sept queues. Précisions (relecture du 30/10/2026) : Chi est le vieux maître de Yan, et Yan le dit en reprenant la cendre du phénix ; Xihe, la colporteuse (ex-« Hua », renommée ; ids `hua_*` conservés ; mère des dix soleils, ce que révèle la quête du Fusang) précède le héros d'une étape et annonce toujours la région suivante de l'ordre réel (rizières, volcan, Gobi, fleuve, tonnerre, fauves, mer, Fusang, Lune) ; elle repasse par le Gobi après le fleuve, d'où la lettre de Petit Bao ; Zhi et Dawa ne sont pas de la partie au Volcan (ils n'y reviennent qu'en retournant sur leurs pas), c'est donc Xiao Gui qui y commente les trois chemins du soleil 6 ; la Grue annonce dès la chute du Neuvième Soleil la fuite de Chang'e (maison forcée par Fengmeng) et l'épreuve de Changxi aux Hautes-Eaux, avant le Pic de la Lune ; ce sont **dix** soleils qui ont brûlé le monde (le héros en abat neuf).
 
 ## Bordures de mer (post-Pas de Yu)
 

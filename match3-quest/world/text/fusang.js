@@ -28,7 +28,7 @@ export default {
     teamaster_you: { name: 'Maître You', title: 'Maître de thé suspendu', 
       idle: ['Le thé se prépare comme la vie : lentement, avec respect, en tenant bien la tasse.', 'Une grue vient parfois boire ici. Elle dit qu\'une dame, là-haut, lui a offert un flacon. Je ne la crois pas, mais elle boit bien.'],
       talk: [{ whenDone: 'sun_9', lines: ['Le thé est meilleur depuis que le ciel est calme. J\'ai tenté d\'en offrir au dernier soleil. Il l\'a refusé poliment. Il est timide.'] }] },
-    hua_fusang: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_fusang: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Me voilà à la cime ! Mes pieds sont vaincus, mon sac ravi. Il y a des clients ici qui ne marchandent pas : les arbres.', 'J\'ai vendu une lanterne à Ri, une écharpe à la Grue, et une histoire au vent. Pas mal pour une journée.'],
       talk: [{ whenDone: 'sun_9', lines: ['Neuf soleils ! Je file vers la Lune. Pas à pied, cette fois : j\'ai promis une lanterne à la veilleuse là-haut.'] }] },
     child_yuer: { name: 'Yuer', title: 'Fillette qui écoute les soleils', 

@@ -59,6 +59,7 @@ export const CREATURE_BY_ID = {
     moon_rabbit_yutu: { kind: 'rabbit', pestle: true },
     moon_crow_wu: { kind: 'crow', moon: true },
     jade_hare: { kind: 'rabbit', jade: true },
+    moon_messenger: { kind: 'rabbit', jade: true },
     ws_ame_guide: { kind: 'ghost' },
     ws_passeur: { kind: 'ghost' }, ws_ame_nostalgique: { kind: 'ghost' }, ws_ame_marche: { kind: 'ghost' },
     ws_fantome_affame: { kind: 'ghost' }   // événement « La Nuit des âmes errantes » (events/wanderingSouls/)

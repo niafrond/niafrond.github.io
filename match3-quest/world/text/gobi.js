@@ -25,7 +25,7 @@ export default {
     camel_baba: { name: 'Tuotuo', title: 'Chameau diplomate', 
       idle: ['Pfff. Les humains courent, je marche. Qui arrive le premier ? Moi, et sans me plaindre.', 'Je crache sur ceux qui m\'ennuient. Je ne vous ai pas encore craché dessus, archer : c\'est un compliment.'],
       talk: [{ whenDone: 'sun_4', lines: ['Pfff. Un soleil de moins, c\'est un chameau de moins qui transpire. Je te regarde presque avec respect, mortel.'] }] },
-    hua_gobi: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_gobi: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Encore vous ! Le monde est un village où les routes se croisent. Tenez, goûtez cette datte : elle n\'a pas peur du soleil.', 'Au Gobi, on vend du sel, de l\'eau, et surtout des histoires. Les histoires pèsent moins lourd que le sel.'],
       talk: [{ whenDone: 'sq_lettre_bao_2', lines: ['Votre lettre est bien arrivée ? Oh, je vois. Gardez-la encore un peu : la route de la mer est longue, et je n\'y vais qu\'à l\'hiver.'] }, { whenDone: 'sun_4', lines: ['Un soleil de moins ! Mon prix de l\'eau a baissé de moitié. C\'est la première fois que je vends moins cher avec plaisir.'] }] },
     storyteller_yun: { name: 'Yun', title: 'Conteur de caravane', 

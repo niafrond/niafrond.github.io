@@ -63,6 +63,7 @@ export const STORY_ENDING = [
 const HOU_YI = { name: 'Hou Yi', title: 'La moitié de miroir', hero: true };
 const CHANGE_MIRROR = { name: "Chang'e", title: 'Dans la moitié de miroir', npc: 'change' };
 const MOONLIGHT = { name: 'Narrateur', title: 'Clair de lune' };
+const SUN_TEN = { name: 'Dixième Soleil', title: 'Dernier des dix soleils', npc: 'sun_ten' };
 
 const MIRROR_TALKS = {
     sun_1: [
@@ -261,6 +262,19 @@ const MIRROR_TALKS = {
     ],
     sun_9: [
         { speaker: MOONLIGHT, lines: [
+            "Le Neuvième est tombé. Le Dixième, serré contre le tronc du Fusang, n'a pas bougé : la flèche est passée entre eux deux, sans lui effleurer la lumière. Il lève vers Hou Yi un visage mouillé."
+        ] },
+        { speaker: SUN_TEN, lines: [
+            "Tu as pu viser mon frère sans me toucher… Pourquoi pas moi ? Tu es venu pour nous abattre tous. Nous étions dix, et la Terre brûlait."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Il faut un jour à la Terre, pas dix. Le Neuvième se cachait derrière toi pour brûler à l'abri ; toi, tu tremblais. Ce n'est pas la même faute.",
+            "J'ai tué par devoir, neuf fois. Je n'ai pas le droit de tuer par habitude. Un seul soleil restera, et ce sera toi. Sois-en digne : lève-toi à l'heure."
+        ] },
+        { speaker: SUN_TEN, lines: [
+            "Je me lèverai à l'heure, je te le jure. Je me souviendrai que tu as eu pitié."
+        ] },
+        { speaker: MOONLIGHT, lines: [
             "Avant que la grue ne se pose, Hou Yi tire le miroir de sa manche, comme chaque fois qu'un soleil tombe. Il fait grand jour, un vrai jour, sous un seul soleil ; la lune n'est qu'une écaille pâle au-dessus du Fusang."
         ] },
         { speaker: HOU_YI, lines: [
@@ -271,6 +285,9 @@ const MIRROR_TALKS = {
         ] },
         { speaker: HOU_YI, lines: [
             "À la prochaine lune… Réponds-moi."
+        ] },
+        { speaker: MOONLIGHT, lines: [
+            "Aucune voix ne répond. Mais dans l'herbe dorée, tout près de lui, un lièvre blanc au pelage de jade se dresse sur ses pattes arrière et attend, une lanterne de lumière entre les pattes. Il est venu pour lui."
         ] }
     ]
 };
@@ -892,9 +909,10 @@ const BASE_SCREENS = {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
                   lines: [
                       "J'étais parti deux jours avant vous, Maître. Je voulais que ce deuxième soleil tombe sous ma flèche, et que pour une fois les villages chantent « Fengmeng ». Mais vous arrivez toujours à temps, n'est-ce pas ?",
-                      "Encore ! Même à armes égales ! Qu'avez-vous de plus que moi, Maître ? La patience ? La faveur du Ciel ? La Reine Mère de l'Occident m'a dit la même chose : « Ce n'est pas à toi. »",
-                      "Oui, j'y suis allé. J'ai gravi les marches du Kunlun pour lui demander un élixir, un seul. Elle a ri avec douceur, la vieille. On ne rit pas de moi avec douceur.",
-                      "Prenez votre deuxième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
+                      "Encore ! Même à armes égales ! Qu'avez-vous de plus que moi, Maître ? La patience ? La faveur du Ciel ?",
+                      "Oui, j'ai gravi les marches du Kunlun. J'ai demandé à la Reine Mère le même élixir que le vôtre. Elle n'en a qu'un seul véritable, m'a-t-elle dit, et il est déjà donné. Elle a refusé, avec douceur.",
+                      "J'ai compris en la regardant : l'élixir n'est plus chez elle. Il est chez vous. Chez Dame Chang'e.",
+                      "Prenez votre deuxième soleil. Ne me retenez pas : j'ai fait mon choix, et personne d'autre que moi ne l'a fait. Je vais la voir."
                   ]
               } },
             { id: 'volcan_lich', templateId: 'gui_esprit', name: 'Taoïste-squelette des braises', kind: 'sentinel', x: 1, y: 8, offset: 0 },
@@ -1096,7 +1114,7 @@ const BASE_SCREENS = {
         w: 14, h: 10, spawn: { x: 1, y: 6 },
         arrival: [
             "Au sommet du monde, l'Arbre Fusang déploie ses branches d'or. Ici dormaient les dix soleils, et leurs nids de feu sont encore tièdes. Il y règne un silence de temple.",
-            "Le neuvième soleil s'est réfugié au pied de l'arbre, devant son plus jeune frère, le dixième, qui tremble. Un tir de précision : n'effleurez jamais le dernier soleil."
+            "Les deux derniers soleils se serrent l'un contre l'autre au pied de l'arbre : le neuvième, qui se cache, et le dixième, son plus jeune frère, qui tremble. Vous n'en abattrez qu'un."
         ],
         obstacles: [[4, 0, 2, 2], [6, 0, 1, 2], [6, 8, 1, 2], [9, 0, 1, 1], [12, 0, 2, 1], [2, 8, 2, 1]],
         liquids: [],
@@ -1118,12 +1136,25 @@ const BASE_SCREENS = {
               talk: [
                   { whenDone: 'sun_8', lines: [
                       "Un jeune archer est venu frapper à la porte de la Reine Mère, il y a quelques semaines. Il demandait un élixir pour lui seul.",
-                      "Elle a refusé avec bonté : « Cet élixir est déjà promis. »",
-                      "Je n'ai jamais vu quelqu'un pâlir ainsi, ni sourire en même temps."
+                      "Elle a refusé avec bonté : « Je n'ai qu'un seul véritable élixir, et il est déjà donné. »",
+                      "Il n'a pas insisté. Il a compris, d'un coup, à qui elle l'avait confié. Je n'ai jamais vu quelqu'un pâlir ainsi, ni sourire en même temps."
                   ] },
                   { whenDone: 'sun_9', lines: [
-                      "Le Dixième vous doit la vie. La Reine Mère dit que cela compte plus que la moitié des victoires.",
+                      "Le Dixième vous doit la vie. La Reine Mère dit que cette pitié compte plus que la moitié des victoires.",
                       "Hâtez-vous vers les Hautes-Eaux, puis vers le Pic de la Lune : le temps presse, et Fengmeng ne s'arrêtera pas."
+                  ] }
+              ] },
+            // Messager de la Lune : après la chute du Neuvième, quand le miroir se tait, il vient près du héros (carte d'exploration)
+            // expliquer que Chang'e a coupé le lien elle-même, pour que Fengmeng ne puisse pas la retrouver.
+            { id: 'moon_messenger', x: 10, y: 2, name: 'Lièvre de jade', title: 'Messager de la Lune', showWhen: 'sun_9',
+              idle: [
+                  "Ne secouez pas le bronze, archer : il n'est pas brisé. C'est Dame Chang'e qui a coupé le lien, de ses propres mains.",
+                  "Elle sait qu'elle devra partir. Tant que les deux moitiés se répondaient, Fengmeng pouvait vous suivre à la trace jusqu'à elle. Elle a préféré se taire plutôt que de le guider.",
+                  "Elle m'a dit : « Dis-lui que ce n'est pas un adieu, et qu'il regarde la lune. » Elle vous attend au Pic de la Lune, par les Hautes-Eaux."
+              ],
+              talk: [
+                  { whenDone: 'q_changxi', lines: [
+                      "Le silence du miroir n'est pas un abandon, archer. C'est le dernier geste de protection qu'elle avait. Montez : elle vous attend."
                   ] }
               ] },
             // Le Dixième Soleil se cache derrière le Neuvième : on ne peut lui parler qu'après sa chute.
@@ -1134,7 +1165,7 @@ const BASE_SCREENS = {
               ],
               talk: [
                   { whenDone: 'sun_9', lines: [
-                      "Merci de m'avoir épargné. Je ne comprends pas encore pourquoi. Je serai le seul, maintenant. Cela fait… beaucoup de ciel.",
+                      "Merci de m'avoir épargné. Tu as dit que c'était par pitié. Je serai le seul, maintenant. Cela fait… beaucoup de ciel.",
                       "Je me lèverai à l'heure, chaque matin. Promis."
                   ] },
                   { whenDone: 'q_epilogue', lines: [
@@ -1175,7 +1206,7 @@ const BASE_SCREENS = {
               permanent: true, shieldedBy: 'sun9_wardens', unsealedBy: ['parley_sun9'], weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 45 },
               afterScenes: MIRROR_TALKS.sun_9,
               shieldLines: [
-                  "Deux grues-lige du Fusang se tiennent devant le Soleil Lâche, ailes déployées : elles couvrent aussi le Dixième Soleil.",
+                  "Deux grues-lige du Fusang se tiennent devant le Soleil Lâche, ailes déployées : elles couvrent aussi le Dixième Soleil, collé à son frère.",
                   "Un tir maladroit pourrait toucher celui qu'on doit épargner : il faut d'abord écarter les gardes, sans trembler.",
                   "Écartez-les, et le Neuvième restera seul sous votre arc. (Les grues apaisées et le sceau des racines l'affaibliront.)",
                   "Les grues se tiennent tournées vers le Dixième, pas vers vous : c'est lui qu'elles défendent. Une grue qui retrouverait son nid les rappellerait peut-être."
@@ -1244,6 +1275,7 @@ const BASE_SCREENS = {
                   enemy: 'fengmeng_3a',
                   lines: [
                       "Hou Yi… Tu es venu. Je savais que tu viendrais, avant même que la grue ne parte. Regarde-moi : la lune m'a déjà un peu changée.",
+                      "Pardonne le silence du bronze : c'est moi qui l'ai éteint. Tant qu'il parlait, Fengmeng pouvait te suivre à la trace jusqu'à moi. Je savais que je devrais partir, alors j'ai coupé le fil moi-même.",
                       "J'ai la fiole contre moi. Fengmeng la veut, et il me suit depuis la digue, pas à pas. Il ne s'arrêtera jamais tant qu'il croira pouvoir l'avoir.",
                       "Alors laissons-le croire. Je resterai là, au bord du bassin, la fiole bien en vue : je serai l'appât, et toi l'archer qui l'attend.",
                       "Ne discute pas : tu n'as jamais su me faire changer d'avis.",
@@ -1284,10 +1316,11 @@ const BASE_SCREENS = {
                   speaker: { name: 'Narrateur', title: 'Le Pic de la Lune' },
                   lines: [
                       "Fengmeng tombe à genoux, son arc brisé à ses côtés. Hou Yi s'avance, la main tendue pour l'aider à se relever. Mais le disciple, d'un geste de serpent, tend la sienne vers Chang'e : « L'élixir, Madame. Donnez-le-moi, ou la prochaine flèche trouvera la poitrine du Maître. »",
-                      "Il tient encore un carreau empoisonné dans sa paume, pointé contre le cœur de Hou Yi, trop près pour qu'on puisse l'arrêter. Chang'e regarde son époux, puis la pointe, puis le visage de celui qu'elle a nourri pendant dix ans. Elle sourit comme on sourit à un enfant perdu.",
-                      "« Tu ne tireras pas, Fengmeng. Il n'y a plus de marché à passer. » Elle porte la fiole à ses lèvres. « Pardonne-moi, mon archer. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel… Ce n'est pas un adieu. Regarde la lune, chaque nuit. Je serai là. »",
+                      "Il tient encore un carreau empoisonné dans sa paume, pointé contre le cœur de Hou Yi, trop près pour qu'on puisse l'arrêter. Chang'e comprend alors ce que le miroir lui disait depuis des lunes : cet homme ne reculera devant rien, et son époux est en danger de mort.",
+                      "Elle ne cherche pas à discuter. Elle lève la fiole avant que la main de Fengmeng ne l'atteigne. « Tu ne l'auras pas, Fengmeng. Ni lui, ni moi ne mourrons ici. Je ne perds pas la vie : je perds seulement d'être près de lui. »",
+                      "Elle se tourne vers Hou Yi, et sourit comme on sourit à celui qu'on aime. « Pardonne-moi, mon archer. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel. Ce n'est pas un adieu. Regarde la lune, chaque nuit. Je serai là. » Elle boit.",
                       "Une lumière d'argent la soulève, et sa robe de hanfu flotte comme une voile. Elle s'élève, lentement, sans cesser de regarder Hou Yi, jusqu'à devenir un point clair devant le disque immense de la lune. Sur le bassin d'eau lunaire, son reflet demeure, comme un souvenir qui ne veut pas partir.",
-                      "Fengmeng hurle. Ce qu'il voulait vient de lui échapper à jamais ; il ne reste que la fureur. Il saisit un nouvel arc et un carquois plein, et ses yeux ne sont plus ceux d'un disciple."
+                      "Fengmeng hurle. L'élixir lui échappe à jamais, et le carreau tremble dans sa main. Il aurait pu le jeter. Il choisit de saisir un nouvel arc et un carquois plein : cette fureur-là est la sienne, et ses yeux ne sont plus ceux d'un disciple."
                   ]
               } },
             { id: 'fengmeng_3b', templateId: 'fengmeng_3b', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
@@ -1299,9 +1332,10 @@ const BASE_SCREENS = {
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_3b'),
                   lines: [
-                      "…Pourquoi ? Pourquoi ne m'avez-vous jamais regardé comme vous la regardiez, elle ?",
-                      "Je voulais seulement que quelqu'un me dise : « Tu es digne. » Vous aviez votre Chang'e, vos soleils, votre légende. Moi, j'avais des flèches.",
-                      "(Il laisse tomber son arc.) Allez. Elle vous attend dans la lumière. Moi, je redescendrai à pied, comme tout le monde."
+                      "…Je voulais seulement que quelqu'un me dise : « Tu es digne. » Vous aviez votre Chang'e, vos soleils, votre légende. Moi, j'avais des flèches.",
+                      "Mais ce manque n'excuse rien. Personne ne m'a poussé : j'ai forcé votre porte, j'ai visé votre cœur, j'ai chassé Dame Chang'e jusqu'à la lune. Ce sont mes mains.",
+                      "(Il dépose son arc et son carquois au pied de l'autel.) Je n'attends pas de pardon. Je redescends à pied, sans arme. Les villages que j'ai effrayés, l'empereur Yao, la Reine Mère : je leur dirai ce que j'ai fait, et ils décideront de ce que je dois.",
+                      "Allez. Elle vous attend dans la lumière."
                   ]
               } }
         ],
@@ -1545,21 +1579,21 @@ const BASE_QUESTS = [
         giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_8'],
         objectives: [{ type: 'kill', target: 'sun_9', text: 'Abattre le Soleil Lâche sans toucher au Dixième Soleil (sanctuaire de la Cime du Fusang, au nord-est)' }],
         offer: [
-            "Neuvième soleil : celui qu'on appelle le Lâche. Il s'est réfugié au pied du Fusang, à l'abri derrière son plus jeune frère, le Dixième, qui tremble de tout son corps.",
-            "Vous devez abattre le Neuvième sans toucher au Dixième : un seul tir mal placé, et la Terre n'aurait plus de jour."
+            "Il ne reste que deux soleils, et ils sont ensemble : le Neuvième, qu'on appelle le Lâche, s'est réfugié au pied du Fusang contre son plus jeune frère, le Dixième, qui tremble de tout son corps.",
+            "Vous n'en abattrez qu'un. Le Neuvième tombera ; le Dixième doit rester, car la Terre n'aurait plus de jour. Épargner celui qui a peur : c'est la seule faveur que le décret de l'empereur vous laisse."
         ],
         hint: [
-            "Le Soleil Lâche est dans le sanctuaire, au nord-est. Le Dixième se tient derrière lui, terrifié : ne le visez jamais.",
-            "Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort.",
+            "Le Soleil Lâche est dans le sanctuaire, au nord-est. Le Dixième se tient contre lui, terrifié : ne le visez jamais.",
+            "Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort. La compassion guide aussi la flèche.",
             "Trois chemins mènent au soleil. Risque : écartez les deux grues-lige, sans toucher au Dixième, pour leur expérience et un soleil entier.",
             "Relation : rapportez les plumes du nid, et Hegui, la sœur de la messagère, rappellera les grues-lige sans combat.",
             "Découverte : le nid de la grue et le sceau des racines affaiblissent le soleil.",
             "Chaque chemin laisse sa trace : des grues abattues ou posées sur la branche, une grue reconnaissante, un soleil moins ardent."
         ],
         complete: [
-            "Le Soleil Lâche tombe sans un cri, comme un fruit mûr. Derrière lui, le Dixième Soleil, un petit être lumineux de la taille d'un enfant, se serre contre le tronc du Fusang et ose enfin regarder son sauveur.",
-            "« Tu… tu ne m'as pas touché », murmure-t-il. « Je serai sage. Je me lèverai à l'heure. Je ne brûlerai personne. » Il lève vers le ciel un visage mouillé de lumière.",
-            "Neuf soleils sont tombés ; un seul demeure, qui éclairera la Terre à jamais. Mais déjà, une grue blanche descend de la plus haute branche…"
+            "Le Soleil Lâche tombe sans un cri, comme un fruit mûr. Contre lui, le Dixième Soleil, un petit être lumineux de la taille d'un enfant, se serre contre le tronc du Fusang et ose enfin regarder son sauveur.",
+            "« Tu… tu ne m'as pas touché », murmure-t-il. Hou Yi baisse l'arc : par compassion, il n'a tiré qu'une fois. « Je serai sage. Je me lèverai à l'heure. Je ne brûlerai personne. »",
+            "Neuf soleils sont tombés ; un seul demeure, qui éclairera la Terre à jamais. Mais le bronze, dans la manche de Hou Yi, est froid, et un lièvre de jade l'attend dans l'herbe…"
         ],
         reward: { gold: 540, fragment: 'Éclat du Soleil Lâche' }
     },
@@ -1570,7 +1604,7 @@ const BASE_QUESTS = [
         giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_9'],
         objectives: [{ type: 'kill', target: 'changxi', text: "Prouver votre courage à Changxi, mère des douze lunes (Autel de Mazu, au bout des Hautes-Eaux)" }],
         offer: [
-            "La grue blanche se penche vers vous : « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir vers le Pic de la Lune, et il la suit. »",
+            "La grue blanche se penche vers vous : « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'était déjà enfuie avec l'élixir vers le Pic de la Lune, et il la suit. Elle a coupé elle-même le miroir, pour qu'il ne la trouve pas par vous. »",
             "« Mais la Lune est montée si haut que la mer a voulu la suivre. Entre le Fusang et le Pic, il n'y a plus de sentier : seulement des pontons, et l'eau noire qui les sépare. Il faudra marcher sur l'eau. »",
             "« Au bout, une divinité dort sur l'autel de Mazu : Changxi, mère des douze lunes. Elle seule peut porter un homme jusqu'à la Lune. Elle ne vous veut aucun mal, archer : elle veut seulement savoir si vous osez. »"
         ],
@@ -1599,8 +1633,8 @@ const BASE_QUESTS = [
             "Ne cherchez pas à le détester. Dame Chang'e vous le dirait elle-même."
         ],
         complete: [
-            "Fengmeng ne se relève pas tout de suite. Quand il le fait, il a vieilli de dix ans. Il laisse son carquois au pied de l'autel et redescend vers la vallée, sans se retourner.",
-            "On dit qu'il passa le reste de ses jours à tirer à l'arc sur des cibles de paille, pour ne plus jamais viser personne.",
+            "Fengmeng ne se relève pas tout de suite. Quand il le fait, il a vieilli de dix ans. Il laisse son arc et son carquois au pied de l'autel et redescend vers la vallée à pied, sans arme, en sachant qu'on l'y attend et qu'il devra répondre de ses actes.",
+            "On dit qu'il se présenta de lui-même devant l'empereur Yao et devant les villages qu'il avait effrayés, puis qu'il passa le reste de ses jours à tirer sur des cibles de paille, pour ne plus jamais viser personne.",
             "Le silence retombe sur le pic. Il ne reste plus, dans la lumière froide, que l'archer, la lune, et la dernière chose que Chang'e lui demande."
         ],
         reward: { gold: 600, fragment: 'Carquois de Fengmeng' }
@@ -1980,7 +2014,7 @@ const BASE_QUESTS = [
         offer: [
             "Archer, ma sœur la grue a perdu ses petits, et son nid, au nord-ouest de l'Arbre, ne tient plus qu'à un fil. J'ai besoin de quelqu'un d'adroit pour y ramasser les dernières plumes avant la pluie.",
             "La Reine Mère en fait des flèches de messager : celles qui ne manquent jamais ceux qu'on aime.",
-            "Un jeune archer est venu frapper à sa porte, il y a quelques semaines. Il demandait un élixir pour lui seul. Elle a refusé avec bonté : « Cet élixir est déjà promis. » Je n'ai jamais vu quelqu'un pâlir ainsi, ni sourire en même temps."
+            "Un jeune archer est venu frapper à sa porte, il y a quelques semaines. Il demandait un élixir pour lui seul. Elle a refusé avec bonté : « Je n'ai qu'un seul véritable élixir, et il est déjà donné. » Je n'ai jamais vu quelqu'un pâlir ainsi, ni sourire en même temps."
         ],
         hint: ["Le nid est dans le coin nord-ouest du Fusang, derrière le pavillon. Aucun ennemi ne le garde."],
         complete: [
