@@ -111,8 +111,10 @@ function reqText(id) {
     if (questById[id]) return { html: `<a href="${regionSlug(questById[id]._region)}#${questAnchor(id)}">${esc(questById[id].title)}</a>`, plain: questById[id].title };
     const en = entOf(id, ['enemy']);
     if (en) return { html: `vaincre <strong>${esc(en.ent.name)}</strong>`, plain: en.ent.name };
-    if (id.startsWith('parley_')) return { html: `pourparlers (<code>${esc(id)}</code>)`, plain: id };
-    return { html: `<code>${esc(id)}</code>`, plain: id };
+    const chest = entOf(id, ['chest']);
+    if (chest) return { html: `ouvrir <strong>${esc(chest.ent.label || 'le coffre')}</strong>`, plain: chest.ent.label || 'le coffre' };
+    if (id.startsWith('parley_')) { const who = entOf(id.slice(7), ['enemy', 'npc']); return { html: `pourparlers${who ? ` avec <strong>${esc(who.ent.name)}</strong>` : ''}`, plain: 'pourparlers' }; }
+    return { html: 'une étape préalable de l’aventure', plain: 'étape préalable' };
 }
 const asArray = v => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -314,7 +316,7 @@ ${cr}
 ${body}
 </main>
 ${LIGHTBOX}
-<footer>Soluce officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle. Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>
 `;
@@ -753,7 +755,7 @@ ${shotFigure(t.id, points)}`;
         body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
 <h2>${esc(realm.name)}</h2>
 <p class="lead">Événement « La Nuit des âmes errantes » : un royaume facultatif, accessible depuis toutes les régions, sur sept cartes (la salle d’entrée et six terrains), avec ${quests.length} quêtes, ${EVENT_PUZZLES.length} énigmes et trois boss. Il n’est pas nécessaire pour finir le jeu.</p>
-<div class="box info"><b class="t">Événement activable</b>Le royaume n’existe que si l’événement est activé dans <code>events/config.js</code> (activation et retrait par un simple commit). S’il manque dans votre version, il est désactivé.</div>
+<div class="box info"><b class="t">Événement temporaire</b>Le royaume n’existe que pendant l’événement. S’il manque dans votre version du jeu, l’événement n’est pas (ou plus) ouvert.</div>
 <div class="box warn"><b class="t">Il se referme</b>Une fois la quête « ${esc(lastQuest?.title || '')} » rendue, le passage se ferme pour de bon. Faites d’abord tout ce que vous voulez dans le royaume : objets, énigmes, lanternes, terrains.</div>
 
 <h3>Comment y entrer</h3>
@@ -838,7 +840,7 @@ ${shotFigure(t.id, points)}`;
         body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
 <h2>${esc(realm.name)}</h2>
 <p class="lead">Événement « La Fête des lanternes d’hiver » (l’événement neige) : un village de montagne et un sanctuaire enneigés, sur ${3 + 1} cartes (village, maison, col, sanctuaire), avec ${quests.length} quêtes, ${WINTER_PUZZLES.length} énigmes et un gardien à apaiser. Contenu de niveau ${WL.HOST.level} : les créatures du givre sont dures, mais les habitants se rallient par la générosité plus que par le combat.</p>
-<div class="box info"><b class="t">Événement activable</b>Le village n’existe que si l’événement est activé dans <code>events/config.js</code> (<code>winterLanternFestival</code>). Il est actif dans cette version. Pour le tester ou le couper dans un onglet : <code>?events=winterLanternFestival</code> ou <code>?events=-winterLanternFestival</code>.</div>
+<div class="box info"><b class="t">Événement temporaire</b>Le village n’existe que pendant l’événement. Il est ouvert dans cette version ; s’il manque dans la vôtre, l’événement n’est pas (ou plus) ouvert.</div>
 <div class="box tip"><b class="t">Fin de l’événement</b>Rien ne se referme : la dernière quête, « ${esc(lastQuest?.title || '')} », est une célébration. Terminez les autres à votre rythme.</div>
 
 <h3>Comment y entrer</h3>
