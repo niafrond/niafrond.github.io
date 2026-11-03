@@ -1944,6 +1944,7 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'companion': {
+                    if (NO_MINIMAP) break;
                     // Compagnon actif : sprite animé `companion_<id>` (4 directions, 3 images de marche) s'il est chargé, sinon son PNJ figé qui sautille.
                     const comp = X.activeCompanionOf(session);
                     const tr = vis.trail;
@@ -1965,6 +1966,7 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'player': {
+                    if (NO_MINIMAP) break;   // `?shot=1` : captures de la soluce et de la carte plein écran, sans le héros
                     const moving = now - (vis.lastMoveAt || -1e9) < 130 || Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
                     const walkPhase = vis.walkPhase || 0;
                     const hop = moving ? -tile * 0.07 * Math.abs(Math.sin(walkPhase * Math.PI)) : Math.sin(now / 500) * tile * 0.01;
