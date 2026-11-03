@@ -67,7 +67,7 @@ souterrains en proportion.
 | `volcan` | `miner_shan` (mineur), `priestess_yan` (prêtresse du feu repentie) |
 | `fauves` | `hunter_wu` (chasseur), `shepherd_zi` (bergère aux troupeaux enfuis) |
 | `mer` | `fisher_hai` (pêcheur), `envoy_longwang` (envoyé du Roi-Dragon de la Mer Orientale) |
-| `fusang` | `crane_envoy` (grue messagère de la Reine Mère de l'Occident), `sun_ten` (le Dixième Soleil, terrorisé, un petit être lumineux, ensemble avec `sun_9` : le héros n'en abat qu'un, par compassion), `moon_messenger` (lièvre de jade, messager de la Lune : visible près du sanctuaire après `sun_9`, il explique que Chang'e a coupé elle-même le miroir ; dessin de `jade_hare`) |
+| `fusang` | `crane_envoy` (grue messagère de la Reine Mère de l'Occident), `sun_ten` (le Dixième Soleil, terrorisé, un petit être lumineux, ensemble avec `sun_9` : le héros n'en abat qu'un, par compassion), `moon_messenger` (lièvre de jade, messager de la Lune : une fois les scènes de `sun_9` dites, il accourt vers le héros **en sautillant à travers la carte**, juste avant sa conversation, où il explique que Chang'e a coupé elle-même le miroir ; il retourne ensuite à sa place en sautillant ; dessin de `jade_hare`) |
 | `lune` | `change_moon` (Chang'e à la Lune, vêtue de lumière lunaire) |
 
 Les sanctuaires 2, 3, 5, 6, 8 et 9 abritent en plus un **PNJ de pourparlers** `parley_sunN` (ajouté, voir §9) ; il n'apparaît qu'après une

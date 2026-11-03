@@ -1156,7 +1156,8 @@ describe('histoire complète', () => {
             expect(events[0].quest.id).toBe(`q_${SUN_ID[n - 1]}`);
             golds.push(events[0].gold);
             const started = events.find(e => e.type === 'questStarted');
-            expect(events.indexOf(started)).toBe(events.length - 1);   // après l'interlude avec Chang'e
+            // après l'interlude avec Chang'e (seul l'accourir d'un PNJ, `npcArrival`, peut encore suivre : il vient après toutes les scènes)
+            expect(events.filter(e => e.type !== 'npcArrival').indexOf(started)).toBe(events.filter(e => e.type !== 'npcArrival').length - 1);
             expect(started.quest.id).toBe(n < 10 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);

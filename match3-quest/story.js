@@ -287,7 +287,7 @@ const MIRROR_TALKS = {
             "À la prochaine lune… Réponds-moi."
         ] },
         { speaker: MOONLIGHT, lines: [
-            "Aucune voix ne répond. Mais dans l'herbe dorée, tout près de lui, un lièvre blanc au pelage de jade se dresse sur ses pattes arrière et attend, une lanterne de lumière entre les pattes. Il est venu pour lui."
+            "Aucune voix ne répond. Mais là-bas, dans l'herbe dorée, quelque chose approche en sautillant : un lièvre blanc au pelage de jade, qui vient droit vers lui."
         ] }
     ]
 };
@@ -1146,7 +1146,7 @@ const BASE_SCREENS = {
               ] },
             // Messager de la Lune : après la chute du Neuvième, quand le miroir se tait, il vient près du héros (carte d'exploration)
             // expliquer que Chang'e a coupé le lien elle-même, pour que Fengmeng ne puisse pas la retrouver.
-            { id: 'moon_messenger', x: 10, y: 2, name: 'Lièvre de jade', title: 'Messager de la Lune', showWhen: 'sun_9',
+            { id: 'moon_messenger', x: 10, y: 2, name: 'Lièvre de jade', title: 'Messager de la Lune', showWhen: 'sun_9', arrival: { hop: true },
               idle: [
                   "Ne secouez pas le bronze, archer : il n'est pas brisé. C'est Dame Chang'e qui a coupé le lien, de ses propres mains.",
                   "Elle sait qu'elle devra partir. Tant que les deux moitiés se répondaient, Fengmeng pouvait vous suivre à la trace jusqu'à elle. Elle a préféré se taire plutôt que de le guider.",
@@ -1593,7 +1593,7 @@ const BASE_QUESTS = [
         complete: [
             "Le Soleil Lâche tombe sans un cri, comme un fruit mûr. Contre lui, le Dixième Soleil, un petit être lumineux de la taille d'un enfant, se serre contre le tronc du Fusang et ose enfin regarder son sauveur.",
             "« Tu… tu ne m'as pas touché », murmure-t-il. Hou Yi baisse l'arc : par compassion, il n'a tiré qu'une fois. « Je serai sage. Je me lèverai à l'heure. Je ne brûlerai personne. »",
-            "Neuf soleils sont tombés ; un seul demeure, qui éclairera la Terre à jamais. Mais le bronze, dans la manche de Hou Yi, est froid, et un lièvre de jade l'attend dans l'herbe…"
+            "Neuf soleils sont tombés ; un seul demeure, qui éclairera la Terre à jamais. Mais le bronze, dans la manche de Hou Yi, est froid, et un lièvre de jade accourt dans l'herbe…"
         ],
         reward: { gold: 540, fragment: 'Éclat du Soleil Lâche' }
     },

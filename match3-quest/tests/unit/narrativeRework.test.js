@@ -1,6 +1,6 @@
 import { SCREENS, QUESTS } from '../../story.js';
 import { BANTER } from '../../companions.js';
-import { createSession, talkToNpc, markEnemyDefeated } from '../../exploration.js';
+import { createSession, talkToNpc, markEnemyDefeated, visibleNpcs, beginNpcArrival } from '../../exploration.js';
 
 const all = lines => (lines || []).join(' ');
 const enemy = (screen, id) => SCREENS[screen].enemies.find(e => e.id === id);
@@ -67,15 +67,27 @@ describe('miroir : le messager de la Lune', () => {
         expect(txt).toMatch(/Fengmeng/);
     });
 
-    test('en exploration, il est invisible avant sun_9 puis parlable après', () => {
+    test('à la victoire sur sun_9, il est annoncé (npcArrival) et caché jusqu\'à ce que la vue le fasse accourir', () => {
         const s = createSession({ screenId: 'fusang', x: SCREENS.fusang.spawn.x, y: SCREENS.fusang.spawn.y });
-        const m = messenger();
-        s.data.x = m.x; s.data.y = m.y + 1;
-        const before = talkToNpc(s, 'moon_messenger');
-        markEnemyDefeated(s, 'sun_9');
-        const after = talkToNpc(s, 'moon_messenger');
-        expect(JSON.stringify(after)).toMatch(/coupé le lien/);
-        expect(JSON.stringify(before)).not.toMatch(/coupé le lien/);
+        expect(visibleNpcs(s).some(n => n.id === 'moon_messenger')).toBe(false);   // avant sun_9
+        const events = markEnemyDefeated(s, 'sun_9');
+        // l'arrivée vient après toutes les scènes et les quêtes
+        expect(events.findIndex(e => e.type === 'npcArrival')).toBeGreaterThan(events.findLastIndex(e => e.type === 'scene'));
+        expect(events.find(e => e.type === 'npcArrival')).toMatchObject({ npcId: 'moon_messenger' });
+        expect(visibleNpcs(s).some(n => n.id === 'moon_messenger')).toBe(false);   // en route : pas encore sur la carte
+        expect(talkToNpc(s, 'moon_messenger')).toBeNull();
+        beginNpcArrival(s, 'moon_messenger');
+        const talk = talkToNpc(s, 'moon_messenger');
+        expect(JSON.stringify(talk.lines)).toMatch(/coupé le lien/);
+    });
+
+    test('rechargé après la victoire (aucun événement), il est simplement à sa place sur la carte', () => {
+        const s = createSession({ screenId: 'fusang', x: SCREENS.fusang.spawn.x, y: SCREENS.fusang.spawn.y, defeated: ['sun_9'] });
+        expect(visibleNpcs(s).some(n => n.id === 'moon_messenger')).toBe(true);
+    });
+
+    test('il est déclaré comme arrivant en sautillant', () => {
+        expect(messenger().arrival).toEqual({ hop: true });
     });
 });
 
