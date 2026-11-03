@@ -13,6 +13,8 @@ export default {
     rizieres_h_etable: { name: 'Étable de Dahei', arrival: ['Une odeur de paille chaude et de sagesse bovine vous accueille.'] }
   },
   npcs: {
+    houyi_mirror: { name: 'Le miroir', title: 'Miroir de la maison',
+      idle: ['Le bronze garde le reflet des villages que Chang\'e a soignés. Y regarder, c\'est y retourner.'] },
     ping: { name: 'Ping', title: 'Épouse de Lin', 
       idle: ['Lin dit que le riz repoussera. Moi, je dis qu\'il faut d\'abord que le riz veuille bien.', 'Je garde de l\'eau de cuisson pour les plantes. Elles me disent merci, à leur manière : en ne mourant pas.'],
       talk: [{ whenDone: 'sun_1', lines: ['Ce matin, un nuage est passé. Un seul, tout timide. Lin a pleuré, les enfants ont dansé : on a eu l\'impression de recevoir de la famille.'] }] },
@@ -25,7 +27,7 @@ export default {
     buffalo_dahei: { name: 'Dahei', title: 'Buffle d\'eau philosophe', 
       idle: ['Meuh. Autrement dit : la terre est sèche, mais la patience est humide.', 'J\'ai vu neuf soleils se lever dans mes rêves. Au dixième, je me suis réveillé. Je préfère rester sur celui-là.'],
       talk: [{ whenDone: 'sun_1', lines: ['Meuh, archer. J\'ai senti l\'humidité dans le vent ce matin. Si tu continues, je pourrai bientôt me rouler dans une vraie mare.'] }] },
-    hua_riz: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_riz: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Épingles, clochettes, nouvelles fraîches ! Tout se vend, même les rumeurs. Surtout les rumeurs.', 'Je remonte le pays d\'ouest en est, village après village. Peut-être que nos routes se recroiseront, archer.'],
       talk: [{ whenDone: 'sun_1', lines: ['Le premier soleil est tombé ? Voilà qui va faire du bruit sur les routes. Je pars l\'annoncer aux Gorges du Volcan : les nouvelles voyagent mieux avec moi qu\'à pied.'] }] },
     scarecrow_cao: { name: 'Cao l\'Épouvantail', title: 'Sentinelle des champs', 

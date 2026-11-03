@@ -195,8 +195,9 @@ export const QUESTS = {
     }
 };
 
-// Énigme des miroirs rituels (moteur d'énigmes existant, mode « mirror » : puzzle/modes.js) : le rayon descend de la source (v), il faut
-// basculer les trois miroirs (/ et \) pour qu'il atteigne la cible (T). Pas de famille d'armure (`set`) : l'énigme ouvre seulement un coffre.
+// Énigme des miroirs rituels (moteur d'énigmes existant, mode « mirror » : puzzle/modes.js), niveau DIFFICILE (13 coups minimum) : le rayon
+// part de la source (>), traverse des miroirs fixes (a, b) et un prisme (*) qui le dédouble ; il faut basculer les bons miroirs (/ et \) parmi
+// vingt pour éclairer les trois cibles (T). Pas de famille d'armure (`set`) : l'énigme ouvre seulement un coffre.
 // Déclarée dans PUZZLES par le module d'événement (donc absente quand l'événement est désactivé).
 export const PUZZLE = {
     id: 'ws_miroirs',
@@ -205,13 +206,14 @@ export const PUZZLE = {
         mode: 'mirror',
         level: {
             grid: [
-                '##########',
-                '#.......v#',
-                '#..\\..T..#',
-                '#........#',
-                '#........#',
-                '#../....\\#',
-                '##########'
+                '###########',
+                '#....>../.#',
+                '#.\\/\\..**.#',
+                '#......//b#',
+                '#\\......\\\\#',
+                '#/\\/..TT\\.#',
+                '#...T...a/#',
+                '###########'
             ]
         }
     },
@@ -219,8 +221,8 @@ export const PUZZLE = {
     item: { id: 'qi_ws_miroir', name: 'Fragment de miroir spirituel', description: 'Un éclat de miroir où l\'on voit, un instant, la version de la salle que les vivants oublient.', earlyDescription: 'Un éclat de verre très clair.' }
 };
 
-// Énigme des urnes (mode « push » : puis des jarres sur les dalles marquées). Même principe que les miroirs : elle verrouille un coffre
-// et n'appartient à aucune famille d'armure antique.
+// Énigme des urnes (mode « push » : pousser des jarres sur les dalles marquées), niveau DIFFICILE (66 coups minimum : trois urnes dans un
+// pavillon cloisonné, où une urne mal placée se coince définitivement). Elle verrouille un coffre et n'appartient à aucune armure antique.
 export const PUZZLE_BLOCKS = {
     id: 'ws_urnes',
     def: {
@@ -229,10 +231,12 @@ export const PUZZLE_BLOCKS = {
         level: {
             grid: [
                 '#########',
-                '#@......#',
-                '#.$..$..#',
-                '#.......#',
-                '#..*..*.#',
+                '#.....###',
+                '#...#.#.#',
+                '#..*#.$.#',
+                '#.#*#$..#',
+                '#.@..$..#',
+                '#...*.#.#',
                 '#########'
             ]
         }
@@ -241,12 +245,12 @@ export const PUZZLE_BLOCKS = {
     item: { id: 'qi_ws_cle', name: 'Clé d\'un sanctuaire', description: 'Une petite clé de bronze, usée par les mains qui l\'ont tenue. Elle n\'ouvre plus rien ici, mais on la garde.', earlyDescription: 'Une clé de bronze.' }
 };
 
-// Énigme du cortège (mode « slide », niveau moyen : 21 coups minimum, entre les charrettes des bambous, 12, et du col, 26) : il faut
-// faire sortir la charrette funéraire (le bloc rouge) du cortège d'offrandes. Récompense de même rang : coffre de palier 2, comme l'offrande
-// et le sceau, un cran sous les énigmes faciles (palier 3 = coffre des miroirs / urnes). Pas de famille d'armure.
+// Énigme du cortège (mode « slide », niveau DIFFICILE : 26 coups minimum, au niveau de la plus dure des charrettes du jeu, le col) : il faut
+// faire sortir la charrette funéraire (le bloc rouge) d'un cortège de dix offrandes. Coffre de palier 3, comme les autres énigmes
+// difficiles de l'événement. Pas de famille d'armure.
 export const PUZZLE_CORTEGE = {
     id: 'ws_cortege',
-    tier: 2,
+    tier: 3,
     def: {
         title: 'Le cortège des offrandes',
         mode: 'slide',
@@ -254,13 +258,16 @@ export const PUZZLE_CORTEGE = {
             w: 6, h: 6, exit: { side: 'right', at: 2 },
             blocks: [
                 { id: 'H', x: 0, y: 2, w: 2, h: 1, hero: true },
-                { id: 'b1', x: 0, y: 3, w: 3, h: 1 },
-                { id: 'b2', x: 2, y: 4, w: 1, h: 2 },
-                { id: 'b3', x: 3, y: 3, w: 1, h: 2 },
-                { id: 'b4', x: 5, y: 0, w: 1, h: 2 },
-                { id: 'b5', x: 4, y: 0, w: 1, h: 3 },
-                { id: 'b6', x: 4, y: 4, w: 2, h: 1 },
-                { id: 'b7', x: 0, y: 5, w: 2, h: 1 }
+                { id: 'b1', x: 2, y: 0, w: 1, h: 3 },
+                { id: 'b2', x: 3, y: 0, w: 1, h: 3 },
+                { id: 'b3', x: 4, y: 2, w: 1, h: 2 },
+                { id: 'b4', x: 2, y: 3, w: 2, h: 1 },
+                { id: 'b5', x: 5, y: 4, w: 1, h: 2 },
+                { id: 'b6', x: 1, y: 4, w: 2, h: 1 },
+                { id: 'b7', x: 3, y: 4, w: 2, h: 1 },
+                { id: 'b8', x: 4, y: 1, w: 2, h: 1 },
+                { id: 'b9', x: 2, y: 5, w: 2, h: 1 },
+                { id: 'b10', x: 4, y: 0, w: 2, h: 1 }
             ]
         }
     },

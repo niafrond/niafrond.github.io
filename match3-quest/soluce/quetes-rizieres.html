@@ -65,6 +65,9 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .lb-cap b{color:#ff7a6a}
 .shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
 .shot figcaption b{color:#ff5a4a}
+.phones{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.phones figure{margin:0;flex:1 1 170px;max-width:250px}.phones img{width:100%;height:auto;border:2px solid var(--line);border-radius:8px}.phones figcaption,.wide figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}.wide{margin:10px 0}.wide img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+.tile-ico svg{width:26px;height:26px;vertical-align:middle;margin-right:4px;background:#efe7ff;border-radius:5px;padding:1px}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -75,7 +78,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="bestiaire.html">Bestiaire</a><a href="royaume-des-ames.html">Royaume des âmes</a><a href="fete-des-lanternes.html">Fête des lanternes</a></nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="bestiaire.html">Bestiaire</a><a href="royaume-des-ames.html">Royaume des âmes</a><a href="fete-des-lanternes.html">Fête des lanternes</a><a href="change.html">Chang’e</a></nav></div></header>
 <main>
 <div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="quetes.html">Quêtes</a> › Rizières Desséchées</div>
 <h2>Rizières Desséchées</h2>
@@ -383,9 +386,9 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Prérequis</dt><dd><a href="quetes-rizieres.html#q-q_sun_1">Le Soleil Ardent</a></dd>
     <dt>Donneur</dt><dd><b>Grand-mère Tao</b> (Doyenne des commères) — Grenier communal (partie nord-est de l’écran)<br><small>Itinéraire depuis le village : Hameau de Dongqiao → Grenier communal</small></dd>
     
-    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Hua la colporteuse sur ses babioles (place du hameau)<br><small>Lieu : Hameau de Dongqiao (au centre de l’écran)</small></li></ol></dd>
-    <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Caillou tiède de Hua</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/rizieres_h_grenier.jpg" width="528" height="352" loading="lazy" alt="Carte : Grenier communal"><span class="ring giver" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Grenier communal : <b>1</b> Grand-mère Tao (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring target" style="left:35.94%;top:37.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Hua (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Objectifs</dt><dd><ol class="steps"><li><b>Parler à</b> : Interroger Xihe la colporteuse sur ses babioles (place du hameau)<br><small>Lieu : Hameau de Dongqiao (au centre de l’écran)</small></li></ol></dd>
+    <dt>Récompense</dt><dd>40 pièces d’or · 250 points d’expérience · composant de flèche : Caillou tiède de Xihe</dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:528px"><img src="img/rizieres_h_grenier.jpg" width="528" height="352" loading="lazy" alt="Carte : Grenier communal"><span class="ring giver" style="left:79.17%;top:18.75%;width:15.00%;height:22.50%"><i>1</i></span></div><figcaption>Grenier communal : <b>1</b> Grand-mère Tao (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring target" style="left:35.94%;top:37.50%;width:5.63%;height:6.43%"><i>1</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Xihe (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     <dt>Débloque</dt><dd><a href="quetes-fleuve.html#q-sq_hua_2">Les mêmes babioles</a></dd>
   </dl>
 </article>

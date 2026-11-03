@@ -14,6 +14,13 @@ export const OVERRIDES = [
   // Créatures dont l'ancien dessin était informe (refait en 64 px, voir tools/gen-sprites-gm.mjs --px=64).
   ['hundun', 'Hundun', 'Bête', 'Chaos primordial', 'orange', 'tonnerre', 'e',
     'Hundun, primordial chaos creature, a round shaggy faceless body like a stuffed bag, dark brown fur with glowing orange cracks, six short legs and four small wings, no face'],
+  // Mimique (coffre refermé ou coffre piège, exploration.js unmask) : créature déguisée en coffre, dessin dédié (clé `mimique`).
+  ['mimique', 'Mimique', 'Bête', 'Coffre vivant', 'red', 'rizieres', 'e',
+    'cute chibi mimic monster, a living traditional ancient Chinese baoxiang treasure chest of dark red lacquered wood, ' +
+    'brass corner fittings, a round brass coin-shaped lock, carved ruyi cloud and gold lattice patterns, ' +
+    'the lid wide open and tilted back like a gaping mouth with many sharp white fangs along the rim and a long pink tongue sticking out, ' +
+    'two big round angry eyes with white sclera and black pupils inside the dark mouth, gold ingots and copper cash coins spilling out, ' +
+    'two tiny stubby legs underneath, the chest itself is the monster, no wings, no horns, no dragon, no western pirate chest'],
   ['gui_esprit', 'Esprit errant', 'Spectre', '', 'purple', 'rizieres', 'e',
     'wandering ghost spirit of ancient China, tattered hooded gray-violet robe fading into a wispy tail, two glowing pale eyes in the dark hood, thin skeletal hands, ethereal floating'],
   // Événement « La Nuit des âmes errantes » (events/wanderingSouls/) : dessins propres à ses trois ennemis, clés = ids d'ennemis du royaume.

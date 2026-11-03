@@ -539,7 +539,7 @@ export default {
     },
     {
           "id": "sq_hua_3",
-          "title": "La carte des pas de Hua",
+          "title": "La carte des pas de Xihe",
           "chapter": "✦ Quête secondaire — Désert de Gobi",
           "giver": "storyteller_yun",
           "turnIn": "storyteller_yun",
@@ -552,16 +552,16 @@ export default {
                 {
                       "type": "talk",
                       "target": "mapmaker_ali",
-                      "text": "Faire tracer par Yuan le trajet de Hua sur sa carte (campement des cartographes)",
+                      "text": "Faire tracer par Yuan le trajet de Xihe sur sa carte (campement des cartographes)",
                       "lines": [
-                            "Je trace les pas de Hua depuis trois jours, et c'est curieux : elle ne suit pas les routes. Elle suit votre route, archer, avec une étape d'avance.",
+                            "Je trace les pas de Xihe depuis trois jours, et c'est curieux : elle ne suit pas les routes. Elle suit votre route, archer, avec une étape d'avance.",
                             "Elle est toujours au village voisin avant vous, mais jamais avant la chute du soleil précédent."
                       ]
                 },
                 {
                       "type": "talk",
                       "target": "hua_gobi",
-                      "text": "Demander à Hua pourquoi elle vous suit (oasis)",
+                      "text": "Demander à Xihe pourquoi elle vous suit (oasis)",
                       "lines": [
                             "Je ne vous suis pas. Je vous précède… de peu. Quelqu'un doit être là quand la lumière s'éteint, pour qu'elle ne tombe pas toute seule.",
                             "Ne me reposez pas la question à voix haute plus loin, d'accord ? Les murs y ont des oreilles."
@@ -570,10 +570,10 @@ export default {
           ],
           "offer": [
                 "Je raconte des histoires de caravane, mais la plus étrange est sous mes yeux : une colporteuse qui suit un archer comme une ombre suit son maître.",
-                "Yuan dessine des cartes : demandez-lui de tracer son chemin. Puis allez trouver Hua et regardez comment elle répond."
+                "Yuan dessine des cartes : demandez-lui de tracer son chemin. Puis allez trouver Xihe et regardez comment elle répond."
           ],
           "hint": [
-                "Yuan est dans le campement des cartographes. Hua se tient près de l'oasis."
+                "Yuan est dans le campement des cartographes. Xihe se tient près de l'oasis."
           ],
           "complete": [
                 "« Quelqu'un doit être là quand la lumière s'éteint. » Je ne la raconterai pas, celle-là, archer. Certaines histoires ne se racontent qu'à voix basse, et tant qu'elles ne sont pas finies."

@@ -1,5 +1,5 @@
 // Manifeste du « Grand Monde » — squelette narratif (étape 1). Voir world/FORMAT.md §2.
-// Fils récurrents : Hua la colporteuse (hua_*), la lettre de Petit Bao (sq_lettre_bao_1..3),
+// Fils récurrents : Xihe la colporteuse (hua_*), la lettre de Petit Bao (sq_lettre_bao_1..3),
 // le rival Fengmeng (rumeurs), l'élixir de Chang'e, la tortue Gui et le conteur Lao Shuo.
 
 export const MANIFEST = {
@@ -26,13 +26,14 @@ export const MANIFEST = {
     ],
     npcs: [
       { id: 'change', where: 'house:rizieres_h_houyi' },
+      { id: 'houyi_mirror', name: 'Le miroir', title: 'Miroir de la maison', where: 'house:rizieres_h_houyi', role: 'ambiance' },
       { id: 'elder_wen', where: 'house:rizieres_h_wen' },
       { id: 'farmer_lin', where: 'house:rizieres_h_lin' },
       { id: 'ping', name: 'Ping', title: 'Épouse de Lin', where: 'house:rizieres_h_lin', role: 'ambiance' },
       { id: 'xiaobao', name: 'Petit Bao', title: 'Enfant du hameau', where: 'place', role: 'donneur' },
       { id: 'grandma_tao', name: 'Grand-mère Tao', title: 'Doyenne des commères', where: 'house:rizieres_h_grenier', role: 'indice' },
       { id: 'buffalo_dahei', name: 'Dahei', title: 'Buffle d\'eau philosophe', where: 'house:rizieres_h_etable', role: 'ambiance' },
-      { id: 'hua_riz', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_riz', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'scarecrow_cao', name: 'Cao l\'Épouvantail', title: 'Sentinelle des champs', where: 'place', role: 'ambiance' },
       { id: 'huang_xian', name: 'Huang Xian', title: 'Belette jaune de la digue', where: 'wild', role: 'indice' }
     ],
@@ -90,7 +91,7 @@ export const MANIFEST = {
       { id: 'gui_turtle', name: 'Gui', title: 'Vieille tortue noire', where: 'house:fleuve_h_tortue', role: 'indice' },
       { id: 'girl_lian', name: 'Lian', title: 'Collectionneuse de coquillages', where: 'place', role: 'donneur' },
       { id: 'boatman_shan', name: 'Laoshan', title: 'Batelier désœuvré', where: 'place', role: 'ambiance' },
-      { id: 'hua_fleuve', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_fleuve', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'carp_jin', name: 'Jin', title: 'Carpe dorée dans sa flaque', where: 'wild', role: 'indice' }
     ],
     chests: [
@@ -108,7 +109,7 @@ export const MANIFEST = {
     ],
     quests: [
       { id: 'sq_lettre_bao_2', title: 'La lettre fait escale', giver: 'ferryman_gu', turnIn: 'hua_gobi', chain: 'sq_lettre_bao_1',
-        summary: 'Gu ne peut pas quitter son fleuve, mais Hua la colporteuse part vers le Désert de Gobi. Rejoignez-la pour lui confier la lettre de Petit Bao.',
+        summary: 'Gu ne peut pas quitter son fleuve, mais Xihe la colporteuse part vers le Désert de Gobi. Rejoignez-la pour lui confier la lettre de Petit Bao.',
         objectives: [{ type: 'talk', target: 'hua_gobi' }] },
       { id: 'sq_perle_carpe', title: 'La perle de la carpe Jin', giver: 'girl_lian', turnIn: 'girl_lian', chain: null,
         summary: 'Lian jure que la carpe Jin garde une perle dans sa flaque, au creux des méandres. Allez la chercher avant que la flaque ne s\'évapore.',
@@ -204,7 +205,7 @@ export const MANIFEST = {
       { id: 'keeper_nur', name: 'Quan', title: 'Gardienne de la citerne', where: 'house:gobi_h_bains', role: 'ambiance' },
       { id: 'mapmaker_ali', name: 'Yuan', title: 'Cartographe optimiste', where: 'house:gobi_h_cartes', role: 'donneur' },
       { id: 'camel_baba', name: 'Tuotuo', title: 'Chameau diplomate', where: 'house:gobi_h_chameaux', role: 'ambiance' },
-      { id: 'hua_gobi', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_gobi', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'storyteller_yun', name: 'Yun', title: 'Conteur de caravane', where: 'place', role: 'indice' },
       { id: 'boy_tarik', name: 'Ahe', title: 'Garçon passeur d\'eau', where: 'place', role: 'ambiance' },
       { id: 'mirage_djinn', name: 'Haishi', title: 'Esprit des mirages repenti', where: 'wild', role: 'donneur' }
@@ -224,7 +225,7 @@ export const MANIFEST = {
     ],
     quests: [
       { id: 'sq_lettre_bao_3', title: 'La lettre prend le large', giver: 'hua_gobi', turnIn: 'sailor_bao', chain: 'sq_lettre_bao_2',
-        summary: 'Hua n\'ira pas jusqu\'à la mer avant l\'hiver, mais vous, si. Portez la lettre au marin Bao, sur le rivage de la Mer Orientale.',
+        summary: 'Xihe n\'ira pas jusqu\'à la mer avant l\'hiver, mais vous, si. Portez la lettre au marin Bao, sur le rivage de la Mer Orientale.',
         objectives: [{ type: 'talk', target: 'sailor_bao' }] },
       { id: 'sq_carte_vraie', title: 'La carte qui ne ment pas', giver: 'mapmaker_ali', turnIn: 'mapmaker_ali', chain: null,
         summary: 'Yuan veut dessiner une carte exacte des dunes, mais le mirage Haishi lui brouille la vue. Allez écouter le djinn, puis trouvez le coffre qu\'il désigne.',
@@ -264,7 +265,7 @@ export const MANIFEST = {
       { id: 'monkey_sun', name: 'Houzi', title: 'Singe filou de l\'auberge', where: 'house:tonnerre_h_auberge', role: 'ambiance' },
       { id: 'nun_ying', name: 'Dame Ying', title: 'Gardienne du petit temple', where: 'house:tonnerre_h_montagne', role: 'ambiance' },
       { id: 'kids_leimei', name: 'Leimei', title: 'Petite chasseuse d\'étincelles', where: 'place', role: 'ambiance' },
-      { id: 'hua_tonnerre', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_tonnerre', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'cairn_spirit', name: 'Vieux Shidui', title: 'Esprit des pierres empilées', where: 'wild', role: 'indice' }
     ],
     chests: [
@@ -320,7 +321,7 @@ export const MANIFEST = {
       { id: 'bather_fei', name: 'Grand-père Fei', title: 'Baigneur invétéré', where: 'house:volcan_h_bains', role: 'indice' },
       { id: 'cook_dada', name: 'Dada', title: 'Cuisinière des mineurs', where: 'house:volcan_h_cantine', role: 'ambiance' },
       { id: 'lizard_zao', name: 'Zao', title: 'Lézard-dragon bavard', where: 'place', role: 'ambiance' },
-      { id: 'hua_volcan', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_volcan', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'young_miner_bo', name: 'Bo', title: 'Jeune mineur curieux', where: 'place', role: 'indice' },
       { id: 'forge_spirit', name: 'Huohui', title: 'Esprit de la forge de lave', where: 'wild', role: 'indice' }
     ],
@@ -377,7 +378,7 @@ export const MANIFEST = {
       { id: 'shaman_ula', name: 'Fengpo', title: 'Chamane des vents', where: 'house:fauves_h_chaman', role: 'indice' },
       { id: 'cheese_sa', name: 'Dame Sa', title: 'Marchande de lait caillé', where: 'house:fauves_h_fromage', role: 'marchand' },
       { id: 'twins_mu', name: 'Les jumeaux Mu', title: 'Enfants-bergers', where: 'place', role: 'donneur' },
-      { id: 'hua_fauves', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_fauves', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'hare_tuzi', name: 'Tuzi', title: 'Lièvre du Palais lunaire', where: 'wild', role: 'indice' },
       { id: 'old_nomad_bayan', name: 'Bai', title: 'Vieux nomade', where: 'place', role: 'indice' }
     ],
@@ -434,7 +435,7 @@ export const MANIFEST = {
       { id: 'pearl_diver_xi', name: 'Xi', title: 'Plongeuse de perles', where: 'house:mer_h_perles', role: 'donneur' },
       { id: 'sailor_bao', name: 'Bao', title: 'Marin, père de Petit Bao', where: 'house:mer_h_marin', role: 'donneur' },
       { id: 'lighthouse_ming', name: 'Ming', title: 'Gardienne du phare', where: 'house:mer_h_phare', role: 'indice' },
-      { id: 'hua_mer', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_mer', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'crab_old_gong', name: 'Vieux Gong', title: 'Crabe sentencieux', where: 'place', role: 'ambiance' },
       { id: 'mermaid_jiaoren', name: 'Jiaoren', title: 'Sirène aux larmes de perle', where: 'wild', role: 'indice' },
       { id: 'girl_net_mi', name: 'Mi', title: 'Fillette réparatrice de filets', where: 'place', role: 'ambiance' }
@@ -492,7 +493,7 @@ export const MANIFEST = {
       { id: 'astronomer_xing', name: 'Mère Xing', title: 'Astronome de l\'arbre', where: 'house:fusang_h_astronome', role: 'indice' },
       { id: 'acolyte_ri', name: 'Ri', title: 'Acolyte des dix lanternes', where: 'house:fusang_h_temple', role: 'donneur' },
       { id: 'teamaster_you', name: 'Maître You', title: 'Maître de thé suspendu', where: 'house:fusang_h_chambre', role: 'ambiance' },
-      { id: 'hua_fusang', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hua_fusang', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
       { id: 'child_yuer', name: 'Yuer', title: 'Fillette qui écoute les soleils', where: 'place', role: 'indice' },
       { id: 'phoenix_chick', name: 'Petit Fenghuang', title: 'Poussin de phénix', where: 'place', role: 'ambiance' },
       { id: 'root_elder', name: 'Racine-Ancienne', title: 'Esprit de l\'arbre', where: 'wild', role: 'indice' }
@@ -543,7 +544,7 @@ export const MANIFEST = {
     ],
     npcs: [
       { id: 'keeper_lunar', name: 'Veilleuse Yin', title: 'Gardienne des lanternes', where: 'house:lune_h_veilleuse', role: 'indice' },
-      { id: 'hua_lune', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'house:lune_h_veilleuse', role: 'marchand' },
+      { id: 'hua_lune', name: 'Xihe', title: 'Colporteuse aux mille babioles', where: 'house:lune_h_veilleuse', role: 'marchand' },
       { id: 'jade_hare', name: 'Lièvre de jade', title: 'Pileur d\'élixir', where: 'house:lune_h_lievres', role: 'indice' },
       { id: 'spinner_yue', name: 'Yue', title: 'Tisseuse d\'argent', where: 'house:lune_h_tisseuse', role: 'ambiance' },
       { id: 'moon_child', name: 'Enfant de la Lune', title: 'Petit veilleur', where: 'place', role: 'ambiance' },
@@ -564,8 +565,8 @@ export const MANIFEST = {
       { id: 'sq_osmanthus', title: 'L\'osmanthus qui repousse', giver: 'osmanthus_woodcutter', turnIn: 'osmanthus_woodcutter', chain: null,
         summary: 'Wu Gang coupe l\'arbre depuis mille ans et l\'arbre repousse toujours. Aidez-le à vider sa dernière cache de bois et à chasser l\'ombre qui rôde.',
         objectives: [{ type: 'chest', target: 'frost_cache' }, { type: 'kill', target: 'lune_mirror_shade' }] },
-      { id: 'sq_lanterne_hua', title: 'La dernière lanterne de Hua', giver: 'hua_lune', turnIn: 'keeper_lunar', chain: null,
-        summary: 'Hua a fait un long chemin pour livrer une dernière lanterne à la veilleuse. Elle vous la confie avec un clin d\'œil, car vous avez passé la sienne en chemin.',
+      { id: 'sq_lanterne_hua', title: 'La dernière lanterne de Xihe', giver: 'hua_lune', turnIn: 'keeper_lunar', chain: null,
+        summary: 'Xihe a fait un long chemin pour livrer une dernière lanterne à la veilleuse. Elle vous la confie avec un clin d\'œil, car vous avez passé la sienne en chemin.',
         objectives: [{ type: 'talk', target: 'keeper_lunar' }] }
     ]
   }

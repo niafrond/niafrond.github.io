@@ -21,7 +21,7 @@ Toutes les informations du joueur sont sauvegardées, notamment :
 - 💫 **Aptitudes** : Compétences spéciales acquises
 - 🌟 **Effets de statut** : Buffs/debuffs actifs
 - 🗺️ **Régions découvertes** (`worldMap.visitedZoneIds`) : sert à la carte du monde
-- 🧭 **Exploration** (`exploration`) : écran et position du héros, ennemis vaincus (`defeated`), coffres ouverts, état des quêtes (`quests`), écrans visités, prologue vu, fin de l'histoire (`ended`)
+- 🧭 **Exploration** (`exploration`) : écran et position du héros, ennemis vaincus (`defeated`), coffres ouverts, état des quêtes (`quests`), écrans visités, prologue vu, fin de l'histoire (`ended`), mode Chang'e (`change` : `done` épisodes terminés, `pending` épisode commencé et inachevé, `hp` soins obtenus par habitant, `healed` habitants soignés ; omis tant qu'aucun épisode n'a été joué)
 
 ## Export / import fichier
 

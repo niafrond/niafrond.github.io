@@ -46,7 +46,7 @@ export default {
     lighthouse_ming: { name: 'Ming', title: 'Gardienne du phare', 
       idle: ['J\'allume le phare chaque soir. Personne ne me remercie, mais personne ne se perd. C\'est mon salaire.', 'Dans la nuit, j\'ai vu quelqu\'un passer sur la falaise, un archer sans nom. Il murmurait « l\'élixir, l\'élixir » comme une prière.'],
       talk: [{ whenDone: 'sun_8', lines: ['La mer est calme. Mon phare brille. Il ne reste que moi et la nuit, et je ne m\'en plains pas.'] }] },
-    hua_mer: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_mer: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['J\'ai fini par arriver jusqu\'à la mer ! Mes pieds ont des ampoules, mon sac des coquillages, ma bourse… un peu moins.', 'La mer est le seul client qui ne marchande pas. Il prend tout, ou rien.'],
       talk: [{ whenDone: 'sq_lettre_bao_3', lines: ['La lettre est arrivée ? Quel bonheur ! Les lettres sont comme les coquillages : elles chantent quand on les écoute.'] }, { whenDone: 'sun_8', lines: ['Huit soleils ! Je vais continuer vers l\'arbre. Quelqu\'un doit bien vendre des lanternes à la cime.'] }] },
     crab_old_gong: { name: 'Vieux Gong', title: 'Crabe sentencieux', 

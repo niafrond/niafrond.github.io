@@ -290,7 +290,7 @@ export default {
                 "La veilleuse Yin est dans sa maison, au cœur du Hameau sous la Lune."
           ],
           "complete": [
-                "Une petite lumière monte, sur le muret, vers la lune. « Mes enfants… », souffle Hua. Puis, plus bas : « Merci, archer. Le monde peut dormir. » Elle vous presse dans la main un dernier caillou tiède, qui ne refroidira jamais."
+                "Une petite lumière monte, sur le muret, vers la lune. « Mes enfants… », souffle Xihe. Puis, plus bas : « Merci, archer. Le monde peut dormir. » Elle vous presse dans la main un dernier caillou tiède, qui ne refroidira jamais."
           ],
           "reward": {
                 "gold": 200,

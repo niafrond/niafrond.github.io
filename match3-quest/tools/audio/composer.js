@@ -130,6 +130,30 @@ const SCENES = {
         accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.2, keep: 0.5, lo: 43 },
         perc: 'caravan'
     },
+    // Mode Chang'e (change/) : repli procédural des trois pistes ACE-Step (village des blessés, puzzle de soin, adieu par le miroir).
+    'change-village': {
+        label: "Chang'e : village", description: 'Tendre et chaleureux : guzheng en arpèges, dizi doux (soigner un village).',
+        root: 5, scale: 'zhi', bpm: 72, lo: 64, hi: 90,
+        melody: { inst: 'dizi', vel: 0.5, cells: [...SLOW, ...WALTZ.slice(0, 3)], rest: 0.3, orn: 0.12, bend: 0.1 },
+        hetero: { inst: 'bell', oct: 12, vel: 0.2 },
+        accomp: { kind: 'arp', inst: 'guzheng', vel: 0.22, keep: 0.6, lo: 45 },
+        pad: { inst: 'sheng', bars: 4, vel: 0.1 }
+    },
+    'change-puzzle': {
+        label: "Chang'e : soins", description: 'Calme et fluide : harpe, petites cloches, pas de percussion (puzzle de soin).',
+        root: 9, scale: 'yu', bpm: 84, lo: 66, hi: 94,
+        melody: { inst: 'harp', vel: 0.48, cells: [...SLOW, ...SYNC.slice(0, 3)], rest: 0.35, orn: 0.15, bend: 0.1 },
+        hetero: { inst: 'bell', oct: 12, vel: 0.26 },
+        accomp: { kind: 'arp', inst: 'yangqin', vel: 0.2, keep: 0.5, lo: 48 },
+        pad: { inst: 'xiao', bars: 4, vel: 0.1 }, perc: 'bells', bells: { prob: 0.45, vel: 0.32 }
+    },
+    'change-farewell': {
+        label: "Chang'e : adieu", description: 'Lent et douloureux : erhu seul, guqin épars (le miroir qui s\'éteint).',
+        root: 9, scale: 'yu', bpm: 54, lo: 58, hi: 84,
+        melody: { inst: 'erhu', vel: 0.55, cells: [...SLOW], rest: 0.5, orn: 0.2, bend: 0.3 },
+        accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.2, keep: 0.4, lo: 40 },
+        pad: { inst: 'sheng', bars: 4, vel: 0.08 }
+    },
     wild: {
         label: 'Terres sauvages', description: 'Mystérieux : tambour lointain, erhu, tension modérée.', biomes: true,
         root: 4, scale: 'yu', bpm: 62, lo: 62, hi: 88,

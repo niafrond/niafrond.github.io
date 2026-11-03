@@ -211,6 +211,10 @@ function init() {
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
+        const change = document.querySelector('.change-overlay');
+        if(change) return [change.dataset.scene || 'change-village'];   // puzzle de soin (change/view.js)
+        const changeScene = exploration.getChangeScene?.();
+        if(changeScene) return [changeScene];   // Chang'e explore son village : musique du village ou de l'adieu
         const puzzle = document.querySelector('.puzzle-overlay');
         if(puzzle) return puzzle.dataset.won ? ['victory'] : [`puzzle-${puzzle.dataset.mode}`];   // énigme à plateau : une piste par type (push, mirror, slide)
         if(document.querySelector('.battle-transition')) return null;

@@ -570,9 +570,9 @@ describe('cartes (story.js)', () => {
     });
 
     test('les PNJ vivent au village et dans les maisons, les sanctuaires abritent les soleils-boss', () => {
-        // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil et Chang'e à la Lune
+        // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil, Chang'e à la Lune et le messager du miroir (Fusang, après sun_9)
         // (+ les PNJ de pourparlers `parley_sunN` du chemin relationnel)
-        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon', 'changxi_calm']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
+        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon', 'changxi_calm', 'moon_messenger']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
         ORDER.forEach(id => {
             const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
             expect(villagers.length).toBeGreaterThan(0);
@@ -619,7 +619,7 @@ describe('cartes (story.js)', () => {
         };
         Object.entries(REGION_OF).forEach(([id, region]) => expect([id, where(id)]).toEqual([id, region]));
         // seuls sun_ten et change_moon sont restés au sanctuaire (avec les PNJ de pourparlers parley_sunN)
-        expect(SCREENS.fusang.npcs.map(n => n.id).filter(id => !id.startsWith('level_guard_'))).toEqual(['sun_ten', 'parley_sun9']);
+        expect(SCREENS.fusang.npcs.map(n => n.id).filter(id => !id.startsWith('level_guard_'))).toEqual(['moon_messenger', 'sun_ten', 'parley_sun9']);
         expect(SCREENS.lune.npcs.map(n => n.id)).toEqual(['change_moon']);
         expect(SCREENS.rizieres_h_houyi.npcs.map(n => n.id)).toContain('change');
         expect(SCREENS.rizieres_h_wen.npcs.map(n => n.id)).toContain('elder_wen');
@@ -1156,7 +1156,9 @@ describe('histoire complète', () => {
             expect(events[0].quest.id).toBe(`q_${SUN_ID[n - 1]}`);
             golds.push(events[0].gold);
             const started = events.find(e => e.type === 'questStarted');
-            expect(events.indexOf(started)).toBe(events.length - 1);   // après l'interlude avec Chang'e
+            // après l'interlude avec Chang'e (seuls l'épisode de Chang'e des soleils 4, 5 et 9, `changeEpisode`, et l'accourir d'un PNJ, `npcArrival`, peuvent encore suivre : ils viennent après toutes les scènes)
+            const lateEvents = new Set(['npcArrival', 'changeEpisode']);
+            expect(events.filter(e => !lateEvents.has(e.type)).indexOf(started)).toBe(events.filter(e => !lateEvents.has(e.type)).length - 1);
             expect(started.quest.id).toBe(n < 10 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);

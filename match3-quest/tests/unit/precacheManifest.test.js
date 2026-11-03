@@ -28,10 +28,18 @@ describe('precache-manifest.json', () => {
         expect(committed.media.some(f => f.p.endsWith("-b.mp3"))).toBe(false);   // variantes traditionnelles : rangées par le service worker à la première lecture
         music.forEach(n => expect(media.has(`audio/music/${n}`)).toBe(true));
         MEDIA_SPRITE_DIRS.forEach(dir => {
-            const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json'));
+            const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json') || n.endsWith('.gif'));
             expect(files.length).toBeGreaterThan(0);
             files.forEach(n => expect(media.has(`sprites/${dir}/${n}`)).toBe(true));
         });
+    });
+
+    test('le service worker range tous les dossiers de médias du manifeste (sinon « téléchargement non conservé »)', () => {
+        const sw = readFileSync(new URL('../../sw.js', import.meta.url), 'utf8');
+        const re = /var MEDIA_RE = [^\n]*sprites\/\(([^)]*)\)/.exec(sw);
+        expect(re).not.toBeNull();
+        const dirs = new Set(re[1].split('|'));
+        ['gba', ...MEDIA_SPRITE_DIRS].forEach(d => expect({ d, inSw: dirs.has(d) }).toEqual({ d, inSw: true }));
     });
 
     test('sprites GBA : un média par module de sprites/gba/, et jamais leur source sprites/generated.js (3 Mo)', () => {

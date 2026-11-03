@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Soluce du mode Chang’e : aller voir les villageois blessés et les soigner.">
+<title>Chang’e : soigner les villageois — Soluce Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+nav.menu{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .85rem system-ui,sans-serif}
+nav.menu a{color:#fff4dc;text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav.menu a:hover,nav.menu a.on{border-bottom-color:var(--gold)}
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:1.8em 0 .5em;border-left:6px solid var(--gold);padding-left:10px;font-size:1.35rem}
+h3{margin:1.4em 0 .4em;font-size:1.1rem;color:var(--gold)}
+.crumbs{font:.82rem system-ui,sans-serif;color:var(--dim);margin-bottom:10px}
+.lead{font-size:1.05rem;color:var(--dim)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.box.tip{border-left:6px solid var(--jade)}.box.warn{border-left:6px solid var(--red)}.box.info{border-left:6px solid var(--blue)}
+.box b.t{display:block;font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.tip b.t{color:var(--jade)}.warn b.t{color:var(--red)}.info b.t{color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:12px 0}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--gold);background:var(--panel2)}
+.card b{display:block;color:var(--gold)}.card span{font-size:.85rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font:700 .78rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.scroll{overflow-x:auto}
+.quest{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:14px 0;padding:0 14px 8px}
+.quest>h3{margin:0 -14px 8px;padding:8px 14px;background:var(--panel2);border-radius:8px 8px 0 0;color:var(--ink)}
+.quest>h3 small{font:600 .72rem system-ui,sans-serif;color:var(--dim);margin-left:8px}
+.badge{display:inline-block;font:700 .68rem system-ui,sans-serif;padding:1px 7px;border-radius:9px;background:var(--gold);color:#201505;margin-left:4px;vertical-align:middle}
+.badge.main{background:var(--red);color:#fff}.badge.comp{background:var(--jade);color:#08210f}.badge.stuff{background:var(--blue);color:#fff}
+dl{margin:6px 0}dt{font:700 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-top:8px}dd{margin:2px 0 0 0}
+svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;border:1px solid var(--line);border-radius:6px}details{margin:8px 0}summary{cursor:pointer;color:var(--gold);font-weight:600}ol.steps{padding-left:22px}ol.steps li{margin:6px 0}.pl-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.pl-bar[hidden]{display:none}.pl-bar button,.pl-bar select{font:inherit;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--ink);cursor:pointer}.pl-bar .pl-play{background:var(--gold);color:var(--bg);font-weight:700;min-width:7.5em}.pl-bar label{display:flex;gap:6px;align-items:center;color:var(--dim)}.pl-status{margin:6px 0;font-weight:600;min-height:2.8em}.pl ol.steps li{cursor:pointer;padding:2px 6px;border-radius:4px}.pl ol.steps li.done{opacity:.55}.pl ol.steps li.cur{background:var(--panel2);outline:2px solid var(--gold);opacity:1}.pl details{max-height:none}
+.shot{margin:10px 0}.shotbox{position:relative;border:2px solid var(--line);border-radius:6px;overflow:hidden;line-height:0}
+.shotbox img{width:100%;height:auto;display:block}
+.ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+.ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
+.shotbox{cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb[hidden]{display:none}
+.lb-stage{position:absolute;left:0;top:0;transform-origin:0 0;line-height:0;cursor:grab;will-change:transform}
+.lb.drag .lb-stage{cursor:grabbing}
+.lb-stage .shotbox{border:0;border-radius:0;cursor:inherit;max-width:none!important}
+.lb-stage img{width:100%;pointer-events:none;-webkit-user-drag:none}
+.lb-btn{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid #fff4dc;background:rgba(30,22,16,.85);color:#fff4dc;font:700 24px/1 system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lb-btn:hover,.lb-btn:focus-visible{background:#d9553f;outline:none}
+.lb-close{top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+.lb-tools{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.lb-tools .lb-btn{position:static}
+.lb-cap{position:absolute;left:12px;right:70px;top:calc(14px + env(safe-area-inset-top,0px));color:#fff4dc;font:.85rem system-ui,sans-serif;pointer-events:none;text-shadow:0 1px 3px #000}
+.lb-cap small{display:none}
+.lb-cap b{color:#ff7a6a}
+.shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
+.shot figcaption b{color:#ff5a4a}
+.phones{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.phones figure{margin:0;flex:1 1 170px;max-width:250px}.phones img{width:100%;height:auto;border:2px solid var(--line);border-radius:8px}.phones figcaption,.wide figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}.wide{margin:10px 0}.wide img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+.tile-ico svg{width:26px;height:26px;vertical-align:middle;margin-right:4px;background:#efe7ff;border-radius:5px;padding:1px}
+ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
+.search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+#results a{display:block;padding:6px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+#results small{color:var(--dim)}
+footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-serif;color:var(--dim);border-top:1px solid var(--line)}
+@media (max-width:560px){h2{font-size:1.15rem}table{font-size:.85rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="bestiaire.html">Bestiaire</a><a href="royaume-des-ames.html">Royaume des âmes</a><a href="fete-des-lanternes.html">Fête des lanternes</a><a href="change.html" class="on">Chang’e</a></nav></div></header>
+<main>
+<div class="crumbs"><a href="../soluce.html">Accueil</a> › Chang’e</div>
+<h2>Chang’e : soigner les villageois</h2>
+<p class="lead">À trois moments de l’histoire, vous jouez Chang’e. Il n’y a rien à combattre : il suffit d’<b>aller voir les villageois blessés et de les soigner</b> (15 au total, cinq par village). Rien ne peut être raté : on peut recommencer autant qu’on veut et les soins déjà faits sont conservés.</p>
+
+<h3>Quand</h3>
+<div class="tablewrap"><table>
+<tr><th>Épisode</th><th>Dès que vous abattez</th><th>Village de Chang’e</th></tr>
+<tr><td><a href="#episode-1">Épisode 1</a></td><td>Soleil des Mirages</td><td>Hameau de Dongqiao</td></tr>
+<tr><td><a href="#episode-2">Épisode 2</a></td><td>Soleil des Orages</td><td>Port-à-Sec de Hekou</td></tr>
+<tr><td><a href="#episode-3">Épisode 3</a></td><td>Soleil Lâche</td><td>Enclos de Caoyuan</td></tr>
+</table></div>
+
+<h3>Quoi faire</h3>
+<ol class="steps">
+<li><b>Marchez vers un blessé</b> (liseré rouge) pour ouvrir son puzzle de soin. Les autres habitants se baladent et n’ont rien à vous demander.</li>
+<li><b>Récoltez l’énergie qu’il demande</b> (indiquée en haut à droite) en alignant trois tuiles ou plus, avant la fin des coups. Un alignement de quatre ou cinq rend plus de points.</li>
+<li>Son liseré tire vers le vert à mesure des soins. Une fois guéri, passez au suivant : quand les cinq sont soignés, l’épisode se termine.</li>
+</ol>
+<div class="phones">
+<figure><img src="img/change_puzzle.jpg" loading="lazy" alt="Le puzzle de soin"><figcaption>Le puzzle de soin : l’énergie demandée est en haut à droite.</figcaption></figure>
+</div>
+<div class="box tip"><b class="t">Bon à savoir</b>Plus de coups ? Rien n’est perdu : réessayez, les points déjà obtenus restent. Les autres couleurs chargent une jauge : pleine, le bouton « Souffle de l’élixir » change cinq tuiles en l’énergie demandée sans dépenser de coup. Chang’e ne quitte pas le village ; le bouton miroir en haut de l’écran permet de revenir auprès de Hou Yi et de reprendre plus tard.</div>
+<div class="box info"><b class="t">Revoir un épisode</b>Dans la <b>maison de Hou Yi et Chang’e</b> (aux Rizières), regardez dans le <b>miroir</b> posé près de Chang’e : il propose de retourner dans un village déjà soigné (ou de reprendre l’épisode resté ouvert). Les habitants sont de nouveau blessés ; le Livre des noms ne perd rien.</div>
+
+<section id="episode-1">
+<h3>Épisode 1 : Hameau de Dongqiao</h3>
+<p>Après avoir abattu <b>Soleil des Mirages</b>. Allez voir les 5 blessés, marqués d’un liseré rouge (les cercles de la carte indiquent où ils se trouvent).</p>
+<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/rizieres_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Hameau de Dongqiao"><span class="ring injured" style="left:85.94%;top:76.79%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring injured" style="left:32.81%;top:83.93%;width:5.63%;height:6.43%"><i>2</i></span><span class="ring injured" style="left:82.81%;top:19.64%;width:5.63%;height:6.43%"><i>3</i></span><span class="ring injured" style="left:54.69%;top:48.21%;width:5.63%;height:6.43%"><i>4</i></span><span class="ring injured" style="left:14.06%;top:58.93%;width:5.63%;height:6.43%"><i>5</i></span></div><figcaption>Hameau de Dongqiao : <b>1</b> Lin (à soigner) · <b>2</b> Doyen Wen (à soigner) · <b>3</b> Ping (à soigner) · <b>4</b> Petit Bao (à soigner) · <b>5</b> Grand-mère Tao (à soigner) <small>(cliquer pour agrandir)</small></figcaption></figure>
+<div class="tablewrap"><table>
+<tr><th>Blessé</th><th>Énergie demandée</th><th>Objectif</th></tr>
+<tr><td><b>1. Lin</b><br><small>Coup de chaleur, désespéré</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="12.5" fill="#2f9a6a" stroke="#2b2140" stroke-width="1.6"/><circle cx="16" cy="16" r="4.6" fill="#173d2c" stroke="#2b2140" stroke-width="1.2"/><path d="M8.2 11.5 A9 9 0 0 1 14 7.3" stroke="#a6efc8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Jade</td><td>24 points en 12 coups</td></tr><tr><td><b>2. Doyen Wen</b><br><small>Épuisé d'avoir porté le village</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3.4 C22.5 11.4 25.6 15.6 25.6 19.8 A9.6 9.6 0 0 1 6.4 19.8 C6.4 15.6 9.5 11.4 16 3.4Z" fill="#4c9be0" stroke="#2b2140" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 19.6 A5.4 5.4 0 0 0 15.4 25" stroke="#bfe0ff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Eau claire</td><td>24 points en 12 coups</td></tr><tr><td><b>3. Ping</b><br><small>Évanouie à la rizière sèche</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><g stroke="#2b2140" stroke-width="1.3" fill="#ef8fb0"><path d="M16 4 C20 9 20 14 16 18 C12 14 12 9 16 4Z"/><path d="M5 12 C11 10 15 13 16 18 C10 19 6 17 5 12Z"/><path d="M27 12 C21 10 17 13 16 18 C22 19 26 17 27 12Z"/><path d="M9 25 C9 20 12 18 16 18 C15 23 13 26 9 25Z" fill="#f6b6cb"/><path d="M23 25 C23 20 20 18 16 18 C17 23 19 26 23 25Z" fill="#f6b6cb"/></g><circle cx="16" cy="17.5" r="2.6" fill="#f2c94c" stroke="#2b2140" stroke-width="1"/></svg></span>Lotus</td><td>26 points en 12 coups</td></tr><tr><td><b>4. Petit Bao</b><br><small>Enfant déshydraté</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="12" fill="#9b7fd1" stroke="#2b2140" stroke-width="1.6"/><circle cx="16" cy="16" r="8.4" fill="#b9a2e6"/><ellipse cx="12.4" cy="11.8" rx="3.6" ry="2.2" fill="#f3ecff" transform="rotate(-30 12.4 11.8)"/><circle cx="21.5" cy="21" r="1.4" fill="#e0d3fb"/></svg></span>Perles de nacre</td><td>26 points en 11 coups</td></tr><tr><td><b>5. Grand-mère Tao</b><br><small>Malaise de la doyenne des commères</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 L19.2 12.8 L29 16 L19.2 19.2 L16 29 L12.8 19.2 L3 16 L12.8 12.8Z" fill="#cdd6e2" stroke="#2b2140" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 8 L17.6 14.4 L24 16 L17.6 17.6 L16 24 L14.4 17.6 L8 16 L14.4 14.4Z" fill="#f5f8fc"/></svg></span>Énergie argentée</td><td>28 points en 12 coups</td></tr>
+</table></div>
+</section>
+<section id="episode-2">
+<h3>Épisode 2 : Port-à-Sec de Hekou</h3>
+<p>Après avoir abattu <b>Soleil des Orages</b>. Allez voir les 5 blessés, marqués d’un liseré rouge (les cercles de la carte indiquent où ils se trouvent).</p>
+<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fleuve_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Port-à-Sec de Hekou"><span class="ring injured" style="left:85.94%;top:83.93%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring injured" style="left:85.94%;top:16.07%;width:5.63%;height:6.43%"><i>2</i></span><span class="ring injured" style="left:23.44%;top:83.93%;width:5.63%;height:6.43%"><i>3</i></span><span class="ring injured" style="left:54.69%;top:62.50%;width:5.63%;height:6.43%"><i>4</i></span><span class="ring injured" style="left:57.81%;top:23.21%;width:5.63%;height:6.43%"><i>5</i></span></div><figcaption>Port-à-Sec de Hekou : <b>1</b> Gu (à soigner) · <b>2</b> Mei (à soigner) · <b>3</b> Hu (à soigner) · <b>4</b> Lian (à soigner) · <b>5</b> Vieux Rao (à soigner) <small>(cliquer pour agrandir)</small></figcaption></figure>
+<div class="tablewrap"><table>
+<tr><th>Blessé</th><th>Énergie demandée</th><th>Objectif</th></tr>
+<tr><td><b>1. Gu</b><br><small>Soif, bateau échoué</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3.4 C22.5 11.4 25.6 15.6 25.6 19.8 A9.6 9.6 0 0 1 6.4 19.8 C6.4 15.6 9.5 11.4 16 3.4Z" fill="#4c9be0" stroke="#2b2140" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 19.6 A5.4 5.4 0 0 0 15.4 25" stroke="#bfe0ff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Eau claire</td><td>34 points en 12 coups</td></tr><tr><td><b>2. Mei</b><br><small>Fièvre de boue</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><g stroke="#2b2140" stroke-width="1.3" fill="#ef8fb0"><path d="M16 4 C20 9 20 14 16 18 C12 14 12 9 16 4Z"/><path d="M5 12 C11 10 15 13 16 18 C10 19 6 17 5 12Z"/><path d="M27 12 C21 10 17 13 16 18 C22 19 26 17 27 12Z"/><path d="M9 25 C9 20 12 18 16 18 C15 23 13 26 9 25Z" fill="#f6b6cb"/><path d="M23 25 C23 20 20 18 16 18 C17 23 19 26 23 25Z" fill="#f6b6cb"/></g><circle cx="16" cy="17.5" r="2.6" fill="#f2c94c" stroke="#2b2140" stroke-width="1"/></svg></span>Lotus</td><td>34 points en 12 coups</td></tr><tr><td><b>3. Hu</b><br><small>Marchand de sel, les poumons pris</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="12.5" fill="#2f9a6a" stroke="#2b2140" stroke-width="1.6"/><circle cx="16" cy="16" r="4.6" fill="#173d2c" stroke="#2b2140" stroke-width="1.2"/><path d="M8.2 11.5 A9 9 0 0 1 14 7.3" stroke="#a6efc8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Jade</td><td>38 points en 12 coups</td></tr><tr><td><b>4. Lian</b><br><small>Enfant fiévreuse</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="12" fill="#9b7fd1" stroke="#2b2140" stroke-width="1.6"/><circle cx="16" cy="16" r="8.4" fill="#b9a2e6"/><ellipse cx="12.4" cy="11.8" rx="3.6" ry="2.2" fill="#f3ecff" transform="rotate(-30 12.4 11.8)"/><circle cx="21.5" cy="21" r="1.4" fill="#e0d3fb"/></svg></span>Perles de nacre</td><td>36 points en 11 coups</td></tr><tr><td><b>5. Vieux Rao</b><br><small>Calfat sans coque, épuisé</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 L19.2 12.8 L29 16 L19.2 19.2 L16 29 L12.8 19.2 L3 16 L12.8 12.8Z" fill="#cdd6e2" stroke="#2b2140" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 8 L17.6 14.4 L24 16 L17.6 17.6 L16 24 L14.4 17.6 L8 16 L14.4 14.4Z" fill="#f5f8fc"/></svg></span>Énergie argentée</td><td>40 points en 12 coups</td></tr>
+</table></div>
+</section>
+<section id="episode-3">
+<h3>Épisode 3 : Enclos de Caoyuan</h3>
+<p>Après avoir abattu <b>Soleil Lâche</b>. Allez voir les 5 blessés, marqués d’un liseré rouge (les cercles de la carte indiquent où ils se trouvent).</p>
+<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/fauves_village.jpg" width="1408" height="1232" loading="lazy" alt="Carte : Enclos de Caoyuan"><span class="ring injured" style="left:85.94%;top:16.07%;width:5.63%;height:6.43%"><i>1</i></span><span class="ring injured" style="left:14.06%;top:30.36%;width:5.63%;height:6.43%"><i>2</i></span><span class="ring injured" style="left:14.06%;top:83.93%;width:5.63%;height:6.43%"><i>3</i></span><span class="ring injured" style="left:48.44%;top:16.07%;width:5.63%;height:6.43%"><i>4</i></span><span class="ring injured" style="left:85.94%;top:58.93%;width:5.63%;height:6.43%"><i>5</i></span></div><figcaption>Enclos de Caoyuan : <b>1</b> Zi (à soigner) · <b>2</b> Wu (à soigner) · <b>3</b> Dame Sa (à soigner) · <b>4</b> Bai (à soigner) · <b>5</b> Mulan (à soigner) <small>(cliquer pour agrandir)</small></figcaption></figure>
+<div class="tablewrap"><table>
+<tr><th>Blessé</th><th>Énergie demandée</th><th>Objectif</th></tr>
+<tr><td><b>1. Zi</b><br><small>Bergère, troupeau dispersé</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="12.5" fill="#2f9a6a" stroke="#2b2140" stroke-width="1.6"/><circle cx="16" cy="16" r="4.6" fill="#173d2c" stroke="#2b2140" stroke-width="1.2"/><path d="M8.2 11.5 A9 9 0 0 1 14 7.3" stroke="#a6efc8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Jade</td><td>44 points en 13 coups</td></tr><tr><td><b>2. Wu</b><br><small>Morsures et fièvre</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><g stroke="#2b2140" stroke-width="1.3" fill="#ef8fb0"><path d="M16 4 C20 9 20 14 16 18 C12 14 12 9 16 4Z"/><path d="M5 12 C11 10 15 13 16 18 C10 19 6 17 5 12Z"/><path d="M27 12 C21 10 17 13 16 18 C22 19 26 17 27 12Z"/><path d="M9 25 C9 20 12 18 16 18 C15 23 13 26 9 25Z" fill="#f6b6cb"/><path d="M23 25 C23 20 20 18 16 18 C17 23 19 26 23 25Z" fill="#f6b6cb"/></g><circle cx="16" cy="17.5" r="2.6" fill="#f2c94c" stroke="#2b2140" stroke-width="1"/></svg></span>Lotus</td><td>46 points en 13 coups</td></tr><tr><td><b>3. Dame Sa</b><br><small>Coup de chaleur</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="12" fill="#9b7fd1" stroke="#2b2140" stroke-width="1.6"/><circle cx="16" cy="16" r="8.4" fill="#b9a2e6"/><ellipse cx="12.4" cy="11.8" rx="3.6" ry="2.2" fill="#f3ecff" transform="rotate(-30 12.4 11.8)"/><circle cx="21.5" cy="21" r="1.4" fill="#e0d3fb"/></svg></span>Perles de nacre</td><td>48 points en 13 coups</td></tr><tr><td><b>4. Bai</b><br><small>Vieux nomade, cœur fatigué</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3.4 C22.5 11.4 25.6 15.6 25.6 19.8 A9.6 9.6 0 0 1 6.4 19.8 C6.4 15.6 9.5 11.4 16 3.4Z" fill="#4c9be0" stroke="#2b2140" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 19.6 A5.4 5.4 0 0 0 15.4 25" stroke="#bfe0ff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Eau claire</td><td>50 points en 13 coups</td></tr><tr><td><b>5. Mulan</b><br><small>Jeune archère mordue</small></td><td><span class="tile-ico"><svg class="change-tile-art" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 L19.2 12.8 L29 16 L19.2 19.2 L16 29 L12.8 19.2 L3 16 L12.8 12.8Z" fill="#cdd6e2" stroke="#2b2140" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 8 L17.6 14.4 L24 16 L17.6 17.6 L16 24 L14.4 17.6 L8 16 L14.4 14.4Z" fill="#f5f8fc"/></svg></span>Énergie argentée</td><td>54 points en 13 coups</td></tr>
+</table></div>
+</section>
+</main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
+<div class="lb-stage" id="lb-stage"></div>
+<div class="lb-cap" id="lb-cap"></div>
+<button class="lb-btn lb-close" id="lb-close" type="button" aria-label="Fermer l’aperçu">&times;</button>
+<div class="lb-tools"><button class="lb-btn" id="lb-out" type="button" aria-label="Zoom arrière">&minus;</button><button class="lb-btn" id="lb-fit" type="button" aria-label="Ajuster à l’écran" style="font-size:15px">Ajuster</button><button class="lb-btn" id="lb-in" type="button" aria-label="Zoom avant">+</button></div>
+</div>
+<script>
+(function(){
+var lb=document.getElementById('lb'),stage=document.getElementById('lb-stage'),cap=document.getElementById('lb-cap');
+var S=1,TX=0,TY=0,FIT=1,W=1,H=1,pts={},pinch=0,moved=0,lastTap=0,opener=null,onStage=false;
+function vw(){return lb.clientWidth;}function vh(){return lb.clientHeight;}
+function apply(){stage.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')';}
+function clampPan(){
+  var w=W*S,h=H*S,m=60;
+  TX=w<=vw()?(vw()-w)/2:Math.min(m,Math.max(vw()-w-m,TX));
+  TY=h<=vh()?(vh()-h)/2:Math.min(m,Math.max(vh()-h-m,TY));
+}
+function zoomAt(f,cx,cy){
+  var ns=Math.min(10,Math.max(FIT*0.95,S*f));f=ns/S;
+  TX=cx-(cx-TX)*f;TY=cy-(cy-TY)*f;S=ns;clampPan();apply();
+}
+function fit(){S=FIT;TX=(vw()-W*S)/2;TY=(vh()-H*S)/2;apply();}
+function open(box){
+  opener=box;
+  var c=box.cloneNode(true);c.removeAttribute('style');
+  var img=c.querySelector('img');
+  var fig=box.closest('figure'),t=fig&&fig.querySelector('figcaption');
+  cap.innerHTML=t?t.innerHTML:'';
+  stage.innerHTML='';stage.appendChild(c);
+  lb.hidden=false;document.body.style.overflow='hidden';
+  function go(){
+    W=img.naturalWidth||1200;H=img.naturalHeight||(W*0.5);
+    stage.style.width=W+'px';
+    FIT=Math.min(vw()/W,vh()/H)*0.96;fit();
+  }
+  if(img.complete&&img.naturalWidth)go();else{img.onload=go;W=1200;H=600;stage.style.width=W+'px';FIT=Math.min(vw()/W,vh()/H)*0.96;fit();}
+  document.getElementById('lb-close').focus();
+}
+function close(){lb.hidden=true;stage.innerHTML='';document.body.style.overflow='';pts={};if(opener&&opener.scrollIntoView){}}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.shotbox');if(b&&!lb.contains(b))open(b);});
+document.getElementById('lb-close').addEventListener('click',close);
+document.getElementById('lb-in').addEventListener('click',function(){zoomAt(1.5,vw()/2,vh()/2);});
+document.getElementById('lb-out').addEventListener('click',function(){zoomAt(1/1.5,vw()/2,vh()/2);});
+document.getElementById('lb-fit').addEventListener('click',fit);
+document.addEventListener('keydown',function(e){
+  if(lb.hidden)return;
+  if(e.key==='Escape')close();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.4,vw()/2,vh()/2);
+  else if(e.key==='-')zoomAt(1/1.4,vw()/2,vh()/2);
+  else if(e.key==='0')fit();
+});
+lb.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);},{passive:false});
+lb.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.lb-btn'))return;
+  onStage=!!e.target.closest('.lb-stage');pts[e.pointerId]={x:e.clientX,y:e.clientY};moved=0;lb.setPointerCapture(e.pointerId);lb.classList.add('drag');
+  var k=Object.keys(pts);if(k.length===2){var a=pts[k[0]],b=pts[k[1]];pinch=Math.hypot(a.x-b.x,a.y-b.y);}
+});
+lb.addEventListener('pointermove',function(e){
+  var p=pts[e.pointerId];if(!p)return;
+  var k=Object.keys(pts);
+  if(k.length===2){
+    var a=pts[k[0]],b=pts[k[1]];
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    var a2=pts[k[0]],b2=pts[k[1]],d=Math.hypot(a2.x-b2.x,a2.y-b2.y);
+    if(pinch>0)zoomAt(d/pinch,(a2.x+b2.x)/2,(a2.y+b2.y)/2);
+    pinch=d;moved=9;return;
+  }
+  moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);
+  TX+=e.clientX-p.x;TY+=e.clientY-p.y;pts[e.pointerId]={x:e.clientX,y:e.clientY};clampPan();apply();
+});
+function up(e){
+  var had=pts[e.pointerId];delete pts[e.pointerId];pinch=0;
+  if(!Object.keys(pts).length)lb.classList.remove('drag');
+  if(had&&moved<6&&!e.target.closest('.lb-btn')){
+    var now=Date.now();
+    if(now-lastTap<350){if(S>FIT*1.2)fit();else zoomAt(3,e.clientX,e.clientY);lastTap=0;}else lastTap=now;
+    if(!onStage)close();
+  }
+}
+lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function(e){delete pts[e.pointerId];pinch=0;lb.classList.remove('drag');});
+window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
+})();
+</script>
+<footer>Soluce officielle. Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+</body>
+</html>

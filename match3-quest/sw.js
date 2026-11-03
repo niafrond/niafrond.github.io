@@ -30,7 +30,7 @@ var NETWORK_TIMEOUT_MS = 3000;
 var BATCH = 8;
 
 // Dossiers de médias (voir MEDIA_SPRITE_DIRS dans tools/precache-manifest.mjs)
-var MEDIA_RE = new RegExp('^' + SCOPE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(audio/music/|sprites/(gba|ultimates|spellfx|prologue|sunfall|ending|fengmeng|launcher)/)');
+var MEDIA_RE = new RegExp('^' + SCOPE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(audio/music/|sprites/(gba|ultimates|spellfx|prologue|sunfall|ending|fengmeng|launcher|change)/)');
 
 var manifestPromise = null;
 

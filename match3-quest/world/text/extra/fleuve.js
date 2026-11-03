@@ -552,7 +552,7 @@ export default {
                 {
                       "type": "talk",
                       "target": "hua_fleuve",
-                      "text": "Montrer le caillou tiède à Hua (berge du fleuve)",
+                      "text": "Montrer le caillou tiède à Xihe (berge du fleuve)",
                       "lines": [
                             "Un caillou tiède, ici aussi ? Les fleuves rendent tout. Ne le jetez pas, c'est tout ce que je vous demande.",
                             "Vous me regardez comme on regarde une énigme. Les énigmes se vexent, vous savez."
@@ -561,7 +561,7 @@ export default {
                 {
                       "type": "talk",
                       "target": "gui_turtle",
-                      "text": "Demander à la tortue Gui qui est Hua (maisonnette de Gui)",
+                      "text": "Demander à la tortue Gui qui est Xihe (maisonnette de Gui)",
                       "lines": [
                             "Je l'ai connue quand le fleuve n'avait pas encore de nom. Elle portait déjà ce sac, et elle cherchait déjà quelqu'un.",
                             "Elle ne vend pas des babioles, petit. Elle ramasse. Ce que les soleils perdent en tombant, elle le ramasse."
@@ -573,7 +573,7 @@ export default {
                 "Je ne sais pas si je dois m'en réjouir ou m'en inquiéter. Allez voir la colporteuse, puis la vieille tortue Gui, qui a bonne mémoire."
           ],
           "hint": [
-                "Hua est sur la berge, côté village. Gui la tortue vit dans sa maisonnette."
+                "Xihe est sur la berge, côté village. Gui la tortue vit dans sa maisonnette."
           ],
           "complete": [
                 "Elle ramasse ce que les soleils perdent… J'ai écrit la phrase, puis je l'ai relue trois fois. Voici de l'encre de crue : elle ne sèche que lorsqu'on a compris."

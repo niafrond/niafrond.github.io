@@ -27,6 +27,9 @@ import * as WS from '../events/wanderingSouls/data.js';
 import * as TR from '../events/wanderingSouls/terrains.js';
 import * as WL from '../events/winterLanternFestival/data.js';
 import * as WT from '../events/winterLanternFestival/terrains.js';
+import { EPISODES as CHANGE_EPISODES, ENERGY_LABEL as CHANGE_ENERGY } from '../change/data.js';
+import { tileSvg } from '../change/art.js';
+import { createSession, startChangeMode, visibleNpcs } from '../exploration.js';
 
 // Événement « La Nuit des âmes errantes » : page dédiée seulement s'il est actif dans le monde assemblé (events/config.js).
 const EVENT_ON = Boolean(SCREENS[WS.REALM_ID]);
@@ -193,6 +196,9 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .lb-cap b{color:#ff7a6a}
 .shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
 .shot figcaption b{color:#ff5a4a}
+.phones{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.phones figure{margin:0;flex:1 1 170px;max-width:250px}.phones img{width:100%;height:auto;border:2px solid var(--line);border-radius:8px}.phones figcaption,.wide figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}.wide{margin:10px 0}.wide img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+.tile-ico svg{width:26px;height:26px;vertical-align:middle;margin-right:4px;background:#efe7ff;border-radius:5px;padding:1px}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -207,7 +213,8 @@ const NAV = [
     ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
     ['bestiaire.html', 'Bestiaire'],
     ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : []),
-    ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : [])
+    ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : []),
+    ['change.html', 'Chang’e']
 ];
 
 
@@ -356,7 +363,7 @@ function objectiveHtml(o, region) {
 
 
 // Captures annotées : la carte de l'écran (soluce/img, voir build-soluce-shots.mjs) avec un cercle rouge par case citée par la quête.
-const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre', exit: 'passage vers une autre zone', door: 'porte' };
+const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre', exit: 'passage vers une autre zone', door: 'porte', injured: 'à soigner' };
 function shotsHtml(q) {
     const byScreen = new Map();
     for (const t of questTargets(q)) byScreen.set(t.screenId, [...(byScreen.get(t.screenId) || []), t]);
@@ -1044,6 +1051,53 @@ ${body}
     }));
 }
 
+function buildChange() {
+    const sunName = id => (Object.values(SCREENS).flatMap(sc => sc.enemies || []).find(e => e.id === id)?.name) || id;
+    const total = CHANGE_EPISODES.reduce((n, e) => n + e.injured.length, 0);
+    const episodes = CHANGE_EPISODES.map(ep => {
+        const session = createSession(null);
+        startChangeMode(session, ep.id);
+        const pts = visibleNpcs(session).filter(n => n.injured).map(n => ({ x: n.x, y: n.y, name: n.name, role: 'injured' }));   // places réelles des blessés
+        const rows = ep.injured.map((n, i) => `<tr><td><b>${i + 1}. ${esc(n.name)}</b><br><small>${esc(n.state)}</small></td><td><span class="tile-ico">${tileSvg(n.color)}</span>${esc(CHANGE_ENERGY[n.color])}</td><td>${n.need} points en ${n.moves} coups</td></tr>`).join('');
+        return `<section id="episode-${ep.id}">
+<h3>Épisode ${ep.id} : ${esc(ep.village)}</h3>
+<p>Après avoir abattu <b>${esc(sunName(ep.sun))}</b>. Allez voir les ${ep.injured.length} blessés, marqués d’un liseré rouge (les cercles de la carte indiquent où ils se trouvent).</p>
+${shotFigure(ep.screen, pts)}
+<div class="tablewrap"><table>
+<tr><th>Blessé</th><th>Énergie demandée</th><th>Objectif</th></tr>
+${rows}
+</table></div>
+</section>`;
+    }).join('\n');
+    write('change.html', page({
+        file: 'change.html', title: 'Chang’e : soigner les villageois', active: 'change.html',
+        desc: 'Soluce du mode Chang’e : aller voir les villageois blessés et les soigner.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Chang’e']],
+        body: `<h2>Chang’e : soigner les villageois</h2>
+<p class="lead">À trois moments de l’histoire, vous jouez Chang’e. Il n’y a rien à combattre : il suffit d’<b>aller voir les villageois blessés et de les soigner</b> (${total} au total, cinq par village). Rien ne peut être raté : on peut recommencer autant qu’on veut et les soins déjà faits sont conservés.</p>
+
+<h3>Quand</h3>
+<div class="tablewrap"><table>
+<tr><th>Épisode</th><th>Dès que vous abattez</th><th>Village de Chang’e</th></tr>
+${CHANGE_EPISODES.map(e => `<tr><td><a href="#episode-${e.id}">Épisode ${e.id}</a></td><td>${esc(sunName(e.sun))}</td><td>${esc(e.village)}</td></tr>`).join('\n')}
+</table></div>
+
+<h3>Quoi faire</h3>
+<ol class="steps">
+<li><b>Marchez vers un blessé</b> (liseré rouge) pour ouvrir son puzzle de soin. Les autres habitants se baladent et n’ont rien à vous demander.</li>
+<li><b>Récoltez l’énergie qu’il demande</b> (indiquée en haut à droite) en alignant trois tuiles ou plus, avant la fin des coups. Un alignement de quatre ou cinq rend plus de points.</li>
+<li>Son liseré tire vers le vert à mesure des soins. Une fois guéri, passez au suivant : quand les cinq sont soignés, l’épisode se termine.</li>
+</ol>
+<div class="phones">
+<figure><img src="img/change_puzzle.jpg" loading="lazy" alt="Le puzzle de soin"><figcaption>Le puzzle de soin : l’énergie demandée est en haut à droite.</figcaption></figure>
+</div>
+<div class="box tip"><b class="t">Bon à savoir</b>Plus de coups ? Rien n’est perdu : réessayez, les points déjà obtenus restent. Les autres couleurs chargent une jauge : pleine, le bouton « Souffle de l’élixir » change cinq tuiles en l’énergie demandée sans dépenser de coup. Chang’e ne quitte pas le village ; le bouton miroir en haut de l’écran permet de revenir auprès de Hou Yi et de reprendre plus tard.</div>
+<div class="box info"><b class="t">Revoir un épisode</b>Dans la <b>maison de Hou Yi et Chang’e</b> (aux Rizières), regardez dans le <b>miroir</b> posé près de Chang’e : il propose de retourner dans un village déjà soigné (ou de reprendre l’épisode resté ouvert). Les habitants sont de nouveau blessés ; le Livre des noms ne perd rien.</div>
+
+${episodes}`
+    }));
+}
+
 function buildHub() {
     const total = QUESTS.length;
     const index = [
@@ -1057,6 +1111,7 @@ function buildHub() {
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
         ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
         ...CATALOG.filter(t => t.id !== 'fallback_enemy').map(t => ({ t: t.name, k: `bestiaire créature ennemi monstre ${t.race || ''} ${t.title || ''}`, h: `soluce/bestiaire.html#be-${t.id}`, c: 'Bestiaire' })),
+        { t: 'Chang’e : soigner les villageois', k: 'chang e change soin soigner blessés villageois village miroir puzzle épisode', h: 'soluce/change.html', c: 'Mode Chang’e' },
         ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
@@ -1076,6 +1131,7 @@ function buildHub() {
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
 <a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).filter(id => !EVENT_PUZZLE_IDS.has(id)).length} énigmes, 3 armures antiques</span></a>
 ${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des âmes</b><span>Événement : ${QUESTS.filter(q => q.event === WS.ID).length} quêtes, ${EVENT_PUZZLES.length} énigmes, 7 cartes</span></a>` : ''}
+<a class="card" href="soluce/change.html"><b>Chang’e</b><span>Trois épisodes de soin dans les villages</span></a>
 ${WINTER_ON ? `<a class="card" href="soluce/fete-des-lanternes.html"><b>Fête des lanternes</b><span>Événement d’hiver : ${QUESTS.filter(q => q.event === WL.ID).length} quêtes, ${WINTER_PUZZLES.length} énigmes, 4 cartes</span></a>` : ''}
 <a class="card" href="soluce/bestiaire.html"><b>Bestiaire</b><span>${BESTIARY_COUNT} créatures : force, faiblesse, lieux</span></a>
 <a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
@@ -1118,5 +1174,6 @@ buildZones();
 buildEvent();
 buildWinter();
 buildBestiary();
+buildChange();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');

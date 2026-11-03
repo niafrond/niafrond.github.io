@@ -1,3 +1,40 @@
+## [2.182.0](https://github.com/niafrond/niafrond.github.io/compare/v2.181.0...v2.182.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** miroir de la maison pour rejouer les épisodes de Chang'e ([#628](https://github.com/niafrond/niafrond.github.io/issues/628)) ([288fe76](https://github.com/niafrond/niafrond.github.io/commit/288fe76db92c09f6f7e7e89bf18b52cfffb19f71))
+
+## [2.181.0](https://github.com/niafrond/niafrond.github.io/compare/v2.180.0...v2.181.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** adapter le manifeste PWA et l'icône à Hou Yi ([#627](https://github.com/niafrond/niafrond.github.io/issues/627)) ([0650bcd](https://github.com/niafrond/niafrond.github.io/commit/0650bcdccfb8c5cba4d475a2986456f1745eb99e))
+* **match3-quest:** mode Chang'e en trois épisodes, puzzle de soin sans crâne ni flèche ([#626](https://github.com/niafrond/niafrond.github.io/issues/626)) ([64fcd34](https://github.com/niafrond/niafrond.github.io/commit/64fcd3419cfc901a3a210570698d24fd25bf9cd0))
+
+## [2.180.0](https://github.com/niafrond/niafrond.github.io/compare/v2.179.0...v2.180.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** faire accourir le messager du miroir en sautillant ([#625](https://github.com/niafrond/niafrond.github.io/issues/625)) ([ea7daac](https://github.com/niafrond/niafrond.github.io/commit/ea7daacc03e552d7743db052a0230cb21f05a929))
+
+## [2.179.0](https://github.com/niafrond/niafrond.github.io/compare/v2.178.0...v2.179.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** durcir les énigmes des événements neige et halloween ([#624](https://github.com/niafrond/niafrond.github.io/issues/624)) ([5d8922a](https://github.com/niafrond/niafrond.github.io/commit/5d8922a0137d71a1117f31122504399e4ad957ef))
+
+## [2.178.0](https://github.com/niafrond/niafrond.github.io/compare/v2.177.0...v2.178.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** refondre le scénario (Xihe, miroir coupé, fin de Fengmeng) ([#623](https://github.com/niafrond/niafrond.github.io/issues/623)) ([04f349c](https://github.com/niafrond/niafrond.github.io/commit/04f349c9ab13d3fdd694667da4892bbb49566b55))
+
+## [2.177.0](https://github.com/niafrond/niafrond.github.io/compare/v2.176.0...v2.177.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** sprite dédié de la mimique avec attaque par saut ([#621](https://github.com/niafrond/niafrond.github.io/issues/621)) ([b72d532](https://github.com/niafrond/niafrond.github.io/commit/b72d53247eb756116979357efb393b49bebc536a))
+
 ## [2.176.0](https://github.com/niafrond/niafrond.github.io/compare/v2.175.0...v2.176.0) (2026-11-03)
 
 ### Features

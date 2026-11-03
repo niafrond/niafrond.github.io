@@ -88,6 +88,11 @@
   "puzzle/modes.js",
   "puzzle/sprites.js",
   "puzzle/view.js",
+  "change/art.js",
+  "change/data.js",
+  "change/engine.js",
+  "change/state.js",
+  "change/view.js",
   "world/aquatic.js",
   "world/armorQuests.js",
   "world/barriers.js",
@@ -193,6 +198,13 @@
   "audio/sfx-models.json",
   "audio/sfx/battleStart.mp3",
   "audio/sfx/bossStart.mp3",
+  "audio/sfx/change-breath.mp3",
+  "audio/sfx/change-cake.mp3",
+  "audio/sfx/change-cut.mp3",
+  "audio/sfx/change-heal.mp3",
+  "audio/sfx/change-match.mp3",
+  "audio/sfx/change-mirror.mp3",
+  "audio/sfx/change-swap.mp3",
   "audio/sfx/combatStart.mp3",
   "audio/sfx/default.mp3",
   "audio/sfx/defeat.mp3",
@@ -718,6 +730,11 @@
    "p": "sprites/gba/change.fd52fd3d.js",
    "s": 4965,
    "h": "fd52fd3d05"
+  },
+  {
+   "p": "sprites/gba/change_jouable.2ebd3b34.js",
+   "s": 40167,
+   "h": "2ebd3b3458"
   },
   {
    "p": "sprites/gba/change_moon.d131916f.js",
@@ -1415,6 +1432,11 @@
    "h": "d6196c3772"
   },
   {
+   "p": "sprites/gba/houyi_mirror.af276110.js",
+   "s": 768,
+   "h": "af2761107f"
+  },
+  {
    "p": "sprites/gba/hu_jing.4949fe90.js",
    "s": 5109,
    "h": "4949fe90b3"
@@ -1853,6 +1875,11 @@
    "p": "sprites/gba/miller_gao.4676d4d8.js",
    "s": 1716,
    "h": "4676d4d824"
+  },
+  {
+   "p": "sprites/gba/mimique.fd09dda5.js",
+   "s": 68632,
+   "h": "fd09dda52c"
   },
   {
    "p": "sprites/gba/miner_shan.afcf4c4a.js",
@@ -4070,6 +4097,16 @@
    "h": "35f3ace6bf"
   },
   {
+   "p": "sprites/change/mirror-in.gif",
+   "s": 2449755,
+   "h": "dbf583bf4e"
+  },
+  {
+   "p": "sprites/change/mirror-out.gif",
+   "s": 2449708,
+   "h": "3a9f17e8f4"
+  },
+  {
    "p": "audio/music/boss-a0.mp3",
    "s": 1957347,
    "h": "97b900d7d0"
@@ -4348,6 +4385,21 @@
    "p": "audio/music/boss-zhuque-l-oiseau-vermillon.mp3",
    "s": 1847320,
    "h": "76f414f3c6"
+  },
+  {
+   "p": "audio/music/change-farewell.mp3",
+   "s": 2057344,
+   "h": "bb66d504c6"
+  },
+  {
+   "p": "audio/music/change-puzzle.mp3",
+   "s": 2024116,
+   "h": "dd12c3998f"
+  },
+  {
+   "p": "audio/music/change-village.mp3",
+   "s": 2073645,
+   "h": "9d090e3e17"
   },
   {
    "p": "audio/music/combat-0.mp3",
