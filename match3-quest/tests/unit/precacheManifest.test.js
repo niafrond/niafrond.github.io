@@ -34,6 +34,14 @@ describe('precache-manifest.json', () => {
         });
     });
 
+    test('le service worker range tous les dossiers de médias du manifeste (sinon « téléchargement non conservé »)', () => {
+        const sw = readFileSync(new URL('../../sw.js', import.meta.url), 'utf8');
+        const re = /var MEDIA_RE = [^\n]*sprites\/\(([^)]*)\)/.exec(sw);
+        expect(re).not.toBeNull();
+        const dirs = new Set(re[1].split('|'));
+        ['gba', ...MEDIA_SPRITE_DIRS].forEach(d => expect({ d, inSw: dirs.has(d) }).toEqual({ d, inSw: true }));
+    });
+
     test('sprites GBA : un média par module de sprites/gba/, et jamais leur source sprites/generated.js (3 Mo)', () => {
         const media = new Set(committed.media.map(f => f.p));
         const files = readdirSync(`${GAME_DIR}/${GBA_SPRITE_DIR}`).filter(n => n.endsWith('.js'));
