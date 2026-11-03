@@ -15,7 +15,7 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, setOption, applyOptions, vibrate } from "./gameOptions.js";
+import { getOption, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
@@ -445,10 +445,28 @@ function init() {
     const vibrationBtn = document.getElementById('opt-vibration');
     const syncVibrationBtn = () => {
         const on = getOption('vibration');
-        if(vibrationBtn) { vibrationBtn.textContent = on ? 'Oui' : 'Non'; vibrationBtn.setAttribute('aria-pressed', String(on)); }
+        if(vibrationBtn) {
+            vibrationBtn.textContent = on ? (canVibrate() ? 'Oui' : 'Oui (secousse)') : 'Non';
+            vibrationBtn.setAttribute('aria-pressed', String(on));
+            if(!canVibrate()) vibrationBtn.title = "Cet appareil ne sait pas vibrer (iPhone, iPad, Firefox ordinateur) : l'écran tremble à la place.";
+        }
     };
     syncVibrationBtn();
-    vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate(40); });
+    // Le navigateur refuse les vibrations tant que l'utilisateur n'a pas fait de geste : on redemande, d'un toucher (gameOptions.js).
+    window.addEventListener('m3:vibration-blocked', () => {
+        if(document.getElementById('vibe-notice')) return;
+        const box = document.createElement('div');
+        box.id = 'vibe-notice';
+        box.className = 'vibe-notice';
+        box.setAttribute('role', 'alert');
+        box.innerHTML = '<span>Le navigateur bloque les vibrations.</span> <button type="button">Les réactiver</button> <button type="button" class="vibe-close" aria-label="Fermer">×</button>';
+        const [enable, close] = box.querySelectorAll('button');
+        enable.addEventListener('click', () => { if(armVibration()) { vibrate([60, 40, 60]); box.remove(); } else enable.textContent = 'Toujours bloqué : touchez l\'écran puis réessayez'; });
+        close.addEventListener('click', () => box.remove());
+        document.body.appendChild(box);
+        setTimeout(() => box.remove(), 12000);
+    });
+    vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate([120, 60, 120]); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),
         weapon: id => (player.weapons || []).find(w => w.id === id) || getWeaponById(id),

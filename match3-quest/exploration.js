@@ -239,6 +239,8 @@ function defaultData() {
         solvedPuzzles: [],       // énigmes à plateau résolues (puzzle/levels.js) : un coffre à énigme ne s'ouvre qu'ensuite
         quests: {},
         visitedScreens: [],
+        mimicked: [],            // coffres refermés au retour du joueur : des mimiques tant qu'ils ne sont pas rouverts
+        returns: {},             // nombre de retours sur chaque carte (graine du tirage des coffres refermés)
         fog: {},                 // brouillard de guerre de la minimap : écran -> cases vues (hexadécimal, 4 cases par signe)
         introSeen: false,
         eventNotices: [],        // annonces d'événements déjà lues (une seule fois chacune : screen.eventNotice)
@@ -264,6 +266,8 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.puzzleSetsDone = Array.isArray(data.puzzleSetsDone) ? data.puzzleSetsDone : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
     data.fog = data.fog && typeof data.fog === 'object' && !Array.isArray(data.fog) ? data.fog : {};
+    data.mimicked = Array.isArray(data.mimicked) ? data.mimicked.filter(id => typeof id === 'string') : [];
+    data.returns = data.returns && typeof data.returns === 'object' && !Array.isArray(data.returns) ? data.returns : {};
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
@@ -432,7 +436,8 @@ export function enterScreen(session, screenId, pos) {
     respawnRegularEnemies(session);
     initScreenRuntime(session);
     session.rt.grace = GRACE_MOVES;
-    if (!session.data.visitedScreens.includes(screenId)) session.data.visitedScreens.push(screenId);
+    if (session.data.visitedScreens.includes(screenId)) reclosePastChests(session);   // retour sur une carte déjà vue
+    else session.data.visitedScreens.push(screenId);
     revealFog(session);
     discoverVillageWaypoint(session);
     return true;
@@ -715,22 +720,91 @@ export const AURA_RANGE = 9;
 export const MIMIC_NAME = 'Mimique';
 export const hasAura = playerLevel => Math.floor(playerLevel || 0) >= AURA_LEVEL;
 
-// Force de l'onde (0..1) et distance de la cache non ouverte la plus proche, ou null (pas d'aura, rien à portée).
-export function auraSignal(session, playerLevel) {
-    if (!hasAura(playerLevel)) return null;
+// La perception ne reste pas allumée : on touche le héros pour la lancer, PERCEPTION_MS durant (`rt.perceptionUntil`, jamais sauvegardé).
+export const PERCEPTION_MS = 5000;
+const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+export const perceptionActive = (session, now = nowMs()) => (session.rt.perceptionUntil || 0) > now;
+
+// Cache invisible non ouverte la plus proche, n'importe où sur la carte : { chest, dist, dx, dy, angle } ou null.
+export function nearestHidden(session) {
     const screen = currentScreen(session);
     let best = null;
     for (const c of screen.chests || []) {
         if (!c.hidden || session.data.openedChests.includes(c.id) || !isEntityVisible(session, c)) continue;
-        const dist = Math.hypot(c.x - session.data.x, c.y - session.data.y);
-        if (dist <= AURA_RANGE && (!best || dist < best.dist)) best = { dist, strength: Math.max(0, Math.min(1, 1 - (dist - 1) / (AURA_RANGE - 1))) };
+        const dx = c.x - session.data.x, dy = c.y - session.data.y;
+        const dist = Math.hypot(dx, dy);
+        if (!best || dist < best.dist) best = { chest: c, dist, dx, dy, angle: Math.atan2(dy, dx) };
     }
     return best;
 }
 
-// Un coffre est-il dessiné ? Les caches ne se montrent qu'à qui a l'aura, une fois tout près.
-export const isChestShown = (session, chest, playerLevel) =>
-    !chest.hidden || (hasAura(playerLevel) && Math.hypot(chest.x - session.data.x, chest.y - session.data.y) <= 2.2);
+// Lance la perception (clic sur le héros) : { ok: false, reason: 'level' } sans le talent, { ok: true, found } sinon (found : une cache existe encore).
+export function startPerception(session, playerLevel, now = nowMs()) {
+    if (!hasAura(playerLevel)) return { ok: false, reason: 'level' };
+    session.rt.perceptionUntil = now + PERCEPTION_MS;
+    return { ok: true, found: Boolean(nearestHidden(session)), until: session.rt.perceptionUntil };
+}
+
+// Lecture de la perception en cours : null si inactive, sans talent ou sans cache ; sinon direction (angle en radians) et force (0..1,
+// de plus en plus forte à mesure qu'on s'approche : 0,1 au-delà de AURA_RANGE, 1 au contact).
+export function auraSignal(session, playerLevel, now = nowMs()) {
+    if (!hasAura(playerLevel) || !perceptionActive(session, now)) return null;
+    const near = nearestHidden(session);
+    if (!near) return null;
+    const strength = near.dist >= AURA_RANGE ? 0.1 : Math.max(0.1, Math.min(1, 1 - (near.dist - 1) / (AURA_RANGE - 1)));
+    return { dist: near.dist, strength, angle: near.angle, dx: near.dx, dy: near.dy };
+}
+
+// Un coffre est-il dessiné ? Les caches ne se montrent qu'à qui a le talent, perception lancée, une fois tout près.
+export const isChestShown = (session, chest, playerLevel, now = nowMs()) =>
+    !chest.hidden || (hasAura(playerLevel) && perceptionActive(session, now) && Math.hypot(chest.x - session.data.x, chest.y - session.data.y) <= 2.2);
+
+// ── Coffres refermés ─────────────────────────────────────────────────
+// Quand le héros revient sur une carte, certains coffres déjà ouverts se referment : ce sont désormais des mimiques (butin maigre, combat).
+// Jamais touchés : coffres d'objet de quête ou à énigme, cibles d'un objectif de quête, coffres cités comme condition (`showWhen`, `requires`…)
+// par un personnage, un ennemi, une sortie ou une quête (les rouvrir défairait la progression), coffre sous les pieds du héros.
+export const RECLOSE_CHANCE = 0.35, RECLOSE_MAX = 3;
+const CONDITION_KEYS = ['showWhen', 'hideWhen', 'requires', 'weakenedBy', 'unsealedBy', 'shieldedBy', 'lockedBy', 'needs'];
+
+function protectedChestIds(session) {
+    const cache = session.rt.protectedChests;
+    if (cache) return cache;
+    const ids = new Set();
+    const take = v => { if (typeof v === 'string') ids.add(v); else if (Array.isArray(v)) v.forEach(take); };
+    Object.values(session.screens).forEach(sc => {
+        [sc.npcs, sc.chests, sc.enemies, sc.exits].forEach(list => (list || []).forEach(e => CONDITION_KEYS.forEach(k => take(e[k]))));
+    });
+    (session.quests || []).forEach(q => {
+        take(q.requires);
+        (q.objectives || []).forEach(o => { if (o.type === 'chest') take(o.target); });
+    });
+    return (session.rt.protectedChests = ids);
+}
+
+const reclosable = (session, chest, guarded) =>
+    session.data.openedChests.includes(chest.id) && !chest.mimic && !chest.questItem && !chest.puzzle && !guarded.has(chest.id)
+    && !(chest.x === session.data.x && chest.y === session.data.y);
+
+// Referme quelques coffres ouverts de la carte courante ; retourne les identifiants refermés.
+export function reclosePastChests(session) {
+    const screen = currentScreen(session);
+    const returns = session.data.returns[screen.id] = (session.data.returns[screen.id] || 0) + 1;
+    const guarded = protectedChestIds(session);
+    const closed = [];
+    for (const chest of screen.chests || []) {
+        if (closed.length >= RECLOSE_MAX) break;
+        if (!reclosable(session, chest, guarded)) continue;
+        const roll = Math.abs(Math.sin((chest.x + 1) * 127.1 + (chest.y + 1) * 311.7 + returns * 74.7 + [...chest.id].reduce((a, ch) => a + ch.charCodeAt(0), 0)) * 43758.5453) % 1;
+        if (roll >= RECLOSE_CHANCE) continue;
+        session.data.openedChests = session.data.openedChests.filter(id => id !== chest.id);
+        if (!session.data.mimicked.includes(chest.id)) session.data.mimicked.push(chest.id);
+        closed.push(chest.id);
+    }
+    return closed;
+}
+
+// Un coffre est-il (devenu) une mimique ?
+export const isMimicChest = (session, chest) => Boolean(chest.mimic) || session.data.mimicked.includes(chest.id);
 
 // ── Brouillard de guerre (minimap uniquement) ────────────────────────
 // Chaque carte garde le masque des cases vues par le héros (rayon FOG_RADIUS autour de lui à chaque pas). Le jeu principal n'est pas
@@ -1258,6 +1332,8 @@ export function startNewGamePlus(session) {
     data.questItems = [];
     data.visitedScreens = [];
     data.fog = {};
+    data.mimicked = [];
+    data.returns = {};
     data.talked = [];
     data.banterSeen = [];
     data.waypoints = [];
@@ -1424,7 +1500,7 @@ function unmask(session, chest) {
     const entry = [...table].sort((a, b) => b.weight - a.weight)[0] || { templateId: 'shu_jing', offset: 0 };
     const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
     rt.wildDefs[id] = {
-        screenId: screen.id, bonusGold: chest.mimicGold || 5, bonusLabel: chest.label,
+        screenId: screen.id, bonusGold: chest.mimicGold || Math.max(5, Math.round((chest.gold || 0) * 0.15)), bonusLabel: chest.label,
         def: { id, templateId: entry.templateId, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
     };
     return { type: 'mimic', chest, enemyId: id, events: [] };
@@ -1439,7 +1515,7 @@ export function openChest(session, chestId) {
     // Le coffre d'un objet de quête s'ouvre à tout moment : avant la quête, le texte et la description de l'objet restent évasifs.
     const early = Boolean(qi) && session.data.quests[qi.quest] !== 'active' && session.data.quests[qi.quest] !== 'done';
     session.data.openedChests.push(chestId);
-    if (chest.mimic) return unmask(session, chest);
+    if (isMimicChest(session, chest)) return unmask(session, chest);
     if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: (early ? qi.earlyDescription : qi.description) || qi.description || '', quest: qi.quest });
     const { region, kind } = currentScreen(session);
     const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, early, screen: { region, kind } }, ...checkAutoQuests(session)];

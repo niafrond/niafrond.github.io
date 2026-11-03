@@ -54,13 +54,53 @@ export function animationFactor() { return SPEED_FACTOR[current.speed] || 1; }
 export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
 
 // Fait vibrer l'appareil (durée en ms ou motif), sauf si l'option « Vibrations » est coupée ou si l'appareil ne sait pas vibrer.
+// `shakeIfUnsupported` : sur un appareil sans vibreur, secoue l'écran à la place (dégâts subis).
 // Retourne true si une vibration a été demandée.
-export function vibrate(pattern) {
+export function vibrate(pattern, shakeIfUnsupported = false) {
     if (!current.vibration) return false;
     try {
-        if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return false;
-        return navigator.vibrate(pattern) !== false;
+        if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') { if (shakeIfUnsupported) shake(); return false; }
+        const ok = navigator.vibrate(pattern) !== false;
+        if (!ok) notifyBlocked(); else vibrationBlocked = false;
+        return ok;
     } catch (e) { return false; }   // vibration refusée (pas de geste utilisateur, mode économie…)
+}
+
+// Depuis Chrome 60, navigator.vibrate() exige un geste de l'utilisateur (sinon il renvoie false) : tant qu'il n'a rien touché, les vibrations
+// déclenchées par le jeu (dégâts, ondes) sont ignorées. Le premier geste (toucher, clic, touche) les arme ; si le navigateur les refuse
+// quand même, l'événement `m3:vibration-blocked` invite à les réactiver d'un toucher (main.js).
+let vibrationBlocked = false, lastBlockedNotice = 0;
+export const isVibrationBlocked = () => vibrationBlocked;
+function notifyBlocked() {
+    vibrationBlocked = true;
+    const now = Date.now();
+    if (typeof window === 'undefined' || now - lastBlockedNotice < 60000) return;
+    lastBlockedNotice = now;
+    window.dispatchEvent(new Event('m3:vibration-blocked'));
+}
+
+// À appeler DANS un geste de l'utilisateur : une micro-vibration qui valide l'autorisation. Retourne true si elle est accordée.
+export function armVibration() {
+    if (!current.vibration || !canVibrate()) return false;
+    try {
+        const ok = navigator.vibrate(1) !== false;
+        if (ok) vibrationBlocked = false;
+        return ok;
+    } catch (e) { return false; }
+}
+
+// L'appareil sait-il vibrer ? (Absent sur iPhone / iPad et Firefox ordinateur : l'API Vibration n'y existe pas.)
+export function canVibrate() {
+    return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+}
+
+// À défaut de vibreur : une brève secousse de l'écran (classe `shake` du body, style.css) à la place.
+function shake() {
+    if (typeof document === 'undefined' || !document.body || effectsLevel() === 'low') return;
+    document.body.classList.remove('shake');
+    void document.body.offsetWidth;   // relance l'animation
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 320);
 }
 
 export function applyOptions() {
@@ -71,3 +111,8 @@ export function applyOptions() {
 }
 
 load();
+// Chaque premier geste de la page arme les vibrations (écouteurs ôtés dès qu'ils ont réussi).
+if (typeof window !== 'undefined' && window.addEventListener) {
+    const arm = () => { if (armVibration()) ['pointerdown', 'touchend', 'keydown', 'click'].forEach(t => window.removeEventListener(t, arm, true)); };
+    ['pointerdown', 'touchend', 'keydown', 'click'].forEach(t => window.addEventListener(t, arm, true));
+}
