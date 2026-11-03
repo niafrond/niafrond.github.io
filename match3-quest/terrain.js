@@ -17,6 +17,7 @@ export const FACE_SIDE = 'side';
 export const OBSERVE_MS = 3000;          // temps d'immobilité pour percer un ennemi
 export const OBSERVE_RANGE = 1;          // observer une faiblesse exige d'être à une case de l'ennemi (diagonales comprises)
 export const AMBUSH_BONUS_PA = 1;
+export const MIMIC_BONUS_PA = 2;   // la mimique et la créature qui surgit des hautes herbes prennent le joueur par surprise : elles jouent en premier avec des PA en plus
 export const WEAKNESS_DAMAGE_BONUS = 0.25;
 export const OUTLOOK_TILES = 5;
 
@@ -83,6 +84,15 @@ export function buildPrep(ctx = {}) {
         prep.playerFirst = true;
         add('ambush', 'Attaque surprise : +1 PA et vous jouez en premier.');
     }
+    if (ctx.mimic) {
+        prep.enemyFirst = true;
+        prep.enemyBonusPA += MIMIC_BONUS_PA;
+        add('mimic', `Le coffre était une mimique : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
+    } else if (ctx.grassAmbush) {
+        prep.enemyFirst = true;
+        prep.enemyBonusPA += MIMIC_BONUS_PA;
+        add('grassAmbush', `Une créature surgit des hautes herbes : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
+    }
     if (ctx.observed) {
         prep.weaknessRevealed = true;
         const w = ctx.weakColor ? weaknessLabel(ctx.weakColor) : null;
@@ -106,6 +116,8 @@ export function buildPrep(ctx = {}) {
 // titre selon l'avantage principal, une ligne par conséquence (déjà rédigée dans `prep.lines`). null si aucune préparation.
 const BANNERS = {
     ambush: { icon: 'bolt', title: 'Attaque surprise !' },
+    mimic: { icon: 'bolt', title: 'Mimique !' },
+    grassAmbush: { icon: 'leaf', title: 'Embuscade dans les herbes !' },
     trap: { icon: 'poison', title: 'Piège !' },
     grass: { icon: 'leaf', title: 'Hautes herbes !' },
     outlook: { icon: 'flag', title: 'Position dominante !' },

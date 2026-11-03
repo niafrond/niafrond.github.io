@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import {
     MANA_COLORS, elementOf, elementName, weaknessOf, applyWeaknessToResistances, WEAKNESS_OF_COLOR
 } from '../../elements.js';
-import { colorName, weaknessLabel, buildPrep } from '../../terrain.js';
+import { colorName, weaknessLabel, buildPrep, prepBanner } from '../../terrain.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const catalog = JSON.parse(fs.readFileSync(path.join(dir, '../../enemies.catalog.json'), 'utf8'));
@@ -58,6 +58,11 @@ describe('éléments de qì', () => {
         const prep = buildPrep({ observed: true, weakColor: 'blue' });
         expect(prep.lines[0]).toContain('Faiblesse repérée : Eau (bleu)');
         expect(buildPrep({ onOutlook: true, weakColor: 'red' }).lines[0]).toContain('Feu (rouge)');
+        const mimic = buildPrep({ mimic: true });
+        expect(mimic).toMatchObject({ enemyFirst: true, enemyBonusPA: 2, playerFirst: false });
+        expect(prepBanner(mimic, 'Mimique').title).toBe('Mimique vous attend !');
+        expect(buildPrep({ grassAmbush: true })).toMatchObject({ enemyFirst: true, enemyBonusPA: 2, tags: ['grassAmbush'] });
+        expect(buildPrep({ mimic: true, grassAmbush: true }).tags).toEqual(['mimic']);
     });
 });
 

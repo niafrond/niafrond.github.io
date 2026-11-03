@@ -1203,7 +1203,7 @@ function wildEncounter(session, { def, screenId }) {
     const screen = session.screens[screenId];
     const level = levelFor(session, def);
     return {
-        prep: buildPrep(),
+        prep: buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic }),   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
         biome: screen?.biome || null,
         enemyId: def.id,
         spriteKey: def.spriteKey || def.templateId,
@@ -1566,7 +1566,7 @@ function unmask(session, chest) {
     const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
     rt.wildDefs[id] = {
         screenId: screen.id, bonusGold: chest.mimicGold || Math.max(5, Math.round((chest.gold || 0) * 0.15)), bonusLabel: chest.label,
-        def: { id, templateId: entry.templateId, spriteKey: MIMIC_SPRITE, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
+        def: { id, templateId: entry.templateId, spriteKey: MIMIC_SPRITE, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true, mimic: true }
     };
     return { type: 'mimic', chest, enemyId: id, events: [] };
 }

@@ -247,15 +247,16 @@ describe('créature d\'herbe : rencontre', () => {
         return { s, res, enc: encounterFor(s, res.enemyId, 1) };
     };
 
-    test('même forme qu\'un ennemi normal : dessin du gabarit, préparation neutre, biome', () => {
+    test('même forme qu\'un ennemi normal : dessin du gabarit, préparation d\'embuscade, biome', () => {
         const { enc } = encounter();
         expect(enc).toMatchObject({
             enemyId: 'wild:t:1', spriteKey: 'lingzhi_maudit', templateId: 'lingzhi_maudit', name: 'Crapaud de boue',
             biome: 'paddy', boss: null, duel: null, wild: true
         });
-        expect(enc.prep.tags).toEqual([]);
-        expect(enc.prep.lines).toEqual([]);
-        expect(enc.prep.playerFirst).toBe(false);
+        // une créature qui surgit des hautes herbes prend le joueur par surprise : elle joue en premier avec +2 PA
+        expect(enc.prep.tags).toEqual(['grassAmbush']);
+        expect(enc.prep.lines).toHaveLength(1);
+        expect(enc.prep).toMatchObject({ playerFirst: false, enemyFirst: true, enemyBonusPA: 2 });
         expect(enc.prep.enemyStatus).toBeNull();
         const normal = encounterFor(createSession({}), 'rizieres_shroom', 1);
         expect(Object.keys(enc).sort()).toEqual(expect.arrayContaining(Object.keys(normal).sort()));

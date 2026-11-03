@@ -1644,6 +1644,7 @@ progress.enemy-bar::-webkit-progress-value {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 70;   /* au-dessus de la carte plein écran (z-index 60) : le message de pose du repère reste lisible */
 }
 
 .explore-toast.visible {

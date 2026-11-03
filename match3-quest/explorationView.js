@@ -906,7 +906,7 @@ export function createExplorationView(cfg) {
             if (performance.now() - openedAt < 450 || pinched) return;
             const rect = cv.getBoundingClientRect();
             const x = Math.floor((ev.clientX - rect.left) / (rect.width / screen.w)), y = Math.floor((ev.clientY - rect.top) / (rect.height / screen.h));
-            if (X.setMarker(session, x, y)) { closeMapOverlay(); toast('Repère posé : une flèche violette y mène.', 2600); }
+            if (X.setMarker(session, x, y)) { paint(); toast('Repère posé : une flèche violette y mène.', 2600); }   // la carte reste ouverte : seul « Fermer » la ferme
             else toast('Repère impossible ici.', 1800);
         });
         mapEl.addEventListener('click', ev => {
@@ -915,7 +915,7 @@ export function createExplorationView(cfg) {
             if (act === 'clear') { X.clearMarker(session); paint(); toast('Repère retiré.', 1500); }
             else if (act === 'zoom-in') setZoom(zoom * 1.6);
             else if (act === 'zoom-out') setZoom(zoom / 1.6);
-            else if (act === 'close' || ev.target === mapEl) closeMapOverlay();
+            else if (act === 'close') closeMapOverlay();
         });
         view.addEventListener('wheel', ev => { ev.preventDefault(); setZoom(zoom * (ev.deltaY < 0 ? 1.25 : 0.8), ev.clientX, ev.clientY); }, { passive: false });
         // pincement à deux doigts : zoom centré sur le milieu des doigts
