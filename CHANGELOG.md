@@ -1,3 +1,9 @@
+## [2.182.0](https://github.com/niafrond/niafrond.github.io/compare/v2.181.0...v2.182.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** miroir de la maison pour rejouer les épisodes de Chang'e ([#628](https://github.com/niafrond/niafrond.github.io/issues/628)) ([288fe76](https://github.com/niafrond/niafrond.github.io/commit/288fe76db92c09f6f7e7e89bf18b52cfffb19f71))
+
 ## [2.181.0](https://github.com/niafrond/niafrond.github.io/compare/v2.180.0...v2.181.0) (2026-11-03)
 
 ### Features
