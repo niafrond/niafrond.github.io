@@ -120,6 +120,7 @@
   "world/maps/rizieres.js",
   "world/maps/tonnerre.js",
   "world/maps/volcan.js",
+  "world/snapshot.js",
   "world/spots.js",
   "world/structures.js",
   "world/text/bambous.js",

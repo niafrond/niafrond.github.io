@@ -695,7 +695,7 @@ describe('quêtes (story.js)', () => {
         expect(quest('q_epilogue').requires).toEqual(['q_fengmeng']);
         expect(quest('q_epilogue').objectives[0]).toMatchObject({ type: 'chest', target: 'moon_altar' });
         expect(main.filter(q => q.final).map(q => q.id)).toEqual(['q_epilogue']);
-        expect(quest('q_epilogue').complete).toBe(STORY_ENDING);
+        expect(quest('q_epilogue').complete).toEqual(STORY_ENDING);
         // récompenses d'or croissantes
         const golds = main.map(q => q.reward.gold);
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);

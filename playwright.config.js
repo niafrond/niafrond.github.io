@@ -34,6 +34,16 @@ export default defineConfig({
       name: 'match3-quest-mobile',
       testDir: './match3-quest/tests/e2e',
       use: { ...devices['Pixel 5'] },
+      metadata: { cpuSlowdown: 4, cores: 4 },
+    },
+    {
+      // Téléphone ancien et bas de gamme : Moto G4 (2016, 360×640 @3x), 2 cœurs, CPU ralenti ×6
+      name: 'match3-quest-lowend',
+      testDir: './match3-quest/tests/e2e',
+      testMatch: 'perf-mobile.spec.js',
+      use: { ...devices['Moto G4'] },
+      // Mesuré à ≈ 8 s (22 s avant l'instantané du monde) : plafond à 15 s
+      metadata: { cpuSlowdown: 6, cores: 2, loadBudgetMs: 15_000 },
     },
   ],
 });

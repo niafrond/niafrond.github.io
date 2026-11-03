@@ -131,6 +131,12 @@ const isWildHost = s => s.kind === 'wild' && /_wild$/.test(s.id) && !s.aquatic &
  * Crée le royaume, son entrée, le talisman, la gardienne des rites et les quêtes. Retourne `false` (sans rien modifier) si la région
  * hôte est absente du monde assemblé, p. ex. dans un monde de test réduit.
  */
+// Énigmes du royaume (moteur d'énigmes existant, seulement quand l'événement est actif). Séparée de `apply` : quand le monde vient de
+// l'instantané (world/snapshot.js), seule cette inscription dans PUZZLES doit être rejouée.
+export function registerPuzzles() {
+    [...D.PUZZLE_LIST, ...T.TERRAIN_PUZZLES].forEach(p => { PUZZLES[p.id] = p.def; });
+}
+
 export function applyWanderingSouls(screens, quests) {
     const wild = screens[D.HOST.wild], village = screens[D.HOST.village];
     if (!wild || !village) return false;
@@ -176,7 +182,7 @@ export function applyWanderingSouls(screens, quests) {
     talkDone(D.ZHONG_KUI.id, D.QUEST_IDS.diyu, D.ZHONG_KUI.talkDone);
     talkDone(D.HUNGRY_GHOST.id, D.QUEST_IDS.lanternes, D.HUNGRY_GHOST.talkDone);
 
-    [...D.PUZZLE_LIST, ...T.TERRAIN_PUZZLES].forEach(p => { PUZZLES[p.id] = p.def; });   // énigmes du royaume (moteur d'énigmes existant, seulement quand l'événement est actif)
+    registerPuzzles();
     screens[D.REALM_ID] = realm;
 
     // Les six terrains au-delà de la salle d'entrée, reliés par des portes symétriques (certaines ne s'ouvrent qu'après un exploit : `requires`).
@@ -191,4 +197,4 @@ export function applyWanderingSouls(screens, quests) {
     return true;
 }
 
-export default { id: D.ID, apply: applyWanderingSouls };
+export default { id: D.ID, apply: applyWanderingSouls, registerPuzzles };

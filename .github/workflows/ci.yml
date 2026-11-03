@@ -120,7 +120,7 @@ jobs:
           npx jest --selectProjects "${UNIQUE_PROJECTS[@]}"
 
   match3-quest-perf:
-    name: Match3 Quest - perf mobile
+    name: Match3 Quest - perf mobile (Pixel 5 + bas de gamme)
     runs-on: ubuntu-24.04
 
     env:
@@ -161,6 +161,10 @@ jobs:
       - name: Perf mobile (Pixel 5, CPU x4)
         if: steps.filter.outputs.match3 == 'true'
         run: npx playwright test --project=match3-quest-mobile
+
+      - name: Perf bas de gamme (Moto G4 2016, 2 cœurs, CPU x6)
+        if: steps.filter.outputs.match3 == 'true'
+        run: npx playwright test --project=match3-quest-lowend
 
       - name: Upload Playwright traces
         if: failure()

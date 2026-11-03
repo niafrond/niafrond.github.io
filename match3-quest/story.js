@@ -35,6 +35,9 @@
 // Sorties : `requires` (+ `lockedMessage`) les ferme tant que la condition d'avancement n'est pas remplie.
 
 import { assembleWorld } from './world/index.js';
+import { EVENTS, EVENTS_DEFAULT } from './events/config.js';
+import { activeModules } from './events/engine.js';
+import { EVENT_MODULES } from './events/registry.js';
 import { buildArenaScreens } from './arena.js';
 
 export const STORY_TITLE = 'La Légende de Hou Yi';
@@ -2026,7 +2029,20 @@ const BASE_QUESTS = [
 ];
 
 // Monde final : les 10 sanctuaires ci-dessus, précédés de villages et de zones sauvages (world/).
-const WORLD = assembleWorld(BASE_SCREENS, BASE_QUESTS);
+// L'assemblage coûte plusieurs secondes sur un vieux téléphone : on lit l'instantané précalculé (world/snapshot.js, tools/build-world-snapshot.mjs)
+// tant que la configuration d'événements est celle par défaut (le monde en dépend) ; sinon, ou si l'instantané manque, on assemble.
+async function loadWorld() {
+    if (JSON.stringify(EVENTS) === JSON.stringify(EVENTS_DEFAULT)) {
+        try {
+            const snapshot = (await import('./world/snapshot.js')).default;
+            // Effet de bord de l'assemblage que l'instantané ne porte pas : l'inscription des énigmes des événements actifs dans PUZZLES.
+            activeModules(EVENT_MODULES).forEach(mod => mod.registerPuzzles?.());
+            return snapshot;
+        } catch { /* instantané absent : assemblage ci-dessous */ }
+    }
+    return assembleWorld(BASE_SCREENS, BASE_QUESTS);
+}
+const WORLD = await loadWorld();
 // L'Arène des Mille Flèches (arena.js) : parvis + salles des huit cercles, hors de la chaîne des régions.
 export const SCREENS = { ...WORLD.screens, ...buildArenaScreens() };
 export const QUESTS = WORLD.quests;
