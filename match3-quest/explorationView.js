@@ -19,6 +19,8 @@ import { vibrate, armVibration } from './gameOptions.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
+import { openChange } from './change/view.js';
+import { episodeById } from './change/data.js';
 import { dialogFlags } from './dialogState.js';
 import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playPortalTransition, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
@@ -133,6 +135,7 @@ export function createExplorationView(cfg) {
         mountBtn: root.querySelector('[data-explore="mount"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
         arenaBtn: root.querySelector('[data-explore="arena"]'),
+        mirrorBtn: root.querySelector('[data-explore="mirror"]'),
         menuBtn: root.querySelector('[data-explore="menu"]')
     };
 
@@ -197,6 +200,11 @@ export function createExplorationView(cfg) {
             const tq = X.trackedQuest(session);
             els.objective.textContent = `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
         }
+        // Bouton miroir : visible tant qu'un épisode de Chang'e est commencé et inachevé (il le rouvre, après confirmation).
+        if (els.mirrorBtn) {
+            if (!els.mirrorBtn.innerHTML) els.mirrorBtn.innerHTML = icon('mirror');
+            els.mirrorBtn.hidden = !X.pendingChangeEpisode(session);
+        }
         // Dans l'arène, le bouton « Arène » (trophée) devient « Sortir » (porte) : on peut en sortir à tout moment.
         if (els.arenaBtn) {
             const inside = X.inArena(session);
@@ -214,6 +222,7 @@ export function createExplorationView(cfg) {
         toastTimer = setTimeout(() => els.toast.classList.remove('visible'), ms);
     }
 
+    let changeOpen = false;   // fenêtre du mode Chang'e ouverte (change/view.js) : la carte ne réagit plus
     let puzzleView = null;   // énigme à plateau ouverte (puzzle/view.js), au-dessus de la carte
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
@@ -221,7 +230,7 @@ export function createExplorationView(cfg) {
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => Boolean(vis.npcAnim?.blocking) || isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => Boolean(vis.npcAnim?.blocking) || isDialogOpen() || Boolean(puzzleView) || changeOpen || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -432,10 +441,57 @@ export function createExplorationView(cfg) {
         // Duel en plusieurs phases : la suivante démarre dès que les scènes sont dites, sans retour libre sur la carte.
         const chain = events.find(e => e.type === 'chain');
         if (chain) afterDialogs(() => startEncounter(chain.enemyId)); else playBanter();
-        // PNJ qui accourt vers le héros en sautillant : une fois tous les dialogues dits, juste avant sa propre conversation.
-        events.filter(e => e.type === 'npcArrival').forEach(e => afterDialogs(() => playNpcArrival(e.npcId)));
+        // Mode Chang'e : après la mort du soleil des régions 3, 6 et 9 et les dialogues, Hou Yi parle à Chang'e par le miroir, puis la transition se lance.
+        const changeEv = events.find(e => e.type === 'changeEpisode');
+        const episodeDone = changeEv ? new Promise(resolve => afterDialogs(() => startChangeEpisode(changeEv.episode).then(resolve))) : null;
+        // PNJ qui accourt vers le héros en sautillant : une fois tous les dialogues dits (et l'épisode de Chang'e terminé), juste avant sa propre conversation.
+        events.filter(e => e.type === 'npcArrival').forEach(e => {
+            if (episodeDone) episodeDone.then(() => afterDialogs(() => playNpcArrival(e.npcId)));
+            else afterDialogs(() => playNpcArrival(e.npcId));
+        });
         cfg.onSave();
         refreshHud();
+    }
+
+    // ── Mode Chang'e (change/) ───────────────────────────────────────────────────────────────────────────────────────
+    const talkLines = (who, lines) => new Promise(resolve => openDialog(
+        who === 'hou' ? sceneSpeaker({ hero: true }) : sceneSpeaker({ npc: 'change', name: "Chang'e", title: 'par le miroir' }), lines, resolve));
+    // Conversation à travers le miroir : les répliques sont groupées par locuteur, dites l'une après l'autre.
+    async function talkThroughMirror(lines) {
+        for (let i = 0; i < lines.length;) {
+            let j = i;
+            while (j < lines.length && lines[j].who === lines[i].who) j++;
+            await talkLines(lines[i].who, lines.slice(i, j).map(l => l.text));
+            i = j;
+        }
+    }
+    // Ouvre l'épisode `n` : conversation d'entrée (sauf reprise par le bouton miroir), transition, village de Chang'e. Se résout quand la fenêtre se ferme.
+    async function startChangeEpisode(n, { resume = false } = {}) {
+        const ep = episodeById(n);
+        if (!ep || changeOpen) return { completed: false };
+        changeOpen = true;
+        try {
+            await loadGbaSprites(['change', 'change_jouable', ...ep.injured.map(p => p.id), cfg.getHero().classId]).catch(() => {});
+            if (!resume) await talkThroughMirror(ep.intro);
+            return await new Promise(resolve => {
+                const view = openChange(root, {
+                    episode: n, data: session.data.change, save: () => cfg.onSave(), heroPortrait: gbaSprite(cfg.getHero().classId),
+                    sfx: name => { try { playSfx(name); } catch { /* le son est facultatif */ } },
+                    onFinish: res => { changeOpen = false; refreshHud(); resolve(res); }
+                });
+                if (!view) { changeOpen = false; resolve({ completed: false }); }
+            });
+        } finally { changeOpen = false; refreshHud(); }
+    }
+    // Bouton miroir : après confirmation, rouvre l'épisode laissé en cours.
+    function askMirror() {
+        const n = X.pendingChangeEpisode(session);
+        const ep = n && episodeById(n);
+        if (!ep || changeOpen) return;
+        openDialog({ ...NARRATOR, title: 'Le miroir' }, [`Le bronze s'éclaire : Chang'e est à ${ep.village}, au milieu de ceux qu'elle soigne. Regarder dans le miroir ?`], null, [
+            { label: 'Regarder dans le miroir', run: () => { startChangeEpisode(n, { resume: true }); } },
+            { label: 'Plus tard', run: () => {} }
+        ]);
     }
 
     // Arrivée d'un PNJ (`arrival`) : il part du bord de la carte, rejoint le héros en sautillant, puis sa conversation s'ouvre ;
@@ -1282,6 +1338,7 @@ export function createExplorationView(cfg) {
         els.mountBtn?.addEventListener('click', () => { if (!isBlocked()) toggleMount(); });
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
         els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
+        els.mirrorBtn?.addEventListener('click', () => { if (!isBlocked()) askMirror(); });
         els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
     }
 

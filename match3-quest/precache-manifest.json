@@ -88,6 +88,11 @@
   "puzzle/modes.js",
   "puzzle/sprites.js",
   "puzzle/view.js",
+  "change/art.js",
+  "change/data.js",
+  "change/engine.js",
+  "change/state.js",
+  "change/view.js",
   "world/aquatic.js",
   "world/armorQuests.js",
   "world/barriers.js",
@@ -718,6 +723,11 @@
    "p": "sprites/gba/change.fd52fd3d.js",
    "s": 4965,
    "h": "fd52fd3d05"
+  },
+  {
+   "p": "sprites/gba/change_jouable.2ebd3b34.js",
+   "s": 40167,
+   "h": "2ebd3b3458"
   },
   {
    "p": "sprites/gba/change_moon.d131916f.js",
@@ -4073,6 +4083,16 @@
    "p": "sprites/launcher/index.json",
    "s": 187,
    "h": "35f3ace6bf"
+  },
+  {
+   "p": "sprites/change/mirror-in.gif",
+   "s": 2449755,
+   "h": "dbf583bf4e"
+  },
+  {
+   "p": "sprites/change/mirror-out.gif",
+   "s": 2449708,
+   "h": "3a9f17e8f4"
   },
   {
    "p": "audio/music/boss-a0.mp3",

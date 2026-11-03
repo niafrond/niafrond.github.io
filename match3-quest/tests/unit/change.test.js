@@ -1,0 +1,217 @@
+// Mode Chang'e (change/) : moteur du puzzle de soin (aucun crâne, aucune flèche), données des trois épisodes (habitants réels du jeu),
+// état sauvegardé et déclencheur (mort des soleils 3, 6 et 9).
+import './fixtures/playerForge.js';   // installe le stub XHR avant le chargement de story.js
+import { describe, test, expect } from '@jest/globals';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { SIZE, ENERGIES, JOKER, TILE_KINDS, GAUGE_MAX, createLevel, generateBoard, findRuns, possibleMoves, hasMove, playMove, useBreath } from '../../change/engine.js';
+import { EPISODES, SUN_EPISODE, episodeById, ENERGY_LABEL } from '../../change/data.js';
+import { TILE_ART, tileSvg } from '../../change/art.js';
+import { defaultChangeData, normalizeChangeData } from '../../change/state.js';
+import { createSession, markEnemyDefeated, pendingChangeEpisode } from '../../exploration.js';
+import { SCREENS } from '../../story.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const seeded = seed => { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; };
+const clone = l => ({ ...l, board: l.board.slice() });
+
+describe('moteur du puzzle de soin', () => {
+    test('les seules tuiles qui existent sont les cinq énergies et la lune : 0 % de crâne et de flèche', () => {
+        expect(TILE_KINDS).toEqual([...ENERGIES, JOKER]);
+        const forbidden = ['skull', 'combat', 'arrow', 'fleche', 'sun', 'crane'];
+        TILE_KINDS.forEach(k => forbidden.forEach(f => expect(k.toLowerCase()).not.toContain(f)));
+        const rng = seeded(1);
+        for (let g = 0; g < 150; g++) {
+            const lv = createLevel({ color: ENERGIES[g % 5], need: 40, moves: 14 }, rng);
+            lv.board.forEach(t => expect(ENERGIES).toContain(t));    // départ : énergies seulement, aucun joker
+            for (let m = 0; m < 14 && !lv.over; m++) {
+                const mv = possibleMoves(lv.board);
+                const [a, b] = mv[Math.floor(rng() * mv.length)];
+                const r = playMove(lv, a, b);
+                expect(r.ok).toBe(true);
+                r.steps.forEach(s => s.board.forEach(t => expect(TILE_KINDS).toContain(t)));
+                lv.board.forEach(t => expect(TILE_KINDS).toContain(t));
+                if (lv.gauge >= GAUGE_MAX) useBreath(lv);
+            }
+        }
+    });
+
+    test('un plateau neuf n\'a aucun alignement et au moins un coup', () => {
+        const rng = seeded(7);
+        for (let i = 0; i < 100; i++) {
+            const b = generateBoard(rng);
+            expect(b).toHaveLength(SIZE * SIZE);
+            expect(findRuns(b)).toHaveLength(0);
+            expect(hasMove(b)).toBe(true);
+        }
+    });
+
+    test('un coup sans alignement est refusé et ne coûte rien', () => {
+        const rng = seeded(3);
+        const lv = createLevel({ color: 'jade', need: 20, moves: 10 }, rng);
+        const all = [];
+        for (let a = 0; a < SIZE * SIZE; a++) for (const b of [a + 1, a + SIZE]) if (b < SIZE * SIZE && (b !== a + 1 || b % SIZE)) all.push([a, b]);
+        const legal = new Set(possibleMoves(lv.board).map(([a, b]) => `${a},${b}`));
+        const bad = all.find(([a, b]) => !legal.has(`${a},${b}`));
+        const before = lv.board.slice();
+        const r = playMove(lv, bad[0], bad[1]);
+        expect(r.ok).toBe(false);
+        expect(lv.movesLeft).toBe(10);
+        expect(lv.board).toEqual(before);
+        expect(playMove(lv, 0, 9).ok).toBe(false);   // cases non voisines
+    });
+
+    test('seuls les alignements de la couleur demandée soignent ; le soin ne dépasse jamais le besoin', () => {
+        const rng = seeded(11);
+        for (let g = 0; g < 80; g++) {
+            const color = ENERGIES[g % 5];
+            const lv = createLevel({ color, need: 12, moves: 20 }, rng);
+            while (!lv.over) {
+                const mv = possibleMoves(lv.board), [a, b] = mv[Math.floor(rng() * mv.length)];
+                const r = playMove(lv, a, b);
+                expect(r.gain).toBeGreaterThanOrEqual(0);
+                expect(lv.hp).toBeLessThanOrEqual(lv.need);
+                expect(r.steps.reduce((n, s) => n + s.gain, 0)).toBe(r.gain);
+            }
+            expect(lv.over).toBe(true);
+            expect(lv.won).toBe(lv.hp >= lv.need);
+            if (!lv.won) expect(lv.movesLeft).toBe(0);
+        }
+    });
+
+    test('les soins déjà obtenus sont conservés entre deux tentatives', () => {
+        const lv = createLevel({ color: 'eau', need: 30, moves: 5, hp: 17 }, seeded(5));
+        expect(lv.hp).toBe(17);
+        expect(createLevel({ color: 'eau', need: 30, moves: 5, hp: 999 }, seeded(5)).hp).toBe(30);   // jamais au-delà du besoin
+        expect(createLevel({ color: 'eau', need: 30, moves: 5, hp: -4 }, seeded(5)).hp).toBe(0);
+        expect(() => createLevel({ color: 'rouge', need: 5, moves: 5 })).toThrow();
+    });
+
+    test('un joueur qui joue vraiment finit par réussir : aucun niveau n\'est impossible', () => {
+        // Aucun chronomètre ni ennemi : plus de coups = échec doux, on recommence avec les soins conservés ; dix tentatives gloutonnes y suffisent.
+        for (const ep of EPISODES) for (const n of ep.injured) {
+            const rng = seeded(n.need * 31 + n.moves), data = { hp: 0 };
+            let healed = false;
+            for (let attempt = 0; attempt < 10 && !healed; attempt++) {
+                const lv = createLevel({ color: n.color, need: n.need, moves: n.moves, hp: data.hp }, rng);
+                while (!lv.over) {
+                    let best = null, bs = -1;
+                    for (const m of possibleMoves(lv.board)) { const t = clone(lv); t.rng = rng; t.movesLeft = 99; t.hp = 0; t.gauge = 0; const r = playMove(t, m[0], m[1]); if (r.gain > bs) { bs = r.gain; best = m; } }
+                    playMove(lv, best[0], best[1]);
+                    if (lv.gauge >= GAUGE_MAX) useBreath(lv);
+                }
+                data.hp = lv.hp; healed = lv.won;
+            }
+            expect(healed).toBe(true);
+        }
+    });
+
+    test('le souffle lunaire exige une jauge pleine et ne coûte aucun coup', () => {
+        const lv = createLevel({ color: 'perle', need: 80, moves: 9 }, seeded(2));
+        expect(useBreath(lv).ok).toBe(false);
+        lv.gauge = GAUGE_MAX;
+        const r = useBreath(lv);
+        expect(r.ok).toBe(true);
+        expect(lv.movesLeft).toBe(9);
+        expect(lv.gauge).toBe(0);
+    });
+});
+
+describe('données des trois épisodes', () => {
+    const npcsByRegion = () => { const out = {}; Object.values(SCREENS).forEach(sc => (sc.npcs || []).forEach(n => { (out[sc.region] ||= new Map()).set(n.id, n); })); return out; };
+
+    test('trois épisodes de cinq blessés au plus, déclenchés par les soleils 3, 6 et 9', () => {
+        expect(EPISODES.map(e => e.id)).toEqual([1, 2, 3]);
+        expect(SUN_EPISODE).toEqual({ sun_4: 1, sun_5: 2, sun_9: 3 });
+        EPISODES.forEach(e => {
+            expect(e.injured.length).toBeLessThanOrEqual(5);
+            expect(e.injured.length).toBe(5);
+            expect(SUN_EPISODE[e.sun]).toBe(e.id);
+            expect(e.intro.length).toBeGreaterThan(0);
+            expect(e.outro.length).toBeGreaterThan(0);
+            expect(episodeById(e.id)).toBe(e);
+        });
+        expect(episodeById(3).finale).toBeTruthy();   // l'épisode 3 s'achève par la coupure du miroir
+    });
+
+    test('chaque blessé est un habitant existant du village de l\'épisode, avec une énergie valide', () => {
+        EPISODES.forEach(e => {
+            const here = npcsByRegion()[e.region];
+            e.injured.forEach(n => {
+                expect(here.has(n.id)).toBe(true);   // un habitant réel de la région de l'épisode (story.js / world/text/)
+                expect(ENERGIES).toContain(n.color);
+                expect(ENERGY_LABEL[n.color]).toBeTruthy();
+                expect(n.need).toBeGreaterThan(0);
+                expect(n.moves).toBeGreaterThan(0);
+                expect(n.cake).toHaveLength(2);
+                expect(n.thanks.length).toBeGreaterThan(10);
+            });
+        });
+        const ids = EPISODES.flatMap(e => e.injured.map(n => n.id));
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    test('chaque blessé a un sprite généré dans le jeu', () => {
+        const gen = fs.readFileSync(path.join(ROOT, 'sprites/generated.js'), 'utf8');
+        ['change', 'change_jouable', ...EPISODES.flatMap(e => e.injured.map(n => n.id))].forEach(id => expect(gen).toContain(`  "${id}": {`));
+    });
+
+    test('la difficulté croît d\'un épisode à l\'autre', () => {
+        const mean = e => e.injured.reduce((s, n) => s + n.need, 0) / e.injured.length;
+        expect(mean(EPISODES[0])).toBeLessThan(mean(EPISODES[1]));
+        expect(mean(EPISODES[1])).toBeLessThan(mean(EPISODES[2]));
+    });
+
+    test('les dessins couvrent exactement les cinq énergies et la lune', () => {
+        expect(TILE_ART.sort()).toEqual([...TILE_KINDS].sort());
+        TILE_KINDS.forEach(k => expect(tileSvg(k)).toContain('<svg'));
+        expect(tileSvg('skull')).toBe('');
+        expect(tileSvg('combat')).toBe('');
+    });
+
+    test('les animations de transition existent', () => {
+        ['mirror-in.gif', 'mirror-out.gif'].forEach(f => expect(fs.existsSync(path.join(ROOT, 'sprites/change', f))).toBe(true));
+    });
+});
+
+describe('état sauvegardé et déclencheur', () => {
+    test('normalizeChangeData garde seulement ce qui est valide', () => {
+        expect(normalizeChangeData(undefined)).toEqual(defaultChangeData());
+        expect(normalizeChangeData('x')).toEqual(defaultChangeData());
+        const d = normalizeChangeData({ done: [1, 1, 9, 'a'], pending: 2, hp: { farmer_lin: 7.9, inconnu: 3, ping: -1 }, healed: ['ping', 'ping', 'zzz'] });
+        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'] });
+        expect(normalizeChangeData({ pending: 7 }).pending).toBeNull();
+    });
+
+    test('la mort des soleils 3, 6 et 9 déclenche l\'épisode correspondant, une seule fois', () => {
+        const session = createSession(null);
+        const ev = id => markEnemyDefeated(session, id).filter(e => e.type === 'changeEpisode');
+        expect(ev('sun_4')).toEqual([{ type: 'changeEpisode', episode: 1 }]);
+        expect(ev('sun_4')).toEqual([]);   // déjà vaincu : rien de plus
+        expect(ev('sun_5')).toEqual([{ type: 'changeEpisode', episode: 2 }]);
+        expect(ev('sun_9')).toEqual([{ type: 'changeEpisode', episode: 3 }]);
+        expect(ev('sun_1')).toEqual([]);
+        expect(ev('sun_2')).toEqual([]);
+    });
+
+    test('l\'épisode se déclenche avant l\'arrivée du messager du Fusang', () => {
+        const session = createSession(null);
+        const events = markEnemyDefeated(session, 'sun_9');
+        const i = events.findIndex(e => e.type === 'changeEpisode'), j = events.findIndex(e => e.type === 'npcArrival');
+        expect(i).toBeGreaterThanOrEqual(0);
+        if (j >= 0) expect(i).toBeLessThan(j);
+    });
+
+    test('la session porte l\'état du mode et le bouton miroir sait ce qui est en cours', () => {
+        const s = createSession(null);
+        expect(s.data.change).toEqual(defaultChangeData());
+        expect(pendingChangeEpisode(s)).toBeNull();
+        s.data.change.pending = 2;
+        expect(pendingChangeEpisode(s)).toBe(2);
+        const loaded = createSession({ change: { done: [1], pending: 3, hp: { hunter_wu: 20 }, healed: [] } });
+        expect(loaded.data.change.pending).toBe(3);
+        expect(loaded.data.change.hp.hunter_wu).toBe(20);
+        expect(createSession({ change: 42 }).data.change).toEqual(defaultChangeData());
+    });
+});

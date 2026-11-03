@@ -51,6 +51,8 @@ import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
 import { launchNotices } from './events/engine.js';
+import { SUN_EPISODE } from './change/data.js';
+import { defaultChangeData, normalizeChangeData } from './change/state.js';
 import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
@@ -256,6 +258,7 @@ function defaultData() {
         tracked: null,
         questItems: [],
         bestiary: [],            // gabarits d'ennemis croisés en combat ou observés (onglet Bestiaire du carnet, conservé en NG+)
+        change: defaultChangeData(),   // mode Chang'e (change/) : épisodes terminés, épisode en cours, soins obtenus
         arena: normalizeArenaData(null)
     };
 }
@@ -270,6 +273,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.fog = data.fog && typeof data.fog === 'object' && !Array.isArray(data.fog) ? data.fog : {};
     data.mimicked = Array.isArray(data.mimicked) ? data.mimicked.filter(id => typeof id === 'string') : [];
     data.returns = data.returns && typeof data.returns === 'object' && !Array.isArray(data.returns) ? data.returns : {};
+    data.change = normalizeChangeData(data.change);
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
@@ -1363,6 +1367,8 @@ export function markEnemyDefeated(session, enemyId) {
     const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
     quests.splice(lastDone + 1 || quests.length, 0, ...after);
     events.push(...quests);
+    // Mode Chang'e : la mort du soleil des régions 3, 6 et 9 ouvre un épisode (conversation par le miroir, puis transition) avant l'arrivée éventuelle d'un PNJ.
+    if (!wasDefeated && SUN_EPISODE[enemyId]) events.push({ type: 'changeEpisode', episode: SUN_EPISODE[enemyId] });
     // PNJ qui rejoint le héros en sautillant (`arrival`) : arrive une fois toutes les scènes dites, juste avant sa conversation.
     if (!wasDefeated) currentScreen(session).npcs
         .filter(n => n.arrival && n.showWhen === enemyId)
@@ -1386,6 +1392,7 @@ export function startNewGamePlus(session) {
     data.fog = {};
     data.mimicked = [];
     data.returns = {};
+    data.change = defaultChangeData();   // les trois épisodes de Chang'e se rejouent avec l'histoire
     data.talked = [];
     data.banterSeen = [];
     data.waypoints = [];
@@ -1943,3 +1950,6 @@ export function markIntroSeen(session) {
 }
 
 export { questById };
+
+// Mode Chang'e : épisode commencé et inachevé (le bouton miroir de l'interface le rouvre), ou null.
+export const pendingChangeEpisode = session => session.data.change?.pending || null;

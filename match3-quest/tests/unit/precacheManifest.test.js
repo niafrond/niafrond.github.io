@@ -28,7 +28,7 @@ describe('precache-manifest.json', () => {
         expect(committed.media.some(f => f.p.endsWith("-b.mp3"))).toBe(false);   // variantes traditionnelles : rangées par le service worker à la première lecture
         music.forEach(n => expect(media.has(`audio/music/${n}`)).toBe(true));
         MEDIA_SPRITE_DIRS.forEach(dir => {
-            const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json'));
+            const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json') || n.endsWith('.gif'));
             expect(files.length).toBeGreaterThan(0);
             files.forEach(n => expect(media.has(`sprites/${dir}/${n}`)).toBe(true));
         });
