@@ -4,10 +4,11 @@
 //  1. COUPE ÉLARGIE : à un endroit sans entité ni patrouille, la carte est coupée en deux et un bloc de colonnes neuves (jusqu'à 64 de large
 //     en tout) est inséré : les couloirs qui traversaient la coupe se prolongent en méandres (route comprise), le reste du bloc est un terrain
 //     neuf (bosquets, herbes). Tout ce qui est à droite de la coupe est décalé : personnages, ennemis, patrouilles, coffres, pierre de voyage.
-//  2. EXCROISSANCES : en haut et en bas, des presqu'îles de terrain praticable (1 ou 2 de chaque côté, de 14 à 26 cases de large) débordent de
-//     l'ancien rectangle, rattachées à lui par des ouvertures dans l'ancienne bordure ; entre elles, les lignes neuves sont de la matière de
+//  2. EXCROISSANCES : en haut et en bas, des presqu'îles de terrain praticable (1 ou 2 de chaque côté, de 14 à 26 cases de large), tantôt en
+//     bosse arrondie, tantôt en rectangle collé à l'ancien rectangle, rattachées à lui par des ouvertures dans l'ancienne bordure ; entre elles, les lignes neuves sont de la matière de
 //     bordure (eau, ou arbres/rochers pour les régions bordées d'arbres) : le contour n'est plus un rectangle.
-//  3. COINS ARRONDIS : les quatre coins de l'ancien rectangle sont rognés en demi-ellipses de bordure (sans toucher personne ni rien couper).
+//  3. COINS : les quatre coins de l'ancien rectangle sont rognés, tantôt en demi-ellipse, tantôt en encoche en escalier (deux rectangles emboîtés),
+//     sans toucher personne ni rien couper. Le style est tiré au sort à chaque bosse et à chaque coin : le contour est un mélange.
 // Garde-fou : si un seul point qui était atteignable à pied ne l'est plus, la carte garde sa taille d'origine.
 // Déterministe (tirage stable selon l'identifiant de la carte).
 
@@ -16,6 +17,7 @@ import { toSet as toStringSet, toRects as toStringRects, buildingCells, routeCel
 export const ENLARGED_LIMITS = { maxSide: 64, maxCells: 2048 };
 export const WING_ROWS = 4;               // lignes neuves en haut et en bas
 const SIDE = 64;                          // largeur visée (plafond du côté)
+const ATTEMPTS = 6;                       // variantes de contour essayées avant d'y renoncer
 const MIN_BLOCK = 8;                      // une coupe élargie d'au moins 8 colonnes, sinon pas d'insertion
 
 const key = (x, y) => y * 512 + x;
@@ -74,10 +76,16 @@ function reachable(w, h, obst, liq, solid, spawn) {
  * `moves` : [{ to, edge: 'north' | 'south' }] déplace le passage qui mène à `to` du bord ouest / est vers le bord haut / bas (chaussée de 3 cases
  * jusqu'au couloir d'origine, ancien passage muré) : l'entrée ou la sortie de la carte n'est plus toujours à gauche ou à droite. Échec = carte inchangée.
  */
-export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
+export function enlargeScreen(screen, options = {}) {
+    // Plusieurs variantes de contour (tirage différent) : la première qui ne coupe rien est retenue, sinon la carte garde sa taille.
+    for (let attempt = 0; attempt < ATTEMPTS && isEnlargeable(screen); attempt++) enlargeOnce(screen, options, attempt);
+    return screen;
+}
+
+function enlargeOnce(screen, { treeBorder = false, moves = [] } = {}, attempt = 0) {
     if (!isEnlargeable(screen)) return screen;
-    const rng = mulberry32(hashSeed(screen.id));
-    const seed = hashSeed(screen.id) % 9973;
+    const rng = mulberry32(hashSeed(screen.id) + attempt * 7919);
+    const seed = (hashSeed(screen.id) + attempt * 131) % 9973;
     const w0 = screen.w, h0 = screen.h;
     const T = WING_ROWS, B = WING_ROWS;
     const N = SIDE - w0, W = SIDE, H = h0 + T + B;
@@ -177,7 +185,7 @@ export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
     // cases de l'ancienne carte atteignables à pied, dans le nouveau repère : une ouverture de bordure ne s'appuie que sur l'une d'elles
     const baseNew = new Set([...base].map(k => { const [x, y] = unkey(k); return key(mx(x), my(y)); }));
     const hardNew = new Set([...hard].map(k => { const [x, y] = unkey(k); return key(mx(x), my(y)); }));
-    const bulge = (top, x0, width) => {
+    const bulge = (top, x0, width, round) => {
         // la bordure ancienne (2 lignes) n'est ouverte qu'au-dessus d'une case libre de la première ligne praticable
         const probeY = top ? T + 2 : T + h0 - 3;
         const openAt = x => !obst.has(key(x, probeY)) && !liq.has(key(x, probeY)) && baseNew.has(key(x, probeY)) && !hardNew.has(key(x, probeY));
@@ -185,13 +193,14 @@ export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
         for (let x = x0; x < x0 + width; x++) if (openAt(x)) links++;
         if (links < 3) return;   // aucun accès : pas d'excroissance
         for (let x = x0; x < x0 + width; x++) {
+            // « arrondi » : bosse en demi-sinus ; « rectangle » : profondeur constante, bordure ancienne ouverte sur toute la largeur
             const t = (x - x0 + 0.5) / width, shape = Math.pow(Math.sin(Math.PI * t), 0.6);
-            const d = Math.max(3, Math.min(T + 2, Math.round((T + 2) * shape * (0.85 + 0.3 * noise(x, top ? 3 : 90, 3, seed + 5)))));
+            const d = round ? Math.max(3, Math.min(T, Math.round(T * shape * (0.85 + 0.3 * noise(x, top ? 3 : 90, 3, seed + 5)) + 1))) : T;
             for (let i = 0; i < d; i++) {
                 const yy = top ? T + 1 - i : T + h0 - 2 + i;
                 if (yy < 2 || yy >= H - 2) continue;   // les deux lignes de bord restent de la matière de bordure (couronne d'eau, world/expand.js)
                 const border = top ? yy >= T : yy <= T + h0 - 1 && i < 2;
-                if (border && !openAt(x)) continue;
+                if (round && border && !openAt(x)) continue;
                 const k = key(x, yy);
                 clearCell(k);
                 const n = noise(x, yy, 3.5, seed + 9), g = noise(x + 11, yy + 5, 5, seed + 4);
@@ -199,7 +208,7 @@ export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
                 else if (hasGrass && g > 0.5) grass.add(k);
             }
         }
-        wings.push({ top, x0, width });
+        wings.push({ top, x0, width, round });
     };
     [true, false].forEach(top => {
         const count = rng() < 0.5 ? 2 : 1;
@@ -209,7 +218,7 @@ export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
             const room = W - 6 - width - from;
             if (room < 0) break;
             const x0 = from + Math.floor(rng() * Math.max(1, Math.min(room, count === 2 ? 14 : room)));
-            bulge(top, x0, width);
+            bulge(top, x0, width, rng() < 0.5);
             from = x0 + width + 4;
         }
     });
@@ -234,7 +243,7 @@ export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
         const i = exits.findIndex(e => e.to === mv.to && !e.door && (e.x === 0 || e.x === W - 1));
         if (i < 0 || (mv.edge !== 'north' && mv.edge !== 'south')) { return screen; }
         const e = exits[i], west = e.x === 0, north = mv.edge === 'north', yg = e.y;
-        const candidates = Array.from({ length: 20 }, (_, j) => (west ? 4 + j : W - 5 - j)).sort(() => rng() - 0.5);
+        const candidates = Array.from({ length: 34 }, (_, j) => (west ? 4 + j : W - 5 - j)).sort(() => rng() - 0.5);
         let done = false;
         for (const x of candidates) {
             const shaft = [], cells = [];
@@ -265,14 +274,19 @@ export function enlargeScreen(screen, { treeBorder = false, moves = [] } = {}) {
     }
 
     // 6. Coins arrondis : demi-ellipses de bordure sur les quatre coins de l'ancien rectangle (jamais sur une case à ne pas toucher).
-    const keepCell = new Set([...hard].map(k => { const [x, y] = unkey(k); return key(mx(x), my(y)); }));
+    const keepCell = new Set();
+    hard.forEach(k => { const [x, y] = unkey(k); for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) keepCell.add(key(mx(x) + dx, my(y) + dy)); });   // et leurs voisines : on doit pouvoir les atteindre
     exits.forEach(e => { for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) keepCell.add(key(e.x + dx, e.y + dy)); });
     lanes.forEach(k => keepCell.add(k));
     const erode = (cx0, cy0, sx, sy) => {
-        const rx = 7 + Math.floor(rng() * 5), ry = 4 + Math.floor(rng() * 3);
-        for (let dy = 0; dy < ry; dy++) for (let dx = 0; dx < rx; dx++) {
-            const wob = noise(dx + cx0, dy + cy0, 2.5, seed + 13) * 0.35;
-            if (((rx - dx) / rx) ** 2 + ((ry - dy) / ry) ** 2 <= 1 + wob - 0.25) continue;   // à l'intérieur de l'ellipse conservée
+        const round = rng() < 0.5;   // mélange : coin arrondi (demi-ellipse) ou encoche en escalier (deux rectangles emboîtés)
+        const rx = round ? 7 + Math.floor(rng() * 5) : 6 + Math.floor(rng() * 4), ry = round ? 4 + Math.floor(rng() * 3) : 2 + Math.floor(rng() * 2);
+        const rx2 = 3 + Math.floor(rng() * 2), ry2 = ry + 3;
+        for (let dy = 0; dy < (round ? ry : ry2); dy++) for (let dx = 0; dx < rx; dx++) {
+            if (round) {
+                const wob = noise(dx + cx0, dy + cy0, 2.5, seed + 13) * 0.35;
+                if (((rx - dx) / rx) ** 2 + ((ry - dy) / ry) ** 2 <= 1 + wob - 0.25) continue;   // à l'intérieur de l'ellipse conservée
+            } else if (!((dx < rx && dy < ry) || (dx < rx2 && dy < ry2))) continue;
             const x = cx0 + sx * dx, y = cy0 + sy * dy, k = key(x, y);
             if (x < 0 || y < 0 || x >= W || y >= H || keepCell.has(k)) continue;
             clearCell(k); grass.delete(k); paths.delete(k); fillMaterial(k); eroded.add(k);

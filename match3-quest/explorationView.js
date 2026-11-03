@@ -149,6 +149,7 @@ export function createExplorationView(cfg) {
     let dialogIndex = 0;
     let toastTimer = null;
     let journalEl = null;
+    let mapEl = null;   // carte plein écran (clic sur la minimap) : pose d'un repère
     let merchantEl = null;
     let inCombat = false;
     let battleTransitionEl = null;
@@ -220,7 +221,7 @@ export function createExplorationView(cfg) {
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -623,6 +624,97 @@ export function createExplorationView(cfg) {
         renderCarnet();
     }
 
+    // ── Carte plein écran et repère ─────────────────────────────────────
+    // Un clic sur la minimap ouvre la carte entière (brouillard de guerre compris) ; toucher une case y pose un repère temporaire : une flèche violette
+    // (autre couleur que la quête dorée et la perception rouge) y mène, et il disparaît dès qu'on y arrive (exploration.js `setMarker`).
+    const MARKER_COLOR = '#c084fc';
+    function closeMapOverlay() {
+        if (!mapEl) return;
+        mapEl.remove();
+        mapEl = null;
+    }
+    function openMapOverlay() {
+        ensureSession();
+        if (mapEl || !session || inCombat) return;
+        held = null; walk = null; stopHoldRepeat();
+        const screen = X.currentScreen(session);
+        const biome = BIOMES[screen.biome] || BIOMES.paddy;
+        mapEl = document.createElement('div');
+        mapEl.className = 'explore-map';
+        mapEl.innerHTML = `<div class="explore-map-card" role="dialog" aria-label="Carte de la zone">
+  <div class="explore-map-head"><b></b><span>Touchez la carte pour poser un repère</span></div>
+  <canvas class="explore-map-canvas"></canvas>
+  <div class="explore-map-actions"><button type="button" data-act="clear">Retirer le repère</button><button type="button" data-act="close">Fermer</button></div></div>`;
+        mapEl.querySelector('b').textContent = screen.name;
+        const cv = mapEl.querySelector('canvas');
+        const cell = Math.max(3, Math.min((window.innerWidth - 32) / screen.w, (window.innerHeight - 170) / screen.h));
+        cv.style.width = `${Math.round(screen.w * cell)}px`;
+        cv.style.height = `${Math.round(screen.h * cell)}px`;
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        cv.width = Math.round(screen.w * cell * dpr);
+        cv.height = Math.round(screen.h * cell * dpr);
+        const paint = () => {
+            const g = cv.getContext('2d');
+            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            g.imageSmoothingEnabled = false;
+            g.clearRect(0, 0, cv.width, cv.height);
+            const W = screen.w * cell, H = screen.h * cell;
+            g.drawImage(miniBase(screen, biome), 0, 0, W, H);
+            const fog = X.fogMask(session, screen);
+            const seen = (x, y) => fog[Math.floor(y) * screen.w + Math.floor(x)] === 1;
+            const dot = (x, y, color, r) => { g.fillStyle = color; g.fillRect((x + 0.5) * cell - r, (y + 0.5) * cell - r, r * 2, r * 2); };
+            (screen.exits || []).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#7dd3fc', Math.max(2, cell * 0.35)); });
+            screen.npcs.forEach(n => { if (seen(n.x, n.y)) dot(n.x, n.y, '#5ab0ff', Math.max(1.5, cell * 0.28)); });
+            X.aliveEnemies(session).forEach(e => { if (seen(e.x, e.y)) dot(e.x, e.y, '#ff4a3a', Math.max(1.5, cell * 0.28)); });
+            g.drawImage(miniFog(screen), 0, 0, W, H);   // le brouillard : cases jamais vues
+            const mk = X.markerOf(session);
+            if (mk) {
+                const cx = (mk.x + 0.5) * cell, cy = (mk.y + 0.5) * cell, r = Math.max(5, cell * 0.9);
+                g.fillStyle = MARKER_COLOR; g.strokeStyle = '#2b1b17'; g.lineWidth = 2;
+                g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx + r * 0.7, cy); g.lineTo(cx, cy + r); g.lineTo(cx - r * 0.7, cy); g.closePath(); g.fill(); g.stroke();
+            }
+            g.fillStyle = '#ffe14a'; g.strokeStyle = '#2b1b17'; g.lineWidth = 2;
+            const hr = Math.max(3, cell * 0.6);
+            g.beginPath(); g.arc((session.data.x + 0.5) * cell, (session.data.y + 0.5) * cell, hr, 0, Math.PI * 2); g.fill(); g.stroke();
+        };
+        cv.addEventListener('click', ev => {
+            const rect = cv.getBoundingClientRect();
+            const x = Math.floor((ev.clientX - rect.left) / (rect.width / screen.w)), y = Math.floor((ev.clientY - rect.top) / (rect.height / screen.h));
+            if (X.setMarker(session, x, y)) { closeMapOverlay(); toast('Repère posé : une flèche violette y mène.', 2600); }
+            else toast('Repère impossible ici.', 1800);
+        });
+        mapEl.addEventListener('click', ev => {
+            const act = ev.target.closest('[data-act]')?.dataset.act;
+            if (act === 'clear') { X.clearMarker(session); paint(); toast('Repère retiré.', 1500); }
+            else if (act === 'close' || ev.target === mapEl) closeMapOverlay();
+        });
+        root.appendChild(mapEl);
+        paint();
+    }
+
+    // Flèche violette vers le repère posé, et pastille sur sa case ; rien quand le repère est tout près.
+    function drawMarkerCompass(P, vis, tile, pulse) {
+        const mk = X.markerOf(session);
+        if (!mk) return;
+        const dest = P(mk.x + 0.5, mk.y + 0.5);
+        ctx.save();
+        // pastille posée sur la case du repère
+        ctx.fillStyle = MARKER_COLOR; ctx.strokeStyle = '#2b1b17'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        const r = tile * (0.3 + 0.04 * pulse);
+        ctx.beginPath(); ctx.moveTo(dest.x, dest.y - r * 1.3); ctx.lineTo(dest.x + r, dest.y); ctx.lineTo(dest.x, dest.y + r * 1.3); ctx.lineTo(dest.x - r, dest.y); ctx.closePath(); ctx.fill(); ctx.stroke();
+        const hero = P(vis.px + 0.5, vis.py + 0.5);
+        const dx = dest.x - hero.x, dy = dest.y - hero.y;
+        if (Math.hypot(dx, dy) >= tile * 1.3) {
+            const ang = Math.atan2(dy, dx), rr = tile * (0.95 + 0.08 * pulse);
+            ctx.translate(hero.x + Math.cos(ang) * rr, hero.y + Math.sin(ang) * rr - tile * 0.1);
+            ctx.rotate(ang);
+            ctx.beginPath();
+            ctx.moveTo(tile * 0.26, 0); ctx.lineTo(-tile * 0.12, -tile * 0.2); ctx.lineTo(-tile * 0.04, 0); ctx.lineTo(-tile * 0.12, tile * 0.2); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
     // Voyage rapide vers une pierre activée (hors combat).
     function travelTo(screenId) {
         ensureSession();
@@ -792,6 +884,7 @@ export function createExplorationView(cfg) {
     }
 
     function handleResult(res) {
+        if (res?.markerReached) toast('Repère atteint.', 1800);
         if (!res) return;
         switch (res.type) {
             case 'combat':
@@ -955,7 +1048,7 @@ export function createExplorationView(cfg) {
     function onCanvasPointerDown(ev) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
-        if (overMinimap(ev)) return;   // la minimap n'est qu'un indicateur : elle ne réagit pas aux clics
+        if (overMinimap(ev)) { openMapOverlay(); return; }   // un clic sur la minimap l'ouvre en plein écran (pose d'un repère)
         // Toucher le héros lance la perception du qì (talent, 5 s) : le geste sert aussi à réarmer les vibrations.
         const tile = tileFromEvent(ev);
         if (tile.x === session.data.x && tile.y === session.data.y && X.hasAura(cfg.getPlayerLevel())) {
@@ -1026,6 +1119,7 @@ export function createExplorationView(cfg) {
         syncStealth();
         const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel() });
         lastMoveAt = performance.now();
+        if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
             walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
             handleResult(res);
@@ -1043,6 +1137,7 @@ export function createExplorationView(cfg) {
             return;
         }
         if (ev.key === 'Escape' && merchantEl) { closeMerchant(); return; }
+        if (ev.key === 'Escape' && mapEl) { closeMapOverlay(); return; }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
         if (ev.key === 'c' || ev.key === 'C') { toggleMount(); return; }
@@ -1860,6 +1955,7 @@ export function createExplorationView(cfg) {
             }
         });
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
+        drawMarkerCompass(P, vis, tile, pulse);
         drawAura(P, vis, tile, now);
         if (screen.dark) { miniRect = null; drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight); }
         else drawMinimap(screen, biome, P(vis.px + 0.5, vis.py + 0.5), { ox, oy, tile, vw, vh, dpr });
@@ -1960,6 +2056,8 @@ export function createExplorationView(cfg) {
         const vx = Math.max(0, -ox / tile), vy = Math.max(0, -oy / tile);
         const vwT = Math.min(screen.w - vx, (vw - Math.max(0, ox)) / tile), vhT = Math.min(screen.h - vy, (vh - Math.max(0, oy)) / tile);
         ctx.strokeRect(x0 + vx * scale + 0.5, y0 + vy * scale + 0.5, Math.max(1, vwT * scale - 1), Math.max(1, vhT * scale - 1));
+        const mk = X.markerOf(session);
+        if (mk) dot(mk.x + 0.5, mk.y + 0.5, MARKER_COLOR, 2.5);
         dot(vis.px + 0.5, vis.py + 0.5, '#ffe14a', 2);
         ctx.restore();
     }

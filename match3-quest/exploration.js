@@ -830,6 +830,19 @@ export function reclosePastChests(session) {
 // Un coffre est-il (devenu) une mimique ?
 export const isMimicChest = (session, chest) => Boolean(chest.mimic) || session.data.mimicked.includes(chest.id);
 
+// ── Repère posé sur la carte (minimap plein écran) ───────────────────
+// Un repère temporaire (`rt.marker`, jamais sauvegardé) tient lieu de marqueur de quête : une flèche d'une autre couleur y mène. Il disparaît dès
+// que le héros arrive dessus. Il appartient à la carte où il est posé (invisible ailleurs, retrouvé au retour).
+export function setMarker(session, x, y) {
+    const screen = currentScreen(session);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || isTerrainBlocked(screen, x, y, canWalkOnWater(session))) return false;
+    if (x === session.data.x && y === session.data.y) return false;
+    session.rt.marker = { screenId: screen.id, x, y };
+    return true;
+}
+export const clearMarker = session => { session.rt.marker = null; };
+export const markerOf = session => (session.rt.marker && session.rt.marker.screenId === session.data.screenId ? session.rt.marker : null);
+
 // ── Brouillard de guerre (minimap uniquement) ────────────────────────
 // Chaque carte garde le masque des cases vues par le héros (rayon FOG_RADIUS autour de lui à chaque pas). Le jeu principal n'est pas
 // voilé : seule la minimap grise les cases jamais vues (et cache les personnages qui s'y trouvent). Sauvegardé dans `data.fog`.
@@ -940,11 +953,16 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.y = ny;
     session.rt.stillMs = 0;
     revealFog(session);
+    const mk = markerOf(session);
+    const markerReached = Boolean(mk && mk.x === nx && mk.y === ny);
+    if (markerReached) clearMarker(session);   // arrivé sur le repère : il disparaît
     if (session.rt.grace > 0) session.rt.grace--;
     // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
     const onGrass = isEncounterCell(screen, nx, ny);
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
-    return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
+    const out = checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
+    if (markerReached) out.markerReached = true;
+    return out;
 }
 
 // Tirage de rencontre après un pas sur l'herbe : null (rien) ou { type: 'combat', enemyId: 'wild:<écran>:<n>', wild: true }.

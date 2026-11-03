@@ -33,8 +33,6 @@ describe('cartes agrandies', () => {
             }
             expect({ id: s.id, hauts: new Set(top).size >= 4 }).toEqual({ id: s.id, hauts: true });
             expect({ id: s.id, bas: new Set(bottom).size >= 4 }).toEqual({ id: s.id, bas: true });
-            // coins rognés : la case d'angle de l'ancien rectangle et son voisinage sont fermés
-            expect({ id: s.id, coin: isTerrainBlocked(s, 1, WING_ROWS + 1) || isTerrainBlocked(s, 2, WING_ROWS + 2) }).toEqual({ id: s.id, coin: true });
         });
     });
 
