@@ -1,3 +1,9 @@
+## [2.175.0](https://github.com/niafrond/niafrond.github.io/compare/v2.174.0...v2.175.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** contours mixtes, repère sur carte plein écran, soluce complète des zones ([#619](https://github.com/niafrond/niafrond.github.io/issues/619)) ([c284e69](https://github.com/niafrond/niafrond.github.io/commit/c284e6925853a37f8821bd0f45cf1510620116f1))
+
 ## [2.174.0](https://github.com/niafrond/niafrond.github.io/compare/v2.173.0...v2.174.0) (2026-11-03)
 
 ### Features
