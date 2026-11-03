@@ -373,6 +373,7 @@ export function addWaterBorder(screen) {
         if (liq.has(k)) return;   // déjà de l'eau
         const wasObstacle = obst.delete(k);
         liq.add(k);
+        if (wasObstacle) { converted.add(k); return; }   // un obstacle devenu de l'eau reste fermé : rien ne change, inutile de parcourir la carte
         // une case d'eau ne doit rien rendre inaccessible (hors cases déjà converties)
         const after = flood();
         let ok = true;

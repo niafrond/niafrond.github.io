@@ -8,6 +8,7 @@ const isTerrainBlocked = (s, x, y, swim) => terrainBlocked(s, x, y, swim ?? (s.a
 import { scaleScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
 import { openRim, WATER_BIOMES } from '../../world/barriers.js';
 import { exitsOf } from './fixtures/gates.js';
+import { ENLARGED_LIMITS } from '../../world/enlarge.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const outdoors = Object.values(SCREENS).filter(s => !s.interior && !s.arena && s.kind !== 'house' && !s.underground);
@@ -41,7 +42,7 @@ describe('cartes extérieures : grandes et reliées', () => {
     test('sanctuaires, zones sauvages, routes et hameaux ont la taille agrandie (minimum) ; les cartes natives gardent leur grille (≤ 64x64, 1500 cases)', () => {
         outdoors.filter(s => !s.aquatic).forEach(s => {
             if (s.native) {
-                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= 1500 }).toEqual({ id: s.id, ok: true });
+                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= ENLARGED_LIMITS.maxCells }).toEqual({ id: s.id, ok: true });
                 return;
             }
             const kind = s.id.endsWith('_wild') || s.id.endsWith('_road') ? 'wild' : s.id.endsWith('_hamlet') ? 'hamlet' : s.kind === undefined ? 'sanctuary' : null;

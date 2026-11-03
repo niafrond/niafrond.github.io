@@ -1,6 +1,6 @@
 // Obstacles bas (roseaux, decor.js) : franchissables comme des hautes herbes, avec rencontres aléatoires.
 import { SCREENS } from '../../story.js';
-import { isLowObstacle, BIOME_DECOR, pickDecor, LOW_DECOR, houseDecor, houseRug } from '../../decor.js';
+import { isLowObstacle, BIOME_DECOR, pickDecor, decorCell, LOW_DECOR, houseDecor, houseRug } from '../../decor.js';
 import { createSession, tryMove, isTerrainBlocked, isEncounterCell, encounterOf, findPath } from '../../exploration.js';
 
 const cellsOf = screen => {
@@ -26,7 +26,7 @@ describe('obstacles bas', () => {
 
     test('le décor d\'un roseau est bien du jonc, jamais la bordure de la carte', () => {
         low.forEach(([x, y]) => {
-            expect(LOW_DECOR.has(pickDecor(BIOME_DECOR[screen.biome], x, y))).toBe(true);
+            expect(LOW_DECOR.has(pickDecor(BIOME_DECOR[screen.biome], ...decorCell(screen, x, y)))).toBe(true);
             expect(x > 0 && y > 0 && x < screen.w - 1 && y < screen.h - 1).toBe(true);
         });
     });

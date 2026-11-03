@@ -352,14 +352,27 @@ function enemyZoneCells(screen, def) {
     return cells;
 }
 
+// Grille des cases fermées de l'écran (obstacles pleins, eau, corniches, hors carte), construite une fois : `isTerrainBlocked` parcourt des listes de
+// rectangles, bien trop lent pour être rappelé case par case sur une carte de 64 × 32 cases (calcul des ennemis qui barrent un chemin, à chaque arrivée).
+const terrainGridCache = new WeakMap();
+function terrainGrid(screen) {
+    const hit = terrainGridCache.get(screen);
+    if (hit && hit.obstacles === screen.obstacles && hit.liquids === screen.liquids && hit.ledges === screen.ledges && hit.w === screen.w && hit.h === screen.h) return hit.grid;
+    const grid = new Uint8Array(screen.w * screen.h);
+    for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (isTerrainBlocked(screen, x, y)) grid[y * screen.w + x] = 1;
+    terrainGridCache.set(screen, { obstacles: screen.obstacles, liquids: screen.liquids, ledges: screen.ledges, w: screen.w, h: screen.h, grid });
+    return grid;
+}
+
 // Composantes connexes de l'écran (terrain libre, hors cases `blocked`) : Map case → numéro de composante.
 function componentsOf(screen, blocked) {
     const comp = new Map();
+    const closed = terrainGrid(screen);
     let id = 0;
     for (let y = 0; y < screen.h; y++) {
         for (let x = 0; x < screen.w; x++) {
             const k = y * screen.w + x;
-            if (comp.has(k) || blocked.has(k) || isTerrainBlocked(screen, x, y)) continue;
+            if (comp.has(k) || blocked.has(k) || closed[k]) continue;
             id++;
             const stack = [[x, y]];
             comp.set(k, id);
@@ -367,7 +380,7 @@ function componentsOf(screen, blocked) {
                 const [cx, cy] = stack.pop();
                 for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                     const nx = cx + dx, ny = cy + dy, nk = ny * screen.w + nx;
-                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || isTerrainBlocked(screen, nx, ny)) continue;
+                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || closed[nk]) continue;
                     comp.set(nk, id);
                     stack.push([nx, ny]);
                 }
@@ -375,6 +388,17 @@ function componentsOf(screen, blocked) {
         }
     }
     return comp;
+}
+
+// Composantes de l'écran sans aucun ennemi : identiques pour tous les ennemis de l'écran, calculées une fois.
+const freeComponentsCache = new WeakMap();
+function freeComponentsOf(screen) {
+    let hit = freeComponentsCache.get(screen);
+    if (!hit || hit.obstacles !== screen.obstacles || hit.liquids !== screen.liquids) {
+        hit = { obstacles: screen.obstacles, liquids: screen.liquids, comp: componentsOf(screen, new Set()) };
+        freeComponentsCache.set(screen, hit);
+    }
+    return hit.comp;
 }
 
 const pathBlockCache = new WeakMap();
@@ -387,7 +411,7 @@ export function blocksPath(screen, def) {
     if (cache.has(def.id)) return cache.get(def.id);
     const points = [...(screen.exits || []), ...(screen.npcs || []), ...(screen.chests || []), ...(screen.spawn ? [screen.spawn] : [])]
         .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
-    const free = componentsOf(screen, new Set());
+    const free = freeComponentsOf(screen);
     const zone = enemyZoneCells(screen, def);
     const cut = componentsOf(screen, zone);
     let blocks = false;
@@ -718,6 +742,7 @@ function crossMapBorder(session, screen, dx, dy, playerLevel, from = session.dat
 export const AURA_LEVEL = 8;
 export const AURA_RANGE = 9;
 export const MIMIC_NAME = 'Mimique';
+export const MIMIC_SPRITE = 'mimique';   // dessin dédié : un coffre vivant (tools/sprite-overrides.mjs)
 export const hasAura = playerLevel => Math.floor(playerLevel || 0) >= AURA_LEVEL;
 
 // La perception ne reste pas allumée : on touche le héros pour la lancer, PERCEPTION_MS durant (`rt.perceptionUntil`, jamais sauvegardé).
@@ -805,6 +830,19 @@ export function reclosePastChests(session) {
 
 // Un coffre est-il (devenu) une mimique ?
 export const isMimicChest = (session, chest) => Boolean(chest.mimic) || session.data.mimicked.includes(chest.id);
+
+// ── Repère posé sur la carte (minimap plein écran) ───────────────────
+// Un repère temporaire (`rt.marker`, jamais sauvegardé) tient lieu de marqueur de quête : une flèche d'une autre couleur y mène. Il disparaît dès
+// que le héros arrive dessus. Il appartient à la carte où il est posé (invisible ailleurs, retrouvé au retour).
+export function setMarker(session, x, y) {
+    const screen = currentScreen(session);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || isTerrainBlocked(screen, x, y, canWalkOnWater(session))) return false;
+    if (x === session.data.x && y === session.data.y) return false;
+    session.rt.marker = { screenId: screen.id, x, y };
+    return true;
+}
+export const clearMarker = session => { session.rt.marker = null; };
+export const markerOf = session => (session.rt.marker && session.rt.marker.screenId === session.data.screenId ? session.rt.marker : null);
 
 // ── Brouillard de guerre (minimap uniquement) ────────────────────────
 // Chaque carte garde le masque des cases vues par le héros (rayon FOG_RADIUS autour de lui à chaque pas). Le jeu principal n'est pas
@@ -916,11 +954,16 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.y = ny;
     session.rt.stillMs = 0;
     revealFog(session);
+    const mk = markerOf(session);
+    const markerReached = Boolean(mk && mk.x === nx && mk.y === ny);
+    if (markerReached) clearMarker(session);   // arrivé sur le repère : il disparaît
     if (session.rt.grace > 0) session.rt.grace--;
     // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
     const onGrass = isEncounterCell(screen, nx, ny);
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
-    return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
+    const out = checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
+    if (markerReached) out.markerReached = true;
+    return out;
 }
 
 // Tirage de rencontre après un pas sur l'herbe : null (rien) ou { type: 'combat', enemyId: 'wild:<écran>:<n>', wild: true }.
@@ -1150,7 +1193,7 @@ function wildEncounter(session, { def, screenId }) {
         prep: buildPrep(),
         biome: screen?.biome || null,
         enemyId: def.id,
-        spriteKey: def.templateId,
+        spriteKey: def.spriteKey || def.templateId,
         templateId: def.templateId,
         name: def.name,
         level,
@@ -1501,7 +1544,7 @@ function unmask(session, chest) {
     const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
     rt.wildDefs[id] = {
         screenId: screen.id, bonusGold: chest.mimicGold || Math.max(5, Math.round((chest.gold || 0) * 0.15)), bonusLabel: chest.label,
-        def: { id, templateId: entry.templateId, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
+        def: { id, templateId: entry.templateId, spriteKey: MIMIC_SPRITE, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true }
     };
     return { type: 'mimic', chest, enemyId: id, events: [] };
 }

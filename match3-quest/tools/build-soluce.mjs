@@ -13,7 +13,8 @@ import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry } from '../bestiary.js';
-import { entOf, questTargets } from './soluce-targets.mjs';
+import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
+import { overlapOf } from '../mapConnections.js';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
 import { solvePath, getMode } from '../puzzle/engine.js';
 import '../puzzle/modes.js';
@@ -24,11 +25,16 @@ import { playerClasses } from '../classes.js';
 import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
 import * as WS from '../events/wanderingSouls/data.js';
 import * as TR from '../events/wanderingSouls/terrains.js';
+import * as WL from '../events/winterLanternFestival/data.js';
+import * as WT from '../events/winterLanternFestival/terrains.js';
 
 // Événement « La Nuit des âmes errantes » : page dédiée seulement s'il est actif dans le monde assemblé (events/config.js).
 const EVENT_ON = Boolean(SCREENS[WS.REALM_ID]);
 const EVENT_PUZZLES = [...WS.PUZZLE_LIST, ...TR.TERRAIN_PUZZLES];   // énigmes de la salle d'entrée et des terrains
-const EVENT_PUZZLE_IDS = new Set(EVENT_PUZZLES.map(p => p.id));
+// Événement « La Fête des lanternes d'hiver » : page dédiée aussi, seulement s'il est actif.
+const WINTER_ON = Boolean(SCREENS[WL.REALM_ID]);
+const WINTER_PUZZLES = [...WL.PUZZLE_LIST, ...WT.TERRAIN_PUZZLES];
+const EVENT_PUZZLE_IDS = new Set([...EVENT_PUZZLES, ...WINTER_PUZZLES].map(p => p.id));
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
@@ -105,8 +111,10 @@ function reqText(id) {
     if (questById[id]) return { html: `<a href="${regionSlug(questById[id]._region)}#${questAnchor(id)}">${esc(questById[id].title)}</a>`, plain: questById[id].title };
     const en = entOf(id, ['enemy']);
     if (en) return { html: `vaincre <strong>${esc(en.ent.name)}</strong>`, plain: en.ent.name };
-    if (id.startsWith('parley_')) return { html: `pourparlers (<code>${esc(id)}</code>)`, plain: id };
-    return { html: `<code>${esc(id)}</code>`, plain: id };
+    const chest = entOf(id, ['chest']);
+    if (chest) return { html: `ouvrir <strong>${esc(chest.ent.label || 'le coffre')}</strong>`, plain: chest.ent.label || 'le coffre' };
+    if (id.startsWith('parley_')) { const who = entOf(id.slice(7), ['enemy', 'npc']); return { html: `pourparlers${who ? ` avec <strong>${esc(who.ent.name)}</strong>` : ''}`, plain: 'pourparlers' }; }
+    return { html: 'une étape préalable de l’aventure', plain: 'étape préalable' };
 }
 const asArray = v => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -167,6 +175,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -194,9 +203,10 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 `;
 
 const NAV = [
-    ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['bases.html', 'Bases du combat'],
+    ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['zones.html', 'Zones et jonctions'], ['bases.html', 'Bases du combat'],
     ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
-    ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : [])
+    ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : []),
+    ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : [])
 ];
 
 
@@ -306,7 +316,7 @@ ${cr}
 ${body}
 </main>
 ${LIGHTBOX}
-<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle. Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>
 `;
@@ -345,7 +355,7 @@ function objectiveHtml(o, region) {
 
 
 // Captures annotées : la carte de l'écran (soluce/img, voir build-soluce-shots.mjs) avec un cercle rouge par case citée par la quête.
-const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre' };
+const ROLE_FR = { giver: 'donne la quête', turnIn: 'à qui la rendre', target: 'objectif', chest: 'coffre', exit: 'passage vers une autre zone', door: 'porte' };
 function shotsHtml(q) {
     const byScreen = new Map();
     for (const t of questTargets(q)) byScreen.set(t.screenId, [...(byScreen.get(t.screenId) || []), t]);
@@ -356,8 +366,8 @@ function shotsHtml(q) {
 function shotFigure(sid, list) {
     if (!existsSync(join(IMG, `${sid}.jpg`))) return '';
     const sc = SCREENS[sid];
-    const rw = (1.8 / sc.w) * 100, rh = (1.8 / sc.h) * 100;
-    const rings = list.map((t, i) => `<span class="ring" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${rw.toFixed(2)}%;height:${rh.toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
+    // `cw` / `ch` : taille du cercle en cases (un passage de bord fait 3 cases de long) ; la classe de rôle colore les passages et les portes
+    const rings = list.map((t, i) => `<span class="ring ${t.role}" style="left:${(((t.x + 0.5) / sc.w) * 100).toFixed(2)}%;top:${(((t.y + 0.5) / sc.h) * 100).toFixed(2)}%;width:${(((t.cw || 1.8) / sc.w) * 100).toFixed(2)}%;height:${(((t.ch || 1.8) / sc.h) * 100).toFixed(2)}%"><i>${i + 1}</i></span>`).join('');
     const legend = list.map((t, i) => `<b>${i + 1}</b> ${esc(t.name)} (${ROLE_FR[t.role]})`).join(' · ');
     return `<figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:${Math.min(1200, sc.w * 44)}px"><img src="img/${sid}.jpg" width="${sc.w * 44}" height="${sc.h * 44}" loading="lazy" alt="Carte : ${esc(sc.name)}">${rings}</div><figcaption>${esc(sc.name)} : ${legend} <small>(cliquer pour agrandir)</small></figcaption></figure>`;
 }
@@ -745,7 +755,7 @@ ${shotFigure(t.id, points)}`;
         body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
 <h2>${esc(realm.name)}</h2>
 <p class="lead">Événement « La Nuit des âmes errantes » : un royaume facultatif, accessible depuis toutes les régions, sur sept cartes (la salle d’entrée et six terrains), avec ${quests.length} quêtes, ${EVENT_PUZZLES.length} énigmes et trois boss. Il n’est pas nécessaire pour finir le jeu.</p>
-<div class="box info"><b class="t">Événement activable</b>Le royaume n’existe que si l’événement est activé dans <code>events/config.js</code> (activation et retrait par un simple commit). S’il manque dans votre version, il est désactivé.</div>
+<div class="box info"><b class="t">Événement temporaire</b>Le royaume n’existe que pendant l’événement. S’il manque dans votre version du jeu, l’événement n’est pas (ou plus) ouvert.</div>
 <div class="box warn"><b class="t">Il se referme</b>Une fois la quête « ${esc(lastQuest?.title || '')} » rendue, le passage se ferme pour de bon. Faites d’abord tout ce que vous voulez dans le royaume : objets, énigmes, lanternes, terrains.</div>
 
 <h3>Comment y entrer</h3>
@@ -789,15 +799,209 @@ ${playerScript(Object.fromEntries(EVENT_PUZZLES.map(p => [p.id, PUZZLES[p.id]]))
     }));
 }
 
+// Page de la Fête des lanternes d'hiver (événement) : accès depuis les Rizières, village, col, sanctuaire, quêtes, énigmes, boss.
+function buildWinter() {
+    if (!WINTER_ON) return;
+    const realm = SCREENS[WL.REALM_ID];
+    const at = (id, kinds) => { const e = entOf(id, kinds); return e ? whereOf(e) : ''; };
+    const host = SCREENS[WL.HOST.wild];
+    const door = host.exits.find(e => e.to === WL.REALM_ID);
+    const doorShot = shotFigure(host.id, [{ x: door.x, y: door.y, name: WL.VILLAGE.entrance, role: 'target' }]);
+    const chestPt = (id, name) => { const e = entOf(id, ['chest']); return e && { x: e.ent.x, y: e.ent.y, name, role: 'chest' }; };
+    const villagePts = [...WL.LANTERNS.map(l => chestPt(l.id, l.label)), chestPt(WL.RIZ.chest.id, WL.RIZ.chest.label), chestPt(WL.SESAME.chest.id, WL.SESAME.chest.label),
+        chestPt(WL.PUZZLE_MIROIR.chest.id, WL.PUZZLE_MIROIR.chest.label),
+        ...realm.npcs.map(n => ({ x: n.x, y: n.y, name: n.name, role: 'target' }))].filter(Boolean);
+    const quests = QUESTS.filter(q => q.event === WL.ID).sort((a, b) => Object.values(WL.QUEST_IDS).indexOf(a.id) - Object.values(WL.QUEST_IDS).indexOf(b.id));
+    const puzzles = WINTER_PUZZLES.map(p => {
+        const def = { id: p.id, ...PUZZLES[p.id] }, steps = solutionSteps(def), total = solvePath(def).length - 1, unit = def.mode === 'push' ? 'pas' : 'coups';
+        const chest = Object.values(SCREENS).flatMap(sc => (sc.chests || []).filter(c => c.puzzle === p.id).map(c => ({ sc, c }))).find(Boolean);
+        return `<h4>${esc(def.title)} <small>— ${total} ${unit} au minimum</small></h4>
+<dl><dt>Où</dt><dd>${esc(chest.sc.name)} — ${esc(at(chest.c.id, ['chest']))} — ${esc(chest.c.label)}</dd><dt>Récompense</dt><dd>${esc(chest.c.questItem?.name || 'le contenu du coffre')} (fragment de la flamme céleste) + l’or du coffre</dd></dl>
+${playerHtml(def, steps)}`;
+    }).join('\n');
+    const terrainCards = WT.TERRAINS.map(t => {
+        const sc = SCREENS[t.id];
+        const l = WT.LINKS.find(k => k.to === t.id);
+        const locked = WT.LINKS.filter(k => k.from === t.id && k.requires).map(k => `<li>Porte vers « ${esc(k.label)} » : ${esc(k.lockedMessage)}</li>`).join('');
+        const points = [...sc.chests.map(c => ({ x: c.x, y: c.y, name: c.label, role: 'chest' })), ...sc.npcs.map(n => ({ x: n.x, y: n.y, name: n.name, role: 'target' })),
+            ...sc.enemies.filter(e => e.boss).map(e => ({ x: e.x, y: e.y, name: e.name, role: 'target' }))];
+        return `<h4 id="${t.id}">${esc(t.name)} <small>— ${sc.w}×${sc.h} cases</small></h4>
+<dl><dt>Accès</dt><dd>depuis « ${esc(SCREENS[l.from].name)} »${l.requires ? ' (porte gelée)' : ''}</dd><dt>Coffres</dt><dd>${sc.chests.map(c => esc(c.label)).join(', ')}</dd><dt>Ennemis</dt><dd>${[...new Set(sc.enemies.map(e => e.name))].map(esc).join(', ')}</dd></dl>
+${locked ? `<ul>${locked}</ul>` : ''}
+${shotFigure(t.id, points)}`;
+    }).join('\n');
+    const maison = SCREENS[WL.MAISON.id];
+    const lanterns = WL.LANTERNS.map((l, i) => `<li><b>${esc(l.label)}</b> (n°${i + 1}) : ${esc(at(l.id, ['chest']))}.${i ? ' Elle n’apparaît qu’une fois la précédente allumée.' : ' Allumée, elle révèle le renard des neiges et le pot de sésame noir.'}</li>`).join('');
+    const lastQuest = quests[quests.length - 1];
+    write('fete-des-lanternes.html', page({
+        file: 'fete-des-lanternes.html', title: 'Fête des lanternes d’hiver', active: 'fete-des-lanternes.html',
+        desc: 'Soluce de l’événement « La Fête des lanternes d’hiver » : accès, quêtes, énigmes, boss et récompenses.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Fête des lanternes d’hiver']],
+        body: `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${spriteDefs()}</defs></svg>
+<h2>${esc(realm.name)}</h2>
+<p class="lead">Événement « La Fête des lanternes d’hiver » (l’événement neige) : un village de montagne et un sanctuaire enneigés, sur ${3 + 1} cartes (village, maison, col, sanctuaire), avec ${quests.length} quêtes, ${WINTER_PUZZLES.length} énigmes et un gardien à apaiser. Contenu de niveau ${WL.HOST.level} : les créatures du givre sont dures, mais les habitants se rallient par la générosité plus que par le combat.</p>
+<div class="box info"><b class="t">Événement temporaire</b>Le village n’existe que pendant l’événement. Il est ouvert dans cette version ; s’il manque dans la vôtre, l’événement n’est pas (ou plus) ouvert.</div>
+<div class="box tip"><b class="t">Fin de l’événement</b>Rien ne se referme : la dernière quête, « ${esc(lastQuest?.title || '')} », est une célébration. Terminez les autres à votre rythme.</div>
+
+<h3>Comment y entrer</h3>
+<p>Un sentier enneigé part de la <b>zone sauvage des Rizières</b> (${esc(host.name)}), ${(() => { const c = compass(door.x, door.y, host.w, host.h); return c === 'centre' ? 'au centre' : `dans la partie ${c}`; })()} de l’écran : « ${esc(WL.VILLAGE.entrance)} ». Il est accessible dès le début de l’aventure ; une annonce au premier chargement en indique l’emplacement.</p>
+${doorShot}
+
+<h3>Le village des lanternes enneigées</h3>
+<p>${esc(realm.name)} : ${realm.w}×${realm.h} cases. Sortie ouest : retour aux Rizières ; sortie est : le col des pins gelés. La maison du kang (${maison.w}×${maison.h}) s’ouvre sur la place. Personnages : ${realm.npcs.map(n => esc(n.name)).join(', ')}.</p>
+${shotFigure(WL.REALM_ID, villagePts)}
+${shotFigure(WL.MAISON.id, [])}
+
+<h3>Ordre conseillé</h3>
+<ol class="steps">
+<li><b>Les préparatifs du solstice.</b> Parlez à ${esc(WL.ANCIEN.name)} (${esc(at(WL.ANCIEN.id, ['npc']))}), puis à ${esc(WL.CUISINIER.name)} (${esc(at(WL.CUISINIER.id, ['npc']))}) et à ${esc(WL.ARTISAN.name)} (${esc(at(WL.ARTISAN.id, ['npc']))}).</li>
+<li><b>Les trois lanternes</b>, dans l’ordre :<ul>${lanterns}</ul> La première rend visible le renard des neiges (${esc(at(WL.RENARD.id, ['npc']))}).</li>
+<li><b>Les tangyuan.</b> Le sac de riz gluant (${esc(at(WL.RIZ.chest.id, ['chest']))}), le pot de sésame noir enfoui (${esc(at(WL.SESAME.chest.id, ['chest']))}, visible après la première lanterne) et la clochette de montagne (${esc(at(WL.CLOCHETTE.id, ['chest']))}).</li>
+<li><b>La source chaude</b> (${esc(at(WL.SOURCE_CHAUDE.chest.id, ['chest']))}) : la libérer fait fondre la glace de la porte du sanctuaire.</li>
+<li><b>Les trois fragments de la flamme.</b> Miroirs de lumière (${esc(at(WL.PUZZLE_MIROIR.chest.id, ['chest']))}), blocs de glace (${esc(at(WL.PUZZLE_GLACE.chest.id, ['chest']))}) et niche du sanctuaire (${esc(at(WL.SANCTUAIRE_CHEST_3.id, ['chest']))}).</li>
+<li><b>Le Gardien de la flamme hivernale</b> (${esc(at(WL.BOSS.id, ['enemy']))}), puis le jade de l’hiver derrière lui (${esc(at(WL.JADE.chest.id, ['chest']))}).</li>
+<li><b>La table du solstice.</b> Saluez la famille Lin, les enfants et l’esprit protecteur du village sur la place.</li>
+</ol>
+
+<h3>Le col et le sanctuaire</h3>
+${terrainCards}
+
+<h3>Le Gardien de la flamme hivernale</h3>
+<div class="box tip"><b class="t">Trois façons de l’affaiblir</b>
+Il est protégé par les deux gardiens de glace du sanctuaire : <b>soit</b> vous les battez, <b>soit</b> vous finissez la quête des lanternes (ils s’écartent). La <b>source chaude</b> et la <b>recette des tangyuan</b> lui retirent chacune un niveau. Arrivez avec les deux : le combat devient très abordable.</div>
+
+<h3>Quêtes</h3>
+${quests.map(questHtml).join('\n')}
+
+<h3>Énigmes</h3>
+<p>${WINTER_PUZZLES.length} énigmes à plateau verrouillent chacune un fragment de flamme. Elles ne font partie d’aucune armure antique ; le lecteur ci-dessous montre la solution la plus courte.</p>
+${puzzles}
+${playerScript(Object.fromEntries(WINTER_PUZZLES.map(p => [p.id, PUZZLES[p.id]])))}`
+    }));
+}
+
+// ───────────────────────── Zones : entrées, sorties et jonctions ─────────────────────────
+// Pour chaque région : la chaîne des zones (route d'accès, village, zone sauvage, hameau, sanctuaire) avec, pour chaque passage de bord, le côté, la
+// position sur ce côté et le côté d'arrivée dans la zone voisine ; les portes (maisons, grottes) ; les bordures de mer (Pas de Yu). Les captures
+// (soluce/img) portent des cadres bleus (passages) et orange (portes).
+const DIR_FR = { north: 'nord', south: 'sud', east: 'est', west: 'ouest' };
+const DIR_ARROW = { north: '↑', south: '↓', east: '→', west: '←' };
+const DIR_OPP = { north: 'south', south: 'north', east: 'west', west: 'east' };
+const edgeCellOf = (s, dir, a) => (dir === 'north' ? { x: a, y: 0 } : dir === 'south' ? { x: a, y: s.h - 1 } : dir === 'west' ? { x: 0, y: a } : { x: s.w - 1, y: a });
+// Position le long d'un bord, en mots : « en haut », « au milieu », « en bas » (bords ouest et est) ou « à gauche »… (bords nord et sud).
+const alongWord = (dir, a, s) => {
+    const len = dir === 'north' || dir === 'south' ? s.w : s.h, f = a / Math.max(1, len - 1);
+    const lo = dir === 'north' || dir === 'south' ? 'à gauche' : 'en haut', hi = dir === 'north' || dir === 'south' ? 'à droite' : 'en bas';
+    return f < 0.34 ? lo : f > 0.66 ? hi : 'au milieu';
+};
+const sizeText = s => `${s.w} × ${s.h} cases`;
+const KIND_FR = id => (id.endsWith('_road') ? 'Route d’accès' : id.endsWith('_village') ? 'Village' : id.endsWith('_wild') ? 'Zone sauvage' : id.endsWith('_hamlet') ? 'Hameau' : 'Sanctuaire du soleil');
+
+/** Passages de bord d'une zone : [{ dir, to, mid:{x,y}, range:[min,max], arriveDir, sea, requires, lockedMessage }], triés ouest, nord, sud, est. */
+function passagesOf(s) {
+    const order = { west: 0, north: 1, south: 2, east: 3 };
+    return Object.entries(s.connections || {}).map(([dir, c]) => {
+        const to = SCREENS[c.to], range = to && overlapOf(c, s, to);
+        if (!range) return null;
+        const a = Math.floor((range[0] + range[1]) / 2);
+        return { dir, to: c.to, mid: edgeCellOf(s, dir, a), a, range, arriveDir: DIR_OPP[dir], sea: Boolean(c.sea), requires: c.requires, lockedMessage: c.lockedMessage };
+    }).filter(Boolean).sort((p, q) => order[p.dir] - order[q.dir]);
+}
+const lockText = p => {
+    if (!p.requires) return '';
+    const r = reqText(p.requires);
+    return `fermé tant que ${p.sea ? 'le gardien' : ''} ${r.html} n’est pas ${/^vaincre/.test(r.html) ? '' : 'accompli'}`.replace('tant que vaincre', 'tant que vous n’avez pas vaincu').replace('  ', ' ');
+};
+const interiorIds = new Set(interiorScreens());
+const doorsOf = s => (s.exits || []).filter(e => !e.leaveArena && SCREENS[e.to] && Number.isFinite(e.x));
+
+function zoneHtml(s) {
+    const passages = passagesOf(s).filter(p => !p.sea);
+    const sea = passagesOf(s).filter(p => p.sea);
+    const doors = doorsOf(s);
+    const marks = [
+        ...passages.map(p => ({ x: p.mid.x, y: p.mid.y, name: `${DIR_ARROW[p.dir]} ${SCREENS[p.to].name}`, role: 'exit', cw: p.dir === 'north' || p.dir === 'south' ? 3.4 : 1.8, ch: p.dir === 'north' || p.dir === 'south' ? 1.8 : 3.4 })),
+        ...doors.map(e => ({ x: e.x, y: e.y, name: SCREENS[e.to].name, role: 'door' }))
+    ];
+    const rows = passages.map(p => {
+        const to = SCREENS[p.to];
+        const lock = lockText(p);
+        return `<tr><td><b>${DIR_ARROW[p.dir]} bord ${DIR_FR[p.dir]}</b>, ${alongWord(p.dir, p.a, s)} (case ${p.mid.x}, ${p.mid.y}) — passage de ${p.range[1] - p.range[0] + 1} cases</td><td><a href="#zone-${esc(p.to)}">${esc(to.name)}</a><br><small>${KIND_FR(p.to)} · on y arrive par le bord ${DIR_FR[p.arriveDir]}</small></td><td>${lock || 'libre'}</td></tr>`;
+    });
+    const seaRows = sea.map(p => `<tr><td><b>${DIR_ARROW[p.dir]} bord ${DIR_FR[p.dir]}</b> (tout le côté, c’est de la mer)</td><td><a href="#zone-${esc(p.to)}">${esc(SCREENS[p.to].name)}</a><br><small>on y arrive par le bord ${DIR_FR[p.arriveDir]}</small></td><td>à pied sur l’eau, avec le Pas de Yu${p.requires ? `, une fois ${reqText(p.requires).html} accompli` : ''}</td></tr>`);
+    const doorRows = doors.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${interiorIds.has(e.to) ? `<a href="#zone-${esc(e.to)}">${esc(SCREENS[e.to].name)}</a>` : esc(SCREENS[e.to].name)}</td><td>${e.requires ? esc(`fermée : ${reqText(e.requires).plain}`) : 'libre'}</td></tr>`);
+    const head = '<tr><th>Où</th><th>Mène à</th><th>Accès</th></tr>';
+    return `<h3 id="zone-${esc(s.id)}">${esc(s.name)} <small>${KIND_FR(s.id)} · ${sizeText(s)}</small></h3>
+${shotFigure(s.id, marks)}
+<div class="scroll"><table>${head}${[...rows, ...seaRows].join('') || '<tr><td colspan="3">Aucun passage de bord.</td></tr>'}</table></div>
+${doors.length ? `<details><summary>${doors.length} ${plural(doors.length, 'porte', 'portes')} (maisons, grottes, escaliers)</summary><div class="scroll"><table>${head}${doorRows.join('')}</table></div></details>` : ''}`;
+}
+
+/** Intérieur (maison, grotte, crypte, étage) : sa carte avec un cadre orange par sortie, et où elles mènent. */
+function interiorHtml(s) {
+    const exits = (s.exits || []).filter(e => !e.leaveArena && SCREENS[e.to] && Number.isFinite(e.x));
+    const marks = exits.map(e => ({ x: e.x, y: e.y, name: `${e.stairs ? 'escalier' : 'sortie'} vers ${SCREENS[e.to].name}`, role: 'door' }));
+    const rows = exits.map(e => `<tr><td>${esc(compass(e.x, e.y, s.w, s.h) === 'centre' ? 'au centre' : `partie ${compass(e.x, e.y, s.w, s.h)}`)} (case ${e.x}, ${e.y})</td><td>${interiorIds.has(e.to) || zoneIdSet.has(e.to) ? `<a href="#zone-${esc(e.to)}">${esc(SCREENS[e.to].name)}</a>` : esc(SCREENS[e.to].name)}</td><td>${e.stairs ? 'escalier' : 'porte'}</td></tr>`);
+    return `<h4 id="zone-${esc(s.id)}">${esc(s.name)} <small>${sizeText(s)}</small></h4>
+${shotFigure(s.id, marks)}
+<div class="scroll"><table><tr><th>Où</th><th>Mène à</th><th>Type</th></tr>${rows.join('') || '<tr><td colspan="3">Aucune sortie déclarée.</td></tr>'}</table></div>`;
+}
+const zoneIdSet = new Set(zoneScreens());
+
+function buildZones() {
+    const regions = REGION_ORDER.filter(r => SCREENS[r]);
+    const zonesOf = r => [`${r}_road`, `${r}_village`, `${r}_wild`, `${r}_hamlet`, r].filter(id => SCREENS[id]);
+    const spans = r => zonesOf(r).map(id => SCREENS[id]);
+    const interiorsOf = r => interiorScreens().map(id => SCREENS[id]).filter(s => s.region === r);
+    const chain = r => {
+        // Parcours de la région dans l'ordre de la progression : chaque flèche porte le côté de sortie ; la zone suivante est entrée par le côté opposé.
+        const main = [`${r}_road`, `${r}_village`, `${r}_wild`, r].filter(id => SCREENS[id]);
+        const steps = [];
+        main.forEach((id, i) => {
+            const s = SCREENS[id], next = SCREENS[main[i + 1]];
+            const p = next && passagesOf(s).find(q => q.to === next.id);
+            steps.push(`<li><a href="#zone-${esc(id)}"><b>${esc(s.name)}</b></a> <small>(${KIND_FR(id)})</small>${p ? ` — sortie par le <b>bord ${DIR_FR[p.dir]}</b> ${DIR_ARROW[p.dir]}, ${alongWord(p.dir, p.a, s)}, puis entrée dans <i>${esc(next.name)}</i> par son bord ${DIR_FR[p.arriveDir]}` : ''}</li>`);
+        });
+        const ham = SCREENS[`${r}_hamlet`], wild = SCREENS[`${r}_wild`];
+        const hp = ham && wild && passagesOf(wild).find(q => q.to === ham.id);
+        return `<ol class="steps">${steps.join('')}</ol>${hp ? `<p>Branche : le <a href="#zone-${esc(ham.id)}">${esc(ham.name)}</a> s’atteint par le bord ${DIR_FR[hp.dir]} de la zone sauvage (${alongWord(hp.dir, hp.a, wild)}).</p>` : ''}`;
+    };
+    const body = regions.map(r => `<h2 id="region-${esc(r)}">${esc(regionName(r))}</h2>
+${chain(r)}
+${spans(r).map(zoneHtml).join('\n')}
+${interiorsOf(r).length ? `<details class="interiors"><summary>${interiorsOf(r).length} intérieurs de la région (maisons, grottes, cryptes), chacun annoté</summary>${interiorsOf(r).map(interiorHtml).join('\n')}</details>` : ''}`).join('\n');
+    // Bordures de mer : une ligne par liaison (le bord nord d'une carte du sud mène au bord sud de la carte du nord).
+    const seaLinks = [];
+    Object.values(SCREENS).forEach(s => passagesOf(s).filter(p => p.sea && p.dir === 'north').forEach(p => seaLinks.push([s, p])));
+    const seaTable = seaLinks.map(([s, p]) => `<tr><td><a href="#zone-${esc(s.id)}">${esc(s.name)}</a> (${KIND_FR(s.id)})</td><td><a href="#zone-${esc(p.to)}">${esc(SCREENS[p.to].name)}</a> (${KIND_FR(p.to)})</td><td>${p.requires ? reqText(p.requires).html : '—'}</td></tr>`).join('');
+    write('zones.html', page({
+        file: 'zones.html', title: 'Zones et jonctions', active: 'zones.html',
+        desc: 'Où se trouvent les entrées, les sorties et les jonctions entre les zones de chaque région.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Zones et jonctions']],
+        body: `<h2>Zones, entrées, sorties et jonctions</h2>
+<p class="lead">Pour chaque région : l’ordre des zones, le côté par lequel on sort de l’une et on entre dans la suivante, et la position exacte des passages. Sur les cartes, les <b style="color:#1f8bff">cadres bleus</b> sont les passages vers une autre zone et les <b style="color:#d98a00">cadres orange</b> les portes (maisons, grottes). Cliquez sur une carte pour l’agrandir.</p>
+<div class="box info"><b class="t">À savoir</b>Le parcours n’est pas toujours d’ouest en est : selon la région, on quitte la route d’accès par le haut ou le bas et on entre dans le village (ou dans la zone sauvage) par le côté opposé. Un passage de bord fait 3 cases ; on le franchit en marchant dessus. La zone sauvage mène toujours au sanctuaire par son bord est.</div>
+<div class="box"><b class="t">Régions</b>${regions.map(r => `<a href="#region-${esc(r)}">${esc(regionName(r))}</a>`).join(' · ')}</div>
+${body}
+<h2 id="mer">Bordures de mer</h2>
+<p>Certaines cartes de régions voisines se touchent par la mer : le bord nord de l’une mène au bord sud de l’autre. Ces bords ne se franchissent qu’en marchant sur l’eau (Pas de Yu), une fois vaincu le gardien de la route vers la région la plus avancée des deux.</p>
+<div class="scroll"><table><tr><th>Bord nord de</th><th>Mène au bord sud de</th><th>Gardien à vaincre</th></tr>${seaTable}</table></div>`
+    }));
+}
+
 function buildHub() {
     const total = QUESTS.length;
     const index = [
         ...QUESTS.map(q => ({ t: q.title, k: `${q.chapter} ${q.giver}`, h: `soluce/${regionSlug(q._region)}#${questAnchor(q.id)}`, c: q.side ? 'Quête' : 'Quête principale' })),
+        ...[...zoneScreens(), ...interiorScreens()].map(id => ({ t: SCREENS[id].name, k: 'zone entrée sortie passage jonction porte carte', h: `soluce/zones.html#zone-${id}`, c: 'Zone' })),
         ...COMPANIONS.map(c => ({ t: c.name, k: `${c.title} compagnon`, h: `soluce/compagnon-${c.id}.html`, c: 'Compagnon' })),
-        ...Object.entries(PUZZLES).map(([id, p]) => EVENT_PUZZLE_IDS.has(id)
+        ...Object.entries(PUZZLES).map(([id, p]) => WINTER_PUZZLES.some(w => w.id === id)
+            ? { t: p.title, k: `énigme ${p.mode} fête des lanternes hiver neige`, h: 'soluce/fete-des-lanternes.html', c: 'Énigme' }
+            : EVENT_PUZZLE_IDS.has(id)
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
         ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
+        ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
     write('soluce.html', page({
@@ -810,11 +1014,13 @@ function buildHub() {
 <div id="results"></div>
 <div class="grid">
 <a class="card" href="soluce/parcours.html"><b>Parcours principal</b><span>${QUESTS.filter(q => !q.side).length} chapitres de l’histoire</span></a>
+<a class="card" href="soluce/zones.html"><b>Zones et jonctions</b><span>Entrées, sorties et passages entre zones</span></a>
 <a class="card" href="soluce/bases.html"><b>Bases du combat</b><span>Éléments, pouvoirs, biomes</span></a>
 <a class="card" href="soluce/compagnons.html"><b>Compagnons</b><span>${COMPANIONS.length} recrues et leurs pouvoirs</span></a>
 <a class="card" href="soluce/quetes.html"><b>Quêtes</b><span>${total} quêtes par région</span></a>
 <a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).filter(id => !EVENT_PUZZLE_IDS.has(id)).length} énigmes, 3 armures antiques</span></a>
 ${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des âmes</b><span>Événement : ${QUESTS.filter(q => q.event === WS.ID).length} quêtes, ${EVENT_PUZZLES.length} énigmes, 7 cartes</span></a>` : ''}
+${WINTER_ON ? `<a class="card" href="soluce/fete-des-lanternes.html"><b>Fête des lanternes</b><span>Événement d’hiver : ${QUESTS.filter(q => q.event === WL.ID).length} quêtes, ${WINTER_PUZZLES.length} énigmes, 4 cartes</span></a>` : ''}
 <a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
@@ -851,6 +1057,8 @@ buildBases();
 buildPuzzles();
 buildUltimes();
 buildParcours();
+buildZones();
 buildEvent();
+buildWinter();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');
