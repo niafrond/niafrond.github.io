@@ -1,46 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Match3 Quest icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hou Yi et les Dix Soleils">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1f2937"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </linearGradient>
-    <linearGradient id="gemR" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff6b6b"/>
-      <stop offset="100%" stop-color="#e63946"/>
-    </linearGradient>
-    <linearGradient id="gemB" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4dabf7"/>
-      <stop offset="100%" stop-color="#1971c2"/>
-    </linearGradient>
-    <linearGradient id="gemG" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#69db7c"/>
-      <stop offset="100%" stop-color="#2b8a3e"/>
-    </linearGradient>
-    <linearGradient id="gemY" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffd43b"/>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fff3b0"/>
+      <stop offset="60%" stop-color="#ffc83d"/>
       <stop offset="100%" stop-color="#f08c00"/>
+    </radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d3440"/>
+      <stop offset="100%" stop-color="#145060"/>
     </linearGradient>
   </defs>
-
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-
-  <g transform="translate(80 80)">
-    <rect x="0" y="0" width="112" height="112" rx="24" fill="url(#gemR)"/>
-    <rect x="120" y="0" width="112" height="112" rx="24" fill="url(#gemB)"/>
-    <rect x="240" y="0" width="112" height="112" rx="24" fill="url(#gemG)"/>
-
-    <rect x="0" y="120" width="112" height="112" rx="24" fill="url(#gemY)"/>
-    <rect x="120" y="120" width="112" height="112" rx="24" fill="url(#gemG)"/>
-    <rect x="240" y="120" width="112" height="112" rx="24" fill="url(#gemR)"/>
-
-    <rect x="0" y="240" width="112" height="112" rx="24" fill="url(#gemB)"/>
-    <rect x="120" y="240" width="112" height="112" rx="24" fill="url(#gemY)"/>
-    <rect x="240" y="240" width="112" height="112" rx="24" fill="url(#gemB)"/>
+  <g stroke="#ffc83d" stroke-width="16" stroke-linecap="round">
+    <path d="M256 70v38M256 404v38M70 256h38M404 256h38M125 125l27 27M360 360l27 27M387 125l-27 27M152 360l-27 27"/>
   </g>
-
-  <g fill="#ffffff" opacity="0.9">
-    <circle cx="136" cy="136" r="10"/>
-    <circle cx="256" cy="136" r="10"/>
-    <circle cx="376" cy="136" r="10"/>
-  </g>
+  <circle cx="256" cy="256" r="110" fill="url(#sun)"/>
+  <path d="M96 416L416 96" stroke="#f5ecd0" stroke-width="14" stroke-linecap="round"/>
+  <path d="M416 96l-62 12 50 50z" fill="#f5ecd0"/>
+  <path d="M96 416l16-44 28 28z" fill="#c2410c"/>
 </svg>
