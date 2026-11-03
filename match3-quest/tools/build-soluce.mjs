@@ -12,7 +12,7 @@ import { QUESTS, SCREENS, REGION_UNLOCK_LEVEL } from '../story.js';
 import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
-import { bestiaryEntry } from '../bestiary.js';
+import { bestiaryEntry, SOURCE_LABELS } from '../bestiary.js';
 import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
 import { overlapOf } from '../mapConnections.js';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
@@ -137,7 +137,7 @@ function enemyCard(id) {
 const CSS = `
 :root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
 @media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
+*{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
 a{color:var(--blue)}a:hover{color:var(--gold)}
 header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
@@ -205,6 +205,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['zones.html', 'Zones et jonctions'], ['bases.html', 'Bases du combat'],
     ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
+    ['bestiaire.html', 'Bestiaire'],
     ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : []),
     ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : [])
 ];
@@ -880,6 +881,60 @@ ${playerScript(Object.fromEntries(WINTER_PUZZLES.map(p => [p.id, PUZZLES[p.id]])
     }));
 }
 
+// ───────────────────────── Bestiaire ─────────────────────────
+// Toutes les créatures du jeu : espèce, force et faiblesse, traits, notice et lieux où on les rencontre (ennemis de carte, hautes herbes, boss).
+const BESTIARY_LIST = CATALOG.filter(t => t.id !== 'fallback_enemy').sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+const BESTIARY_COUNT = BESTIARY_LIST.length;
+function buildBestiary() {
+    // lieux par espèce : carte -> { sentinelle|patrouille|boss, herbes }
+    const seen = new Map();
+    const mark = (tid, sc, what) => {
+        if (!tid) return;
+        const byScreen = seen.get(tid) || seen.set(tid, new Map()).get(tid);
+        const set = byScreen.get(sc.id) || byScreen.set(sc.id, { sc, what: new Set() }).get(sc.id);
+        set.what.add(what);
+    };
+    Object.values(SCREENS).forEach(sc => {
+        (sc.enemies || []).forEach(e => mark(e.templateId, sc, e.boss ? 'boss' : e.kind === 'patrol' ? 'patrouille' : 'sentinelle'));
+        (sc.grass?.table || []).forEach(t => mark(t.templateId, sc, 'herbes'));
+    });
+    const WHAT_FR = { boss: 'boss', patrouille: 'patrouille', sentinelle: 'sentinelle', herbes: 'hautes herbes' };
+    const cards = BESTIARY_LIST.map(t => {
+        const be = bestiaryEntry(t);
+        const places = [...(seen.get(t.id)?.values() || [])].sort((a, b) => REGION_ORDER.indexOf(a.sc.region) - REGION_ORDER.indexOf(b.sc.region) || a.sc.name.localeCompare(b.sc.name, 'fr'));
+        const kinds = new Set(places.flatMap(p => [...p.what]));
+        const placeHtml = places.length
+            ? `<ul class="enemy">${places.map(p => `<li>${esc(p.sc.name)} <small>(${esc(regionName(p.sc.region))} — ${[...p.what].map(w => WHAT_FR[w]).join(', ')})</small></li>`).join('')}</ul>`
+            : '<p class="dim">Aucune rencontre sur les cartes : créature réservée à un combat scénarisé.</p>';
+        const res = t.resistanceProfile ? Object.entries(t.resistanceProfile).sort((a, b) => b[1] - a[1]).map(([c, v]) => `${dot(c)} ${Math.round(v * 100)} %`).join(' · ') : '';
+        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${t.title || ''} ${t.race || ''}`.toLowerCase())}">
+  <h3>${esc(t.name)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([t.title, be.race].filter(Boolean).join(' · '))}</small></h3>
+  <dl>
+    <dt>Force</dt><dd>${dot(be.strongColor)}</dd>
+    <dt>Faiblesse</dt><dd><b>${dot(be.weakColor)}</b></dd>
+    ${be.traits.length ? `<dt>Traits</dt><dd>${esc(be.traits.join(', '))}</dd>` : ''}
+    ${res ? `<dt>Résistances</dt><dd>${res}</dd>` : ''}
+    <dt>Origine</dt><dd>${esc(SOURCE_LABELS[be.source] || be.source)}</dd>
+    <dt>Notice</dt><dd>${esc(be.lore)}</dd>
+    <dt>Où</dt><dd>${placeHtml}</dd>
+  </dl>
+</article>`;
+    }).join('\n');
+    write('bestiaire.html', page({
+        file: 'bestiaire.html', title: 'Bestiaire', active: 'bestiaire.html',
+        desc: 'Bestiaire complet : force, faiblesse, traits, notice et lieux de chaque créature.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Bestiaire']],
+        body: `<h2>Bestiaire</h2>
+<p class="lead">${BESTIARY_COUNT} créatures, classées par ordre alphabétique. Pour chacune : la couleur de qì qu’elle encaisse le mieux, <b>sa faiblesse</b> (les sorts de cette couleur lui font plus mal), ses traits de combat, sa notice et les lieux où on la croise.</p>
+<div class="box tip"><b class="t">Astuce</b>Frappez la faiblesse : alignez des tuiles de la couleur indiquée pour lancer des sorts qui font plus de dégâts. Une créature qui surgit des hautes herbes ou une mimique attaque par surprise : elle joue en premier avec 2 PA de plus.</div>
+<input class="search" id="bq" type="search" placeholder="Rechercher une créature, une espèce…" autocomplete="off" aria-label="Rechercher dans le bestiaire">
+<div id="bestiary">
+${cards}
+</div>
+<script>(function(){var q=document.getElementById('bq'),l=[].slice.call(document.querySelectorAll('#bestiary .be'));q.addEventListener('input',function(){var v=q.value.trim().toLowerCase();l.forEach(function(a){a.hidden=v&&a.dataset.name.indexOf(v)<0;});});})();</script>`
+    }));
+}
+
 // ───────────────────────── Zones : entrées, sorties et jonctions ─────────────────────────
 // Pour chaque région : la chaîne des zones (route d'accès, village, zone sauvage, hameau, sanctuaire) avec, pour chaque passage de bord, le côté, la
 // position sur ce côté et le côté d'arrivée dans la zone voisine ; les portes (maisons, grottes) ; les bordures de mer (Pas de Yu). Les captures
@@ -1001,6 +1056,7 @@ function buildHub() {
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
         ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
+        ...CATALOG.filter(t => t.id !== 'fallback_enemy').map(t => ({ t: t.name, k: `bestiaire créature ennemi monstre ${t.race || ''} ${t.title || ''}`, h: `soluce/bestiaire.html#be-${t.id}`, c: 'Bestiaire' })),
         ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
     ];
@@ -1021,6 +1077,7 @@ function buildHub() {
 <a class="card" href="soluce/enigmes.html"><b>Énigmes et armures</b><span>${Object.keys(PUZZLES).filter(id => !EVENT_PUZZLE_IDS.has(id)).length} énigmes, 3 armures antiques</span></a>
 ${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des âmes</b><span>Événement : ${QUESTS.filter(q => q.event === WS.ID).length} quêtes, ${EVENT_PUZZLES.length} énigmes, 7 cartes</span></a>` : ''}
 ${WINTER_ON ? `<a class="card" href="soluce/fete-des-lanternes.html"><b>Fête des lanternes</b><span>Événement d’hiver : ${QUESTS.filter(q => q.event === WL.ID).length} quêtes, ${WINTER_PUZZLES.length} énigmes, 4 cartes</span></a>` : ''}
+<a class="card" href="soluce/bestiaire.html"><b>Bestiaire</b><span>${BESTIARY_COUNT} créatures : force, faiblesse, lieux</span></a>
 <a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
@@ -1060,5 +1117,6 @@ buildParcours();
 buildZones();
 buildEvent();
 buildWinter();
+buildBestiary();
 buildHub();
 console.log('Soluce générée :', QUESTS.length, 'quêtes,', COMPANIONS.length, 'compagnons,', allStuff.length, 'pièces de stuff');
