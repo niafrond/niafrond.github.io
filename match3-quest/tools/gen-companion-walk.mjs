@@ -113,7 +113,7 @@ function saveGenerated(sprites) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
     const sprites = loadGenerated();
     mkdirSync(PNG_DIR, { recursive: true });
-    const ids = Object.keys(sprites).filter(k => /^companion_/.test(k) && (!ONLY || ONLY.includes(k)));
+    const ids = Object.keys(sprites).filter(k => /^(companion_|change_jouable$)/.test(k) && (!ONLY || ONLY.includes(k)));
     for (const id of ids) {
         const s = sprites[id];
         if (!['front', 'back', 'left', 'right'].every(d => s[d])) { console.log(`· ${id} : les 4 directions manquent, ignoré`); continue; }

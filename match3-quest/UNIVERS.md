@@ -24,6 +24,8 @@ Ton : épique, poétique, mélancolique ; humour léger chez les villageois ; to
 anciens et dignitaires, tutoiement pour les proches et les enfants. Français soigné, avec quelques termes chinois usuels
 (hanfu, yaoguai, qi, jade, Fusang…). Les noms propres : Hou Yi, Chang'e, Fengmeng, Yao, Di Jun, Reine Mère de l'Occident.
 
+Une histoire parallèle jouable (**mode Chang'e**, 3 épisodes seulement : « la mémoire des gens ordinaires ») est décrite dans [`UNIVERS-CHANGE.md`](UNIVERS-CHANGE.md). Elle se déclenche à la mort des soleils des régions 3, 6 et 9 (Hou Yi finit de parler à Chang'e par le miroir, puis la transition « reflet circulaire » l'envoie dans les villages de Dongqiao, Hekou et Caoyuan, où elle soigne cinq habitants par un puzzle sans crâne ni flèche). L'épisode 3 s'achève par la **coupure du miroir** racontée plus haut (le lièvre de jade vient ensuite l'expliquer). Aucun identifiant FIXE ne change.
+
 ## 2. Régions, soleils, identifiants (FIXES)
 
 Une région = **un écran** (14×10) contenant un coin village (PNJ, quêtes) et un sanctuaire (le Soleil-Boss). Identifiant d'écran

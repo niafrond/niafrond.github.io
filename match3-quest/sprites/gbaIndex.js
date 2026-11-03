@@ -56,6 +56,7 @@ export const GBA_FILES = {
     carpe_doree: 'carpe_doree.4ee3a0f5.js',
     carver_ling: 'carver_ling.747d08a1.js',
     change: 'change.fd52fd3d.js',
+    change_jouable: 'change_jouable.2ebd3b34.js',
     change_moon: 'change_moon.d131916f.js',
     changxi: 'changxi.75549f24.js',
     chaofeng: 'chaofeng.c54f9fa2.js',

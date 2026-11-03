@@ -65,6 +65,13 @@ T('defeat', `somber defeat theme, fragments of the Hou Yi motif on lonely ${I.xi
 /* ───────────── Énigmes : un thème par type, calme et réfléchi (aucune urgence), boucle discrète ───────────── */
 T('puzzle-push', `puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, soft ${I.xiao} answering, muted felt drum on the beat, curious and patient mood, gentle repeating phrase, no tension, no climax`,
     { bpm: 76, keyScale: 'G major', dur: 180 });
+/* ───────────── Mode Chang'e (change/) : village des blessés, puzzle de soin, adieu par le miroir ───────────── */
+T('change-village', `Chang'e among the villagers she heals, tender warm moonlit village theme, ${I.guzheng} gentle rolling arpeggios, soft ${I.dizi} singing a kind simple melody, small woodblock heartbeat, slow lilting feel, comforting and hopeful, a steaming pot of soup and moon cakes, no drums, no tension, no climax`,
+    { bpm: 72, keyScale: 'F major', dur: 150 });
+T('change-puzzle', `calm healing puzzle theme, soft marimba-like plucks and harp, small bells like drops of moonlight, flowing steady gentle pulse, ${I.guzheng} pad, soothing and focused, gentle ascending phrases, no percussion, no tension, no climax`,
+    { bpm: 84, keyScale: 'A minor', dur: 180 });
+T('change-farewell', `Chang'e's last conversation through the bronze mirror, tender and sorrowful goodbye, solo ${I.erhu} with sparse ${I.guqin}, slow, long silences, quiet resignation and love, ends softly, no drums`,
+    { bpm: 54, keyScale: 'A minor', dur: 100 });
 T('puzzle-mirror', `puzzle theme for aligning mirrors of light, crystalline harp-like plucks and small bells, airy and spacious, slow arpeggios, soft ${I.sheng} pad, mysterious and calm, silence between phrases, no drums, no tension, no climax`,
     { bpm: 68, keyScale: 'E minor', dur: 180 });
 T('puzzle-slide', `puzzle theme for sliding carts along caravan tracks, light rolling rhythm, ${I.pipa} gently plucked, ${I.dizi} playful melody, small caravan clappers and woodblock, lightly bouncy and cheerful, relaxed pace, no tension, no climax`,

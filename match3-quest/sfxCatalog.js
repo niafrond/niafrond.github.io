@@ -9,7 +9,9 @@ export const SFX_PLAY_GAIN = 0.24;   // les clips sont rendus à SFX_RENDER_GAIN
 export const SFX_RENDER_GAIN = 0.5;
 
 const SINGLE = ['uiClick', 'toggleOn', 'swap', 'invalid', 'turnBonus', 'spellCast', 'heal', 'victory', 'defeat',
-    'battleStart', 'combatStart', 'bossStart', 'introJingle', 'endingJingle'];
+    'battleStart', 'combatStart', 'bossStart', 'introJingle', 'endingJingle',
+    // Mode Chang'e (change/view.js) : échange de tuiles, alignement, soin, gâteau offert, souffle lunaire, transition par le miroir, miroir qui s'éteint
+    'change-swap', 'change-match', 'change-heal', 'change-cake', 'change-breath', 'change-mirror', 'change-cut'];
 const MATCH_TYPES = ['color', 'skull', 'combat'];
 const LENGTHS = [3, 4, 5];   // 3, 4, 5 et plus
 
