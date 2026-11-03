@@ -234,7 +234,7 @@ describe('La Fête des lanternes d\'hiver : événement activé', () => {
     test('énigmes : miroirs de lumière et blocs de glace sont solubles, déclarées seulement quand l\'événement est actif, sans armure', () => {
         D.PUZZLE_LIST.forEach(p => {
             expect(createPuzzle(puzzleDef(p.id)).won).toBe(false);
-            expect(solve(puzzleDef(p.id))).toBeGreaterThan(0);
+            expect(solve(puzzleDef(p.id), { maxStates: 300000 })).toBeGreaterThanOrEqual(40 * (p.def.mode === 'mirror' ? 0.3 : 1));   // énigmes difficiles : miroirs ≥ 12 coups, blocs ≥ 40
             expect(puzzleDef(p.id).set).toBeUndefined();
         });
         const hubChest = village.chests.find(c => c.id === D.PUZZLE_MIROIR.chest.id);
