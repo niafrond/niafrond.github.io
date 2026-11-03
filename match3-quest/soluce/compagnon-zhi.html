@@ -47,6 +47,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -74,7 +75,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html" class="on">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html" class="on">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
 <main>
 <div class="crumbs"><a href="../soluce.html">Accueil</a> › <a href="compagnons.html">Compagnons</a> › Zhi</div>
 <h2>Zhi <small>— Jeune moine novice</small></h2>
@@ -93,7 +94,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     
     <dt>Objectifs</dt><dd><ol class="steps"><li><b>Ouvrir</b> : Retrouver la cloche du temple sous les cendres (coin nord-ouest, près des ruines)<br><small>Lieu : Forêt de Bambous Calcinée (partie nord de l’écran) — itinéraire : Village des Cent Tiges → Sentier des Tiges Cendrées → Forêt de Bambous Calcinée</small></li></ol></dd>
     <dt>Récompense</dt><dd>50 pièces d’or · 4550 points d’expérience · composant de flèche : Cinabre du temple · <a href="compagnon-zhi.html"><strong>Zhi</strong></a> rejoint le groupe</dd>
-    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/bambous_h_zhen.jpg" width="440" height="308" loading="lazy" alt="Carte : Cellule du moine Zhen"><span class="ring" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cellule du moine Zhen : <b>1</b> Zhen (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/bambous.jpg" width="1320" height="968" loading="lazy" alt="Carte : Forêt de Bambous Calcinée"><span class="ring" style="left:58.33%;top:11.36%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Forêt de Bambous Calcinée : <b>1</b> Cloche du temple (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
+    <dt>Où chercher</dt><dd><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:440px"><img src="img/bambous_h_zhen.jpg" width="440" height="308" loading="lazy" alt="Carte : Cellule du moine Zhen"><span class="ring giver" style="left:25.00%;top:21.43%;width:18.00%;height:25.71%"><i>1</i></span></div><figcaption>Cellule du moine Zhen : <b>1</b> Zhen (donne la quête) <small>(cliquer pour agrandir)</small></figcaption></figure><figure class="shot"><div class="shotbox" title="Cliquer pour agrandir" style="max-width:1200px"><img src="img/bambous.jpg" width="1320" height="968" loading="lazy" alt="Carte : Forêt de Bambous Calcinée"><span class="ring target" style="left:58.33%;top:11.36%;width:6.00%;height:8.18%"><i>1</i></span></div><figcaption>Forêt de Bambous Calcinée : <b>1</b> Cloche du temple (objectif) <small>(cliquer pour agrandir)</small></figcaption></figure></dd>
     
   </dl>
 </article>
