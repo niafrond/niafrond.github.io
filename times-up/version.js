@@ -2,10 +2,10 @@
 // It mirrors root /version.js so that the times-up SW module can import it.
 export const SITE_SEMVER = {
   major: 2,
-  minor: 182,
+  minor: 183,
   patch: 0,
   prerelease: '',
-  buildDate: '2026-11-03T23:14:24.525Z',
+  buildDate: '2026-11-03T23:57:19.349Z',
 };
 
 export function getVersion() {

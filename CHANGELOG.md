@@ -1,3 +1,9 @@
+## [2.183.0](https://github.com/niafrond/niafrond.github.io/compare/v2.182.0...v2.183.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** attaque surprise des mimiques et des hautes herbes, bestiaire dans la soluce ([#622](https://github.com/niafrond/niafrond.github.io/issues/622)) ([2857809](https://github.com/niafrond/niafrond.github.io/commit/28578092514277448c382de25ef3e2bcf87ad53c))
+
 ## [2.182.0](https://github.com/niafrond/niafrond.github.io/compare/v2.181.0...v2.182.0) (2026-11-03)
 
 ### Features
