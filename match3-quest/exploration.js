@@ -1830,7 +1830,7 @@ function targetPosition(session, target) {
 // Premier écran à rejoindre (sortie à prendre depuis `fromId`) pour atteindre `toId`, en évitant les sorties verrouillées.
 function nextExitToward(session, fromId, toId) {
     const toEvent = session.screens[toId]?.event || null;
-    const attempt = allowLocked => {
+    const attempt = (allowLocked, allowSea = canWalkOnWater(session)) => {
         const seen = new Map([[fromId, null]]);
         const queue = [fromId];
         while (queue.length) {
@@ -1840,6 +1840,8 @@ function nextExitToward(session, fromId, toId) {
             for (const ex of [...session.screens[id].exits, ...connectionMarkers(session.screens, session.screens[id])]) {
                 if (seen.has(ex.to) || !session.screens[ex.to]) continue;
                 if (!allowLocked && isExitLocked(session, ex)) continue;
+                // Bordure de mer : on ne la franchit qu'avec le Pas de Yu, sinon le guidage prend le passage à pied.
+                if (ex.sea && !allowSea) continue;
                 // Portails d'événement (royaume des âmes) : jamais un raccourci vers un autre écran ; on n'y entre que si la cible y est,
                 // la sortie du royaume n'est donc empruntée que depuis l'intérieur.
                 if (ex.rememberReturn && !(toEvent && session.screens[ex.to].event === toEvent)) continue;
@@ -1852,7 +1854,7 @@ function nextExitToward(session, fromId, toId) {
         while (step && step.from !== fromId) step = seen.get(step.from);
         return step ? step.exit : null;
     };
-    return attempt(false) || attempt(true);
+    return attempt(false) || attempt(true) || attempt(true, true);
 }
 
 // Indicateur de direction de la quête suivie : { x, y, label, kind: 'target' | 'exit' } (tuile de l'écran courant), ou null.
