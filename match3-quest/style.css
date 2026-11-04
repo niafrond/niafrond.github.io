@@ -3882,3 +3882,20 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 @media (orientation: portrait) { #player-stats:has(.rage-stat) > .rage-stat { grid-row: 1 / span 4; } }
 #player-stats:has(.rage-stat) .mana-dots .cost-badge { width: 1.75em; height: 1.75em; font-size: .85em; }
 #player-stats:has(.rage-stat) .mana-dots .pa-stat { padding: 0 3px; font-size: .9em; }
+/* Petit écran : portrait de la créature réduit (48 px) pour laisser de la place à la barre de PV, dont le texte est resserré. */
+@media (max-width: 420px) and (orientation: portrait) {
+    #player-stats::after, #enemy-stats::after { width: 48px; height: 48px; }
+    #player-stats[style*="--portrait"] .stat:nth-child(-n+2), #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 50px; }
+    body.rt #player-stats .row-hp .hp-text, body.rt #enemy-stats .row-hp .hp-text { font-size: 8px; letter-spacing: -0.04em; }
+}
+/* Téléphone en paysage : fiches étroites (~150 px) → portrait réduit, PV sur toute la largeur, libellés Att./Déf. masqués. */
+@media (orientation: landscape) and (max-height: 520px) {
+    #player-stats::after, #enemy-stats::after { width: 34px; height: 34px; }
+    #player-stats[style*="--portrait"] .stat:nth-child(-n+2), #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 0; }
+    #player-stats[style*="--portrait"] .row-name, #enemy-stats[style*="--portrait"] .row-name { margin-right: 36px; }
+    body.rt #player-stats .row-hp .hp-text, body.rt #enemy-stats .row-hp .hp-text { font-size: 8px; letter-spacing: -0.04em; }
+    #player-stats .row-stats .stat-chip strong, #enemy-stats .row-stats .stat-chip strong { display: none; }
+    .rage-stat .rage-bar-container, .rage-bar-container.ultimate-ready { width: 16px; }
+    .rage-stat .ult-mana-bar { width: 11px; }
+    .rage-stat .ult-mana-num { display: none; }
+}
