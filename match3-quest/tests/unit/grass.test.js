@@ -90,6 +90,16 @@ describe('déclenchement des rencontres', () => {
         expect(hit).toEqual({ type: 'combat', enemyId: 'wild:t:1', wild: true });
     });
 
+    test('à cheval : probabilité de rencontre réduite (MOUNTED_GRASS_FACTOR)', async () => {
+        const { MOUNTED_GRASS_FACTOR } = await import('../../exploration.js');
+        expect(MOUNTED_GRASS_FACTOR).toBeLessThan(1);
+        const s = sessionOf();
+        walk(s, 3, { random: always });
+        // 0,08 < 0,12 déclenche à pied, mais plus à cheval (seuil 0,12 × facteur)
+        expect(tryMove(s, 1, 0, { random: seq(0.08), riding: true }).type).toBe('moved');
+        expect(tryMove(s, 1, 0, { random: seq(0.08, 0) }).type).toBe('combat');
+    });
+
     test('rate 0 : jamais ; rate 1 : à chaque pas une fois la grâce passée', () => {
         const none = sessionOf({}, { rate: 0 });
         expect(walk(none, 10, { random: always }).every(r => r.type === 'moved')).toBe(true);
