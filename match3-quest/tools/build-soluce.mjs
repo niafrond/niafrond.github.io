@@ -1092,7 +1092,7 @@ ${CHANGE_EPISODES.map(e => `<tr><td><a href="#episode-${e.id}">Épisode ${e.id}<
 <figure><img src="img/change_puzzle.jpg" loading="lazy" alt="Le puzzle de soin"><figcaption>Le puzzle de soin : l’énergie demandée est en haut à droite.</figcaption></figure>
 </div>
 <div class="box tip"><b class="t">Bon à savoir</b>Plus de coups ? Rien n’est perdu : réessayez, les points déjà obtenus restent. Les autres couleurs chargent une jauge : pleine, le bouton « Souffle de l’élixir » change cinq tuiles en l’énergie demandée sans dépenser de coup. Chang’e ne quitte pas le village ; le bouton miroir en haut de l’écran permet de revenir auprès de Hou Yi et de reprendre plus tard.</div>
-<div class="box info"><b class="t">Revoir un épisode</b>Dans la <b>maison de Hou Yi et Chang’e</b> (aux Rizières), regardez dans le <b>miroir</b> posé près de Chang’e : il propose de retourner dans un village déjà soigné (ou de reprendre l’épisode resté ouvert). Les habitants sont de nouveau blessés ; le Livre des noms ne perd rien.</div>
+<div class="box info"><b class="t">Revoir un épisode</b>Dans la <b>maison de Hou Yi et Chang’e</b> (aux Rizières), regardez dans le <b>miroir</b> posé près de Chang’e : il propose de retourner dans un village déjà soigné, de reprendre l’épisode resté ouvert, ou de <b>découvrir</b> un épisode dont le soleil est déjà tombé mais que vous n’avez pas encore joué (par exemple si vous l’avez abattu avant l’arrivée de ce mode). Pour un village déjà soigné, les habitants sont de nouveau blessés ; le Livre des noms ne perd rien.</div>
 
 ${episodes}`
     }));

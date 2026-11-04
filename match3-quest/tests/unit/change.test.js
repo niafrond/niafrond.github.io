@@ -402,6 +402,22 @@ describe('le miroir de la maison : rejeu des épisodes terminés', () => {
         ]);
     });
 
+    test('un soleil déjà abattu avant le mode Chang\'e rend son épisode disponible au miroir (à découvrir), sans rien casser', () => {
+        const s = createSession(null);
+        s.data.defeated.push('sun_4');
+        expect(changeReplayOptions(s)).toEqual([{ episode: 1, village: 'Hameau de Dongqiao', kind: 'new' }]);
+        s.data.defeated.push('sun_5', 'sun_9');
+        s.data.change.done = [1];
+        expect(changeReplayOptions(s).map(o => `${o.episode}:${o.kind}`)).toEqual(['1:replay', '2:new', '3:new']);
+        startChangeMode(s, 2);   // première fois : pas un rejeu, l'épisode devient « ouvert »
+        expect(changeIsReplay(s)).toBe(false);
+        endChangeMode(s);
+        expect(changeReplayOptions(s).map(o => `${o.episode}:${o.kind}`)).toEqual(['1:replay', '2:resume', '3:new']);
+        const t = createSession(null);   // aucun soleil concerné abattu : rien à proposer
+        t.data.defeated.push('sun_1', 'sun_2');
+        expect(changeReplayOptions(t)).toEqual([]);
+    });
+
     test('rejouer un épisode terminé : ses habitants sont de nouveau blessés, les autres soins et l\'épisode ouvert ne bougent pas', () => {
         const s = createSession(null), ch = s.data.change, ep1 = episodeById(1), ep2 = episodeById(2);
         ch.done = [1]; ch.pending = 2;
