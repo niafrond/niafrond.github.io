@@ -516,7 +516,8 @@ export function createExplorationView(cfg) {
             return;
         }
         openDialog({ ...NARRATOR, title: 'Le miroir' }, ['Le bronze garde le reflet des villages que Chang\'e a soignés. Y regarder, c\'est y retourner.'], null, [
-            ...opts.map(o => ({ label: `${o.kind === 'resume' ? 'Reprendre' : 'Revoir'} : ${o.village}`, run: () => { startChangeEpisode(o.episode, { resume: true }); } })),
+            // « new » : le soleil est tombé avant le mode Chang'e, l'épisode n'a jamais été joué : il commence comme au premier jour (conversation avec Hou Yi comprise)
+            ...opts.map(o => ({ label: `${{ resume: 'Reprendre', replay: 'Revoir', new: 'Découvrir' }[o.kind]} : ${o.village}`, run: () => { startChangeEpisode(o.episode, { resume: o.kind !== 'new' }); } })),
             { label: 'Plus tard', run: () => {} }
         ]);
     }
