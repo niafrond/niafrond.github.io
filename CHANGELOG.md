@@ -1,3 +1,9 @@
+## [2.188.1](https://github.com/niafrond/niafrond.github.io/compare/v2.188.0...v2.188.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** fiches de combat lisibles sur petits écrans et en paysage ([#641](https://github.com/niafrond/niafrond.github.io/issues/641)) ([9624527](https://github.com/niafrond/niafrond.github.io/commit/9624527b0db4579ceb7b1bcdb8a1ac82613615fa))
+
 ## [2.188.0](https://github.com/niafrond/niafrond.github.io/compare/v2.187.0...v2.188.0) (2026-11-04)
 
 ### Features
