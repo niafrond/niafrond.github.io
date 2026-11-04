@@ -22,6 +22,7 @@
   "companions.js",
   "compareView.js",
   "constants.js",
+  "creatureScale.js",
   "decor.js",
   "dialogState.js",
   "duel.js",

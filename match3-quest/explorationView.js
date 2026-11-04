@@ -37,6 +37,7 @@ import { enemyCatalogList } from './enemies.js';
 import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
 import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug, decorCell, decorScale, npcScale } from './decor.js';
+import { creatureSize } from './creatureScale.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
 import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront, drawLedge } from './tilePainter.js';
 
@@ -293,7 +294,7 @@ export function createExplorationView(cfg) {
         const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
         const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
         // sprites GBA de la région : héros, PNJ, ennemis et leurs gabarits (le reste se charge à la première apparition)
-        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
+        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, X.MIMIC_SPRITE, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
         const promise = withLoadingScreen(label, async progress => {
             await trackProgress([...packs.map(loadSpritePack), gba], r => progress(r * 0.5));
             const svgs = regionSprites(region);
@@ -2162,9 +2163,11 @@ export function createExplorationView(cfg) {
                     const big = boss || illusion;
                     const shielded = X.isShielded(session, def);
                     const lvl = X.levelFor(session, twin || def);
-                    const size = tile * (def.span || (big ? 1.55 : 1.08));   // `span` : boss immense (Changxi, 6 cases)
+                    // taille propre à chaque gabarit (creatureScale.js : un crapaud n'a pas la taille d'un dragon) ; `span` : boss immense (Changxi, 6 cases)
+                    const size = tile * (def.span || creatureSize((twin || def).templateId, big));
+                    const sizeK = Math.min(2.2, Math.max(0.6, size / (tile * (big ? 1.55 : 1.08))));   // l'ombre suit la taille
                     const feet = c.y + tile * 0.4;
-                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
+                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3) * sizeK, tile * 0.1 * sizeK);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
                     const eKey = def.spriteKey || def.id;

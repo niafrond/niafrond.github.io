@@ -1,3 +1,21 @@
+## [2.184.3](https://github.com/niafrond/niafrond.github.io/compare/v2.184.2...v2.184.3) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** afficher le sprite de la mimique à l'annonce de combat ([#637](https://github.com/niafrond/niafrond.github.io/issues/637)) ([597a68c](https://github.com/niafrond/niafrond.github.io/commit/597a68c5dff6ddf892723e4a6292234f0e884e81))
+
+## [2.184.2](https://github.com/niafrond/niafrond.github.io/compare/v2.184.1...v2.184.2) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** mettre les ennemis, les boss et les enfants à l'échelle sur la carte ([#635](https://github.com/niafrond/niafrond.github.io/issues/635)) ([e9645d1](https://github.com/niafrond/niafrond.github.io/commit/e9645d10494e88a15d7ce4c685b4a1e79983bdf7))
+
+## [2.184.1](https://github.com/niafrond/niafrond.github.io/compare/v2.184.0...v2.184.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** mettre les décors et les animaux à l'échelle sur le terrain ([#633](https://github.com/niafrond/niafrond.github.io/issues/633)) ([3917625](https://github.com/niafrond/niafrond.github.io/commit/391762561881a6da132d012fdca993569812e336))
+
 ## [2.184.0](https://github.com/niafrond/niafrond.github.io/compare/v2.183.3...v2.184.0) (2026-11-04)
 
 ### Features
