@@ -1,3 +1,9 @@
+## [2.188.0](https://github.com/niafrond/niafrond.github.io/compare/v2.187.0...v2.188.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** rage et qì de l'ultime en barres verticales ([#640](https://github.com/niafrond/niafrond.github.io/issues/640)) ([97cf920](https://github.com/niafrond/niafrond.github.io/commit/97cf9205f2c79e4353aac2ed1e25ca76f7a91f5a))
+
 ## [2.187.0](https://github.com/niafrond/niafrond.github.io/compare/v2.186.0...v2.187.0) (2026-11-04)
 
 ### Features
