@@ -1,6 +1,6 @@
 // Obstacles bas (roseaux, decor.js) : franchissables comme des hautes herbes, avec rencontres aléatoires.
 import { SCREENS } from '../../story.js';
-import { isLowObstacle, BIOME_DECOR, pickDecor, decorCell, LOW_DECOR, houseDecor, houseRug } from '../../decor.js';
+import { isLowObstacle, BIOME_DECOR, pickDecor, decorCell, LOW_DECOR, houseDecor, houseRug, DECOR_SCALE, DEFAULT_DECOR_SCALE, decorScale, NPC_SCALE, npcScale } from '../../decor.js';
 import { createSession, tryMove, isTerrainBlocked, isEncounterCell, encounterOf, findPath } from '../../exploration.js';
 
 const cellsOf = screen => {
@@ -85,5 +85,40 @@ describe('mobilier des maisons', () => {
         for (let i = 0; i < rug.w; i++) for (let j = 0; j < rug.h; j++) expect(isObst(rug.x + i, rug.y + j)).toBe(false);
         expect(rug.y + rug.h).toBeLessThanOrEqual(house.h - 2);
         expect(houseRug(() => true, 10, 7)).toBeNull();
+    });
+});
+
+// Échelle des sprites sur le terrain : chaque décor a sa taille (un lit n'est pas un coquillage), les animaux dépassent ou n'atteignent pas un personnage.
+describe('échelle des décors et des PNJ', () => {
+    // dessinés par leur propre code (rocher en bloc, arbre mort en variantes), pas par drawDecor
+    const OWN_DRAWING = new Set(['rock', 'deadtree']);
+
+    test('chaque décor tiré par un biome ou une maison a son échelle', () => {
+        const names = new Set(Object.values(BIOME_DECOR).flat());
+        for (const furnishing of [undefined, 'winter']) for (let x = 0; x < 12; x++) for (let y = 1; y < 8; y++) {
+            names.add(houseDecor(() => false, x, y, furnishing));
+            names.add(houseDecor(() => true, x, y, furnishing));
+        }
+        const missing = [...names].filter(n => !OWN_DRAWING.has(n) && !(n in DECOR_SCALE));
+        expect(missing).toEqual([]);
+    });
+
+    test('les échelles sont raisonnables et le mobilier est à la taille de la pièce', () => {
+        Object.entries(DECOR_SCALE).forEach(([name, k]) => { expect({ name, ok: k >= 0.3 && k <= 2 }).toEqual({ name, ok: true }); });
+        expect(decorScale('inconnu')).toBe(DEFAULT_DECOR_SCALE);
+        expect(decorScale('bed')).toBeGreaterThan(1.2);              // un lit prend de la place (il faisait 0,85)
+        expect(decorScale('bed')).toBeGreaterThan(decorScale('cabinet'));
+        expect(decorScale('shelf')).toBeGreaterThan(DEFAULT_DECOR_SCALE);
+        expect(decorScale('table')).toBeGreaterThan(DEFAULT_DECOR_SCALE);
+        ['cushion', 'basket', 'shell', 'crab', 'mushroom', 'strawhat'].forEach(n => expect(decorScale(n)).toBeLessThan(DEFAULT_DECOR_SCALE));
+        ['tree', 'acacia', 'snow_pine', 'kang'].forEach(n => expect(decorScale(n)).toBeGreaterThan(1.2));
+    });
+
+    test('les animaux ont leur échelle : buffle, cheval, chameau plus grands qu\'un homme, tortue, lièvre et carpe plus petits', () => {
+        ['buffalo_dahei', 'horse_tian', 'camel_baba'].forEach(id => expect(npcScale(id)).toBeGreaterThan(1.2));
+        ['gui_turtle', 'hare_tuzi', 'carp_jin', 'huang_xian'].forEach(id => expect(npcScale(id)).toBeLessThan(0.9));
+        expect(npcScale('farmer_lin')).toBe(1);
+        const ids = new Set(Object.values(SCREENS).flatMap(sc => (sc.npcs || []).map(n => n.id)));
+        Object.keys(NPC_SCALE).filter(id => id !== 'jade_hare').forEach(id => expect({ id, existe: ids.has(id) }).toEqual({ id, existe: true }));
     });
 });
