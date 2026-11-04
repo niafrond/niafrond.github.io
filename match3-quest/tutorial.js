@@ -18,6 +18,8 @@ export const tutorialCallbacks = {
     useDumbAI: false,      // board.js lit ce flag dans enemyMakeMove
     allowSwap: null,       // (i, j, board) → bool : refuse tout échange autre que celui demandé (board.js, selectTile)
     dropProbabilities: null, // { skullProb, combatProb, jokerProb } : répartition des tuiles neuves pendant le tutoriel (board.js)
+    dropTile: null,        // (index, board, turn) → tuile | null : tuile neuve imposée à cet emplacement (board.js, remplissage et tirage)
+    pickEnemyMove: null,   // (moves) → coup | null : coup de l'adversaire imposé (board.js, enemyMakeRandomMove)
     allowSpell: null,      // (spell) → bool : refuse tout sort autre que celui demandé (game.js, castSpell)
 };
 
@@ -47,6 +49,62 @@ const TUTORIAL_BOARD = [
     'red',   'blue',   'yellow', 'green',  'purple', 'yellow', 'blue',   'red',     // ligne 6
     'blue',  'red',    'purple', 'yellow', 'green',  'blue',   'purple', 'green',   // ligne 7
 ];
+
+// Tuiles neuves PRÉ-GÉNÉRÉES (96, tirées une fois avec une graine fixe, jamais trois identiques d'affilée) : au tour du joueur,
+// les tuiles qui tombent suivent cette suite (beaucoup de crânes et de qì), donc le déroulement est le même à chaque partie.
+// prettier-ignore
+const TUTORIAL_DROPS = [
+    'red', 'purple', 'red', 'skull', 'blue', 'skull', 'skull', 'blue',
+    'red', 'yellow', 'green', 'yellow', 'purple', 'yellow', 'red', 'yellow',
+    'skull', 'purple', 'skull', 'skull', 'yellow', 'blue', 'skull', 'skull',
+    'red', 'red', 'purple', 'skull', 'purple', 'green', 'green', 'blue',
+    'yellow', 'blue', 'skull', 'skull', 'red', 'red', 'purple', 'skull',
+    'green', 'skull', 'green', 'skull', 'green', 'red', 'green', 'blue',
+    'combat', 'skull', 'green', 'green', 'purple', 'skull', 'green', 'red',
+    'skull', 'green', 'skull', 'skull', 'red', 'yellow', 'skull', 'purple',
+    'green', 'blue', 'yellow', 'blue', 'green', 'combat', 'purple', 'yellow',
+    'yellow', 'green', 'red', 'green', 'skull', 'green', 'skull', 'green',
+    'combat', 'skull', 'red', 'red', 'skull', 'yellow', 'red', 'blue',
+    'purple', 'blue', 'blue', 'skull', 'blue', 'yellow', 'green', 'yellow',
+];
+let _dropCursor = 0;
+export const TUTORIAL_DROPS_SCRIPT = TUTORIAL_DROPS;
+
+// Une tuile neuve ne doit jamais former une ligne de 3 avec les tuiles déjà posées (pas de cascade, donc pas de tour bonus).
+function _formsLine(board, size, index, tile) {
+    const at = (r, c) => (r < 0 || c < 0 || r >= size || c >= size ? undefined : board[r * size + c]);
+    const r = Math.floor(index / size), c = index % size;
+    const same = (a, b) => a === tile && b === tile;
+    return same(at(r, c - 1), at(r, c - 2)) || same(at(r, c + 1), at(r, c + 2)) || same(at(r, c - 1), at(r, c + 1))
+        || same(at(r - 1, c), at(r - 2, c)) || same(at(r + 1, c), at(r + 2, c)) || same(at(r - 1, c), at(r + 1, c));
+}
+
+// Tuile neuve du tutoriel. Tour du joueur : la suite pré-générée. Tour de l'adversaire : une couleur neutre qui ne forme aucune
+// ligne (ni crâne, ni épée), pour qu'il n'enchaîne pas de tours bonus et ne puisse pas infliger de dégâts avec ce qui tombe.
+export function _dropTile(index, board, turn) {
+    const size = Math.round(Math.sqrt(board.length));
+    if (turn === 'enemy') {
+        const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+        const start = (_dropCursor + index) % colors.length;
+        for (let k = 0; k < colors.length; k++) {
+            const tile = colors[(start + k) % colors.length];
+            if (!_formsLine(board, size, index, tile)) return tile;
+        }
+        return colors[start];
+    }
+    const tile = TUTORIAL_DROPS[_dropCursor % TUTORIAL_DROPS.length];
+    _dropCursor++;
+    return tile;
+}
+
+// Coup de l'adversaire : jamais de crâne (donc aucun dégât), jamais de match de 4+ (donc aucun tour bonus), le plus petit gain possible.
+export function _pickEnemyMove(moves) {
+    if (!moves?.length) return null;
+    const rank = m => (m.matchType === 'skull' ? 2 : 0) * 100 + (m.matchLength >= 4 ? 1 : 0) * 50 + m.matchLength;
+    const best = Math.min(...moves.map(rank));
+    const pool = moves.filter(m => rank(m) === best);
+    return pool[Math.floor(Math.random() * pool.length)];
+}
 
 const TUTORIAL_SPELL = {
     id: TUTO_SPELL_ID,
@@ -197,6 +255,9 @@ export function startTutorial(opts = {}) {
     _step = 1;
     tutorialCallbacks.useDumbAI = true;
     tutorialCallbacks.dropProbabilities = TUTORIAL_DROP_PROBABILITIES;
+    tutorialCallbacks.dropTile = _dropTile;
+    tutorialCallbacks.pickEnemyMove = _pickEnemyMove;
+    _dropCursor = 0;
 
     _injectTutorialSpell().then(() => {
         _startTutorialCombat();
@@ -214,6 +275,8 @@ export function quitTutorial() {
     _clearHooks();
     tutorialCallbacks.useDumbAI = false;
     tutorialCallbacks.dropProbabilities = null;
+    tutorialCallbacks.dropTile = null;
+    tutorialCallbacks.pickEnemyMove = null;
     _active = false;
     _step = 0;
     _removeTutorialSpell();
@@ -412,6 +475,8 @@ function _completeTutorial() {
     _hideOverlay();
     tutorialCallbacks.useDumbAI = false;
     tutorialCallbacks.dropProbabilities = null;
+    tutorialCallbacks.dropTile = null;
+    tutorialCallbacks.pickEnemyMove = null;
     const wasActive = _active;
     _active = false;
     _step = 0;
