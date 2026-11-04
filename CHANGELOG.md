@@ -1,3 +1,9 @@
+## [2.186.0](https://github.com/niafrond/niafrond.github.io/compare/v2.185.0...v2.186.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** launcher au démarrage, icône gâteau de lune, objectif translucide ([#638](https://github.com/niafrond/niafrond.github.io/issues/638)) ([b27d2ed](https://github.com/niafrond/niafrond.github.io/commit/b27d2ed1e69ff3065a001765d509f97464ef4874))
+
 ## [2.185.0](https://github.com/niafrond/niafrond.github.io/compare/v2.184.3...v2.185.0) (2026-11-04)
 
 ### Features
