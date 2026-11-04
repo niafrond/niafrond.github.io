@@ -538,7 +538,9 @@ function generateRandomTile(options = {}){
 }
 
 // Tuile qui tombe pour combler un trou : tirée pour que la répartition cible tienne sur tout le plateau après la chute.
-function generateBalancedDropTile(){
+function generateBalancedDropTile(index){
+    const scripted = tutorialCallbacks.dropTile?.(index, board, currentTurn);   // tutoriel : tuile pré-générée / neutre
+    if(scripted) return scripted;
     refreshBoardDropProbabilities();
     return rollBalancedTile(board, boardDropProbabilities, colors);
 }
@@ -567,7 +569,7 @@ function fillColumnByGravity(col){
     const newCount = writeRow + 1;
     while(writeRow >= 0){
         const writeIdx = writeRow * boardSize + col;
-        board[writeIdx] = generateBalancedDropTile();
+        board[writeIdx] = generateBalancedDropTile(writeIdx);
         writeRow--;
     }
     return { moved, newCount };
@@ -1151,7 +1153,7 @@ function dropTiles(removedIndices = []){
         // Ajouter des nouvelles tuiles en haut.
         while(writeRow >= 0){
             const idx = writeRow * boardSize + col;
-            board[idx] = generateBalancedDropTile();
+            board[idx] = generateBalancedDropTile(idx);
             writeRow--;
         }
     }
@@ -1348,6 +1350,7 @@ function showMatchSuggestion(){
     const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
+        if(tutorialCallbacks.noSuggestions) return;   // tutoriel : surbrillances propres à chaque étape, pas de conseil standard (le plateau bloqué reste régénéré)
         const suggestedMove = possibleMoves[0];
         
         suggestedMoveIndices = [suggestedMove.from, suggestedMove.to];
@@ -1479,7 +1482,7 @@ export function enemyMakeRandomMove(){
     if(possibleMoves.length === 0){ handleNoPossibleMoveForCurrentTurn(); return; }
 
     // Prendre un mouvement aléatoire parmi tous les valides (pas forcément le meilleur)
-    const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    const move = tutorialCallbacks.pickEnemyMove?.(possibleMoves) || possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     log(`L'ennemi fait un move aléatoire...`);
     setTimeout(() => {
         animateEnemySwap(move.from, move.to, () => {
