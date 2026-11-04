@@ -18,6 +18,7 @@ export const tutorialCallbacks = {
     useDumbAI: false,      // board.js lit ce flag dans enemyMakeMove
     allowSwap: null,       // (i, j, board) → bool : refuse tout échange autre que celui demandé (board.js, selectTile)
     dropProbabilities: null, // { skullProb, combatProb, jokerProb } : répartition des tuiles neuves pendant le tutoriel (board.js)
+    enemyHpFloor: 0,       // PV minimaux de l'adversaire (game.js, applyDamage) : plancher qui l'empêche de mourir avant l'étape finale
     noSuggestions: false,  // true : pas de conseil « essayez d'échanger ces deux tuiles » (le tutoriel a ses propres surbrillances)
     dropTile: null,        // (index, board, turn) → tuile | null : tuile neuve imposée à cet emplacement (board.js, remplissage et tirage)
     pickEnemyMove: null,   // (moves) → coup | null : coup de l'adversaire imposé (board.js, enemyMakeRandomMove)
@@ -29,7 +30,6 @@ const TOTAL_STEPS = 5;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : un dernier coup suffit à conclure
-const ENEMY_SPELL_HP_BUFFER = 500; // PV de l'adversaire à l'étape du sort (voir _adjustEnemyHp)
 const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les premiers coups ne l'achèvent pas
 
 // Répartition des tuiles neuves pendant le tutoriel (le reste = gâteaux de lune) : beaucoup de crânes et de qì,
@@ -69,7 +69,6 @@ const TUTORIAL_DROPS = [
     'purple', 'blue', 'blue', 'skull', 'blue', 'yellow', 'green', 'yellow',
 ];
 let _dropCursor = 0;
-let _enemyBaseMaxHp = 0;   // PV max réels de l'adversaire (avant la grande réserve de l'étape du sort)
 export const TUTORIAL_DROPS_SCRIPT = TUTORIAL_DROPS;
 
 // Une tuile neuve ne doit jamais former une ligne de 3 avec les tuiles déjà posées (pas de cascade, donc pas de tour bonus).
@@ -259,6 +258,7 @@ export function startTutorial(opts = {}) {
     tutorialCallbacks.useDumbAI = true;
     tutorialCallbacks.dropProbabilities = TUTORIAL_DROP_PROBABILITIES;
     tutorialCallbacks.noSuggestions = true;
+    tutorialCallbacks.enemyHpFloor = 1;   // l'adversaire ne meurt qu'à l'étape finale
     tutorialCallbacks.dropTile = _dropTile;
     tutorialCallbacks.pickEnemyMove = _pickEnemyMove;
     _dropCursor = 0;
@@ -280,6 +280,7 @@ export function quitTutorial() {
     tutorialCallbacks.useDumbAI = false;
     tutorialCallbacks.dropProbabilities = null;
     tutorialCallbacks.noSuggestions = false;
+    tutorialCallbacks.enemyHpFloor = 0;
     tutorialCallbacks.dropTile = null;
     tutorialCallbacks.pickEnemyMove = null;
     _active = false;
@@ -374,7 +375,6 @@ function _startTutorialCombat() {
             _duelEnemy = null;
         }
         startNewCombat(enemy);
-        _enemyBaseMaxHp = enemy.maxHp;
 
         import('./board.js').then(boardModule => {
             boardModule.generateBoard();
@@ -444,13 +444,13 @@ function _adjustEnemyHp(step) {
         foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (step === 4 && _tutoSpell) {
-        // Les dégâts réels du sort dépassent son `dmg` de base (attributs, arme…) : grande réserve de PV, ramenée à
-        // ENEMY_FINISH_HP juste après le lancer (hook onSpellCast), pour que le sort ne conclue jamais le duel à lui seul.
-        foe.hp = ENEMY_SPELL_HP_BUFFER;
-        foe.maxHp = Math.max(_enemyBaseMaxHp || foe.maxHp, foe.hp);
+        // Les dégâts réels du sort dépassent son `dmg` de base (attributs, arme…) : le plancher de PV (enemyHpFloor = 1) l'empêche de
+        // conclure le duel à lui seul, sans gonfler les PV affichés ; les PV passent à ENEMY_FINISH_HP juste après le lancer (hook onSpellCast).
+        foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
+        foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (step === 5) {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
-        foe.maxHp = Math.max(_enemyBaseMaxHp || ENEMY_FINISH_HP, foe.hp);
+        tutorialCallbacks.enemyHpFloor = 0;   // dernier coup : il peut mourir
     } else {
         return;
     }
@@ -484,6 +484,7 @@ function _completeTutorial() {
     tutorialCallbacks.useDumbAI = false;
     tutorialCallbacks.dropProbabilities = null;
     tutorialCallbacks.noSuggestions = false;
+    tutorialCallbacks.enemyHpFloor = 0;
     tutorialCallbacks.dropTile = null;
     tutorialCallbacks.pickEnemyMove = null;
     const wasActive = _active;
@@ -542,7 +543,7 @@ function _installHooks(step) {
 
     } else if (step === 4) {
         tutorialCallbacks.onSpellCast = () => {
-            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.enemy.maxHp = Math.max(_enemyBaseMaxHp, ENEMY_FINISH_HP); _game.updateStats(); }
+            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
             _advanceStep();
         };
     }

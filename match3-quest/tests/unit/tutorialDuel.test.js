@@ -19,7 +19,8 @@ describe('duel-tutoriel', () => {
 
     test("l'adversaire a une grande réserve de PV à l'étape du sort, ramenée à ENEMY_FINISH_HP après le lancer", () => {
         const src = read('tutorial.js');
-        expect(src).toMatch(/foe\.hp = ENEMY_SPELL_HP_BUFFER/);
+        expect(src).not.toMatch(/ENEMY_SPELL_HP_BUFFER/);   // plus de réserve de 500 PV affichée : un plancher de PV protège l'adversaire
+        expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 1/);
         expect(src).toMatch(/onSpellCast = \(\) => \{\s*if \(_game\?\.enemy\) \{ _game\.enemy\.hp = ENEMY_FINISH_HP;/);
     });
 

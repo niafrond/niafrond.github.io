@@ -66,9 +66,21 @@ describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
         expect(src).toMatch(/attributes: \{ \.\.\._duelEnemy\.attributes, agility: 0 \}/);
     });
 
-    test("la réserve de 500 PV de l'étape du sort ne reste pas dans les PV max", () => {
+    test("plus de réserve de 500 PV : un plancher de PV empêche la mort avant l'étape finale", () => {
         const src = read('tutorial.js');
-        expect(src).toMatch(/_enemyBaseMaxHp = enemy\.maxHp/);
-        expect(src).toMatch(/_game\.enemy\.maxHp = Math\.max\(_enemyBaseMaxHp, ENEMY_FINISH_HP\)/);
+        expect(src).not.toMatch(/500/);
+        expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 1/);
+        expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 0;\s+\/\/ dernier coup/);
+        expect(read('game.js')).toMatch(/const nextHp = Math\.max\(hpFloor, currentHp - normalizedDamage\)/);
+    });
+});
+
+import { rollBlock, resolveStrike } from '../../combatStats.js';
+describe("tutoriel : l'adversaire ne bloque jamais", () => {
+    test('même avec une forte défense et un niveau élevé, aucun blocage ni parade', () => {
+        const foe = { isTutorialEnemy: true, level: 40, defense: 500, attributes: { agility: 50 } };
+        for (let i = 0; i < 200; i++) expect(rollBlock(foe, () => 0)).toBe('none');
+        expect(resolveStrike(10, { level: 1, attack: 1 }, foe, { rng: () => 0.99 }).block).toBe('none');
+        expect(rollBlock({ level: 40, defense: 500 }, () => 0)).not.toBe('none');   // un ennemi normal bloque toujours
     });
 });
