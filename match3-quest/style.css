@@ -3837,7 +3837,7 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 /* ── Rage et qì de l'ultime : barres VERTICALES, collées au bord gauche de la fiche du héros ───────────────────── */
 #player-stats:has(.rage-stat) { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 6px; }
 #player-stats:has(.rage-stat) > :not(.rage-stat) { grid-column: 2; }
-#player-stats:has(.rage-stat) > .rage-stat { grid-column: 1; grid-row: 2 / span 5; margin: 4px 0; align-self: stretch; }
+#player-stats:has(.rage-stat) > .rage-stat { grid-column: 1; grid-row: 1 / span 6; margin: 4px 0; align-self: stretch; }
 .rage-stat { flex-direction: row; align-items: stretch; gap: 3px; min-height: 0; }
 .rage-stat .rage-bar-container { width: 26px; height: 100%; flex: none; }
 .rage-stat .rage-bar, .rage-bar-container.ultimate-ready .rage-bar { width: 100%; height: 100%; min-height: 0; display: flex; align-items: flex-end; }
@@ -3853,7 +3853,7 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 /* Portrait : les rangs restent partagés avec la fiche ennemie (la rage occupe les rangs PV à pilules). */
 @media (orientation: portrait) {
     .stats-container > #player-stats:has(.rage-stat) { grid-template-columns: auto minmax(0, 1fr); }
-    #player-stats:has(.rage-stat) > .rage-stat { grid-row: 3 / span 3; }
+    #player-stats:has(.rage-stat) > .rage-stat { grid-row: 1 / span 5; }
     #player-stats > .rage-stat { grid-column: 1; }
 }
 #player-stats:has(.rage-stat) .row-stats { flex-wrap: nowrap; gap: 3px; }
