@@ -30,7 +30,7 @@ import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
 import { ARENA_NAME, ARENA_REGION } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
-import { hideLoadingScreen, setLoadingProgress, trackProgress } from "./loader.js";
+import { hideLoadingScreen, showLoadingScreen, setLoadingScreenSuppressed, setLoadingProgress, trackProgress } from "./loader.js";
 import { readLastPlayed, touchLastPlayed, isLongAbsence, buildRecap, absenceDays, showWelcomeBack } from "./welcomeBack.js";
 
 // initialisation de la partie
@@ -557,11 +557,21 @@ function init() {
     const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
     // Écran de chargement initial (index.html) : on ne charge que les dessins communs (héros, coffres) et ceux de la
     // région où reprend la partie ; les autres régions sont chargées en y entrant.
+    // Le launcher s'affiche tout de suite (écran de chargement masqué, pas d'animation de biome) pendant que le chargement
+    // se poursuit en arrière-plan ; l'écran de chargement ne revient que si le joueur touche avant la fin.
+    if(!skipTitle) { setLoadingScreenSuppressed(true); hideLoadingScreen(true); }
+    let booted = false;
     const bootReady = trackProgress([loadSpritePack(CORE_PACK), exploration.ready()], setLoadingProgress)
         .catch(err => console.warn('[boot] chargement initial incomplet', err))
-        .then(() => hideLoadingScreen());
+        .then(() => { booted = true; });
     // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
-    bootReady.then(() => (skipTitle ? undefined : playTitleScreen()))
+    (skipTitle ? Promise.resolve() : playTitleScreen())
+        .then(() => {
+            setLoadingScreenSuppressed(false);
+            if(!booted && !skipTitle) showLoadingScreen('Chargement…');
+            return bootReady;
+        })
+        .then(() => hideLoadingScreen())
         .then(() => (!skipTitle && !player.class ? playPrologueAnimation() : undefined))
         .then(() => {
         showClassSelection();

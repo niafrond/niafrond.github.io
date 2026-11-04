@@ -1,21 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hou Yi et les Dix Soleils">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Gâteau de lune">
   <defs>
-    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#fff3b0"/>
-      <stop offset="60%" stop-color="#ffc83d"/>
-      <stop offset="100%" stop-color="#f08c00"/>
-    </radialGradient>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0d3440"/>
       <stop offset="100%" stop-color="#145060"/>
     </linearGradient>
+    <radialGradient id="cake" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0%" stop-color="#e9a04b"/>
+      <stop offset="60%" stop-color="#c26a1f"/>
+      <stop offset="100%" stop-color="#8a4313"/>
+    </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <g stroke="#ffc83d" stroke-width="16" stroke-linecap="round">
-    <path d="M256 70v38M256 404v38M70 256h38M404 256h38M125 125l27 27M360 360l27 27M387 125l-27 27M152 360l-27 27"/>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="262" r="168" fill="#2a0f10" opacity="0.35"/>
+  <circle cx="256" cy="256" r="168" fill="url(#cake)"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#f3c77a" stroke-width="10"/>
+  <g fill="none" stroke="#f3c77a" stroke-width="10" stroke-linecap="round">
+    <circle cx="256" cy="256" r="136" opacity="0.7"/>
+    <path d="M256 120v34M256 358v34M120 256h34M358 256h34M160 160l24 24M328 328l24 24M352 160l-24 24M184 328l-24 24"/>
   </g>
-  <circle cx="256" cy="256" r="110" fill="url(#sun)"/>
-  <path d="M96 416L416 96" stroke="#f5ecd0" stroke-width="14" stroke-linecap="round"/>
-  <path d="M416 96l-62 12 50 50z" fill="#f5ecd0"/>
-  <path d="M96 416l16-44 28 28z" fill="#c2410c"/>
+  <circle cx="256" cy="256" r="62" fill="#fbe7b0" stroke="#f3c77a" stroke-width="10"/>
+  <path d="M236 256a20 20 0 1 0 28-18 26 26 0 1 1-28 18z" fill="#c26a1f"/>
+  <g fill="#f3c77a">
+    <circle cx="200" cy="200" r="7"/><circle cx="312" cy="200" r="7"/><circle cx="200" cy="312" r="7"/><circle cx="312" cy="312" r="7"/>
+  </g>
 </svg>

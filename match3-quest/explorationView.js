@@ -26,7 +26,7 @@ import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDisco
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { createTrail, recordHero, stepCompanion } from './companionTrail.js';
-import { withLoadingScreen, trackProgress } from './loader.js';
+import { withLoadingScreen, trackProgress, isLoadingScreenSuppressed } from './loader.js';
 import { loadSequence } from './ultimateCinematics.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
@@ -292,7 +292,7 @@ export function createExplorationView(cfg) {
         const zone = worldZones.find(z => z.id === region);
         const label = zone ? zone.name : region === ARENA_REGION ? ARENA_NAME : 'Chargement…';
         const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
-        const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
+        const clip = portrait && zone && !isLoadingScreenSuppressed() ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
         // sprites GBA de la région : héros, PNJ, ennemis et leurs gabarits (le reste se charge à la première apparition)
         const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, X.MIMIC_SPRITE, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
         const promise = withLoadingScreen(label, async progress => {
