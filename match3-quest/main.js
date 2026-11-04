@@ -15,7 +15,7 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
+import { getOption, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
@@ -598,6 +598,12 @@ if (document.readyState === 'loading') {
 
 // Jeu hors ligne : service worker (sw.js) enregistré une fois la page chargée, puis téléchargement de tout le jeu en arrière-plan (voir offlineCache.js)
 registerServiceWorkerWhenLoaded();
-const offlinePrefetcher = createPrefetcher();
+// Appareil modeste : le téléchargement de tout le jeu (≈ 270 Mo) ralentit l'affichage de ≈ 25 % ; il n'avance donc que lorsque le joueur ne
+// touche plus l'écran depuis 4 s (ou que la page est masquée), et un fichier à la fois.
+let lastInputAt = 0;
+['pointerdown', 'pointermove', 'keydown', 'touchstart'].forEach(type => addEventListener(type, () => { lastInputAt = performance.now(); }, { passive: true, capture: true }));
+const offlinePrefetcher = effectsLevel() === 'low'
+    ? createPrefetcher(globalThis, { concurrency: 1, waitWhile: () => document.visibilityState === 'visible' && performance.now() - lastInputAt < 4000 })
+    : createPrefetcher();
 bindOfflineOptions(offlinePrefetcher, document.getElementById('offline-status'), document.getElementById('offline-btn'));
 startBackgroundPrefetch(offlinePrefetcher);

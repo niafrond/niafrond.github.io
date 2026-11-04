@@ -8,6 +8,7 @@ const URL = '/match3-quest/';
 let CPU_SLOWDOWN = 4;
 let DEFAULT_CORES = 4;
 let LOAD_BUDGET_MS = 20_000;
+let MIN_FPS = 6;
 
 // Compteurs injectés avant le chargement : appels canvas, images, tâches longues, contextes audio.
 const instrument = ({ cores }) => {
@@ -87,6 +88,7 @@ test.describe('match3-quest · performances mobile', () => {
         CPU_SLOWDOWN = m.cpuSlowdown ?? 4;
         DEFAULT_CORES = m.cores ?? 4;
         LOAD_BUDGET_MS = m.loadBudgetMs ?? 20_000;
+        MIN_FPS = m.minFps ?? 6;
     });
     test.setTimeout(60_000 * 2);
 
@@ -122,7 +124,7 @@ test.describe('match3-quest · performances mobile', () => {
 
         console.log(`[perf] fluidité: ${(c.frames / 4).toFixed(1)} img/s, blocage ${Math.round(c.blockingMs)} ms, tâche max ${Math.round(c.maxLongMs)} ms`);
         // ≥ 6 images/s même avec un CPU ralenti ×4 en rendu logiciel (le plancher réel mesuré est ≈ 15)
-        expect(c.frames / 4).toBeGreaterThan(6);
+        expect(c.frames / 4).toBeGreaterThan(MIN_FPS);
         // Temps de blocage cumulé (au-delà de 50 ms par tâche) sur 4 s : mesuré ≈ 600 ms, plafond large
         expect(c.blockingMs).toBeLessThan(2500);
     });

@@ -43,7 +43,7 @@ export default defineConfig({
       testMatch: 'perf-mobile.spec.js',
       use: { ...devices['Moto G4'] },
       // Mesuré à ≈ 8 s (22 s avant l'instantané du monde) : plafond à 15 s
-      metadata: { cpuSlowdown: 6, cores: 2, loadBudgetMs: 15_000 },
+      metadata: { cpuSlowdown: 6, cores: 2, loadBudgetMs: 15_000, minFps: 12 },
     },
   ],
 });
