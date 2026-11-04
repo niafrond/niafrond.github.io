@@ -1,3 +1,9 @@
+## [2.184.2](https://github.com/niafrond/niafrond.github.io/compare/v2.184.1...v2.184.2) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** mettre les ennemis, les boss et les enfants à l'échelle sur la carte ([#635](https://github.com/niafrond/niafrond.github.io/issues/635)) ([e9645d1](https://github.com/niafrond/niafrond.github.io/commit/e9645d10494e88a15d7ce4c685b4a1e79983bdf7))
+
 ## [2.184.1](https://github.com/niafrond/niafrond.github.io/compare/v2.184.0...v2.184.1) (2026-11-04)
 
 ### Bug Fixes
