@@ -1350,6 +1350,7 @@ function showMatchSuggestion(){
     const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
+        if(tutorialCallbacks.noSuggestions) return;   // tutoriel : surbrillances propres à chaque étape, pas de conseil standard (le plateau bloqué reste régénéré)
         const suggestedMove = possibleMoves[0];
         
         suggestedMoveIndices = [suggestedMove.from, suggestedMove.to];

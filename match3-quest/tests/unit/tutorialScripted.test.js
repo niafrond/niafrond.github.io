@@ -47,3 +47,28 @@ describe('tutoriel scripté', () => {
         expect(_pickEnemyMove([])).toBeNull();
     });
 });
+
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8');
+
+describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
+    test('pas de conseil standard pendant le tutoriel, rétabli à la fin', () => {
+        expect(read('board.js')).toMatch(/if\(tutorialCallbacks\.noSuggestions\) return;/);
+        const src = read('tutorial.js');
+        expect(src).toMatch(/tutorialCallbacks\.noSuggestions = true/);
+        expect((src.match(/tutorialCallbacks\.noSuggestions = false/g) || []).length).toBeGreaterThanOrEqual(2);
+    });
+
+    test("l'adversaire du tutoriel n'a aucune agilité (mannequin et Fengmeng)", () => {
+        const src = read('tutorial.js');
+        expect(src).toMatch(/attributes: \{ strength: 0, agility: 0,/);
+        expect(src).toMatch(/attributes: \{ \.\.\._duelEnemy\.attributes, agility: 0 \}/);
+    });
+
+    test("la réserve de 500 PV de l'étape du sort ne reste pas dans les PV max", () => {
+        const src = read('tutorial.js');
+        expect(src).toMatch(/_enemyBaseMaxHp = enemy\.maxHp/);
+        expect(src).toMatch(/_game\.enemy\.maxHp = Math\.max\(_enemyBaseMaxHp, ENEMY_FINISH_HP\)/);
+    });
+});

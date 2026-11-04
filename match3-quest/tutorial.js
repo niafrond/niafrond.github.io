@@ -18,6 +18,7 @@ export const tutorialCallbacks = {
     useDumbAI: false,      // board.js lit ce flag dans enemyMakeMove
     allowSwap: null,       // (i, j, board) → bool : refuse tout échange autre que celui demandé (board.js, selectTile)
     dropProbabilities: null, // { skullProb, combatProb, jokerProb } : répartition des tuiles neuves pendant le tutoriel (board.js)
+    noSuggestions: false,  // true : pas de conseil « essayez d'échanger ces deux tuiles » (le tutoriel a ses propres surbrillances)
     dropTile: null,        // (index, board, turn) → tuile | null : tuile neuve imposée à cet emplacement (board.js, remplissage et tirage)
     pickEnemyMove: null,   // (moves) → coup | null : coup de l'adversaire imposé (board.js, enemyMakeRandomMove)
     allowSpell: null,      // (spell) → bool : refuse tout sort autre que celui demandé (game.js, castSpell)
@@ -68,6 +69,7 @@ const TUTORIAL_DROPS = [
     'purple', 'blue', 'blue', 'skull', 'blue', 'yellow', 'green', 'yellow',
 ];
 let _dropCursor = 0;
+let _enemyBaseMaxHp = 0;   // PV max réels de l'adversaire (avant la grande réserve de l'étape du sort)
 export const TUTORIAL_DROPS_SCRIPT = TUTORIAL_DROPS;
 
 // Une tuile neuve ne doit jamais former une ligne de 3 avec les tuiles déjà posées (pas de cascade, donc pas de tour bonus).
@@ -125,6 +127,7 @@ export const TUTORIAL_ENEMY = {
     maxHp: 25,
     attack: 2,
     defense: 0,
+    attributes: { strength: 0, agility: 0, intelligence: 0, stamina: 0, morale: 0 },   // aucune agilité : ni esquive, ni initiative
     mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
     manaCaps: { red: 50, blue: 50, green: 50, yellow: 50, purple: 50 },
     spells: [],
@@ -255,6 +258,7 @@ export function startTutorial(opts = {}) {
     _step = 1;
     tutorialCallbacks.useDumbAI = true;
     tutorialCallbacks.dropProbabilities = TUTORIAL_DROP_PROBABILITIES;
+    tutorialCallbacks.noSuggestions = true;
     tutorialCallbacks.dropTile = _dropTile;
     tutorialCallbacks.pickEnemyMove = _pickEnemyMove;
     _dropCursor = 0;
@@ -275,6 +279,7 @@ export function quitTutorial() {
     _clearHooks();
     tutorialCallbacks.useDumbAI = false;
     tutorialCallbacks.dropProbabilities = null;
+    tutorialCallbacks.noSuggestions = false;
     tutorialCallbacks.dropTile = null;
     tutorialCallbacks.pickEnemyMove = null;
     _active = false;
@@ -363,11 +368,13 @@ function _startTutorialCombat() {
             enemy = Object.assign(_duelEnemy, {
                 hp: Math.min(_duelEnemy.hp, 40), maxHp: Math.min(_duelEnemy.maxHp, 40),
                 attack: Math.min(_duelEnemy.attack, 4), defense: 0,
-                spells: [], abilities: [], useDumbAI: true, isTutorialEnemy: true
+                spells: [], abilities: [], useDumbAI: true, isTutorialEnemy: true,
+                attributes: { ..._duelEnemy.attributes, agility: 0 }   // Fengmeng sans agilité pendant le tutoriel
             });
             _duelEnemy = null;
         }
         startNewCombat(enemy);
+        _enemyBaseMaxHp = enemy.maxHp;
 
         import('./board.js').then(boardModule => {
             boardModule.generateBoard();
@@ -440,9 +447,10 @@ function _adjustEnemyHp(step) {
         // Les dégâts réels du sort dépassent son `dmg` de base (attributs, arme…) : grande réserve de PV, ramenée à
         // ENEMY_FINISH_HP juste après le lancer (hook onSpellCast), pour que le sort ne conclue jamais le duel à lui seul.
         foe.hp = ENEMY_SPELL_HP_BUFFER;
-        foe.maxHp = Math.max(foe.maxHp, foe.hp);
+        foe.maxHp = Math.max(_enemyBaseMaxHp || foe.maxHp, foe.hp);
     } else if (step === 5) {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
+        foe.maxHp = Math.max(_enemyBaseMaxHp || ENEMY_FINISH_HP, foe.hp);
     } else {
         return;
     }
@@ -475,6 +483,7 @@ function _completeTutorial() {
     _hideOverlay();
     tutorialCallbacks.useDumbAI = false;
     tutorialCallbacks.dropProbabilities = null;
+    tutorialCallbacks.noSuggestions = false;
     tutorialCallbacks.dropTile = null;
     tutorialCallbacks.pickEnemyMove = null;
     const wasActive = _active;
@@ -533,7 +542,7 @@ function _installHooks(step) {
 
     } else if (step === 4) {
         tutorialCallbacks.onSpellCast = () => {
-            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
+            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.enemy.maxHp = Math.max(_enemyBaseMaxHp, ENEMY_FINISH_HP); _game.updateStats(); }
             _advanceStep();
         };
     }
