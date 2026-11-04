@@ -854,10 +854,11 @@ export function setMarker(session, x, y) {
 export const clearMarker = session => { session.rt.marker = null; };
 export const markerOf = session => (session.rt.marker && session.rt.marker.screenId === session.data.screenId ? session.rt.marker : null);
 
-// ── Brouillard de guerre (minimap uniquement) ────────────────────────
-// Chaque carte garde le masque des cases vues par le héros (rayon FOG_RADIUS autour de lui à chaque pas). Le jeu principal n'est pas
-// voilé : seule la minimap grise les cases jamais vues (et cache les personnages qui s'y trouvent). Sauvegardé dans `data.fog`.
-export const FOG_RADIUS = 7;
+// ── Brouillard de guerre ─────────────────────────────────────────────
+// Chaque carte garde le masque des cases vues par le héros (rayon FOG_RADIUS autour de lui à chaque pas, définitivement). Les cases jamais
+// vues sont voilées dans la vue principale (explorationView.js `drawFogOfWar`, personnages et ennemis compris), la minimap et la carte
+// plein écran. Sauvegardé dans `data.fog`.
+export const FOG_RADIUS = 6;
 const fogCache = new WeakMap();   // data.fog -> { [écran]: Uint8Array }
 
 function decodeFog(text, n) {

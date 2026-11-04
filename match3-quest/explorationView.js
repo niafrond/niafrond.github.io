@@ -2275,6 +2275,7 @@ export function createExplorationView(cfg) {
                     break;
             }
         });
+        drawFogOfWar(P, screen, tile, vw, vh);
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
         drawMarkerCompass(P, vis, tile, pulse);
         drawAura(P, vis, tile, now);
@@ -2333,7 +2334,43 @@ export function createExplorationView(cfg) {
         return off;
     }
 
+    // Brouillard de guerre de la vue principale : les cases jamais vues (masque X.fogMask, rayon X.FOG_RADIUS autour du héros) sont voilées,
+    // personnages et ennemis compris, jusqu'à ce que le héros s'en approche (définitif). Le voile est une image w x h (1 px par case, opaque
+    // sur l'inconnu) agrandie avec lissage : la lisière est un dégradé d'environ une case. Seule la partie visible est recopiée.
+    const viewFog = { screen: null, rev: -1, canvas: null };
+    let fogHeroCell = '';
+    function drawFogOfWar(P, screen, tile, vw, vh) {
+        if (NO_FOG || !screen.w || !screen.h) return;
+        const cell = `${screen.id}|${session.data.x},${session.data.y}`;
+        if (cell !== fogHeroCell) { fogHeroCell = cell; X.revealFog(session); }   // téléportation, reprise…
+        const rev = session.rt.fogRev || 0;
+        if (viewFog.screen !== screen || viewFog.rev !== rev || !viewFog.canvas) {
+            const mask = X.fogMask(session, screen);
+            const off = viewFog.canvas || document.createElement('canvas');
+            off.width = screen.w;
+            off.height = screen.h;
+            const g = off.getContext('2d');
+            const img = g.createImageData(screen.w, screen.h);
+            for (let i = 0; i < screen.w * screen.h; i++) {
+                if (mask[i]) continue;
+                img.data[i * 4] = 10; img.data[i * 4 + 1] = 12; img.data[i * 4 + 2] = 24; img.data[i * 4 + 3] = 255;
+            }
+            g.putImageData(img, 0, 0);
+            Object.assign(viewFog, { screen, rev, canvas: off });
+        }
+        const o = P(0, 0);
+        const x0 = Math.max(0, Math.floor(-o.x / tile) - 1), y0 = Math.max(0, Math.floor(-o.y / tile) - 1);
+        const x1 = Math.min(screen.w, Math.ceil((vw - o.x) / tile) + 1), y1 = Math.min(screen.h, Math.ceil((vh - o.y) / tile) + 1);
+        if (x1 <= x0 || y1 <= y0) return;
+        const smoothing = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(viewFog.canvas, x0, y0, x1 - x0, y1 - y0, o.x + x0 * tile, o.y + y0 * tile, (x1 - x0) * tile, (y1 - y0) * tile);
+        ctx.imageSmoothingEnabled = smoothing;
+    }
+
     // `?shot=1` (captures de la soluce, tools/build-soluce-shots.mjs) : pas de minimap, elle cacherait un coin de la carte.
+    // Pas de brouillard non plus sur ces captures (elles montrent toute la carte).
+    const NO_FOG = typeof location !== 'undefined' && /[?&]shot=1(&|$)/.test(location.search);
     const NO_MINIMAP = typeof location !== 'undefined' && /[?&]shot=1(&|$)/.test(location.search);
     function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
         miniRect = null;
