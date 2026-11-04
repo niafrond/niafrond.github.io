@@ -734,3 +734,12 @@ body.rt #player-stats.active-turn { border-color: #00c853; }
 body.rt #enemy-stats.active-turn { border-color: #ff1744; }
 body.rt #player-spells, body.rt #enemy-spells { border-width: 3px; box-shadow: 0 4px 0 var(--rt-ink); }
 body.rt .stat-chip, body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border: 0; }
+
+/* Objectif de quête en cours : translucide et traversable (le clic atteint la carte pour explorer). */
+body.rt .explore-hud-main,
+body.rt .explore-hud-main > * { pointer-events: none; }
+body.rt .explore-objective {
+    background: rgba(251, 241, 216, 0.55);
+    border-color: rgba(42, 15, 16, 0.55);
+    box-shadow: none;
+}
