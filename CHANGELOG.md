@@ -1,3 +1,9 @@
+## [2.185.0](https://github.com/niafrond/niafrond.github.io/compare/v2.184.3...v2.185.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** ajouter le brouillard de guerre à la vue d'exploration ([#636](https://github.com/niafrond/niafrond.github.io/issues/636)) ([39117bc](https://github.com/niafrond/niafrond.github.io/commit/39117bcc6bf49f8dac853870ce8d6a0e98ff6294))
+
 ## [2.184.3](https://github.com/niafrond/niafrond.github.io/compare/v2.184.2...v2.184.3) (2026-11-04)
 
 ### Bug Fixes
