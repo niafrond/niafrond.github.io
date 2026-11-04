@@ -3806,3 +3806,15 @@ body.shake { animation: m3-shake .3s ease-in-out; }
 /* Mode Chang'e : seule l'icône miroir reste dans le HUD d'exploration (retour auprès de Hou Yi). */
 .change-mode .explore-hud-buttons > button:not([data-explore="mirror"]) { display: none !important; }
 .change-mode .explore-hud-buttons > [data-explore="mirror"] { display: inline-flex !important; }
+
+/* ── Fiches de combat : niveau (chiffre seul) sur la ligne Att./Déf., points d'action avec les pilules de qì ───── */
+.level-pill { margin-left: 0; padding: 0 5px; font-size: .85em; line-height: 1.5; }
+body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
+#player-stats .stat-row, #enemy-stats .stat-row { flex-wrap: wrap; gap: 4px; }
+#player-stats .mana-dots, #enemy-stats .mana-dots { display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: center; gap: 2px; width: 100%; }
+#player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { margin-right: 0; flex: 0 1 auto; }
+#player-stats .mana-dots .pa-stat, #enemy-stats .mana-dots .pa-stat { margin: 0; flex: none; }
+/* Héros avec rage : la fiche ennemie prend plus de largeur (nom lisible) — disposition en colonnes (portrait). */
+@media (orientation: portrait) {
+    .stats-container.has-rage #enemy-stats { flex: 1.3 1 0; }
+}
