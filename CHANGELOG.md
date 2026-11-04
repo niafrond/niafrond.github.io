@@ -1,3 +1,9 @@
+## [2.190.0](https://github.com/niafrond/niafrond.github.io/compare/v2.189.1...v2.190.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** faire clignoter la fiche du héros et enflammer la rage quand l'ultime est prêt ([#644](https://github.com/niafrond/niafrond.github.io/issues/644)) ([b5d27b7](https://github.com/niafrond/niafrond.github.io/commit/b5d27b7ffc4606e891fc1baab82e13bf376262ff))
+
 ## [2.189.1](https://github.com/niafrond/niafrond.github.io/compare/v2.189.0...v2.189.1) (2026-11-04)
 
 ### Bug Fixes
