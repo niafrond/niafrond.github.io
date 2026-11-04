@@ -51,7 +51,7 @@ import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
 import { launchNotices } from './events/engine.js';
-import { SUN_EPISODE, episodeById } from './change/data.js';
+import { SUN_EPISODE, EPISODES, episodeById } from './change/data.js';
 import { defaultChangeData, normalizeChangeData } from './change/state.js';
 import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
@@ -2126,11 +2126,13 @@ export const changeAmbientOf = (session, npcId) => {
 export const changeIsReplay = session => Boolean(session.rt.changeMode?.replay);
 
 /**
- * Ce que propose le miroir de la maison : les épisodes terminés (à revoir) et l'épisode resté ouvert (à reprendre).
- * [{ episode, village, kind: 'replay' | 'resume' }], dans l'ordre des épisodes ; vide tant qu'aucun épisode n'a été commencé.
+ * Ce que propose le miroir de la maison : les épisodes terminés (à revoir), l'épisode resté ouvert (à reprendre) et ceux dont le soleil est déjà
+ * abattu mais qui n'ont jamais été joués (parties commencées avant le mode Chang'e : à découvrir).
+ * [{ episode, village, kind: 'replay' | 'resume' | 'new' }], dans l'ordre des épisodes ; vide si aucun soleil concerné n'est tombé.
  */
 export function changeReplayOptions(session) {
     const ch = session.data.change;
-    const ids = [...new Set([...ch.done, ...(ch.pending ? [ch.pending] : [])])].sort((a, b) => a - b);
-    return ids.map(id => ({ episode: id, village: episodeById(id).village, kind: ch.done.includes(id) ? 'replay' : 'resume' }));
+    const unlocked = EPISODES.filter(e => session.data.defeated.includes(e.sun)).map(e => e.id);
+    const ids = [...new Set([...ch.done, ...(ch.pending ? [ch.pending] : []), ...unlocked])].sort((a, b) => a - b);
+    return ids.map(id => ({ episode: id, village: episodeById(id).village, kind: ch.done.includes(id) ? 'replay' : ch.pending === id ? 'resume' : 'new' }));
 }
