@@ -3302,7 +3302,7 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 }
 body.fx-low .hero-arrow { display: none; }
 
-/* Sorts multi-mana : barre dégradée aux deux couleurs sous le bouton, « + » discret entre les coûts */
+/* Sorts multi-qì : barre dégradée aux deux couleurs sous le bouton, « + » discret entre les coûts */
 .spell-multi { position: relative; }
 .spell-multi::after {
     content: '';
@@ -3462,7 +3462,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .compare-table th, .compare-table td { padding: 4px 6px; border-bottom: 1px solid rgba(128,128,128,.3); text-align: left; }
 .compare-table td.cmp-better { color: #2e7d32; font-weight: bold; }
 
-/* Sort multi-mana incomplet : seules les couleurs manquantes sont grisées, celles atteintes gardent leur couleur */
+/* Sort multi-qì incomplet : seules les couleurs manquantes sont grisées, celles atteintes gardent leur couleur */
 #spell-buttons .enemy-spell-item.disabled.spell-partial { opacity: 1; filter: none; }
 #spell-buttons .enemy-spell-item.disabled.spell-partial .spell-name { opacity: 0.6; }
 #spell-buttons .enemy-spell-item .cost-part.unmet { opacity: 0.4; filter: grayscale(1); }
@@ -3806,3 +3806,31 @@ body.shake { animation: m3-shake .3s ease-in-out; }
 /* Mode Chang'e : seule l'icône miroir reste dans le HUD d'exploration (retour auprès de Hou Yi). */
 .change-mode .explore-hud-buttons > button:not([data-explore="mirror"]) { display: none !important; }
 .change-mode .explore-hud-buttons > [data-explore="mirror"] { display: inline-flex !important; }
+
+/* ── Fiches de combat : niveau (chiffre seul) sur la ligne Att./Déf., points d'action avec les pilules de qì ───── */
+.level-pill { margin-left: 0; padding: 0 5px; font-size: .85em; line-height: 1.5; }
+body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
+#player-stats .stat-row, #enemy-stats .stat-row { flex-wrap: wrap; gap: 4px; }
+#player-stats .mana-dots, #enemy-stats .mana-dots { display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: center; gap: 2px; width: 100%; }
+#player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { margin-right: 0; flex: 0 1 auto; }
+#player-stats .mana-dots .pa-stat, #enemy-stats .mana-dots .pa-stat { margin: 0; flex: none; }
+/* Les pilules rétrécissent plutôt que de déborder de la fiche. */
+#player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { min-width: 0; width: 1.75em; height: 1.75em; padding: 0; }
+#player-stats .mana-dots .pa-stat, #enemy-stats .mana-dots .pa-stat { padding: 0 3px; font-size: .9em; }
+/* Héros avec rage : sa fiche est plus haute, la fiche ennemie en profite pour afficher le nom complet (sur 2 lignes si besoin). */
+.stats-container.has-rage #enemy-stats .enemy-combat-name { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.15; }
+
+/* Portrait : les deux fiches partagent les mêmes lignes (nom, états, PV, rage, niveau/Att./Déf., pilules) pour être alignées
+   rang par rang, même si l'une a une rage ou un nom sur 2 lignes. Sous-grille : chaque ligne prend la hauteur la plus grande. */
+@media (orientation: portrait) {
+    .stats-container:not([style*="none"]) { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto); column-gap: 4px; align-items: start; }
+    .stats-container > #player-stats, .stats-container > #enemy-stats { grid-row: 1 / span 6; display: grid; grid-template-rows: subgrid; align-content: start; }
+    .stats-container > #player-stats { grid-column: 1; }
+    .stats-container > #enemy-stats { grid-column: 2; }
+    #player-stats > .row-name, #enemy-stats > .row-name { grid-row: 1; }
+    #player-stats > .status-badges, #enemy-stats > .status-badges { grid-row: 2; }
+    #player-stats > .row-hp, #enemy-stats > .row-hp { grid-row: 3; }
+    #player-stats > .row-rage { grid-row: 4; }
+    #player-stats > .row-stats, #enemy-stats > .row-stats { grid-row: 5; }
+    #player-stats > .row-pills, #enemy-stats > .row-pills { grid-row: 6; }
+}

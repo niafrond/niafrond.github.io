@@ -83,7 +83,7 @@ export function getAttributeManaBonus(entity, color, bonusType){
     if(!attribute) return 0;
     const fixedBonus = ATTRIBUTE_MANA_RULES[attribute]?.bonuses?.[bonusType] || 0;
     if(fixedBonus <= 0) return 0;
-    return getPrimaryAttributeEffect(entity, attribute) * fixedBonus;
+    return Math.floor(getPrimaryAttributeEffect(entity, attribute) * fixedBonus + 1e-9);
 }
 
 export function getManaCapForColor(entity, color){
@@ -187,7 +187,7 @@ export function addBonusTurn(entity, amount = 1){
     return entity.bonusTurn;
 }
 
-// Couleurs de qì d'un sort : une (coût simple) ou plusieurs (coût multi-mana).
+// Couleurs de qì d'un sort : une (coût simple) ou plusieurs (coût multi-qì).
 export function spellColorsOf(spell){
     if(!spell) return [];
     if(spell.cost && typeof spell.cost === 'object') return Object.keys(spell.cost);
@@ -195,7 +195,7 @@ export function spellColorsOf(spell){
     return spell.color ? [spell.color] : [];
 }
 
-// Coût en HTML : pastille + montant par couleur, « + » entre deux couleurs ; le sort multi-mana est marqué `spell-multi`.
+// Coût en HTML : pastille + montant par couleur, « + » entre deux couleurs ; le sort multi-qì est marqué `spell-multi`.
 const MANA_HEX = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1c40f', purple: '#9b59b6' };
 // Coût d'un sort en { couleur: quantité } (forme unique pour `cost` nombre ou objet).
 function spellCostEntries(sp){
@@ -230,7 +230,7 @@ function getUltimateTooltipHtml(entity, spell){
 // Gomette de coût : disque de la couleur du qì avec la quantité écrite dedans.
 const costBadge = (color, text) => `<span class="cost-badge mana-${color}${color === 'yellow' ? ' cost-badge-light' : ''}" title="${color}">${text}</span>`;
 export function spellCostHtml(sp, entity = null){
-    // Avec un lanceur : chaque couleur du coût d'un sort multi-mana est marquée atteinte (`met`) ou manquante (`unmet`).
+    // Avec un lanceur : chaque couleur du coût d'un sort multi-qì est marquée atteinte (`met`) ou manquante (`unmet`).
     if(entity && sp.cost && typeof sp.cost === 'object'){
         return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}">${costBadge(color, amount)}</span>`).join('');
     }
@@ -240,7 +240,7 @@ export function spellCostHtml(sp, entity = null){
     }
     return '';
 }
-// Marque visuelle d'un sort multi-mana : barre dégradée aux deux couleurs (CSS `.spell-multi`).
+// Marque visuelle d'un sort multi-qì : barre dégradée aux deux couleurs (CSS `.spell-multi`).
 export function markMultiManaSpell(el, sp){
     const colors = spellColorsOf(sp);
     if(colors.length < 2) return;
@@ -252,7 +252,7 @@ export function markMultiManaSpell(el, sp){
 function getPrimarySpellColor(spell, target = null){
     if(!spell || typeof spell !== 'object') return null;
 
-    // Sort multi-mana : on retient la couleur la plus pertinente contre la cible (sa faiblesse, sinon une couleur qu'elle ne maîtrise pas)
+    // Sort multi-qì : on retient la couleur la plus pertinente contre la cible (sa faiblesse, sinon une couleur qu'elle ne maîtrise pas)
     const multi = spellColorsOf(spell);
     if(multi.length > 1 && target){
         if(target.weakColor && multi.includes(target.weakColor)) return target.weakColor;
@@ -510,7 +510,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         let spellFlags = '';
         const spellColors = spellColorsOf(spell);
         const targetResistance = spellColors.length
-            ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-mana : résistance moyenne
+            ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-qì : résistance moyenne
             : (target.resistances?.[spell.color] || 0);
         let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
         if(isPlayerCaster && target.prep?.weaknessRevealed){
@@ -1476,19 +1476,21 @@ export function updateStats(){
     const equippedUltimate = getEquippedUltimate(player);
     const ultimateReady = !!equippedUltimate && isRageFull(player) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
+    // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
+    document.querySelector('.stats-container')?.classList.toggle('has-rage', !!equippedUltimate);
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span class="level-pill" title="Niveau ${player.level}">Niv. ${player.level}</span>${bonusTurnBadge(player)}</div>
+            <div class="stat row-name"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span>${bonusTurnBadge(player)}</div>
             ${statusBadgesHtml(player)}
-            <div class="stat">
+            <div class="stat row-hp">
                 <div class="hp-bar-container">
                     <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
             ${equippedUltimate ? `
-            <div class="stat rage-stat">
+            <div class="stat rage-stat row-rage">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="width:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
                     <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}/${RAGE_MAX}`}</span>
@@ -1496,14 +1498,15 @@ export function updateStats(){
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
             ` : ''}
-            <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${player.combatPoints}</span></div>
-            <div class="stat">
+            <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
+            <div class="stat row-pills">
                 <div class="mana-dots">
                     <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
                     <span id="player-mana-blue" class="cost-badge mana-blue" title="blue">${targetPlayerMana.blue}</span>
                     <span id="player-mana-green" class="cost-badge mana-green" title="green">${targetPlayerMana.green}</span>
                     <span id="player-mana-yellow" class="cost-badge mana-yellow cost-badge-light" title="yellow">${targetPlayerMana.yellow}</span>
                     <span id="player-mana-purple" class="cost-badge mana-purple" title="purple">${targetPlayerMana.purple}</span>
+                    <span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${player.combatPoints}</span>
                 </div>
             </div>`;
         
@@ -1542,26 +1545,27 @@ export function updateStats(){
     
     // Afficher un indicateur visuel si l'ennemi est plus fort
     const levelIndicator = enemy.level > player.level ? 
-        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">Niv. ${enemy.level}</span>` : 
-        `<span class="level-pill" title="Niveau ${enemy.level}">Niv. ${enemy.level}</span>`;
+        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">${enemy.level}</span>` : 
+        `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
+        <div class="stat row-name"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy)}
-        <div class="stat">
+        <div class="stat row-hp">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat stat-row"><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span><span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${enemy.combatPoints}</span></div>
-        <div class="stat">
+        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>
+        <div class="stat row-pills">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
                 <span id="enemy-mana-blue" class="cost-badge mana-blue" title="blue">${targetEnemyMana.blue}</span>
                 <span id="enemy-mana-green" class="cost-badge mana-green" title="green">${targetEnemyMana.green}</span>
                 <span id="enemy-mana-yellow" class="cost-badge mana-yellow cost-badge-light" title="yellow">${targetEnemyMana.yellow}</span>
                 <span id="enemy-mana-purple" class="cost-badge mana-purple" title="purple">${targetEnemyMana.purple}</span>
+                <span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${enemy.combatPoints}</span>
             </div>
         </div>`;
     bindStatusBadges(enemyDiv, enemy);
@@ -1838,7 +1842,7 @@ export function updatePlayerStatsTab(){
                 <span class="stat-value">${player.maxMana}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">${['red', 'yellow', 'green', 'blue', 'purple'].map(manaIcon).join('')} Caps mana:</span>
+                <span class="stat-label">${['red', 'yellow', 'green', 'blue', 'purple'].map(manaIcon).join('')} Caps qì :</span>
                 <span class="stat-value">${player.manaCaps?.red ?? player.maxMana}/${player.manaCaps?.yellow ?? player.maxMana}/${player.manaCaps?.green ?? player.maxMana}/${player.manaCaps?.blue ?? player.maxMana}/${player.manaCaps?.purple ?? player.maxMana}</span>
             </div>
         </div>
@@ -3207,7 +3211,7 @@ export function createSpellButtons(){
         `;
         if(player.level<sp.minLevel || !hasEnoughMana) {
             btn.classList.add('disabled');
-            // Sort multi-mana sans niveau manquant : les couleurs déjà atteintes restent en couleur (seules les autres sont grisées).
+            // Sort multi-qì sans niveau manquant : les couleurs déjà atteintes restent en couleur (seules les autres sont grisées).
             if(player.level >= sp.minLevel && spellColorsOf(sp).length > 1) btn.classList.add('spell-partial');
             btn.tabIndex = -1;
         } else {

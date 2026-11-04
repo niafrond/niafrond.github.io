@@ -30,7 +30,7 @@ describe('attributs de niveau et bonus de couleur', () => {
 
     test('le résumé permanent reflète les points acquis', () => {
         const s = summarizeColorBonuses(hero({ strength: 2 })).find(c => c.attr === 'strength');
-        expect(s).toMatchObject({ color: 'red', perMatch3: 5, initial: 2, cap: 54 });
+        expect(s).toMatchObject({ color: 'red', perMatch3: 5, initial: 2, cap: 52 });
     });
 });
 
@@ -113,5 +113,12 @@ describe('la rage dépend des attributs de montée de niveau', () => {
         expect(boostedRageGain(hero({ morale: 4 }), 20)).toBe(24);
         expect(boostedRageGain(hero({ morale: 4 }), 0)).toBe(0);
         expect(describeAttributeChoice(hero(), 'morale').lines.join(' ')).toMatch(/\+5 % de rage gagnée/);
+    });
+});
+
+describe('plafond de qì par niveau', () => {
+    test('100 de qì est atteint au niveau 40 (39 points dans une même couleur)', () => {
+        expect(summarizeColorBonuses(hero({ strength: 39 })).find(c => c.attr === 'strength').cap).toBe(100);
+        expect(summarizeColorBonuses(hero({ strength: 38 })).find(c => c.attr === 'strength').cap).toBeLessThan(100);
     });
 });

@@ -543,7 +543,7 @@ describe('progression des joueurs sauvegardés', () => {
             expect(row.color).toBe(rule.color);
             expect(row.perMatch3).toBe(3 + rule.bonuses.gain * row.points);
             expect(row.initial).toBe(rule.bonuses.initial * row.points);
-            expect(row.cap).toBe(p.maxMana + rule.bonuses.max * row.points);
+            expect(row.cap).toBe(p.maxMana + Math.floor(rule.bonuses.max * row.points + 1e-9));
             expect(manaPerMatch(row.attr, row.points, 5)).toBe(5 + rule.bonuses.gain * row.points);
         });
         expect(manaBonusFor('strength', -4, 'gain')).toBe(0);   // points négatifs : jamais de malus
