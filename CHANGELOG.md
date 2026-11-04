@@ -1,3 +1,9 @@
+## [2.183.2](https://github.com/niafrond/niafrond.github.io/compare/v2.183.1...v2.183.2) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** attendre la fin des mini-annonces avant de résoudre le plateau ([#630](https://github.com/niafrond/niafrond.github.io/issues/630)) ([7905387](https://github.com/niafrond/niafrond.github.io/commit/7905387940d24044ac5d2e7f62ef7e42d5ec2bef))
+
 ## [2.183.1](https://github.com/niafrond/niafrond.github.io/compare/v2.183.0...v2.183.1) (2026-11-04)
 
 ### Bug Fixes
