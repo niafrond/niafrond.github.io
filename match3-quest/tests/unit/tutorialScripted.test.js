@@ -66,9 +66,11 @@ describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
         expect(src).toMatch(/attributes: \{ \.\.\._duelEnemy\.attributes, agility: 0 \}/);
     });
 
-    test("la réserve de 500 PV de l'étape du sort ne reste pas dans les PV max", () => {
+    test("plus de réserve de 500 PV : un plancher de PV empêche la mort avant l'étape finale", () => {
         const src = read('tutorial.js');
-        expect(src).toMatch(/_enemyBaseMaxHp = enemy\.maxHp/);
-        expect(src).toMatch(/_game\.enemy\.maxHp = Math\.max\(_enemyBaseMaxHp, ENEMY_FINISH_HP\)/);
+        expect(src).not.toMatch(/500/);
+        expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 1/);
+        expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 0;\s+\/\/ dernier coup/);
+        expect(read('game.js')).toMatch(/const nextHp = Math\.max\(hpFloor, currentHp - normalizedDamage\)/);
     });
 });
