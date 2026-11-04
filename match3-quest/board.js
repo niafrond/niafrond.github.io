@@ -880,7 +880,17 @@ export function checkForMatchesOnly(){
     return checkForMatchesOnlyOnBoard(board);
 }
 
+let announceWaitSince = 0;
 export function checkMatches(forceFullBoard = false){
+    // Une mini-annonce de sort / dégâts est affichée : on attend qu'elle parte (délai auto ou clic) avant de résoudre le plateau.
+    if(document.querySelector('#board .attack-overlay')){
+        if(!announceWaitSince) announceWaitSince = Date.now();
+        if(Date.now() - announceWaitSince < SPELL_HOLES_MAX_WAIT_MS){
+            setTimeout(() => checkMatches(forceFullBoard), 100);
+            return;
+        }
+    }
+    announceWaitSince = 0;
     if(pendingComboAnimations > 0){
         onBoardSettled(() => {
             setTimeout(() => checkMatches(forceFullBoard), 0);
