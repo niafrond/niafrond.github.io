@@ -2369,3 +2369,16 @@ describe('quêtes des armures antiques', () => {
         expect(questStatus(s, quest)).toBe('done');
     });
 });
+
+describe('guidage de quête : bordures de mer', () => {
+    test('depuis le Lit du Fleuve, la flèche vers les Bambous suit la route à pied, pas la bordure de mer', () => {
+        const session = createSession({ screenId: 'fleuve', x: 2, y: 11 });
+        session.data.defeated.push('sun_1', 'sun_2');
+        session.data.quests.q_sun_3 = 'active';
+        const q = session.quests.find(x => x.id === 'q_sun_3');
+        setTrackedQuest(session, q.id);
+        const dir = questDirection(session);
+        expect(dir).toBeTruthy();
+        expect(dir.x).toBe(29);   // sortie est, vers la route des Bambous
+    });
+});

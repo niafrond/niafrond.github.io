@@ -149,7 +149,7 @@ export function connectionMarkers(screens, screen) {
         const range = to && overlapOf(c, screen, to);
         if (!range) return [];
         const { x, y } = borderCell(screen, dir, Math.floor((range[0] + range[1]) / 2));
-        return [{ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, edge: dir, connection: true }];
+        return [{ to: c.to, x, y, label: c.label || to.name, requires: c.requires, lockedMessage: c.lockedMessage, edge: dir, connection: true, sea: Boolean(c.sea) }];
     });
 }
 
