@@ -1,3 +1,14 @@
+## [2.184.0](https://github.com/niafrond/niafrond.github.io/compare/v2.183.3...v2.184.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** ajouter une barre de chargement factice au démarrage ([1f8502d](https://github.com/niafrond/niafrond.github.io/commit/1f8502d02fa03338228ca2cc735d7b12d53edc4d))
+
+### Performance Improvements
+
+* **match3-quest:** ajouter un profil bas de gamme en CI et précalculer le monde ([99f140f](https://github.com/niafrond/niafrond.github.io/commit/99f140f88f97f32d9734f56f73ff60722b791f64))
+* **match3-quest:** fluidifier l'exploration sur vieux téléphone ([a34c980](https://github.com/niafrond/niafrond.github.io/commit/a34c9803fc8c8f6de12adbc6dc57eb80edb31fdf))
+
 ## [2.183.3](https://github.com/niafrond/niafrond.github.io/compare/v2.183.2...v2.183.3) (2026-11-04)
 
 ### Bug Fixes
