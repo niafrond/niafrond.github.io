@@ -1,3 +1,9 @@
+## [2.187.0](https://github.com/niafrond/niafrond.github.io/compare/v2.186.0...v2.187.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** fiches de combat alignées et plafonds de qì abaissés ([#639](https://github.com/niafrond/niafrond.github.io/issues/639)) ([828d8e4](https://github.com/niafrond/niafrond.github.io/commit/828d8e41e19751a2f6c79d05a45d0929f52e0429))
+
 ## [2.186.0](https://github.com/niafrond/niafrond.github.io/compare/v2.185.0...v2.186.0) (2026-11-04)
 
 ### Features
