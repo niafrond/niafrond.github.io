@@ -1,3 +1,9 @@
+## [2.184.3](https://github.com/niafrond/niafrond.github.io/compare/v2.184.2...v2.184.3) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** afficher le sprite de la mimique à l'annonce de combat ([#637](https://github.com/niafrond/niafrond.github.io/issues/637)) ([597a68c](https://github.com/niafrond/niafrond.github.io/commit/597a68c5dff6ddf892723e4a6292234f0e884e81))
+
 ## [2.184.2](https://github.com/niafrond/niafrond.github.io/compare/v2.184.1...v2.184.2) (2026-11-04)
 
 ### Bug Fixes
