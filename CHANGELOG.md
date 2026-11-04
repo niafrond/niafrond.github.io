@@ -1,3 +1,9 @@
+## [2.183.1](https://github.com/niafrond/niafrond.github.io/compare/v2.183.0...v2.183.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** guider la quête par la route à pied plutôt que par la bordure de mer ([#629](https://github.com/niafrond/niafrond.github.io/issues/629)) ([5fbfba6](https://github.com/niafrond/niafrond.github.io/commit/5fbfba6034b83403a658497e3b97fc9f1654d5b1))
+
 ## [2.183.0](https://github.com/niafrond/niafrond.github.io/compare/v2.182.0...v2.183.0) (2026-11-03)
 
 ### Features
