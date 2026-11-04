@@ -1,3 +1,9 @@
+## [2.184.1](https://github.com/niafrond/niafrond.github.io/compare/v2.184.0...v2.184.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** mettre les décors et les animaux à l'échelle sur le terrain ([#633](https://github.com/niafrond/niafrond.github.io/issues/633)) ([3917625](https://github.com/niafrond/niafrond.github.io/commit/391762561881a6da132d012fdca993569812e336))
+
 ## [2.184.0](https://github.com/niafrond/niafrond.github.io/compare/v2.183.3...v2.184.0) (2026-11-04)
 
 ### Features
