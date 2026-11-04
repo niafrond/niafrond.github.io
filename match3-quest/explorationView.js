@@ -294,7 +294,7 @@ export function createExplorationView(cfg) {
         const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
         const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
         // sprites GBA de la région : héros, PNJ, ennemis et leurs gabarits (le reste se charge à la première apparition)
-        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
+        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, X.MIMIC_SPRITE, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
         const promise = withLoadingScreen(label, async progress => {
             await trackProgress([...packs.map(loadSpritePack), gba], r => progress(r * 0.5));
             const svgs = regionSprites(region);
