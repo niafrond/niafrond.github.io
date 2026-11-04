@@ -1,3 +1,9 @@
+## [2.189.0](https://github.com/niafrond/niafrond.github.io/compare/v2.188.1...v2.189.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** tutoriel scripté (tuiles pré-générées, Fengmeng inoffensif) ([#642](https://github.com/niafrond/niafrond.github.io/issues/642)) ([bf31ffa](https://github.com/niafrond/niafrond.github.io/commit/bf31ffa0aa76911ca1274ddab5fc3f13376facb5))
+
 ## [2.188.1](https://github.com/niafrond/niafrond.github.io/compare/v2.188.0...v2.188.1) (2026-11-04)
 
 ### Bug Fixes
