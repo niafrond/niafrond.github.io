@@ -71,6 +71,7 @@ const inRect = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < 
 
 // ── Hautes herbes : rencontres aléatoires (voir world/DESIGN-V2.md §5) ───────────────────────────
 export const GRASS_RATE = 0.12;          // probabilité de rencontre par pas sur l'herbe, une fois les pas de grâce passés
+export const MOUNTED_GRASS_FACTOR = 0.4;   // à cheval : 40 % de la probabilité de rencontre (le cheval galope trop vite pour être surpris)
 export const GRASS_SAFE_STEPS = 3;       // pas d'herbe sans rencontre après l'arrivée sur la carte ou un combat
 export const WILD_PREFIX = 'wild:';      // identifiant synthétique d'une créature d'herbe : wild:<écran>:<n>
 export const WILD_INTRO = 'Des créatures se cachent dans les hautes herbes, l\'eau et la lave.';
@@ -989,7 +990,8 @@ function rollWildEncounter(session, ctx = {}) {
     if (!g || g.table.length === 0) return null;
     if (session.rt.grace > 0 || isStealthy(session) || session.rt.grassSteps <= g.safeSteps) return null;
     const random = typeof ctx.random === 'function' ? ctx.random : Math.random;
-    if (random() >= g.rate) return null;
+    const rate = ctx.riding ? g.rate * MOUNTED_GRASS_FACTOR : g.rate;   // à cheval : rencontres plus rares
+    if (random() >= rate) return null;
     const total = g.table.reduce((sum, t) => sum + t.weight, 0);
     let pick = random() * total;
     const entry = g.table.find(t => (pick -= t.weight) < 0) || g.table[g.table.length - 1];
