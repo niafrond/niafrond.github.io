@@ -74,3 +74,13 @@ describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
         expect(read('game.js')).toMatch(/const nextHp = Math\.max\(hpFloor, currentHp - normalizedDamage\)/);
     });
 });
+
+import { rollBlock, resolveStrike } from '../../combatStats.js';
+describe("tutoriel : l'adversaire ne bloque jamais", () => {
+    test('même avec une forte défense et un niveau élevé, aucun blocage ni parade', () => {
+        const foe = { isTutorialEnemy: true, level: 40, defense: 500, attributes: { agility: 50 } };
+        for (let i = 0; i < 200; i++) expect(rollBlock(foe, () => 0)).toBe('none');
+        expect(resolveStrike(10, { level: 1, attack: 1 }, foe, { rng: () => 0.99 }).block).toBe('none');
+        expect(rollBlock({ level: 40, defense: 500 }, () => 0)).not.toBe('none');   // un ennemi normal bloque toujours
+    });
+});
