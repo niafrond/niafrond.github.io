@@ -1536,6 +1536,7 @@ export function updateStats(){
 
         // Ajouter/retirer classe pour liseré selon le tour actuel
         playerDiv.classList.toggle('active-turn', currentTurn === 'player');
+        playerDiv.classList.toggle('ultimate-ready', ultimateReady);   // ultime disponible : toute la fiche clignote (style.css)
         bindStatusBadges(playerDiv, player);
     });
     
