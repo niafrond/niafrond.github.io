@@ -82,7 +82,7 @@ export function hideLoadingScreen() {
         hideTimer = setTimeout(() => {
             el.classList.add('closing');
             hideTimer = setTimeout(() => {
-                el.classList.remove('visible', 'closing');
+                el.classList.remove('visible', 'closing', 'boot');
                 stopClip(el);
                 el.setAttribute('aria-hidden', 'true');
                 resolve();

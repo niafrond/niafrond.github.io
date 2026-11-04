@@ -25,3 +25,14 @@ describe('écran de chargement avec animation de biome', () => {
         expect(during).toEqual({ visible: false, clip: null });
     });
 });
+
+describe('écran de chargement du démarrage', () => {
+    test('la classe `boot` (barre factice) est retirée à la fermeture', async () => {
+        document.body.innerHTML = '<div id="loading-screen" class="loading-screen visible boot"><div class="loading-panel"><div class="loading-label"></div><div class="loading-bar"><i></i></div></div></div>';
+        const { hideLoadingScreen } = await import('../../loader.js');
+        await hideLoadingScreen();
+        const el = document.getElementById('loading-screen');
+        expect(el.classList.contains('boot')).toBe(false);
+        expect(el.classList.contains('visible')).toBe(false);
+    });
+});
