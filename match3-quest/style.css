@@ -3877,3 +3877,8 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 #player-stats .row-stats, #enemy-stats .row-stats { flex-wrap: nowrap; width: 100%; }
 #player-stats .row-stats > .level-pill, #enemy-stats .row-stats > .level-pill,
 #player-stats .row-stats > .stat-chip, #enemy-stats .row-stats > .stat-chip { flex: 1 1 0; min-width: 0; margin: 0; text-align: center; justify-content: center; box-sizing: border-box; }
+/* Héros avec rage : les pastilles de qì passent sous la barre verticale, sur toute la largeur de la fiche. */
+#player-stats:has(.rage-stat) > .row-pills { grid-column: 1 / -1; }
+@media (orientation: portrait) { #player-stats:has(.rage-stat) > .rage-stat { grid-row: 1 / span 4; } }
+#player-stats:has(.rage-stat) .mana-dots .cost-badge { width: 1.75em; height: 1.75em; font-size: .85em; }
+#player-stats:has(.rage-stat) .mana-dots .pa-stat { padding: 0 3px; font-size: .9em; }
