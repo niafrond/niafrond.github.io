@@ -137,6 +137,12 @@ function addTalk(village) {
  * Crée le village, son entrée dans la zone sauvage des Rizières, le col, le sanctuaire et les quêtes. Retourne `false` (sans rien modifier)
  * si la zone hôte est absente du monde assemblé, p. ex. dans un monde de test réduit.
  */
+// Énigmes de l'événement (moteur d'énigmes existant, seulement quand l'événement est actif). Séparée de `apply` : quand le monde vient de
+// l'instantané (world/snapshot.js), seule cette inscription dans PUZZLES doit être rejouée.
+export function registerPuzzles() {
+    D.PUZZLE_LIST.forEach(p => { PUZZLES[p.id] = p.def; });
+}
+
 export function applyWinterLanternFestival(screens, quests) {
     const wild = screens[D.HOST.wild];
     if (!wild) return false;
@@ -155,7 +161,7 @@ export function applyWinterLanternFestival(screens, quests) {
     village.biomeIntro = D.VILLAGE.intro;
     addTalk(village);
 
-    D.PUZZLE_LIST.forEach(p => { PUZZLES[p.id] = p.def; });   // énigmes de l'événement (moteur d'énigmes existant, seulement quand l'événement est actif)
+    registerPuzzles();
     screens[D.REALM_ID] = village;
     screens[D.MAISON.id] = buildMaison();
 
@@ -170,4 +176,4 @@ export function applyWinterLanternFestival(screens, quests) {
     return true;
 }
 
-export default { id: D.ID, apply: applyWinterLanternFestival, launchNotice: D.LAUNCH_NOTICE };
+export default { id: D.ID, apply: applyWinterLanternFestival, registerPuzzles, launchNotice: D.LAUNCH_NOTICE };

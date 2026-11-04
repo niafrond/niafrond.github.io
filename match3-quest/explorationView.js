@@ -230,7 +230,13 @@ export function createExplorationView(cfg) {
     let puzzleView = null;   // énigme à plateau ouverte (puzzle/view.js), au-dessus de la carte
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
-    const isOnScreen = () => root.getClientRects().length > 0;
+    // Lecture de layout (getClientRects) appelée plusieurs fois par image : mémorisée 100 ms.
+    let onScreenStamp = -Infinity, onScreenValue = false;
+    const isOnScreen = () => {
+        const t = performance.now();
+        if (t - onScreenStamp > 100) { onScreenValue = root.getClientRects().length > 0; onScreenStamp = t; }
+        return onScreenValue;
+    };
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
@@ -1666,6 +1672,17 @@ export function createExplorationView(cfg) {
         if (groundJob && !groundJob.done) stepGroundJob(groundJob, PREBUILD_BUDGET_MS);
     }
 
+    // Indicateur de quête d'un PNJ : parcourt toutes les quêtes, donc mémorisé 250 ms par PNJ (il ne change qu'aux événements de quête).
+    const markerCache = new Map();
+    function npcMarkerCached(id) {
+        const now = performance.now();
+        const hit = markerCache.get(id);
+        if (hit && now - hit.at < 250) return hit.value;
+        const value = X.npcMarker(session, id);
+        markerCache.set(id, { at: now, value });
+        return value;
+    }
+    let drawDpr = 1;   // densité de pixels de l'image en cours (ombres pré-rendues)
     function draw(now) {
         const screen = X.currentScreen(session);
         const biome = BIOMES[screen.biome] || BIOMES.paddy;
@@ -1677,6 +1694,7 @@ export function createExplorationView(cfg) {
             canvas.height = Math.round(vh * dpr);
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawDpr = dpr;
         // Défilement entre deux cartes : ancienne image qui sort, nouvelle carte qui entre (poussée dans le sens de la marche).
         const sp = slideProgress(now);
         let slideX = 0, slideY = 0;   // décalage de la carte pendant le défilement (repère pour ne dessiner que ce qui est à l'écran)
@@ -2096,7 +2114,7 @@ export function createExplorationView(cfg) {
                     if (careCol) { ctx.save(); ctx.shadowColor = careCol; ctx.shadowBlur = tile * 0.16; }
                     drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));
                     if (careCol) ctx.restore();   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
-                    const marker = it.n.injured || it.n.ambient ? null : X.npcMarker(session, it.n.id);   // mode Chang'e : pas de « ! » de quête
+                    const marker = it.n.injured || it.n.ambient ? null : npcMarkerCached(it.n.id);   // mode Chang'e : pas de « ! » de quête
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
                     else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
@@ -2604,11 +2622,31 @@ export function createExplorationView(cfg) {
         ctx.stroke();
     }
 
+    // Ombre ovale sous les pieds : une dizaine par image. Remplir un chemin elliptique translucide coûte cher en rendu logiciel (≈ 40 % du temps
+    // natif d'une image sur un vieux téléphone) ; l'ovale est donc rasterisé une fois par taille (au quart de pixel) puis recopié.
+    const shadowSprites = new Map();
+    function shadowSprite(rx, ry, dpr) {
+        const key = `${Math.round(rx * 4)}|${Math.round(ry * 4)}|${dpr}`;
+        let sprite = shadowSprites.get(key);
+        if (!sprite) {
+            const pad = 1;   // marge (px CSS) pour l'anticrénelage du bord
+            const cv = document.createElement('canvas');
+            cv.width = Math.ceil((rx + pad) * 2 * dpr);
+            cv.height = Math.ceil((ry + pad) * 2 * dpr);
+            const g = cv.getContext('2d');
+            g.beginPath();
+            g.ellipse(cv.width / 2, cv.height / 2, rx * dpr, ry * dpr, 0, 0, Math.PI * 2);
+            g.fillStyle = 'rgba(0,0,0,0.22)';
+            g.fill();
+            sprite = { cv, w: cv.width / dpr, h: cv.height / dpr };
+            if (shadowSprites.size > 64) shadowSprites.clear();
+            shadowSprites.set(key, sprite);
+        }
+        return sprite;
+    }
     function drawShadow(x, y, rx, ry) {
-        ctx.beginPath();
-        ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
-        ctx.fill();
+        const sprite = shadowSprite(rx, ry, drawDpr);
+        ctx.drawImage(sprite.cv, x - sprite.w / 2, y - sprite.h / 2, sprite.w, sprite.h);
     }
 
     // Porte d'événement : grande (GATE_SCALE cases de large, elle déborde sur les cases voisines), entourée d'une aura qui change de couleur

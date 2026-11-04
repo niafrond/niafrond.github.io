@@ -2860,6 +2860,26 @@ body.dark-mode .tutorial-card {
     transition: width 0.2s steps(6, end);
 }
 @keyframes loading-stripes { to { background-position: 40px 0; } }
+/* Barre factice du démarrage (classe `boot` posée dans index.html, retirée à la fermeture par loader.js) : le démarrage bloque le thread
+   principal plusieurs secondes sur un vieux téléphone, donc la barre réelle (JS) ne bouge pas. Celle-ci n'anime que `transform`, que le
+   compositeur exécute sans le thread principal : elle avance vite puis ralentit sans jamais atteindre 100 % (la barre réelle la dépasse
+   et la fin du chargement la remplit). */
+.loading-bar { position: relative; }
+.loading-bar i { position: relative; }
+.loading-screen.boot .loading-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, #e8b923 0 8px, #c9922a 8px 10px);
+    transform: translateX(-100%);
+    animation: loading-fake 24s linear forwards;
+}
+@keyframes loading-fake {
+    0%   { transform: translateX(-100%); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+    30%  { transform: translateX(-45%);  animation-timing-function: ease-out; }
+    60%  { transform: translateX(-20%);  animation-timing-function: ease-out; }
+    100% { transform: translateX(-8%); }
+}
 @media (prefers-reduced-motion: reduce) { .loading-sun, .loading-bar { animation: none; } }
 
 /* ── Écran de démarrage ────────────────────────────────────────────────────── */

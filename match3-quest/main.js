@@ -15,7 +15,7 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
+import { getOption, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
@@ -30,7 +30,7 @@ import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
 import { ARENA_NAME, ARENA_REGION } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
-import { hideLoadingScreen } from "./loader.js";
+import { hideLoadingScreen, setLoadingProgress, trackProgress } from "./loader.js";
 import { readLastPlayed, touchLastPlayed, isLongAbsence, buildRecap, absenceDays, showWelcomeBack } from "./welcomeBack.js";
 
 // initialisation de la partie
@@ -557,7 +557,7 @@ function init() {
     const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
     // Écran de chargement initial (index.html) : on ne charge que les dessins communs (héros, coffres) et ceux de la
     // région où reprend la partie ; les autres régions sont chargées en y entrant.
-    const bootReady = Promise.all([loadSpritePack(CORE_PACK), exploration.ready()])
+    const bootReady = trackProgress([loadSpritePack(CORE_PACK), exploration.ready()], setLoadingProgress)
         .catch(err => console.warn('[boot] chargement initial incomplet', err))
         .then(() => hideLoadingScreen());
     // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
@@ -598,6 +598,12 @@ if (document.readyState === 'loading') {
 
 // Jeu hors ligne : service worker (sw.js) enregistré une fois la page chargée, puis téléchargement de tout le jeu en arrière-plan (voir offlineCache.js)
 registerServiceWorkerWhenLoaded();
-const offlinePrefetcher = createPrefetcher();
+// Appareil modeste : le téléchargement de tout le jeu (≈ 270 Mo) ralentit l'affichage de ≈ 25 % ; il n'avance donc que lorsque le joueur ne
+// touche plus l'écran depuis 4 s (ou que la page est masquée), et un fichier à la fois.
+let lastInputAt = 0;
+['pointerdown', 'pointermove', 'keydown', 'touchstart'].forEach(type => addEventListener(type, () => { lastInputAt = performance.now(); }, { passive: true, capture: true }));
+const offlinePrefetcher = effectsLevel() === 'low'
+    ? createPrefetcher(globalThis, { concurrency: 1, waitWhile: () => document.visibilityState === 'visible' && performance.now() - lastInputAt < 4000 })
+    : createPrefetcher();
 bindOfflineOptions(offlinePrefetcher, document.getElementById('offline-status'), document.getElementById('offline-btn'));
 startBackgroundPrefetch(offlinePrefetcher);
