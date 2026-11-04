@@ -148,7 +148,13 @@ export const NPC_SCALE = {
     huang_xian: 0.7,       // belette
     hare_tuzi: 0.6,        // lièvre
     jade_hare: 0.6,        // lièvre de jade (messager de Chang'e)
-    carp_jin: 0.55         // carpe dans sa flaque
+    carp_jin: 0.55,        // carpe dans sa flaque
+    // enfants et apprentis : plus petits qu'un adulte
+    child_yuer: 0.78, girl_net_mi: 0.78, kids_leimei: 0.8, moon_child: 0.75, xiaobao: 0.78, rizieres_village_kid_lan: 0.78,
+    fleuve_village_kid_ming: 0.8, fleuve_hamlet_kid_dun: 0.8, bambous_village_kid_runner: 0.8, gobi_village_kid_guide: 0.82,
+    mer_village_awen: 0.85, mer_hamlet_dao: 0.85, apprentice_zhu: 0.88, mer_village_yue: 0.88, crane_apprentice_ling: 0.88,
+    tonnerre_village_apprentice: 0.9, twins_mu: 0.85,
+    sun_ten: 0.6           // le dixième soleil, un petit être lumineux et terrorisé
 };
 export const npcScale = id => NPC_SCALE[id] ?? 1;
 
