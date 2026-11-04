@@ -1,3 +1,9 @@
+## [2.189.1](https://github.com/niafrond/niafrond.github.io/compare/v2.189.0...v2.189.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** tutoriel sans PV gonflés à 500 et sans blocage de l'adversaire ([#643](https://github.com/niafrond/niafrond.github.io/issues/643)) ([8d4c547](https://github.com/niafrond/niafrond.github.io/commit/8d4c547b1773af62be714ae800edf4674ef923a4))
+
 ## [2.189.0](https://github.com/niafrond/niafrond.github.io/compare/v2.188.1...v2.189.0) (2026-11-04)
 
 ### Features
