@@ -4,13 +4,13 @@
 // Règles paramétrables : un attribut influence la couleur de qì associée.
 //  initial : qì de cette couleur au début de chaque combat, par point
 //  gain    : qì en plus à chaque match de cette couleur, par point (3 tuiles => 3 + gain)
-//  max     : plafond de qì de cette couleur, par point
+//  max     : plafond de qì de cette couleur, par point (1,3 : 100 est atteint au niveau 40 en mettant tous ses points dans une couleur, 50 + ⌊39 × 1,3⌋)
 export const ATTRIBUTE_MANA_RULES = {
-    strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 2 } },
-    agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 2 } },
-    stamina: { color: "green", bonuses: { initial: 1, gain: 1, max: 2 } },
-    intelligence: { color: "blue", bonuses: { initial: 1, gain: 1, max: 2 } },
-    morale: { color: "purple", bonuses: { initial: 1, gain: 1, max: 2 } }
+    strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 1.3 } },
+    agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 1.3 } },
+    stamina: { color: "green", bonuses: { initial: 1, gain: 1, max: 1.3 } },
+    intelligence: { color: "blue", bonuses: { initial: 1, gain: 1, max: 1.3 } },
+    morale: { color: "purple", bonuses: { initial: 1, gain: 1, max: 1.3 } }
 };
 
 // Effet direct d'un point (stat de combat), appliqué par applyAttributeBonus.
@@ -73,7 +73,7 @@ export function getAttributePoints(entity, attr) {
 // Bonus de qì d'une couleur pour un nombre de points donné.
 export function manaBonusFor(attr, points, type) {
     const rule = ATTRIBUTE_MANA_RULES[attr];
-    return (rule?.bonuses?.[type] || 0) * Math.max(0, Math.floor(points || 0));
+    return Math.floor((rule?.bonuses?.[type] || 0) * Math.max(0, Math.floor(points || 0)) + 1e-9);
 }
 
 // Rage de départ (sur 100) et majoration (%) de la rage gagnée pour `points` points d'un attribut.
@@ -115,7 +115,7 @@ export function describeAttributeChoice(entity, attr) {
         stat.line,
         `Couleur ${color} : un match de 3 tuiles ${color}s donne ${manaPerMatch(attr, next)} qì ${color} au lieu de ${manaPerMatch(attr, pts)}.`,
         `Un match de 4 donne ${manaPerMatch(attr, next, 4)} qì ${color} (tour bonus) ; de 5, ${manaPerMatch(attr, next, 5)}.`,
-        `+${b.initial} qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de qì ${color} +${b.max} (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`,
+        `+${b.initial} qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de qì ${color} +${String(b.max).replace('.', ',')} par point (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`,
         ...rageLines
     ];
     return {

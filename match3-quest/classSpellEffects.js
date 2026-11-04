@@ -199,7 +199,7 @@ export function applyClassSpellEffect(spell) {
             return applyRageToDamage(spell);
         case 'ultimate': // Sorts ultimes (jauge de rage)
             return applyUltimate(spell);
-        // Sorts avancés multi-mana (3 à 5 couleurs), génériques
+        // Sorts avancés multi-qì (3 à 5 couleurs), génériques
         case 'sweepRow': // Lame des Quatre Vents
             return applySweepLines(spell, 'row');
         case 'sweepCol': // Fente de Givre, Entaille du Vent…
@@ -892,7 +892,7 @@ function applyBloodlust(spell) {
     return true;
 }
 
-// ── Sorts avancés multi-mana ────────────────────────────────────────────────
+// ── Sorts avancés multi-qì ────────────────────────────────────────────────
 
 const MANA_COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
 

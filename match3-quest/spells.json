@@ -635,9 +635,9 @@
       "name": "Fin de la Tribulation",
       "type": "damage",
       "cost": {
-        "red": 80,
-        "blue": 80,
-        "yellow": 80,
+        "red": 70,
+        "blue": 70,
+        "yellow": 70,
         "green": 60
       },
       "dmg": 1260,
