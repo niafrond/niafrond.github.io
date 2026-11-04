@@ -3873,3 +3873,7 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 #player-stats:has(.rage-stat) .mana-dots { gap: 1px; }
 #player-stats:has(.rage-stat) .mana-dots .cost-badge { width: 1.45em; height: 1.45em; font-size: .8em; }
 #player-stats:has(.rage-stat) .mana-dots .pa-stat { padding: 0 2px; font-size: .8em; }
+/* Niveau, Att. et Déf. se partagent toute la largeur de la ligne. */
+#player-stats .row-stats, #enemy-stats .row-stats { flex-wrap: nowrap; width: 100%; }
+#player-stats .row-stats > .level-pill, #enemy-stats .row-stats > .level-pill,
+#player-stats .row-stats > .stat-chip, #enemy-stats .row-stats > .stat-chip { flex: 1 1 0; min-width: 0; margin: 0; text-align: center; justify-content: center; box-sizing: border-box; }
