@@ -36,7 +36,7 @@ import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
 import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
 import { connectionRows } from './mapConnections.js';
-import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug, decorCell } from './decor.js';
+import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug, decorCell, decorScale, npcScale } from './decor.js';
 import { gridsOf, rectGrid } from './explorationGrids.js';
 import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront, drawLedge } from './tilePainter.js';
 
@@ -2082,8 +2082,10 @@ export function createExplorationView(cfg) {
                         drawSprite(DEAD_TREES[Math.floor(hash(it.y + 5, it.x + 11) * DEAD_TREES.length)], c.x, c.y + tile * 0.4, tile * 1.35);
                         break;
                     }
-                    drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
-                    drawDecor(decor, c.x, c.y + tile * 0.36, tile * 0.85);
+                    // échelle propre à chaque décor (decor.js : un lit n'a pas la taille d'un coquillage) ; l'ombre suit
+                    const dk = decorScale(decor), shadowK = Math.min(1.7, Math.max(0.6, dk / 0.85));
+                    drawShadow(c.x, c.y + tile * 0.3, tile * 0.32 * shadowK, tile * 0.11 * shadowK);
+                    drawDecor(decor, c.x, c.y + tile * 0.36, tile * dk);
                     break;
                 }
                 case 'npc': {
@@ -2094,7 +2096,7 @@ export function createExplorationView(cfg) {
                     const careT = it.n.injured ? (session.data.change.healed.includes(it.n.id) ? 1 : Math.min(1, (session.data.change.hp[it.n.id] || 0) / (it.n.need || 1))) : 0;
                     const careCol = it.n.injured ? `rgb(${Math.round(222 + (70 - 222) * careT)},${Math.round(56 + (200 - 56) * careT)},${Math.round(60 + (120 - 60) * careT)})` : null;
                     if (careCol) { ctx.save(); ctx.shadowColor = careCol; ctx.shadowBlur = tile * 0.16; }
-                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02));
+                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob - (it.hop || 0) * tile * 0.32, tile * (it.n.span || 1.02 * npcScale(it.n.id)));
                     if (careCol) ctx.restore();   // `span` : PNJ immense (Changxi) ; `hop` : saut d'un PNJ qui accourt
                     const marker = it.n.injured || it.n.ambient ? null : X.npcMarker(session, it.n.id);   // mode Chang'e : pas de « ! » de quête
                     if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
