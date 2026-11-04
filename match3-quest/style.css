@@ -3819,3 +3819,18 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 #player-stats .mana-dots .pa-stat, #enemy-stats .mana-dots .pa-stat { padding: 0 3px; font-size: .9em; }
 /* Héros avec rage : sa fiche est plus haute, la fiche ennemie en profite pour afficher le nom complet (sur 2 lignes si besoin). */
 .stats-container.has-rage #enemy-stats .enemy-combat-name { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.15; }
+
+/* Portrait : les deux fiches partagent les mêmes lignes (nom, états, PV, rage, niveau/Att./Déf., pilules) pour être alignées
+   rang par rang, même si l'une a une rage ou un nom sur 2 lignes. Sous-grille : chaque ligne prend la hauteur la plus grande. */
+@media (orientation: portrait) {
+    .stats-container:not([style*="none"]) { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto); column-gap: 4px; align-items: start; }
+    .stats-container > #player-stats, .stats-container > #enemy-stats { grid-row: 1 / span 6; display: grid; grid-template-rows: subgrid; align-content: start; }
+    .stats-container > #player-stats { grid-column: 1; }
+    .stats-container > #enemy-stats { grid-column: 2; }
+    #player-stats > .row-name, #enemy-stats > .row-name { grid-row: 1; }
+    #player-stats > .status-badges, #enemy-stats > .status-badges { grid-row: 2; }
+    #player-stats > .row-hp, #enemy-stats > .row-hp { grid-row: 3; }
+    #player-stats > .row-rage { grid-row: 4; }
+    #player-stats > .row-stats, #enemy-stats > .row-stats { grid-row: 5; }
+    #player-stats > .row-pills, #enemy-stats > .row-pills { grid-row: 6; }
+}
