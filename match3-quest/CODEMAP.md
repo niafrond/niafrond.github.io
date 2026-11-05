@@ -38,7 +38,13 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `equipment.js` — Système d'équipement multi-slot (main droite, main gauche, objet)
 - `experience.js` — Système d'expérience et de progression du joueur
 - `exploration.js` — Moteur de la phase d'exploration (logique pure, sans DOM).
+- `explorationChange.js` — Mode Chang'e : Chang'e explore son village (places des blessés et des habitants de passage, épisodes, ambiance).
+- `explorationDialogue.js` — Compagnons et dialogues contextuels : répliques d'ambiance, conversation avec un PNJ.
 - `explorationGrids.js` — Grilles de cases (obstacles, liquides) et liste des décors fixes d'un écran, mises en cache : `inRects` parcourait tous les rectangles
+- `explorationGuide.js` — Guide du joueur : suivi de quête, cibles, repères, direction à prendre, texte d'objectif et journal.
+- `explorationQuests.js` — Quêtes de l'exploration : statut, objectifs, démarrage, achèvement, victoire sur un ennemi, Nouvelle Partie +, défaite.
+- `explorationSenses.js` — Perception du joueur : aura, caches invisibles et mimiques, coffres refermés, repère posé sur la carte, brouillard de guerre.
+- `explorationTravel.js` — Pierres de voyage (voyage rapide), progression par région, bestiaire et introduction.
 - `explorationView.js` — Phase d'exploration : carte plein écran en vue du dessus (canvas), saisie clavier / pavé
 - `explorationViewCarnet.js` — Carnet de voyage de la vue d'exploration : onglets quêtes, voyage rapide, progression, bestiaire.
 - `explorationViewChange.js` — Mode Chang'e de la vue d'exploration : épisodes, miroir, soins, arrivée des PNJ, fin de la légende.
@@ -80,6 +86,10 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `spells.js` — Catalogue des sorts charge depuis spells.json
 - `statusBadges.js` — Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
 - `story.js` — Histoire et cartes d'exploration de Match3-Quest : « La Légende de Hou Yi ».
+- `storyMirror.js` — Le miroir brisé de Chang'e : interludes joués après chaque soleil abattu (MIRROR_TALKS) et orateur de Fengmeng.
+- `storyQuests.js` — Quêtes de base de l'histoire : histoire principale puis quêtes annexes. Données pures, extraites de story.js.
+- `storyScreens.js` — Écrans de base de l'histoire (un par région/sanctuaire : décor, PNJ, ennemis, coffres, sorties).
+- `storyText.js` — Textes de l'histoire : titre, introduction et épilogue de « La Légende de Hou Yi ». Extrait de story.js (ré-exporté).
 - `stuff.js` — Stuff : casque, collier, bracelet et bague. Module pur (sans DOM).
 - `stuffView.js` — Onglet « Stuff » : casque, collier, bracelet et bague (stuff.js). Affichage et actions du joueur ; la logique est dans stuff.js.
 - `sw.js` — (sans description)
@@ -116,3 +126,7 @@ Les modules extraits importent `game.js` en retour (import circulaire sûr : usa
 - `explorationViewMap.js` : carte plein écran et repère, voyage, arène
 - `explorationViewChange.js` : mode Chang'e (épisodes, miroir, soins)
 Les tests qui lisent le source utilisent `tests/unit/fixtures/explorationViewSource.js` (concatène `explorationView*.js`).
+
+## story.js et exploration.js — plans par modules
+- `story.js` : assemble le monde (`SCREENS`, `QUESTS`, `REGION_UNLOCK_LEVEL`) ; le format des données est décrit en tête. Données : `storyText.js` (titre, intro, épilogue), `storyMirror.js` (interludes du miroir), `storyScreens.js` (`BASE_SCREENS`, gros), `storyQuests.js` (`BASE_QUESTS`, gros).
+- `exploration.js` : moteur (session, déplacements, ennemis, boss, entrée d'écran, arène, herbes, rencontres) et `export *` des modules : `explorationSenses.js` (aura, mimiques, coffres refermés, repère, brouillard), `explorationQuests.js` (statut/achèvement des quêtes, victoire, Nouvelle Partie +), `explorationDialogue.js` (compagnons, `talkToNpc`), `explorationGuide.js` (suivi de quête, cibles, objectif, journal), `explorationTravel.js` (voyage rapide, progression, bestiaire), `explorationChange.js` (mode Chang'e).
