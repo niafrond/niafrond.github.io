@@ -150,6 +150,11 @@ describe('plateau : les matchs de l\'ennemi sont toujours résolus', () => {
         expect(swap).toMatch(/\n    gameStarted = true;/);
         expect(swap).not.toMatch(/if\(currentTurn === 'player'\)\{\s*gameStarted = true;/);
     });
+    test('cliquer une case de biome affiche brièvement son effet', () => {
+        const sel = board.slice(board.indexOf('export function selectTile'), board.indexOf('export function selectTile') + 1200);
+        expect(sel).toMatch(/announceClickedBiomeCell\(index\)/);
+        expect(board).toMatch(/function announceClickedBiomeCell[\s\S]*?floatCellText\(index, cellBanner\(/);
+    });
     test('un plateau de départ ne garde pas d\'alignement non résolu', () => {
         expect(board).toMatch(/if\(!gameStarted && !forceFullBoard\)\{[\s\S]*?hasMatchesOnBoard\(board\)\) generateNewBoard\(\)/);
     });
