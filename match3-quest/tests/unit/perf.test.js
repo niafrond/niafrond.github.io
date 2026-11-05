@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (f) => readFileSync(join(root, f), 'utf8');
@@ -44,7 +45,7 @@ describe('animations du coup suggéré (tuile du plateau)', () => {
 });
 
 describe('carte d\'exploration : coût de rendu', () => {
-    const view = read('explorationView.js');
+    const view = readExplorationViewSource();
 
     test('le flou d\'ombre (shadowBlur) n\'est appliqué que dans le calque de sol en cache ou son repli', () => {
         const uses = [...view.matchAll(/\.shadowBlur\s*=/g)];

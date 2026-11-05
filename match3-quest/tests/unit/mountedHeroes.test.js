@@ -1,6 +1,7 @@
 // Héros à cheval (tools/gen-mounted-heroes.py) : un sprite de cavalier par classe, 4 directions + cycle de marche, 40×40, chargé avec la région.
 import { readFileSync } from 'fs';
 import { gbaSprite, gbaWalkSprite, loadGbaSprites, hasGbaSprite } from '../../sprites/index.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 
 const CLASSES = ['archer', 'templar', 'barbarian', 'assassin', 'sorcerer'];
 const DIRS = ['front', 'back', 'left', 'right'];
@@ -26,10 +27,10 @@ describe('héros à cheval', () => {
     });
 
     test('le rendu d\'exploration utilise le sprite monté de la classe, avec repli sur l\'ancien montage, et le charge avec la région', () => {
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).toMatch(/const mountKey = `\$\{hero\.classId\}_horse`/);
         expect(view).toMatch(/riding\(\) && \(\(moving && gbaWalkSprite\(mountKey, heroDir/);
-        expect(view).toMatch(/else if \(riding\(\)\) \{[\s\S]*horse_mount/);   // repli
+        expect(view).toMatch(/else if \((?:env\.)?riding\(\)\) \{[\s\S]*horse_mount/);   // repli
         expect(view.match(/\$\{cfg\.getHero\(\)\.classId\}_horse/g).length).toBeGreaterThanOrEqual(2);   // chargé à l'arrivée et région déjà prête
     });
 });

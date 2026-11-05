@@ -40,6 +40,14 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `exploration.js` — Moteur de la phase d'exploration (logique pure, sans DOM).
 - `explorationGrids.js` — Grilles de cases (obstacles, liquides) et liste des décors fixes d'un écran, mises en cache : `inRects` parcourait tous les rectangles
 - `explorationView.js` — Phase d'exploration : carte plein écran en vue du dessus (canvas), saisie clavier / pavé
+- `explorationViewCarnet.js` — Carnet de voyage de la vue d'exploration : onglets quêtes, voyage rapide, progression, bestiaire.
+- `explorationViewChange.js` — Mode Chang'e de la vue d'exploration : épisodes, miroir, soins, arrivée des PNJ, fin de la légende.
+- `explorationViewConsts.js` — Constantes de la vue d'exploration : durées, tailles de tuile, touches, palette des biomes.
+- `explorationViewDraw.js` — Dessin d'une image de la vue d'exploration (carte, décors, héros, ennemis, PNJ, effets).
+- `explorationViewGround.js` — Calque de sol mis en cache de la vue d'exploration (peinture du sol par tranches, pré-construction des cartes voisines).
+- `explorationViewMap.js` — Carte plein écran de la vue d'exploration (pose d'un repère), voyage, arène, boussole du repère.
+- `explorationViewOverlays.js` — Superpositions de la vue d'exploration : minimap, brouillard de guerre, obscurité, aura, boussole de quête.
+- `explorationViewPainters.js` — Primitives de dessin de la vue d'exploration : bâtiments, sprites, marqueurs, ombres, portails, étiquettes.
 - `game.js` — logique globale du joueur, ennemis, combat et interface
 - `gameCardUi.js` — Aides communes aux cartes des onglets Sorts / Armes / Équipement / Inventaire (échappement HTML, pied de carte, tri mémorisé).
 - `gameInventoryTabs.js` — Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
@@ -96,3 +104,15 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `gameSpellsTab.js` : onglet Sorts, sélecteur d'ultime, équiper/retirer un sort ou ultime
 - `gameInventoryTabs.js` : onglets Armes / Équipement / Inventaire, armes en main, utilisation d'objets
 Les modules extraits importent `game.js` en retour (import circulaire sûr : usage uniquement à l'exécution, jamais au chargement).
+
+## explorationView.js — plan par modules
+`createExplorationView(cfg)` garde l'état partagé (session, caméra, dialogues, boucle `frame`, API publique). Le reste vit dans des fabriques `createXxx(env)` : `env` expose l'état de la vue (getters/setters sur ses variables) et chaque fabrique renvoie ses fonctions, déstructurées dans la vue.
+- `explorationViewConsts.js` : constantes (durées, tailles de tuile, touches, palette des biomes `BIOMES`)
+- `explorationViewDraw.js` : `draw(now)`, l'image complète (carte, décors, héros, ennemis, PNJ)
+- `explorationViewGround.js` : calque de sol en cache, pré-construction des cartes voisines
+- `explorationViewOverlays.js` : minimap, brouillard de guerre, obscurité, aura, boussole de quête
+- `explorationViewPainters.js` : primitives de dessin (bâtiments, sprites, marqueurs, ombres, portails, étiquettes)
+- `explorationViewCarnet.js` : onglets du carnet (quêtes, voyage, progression, bestiaire)
+- `explorationViewMap.js` : carte plein écran et repère, voyage, arène
+- `explorationViewChange.js` : mode Chang'e (épisodes, miroir, soins)
+Les tests qui lisent le source utilisent `tests/unit/fixtures/explorationViewSource.js` (concatène `explorationView*.js`).

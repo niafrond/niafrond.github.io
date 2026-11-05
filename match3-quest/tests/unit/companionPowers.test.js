@@ -3,6 +3,7 @@ import { COMPANION_POWERS, rollCompanionPowers, turnPowerIds, MANA_COLORS } from
 import { COMPANIONS } from '../../companions.js';
 import { createSession, activeCompanionOf, setActiveCompanion } from '../../exploration.js';
 import { QUESTS } from '../../story.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 
 const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
 const hero = { maxHp: 100, level: 10 };
@@ -82,7 +83,7 @@ describe('un seul compagnon actif, choisi dans le menu', () => {
         expect(game).toContain('companionSectionHtml()');
         const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
         expect(main).toContain('companionMenuHooks.setActive');
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).toContain('return active ? [active.id] : [];');
     });
 });
