@@ -3843,7 +3843,7 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 .rage-stat .rage-bar, .rage-bar-container.ultimate-ready .rage-bar { width: 100%; height: 100%; min-height: 0; display: flex; align-items: flex-end; }
 .rage-stat .rage-fill { width: 100%; transition: height .3s ease; background: linear-gradient(90deg, #a8283f, #7a1428 60%, #520b1b); }
 .rage-bar-container.full .rage-fill { background: linear-gradient(90deg, #d63a5a, #a8153a 60%, #6e0c26); }
-.rage-stat .rage-bar-container .rage-text { white-space: nowrap; font-size: 11px; letter-spacing: .05em; }
+.rage-stat .rage-bar-container .rage-text { white-space: nowrap; overflow: hidden; font-size: 11px; letter-spacing: 0; }   /* texte horizontal réduit au chiffre (★ si ultime prêt) : tient dans la barre étroite */
 .rage-bar-container.ultimate-ready .rage-text { font-size: 11px; letter-spacing: .1em; }
 @media (pointer: coarse), (max-width: 820px) { .rage-bar-container.ultimate-ready { min-height: 0; width: 30px; } }
 .rage-stat .ult-mana-bar { flex-direction: column-reverse; width: 16px; height: auto; margin: 0; gap: 2px; }
@@ -3898,6 +3898,7 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
     .rage-stat .rage-bar-container, .rage-bar-container.ultimate-ready { width: 16px; }
     .rage-stat .ult-mana-bar { width: 11px; }
     .rage-stat .ult-mana-num { display: none; }
+    .rage-stat .rage-bar-container .rage-text, .rage-bar-container.ultimate-ready .rage-text { font-size: 8px; letter-spacing: -.04em; }
 }
 
 /* ── Ultime disponible : la fiche du héros clignote, la barre de rage prend feu ──────────────────────────────── */

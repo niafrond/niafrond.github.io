@@ -211,7 +211,7 @@ function ultimateManaBarHtml(entity, spell){
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
         const label = `${color} ${Math.min(have, need)}/${need}`;
-        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}${color === 'yellow' ? ' light' : ''}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}/${need}</span></span>`;
+        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}${color === 'yellow' ? ' light' : ''}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}</span></span>`;
     });
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
@@ -1495,7 +1495,7 @@ export function updateStats(){
             <div class="stat rage-stat row-rage">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
-                    <span class="rage-text">${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}`}</span>
+                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : Math.floor(player.rage || 0)}</span>
                 </div>
                 ${ultimateManaBarHtml(player, equippedUltimate)}
             </div>
