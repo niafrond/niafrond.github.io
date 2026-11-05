@@ -100,6 +100,13 @@ function floatCellText(index, text){
     setTimeout(() => el.remove(), BIOME_BANNER_MS);
 }
 
+// Clic sur une case de biome : affiche brièvement son effet (« Case brûlante - -6 PV pour l'ennemi », « Case gelée - indisponible 2 tours »…).
+function announceClickedBiomeCell(index){
+    const cell = biomeState.cells[index];
+    if(!biomeRule || !cell || cell.kind !== biomeRule.kind) return;
+    floatCellText(index, cellBanner(biomeRule, biomeRule.blocks ? biomeRule.cellEffect : (biomeRule.matchEffect || biomeRule.cellEffect)));
+}
+
 // Annonce « Case brûlante - 3 dégâts » sur chaque case brûlante avant que les dégâts ne tombent. Retourne le délai à attendre (ms).
 export function announceBurningCells(){
     if(!biomeRule?.burnDamage) return 0;
@@ -663,6 +670,8 @@ export function selectTile(index){
     if(pendingSwap || actionGuard.isBoardBusy()){
         return;
     }
+
+    announceClickedBiomeCell(index);
 
     // Regle commune joueur/ennemi: plateau bloque => regeneration puis meme acteur rejoue.
     if(getSortedPossibleMoves().length === 0){
