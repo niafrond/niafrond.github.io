@@ -1283,7 +1283,7 @@ export function createExplorationView(cfg) {
         syncStealth();
         const d = DIRECTIONS[dirName];
         if (!d) return;
-        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel() }));
+        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel(), riding: riding() }));
         lastMoveAt = performance.now();
     }
 
@@ -1382,7 +1382,7 @@ export function createExplorationView(cfg) {
         const dx = next.x - session.data.x;
         const dy = next.y - session.data.y;
         syncStealth();
-        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel() });
+        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel(), riding: riding() });
         lastMoveAt = performance.now();
         if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
