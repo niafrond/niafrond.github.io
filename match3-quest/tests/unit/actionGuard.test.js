@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { createActionGuard, ACTION_COOLDOWN_MS, BOARD_SETTLE_MS, BOARD_BUSY_TIMEOUT_MS } from '../../actionGuard.js';
 import { collectMatches, getColorMatchManaBaseGain, getEffectiveMatchLength, getJokerMatchMultiplier, bigMatchXpFor } from '../../matchMechanics.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
 const clock = () => { let t = 100000; return { now: () => t, advance: (ms) => { t += ms; } }; };
 

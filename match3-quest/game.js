@@ -1,49 +1,57 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { colors, boardSize, setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
+import { boardSize, setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
-import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
+import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
-import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from "./sprites/index.js";
+
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, announceBurningCells, boostBoardColor, convertRandomColorToArrows, checkMatches } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
-import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
-import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
-import { elementName } from "./elements.js";
-import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
-import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
-import { bigMatchXpFor } from "./matchMechanics.js";
+
+import { protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
+
+
+import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, HP_BAR_EMPTY_PAUSE_MS } from "./combatFlow.js";
+
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
-import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
+import { makeDecision, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { rollOverleveledLoot } from "./victoryLoot.js";
-import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
-import { icon as svgIcon, manaIcon } from "./icons.js";
-import { npcSprite } from "./sprites/index.js";
-import { rollCompanionPowers, COMPANION_POWERS } from "./companionPowers.js";
-import { COMPANIONS } from "./companions.js";
-import { startingRage, boostedRageGain, MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints, agilityScore } from "./attributes.js";
-import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
-import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
+import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from "./items.js";
+import { icon as svgIcon } from "./icons.js";
+
+import { rollCompanionPowers } from "./companionPowers.js";
+
+import { startingRage, boostedRageGain, MANA_COLOR_LABELS, ATTRIBUTE_MANA_RULES, agilityScore } from "./attributes.js";
+import { initializeXP, addXP, calculateXPGain, normalizeXP } from "./experience.js";
+
 import { playSfx } from "./sound.js";
-import { preloadUltimateCinematic, loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
-import { RAGE_MAX, getSelectableUltimates, getEquippedUltimate, getUltimateById, getQuestUltimates, isUltimateUnlocked, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, withUltimateCost, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
+import { loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
+import { RAGE_MAX, getEquippedUltimate, getUltimateById, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
-import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
-import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
-import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
+
+
+import { resolveStrike, blockLabel, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
-import { bindStatusBadges, bindTooltip, getSpellTooltipHtml, showWeaponTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyCardTap, showEnemyNameTooltip, hideEnemyNameTooltip, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
+import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
 export { TOOLTIP_LONG_PRESS_MS };
 import { equipSpell, equipUltimate, unequipSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
 export { equipSpell, equipUltimate, unequipSpell, updateSpellsTab };
-import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, statValueHtml, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
+import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
 export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem };
-import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
+import { allSpells as spellsCatalog, getSpellsByClass } from "./spells.js";
+import { _activeCounters, log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from './gameHud.js';
+export * from './gameHud.js';
+import { companionIconHtml, foxIconHtml, showCombatAnimation } from './gameStatsTab.js';
+export * from './gameStatsTab.js';
+import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
+export * from './gameLevelUp.js';
+import { updateAvailableSpells } from './gameSpellList.js';
+export * from './gameSpellList.js';
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
@@ -64,7 +72,7 @@ const SPELL_EFFECT_ICONS = {
     clearColor: 'sweepColor', destroyColor: 'sweepColor', destroyPurple: 'sweepColor'
 };
 export const spellEffectIcon = sp => (SPELL_EFFECT_ICONS[sp.effect] ? svgIcon(SPELL_EFFECT_ICONS[sp.effect], 'spell-fx-ic') : '');
-const classIcon = classId => (CLASS_ICONS[classId] ? svgIcon(CLASS_ICONS[classId]) : '');
+export const classIcon = classId => (CLASS_ICONS[classId] ? svgIcon(CLASS_ICONS[classId]) : '');
 export const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
 export const MANA_COLOR_META = {
     red: { name: 'Rouge' },
@@ -106,7 +114,7 @@ export function recalculateManaCaps(entity){
     entity.manaCaps = manaCaps;
 }
 
-function clampManaToCaps(entity){
+export function clampManaToCaps(entity){
     if(!entity || !entity.mana) return;
     recalculateManaCaps(entity);
     Object.keys(entity.mana).forEach(color => {
@@ -178,7 +186,7 @@ function normalizeBonusTurnValue(value){
 }
 
 // Pastille « cadeau ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
-function bonusTurnBadge(entity){
+export function bonusTurnBadge(entity){
     const n = normalizeBonusTurnValue(entity?.bonusTurn);
     if(n <= 0) return '';
     return `<span class="bonus-turn-badge" title="${n} tour${n > 1 ? 's' : ''} bonus en réserve">${svgIcon('gift')}×${n}</span>`;
@@ -212,7 +220,7 @@ function spellCostEntries(sp){
 
 // Mini-barre collée à la jauge de rage : un tronçon par couleur de qì requise, rempli selon le qì possédé
 // (tronçon vide / pointillé = couleur manquante).
-function ultimateManaBarHtml(entity, spell){
+export function ultimateManaBarHtml(entity, spell){
     const parts = ultimateCostEntries(spell).map(([color, need]) => {
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
@@ -223,7 +231,7 @@ function ultimateManaBarHtml(entity, spell){
 }
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
-function getUltimateTooltipHtml(entity, spell){
+export function getUltimateTooltipHtml(entity, spell){
     const cost = ultimateCostEntries(spell).map(([color, need]) => {
         const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
         return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
@@ -731,7 +739,7 @@ function resetCombatRewards(){
     combatRewards.levelReached = 0;
 }
 
-function queueCombatXP(xpAmount){
+export function queueCombatXP(xpAmount){
     const safeXP = Math.max(0, Math.floor(xpAmount || 0));
     if(safeXP <= 0) return 0;
     combatRewards.xpGained += safeXP;
@@ -1339,677 +1347,7 @@ clampManaToCaps(player);
 
 // interface minimale
 
-// --- Animation compteur (tick 1 par 1) ---
-const _activeCounters = {};
-/**
- * Anime simultanément un compteur texte (id) et sa progress bar associée,
- * en incrémentant/décrémentant de 1 à chaque tick jusqu'à la valeur cible.
- * @param {string} id      - id du span texte
- * @param {number} from    - valeur de départ
- * @param {number} to      - valeur cible
- * @param {HTMLElement|null} progressEl - élément <progress> à synchroniser (optionnel)
- */
-function _animateHpBar(id, from, to, progressEl = null) {
-    if (_activeCounters[id]) {
-        clearInterval(_activeCounters[id]);
-        delete _activeCounters[id];
-    }
-    if (isNaN(from) || from === to) return;
-    let current = from;
-    const delta = Math.abs(to - from);
-    // Toute animation de PV (affichage initial, dégâts, soins) dure moins de 4 s : au-delà, le compteur avance par paliers.
-    const { intervalMs, unit } = hpBarTiming(delta);
-    const step = (to > from ? 1 : -1) * unit;
 
-    function applyValue(val) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = val;
-        if (progressEl) progressEl.value = val;
-    }
-
-    applyValue(current);
-    _activeCounters[id] = setInterval(() => {
-        current = step > 0 ? Math.min(to, current + step) : Math.max(to, current + step);
-        applyValue(current);
-        if (current === to) {
-            clearInterval(_activeCounters[id]);
-            delete _activeCounters[id];
-        }
-    }, intervalMs);
-}
-
-function _animateCounter(id, from, to) {
-    _animateHpBar(id, from, to, null);
-}
-
-// Dessins des combattants (héros à gauche tourné vers la droite, ennemi à droite tourné vers la gauche) : posés en variable CSS
-// `--portrait` des panneaux de stats (pseudo-élément ::after), donc sans clignotement quand le panneau est reconstruit.
-// Animation d'attaque jouée sur le portrait : les images défilent puis le portrait de face revient.
-const attackPlaying = new Set();
-export const ATTACK_FRAME_MS = 90;
-// Flèche qui vole du portrait de Hou Yi à celui de l'ennemi (élément posé sur la page, retiré à l'arrivée).
-function shootArrow(fromEl, toEl){
-    if(!fromEl || !toEl) return;
-    const center = el => { const r = el.getBoundingClientRect(); const w = r.width ? Math.min(64, r.width) : 64; return { x: r.right - 4 - w / 2, y: r.top + 2 + w * 0.5 }; };
-    const a = center(fromEl), b = center(toEl);
-    const arrow = document.createElement('div');
-    arrow.className = 'hero-arrow';
-    arrow.style.left = `${a.x}px`;
-    arrow.style.top = `${a.y}px`;
-    const angle = Math.atan2(b.y - a.y, b.x - a.x);
-    arrow.style.setProperty('--angle', `${angle}rad`);
-    document.body.appendChild(arrow);
-    const dx = b.x - a.x, dy = b.y - a.y, dur = 360 * animationFactor();
-    const anim = arrow.animate ? arrow.animate([
-        { transform: `translate(0px, 0px) rotate(${angle}rad)`, opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(${angle}rad)`, opacity: 1 }
-    ], { duration: dur, easing: 'ease-in', fill: 'forwards' }) : null;
-    setTimeout(() => arrow.remove(), dur + 60);
-    if(anim) anim.onfinish = () => arrow.remove();
-}
-
-export function playFighterAttack(isPlayer){
-    if(document.body.classList.contains('fx-low')) return;
-    const id = isPlayer ? 'player-stats' : 'enemy-stats';
-    const el = document.getElementById(id);
-    const fighter = isPlayer ? player : enemy;
-    const frames = isPlayer ? gbaAttackFrames(player.class) : (gbaAttackFrames(fighter.spriteKey || fighter.id).length ? gbaAttackFrames(fighter.spriteKey || fighter.id) : gbaAttackFrames(fighter.templateId));
-    if(!el || !frames.length || attackPlaying.has(id)) return;
-    attackPlaying.add(id);
-    const ms = (isPlayer ? 130 : ATTACK_FRAME_MS) * animationFactor();
-    frames.forEach((uri, i) => setTimeout(() => el.style.setProperty('--portrait', `url("${uri}")`), i * ms));
-    if(isPlayer) setTimeout(() => shootArrow(el, document.getElementById('enemy-stats')), (frames.length - 1) * ms);   // la flèche part quand la corde est lâchée
-    setTimeout(() => { attackPlaying.delete(id); updateFighterPortraits(); }, frames.length * ms);
-}
-
-function updateFighterPortraits(){
-    // Hou Yi est tourné vers la droite (vers l'ennemi) ; l'ennemi est tourné vers la gauche : la vue de profil dérivée des sprites
-    // vectoriels écrasait les personnages en largeur, mais les sprites GBA ont de vraies vues de profil.
-    const set = (id, svg) => {
-        const el = document.getElementById(id);
-        if(!el || attackPlaying.has(id)) return;
-        const view = svg || null;
-        if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
-        else el.style.removeProperty('--portrait');
-    };
-    set('player-stats', gbaSprite(player.class, 'right') || heroSprite(player.class) || heroSprite('assassin'));
-    const eKey = enemy.spriteKey || enemy.id;
-    const terrainSprite = gbaSprite(eKey, 'left') || gbaSprite(enemy.templateId, 'left');   // l'ennemi regarde vers Hou Yi (à gauche)
-    set('enemy-stats', terrainSprite || enemySprite(eKey, enemy.templateId, enemy.biome));
-}
-
-export function updateStats(){
-    syncPlayerControlsLock();
-    updateLevelHud();
-    updateFighterPortraits();
-    // truncate log to only the latest message
-    const logDiv=document.getElementById('log');
-    if(logDiv){
-        const lines = logDiv.innerHTML.split('<br>').filter(l=>l.trim()!=='');
-        logDiv.innerHTML = lines.slice(-1).join('<br>');
-    }
-
-    // Snapshot des valeurs affichées AVANT le rebuild du DOM
-    const snapPlayerHp = parseInt(document.getElementById('player-hp-current')?.textContent, 10);
-    const snapEnemyHp  = parseInt(document.getElementById('enemy-hp-current')?.textContent,  10);
-    const snapPlayerMana = {};
-    const snapEnemyMana  = {};
-    for (const c of ['red','blue','green','yellow','purple']) {
-        snapPlayerMana[c] = parseInt(document.getElementById(`player-mana-${c}`)?.textContent, 10);
-        snapEnemyMana[c]  = parseInt(document.getElementById(`enemy-mana-${c}`)?.textContent,  10);
-    }
-
-    // Cibles (valeurs actuelles des entités)
-    const targetPlayerHp = Math.floor(player.hp);
-    const targetEnemyHp  = Math.floor(enemy.hp);
-    // Valeurs initiales pour les progress bars (snap si disponible, sinon target)
-    const initPlayerHp = isNaN(snapPlayerHp) ? targetPlayerHp : snapPlayerHp;
-    const initEnemyHp  = isNaN(snapEnemyHp)  ? targetEnemyHp  : snapEnemyHp;
-    const targetPlayerMana = { red: player.mana.red, blue: player.mana.blue, green: player.mana.green, yellow: player.mana.yellow, purple: player.mana.purple };
-    const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
-
-    const playerDiv=document.getElementById('player-stats');
-    if(playerDiv && !playerDiv.dataset.gearTipBound){
-        playerDiv.dataset.gearTipBound = '1';
-        bindTooltip(playerDiv, () => showPlayerGearTooltip(playerDiv), hideSpellTooltip);
-        // Un clic / toucher sur le joueur affiche aussi son équipement et ses bonus/malus, quelques secondes.
-        playerDiv.addEventListener('click', () => {
-            showPlayerGearTooltipBriefly(playerDiv);
-        });
-    }
-    // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
-    // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
-    const equippedUltimate = getEquippedUltimate(player);
-    const ultimateReady = !!equippedUltimate && isRageFull(player) && gameState.combatState === 'active';
-    const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
-    // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
-    document.querySelector('.stats-container')?.classList.toggle('has-rage', !!equippedUltimate);
-    // Affichage de la classe si définie
-    Promise.resolve(classIcon(player.class)).then(emoji => {
-        playerDiv.innerHTML = `
-            <div class="stat row-name"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span>${bonusTurnBadge(player)}</div>
-            ${statusBadgesHtml(player)}
-            <div class="stat row-hp">
-                <div class="hp-bar-container">
-                    <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
-                    <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
-                </div>
-            </div>
-            ${equippedUltimate ? `
-            <div class="stat rage-stat row-rage">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : Math.floor(player.rage || 0)}</span>
-                </div>
-                ${ultimateManaBarHtml(player, equippedUltimate)}
-            </div>
-            ` : ''}
-            <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
-            <div class="stat row-pills">
-                <div class="mana-dots">
-                    <span id="player-mana-red" class="cost-badge mana-red" title="red">${targetPlayerMana.red}</span>
-                    <span id="player-mana-blue" class="cost-badge mana-blue" title="blue">${targetPlayerMana.blue}</span>
-                    <span id="player-mana-green" class="cost-badge mana-green" title="green">${targetPlayerMana.green}</span>
-                    <span id="player-mana-yellow" class="cost-badge mana-yellow cost-badge-light" title="yellow">${targetPlayerMana.yellow}</span>
-                    <span id="player-mana-purple" class="cost-badge mana-purple" title="purple">${targetPlayerMana.purple}</span>
-                    <span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${player.combatPoints}</span>
-                </div>
-            </div>`;
-        
-        if(equippedUltimate){
-            const rageBar = playerDiv.querySelector('.rage-bar-container');
-            if(ultimateReady){
-                rageBar.onclick = () => castUltimate(equippedUltimate.id);
-                rageBar.onkeydown = (event) => {
-                    if(event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        castUltimate(equippedUltimate.id);
-                    }
-                };
-            }
-            // Fiche (nom, qì requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
-            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = getUltimateTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
-        }
-
-        // Animer les compteurs si les valeurs ont changé
-        const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
-        _animateHpBar('player-hp-current', initPlayerHp, targetPlayerHp, playerProgressEl);
-        for (const c of ['red','blue','green','yellow','purple']) {
-            _animateCounter(`player-mana-${c}`, snapPlayerMana[c], targetPlayerMana[c]);
-        }
-
-        // Ajouter/retirer classe pour liseré selon le tour actuel
-        playerDiv.classList.toggle('active-turn', currentTurn === 'player');
-        playerDiv.classList.toggle('ultimate-ready', ultimateReady);   // ultime disponible : toute la fiche clignote (style.css)
-        bindStatusBadges(playerDiv, player);
-    });
-    
-    const enemyDiv=document.getElementById('enemy-stats');
-    enemyDiv.classList.toggle('active-turn', currentTurn === 'enemy');
-    
-    // Icône de la classe de l'ennemi
-    const enemyClassEmoji = classIcon(enemy.playerClass);
-    
-    // Afficher un indicateur visuel si l'ennemi est plus fort
-    const levelIndicator = enemy.level > player.level ? 
-        `<span class="level-pill level-pill-danger" title="Niveau ${enemy.level} : plus fort que vous">${enemy.level}</span>` : 
-        `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
-    
-    enemyDiv.innerHTML = `
-        <div class="stat row-name"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${bonusTurnBadge(enemy)}</div>
-        ${statusBadgesHtml(enemy)}
-        <div class="stat row-hp">
-            <div class="hp-bar-container">
-                <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
-                <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
-            </div>
-        </div>
-        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>
-        <div class="stat row-pills">
-            <div class="mana-dots">
-                <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
-                <span id="enemy-mana-blue" class="cost-badge mana-blue" title="blue">${targetEnemyMana.blue}</span>
-                <span id="enemy-mana-green" class="cost-badge mana-green" title="green">${targetEnemyMana.green}</span>
-                <span id="enemy-mana-yellow" class="cost-badge mana-yellow cost-badge-light" title="yellow">${targetEnemyMana.yellow}</span>
-                <span id="enemy-mana-purple" class="cost-badge mana-purple" title="purple">${targetEnemyMana.purple}</span>
-                <span class="stat-chip pa-stat" title="Points d'action"><img class="pa-ic" src="sprites/tiles/tile-combat.svg" alt=""> ${enemy.combatPoints}</span>
-            </div>
-        </div>`;
-    bindStatusBadges(enemyDiv, enemy);
-    // Animer les compteurs ennemi
-    const enemyProgressEl = enemyDiv.querySelector('.hp-bar-container progress');
-    _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
-    for (const c of ['red','blue','green','yellow','purple']) {
-        _animateCounter(`enemy-mana-${c}`, snapEnemyMana[c], targetEnemyMana[c]);
-    }
-
-    const enemyNameEl = enemyDiv.querySelector('.enemy-combat-name');
-    if(enemyNameEl) {
-        const fullName = enemyNameEl.dataset.fullName || enemy.name;
-        const showName = () => showEnemyNameTooltip(enemyNameEl, fullName, enemy);
-        const hideName = () => hideEnemyNameTooltip();
-
-        enemyNameEl.addEventListener('mouseenter', showName);
-        enemyNameEl.addEventListener('mouseleave', hideName);
-        enemyNameEl.addEventListener('focus', showName);
-        enemyNameEl.addEventListener('blur', hideName);
-        enemyNameEl.addEventListener('touchstart', showName, { passive: true });
-        enemyNameEl.addEventListener('touchend', hideName);
-        enemyNameEl.addEventListener('touchcancel', hideName);
-    }
-    bindEnemyCardTap(enemyDiv);
-    
-    updateEnemySpells();
-}
-
-export function updateEnemySpells(){
-    // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
-    const weaponContainer = document.getElementById('enemy-weapon-button');
-    if (weaponContainer) {
-        let weaponHtml = '';
-        if (enemy.weapon) {
-            const icon = getWeaponIcon(enemy.weapon.type);
-            weaponHtml += `
-                <div class="enemy-spell-item disabled">
-                    <div class="spell-name">${icon} ${enemy.weapon.name}</div>
-                    <div class="spell-cost">${enemy.weapon.actionPoints} ${svgIcon('arrow')} - ${enemy.weapon.damage} ${svgIcon('skull')}</div>
-                </div>
-            `;
-        }
-        if (enemy.inventoryItem) {
-            weaponHtml += `
-                <div class="enemy-spell-item disabled enemy-item-card" tabindex="0">
-                    <div class="spell-name">${svgIcon('bag')} ${enemy.inventoryItem.name}</div>
-                    <div class="spell-cost">Objet ennemi</div>
-                </div>
-            `;
-        }
-        weaponContainer.innerHTML = weaponHtml;
-
-        const enemyItemCard = weaponContainer.querySelector('.enemy-item-card');
-        if(enemyItemCard && enemy.inventoryItem) {
-            const showDetails = () => showItemTooltip(enemyItemCard, enemy.inventoryItem, { isEnemyItem: true });
-            const hideDetails = () => hideSpellTooltip();
-            bindTooltip(enemyItemCard, showDetails, hideDetails);
-        }
-    }
-
-    const container = document.getElementById('enemy-spell-list');
-    if(!container) return;
-    container.innerHTML = '';
-    
-    // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
-    if(!enemy.spells || enemy.spells.length === 0) return;
-    
-    enemy.spells.forEach(sp => {
-        const div = document.createElement('div');
-        div.className = 'enemy-spell-item';
-        const hasEnoughMana = canEntityCastSpell(enemy, sp);
-        if(!hasEnoughMana) {
-            div.classList.add('disabled');
-        }
-        
-        // Sort de classe : icône de la classe
-        const spellClassIndicator = sp.class ? classIcon(sp.class) : '';
-        
-        // Gestion des coûts multiples pour les sorts de classe
-        const costDisplay = spellCostHtml(sp);
-        
-        const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
-        const healText = sp.heal ? ` • ${sp.heal} HP` : '';
-        const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
-        div.innerHTML = `
-            <div class="spell-name">${spellClassIndicator} ${sp.name} ${spellEffectIcon(sp)}</div>
-            <div class="spell-cost">${costDisplay}${damageText}${healText}</div>
-        `;
-        div.title = effectText;
-        markMultiManaSpell(div, sp);
-
-        const showDetails = () => showSpellTooltip(div, sp);
-        const hideDetails = () => hideSpellTooltip();
-        bindTooltip(div, showDetails, hideDetails);
-
-        container.appendChild(div);
-    });
-}
-
-export function log(text){
-    const logDiv=document.getElementById('log');
-    if(logDiv){
-        logDiv.innerHTML = text + "<br>";
-        logDiv.scrollTop = logDiv.scrollHeight;
-    }
-}
-
-export function logActiveAction(actionText){
-    const actor = currentTurn === 'player'
-        ? `joueur (${player.name || 'Hou Yi'})`
-        : `ennemi (${enemy.name || 'Ennemi'})`;
-    console.log(`Action active - ${actor}: ${actionText}`);
-}
-
-// ========================================
-// GESTION DE LA DIFFICULTÉ DE L'IA
-// ========================================
-
-export function changeAIDifficulty(difficultyLevel) {
-    setAIDifficulty(difficultyLevel);
-    log(`Difficulté de l'IA changée: ${difficultyLevel}`);
-}
-
-export function getCurrentAIDifficulty() {
-    const difficulty = getAIDifficulty();
-    return difficulty.name;
-}
-
-// ========================================
-
-export function saveUpdate(){
-    clampManaToCaps(player);
-    try {
-        localStorage.setItem('player', JSON.stringify(player));
-        console.log('Données du joueur sauvegardées');
-        if (player.class) {
-            console.log(`Classe sauvegardée: ${player.class}`);
-        }
-    } catch (e) {
-        console.error('Erreur lors de la sauvegarde:', e);
-    }
-    updateStats();
-    createSpellButtons();
-    createWeaponButton();
-    updatePlayerStatsTab();
-}
-
-// Fonction pour effacer la sauvegarde
-export function clearSaveData() {
-    if (confirm('Réinitialiser le jeu ? Toute votre progression (personnage, quêtes, objets) sera définitivement effacée.')) {
-        localStorage.removeItem('player');
-        console.log('Sauvegarde effacée');
-        location.reload();
-    }
-}
-
-// mise à jour de l'onglet stats détaillées
-// Section « Compagnon » de l'onglet Stats : un seul compagnon actif à la fois, choisi parmi les recrutés (hors combat).
-function companionSectionHtml(){
-    const choices = companionMenuHooks.getChoices?.();
-    if(!choices || !choices.companions.length) return '';
-    const locked = gameState.combatState === 'active' ? ' disabled' : '';
-    const buttons = [...choices.companions.map(c => ({ id: c.id, name: c.name, title: c.title })), { id: 'none', name: 'Aucun', title: 'Combattre seul' }].map(c => {
-        const power = COMPANION_POWERS[c.id];
-        const on = choices.activeId === c.id;
-        return `<div class="stat-line"><button type="button" data-companion="${c.id}" class="${on ? 'active' : 'secondary'}" aria-pressed="${on}"${locked}>${c.name}${on ? ' (actif)' : ''}</button><span class="stat-effect">${c.title}${power ? ` · ${power.name} : ${power.text}` : ''}</span></div>`;
-    }).join('');
-    return `<div class="stats-section"><h3>Compagnon actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul compagnon à la fois ; le changer se fait hors combat.</span></div></div>`;
-}
-
-export function updatePlayerStatsTab(){
-    const statsContent = document.getElementById('stats-content');
-    if(!statsContent) return;
-    
-    // Import de la classe pour afficher le nom
-    import('./classes.js').then(module => {
-        const classData = player.class ? module.playerClasses[player.class] : null;
-        const className = classData ? `${classIcon(player.class)} ${classData.name}` : 'Aucun';
-        
-        // Calculer la progression XP
-        const xpProgress = getXPProgress(player);
-        const xpRemaining = getXPToNextLevel(player);
-        
-        statsContent.innerHTML = `
-            <div class="stats-section">
-                <h3>Informations</h3>
-                <div class="stat-line">
-                    <span class="stat-label">${svgIcon('idCard')} Nom:</span>
-                    <span class="stat-value">${player.name || 'Hou Yi'}</span>
-                </div>
-                <div class="stat-line">
-                    <span class="stat-label">${svgIcon('mask')} Style:</span>
-                    <span class="stat-value">${className}</span>
-                </div>
-                <div class="stat-line">
-                    <span class="stat-label">${svgIcon('star')} Niveau:</span>
-                    <span class="stat-value">${player.level}</span>
-                </div>
-                <div class="stat-line">
-                    <span class="stat-label">${svgIcon('chart')} Expérience:</span>
-                    <span class="stat-value">${player.xp} / ${player.xpToNextLevel} XP</span>
-                </div>
-                <div class="stat-line">
-                    <div style="width: 100%; margin-top: 5px;">
-                        <div class="xp-bar-container">
-                            <progress class="xp-bar" value="${xpProgress}" max="100" style="width: 100%;"></progress>
-                            <span class="xp-text">${xpProgress}% (${xpRemaining} XP restants)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="stats-section attribute-points-section">
-                <h3>Points d'attribut</h3>
-                <div class="stat-line">
-                    <span class="stat-label">${svgIcon('star')} À répartir :</span>
-                    <span class="stat-value">${player.unspentLevelPoints || 0}</span>
-                    <span class="stat-effect">${totalAttributePoints(player)} point(s) dépensé(s)</span>
-                </div>
-                <div class="attribute-points-actions">
-                    <button type="button" id="spend-points-btn" ${(player.unspentLevelPoints || 0) > 0 && gameState.combatState !== 'active' ? '' : 'disabled'}>Répartir les points</button>
-                    <button type="button" id="reset-points-btn" ${totalAttributePoints(player) > 0 && gameState.combatState !== 'active' ? '' : 'disabled'} title="Rend tous les points dépensés pour les répartir autrement (hors combat)">Réinitialiser les points</button>
-                </div>
-            </div>
-            <div class="stats-section">
-                <h3>Caractéristiques</h3>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('muscle')} Force (Strength):</span>
-                <span class="stat-value">${player.attributes.strength}</span>
-                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'strength')} Attaque</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('runner')} Agilité (Agility):</span>
-                <span class="stat-value">${player.attributes.agility}</span>
-                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'agility')} Défense</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('brain')} Intelligence:</span>
-                <span class="stat-value">${player.attributes.intelligence}</span>
-                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'intelligence')} Puissance magique</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('heart')} Endurance (Stamina):</span>
-                <span class="stat-value">${player.attributes.stamina}</span>
-                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'stamina')} HP max</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('target')} Moral (Morale):</span>
-                <span class="stat-value">${player.attributes.morale}</span>
-                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'morale')} Défense et agilité</span>
-            </div>
-        </div>
-        
-        <div class="stats-section">
-            <h3>Statistiques de combat</h3>
-            <div class="stat-line">
-                <span class="stat-label" title="Chance de coup critique (arme, crânes) — plafonnée à 98 %">${svgIcon('sword')} Attaque (critique):</span>
-                <span class="stat-value">${statValueHtml(player, 'attack')}</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
-                <span class="stat-value">${statValueHtml(player, 'defense')}</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label" title="Agilité (points d'Agilité et de Moral) : joue en premier quand elle dépasse celle de l'ennemi (initiative) ; chaque point ajoute aussi 1 de défense">${svgIcon('runner')} Agilité (initiative):</span>
-                <span class="stat-value">${agilityScore(player)}</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('heart')} HP Maximum:</span>
-                <span class="stat-value">${player.maxHp}</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${svgIcon('spark')} Qì Maximum:</span>
-                <span class="stat-value">${player.maxMana}</span>
-            </div>
-            <div class="stat-line">
-                <span class="stat-label">${['red', 'yellow', 'green', 'blue', 'purple'].map(manaIcon).join('')} Caps qì :</span>
-                <span class="stat-value">${player.manaCaps?.red ?? player.maxMana}/${player.manaCaps?.yellow ?? player.maxMana}/${player.manaCaps?.green ?? player.maxMana}/${player.manaCaps?.blue ?? player.maxMana}/${player.manaCaps?.purple ?? player.maxMana}</span>
-            </div>
-        </div>
-        
-        <div class="stats-section">
-            <h3>Bonus de couleur (niveaux)</h3>
-            ${summarizeColorBonuses(player).map(c => `<div class="stat-line">
-                <span class="stat-label">${manaIcon(c.color)} ${c.colorLabel[0].toUpperCase() + c.colorLabel.slice(1)} (${c.points} pt) :</span>
-                <span class="stat-effect">match de 3 = ${c.perMatch3} qì · +${c.initial} au départ · réserve ${c.cap}</span>
-            </div>`).join('')}
-        </div>
-
-        ${companionSectionHtml()}
-        <div class="stats-section">
-            <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
-        </div>
-    `;
-        statsContent.querySelectorAll('[data-companion]').forEach(btn => btn.addEventListener('click', () => {
-            if(gameState.combatState === 'active') return;
-            if(companionMenuHooks.setActive?.(btn.dataset.companion)) updatePlayerStatsTab();
-        }));
-        statsContent.querySelector('#spend-points-btn')?.addEventListener('click', () => showAttributeMenu());
-        statsContent.querySelector('#reset-points-btn')?.addEventListener('click', () => {
-            if(gameState.combatState === 'active') return;
-            if(confirm(`Réinitialiser les ${totalAttributePoints(player)} point(s) d'attribut dépensés ? Ils vous seront rendus pour être répartis autrement.`)) {
-                resetAttributePoints();
-            }
-        });
-    });
-}
-
-// Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
-// Paramètres : { icon, title, damage?, heal?, source?, target? }
-preloadSpellFx();
-
-// Portrait pixel art de Xiao Gui (le renard compagnon) pour l'annonce de son coup.
-function companionIconHtml(id){
-    const npc = COMPANIONS.find(c => c.id === id)?.npc;
-    const uri = npc ? spriteUri(npcSprite(npc)) : null;
-    return uri ? `<img class="fox-portrait" src="${uri}" alt="${COMPANION_NAMES[id] || id}" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
-}
-function foxIconHtml(){
-    const uri = spriteUri(npcSprite('xiao_gui'));
-    return uri ? `<img class="fox-portrait" src="${uri}" alt="Xiao Gui" style="width:96px;height:96px;max-width:40vw;max-height:40vw;object-fit:contain;image-rendering:pixelated">` : svgIcon('star');
-}
-
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
-    // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
-    if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
-    // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
-    if(damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
-    const boardEl = document.getElementById('board');   // zone intérieure (l'overlay est dans le padding du plateau)
-    const boardPx = boardEl ? Math.min(boardEl.clientWidth, boardEl.clientHeight) || Infinity : Infinity;
-    const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
-    if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
-    const bigFx = Boolean(fx && fx.includes('spellfx-big'));
-    let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
-    let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
-    if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
-    if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
-    if (source !== null) caption += `<div class="attack-source">${source}</div>`;
-    if (target !== null) caption += `<div class="attack-target">${target}</div>`;
-    // Sort très cher : l'animation garde tout le plateau, titre et dégâts recouvrent les boutons de sorts.
-    html += bigFx ? `<div class="attack-caption">${caption}</div>` : caption;
-    showAttackAnimation(html, isPlayerAttack, options);
-}
-
-// Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
-export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
-    const {
-        requireClick = false,
-        continueText = 'Cliquez pour continuer',
-        onContinue = null,
-        autoHideMs = 1000 * animationFactor()
-    } = options;
-
-    const boardDiv = document.getElementById('board');
-    if(!boardDiv) {
-        if(typeof onContinue === 'function') {
-            onContinue();
-        }
-        return;
-    }
-    
-    // Créer l'overlay qui cache la grille
-    const overlay = document.createElement('div');
-    overlay.className = 'attack-overlay';
-    
-    // Créer le contenu de l'animation
-    const attackDiv = document.createElement('div');
-    attackDiv.className = 'attack-animation';
-    attackDiv.innerHTML = text;
-    
-    // Couleur selon qui attaque
-    if(isPlayerAttack) {
-        overlay.classList.add('player-attack');
-    } else {
-        overlay.classList.add('enemy-attack');
-    }
-
-    // Légende d'un sort très cher : sortie de l'overlay pour se poser sur les boutons de sorts.
-    const caption = attackDiv.querySelector('.attack-caption');
-    const spellsBox = document.getElementById('spells-container');
-    if(caption && spellsBox) {
-        const r = spellsBox.getBoundingClientRect();
-        Object.assign(caption.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
-        document.body.appendChild(caption);
-        // Fermeture forcée : petite flèche vers le bas en bas de la légende (elle seule capte les clics).
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'attack-caption-close';
-        closeBtn.setAttribute('aria-label', "Fermer l'annonce");
-        closeBtn.textContent = '▼';
-        closeBtn.addEventListener('click', (event) => { event.stopPropagation(); finishOverlay(); });
-        caption.appendChild(closeBtn);
-    }
-
-    const finishOverlay = () => {
-        if(!overlay.parentNode) return;
-        caption?.remove();   // la légende part en même temps que le clic « pour continuer » (ou la fin du délai)
-        overlay.classList.add('fade-out');
-        setTimeout(() => {
-            if(overlay.parentNode) {
-                overlay.parentNode.removeChild(overlay);
-            }
-            if(typeof onContinue === 'function') {
-                onContinue();
-            }
-        }, 500);
-    };
-
-    if(requireClick) {
-        overlay.classList.add('requires-click');
-        const continueHint = document.createElement('div');
-        continueHint.className = 'attack-continue';
-        continueHint.textContent = continueText;
-        attackDiv.appendChild(continueHint);
-
-        overlay.setAttribute('role', 'button');
-        overlay.setAttribute('aria-label', continueText);
-        overlay.tabIndex = 0;
-        overlay.addEventListener('click', finishOverlay);
-        overlay.addEventListener('keydown', (event) => {
-            if(event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                finishOverlay();
-            }
-        });
-    }
-    
-    overlay.appendChild(attackDiv);
-    boardDiv.appendChild(overlay);
-
-    if(!requireClick) {
-        // Supprimer automatiquement après un court délai.
-        setTimeout(() => {
-            finishOverlay();
-        }, autoHideMs);
-    }
-}
 
 // -------------------------------------
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
@@ -2264,7 +1602,7 @@ export function forcePlayerTurnForCheat(){
 }
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
-const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
+export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
 function applyCompanionPowers(){
     const outcome = { skipEnemy: false, enemyDown: false, boardChanged: false, announcements: [] };
     rollCompanionPowers([...activeCompanionIds], player, Math.random, enemy).forEach(({ id, power, amount, color }) => {
@@ -2934,315 +2272,10 @@ export function handleEnemyDefeated(){
     showEndCombatAnimation(true);
 }
 
-export function grantComboMasteryRewards(xpAmount = 25){
-    queueCombatXP(xpAmount);
-    return xpAmount;
-}
-
-export function grantBigMatchXP(len){
-    return queueCombatXP(bigMatchXpFor(len));
-}
-
-export function grantManaGeneratedXP(manaAmount){
-    const safeMana = Math.max(0, Math.floor(manaAmount || 0));
-    if(safeMana <= 0) return { xpGained: 0, leveledUp: false, levelsGained: 0 };
-
-    queueCombatXP(safeMana);
-
-    return {
-        xpGained: safeMana,
-        leveledUp: false,
-        levelsGained: 0
-    };
-}
-
-// HUD permanent : niveau, XP actuelle, XP du prochain niveau et progression.
-export function updateLevelHud(){
-    const hud = document.getElementById('level-hud');
-    if(!hud) return;
-    const max = player.level >= MAX_LEVEL;
-    const pct = getXPProgress(player);
-    hud.querySelector('.level-hud-level').textContent = `Niv. ${player.level}`;
-    hud.querySelector('.level-hud-xp').textContent = max ? `${player.xp} XP (max)` : `${player.xp} / ${player.xpToNextLevel} XP`;
-    hud.querySelector('.level-hud-bar i').style.width = `${pct}%`;
-    hud.querySelector('.level-hud-pct').textContent = max ? '' : `${pct}%`;
-    const pts = player.unspentLevelPoints || 0;
-    hud.title = max ? 'Niveau maximum atteint' : `Niveau ${player.level} : ${getXPToNextLevel(player)} XP restants avant le niveau ${player.level + 1}`
-        + (pts > 0 ? ` · ${pts} point(s) d'attribut à dépenser` : '');
-    hud.classList.toggle('has-points', pts > 0);
-}
-if(typeof window !== 'undefined' && typeof setInterval === 'function'){
-    setInterval(() => { if(!document.hidden) updateLevelHud(); }, 500);   // inutile (et coûteux sur vieil appareil) onglet masqué
-}
-
-function renderLevelUpHud(){
-    const info = document.getElementById('levelup-progress');
-    if(!info) return;
-    const remaining = getXPToNextLevel(player);
-    info.innerHTML = player.level >= MAX_LEVEL
-        ? `Niveau ${player.level} (maximum) · ${player.xp} XP`
-        : `Niveau ${player.level} · ${player.xp} / ${player.xpToNextLevel} XP · ${getXPProgress(player)} % vers le niveau ${player.level + 1} (${remaining} XP restants)`;
-}
-
-function buildAttributeCards(){
-    const grid = document.getElementById('levelup-attributes');
-    if(!grid) return;
-    grid.innerHTML = ATTRIBUTE_ORDER.map(attr => {
-        const d = describeAttributeChoice(player, attr);
-        return `<div class="attribute-card attr-${d.color}" data-attr="${attr}" role="button" tabindex="0">
-            <div class="attr-icon">${svgIcon(d.icon)}</div>
-            <div class="attr-name">${d.name} <span class="attr-points">(${d.points} → ${d.nextPoints})</span></div>
-            <div class="attr-description"><ul>${d.lines.map((l, i) => `<li>${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>`).join('')}</ul></div>
-        </div>`;
-    }).join('');
-}
-
-export function showAttributeMenu(){
-    if((player.unspentLevelPoints || 0) <= 0) return;
-
-    // Afficher la modale de montée de niveau
-    const modal = document.getElementById('levelup-modal');
-    const newLevelSpan = document.getElementById('new-level');
-    const subtitle = modal ? modal.querySelector('.levelup-subtitle') : null;
-    
-    if(!modal || !newLevelSpan) {
-        console.error('Modale de montée de niveau introuvable');
-        return;
-    }
-    
-    newLevelSpan.textContent = player.level;
-    if(subtitle) {
-        const remainingPoints = player.unspentLevelPoints || 0;
-        subtitle.textContent = remainingPoints > 1
-            ? `Choisissez un attribut à améliorer (${remainingPoints} points restants). Chaque point améliore une statistique ET la couleur de qì associée.`
-            : 'Choisissez un attribut à améliorer. Chaque point améliore une statistique ET la couleur de qì associée.';
-    }
-    renderLevelUpHud();
-    buildAttributeCards();
-    modal.style.display = 'flex';
-
-    modal.querySelectorAll('.attribute-card').forEach(card => {
-        const choose = () => {
-            const attr = card.dataset.attr;
-            if(!attr) return;
-            selectAttribute(attr);
-            if((player.unspentLevelPoints || 0) <= 0) {
-                modal.style.display = 'none';
-            } else {
-                showAttributeMenu();
-            }
-        };
-        card.addEventListener('click', choose);
-        card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); choose(); } });
-    });
-}
-
-function selectAttribute(attr) {
-    const attrNames = {
-        'strength': 'Battle',
-        'agility': 'Defense',
-        'intelligence': 'Cunning',
-        'stamina': 'Stamina',
-        'morale': 'Morale'
-    };
-    
-    if((player.unspentLevelPoints || 0) <= 0) return;
-
-    player.attributes[attr]++;
-    player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
-    applyAttributeBonus(attr);
-    const d = describeAttributeChoice(player, attr);
-    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, qì ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
-    updateLevelHud();
-    updatePlayerStatsTab();
-    saveUpdate();
-}
-
-// Menu « Réinitialiser les points » (onglet Stats) : rend tous les points d'attribut dépensés, hors combat, puis ouvre la répartition.
-export function resetAttributePoints(){
-    if(gameState.combatState === 'active') {
-        log("Impossible de réinitialiser les points pendant un combat.");
-        return { ok: false, refunded: 0 };
-    }
-    const { refunded } = respecAttributes(player);
-    if(refunded <= 0) return { ok: false, refunded: 0 };
-    clampManaToCaps(player);
-    log(`Points réinitialisés : ${refunded} point(s) d'attribut à répartir.`);
-    updateLevelHud();
-    updateStats();
-    updatePlayerStatsTab();
-    saveUpdate();
-    showAttributeMenu();
-    return { ok: true, refunded };
-}
-
-export function applyAttributeBonus(attr){
-    switch(attr){
-        case "strength":
-            player.attack += 1;
-            break;
-        case "agility":
-            player.defense = (player.defense || 0) + 1;
-            break;
-        case "intelligence":
-            // L'effet principal reste linéaire (v) sur la puissance magique.
-            break;
-        case "stamina":
-            player.maxHp += 1;
-            player.hp = Math.min(player.maxHp, player.hp + 1);
-            break;
-        case "morale":
-            player.defense = (player.defense || 0) + 1;   // le moral donne de l'agilité : défense (comme l'agilité) et initiative (agilityScore)
-            break;
-    }
-    clampManaToCaps(player);
-}
-
-// -------------------------------------
-// sorts
-const HIGH_SPELL_FROM_LEVEL = 15;
-
-function getUnlockedSpellCap(level) {
-    const safeLevel = Math.max(1, Math.floor(level || 1));
-    return Math.max(0, safeLevel - 1);
-}
-
-function buildUnlockedSpellsList(spells, level) {
-    const unlockCap = getUnlockedSpellCap(level);
-
-    const uniqueById = [];
-    const seenIds = new Set();
-    for(const spell of spells || []) {
-        if(!spell || !spell.id || seenIds.has(spell.id)) continue;
-        seenIds.add(spell.id);
-        uniqueById.push(spell);
-    }
-
-    // Sort offensif de départ : dès le niveau 1, le joueur a au moins un sort de dégâts (le moins coûteux), toujours en tête de liste.
-    const isOffensive = s => s.type === 'damage' && s.dmg > 0 && !s.effect && (s.minLevel || 1) <= Math.max(1, Math.floor(level || 1));
-    const starter = uniqueById.filter(isOffensive).sort((a, b) => (a.cost || 0) - (b.cost || 0) || String(a.id).localeCompare(String(b.id)))[0];
-
-    uniqueById.sort((a, b) => {
-        if(starter && (a === starter) !== (b === starter)) return a === starter ? -1 : 1;
-        const levelA = Math.max(1, Math.floor(a?.minLevel || 1));
-        const levelB = Math.max(1, Math.floor(b?.minLevel || 1));
-        if(levelA !== levelB) return levelA - levelB;
-        return String(a.id).localeCompare(String(b.id));
-    });
-
-    // Les sorts de haut niveau (multimana, niveau > 15) et les sorts avancés (3 à 5 couleurs, dès le niveau 8) sont débloqués dès leur
-    // niveau, hors plafond du nombre de sorts : sinon, triés après les sorts de niveau inférieur, ils restaient hors de portée jusqu'au niveau 38+.
-    const isFreeUnlock = s => s.type === 'advanced' || s.type === 'board' || (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL;
-    const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, Math.max(unlockCap, starter ? 1 : 0));
-    const free = uniqueById.filter(isFreeUnlock);
-    return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
-}
-
-// Menu secret (secretMenu.js) : le temps de la session, tous les sorts (toutes classes) sont débloqués.
-let cheatAllSpells = false;
 // Menu secret : tant qu'actif, tout dégât infligé à l'ennemi le tue d'un coup.
 let cheatOneShot = false;
 export function setCheatOneShot(on){ cheatOneShot = !!on; }
 export function isCheatOneShot(){ return cheatOneShot; }
-export function setCheatAllSpells(on){
-    cheatAllSpells = !!on;
-    // Indicateur non énumérable (jamais sauvegardé) lu par ultimates.js : tous les ultimes, toutes classes.
-    Object.defineProperty(player, 'cheatAllUltimates', { value: !!on, enumerable: false, writable: true, configurable: true });
-}
-
-export function updateAvailableSpells(){
-    if(cheatAllSpells) {
-        import('./classes.js').then(module => {
-            const everySpell = [...spellsCatalog, ...module.allClassSpells];
-            const seen = new Set();
-            player.availableSpells = everySpell.filter(sp => sp?.id && !seen.has(sp.id) && seen.add(sp.id));
-            updateActiveSpells();
-        });
-        return;
-    }
-    // Si le joueur a une classe, inclure les sorts de classe
-    let allAvailableSpells = [...getSpellsByLevel(player.level)];
-    
-    if(player.class) {
-        import('./classes.js').then(module => {
-            const classSpells = module.getClassSpells(player.class, player.level);
-            allAvailableSpells = [...allAvailableSpells, ...classSpells];
-            player.availableSpells = buildUnlockedSpellsList(allAvailableSpells, player.level);
-            updateActiveSpells();
-        });
-    } else {
-        player.availableSpells = buildUnlockedSpellsList(allAvailableSpells, player.level);
-        updateActiveSpells();
-    }
-}
-
-function updateActiveSpells() {
-    // garder seulement les sorts actifs valides
-    player.activeSpells = player.activeSpells.filter(sp => 
-        player.availableSpells.some(avail => avail.id === sp.id)
-    );
-    // si moins de 4 sorts actifs, en ajouter automatiquement
-    if(player.activeSpells.length < MAX_ACTIVE_SPELLS){
-        for(const sp of player.availableSpells){
-            if(!player.activeSpells.some(active => active.id === sp.id)){
-                player.activeSpells.push(sp);
-                if(player.activeSpells.length >= MAX_ACTIVE_SPELLS) break;
-            }
-        }
-    }
-    // maintenir la compatibilité avec l'ancien code
-    player.spells = player.activeSpells;
-}
-
-export function createSpellButtons(){
-    const container=document.getElementById('spell-buttons');
-    if(!container) return;
-    hideSpellTooltip();
-    container.innerHTML="";
-    player.activeSpells.forEach(sp=>{
-        const btn=document.createElement('div');
-        btn.className = 'enemy-spell-item';
-        btn.dataset.spellId = sp.id;
-        btn.tabIndex = 0;
-        const damageText = sp.dmg ? ` - ${sp.dmg} dmg` : '';
-        const healText = sp.heal ? ` - ${sp.heal} HP` : '';
-        
-        // Gérer l'affichage du coût (simple ou multiple)
-        const costHTML = spellCostHtml(sp, player);
-        const hasEnoughMana = canEntityCastSpell(player, sp);
-        markMultiManaSpell(btn, sp);
-        
-        btn.innerHTML = `
-            <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
-            <div class="spell-cost">${costHTML}${damageText}${healText}</div>
-        `;
-        if(player.level<sp.minLevel || !hasEnoughMana) {
-            btn.classList.add('disabled');
-            // Sort multi-qì sans niveau manquant : les couleurs déjà atteintes restent en couleur (seules les autres sont grisées).
-            if(player.level >= sp.minLevel && spellColorsOf(sp).length > 1) btn.classList.add('spell-partial');
-            btn.tabIndex = -1;
-        } else {
-            btn.onclick=()=>castSpell(sp.id);
-            btn.onkeydown=(event)=>{
-                if(event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    castSpell(sp.id);
-                }
-            };
-        }
-
-        const showDetails = () => showSpellTooltip(btn, sp);
-        const hideDetails = () => hideSpellTooltip();
-        bindTooltip(btn, showDetails, hideDetails);
-
-        container.appendChild(btn);
-    });
-    // Planches de cinématique de l'ultime choisi gardées en mémoire : son lancement n'attend aucun téléchargement.
-    const ultimate = getEquippedUltimate(player);
-    if(ultimate) preloadUltimateCinematic([ultimate]);
-    updateSpellsTab();
-}
-
 // -------------------------------------
 // Applique les aptitudes de début de combat pour le joueur et l'ennemi
 export function applyStartingAbilities(){

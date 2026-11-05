@@ -10,9 +10,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
+import { readGameSource } from './gameSource.js';
 
 export const GAME_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const readGame = file => readFileSync(join(GAME_ROOT, file), 'utf8');
+// game.js est réparti en plusieurs modules game*.js : on lit leur ensemble.
+const readGame = file => (file === 'game.js' ? readGameSource() : readFileSync(join(GAME_ROOT, file), 'utf8'));
 
 if (typeof globalThis.XMLHttpRequest === 'undefined') {
     globalThis.XMLHttpRequest = class XhrDisque {

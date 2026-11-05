@@ -31,6 +31,7 @@ import {
     OBSERVE_MS, OBSERVE_RANGE, AMBUSH_BONUS_PA, WEAKNESS_DAMAGE_BONUS, OUTLOOK_TILES, FACE_FRONT, FACE_BEHIND, FACE_SIDE
 } from '../../terrain.js';
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp, TRAP_SIZE } from '../../duel.js';
+import { readGameSource } from './fixtures/gameSource.js';
 import {
     ARENA_TIERS, ARENA_HALL, arenaRoomId, arenaGuardId, arenaMasterId, arenaClearedFlag, gymGuardsGroup, arenaTier, arenaWaveLevel,
     arenaEncounterInfo, arenaRewardBonus, applyArenaScaling, normalizeArenaData, isArenaUnlocked, isChampionWave, ARENA_UNLOCK_REGION
@@ -651,7 +652,7 @@ describe('déblocage des sorts selon le niveau et la classe', () => {
     });
 
     test('la règle de déblocage utilisée par la forge est bien celle de game.js (constante et plafond)', () => {
-        const src = read('game.js');
+        const src = readGameSource();
         expect(src).toContain(`const HIGH_SPELL_FROM_LEVEL = ${HIGH_SPELL_FROM_LEVEL}`);
         expect(gameRules.getUnlockedSpellCap(1)).toBe(0);
         expect(gameRules.getUnlockedSpellCap(40)).toBe(39);

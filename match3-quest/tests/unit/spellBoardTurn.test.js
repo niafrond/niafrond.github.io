@@ -3,11 +3,12 @@
 import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { readGameSource } from './fixtures/gameSource.js';
 
 const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8');
 
 describe('fin de tour après un sort qui modifie le plateau', () => {
-    const game = read('game.js');
+    const game = readGameSource();
     const effects = read('classSpellEffects.js');
 
     test('les sorts de classe passent par endPlayerSpellTurn au lieu de finishPlayerTurn direct', () => {
@@ -24,7 +25,7 @@ describe('fin de tour après un sort qui modifie le plateau', () => {
 });
 
 describe('Tir Furtif : tour bonus pour celui qui le lance', () => {
-    const game = read('game.js');
+    const game = readGameSource();
 
     test('le lanceur (joueur ou ennemi) reçoit le tour bonus dans applyStandardSpellEffects', () => {
         const fn = game.slice(game.indexOf('function applyStandardSpellEffects'));

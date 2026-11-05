@@ -4,8 +4,9 @@ import { COMPANIONS } from '../../companions.js';
 import { createSession, activeCompanionOf, setActiveCompanion } from '../../exploration.js';
 import { QUESTS } from '../../story.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
-const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const game = readGameSource();
 const hero = { maxHp: 100, level: 10 };
 
 describe('pouvoirs des compagnons', () => {

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { BOSS_LOSS_THRESHOLD, recordBossLoss, recordVictory, isStreakTipDue, applicableTips, pickBossTip } from '../../bossTips.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
 describe('conseil anti try-hard (3 défaites d\'affilée contre le même boss)', () => {
     test('la série compte les défaites contre le même boss et repart à 1 pour un autre', () => {
@@ -38,7 +39,7 @@ describe('conseil anti try-hard (3 défaites d\'affilée contre le même boss)',
 });
 
 describe('branchement dans game.js (lecture statique : le module dépend du DOM)', () => {
-    const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+    const game = readGameSource();
     const body = (name) => { const i = game.indexOf(`function ${name}(`); return game.slice(i, game.indexOf('\n}\n', i)); };
     test('défaite contre un boss : série mise à jour ; victoire : série effacée', () => {
         expect(body('handlePlayerDeath')).toMatch(/enemy\?\.isBoss[\s\S]*recordBossLoss\(/);

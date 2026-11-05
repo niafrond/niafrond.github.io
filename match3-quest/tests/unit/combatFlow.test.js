@@ -6,8 +6,9 @@ import {
 } from '../../combatFlow.js';
 import { createActionGuard } from '../../actionGuard.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
-const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const game = readGameSource();
 const css = readFileSync(new URL('../../style.css', import.meta.url), 'utf8');
 
 describe('annonces : 2 s minimum, fermables ensuite', () => {

@@ -12,6 +12,9 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `attributes.js` — Attributs du joueur : source unique des effets (appliqués par game.js) et de leur description affichée.
 - `bestiary.js` — Bestiaire du carnet : force, faiblesse et notice mythologique de chaque gabarit d'ennemi (enemies.catalog.json).
 - `board.js` — (sans description)
+- `boardEnemyMoves.js` — Coups joués sur le plateau par l'ennemi et par le compagnon (Xiao Gui) : choix, animation de l'échange.
+- `boardLayout.js` — Dimensionnement du plateau : taille des cases selon la fenêtre (paysage / portrait), observateur de redimensionnement.
+- `boardSuggestions.js` — Suggestion de coup au joueur (minuteur d'inactivité, surbrillance) et gestion du plateau sans coup possible.
 - `bossTips.js` — (sans description)
 - `breakReminder.js` — Rappel de pause : une popup bienveillante après 30 min de jeu continu, puis toutes les 15 min.
 - `cheatMode.js` — (sans description)
@@ -64,9 +67,13 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `explorationViewPainters.js` — Primitives de dessin de la vue d'exploration : bâtiments, sprites, marqueurs, ombres, portails, étiquettes.
 - `game.js` — logique globale du joueur, ennemis, combat et interface
 - `gameCardUi.js` — Aides communes aux cartes des onglets Sorts / Armes / Équipement / Inventaire (échappement HTML, pied de carte, tri mémorisé).
+- `gameHud.js` — Interface du combat : animation des barres de PV et des compteurs, portraits, mise à jour des stats et sorts ennemis, journal, sauvegarde.
 - `gameInventoryTabs.js` — Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
+- `gameLevelUp.js` — Niveau et attributs : XP gagnée (combo, gros alignements, mana), barre de niveau, menu des attributs, réinitialisation.
 - `gameOptions.js` — Options d'affichage et de performance (menu Options), mémorisées par appareil dans localStorage.
+- `gameSpellList.js` — Sorts disponibles selon le niveau (plafond, liste débloquée), boutons de sorts, déblocage par le menu secret.
 - `gameSpellsTab.js` — Onglet Sorts : liste des sorts disponibles, tri, sélecteur d'ultime, équiper / retirer un sort ou un ultime.
+- `gameStatsTab.js` — Onglet Stats détaillées du joueur et animations d'annonce (sorts, attaques) du combat.
 - `gameTooltips.js` — Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 - `icons.js` — Icônes SVG de l'interface (le jeu n'utilise aucun emoji) : petites pictos en ligne, viewBox 16x16, contour
 - `items.js` — (sans description)
@@ -119,6 +126,10 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 `game.js` garde l'état (`player`, `enemy`, `gameState`), le mana, les dégâts, le déroulé du combat (tours joueur/ennemi, victoire, nouveau combat) et les attributs. Le reste est extrait et ré-exporté par `game.js` (les imports existants restent valables) :
 - `gameTooltips.js` : infobulles (sort, arme, objet, équipement, ennemi), pastilles de statut
 - `gameCardUi.js` : aides communes des cartes (échappement HTML, pied de carte, tri mémorisé)
+- `gameHud.js` : barres de PV, compteurs, `updateStats`, journal, sauvegarde
+- `gameStatsTab.js` : onglet Stats détaillées, annonces de sorts/attaques
+- `gameLevelUp.js` : XP, niveau, attributs
+- `gameSpellList.js` : sorts disponibles selon le niveau, boutons de sorts
 - `gameSpellsTab.js` : onglet Sorts, sélecteur d'ultime, équiper/retirer un sort ou ultime
 - `gameInventoryTabs.js` : onglets Armes / Équipement / Inventaire, armes en main, utilisation d'objets
 Les modules extraits importent `game.js` en retour (import circulaire sûr : usage uniquement à l'exécution, jamais au chargement).

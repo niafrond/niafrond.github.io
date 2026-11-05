@@ -3,12 +3,13 @@
 import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { readGameSource } from './fixtures/gameSource.js';
 
 const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8');
 
 describe('duel-tutoriel', () => {
     test('le plateau reste en 8×8 même contre un boss tutoriel', () => {
-        expect(read('game.js')).toMatch(/selectedEnemy\?\.isBoss && !selectedEnemy\.isTutorialEnemy\) \? BOSS_BOARD_SIZE : BASE_BOARD_SIZE/);
+        expect(readGameSource()).toMatch(/selectedEnemy\?\.isBoss && !selectedEnemy\.isTutorialEnemy\) \? BOSS_BOARD_SIZE : BASE_BOARD_SIZE/);
     });
 
     test('TUTORIAL_BOARD compte 8×8 tuiles', () => {

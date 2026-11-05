@@ -1,9 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
-import { readFileSync } from 'fs';
+import { readGameSource } from './fixtures/gameSource.js';
 
 // game.js dépend du DOM : vérification statique que sorts, armes et objets passent tous par bindTooltip (appui long).
-const src = readFileSync(new URL('../../game.js', import.meta.url), 'utf8')
-    + ['gameTooltips.js', 'gameInventoryTabs.js', 'gameSpellsTab.js', 'gameCardUi.js'].map(f => readFileSync(new URL('../../' + f, import.meta.url), 'utf8')).join('\n'); // modules extraits de game.js
+const src = readGameSource();   // game.js + modules game*.js extraits
 
 describe('infobulles : appui bref sans infobulle', () => {
     it('plus aucun appui direct (touchstart / mousedown) n\'affiche une infobulle', () => {
