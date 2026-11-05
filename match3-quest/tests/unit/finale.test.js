@@ -90,7 +90,7 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
     });
 
     test('le générique défile seul, se laisse remonter, s\'arrête sur la dernière phrase et attend « Continuer »', () => {
-        const src = readFileSync(new URL('../../cinematics.js', import.meta.url), 'utf8');
+        const src = readFileSync(new URL('../../cinematicsEnding.js', import.meta.url), 'utf8');
         expect(src).toMatch(/cine-credits-continue/);
         expect(src).toMatch(/\['wheel', 'touchstart', 'touchmove', 'pointerdown'\]/);   // le joueur reprend la main
         expect(src).toMatch(/if \(pos >= maxScroll\(\) - 1\) markDone\(\)/);

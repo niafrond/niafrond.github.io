@@ -16,7 +16,15 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `breakReminder.js` — Rappel de pause : une popup bienveillante après 30 min de jeu continu, puis toutes les 15 min.
 - `cheatMode.js` — (sans description)
 - `chestLoot.js` — Butin des coffres d'exploration : en plus de l'or, un coffre peut contenir des potions (consommables),
-- `cinematics.js` — Animations « pixel art » plein écran : intro de la partie, fin de la légende, dialogues de boss.
+- `cinematics.js` — Animations « pixel art » plein écran (intro, fin de la légende, boss, soleils, régions, titre, prologue, duel).
+- `cinematicsBoss.js` — Dialogues de début de combat de boss : provocations, répliques, duels et animation d'introduction. Extrait de cinematics.js.
+- `cinematicsCore.js` — Socle des animations pixel art : taille de scène, montage plein écran, boucle runScene, primitives de dessin, palette du titre.
+- `cinematicsDuel.js` — Cinématique du duel de mi-parcours contre Fengmeng (gorges du Volcan). Extrait de cinematics.js.
+- `cinematicsEnding.js` — Fin de la légende (animation plein écran) et générique de fin. Extrait de cinematics.js.
+- `cinematicsPrologue.js` — Prologue animé de la nouvelle partie. Extrait de cinematics.js.
+- `cinematicsRegion.js` — Découverte d'une région et passage de portail. Extrait de cinematics.js.
+- `cinematicsSun.js` — Chute d'un soleil (animation plein écran). Extrait de cinematics.js.
+- `cinematicsTitle.js` — Écran de démarrage (launcher) : boucle pixel art de Hou Yi. Extrait de cinematics.js.
 - `classSpellEffects.js` — Gestion des effets spéciaux des sorts de classe
 - `classes.js` — Système de classes de personnages avec sorts spécialisés
 - `combatFlow.js` — (sans description)
@@ -130,3 +138,4 @@ Les tests qui lisent le source utilisent `tests/unit/fixtures/explorationViewSou
 ## story.js et exploration.js — plans par modules
 - `story.js` : assemble le monde (`SCREENS`, `QUESTS`, `REGION_UNLOCK_LEVEL`) ; le format des données est décrit en tête. Données : `storyText.js` (titre, intro, épilogue), `storyMirror.js` (interludes du miroir), `storyScreens.js` (`BASE_SCREENS`, gros), `storyQuests.js` (`BASE_QUESTS`, gros).
 - `exploration.js` : moteur (session, déplacements, ennemis, boss, entrée d'écran, arène, herbes, rencontres) et `export *` des modules : `explorationSenses.js` (aura, mimiques, coffres refermés, repère, brouillard), `explorationQuests.js` (statut/achèvement des quêtes, victoire, Nouvelle Partie +), `explorationDialogue.js` (compagnons, `talkToNpc`), `explorationGuide.js` (suivi de quête, cibles, objectif, journal), `explorationTravel.js` (voyage rapide, progression, bestiaire), `explorationChange.js` (mode Chang'e).
+- `cinematics.js` : façade ; code dans `cinematicsCore.js` (socle, primitives), `cinematicsEnding.js` (fin + générique), `cinematicsBoss.js`, `cinematicsSun.js`, `cinematicsRegion.js`, `cinematicsTitle.js`, `cinematicsPrologue.js`, `cinematicsDuel.js`.
