@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 
 // game.js dépend du DOM : vérification statique que sorts, armes et objets passent tous par bindTooltip (appui long).
 const src = readFileSync(new URL('../../game.js', import.meta.url), 'utf8')
-    + readFileSync(new URL('../../gameTooltips.js', import.meta.url), 'utf8'); // infobulles extraites de game.js
+    + ['gameTooltips.js', 'gameInventoryTabs.js', 'gameSpellsTab.js', 'gameCardUi.js'].map(f => readFileSync(new URL('../../' + f, import.meta.url), 'utf8')).join('\n'); // modules extraits de game.js
 
 describe('infobulles : appui bref sans infobulle', () => {
     it('plus aucun appui direct (touchstart / mousedown) n\'affiche une infobulle', () => {

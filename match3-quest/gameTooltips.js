@@ -7,7 +7,8 @@ import { isWeaknessShown } from "./combatFlow.js";
 import { describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { activeStatuses, statusTooltipHtml, statusLinesHtml } from "./statusBadges.js";
-import { MANA_COLOR_ORDER, MANA_COLOR_META, player, enemy, updateStats, shieldStats } from "./game.js";
+import { MANA_COLOR_ORDER, MANA_COLOR_META, player, enemy, updateStats } from "./game.js";
+import { shieldStats } from "./gameInventoryTabs.js";
 
 // Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
 // (un appui bref sert à utiliser l'élément et ne doit pas afficher l'infobulle).

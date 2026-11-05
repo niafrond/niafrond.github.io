@@ -41,7 +41,10 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `explorationGrids.js` — Grilles de cases (obstacles, liquides) et liste des décors fixes d'un écran, mises en cache : `inRects` parcourait tous les rectangles
 - `explorationView.js` — Phase d'exploration : carte plein écran en vue du dessus (canvas), saisie clavier / pavé
 - `game.js` — logique globale du joueur, ennemis, combat et interface
+- `gameCardUi.js` — Aides communes aux cartes des onglets Sorts / Armes / Équipement / Inventaire (échappement HTML, pied de carte, tri mémorisé).
+- `gameInventoryTabs.js` — Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
 - `gameOptions.js` — Options d'affichage et de performance (menu Options), mémorisées par appareil dans localStorage.
+- `gameSpellsTab.js` — Onglet Sorts : liste des sorts disponibles, tri, sélecteur d'ultime, équiper / retirer un sort ou un ultime.
 - `gameTooltips.js` — Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 - `icons.js` — Icônes SVG de l'interface (le jeu n'utilise aucun emoji) : petites pictos en ligne, viewBox 16x16, contour
 - `items.js` — (sans description)
@@ -55,7 +58,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `merchants.js` — (sans description)
 - `music.js` — (sans description)
 - `musicTracks.js` — (sans description)
-- `offlineCache.js` — Jeu hors ligne : enregistrement du service worker (sw.js) qui sert le jeu depuis le téléphone. Le pré-téléchargement des musiques et de
+- `offlineCache.js` — Jeu hors ligne : enregistrement du service worker (sw.js) qui sert le jeu depuis le téléphone. Le pré-téléchargement des musiques et dessins
 - `playTime.js` — Temps de jeu (menu Options), mémorisé par appareil dans localStorage : aujourd'hui, hier, cette semaine (depuis lundi), total.
 - `playerNames.js` — Bibliothèque de noms de joueur aléatoires
 - `progression.js` — Progression au-delà du niveau 18 : les armes et les sorts s'arrêtent au niveau 18 (dégâts ≤ 100 / 150) alors que les ennemis
@@ -74,7 +77,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `sw.js` — (sans description)
 - `terrain.js` — Préparation du terrain et règles de biome. Module pur (aucun DOM) : exploration.js, game.js et board.js l'appliquent.
 - `test-localstorage.js` — Test du système de localStorage pour Match3-Quest
-- `tileBitmaps.js` — Tuiles du plateau en bitmap. Chaque tuile est un <div> dont le fond est un SVG (≈ 40 primitives vectorielles : cercles tracés, dégradé 
+- `tileBitmaps.js` — Tuiles du plateau en bitmap. Chaque tuile est un <div> dont le fond est un SVG (≈ 40 primitives vectorielles : cercles tracés, dégradé radia
 - `tilePainter.js` — Rendu « tuiles à la Pokémon (GBA) » de l'exploration : herbe en nappes de tons, chemins et étangs aux coins arrondis et aux
 - `tutorial.js` — (sans description)
 - `ultimateCinematics.js` — Cinématiques plein écran des ultimes, façon invocations de FF9 : 4 plans portrait (incantation, apparition de l'entité,
@@ -86,10 +89,10 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `worldMap.js` — Régions du monde de « Hou Yi et les Dix Soleils » (voir UNIVERS.md). Chaque région correspond à un écran
 - `worldMapView.js` — Rendu de la carte du monde façon "overworld" de Mario : mer, île aux falaises,
 
-## game.js — plan par lignes approximatives
-- 40-140 : mana (caps, gains par couleur), icônes — 140-330 : sorts (coût, affinités) et `applyDamage` — 560-700 : état `player`, loot, compagnons
-- 700-1200 : XP/fin de combat, `restartCombat`, `startNewCombat`, `loadGameData` — 1200-1700 : barres, `updateStats`, journal
-- 1700-2000 : sauvegarde, onglet stats, animations d'attaque — 2000-2470 : actions joueur (`useWeapon`, `castSpell`, `finishPlayerTurn`)
-- 2470-2960 : tour ennemi, victoire — 2960-3100 : attributs, niveau — 3100-3240 : liste des sorts
-- onglets Sorts / Armes / Équipement / Inventaire à partir de ~3240 ; combat (intro, premier tour) ~3500-3980
-- Infobulles : voir `gameTooltips.js` (extrait de game.js, ré-exporté).
+## game.js — plan par modules
+`game.js` garde l'état (`player`, `enemy`, `gameState`), le mana, les dégâts, le déroulé du combat (tours joueur/ennemi, victoire, nouveau combat) et les attributs. Le reste est extrait et ré-exporté par `game.js` (les imports existants restent valables) :
+- `gameTooltips.js` : infobulles (sort, arme, objet, équipement, ennemi), pastilles de statut
+- `gameCardUi.js` : aides communes des cartes (échappement HTML, pied de carte, tri mémorisé)
+- `gameSpellsTab.js` : onglet Sorts, sélecteur d'ultime, équiper/retirer un sort ou ultime
+- `gameInventoryTabs.js` : onglets Armes / Équipement / Inventaire, armes en main, utilisation d'objets
+Les modules extraits importent `game.js` en retour (import circulaire sûr : usage uniquement à l'exécution, jamais au chargement).
