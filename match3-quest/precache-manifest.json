@@ -38,6 +38,7 @@
   "explorationView.js",
   "game.js",
   "gameOptions.js",
+  "gameTooltips.js",
   "icon.svg",
   "icons.js",
   "items.js",

@@ -1,0 +1,95 @@
+# CODEMAP — carte du code (pour lecteurs LLM)
+
+Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte, puis ne lire que le fichier (ou la plage de lignes) utile.
+
+## Fichiers à NE PAS lire en entier (très volumineux, données générées)
+- `sprites/generated.js` (4,5 Mo), `world/snapshot.js` (0,9 Mo), `sprites/gba/*.js`, `sprites/biomeArchi.js`, `sprites/winter-decor.js`, `soluce/*.html`, `SPECS.md` (0,6 Mo) : utiliser `Grep` ciblé.
+- Gros fichiers de logique à lire par plages : `game.js`, `explorationView.js`, `story.js`, `exploration.js`, `style.css`.
+
+## Modules racine (première ligne de commentaire)
+- `actionGuard.js` — (sans description)
+- `arena.js` — Arène des Mille Flèches : un lieu à explorer, comme une arène de Pokémon. Ouverte dès le 3e terrain
+- `attributes.js` — Attributs du joueur : source unique des effets (appliqués par game.js) et de leur description affichée.
+- `bestiary.js` — Bestiaire du carnet : force, faiblesse et notice mythologique de chaque gabarit d'ennemi (enemies.catalog.json).
+- `board.js` — (sans description)
+- `bossTips.js` — (sans description)
+- `breakReminder.js` — Rappel de pause : une popup bienveillante après 30 min de jeu continu, puis toutes les 15 min.
+- `cheatMode.js` — (sans description)
+- `chestLoot.js` — Butin des coffres d'exploration : en plus de l'or, un coffre peut contenir des potions (consommables),
+- `cinematics.js` — Animations « pixel art » plein écran : intro de la partie, fin de la légende, dialogues de boss.
+- `classSpellEffects.js` — Gestion des effets spéciaux des sorts de classe
+- `classes.js` — Système de classes de personnages avec sorts spécialisés
+- `combatFlow.js` — (sans description)
+- `combatStats.js` — Attaque / Défense : ce sont des probabilités, pas des dégâts.
+- `companionMoves.js` — Choix « ultra smart » du coup supplémentaire de Xiao Gui (logique pure, sans DOM ; appliqué par board.js : foxMakeRandomMove).
+- `companionPowers.js` — Pouvoirs de combat des compagnons (données pures et tirage, sans DOM ; appliqués par game.js : applyCompanionPowers).
+- `companionTrail.js` — (sans description)
+- `companions.js` — Compagnons de route et dialogues contextuels de Match3-Quest (données pures, sans DOM ; propriétaire : agent Scénario).
+- `compareView.js` — Comparaison de deux sorts, armes ou stuffs : bouton « Comparer » sur chaque ligne (1er clic = référence, 2e clic = tableau comparatif).
+- `constants.js` — Constantes globales utilisées par le jeu
+- `creatureScale.js` — Échelle des ennemis et des boss sur la carte d'exploration (module pur, aucun DOM).
+- `decor.js` — Décors des obstacles par biome (module pur, aucun DOM) : l'exploration les dessine (explorationView.js) et le moteur
+- `dialogState.js` — État d'affichage d'un dialogue d'exploration (explorationView.js). Module pur (sans DOM).
+- `duel.js` — Règles de duel des combats contre Fengmeng (champ `duel` d'un ennemi de story.js, recopié sur l'ennemi
+- `elements.js` — Éléments de qì et table des faiblesses. Module pur (aucun DOM), partagé par enemies.js, terrain.js et l'UI.
+- `enemies.js` — Système d'ennemis piloté par un catalogue JSON
+- `enemyAI.js` — Bibliothèque d'intelligence artificielle pour les ennemis
+- `equipPreview.js` — Aperçu d'un équipement chez le marchand : stats globales du héros avant / après avoir porté la pièce à la place de celle équipée.
+- `equipment.js` — Système d'équipement multi-slot (main droite, main gauche, objet)
+- `experience.js` — Système d'expérience et de progression du joueur
+- `exploration.js` — Moteur de la phase d'exploration (logique pure, sans DOM).
+- `explorationGrids.js` — Grilles de cases (obstacles, liquides) et liste des décors fixes d'un écran, mises en cache : `inRects` parcourait tous les rectangles
+- `explorationView.js` — Phase d'exploration : carte plein écran en vue du dessus (canvas), saisie clavier / pavé
+- `game.js` — logique globale du joueur, ennemis, combat et interface
+- `gameOptions.js` — Options d'affichage et de performance (menu Options), mémorisées par appareil dans localStorage.
+- `gameTooltips.js` — Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
+- `icons.js` — Icônes SVG de l'interface (le jeu n'utilise aucun emoji) : petites pictos en ligne, viewBox 16x16, contour
+- `items.js` — (sans description)
+- `joker.js` — (sans description)
+- `loader.js` — Écran de chargement plein écran (démarrage du jeu, entrée dans une région dont les dessins ne sont pas encore
+- `main.js` — (sans description)
+- `manaFlight.js` — Animation purement décorative : de petits points de la couleur du qì volent des tuiles combinées
+- `manaGear.js` — Qì max apporté par l'équipement : champ `manaMax` d'une arme, d'un bouclier ou d'un stuff porté, `{ couleur: bonus }`
+- `mapConnections.js` — Connexions de bordure entre cartes (« à la Pokémon Rubis / Saphir / Émeraude ») : logique pure, sans DOM.
+- `matchMechanics.js` — (sans description)
+- `merchants.js` — (sans description)
+- `music.js` — (sans description)
+- `musicTracks.js` — (sans description)
+- `offlineCache.js` — Jeu hors ligne : enregistrement du service worker (sw.js) qui sert le jeu depuis le téléphone. Le pré-téléchargement des musiques et de
+- `playTime.js` — Temps de jeu (menu Options), mémorisé par appareil dans localStorage : aujourd'hui, hier, cette semaine (depuis lundi), total.
+- `playerNames.js` — Bibliothèque de noms de joueur aléatoires
+- `progression.js` — Progression au-delà du niveau 18 : les armes et les sorts s'arrêtent au niveau 18 (dégâts ≤ 100 / 150) alors que les ennemis
+- `saveManager.js` — Gestionnaire de sauvegarde/chargement de parties (export/import JSON)
+- `secretLogic.js` — Logique pure du menu secret (testable sans charger game.js).
+- `secretMenu.js` — Menu secret : 6 clics sur « Particules de qì » (Options) l'ouvrent pour toute la session (jamais sauvegardé).
+- `sfxCatalog.js` — (sans description)
+- `shop.js` — =====================================
+- `sound.js` — (sans description)
+- `spellFx.js` — (sans description)
+- `spells.js` — Catalogue des sorts charge depuis spells.json
+- `statusBadges.js` — Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
+- `story.js` — Histoire et cartes d'exploration de Match3-Quest : « La Légende de Hou Yi ».
+- `stuff.js` — Stuff : casque, collier, bracelet et bague. Module pur (sans DOM).
+- `stuffView.js` — Onglet « Stuff » : casque, collier, bracelet et bague (stuff.js). Affichage et actions du joueur ; la logique est dans stuff.js.
+- `sw.js` — (sans description)
+- `terrain.js` — Préparation du terrain et règles de biome. Module pur (aucun DOM) : exploration.js, game.js et board.js l'appliquent.
+- `test-localstorage.js` — Test du système de localStorage pour Match3-Quest
+- `tileBitmaps.js` — Tuiles du plateau en bitmap. Chaque tuile est un <div> dont le fond est un SVG (≈ 40 primitives vectorielles : cercles tracés, dégradé 
+- `tilePainter.js` — Rendu « tuiles à la Pokémon (GBA) » de l'exploration : herbe en nappes de tons, chemins et étangs aux coins arrondis et aux
+- `tutorial.js` — (sans description)
+- `ultimateCinematics.js` — Cinématiques plein écran des ultimes, façon invocations de FF9 : 4 plans portrait (incantation, apparition de l'entité,
+- `ultimates.js` — Sorts ultimes (« rage ») : une jauge se charge quand le joueur subit des dégâts ; pleine, elle permet de lancer un
+- `version.js` — (sans description)
+- `victoryLoot.js` — Butin d'un ennemi de niveau supérieur : le vaincre rapporte à coup sûr de l'équipement rare, du niveau du joueur (jamais
+- `weapons.js` — Bibliothèque complète des armes du jeu
+- `welcomeBack.js` — « Ça fait longtemps » : rappel succinct (armes, sorts, potions, quêtes actives) quand le joueur revient après une longue absence.
+- `worldMap.js` — Régions du monde de « Hou Yi et les Dix Soleils » (voir UNIVERS.md). Chaque région correspond à un écran
+- `worldMapView.js` — Rendu de la carte du monde façon "overworld" de Mario : mer, île aux falaises,
+
+## game.js — plan par lignes approximatives
+- 40-140 : mana (caps, gains par couleur), icônes — 140-330 : sorts (coût, affinités) et `applyDamage` — 560-700 : état `player`, loot, compagnons
+- 700-1200 : XP/fin de combat, `restartCombat`, `startNewCombat`, `loadGameData` — 1200-1700 : barres, `updateStats`, journal
+- 1700-2000 : sauvegarde, onglet stats, animations d'attaque — 2000-2470 : actions joueur (`useWeapon`, `castSpell`, `finishPlayerTurn`)
+- 2470-2960 : tour ennemi, victoire — 2960-3100 : attributs, niveau — 3100-3240 : liste des sorts
+- onglets Sorts / Armes / Équipement / Inventaire à partir de ~3240 ; combat (intro, premier tour) ~3500-3980
+- Infobulles : voir `gameTooltips.js` (extrait de game.js, ré-exporté).

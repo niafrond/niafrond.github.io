@@ -37,6 +37,8 @@ import { activeStatuses, statusBadgesHtml, statusTooltipHtml, statusLinesHtml } 
 import { resolveStrike, blockLabel, displayAttack, rawDefense, statModifier, addStatBuff, describeStatBuff, tickStatBuffs, clearStatBuffs, ancientArrowGain } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
+import { bindStatusBadges, bindTooltip, getSpellTooltipHtml, showWeaponTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyCardTap, showEnemyNameTooltip, hideEnemyNameTooltip, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
+export { TOOLTIP_LONG_PRESS_MS };
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
 const BASE_MANA_CAP = 50;
@@ -59,8 +61,8 @@ const SPELL_EFFECT_ICONS = {
 };
 const spellEffectIcon = sp => (SPELL_EFFECT_ICONS[sp.effect] ? svgIcon(SPELL_EFFECT_ICONS[sp.effect], 'spell-fx-ic') : '');
 const classIcon = classId => (CLASS_ICONS[classId] ? svgIcon(CLASS_ICONS[classId]) : '');
-const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
-const MANA_COLOR_META = {
+export const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
+export const MANA_COLOR_META = {
     red: { name: 'Rouge' },
     blue: { name: 'Bleu' },
     green: { name: 'Vert' },
@@ -1468,9 +1470,7 @@ export function updateStats(){
         bindTooltip(playerDiv, () => showPlayerGearTooltip(playerDiv), hideSpellTooltip);
         // Un clic / toucher sur le joueur affiche aussi son équipement et ses bonus/malus, quelques secondes.
         playerDiv.addEventListener('click', () => {
-            showPlayerGearTooltip(playerDiv);
-            clearTimeout(playerTapTimer);
-            playerTapTimer = setTimeout(hideSpellTooltip, ENEMY_TAP_TOOLTIP_MS);
+            showPlayerGearTooltipBriefly(playerDiv);
         });
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
@@ -3239,273 +3239,6 @@ export function createSpellButtons(){
     updateSpellsTab();
 }
 
-// Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
-// (un appui bref sert à utiliser l'élément et ne doit pas afficher l'infobulle).
-export const TOOLTIP_LONG_PRESS_MS = 400;
-// Pastilles de bonus/malus : survol ou appui long = explication de l'effet.
-function bindStatusBadges(container, entity) {
-    const list = activeStatuses(entity);
-    container.querySelectorAll('.status-badge').forEach(el => {
-        const status = list.find(x => x.id === el.dataset.status);
-        if(!status) return;
-        el.removeAttribute('title');
-        bindTooltip(el, () => {
-            const tooltip = ensureSpellTooltip();
-            tooltip.innerHTML = statusTooltipHtml(status);
-            tooltip.classList.add('visible');
-            placeTooltip(tooltip, el, 260);
-        }, hideSpellTooltip);
-    });
-}
-
-function bindTooltip(el, show, hide) {
-    let timer = null;
-    let shownByPress = false;
-    const cancel = () => { clearTimeout(timer); timer = null; };
-    el.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') show(); });
-    el.addEventListener('pointerleave', e => { cancel(); if(e.pointerType === 'mouse') hide(); });
-    el.addEventListener('pointerdown', e => {
-        if(e.pointerType === 'mouse') return;
-        cancel();
-        timer = setTimeout(() => { timer = null; shownByPress = true; show(); }, TOOLTIP_LONG_PRESS_MS);
-    });
-    // Relâcher un appui long ne doit pas utiliser l'élément : on avale le clic qui suit.
-    el.addEventListener('click', e => {
-        if(!shownByPress) return;
-        shownByPress = false;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-    }, true);
-    ['pointerup', 'pointercancel'].forEach(type => el.addEventListener(type, () => { cancel(); hide(); }));
-    el.addEventListener('focus', () => { if(el.matches?.(':focus-visible')) show(); });
-    el.addEventListener('blur', () => { cancel(); hide(); });
-}
-
-function getSpellTooltipHtml(spell) {
-    let effectText = 'Aucun effet';
-    if(spell.effect) {
-        effectText = spell.description || 'Effet spécial';
-    } else if(spell.dmg && spell.heal) {
-        effectText = `Inflige ${spell.dmg} ${svgIcon('skull')} et soigne ${spell.heal} ${svgIcon('heart')}`;
-    } else if(spell.dmg) {
-        effectText = `Inflige ${spell.dmg} ${svgIcon('skull')}`;
-    } else if(spell.heal) {
-        effectText = `Soigne ${spell.heal} ${svgIcon('heart')}`;
-    }
-
-    return `<div class="spell-tooltip-line">${effectText}</div>`;
-}
-
-function getWeaponTooltipHtml(weapon) {
-    let html = `<div class="spell-tooltip-title">${weapon.name}</div>`;
-    html += `<div class="spell-tooltip-line">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}</div>`;
-    if(weapon.description) html += `<div class="spell-tooltip-line">${weapon.description}</div>`;
-    if(weapon.biome) html += `<div class="spell-tooltip-line">Bonus de dégâts en ${BIOME_LABELS[weapon.biome]}${enemy?.biome === weapon.biome ? ' (actif)' : ''}</div>`;
-    return html;
-}
-
-function showWeaponTooltip(button, weapon) {
-    if(!button || !weapon) return;
-    const tooltip = ensureSpellTooltip();
-    tooltip.innerHTML = getWeaponTooltipHtml(weapon);
-    tooltip.classList.add('visible');
-    placeTooltip(tooltip, button, 260);
-}
-
-function getItemTooltipHtml(item, options = {}) {
-    if(!item) return '<div class="spell-tooltip-line">Objet inconnu</div>';
-
-    const isEnemyItem = options.isEnemyItem === true;
-    const ownerLabel = isEnemyItem ? 'ennemi' : 'allié';
-    const typeLabel = item.type === 'artifact'
-        ? 'Relique passive'
-        : (item.type === 'consumable' ? 'Consommable' : item.type === 'reusable' ? 'Objet rechargeable' : 'Objet');
-    const actionPoints = (item.type === 'consumable' || item.type === 'reusable') ? (item.actionPoints || 2) : null;
-
-    let html = `<div class="spell-tooltip-title">${item.name || 'Objet'}</div>`;
-    html += `<div class="spell-tooltip-line">Objet ${ownerLabel}</div>`;
-    html += `<div class="spell-tooltip-line">Type: ${typeLabel}</div>`;
-    if(actionPoints !== null) {
-        html += `<div class="spell-tooltip-line">Coût: ${actionPoints} PA</div>`;
-    }
-    if(item.description) {
-        html += `<div class="spell-tooltip-line">${item.description}</div>`;
-    }
-    if(item.type === 'reusable') {
-        html += `<div class="spell-tooltip-line">Charges: ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} • ${describeRecharge(item)}</div>`;
-    }
-    return html;
-}
-
-function ensureSpellTooltip() {
-    let tooltip = document.getElementById('spell-detail-tooltip');
-    if(!tooltip){
-        tooltip = document.createElement('div');
-        tooltip.id = 'spell-detail-tooltip';
-        tooltip.className = 'spell-detail-tooltip';
-        document.body.appendChild(tooltip);
-    }
-    return tooltip;
-}
-
-// Place une infobulle au-dessus de l'élément maintenu, à bonne distance : le pouce (ou le doigt) qui appuie dessus ne doit pas
-// cacher le contenu. Pas assez de place au-dessus : en dessous, plus bas encore pour dégager le pouce.
-const TOOLTIP_GAP_ABOVE = 28;
-const TOOLTIP_GAP_BELOW = 72;
-function placeTooltip(tooltip, targetEl, tooltipWidth) {
-    const rect = targetEl.getBoundingClientRect();
-    const margin = 10;
-    const height = tooltip.offsetHeight || 100;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    let top = rect.top - height - TOOLTIP_GAP_ABOVE;
-    if(top < margin) top = Math.min(window.innerHeight - height - margin, rect.bottom + TOOLTIP_GAP_BELOW);
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${Math.max(margin, top)}px`;
-}
-
-function showSpellTooltip(button, spell) {
-    if(!button || !spell) return;
-    const tooltip = ensureSpellTooltip();
-    tooltip.innerHTML = getSpellTooltipHtml(spell);
-    tooltip.classList.add('visible');
-
-    placeTooltip(tooltip, button, 260);
-}
-
-// Équipement du joueur (arme, bouclier, stuff) : appui long sur sa carte en combat.
-function getPlayerGearTooltipHtml() {
-    const line = (label, text) => `<div class="spell-tooltip-line"><strong>${label} :</strong> ${text}</div>`;
-    const weapon = player.equippedWeapon;
-    const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    let html = `<div class="spell-tooltip-title">${player.name || 'Hou Yi'}</div>`;
-    html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
-    html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
-    normalizeStuff(player);
-    Object.entries(STUFF_SLOT_LABELS).forEach(([slot, label]) => {
-        const piece = getStuffById(player.stuff[slot]);
-        html += line(label, piece ? piece.name : '—');
-    });
-    return html + statusLinesHtml(player);
-}
-
-function showPlayerGearTooltip(targetEl) {
-    if(!targetEl) return;
-    const tooltip = ensureSpellTooltip();
-    tooltip.innerHTML = getPlayerGearTooltipHtml();
-    tooltip.classList.add('visible');
-    placeTooltip(tooltip, targetEl, 260);
-}
-
-function showItemTooltip(button, item, options = {}) {
-    if(!button || !item) return;
-    const tooltip = ensureSpellTooltip();
-    tooltip.innerHTML = getItemTooltipHtml(item, options);
-    tooltip.classList.add('visible');
-
-    placeTooltip(tooltip, button, 260);
-}
-
-function hideSpellTooltip() {
-    const tooltip = document.getElementById('spell-detail-tooltip');
-    if(tooltip){
-        tooltip.classList.remove('visible');
-    }
-}
-
-function ensureEnemyNameTooltip() {
-    let tooltip = document.getElementById('enemy-name-tooltip');
-    if(!tooltip){
-        tooltip = document.createElement('div');
-        tooltip.id = 'enemy-name-tooltip';
-        tooltip.className = 'enemy-name-tooltip';
-        document.body.appendChild(tooltip);
-    }
-    return tooltip;
-}
-
-function getEnemyResistanceInsights(enemyEntity) {
-    const resistances = enemyEntity?.resistances || {};
-    const entries = MANA_COLOR_ORDER
-        .filter(color => Number.isFinite(Number(resistances[color])))
-        .map(color => ({
-            color,
-            value: Math.max(0, Number(resistances[color]))
-        }));
-
-    if(entries.length === 0) {
-        return { weakest: null, strongest: null };
-    }
-
-    const sorted = [...entries].sort((a, b) => a.value - b.value);
-    return {
-        weakest: sorted[0] || null,
-        strongest: sorted[sorted.length - 1] || null
-    };
-}
-
-// Infobulle de l'ennemi : sa force est toujours indiquée ; sa faiblesse (couleur + élément) seulement une fois repérée
-// (avantage « Faiblesse repérée » du terrain, prep.weaknessRevealed).
-function getEnemyNameTooltipHtml(fullName, enemyEntity) {
-    const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
-    const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
-
-    if(strongest) {
-        const strongMeta = MANA_COLOR_META[strongest.color];
-        const strongPercent = Math.round(strongest.value * 100);
-        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-strong">Force : ${manaIcon(strongest.color)} ${strongMeta.name} (${strongPercent}% res.)</div>`);
-    }
-
-    if(isWeaknessShown(enemyEntity?.prep)) {
-        const weakColor = enemyEntity.weakColor || weakest?.color;
-        if(weakColor && MANA_COLOR_META[weakColor]) {
-            const element = elementName(weakColor);
-            const resist = Number(enemyEntity.resistances?.[weakColor]);
-            const percent = Number.isFinite(resist) ? ` (${Math.round(Math.max(0, resist) * 100)}% res.)` : '';
-            lines.push(`<div class="enemy-tooltip-row enemy-tooltip-weak">Faiblesse : ${manaIcon(weakColor)} ${element ? `${element} - ` : ''}${MANA_COLOR_META[weakColor].name}${percent}</div>`);
-        }
-    }
-
-    lines.push(statusLinesHtml(enemyEntity));
-    return lines.join('');
-}
-
-// Un clic / toucher sur la carte ou le portrait de l'ennemi affiche son infobulle (faiblesse incluse si elle est repérée),
-// qui se referme seule après quelques secondes. Lié une seule fois : le panneau est reconstruit à chaque updateStats.
-const ENEMY_TAP_TOOLTIP_MS = 3500;
-let enemyTapTimer = null;
-let playerTapTimer = null;
-function bindEnemyCardTap(enemyDiv){
-    if(!enemyDiv || enemyDiv.dataset.tapBound) return;
-    enemyDiv.dataset.tapBound = '1';
-    enemyDiv.addEventListener('click', () => {
-        const nameEl = enemyDiv.querySelector('.enemy-combat-name');
-        if(!nameEl) return;
-        showEnemyNameTooltip(nameEl, nameEl.dataset.fullName || enemy.name, enemy);
-        clearTimeout(enemyTapTimer);
-        enemyTapTimer = setTimeout(hideEnemyNameTooltip, ENEMY_TAP_TOOLTIP_MS);
-    });
-}
-
-function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
-    if(!targetEl || !fullName) return;
-    const tooltip = ensureEnemyNameTooltip();
-    tooltip.innerHTML = getEnemyNameTooltipHtml(fullName, enemyEntity);
-    tooltip.classList.add('visible');
-
-    placeTooltip(tooltip, targetEl, 250);
-}
-
-function hideEnemyNameTooltip() {
-    const tooltip = document.getElementById('enemy-name-tooltip');
-    if(tooltip){
-        tooltip.classList.remove('visible');
-    }
-}
-
-// Cartes des onglets Armes / Sorts : nom, caractéristiques, description, puis pied « Comparer » + actions.
 const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cardActionsHtml = (compare, actions) => `<div class="card-actions">${compare}<span class="card-actions-main">${actions}</span></div>`;
 const emptySlotHtml = (label, text) => `<div class="weapon-item gear-card slot-empty"><div class="weapon-details"><span class="weapon-name">${label}</span><span class="weapon-description">${text}</span></div></div>`;
@@ -4220,7 +3953,7 @@ export function updateWeaponsTab(){
 }
 
 
-const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
+export const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.atkBonus ? `Atk +${it.atkBonus}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
 
 // Boucliers (main gauche, onglet Armes) ou objets rechargeables (objet actif, onglet Objets) : affichés dès l'achat,
 // non sélectionnables tant que le niveau requis n'est pas atteint.
