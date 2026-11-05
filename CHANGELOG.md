@@ -1,3 +1,9 @@
+## [2.191.0](https://github.com/niafrond/niafrond.github.io/compare/v2.190.0...v2.191.0) (2026-11-05)
+
+### Features
+
+* **match3-quest:** réduire les rencontres dans les hautes herbes à cheval ([#646](https://github.com/niafrond/niafrond.github.io/issues/646)) ([34389f7](https://github.com/niafrond/niafrond.github.io/commit/34389f79020311859c20273a6871970721474059))
+
 ## [2.190.0](https://github.com/niafrond/niafrond.github.io/compare/v2.189.1...v2.190.0) (2026-11-04)
 
 ### Features
