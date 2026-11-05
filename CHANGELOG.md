@@ -1,3 +1,9 @@
+## [2.192.0](https://github.com/niafrond/niafrond.github.io/compare/v2.191.0...v2.192.0) (2026-11-05)
+
+### Features
+
+* **match3-quest:** afficher l'effet d'une case de biome au clic ([#647](https://github.com/niafrond/niafrond.github.io/issues/647)) ([76d9054](https://github.com/niafrond/niafrond.github.io/commit/76d90549b4ab03fed26122eb44fa501f4fe75dff))
+
 ## [2.191.0](https://github.com/niafrond/niafrond.github.io/compare/v2.190.0...v2.191.0) (2026-11-05)
 
 ### Features
