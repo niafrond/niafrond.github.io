@@ -855,3 +855,15 @@ body.dark-mode :focus-visible { outline-color: #ffd54a; box-shadow: 0 0 0 5px #0
   button:not(.tile):not(.wm-node) { min-width: 44px; }
 }
 
+/* Mode daltonien : palette inspirée d'Okabe-Ito. Les teintes sont décalées ET les luminosités échelonnées (le vert devient sombre et bleuté,
+   le jaune clair, le violet rosé) pour que rouge/vert et bleu/violet ne se confondent plus ; les symboles (a11y-shapes) restent affichés. */
+body.a11y-colorblind .tile.red { filter: hue-rotate(22deg) saturate(1.2) brightness(1.05); }
+body.a11y-colorblind .tile.green { filter: hue-rotate(35deg) saturate(1.1) brightness(.78); }
+body.a11y-colorblind .tile.blue { filter: saturate(1.2) brightness(.95); }
+body.a11y-colorblind .tile.yellow { filter: brightness(1.25) saturate(.95); }
+body.a11y-colorblind .tile.purple { filter: hue-rotate(50deg) saturate(1.1) brightness(1.2); }
+body.a11y-colorblind .mana-red { background: #d55e00; }
+body.a11y-colorblind .mana-blue { background: #0072b2; }
+body.a11y-colorblind .mana-green { background: #009e73; }
+body.a11y-colorblind .mana-yellow { background: #f0e442; }
+body.a11y-colorblind .mana-purple { background: #cc79a7; }

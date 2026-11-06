@@ -5,6 +5,8 @@ Jeu pensé pour **mobile / tactile** ; le clavier n'est pas une cible (les fenê
 ## Déjà présent (non dupliqué)
 Taille du texte, symboles en plus des couleurs, animations coupables, effets réduits, vibrations désactivables, vitesse des animations, `prefers-reduced-motion` sur plusieurs animations CSS, mode nuit, cibles de 40-44 px sur plusieurs boutons.
 
+**Mode daltonien** (Options / Pause) : teintes décalées et luminosités échelonnées pour les tuiles et le qì, symboles forcés. À valider avec des joueurs concernés ; les barres de PV et autres indicateurs ne dépendent pas de cette palette.
+
 ## Constats et corrections
 | Constat | Impact | Correction |
 |---|---|---|
