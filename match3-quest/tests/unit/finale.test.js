@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { SCREENS, STORY_ENDING } from '../../story.js';
 import { isArenaUnlocked } from '../../arena.js';
 import { CREDITS, ENDING_CAPTIONS } from '../../cinematics.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 import {
     createSession, talkToNpc, markEnemyDefeated, encounterFor, resetAfterDefeat, startNewGamePlus, aliveEnemies
 } from '../../exploration.js';
@@ -89,7 +90,7 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
     });
 
     test('le générique défile seul, se laisse remonter, s\'arrête sur la dernière phrase et attend « Continuer »', () => {
-        const src = readFileSync(new URL('../../cinematics.js', import.meta.url), 'utf8');
+        const src = readFileSync(new URL('../../cinematicsEnding.js', import.meta.url), 'utf8');
         expect(src).toMatch(/cine-credits-continue/);
         expect(src).toMatch(/\['wheel', 'touchstart', 'touchmove', 'pointerdown'\]/);   // le joueur reprend la main
         expect(src).toMatch(/if \(pos >= maxScroll\(\) - 1\) markDone\(\)/);
@@ -126,12 +127,12 @@ describe('fin de la légende : textes, générique, Nouvelle Partie +', () => {
         expect(s.data.introSeen).toBe(false);
         expect(s.data.tracked).toBe(null);
         expect(s.data.waypoints.includes('some_village')).toBe(false);
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).toMatch(/playPrologueAnimation\(\)\.then[\s\S]*startEncounter\('fengmeng_1'\)/);
     });
 
     test('la Nouvelle Partie + passe par l\'export de la sauvegarde, après le générique', () => {
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).toMatch(/await playEndingAnimation\(\);\s*await playCredits\(\);/);
         expect(view).toMatch(/cfg\.onExportSave && !cfg\.onExportSave\(\)/);
         const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');

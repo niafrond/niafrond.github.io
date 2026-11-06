@@ -3,6 +3,7 @@ import { gbaAttackFrames, loadAllGbaSprites } from '../../sprites/index.js';
 import { DEAD_TREES } from '../../sprites/deadtrees.js';
 import { DECOR_NAMES } from '../../sprites/decor.js';
 import { ARENA_BIOMES } from '../../arena.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
 // Les sprites GBA sont chargés à la demande (avec leur région) : ici on les charge tous.
 await loadAllGbaSprites();
@@ -36,7 +37,7 @@ describe('arbres morts du décor', () => {
 });
 
 describe('déclenchement de l\'animation d\'attaque', () => {
-    const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+    const game = readGameSource();
     const board = readFileSync(new URL('../../board.js', import.meta.url), 'utf8');
     test('coups d\'arme et sorts offensifs (annonce de dégâts) jouent l\'animation du lanceur', () => {
         const fn = game.slice(game.indexOf('export function showCombatAnimation'));

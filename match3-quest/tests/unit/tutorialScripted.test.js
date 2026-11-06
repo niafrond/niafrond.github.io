@@ -2,6 +2,7 @@
 // tour bonus (Fengmeng ne peut ni tuer le joueur ni enchaîner).
 import { describe, test, expect } from '@jest/globals';
 import { TUTORIAL_DROPS_SCRIPT, _dropTile, _pickEnemyMove } from '../../tutorial.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
 const COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
 
@@ -54,7 +55,7 @@ const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.
 
 describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
     test('pas de conseil standard pendant le tutoriel, rétabli à la fin', () => {
-        expect(read('board.js')).toMatch(/if\(tutorialCallbacks\.noSuggestions\) return;/);
+        expect(read('boardSuggestions.js')).toMatch(/if\(tutorialCallbacks\.noSuggestions\) return;/);
         const src = read('tutorial.js');
         expect(src).toMatch(/tutorialCallbacks\.noSuggestions = true/);
         expect((src.match(/tutorialCallbacks\.noSuggestions = false/g) || []).length).toBeGreaterThanOrEqual(2);
@@ -71,7 +72,7 @@ describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
         expect(src).not.toMatch(/500/);
         expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 1/);
         expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 0;\s+\/\/ dernier coup/);
-        expect(read('game.js')).toMatch(/const nextHp = Math\.max\(hpFloor, currentHp - normalizedDamage\)/);
+        expect(readGameSource()).toMatch(/const nextHp = Math\.max\(hpFloor, currentHp - normalizedDamage\)/);
     });
 });
 

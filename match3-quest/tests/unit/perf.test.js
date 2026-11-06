@@ -2,10 +2,12 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
+import { readStyleSource } from './fixtures/styleSource.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (f) => readFileSync(join(root, f), 'utf8');
-const css = read('style.css');
+const css = readStyleSource();
 
 /** Corps d'un bloc délimité par des accolades à partir de l'index de l'accolade ouvrante. */
 function block(src, open) {
@@ -44,7 +46,7 @@ describe('animations du coup suggéré (tuile du plateau)', () => {
 });
 
 describe('carte d\'exploration : coût de rendu', () => {
-    const view = read('explorationView.js');
+    const view = readExplorationViewSource();
 
     test('le flou d\'ombre (shadowBlur) n\'est appliqué que dans le calque de sol en cache ou son repli', () => {
         const uses = [...view.matchAll(/\.shadowBlur\s*=/g)];

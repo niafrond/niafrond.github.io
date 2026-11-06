@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, weakColorOf, strongColorOf } from '../../bestiary.js';
 import { weaknessOf } from '../../elements.js';
 import { createSession, recordBestiary, startNewGamePlus } from '../../exploration.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 
@@ -46,7 +47,7 @@ describe('Bestiaire du carnet', () => {
     });
 
     test("le bestiaire a son propre onglet (ni le carnet, ni l'Inventaire) et le combat inscrit la créature", () => {
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).not.toMatch(/tab\('bestiary'/);   // plus d'onglet dans le carnet
         expect(view).toMatch(/async bestiaryHtml\(\)/);
         const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');

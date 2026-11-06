@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { bigScale, setSpellFxIndex, spellFxHtml, spellFxIdForTitle, spellFxDurationMs } from '../../spellFx.js';
+import { readStyleSource } from './fixtures/styleSource.js';
 
 const index = JSON.parse(readFileSync(new URL('../../sprites/spellfx/index.json', import.meta.url), 'utf8'));
 const spells = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));
@@ -30,7 +31,7 @@ describe('spellFx', () => {
     test('l\'animation tourne en boucle et sa durée (d\'un cycle) est connue', () => {
         expect(spellFxDurationMs('SOUFFLE DU DRAGON DE FEU')).toBe(Math.round(index.fireball.frames / index.fireball.fps * 1000));
         expect(spellFxDurationMs("COUP D'ÉPÉE")).toBe(0);
-        const css = readFileSync(new URL('../../style.css', import.meta.url), 'utf8');
+        const css = readStyleSource();
         expect(css).toMatch(/\.spellfx \{[^}]*infinite;/);
         expect(css).not.toMatch(/\.spellfx \{[^}]*forwards/);
     });
