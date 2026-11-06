@@ -1,5 +1,6 @@
 // Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 // Extrait de game.js pour alléger ce fichier ; game.js ré-exporte ce qui était public.
+import { escapeHtml } from "./escapeHtml.js";
 import { BIOME_LABELS } from "./weapons.js";
 import { STUFF_SLOT_LABELS, getStuffById, normalizeStuff } from "./stuff.js";
 import { elementName } from "./elements.js";
@@ -151,7 +152,7 @@ function getPlayerGearTooltipHtml() {
     const line = (label, text) => `<div class="spell-tooltip-line"><strong>${label} :</strong> ${text}</div>`;
     const weapon = player.equippedWeapon;
     const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
-    let html = `<div class="spell-tooltip-title">${player.name || 'Hou Yi'}</div>`;
+    let html = `<div class="spell-tooltip-title">${escapeHtml(player.name || 'Hou Yi')}</div>`;
     html += line('Arme', weapon ? `${weapon.name} (${weapon.damage} ${svgIcon('skull')})` : 'aucune');
     html += line('Bouclier', shield ? `${shield.name} (${shieldStats(shield)})` : 'aucun');
     normalizeStuff(player);

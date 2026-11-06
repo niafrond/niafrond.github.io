@@ -12,6 +12,7 @@
 // région, la carte se fige (saisies bloquées) le temps de charger les nouveaux paquets de sprites, derrière un
 // écran de chargement si cela dure ; les images de l'ancienne région sont libérées.
 
+import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
@@ -554,10 +555,6 @@ export function createExplorationView(cfg) {
             toast(`Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
             return prepareRegion(X.currentScreen(session).region);
         }).then(() => startEncounter('fengmeng_1'));
-    }
-
-    function escapeHtml(str) {
-        return String(str).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     }
 
     // ── Actions ────────────────────────────────────────────────────────────
