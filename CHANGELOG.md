@@ -1,3 +1,15 @@
+## [2.197.0](https://github.com/niafrond/niafrond.github.io/compare/v2.196.0...v2.197.0) (2026-11-06)
+
+### Features
+
+* **match3-quest:** aérer les cartes de la boutique pour lire tous les attributs ([ed9dd40](https://github.com/niafrond/niafrond.github.io/commit/ed9dd404b1be8ac20ef9f48aa417b590880e5c5f))
+* **match3-quest:** afficher la boutique en cartes compactes avec écarts d'équipement ([cbc9896](https://github.com/niafrond/niafrond.github.io/commit/cbc9896b34f9beb76fc0434af72bb0b0ee4308d8))
+* **match3-quest:** afficher un picto par famille d'objets au lieu d'un rond ([e46f598](https://github.com/niafrond/niafrond.github.io/commit/e46f59832ec31e9d1bad119fa0e5da050c4d8520))
+* **match3-quest:** comparer automatiquement armes (main gauche), boucliers et stuff, regrouper les doublons ([580f1ae](https://github.com/niafrond/niafrond.github.io/commit/580f1aefa7b993cf5b8e20682e136f3c71fa6cbf))
+* **match3-quest:** réduire le butin des victoires contre les ennemis ordinaires ([6b5c5e0](https://github.com/niafrond/niafrond.github.io/commit/6b5c5e08a17d816259c8b6cde887c0aef9018e9d))
+* **match3-quest:** rééquilibrer le prix des armes et garnir les étals des marchands ([411226c](https://github.com/niafrond/niafrond.github.io/commit/411226c5e9b958065667c9a9640071600f3bcd39))
+* **match3-quest:** refondre les cartes d'armes, d'objets et de stuff en lignes compactes ([d6a13fc](https://github.com/niafrond/niafrond.github.io/commit/d6a13fce208f71f7e3081e97e239bfdc7f08c74a))
+
 ## [2.196.0](https://github.com/niafrond/niafrond.github.io/compare/v2.195.0...v2.196.0) (2026-11-06)
 
 ### Features
