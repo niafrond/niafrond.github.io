@@ -1,0 +1,55 @@
+name: Match3 Quest - perf mobile (main)
+
+# Rejoue les tests de perf mobile après chaque fusion sur main (ils ne tournent sinon que sur les PR, voir ci.yml).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'match3-quest/**'
+      - 'version.js'
+      - 'playwright.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/match3-perf-main.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  match3-quest-perf:
+    name: Match3 Quest - perf mobile (Pixel 5 + bas de gamme)
+    runs-on: ubuntu-24.04
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Perf mobile (Pixel 5, CPU x4)
+        run: npx playwright test --project=match3-quest-mobile
+
+      - name: Perf bas de gamme (Moto G4 2016, 2 cœurs, CPU x6)
+        run: npx playwright test --project=match3-quest-lowend
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3-quest-perf-results
+          path: test-results/
+          if-no-files-found: ignore
