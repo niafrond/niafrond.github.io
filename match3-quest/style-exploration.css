@@ -1,0 +1,450 @@
+/* Phase d'exploration (carte plein écran), transition d'entrée en combat, carnet de voyage et carte du monde. Extrait de style.css (chargé à la suite, dans cet ordre : la cascade est inchangée). */
+
+/* ── Phase d'exploration (carte plein écran, vue du dessus) — explorationView.js ─────── */
+#explore-container {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: #0f1724;
+    overscroll-behavior: contain;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#explore-canvas {
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.explore-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    pointer-events: none;
+}
+
+.explore-hud > * { pointer-events: auto; }
+
+.explore-hud-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.explore-title {
+    align-self: flex-start;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(30, 20, 10, 0.85);
+    color: #fff8e1;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.explore-objective {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255, 248, 225, 0.92);
+    border: 2px solid #5a3e1b;
+    color: #3b2a20;
+    font-size: 0.8em;
+    line-height: 1.25;
+}
+
+.explore-hud-buttons {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.explore-hud-buttons button {
+    padding: 6px 10px;
+    font-size: 0.9em;
+}
+
+.explore-toast {
+    position: absolute;
+    top: 78px;
+    left: 50%;
+    transform: translate(-50%, -12px);
+    max-width: 92%;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(30, 20, 10, 0.9);
+    color: #fff8e1;
+    font-size: 0.85em;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 70;   /* au-dessus de la carte plein écran (z-index 60) : le message de pose du repère reste lisible */
+}
+
+.explore-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.explore-dialog {
+    display: none;
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    width: min(720px, calc(100% - 20px));
+    box-sizing: border-box;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    background: #fff8e1;
+    color: #3b2a20;
+    cursor: pointer;
+    text-align: left;
+}
+
+.explore-dialog.visible {
+    display: flex;
+    z-index: 3;
+}
+
+.explore-dialog-portrait {
+    font-size: 2.4em;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.explore-dialog-portrait img.pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; object-fit: contain; }
+.explore-dialog-portrait img {
+    display: block;
+    width: 72px;
+    height: 72px;
+}
+
+.explore-dialog-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.explore-dialog-name span {
+    font-weight: normal;
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+
+.explore-dialog-text {
+    font-size: 0.95em;
+    line-height: 1.35;
+}
+
+.explore-dialog-next {
+    margin-top: 6px;
+    text-align: right;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #a8692f;
+}
+
+@media (max-width: 560px) {
+    .explore-hud-buttons button span { display: none; }
+    .explore-title { font-size: 0.8em; }
+}
+
+/* Transition d'entrée en combat (à la Pokémon) */
+.battle-transition {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    overflow: hidden;
+    pointer-events: all;
+}
+
+.bt-strips {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.bt-strip {
+    flex: 1;
+    background: #000;
+    transform: translateX(-101%);
+    animation: bt-slide 0.55s cubic-bezier(0.6, 0, 0.3, 1) forwards;
+    animation-delay: calc(0.62s + var(--i) * 0.045s);
+}
+
+.bt-strip.from-right {
+    transform: translateX(101%);
+    animation-name: bt-slide-right;
+}
+
+.bt-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    animation: bt-flash 0.62s steps(1, end) forwards;
+}
+
+.bt-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 8px #000;
+    opacity: 0;
+    animation: bt-title 0.5s ease-out 1.15s forwards;
+}
+
+.bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.5s ease-out 1.15s both; }
+.bt-sprite { display: block; width: min(256px, 45vw); height: min(256px, 45vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
+.bt-sprite.pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; }
+.bt-name { font-size: 1.6em; font-weight: bold; }
+.bt-level { font-size: 1em; opacity: 0.85; }
+
+.battle-transition.reduced .bt-strip,
+.battle-transition.reduced .bt-flash,
+.battle-transition.reduced .bt-emoji { animation: none; }
+.battle-transition.reduced .bt-strip { transform: none; }
+.battle-transition.reduced .bt-title { animation: none; opacity: 1; }
+
+@keyframes bt-slide { to { transform: translateX(0); } }
+@keyframes bt-slide-right { from { transform: translateX(101%); } to { transform: translateX(0); } }
+@keyframes bt-flash {
+    0% { opacity: 0.95; }
+    10% { opacity: 0; }
+    25% { opacity: 0.95; }
+    35% { opacity: 0; }
+    50% { opacity: 0.95; }
+    62% { opacity: 0; }
+    100% { opacity: 0; }
+}
+@keyframes bt-title { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+@keyframes bt-pop { from { transform: scale(0.3) rotate(-15deg); } to { transform: scale(1) rotate(0); } }
+
+.explore-journal {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.explore-journal-card {
+    width: 100%;
+    max-width: 560px;
+    max-height: 90%;
+    overflow-y: auto;
+    padding: 14px;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    background: #fff8e1;
+    color: #3b2a20;
+    text-align: left;
+}
+
+.explore-journal-card h3 {
+    margin: 0 0 8px;
+    text-align: center;
+}
+
+.explore-journal-end {
+    text-align: center;
+    font-weight: bold;
+    color: #1e8449;
+}
+
+.explore-quest {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 2px solid #d9c9a3;
+    background: #fffdf5;
+}
+
+.explore-quest.done { opacity: 0.6; }
+.explore-quest.ready { border-color: #27ae60; }
+.explore-quest.active { border-color: #d68910; }
+.explore-quest-head { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9em; }
+.explore-quest-chapter { font-size: 0.75em; opacity: 0.7; margin-bottom: 4px; }
+.explore-quest ul { list-style: none; margin: 0; padding: 0; font-size: 0.85em; }
+.explore-quest li.done { text-decoration: line-through; opacity: 0.7; }
+
+/* Carnet de voyage : onglets, filtres, suivi de quête, voyage rapide */
+.explore-quest.tracked { border-color: #facc15; box-shadow: 0 0 0 2px #facc15; }
+.explore-quest-where { font-size: 0.8em; margin-top: 4px; color: #6b4a1f; }
+.explore-quest-reward { font-size: 0.78em; margin-top: 4px; opacity: 0.85; }
+.carnet-tabs, .carnet-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.carnet-tab, .carnet-chip, .carnet-track, .carnet-travel-btn, .worldmap-travel-btn {
+    cursor: pointer; border: 2px solid #5a3e1b; background: #f3e3b8; color: #3b2a20;
+    border-radius: 8px; padding: 5px 9px; font: inherit; font-size: 0.85em;
+}
+.carnet-tab { flex: 1 1 auto; }
+.carnet-tab.on, .carnet-chip.on { background: #d68910; color: #fff; }
+.carnet-region { width: 100%; margin-bottom: 8px; padding: 5px; border-radius: 8px; border: 2px solid #5a3e1b; background: #fffdf5; font: inherit; font-size: 0.85em; }
+.carnet-track { margin-top: 6px; }
+.carnet-hint { font-size: 0.8em; opacity: 0.8; margin: 0 0 8px; }
+.carnet-travel-region { margin-bottom: 8px; }
+.carnet-travel-region h4, .worldmap-travel h4 { margin: 0 0 4px; font-size: 0.9em; }
+.carnet-travel-btn, .worldmap-travel-btn { display: block; width: 100%; margin-bottom: 4px; text-align: left; }
+.carnet-travel-btn:disabled, .worldmap-travel-btn:disabled { opacity: 0.55; cursor: default; }
+.worldmap-travel { margin-top: 10px; padding: 8px; border-radius: 8px; background: rgba(255, 248, 225, 0.92); color: #3b2a20; }
+.carnet-progress-row { margin-bottom: 10px; padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c9a3; background: #fffdf5; font-size: 0.85em; }
+.carnet-bar { display: inline-block; width: 90px; height: 8px; border-radius: 4px; border: 1px solid #5a3e1b; background: #eadfc0; vertical-align: middle; overflow: hidden; }
+.carnet-bar i { display: block; height: 100%; background: #d68910; }
+.carnet-bestiary { display: flex; flex-direction: column; gap: 8px; }
+.carnet-beast { padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c9a3; background: #fffdf5; font-size: 0.85em; }
+.carnet-beast-head { display: flex; align-items: center; gap: 8px; }
+.carnet-beast-head small { opacity: 0.75; }
+.carnet-beast-sprite { width: 40px; height: 40px; flex: 0 0 40px; image-rendering: pixelated; object-fit: contain; display: inline-flex; align-items: center; justify-content: center; }
+.carnet-beast-race { font-size: 0.85em; opacity: 0.7; }
+.carnet-beast-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 4px 0; }
+.carnet-beast-lore { margin: 4px 0 0; font-style: italic; line-height: 1.35; }
+.carnet-beast-source { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 6px; font-size: 0.8em; border: 1px solid #5a3e1b; background: #eadfc0; }
+.carnet-beast-source.classique { background: #f3d58a; }
+.carnet-beast-source.adaptation { background: #e3e3e3; opacity: 0.85; }
+
+/* Carte du monde (style overworld) — rendu par worldMapView.js */
+.worldmap-modal-content {
+    max-width: 860px;
+    padding: 12px;
+}
+
+.wm-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 68vh;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.wm-sea-a { stop-color: #4fc3f7; }
+.wm-sea-b { stop-color: #1e88e5; }
+.wm-wave { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 2.2; stroke-linecap: round; }
+.wm-shallows { fill: none; stroke: rgba(255, 255, 255, 0.55); }
+.wm-shallows circle { fill: rgba(255, 255, 255, 0.55); stroke: rgba(255, 255, 255, 0.55); stroke-width: 16; }
+.wm-shallows path { stroke-width: 186; stroke-linecap: round; stroke-linejoin: round; }
+.wm-cliff { fill: #a8692f; stroke: #a8692f; }
+.wm-cliff path { fill: none; }
+.wm-grass { fill: #74c94f; stroke: #74c94f; }
+.wm-grass path { fill: none; }
+
+.wm-biome-blob { stroke: rgba(0, 0, 0, 0.18); stroke-width: 3; }
+.wm-biome.locked { filter: grayscale(0.75) brightness(0.85); }
+.wm-fog { fill: rgba(30, 40, 60, 0.35); }
+
+.wm-road path { fill: none; stroke-linecap: round; }
+.wm-road-edge { stroke: #7a5230; stroke-width: 13; }
+.wm-road-fill { stroke: #f6e0a8; stroke-width: 8; }
+.wm-road-dots { stroke: #fff; stroke-width: 3; stroke-dasharray: 0.1 12; }
+.wm-road.locked { opacity: 0.45; filter: grayscale(1); }
+
+.wm-node { cursor: pointer; outline: none; }
+.wm-node-inner { transition: transform 0.15s ease; transform-box: fill-box; transform-origin: center; }
+.wm-node:hover .wm-node-inner,
+.wm-node:focus-visible .wm-node-inner { transform: scale(1.12); }
+.wm-node:focus-visible .wm-node-dot { stroke: #fff; stroke-width: 4; }
+.wm-node.locked { cursor: not-allowed; }
+.wm-node-shadow { fill: rgba(0, 0, 0, 0.3); }
+.wm-node-dot { stroke: #2b1b17; stroke-width: 3; }
+.wm-node.new .wm-node-dot { fill: #e63946; }
+.wm-node.visited .wm-node-dot { fill: #f4c430; }
+.wm-node.locked .wm-node-dot { fill: #8b95a1; }
+.wm-node-shine { fill: rgba(255, 255, 255, 0.45); }
+.wm-node-icon { pointer-events: none; }
+.wm-node-badge { pointer-events: none; }
+.wm-pulse { fill: none; stroke: #fff; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: wm-pulse 1.6s ease-out infinite; }
+.wm-banner { fill: #fff8e1; stroke: #5a3e1b; stroke-width: 2.5; }
+.wm-banner-text { font-size: 13px; font-weight: bold; fill: #3b2a20; pointer-events: none; }
+.wm-lvl { fill: #3b2a20; }
+.wm-lvl-text { font-size: 11px; font-weight: bold; fill: #ffd166; pointer-events: none; }
+.wm-hero { font-size: 30px; pointer-events: none; animation: wm-hop 0.9s ease-in-out infinite; }
+
+.wm-cloud ellipse { fill: rgba(255, 255, 255, 0.9); }
+.wm-cloud { animation: wm-drift 40s linear infinite alternate; }
+.wm-cloud.c2 { animation-duration: 55s; }
+.wm-cloud.c3 { animation-duration: 48s; }
+
+.wm-caption {
+    margin-top: 8px;
+    min-height: 2.6em;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 2px solid #5a3e1b;
+    color: #3b2a20;
+    font-size: 0.85em;
+    line-height: 1.3;
+    text-align: center;
+}
+
+@keyframes wm-pulse {
+    0% { transform: scale(0.9); opacity: 0.9; }
+    100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes wm-hop {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+}
+@keyframes wm-drift {
+    from { transform: translateX(-30px); }
+    to { transform: translateX(60px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wm-pulse, .wm-hero, .wm-cloud { animation: none; }
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+.modal-actions button {
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.modal-actions button.primary {
+    background: #27ae60;
+    color: #fff;
+}
+.modal-actions button.primary:hover {
+    background: #229954;
+}
+.modal-actions button.secondary {
+    background: #95a5a6;
+    color: #fff;
+}
+.modal-actions button.secondary:hover {
+    background: #7f8c8d;
+}

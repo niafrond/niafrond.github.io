@@ -3,10 +3,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
+import { readStyleSource } from './fixtures/styleSource.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (f) => readFileSync(join(root, f), 'utf8');
-const css = read('style.css');
+const css = readStyleSource();
 
 /** Corps d'un bloc délimité par des accolades à partir de l'index de l'accolade ouvrante. */
 function block(src, open) {

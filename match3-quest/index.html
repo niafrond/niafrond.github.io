@@ -26,7 +26,7 @@
     im.type = 'importmap';
     im.textContent = JSON.stringify({ imports: map });
     document.head.appendChild(im);
-    document.write('<link rel="stylesheet" href="style.css?v=' + v + '"><link rel="stylesheet" href="retro.css?v=' + v + '">');
+    document.write('<link rel="stylesheet" href="style.css?v=' + v + '"><link rel="stylesheet" href="style-exploration.css?v=' + v + '"><link rel="stylesheet" href="style-inventory.css?v=' + v + '"><link rel="stylesheet" href="style-tutorial.css?v=' + v + '"><link rel="stylesheet" href="style-cinematics.css?v=' + v + '"><link rel="stylesheet" href="style-hud.css?v=' + v + '"><link rel="stylesheet" href="retro.css?v=' + v + '">');
     // Les dessins des tuiles sont référencés par retro.css (url() sans suffixe) : on les redéclare avec ?v= pour qu'un
     // nouveau dessin ne reste pas bloqué dans le cache du navigateur.
     var tiles = ['red', 'blue', 'green', 'yellow', 'purple', 'combat', 'skull', 'skull5', 'joker'];

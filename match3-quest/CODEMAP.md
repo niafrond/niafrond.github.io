@@ -4,7 +4,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 
 ## Fichiers à NE PAS lire en entier (très volumineux, données générées)
 - `sprites/generated.js` (4,5 Mo), `world/snapshot.js` (0,9 Mo), `sprites/gba/*.js`, `sprites/biomeArchi.js`, `sprites/winter-decor.js`, `soluce/*.html`, `SPECS.md` (0,6 Mo) : utiliser `Grep` ciblé.
-- Gros fichiers de logique à lire par plages : `game.js`, `explorationView.js`, `story.js`, `exploration.js`, `style.css`.
+- Gros fichiers de logique à lire par plages : `game.js`, `explorationView.js`, `story.js`, `exploration.js`, `style*.css`.
 
 ## Modules racine (première ligne de commentaire)
 - `actionGuard.js` — (sans description)
@@ -153,3 +153,6 @@ Les tests qui lisent le source utilisent `tests/unit/fixtures/explorationViewSou
 - `exploration.js` : moteur (session, déplacements, ennemis, boss, entrée d'écran, arène, herbes, rencontres) et `export *` des modules : `explorationSenses.js` (aura, mimiques, coffres refermés, repère, brouillard), `explorationQuests.js` (statut/achèvement des quêtes, victoire, Nouvelle Partie +), `explorationDialogue.js` (compagnons, `talkToNpc`), `explorationGuide.js` (suivi de quête, cibles, objectif, journal), `explorationTravel.js` (voyage rapide, progression, bestiaire), `explorationChange.js` (mode Chang'e).
 - `cinematics.js` : façade ; code dans `cinematicsCore.js` (socle, primitives), `cinematicsEnding.js` (fin + générique), `cinematicsBoss.js`, `cinematicsSun.js`, `cinematicsRegion.js`, `cinematicsTitle.js`, `cinematicsPrologue.js`, `cinematicsDuel.js`.
 - `board.js` : plateau (génération, sélection, échanges, résolution des alignements, gravité) ; extraits : `boardLayout.js` (taille des cases), `boardSuggestions.js` (suggestion de coup), `boardEnemyMoves.js` (coups ennemi / compagnon).
+
+## Feuilles de style (chargées dans cet ordre, puis `retro.css`)
+`style.css` (combat, plateau, sorts, armes) → `style-exploration.css` (exploration, carnet, carte du monde) → `style-inventory.css` (inventaire, niveau) → `style-tutorial.css` (tutoriel, portrait/paysage) → `style-cinematics.css` (cinématiques, chargement, titre, fin) → `style-hud.css` (HUD, quêtes, marchands, effets, ultimes). Rechercher une règle avec `Grep` sur `style*.css`.

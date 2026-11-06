@@ -7,9 +7,10 @@ import {
 import { createActionGuard } from '../../actionGuard.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 import { readGameSource } from './fixtures/gameSource.js';
+import { readStyleSource } from './fixtures/styleSource.js';
 
 const game = readGameSource();
-const css = readFileSync(new URL('../../style.css', import.meta.url), 'utf8');
+const css = readStyleSource();
 
 describe('annonces : 2 s minimum, fermables ensuite', () => {
     beforeEach(() => jest.useFakeTimers());
