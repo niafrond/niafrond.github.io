@@ -2,6 +2,7 @@
 import { allItems, toReusable } from './items.js';
 import { getWeaponById } from './weapons.js';
 import { getSpellById, getClassSpellById } from './spells.js';
+import { MAX_LEVEL } from './experience.js';
 
 // Format 2 : export compact (voir sanitizePlayer). Les sauvegardes sans `format` contiennent l'objet joueur complet.
 const SAVE_FORMAT = 2;
@@ -65,6 +66,49 @@ export function exportSaveToFile(player, gameVersion = "1.0.0") {
     }
 }
 
+/** Taille maximale d'un fichier de sauvegarde importé (un export compact fait quelques dizaines de ko). */
+export const MAX_SAVE_FILE_BYTES = 1024 * 1024;
+const MAX_NAME_LENGTH = 40;
+const MAX_TEXT_LENGTH = 200;
+const MAX_ID_LENGTH = 100;
+const MAX_LIST_LENGTH = 2000;
+const MAX_INVENTORY = 500;
+const MAX_STAT = 1e9;
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** Reviver JSON : écarte les clés qui permettraient une pollution de prototype. */
+function dropForbiddenKeys(key, value) {
+    return FORBIDDEN_KEYS.has(key) ? undefined : value;
+}
+
+/** Texte sûr : chaîne tronquée, sans caractères de contrôle ni chevrons (jamais interprété comme du HTML). Null si ce n'est pas une chaîne. */
+export function cleanText(value, max = MAX_TEXT_LENGTH) {
+    if (typeof value !== 'string') return null;
+    // eslint-disable-next-line no-control-regex
+    return value.replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, max);
+}
+
+/** Nombre fini borné, ou undefined (le jeu applique alors sa valeur par défaut). */
+function cleanNumber(value, min, max, integer = false) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+    const n = Math.min(max, Math.max(min, value));
+    return integer ? Math.round(n) : n;
+}
+
+const isPlainObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+/** Tableau d'identifiants (chaînes bornées). */
+function cleanIdList(value, maxLength = MAX_LIST_LENGTH) {
+    if (!Array.isArray(value)) return undefined;
+    return value.slice(0, maxLength).map(v => cleanText(v, MAX_ID_LENGTH)).filter(Boolean);
+}
+
+/** Écrase `obj[key]` par sa version nettoyée, ou supprime le champ si invalide. */
+function assign(obj, key, cleaned) {
+    if (cleaned === undefined || cleaned === null) delete obj[key];
+    else obj[key] = cleaned;
+}
+
 /**
  * Importe une sauvegarde depuis un fichier JSON
  * @param {File} file - Le fichier de sauvegarde
@@ -83,15 +127,24 @@ export async function importSaveFromFile(file) {
                 return;
             }
 
+            if (typeof file.size === 'number' && file.size > MAX_SAVE_FILE_BYTES) {
+                resolve({ success: false, message: "Fichier trop volumineux (1 Mo maximum)" });
+                return;
+            }
+
             const reader = new FileReader();
 
             reader.onload = (event) => {
                 try {
                     const json = event.target.result;
-                    const saveData = JSON.parse(json);
+                    if (typeof json !== 'string' || json.length > MAX_SAVE_FILE_BYTES) {
+                        resolve({ success: false, message: "Fichier trop volumineux (1 Mo maximum)" });
+                        return;
+                    }
+                    const saveData = JSON.parse(json, dropForbiddenKeys);
 
                     // Valider la structure
-                    if (!saveData.metadata || !saveData.player) {
+                    if (!isPlainObject(saveData) || !isPlainObject(saveData.metadata) || !isPlainObject(saveData.player)) {
                         resolve({ success: false, message: "Format de sauvegarde invalide" });
                         return;
                     }
@@ -110,11 +163,16 @@ export async function importSaveFromFile(file) {
                         return;
                     }
 
+                    const metadata = saveData.metadata;
+                    metadata.playerName = cleanText(metadata.playerName, MAX_NAME_LENGTH) || player.name;
+                    metadata.progress = cleanText(metadata.progress) || '';
+                    metadata.level = player.level;
+
                     resolve({
                         success: true,
-                        message: `Sauvegarde importée: ${saveData.metadata.playerName} (niveau ${saveData.metadata.level})`,
+                        message: `Sauvegarde importée: ${metadata.playerName} (niveau ${metadata.level})`,
                         player,
-                        metadata: saveData.metadata
+                        metadata
                     });
                 } catch (error) {
                     resolve({ success: false, message: `Erreur lors de la lecture du fichier: ${error.message}` });
@@ -282,16 +340,61 @@ function validateMetadata(metadata) {
     if (!metadata || typeof metadata !== 'object') return false;
 
     // Vérifier les champs essentiels
-    if (!metadata.version || !metadata.timestamp) return false;
+    if (typeof metadata.version !== 'string' || !metadata.version || !metadata.timestamp) return false;
+    if (metadata.format !== undefined && !Number.isInteger(metadata.format)) return false;
 
     // Valider le timestamp
-    if (!Number.isInteger(metadata.timestamp)) return false;
+    if (!Number.isInteger(metadata.timestamp) || metadata.timestamp < 0) return false;
 
     // Valider les chaînes
     if (metadata.playerName && typeof metadata.playerName !== 'string') return false;
     if (metadata.progress && typeof metadata.progress !== 'string') return false;
 
     return true;
+}
+
+/**
+ * Nettoie en place les champs connus d'un joueur importé : types, bornes, longueurs.
+ * Un champ invalide est retiré (le jeu applique alors sa valeur par défaut) plutôt que de refuser toute la sauvegarde.
+ * Les champs inconnus ne sont pas modifiés : les sauvegardes existantes restent compatibles.
+ */
+function sanitizeImportedPlayer(player) {
+    player.name = cleanText(player.name, MAX_NAME_LENGTH) || 'Héros';
+    assign(player, 'class', cleanText(player.class, MAX_ID_LENGTH));
+    player.level = cleanNumber(player.level, 1, MAX_LEVEL, true);
+
+    for (const key of ['xp', 'xpToNextLevel', 'unspentLevelPoints', 'growthLevel', 'hp', 'maxHp', 'maxMana', 'attack', 'defense', 'gold', 'bossLossStreak', 'activeInventoryIndex']) {
+        assign(player, key, cleanNumber(player[key], 0, MAX_STAT, true));
+    }
+    if (player.maxHp !== undefined && player.hp !== undefined) player.hp = Math.min(player.hp, player.maxHp);
+
+    if (isPlainObject(player.attributes)) {
+        for (const key of Object.keys(player.attributes)) assign(player.attributes, key, cleanNumber(player.attributes[key], 0, 1000, true));
+    } else delete player.attributes;
+
+    for (const key of ['mount', 'torch']) {
+        if (typeof player[key] !== 'boolean' && typeof player[key] !== 'string') delete player[key];
+        else if (typeof player[key] === 'string') player[key] = cleanText(player[key], MAX_ID_LENGTH);
+    }
+    for (const key of ['equippedUltimate', 'currentZoneId']) assign(player, key, cleanText(player[key], MAX_ID_LENGTH));
+    for (const key of ['abilities', 'unlockedUltimates', 'stuffOwned', 'merchantSold', 'sellTags', 'defeatedBossTiers', 'visitedZoneIds']) {
+        if (player[key] === undefined) continue;
+        if (!Array.isArray(player[key])) { delete player[key]; continue; }
+        player[key] = player[key].slice(0, MAX_LIST_LENGTH).filter(v => typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string').map(v => typeof v === 'string' ? cleanText(v, MAX_ID_LENGTH) : v);
+    }
+
+    if (Array.isArray(player.inventory)) player.inventory = player.inventory.slice(0, MAX_INVENTORY).filter(isPlainObject);
+    else delete player.inventory;
+    if (player.stuffOwned !== undefined && !Array.isArray(player.stuffOwned)) delete player.stuffOwned;
+
+    if (player.exploration !== undefined && !isPlainObject(player.exploration)) delete player.exploration;
+    if (isPlainObject(player.exploration)) {
+        const ex = player.exploration;
+        for (const key of ['defeated', 'openedChests', 'visitedScreens', 'waypoints', 'talked', 'introSeen']) assign(ex, key, cleanIdList(ex[key]));
+        assign(ex, 'screenId', cleanText(ex.screenId, MAX_ID_LENGTH));
+        for (const key of ['quests', 'questItems', 'fog', 'bestiary']) if (ex[key] !== undefined && !isPlainObject(ex[key]) && !Array.isArray(ex[key])) delete ex[key];
+    }
+    return player;
 }
 
 /**
@@ -303,8 +406,8 @@ function validateAndRestorePlayer(player) {
     if (!player || typeof player !== 'object') return null;
 
     // Vérifier les champs essentiels
-    if (!player.name) player.name = 'Héros';
     if (!Number.isInteger(player.level)) return null;
+    sanitizeImportedPlayer(player);
     if (!player.inventory || !Array.isArray(player.inventory)) player.inventory = [];
 
     // Initialiser les champs manquants
