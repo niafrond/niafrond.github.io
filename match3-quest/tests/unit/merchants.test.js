@@ -6,6 +6,7 @@ import {
 import { REGION_LEVEL as WORLD_LEVEL, REGION_ORDER } from '../../world/index.js';
 import { SCREENS } from '../../story.js';
 import { allItems } from '../../items.js';
+import { allWeapons } from '../../weapons.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 
 const hero = (gold = 100000) => ({ gold, weapons: [], inventory: [] });
@@ -267,6 +268,38 @@ describe('pièces standard : un objet de chaque type en permanence', () => {
             expect(availableOffers(id, h).some(a => a.key === o.key)).toBe(true);
             const again = buyOffer(id, o.key, h);
             expect(again.ok).toBe(offerObject(o).type !== 'artifact');
+        });
+    });
+});
+
+describe('économie : prix des armes alignés sur ceux des objets, étals fournis', () => {
+    test('une arme légendaire coûte autant qu\'une relique ou un bouclier légendaire du même ordre de niveau', () => {
+        const legendaryWeapons = allWeapons.filter(w => w.rarity === 'legendary' && w.minLevel >= 38);
+        const legendaryItems = allItems.filter(i => i.rarity === 'legendary' && i.minLevel >= 45);
+        const cheapestWeapon = Math.min(...legendaryWeapons.map(w => baseWeaponPrice(w) * PRICE_MULT.legendary));
+        const cheapestItem = Math.min(...legendaryItems.map(i => baseItemPrice(i) * PRICE_MULT.legendary));
+        expect(cheapestWeapon).toBeGreaterThanOrEqual(cheapestItem * 0.8);
+        // Les armes de fin de partie ne sont plus à la portée d'une poignée de combats (20 000 pièces).
+        expect(Math.max(...allWeapons.map(w => baseWeaponPrice(w) * (PRICE_MULT[w.rarity] || 2)))).toBeGreaterThan(40000);
+    });
+
+    test('le barème monte avec la rareté, à niveau comparable', () => {
+        const at = (rarity, lo, hi) => allWeapons.filter(w => w.rarity === rarity && w.minLevel >= lo && w.minLevel <= hi).map(w => baseWeaponPrice(w) * PRICE_MULT[w.rarity]);
+        expect(Math.min(...at('legendary', 12, 20))).toBeGreaterThan(Math.max(...at('rare', 7, 12)));
+    });
+
+    test('les armes de départ ne deviennent pas moins chères (plancher de l\'ancien barème)', () => {
+        const w = { minLevel: 1, damage: 10, rarity: 'common' };
+        expect(baseWeaponPrice(w)).toBeGreaterThanOrEqual(1 * 15 + 10 * 2);
+    });
+
+    test('chaque marchand vend au moins 18 pièces distinctes (étal, parures, pièces rares et d\'exception)', () => {
+        MERCHANT_IDS.forEach(id => {
+            const stock = merchantStock(id);
+            expect(stock.length).toBeGreaterThanOrEqual(18);
+            expect(new Set(stock.map(o => o.key)).size).toBe(stock.length);
+            expect(stock.filter(o => o.section === 'exceptional').length).toBeGreaterThanOrEqual(2);
+            expect(stock.filter(o => o.section === 'stuff').length).toBeGreaterThanOrEqual(4);
         });
     });
 });
