@@ -2,7 +2,6 @@ import { icon } from "./icons.js";
 import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
 import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
-import { PLAY_STYLES, setPlayStyle, getPlayStyle } from "./playStyles.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -489,24 +488,6 @@ function init() {
         btn.addEventListener('click', () => { setOption(key, !value()); sync(); });
     });
 
-    // Style de Hou Yi (playStyles.js) : se change hors combat, sans toucher à la progression.
-    const styleSelect = document.getElementById('opt-playstyle');
-    const styleDesc = document.getElementById('playstyle-desc');
-    const syncPlayStyle = () => {
-        const st = getPlayStyle(player);
-        if(styleSelect) { styleSelect.value = st ? st.id : ''; styleSelect.disabled = gameState.combatState === 'active'; }
-        if(styleDesc) styleDesc.innerHTML = st
-            ? `${st.summary}<ul>${st.effects.map(e => `<li>${e}</li>`).join('')}</ul>`
-            : 'Aucun style : le jeu de base. Choisissez-en un, vous pourrez en changer à tout moment hors combat.';
-    };
-    syncPlayStyle();
-    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', syncPlayStyle));
-    styleSelect?.addEventListener('change', () => {
-        if(gameState.combatState === 'active' || !setPlayStyle(player, styleSelect.value || null)) { syncPlayStyle(); return; }
-        saveUpdate();
-        syncPlayStyle();
-        log(PLAY_STYLES[player.playStyle] ? `Style : ${PLAY_STYLES[player.playStyle].name}.` : 'Style libre.');
-    });
     vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate([120, 60, 120]); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),

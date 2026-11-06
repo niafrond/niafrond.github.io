@@ -6,12 +6,13 @@ import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from './spellFx.js';
 import { icon as svgIcon, manaIcon } from './icons.js';
 import { npcSprite } from './sprites/index.js';
 import { COMPANION_POWERS } from './companionPowers.js';
+import { PLAY_STYLES, PLAY_STYLE_ORDER, getPlayStyle, setPlayStyle } from './playStyles.js';
 import { COMPANIONS } from './companions.js';
 import { summarizeColorBonuses, totalAttributePoints, agilityScore } from './attributes.js';
 import { getXPProgress, getXPToNextLevel } from './experience.js';
 import { animationFactor } from './gameOptions.js';
 import { statValueHtml } from './gameInventoryTabs.js';
-import { playFighterAttack } from './gameHud.js';
+import { playFighterAttack, log, saveUpdate } from './gameHud.js';
 import { resetAttributePoints, showAttributeMenu } from './gameLevelUp.js';
 import { COMPANION_NAMES, classIcon, companionMenuHooks, enemy, gameState, getPrimaryAttributeEffect, player } from './game.js';
 
@@ -27,6 +28,21 @@ function companionSectionHtml(){
         return `<div class="stat-line"><button type="button" data-companion="${c.id}" class="${on ? 'active' : 'secondary'}" aria-pressed="${on}"${locked}>${c.name}${on ? ' (actif)' : ''}</button><span class="stat-effect">${c.title}${power ? ` · ${power.name} : ${power.text}` : ''}</span></div>`;
     }).join('');
     return `<div class="stats-section"><h3>Compagnon actif</h3>${buttons}<div class="stat-line"><span class="stat-effect">Un seul compagnon à la fois ; le changer se fait hors combat.</span></div></div>`;
+}
+
+// Section « Style de Hou Yi » de l'onglet Stats : cartes au style du jeu (comme le choix de classe), modifiables hors combat.
+function playStyleSectionHtml(){
+    const current = getPlayStyle(player)?.id || '';
+    const locked = gameState.combatState === 'active' ? ' disabled' : '';
+    const cards = [{ id: '', name: 'Style libre', summary: 'Aucun modificateur : le jeu de base.', effects: [] }, ...PLAY_STYLE_ORDER.map(id => PLAY_STYLES[id])].map(st => {
+        const on = current === st.id;
+        return `<button type="button" class="class-card playstyle-card${on ? ' selected' : ''}" data-playstyle="${st.id}" aria-pressed="${on}"${locked}>
+            <div class="class-name">${st.name}</div>
+            <div class="class-description">${st.summary}</div>
+            ${st.effects.length ? `<ul class="playstyle-effects">${st.effects.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
+        </button>`;
+    }).join('');
+    return `<div class="stats-section"><h3>Style de Hou Yi</h3><div class="class-grid playstyle-grid">${cards}</div><div class="stat-line"><span class="stat-effect">Se change librement hors combat, sans perdre de progression.</span></div></div>`;
 }
 
 export function updatePlayerStatsTab(){
@@ -147,6 +163,7 @@ export function updatePlayerStatsTab(){
             </div>`).join('')}
         </div>
 
+        ${playStyleSectionHtml()}
         ${companionSectionHtml()}
         <div class="stats-section">
             <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
@@ -155,6 +172,12 @@ export function updatePlayerStatsTab(){
         statsContent.querySelectorAll('[data-companion]').forEach(btn => btn.addEventListener('click', () => {
             if(gameState.combatState === 'active') return;
             if(companionMenuHooks.setActive?.(btn.dataset.companion)) updatePlayerStatsTab();
+        }));
+        statsContent.querySelectorAll('[data-playstyle]').forEach(btn => btn.addEventListener('click', () => {
+            if(gameState.combatState === 'active' || !setPlayStyle(player, btn.dataset.playstyle || null)) return;
+            saveUpdate();
+            log(PLAY_STYLES[player.playStyle] ? `Style : ${PLAY_STYLES[player.playStyle].name}.` : 'Style libre.');
+            updatePlayerStatsTab();
         }));
         statsContent.querySelector('#spend-points-btn')?.addEventListener('click', () => showAttributeMenu());
         statsContent.querySelector('#reset-points-btn')?.addEventListener('click', () => {
