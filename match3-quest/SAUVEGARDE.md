@@ -27,6 +27,17 @@ Toutes les informations du joueur sont sauvegardées, notamment :
 
 Options → « Sauvegarde (fichier) ». L'export (format 2) ne contient que l'utile : héros et stats, sorts équipés et armes (par identifiant), inventaire, or, aptitudes, monstres vaincus, quêtes terminées / en cours, coffres ouverts, écrans et régions découverts, boss, arène, terrain courant (le héros reprend sur la pierre de voyage du terrain, pas à la case exacte). Qì, effets temporaires et valeurs recalculées ne sont pas exportés. Les anciens exports restent importables.
 
+### Garanties à l'import
+
+- **Taille** : 1 Mo maximum (un export compact fait quelques dizaines de ko) ; au-delà, le fichier est refusé avant lecture.
+- **Structure** : la racine, `metadata` et `player` doivent être des objets ; `metadata.version` une chaîne, `metadata.timestamp` un entier positif, `player.level` un entier. Sinon l'import est refusé avec un message clair (JSON malformé, format invalide, données corrompues).
+- **Chaînes** : nom du héros (40 caractères), classe et identifiants (100) sont débarrassés des caractères de contrôle et des chevrons `<` `>`. Le nom n'est jamais interprété comme du HTML : l'interface passe par `escapeHtml.js` (ou `textContent`).
+- **Nombres** : niveau borné à `MAX_LEVEL` (70), PV/or/XP/attaque/défense à 0…10⁹ (PV ≤ PV max), attributs à 0…1000. Les valeurs non numériques ou infinies sont retirées.
+- **Tableaux et objets** : inventaire limité à 500 objets, listes d'identifiants à 2000 entrées ; un champ de mauvais type est retiré (le jeu applique sa valeur par défaut) au lieu de refuser toute la sauvegarde.
+- **Clés dangereuses** `__proto__`, `constructor`, `prototype` : supprimées à la lecture.
+- **Compatibilité** : aucune migration nécessaire. Les sauvegardes existantes (avec ou sans `format`) restent importables ; seuls les contenus invalides sont corrigés ou retirés. Rien n'est supprimé dans la sauvegarde en cours tant que l'import n'est pas confirmé.
+
+
 ## Sauvegarde automatique
 
 La sauvegarde se déclenche automatiquement après chaque action importante :
