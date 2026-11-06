@@ -1,3 +1,9 @@
+## [2.192.1](https://github.com/niafrond/niafrond.github.io/compare/v2.192.0...v2.192.1) (2026-11-06)
+
+### Bug Fixes
+
+* **match3-quest:** sécuriser l'import de sauvegarde et fiabiliser l'IA (lot 1) ([#651](https://github.com/niafrond/niafrond.github.io/issues/651)) ([8ea59e0](https://github.com/niafrond/niafrond.github.io/commit/8ea59e029934455e5b1a96dab8065080ec78e8c3))
+
 ## [2.192.0](https://github.com/niafrond/niafrond.github.io/compare/v2.191.0...v2.192.0) (2026-11-05)
 
 ### Features
