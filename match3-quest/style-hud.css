@@ -342,8 +342,13 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .tile.tile-created { position: relative; z-index: 2; animation: tile-created-pulse .6s ease-in-out 3; box-shadow: 0 0 0 3px #ffd24a, 0 0 14px 6px rgba(255,210,74,.85); }
 @keyframes tile-created-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 /* Tri des listes d'armes et d'objets */
-.sort-bar { display: flex; align-items: center; gap: 8px; margin: 6px 0 10px; font-size: .9em; }
-.sort-bar select { font: inherit; padding: 2px 6px; }
+/* Tri : un petit sélecteur à droite du titre de l'onglet (il prenait une ligne entière pour une action secondaire) */
+.tab-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 6px; padding-left: 10px; }
+#tab-weapons h3, #tab-items h3, #tab-stuff h3 { margin: 8px 0 2px; text-align: left; font-size: 11px; padding-left: 10px; }
+.tab-head > h2, .tab-head > h3 { margin: 0 !important; text-align: left !important; min-width: 0; }
+.sort-bar { display: flex; align-items: center; gap: 4px; margin: 0; font-size: 11px; flex: none; }
+.sort-bar .sort-label { opacity: .7; }
+.sort-bar select { font: inherit; font-size: 12px; padding: 1px 4px; min-height: 32px; max-width: 150px; }
 /* Qì du héros et de l'ennemi en gomettes (zone de stats) */
 #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { font-size: .85em; margin-right: 3px; }
 

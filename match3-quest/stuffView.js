@@ -3,56 +3,53 @@
 import { player, gameState, log, saveUpdate, updateStats } from './game.js';
 import { getRarityColor } from './items.js';
 import { compareButtonHtml, deltaBadgesHtml } from './compareView.js';
+import { rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, escapeHtml as esc, shortText } from './gameCardUi.js';
+import { bindCardTips } from './gameTooltips.js';
 import {
     STUFF_SLOTS, STUFF_SLOT_LABELS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL,
     getStuffById, describeStuff, powerLines, equipStuff, unequipStuff, stuffTotals, normalizeStuff, relicsOf
 } from './stuff.js';
 
-const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const escapeHtml = esc;
 
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 
 const STUFF_DELTA_FIELDS = [['atkBonus', 'Atk'], ['defBonus', 'Déf'], ['maxHp', 'PV max'], ['poisonResist', '% poison']];
 
-const expanded = new Set();   // pièces dont la description est dépliée (un appui sur la carte la montre ou la cache)
+// Infobulle (appui long / survol) : emplacement, rareté, bonus complets, protection de biome, description.
+const stuffTip = stuff => cardTipHtml(escapeHtml(stuff.name), [
+    `${escapeHtml(STUFF_SLOT_LABELS[stuff.slot])} • ${escapeHtml(RARITY_LABEL[stuff.rarity] || '')} • Niv. ${stuff.minLevel}`,
+    escapeHtml(describeStuff(stuff)),
+    stuff.biomeProtect ? `Au combat dans ce biome, ${escapeHtml(BIOME_PROTECTION_TEXT[stuff.biomeProtect])}.` : ''
+], escapeHtml(stuff.description || ''));
 
-const rarityTitle = stuff => escapeHtml(`${RARITY_LABEL[stuff.rarity] || ''} : touchez pour la description`);
-const descriptionHtml = stuff => `<span class="weapon-description stuff-desc">${escapeHtml(stuff.description)}${stuff.biomeProtect ? ` <strong>Au combat dans ce biome, ${escapeHtml(BIOME_PROTECTION_TEXT[stuff.biomeProtect])}.</strong>` : ''}</span>`;
-
-// Tuile d'un emplacement porté (grille 2 × 2) : emplacement, nom, bonus, « Retirer ».
-function wornTile(slot) {
+// Pièce portée (liste « Porté », une ligne par emplacement) : nom et bonus, « Retirer » ; Comparer dans le menu « ⋯ ».
+function wornRow(slot) {
     const stuff = getStuffById(player.stuff[slot]);
-    if (!stuff) return `<div class="stuff-tile slot-empty"><span class="stuff-slot">${STUFF_SLOT_LABELS[slot]}</span><span class="stuff-tile-empty">Vide</span></div>`;
+    if (!stuff) return emptyRowHtml(escapeHtml(STUFF_SLOT_LABELS[slot]), 'vide');
     const lockedInCombat = gameState.combatState === 'active';
-    return `
-        <div class="stuff-tile stuff-item${expanded.has(stuff.id) ? ' expanded' : ''}" data-stuff="${stuff.id}" style="border-left-color:${getRarityColor(stuff.rarity)}" title="${rarityTitle(stuff)}">
-            <span class="stuff-slot">${STUFF_SLOT_LABELS[slot]}</span>
-            <span class="weapon-name">${escapeHtml(stuff.name)}</span>
-            <span class="weapon-stats">${escapeHtml(describeStuff(stuff))}</span>
-            ${descriptionHtml(stuff)}
-            <span class="stuff-tile-actions">${compareButtonHtml('stuff', stuff.id)}<button type="button" class="weapon-action" data-unequip="${slot}" ${lockedInCombat ? 'disabled' : ''}>Retirer</button></span>
-        </div>`;
+    return rowCardHtml({
+        key: `st:${stuff.id}:worn`, cls: 'rc-equipped', border: getRarityColor(stuff.rarity),
+        name: escapeHtml(stuff.name),
+        sub: `<span class="rc-chip">${escapeHtml(STUFF_SLOT_LABELS[slot])}</span><span class="rc-stats">${escapeHtml(describeStuff(stuff))}</span>`,
+        primary: `<button type="button" class="rc-btn rc-btn-alt" data-unequip="${slot}" ${lockedInCombat ? 'disabled' : ''}>Retirer</button>`,
+        more: compareButtonHtml('stuff', stuff.id), tip: stuffTip(stuff)
+    });
 }
 
-// Ligne compacte de la collection : emplacement + bonus et écarts à gauche, action et « Comparer » à droite.
+// Ligne de la collection : nom, écarts avec la pièce portée au même emplacement (sinon ses bonus), « Équiper » ; Comparer dans « ⋯ ».
 function pieceRow(stuff) {
     const locked = player.level < stuff.minLevel;
     const lockedInCombat = gameState.combatState === 'active';
     const worn = getStuffById(player.stuff[stuff.slot]);
     const deltas = locked ? '' : deltaBadgesHtml(stuff, worn, STUFF_DELTA_FIELDS);
-    return `
-        <div class="stuff-row stuff-item${locked ? ' is-locked' : ''}${expanded.has(stuff.id) ? ' expanded' : ''}" data-stuff="${stuff.id}" style="border-left-color:${getRarityColor(stuff.rarity)}" title="${rarityTitle(stuff)}">
-            <div class="stuff-row-main">
-                <span class="weapon-name">${escapeHtml(stuff.name)}</span>
-                <span class="weapon-stats"><b>${STUFF_SLOT_LABELS[stuff.slot]}</b> • ${escapeHtml(describeStuff(stuff))}</span>
-                ${deltas ? `<span class="card-deltas" title="Par rapport à la pièce portée">${deltas}</span>` : ''}
-                ${descriptionHtml(stuff)}
-            </div>
-            <div class="stuff-row-actions">
-                <button type="button" class="weapon-action" data-equip="${stuff.id}" ${locked || lockedInCombat ? 'disabled' : ''}>${locked ? `Niv. ${stuff.minLevel}` : worn ? 'Remplacer' : 'Équiper'}</button>
-                ${compareButtonHtml('stuff', stuff.id)}
-            </div>
-        </div>`;
+    return rowCardHtml({
+        key: `st:${stuff.id}`, cls: locked ? 'is-locked' : '', border: getRarityColor(stuff.rarity),
+        name: escapeHtml(stuff.name),
+        sub: `<span class="rc-chip">${escapeHtml(STUFF_SLOT_LABELS[stuff.slot])}</span>` + (deltas ? `<span class="card-deltas" title="Par rapport à la pièce portée">${deltas}</span>` : `<span class="rc-stats">${escapeHtml(describeStuff(stuff))}</span>`),
+        primary: `<button type="button" class="rc-btn" data-equip="${stuff.id}" ${locked || lockedInCombat ? 'disabled' : ''}>${locked ? `Niv. ${stuff.minLevel}` : worn ? 'Remplacer' : 'Équiper'}</button>`,
+        more: compareButtonHtml('stuff', stuff.id), tip: stuffTip(stuff)
+    });
 }
 
 // Collection : par emplacement (casque, collier, bracelet, bague), pièces utilisables d'abord, puis par niveau.
@@ -75,8 +72,9 @@ export function renderStuffTab() {
     ].filter(Boolean).join(' • ');
     root.innerHTML = `
         <div class="stuff-summary">${summary ? `Bonus portés : ${escapeHtml(summary)}` : '<em>Aucun bonus porté.</em>'}</div>
-        <h3>Porté</h3><div class="stuff-grid">${STUFF_SLOTS.map(wornTile).join('')}</div>
+        <h3>Porté</h3>${STUFF_SLOTS.map(wornRow).join('')}
         <h3>Collection${spare.length ? ` (${spare.length})` : ''}</h3>${spare.length ? spare.map(pieceRow).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}${relicsHtml()}`;
+    bindCardTips(root);
 }
 
 // Reliques permanentes (type `artifact` : amulette, bague d'archer, sandales, couronne…) : elles n'ont pas d'emplacement, leur bonus s'applique
@@ -84,14 +82,12 @@ export function renderStuffTab() {
 function relicsHtml() {
     const relics = relicsOf(player);
     if (!relics.length) return '';
-    const rows = relics.map(r => `
-        <div class="stuff-row" style="border-left-color:${getRarityColor(r.rarity)}" title="${escapeHtml(RARITY_LABEL[r.rarity] || '')}">
-            <div class="stuff-row-main">
-                <span class="weapon-name">${escapeHtml(r.name)}</span>
-                <span class="weapon-stats"><b>Relique</b> • ${escapeHtml(r.description || '')}</span>
-            </div>
-        </div>`).join('');
-    return `<h3>Reliques (${relics.length})</h3><p class="shop-empty">Permanentes, toujours actives : sans emplacement. Vente et rebut dans l'onglet Objets.</p>${rows}`;
+    const rows = relics.map(r => rowCardHtml({
+        key: `rel:${r.id || r.name}`, border: getRarityColor(r.rarity), name: escapeHtml(r.name), badges: badgeHtml('Relique'),
+        sub: `<span class="rc-short">${escapeHtml(shortText(r.description))}</span>`,
+        tip: cardTipHtml(escapeHtml(r.name), [escapeHtml(RARITY_LABEL[r.rarity] || '')], escapeHtml(r.description || ''))
+    })).join('');
+    return `<h3>Reliques (${relics.length})</h3>${rows}`;
 }
 
 // Onglet « Spéciaux » : objets de quête rangés dans exploration.questItems (jamais dans le sac, donc invendables).
@@ -100,8 +96,13 @@ export function renderSpecialTab() {
     if (!root) return;
     const special = Array.isArray(player.exploration?.questItems) ? player.exploration.questItems : [];
     root.innerHTML = special.length
-        ? special.map(i => `<div class="weapon-item stuff-item special-item"><div class="weapon-details"><span class="weapon-name">${escapeHtml(i.name)} <em class="merchant-rarity">Quête</em></span><span class="weapon-description">${escapeHtml(i.description || '')}</span></div></div>`).join('')
+        ? special.map((i, n) => rowCardHtml({
+            key: `sp:${n}:${i.name}`, name: escapeHtml(i.name), badges: badgeHtml('Quête'),
+            sub: `<span class="rc-short">${escapeHtml(shortText(i.description, 60))}</span>`,
+            tip: cardTipHtml(escapeHtml(i.name), [], escapeHtml(i.description || ''))
+        })).join('')
         : '<p class="shop-empty">Aucun objet spécial pour le moment.</p>';
+    bindCardTips(root);
 }
 
 function afterChange(message) {
@@ -116,13 +117,6 @@ function onClick(ev) {
     if (equip) { if (gameState.combatState !== 'active') afterChange(equipStuff(player, equip.dataset.equip).message); return; }
     const off = ev.target.closest('[data-unequip]');
     if (off) { if (gameState.combatState !== 'active') afterChange(unequipStuff(player, off.dataset.unequip).message); return; }
-    // Appui ailleurs sur une pièce (hors boutons) : déplie ou replie sa description.
-    const card = ev.target.closest('[data-stuff]');
-    if (card && !ev.target.closest('button')) {
-        const id = card.dataset.stuff;
-        if (!expanded.delete(id)) expanded.add(id);
-        card.classList.toggle('expanded', expanded.has(id));
-    }
 }
 
 function init() {

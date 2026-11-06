@@ -272,6 +272,26 @@ body.rt .stuff-row .weapon-action { font-size: 11px; box-shadow: 0 3px 0 var(--r
     body.rt .gear-card.available-weapon:hover { transform: none; background: var(--rt-paper); box-shadow: 0 4px 0 var(--rt-ink); }
 }
 body.rt .locked-group > summary { color: var(--rt-muted); }
+/* Cartes compactes (gameCardUi.js) : boutons plus petits, bouton principal vert, « Retirer » neutre, « À vendre » doré quand actif */
+body.rt .rc .rc-btn,
+body.rt .rc .weapon-action,
+body.rt .rc .compare-btn,
+body.rt .rc .item-discard-btn { margin: 0; min-height: 36px; padding: 3px 10px; font-size: 12px; box-shadow: 0 2px 0 var(--rt-ink), inset 0 2px 0 rgba(255, 255, 255, 0.45); }
+body.rt .rc .rc-ic { min-width: 36px; padding: 3px 6px; }
+body.rt .rc .rc-btn:not(:disabled) { background: #5cc46a; color: #10300f; }
+body.rt .rc .rc-btn:hover:not(:disabled) { background: #7ad887; }
+body.rt .rc .rc-btn.rc-btn-alt:not(:disabled), body.rt .rc .rc-ic:not(:disabled) { background: var(--rt-sand); color: var(--rt-ink); }
+body.rt .rc .rc-btn.rc-btn-alt:hover:not(:disabled), body.rt .rc .rc-ic:hover:not(:disabled) { background: var(--rt-sand-hi); }
+body.rt .rc .item-sell-tag { background: var(--rt-sand); color: var(--rt-ink); text-shadow: none; }
+body.rt .rc .item-sell-tag.on { background: var(--rt-gold); }
+body.rt .rc .compare-btn.compare-selected { background: var(--rt-gold); outline: 0; }
+body.rt .rc { background: var(--rt-paper); }
+body.rt .rc-equipped { background: #fff0b3; box-shadow: 0 2px 0 var(--rt-ink), inset 0 0 0 2px var(--rt-gold); }
+body.rt.dark-mode .rc-equipped { background: #5a4a20; }
+body.rt .rc-empty { box-shadow: none; }
+body.rt .rc-sub, body.rt .rc-stats, body.rt .rc-short { color: var(--rt-muted); }
+body.rt .sort-bar select { border: 2px solid var(--rt-ink); border-radius: 4px; background: var(--rt-paper); color: var(--rt-text); }
+
 
 body.rt .class-card:hover,
 body.rt .attribute-card:hover,
