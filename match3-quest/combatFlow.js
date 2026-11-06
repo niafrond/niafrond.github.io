@@ -89,4 +89,15 @@ export function hpBarTiming(delta) {
     return { intervalMs, unit };
 }
 
+/**
+ * Part encaissable par le bouclier sur la barre de PV : la barre représente PV + dégâts encaissables (ex. 30 PV + 10 = 40), le
+ * segment du bouclier suit la partie remplie. `max` = échelle de la barre ; `left` / `width` en % de la barre ; `absorb` = dégâts encaissables.
+ */
+export function hpShieldSegment(hp, absorb, maxHp) {
+    const life = Math.max(0, Number(hp) || 0);
+    const soak = Math.max(0, Math.floor(Number(absorb) || 0));
+    const max = Math.max(1, Number(maxHp) || 1, life + soak);
+    return { max, absorb: soak, left: life / max * 100, width: Math.min(soak, max - life) / max * 100 };
+}
+
 export const CRIT_BLOCK_ANNOUNCE_MS = 1800;   // durée des annonces de critique / blocage / parade (× vitesse des animations)

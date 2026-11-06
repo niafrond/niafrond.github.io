@@ -12,7 +12,7 @@ import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
 import { STUFF_SLOT_LABELS, getStuffById, protectsFromBiome, stuffTotals, inflictPoison, isVenomous, normalizeStuff, grantStuff, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from "./spellFx.js";
-import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming } from "./combatFlow.js";
+import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS, hpBarTiming, hpShieldSegment } from "./combatFlow.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
@@ -1354,7 +1354,7 @@ function _animateHpBar(id, from, to, progressEl = null) {
     function applyValue(val) {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
-        if (progressEl) progressEl.value = val;
+        if (progressEl) { progressEl.value = val; syncHpShield(progressEl); }
     }
 
     applyValue(current);
@@ -1366,6 +1366,21 @@ function _animateHpBar(id, from, to, progressEl = null) {
             delete _activeCounters[id];
         }
     }, intervalMs);
+}
+
+// Part de PV encaissable par le bouclier équipé : segment de couleur différente à la suite des PV (30 PV + 10 encaissables = barre de 40).
+function playerHpShieldHtml(hp){
+    const absorb = Math.max(0, Math.floor(player.shieldAbsorbLeft || 0));
+    const seg = hpShieldSegment(hp, absorb, player.maxHp);
+    return { max: seg.max, bar: absorb > 0 ? `<span class="hp-shield" data-absorb="${absorb}" title="Bouclier : encaisse encore ${absorb} dégâts"></span>` : '', text: absorb > 0 ? ` <span class="hp-shield-text" title="Bouclier : encaisse encore ${absorb} dégâts">+${absorb}</span>` : '' };
+}
+// Positionne le segment du bouclier d'après la valeur affichée (animée) de la barre.
+function syncHpShield(progressEl){
+    const segEl = progressEl?.parentElement?.querySelector('.hp-shield');
+    if(!segEl) return;
+    const seg = hpShieldSegment(Number(progressEl.value), Number(segEl.dataset.absorb), Number(progressEl.max));
+    segEl.style.left = `${seg.left}%`;
+    segEl.style.width = `${seg.width}%`;
 }
 
 function _animateCounter(id, from, to) {
@@ -1451,6 +1466,7 @@ export function updateStats(){
 
     // Cibles (valeurs actuelles des entités)
     const targetPlayerHp = Math.floor(player.hp);
+    const playerShield = playerHpShieldHtml(targetPlayerHp);
     const targetEnemyHp  = Math.floor(enemy.hp);
     // Valeurs initiales pour les progress bars (snap si disponible, sinon target)
     const initPlayerHp = isNaN(snapPlayerHp) ? targetPlayerHp : snapPlayerHp;
@@ -1481,8 +1497,8 @@ export function updateStats(){
             ${statusBadgesHtml(player)}
             <div class="stat">
                 <div class="hp-bar-container">
-                    <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
-                    <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
+                    <progress value="${initPlayerHp}" max="${playerShield.max}"></progress>${playerShield.bar}
+                    <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}${playerShield.text}</span>
                 </div>
             </div>
             ${equippedUltimate ? `
@@ -1522,6 +1538,7 @@ export function updateStats(){
 
         // Animer les compteurs si les valeurs ont changé
         const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
+        syncHpShield(playerProgressEl);
         _animateHpBar('player-hp-current', initPlayerHp, targetPlayerHp, playerProgressEl);
         for (const c of ['red','blue','green','yellow','purple']) {
             _animateCounter(`player-mana-${c}`, snapPlayerMana[c], targetPlayerMana[c]);
