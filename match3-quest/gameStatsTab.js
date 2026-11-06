@@ -1,5 +1,6 @@
 // Onglet Stats détaillées du joueur et animations d'annonce (sorts, attaques) du combat.
 // Extrait de game.js.
+import { escapeHtml } from "./escapeHtml.js";
 import { spriteUri } from './sprites/index.js';
 import { spellFxHtml, spellFxDurationMs, preloadSpellFx } from './spellFx.js';
 import { icon as svgIcon, manaIcon } from './icons.js';
@@ -46,7 +47,7 @@ export function updatePlayerStatsTab(){
                 <h3>Informations</h3>
                 <div class="stat-line">
                     <span class="stat-label">${svgIcon('idCard')} Nom:</span>
-                    <span class="stat-value">${player.name || 'Hou Yi'}</span>
+                    <span class="stat-value">${escapeHtml(player.name || 'Hou Yi')}</span>
                 </div>
                 <div class="stat-line">
                     <span class="stat-label">${svgIcon('mask')} Style:</span>
@@ -194,8 +195,8 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
-    if (source !== null) caption += `<div class="attack-source">${source}</div>`;
-    if (target !== null) caption += `<div class="attack-target">${target}</div>`;
+    if (source !== null) caption += `<div class="attack-source">${escapeHtml(source)}</div>`;
+    if (target !== null) caption += `<div class="attack-target">${escapeHtml(target)}</div>`;
     // Sort très cher : l'animation garde tout le plateau, titre et dégâts recouvrent les boutons de sorts.
     html += bigFx ? `<div class="attack-caption">${caption}</div>` : caption;
     showAttackAnimation(html, isPlayerAttack, options);

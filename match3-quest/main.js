@@ -1,4 +1,5 @@
 import { icon } from "./icons.js";
+import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
 import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
@@ -124,7 +125,7 @@ function showClassSelection() {
         Object.keys(classData.startingStats).forEach(attr => {
             player.attributes[attr] += classData.startingStats[attr];
         });
-        log(`${player.name}, vous êtes maintenant ${classData.name} !`);
+        log(`${escapeHtml(player.name)}, vous êtes maintenant ${classData.name} !`);
         // Le joueur ne doit jamais commencer un combat sans arme équipée
         grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
         updateAvailableSpells();

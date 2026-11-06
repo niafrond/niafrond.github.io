@@ -1,4 +1,5 @@
 // Sorts de classe : bonus de caractéristiques, guerrier, templier, barbare (renforts, barrière, enragement, hache…). Extrait de classSpellEffects.js.
+import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyManaSteal, flyHeal } from './manaFlight.js';
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
@@ -139,7 +140,7 @@ export function applyShadowStrike(spell) {
     dmg = lastSpellDamage(dmg);
     renderBoard();
     showCombatAnimation({ icon: 'moon', title: "FLÈCHE D'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Flèche d'Ombre détruit ${count} gâteaux de lune violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
+    log(`Flèche d'Ombre détruit ${count} gâteaux de lune violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} qì à ${escapeHtml(caster.name)}.`);
     return true;
 }
 
@@ -176,7 +177,7 @@ export function applyDefensiveWall(spell) {
     player.defense = (player.defense || 0) + defenseGain;
     renderBoard();
     showCombatAnimation({ icon: 'shield', title: "MURAILLE IMPÉRIALE", heal: `+${defenseGain} défense`, target: '→ Vous' }, true);
-    log(`Muraille Impériale détruit ${count} gâteaux de lune violettes: +${defenseGain} défense et +${manaCollected.total} qì pour ${caster.name}.`);
+    log(`Muraille Impériale détruit ${count} gâteaux de lune violettes: +${defenseGain} défense et +${manaCollected.total} qì pour ${escapeHtml(caster.name)}.`);
     return true;
 }
 
@@ -358,7 +359,7 @@ export function applyCleave(spell) {
     dmg = lastSpellDamage(dmg);
     renderBoard();
     showCombatAnimation({ icon: 'axe', title: "ENTAILLE DE LA HORDE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`Entaille de la Horde détruit ${count} gâteaux de lune jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} qì pour ${caster.name}.`);
+    log(`Entaille de la Horde détruit ${count} gâteaux de lune jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} qì pour ${escapeHtml(caster.name)}.`);
     return true;
 }
 
