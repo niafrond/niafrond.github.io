@@ -20,7 +20,14 @@ export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambo
 export const PRICE_MULT = { common: 2, uncommon: 2.5, rare: 4, legendary: 8 };
 const ITEM_RARITY_PRICE = { common: 5, uncommon: 12, rare: 30, legendary: 80 };
 
-export const baseWeaponPrice = weapon => Math.floor(weapon.minLevel * 15 + weapon.damage * 2);
+// Barème des armes aligné sur celui des objets (niveau × prix de rareté, comme `baseItemPrice`) plus les dégâts : une arme légendaire
+// coûte autant qu'une relique ou un bouclier légendaire du même niveau, au lieu d'une fraction. L'ancien barème (15 par niveau + 2 par
+// point de dégâts) sert de plancher : les armes de départ ne deviennent pas moins chères.
+const WEAPON_DAMAGE_PRICE = 3;
+export const baseWeaponPrice = weapon => Math.floor(Math.max(
+    weapon.minLevel * 15 + weapon.damage * 2,
+    weapon.minLevel * (ITEM_RARITY_PRICE[weaponRarity(weapon)] || 5) + weapon.damage * WEAPON_DAMAGE_PRICE
+));
 export const baseItemPrice = item => Math.floor(item.minLevel * (ITEM_RARITY_PRICE[item.rarity] || 5));
 
 export const MERCHANTS = [
@@ -102,6 +109,9 @@ const offerOf = (kind, obj, section, rarity) => {
     return { key: `${kind}:${obj.id}`, kind, id: obj.id, section, rarity, unique, price: Math.floor(base * (PRICE_MULT[rarity] || 2)) };
 };
 
+// Nombre de pièces tirées par section (en plus des fournitures permanentes).
+export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, rare: 6, exceptional: 2, stuff: 5 };
+
 // Types d'objets que chaque marchand vend en permanence (une pièce « standard » de chacun, toujours rachetable).
 const STANDARD_TYPES = ['reusable', 'shield', 'artifact'];
 const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
@@ -138,22 +148,29 @@ export function merchantStock(merchantId, ngPlus = 0) {
     const all = [...items, ...weapons];
     const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;
 
+    // Étal et pièces rares : nettement plus fournis qu'avant (les prix suivent le barème, il faut choisir ce qu'on achète).
+    const rareEntries = sample(all.filter(e => fits(e, ['rare'], 6, 14)), STOCK_SIZE.rare, rng);
+    // Armes de l'étal : communes ou peu communes ; dans les dernières régions, où il n'y en a plus, des armes rares plus anciennes
+    // (jamais déjà en « Pièces rares »).
+    const cheapWeapons = weapons.filter(e => fits(e, ['common', 'uncommon'], 2, 12));
+    const oldRareWeapons = weapons.filter(e => fits(e, ['rare'], 2, 25) && !rareEntries.includes(e));
+    const stallWeapons = sample(cheapWeapons, STOCK_SIZE.stallWeapons, rng);
+    if (stallWeapons.length < STOCK_SIZE.stallWeapons) stallWeapons.push(...sample(oldRareWeapons, STOCK_SIZE.stallWeapons - stallWeapons.length, rng));
     const stall = [
-        ...sample(items.filter(e => e.obj.type === 'reusable' && fits(e, ['common', 'uncommon'], 1)), 3, rng),
-        ...sample(weapons.filter(e => fits(e, ['common', 'uncommon'], 2, 5)), 2, rng)
+        ...sample(items.filter(e => e.obj.type === 'reusable' && fits(e, ['common', 'uncommon'], 1)), STOCK_SIZE.stallItems, rng),
+        ...stallWeapons
     ];
-    const rareEntries = sample(all.filter(e => fits(e, ['rare'], 6, 14)), 3, rng);
     const legendary = all.filter(e => fits(e, ['legendary'], 9, 12));
     const exceptional = legendary.length
-        ? sample(legendary, 1, rng)
+        ? sample(legendary, STOCK_SIZE.exceptional, rng)
         : all.filter(e => fits(e, ['rare'], 9, 12) && !rareEntries.includes(e))
-            .sort((a, b) => (b.kind === 'weapon' ? baseWeaponPrice(b.obj) : baseItemPrice(b.obj)) - (a.kind === 'weapon' ? baseWeaponPrice(a.obj) : baseItemPrice(a.obj))).slice(0, 1);
+            .sort((a, b) => (b.kind === 'weapon' ? baseWeaponPrice(b.obj) : baseItemPrice(b.obj)) - (a.kind === 'weapon' ? baseWeaponPrice(a.obj) : baseItemPrice(a.obj))).slice(0, STOCK_SIZE.exceptional);
 
     // « prix d'or » : la pièce d'exception ne coûte jamais moins que la pièce rare la plus chère de l'étal.
     const rareMax = Math.max(0, ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity).price));
 
-    // « Parures » : deux pièces de stuff (casque, collier, bracelet ou bague) du niveau de la région.
-    const stuffOffers = sample(lootableStuff().filter(s => s.minLevel <= L + 4 && s.minLevel >= L - 14), 2, rng)
+    // « Parures » : des pièces de stuff (casque, collier, bracelet ou bague) du niveau de la région.
+    const stuffOffers = sample(lootableStuff().filter(s => s.minLevel <= L + 4 && s.minLevel >= L - 14), STOCK_SIZE.stuff, rng)
         .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
             price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2)) }));
 

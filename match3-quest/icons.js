@@ -92,6 +92,9 @@ const PATHS = {
     sweepCross: `<rect x="2.0" y="2.0" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="6.2" y="2.0" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="10.4" y="2.0" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="2.0" y="6.2" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="6.2" y="6.2" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="10.4" y="6.2" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="2.0" y="10.4" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="6.2" y="10.4" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="10.4" y="10.4" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/>`,
     sweepColor: `<rect x="2.0" y="2.0" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="6.2" y="2.0" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="10.4" y="2.0" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="2.0" y="6.2" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="6.2" y="6.2" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="10.4" y="6.2" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="2.0" y="10.4" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/><rect x="6.2" y="10.4" width="3.6" height="3.6" rx=".6" fill="#d8d2c0" stroke="#2b1b17" stroke-width=".7"/><rect x="10.4" y="10.4" width="3.6" height="3.6" rx=".6" fill="#f2a81e" stroke="#2b1b17" stroke-width=".7"/>`,
     mana: orb('#9a5ac8'),
+    // Boutons compacts des cartes (Comparer, Plus d'actions)
+    compare: `<path d="M2 5.2 L12.4 5.2 M9.6 2.4 L12.6 5.2 L9.6 8 M14 10.8 L3.6 10.8 M6.4 8 L3.4 10.8 L6.4 13.6" fill="none" stroke="${K}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`,
+    more: `<circle cx="3.4" cy="8" r="1.7" fill="${K}"/><circle cx="8" cy="8" r="1.7" fill="${K}"/><circle cx="12.6" cy="8" r="1.7" fill="${K}"/>`,
     up: `<path d="M8 2 L13.4 8 L10 8 L10 14 L6 14 L6 8 L2.6 8Z" fill="#4fa34a" ${S}/>`
 };
 Object.entries(MANA_HEX).forEach(([color, hex]) => { PATHS[`mana_${color}`] = orb(hex); });
@@ -112,3 +115,50 @@ export const iconSvg = name => PATHS[name]
 
 // Pastille de qì d'une couleur (rouge, bleu…).
 export const manaIcon = color => icon(`mana_${color}`) || icon('mana');
+
+// Pictos d'objets : une forme par famille (boîte à remède, flacon, talisman…), teintée selon la rareté, au lieu d'un rond de qì.
+// Pas un sprite par objet : `itemFamily` range chaque objet dans une famille d'après son nom.
+export const RARITY_HEX = { common: '#d8d2bf', uncommon: '#6ab04c', rare: '#3a7ad8', legendary: '#9a5ac8' };
+const GOLD = '#f2c14e';
+const shine = (x, y, r = 1.1) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity=".6"/>`;
+
+const ITEM_PATHS = {
+    remedy: c => `<rect x="2" y="7.2" width="12" height="6.8" rx="1" fill="${c}" ${S}/><path d="M1.4 7.2 L1.4 5 Q1.4 3.6 2.8 3.6 L13.2 3.6 Q14.6 3.6 14.6 5 L14.6 7.2Z" fill="#a8683a" ${S}/><rect x="6.8" y="6" width="2.4" height="2.6" rx=".5" fill="${GOLD}" ${S}/><path d="M8 9.4 L8 13 M6.2 11.2 L9.8 11.2" fill="none" stroke="#f4ecd8" stroke-width="1.4" stroke-linecap="round"/><path d="M3.4 4.8 L6 4.8" stroke="#fff" stroke-width=".9" stroke-linecap="round" opacity=".5"/>`,
+    flask: c => `<path d="M6.2 1.8 L9.8 1.8 L9.8 5.2 Q13.2 6.8 13 10.4 Q12.6 14.2 8 14.2 Q3.4 14.2 3 10.4 Q2.8 6.8 6.2 5.2Z" fill="#f4ecd8" ${S}/><path d="M3.2 9.4 Q8 11 12.8 9.4 Q12.6 14 8 14 Q3.4 14 3.2 9.4Z" fill="${c}"/><rect x="5.8" y="1" width="4.4" height="1.8" rx=".6" fill="#a8683a" ${S}/>${shine(5.2, 10.6)}`,
+    gourd: c => `<path d="M6.4 2 L9.6 2 L9.6 4.2 Q12.8 5.4 12.8 9.4 Q12.8 14.2 8 14.2 Q3.2 14.2 3.2 9.4 Q3.2 5.4 6.4 4.2Z" fill="${c}" ${S}/><rect x="6" y="1" width="4" height="1.8" rx=".6" fill="#a8683a" ${S}/><path d="M5.4 8.6 Q8 10 10.6 8.6" fill="none" stroke="#f4ecd8" stroke-width="1" opacity=".8"/>${shine(5.4, 7.4)}`,
+    cup: c => `<path d="M2.6 6 L13.4 6 Q13.4 12.6 8 12.6 Q2.6 12.6 2.6 6Z" fill="#f4ecd8" ${S}/><path d="M3 7 L13 7 Q12.6 9.4 11.4 10.6 L4.6 10.6 Q3.4 9.4 3 7Z" fill="${c}"/><path d="M5 14.2 L11 14.2" fill="none" ${S}/><path d="M6 4.6 Q5.2 3.4 6.2 2.2 M8.4 4.6 Q7.6 3.4 8.6 2.2 M10.6 4.6 Q9.8 3.4 10.8 2.2" fill="none" stroke="#cfd6de" stroke-width="1" stroke-linecap="round"/>`,
+    talisman: c => `<path d="M4.2 1.6 L11.8 1.6 L11.8 14.4 L4.2 14.4Z" fill="#f2d88a" ${S}/><rect x="4.2" y="1.6" width="7.6" height="2" fill="${c}" ${S}/><path d="M6.4 6 L9.6 6 M8 6 L8 12.4 M6 9 L10 9 M6.4 11.6 Q8 13 9.6 11.6" fill="none" stroke="#c0392b" stroke-width="1.2" stroke-linecap="round"/>`,
+    sachet: c => `<path d="M5 4.4 Q2.6 6.6 3 11.4 Q3.4 14.2 8 14.2 Q12.6 14.2 13 11.4 Q13.4 6.6 11 4.4Z" fill="${c}" ${S}/><path d="M5 4.4 Q8 6.2 11 4.4 L11 2.4 L5 2.4Z" fill="#f2c14e" ${S}/><circle cx="8" cy="9.8" r="1.8" fill="#f4ecd8" ${S}/>`,
+    feather: c => `<path d="M3 14 Q2 4 13.4 2 Q14 9.6 8 12 Q5.6 12.8 3 14Z" fill="${c}" ${S}/><path d="M3 14 L11.6 4.4" fill="none" stroke="#f4ecd8" stroke-width="1"/><path d="M6.4 9.2 L5 7.6 M8.6 7 L7.4 5.4 M9.6 9.8 L10.8 8.4" fill="none" stroke="${K}" stroke-width=".8" opacity=".6"/>`,
+    ring: c => `<circle cx="8" cy="9.6" r="4.6" fill="none" stroke="${K}" stroke-width="3.2"/><circle cx="8" cy="9.6" r="4.6" fill="none" stroke="${GOLD}" stroke-width="1.6"/><path d="M5.8 4.2 L8 1.4 L10.2 4.2 L8 6Z" fill="${c}" ${S}/>`,
+    pendant: c => `<path d="M3.2 1.6 Q8 7 12.8 1.6" fill="none" ${S}/><path d="M8 5.4 Q13 7 11.4 11.6 Q10 14.4 8 14.6 Q6 14.4 4.6 11.6 Q3 7 8 5.4Z" fill="${c}" ${S}/>${shine(6.6, 9)}`,
+    crown: c => `<path d="M2 12.6 L2.6 4.8 L5.6 8 L8 3 L10.4 8 L13.4 4.8 L14 12.6Z" fill="${GOLD}" ${S}/><circle cx="8" cy="9.6" r="1.3" fill="${c}" ${S}/><circle cx="4.4" cy="10.4" r=".8" fill="${c}"/><circle cx="11.6" cy="10.4" r=".8" fill="${c}"/>`,
+    pearl: c => `<circle cx="8" cy="8.4" r="5.6" fill="${c}" ${S}/><path d="M3.4 5.4 Q4 2.4 7 2.8 M12.6 11 Q11.6 14 8.4 14" fill="none" stroke="${GOLD}" stroke-width="1.2" stroke-linecap="round"/>${shine(6, 6.2, 1.6)}`,
+    orb: c => `<circle cx="8" cy="7.6" r="5.4" fill="${c}" ${S}/><path d="M4.4 13.8 L11.6 13.8 L10.6 11.8 L5.4 11.8Z" fill="#a8683a" ${S}/><path d="M5.6 6 Q8 4 10.4 6" fill="none" stroke="#fff" stroke-width="1" opacity=".6"/>${shine(6, 5.8, 1.4)}`,
+    seal: c => `<rect x="4" y="7" width="8" height="7" rx="1" fill="${c}" ${S}/><path d="M6 7 L6 4.4 Q6 2 8 2 Q10 2 10 4.4 L10 7" fill="${GOLD}" ${S}/><path d="M6 9.4 L10 9.4 M6 11.6 L10 11.6 M8 9.4 L8 11.6" fill="none" stroke="#fff" stroke-width=".9" opacity=".7"/>`,
+    heart: c => `<path d="M8 13.8 Q1.8 9.8 1.8 5.8 Q1.8 2.6 5 2.6 Q7 2.6 8 4.6 Q9 2.6 11 2.6 Q14.2 2.6 14.2 5.8 Q14.2 9.8 8 13.8Z" fill="${c}" ${S}/>${shine(5, 5.4, 1.2)}`,
+    boots: c => `<path d="M4 2.4 L8.6 2.4 L8.6 8 Q12.6 8.6 14 11 L14 13.4 L2.6 13.4 L3.4 8Z" fill="${c}" ${S}/><path d="M2.6 13.4 L14 13.4" fill="none" stroke="${K}" stroke-width="1.8"/><path d="M0.8 4.6 Q2.4 3.4 3.6 4.4 M0.8 7 Q2.4 5.8 3.6 6.8" fill="none" stroke="#cfd6de" stroke-width="1" stroke-linecap="round"/>`,
+    shield: c => `<path d="M8 1.6 L13.6 3.6 Q13.6 10.6 8 14.4 Q2.4 10.6 2.4 3.6Z" fill="${c}" ${S}/><path d="M8 3.4 L8 12.2 M4.4 6.4 L11.6 6.4" fill="none" stroke="#f4ecd8" stroke-width="1.1" opacity=".85"/>`,
+    stone: c => `<ellipse cx="8" cy="12.8" rx="5.6" ry="1.8" fill="#8a8f99" ${S}/><path d="M4.4 12.6 Q3.6 4 8 2 Q12.4 4 11.6 12.6Z" fill="${c}" ${S}/><path d="M8 5.4 Q10.2 6.2 9.4 8.6 Q8.4 10.2 6.8 9.2 Q6 8 7.4 7.4" fill="none" stroke="#fff" stroke-width="1.2" opacity=".8"/>`
+};
+
+// Famille d'icône d'un objet d'après son nom (français), puis son type.
+const FAMILY_RULES = [
+    [/pilule/i, 'remedy'], [/tisane|infusion|th[eé]\b/i, 'cup'], [/gourde|vin\b/i, 'gourd'], [/[eé]lixir|nectar|flacon/i, 'flask'],
+    [/talisman/i, 'talisman'], [/sachet/i, 'sachet'], [/plume/i, 'feather'], [/pierre/i, 'stone'],
+    [/bague|anneau/i, 'ring'], [/pendentif|amulette|charme/i, 'pendant'], [/couronne/i, 'crown'], [/perle/i, 'pearl'],
+    [/orbe/i, 'orb'], [/sceau/i, 'seal'], [/c[oœ]ur/i, 'heart'], [/bottes|sandales/i, 'boots'], [/bouclier|rondache|[eé]gide/i, 'shield']
+];
+export const itemFamily = item => {
+    const name = String(item?.name || '');
+    for (const [re, family] of FAMILY_RULES) if (re.test(name)) return family;
+    return item?.type === 'shield' ? 'shield' : item?.type === 'artifact' ? 'pearl' : 'flask';
+};
+
+/** Picto d'un objet : famille d'après son nom, teinte d'après sa rareté. */
+export function itemIcon(item, cls = '') {
+    const family = itemFamily(item);
+    const body = ITEM_PATHS[family](RARITY_HEX[item?.rarity] || RARITY_HEX.common);
+    return `<svg class="ic ic-item ic-item-${family}${cls ? ` ${cls}` : ''}" viewBox="0 0 16 16" aria-hidden="true" focusable="false">${body}</svg>`;
+}
+export const ITEM_FAMILIES = Object.keys(ITEM_PATHS);

@@ -2,14 +2,14 @@
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
-import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
-import { getRarityIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
+import { compareButtonHtml, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
+import { getItemIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
-import { bindTooltip, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
-import { escapeHtml, cardActionsHtml, emptySlotHtml, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
+import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
+import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
 import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn } from "./game.js";
 
 // -------------------------------------
@@ -155,39 +155,49 @@ export function createWeaponButton(){
     updateWeaponsTab();
 }
 
-const WEAPON_DELTA_FIELDS = [['damage', 'Dégâts'], ['actionPoints', 'PA', 'low'], ['atkBonus', 'Atk'], ['defBonus', 'Déf']];
 
 // hand : 'right' | 'left' pour une arme en main (bouton « Retirer »), absent pour une arme du sac.
-function weaponCardHtml(weapon, { hand } = {}){
+// Carte compacte : nom, puis les écarts avec l'arme en main droite (ce qui compte pour choisir) ou, à défaut, dégâts et PA.
+// Atk/Déf, biome et description sont dans l'infobulle (appui long) ; « Main gauche », « Comparer » et « À vendre » dans le menu « ⋯ ».
+function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     const right = player.equippedWeapon;
     const locked = player.level < weapon.minLevel;
     const bonuses = describeStatBonuses(weapon);
-    const stats = `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}${bonuses ? ` • ${bonuses}` : ''}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}`;
-    const deltas = hand || locked ? '' : deltaBadgesHtml(weapon, right, WEAPON_DELTA_FIELDS);
-    let actions;
+    // Écarts avec la main droite et, pour une arme à une main, avec ce qui est en main gauche (arme, bouclier ou rien).
+    const deltas = hand ? '' : equipDeltaGroupsHtml(player, 'weapon', weapon);
+    const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span>`;
+    const tip = cardTipHtml(escapeHtml(weapon.name), [
+        `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}`,
+        bonuses ? escapeHtml(bonuses) : '',
+        weapon.biome ? `Bonus de dégâts : ${escapeHtml(BIOME_LABELS[weapon.biome])}` : '',
+        count > 1 ? `Exemplaires : ${count}` : ''
+    ], escapeHtml(weapon.description || ''));
+    let primary, more = '';
     if(hand){
-        actions = `<button type="button" class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>`;
-    } else if(locked){
-        actions = `<button type="button" class="weapon-action" disabled>Niv. ${weapon.minLevel} requis</button>`;
-    } else if(weapon.twoHanded){
-        actions = `<button type="button" class="weapon-action" onclick="window.equipWeapon('${weapon.id}', 'right')">${right ? 'Remplacer' : 'Équiper'} (2 mains)</button>`;
+        primary = `<button type="button" class="rc-btn rc-btn-alt" onclick="window.unequipWeapon('${hand}')">Retirer</button>`;
+        more = compareButtonHtml('weapon', weapon.id);
     } else {
-        const leftBlocked = right?.twoHanded;
-        actions = `<button type="button" class="weapon-action" onclick="window.equipWeapon('${weapon.id}', 'right')">Main droite</button>`
-            + `<button type="button" class="weapon-action" ${leftBlocked ? `disabled title="${escapeHtml(right.name)} occupe les deux mains"` : ''} onclick="window.equipWeapon('${weapon.id}', 'left')">Main gauche</button>`;
+        if(locked){
+            primary = `<button type="button" class="rc-btn" disabled>Niv. ${weapon.minLevel}</button>`;
+        } else if(weapon.twoHanded){
+            primary = `<button type="button" class="rc-btn" title="Se manie à deux mains" onclick="window.equipWeapon('${weapon.id}', 'right')">Équiper</button>`;
+        } else {
+            primary = `<button type="button" class="rc-btn" title="Main droite" onclick="window.equipWeapon('${weapon.id}', 'right')">Équiper</button>`;
+            const leftBlocked = right?.twoHanded;
+            more += `<button type="button" class="weapon-action" ${leftBlocked ? `disabled title="${escapeHtml(right.name)} occupe les deux mains"` : ''} onclick="window.equipWeapon('${weapon.id}', 'left')">Main gauche</button>`;
+        }
+        more += compareButtonHtml('weapon', weapon.id) + weaponSellTagButton(weapon);
     }
-    const handBadge = hand ? `<em class="slot-badge">${hand === 'left' ? 'Main gauche' : 'Main droite'}</em>` : '';
-    return `
-        <div class="weapon-item gear-card ${hand ? 'equipped-weapon' : 'available-weapon'}${locked && !hand ? ' is-locked' : ''}">
-            <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${weapon.name} ${handBadge}</span>
-                <span class="weapon-stats">${stats}</span>
-                ${deltas ? `<span class="card-deltas" title="Par rapport à l'arme en main droite">${deltas}</span>` : ''}
-                <span class="weapon-description">${weapon.description}</span>
-            </div>
-            ${cardActionsHtml(compareButtonHtml('weapon', weapon.id) + (hand ? '' : weaponSellTagButton(weapon)), actions)}
-        </div>`;
+    const badges = (hand ? badgeHtml(hand === 'left' ? 'Gauche' : 'Droite', 'rc-badge-on') : '') + (weapon.twoHanded ? badgeHtml('2 mains') : '') + (count > 1 ? badgeHtml(`×${count}`) : '');
+    return rowCardHtml({
+        key: `w:${weapon.id}${hand ? ':' + hand : ''}`,
+        cls: `${hand ? 'rc-equipped' : ''}${locked && !hand ? ' is-locked' : ''}`,
+        border: getRarityColor(weapon.rarity),
+        name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
+        badges,
+        sub: deltas || stats,   // écarts d'abord ; les chiffres bruts sont dans l'infobulle
+        primary, more, tip
+    });
 }
 
 // mise à jour de l'onglet armes
@@ -199,17 +209,17 @@ export function updateWeaponsTab(){
     if(!equippedDiv || !availableList) return;
     
     // Armes équipées : une case par main, vide ou occupée (bouclier, arme à deux mains), comme l'onglet Stuff.
-    equippedDiv.innerHTML = '<h3>Armes équipées</h3>';
+    equippedDiv.innerHTML = '<h3>En main</h3>';
     const right = player.equippedWeapon;
     const left = getLeftHandWeapon();
     equippedDiv.insertAdjacentHTML('beforeend', right
         ? weaponCardHtml(right, { hand: 'right' })
-        : emptySlotHtml('Main droite', 'Vide : équipez une arme ci-dessous.'));
+        : emptyRowHtml('Main droite', 'vide'));
     const shield = player.equipment?.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
     if(left) equippedDiv.insertAdjacentHTML('beforeend', weaponCardHtml(left, { hand: 'left' }));
-    else if(right?.twoHanded) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `Occupée : ${escapeHtml(right.name)} se tient à deux mains.`));
-    else if(shield) equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', `${escapeHtml(shield.name)} (bouclier, ci-dessous).`));
-    else equippedDiv.insertAdjacentHTML('beforeend', emptySlotHtml('Main gauche', 'Vide : une arme à une main peut s\'y ajouter.'));
+    else if(right?.twoHanded) equippedDiv.insertAdjacentHTML('beforeend', emptyRowHtml('Main gauche', 'occupée (arme à deux mains)'));
+    else if(shield) equippedDiv.insertAdjacentHTML('beforeend', emptyRowHtml('Main gauche', `${escapeHtml(shield.name)} (bouclier)`));
+    else equippedDiv.insertAdjacentHTML('beforeend', emptyRowHtml('Main gauche', 'vide'));
 
     // Armes disponibles : celles du sac (hors mains), utilisables d'abord, puis « Niveau trop bas » repliées.
     const lockedWasOpen = !!availableList.querySelector('details.locked-group')?.open;
@@ -224,11 +234,16 @@ export function updateWeaponsTab(){
     } else {
         const usable = spare.filter(w => player.level >= w.minLevel);
         const locked = spare.filter(w => player.level < w.minLevel);
-        availableList.innerHTML = usable.map(w => weaponCardHtml(w)).join('')
-            + (locked.length ? `<details class="locked-group"${lockedWasOpen ? ' open' : ''}><summary>Niveau trop bas (${locked.length})</summary>${locked.map(w => weaponCardHtml(w)).join('')}</details>` : '');
+        // Exemplaires identiques : une seule carte avec une pastille ×N.
+        const grouped = list => { const m = new Map(); list.forEach(w => m.set(w.id, m.has(w.id) ? { w: m.get(w.id).w, count: m.get(w.id).count + 1 } : { w, count: 1 })); return [...m.values()]; };
+        const card = ({ w, count }) => weaponCardHtml(w, { count });
+        availableList.innerHTML = grouped(usable).map(card).join('')
+            + (locked.length ? `<details class="locked-group"${lockedWasOpen ? ' open' : ''}><summary>Niveau trop bas (${locked.length})</summary>${grouped(locked).map(card).join('')}</details>` : '');
     }
 
     renderGearList(document.getElementById('shield-list'), 'shield');
+    bindCardTips(equippedDiv);
+    bindCardTips(availableList);
     updateInventoryTab();
     updateItemButton();
 }
@@ -245,30 +260,37 @@ function renderGearList(container, kind){
     const inventory = player.inventory || [];
     const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
     const withShields = kind === 'shield';
-    const shields = withShields ? sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort') : [];
+    const shields = withShields ? groupInventoryEntries(sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort')) : [];
     if(!(withShields && wornShield) && shields.length === 0) return;
     const section = document.createElement('div');
     section.innerHTML = '<h3 class="shop-section-title">Boucliers</h3>';
-    const row = (it, details, action) => {
-        const div = document.createElement('div');
-        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.current ? ' is-equipped' : '');
-        div.innerHTML = `
-            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'bag')}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${it.name}</span>
-                <span class="weapon-stats">${details}</span>
-                <span class="weapon-description">${it.description || ''}</span>
-            </div>
-            <button class="weapon-action" ${action.disabled ? 'disabled' : ''}${action.title ? ` title="${escapeHtml(action.title)}"` : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
-        div.querySelector('.weapon-details').insertAdjacentHTML('beforeend', compareButtonHtml('item', it.id) + (action.sellTag ? sellTagButton(it, 1) : ''));
-        section.appendChild(div);
+    // Écarts d'un bouclier du sac avec celui qui est porté (défense, attaque, absorption).
+    const deltas = it => equipDeltaGroupsHtml(player, 'item', it);   // vs ce qui est en main gauche (bouclier, arme ou rien)
+    const row = (it, { current, locked, label, onclick, title, sellTag, count = 1 }) => {
+        const d = current ? '' : deltas(it);
+        const tip = cardTipHtml(escapeHtml(it.name), [escapeHtml(shieldStats(it))], escapeHtml(it.description || ''));
+        const primary = `<button type="button" class="rc-btn${current ? ' rc-btn-alt' : ''}" ${locked ? 'disabled' : ''}${title ? ` title="${escapeHtml(title)}"` : ''} onclick="${onclick}">${label}</button>`;
+        return rowCardHtml({
+            key: `sh:${it.id || it.name}${current ? ':worn' : ''}`,
+            cls: `${current ? 'rc-equipped' : ''}${locked ? ' is-locked' : ''}`,
+            border: getRarityColor(it.rarity),
+            name: `${svgIcon('shield')} ${escapeHtml(it.name)}`,
+            badges: (current ? badgeHtml('Gauche', 'rc-badge-on') : '') + (count > 1 ? badgeHtml(`×${count}`) : ''),
+            sub: d || `<span class="rc-stats">${it.defense ? `Déf +${it.defense}` : ''}${it.atkBonus ? ` Atk +${it.atkBonus}` : ''}${it.absorbDamage ? ` Abs. ${it.absorbDamage}` : ''}</span>`,
+            primary,
+            more: compareButtonHtml('item', it.id) + (sellTag ? sellTagButton(it, count) : ''),
+            tip
+        });
     };
-    if(withShields && wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
-    shields.forEach(({ it, index }) => {
+    let html = '';
+    if(withShields && wornShield) html += row(wornShield, { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
+    shields.forEach(({ it, index, count }) => {
         const locked = player.level < (it.minLevel || 1);
-        row(it, shieldStats(it), { sellTag: true, locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
+        html += row(it, { sellTag: true, count, locked, label: locked ? `Niv. ${it.minLevel}` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
     });
+    section.insertAdjacentHTML('beforeend', html);
     container.appendChild(section);
+    bindCardTips(section);
 }
 
 export function equipGear(inventoryIndex){
@@ -324,7 +346,6 @@ function groupInventoryEntries(entries){
     });
     return [...groups.values()];
 }
-const countLabel = count => count > 1 ? ` x ${count}` : '';
 // Bouton pièce : tague une pièce à vendre au prochain marchand. Armes et boucliers : toujours (la pièce entière, même sans doublon) ;
 // autres objets : seulement quand il y en a plusieurs (l'excédent).
 const sellTagButtonFor = (tag, title) => {
@@ -360,45 +381,47 @@ export function updateInventoryTab(){
     bindSortSelect('items-sort', updateWeaponsTab);
     normalizeActiveInventoryIndex();
 
-    inventoryList.innerHTML = '';
-
     // Les boucliers (portés ou en réserve) sont gérés dans l'onglet Armes : le sac ne liste que les objets, une seule fois chacun.
     if(!player.inventory || !player.inventory.some(item => item.type !== 'shield')){
-        inventoryList.innerHTML = `
-            <div class="inventory-slot inventory-slot-empty">
-                <span class="slot-icon">${svgIcon('box')}</span>
-                <span class="slot-label"><em>Aucun objet</em></span>
-            </div>
-        `;
+        inventoryList.innerHTML = emptyRowHtml(svgIcon('box'), 'aucun objet dans le sac');
         return;
     }
 
-    groupInventoryEntries(sortedEntries(player.inventory.map((item, index) => ({ it: item, index })).filter(({ it }) => it.type !== 'shield'), 'items-sort')).forEach(({ it: item, index, count }) => {
+    const entries = groupInventoryEntries(sortedEntries(player.inventory.map((item, index) => ({ it: item, index })).filter(({ it }) => it.type !== 'shield'), 'items-sort'));
+    const activeItem = getActiveInventoryItem();
+    const inCombat = gameState.combatState === 'active';
+    inventoryList.innerHTML = entries.map(({ it: item, index, count }) => {
         const isActive = index === player.activeInventoryIndex;
-        const rarityEmoji = getRarityIcon(item.rarity);
-        const rarityColor = getRarityColor(item.rarity);
-
-        const div = document.createElement('div');
-        div.className = `item-card ${item.type === 'consumable' || item.type === 'reusable' ? 'consumable-item' : 'artifact-item'}`;
-        div.style.borderLeft = `4px solid ${rarityColor}`;
-        const paInfo = item.type === 'consumable' || item.type === 'reusable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
+        const usable = item.type === 'consumable' || item.type === 'reusable';
         const levelLocked = player.level < (item.minLevel || 1);
-        const inCombat = gameState.combatState === 'active';
-        const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : '';
-        div.innerHTML = `
-            <div class="item-header">
-                <span class="item-name">${rarityEmoji} ${item.name}${countLabel(count)}${paInfo}</span>
-                <div class="item-actions">
-                    ${sellTagButton(item, count)}
-                    ${isActive ? '<span class="artifact-badge">Actif</span>' : `<button class="item-discard-btn" ${levelLocked || inCombat ? 'disabled' : ''} title="${activateTitle}" onclick="window.setActiveInventoryItem(${index})">${levelLocked ? `Niv. ${item.minLevel} requis` : 'Activer'}</button>`}
-                    <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
-                </div>
-            </div>
-            <div class="item-description">${item.description}${item.type === 'reusable' ? ` <em>(${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} charges)</em>` : ''}${item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
-        `;
-        inventoryList.appendChild(div);
-    });
+        const charges = item.type === 'reusable' ? `${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : '';
+        // Écarts avec l'objet actif (seulement entre objets d'usage qui ont un effet en commun), sinon la première phrase de l'effet.
+        const deltas = !isActive && usable && sharesEffect(item, activeItem) ? deltaBadgesHtml(itemNumbers(item), itemNumbers(activeItem), ITEM_DELTA_FIELDS) : '';
+        const chips = (usable ? `<span class="rc-chip">${item.actionPoints || 2} ${svgIcon('arrow')}</span>` : '') + (charges ? `<span class="rc-chip" title="Charges">${charges}</span>` : '');
+        const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : 'Utiliser cet objet en combat';
+        const primary = isActive ? '' : `<button type="button" class="rc-btn" ${levelLocked || inCombat ? 'disabled' : ''} title="${escapeHtml(activateTitle)}" onclick="window.setActiveInventoryItem(${index})">${levelLocked ? `Niv. ${item.minLevel}` : 'Activer'}</button>`;
+        const more = sellTagButton(item, count) + `<button type="button" class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>`;
+        const tip = cardTipHtml(escapeHtml(item.name), [
+            usable ? `${item.actionPoints || 2} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • Charges ${charges}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` (${escapeHtml(describeRecharge(item))})` : ''}` : ''}` : 'Relique permanente',
+            count > 1 ? `Exemplaires : ${count}` : ''
+        ], escapeHtml(item.description || ''));
+        return rowCardHtml({
+            key: `i:${itemGroupKey(item)}`,
+            cls: `${isActive ? 'rc-equipped' : ''}${levelLocked ? ' is-locked' : ''}`,
+            border: getRarityColor(item.rarity),
+            name: `${getItemIcon(item)} ${escapeHtml(item.name)}`,
+            badges: (count > 1 ? badgeHtml(`×${count}`) : '') + (isActive ? badgeHtml('Actif', 'rc-badge-on') : ''),
+            sub: chips + (deltas ? `<span class="card-deltas" title="Par rapport à l'objet actif">${deltas}</span>` : `<span class="rc-short">${escapeHtml(shortText(item.description))}</span>`),
+            primary, more, tip
+        });
+    }).join('');
+    bindCardTips(inventoryList);
 }
+
+// Chiffres comparables d'un objet d'usage (effets numériques + points d'action) pour les écarts avec l'objet actif.
+const ITEM_DELTA_FIELDS = [['heal', 'PV'], ['mana', 'qì'], ['tempAttack', 'Atk'], ['tempDefense', 'Déf'], ['actionPoints', 'PA', 'low']];
+const itemNumbers = item => item ? { id: item.id, actionPoints: item.actionPoints || 2, ...Object.fromEntries(ITEM_DELTA_FIELDS.map(([k]) => [k, Number(item.effect?.[k]) || 0])) } : null;
+const sharesEffect = (a, b) => !!a && !!b && ITEM_DELTA_FIELDS.some(([k]) => k !== 'actionPoints' && a.effect?.[k] && b.effect?.[k]);
 
 export function updateItemButton(){
     const container = document.getElementById('item-button');

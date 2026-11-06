@@ -53,6 +53,21 @@ export function bindTooltip(el, show, hide) {
     el.addEventListener('blur', () => { cancel(); hide(); });
 }
 
+// Infobulle des cartes compactes (gameCardUi.js : rowCardHtml) : le contenu est lu dans l'élément .rc-tip de la carte,
+// affiché au survol (souris), à l'appui long (tactile) ou au focus clavier.
+export function bindCardTips(root) {
+    root?.querySelectorAll?.('.rc[data-rc]').forEach(card => {
+        const tip = card.querySelector('.rc-tip');
+        if(!tip) return;
+        bindTooltip(card, () => {
+            const tooltip = ensureSpellTooltip();
+            tooltip.innerHTML = tip.innerHTML;
+            tooltip.classList.add('visible');
+            placeTooltip(tooltip, card, 260);
+        }, hideSpellTooltip);
+    });
+}
+
 export function getSpellTooltipHtml(spell) {
     let effectText = 'Aucun effet';
     if(spell.effect) {

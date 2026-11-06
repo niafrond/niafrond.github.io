@@ -9,7 +9,7 @@ import { recordVictory } from './bossTips.js';
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from './duel.js';
 import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
-import { rollOverleveledLoot } from './victoryLoot.js';
+import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
 import { MANA_COLOR_LABELS } from './attributes.js';
@@ -580,9 +580,8 @@ export function handleEnemyDefeated(){
     }
 
     // Chance de drop selon le profil de l'ennemi (défaut : 60%)
-    const baseDropChance = enemy.dropProfile?.dropChance ?? 0.6;
-    const dropChance = Math.random();
-    if(dropChance < baseDropChance) {
+    // (réduite pour les ennemis ordinaires : ne rien trouver est normal, voir victoryLoot.js)
+    if(Math.random() < effectiveDropChance(enemy)) {
         // Répartition arme/objet selon le profil de l'ennemi (défaut : 30% arme)
         const weaponChance = enemy.dropProfile?.weaponChance ?? 0.3;
         const itemOrWeapon = Math.random();

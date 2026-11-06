@@ -187,15 +187,15 @@
         <h2>Gestion des sorts</h2>
         <div id="active-spells-list"></div>
         <div id="ultimate-spells-list"></div>
-        <h3>Sorts disponibles</h3>
-        <label class="sort-bar">Trier par <select id="spells-sort"><option value="default">Ordre d'obtention</option><option value="name">Nom</option><option value="cost">Coût</option><option value="dmg">Dégâts</option><option value="heal">Soin</option><option value="color">Couleur</option></select></label>
+        <div class="tab-head"><h3>Sorts disponibles</h3>
+        <label class="sort-bar"><span class="sort-label">Tri</span><select id="spells-sort" aria-label="Trier les sorts par"><option value="default">Ordre d'obtention</option><option value="name">Nom</option><option value="cost">Coût</option><option value="dmg">Dégâts</option><option value="heal">Soin</option><option value="color">Couleur</option></select></label></div>
         <div id="available-spells-list"></div>
     </div>
     
     <!-- Onglet Armes -->
     <div id="tab-weapons" class="tab-panel">
-        <h2>Armes</h2>
-        <label class="sort-bar">Trier par <select id="weapons-sort"><option value="default">Ordre d'obtention</option><option value="name">Nom</option><option value="damage">Dégâts</option><option value="ap">Points d'action</option><option value="level">Niveau requis</option></select></label>
+        <div class="tab-head"><h2>Armes</h2>
+        <label class="sort-bar"><span class="sort-label">Tri</span><select id="weapons-sort" aria-label="Trier les armes par"><option value="default">Ordre d'obtention</option><option value="name">Nom</option><option value="damage">Dégâts</option><option value="ap">Points d'action</option><option value="level">Niveau requis</option></select></label></div>
         <div id="equipped-weapon"></div>
         <h3>Armes disponibles</h3>
         <div id="available-weapons-list"></div>
@@ -204,8 +204,8 @@
 
     <!-- Onglet Objets (objets rechargeables, reliques, consommables ; les boucliers sont dans l'onglet Armes) -->
     <div id="tab-items" class="tab-panel">
-        <h2>Inventaire</h2>
-        <label class="sort-bar">Trier par <select id="items-sort"><option value="default">Ordre du sac</option><option value="name">Nom</option><option value="rarity">Rareté</option><option value="level">Niveau requis</option><option value="type">Type</option></select></label>
+        <div class="tab-head"><h2>Inventaire</h2>
+        <label class="sort-bar"><span class="sort-label">Tri</span><select id="items-sort" aria-label="Trier les objets par"><option value="default">Ordre du sac</option><option value="name">Nom</option><option value="rarity">Rareté</option><option value="level">Niveau requis</option><option value="type">Type</option></select></label></div>
         <div id="inventory-list"></div>
     </div>
 

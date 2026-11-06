@@ -1,5 +1,5 @@
 import { flyManaGain, flyHeal } from './manaFlight.js';
-import { manaIcon } from './icons.js';
+import { manaIcon, itemIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 
 // Système d'objets et inventaire
@@ -193,6 +193,11 @@ export function getRandomItem(playerLevel) {
 export function getRarityIcon(rarity) {
     const colors = { common: 'white', uncommon: 'green', rare: 'blue', legendary: 'purple' };
     return manaIcon(colors[rarity] || 'white');
+}
+
+// Picto d'un objet (famille d'après son nom, teinte d'après sa rareté)
+export function getItemIcon(item) {
+    return itemIcon(item);
 }
 
 // Obtenir la couleur selon la rareté

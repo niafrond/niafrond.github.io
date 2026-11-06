@@ -4,6 +4,18 @@
 import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 
+// Les armes et objets se revendent désormais cher (barème des armes aligné sur celui des objets, voir merchants.js) : un butin à chaque
+// victoire ferait de la revente un robinet d'or. Les ennemis ordinaires ne laissent donc rien une fois sur deux ou plus (le profil du
+// catalogue, de 40 % à 80 %, est multiplié par ce facteur) ; ne rien trouver est normal. Les boss gardent leur taux. Le butin rare
+// garanti d'un ennemi plus fort que le joueur (ci-dessous) n'est pas concerné.
+export const REGULAR_DROP_FACTOR = 0.6;
+
+/** Probabilité qu'une victoire laisse un objet ou une arme (profil de l'ennemi, 0,6 par défaut). */
+export function effectiveDropChance(enemy) {
+    const base = enemy?.dropProfile?.dropChance ?? 0.6;
+    return Math.min(1, Math.max(0, enemy?.isBoss ? base : base * REGULAR_DROP_FACTOR));
+}
+
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary'];
 
 // Toujours rare au minimum (le jeu n'a pas de rareté « épique » : rare → légendaire). Poids de rareté selon l'écart de niveau (ennemi − joueur), et nombre de tirages.
