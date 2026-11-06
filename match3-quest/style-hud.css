@@ -650,10 +650,23 @@ body.shake { animation: m3-shake .3s ease-in-out; }
 .change-stats { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .change-gauge { flex: 1; min-width: 70px; height: 10px; border: 2px solid #2b2140; border-radius: 6px; background: #fff; overflow: hidden; }
 .change-gauge i { background: linear-gradient(#e3ebff, #9bb6f0); }
-.change-board { display: grid; grid-template-columns: repeat(var(--cols, 8), 1fr); gap: 3px; width: min(100%, calc(100vh - 290px)); min-width: 260px; align-self: center; background: #2b2140; padding: 3px; border-radius: 8px; touch-action: manipulation; }
-.change-tile { aspect-ratio: 1; padding: 2px; border: 0; border-radius: 6px; background: #efe7ff; cursor: pointer; transition: transform .15s, opacity .25s; }
-.change-tile:nth-child(odd) { background: #f8f2ff; }
-.change-tile.selected { outline: 3px solid #ffb703; transform: scale(.92); }
+/* Puzzle de soin = écran de match de Hou Yi (mêmes fiches .stats-container, même plateau #board, même tuile .tile) ; seules les stats et les formes changent. */
+.change-card.hou { background: transparent; border: 0; padding: 0; width: min(640px, 100%); }
+.change-stats-container { display: flex; gap: 10px; margin: 8px 0; }
+.change-stat-card { flex: 1; min-width: 0; text-align: left; background: var(--team-player-bg, #f7f7f7); border: 3px solid var(--team-player-edge, transparent); border-radius: 6px; padding: 6px 8px; color: #1a1a1a; }
+.change-stat-card.enemy { background: var(--team-enemy-bg, #f7f7f7); border-color: var(--team-enemy-edge, transparent); }
+body.dark-mode .change-stat-card { color: #f1f5f9; }
+.change-stat-card .stat { display: flex; align-items: center; margin: 4px 0; min-width: 0; gap: 6px; }
+.change-stat-card .change-patient > img { width: 40px; height: 40px; }
+.change-stat-card .change-want svg { width: 30px; height: 30px; }
+.change-stat-card .change-meter, .change-stat-card .change-gauge { flex: 1; }
+@media (orientation: portrait) { .change-stat-card .change-btn { font-size: 12px; padding: 5px 8px; } }
+.change-board { display: grid; grid-template-columns: repeat(var(--board-cols, 8), 1fr); grid-gap: 6px; margin: 15px auto; width: min(100%, calc(100vh - 330px)); min-width: 260px; background: #e0e0e0; padding: 8px; border-radius: 8px; box-sizing: border-box; touch-action: manipulation; position: relative; }
+body.rt .change-board { background: #1c2433; border: 4px solid var(--rt-ink); border-radius: 6px; box-shadow: inset 0 0 0 3px var(--rt-gold), 0 6px 0 var(--rt-ink); padding: 10px; }
+@media (max-height: 520px) and (orientation: landscape) { .change-board { grid-gap: 2px; padding: 3px; margin: 2px auto; } }
+.change-tile.tile { width: auto; height: auto; aspect-ratio: 1; padding: 0; margin: 0; border: 0; background: transparent; box-shadow: none; transition: transform .15s, opacity .25s; }
+.change-tile .change-tile-art { position: static; width: 100%; height: 100%; display: block; }
+.change-tile.selected { transform: scale(1.05); }
 .change-tile.clearing { opacity: 0; transform: scale(.4); }
 .change-tile-art { width: 100%; height: 100%; display: block; }
 .change-note { min-height: 20px; font-size: 13px; text-align: center; }

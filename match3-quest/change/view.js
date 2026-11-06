@@ -68,14 +68,22 @@ export function openHeal(host, { npc, data, save = () => {}, sfx = () => {}, onC
     const startLevel = () => { level = createLevel({ color: npc.color, need: npc.need, moves: npc.moves, hp: data.hp[npc.id] || 0 }); selected = -1; };
     function render(note = '') {
         const pct = Math.round(100 * level.hp / level.need);
-        puzzle.innerHTML = `<div class="change-card">
-            <div class="change-patient">${img(npc.id)}<div><b>${esc(npc.name)}</b><span>${esc(npc.state)}</span></div>
-              <div class="change-want" title="${esc(ENERGY_LABEL[npc.color])}">${tileSvg(npc.color)}<span>${esc(ENERGY_LABEL[npc.color])}</span></div></div>
-            <div class="change-meter" role="progressbar" aria-valuemin="0" aria-valuemax="${level.need}" aria-valuenow="${level.hp}"><i style="width:${pct}%"></i><span>Soin ${level.hp} / ${level.need}</span></div>
-            <div class="change-stats"><span>Coups : <b>${level.movesLeft}</b></span>
-              <span class="change-gauge" title="Recueillez d'autres énergies pour charger le souffle de l'élixir"><i style="width:${Math.round(100 * level.gauge / GAUGE_MAX)}%"></i></span>
-              <button type="button" class="change-btn" data-act="breath" ${level.gauge >= GAUGE_MAX && !level.over ? '' : 'disabled'}>${icon('star')} Souffle de l'élixir</button></div>
-            <div class="change-board" style="--cols:${SIZE}">${level.board.map((t, i) => `<button type="button" class="change-tile${i === selected ? ' selected' : ''}" data-i="${i}" data-kind="${t}" aria-label="${esc(ENERGY_LABEL[t] || 'Goutte d\'élixir')}">${tileSvg(t)}</button>`).join('')}</div>
+        // Même mise en page que le match de Hou Yi : deux fiches côte à côte (.stats-container), puis le plateau, le journal et les boutons.
+        // Seules la zone des stats (soin du blessé, coups, souffle) et la forme des tuiles (SVG ci-dessous) diffèrent.
+        puzzle.innerHTML = `<div class="change-card hou">
+            <div class="stats-container change-stats-container">
+              <div class="change-stat-card player">
+                <div class="stat change-patient">${img(npc.id)}<div><b>${esc(npc.name)}</b><span>${esc(npc.state)}</span></div>
+                  <div class="change-want" title="${esc(ENERGY_LABEL[npc.color])}">${tileSvg(npc.color)}<span>${esc(ENERGY_LABEL[npc.color])}</span></div></div>
+                <div class="stat"><div class="change-meter" role="progressbar" aria-valuemin="0" aria-valuemax="${level.need}" aria-valuenow="${level.hp}"><i style="width:${pct}%"></i><span>Soin ${level.hp} / ${level.need}</span></div></div>
+              </div>
+              <div class="change-stat-card enemy">
+                <div class="stat"><strong>Coups</strong> <b class="change-moves">${level.movesLeft}</b></div>
+                <div class="stat"><span class="change-gauge" title="Recueillez d'autres énergies pour charger le souffle de l'élixir"><i style="width:${Math.round(100 * level.gauge / GAUGE_MAX)}%"></i></span></div>
+                <div class="stat"><button type="button" class="change-btn" data-act="breath" ${level.gauge >= GAUGE_MAX && !level.over ? '' : 'disabled'}>${icon('star')} Souffle de l'élixir</button></div>
+              </div>
+            </div>
+            <div class="change-board" style="--board-cols:${SIZE}">${level.board.map((t, i) => `<button type="button" class="tile change-tile${i === selected ? ' selected' : ''}" data-i="${i}" data-kind="${t}" aria-label="${esc(ENERGY_LABEL[t] || 'Goutte d\'élixir')}">${tileSvg(t)}</button>`).join('')}</div>
             <div class="change-note" role="status" aria-live="polite">${esc(note)}</div>
             <div class="change-foot"><button type="button" class="change-btn" data-act="retry">Recommencer</button><button type="button" class="change-btn" data-act="close">Retour à la carte</button></div>
           </div>`;
