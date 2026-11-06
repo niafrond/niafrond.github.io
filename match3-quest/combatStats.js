@@ -15,17 +15,26 @@ export const TOTAL_BLOCK_SHARE = 0.4;      // part des blocages qui sont totaux 
 export const SKULL_STRENGTH_DIVISOR = 2;   // 1 dégât de plus par crâne tous les 2 points de force
 export const SKULL_STRENGTH_BONUS_CAP = 6;
 
-// Avantage caché du plus haut niveau : `entity.levelEdge` = écart de niveau en sa faveur (posé au début du combat, voir newEnemy).
-// Il multiplie son attaque et sa défense (×1,35 à 1 niveau, ×1,8 à 2, ×3,6 à 4, ×4 au plus) et y ajoute 5 points par niveau d'écart :
-// il crite et bloque bien plus souvent, donc frappe et encaisse mieux. Jamais affiché (rawAttack / rawDefense l'ignorent), aucun
-// malus pour le plus faible.
-export const LEVEL_EDGE_MAX_MULT = 4;
-export const LEVEL_EDGE_FLAT_PER_LEVEL = 5;
-export function levelEdgeBonus(entity, raw) {
+// Avantage du plus haut niveau : `entity.levelEdge` = écart de niveau en sa faveur (posé au début du combat, voir newEnemy).
+// Il ajoute des POINTS à l'attaque (chance de critique) et à la défense (chance de blocage) : +6 points par niveau d'écart,
+// au plus +18 (atteint à 3 niveaux d'écart). Courbe additive et plafonnée : elle ne se multiplie plus avec les statistiques
+// (l'ancienne courbe, ×1,35 à ×4, poussait une stat brute de 33 à 98 % dès 3 niveaux d'écart). Le plus faible ne subit aucun malus.
+// Le bonus reste hors des valeurs affichées (rawAttack / rawDefense) mais il est annoncé au début du combat (describeLevelEdge).
+export const LEVEL_EDGE_POINTS_PER_LEVEL = 6;
+export const LEVEL_EDGE_MAX_POINTS = 18;
+export function levelEdgePoints(entity) {
     const gap = Math.max(0, Math.floor(Number(entity?.levelEdge) || 0));
-    if (gap === 0) return raw;
-    const mult = Math.min(LEVEL_EDGE_MAX_MULT, 1 + 0.25 * gap + 0.1 * gap * gap);
-    return Math.floor(raw * mult) + LEVEL_EDGE_FLAT_PER_LEVEL * gap;
+    return Math.min(LEVEL_EDGE_MAX_POINTS, LEVEL_EDGE_POINTS_PER_LEVEL * gap);
+}
+export function levelEdgeBonus(entity, raw) {
+    return raw + levelEdgePoints(entity);
+}
+/** Phrase d'annonce de l'avantage (vide s'il n'y en a pas), ex. « 2 niveaux d'avance : +12 % de critique et de blocage ». */
+export function describeLevelEdge(entity) {
+    const points = levelEdgePoints(entity);
+    if (points === 0) return '';
+    const gap = Math.floor(entity.levelEdge);
+    return `${gap} niveau${gap > 1 ? 'x' : ''} d'avance : +${points} % de critique et de blocage`;
 }
 
 const clampChance = value => Math.max(0, Math.min(STAT_CHANCE_CAP, Math.floor(Number(value) || 0)));

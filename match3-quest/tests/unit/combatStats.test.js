@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
     STAT_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
-    skullStrengthBonus, levelEdgeBonus, addStatBuff, stackStatusEffect, tickStatBuffs, statBuffAmount, gearBonus
+    skullStrengthBonus, levelEdgeBonus, describeLevelEdge, addStatBuff, stackStatusEffect, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
 import { allWeapons, WEAPON_STAT_BONUSES, getWeaponById } from '../../weapons.js';
@@ -210,22 +210,50 @@ describe('mêmes limites que le joueur : sorts et armes', () => {
     });
 });
 
-describe('écart de niveau : avantage caché du plus haut niveau', () => {
-    test('aucun bonus sans écart en sa faveur, croissant puis plafonné', () => {
+describe('écart de niveau : avantage borné du plus haut niveau', () => {
+    test('aucun bonus sans écart en sa faveur, +6 points par niveau, plafonné à +18', () => {
         expect(levelEdgeBonus({ levelEdge: 0 }, 12)).toBe(12);
         expect(levelEdgeBonus({}, 12)).toBe(12);
-        expect(levelEdgeBonus({ levelEdge: 1 }, 12)).toBe(16 + 5);
-        expect(levelEdgeBonus({ levelEdge: 4 }, 10)).toBe(36 + 20);
-        expect(levelEdgeBonus({ levelEdge: 60 }, 10)).toBe(40 + 300);
+        expect(levelEdgeBonus({ levelEdge: 1 }, 12)).toBe(12 + 6);
+        expect(levelEdgeBonus({ levelEdge: 2 }, 12)).toBe(12 + 12);
+        expect(levelEdgeBonus({ levelEdge: 4 }, 10)).toBe(10 + 18);
+        expect(levelEdgeBonus({ levelEdge: 60 }, 10)).toBe(10 + 18);
+        expect(levelEdgeBonus({ levelEdge: -3 }, 10)).toBe(10);
+    });
+
+    test('courbe additive : écart 0 à 4, valeurs brutes réalistes — jamais plus de +18 points, monotone, plafond 98 %', () => {
+        for (const raw of [0, 7, 18, 33, 60, 120]) {
+            let previous = critChance({ attack: raw });
+            expect(previous).toBe(Math.min(98, raw));          // non-régression : sans écart, rien ne change
+            for (let gap = 1; gap <= 4; gap++) {
+                const entity = { attack: raw, defense: raw, levelEdge: gap };
+                const crit = critChance(entity);
+                expect(crit).toBeGreaterThanOrEqual(previous);
+                expect(crit - Math.min(98, raw)).toBeLessThanOrEqual(18);
+                expect(crit).toBeLessThanOrEqual(98);
+                expect(blockChance(entity)).toBe(crit);        // même courbe pour la défense
+                previous = crit;
+            }
+        }
+        // Cas qui était disproportionné : stat brute 33, 3 niveaux d'écart donnait 98 % (quasi invincible).
+        expect(critChance({ attack: 33, levelEdge: 3 })).toBe(51);
+        expect(blockChance({ defense: 18, levelEdge: 4 })).toBe(36);
     });
 
     test('il augmente les chances de critique et de blocage, sans changer les valeurs affichées', () => {
         const strong = { attack: 12, defense: 6, levelEdge: 4 };
         const plain = { attack: 12, defense: 6 };
-        expect(critChance(strong)).toBeGreaterThan(critChance(plain) * 3);
-        expect(blockChance(strong)).toBeGreaterThan(blockChance(plain) * 3);
+        expect(critChance(strong)).toBe(critChance(plain) + 18);
+        expect(blockChance(strong)).toBe(blockChance(plain) + 18);
         expect(rawAttack(strong)).toBe(12);
         expect(rawDefense(strong)).toBe(6);
+    });
+
+    test('il est annoncé au joueur (jamais caché)', () => {
+        expect(describeLevelEdge({ levelEdge: 0 })).toBe('');
+        expect(describeLevelEdge({ levelEdge: 1 })).toBe("1 niveau d'avance : +6 % de critique et de blocage");
+        expect(describeLevelEdge({ levelEdge: 2 })).toBe("2 niveaux d'avance : +12 % de critique et de blocage");
+        expect(describeLevelEdge({ levelEdge: 9 })).toBe("9 niveaux d'avance : +18 % de critique et de blocage");
     });
 });
 
