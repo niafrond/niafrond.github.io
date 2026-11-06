@@ -832,8 +832,10 @@ body.fx-reduced .shake, body.fx-reduced .spellfx, body.fx-reduced .mana-fly-dot,
 body.fx-reduced .tile.suggested { outline: 3px solid #fff; outline-offset: -3px; }
 
 /* Style de jeu de Hou Yi (menu Options). */
-.playstyle-desc { display: block; margin: -4px 0 10px; font-size: .85em; opacity: .9; }
-.playstyle-desc ul { margin: 2px 0 0 1.1em; padding: 0; }
+.playstyle-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.playstyle-card { font: inherit; color: inherit; background: none; }
+.playstyle-card:disabled { opacity: .6; cursor: not-allowed; }
+.playstyle-effects { margin: 4px 0 0 1.1em; padding: 0; text-align: left; font-size: .75em; }
 
 /* ---- Lot 3 : accessibilité (a11y.js, gameOptions.js) ---- */
 /* Texte lisible uniquement par les technologies d'assistance. */
