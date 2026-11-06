@@ -1,3 +1,9 @@
+## [2.193.0](https://github.com/niafrond/niafrond.github.io/compare/v2.192.1...v2.193.0) (2026-11-06)
+
+### Features
+
+* **match3-quest:** ajouter les options d'accessibilité et trois styles de jeu pour Hou Yi ([#652](https://github.com/niafrond/niafrond.github.io/issues/652)) ([5024616](https://github.com/niafrond/niafrond.github.io/commit/5024616e284efaa5d287b20e3a5af3e9f37d85af))
+
 ## [2.192.1](https://github.com/niafrond/niafrond.github.io/compare/v2.192.0...v2.192.1) (2026-11-06)
 
 ### Bug Fixes
