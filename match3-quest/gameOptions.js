@@ -6,6 +6,7 @@
 // Accessibilité :
 //  - textSize   : 'normal' | 'large' | 'xlarge' — taille du texte des menus, de la fiche des combattants et du journal ;
 //  - shapes     : symboles en plus des couleurs (tuiles, qì, camps) pour ne pas dépendre de la seule couleur ;
+//  - colorblind : mode daltonien — palette des tuiles et du qì séparée par la teinte ET la luminosité (rouge/vert, bleu/violet), symboles activés d'office ;
 //  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
 //  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
 //    Tant que le joueur n'a pas choisi lui-même « Animations », le réglage « réduire les animations » du système (prefers-reduced-motion) s'applique ;
@@ -18,7 +19,7 @@
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, animations: true, reduceFx: false, breakReminder: true, aiDifficulty: 'auto' };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, reduceFx: false, breakReminder: true, aiDifficulty: 'auto' };
 const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
@@ -135,7 +136,8 @@ export function applyOptions() {
     const b = document.body.classList;
     b.toggle('text-large', current.textSize === 'large');
     b.toggle('text-xlarge', current.textSize === 'xlarge');
-    b.toggle('a11y-shapes', current.shapes);
+    b.toggle('a11y-shapes', current.shapes || current.colorblind);   // le mode daltonien impose les symboles
+    b.toggle('a11y-colorblind', current.colorblind);
     b.toggle('no-anim', !animationsEnabled());
     b.toggle('fx-reduced', current.reduceFx);
 }

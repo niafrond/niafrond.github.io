@@ -149,3 +149,21 @@ describe('animations et prefers-reduced-motion', () => {
         expect(document.body.classList.contains('no-anim')).toBe(true);
     });
 });
+
+describe('mode daltonien', () => {
+    test('active la palette et impose les symboles, sans toucher à l\'option Symboles', () => {
+        setOption('colorblind', true);
+        expect(document.body.classList.contains('a11y-colorblind')).toBe(true);
+        expect(document.body.classList.contains('a11y-shapes')).toBe(true);
+        expect(getOption('shapes')).toBe(false);
+        setOption('colorblind', false);
+        expect(document.body.classList.contains('a11y-shapes')).toBe(false);
+    });
+    test('la feuille de style définit une règle par couleur de tuile et de qì', () => {
+        const css = readFileSync(new URL('../../style-hud.css', import.meta.url), 'utf8');
+        for (const c of ['red', 'blue', 'green', 'yellow', 'purple']) {
+            expect(css).toContain(`body.a11y-colorblind .tile.${c} {`);
+            expect(css).toContain(`body.a11y-colorblind .mana-${c} {`);
+        }
+    });
+});
