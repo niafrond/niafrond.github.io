@@ -3,7 +3,7 @@
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareButtonHtml, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
-import { getRarityIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
+import { getItemIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
@@ -409,7 +409,7 @@ export function updateInventoryTab(){
             key: `i:${itemGroupKey(item)}`,
             cls: `${isActive ? 'rc-equipped' : ''}${levelLocked ? ' is-locked' : ''}`,
             border: getRarityColor(item.rarity),
-            name: `${getRarityIcon(item.rarity)} ${escapeHtml(item.name)}`,
+            name: `${getItemIcon(item)} ${escapeHtml(item.name)}`,
             badges: (count > 1 ? badgeHtml(`×${count}`) : '') + (isActive ? badgeHtml('Actif', 'rc-badge-on') : ''),
             sub: chips + (deltas ? `<span class="card-deltas" title="Par rapport à l'objet actif">${deltas}</span>` : `<span class="rc-short">${escapeHtml(shortText(item.description))}</span>`),
             primary, more, tip

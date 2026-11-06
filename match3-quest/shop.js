@@ -2,7 +2,7 @@
 // Marchands (PNJ des villages, voir merchants.js)
 // =====================================
 
-import { getRarityIcon, getRarityColor } from './items.js';
+import { getItemIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus } from './merchants.js';
@@ -83,7 +83,7 @@ function offerRow(offer, gold) {
     if (!obj) return '';
     const canAfford = gold >= offer.price;
     return shopCard(offer.key, obj, offer.kind, offer.rarity, {
-        iconHtml: offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(offer.rarity), price: offer.price,
+        iconHtml: offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getItemIcon({ ...obj, rarity: offer.rarity }), price: offer.price,
         primary: `<button type="button" class="rc-btn rc-buy" data-buy="${offer.key}" ${canAfford ? '' : 'disabled'} title="${canAfford ? 'Acheter' : 'Pas assez d\'or'}">${offer.price} ${svgIcon('coin')}</button>`,
         extraMore: isComparable(offer.kind, obj) ? `<button type="button" class="compare-btn" data-preview="${offer.key}" title="Voir l'effet sur vos stats par rapport à la pièce équipée">Comparer à l'équipé</button>` : ''
     });
@@ -92,7 +92,7 @@ function offerRow(offer, gold) {
 function sellRow(entry) {
     const obj = entry.obj;
     return shopCard(`sell:${entry.key}`, obj, entry.kind, entry.rarity, {
-        iconHtml: entry.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(entry.rarity), price: entry.price,
+        iconHtml: entry.kind === 'weapon' ? getWeaponIcon(obj.type) : getItemIcon({ ...obj, rarity: entry.rarity }), price: entry.price,
         primary: `<button type="button" class="rc-btn rc-buy" data-sell="${entry.key}" ${entry.locked ? 'disabled' : ''} title="${entry.locked ? escapeHtml(entry.locked) : 'Vendre'}">${entry.locked ? escapeHtml(entry.locked) : `+${entry.price} ${svgIcon('coin')}`}</button>`
     });
 }
