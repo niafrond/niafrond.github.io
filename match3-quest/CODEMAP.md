@@ -48,6 +48,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `elements.js` — Éléments de qì et table des faiblesses. Module pur (aucun DOM), partagé par enemies.js, terrain.js et l'UI.
 - `enemies.js` — Système d'ennemis piloté par un catalogue JSON
 - `enemyAI.js` — Bibliothèque d'intelligence artificielle pour les ennemis
+- `enemyAIChoice.js` — Fonctions pures de l'IA ennemie : facteur du temps de réflexion et tirage pondéré renormalisé
 - `equipPreview.js` — Aperçu d'un équipement chez le marchand : stats globales du héros avant / après avoir porté la pièce à la place de celle équipée.
 - `equipment.js` — Système d'équipement multi-slot (main droite, main gauche, objet)
 - `experience.js` — Système d'expérience et de progression du joueur
@@ -96,6 +97,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `playerNames.js` — Bibliothèque de noms de joueur aléatoires
 - `progression.js` — Progression au-delà du niveau 18 : les armes et les sorts s'arrêtent au niveau 18 (dégâts ≤ 100 / 150) alors que les ennemis
 - `saveManager.js` — Gestionnaire de sauvegarde/chargement de parties (export/import JSON)
+- `escapeHtml.js` — Échappement HTML centralisé (données non fiables, nom du héros)
 - `secretLogic.js` — Logique pure du menu secret (testable sans charger game.js).
 - `secretMenu.js` — Menu secret : 6 clics sur « Particules de qì » (Options) l'ouvrent pour toute la session (jamais sauvegardé).
 - `sfxCatalog.js` — (sans description)
