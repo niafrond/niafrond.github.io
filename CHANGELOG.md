@@ -1,3 +1,9 @@
+## [2.196.0](https://github.com/niafrond/niafrond.github.io/compare/v2.195.0...v2.196.0) (2026-11-06)
+
+### Features
+
+* **match3-quest:** choisir le style de Hou Yi dans l'onglet Stats sous forme de cartes ([#656](https://github.com/niafrond/niafrond.github.io/issues/656)) ([5ebf0da](https://github.com/niafrond/niafrond.github.io/commit/5ebf0da5f0d1954c8792eb71650f7a471218b075))
+
 ## [2.195.0](https://github.com/niafrond/niafrond.github.io/compare/v2.194.0...v2.195.0) (2026-11-06)
 
 ### Features
