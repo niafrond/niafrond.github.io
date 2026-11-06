@@ -434,6 +434,7 @@ function init() {
     const manaFlightBtn = document.getElementById('opt-mana-flight');
     const effectsSelect = document.getElementById('opt-effects');
     const speedSelect = document.getElementById('opt-speed');
+    const aiDifficultySelect = document.getElementById('opt-ai-difficulty');
     const syncManaFlightBtn = () => {
         const on = getOption('manaFlight');
         if(manaFlightBtn) { manaFlightBtn.textContent = on ? 'Oui' : 'Non'; manaFlightBtn.setAttribute('aria-pressed', String(on)); }
@@ -441,6 +442,7 @@ function init() {
     syncManaFlightBtn();
     if(effectsSelect) effectsSelect.value = getOption('effects');
     if(speedSelect) speedSelect.value = getOption('speed');
+    if(aiDifficultySelect) aiDifficultySelect.value = getOption('aiDifficulty');
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),
@@ -494,6 +496,7 @@ function init() {
     bindSecretTrigger(manaFlightBtn);   // 6 clics : menu secret (secretMenu.js)
     effectsSelect?.addEventListener('change', () => setOption('effects', effectsSelect.value));
     speedSelect?.addEventListener('change', () => setOption('speed', speedSelect.value));
+    aiDifficultySelect?.addEventListener('change', () => setOption('aiDifficulty', aiDifficultySelect.value));
 
     const darkModeToggleButton = document.getElementById('dark-mode-toggle-btn');
     initializeThemeUI(darkModeToggleButton);

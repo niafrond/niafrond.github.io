@@ -3,70 +3,20 @@
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
+import { getOption } from "./gameOptions.js";
+import {
+    AI_TIERS, resolveDifficulty, tierSettings, thinkingTimeFor,
+    PERSONALITIES, assignPersonality, personalityWeight, pickWeighted
+} from "./enemyAIProfiles.js";
 
-// ========================================
-// CONFIGURATION DES NIVEAUX D'IA
-// ========================================
+// Voir enemyAIProfiles.js pour la séparation niveau / personnalité / qualité tactique / difficulté choisie.
+export { PERSONALITIES as enemyPersonalities, assignPersonality };
+export const aiDifficulty = AI_TIERS;
 
 // Fonction helper mutualisee (joueur/ennemi) importee depuis game.js.
 function canAffordSpell(spell) {
     return canEntityCastSpell(enemy, spell);
 }
-
-export const aiDifficulty = {
-    easy: {
-        name: "Facile",
-        thinkingTimeMin: 300,
-        thinkingTimeMax: 500,
-        spellUseProbability: 0.20,      // 20% de chance d'utiliser un sort
-        weaponUseProbability: 0.20,     // 20% de chance d'utiliser une arme
-        boardMoveProbability: 0.60,     // 60% de chance de jouer sur le plateau
-        strategicThinking: false,       // Ne calcule pas les meilleurs coups
-        healThreshold: 0.3,             // Se soigne si HP < 30%
-        aggressiveThreshold: 0.7,       // Devient agressif si joueur HP < 70%
-        stupidityChance: 0.80,          // 80% de chance de faire un coup stupide
-        randomBoardMove: true,          // Joue un swap aléatoire sur le plateau
-    },
-    normal: {
-        name: "Normal",
-        thinkingTimeMin: 300,
-        thinkingTimeMax: 500,
-        spellUseProbability: 0.25,
-        weaponUseProbability: 0.25,
-        boardMoveProbability: 0.50,
-        strategicThinking: true,
-        healThreshold: 0.4,
-        aggressiveThreshold: 0.6,
-        stupidityChance: 0.55,
-        randomBoardMove: true,
-    },
-    hard: {
-        name: "Difficile",
-        thinkingTimeMin: 300,
-        thinkingTimeMax: 500,
-        spellUseProbability: 0.30,
-        weaponUseProbability: 0.25,
-        boardMoveProbability: 0.45,
-        strategicThinking: true,
-        healThreshold: 0.5,
-        aggressiveThreshold: 0.5,
-        stupidityChance: 0.35,
-        randomBoardMove: true,
-    },
-    expert: {
-        name: "Expert",
-        thinkingTimeMin: 300,
-        thinkingTimeMax: 500,
-        spellUseProbability: 0.35,
-        weaponUseProbability: 0.25,
-        boardMoveProbability: 0.40,
-        strategicThinking: true,
-        healThreshold: 0.6,
-        aggressiveThreshold: 0.4,
-        stupidityChance: 0.20,
-        randomBoardMove: true,
-    }
-};
 
 // Difficulté par défaut
 let currentDifficulty = aiDifficulty.normal;
@@ -78,7 +28,6 @@ let currentDifficulty = aiDifficulty.normal;
 export function setAIDifficulty(difficulty) {
     if (aiDifficulty[difficulty]) {
         currentDifficulty = aiDifficulty[difficulty];
-        console.log(`Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
     }
 }
 
@@ -86,75 +35,16 @@ export function getAIDifficulty() {
     return currentDifficulty;
 }
 
-// Déterminer automatiquement la difficulté en fonction du niveau de l'ennemi
-export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = null) {
-    // Cas special: ennemi affaibli volontairement tres peu intelligent.
-    if (enemyProfile?.isEasyChoice) {
-        currentDifficulty = {
-            ...aiDifficulty.easy,
-            name: "Affaibli",
-            spellUseProbability: 0.08,
-            weaponUseProbability: 0.07,
-            boardMoveProbability: 0.85,
-            strategicThinking: false,
-            stupidityChance: 0.97,
-            randomBoardMove: true,
-            thinkingTimeMin: 450,
-            thinkingTimeMax: 850
-        };
-        console.log(`Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
-        console.log(`Ennemi affaibli détecté: IA volontairement très stupide (niveau ${enemyLevel}).`);
-        return 'easy';
-    }
-
-    // Cas special: ennemi rare hors niveau volontairement tres intelligent.
-    if (enemyProfile?.isOverleveledChoice) {
-        currentDifficulty = {
-            ...aiDifficulty.expert,
-            name: "Hors niveau",
-            spellUseProbability: 0.45,
-            weaponUseProbability: 0.35,
-            boardMoveProbability: 0.20,
-            strategicThinking: true,
-            stupidityChance: 0.02,
-            randomBoardMove: false,
-            thinkingTimeMin: 180,
-            thinkingTimeMax: 320
-        };
-        console.log(`Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
-        console.log(`Ennemi hors niveau détecté: IA très intelligente (niveau ${enemyLevel}).`);
-        return 'expert';
-    }
-
-    const levelDifference = enemyLevel - playerLevel;
-    
-    // Ajuster la difficulté de base selon le niveau de l'ennemi
-    let baseDifficulty;
-    if (enemyLevel <= 3) {
-        baseDifficulty = 'easy';
-    } else if (enemyLevel <= 7) {
-        baseDifficulty = 'normal';
-    } else if (enemyLevel <= 12) {
-        baseDifficulty = 'hard';
-    } else {
-        baseDifficulty = 'expert';
-    }
-    
-    // Augmenter plus doucement la difficulté meme si l'ennemi depasse le joueur.
-    // Objectif: conserver une IA imparfaite et plus permissive.
-    if (levelDifference >= 3) {
-        baseDifficulty = baseDifficulty === 'easy' ? 'normal' : 'hard';
-    } else if (levelDifference >= 2) {
-        baseDifficulty = baseDifficulty === 'easy' ? 'normal' : 'hard';
-    } else if (levelDifference >= 1) {
-        if (baseDifficulty === 'easy') baseDifficulty = 'normal';
-        else if (baseDifficulty === 'normal') baseDifficulty = 'hard';
-    }
-    
-    setAIDifficulty(baseDifficulty);
-    console.log(`Niveau ennemi: ${enemyLevel}, Niveau joueur: ${playerLevel}, Difficulté IA: ${baseDifficulty}`);
-    
-    return baseDifficulty;
+/**
+ * Règle la difficulté de l'IA au début d'un combat.
+ *  - préférence du joueur (Options > Difficulté des ennemis) fixe : appliquée telle quelle ;
+ *  - préférence « auto » : adaptation bornée au niveau de l'ennemi (voir resolveDifficulty).
+ * Renvoie la clé du palier retenu ('easy' | 'normal' | 'hard' | 'expert').
+ */
+export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = null, preference = getOption('aiDifficulty')) {
+    const { tier, special } = resolveDifficulty({ preference, enemyLevel, playerLevel, enemyProfile });
+    currentDifficulty = special ? tierSettings(tier, special) : aiDifficulty[tier];
+    return tier;
 }
 
 // ========================================
@@ -266,14 +156,9 @@ export function evaluateSpells() {
             }
         }
 
-        // Bonus basé sur le niveau de l'ennemi (plus il est fort, plus il est efficace)
-        if (enemy.level >= 10) {
-            score *= 1.1; // +10% d'efficacité
-        }
-        if (enemy.level >= 15) {
-            score *= 1.15; // +15% d'efficacité supplémentaire
-        }
-        
+        // Tendance de la personnalité (pondération bornée, jamais d'exclusion)
+        score *= personalityWeight(enemy.personality, { type: 'spell', data: { spell, reason } }, context);
+
         // Ajustement aléatoire selon la difficulté
         if (!currentDifficulty.strategicThinking) {
             score = Math.random() * 100; // Choix aléatoire en mode facile
@@ -365,97 +250,39 @@ export function evaluateBoardMove() {
 // DÉCISION PRINCIPALE DE L'IA
 // ========================================
 
-export function makeDecision() {
+export function makeDecision(rng = Math.random) {
     const difficulty = currentDifficulty;
     const context = analyzeBattleContext();
-    
-    // Temps de réflexion (réduit si l'ennemi a un niveau élevé)
-    let thinkingTime = difficulty.thinkingTimeMin + 
-                        Math.random() * (difficulty.thinkingTimeMax - difficulty.thinkingTimeMin);
-    
-    // Les ennemis de haut niveau réagissent plus vite
-    if (enemy.level >= 10) {
-        thinkingTime *= 0.7;
-    } else if (enemy.level >= 15) {
-        thinkingTime *= 0.5;
-    }
 
-    // Évaluer toutes les options disponibles
+    // Temps de réflexion (plus court pour les ennemis de haut niveau)
+    const thinkingTime = thinkingTimeFor(difficulty, enemy.level, rng);
+
+    // Évaluer toutes les options disponibles (seules les actions réellement possibles sont proposées)
     const spellEval = evaluateSpells();
     const weaponEval = evaluateWeapon();
     const boardEval = evaluateBoardMove();
 
     const options = [];
+    if (spellEval) options.push({ type: 'spell', data: spellEval, score: spellEval.score, probability: difficulty.spellUseProbability });
+    if (weaponEval) options.push({ type: 'weapon', data: weaponEval, score: weaponEval.score, probability: difficulty.weaponUseProbability });
+    options.push({ type: 'board', data: boardEval, score: boardEval.score, probability: difficulty.boardMoveProbability });
 
-    if (spellEval) {
-        options.push({ 
-            type: 'spell', 
-            data: spellEval,
-            score: spellEval.score,
-            probability: difficulty.spellUseProbability
-        });
-    }
-
-    if (weaponEval) {
-        options.push({ 
-            type: 'weapon', 
-            data: weaponEval,
-            score: weaponEval.score,
-            probability: difficulty.weaponUseProbability
-        });
-    }
-
-    options.push({ 
-        type: 'board', 
-        data: boardEval,
-        score: boardEval.score,
-        probability: difficulty.boardMoveProbability
-    });
-
-    // Choisir la meilleure option en tenant compte des probabilités
     let chosenOption;
     let isStupid = false;
 
-    // Coup stupide : l'IA ignore la meilleure option et choisit au hasard
-    if (difficulty.stupidityChance > 0 && Math.random() < difficulty.stupidityChance) {
+    if (difficulty.stupidityChance > 0 && rng() < difficulty.stupidityChance) {
+        // Coup stupide : l'IA ignore tout (personnalité comprise) et choisit au hasard parmi les actions valides
         isStupid = true;
-        chosenOption = options[Math.floor(Math.random() * options.length)];
-    } else if (difficulty.strategicThinking) {
-        // Mode stratégique: choisir la meilleure option avec un facteur de probabilité
-        options.sort((a, b) => b.score - a.score);
-        
-        // Appliquer les probabilités comme modificateurs
-        const rand = Math.random();
-        let cumulative = 0;
-        
-        for (const option of options) {
-            cumulative += option.probability;
-            if (rand <= cumulative) {
-                chosenOption = option;
-                break;
-            }
-        }
-        
-        // Si aucune option n'a été choisie (ne devrait pas arriver), prendre la meilleure
-        if (!chosenOption) {
-            chosenOption = options[0];
-        }
+        chosenOption = options[Math.floor(rng() * options.length)];
     } else {
-        // Mode aléatoire (facile): choisir selon les probabilités pures
-        const rand = Math.random();
-        let cumulative = 0;
-        
+        // Poids = probabilité du palier (qualité tactique) x tendance de la personnalité (style).
+        // En mode stratégique, la personnalité « tactique » peut aussi suivre le meilleur score.
+        const best = difficulty.strategicThinking ? options.reduce((a, b) => (b.score > a.score ? b : a)) : null;
+        const ctx = { ...context, bestType: best?.type };
         for (const option of options) {
-            cumulative += option.probability;
-            if (rand <= cumulative) {
-                chosenOption = option;
-                break;
-            }
+            option.weight = option.probability * personalityWeight(enemy.personality, option, ctx);
         }
-        
-        if (!chosenOption) {
-            chosenOption = options[options.length - 1];
-        }
+        chosenOption = pickWeighted(options, rng);
     }
 
     return {
@@ -464,71 +291,11 @@ export function makeDecision() {
         thinkingTime: thinkingTime,
         reason: chosenOption.data.reason || "action tactique",
         isStupid,
+        personality: enemy.personality || null,
         // Un coup stupide sur le plateau doit etre reellement aleatoire,
         // meme pour les difficultes qui restent strategiques.
         randomBoardMove: chosenOption.type === 'board' && (isStupid || difficulty.randomBoardMove)
     };
-}
-
-// ========================================
-// PERSONNALITÉS D'ENNEMIS
-// ========================================
-
-export const enemyPersonalities = {
-    aggressive: {
-        name: "Agressif",
-        modifyDecision: (decision) => {
-            // Préfère toujours l'attaque
-            if (decision.action === 'board') {
-                decision.score *= 0.5;
-            }
-            return decision;
-        }
-    },
-    defensive: {
-        name: "Défensif",
-        modifyDecision: (decision) => {
-            // Préfère se soigner et utiliser des buffs
-            if (decision.action === 'spell' && decision.data.spell.heal) {
-                decision.data.score *= 1.5;
-            }
-            return decision;
-        }
-    },
-    tactical: {
-        name: "Tactique",
-        modifyDecision: (decision) => {
-            // Équilibre entre attaque et défense
-            return decision;
-        }
-    },
-    reckless: {
-        name: "Téméraire",
-        modifyDecision: (decision) => {
-            // Utilise ses ressources sans réfléchir
-            if (decision.action === 'weapon' || decision.action === 'spell') {
-                decision.data.score *= 1.3;
-            }
-            return decision;
-        }
-    },
-    cunning: {
-        name: "Rusé",
-        modifyDecision: (decision) => {
-            // Préfère les debuffs et les stratégies indirectes
-            if (decision.action === 'spell' && decision.data.spell.debuff) {
-                decision.data.score *= 1.4;
-            }
-            return decision;
-        }
-    }
-};
-
-// Assigner une personnalité à un ennemi
-export function assignPersonality(enemyType) {
-    const personalities = Object.keys(enemyPersonalities);
-    const randomPersonality = personalities[Math.floor(Math.random() * personalities.length)];
-    return randomPersonality;
 }
 
 // ========================================
@@ -538,6 +305,7 @@ export function assignPersonality(enemyType) {
 export function getAIStats() {
     return {
         difficulty: currentDifficulty.name,
+        personality: enemy.personality || null,
         context: analyzeBattleContext(),
         availableActions: {
             canUseSpell: evaluateSpells() !== null,

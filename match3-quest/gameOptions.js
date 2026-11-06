@@ -2,11 +2,13 @@
 //  - manaFlight : particules de qì qui rejoignent la banque (manaFlight.js) ;
 //  - effects    : 'auto' | 'low' | 'normal' | 'high' — niveau d'effets visuels ('auto' se règle sur l'appareil) ;
 //  - speed      : 'slow' | 'normal' | 'fast' — durée des animations de combat et pauses entre les tours.
-// Purement visuel : aucune de ces options ne change les règles du jeu.
+//  - aiDifficulty : 'auto' | 'easy' | 'normal' | 'hard' | 'expert' — difficulté des ennemis (enemyAI.js). 'auto' (défaut) adapte la
+//    qualité de leurs décisions au niveau de l'ennemi, de façon bornée ; un palier fixe est appliqué tel quel à chaque combat.
+// Les trois premières sont purement visuelles ; la difficulté ne change que la qualité des décisions de l'ennemi (jamais ses statistiques).
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal' };
-const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'] };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', aiDifficulty: 'auto' };
+const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], aiDifficulty: ['auto', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
 let current = { ...OPTION_DEFAULTS };
