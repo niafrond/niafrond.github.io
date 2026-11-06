@@ -1,3 +1,9 @@
+## [2.197.1](https://github.com/niafrond/niafrond.github.io/compare/v2.197.0...v2.197.1) (2026-11-06)
+
+### Bug Fixes
+
+* **match3-quest:** garder le texte des PV sur une ligne avec le bouclier ([#657](https://github.com/niafrond/niafrond.github.io/issues/657)) ([65c2e5e](https://github.com/niafrond/niafrond.github.io/commit/65c2e5ecef3bd205ff909b67d9264b75b7748222))
+
 ## [2.197.0](https://github.com/niafrond/niafrond.github.io/compare/v2.196.0...v2.197.0) (2026-11-06)
 
 ### Features
