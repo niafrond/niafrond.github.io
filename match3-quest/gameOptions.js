@@ -3,11 +3,16 @@
 //  - effects    : 'auto' | 'low' | 'normal' | 'high' — niveau d'effets visuels ('auto' se règle sur l'appareil) ;
 //  - speed      : 'slow' | 'normal' | 'fast' — durée des animations de combat et pauses entre les tours ;
 //  - vibration  : vibrations du téléphone (dégâts subis, onde de la perception du qì), désactivables.
+// Accessibilité :
+//  - textSize   : 'normal' | 'large' | 'xlarge' — taille du texte des menus, de la fiche des combattants et du journal ;
+//  - shapes     : symboles en plus des couleurs (tuiles, qì, camps) pour ne pas dépendre de la seule couleur ;
+//  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
+//  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
 // Purement visuel : aucune de ces options ne change les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true };
-const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'] };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, animations: true, reduceFx: false };
+const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
 let current = { ...OPTION_DEFAULTS };
@@ -36,6 +41,7 @@ export function setOption(key, value) {
 
 // Niveau d'effets réellement appliqué : 'low' | 'normal' | 'high'.
 export function effectsLevel() {
+    if (current.reduceFx) return 'low';
     if (current.effects !== 'auto') return current.effects;
     try {
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'low';
@@ -48,7 +54,7 @@ export function effectsLevel() {
 }
 
 // Multiplicateur appliqué aux durées d'animation et aux pauses (1 = normal).
-export function animationFactor() { return SPEED_FACTOR[current.speed] || 1; }
+export function animationFactor() { return (SPEED_FACTOR[current.speed] || 1) * (current.animations ? 1 : 0.3); }
 
 // Nombre maximal de particules de qì par match, selon le niveau d'effets.
 export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
@@ -107,7 +113,13 @@ export function applyOptions() {
     if (typeof document === 'undefined' || !document.body) return;
     const level = effectsLevel();
     document.body.classList.toggle('fx-low', level === 'low');
-    document.body.classList.toggle('fx-high', level === 'high');
+    document.body.classList.toggle('fx-high', level === 'high' && !current.reduceFx);
+    const b = document.body.classList;
+    b.toggle('text-large', current.textSize === 'large');
+    b.toggle('text-xlarge', current.textSize === 'xlarge');
+    b.toggle('a11y-shapes', current.shapes);
+    b.toggle('no-anim', !current.animations);
+    b.toggle('fx-reduced', current.reduceFx);
 }
 
 load();

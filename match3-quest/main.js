@@ -1,7 +1,8 @@
 import { icon } from "./icons.js";
 import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
+import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
+import { PLAY_STYLES, setPlayStyle, getPlayStyle } from "./playStyles.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -470,6 +471,35 @@ function init() {
         close.addEventListener('click', () => box.remove());
         document.body.appendChild(box);
         setTimeout(() => box.remove(), 12000);
+    });
+    // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
+    const textSizeSelect = document.getElementById('opt-text-size');
+    if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
+    [['opt-shapes', 'shapes'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx']].forEach(([id, key]) => {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+        const sync = () => { const on = getOption(key); btn.textContent = on ? 'Oui' : 'Non'; btn.setAttribute('aria-pressed', String(on)); };
+        sync();
+        btn.addEventListener('click', () => { setOption(key, !getOption(key)); sync(); });
+    });
+
+    // Style de Hou Yi (playStyles.js) : se change hors combat, sans toucher à la progression.
+    const styleSelect = document.getElementById('opt-playstyle');
+    const styleDesc = document.getElementById('playstyle-desc');
+    const syncPlayStyle = () => {
+        const st = getPlayStyle(player);
+        if(styleSelect) { styleSelect.value = st ? st.id : ''; styleSelect.disabled = gameState.combatState === 'active'; }
+        if(styleDesc) styleDesc.innerHTML = st
+            ? `${st.summary}<ul>${st.effects.map(e => `<li>${e}</li>`).join('')}</ul>`
+            : 'Aucun style : le jeu de base. Choisissez-en un, vous pourrez en changer à tout moment hors combat.';
+    };
+    syncPlayStyle();
+    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', syncPlayStyle));
+    styleSelect?.addEventListener('change', () => {
+        if(gameState.combatState === 'active' || !setPlayStyle(player, styleSelect.value || null)) { syncPlayStyle(); return; }
+        saveUpdate();
+        syncPlayStyle();
+        log(PLAY_STYLES[player.playStyle] ? `Style : ${PLAY_STYLES[player.playStyle].name}.` : 'Style libre.');
     });
     vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate([120, 60, 120]); });
     initCompare({

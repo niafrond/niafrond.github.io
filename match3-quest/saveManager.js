@@ -253,6 +253,7 @@ function sanitizePlayer(player) {
     return compact({
         name: player.name,
         class: player.class,
+        playStyle: player.playStyle,
         level: player.level,
         xp: player.xp,
         unspentLevelPoints: player.unspentLevelPoints,
@@ -361,6 +362,7 @@ function validateMetadata(metadata) {
 function sanitizeImportedPlayer(player) {
     player.name = cleanText(player.name, MAX_NAME_LENGTH) || 'Héros';
     assign(player, 'class', cleanText(player.class, MAX_ID_LENGTH));
+    assign(player, 'playStyle', cleanText(player.playStyle, MAX_ID_LENGTH));
     player.level = cleanNumber(player.level, 1, MAX_LEVEL, true);
 
     for (const key of ['xp', 'xpToNextLevel', 'unspentLevelPoints', 'growthLevel', 'hp', 'maxHp', 'maxMana', 'attack', 'defense', 'gold', 'activeInventoryIndex']) {

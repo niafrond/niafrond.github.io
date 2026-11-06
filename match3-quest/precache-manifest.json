@@ -92,6 +92,7 @@
   "music.js",
   "musicTracks.js",
   "offlineCache.js",
+  "playStyles.js",
   "playTime.js",
   "playerNames.js",
   "progression.js",

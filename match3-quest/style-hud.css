@@ -794,3 +794,43 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
     #player-stats.ultimate-ready, body.rt #player-stats.ultimate-ready { animation: none; box-shadow: 0 0 14px 4px rgba(255, 140, 30, .9); }
     .rage-bar-container.ultimate-ready .rage-fill, .rage-bar-container.ultimate-ready .rage-bar::after { animation: none; }
 }
+
+/* ===== Accessibilité (gameOptions.js : textSize, shapes, animations, reduceFx ; playStyles.js) ===== */
+
+/* Taille du texte réglable : agrandit menus, fenêtres, onglets, journal, fiches des combattants et sorts (le plateau garde sa taille). */
+body.text-large .modal-content, body.text-large .tab-panel:not(#tab-combat), body.text-large #log,
+body.text-large #player-stats, body.text-large #enemy-stats, body.text-large #spells-container { zoom: 1.2; }
+body.text-xlarge .modal-content, body.text-xlarge .tab-panel:not(#tab-combat), body.text-xlarge #log,
+body.text-xlarge #player-stats, body.text-xlarge #enemy-stats, body.text-xlarge #spells-container { zoom: 1.4; }
+body.text-large .modal-content, body.text-xlarge .modal-content { max-height: 92vh; overflow-y: auto; }
+
+/* Indications visuelles qui ne reposent pas que sur la couleur : un symbole propre à chaque couleur de qì (tuiles, compteurs, coûts). */
+body.a11y-shapes .tile.red::after, body.a11y-shapes .mana-red::before { content: "\25B2"; }       /* triangle */
+body.a11y-shapes .tile.blue::after, body.a11y-shapes .mana-blue::before { content: "\25CF"; }     /* disque */
+body.a11y-shapes .tile.green::after, body.a11y-shapes .mana-green::before { content: "\25C6"; }   /* losange */
+body.a11y-shapes .tile.yellow::after, body.a11y-shapes .mana-yellow::before { content: "\25A0"; } /* carré */
+body.a11y-shapes .tile.purple::after, body.a11y-shapes .mana-purple::before { content: "\271A"; } /* croix */
+body.a11y-shapes .tile { position: relative; }
+body.a11y-shapes .tile.red::after, body.a11y-shapes .tile.blue::after, body.a11y-shapes .tile.green::after,
+body.a11y-shapes .tile.yellow::after, body.a11y-shapes .tile.purple::after {
+    position: absolute; right: 6%; bottom: 4%; z-index: 3; font-size: .55em; line-height: 1; pointer-events: none;
+    color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 3px #000;
+}
+body.a11y-shapes .mana-red::before, body.a11y-shapes .mana-blue::before, body.a11y-shapes .mana-green::before,
+body.a11y-shapes .mana-yellow::before, body.a11y-shapes .mana-purple::before { font-size: .6em; margin-right: 2px; }
+/* Camps : bordure pleine pour le joueur, pointillée pour l'ennemi ; PV bas = motif hachuré en plus du rouge. */
+body.a11y-shapes #player-stats { border-style: solid; }
+body.a11y-shapes #enemy-stats { border-style: dashed; }
+body.a11y-shapes .tile.suggested { outline: 3px dashed #fff; outline-offset: -3px; }
+
+/* Animations désactivées : plus aucune animation ni transition CSS. */
+body.no-anim *, body.no-anim *::before, body.no-anim *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+
+/* Effets visuels réduits : plus de lueurs, d'ombres portées lumineuses ni de secousses. */
+body.fx-reduced *, body.fx-reduced *::before, body.fx-reduced *::after { text-shadow: none; }
+body.fx-reduced .shake, body.fx-reduced .spellfx, body.fx-reduced .mana-fly-dot, body.fx-reduced .heal-fly-dot { animation: none !important; box-shadow: none !important; }
+body.fx-reduced .tile.suggested { outline: 3px solid #fff; outline-offset: -3px; }
+
+/* Style de jeu de Hou Yi (menu Options). */
+.playstyle-desc { display: block; margin: -4px 0 10px; font-size: .85em; opacity: .9; }
+.playstyle-desc ul { margin: 2px 0 0 1.1em; padding: 0; }

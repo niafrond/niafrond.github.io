@@ -93,6 +93,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `music.js` — (sans description)
 - `musicTracks.js` — (sans description)
 - `offlineCache.js` — Jeu hors ligne : enregistrement du service worker (sw.js) qui sert le jeu depuis le téléphone. Le pré-téléchargement des musiques et dessins
+- `playStyles.js` — Styles de jeu de Hou Yi (flamboyant, mystique, gardien) : multiplicateurs appliqués à l'exécution, modifiables hors combat. Module pur.
 - `playTime.js` — Temps de jeu (menu Options), mémorisé par appareil dans localStorage : aujourd'hui, hier, cette semaine (depuis lundi), total.
 - `playerNames.js` — Bibliothèque de noms de joueur aléatoires
 - `progression.js` — Progression au-delà du niveau 18 : les armes et les sorts s'arrêtent au niveau 18 (dégâts ≤ 100 / 150) alors que les ennemis
