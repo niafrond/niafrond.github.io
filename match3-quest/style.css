@@ -298,8 +298,10 @@ button.disabled { opacity: 0.5; cursor: not-allowed; }
     pointer-events: none;
     border-radius: 0 3px 3px 0;
 }
-.hp-shield-text { color: #1b6aa5; }
+.hp-shield-text { color: #1b6aa5; font-size: .8em; }
 .hp-text {
+    /* Une seule ligne : sans cela, « PV +bouclier » est coupé en deux (la boîte, centrée à 50 %, ne peut pas dépasser la moitié de la barre). */
+    white-space: nowrap;
     position: absolute;
     top: 50%;
     left: 50%;
