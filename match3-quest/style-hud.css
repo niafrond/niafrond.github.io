@@ -656,10 +656,7 @@ body.shake { animation: m3-shake .3s ease-in-out; }
 .change-stat-card { flex: 1; min-width: 0; text-align: left; background: var(--team-player-bg, #f7f7f7); border: 3px solid var(--team-player-edge, transparent); border-radius: 6px; padding: 6px 8px; color: #1a1a1a; }
 .change-stat-card.enemy { background: var(--team-enemy-bg, #f7f7f7); border-color: var(--team-enemy-edge, transparent); }
 body.dark-mode .change-stat-card { color: #f1f5f9; }
-.change-stat-card .stat { display: flex; align-items: center; margin: 4px 0; min-width: 0; gap: 6px; }
-.change-stat-card .change-patient > img { width: 40px; height: 40px; }
-.change-stat-card .change-want svg { width: 30px; height: 30px; }
-.change-stat-card .change-meter, .change-stat-card .change-gauge { flex: 1; }
+.change-stat-card { display: flex; flex-direction: column; gap: 8px; }
 @media (orientation: portrait) { .change-stat-card .change-btn { font-size: 12px; padding: 5px 8px; } }
 .change-board { display: grid; grid-template-columns: repeat(var(--board-cols, 8), 1fr); grid-gap: 6px; margin: 15px auto; width: min(100%, calc(100vh - 330px)); min-width: 260px; background: #e0e0e0; padding: 8px; border-radius: 8px; box-sizing: border-box; touch-action: manipulation; position: relative; }
 body.rt .change-board { background: #1c2433; border: 4px solid var(--rt-ink); border-radius: 6px; box-shadow: inset 0 0 0 3px var(--rt-gold), 0 6px 0 var(--rt-ink); padding: 10px; }
@@ -887,3 +884,4 @@ body.a11y-colorblind .mana-blue { background: #0072b2; }
 body.a11y-colorblind .mana-green { background: #009e73; }
 body.a11y-colorblind .mana-yellow { background: #f0e442; }
 body.a11y-colorblind .mana-purple { background: #cc79a7; }
+.change-stats-container > .change-stat-card { grid-column: 1 / -1 !important; grid-row: auto !important; }
