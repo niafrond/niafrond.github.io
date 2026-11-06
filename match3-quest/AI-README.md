@@ -1,231 +1,94 @@
-# 🤖 Bibliothèque d'Intelligence Artificielle des Ennemis
+# Intelligence artificielle des ennemis
 
-## Vue d'ensemble
+Deux fichiers : `enemyAI.js` (lit l'état du combat dans `game.js` et décide) et `enemyAIProfiles.js` (module pur : paliers,
+choix de difficulté, personnalités ; testable sans le jeu). Tests : `tests/unit/enemyAIProfiles.test.js`,
+`tests/unit/enemyAIDecision.test.js`, `tests/unit/combatStats.test.js`.
 
-La bibliothèque `enemyAI.js` gère le comportement intelligent des ennemis dans le jeu Match3-Quest. Elle fournit un système de décision stratégique avec plusieurs niveaux de difficulté qui s'adaptent automatiquement au niveau de l'ennemi et des personnalités d'ennemis.
+## Quatre notions séparées
 
-## Système de niveaux
+| Notion | Où | Ce qu'elle règle |
+| --- | --- | --- |
+| **Niveau et statistiques** de l'ennemi | `enemies.js` | PV, attaque (chance de critique), défense (chance de blocage), sorts, arme. Aucun palier d'IA n'y touche. |
+| **Personnalité** (style) | `PERSONALITIES` | Quelles actions l'ennemi préfère (frapper, soigner, affaiblir…). |
+| **Qualité tactique** | `AI_TIERS` | Probabilités d'action et part de tours joués au hasard (« coups hasardeux »). |
+| **Difficulté choisie par le joueur** | Options > « Difficulté des ennemis » | `Auto` ou un palier fixe. |
 
-### Génération des niveaux d'ennemis
+La difficulté ne donne **aucun bonus caché de statistiques** : elle ne change que la qualité des décisions.
 
-Chaque nouvel ennemi a un niveau **égal ou supérieur** au niveau du joueur :
-- **50%** de chance d'avoir le même niveau que le joueur
-- **30%** de chance d'avoir +1 niveau
-- **15%** de chance d'avoir +2 niveaux
-- **5%** de chance d'avoir +3 niveaux
+## Difficulté choisie par le joueur
 
-### Influence du niveau sur l'IA
+Option `aiDifficulty` (`gameOptions.js`, mémorisée par appareil) :
 
-La difficulté de l'IA est **automatiquement ajustée** en fonction du niveau de l'ennemi :
+- **Palier fixe** (`Facile`, `Normal`, `Difficile`, `Expert`) : appliqué tel quel à tous les combats, boss et ennemis
+  « hors niveau » compris. Le niveau de l'ennemi n'a aucune influence.
+- **Auto** (défaut) : adaptation explicite et bornée, désactivée dès qu'on choisit un palier fixe.
+  1. Palier de base selon le niveau de l'ennemi : 1-3 Facile, 4-7 Normal, 8-12 Difficile, 13+ Expert.
+  2. +1 cran si l'ennemi a un niveau supérieur à celui du joueur, mais jamais au-dessus de **Difficile** (seul un ennemi de
+     niveau 13+ est Expert). Un ennemi de niveau égal ou inférieur ne durcit jamais l'IA.
+  3. Profils scénarisés, seulement en Auto : ennemi « affaibli » (très maladroit) et ennemi / boss « hors niveau »
+     (Expert, 2 % de coups hasardeux).
 
-#### Difficulté de base par niveau
-- **Niveau 1-3** : Facile
-- **Niveau 4-7** : Normal
-- **Niveau 8-12** : Difficile
-- **Niveau 13+** : Expert
+`Facile` reste accessible aux joueurs occasionnels : 80 % des tours sont joués au hasard.
 
-#### Bonus de niveau
-- Si l'ennemi a **+3 niveaux** : Toujours Expert
-- Si l'ennemi a **+2 niveaux** : Difficile ou Expert
-- Si l'ennemi a **+1 niveau** : Augmente d'un cran la difficulté
+### Paliers (`AI_TIERS`)
 
-#### Effets du niveau sur le comportement
-- **Niveau 10+** : Temps de réflexion réduit de 30%, efficacité +10%
-- **Niveau 15+** : Temps de réflexion réduit de 50%, efficacité +15%
+| Palier | Sort | Arme | Plateau | Coups hasardeux | Seuil de soin | Joueur « vulnérable » si PV < |
+| --- | --- | --- | --- | --- | --- | --- |
+| Facile | 20 % | 20 % | 60 % | 80 % | 30 % | 70 % |
+| Normal | 25 % | 25 % | 50 % | 55 % | 40 % | 60 % |
+| Difficile | 30 % | 25 % | 45 % | 35 % | 50 % | 50 % |
+| Expert | 35 % | 25 % | 40 % | 20 % | 60 % | 40 % |
 
-## Fonctionnalités principales
+**Temps de réflexion** : 300 à 500 ms pour les quatre paliers (le rythme du combat ne dépend pas de la difficulté).
+Ennemi de niveau 10 à 14 : × 0,7 ; niveau 15+ : × 0,5. Profils : « Affaibli » 450-850 ms, « Hors niveau » 180-320 ms.
+(Les anciennes valeurs de 0,3 à 3 s de ce document ne correspondaient plus au code.)
 
-### 1. Niveaux de difficulté
+## Décision d'un tour (`makeDecision`, appelée par `enemyTurn` dans `game.js`)
 
-Quatre niveaux de difficulté sont disponibles :
+1. Contexte : PV, qì, points de combat, joueur vulnérable, ennemi en danger.
+2. Seules les **actions possibles** sont proposées : sort abordable (coûts et ressources vérifiés ; un soin à pleine vie
+   est écarté), arme dont le coût en points de combat est couvert, plateau (toujours).
+3. Chaque action reçoit un score (coup fatal, soin critique, joueur vulnérable…), qui sert à choisir le **sort** à lancer et à
+   la personnalité « tactique ».
+4. Tour hasardeux (selon `stupidityChance`) : action tirée au sort parmi les actions possibles, personnalité ignorée.
+5. Sinon : poids de chaque action = **probabilité du palier × pondération de la personnalité**, tirage proportionnel.
+6. L'action est exécutée par `game.js` après le temps de réflexion.
 
-- **Facile** : L'ennemi prend des décisions aléatoires avec des temps de réflexion longs
-  - Temps de réflexion : 1.5-3 secondes
-  - Priorité sorts : 25%
-  - Priorité armes : 25%
-  - Priorité plateau : 50%
-  - Pas de pensée stratégique
+## Personnalités
 
-- **Normal** : Comportement équilibré avec une pensée stratégique de base
-  - Temps de réflexion : 1-2 secondes
-  - Priorité sorts : 35%
-  - Priorité armes : 35%
-  - Priorité plateau : 30%
-  - Pensée stratégique activée
+Attribuées à `newEnemy()` : celle du gabarit s'il en définit une (`enemy.personality`), sinon calculée de façon **stable
+par espèce** (`assignPersonality(templateId)`), pour qu'on la reconnaisse d'un combat à l'autre. Elle est annoncée dans le
+journal de combat au début du combat.
 
-- **Difficile** : L'ennemi privilégie les attaques et réagit rapidement
-  - Temps de réflexion : 0.5-1.5 secondes
-  - Priorité sorts : 45%
-  - Priorité armes : 35%
-  - Priorité plateau : 20%
-  - Pensée stratégique activée
+Chaque personnalité fournit `modifyDecision(option, contexte)`, un **multiplicateur de poids** :
 
-- **Expert** : Comportement optimal avec réactions très rapides
-  - Temps de réflexion : 0.3-1 seconde
-  - Priorité sorts : 50%
-  - Priorité armes : 35%
-  - Priorité plateau : 15%
-  - Pensée stratégique activée
+| Personnalité | Tendance |
+| --- | --- |
+| Agressif | arme ×1,4, sort de dégâts ×1,3, plateau ×0,6, soin ×0,8 |
+| Défensif | soin ×1,8 si PV bas (×1,2 sinon), renfort ×1,3, plateau ×1,15, arme ×0,8 si PV bas |
+| Tactique | meilleure action selon le score ×1,3, coup fatal ×1,5 |
+| Téméraire | arme ×1,3, sorts offensifs ×1,3, plateau ×0,6, soin ×0,7 |
+| Rusé | affaiblissement ×1,5, renfort ×1,2, arme ×0,9 |
 
-### 2. Système de décision
+Garde-fous (testés) : le produit est borné à [0,5 ; 1,8] ; une personnalité ne peut pas ajouter une action impossible ni
+en retirer une possible ; un coup fatal n'est jamais pénalisé ; chaque action possible garde plus de 10 % de chances, donc
+l'issue d'un tour n'est jamais déterministe. Les personnalités n'ont aucun effet sur les statistiques.
 
-L'IA analyse le contexte du combat et évalue chaque action possible :
+## Écart de niveau (`combatStats.js`)
 
-#### Analyse du contexte
-- Pourcentage de HP du joueur et de l'ennemi
-- Qì disponible pour les deux parties
-- Points de combat disponibles
-- Vulnérabilité du joueur
-- État critique de l'ennemi
+`levelEdge` (écart de niveau en faveur d'une entité, posé au début du combat) ajoute des **points** à l'attaque (chance de
+critique) et à la défense (chance de blocage) : **+6 points par niveau d'écart, au plus +18** (atteint à 3 niveaux). Il ne
+multiplie pas les dégâts ni les statistiques ; les chances finales restent plafonnées à 98 %. Le plus faible ne subit aucun
+malus, et la règle est la même pour le joueur et pour l'ennemi.
 
-#### Évaluation des sorts
-- **Sorts de soin** : Priorité maximale si HP < seuil de soin
-- **Sorts de dégâts** : Priorité si le joueur est vulnérable
-- **Coups fatals** : Priorité absolue si peut tuer le joueur
-- **Sorts de buff/debuff** : Évalués selon le contexte
+Avant le lot 2, le bonus était multiplicatif (×1,35 à ×4) : une statistique brute de 33 passait à 98 % dès 3 niveaux
+d'écart. Comparaison reproductible : `node match3-quest/tools/simulate-level-edge.mjs`.
 
-#### Évaluation de l'arme
-- Priorise l'arme si elle peut tuer le joueur
-- Bonus pour les armes puissantes
-- Considère les points de combat disponibles
+L'avantage est annoncé dans le journal au début du combat (« 2 niveaux d'avance : +12 % de critique et de blocage »).
 
-#### Évaluation du plateau
-- Priorité si manque de ressources (qì/combat points)
-- Score augmenté si aucun sort utilisable
+## Documenter / modifier
 
-### 3. Personnalités d'ennemis
-
-Cinq personnalités modifient le comportement de l'IA :
-
-- **Agressif** : Préfère toujours l'attaque, évite le plateau
-- **Défensif** : Priorise les soins et les buffs
-- **Tactique** : Comportement équilibré (par défaut)
-- **Téméraire** : Utilise les ressources sans hésitation
-- **Rusé** : Privilégie les debuffs et stratégies indirectes
-
-## Utilisation
-
-### Ajustement automatique de la difficulté
-
-La difficulté est **automatiquement ajustée** lors de la génération d'un nouvel ennemi via `newEnemy()`. Vous n'avez rien à faire !
-
-```javascript
-// Lors de la génération d'un ennemi, l'IA s'ajuste automatiquement
-newEnemy(); // La difficulté sera adaptée au niveau de l'ennemi
-```
-
-### Changer manuellement la difficulté (optionnel)
-
-Si vous souhaitez forcer une difficulté spécifique :
-
-Dans la console du navigateur ou via le code :
-
-```javascript
-import { setAIDifficulty } from './enemyAI.js';
-
-// Changer la difficulté
-setAIDifficulty('easy');    // Facile
-setAIDifficulty('normal');  // Normal
-setAIDifficulty('hard');    // Difficile
-setAIDifficulty('expert');  // Expert
-```
-
-Depuis `game.js` :
-
-```javascript
-import { changeAIDifficulty, getCurrentAIDifficulty } from './game.js';
-
-// Changer la difficulté
-changeAIDifficulty('hard');
-
-// Obtenir la difficulté actuelle
-const currentDiff = getCurrentAIDifficulty();
-console.log(currentDiff); // "Difficile"
-```
-
-### Assigner une personnalité
-
-```javascript
-import { assignPersonality, enemyPersonalities } from './enemyAI.js';
-
-// Assigner une personnalité aléatoire
-const personality = assignPersonality();
-
-// Ou choisir une personnalité spécifique
-enemy.personality = 'aggressive';
-```
-
-### Obtenir les statistiques de l'IA
-
-```javascript
-import { getAIStats } from './enemyAI.js';
-
-const stats = getAIStats();
-console.log(stats);
-// {
-//   difficulty: "Normal",
-//   context: { ... },
-//   availableActions: { ... }
-// }
-```
-
-## Intégration dans le jeu
-
-La bibliothèque est automatiquement intégrée dans `game.js` via la fonction `enemyTurn()`. À chaque tour de l'ennemi :
-
-1. L'IA analyse le contexte de combat
-2. Évalue toutes les actions possibles (sorts, armes, plateau)
-3. Attribue un score à chaque action
-4. Choisit la meilleure action selon la difficulté
-5. Exécute l'action après un temps de réflexion
-
-## Exemples de logs
-
-Les décisions de l'IA sont loggées dans la console :
-
-```javascript
-🤖 IA Décision: {
-  action: 'spell',
-  reason: 'coup fatal',
-  score: 245,
-  thinkingTime: 1234
-}
-```
-
-## Personnalisation
-
-Pour ajouter de nouvelles stratégies ou modifier le comportement :
-
-1. **Modifier les probabilités** dans `aiDifficulty`
-2. **Créer de nouvelles personnalités** dans `enemyPersonalities`
-3. **Ajuster les seuils** (healThreshold, aggressiveThreshold)
-4. **Modifier les scores** dans les fonctions d'évaluation
-
-## Debug
-
-Pour activer les logs détaillés de l'IA :
-
-```javascript
-import { logDecision, getAIStats } from './enemyAI.js';
-
-// La fonction logDecision est appelée automatiquement
-// mais vous pouvez aussi l'utiliser manuellement
-const stats = getAIStats();
-console.log('📊 Stats IA:', stats);
-```
-
-## Notes techniques
-
-- La bibliothèque utilise un système de scoring pour évaluer les actions
-- Les décisions sont influencées par la difficulté et les personnalités
-- Un facteur aléatoire est ajouté pour éviter la prédictibilité
-- Les temps de réflexion sont ajustés selon la difficulté
-- Le système est extensible et modulaire
-
-## Prochaines améliorations possibles
-
-- [ ] Apprentissage des patterns du joueur
-- [ ] Stratégies spécifiques par type d'ennemi
-- [ ] Comportements d'équipe pour les combats multiples
-- [ ] Réactions aux combos du joueur
-- [ ] Mémorisation des actions précédentes
+- Probabilités, seuils, temps : `AI_TIERS` / `SPECIAL_TIERS`.
+- Nouveau style : ajouter une entrée à `PERSONALITIES` (nom, description, `modifyDecision`) ; le test « borné » la couvre.
+- Scores d'actions : `evaluateSpells`, `evaluateWeapon`, `evaluateBoardMove` dans `enemyAI.js`.
+- Débogage : `getAIStats()` (difficulté, personnalité, contexte) et `logDecision(decision)`.
