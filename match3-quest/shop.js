@@ -8,7 +8,9 @@ import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus } from './merchants.js';
 import { describeManaMax } from './manaGear.js';
 import { previewEquip, equippedCounterpart, isComparable } from './equipPreview.js';
-import { compareButtonHtml } from './compareView.js';
+import { compareButtonHtml, equipDeltaGroupsHtml } from './compareView.js';
+import { rowCardHtml, badgeHtml, cardTipHtml, escapeHtml as esc } from './gameCardUi.js';
+import { bindCardTips } from './gameTooltips.js';
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
 
 const SECTION_TITLES = {
@@ -22,58 +24,56 @@ const SECTION_TITLES = {
 };
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 
-const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const escapeHtml = esc;
 
+// Offre d'un marchand en carte compacte : nom et rareté, écarts avec ce que vous portez (sinon les chiffres clés), le prix dans le bouton d'achat ;
+// « Comparer » et la comparaison complète dans le menu « ⋯ », description à l'appui long.
 function offerRow(offer, gold) {
     const obj = offerObject(offer);
     if (!obj) return '';
     const canAfford = gold >= offer.price;
     const color = getRarityColor(offer.rarity);
     const icon = offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(offer.rarity);
-    const levelText = offer.kind === 'mount' || offer.kind === 'torch' ? '' : ` • Niv. ${obj.minLevel}`;
+    const special = offer.kind === 'mount' || offer.kind === 'torch';
     const stats = offer.kind === 'torch' ? 'Vue élargie sous terre'
         : offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
         : offer.kind === 'stuff' ? `${STUFF_SLOT_LABELS[obj.slot]} • ${describeStuff(obj)}`
         : offer.kind === 'weapon'
         ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}${describeManaMax(obj) ? ` • ${describeManaMax(obj)}` : ''}`
-        : obj.type === 'shield' ? `Déf. +${obj.defense} %`
-            : obj.type === 'reusable' ? `${obj.actionPoints || 2} ${svgIcon('arrow')} • ${obj.chargesPerCycle} charge${obj.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${obj.rechargeTurns || 4} tours`
+        : obj.type === 'shield' ? `Déf. +${obj.defense}`
+            : obj.type === 'reusable' ? `${obj.actionPoints || 2} ${svgIcon('arrow')} • ${obj.chargesPerCycle} charge${obj.chargesPerCycle > 1 ? 's' : ''}`
                 : 'Relique passive';
-    return `
-        <div class="weapon-item shop-weapon merchant-offer rarity-${offer.rarity}" style="border-left:3px solid ${color}">
-            <span class="weapon-icon">${icon}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${escapeHtml(obj.name)} <em class="merchant-rarity" style="color:${color}">${RARITY_LABEL[offer.rarity] || ''}</em></span>
-                <span class="weapon-stats">${stats}${levelText}</span>
-                <span class="weapon-description">${escapeHtml(obj.description || '')}</span>
-                ${offer.kind === 'mount' || offer.kind === 'torch' ? '' : compareButtonHtml(offer.kind === 'weapon' ? 'weapon' : offer.kind === 'stuff' ? 'stuff' : 'item', obj.id)}
-            </div>
-            <div class="shop-weapon-right">
-                <span class="shop-price-tag">${offer.price} ${svgIcon('coin')}</span>
-                ${isComparable(offer.kind, obj) ? `<button type="button" class="compare-btn" data-preview="${offer.key}" title="Voir l'effet sur vos stats par rapport à la pièce équipée">Comparer à l'équipé</button>` : ''}
-                <button type="button" class="weapon-action" data-buy="${offer.key}" ${canAfford ? '' : 'disabled'}>${canAfford ? 'Acheter' : 'Trop cher'}</button>
-            </div>
-        </div>`;
+    const kind = offer.kind === 'weapon' ? 'weapon' : offer.kind === 'stuff' ? 'stuff' : 'item';
+    const deltas = special ? '' : equipDeltaGroupsHtml(player, kind, obj);
+    const tooLow = !special && (obj.minLevel || 1) > player.level;
+    const more = (special ? '' : compareButtonHtml(kind, obj.id))
+        + (isComparable(offer.kind, obj) ? `<button type="button" class="compare-btn" data-preview="${offer.key}" title="Voir l'effet sur vos stats par rapport à la pièce équipée">Comparer à l'équipé</button>` : '');
+    return rowCardHtml({
+        key: `shop:${offer.key}`, cls: `merchant-offer rarity-${offer.rarity}`, border: color,
+        name: `${icon} ${escapeHtml(obj.name)}`,
+        badges: (offer.rarity === 'rare' || offer.rarity === 'legendary' ? badgeHtml(RARITY_LABEL[offer.rarity]) : '') + (tooLow ? badgeHtml(`Niv. ${obj.minLevel}`, 'rc-badge-warn') : ''),
+        sub: deltas || `<span class="rc-stats">${stats}</span>`,
+        primary: `<button type="button" class="rc-btn rc-buy" data-buy="${offer.key}" ${canAfford ? '' : 'disabled'} title="${canAfford ? 'Acheter' : 'Pas assez d\'or'}">${offer.price} ${svgIcon('coin')}</button>`,
+        more,
+        tip: cardTipHtml(escapeHtml(obj.name), [stats, special ? '' : `Niv. ${obj.minLevel}`, `${RARITY_LABEL[offer.rarity] || ''} • ${offer.price} pièces d'or`], escapeHtml(obj.description || ''))
+    });
 }
 
 function sellRow(entry) {
     const obj = entry.obj;
     const color = getRarityColor(entry.rarity);
     const icon = entry.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(entry.rarity);
-    const stats = entry.kind === 'stuff' ? `${STUFF_SLOT_LABELS[obj.slot]} • ${describeStuff(obj)}` : entry.kind === 'weapon' ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}` : (obj.type === 'shield' ? `Déf. +${obj.defense} %` : obj.type === 'artifact' ? 'Relique' : 'Objet');
-    return `
-        <div class="weapon-item shop-weapon merchant-offer${entry.locked ? ' is-locked' : ''}" style="border-left:3px solid ${color}">
-            <span class="weapon-icon">${icon}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${escapeHtml(obj.name)} <em class="merchant-rarity" style="color:${color}">${RARITY_LABEL[entry.rarity] || ''}</em></span>
-                <span class="weapon-stats">${stats} • Niv. ${obj.minLevel}</span>
-                ${compareButtonHtml(entry.kind === 'weapon' ? 'weapon' : entry.kind === 'stuff' ? 'stuff' : 'item', obj.id)}
-            </div>
-            <div class="shop-weapon-right">
-                <span class="shop-price-tag">+${entry.price} ${svgIcon('coin')}</span>
-                <button type="button" class="weapon-action" data-sell="${entry.key}" ${entry.locked ? 'disabled' : ''}>${entry.locked ? escapeHtml(entry.locked) : 'Vendre'}</button>
-            </div>
-        </div>`;
+    const kind = entry.kind === 'weapon' ? 'weapon' : entry.kind === 'stuff' ? 'stuff' : 'item';
+    const stats = entry.kind === 'stuff' ? `${STUFF_SLOT_LABELS[obj.slot]} • ${describeStuff(obj)}` : entry.kind === 'weapon' ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}` : (obj.type === 'shield' ? `Déf. +${obj.defense}` : obj.type === 'artifact' ? 'Relique' : 'Objet');
+    return rowCardHtml({
+        key: `sell:${entry.key}`, cls: `merchant-offer${entry.locked ? ' is-locked' : ''}`, border: color,
+        name: `${icon} ${escapeHtml(obj.name)}`,
+        badges: entry.rarity === 'rare' || entry.rarity === 'legendary' ? badgeHtml(RARITY_LABEL[entry.rarity]) : '',   // communs et peu communs : la couleur du liseré suffit
+        sub: `<span class="rc-stats">${stats}</span>`,
+        primary: `<button type="button" class="rc-btn rc-buy" data-sell="${entry.key}" ${entry.locked ? 'disabled' : ''} title="${entry.locked ? escapeHtml(entry.locked) : 'Vendre'}">${entry.locked ? escapeHtml(entry.locked) : `+${entry.price} ${svgIcon('coin')}`}</button>`,
+        more: compareButtonHtml(kind, obj.id),
+        tip: cardTipHtml(escapeHtml(obj.name), [stats, `Niv. ${obj.minLevel}`, `Rachat : ${entry.price} pièces d'or`], escapeHtml(obj.description || ''))
+    });
 }
 
 // Comparaison avec la pièce équipée : stats globales avant → après (vert = mieux, rouge = moins bien).
@@ -128,6 +128,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             ${surplusPopup(pending)}
             ${entries.length ? entries.map(sellRow).join('') : '<p class="shop-empty">Vous n\'avez rien à vendre.</p>'}
             <button type="button" class="primary merchant-close">Fermer</button>`;
+        bindCardTips(card);
     };
     const draw = (note = '') => {
         if (mode === 'sell') { drawSell(note); return; }
@@ -147,6 +148,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             ${previewPanel(offers.find(o => o.key === previewKey))}
             ${sections || '<p class="shop-empty">Le marchand a tout vendu.</p>'}
             <button type="button" class="primary merchant-close">Fermer</button>`;
+        bindCardTips(card);
     };
     card.onclick = ev => {
         if (ev.target.closest('.merchant-close')) { hooks.close?.(); return; }

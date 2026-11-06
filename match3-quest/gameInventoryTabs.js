@@ -2,7 +2,7 @@
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
-import { compareButtonHtml, deltaBadgesHtml, gearDeltasHtml } from "./compareView.js";
+import { compareButtonHtml, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { getRarityIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
@@ -164,10 +164,7 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     const locked = player.level < weapon.minLevel;
     const bonuses = describeStatBonuses(weapon);
     // Écarts avec la main droite et, pour une arme à une main, avec ce qui est en main gauche (arme, bouclier ou rien).
-    const handDeltas = (label, title, ref) => { const d = hand ? '' : gearDeltasHtml(weapon, ref); return d ? `<span class="card-deltas" title="${title}"><span class="rc-hand">${label}</span>${d}</span>` : ''; };
-    const leftRef = player.equipment?.leftHand || null;
-    const deltas = hand ? '' : handDeltas('Droite', "Par rapport à l'arme en main droite", right)
-        + (weapon.twoHanded || right?.twoHanded ? '' : handDeltas('Gauche', 'Par rapport à ce qui est en main gauche', leftRef));
+    const deltas = hand ? '' : equipDeltaGroupsHtml(player, 'weapon', weapon);
     const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span>`;
     const tip = cardTipHtml(escapeHtml(weapon.name), [
         `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}`,
@@ -268,8 +265,7 @@ function renderGearList(container, kind){
     const section = document.createElement('div');
     section.innerHTML = '<h3 class="shop-section-title">Boucliers</h3>';
     // Écarts d'un bouclier du sac avec celui qui est porté (défense, attaque, absorption).
-    const leftRef = player.equipment?.leftHand || null;   // bouclier porté, ou arme tenue en main gauche, ou rien
-    const deltas = it => gearDeltasHtml(it, leftRef);
+    const deltas = it => equipDeltaGroupsHtml(player, 'item', it);   // vs ce qui est en main gauche (bouclier, arme ou rien)
     const row = (it, { current, locked, label, onclick, title, sellTag, count = 1 }) => {
         const d = current ? '' : deltas(it);
         const tip = cardTipHtml(escapeHtml(it.name), [escapeHtml(shieldStats(it))], escapeHtml(it.description || ''));
@@ -280,7 +276,7 @@ function renderGearList(container, kind){
             border: getRarityColor(it.rarity),
             name: `${svgIcon('shield')} ${escapeHtml(it.name)}`,
             badges: (current ? badgeHtml('Gauche', 'rc-badge-on') : '') + (count > 1 ? badgeHtml(`×${count}`) : ''),
-            sub: (d ? `<span class="card-deltas" title="Par rapport à ce qui est en main gauche">${d}</span>` : '') + `<span class="rc-stats">${it.defense ? `Déf +${it.defense}` : ''}${it.atkBonus ? ` Atk +${it.atkBonus}` : ''}${it.absorbDamage ? ` Abs. ${it.absorbDamage}` : ''}</span>`,
+            sub: d || `<span class="rc-stats">${it.defense ? `Déf +${it.defense}` : ''}${it.atkBonus ? ` Atk +${it.atkBonus}` : ''}${it.absorbDamage ? ` Abs. ${it.absorbDamage}` : ''}</span>`,
             primary,
             more: compareButtonHtml('item', it.id) + (sellTag ? sellTagButton(it, count) : ''),
             tip

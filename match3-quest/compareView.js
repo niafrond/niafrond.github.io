@@ -3,6 +3,7 @@
 
 import { MANA_HEX } from './icons.js';
 import { MANA_COLORS, MANA_LABELS } from './manaGear.js';
+import { getStuffById } from './stuff.js';
 
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff', item: 'objet' };
@@ -105,6 +106,26 @@ export function gearDeltasHtml(candidate, current) {
     if (!candidate || (current && candidate.id === current.id)) return '';
     const fields = GEAR_FIELDS.filter(([k]) => k !== 'actionPoints' || (isWeaponLike(candidate) && isWeaponLike(current)));
     return deltaBadgesHtml(gearNumbers(candidate), { ...gearNumbers(current), id: current?.id ?? '__vide__' }, fields);
+}
+
+// Écarts d'une pièce avec ce que le héros porte à l'emplacement visé, prêts à afficher dans une carte compacte :
+// arme à une main : groupes « Droite » (main droite) et « Gauche » (arme, bouclier ou rien en main gauche) ; arme à deux mains : « Droite » ;
+// bouclier : ce qui occupe la main gauche ; stuff : la pièce portée au même emplacement. Chaîne vide si rien ne change.
+export function equipDeltaGroupsHtml(hero, kind, obj) {
+    if (!obj) return '';
+    const group = (label, title, ref) => {
+        const d = gearDeltasHtml(obj, ref);
+        return d ? `<span class="card-deltas" title="${title}">${label ? `<span class="rc-hand">${label}</span>` : ''}${d}</span>` : '';
+    };
+    if (kind === 'weapon') {
+        const right = hero.equippedWeapon || hero.equipment?.rightHand || null;
+        const left = hero.equipment?.leftHand || null;
+        return group('Droite', "Par rapport à l'arme en main droite", right)
+            + (obj.twoHanded || right?.twoHanded ? '' : group('Gauche', 'Par rapport à ce qui est en main gauche', left));
+    }
+    if (kind === 'stuff') return group('', 'Par rapport à la pièce portée (ou à un emplacement vide)', getStuffById(hero.stuff?.[obj.slot]));
+    if (obj.type === 'shield') return group('', 'Par rapport à ce qui est en main gauche', hero.equipment?.leftHand || null);
+    return '';
 }
 
 let selection = null;   // { kind, id } : premier élément choisi
