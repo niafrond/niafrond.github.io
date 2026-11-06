@@ -2,6 +2,7 @@
 // Module d'affichage pur : les objets sont retrouvés par les résolveurs passés à initCompare (aucune dépendance à game.js).
 
 import { MANA_HEX } from './icons.js';
+import { MANA_COLORS, MANA_LABELS } from './manaGear.js';
 
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 const KIND_LABEL = { spell: 'sort', weapon: 'arme', stuff: 'stuff', item: 'objet' };
@@ -72,6 +73,38 @@ export function deltaBadgesHtml(candidate, current, fields) {
         const good = better === 'high' ? d > 0 : d < 0;
         return `<span class="delta ${good ? 'delta-up' : 'delta-down'}">${d > 0 ? '+' : '−'}${Math.abs(d)} ${esc(label)}</span>`;
     }).join('');
+}
+
+// ── Écarts d'un équipement avec ce qui occupe l'emplacement visé (arme, bouclier ou stuff) ──
+// Un bouclier, une arme ou une pièce de stuff sont ramenés aux mêmes chiffres : on peut donc comparer une arme à ce qui est en main
+// gauche (arme ou bouclier), un bouclier à une arme tenue en main gauche, ou une pièce à un emplacement vide (le gain complet s'affiche).
+const GEAR_FIELDS = [
+    ['damage', 'Dégâts'], ['actionPoints', 'PA', 'low'], ['atkBonus', 'Atk'], ['defBonus', 'Déf'], ['absorbDamage', 'Abs.'],
+    ['maxHp', 'PV max'], ['poisonResist', '% poison'],
+    ...MANA_COLORS.map(c => [`mana_${c}`, `Qì ${MANA_LABELS[c]}`])
+];
+const isWeaponLike = o => !!o && o.type !== 'shield' && o.type !== 'stuff' && o.damage !== undefined;
+
+// Chiffres comparables d'un équipement (le bouclier donne sa défense en `defBonus`).
+export function gearNumbers(o) {
+    const n = { id: o?.id ?? null };
+    if (!o) return n;
+    n.damage = o.damage || 0;
+    n.actionPoints = o.actionPoints || 0;
+    n.atkBonus = o.atkBonus || 0;
+    n.defBonus = (o.type === 'shield' ? o.defense : o.defBonus) || 0;
+    n.absorbDamage = o.absorbDamage || 0;
+    n.maxHp = o.maxHp || 0;
+    n.poisonResist = o.poisonResist || 0;
+    MANA_COLORS.forEach(c => { n[`mana_${c}`] = Math.floor(o.manaMax?.[c] || 0); });
+    return n;
+}
+
+// Pastilles d'écart de `candidate` par rapport à `current` (null = emplacement vide : le gain complet). Les PA ne se comparent qu'entre deux armes.
+export function gearDeltasHtml(candidate, current) {
+    if (!candidate || (current && candidate.id === current.id)) return '';
+    const fields = GEAR_FIELDS.filter(([k]) => k !== 'actionPoints' || (isWeaponLike(candidate) && isWeaponLike(current)));
+    return deltaBadgesHtml(gearNumbers(candidate), { ...gearNumbers(current), id: current?.id ?? '__vide__' }, fields);
 }
 
 let selection = null;   // { kind, id } : premier élément choisi

@@ -2,7 +2,7 @@
 
 import { player, gameState, log, saveUpdate, updateStats } from './game.js';
 import { getRarityColor } from './items.js';
-import { compareButtonHtml, deltaBadgesHtml } from './compareView.js';
+import { compareButtonHtml, gearDeltasHtml } from './compareView.js';
 import { rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, escapeHtml as esc, shortText } from './gameCardUi.js';
 import { bindCardTips } from './gameTooltips.js';
 import {
@@ -13,8 +13,6 @@ import {
 const escapeHtml = esc;
 
 const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
-
-const STUFF_DELTA_FIELDS = [['atkBonus', 'Atk'], ['defBonus', 'Déf'], ['maxHp', 'PV max'], ['poisonResist', '% poison']];
 
 // Infobulle (appui long / survol) : emplacement, rareté, bonus complets, protection de biome, description.
 const stuffTip = stuff => cardTipHtml(escapeHtml(stuff.name), [
@@ -42,11 +40,11 @@ function pieceRow(stuff) {
     const locked = player.level < stuff.minLevel;
     const lockedInCombat = gameState.combatState === 'active';
     const worn = getStuffById(player.stuff[stuff.slot]);
-    const deltas = locked ? '' : deltaBadgesHtml(stuff, worn, STUFF_DELTA_FIELDS);
+    const deltas = gearDeltasHtml(stuff, worn);   // aussi pour une pièce verrouillée (pour savoir si elle vaudra le coup) ; emplacement vide : gain complet
     return rowCardHtml({
         key: `st:${stuff.id}`, cls: locked ? 'is-locked' : '', border: getRarityColor(stuff.rarity),
         name: escapeHtml(stuff.name),
-        sub: `<span class="rc-chip">${escapeHtml(STUFF_SLOT_LABELS[stuff.slot])}</span>` + (deltas ? `<span class="card-deltas" title="Par rapport à la pièce portée">${deltas}</span>` : `<span class="rc-stats">${escapeHtml(describeStuff(stuff))}</span>`),
+        sub: deltas ? `<span class="card-deltas" title="Par rapport à la pièce portée (ou à un emplacement vide)">${deltas}</span>` : `<span class="rc-stats">${escapeHtml(describeStuff(stuff))}</span>`,
         primary: `<button type="button" class="rc-btn" data-equip="${stuff.id}" ${locked || lockedInCombat ? 'disabled' : ''}>${locked ? `Niv. ${stuff.minLevel}` : worn ? 'Remplacer' : 'Équiper'}</button>`,
         more: compareButtonHtml('stuff', stuff.id), tip: stuffTip(stuff)
     });
@@ -73,7 +71,7 @@ export function renderStuffTab() {
     root.innerHTML = `
         <div class="stuff-summary">${summary ? `Bonus portés : ${escapeHtml(summary)}` : '<em>Aucun bonus porté.</em>'}</div>
         <h3>Porté</h3>${STUFF_SLOTS.map(wornRow).join('')}
-        <h3>Collection${spare.length ? ` (${spare.length})` : ''}</h3>${spare.length ? spare.map(pieceRow).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}${relicsHtml()}`;
+        <h3>Collection${spare.length ? ` (${spare.length})` : ''}</h3>${spare.length ? spare.map((s, i) => (i === 0 || spare[i - 1].slot !== s.slot ? `<div class="rc-group">${escapeHtml(STUFF_SLOT_LABELS[s.slot])}</div>` : '') + pieceRow(s)).join('') : '<p class="shop-empty">Rien d\'autre. Achetez-en chez les marchands, trouvez-en dans les coffres ou en butin, ou gagnez un collier de biome en finissant sa quête.</p>'}${relicsHtml()}`;
     bindCardTips(root);
 }
 
@@ -82,12 +80,15 @@ export function renderStuffTab() {
 function relicsHtml() {
     const relics = relicsOf(player);
     if (!relics.length) return '';
-    const rows = relics.map(r => rowCardHtml({
-        key: `rel:${r.id || r.name}`, border: getRarityColor(r.rarity), name: escapeHtml(r.name), badges: badgeHtml('Relique'),
+    // Reliques identiques : une seule ligne avec une pastille ×N.
+    const groups = new Map();
+    relics.forEach(r => { const k = r.id || r.name; groups.set(k, { r, count: (groups.get(k)?.count || 0) + 1 }); });
+    const rows = [...groups.values()].map(({ r, count }) => rowCardHtml({
+        key: `rel:${r.id || r.name}`, border: getRarityColor(r.rarity), name: escapeHtml(r.name), badges: badgeHtml('Relique') + (count > 1 ? badgeHtml(`×${count}`) : ''),
         sub: `<span class="rc-short">${escapeHtml(shortText(r.description))}</span>`,
-        tip: cardTipHtml(escapeHtml(r.name), [escapeHtml(RARITY_LABEL[r.rarity] || '')], escapeHtml(r.description || ''))
+        tip: cardTipHtml(escapeHtml(r.name), [escapeHtml(RARITY_LABEL[r.rarity] || ''), count > 1 ? `Exemplaires : ${count}` : ''], escapeHtml(r.description || ''))
     })).join('');
-    return `<h3>Reliques (${relics.length})</h3>${rows}`;
+    return `<h3>Reliques (${groups.size})</h3>${rows}`;
 }
 
 // Onglet « Spéciaux » : objets de quête rangés dans exploration.questItems (jamais dans le sac, donc invendables).

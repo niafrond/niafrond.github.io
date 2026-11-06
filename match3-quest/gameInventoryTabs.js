@@ -2,7 +2,7 @@
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
-import { compareButtonHtml, deltaBadgesHtml } from "./compareView.js";
+import { compareButtonHtml, deltaBadgesHtml, gearDeltasHtml } from "./compareView.js";
 import { getRarityIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
@@ -155,22 +155,25 @@ export function createWeaponButton(){
     updateWeaponsTab();
 }
 
-const WEAPON_DELTA_FIELDS = [['damage', 'Dégâts'], ['actionPoints', 'PA', 'low'], ['atkBonus', 'Atk'], ['defBonus', 'Déf']];
-const SHIELD_DELTA_FIELDS = [['defense', 'Déf'], ['atkBonus', 'Atk'], ['absorbDamage', 'Abs.']];
 
 // hand : 'right' | 'left' pour une arme en main (bouton « Retirer »), absent pour une arme du sac.
 // Carte compacte : nom, puis les écarts avec l'arme en main droite (ce qui compte pour choisir) ou, à défaut, dégâts et PA.
 // Atk/Déf, biome et description sont dans l'infobulle (appui long) ; « Main gauche », « Comparer » et « À vendre » dans le menu « ⋯ ».
-function weaponCardHtml(weapon, { hand } = {}){
+function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     const right = player.equippedWeapon;
     const locked = player.level < weapon.minLevel;
     const bonuses = describeStatBonuses(weapon);
-    const deltas = hand || locked ? '' : deltaBadgesHtml(weapon, right, WEAPON_DELTA_FIELDS);
+    // Écarts avec la main droite et, pour une arme à une main, avec ce qui est en main gauche (arme, bouclier ou rien).
+    const handDeltas = (label, title, ref) => { const d = hand ? '' : gearDeltasHtml(weapon, ref); return d ? `<span class="card-deltas" title="${title}"><span class="rc-hand">${label}</span>${d}</span>` : ''; };
+    const leftRef = player.equipment?.leftHand || null;
+    const deltas = hand ? '' : handDeltas('Droite', "Par rapport à l'arme en main droite", right)
+        + (weapon.twoHanded || right?.twoHanded ? '' : handDeltas('Gauche', 'Par rapport à ce qui est en main gauche', leftRef));
     const stats = `<span class="rc-stats">${weapon.damage} ${svgIcon('skull')} · ${weapon.actionPoints} ${svgIcon('arrow')}</span>`;
     const tip = cardTipHtml(escapeHtml(weapon.name), [
         `${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.twoHanded ? ' • Deux mains' : ''}`,
         bonuses ? escapeHtml(bonuses) : '',
-        weapon.biome ? `Bonus de dégâts : ${escapeHtml(BIOME_LABELS[weapon.biome])}` : ''
+        weapon.biome ? `Bonus de dégâts : ${escapeHtml(BIOME_LABELS[weapon.biome])}` : '',
+        count > 1 ? `Exemplaires : ${count}` : ''
     ], escapeHtml(weapon.description || ''));
     let primary, more = '';
     if(hand){
@@ -188,14 +191,14 @@ function weaponCardHtml(weapon, { hand } = {}){
         }
         more += compareButtonHtml('weapon', weapon.id) + weaponSellTagButton(weapon);
     }
-    const badges = (hand ? badgeHtml(hand === 'left' ? 'Gauche' : 'Droite', 'rc-badge-on') : '') + (weapon.twoHanded ? badgeHtml('2 mains') : '');
+    const badges = (hand ? badgeHtml(hand === 'left' ? 'Gauche' : 'Droite', 'rc-badge-on') : '') + (weapon.twoHanded ? badgeHtml('2 mains') : '') + (count > 1 ? badgeHtml(`×${count}`) : '');
     return rowCardHtml({
         key: `w:${weapon.id}${hand ? ':' + hand : ''}`,
         cls: `${hand ? 'rc-equipped' : ''}${locked && !hand ? ' is-locked' : ''}`,
         border: getRarityColor(weapon.rarity),
         name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
         badges,
-        sub: deltas ? `<span class="card-deltas" title="Par rapport à l'arme en main droite">${deltas}</span>` : stats,   // écarts d'abord ; les chiffres bruts sont dans l'infobulle
+        sub: deltas || stats,   // écarts d'abord ; les chiffres bruts sont dans l'infobulle
         primary, more, tip
     });
 }
@@ -234,8 +237,11 @@ export function updateWeaponsTab(){
     } else {
         const usable = spare.filter(w => player.level >= w.minLevel);
         const locked = spare.filter(w => player.level < w.minLevel);
-        availableList.innerHTML = usable.map(w => weaponCardHtml(w)).join('')
-            + (locked.length ? `<details class="locked-group"${lockedWasOpen ? ' open' : ''}><summary>Niveau trop bas (${locked.length})</summary>${locked.map(w => weaponCardHtml(w)).join('')}</details>` : '');
+        // Exemplaires identiques : une seule carte avec une pastille ×N.
+        const grouped = list => { const m = new Map(); list.forEach(w => m.set(w.id, m.has(w.id) ? { w: m.get(w.id).w, count: m.get(w.id).count + 1 } : { w, count: 1 })); return [...m.values()]; };
+        const card = ({ w, count }) => weaponCardHtml(w, { count });
+        availableList.innerHTML = grouped(usable).map(card).join('')
+            + (locked.length ? `<details class="locked-group"${lockedWasOpen ? ' open' : ''}><summary>Niveau trop bas (${locked.length})</summary>${grouped(locked).map(card).join('')}</details>` : '');
     }
 
     renderGearList(document.getElementById('shield-list'), 'shield');
@@ -257,14 +263,15 @@ function renderGearList(container, kind){
     const inventory = player.inventory || [];
     const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
     const withShields = kind === 'shield';
-    const shields = withShields ? sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort') : [];
+    const shields = withShields ? groupInventoryEntries(sortedEntries(inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield'), 'items-sort')) : [];
     if(!(withShields && wornShield) && shields.length === 0) return;
     const section = document.createElement('div');
     section.innerHTML = '<h3 class="shop-section-title">Boucliers</h3>';
     // Écarts d'un bouclier du sac avec celui qui est porté (défense, attaque, absorption).
-    const deltas = it => wornShield && it.id !== wornShield.id ? deltaBadgesHtml(it, wornShield, SHIELD_DELTA_FIELDS) : '';
-    const row = (it, { current, locked, label, onclick, title, sellTag }) => {
-        const d = current || locked ? '' : deltas(it);
+    const leftRef = player.equipment?.leftHand || null;   // bouclier porté, ou arme tenue en main gauche, ou rien
+    const deltas = it => gearDeltasHtml(it, leftRef);
+    const row = (it, { current, locked, label, onclick, title, sellTag, count = 1 }) => {
+        const d = current ? '' : deltas(it);
         const tip = cardTipHtml(escapeHtml(it.name), [escapeHtml(shieldStats(it))], escapeHtml(it.description || ''));
         const primary = `<button type="button" class="rc-btn${current ? ' rc-btn-alt' : ''}" ${locked ? 'disabled' : ''}${title ? ` title="${escapeHtml(title)}"` : ''} onclick="${onclick}">${label}</button>`;
         return rowCardHtml({
@@ -272,18 +279,18 @@ function renderGearList(container, kind){
             cls: `${current ? 'rc-equipped' : ''}${locked ? ' is-locked' : ''}`,
             border: getRarityColor(it.rarity),
             name: `${svgIcon('shield')} ${escapeHtml(it.name)}`,
-            badges: current ? badgeHtml('Gauche', 'rc-badge-on') : '',
-            sub: (d ? `<span class="card-deltas" title="Par rapport au bouclier porté">${d}</span>` : '') + `<span class="rc-stats">${it.defense ? `Déf +${it.defense}` : ''}${it.atkBonus ? ` Atk +${it.atkBonus}` : ''}${it.absorbDamage ? ` Abs. ${it.absorbDamage}` : ''}</span>`,
+            badges: (current ? badgeHtml('Gauche', 'rc-badge-on') : '') + (count > 1 ? badgeHtml(`×${count}`) : ''),
+            sub: (d ? `<span class="card-deltas" title="Par rapport à ce qui est en main gauche">${d}</span>` : '') + `<span class="rc-stats">${it.defense ? `Déf +${it.defense}` : ''}${it.atkBonus ? ` Atk +${it.atkBonus}` : ''}${it.absorbDamage ? ` Abs. ${it.absorbDamage}` : ''}</span>`,
             primary,
-            more: compareButtonHtml('item', it.id) + (sellTag ? sellTagButton(it, 1) : ''),
+            more: compareButtonHtml('item', it.id) + (sellTag ? sellTagButton(it, count) : ''),
             tip
         });
     };
     let html = '';
     if(withShields && wornShield) html += row(wornShield, { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
-    shields.forEach(({ it, index }) => {
+    shields.forEach(({ it, index, count }) => {
         const locked = player.level < (it.minLevel || 1);
-        html += row(it, { sellTag: true, locked, label: locked ? `Niv. ${it.minLevel}` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
+        html += row(it, { sellTag: true, count, locked, label: locked ? `Niv. ${it.minLevel}` : 'Équiper', title: !locked && player.equipment?.rightHand?.twoHanded ? `${player.equipment.rightHand.name} (deux mains) sera retirée` : '', onclick: `window.equipGear(${index})` });
     });
     section.insertAdjacentHTML('beforeend', html);
     container.appendChild(section);

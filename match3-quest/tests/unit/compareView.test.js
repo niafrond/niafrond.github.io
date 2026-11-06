@@ -32,3 +32,49 @@ describe('comparaison', () => {
         expect(deltaBadgesHtml({ id: 'd', damage: 5 }, null, fields)).toBe('');
     });
 });
+
+describe('écarts d\'équipement (armes mains droite et gauche, boucliers, stuff)', () => {
+    const arc = { id: 'a', type: 'weapon', damage: 10, actionPoints: 3, atkBonus: 0 };
+    const arc2 = { id: 'b', type: 'weapon', damage: 20, actionPoints: 4, atkBonus: 5 };
+    const bouclier = { id: 's', type: 'shield', defense: 10, absorbDamage: 0 };
+
+    test('arme contre arme : dégâts, PA (moins = mieux) et bonus', async () => {
+        const { gearDeltasHtml } = await import('../../compareView.js');
+        const html = gearDeltasHtml(arc2, arc);
+        expect(html).toContain('delta-up">+10 Dégâts');
+        expect(html).toContain('delta-down">+1 PA');
+        expect(html).toContain('delta-up">+5 Atk');
+    });
+
+    test('arme contre bouclier en main gauche : défense perdue, pas de PA comparés', async () => {
+        const { gearDeltasHtml } = await import('../../compareView.js');
+        const html = gearDeltasHtml(arc2, bouclier);
+        expect(html).toContain('delta-down">−10 Déf');
+        expect(html).toContain('+20 Dégâts');
+        expect(html).not.toContain('PA');
+    });
+
+    test('bouclier contre arme en main gauche, et contre un autre bouclier', async () => {
+        const { gearDeltasHtml } = await import('../../compareView.js');
+        expect(gearDeltasHtml(bouclier, arc2)).toContain('delta-down">−20 Dégâts');
+        expect(gearDeltasHtml({ ...bouclier, id: 's2', defense: 14 }, bouclier)).toContain('delta-up">+4 Déf');
+    });
+
+    test('emplacement vide : le gain complet ; même objet : rien', async () => {
+        const { gearDeltasHtml } = await import('../../compareView.js');
+        const piece = { id: 'p', type: 'stuff', slot: 'ring', defBonus: 3, maxHp: 10, manaMax: { red: 8 } };
+        const html = gearDeltasHtml(piece, null);
+        expect(html).toContain('+3 Déf');
+        expect(html).toContain('+10 PV max');
+        expect(html).toContain('+8 Qì rouge');
+        expect(gearDeltasHtml(piece, piece)).toBe('');
+    });
+
+    test('stuff : qì max et résistance comparés à la pièce portée', async () => {
+        const { gearDeltasHtml } = await import('../../compareView.js');
+        const worn = { id: 'w', type: 'stuff', manaMax: { red: 8 }, poisonResist: 50 };
+        const html = gearDeltasHtml({ id: 'n', type: 'stuff', manaMax: { red: 12 }, poisonResist: 20 }, worn);
+        expect(html).toContain('delta-up">+4 Qì rouge');
+        expect(html).toContain('delta-down">−30 % poison');
+    });
+});
