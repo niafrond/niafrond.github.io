@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { rollOverleveledLoot, overleveledLootTier } from '../../victoryLoot.js';
+import { rollOverleveledLoot, effectiveDropChance, REGULAR_DROP_FACTOR, overleveledLootTier } from '../../victoryLoot.js';
 
 const RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
 const owner = level => ({ level, weapons: [], inventory: [] });
@@ -34,5 +34,25 @@ describe('butin d\'un ennemi de niveau supérieur', () => {
             const ids = loot.filter(e => e.kind === 'weapon' || e.item.type === 'artifact').map(e => (e.item || e.weapon).id);
             expect(new Set(ids).size).toBe(ids.length);
         }
+    });
+});
+
+describe('butin d\'une victoire : ne rien trouver est normal', () => {
+    test('un ennemi ordinaire laisse un objet ou une arme moins d\'une fois sur deux, quel que soit son profil', () => {
+        [0.4, 0.55, 0.6, 0.75, 0.8].forEach(p => {
+            const c = effectiveDropChance({ dropProfile: { dropChance: p } });
+            expect(c).toBeCloseTo(p * REGULAR_DROP_FACTOR, 5);
+            expect(c).toBeLessThanOrEqual(0.5);
+        });
+        expect(effectiveDropChance({})).toBeCloseTo(0.6 * REGULAR_DROP_FACTOR, 5);   // profil absent : 0,6 par défaut
+    });
+
+    test('les boss gardent leur taux de butin', () => {
+        expect(effectiveDropChance({ isBoss: true, dropProfile: { dropChance: 0.8 } })).toBe(0.8);
+    });
+
+    test('le taux reste une probabilité', () => {
+        expect(effectiveDropChance({ isBoss: true, dropProfile: { dropChance: 3 } })).toBe(1);
+        expect(effectiveDropChance({ dropProfile: { dropChance: -1 } })).toBe(0);
     });
 });
