@@ -29,6 +29,9 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `cinematicsSun.js` — Chute d'un soleil (animation plein écran). Extrait de cinematics.js.
 - `cinematicsTitle.js` — Écran de démarrage (launcher) : boucle pixel art de Hou Yi. Extrait de cinematics.js.
 - `classSpellEffects.js` — Gestion des effets spéciaux des sorts de classe
+- `classSpellsAdvanced.js` — Sorts avancés multi-qì (balayage de lignes, couleur, pluie d étoiles, tempête, rage) et ultimes. Extrait de classSpellEffects.js.
+- `classSpellsMage.js` — Sorts de classe : mage, ensorceleur et assassin (frappe, sphères, malédictions, glace, poison…). Extrait de classSpellEffects.js.
+- `classSpellsWarrior.js` — Sorts de classe : bonus de caractéristiques, guerrier, templier, barbare (renforts, barrière, enragement, hache…). Extrait de classSpellEffe
 - `classes.js` — Système de classes de personnages avec sorts spécialisés
 - `combatFlow.js` — (sans description)
 - `combatStats.js` — Attaque / Défense : ce sont des probabilités, pas des dégâts.
@@ -113,6 +116,9 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `test-localstorage.js` — Test du système de localStorage pour Match3-Quest
 - `tileBitmaps.js` — Tuiles du plateau en bitmap. Chaque tuile est un <div> dont le fond est un SVG (≈ 40 primitives vectorielles : cercles tracés, dégradé radia
 - `tilePainter.js` — Rendu « tuiles à la Pokémon (GBA) » de l'exploration : herbe en nappes de tons, chemins et étangs aux coins arrondis et aux
+- `tilePainterBuildings.js` — Bâtiments de la vue d exploration (maisons, toits, portes). Extrait de tilePainter.js.
+- `tilePainterDecor.js` — Décors de bordure de la vue d exploration : pins, arbres de bordure, rochers, murs. Extrait de tilePainter.js.
+- `tilePainterTerrain.js` — Détails de sol de la vue d exploration : terre, eau, planches, tapis, dalles, détails propres à chaque région. Extrait de tilePainter.js.
 - `tutorial.js` — (sans description)
 - `ultimateCinematics.js` — Cinématiques plein écran des ultimes, façon invocations de FF9 : 4 plans portrait (incantation, apparition de l'entité,
 - `ultimates.js` — Sorts ultimes (« rage ») : une jauge se charge quand le joueur subit des dégâts ; pleine, elle permet de lancer un
@@ -156,3 +162,7 @@ Les tests qui lisent le source utilisent `tests/unit/fixtures/explorationViewSou
 
 ## Feuilles de style (chargées dans cet ordre, puis `retro.css`)
 `style.css` (combat, plateau, sorts, armes) → `style-exploration.css` (exploration, carnet, carte du monde) → `style-inventory.css` (inventaire, niveau) → `style-tutorial.css` (tutoriel, portrait/paysage) → `style-cinematics.css` (cinématiques, chargement, titre, fin) → `style-hud.css` (HUD, quêtes, marchands, effets, ultimes). Rechercher une règle avec `Grep` sur `style*.css`.
+
+## Sorts de classe et dessin des tuiles
+- `classSpellEffects.js` : dispatcher `applyClassSpellEffect` + aides ; sorts dans `classSpellsMage.js`, `classSpellsWarrior.js`, `classSpellsAdvanced.js`.
+- `tilePainter.js` : aides de dessin + sol ; `tilePainterTerrain.js` (détails de sol), `tilePainterDecor.js` (arbres, rochers, murs), `tilePainterBuildings.js` (maisons), ré-exportés par `tilePainter.js`.

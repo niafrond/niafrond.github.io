@@ -106,7 +106,7 @@ describe('sorts', () => {
     });
 
     test('sorts avancés : 3 à 5 couleurs, effet implémenté, budget de qì respecté', () => {
-        const effects = readFileSync(join(root, 'classSpellEffects.js'), 'utf8');
+        const effects = ['classSpellEffects.js', 'classSpellsMage.js', 'classSpellsWarrior.js', 'classSpellsAdvanced.js'].map(f => readFileSync(join(root, f), 'utf8')).join('\n');   // dispatcher + modules extraits
         const advanced = spells.filter(s => s.type === 'advanced');
         expect(advanced.length).toBeGreaterThanOrEqual(6);
         advanced.forEach(s => {
