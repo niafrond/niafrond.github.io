@@ -73,7 +73,7 @@ const MAX_TEXT_LENGTH = 200;
 const MAX_ID_LENGTH = 100;
 const MAX_LIST_LENGTH = 2000;
 const MAX_INVENTORY = 500;
-const MAX_STAT = 1e9;
+const MAX_STAT = 1e15;   // large, mais sûr pour les entiers JavaScript
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /** Reviver JSON : écarte les clés qui permettraient une pollution de prototype. */
@@ -363,9 +363,15 @@ function sanitizeImportedPlayer(player) {
     assign(player, 'class', cleanText(player.class, MAX_ID_LENGTH));
     player.level = cleanNumber(player.level, 1, MAX_LEVEL, true);
 
-    for (const key of ['xp', 'xpToNextLevel', 'unspentLevelPoints', 'growthLevel', 'hp', 'maxHp', 'maxMana', 'attack', 'defense', 'gold', 'bossLossStreak', 'activeInventoryIndex']) {
+    for (const key of ['xp', 'xpToNextLevel', 'unspentLevelPoints', 'growthLevel', 'hp', 'maxHp', 'maxMana', 'attack', 'defense', 'gold', 'activeInventoryIndex']) {
         assign(player, key, cleanNumber(player[key], 0, MAX_STAT, true));
     }
+    // Série de défaites contre un boss : { id, count }
+    if (isPlainObject(player.bossLossStreak)) {
+        const id = cleanText(player.bossLossStreak.id, MAX_ID_LENGTH);
+        const count = cleanNumber(player.bossLossStreak.count, 0, 1000, true);
+        if (id && count !== undefined) player.bossLossStreak = { id, count }; else delete player.bossLossStreak;
+    } else delete player.bossLossStreak;
     if (player.maxHp !== undefined && player.hp !== undefined) player.hp = Math.min(player.hp, player.maxHp);
 
     if (isPlainObject(player.attributes)) {

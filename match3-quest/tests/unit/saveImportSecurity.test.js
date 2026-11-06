@@ -48,9 +48,16 @@ describe('import de sauvegarde : sécurité', () => {
         const res = await importSaveFromFile(file(save({ level: 5, hp: 5000, maxHp: 100, gold: 1e30, attack: -50, attributes: { force: 1e9, agilite: -3 } })));
         expect(res.success).toBe(true);
         expect(res.player.hp).toBe(100);
-        expect(res.player.gold).toBeLessThanOrEqual(1e9);
+        expect(res.player.gold).toBeLessThanOrEqual(1e15);
         expect(res.player.attack).toBe(0);
         expect(res.player.attributes).toEqual({ force: 1000, agilite: 0 });
+    });
+
+    it('conserve la série de défaites de boss et rejette une forme invalide', async () => {
+        const ok = await importSaveFromFile(file(save({ bossLossStreak: { id: 'sun_7', count: 3 } })));
+        expect(ok.player.bossLossStreak).toEqual({ id: 'sun_7', count: 3 });
+        const bad = await importSaveFromFile(file(save({ bossLossStreak: 'beaucoup' })));
+        expect(bad.player.bossLossStreak).toBeUndefined();
     });
 
     it('borne le niveau au maximum du jeu', async () => {
