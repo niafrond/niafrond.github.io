@@ -1,3 +1,10 @@
+## [2.195.0](https://github.com/niafrond/niafrond.github.io/compare/v2.194.0...v2.195.0) (2026-11-06)
+
+### Features
+
+* **match3-quest:** ajouter un mode daltonien ([95f9ab3](https://github.com/niafrond/niafrond.github.io/commit/95f9ab3677ddb72d532bb7ed21fcb347654ddaf0))
+* **match3-quest:** améliorer l'accessibilité mobile et le rappel de pause ([26f6105](https://github.com/niafrond/niafrond.github.io/commit/26f6105e7bb8553b167b923400521ccbbb8aef15))
+
 ## [2.194.0](https://github.com/niafrond/niafrond.github.io/compare/v2.193.0...v2.194.0) (2026-11-06)
 
 ### Features
