@@ -8,22 +8,27 @@
 //  - shapes     : symboles en plus des couleurs (tuiles, qì, camps) pour ne pas dépendre de la seule couleur ;
 //  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
 //  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
+//    Tant que le joueur n'a pas choisi lui-même « Animations », le réglage « réduire les animations » du système (prefers-reduced-motion) s'applique ;
+//    son choix explicite, dans un sens ou dans l'autre, prime ensuite.
+// Confort :
+//  - breakReminder : rappel de pause bienveillant (breakReminder.js), désactivable.
 // Difficulté des ennemis :
 //  - aiDifficulty : 'auto' | 'easy' | 'normal' | 'hard' | 'expert' (enemyAI.js). 'auto' (défaut) adapte la qualité des décisions au
 //    niveau de l'ennemi, de façon bornée ; un palier fixe est appliqué tel quel à chaque combat (jamais de bonus de statistiques).
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, animations: true, reduceFx: false, aiDifficulty: 'auto' };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, animations: true, reduceFx: false, breakReminder: true, aiDifficulty: 'auto' };
 const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
 let current = { ...OPTION_DEFAULTS };
+const explicit = new Set();   // options que le joueur a réellement choisies (stockées)
 
 function load() {
     try {
         const raw = JSON.parse(localStorage.getItem(OPTIONS_STORAGE_KEY) || '{}');
-        Object.keys(OPTION_DEFAULTS).forEach(k => { if (isValid(k, raw[k])) current[k] = raw[k]; });
+        Object.keys(OPTION_DEFAULTS).forEach(k => { if (isValid(k, raw[k])) { current[k] = raw[k]; explicit.add(k); } });
     } catch (e) { /* stockage indisponible : valeurs par défaut */ }
 }
 
@@ -37,6 +42,7 @@ export function getOption(key) { return current[key]; }
 export function setOption(key, value) {
     if (!(key in OPTION_DEFAULTS) || !isValid(key, value)) return false;
     current[key] = value;
+    explicit.add(key);
     try { localStorage.setItem(OPTIONS_STORAGE_KEY, JSON.stringify(current)); } catch (e) { /* ignoré */ }
     applyOptions();
     return true;
@@ -56,8 +62,17 @@ export function effectsLevel() {
     return 'normal';
 }
 
+function osReducesMotion() {
+    try { return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; }
+}
+
+// Animations réellement actives : choix explicite du joueur, sinon réglage du système (prefers-reduced-motion).
+export function animationsEnabled() {
+    return explicit.has('animations') ? current.animations : !osReducesMotion();
+}
+
 // Multiplicateur appliqué aux durées d'animation et aux pauses (1 = normal).
-export function animationFactor() { return (SPEED_FACTOR[current.speed] || 1) * (current.animations ? 1 : 0.3); }
+export function animationFactor() { return (SPEED_FACTOR[current.speed] || 1) * (animationsEnabled() ? 1 : 0.3); }
 
 // Nombre maximal de particules de qì par match, selon le niveau d'effets.
 export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
@@ -121,7 +136,7 @@ export function applyOptions() {
     b.toggle('text-large', current.textSize === 'large');
     b.toggle('text-xlarge', current.textSize === 'xlarge');
     b.toggle('a11y-shapes', current.shapes);
-    b.toggle('no-anim', !current.animations);
+    b.toggle('no-anim', !animationsEnabled());
     b.toggle('fx-reduced', current.reduceFx);
 }
 

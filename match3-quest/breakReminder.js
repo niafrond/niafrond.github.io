@@ -20,8 +20,8 @@ const HOOKS = [
     d => `Ça fait ${d} que tu joues !`,
     d => `${d} de jeu, déjà !`,
     d => `Tu es là depuis ${d}.`,
-    d => `${d} de jeu non-stop ?!`,
-    d => `Nouveau record débloqué : ${d} de jeu !`,
+    d => `${d} de jeu, c’est déjà pas mal !`,
+    d => `Déjà ${d} de jeu, bravo !`,
     d => `Ça fait ${d} que tu explores notre univers !`,
 ];
 
@@ -33,9 +33,9 @@ const BODIES = [
     'Tout va bien de ton côté ? Nous, ça va, mais tes jambes aimeraient peut-être te revoir !',
     'Récompense : le droit de faire une pause bien méritée.',
     'Prends quelques minutes pour toi : bois, respire, bouge un peu.',
-    'Le comité officiel de tes jambes réclame une réunion d’urgence. Motif : immobilité prolongée. Décision : petite balade recommandée.',
+    'Le comité officiel de tes jambes propose une petite balade. Motion adoptée à l’unanimité !',
     'C’est chouette de t’avoir avec nous, mais n’oublie pas le monde extérieur : il a aussi quelques quêtes secondaires intéressantes.',
-    'Batterie du joueur : niveau critique. Pense à recharger ton énergie avec une pause, un peu d’eau et quelques pas.',
+    'Pense à recharger ton énergie avec une pause, un peu d’eau et quelques pas.',
     'Le temps file quand on s’amuse. Va prendre l’air quelques instants.',
     'Message officiel du ministère des pauses. Une pause est fortement conseillée. Aucun contrôle surprise à la sortie : prends soin de toi, citoyen !',
 ];
@@ -85,27 +85,34 @@ export function showBreakReminder(seconds, rng = Math.random) {
     const modal = document.createElement('div');
     modal.className = 'modal active';
     modal.id = 'break-reminder-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'break-reminder-title');
+    const previous = document.activeElement;
     modal.innerHTML = `<div class="modal-content">
-        <h2>Petite pause ?</h2>
+        <h2 id="break-reminder-title">Petite pause ?</h2>
         <p><strong>${esc(m.hook)}</strong></p>
         <p>${esc(m.body)}</p>
         <p>${esc(m.conclusion)}</p>
         <p><em>${esc(m.punchline)}</em></p>
         <div class="modal-actions"><button class="primary" id="break-reminder-close">Continuer à jouer</button></div>
+        <p class="break-reminder-hint"><small>Ce rappel se désactive dans Options / Pause.</small></p>
     </div>`;
     document.body.appendChild(modal);
     // Fermeture facile, sans obligation de faire une pause : bouton, clic à côté de la fenêtre ou Échap.
-    const close = () => { modal.remove(); document.removeEventListener('keydown', onKey); };
+    const close = () => { modal.remove(); document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus?.(); };
     const onKey = e => { if (e.key === 'Escape') close(); };
     modal.querySelector('#break-reminder-close').addEventListener('click', close);
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
     document.addEventListener('keydown', onKey);
+    modal.querySelector('#break-reminder-close').focus?.();
     return modal;
 }
 
 // Surveille le temps de jeu de la session (secondes, page visible). `isCalm()` doit renvoyer true hors combat / dialogue :
 // le rappel attend un moment calme (jamais en plein combat ou puzzle). Fermer la popup ne touche pas au compteur de session. Renvoie la fonction à appeler chaque seconde.
-export function createBreakWatcher({ isCalm = () => true, show = showBreakReminder } = {}) {
+// `isEnabled()` : false quand le joueur a désactivé le rappel (option) ; le compteur continue mais rien n'est affiché, et aucune rafale ne suit la réactivation.
+export function createBreakWatcher({ isCalm = () => true, show = showBreakReminder, isEnabled = () => true } = {}) {
     let session = 0;
     let shown = 0;
     let last = Date.now();
@@ -113,7 +120,9 @@ export function createBreakWatcher({ isCalm = () => true, show = showBreakRemind
         const visible = typeof document === 'undefined' || document.visibilityState !== 'hidden';
         if (visible) session += Math.min(now - last, 5000) / 1000;   // plafond : une veille ne compte pas
         last = now;
-        if (session >= breakThreshold(shown) && isCalm()) {
+        if (session >= breakThreshold(shown) && !isEnabled()) {
+            while (session >= breakThreshold(shown)) shown += 1;
+        } else if (session >= breakThreshold(shown) && isCalm()) {
             show(session);
             shown += 1;
             // Si la session a beaucoup dépassé le seuil (calme tardif), on saute les rappels manqués.

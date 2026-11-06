@@ -8,6 +8,7 @@ import { icon as svgIcon } from './icons.js';
 import { RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
 import { animationFactor } from './gameOptions.js';
+import { announce, notify } from './a11y.js';
 import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyCardTap, showEnemyNameTooltip, hideEnemyNameTooltip } from './gameTooltips.js';
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
@@ -368,6 +369,7 @@ export function updateEnemySpells(){
 }
 
 export function log(text){
+    announce(text);   // lecteurs d'écran : le message ne dépend ni d'une animation ni d'un son (a11y.js)
     const logDiv=document.getElementById('log');
     if(logDiv){
         logDiv.innerHTML = text + "<br>";
@@ -398,6 +400,7 @@ export function getCurrentAIDifficulty() {
 
 // ========================================
 
+let lastSaveErrorNotice = 0;
 export function saveUpdate(){
     clampManaToCaps(player);
     try {
@@ -408,6 +411,11 @@ export function saveUpdate(){
         }
     } catch (e) {
         console.error('Erreur lors de la sauvegarde:', e);
+        // Sans message, le joueur croirait sa partie enregistrée : on le dit calmement, une fois par minute au plus.
+        if (Date.now() - lastSaveErrorNotice > 60000) {
+            lastSaveErrorNotice = Date.now();
+            notify("La sauvegarde automatique n'a pas fonctionné (stockage du navigateur plein ou bloqué). Votre partie reste en cours : pensez à l'exporter depuis Options / Pause.", 9000);
+        }
     }
     updateStats();
     createSpellButtons();

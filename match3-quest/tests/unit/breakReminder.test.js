@@ -91,3 +91,36 @@ describe('fermeture de la popup', () => {
         expect(document.getElementById('break-reminder-modal')).toBeNull();
     });
 });
+
+describe('rappel de pause : discrétion et réglage', () => {
+    test('la popup est un dialogue nommé, avec le focus sur « Continuer » et un rappel que le réglage existe', () => {
+        const btn = document.createElement('button'); document.body.appendChild(btn); btn.focus();
+        const modal = showBreakReminder(1800);
+        expect(modal.getAttribute('role')).toBe('dialog');
+        expect(document.getElementById(modal.getAttribute('aria-labelledby')).textContent).toBe('Petite pause ?');
+        expect(document.activeElement.id).toBe('break-reminder-close');
+        expect(modal.textContent).toMatch(/Options/);
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        expect(document.getElementById('break-reminder-modal')).toBeNull();
+        expect(document.activeElement).toBe(btn);
+    });
+
+    test('aucun texte alarmiste ni culpabilisant', () => {
+        for (let i = 0; i < 200; i++) {
+            const txt = Object.values(buildBreakMessage(3600, () => i / 200)).join(' ');
+            expect(txt).not.toMatch(/urgence|critique|obligatoire|perdu ta|honte|addict/i);
+        }
+    });
+
+    test('désactivé : rien n\'est affiché, et aucune rafale à la réactivation', () => {
+        const show = jest.fn();
+        let enabled = false;
+        const tick = createBreakWatcher({ show, isEnabled: () => enabled });
+        let now = Date.now();
+        for (let i = 0; i < 4000; i++) { now += 1000; tick(now); }   // plus d'une heure
+        expect(show).not.toHaveBeenCalled();
+        enabled = true;
+        for (let i = 0; i < 10; i++) { now += 1000; tick(now); }
+        expect(show).not.toHaveBeenCalled();
+    });
+});
