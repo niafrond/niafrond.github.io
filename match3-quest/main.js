@@ -17,8 +17,9 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
+import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
+import { initDialogs } from "./a11y.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
 import { getWeaponById } from "./weapons.js";
@@ -427,6 +428,7 @@ function init() {
     };
     // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
     const breakTick = createBreakWatcher({
+        isEnabled: () => getOption('breakReminder'),
         // Calme : hors combat, dialogue et marchand (carte affichée ou non, p. ex. onglet Armes), ou combat terminé (écran Victoire / Défaite,
         // dont l'arène enchaîne sans repasser par la carte), sans cinématique ni transition de combat (ce ne sont pas des .modal) ni fenêtre ouverte.
         isCalm: () => (Boolean(exploration.isFree?.()) || Boolean(document.body.dataset.combatEnd))
@@ -437,6 +439,7 @@ function init() {
 
     // Options d'affichage / performance (gameOptions.js)
     applyOptions();
+    initDialogs();   // fenêtres : rôle dialog, focus à l'ouverture / fermeture (a11y.js)
     const manaFlightBtn = document.getElementById('opt-mana-flight');
     const effectsSelect = document.getElementById('opt-effects');
     const speedSelect = document.getElementById('opt-speed');
@@ -477,12 +480,13 @@ function init() {
     // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
     const textSizeSelect = document.getElementById('opt-text-size');
     if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
-    [['opt-shapes', 'shapes'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx']].forEach(([id, key]) => {
+    [['opt-shapes', 'shapes'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder']].forEach(([id, key]) => {
         const btn = document.getElementById(id);
         if(!btn) return;
-        const sync = () => { const on = getOption(key); btn.textContent = on ? 'Oui' : 'Non'; btn.setAttribute('aria-pressed', String(on)); };
+        const value = () => key === 'animations' ? animationsEnabled() : getOption(key);
+        const sync = () => { const on = value(); btn.textContent = on ? 'Oui' : 'Non'; btn.setAttribute('aria-pressed', String(on)); };
         sync();
-        btn.addEventListener('click', () => { setOption(key, !getOption(key)); sync(); });
+        btn.addEventListener('click', () => { setOption(key, !value()); sync(); });
     });
 
     // Style de Hou Yi (playStyles.js) : se change hors combat, sans toucher à la progression.

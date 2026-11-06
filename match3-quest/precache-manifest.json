@@ -2,6 +2,7 @@
  "version": 1,
  "core": [
   "index.html",
+  "a11y.js",
   "actionGuard.js",
   "arena.js",
   "attributes.js",

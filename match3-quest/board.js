@@ -184,8 +184,20 @@ const TILE_LABELS = {
 
 function paintTileGlyph(el, tile){
     el.textContent = '';
-    el.title = TILE_LABELS[isJokerTile(tile) ? 'joker' : tile] || '';
+    const label = TILE_LABELS[isJokerTile(tile) ? 'joker' : tile] || '';
+    el.title = label;
+    // Nom accessible : la tuile et sa position (ligne, colonne), pour jouer sans voir les couleurs ni la souris.
+    const cols = boardColumns(el.parentElement);
+    const i = Number(el.dataset.index);
+    if(label && Number.isFinite(i)) el.setAttribute('aria-label', `${label}, ligne ${Math.floor(i / cols) + 1}, colonne ${(i % cols) + 1}`);
 }
+
+// Nombre de colonnes affichées (8, ou 10 contre un boss) : lu sur le plateau lui-même.
+function boardColumns(boardDiv){
+    const n = parseInt(boardDiv?.style.getPropertyValue('--board-cols'), 10);
+    return n > 0 ? n : boardSize;
+}
+
 
 const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
@@ -434,6 +446,7 @@ export function generateBoard(){
         tile.className=`tile ${board[i]}`;
         tile.dataset.index=i;
         tile.onclick=()=>selectTile(i);
+        tile.setAttribute('role', 'button');   // lecteurs d'écran tactiles (TalkBack, VoiceOver) : nom donné par aria-label
         boardDiv.appendChild(tile);
     }
     ensureBoardResizeListeners();

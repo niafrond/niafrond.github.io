@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { getOption, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
 import { readFileSync } from 'node:fs';
 import { flyManaToCounter } from '../../manaFlight.js';
 
@@ -127,5 +127,25 @@ describe('manaFlight et options', () => {
         setOption('effects', 'high');
         flyManaToCounter(all, 'blue');
         expect(document.querySelectorAll('.mana-fly-dot').length).toBeGreaterThan(6);
+    });
+});
+
+describe('animations et prefers-reduced-motion', () => {
+    test('rappel de pause activé par défaut et mémorisé', () => {
+        expect(getOption('breakReminder')).toBe(true);
+        setOption('breakReminder', false);
+        expect(JSON.parse(localStorage.getItem('match3quest.options')).breakReminder).toBe(false);
+        setOption('breakReminder', true);
+    });
+
+    test('le choix explicite du joueur prime sur le réglage du système', () => {
+        window.matchMedia = q => ({ matches: /reduced-motion/.test(q) });
+        // beforeEach a écrit les défauts : l'option est donc « explicite » ; on teste le comportement avec ce choix.
+        setOption('animations', true);
+        expect(animationsEnabled()).toBe(true);
+        expect(document.body.classList.contains('no-anim')).toBe(false);
+        setOption('animations', false);
+        expect(animationsEnabled()).toBe(false);
+        expect(document.body.classList.contains('no-anim')).toBe(true);
     });
 });
