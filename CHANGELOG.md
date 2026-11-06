@@ -1,3 +1,9 @@
+## [2.194.0](https://github.com/niafrond/niafrond.github.io/compare/v2.193.0...v2.194.0) (2026-11-06)
+
+### Features
+
+* **match3-quest:** lot 2 — personnalités, difficulté choisie, écart de niveau borné et bouclier sur la barre de PV ([#653](https://github.com/niafrond/niafrond.github.io/issues/653)) ([1a905cb](https://github.com/niafrond/niafrond.github.io/commit/1a905cb4f732fa7a54da884d58a978a3000f477d))
+
 ## [2.193.0](https://github.com/niafrond/niafrond.github.io/compare/v2.192.1...v2.193.0) (2026-11-06)
 
 ### Features
