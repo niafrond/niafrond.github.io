@@ -50,7 +50,7 @@ describe('pouvoirs des compagnons', () => {
     });
     test("game.js applique les pouvoirs une fois par tour", () => {
         expect(game).toContain('applyCompanionPowers()');
-        expect(game).toContain('companionsActedThisTurn');
+        expect(game).toContain('turnFlags.companionsActed');
     });
 });
 

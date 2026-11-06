@@ -71,6 +71,7 @@
   "gameSpellsTab.js",
   "gameStatsTab.js",
   "gameTooltips.js",
+  "gameTurnFlow.js",
   "icon.svg",
   "icons.js",
   "items.js",

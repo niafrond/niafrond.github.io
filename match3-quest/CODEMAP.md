@@ -75,6 +75,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `gameSpellsTab.js` — Onglet Sorts : liste des sorts disponibles, tri, sélecteur d'ultime, équiper / retirer un sort ou un ultime.
 - `gameStatsTab.js` — Onglet Stats détaillées du joueur et animations d'annonce (sorts, attaques) du combat.
 - `gameTooltips.js` — Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
+- `gameTurnFlow.js` — Déroulé des tours : coup du joueur (arme, sort, ultime), pouvoirs des compagnons, tour de l'ennemi, fin de tour, victoire sur l'ennemi.
 - `icons.js` — Icônes SVG de l'interface (le jeu n'utilise aucun emoji) : petites pictos en ligne, viewBox 16x16, contour
 - `items.js` — (sans description)
 - `joker.js` — (sans description)
@@ -123,13 +124,14 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `worldMapView.js` — Rendu de la carte du monde façon "overworld" de Mario : mer, île aux falaises,
 
 ## game.js — plan par modules
-`game.js` garde l'état (`player`, `enemy`, `gameState`), le mana, les dégâts, le déroulé du combat (tours joueur/ennemi, victoire, nouveau combat) et les attributs. Le reste est extrait et ré-exporté par `game.js` (les imports existants restent valables) :
+`game.js` garde l'état (`player`, `enemy`, `gameState`, `currentTurn`, `turnFlags`), le mana, les dégâts, la fin de combat et le démarrage d'un combat. Le reste est extrait et ré-exporté par `game.js` (les imports existants restent valables) :
 - `gameTooltips.js` : infobulles (sort, arme, objet, équipement, ennemi), pastilles de statut
 - `gameCardUi.js` : aides communes des cartes (échappement HTML, pied de carte, tri mémorisé)
 - `gameHud.js` : barres de PV, compteurs, `updateStats`, journal, sauvegarde
 - `gameStatsTab.js` : onglet Stats détaillées, annonces de sorts/attaques
 - `gameLevelUp.js` : XP, niveau, attributs
 - `gameSpellList.js` : sorts disponibles selon le niveau, boutons de sorts
+- `gameTurnFlow.js` : tours (coup du joueur, compagnons, tour ennemi, victoire) ; l'état reste dans `game.js` (`setCurrentTurn`, `turnFlags`)
 - `gameSpellsTab.js` : onglet Sorts, sélecteur d'ultime, équiper/retirer un sort ou ultime
 - `gameInventoryTabs.js` : onglets Armes / Équipement / Inventaire, armes en main, utilisation d'objets
 Les modules extraits importent `game.js` en retour (import circulaire sûr : usage uniquement à l'exécution, jamais au chargement).
