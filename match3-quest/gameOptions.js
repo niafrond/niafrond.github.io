@@ -8,11 +8,14 @@
 //  - shapes     : symboles en plus des couleurs (tuiles, qì, camps) pour ne pas dépendre de la seule couleur ;
 //  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
 //  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
-// Purement visuel : aucune de ces options ne change les règles du jeu.
+// Difficulté des ennemis :
+//  - aiDifficulty : 'auto' | 'easy' | 'normal' | 'hard' | 'expert' (enemyAI.js). 'auto' (défaut) adapte la qualité des décisions au
+//    niveau de l'ennemi, de façon bornée ; un palier fixe est appliqué tel quel à chaque combat (jamais de bonus de statistiques).
+// Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, animations: true, reduceFx: false };
-const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'] };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, animations: true, reduceFx: false, aiDifficulty: 'auto' };
+const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
 let current = { ...OPTION_DEFAULTS };

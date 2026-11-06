@@ -253,3 +253,17 @@ describe('écrans de fin de combat : boucles animées (feu d\'artifice / cœur q
         expect(css).toMatch(/\.combat-end-loop \{[^}]*object-fit: cover;[^}]*z-index: -1/);
     });
 });
+
+describe('barre de PV : part encaissable par le bouclier', () => {
+    test('30 PV + 10 encaissables : la barre vaut 40, dont 10 de bouclier à la suite des PV', async () => {
+        const { hpShieldSegment } = await import('../../combatFlow.js');
+        expect(hpShieldSegment(30, 10, 40)).toEqual({ max: 40, absorb: 10, left: 75, width: 25 });
+        // PV max plus grands que PV + bouclier : l'échelle reste celle des PV max
+        expect(hpShieldSegment(30, 10, 100)).toEqual({ max: 100, absorb: 10, left: 30, width: 10 });
+        // PV pleins + bouclier : la barre s'agrandit pour tout montrer
+        expect(hpShieldSegment(100, 20, 100)).toEqual({ max: 120, absorb: 20, left: 100 / 120 * 100, width: 20 / 120 * 100 });
+        // pas de bouclier : segment vide
+        expect(hpShieldSegment(50, 0, 100)).toMatchObject({ max: 100, absorb: 0, width: 0 });
+        expect(hpShieldSegment(NaN, -5, 0)).toMatchObject({ max: 1, absorb: 0, width: 0 });
+    });
+});

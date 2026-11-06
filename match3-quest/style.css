@@ -286,6 +286,19 @@ button.disabled { opacity: 0.5; cursor: not-allowed; }
     width: 100%;
     margin: 0;
 }
+/* Part de PV encaissable par le bouclier : à la suite des PV, d'une autre couleur (la barre vaut PV + encaissable). */
+.hp-shield {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    background: repeating-linear-gradient(135deg, #4aa8e8 0 4px, #8fd0f7 4px 8px);
+    box-shadow: inset 0 0 0 1px rgba(30, 90, 140, .6);
+    pointer-events: none;
+    border-radius: 0 3px 3px 0;
+}
+.hp-shield-text { color: #1b6aa5; }
 .hp-text {
     position: absolute;
     top: 50%;

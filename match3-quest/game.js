@@ -18,7 +18,7 @@ import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openin
 import { recordBossLoss, pickBossTip } from "./bossTips.js";
 
 
-import { setAIDifficultyByLevel } from "./enemyAI.js";
+import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
 
 import { getRarityIcon, applyArtifactEffects } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
@@ -35,7 +35,7 @@ import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
+import { describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
@@ -1706,12 +1706,14 @@ export function newEnemy(selectedEnemy = null){
     enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
 
-    // Avantage caché du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), voir combatStats.js
+    // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
     player.levelEdge = Math.max(0, (player.level || 0) - (enemy.level || 0));
 
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level, enemy);
+    // Style de l'ennemi : celui du gabarit s'il en a un, sinon stable par espèce (le joueur peut le reconnaître d'un combat à l'autre)
+    if(!enemyPersonalities[enemy.personality]) enemy.personality = assignPersonality(enemy.templateId || enemy.name);
     
     // Afficher le niveau de l'ennemi dans les logs
     if (enemy.level > player.level) {
@@ -1719,6 +1721,10 @@ export function newEnemy(selectedEnemy = null){
     } else {
         log(`${enemy.name} (Niveau ${enemy.level}) apparaît !`);
     }
+    log(`${enemy.name} a un tempérament ${enemyPersonalities[enemy.personality].name.toLowerCase()}.`);
+    // Avantage lié à l'écart de niveau : jamais caché, annoncé à celui qui le détient
+    const edgeNote = describeLevelEdge(enemy) ? `${enemy.name} : ${describeLevelEdge(enemy)}.` : (describeLevelEdge(player) ? `Vous : ${describeLevelEdge(player)}.` : '');
+    if(edgeNote) log(edgeNote);
     // Réinitialiser le qì de l'ennemi à 0 puis appliquer ses aptitudes
     enemy.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
     applyStartingAbilities();
