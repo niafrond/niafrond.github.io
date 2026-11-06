@@ -52,7 +52,7 @@ export default {
     lizard_zao: { name: 'Zao', title: 'Lézard-dragon bavard', 
       idle: ['Je vis dans les braises. Elles sont moelleuses, je vous assure, quand on a le cuir qu\'il faut.', 'Les salamandres sont nées du feu, dit-on. Moi, je dis que je suis née dans un lit, comme tout le monde. Mais le feu est plus flatteur.'],
       talk: [{ whenDone: 'sun_6', lines: ['Un soleil de moins, c\'est un volcan qui se calme. Je suis un peu triste : mes amis les flammes dansent plus doucement.'] }] },
-    hua_volcan: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_volcan: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Gants ignifugés, éventails de pierre, tisane contre les brûlures de langue : tout est à vendre, sauf ma patience.', 'Dernièrement, j\'ai vendu une lanterne à un archer pressé. Il ne m\'a pas dit son nom, mais il avait un air de jalousie bien cuite.'],
       talk: [{ whenDone: 'sun_6', lines: ['Je suis encore là, archer ! Le prochain arrêt, c\'est le Gobi. Je compte vendre du sable aux dunes. Non, l\'inverse.'] }] },
     young_miner_bo: { name: 'Bo', title: 'Jeune mineur curieux', 

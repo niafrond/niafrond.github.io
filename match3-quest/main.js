@@ -1,6 +1,8 @@
 import { icon } from "./icons.js";
+import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions } from "./game.js";
+import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
+import { PLAY_STYLES, setPlayStyle, getPlayStyle } from "./playStyles.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -15,7 +17,7 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, setOption, applyOptions } from "./gameOptions.js";
+import { getOption, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
@@ -30,7 +32,7 @@ import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
 import { ARENA_NAME, ARENA_REGION } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
-import { hideLoadingScreen } from "./loader.js";
+import { hideLoadingScreen, showLoadingScreen, setLoadingScreenSuppressed, setLoadingProgress, trackProgress } from "./loader.js";
 import { readLastPlayed, touchLastPlayed, isLongAbsence, buildRecap, absenceDays, showWelcomeBack } from "./welcomeBack.js";
 
 // initialisation de la partie
@@ -124,7 +126,7 @@ function showClassSelection() {
         Object.keys(classData.startingStats).forEach(attr => {
             player.attributes[attr] += classData.startingStats[attr];
         });
-        log(`${player.name}, vous êtes maintenant ${classData.name} !`);
+        log(`${escapeHtml(player.name)}, vous êtes maintenant ${classData.name} !`);
         // Le joueur ne doit jamais commencer un combat sans arme équipée
         grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
         updateAvailableSpells();
@@ -211,6 +213,10 @@ function init() {
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
+        const change = document.querySelector('.change-overlay');
+        if(change) return [change.dataset.scene || 'change-village'];   // puzzle de soin (change/view.js)
+        const changeScene = exploration.getChangeScene?.();
+        if(changeScene) return [changeScene];   // Chang'e explore son village : musique du village ou de l'adieu
         const puzzle = document.querySelector('.puzzle-overlay');
         if(puzzle) return puzzle.dataset.won ? ['victory'] : [`puzzle-${puzzle.dataset.mode}`];   // énigme à plateau : une piste par type (push, mirror, slide)
         if(document.querySelector('.battle-transition')) return null;
@@ -444,6 +450,60 @@ function init() {
     if(speedSelect) speedSelect.value = getOption('speed');
     if(aiDifficultySelect) aiDifficultySelect.value = getOption('aiDifficulty');
     manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
+    const vibrationBtn = document.getElementById('opt-vibration');
+    const syncVibrationBtn = () => {
+        const on = getOption('vibration');
+        if(vibrationBtn) {
+            vibrationBtn.textContent = on ? (canVibrate() ? 'Oui' : 'Oui (secousse)') : 'Non';
+            vibrationBtn.setAttribute('aria-pressed', String(on));
+            if(!canVibrate()) vibrationBtn.title = "Cet appareil ne sait pas vibrer (iPhone, iPad, Firefox ordinateur) : l'écran tremble à la place.";
+        }
+    };
+    syncVibrationBtn();
+    // Le navigateur refuse les vibrations tant que l'utilisateur n'a pas fait de geste : on redemande, d'un toucher (gameOptions.js).
+    window.addEventListener('m3:vibration-blocked', () => {
+        if(document.getElementById('vibe-notice')) return;
+        const box = document.createElement('div');
+        box.id = 'vibe-notice';
+        box.className = 'vibe-notice';
+        box.setAttribute('role', 'alert');
+        box.innerHTML = '<span>Le navigateur bloque les vibrations.</span> <button type="button">Les réactiver</button> <button type="button" class="vibe-close" aria-label="Fermer">×</button>';
+        const [enable, close] = box.querySelectorAll('button');
+        enable.addEventListener('click', () => { if(armVibration()) { vibrate([60, 40, 60]); box.remove(); } else enable.textContent = 'Toujours bloqué : touchez l\'écran puis réessayez'; });
+        close.addEventListener('click', () => box.remove());
+        document.body.appendChild(box);
+        setTimeout(() => box.remove(), 12000);
+    });
+    // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
+    const textSizeSelect = document.getElementById('opt-text-size');
+    if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
+    [['opt-shapes', 'shapes'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx']].forEach(([id, key]) => {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+        const sync = () => { const on = getOption(key); btn.textContent = on ? 'Oui' : 'Non'; btn.setAttribute('aria-pressed', String(on)); };
+        sync();
+        btn.addEventListener('click', () => { setOption(key, !getOption(key)); sync(); });
+    });
+
+    // Style de Hou Yi (playStyles.js) : se change hors combat, sans toucher à la progression.
+    const styleSelect = document.getElementById('opt-playstyle');
+    const styleDesc = document.getElementById('playstyle-desc');
+    const syncPlayStyle = () => {
+        const st = getPlayStyle(player);
+        if(styleSelect) { styleSelect.value = st ? st.id : ''; styleSelect.disabled = gameState.combatState === 'active'; }
+        if(styleDesc) styleDesc.innerHTML = st
+            ? `${st.summary}<ul>${st.effects.map(e => `<li>${e}</li>`).join('')}</ul>`
+            : 'Aucun style : le jeu de base. Choisissez-en un, vous pourrez en changer à tout moment hors combat.';
+    };
+    syncPlayStyle();
+    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', syncPlayStyle));
+    styleSelect?.addEventListener('change', () => {
+        if(gameState.combatState === 'active' || !setPlayStyle(player, styleSelect.value || null)) { syncPlayStyle(); return; }
+        saveUpdate();
+        syncPlayStyle();
+        log(PLAY_STYLES[player.playStyle] ? `Style : ${PLAY_STYLES[player.playStyle].name}.` : 'Style libre.');
+    });
+    vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate([120, 60, 120]); });
     initCompare({
         spell: id => player.availableSpells.find(s => s.id === id),
         weapon: id => (player.weapons || []).find(w => w.id === id) || getWeaponById(id),
@@ -531,11 +591,21 @@ function init() {
     const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
     // Écran de chargement initial (index.html) : on ne charge que les dessins communs (héros, coffres) et ceux de la
     // région où reprend la partie ; les autres régions sont chargées en y entrant.
-    const bootReady = Promise.all([loadSpritePack(CORE_PACK), exploration.ready()])
+    // Le launcher s'affiche tout de suite (écran de chargement masqué, pas d'animation de biome) pendant que le chargement
+    // se poursuit en arrière-plan ; l'écran de chargement ne revient que si le joueur touche avant la fin.
+    if(!skipTitle) { setLoadingScreenSuppressed(true); hideLoadingScreen(true); }
+    let booted = false;
+    const bootReady = trackProgress([loadSpritePack(CORE_PACK), exploration.ready()], setLoadingProgress)
         .catch(err => console.warn('[boot] chargement initial incomplet', err))
-        .then(() => hideLoadingScreen());
+        .then(() => { booted = true; });
     // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
-    bootReady.then(() => (skipTitle ? undefined : playTitleScreen()))
+    (skipTitle ? Promise.resolve() : playTitleScreen())
+        .then(() => {
+            setLoadingScreenSuppressed(false);
+            if(!booted && !skipTitle) showLoadingScreen('Chargement…');
+            return bootReady;
+        })
+        .then(() => hideLoadingScreen())
         .then(() => (!skipTitle && !player.class ? playPrologueAnimation() : undefined))
         .then(() => {
         showClassSelection();
@@ -572,6 +642,12 @@ if (document.readyState === 'loading') {
 
 // Jeu hors ligne : service worker (sw.js) enregistré une fois la page chargée, puis téléchargement de tout le jeu en arrière-plan (voir offlineCache.js)
 registerServiceWorkerWhenLoaded();
-const offlinePrefetcher = createPrefetcher();
+// Appareil modeste : le téléchargement de tout le jeu (≈ 270 Mo) ralentit l'affichage de ≈ 25 % ; il n'avance donc que lorsque le joueur ne
+// touche plus l'écran depuis 4 s (ou que la page est masquée), et un fichier à la fois.
+let lastInputAt = 0;
+['pointerdown', 'pointermove', 'keydown', 'touchstart'].forEach(type => addEventListener(type, () => { lastInputAt = performance.now(); }, { passive: true, capture: true }));
+const offlinePrefetcher = effectsLevel() === 'low'
+    ? createPrefetcher(globalThis, { concurrency: 1, waitWhile: () => document.visibilityState === 'visible' && performance.now() - lastInputAt < 4000 })
+    : createPrefetcher();
 bindOfflineOptions(offlinePrefetcher, document.getElementById('offline-status'), document.getElementById('offline-btn'));
 startBackgroundPrefetch(offlinePrefetcher);

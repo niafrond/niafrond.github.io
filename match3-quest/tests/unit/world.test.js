@@ -16,6 +16,7 @@ import {
     trackedMarkers, currentObjectiveText, journalEntries, regionProgress, npcMarker, progressReached, aliveEnemies
 } from '../../exploration.js';
 import { exitsOf } from './fixtures/gates.js';
+import { ENLARGED_LIMITS } from '../../world/enlarge.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
@@ -131,7 +132,7 @@ describe('Grand Monde : cartes', () => {
         screens.forEach(s => {
             // cartes natives (`native: true`, format v2) : jamais étirées, bornées par le calque de sol (DESIGN-V2 §3)
             if (s.native) {
-                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= 1500 }).toEqual({ id: s.id, ok: true });
+                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= ENLARGED_LIMITS.maxCells }).toEqual({ id: s.id, ok: true });
                 expect(s.interior).toBeFalsy();
             }
             // villages : taille d'origine ; hameaux et zones sauvages : agrandis (world/expand.js)

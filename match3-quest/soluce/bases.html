@@ -9,7 +9,7 @@
 <style>
 :root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
 @media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
+*{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
 a{color:var(--blue)}a:hover{color:var(--gold)}
 header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
@@ -47,6 +47,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -64,6 +65,9 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .lb-cap b{color:#ff7a6a}
 .shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
 .shot figcaption b{color:#ff5a4a}
+.phones{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.phones figure{margin:0;flex:1 1 170px;max-width:250px}.phones img{width:100%;height:auto;border:2px solid var(--line);border-radius:8px}.phones figcaption,.wide figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}.wide{margin:10px 0}.wide img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+.tile-ico svg{width:26px;height:26px;vertical-align:middle;margin-right:4px;background:#efe7ff;border-radius:5px;padding:1px}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -74,7 +78,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html" class="on">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html" class="on">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="bestiaire.html">Bestiaire</a><a href="royaume-des-ames.html">Royaume des âmes</a><a href="fete-des-lanternes.html">Fête des lanternes</a><a href="change.html">Chang’e</a></nav></div></header>
 <main>
 <div class="crumbs"><a href="../soluce.html">Accueil</a> › Bases du combat</div>
 <h2>Bases du combat</h2>
@@ -83,7 +87,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 <div class="scroll"><table><tr><th>Ennemi de couleur</th><th>Faible à</th></tr><tr><td><span class="dot" style="background:#e0533d"></span>Feu (rouge)</td><td><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</td></tr><tr><td><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</td><td><span class="dot" style="background:#4cae5d"></span>Terre (vert)</td></tr><tr><td><span class="dot" style="background:#4cae5d"></span>Terre (vert)</td><td><span class="dot" style="background:#e6c13a"></span>Air (jaune)</td></tr><tr><td><span class="dot" style="background:#e6c13a"></span>Air (jaune)</td><td><span class="dot" style="background:#e0533d"></span>Feu (rouge)</td></tr><tr><td><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</td><td><span class="dot" style="background:#4cae5d"></span>Terre (vert)</td></tr></table></div>
 <div class="box tip"><b class="t">Astuce</b>Observez l’ennemi sur la carte avant d’engager : le carnet note sa faiblesse. Les fiches de quête de cette soluce l’indiquent déjà pour chaque cible.</div>
 <h3>Pouvoirs des compagnons</h3>
-<div class="scroll"><table><tr><th>Compagnon</th><th>Pouvoir</th><th>Effet</th></tr><tr><td><a href="compagnon-xiao_gui.html">Xiao Gui</a></td><td>Coup de renard</td><td>30 % : joue un coup supplémentaire sur le plateau.</td></tr><tr><td><a href="compagnon-zhi.html">Zhi</a></td><td>Souffle de Zhi</td><td>25 % : rend 10 % des PV max au héros.</td></tr><tr><td><a href="compagnon-dawa.html">Dawa</a></td><td>Mirage de Dawa</td><td>20 % : l'ennemi se perd dans un mirage et perd son tour.</td></tr><tr><td><a href="compagnon-yu.html">Yu</a></td><td>Jet d'eau de Yu</td><td>25 % : un jet d'eau blesse l'ennemi (4 + niveau du héros).</td></tr><tr><td><a href="compagnon-etincelle.html">Étincelle</a></td><td>Étincelle d'Étincelle</td><td>30 % : +4 qì dans une couleur au hasard.</td></tr><tr><td><a href="compagnon-braise.html">Braise</a></td><td>Colère de Braise</td><td>15 % : remplit 50 % de la jauge de rage.</td></tr><tr><td><a href="compagnon-jian.html">Jian</a></td><td>Volée de Jian</td><td>5 % : toutes les tuiles d'une couleur au hasard deviennent des flèches.</td></tr><tr><td><a href="compagnon-tou.html">Tou</a></td><td>Larcin de Tou</td><td>30 % : vole tout le qì d'une couleur au hasard à l'ennemi.</td></tr></table></div>
+<div class="scroll"><table><tr><th>Compagnon</th><th>Pouvoir</th><th>Effet</th></tr><tr><td><a href="compagnon-xiao_gui.html">Xiao Gui</a></td><td>Coup de renard</td><td>30 % : joue un coup supplémentaire sur le plateau.</td></tr><tr><td><a href="compagnon-zhi.html">Zhi</a></td><td>Souffle de Zhi</td><td>25 % : rend 10 % des PV max au héros.</td></tr><tr><td><a href="compagnon-dawa.html">Dawa</a></td><td>Mirage de Dawa</td><td>20 % : l'ennemi se perd dans un mirage et perd son tour.</td></tr><tr><td><a href="compagnon-yu.html">Yu</a></td><td>Jet d'eau de Yu</td><td>25 % : un jet d'eau blesse l'ennemi (4 + niveau du héros).</td></tr><tr><td><a href="compagnon-etincelle.html">Leigong</a></td><td>Foudre de Leigong</td><td>30 % : +4 qì dans une couleur au hasard.</td></tr><tr><td><a href="compagnon-braise.html">Braise</a></td><td>Colère de Braise</td><td>15 % : remplit 50 % de la jauge de rage.</td></tr><tr><td><a href="compagnon-jian.html">Jian</a></td><td>Volée de Jian</td><td>5 % : toutes les tuiles d'une couleur au hasard deviennent des flèches.</td></tr><tr><td><a href="compagnon-tou.html">Tou</a></td><td>Larcin de Tou</td><td>30 % : vole tout le qì d'une couleur au hasard à l'ennemi.</td></tr></table></div>
 <h3>Protections de biome</h3>
 <div class="scroll"><table><tr><th>Collier</th><th>Biome</th><th>Effet</th></tr><tr><td><a href="stuff-collier_obsidienne.html">Collier d'obsidienne froide</a></td><td>Volcan</td><td>les cases brûlantes ne vous blessent plus</td></tr><tr><td><a href="stuff-collier_jade_vert.html">Collier de jade vert</a></td><td>Bambous</td><td>les bambous n'envahissent plus le plateau</td></tr><tr><td><a href="stuff-collier_braise_d_orage.html">Collier de braise d'orage</a></td><td>Neige</td><td>la glace ne gèle plus les cases</td></tr><tr><td><a href="stuff-collier_voile_d_ombre.html">Collier du voile d'ombre</a></td><td>Fusang</td><td>Les ennemis ne vous détectent plus</td></tr><tr><td><a href="stuff-collier_perle_des_marees.html">Collier de perle des marées</a></td><td>Mer</td><td>la mer ne fait plus dériver les rangées</td></tr></table></div>
 </main>
@@ -170,6 +174,6 @@ lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function
 window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
 })();
 </script>
-<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle. Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>

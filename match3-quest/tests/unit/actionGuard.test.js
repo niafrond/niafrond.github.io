@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { createActionGuard, ACTION_COOLDOWN_MS, BOARD_SETTLE_MS, BOARD_BUSY_TIMEOUT_MS } from '../../actionGuard.js';
 import { collectMatches, getColorMatchManaBaseGain, getEffectiveMatchLength, getJokerMatchMultiplier, bigMatchXpFor } from '../../matchMechanics.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
 const clock = () => { let t = 100000; return { now: () => t, advance: (ms) => { t += ms; } }; };
 
@@ -47,7 +48,7 @@ describe('anti-bourrinage : actionGuard', () => {
 // Pourquoi rien ne couvrait cela : game.js dépend du DOM et n'est importé par aucun test ; les tests ne touchaient que
 // les modules purs. La logique est donc isolée (actionGuard.js) et on vérifie ici, statiquement, son branchement.
 describe('branchement du garde dans game.js / board.js', () => {
-    const game = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+    const game = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8') + ['gameInventoryTabs.js', 'gameSpellsTab.js', 'gameCardUi.js'].map(f => fs.readFileSync(new URL('../../' + f, import.meta.url), 'utf8')).join('\n'); // game.js + modules extraits
     const board = fs.readFileSync(new URL('../../board.js', import.meta.url), 'utf8');
     const body = (src, name) => { const i = src.indexOf(`function ${name}(`); return src.slice(i, src.indexOf('\nexport function', i + 10)); };
 

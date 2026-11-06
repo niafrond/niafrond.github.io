@@ -6,6 +6,7 @@ import {
 import { REGION_LEVEL as WORLD_LEVEL, REGION_ORDER } from '../../world/index.js';
 import { SCREENS } from '../../story.js';
 import { allItems } from '../../items.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
 
 const hero = (gold = 100000) => ({ gold, weapons: [], inventory: [] });
 
@@ -110,7 +111,7 @@ describe('PNJ marchands', () => {
         const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
         expect(html).not.toContain("switchTab('boutique')");
         expect(html).toContain('merchants.js');
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).toContain('drawMerchantBadge(');
         expect(view).toContain('it.n.merchant');
         expect(allItems.length).toBeGreaterThan(0);

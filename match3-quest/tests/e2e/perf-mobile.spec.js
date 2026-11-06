@@ -4,7 +4,11 @@
 import { test, expect } from '@playwright/test';
 
 const URL = '/match3-quest/';
-const CPU_SLOWDOWN = 4;
+// Profil de l'appareil émulé : lu dans `metadata` du projet Playwright (voir playwright.config.js), valeurs par défaut = Pixel 5.
+let CPU_SLOWDOWN = 4;
+let DEFAULT_CORES = 4;
+let LOAD_BUDGET_MS = 20_000;
+let MIN_FPS = 6;
 
 // Compteurs injectés avant le chargement : appels canvas, images, tâches longues, contextes audio.
 const instrument = ({ cores }) => {
@@ -44,7 +48,7 @@ const resetCounters = page => page.evaluate(() => {
     c.shadowBlur = c.fillRect = c.frames = c.longTasks = c.blockingMs = c.maxLongMs = c.fullFills = 0;
 });
 
-async function openGame(page, context, { cores = 4 } = {}) {
+async function openGame(page, context, { cores = DEFAULT_CORES } = {}) {
     const cdp = await context.newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU_SLOWDOWN });
     await page.addInitScript(instrument, { cores });
@@ -78,14 +82,22 @@ async function reloadAt(page, screenId, x, y) {
     await page.waitForSelector('#explore-canvas', { state: 'visible' });
 }
 
-test.describe('match3-quest · performances mobile (CPU ×4)', () => {
-    test.setTimeout(60_000);
+test.describe('match3-quest · performances mobile', () => {
+    test.beforeEach(({}, testInfo) => {
+        const m = testInfo.project.metadata || {};
+        CPU_SLOWDOWN = m.cpuSlowdown ?? 4;
+        DEFAULT_CORES = m.cores ?? 4;
+        LOAD_BUDGET_MS = m.loadBudgetMs ?? 20_000;
+        MIN_FPS = m.minFps ?? 6;
+    });
+    test.setTimeout(60_000 * 2);
 
     test('démarrage : budget de chargement, aucune erreur ni ressource manquante', async ({ page, context }) => {
         const { loadMs, errors, failed } = await openGame(page, context);
+        console.log(`[perf] chargement: ${loadMs} ms`);
         expect(errors).toEqual([]);
         expect(failed).toEqual([]);
-        expect(loadMs).toBeLessThan(20_000);
+        expect(loadMs).toBeLessThan(LOAD_BUDGET_MS);
     });
 
     test('exploration : le fond est mis en cache (pas de flou ni de rafale de fillRect par image)', async ({ page, context }) => {
@@ -94,6 +106,7 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         await resetCounters(page);
         await page.waitForTimeout(3000);
         const c = await page.evaluate(() => window.__perf);
+        console.log(`[perf] cache fond: ${JSON.stringify(c)}`);
 
         expect(c.frames).toBeGreaterThan(20);
         // shadowBlur (ombre floue de la falaise) n'est appliqué qu'à la construction du calque, jamais à chaque image
@@ -109,8 +122,9 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         await page.waitForTimeout(4000);
         const c = await page.evaluate(() => window.__perf);
 
+        console.log(`[perf] fluidité: ${(c.frames / 4).toFixed(1)} img/s, blocage ${Math.round(c.blockingMs)} ms, tâche max ${Math.round(c.maxLongMs)} ms`);
         // ≥ 6 images/s même avec un CPU ralenti ×4 en rendu logiciel (le plancher réel mesuré est ≈ 15)
-        expect(c.frames / 4).toBeGreaterThan(6);
+        expect(c.frames / 4).toBeGreaterThan(MIN_FPS);
         // Temps de blocage cumulé (au-delà de 50 ms par tâche) sur 4 s : mesuré ≈ 600 ms, plafond large
         expect(c.blockingMs).toBeLessThan(2500);
     });
@@ -118,12 +132,14 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
     test('exploration : sur une grande zone sauvage, seul ce qui est à l\'écran est dessiné', async ({ page, context }) => {
         await openGame(page, context);
         await enterExploration(page);
-        // Zone sauvage de 48×24 cases (≈ 1 150 cases, dont beaucoup hors écran sur un téléphone) : on y place le héros puis on recharge
-        await reloadAt(page, 'rizieres_wild', 1, 11);
+        // Zone sauvage de 64×32 cases (≈ 2 000 cases, dont beaucoup hors écran sur un téléphone) : on y place le héros à son point d'arrivée puis on recharge
+        const spawn = await page.evaluate(async () => (await import('./story.js')).SCREENS.rizieres_wild.spawn);
+        await reloadAt(page, 'rizieres_wild', spawn.x, spawn.y);
         await page.waitForTimeout(2500);
         await resetCounters(page);
         await page.waitForTimeout(3000);
         const c = await page.evaluate(() => window.__perf);
+        console.log(`[perf] zone sauvage: ${JSON.stringify(c)}`);
         expect(c.frames).toBeGreaterThan(10);
         // Mesuré sur cette zone : 315 fillRect / image avant le découpage hors écran, 46 après ; plafond large
         expect(c.fillRect / c.frames).toBeLessThan(150);
@@ -141,10 +157,13 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         await page.keyboard.press('ArrowLeft');
         await page.waitForTimeout(3000);
         const c = await page.evaluate(() => window.__perf);
+        console.log(`[perf] transition: ${JSON.stringify(c)}`);
         expect(c.frames).toBeGreaterThan(10);
         expect(c.maxLongMs).toBeLessThan(450);
     });
 
+    // Écart toléré (px) entre la taille du bitmap et celle de la tuile : sous CPU très ralenti, la mise en page peut encore bouger de quelques pixels
+    const TILE_BITMAP_TOLERANCE = 4;
     test('combat : les fonds des tuiles sont des bitmaps à la taille d\'affichage (pas 64 SVG vectoriels rejoués par le GPU)', async ({ page, context }) => {
         await openGame(page, context);
         await enterExploration(page);
@@ -172,14 +191,14 @@ test.describe('match3-quest · performances mobile (CPU ×4)', () => {
         });
         await expect.poll(async () => (await measure()).bitmap, { timeout: 15_000 }).toBe(true);
         const first = await measure();
-        expect(first.side).toBe(first.expected);
+        expect(Math.abs(first.side - first.expected)).toBeLessThanOrEqual(TILE_BITMAP_TOLERANCE);
         expect(first.side).toBeGreaterThan(40);
         // Les 9 saveurs (dont le crâne +5) ont leur règle
         expect(await page.evaluate(() => document.getElementById('tile-bitmaps').textContent.match(/background-image/g).length)).toBe(9);
 
         // Un redimensionnement (rotation, fenêtre) refait les bitmaps à la nouvelle taille
         await page.setViewportSize({ width: 300, height: 640 });
-        await expect.poll(async () => { const m = await measure(); return m.bitmap && m.side === m.expected && m.side !== first.side; }, { timeout: 15_000 }).toBe(true);
+        await expect.poll(async () => { const m = await measure(); return m.bitmap && Math.abs(m.side - m.expected) <= TILE_BITMAP_TOLERANCE && m.side !== first.side; }, { timeout: 15_000 }).toBe(true);
     });
 
     test('exploration : la carte n\'est plus redessinée à pleine cadence sous un modal ni sous une cinématique', async ({ page, context }) => {

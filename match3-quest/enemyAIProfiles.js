@@ -7,6 +7,8 @@
 //  4. difficulté choisie par le joueur    -> préférence 'auto' | 'easy' | 'normal' | 'hard' | 'expert' (Options).
 // Aucun niveau de difficulté ne donne de bonus de statistiques : seule la qualité des décisions change.
 
+import { thinkingTimeFactor } from "./enemyAIChoice.js";
+
 export const TIER_ORDER = ['easy', 'normal', 'hard', 'expert'];
 export const DIFFICULTY_PREFERENCES = ['auto', ...TIER_ORDER];
 
@@ -38,7 +40,8 @@ export const AI_TIERS = {
         strategicThinking: true,
         healThreshold: 0.5, aggressiveThreshold: 0.5,
         stupidityChance: 0.35,
-        randomBoardMove: true,
+        randomBoardMove: false,
+        manaFocus: true,                // choisit les combinaisons qui donnent le qì dont il manque
     },
     expert: {
         name: "Expert",
@@ -47,7 +50,8 @@ export const AI_TIERS = {
         strategicThinking: true,
         healThreshold: 0.6, aggressiveThreshold: 0.4,
         stupidityChance: 0.20,
-        randomBoardMove: true,
+        randomBoardMove: false,
+        manaFocus: true,
     },
 };
 
@@ -62,7 +66,7 @@ export const SPECIAL_TIERS = {
     overleveled: {
         base: 'expert', name: "Hors niveau",
         spellUseProbability: 0.45, weaponUseProbability: 0.35, boardMoveProbability: 0.20,
-        strategicThinking: true, stupidityChance: 0.02, randomBoardMove: false,
+        strategicThinking: true, stupidityChance: 0.02, randomBoardMove: false, manaFocus: true,
         thinkingTimeMin: 180, thinkingTimeMax: 320,
     },
 };
@@ -100,7 +104,7 @@ export function tierSettings(tier, special = null) {
 /** Temps de réflexion : plus court pour les ennemis de haut niveau (15+ : -50 %, 10+ : -30 %). */
 export function thinkingTimeFor(settings, enemyLevel, rng = Math.random) {
     const time = settings.thinkingTimeMin + rng() * (settings.thinkingTimeMax - settings.thinkingTimeMin);
-    return time * (enemyLevel >= 15 ? 0.5 : enemyLevel >= 10 ? 0.7 : 1);
+    return time * thinkingTimeFactor(enemyLevel);
 }
 
 // ========================================
@@ -196,17 +200,4 @@ export function personalityWeight(personality, option, ctx = {}) {
     let factor = p.modifyDecision(option, ctx);
     if (option.data?.reason === 'coup fatal' && factor < 1) factor = 1;
     return Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, factor));
-}
-
-/**
- * Choix pondéré. Chaque option a un `weight` > 0 ; le tirage est proportionnel (aucune option n'a une probabilité nulle).
- */
-export function pickWeighted(options, rng = Math.random) {
-    const total = options.reduce((sum, o) => sum + o.weight, 0);
-    let roll = rng() * total;
-    for (const option of options) {
-        roll -= option.weight;
-        if (roll <= 0) return option;
-    }
-    return options[options.length - 1];
 }

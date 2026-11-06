@@ -36,3 +36,13 @@ export const shotScreens = () => [...new Set([
     ...QUESTS.flatMap(q => questTargets(q).map(t => t.screenId)),
     ...Object.values(SCREENS).filter(s => (s.chests || []).some(c => c.puzzle)).map(s => s.id)
 ])];
+
+// Zones de la chaîne d'une région (route d'accès, village, zone sauvage, hameau, sanctuaire) : captures de la page « Zones et jonctions ».
+export const zoneScreens = () => Object.values(SCREENS)
+    .filter(s => s.region && !s.interior && !s.arena && !s.event && s.kind !== 'house' && /^[a-z]+(_(road|village|wild|hamlet))?$/.test(s.id) && s.id.split('_')[0] === s.region)
+    .map(s => s.id);
+
+// Intérieurs (maisons, grottes, cryptes, étages) des régions : eux aussi annotés sur la page « Zones et jonctions ».
+export const interiorScreens = () => Object.values(SCREENS)
+    .filter(s => s.region && !s.event && !s.arena && (s.interior || s.kind === 'house' || /_(cave|crypt)$/.test(s.id)) && s.id !== s.region)
+    .map(s => s.id);

@@ -12,6 +12,7 @@
     "audio:build": "node match3-quest/tools/audio/render.mjs",
     "precache:build": "node match3-quest/tools/precache-manifest.mjs",
     "sprites:gba": "node match3-quest/sprites/build-gba.mjs",
+    "world:snapshot": "node match3-quest/tools/build-world-snapshot.mjs",
     "start": " serve -l 8080 ",
     "start:local": " serve -l 8000 "
   },

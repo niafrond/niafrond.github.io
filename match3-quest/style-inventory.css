@@ -1,0 +1,313 @@
+/* Inventaire et modale de montée de niveau. Extrait de style.css (chargé à la suite, dans cet ordre : la cascade est inchangée). */
+
+/* Inventaire */
+#inventory-list {
+    margin-top: 20px;
+}
+
+.item-card {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+    transition: all 0.2s;
+}
+
+.item-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.item-card.consumable-item {
+    background: linear-gradient(to right, #fff, #f0f8ff);
+}
+
+.item-card.artifact-item {
+    background: linear-gradient(to right, #fff, #fff8e1);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.item-name {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.item-use-btn {
+    padding: 5px 12px;
+    font-size: 0.9em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #27ae60;
+    color: white;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.item-use-btn:hover {
+    background: #229954;
+}
+
+.item-use-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #95a5a6;
+}
+
+.artifact-badge {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.item-description {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+.item-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.item-discard-btn {
+    padding: 5px 10px;
+    font-size: 0.85em;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: #e74c3c;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.item-discard-btn:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.inventory-slot-empty {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    background: #f5f5f5;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    color: #999;
+    font-size: 1em;
+}
+
+.inventory-slot-empty .slot-icon {
+    font-size: 1.5em;
+}
+
+/* Modale de montée de niveau */
+.levelup-content {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.levelup-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.levelup-header h2 {
+    color: #27ae60;
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.levelup-subtitle {
+    color: #7f8c8d;
+    font-size: 0.95em;
+    margin: 8px 0 0 0;
+}
+
+.attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.attribute-card {
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.attribute-card:hover {
+    border-color: #3498db;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(52, 152, 219, 0.2);
+}
+
+.attr-icon {
+    font-size: 2.5em;
+    margin-bottom: 8px;
+}
+
+.attr-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.attr-description {
+    text-align: left;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.attr-description p {
+    margin: 8px 0;
+}
+
+.attr-description ul {
+    margin: 5px 0 10px 20px;
+    padding: 0;
+}
+
+.attr-description li {
+    margin: 3px 0;
+    color: #666;
+}
+
+.attr-classes {
+    font-size: 0.85em;
+    color: #9b59b6;
+    font-weight: 500;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #ecf0f1;
+}
+
+@media (max-width: 768px) {
+    .attributes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .levelup-content {
+        max-width: 95vw;
+    }
+}
+
+body.dark-mode {
+    background: #0f1318;
+    color: #e5ebf2;
+}
+
+body.dark-mode .game-container {
+    background: #151b22;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.45);
+}
+
+body.dark-mode .tabs,
+body.dark-mode .shop-header {
+    background: #151b22;
+    border-color: #2a3441;
+}
+
+body.dark-mode .tab-btn {
+    color: #d6dde7;
+}
+
+body.dark-mode .tab-btn:hover {
+    background: #222a34;
+}
+
+body.dark-mode .tab-btn.active {
+    border-right-color: #5fb0ff;
+}
+
+body.dark-mode #player-stats,
+body.dark-mode #enemy-stats,
+body.dark-mode .spells-column,
+body.dark-mode .stats-section,
+body.dark-mode .weapon-item,
+body.dark-mode .item-card,
+body.dark-mode .spell-item,
+body.dark-mode .enemy-spell-item,
+body.dark-mode .modal-content,
+body.dark-mode .class-card,
+body.dark-mode .attribute-card,
+body.dark-mode .inventory-slot-empty {
+    background: #1d2530;
+    border-color: #2f3d4d;
+    color: #dbe4ef;
+}
+
+body.dark-mode .wm-sea-a { stop-color: #1b4f8a; }
+body.dark-mode .wm-sea-b { stop-color: #0b2a52; }
+body.dark-mode .wm-wave { stroke: rgba(255, 255, 255, 0.25); }
+body.dark-mode .wm-shallows circle { fill: rgba(120, 180, 255, 0.25); stroke: rgba(120, 180, 255, 0.25); }
+body.dark-mode .wm-shallows { stroke: rgba(120, 180, 255, 0.25); }
+body.dark-mode .wm-cloud ellipse { fill: rgba(220, 230, 245, 0.45); }
+body.dark-mode .wm-caption { background: #2b2a1f; border-color: #6b5a30; color: #f0e6c8; }
+
+body.dark-mode #board {
+    background: #283341;
+}
+
+body.dark-mode .spell-detail,
+body.dark-mode .weapon-description,
+body.dark-mode .weapon-stats,
+body.dark-mode .item-description,
+body.dark-mode .shop-subtitle,
+body.dark-mode .class-description,
+body.dark-mode .stat-effect {
+    color: #a9b7c8;
+}
+
+body.dark-mode .weapon-name,
+body.dark-mode .item-name,
+body.dark-mode .class-name,
+body.dark-mode .attr-name,
+body.dark-mode .stats-section h3,
+body.dark-mode .modal-content h2 {
+    color: #ecf3fb;
+}
+
+body.dark-mode .shop-gold-display {
+    background: #2d2a1e;
+    border-color: #8c7a30;
+    color: #f3dd8b;
+}
+
+body.dark-mode .item-card.consumable-item,
+body.dark-mode .item-card.artifact-item,
+body.dark-mode .enemy-spell-item.enemy-attack-item,
+body.dark-mode .weapon-item.equipped-weapon,
+body.dark-mode .spell-item.active-spell {
+    background: #253242;
+}
+
+body.dark-mode .modal {
+    background: rgba(0, 0, 0, 0.78);
+}

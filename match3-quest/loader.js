@@ -15,8 +15,13 @@ let shownAt = 0;
 let hideTimer = null;
 let minVisible = MIN_VISIBLE_MS;
 let clipRaf = 0;
+let suppressed = false;   // démarrage : le launcher est à l'écran, le chargement se fait en arrière-plan sans écran de chargement
 
 const screenEl = () => (typeof document === 'undefined' ? null : document.getElementById('loading-screen'));
+
+// Pendant que le launcher est affiché, withLoadingScreen exécute sa tâche sans rien montrer (ni écran, ni animation de biome).
+export const setLoadingScreenSuppressed = v => { suppressed = Boolean(v); };
+export const isLoadingScreenSuppressed = () => suppressed;
 
 export function isLoadingScreenVisible() {
     const el = screenEl();
@@ -72,17 +77,17 @@ export function setLoadingProgress(ratio) {
 }
 
 // Masque l'écran (après le temps minimal d'affichage) ; la promesse se résout quand il a disparu.
-export function hideLoadingScreen() {
+export function hideLoadingScreen(immediate = false) {
     const el = screenEl();
     if (!el || !el.classList.contains('visible')) return Promise.resolve();
     setLoadingProgress(1);
-    const wait = Math.max(0, minVisible - (performance.now() - shownAt));
+    const wait = immediate ? 0 : Math.max(0, minVisible - (performance.now() - shownAt));
     return new Promise(resolve => {
         clearTimeout(hideTimer);
         hideTimer = setTimeout(() => {
             el.classList.add('closing');
             hideTimer = setTimeout(() => {
-                el.classList.remove('visible', 'closing');
+                el.classList.remove('visible', 'closing', 'boot');
                 stopClip(el);
                 el.setAttribute('aria-hidden', 'true');
                 resolve();
@@ -95,6 +100,7 @@ export function hideLoadingScreen() {
 // `clip` (promesse d'une animation, ex. boucle d'arrivée dans un biome) : si elle est prête à temps, l'écran s'affiche tout de suite
 // avec elle en fond, au lieu d'attendre SHOW_DELAY_MS.
 export async function withLoadingScreen(label, task, clip = null) {
+    if (suppressed) return task(() => {});
     let shown = false;
     const seq = clip ? await Promise.race([Promise.resolve(clip).catch(() => null), new Promise(r => setTimeout(r, CLIP_WAIT_MS, null))]) : null;
     const show = () => { shown = true; showLoadingScreen(label, seq); };

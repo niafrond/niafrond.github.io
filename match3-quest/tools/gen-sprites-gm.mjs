@@ -9,7 +9,7 @@
  * Écrit sprites/generated.js (même format que gen-sprites.mjs) et sprites/png/<id>_<dir>.png.
  * Ne touche ni aux créatures déjà complètes ni aux animations d'attaque (gen-attacks.mjs, Pixel Lab).
  *
- * Usage (WSL, Node 22) : node tools/gen-sprites-gm.mjs [--only=a,b] [--force] [--steps=25] [--cfg=7] [--lora=1] [--desc=texte_ajouté_au_prompt] [--host=<ip>]
+ * Usage (WSL, Node 22) : node tools/gen-sprites-gm.mjs [--only=a,b] [--force] [--front] [--seed=n] [--steps=25] [--cfg=7] [--lora=1] [--desc=texte_ajouté_au_prompt] [--host=<ip>]
  * Le fichier est réécrit après chaque créature : on peut interrompre et relancer (les créatures complètes sont sautées).
  * Puis : node tools/build-bestiary.mjs (ajoute au catalogue et aux hautes herbes celles qui ont leurs sprites).
  */
@@ -44,6 +44,7 @@ const VIEWS = {
 const NEGATIVE = '3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres, ' +
   'multiple characters, multiple views, sprite sheet, character sheet, reference sheet, turnaround, collage, grid, color palette, swatches, ' +
   'cropped, cut off, ground shadow, floor, scenery, landscape, frame, border, white background, gray background';
+const NEG_BIPED = ', standing on two legs, bipedal, upright, anthropomorphic, humanoid animal, hands, arms, realistic proportions, long legs, tall body';
 
 async function findHost() {
   const cands = [args.host, process.env.COMFY_HOST, '127.0.0.1'].filter(Boolean);
@@ -60,7 +61,7 @@ const workflow = (prompt, seed) => ({
   1: { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: 'sd_xl_base_1.0.safetensors' } },
   2: { class_type: 'LoraLoader', inputs: { model: ['1', 0], clip: ['1', 1], lora_name: 'pixel-art-xl.safetensors', strength_model: LORA, strength_clip: LORA } },
   3: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: prompt } },
-  4: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: NEGATIVE } },
+  4: { class_type: 'CLIPTextEncode', inputs: { clip: ['2', 1], text: /four paws/.test(prompt) ? NEGATIVE + NEG_BIPED : NEGATIVE } },
   5: { class_type: 'EmptyLatentImage', inputs: { width: SIZE, height: SIZE, batch_size: 1 } },
   6: { class_type: 'KSampler', inputs: { model: ['2', 0], positive: ['3', 0], negative: ['4', 0], latent_image: ['5', 0], seed, steps: STEPS, cfg: CFG, sampler_name: 'euler', scheduler: 'normal', denoise: 1 } },
   7: { class_type: 'VAEDecode', inputs: { samples: ['6', 0], vae: ['1', 2] } },
@@ -193,7 +194,8 @@ const host = await findHost(), base = `http://${host}:${PORT}`;
 console.log(`ComfyUI : ${base}`);
 mkdirSync(PNG_DIR, { recursive: true });
 const sprites = loadGenerated();
-const complete = id => DIRS.every(d => sprites[id]?.[d]);
+const FRONT_ONLY = Boolean(args.front);   // --front : une seule vue de face (gbaSprite retombe sur `front` pour les autres directions)
+const complete = id => (FRONT_ONLY ? ['front'] : DIRS).every(d => sprites[id]?.[d]);
 const todo = BESTIARY.filter(b => (!ONLY || ONLY.includes(b[0])) && (args.force || !complete(b[0])));
 console.log(`${todo.length} créature(s) à générer`);
 
@@ -203,8 +205,8 @@ for (const entry of todo) {
   const t0 = Date.now();
   try {
     const bg = args.bg ? String(args.bg).replace(/_/g, ' ') : 'flat medium gray (#808080)';
-    const seed = seedOf(id), made = {};
-    for (const view of ['front', 'back', 'left']) {
+    const seed = seedOf(id) + Number(args.seed || 0), made = {};
+    for (const view of FRONT_ONLY ? ['front'] : ['front', 'back', 'left']) {
       const prompt = `pixel art, ${desc}, ${VIEWS[view]}, one single creature alone, full body, centered, plain solid flat ${bg} background, ` +
         'video game monster, chibi proportions, clean bold dark outline, flat shading, limited color palette, ancient Chinese mythological style';
       let best = null; const whys = [];
@@ -216,9 +218,10 @@ for (const entry of todo) {
       if (!best.q.ok) throw new Error(`${view} : contrôle qualité échoué (${whys.join(', ')})`);
       made[view] = toSprite(toCells(best.img));
     }
-    made.right = flip(made.left);
-    sprites[id] = Object.fromEntries(DIRS.map(d => [d, uriOf(made[d])]));
-    DIRS.forEach(d => writeFileSync(join(PNG_DIR, `${id}_${d}.png`), PNG.sync.write(made[d])));
+    if (!FRONT_ONLY) made.right = flip(made.left);
+    const outDirs = FRONT_ONLY ? ['front'] : DIRS;
+    sprites[id] = Object.fromEntries(outDirs.map(d => [d, uriOf(made[d])]));
+    outDirs.forEach(d => writeFileSync(join(PNG_DIR, `${id}_${d}.png`), PNG.sync.write(made[d])));
     saveGenerated(sprites);
     ok++; console.log(`OK   ${id} (${Math.round((Date.now() - t0) / 1000)} s)`);
   } catch (e) { fail++; console.log(`ERR  ${id}: ${e.message}`); }

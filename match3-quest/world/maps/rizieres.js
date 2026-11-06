@@ -181,7 +181,7 @@ export default {
             id: 'rizieres_h_houyi', house: 'A',
             grid: [
                 '###########',
-                '#.##...1..#',
+                '#.##.3.1..#',
                 '#.#.......#',
                 '#.....##..#',
                 '#.2.......#',
@@ -189,7 +189,8 @@ export default {
                 '#####v#####'
             ],
             npcs: [
-                { id: 'change', at: '1' }
+                { id: 'change', at: '1' },
+                { id: 'houyi_mirror', at: '3' }   // le miroir de la maison : y regarder rejoue un épisode de Chang'e (change/)
             ],
             chests: [
                 { id: 'houyi_trunk', at: '2', gold: 15 }

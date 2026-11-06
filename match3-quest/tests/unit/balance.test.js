@@ -106,7 +106,7 @@ describe('sorts', () => {
     });
 
     test('sorts avancés : 3 à 5 couleurs, effet implémenté, budget de qì respecté', () => {
-        const effects = readFileSync(join(root, 'classSpellEffects.js'), 'utf8');
+        const effects = ['classSpellEffects.js', 'classSpellsMage.js', 'classSpellsWarrior.js', 'classSpellsAdvanced.js'].map(f => readFileSync(join(root, f), 'utf8')).join('\n');   // dispatcher + modules extraits
         const advanced = spells.filter(s => s.type === 'advanced');
         expect(advanced.length).toBeGreaterThanOrEqual(6);
         advanced.forEach(s => {
@@ -139,11 +139,13 @@ describe('sorts multimana', () => {
         });
     });
 
-    test('dégâts : 2,7 à 4,3 par qì, plus rentables aux hauts niveaux', () => {
+    // Plafond relevé de 4,3 à 4,7 : « Fin de la Tribulation » (niv. 70) coûte 270 qì depuis l'abaissement des plafonds de qì (#639)
+    // pour 1260 dégâts, soit ~4,67 par qì.
+    test('dégâts : 2,7 à 4,7 par qì, plus rentables aux hauts niveaux', () => {
         const dmg = multiSpells.filter(s => s.type === 'damage').sort((a, b) => a.minLevel - b.minLevel);
         dmg.forEach(s => {
             expect(s.dmg / totalCost(s)).toBeGreaterThanOrEqual(2.7);
-            expect(s.dmg / totalCost(s)).toBeLessThanOrEqual(4.3);
+            expect(s.dmg / totalCost(s)).toBeLessThanOrEqual(4.7);
         });
         dmg.slice(1).forEach((s, i) => expect(s.dmg).toBeGreaterThan(dmg[i].dmg));
     });

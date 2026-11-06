@@ -88,8 +88,23 @@ BY_COLOR = {"red": "fire blast crackling flames", "blue": "water splash and ice 
 NEGATIVE = "Low quality, average quality, noise, music, speech, voice."
 
 
+# Effets du mode Chang'e (change/view.js) : clé -> (légende courte, légende longue, durée en s, fondu en s). Générés avec `--only=change-heal,...` (modèle gm = MMAudio).
+CHANGE_SFX = {
+    "change-swap":   ("a soft jade tile click, small wooden tick", "a soft click of two jade tiles swapping places, a small gentle wooden tick", 1.0, 0.2),
+    "change-match":  ("gentle ascending chime of small bronze bells", "three small bronze bells chiming softly in a rising soothing order, short and bright", 1.2, 0.3),
+    "change-heal":   ("warm healing shimmer, soft bell tree, gentle breath of light", "a warm soothing healing shimmer with a soft bell tree and a gentle airy breath of light, comforting, no music", 1.8, 0.5),
+    "change-cake":   ("cheerful soft sparkle with a small sweet bell ding", "a small wooden box opening with a cheerful soft sparkle and one sweet bell ding, warm and gentle", 1.4, 0.4),
+    "change-breath": ("airy moonlight whoosh with a crystal glass chime", "a soft airy whoosh like moonlight blowing through the air ending with a crystal glass chime", 1.6, 0.4),
+    "change-mirror": ("a magical bronze mirror shimmering, glowing silver light swelling then a soft airy whoosh with distant bells",
+                      "a magical polished bronze mirror shimmering as silver moonlight swells, then a soft airy swirling whoosh with distant chiming bells fading out", 6.6, 0.8),
+    "change-cut":    ("a bronze mirror going dark, low glassy ring fading to silence", "a bronze mirror going dark, a low sad glassy ring slowly fading into silence", 3.0, 0.9),
+}
+
+
 def caption(key: str, meta: dict, kind: str = "short") -> str:
     idx = 1 if kind == "short" else 2
+    if key in CHANGE_SFX:
+        return CHANGE_SFX[key][0 if kind == "short" else 1]
     m = re.match(r"weaponHit-(\w+)-([pe])$", key)
     if m:
         rar, side = m.groups()
@@ -106,6 +121,8 @@ def caption(key: str, meta: dict, kind: str = "short") -> str:
 
 
 def target_seconds(key: str, meta: dict) -> tuple[float, float]:
+    if key in CHANGE_SFX:
+        return CHANGE_SFX[key][2], CHANGE_SFX[key][3]
     m = re.match(r"weaponHit-(\w+)-", key)
     if m:
         return {"common": 1.0, "uncommon": 1.1, "rare": 1.25, "legendary": 1.5}[m.group(1)], 0.25
@@ -133,6 +150,7 @@ def all_keys() -> list:
     for r in ("common", "uncommon", "rare", "legendary"):
         for s in ("p", "e"):
             keys.append((f"weaponHit-{r}-{s}", {"name": f"Coup d'arc {r} ({'joueur' if s == 'p' else 'ennemi'})"}))
+    keys += [(k, {"name": f"Mode Chang'e : {k}"}) for k in CHANGE_SFX]
     return keys
 
 

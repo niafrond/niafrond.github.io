@@ -3,6 +3,7 @@
 
 import { HOUSE_SPRITES } from './house.js';
 import { SOULS_DECOR } from './souls-decor.js';
+import { WINTER_DECOR } from './winter-decor.js';
 
 const K = '#2b1b17';
 const O = `stroke="${K}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;
@@ -229,11 +230,12 @@ const D = {
 };
 
 // « deadtree » n'est pas un dessin SVG : c'est l'une des variantes de sprites/deadtrees.js (dessinée par explorationView.js).
-export const DECOR_NAMES = [...Object.keys(D), ...Object.keys(SOULS_DECOR), 'deadtree'];
+export const DECOR_NAMES = [...Object.keys(D), ...Object.keys(SOULS_DECOR), ...Object.keys(WINTER_DECOR), 'deadtree'];
 
 const cache = new Map();
 export function decorSprite(name) {
     if (SOULS_DECOR[name]) return SOULS_DECOR[name].uri;   // décors du Royaume des âmes errantes en pixel art (tools/gen-souls-decor.mjs), sans dessin SVG
+    if (WINTER_DECOR[name]) return WINTER_DECOR[name].uri;   // décors de la Montagne des lanternes enneigées (tools/gen-winter-decor.mjs)
     if (!D[name]) return null;
     if (HOUSE_SPRITES[name]) return HOUSE_SPRITES[name].uri;   // mobilier de maison en pixel art (tools/gen-house-sprites.mjs), sinon le dessin SVG
     if (!cache.has(name)) cache.set(name, wrap(D[name]()));

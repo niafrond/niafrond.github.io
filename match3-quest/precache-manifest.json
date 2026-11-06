@@ -7,12 +7,26 @@
   "attributes.js",
   "bestiary.js",
   "board.js",
+  "boardEnemyMoves.js",
+  "boardLayout.js",
+  "boardSuggestions.js",
   "bossTips.js",
   "breakReminder.js",
   "cheatMode.js",
   "chestLoot.js",
   "cinematics.js",
+  "cinematicsBoss.js",
+  "cinematicsCore.js",
+  "cinematicsDuel.js",
+  "cinematicsEnding.js",
+  "cinematicsPrologue.js",
+  "cinematicsRegion.js",
+  "cinematicsSun.js",
+  "cinematicsTitle.js",
   "classSpellEffects.js",
+  "classSpellsAdvanced.js",
+  "classSpellsMage.js",
+  "classSpellsWarrior.js",
   "classes.js",
   "combatFlow.js",
   "combatStats.js",
@@ -22,6 +36,7 @@
   "companions.js",
   "compareView.js",
   "constants.js",
+  "creatureScale.js",
   "decor.js",
   "dialogState.js",
   "duel.js",
@@ -29,15 +44,40 @@
   "enemies.catalog.json",
   "enemies.js",
   "enemyAI.js",
+  "enemyAIChoice.js",
   "enemyAIProfiles.js",
   "equipPreview.js",
   "equipment.js",
+  "escapeHtml.js",
   "experience.js",
   "exploration.js",
+  "explorationChange.js",
+  "explorationDialogue.js",
   "explorationGrids.js",
+  "explorationGuide.js",
+  "explorationQuests.js",
+  "explorationSenses.js",
+  "explorationTravel.js",
   "explorationView.js",
+  "explorationViewCarnet.js",
+  "explorationViewChange.js",
+  "explorationViewConsts.js",
+  "explorationViewDraw.js",
+  "explorationViewGround.js",
+  "explorationViewMap.js",
+  "explorationViewOverlays.js",
+  "explorationViewPainters.js",
   "game.js",
+  "gameCardUi.js",
+  "gameHud.js",
+  "gameInventoryTabs.js",
+  "gameLevelUp.js",
   "gameOptions.js",
+  "gameSpellList.js",
+  "gameSpellsTab.js",
+  "gameStatsTab.js",
+  "gameTooltips.js",
+  "gameTurnFlow.js",
   "icon.svg",
   "icons.js",
   "items.js",
@@ -53,6 +93,7 @@
   "music.js",
   "musicTracks.js",
   "offlineCache.js",
+  "playStyles.js",
   "playTime.js",
   "playerNames.js",
   "progression.js",
@@ -68,12 +109,24 @@
   "spells.json",
   "statusBadges.js",
   "story.js",
+  "storyMirror.js",
+  "storyQuests.js",
+  "storyScreens.js",
+  "storyText.js",
   "stuff.js",
   "stuffView.js",
+  "style-cinematics.css",
+  "style-exploration.css",
+  "style-hud.css",
+  "style-inventory.css",
+  "style-tutorial.css",
   "style.css",
   "terrain.js",
   "tileBitmaps.js",
   "tilePainter.js",
+  "tilePainterBuildings.js",
+  "tilePainterDecor.js",
+  "tilePainterTerrain.js",
   "tutorial.js",
   "ultimateCinematics.js",
   "ultimates.js",
@@ -89,16 +142,23 @@
   "puzzle/modes.js",
   "puzzle/sprites.js",
   "puzzle/view.js",
+  "change/art.js",
+  "change/data.js",
+  "change/engine.js",
+  "change/state.js",
+  "change/view.js",
   "world/aquatic.js",
   "world/armorQuests.js",
   "world/barriers.js",
   "world/collars.js",
   "world/connections.js",
+  "world/enlarge.js",
   "world/etages.js",
   "world/expand.js",
   "world/index.js",
   "world/junctions.js",
   "world/legends.js",
+  "world/levelDesign.js",
   "world/manifest.js",
   "world/manifest2.js",
   "world/mapKit.js",
@@ -114,6 +174,7 @@
   "world/maps/rizieres.js",
   "world/maps/tonnerre.js",
   "world/maps/volcan.js",
+  "world/snapshot.js",
   "world/spots.js",
   "world/structures.js",
   "world/text/bambous.js",
@@ -140,12 +201,16 @@
   "world/text/tonnerre.js",
   "world/text/volcan.js",
   "world/underground.js",
+  "world/wildGrass.js",
   "events/config.js",
   "events/engine.js",
   "events/registry.js",
   "events/wanderingSouls/data.js",
   "events/wanderingSouls/index.js",
   "events/wanderingSouls/terrains.js",
+  "events/winterLanternFestival/data.js",
+  "events/winterLanternFestival/index.js",
+  "events/winterLanternFestival/terrains.js",
   "sprites/archi.js",
   "sprites/biomeArchi.js",
   "sprites/biomeSvg.js",
@@ -162,6 +227,8 @@
   "sprites/souls-decor.js",
   "sprites/soulsFloor.js",
   "sprites/villagers.js",
+  "sprites/winter-decor.js",
+  "sprites/winterFloor.js",
   "sprites/cn/actors-a.js",
   "sprites/cn/actors-b.js",
   "sprites/cn/enemies-1.js",
@@ -186,6 +253,13 @@
   "audio/sfx-models.json",
   "audio/sfx/battleStart.mp3",
   "audio/sfx/bossStart.mp3",
+  "audio/sfx/change-breath.mp3",
+  "audio/sfx/change-cake.mp3",
+  "audio/sfx/change-cut.mp3",
+  "audio/sfx/change-heal.mp3",
+  "audio/sfx/change-match.mp3",
+  "audio/sfx/change-mirror.mp3",
+  "audio/sfx/change-swap.mp3",
   "audio/sfx/combatStart.mp3",
   "audio/sfx/default.mp3",
   "audio/sfx/defeat.mp3",
@@ -713,6 +787,11 @@
    "h": "fd52fd3d05"
   },
   {
+   "p": "sprites/gba/change_jouable.2ebd3b34.js",
+   "s": 40167,
+   "h": "2ebd3b3458"
+  },
+  {
    "p": "sprites/gba/change_moon.d131916f.js",
    "s": 1324,
    "h": "d131916fdc"
@@ -773,44 +852,44 @@
    "h": "0fe4bd3091"
   },
   {
-   "p": "sprites/gba/companion_braise.9b231cf1.js",
-   "s": 34415,
-   "h": "9b231cf11e"
+   "p": "sprites/gba/companion_braise.9898150f.js",
+   "s": 38511,
+   "h": "9898150fcb"
   },
   {
-   "p": "sprites/gba/companion_dawa.a04cab4b.js",
-   "s": 29047,
-   "h": "a04cab4be7"
+   "p": "sprites/gba/companion_dawa.c4c6c2cd.js",
+   "s": 32003,
+   "h": "c4c6c2cd0e"
   },
   {
-   "p": "sprites/gba/companion_etincelle.30eff963.js",
-   "s": 41895,
-   "h": "30eff963c4"
+   "p": "sprites/gba/companion_etincelle.a6f630f6.js",
+   "s": 36475,
+   "h": "a6f630f67a"
   },
   {
-   "p": "sprites/gba/companion_jian.6649d612.js",
-   "s": 40763,
-   "h": "6649d612f4"
+   "p": "sprites/gba/companion_jian.ff31f9d1.js",
+   "s": 35695,
+   "h": "ff31f9d185"
   },
   {
-   "p": "sprites/gba/companion_tou.d6fc3111.js",
-   "s": 29435,
-   "h": "d6fc311171"
+   "p": "sprites/gba/companion_tou.eeca84c2.js",
+   "s": 39759,
+   "h": "eeca84c22f"
   },
   {
-   "p": "sprites/gba/companion_xiao_gui.d7725b58.js",
-   "s": 36447,
-   "h": "d7725b5824"
+   "p": "sprites/gba/companion_xiao_gui.207f2fcf.js",
+   "s": 36631,
+   "h": "207f2fcf3d"
   },
   {
-   "p": "sprites/gba/companion_yu.fea8218d.js",
-   "s": 36671,
-   "h": "fea8218d97"
+   "p": "sprites/gba/companion_yu.fbe658a3.js",
+   "s": 38799,
+   "h": "fbe658a32f"
   },
   {
-   "p": "sprites/gba/companion_zhi.e32338d6.js",
-   "s": 27535,
-   "h": "e32338d67f"
+   "p": "sprites/gba/companion_zhi.f9488510.js",
+   "s": 29815,
+   "h": "f948851096"
   },
   {
    "p": "sprites/gba/cook_dada.e1852e6d.js",
@@ -1408,6 +1487,11 @@
    "h": "d6196c3772"
   },
   {
+   "p": "sprites/gba/houyi_mirror.af276110.js",
+   "s": 768,
+   "h": "af2761107f"
+  },
+  {
    "p": "sprites/gba/hu_jing.4949fe90.js",
    "s": 5109,
    "h": "4949fe90b3"
@@ -1846,6 +1930,11 @@
    "p": "sprites/gba/miller_gao.4676d4d8.js",
    "s": 1716,
    "h": "4676d4d824"
+  },
+  {
+   "p": "sprites/gba/mimique.fd09dda5.js",
+   "s": 68632,
+   "h": "fd09dda52c"
   },
   {
    "p": "sprites/gba/miner_shan.afcf4c4a.js",
@@ -2748,6 +2837,71 @@
    "h": "7f309c9762"
   },
   {
+   "p": "sprites/gba/wlm_ancien.ea493451.js",
+   "s": 28721,
+   "h": "ea49345152"
+  },
+  {
+   "p": "sprites/gba/wlm_artisan.74b5083a.js",
+   "s": 17537,
+   "h": "74b5083af8"
+  },
+  {
+   "p": "sprites/gba/wlm_cuisinier.6cfe3e14.js",
+   "s": 17121,
+   "h": "6cfe3e1448"
+  },
+  {
+   "p": "sprites/gba/wlm_enfants.489a5436.js",
+   "s": 22901,
+   "h": "489a543607"
+  },
+  {
+   "p": "sprites/gba/wlm_esprit_givre.82713a81.js",
+   "s": 26253,
+   "h": "82713a814d"
+  },
+  {
+   "p": "sprites/gba/wlm_esprit_village.09023950.js",
+   "s": 24341,
+   "h": "0902395007"
+  },
+  {
+   "p": "sprites/gba/wlm_famille.2ea48bce.js",
+   "s": 39853,
+   "h": "2ea48bce8b"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_flamme.e7e74f12.js",
+   "s": 24785,
+   "h": "e7e74f121c"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_glace.f5e2aba7.js",
+   "s": 23857,
+   "h": "f5e2aba7c1"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_sanctuaire.e98cf8d7.js",
+   "s": 20481,
+   "h": "e98cf8d7d6"
+  },
+  {
+   "p": "sprites/gba/wlm_oiseau_givre.ede8bec7.js",
+   "s": 37321,
+   "h": "ede8bec7be"
+  },
+  {
+   "p": "sprites/gba/wlm_pelerin.aa23ce8f.js",
+   "s": 21585,
+   "h": "aa23ce8fd7"
+  },
+  {
+   "p": "sprites/gba/wlm_renard_neiges.c500944e.js",
+   "s": 24933,
+   "h": "c500944eed"
+  },
+  {
    "p": "sprites/gba/wolf_pup_baatar.f6482063.js",
    "s": 1528,
    "h": "f64820631c"
@@ -2948,6 +3102,11 @@
    "h": "603140cca8"
   },
   {
+   "p": "sprites/ultimates/biome_winter_lantern_mountain-seq.png",
+   "s": 178126,
+   "h": "34aa8d12af"
+  },
+  {
    "p": "sprites/ultimates/combatend_defeat-seq.png",
    "s": 298472,
    "h": "2624a2f623"
@@ -2959,8 +3118,8 @@
   },
   {
    "p": "sprites/ultimates/index.json",
-   "s": 6811,
-   "h": "81bae8ec4a"
+   "s": 6965,
+   "h": "b0d4153193"
   },
   {
    "p": "sprites/ultimates/ultimateAzureDragon-seq.png",
@@ -3993,6 +4152,16 @@
    "h": "35f3ace6bf"
   },
   {
+   "p": "sprites/change/mirror-in.gif",
+   "s": 2449755,
+   "h": "dbf583bf4e"
+  },
+  {
+   "p": "sprites/change/mirror-out.gif",
+   "s": 2449708,
+   "h": "3a9f17e8f4"
+  },
+  {
    "p": "audio/music/boss-a0.mp3",
    "s": 1957347,
    "h": "97b900d7d0"
@@ -4106,6 +4275,11 @@
    "p": "audio/music/boss-gardien-de-la-digue.mp3",
    "s": 1844812,
    "h": "1493f9d131"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-flamme-hivernale.mp3",
+   "s": 1791522,
+   "h": "879e3d289b"
   },
   {
    "p": "audio/music/boss-gardien-de-la-forge-noire.mp3",
@@ -4268,6 +4442,21 @@
    "h": "76f414f3c6"
   },
   {
+   "p": "audio/music/change-farewell.mp3",
+   "s": 2057344,
+   "h": "bb66d504c6"
+  },
+  {
+   "p": "audio/music/change-puzzle.mp3",
+   "s": 2024116,
+   "h": "dd12c3998f"
+  },
+  {
+   "p": "audio/music/change-village.mp3",
+   "s": 2073645,
+   "h": "9d090e3e17"
+  },
+  {
    "p": "audio/music/combat-0.mp3",
    "s": 2003427,
    "h": "8999a3c0ca"
@@ -4311,6 +4500,11 @@
    "p": "audio/music/event-wandering-souls.mp3",
    "s": 2018787,
    "h": "ef37e23078"
+  },
+  {
+   "p": "audio/music/event-winter-lantern.mp3",
+   "s": 1993710,
+   "h": "ec53f47e2d"
   },
   {
    "p": "audio/music/house.mp3",

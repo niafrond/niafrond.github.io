@@ -10,9 +10,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
+import { readGameSource } from './gameSource.js';
 
 export const GAME_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const readGame = file => readFileSync(join(GAME_ROOT, file), 'utf8');
+// game.js est réparti en plusieurs modules game*.js : on lit leur ensemble.
+const readGame = file => (file === 'game.js' ? readGameSource() : readFileSync(join(GAME_ROOT, file), 'utf8'));
 
 if (typeof globalThis.XMLHttpRequest === 'undefined') {
     globalThis.XMLHttpRequest = class XhrDisque {
@@ -88,7 +90,7 @@ export const gameRules = extractGameFunctions(
     ['getUnlockedSpellCap', 'buildUnlockedSpellsList', 'canEntityCastSpell', 'consumeSpellMana', 'spellColorsOf'],
     // flyManaSpend / flyHeal : animations DOM de manaFlight.js (importées par game.js), sans effet sur les règles testées ;
     // player : l'état global de game.js (consumeSpellMana compare l'entité au joueur pour orienter l'animation).
-    `const HIGH_SPELL_FROM_LEVEL = ${HIGH_SPELL_FROM_LEVEL}; const flyManaSpend = () => {}; const flyHeal = () => {}; const player = Symbol('joueur');`
+    `const HIGH_SPELL_FROM_LEVEL = ${HIGH_SPELL_FROM_LEVEL}; const flyManaSpend = () => {}; const flyHeal = () => {}; const player = Symbol('joueur'); const spellCostFor = (entity, amount) => amount;`
 );
 
 // ── Sorts : règle de déblocage de game.js (updateAvailableSpells), appliquée avec les vrais modules ───────────────────────

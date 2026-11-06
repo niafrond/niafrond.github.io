@@ -17,6 +17,9 @@
 import { applyEtages } from './etages.js';
 import { merchantNpc } from '../merchants.js';
 import { getXPCostForLevel } from '../experience.js';
+import { thickenGrass } from './wildGrass.js';
+import { enlargeScreen } from './enlarge.js';
+import { designLevel } from './levelDesign.js';
 import { buildZone, arrivalFor, freeNeighbor, applyNativeSanctuary } from './mapKit.js';
 import { EXPANDED_SIZES, fitScreen, widenGates, linkGates, openPerimeter, addWaterBorder, addTreeBorder, pruneGrass } from './expand.js';
 import { applyJunctions, applyLevelGuards } from './junctions.js';
@@ -29,7 +32,7 @@ import { applyUnderground } from './underground.js';
 import { applyEvents } from '../events/engine.js';
 import { EVENTS } from '../events/config.js';
 import { EVENT_MODULES } from '../events/registry.js';
-import { applyConnections, migrateEdgeExits } from '../mapConnections.js';
+import { applyConnections, migrateEdgeExits, DIRS } from '../mapConnections.js';
 import { CONNECTIONS } from './connections.js';
 import { addBorderBarriers } from './barriers.js';
 import { addStructures } from './structures.js';
@@ -45,7 +48,13 @@ const BASE_CHAIN = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
 const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };
 // Régions bordées d'arbres plutôt que de mer (world/expand.js addTreeBorder).
-export const TREE_BORDER_REGIONS = new Set(['rizieres']);   // part du coût d'un niveau (experience.js : getXPCostForLevel)
+export const TREE_BORDER_REGIONS = new Set(['rizieres']);
+// Variété du parcours (world/enlarge.js `moves`) : côté par lequel la route sort vers le village (`road`) et côté de la zone sauvage par lequel
+// on y entre (`wild`) ; absent = classique (ouest → est). Seuls les villages à quatre ancres (`<` `>` `^` `v`) en profitent.
+export const TURNS = {
+    rizieres: { wild: 'north' }, volcan: { road: 'north' }, gobi: { wild: 'north' }, fleuve: { road: 'north' }, bambous: { road: 'south' },
+    fauves: { road: 'north' }, mer: { wild: 'north' }, fusang: { road: 'south' }
+};   // part du coût d'un niveau (experience.js : getXPCostForLevel)
 
 // Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
 export function questXp(quest, region) {
@@ -142,8 +151,6 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             if (prev) addExit(road, map.road, '<', { to: prev, label: screens[prev].name });
             addExit(road, map.road, '>', { to: village.id, label: village.name });
         }
-        if (prev) addExit(village, map.village, '<', { to: road ? road.id : prev, label: road ? road.name : screens[prev].name });
-        addExit(village, map.village, '>', { to: wild.id, label: wild.name });
         addExit(wild, map.wild, '<', { to: village.id, label: village.name });
         const gate = map.wild.gate || {};
         addExit(wild, map.wild, '>', {
@@ -159,6 +166,29 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             addExit(wild, map.wild, 'v', { to: hamlet.id, label: hamlet.name });
             screens[hamlet.id] = hamlet;
         }
+        // Routes agrandies et moins rectangulaires (world/enlarge.js), avec un parcours varié : selon la région, on sort de la route par le bas ou le
+        // haut (on entre alors dans le village par le haut ou le bas) et on entre dans la zone sauvage par le haut (on sort du village par le bas).
+        // Le déplacement n'est retenu que si l'agrandissement réussit : sinon le parcours reste classique (ouest → est).
+        const turned = { road: 'east', wild: 'west' };
+        if (!options.legacy) {
+            const want = TURNS[region] || {};
+            const treeBorder = TREE_BORDER_REGIONS.has(region);
+            const turn = (zone, edge) => {
+                if (!zone) return false;
+                if (edge) {
+                    enlargeScreen(zone, { treeBorder, moves: [{ to: village.id, edge }] });
+                    if (zone.enlarged?.moved?.includes(village.id)) return true;
+                }
+                enlargeScreen(zone, { treeBorder });   // déplacement impossible : agrandie, mais parcours classique
+                return false;
+            };
+            if (turn(road, want.road)) turned.road = want.road;
+            if (turn(wild, want.wild)) turned.wild = want.wild;
+        }
+        // Le village s'ouvre par l'ancre opposée à la sortie de la route (`<` ouest, `^` nord, `v` sud) et sort vers la zone sauvage par `>` ou `v`.
+        const entryAnchor = { east: '<', south: '^', north: 'v' }[turned.road];
+        if (prev) addExit(village, map.village, entryAnchor, { to: road ? road.id : prev, label: road ? road.name : screens[prev].name });
+        addExit(village, map.village, turned.wild === 'north' ? 'v' : '>', { to: wild.id, label: wild.name });
         screens[village.id] = village;
         screens[wild.id] = wild;
         if (road) screens[road.id] = road;
@@ -245,13 +275,21 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
 
     // Connexions de bordure (données : world/connections.js) ; les cartes sans connexion gardent des bords infranchissables.
     // Les passages de bord (rangées de sorties de world/expand.js) deviennent des connexions de bordure.
-    applyConnections(screens, options.legacy ? [] : [...migrateEdgeExits(screens), ...(options.connections || CONNECTIONS)]);
+    // Une bordure de mer (world/connections.js) cède la place au passage de parcours qui occupe le même bord (TURNS), de l'un ou l'autre côté.
+    const gateConnections = options.legacy ? [] : migrateEdgeExits(screens);
+    const usedSides = new Set(gateConnections.map(c => `${c.from}/${c.dir}`));
+    const sea = (options.connections || CONNECTIONS).filter(c => options.connections || !(usedSides.has(`${c.from}/${c.dir}`) || usedSides.has(`${c.to}/${DIRS[c.dir].opposite}`)));
+    applyConnections(screens, options.legacy ? [] : [...gateConnections, ...sea]);
     // Bordures qui ne se traversent pas : barrière du biome (eau, rochers, arbres…), world/barriers.js.
     if (!options.legacy) addBorderBarriers(screens);
     // Bâtiments, tours, sanctuaires, ponts et escaliers du biome posés à leur échelle dans les zones sauvages (world/structures.js).
     if (!options.legacy) addStructures(screens);
     // Les hautes herbes ne couvrent que des cases franchissables (décor de bordure, eau, bâtiments les ont pu recouvrir).
     Object.values(screens).forEach(pruneGrass);
+    // Zones sauvages : moins d'amas d'obstacles décoratifs, plus de hautes herbes (world/wildGrass.js).
+    if (!options.legacy) Object.values(screens).forEach(thickenGrass);
+    // Level design à la Pokémon : corniches à sens unique, défilés d'herbes, motifs d'obstacles (world/levelDesign.js).
+    if (!options.legacy) Object.values(screens).forEach(s => designLevel(s, { rank: REGION_ORDER.indexOf(s.region) + 1 }));
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });

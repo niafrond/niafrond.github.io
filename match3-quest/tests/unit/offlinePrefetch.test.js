@@ -85,6 +85,18 @@ describe('createPrefetcher', () => {
         expect((await pf.refresh()).phase).toBe('done');
     });
 
+    test('waitWhile : rien n\'est téléchargé tant que la garde retient, puis tout reprend', async () => {
+        const env = makeEnv();
+        let busy = true;
+        const pf = createPrefetcher(env, { ...quick, waitWhile: () => busy, waitPollMs: 5 });
+        const run = pf.start();
+        await new Promise(r => setTimeout(r, 60));
+        expect(env.calls).toEqual([]);
+        busy = false;
+        await run;
+        expect(pf.state).toMatchObject({ phase: 'done', done: 3 });
+    });
+
     test('start : télécharge seulement ce qui manque, dans l\'ordre du manifeste, 2 à la fois, progression croissante', async () => {
         const env = makeEnv();
         await seed(env, [MEDIA[0]]);

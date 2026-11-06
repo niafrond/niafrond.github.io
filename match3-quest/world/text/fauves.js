@@ -43,7 +43,7 @@ export default {
     twins_mu: { name: 'Les jumeaux Mu', title: 'Enfants-bergers', 
       idle: ['On est deux, mais on ne parle que d\'une voix ! Elle dit qu\'on garde les moutons. Il dit que ce sont eux qui nous gardent.', 'Notre agneau s\'appelle Nuage. Il a disparu dans l\'herbe. On a pleuré à deux, ça a fait plus de bruit.'],
       talk: [{ whenDone: 'sq_agneau_perdu', lines: ['Nuage est de retour ! Il dort déjà ! Merci, archer. On a mis un ruban rouge à son cou, pour le retrouver la prochaine fois.'] }] },
-    hua_fauves: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_fauves: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Cloches, rubans, fromages de brebis : les nomades n\'ont pas de maison, mais ils aiment les jolies choses.', 'Plus loin, j\'irai jusqu\'à la mer. Ou plus haut, jusqu\'à l\'arbre. On verra : la route décide, pas moi.'],
       talk: [{ whenDone: 'sun_7', lines: ['Septième soleil ! Mon sac est plus léger, mon cœur aussi. La mer m\'attend, archer, mais vous y serez avant moi.'] }] },
     hare_tuzi: { name: 'Tuzi', title: 'Lièvre du Palais lunaire', 

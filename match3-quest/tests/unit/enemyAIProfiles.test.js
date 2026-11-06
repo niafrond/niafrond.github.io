@@ -2,8 +2,9 @@
 import { describe, test, expect } from '@jest/globals';
 import {
     AI_TIERS, TIER_ORDER, baseTierForLevel, resolveDifficulty, tierSettings, thinkingTimeFor,
-    PERSONALITIES, PERSONALITY_KEYS, WEIGHT_MIN, WEIGHT_MAX, assignPersonality, personalityWeight, pickWeighted
+    PERSONALITIES, PERSONALITY_KEYS, WEIGHT_MIN, WEIGHT_MAX, assignPersonality, personalityWeight
 } from '../../enemyAIProfiles.js';
+import { pickWeightedOption } from '../../enemyAIChoice.js';
 import { DIFFICULTY_PREFERENCES } from '../../enemyAIProfiles.js';
 import { getOption, setOption, OPTION_DEFAULTS } from '../../gameOptions.js';
 
@@ -21,8 +22,8 @@ function frequencies(personality, options, ctx, n = 6000, seed = 7) {
     const rng = seeded(seed);
     const counts = {};
     for (let i = 0; i < n; i++) {
-        const weighted = options.map(o => ({ ...o, weight: o.probability * personalityWeight(personality, o, ctx) }));
-        const key = pickWeighted(weighted, rng).type;
+        const weighted = options.map(o => ({ ...o, probability: o.probability * personalityWeight(personality, o, ctx) }));
+        const key = pickWeightedOption(weighted, rng).type;
         counts[key] = (counts[key] || 0) + 1 / n;
     }
     return counts;
@@ -198,13 +199,5 @@ describe('personnalités', () => {
         }
         // un seul choix valide : il est toujours pris
         expect(frequencies('aggressive', [board], calm).board).toBeCloseTo(1, 9);
-    });
-
-    test('pickWeighted : proportionnel aux poids', () => {
-        const options = [{ type: 'a', weight: 1 }, { type: 'b', weight: 3 }];
-        expect(pickWeighted(options, () => 0).type).toBe('a');
-        expect(pickWeighted(options, () => 0.24).type).toBe('a');
-        expect(pickWeighted(options, () => 0.26).type).toBe('b');
-        expect(pickWeighted(options, () => 0.999999).type).toBe('b');
     });
 });

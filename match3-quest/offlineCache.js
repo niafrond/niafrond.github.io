@@ -74,10 +74,11 @@ async function hasController(env, waitMs = 8000) {
 }
 
 /**
+ * Options : `waitWhile()` (vrai = patienter avant le fichier suivant, interrogé toutes les `waitPollMs` ms).
  * @returns {{ start, pause, clear, refresh, subscribe, state }} `state` : { phase, total, done, bytesTotal, bytesDone, failed, reason }
  *   phase : 'idle' | 'running' | 'paused' | 'done' | 'partial' | 'unsupported' ; reason (partial/paused/unsupported) : 'quota' | 'errors' | 'offline' | 'not-cached' | 'no-service-worker'
  */
-export function createPrefetcher(env = globalThis, { concurrency = 2, retries = 2, retryDelayMs = 1500, settleMs = 400 } = {}) {
+export function createPrefetcher(env = globalThis, { concurrency = 2, retries = 2, retryDelayMs = 1500, settleMs = 400, waitWhile = null, waitPollMs = 1000 } = {}) {
     const listeners = new Set();
     let state = { phase: 'idle', total: 0, done: 0, bytesTotal: 0, bytesDone: 0, failed: 0, reason: null };
     let running = null;
@@ -159,6 +160,9 @@ export function createPrefetcher(env = globalThis, { concurrency = 2, retries = 
         let failed = 0;
         const worker = async () => {
             while (queue.length && !stopRequested) {
+                // `waitWhile` : le téléchargement s'efface devant le jeu (appareil modeste : il ralentit l'affichage de ≈ 25 %)
+                while (waitWhile && waitWhile() && !stopRequested) await new Promise(r => setTimeout(r, waitPollMs));
+                if (stopRequested) break;
                 if (env.navigator.onLine === false) { stopRequested = true; set({ phase: 'paused', reason: 'offline' }); return; }
                 const m = queue.shift();
                 if (await downloadOne(m)) set({ done: state.done + 1, bytesDone: state.bytesDone + m.s });

@@ -19,6 +19,8 @@
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
 //  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
 //    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
+//  - arrival (PNJ) : { hop? } ; avec `showWhen: <id d'un ennemi de l'écran>`, le PNJ ne surgit pas : à la victoire sur cet ennemi, un événement
+//    `npcArrival` (après toutes les scènes) le fait rejoindre le héros en sautillant, puis sa conversation s'ouvre d'elle-même ;
 //  - bait (PNJ) : { enemy, lines, retry } ; lui parler fait surgir l'ennemi `enemy` (tant qu'il n'est pas vaincu) : les lignes sont
 //    dites, puis le combat démarre (résultat `combat` de talkToNpc) ; `retry` remplace `lines` aux conversations suivantes ;
 //  - chain (ennemi) : id d'un ennemi attaqué tout de suite après sa victoire (événement `chain`, après les scènes) ;
@@ -40,15 +42,25 @@
 //    mêmes tirages, table des herbes de la carte ou, à défaut, de la carte sauvage de la région (encounterOf / isEncounterCell).
 
 import { PUZZLES, PUZZLE_SETS, isSetComplete, puzzlesOfSet, pieceOfPuzzle } from './puzzle/levels.js';
-import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
-import { COMPANIONS, BANTER } from './companions.js';
+import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL } from './story.js';
 import { REGION_LEVEL } from './world/index.js';
-import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
 import { isLowObstacle } from './decor.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
-import { crossBorder, connectionMarkers, onSide, dirOfStep, overlapOf } from './mapConnections.js';
+import { crossBorder, onSide, dirOfStep, overlapOf } from './mapConnections.js';
+import { launchNotices } from './events/engine.js';
+import { defaultChangeData, normalizeChangeData } from './change/state.js';
+import { EVENT_MODULES } from './events/registry.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
+import { MIMIC_NAME, MIMIC_SPRITE, clearMarker, isMimicChest, markerOf, reclosePastChests, revealFog } from './explorationSenses.js';
+export * from './explorationSenses.js';
+import { checkAutoQuests, objectiveDone, progressReached, questById, questStatus } from './explorationQuests.js';
+export * from './explorationQuests.js';
+export * from './explorationDialogue.js';
+export * from './explorationGuide.js';
+import { activateWaypoint, discoverVillageWaypoint, recordBestiary } from './explorationTravel.js';
+export * from './explorationTravel.js';
+export * from './explorationChange.js';
 
 export const AGGRO_RADIUS = 1;
 // Rayon de vigilance d'un ennemi : 1 case pour un ennemi normal, 0 pour un boss (ou le gardien d'une porte) : il faut alors
@@ -65,6 +77,7 @@ const inRect = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < 
 
 // ── Hautes herbes : rencontres aléatoires (voir world/DESIGN-V2.md §5) ───────────────────────────
 export const GRASS_RATE = 0.12;          // probabilité de rencontre par pas sur l'herbe, une fois les pas de grâce passés
+export const MOUNTED_GRASS_FACTOR = 0.4;   // à cheval : 40 % de la probabilité de rencontre (le cheval galope trop vite pour être surpris)
 export const GRASS_SAFE_STEPS = 3;       // pas d'herbe sans rencontre après l'arrivée sur la carte ou un combat
 export const WILD_PREFIX = 'wild:';      // identifiant synthétique d'une créature d'herbe : wild:<écran>:<n>
 export const WILD_INTRO = 'Des créatures se cachent dans les hautes herbes, l\'eau et la lave.';
@@ -145,13 +158,21 @@ export function takeWildIntro(session) {
     return WILD_INTRO;
 }
 
+// Annonces de lancement des événements activés (events/engine.js `launchNotices`) pas encore lues dans cette partie : une seule fois chacune
+// (`data.eventNotices`), au premier chargement du jeu ; renvoie [] ensuite.
+export function takeLaunchNotices(session) {
+    const fresh = launchNotices(session.screens, EVENT_MODULES).filter(n => !session.data.eventNotices.includes(n.id));
+    fresh.forEach(n => session.data.eventNotices.push(n.id));
+    return fresh;
+}
+
 // Quête qui enseigne le « Pas de Yu » (yubu) : une fois terminée, le héros marche sur les eaux.
 export const YUBU_QUEST = 'sq_pas_de_yu';
 export const canWalkOnWater = session => session?.data?.quests?.[YUBU_QUEST] === 'done';
 
 // Cheval : `owned` = le héros possède une monture. Il est en selle tant qu'il ne l'a pas quittée (`data.mounted === false`) ;
 // il descend tout seul sur l'eau (le cheval ne marche pas sur les eaux) et remonte à la demande, sur la terre ferme.
-export const isRiding = (session, owned) => Boolean(owned) && session.data.mounted !== false;
+export const isRiding = (session, owned) => Boolean(owned) && session.data.mounted !== false && !session.rt?.changeMode;   // Chang'e va à pied
 export function isOnLiquid(session) {
     const screen = session.screens[session.data.screenId];
     return Boolean(screen) && inRect(screen.liquids || [], session.data.x, session.data.y);
@@ -176,8 +197,19 @@ export function toggleMount(session, owned) {
 
 // Les liquides bloquent, sauf pour qui marche sur l'eau (`onWater`) ; dans un écran aquatique (`screen.aquatic`) on n'entre
 // qu'avec le Pas de Yu, ses eaux sont donc toujours franchissables.
+// Corniche (rebord à sens unique, world/levelDesign.js) : [dx, dy] du saut permis sur la case (x, y), ou null.
+const ledgeCache = new WeakMap();
+export function ledgeAt(screen, x, y) {
+    const list = screen.ledges;
+    if (!Array.isArray(list) || !list.length) return null;
+    let map = ledgeCache.get(list);
+    if (!map) { map = new Map(list.map(([lx, ly, dx, dy]) => [`${lx},${ly}`, [dx, dy]])); ledgeCache.set(list, map); }
+    return map.get(`${x},${y}`) || null;
+}
+
 export function isTerrainBlocked(screen, x, y, onWater = false) {
     if (x < 0 || y < 0 || x >= screen.w || y >= screen.h) return true;
+    if (screen.ledges && ledgeAt(screen, x, y)) return true;   // une corniche ne se marche pas : on la saute (tryMove)
     if (inRect(screen.obstacles, x, y) && !isLowObstacle(screen, x, y)) return true;   // les roseaux se traversent
     return !(onWater || screen.aquatic) && inRect(screen.liquids || [], x, y);
 }
@@ -218,6 +250,9 @@ function defaultData() {
         solvedPuzzles: [],       // énigmes à plateau résolues (puzzle/levels.js) : un coffre à énigme ne s'ouvre qu'ensuite
         quests: {},
         visitedScreens: [],
+        mimicked: [],            // coffres refermés au retour du joueur : des mimiques tant qu'ils ne sont pas rouverts
+        returns: {},             // nombre de retours sur chaque carte (graine du tirage des coffres refermés)
+        fog: {},                 // brouillard de guerre de la minimap : écran -> cases vues (hexadécimal, 4 cases par signe)
         introSeen: false,
         eventNotices: [],        // annonces d'événements déjà lues (une seule fois chacune : screen.eventNotice)
         eventReturn: null,       // écran et case d'où le héros est entré dans un écran d'événement (sortie exit.returnToSaved)
@@ -230,6 +265,7 @@ function defaultData() {
         tracked: null,
         questItems: [],
         bestiary: [],            // gabarits d'ennemis croisés en combat ou observés (onglet Bestiaire du carnet, conservé en NG+)
+        change: defaultChangeData(),   // mode Chang'e (change/) : épisodes terminés, épisode en cours, soins obtenus
         arena: normalizeArenaData(null)
     };
 }
@@ -241,6 +277,11 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.solvedPuzzles = Array.isArray(data.solvedPuzzles) ? data.solvedPuzzles : [];
     data.puzzleSetsDone = Array.isArray(data.puzzleSetsDone) ? data.puzzleSetsDone : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
+    data.fog = data.fog && typeof data.fog === 'object' && !Array.isArray(data.fog) ? data.fog : {};
+    data.mimicked = Array.isArray(data.mimicked) ? data.mimicked.filter(id => typeof id === 'string') : [];
+    data.returns = data.returns && typeof data.returns === 'object' && !Array.isArray(data.returns) ? data.returns : {};
+    data.change = normalizeChangeData(data.change);
+    data.change.return = null;   // le mode n'est jamais restauré à mi-chemin : Hou Yi reprend sa place, l'épisode inachevé se rouvre par le miroir
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
@@ -292,13 +333,14 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     }
     initScreenRuntime(session);
     if (!data.visitedScreens.includes(data.screenId)) data.visitedScreens.push(data.screenId);
+    revealFog(session);
     discoverVillageWaypoint(session);
     return session;
 }
 
 export const currentScreen = session => session.screens[session.data.screenId];
 
-function initScreenRuntime(session) {
+export function initScreenRuntime(session) {
     const screen = currentScreen(session);
     session.rt.enemies = {};
     session.rt.patrolTimer = 0;
@@ -324,14 +366,27 @@ function enemyZoneCells(screen, def) {
     return cells;
 }
 
+// Grille des cases fermées de l'écran (obstacles pleins, eau, corniches, hors carte), construite une fois : `isTerrainBlocked` parcourt des listes de
+// rectangles, bien trop lent pour être rappelé case par case sur une carte de 64 × 32 cases (calcul des ennemis qui barrent un chemin, à chaque arrivée).
+const terrainGridCache = new WeakMap();
+function terrainGrid(screen) {
+    const hit = terrainGridCache.get(screen);
+    if (hit && hit.obstacles === screen.obstacles && hit.liquids === screen.liquids && hit.ledges === screen.ledges && hit.w === screen.w && hit.h === screen.h) return hit.grid;
+    const grid = new Uint8Array(screen.w * screen.h);
+    for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (isTerrainBlocked(screen, x, y)) grid[y * screen.w + x] = 1;
+    terrainGridCache.set(screen, { obstacles: screen.obstacles, liquids: screen.liquids, ledges: screen.ledges, w: screen.w, h: screen.h, grid });
+    return grid;
+}
+
 // Composantes connexes de l'écran (terrain libre, hors cases `blocked`) : Map case → numéro de composante.
 function componentsOf(screen, blocked) {
     const comp = new Map();
+    const closed = terrainGrid(screen);
     let id = 0;
     for (let y = 0; y < screen.h; y++) {
         for (let x = 0; x < screen.w; x++) {
             const k = y * screen.w + x;
-            if (comp.has(k) || blocked.has(k) || isTerrainBlocked(screen, x, y)) continue;
+            if (comp.has(k) || blocked.has(k) || closed[k]) continue;
             id++;
             const stack = [[x, y]];
             comp.set(k, id);
@@ -339,7 +394,7 @@ function componentsOf(screen, blocked) {
                 const [cx, cy] = stack.pop();
                 for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                     const nx = cx + dx, ny = cy + dy, nk = ny * screen.w + nx;
-                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || isTerrainBlocked(screen, nx, ny)) continue;
+                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || closed[nk]) continue;
                     comp.set(nk, id);
                     stack.push([nx, ny]);
                 }
@@ -347,6 +402,17 @@ function componentsOf(screen, blocked) {
         }
     }
     return comp;
+}
+
+// Composantes de l'écran sans aucun ennemi : identiques pour tous les ennemis de l'écran, calculées une fois.
+const freeComponentsCache = new WeakMap();
+function freeComponentsOf(screen) {
+    let hit = freeComponentsCache.get(screen);
+    if (!hit || hit.obstacles !== screen.obstacles || hit.liquids !== screen.liquids) {
+        hit = { obstacles: screen.obstacles, liquids: screen.liquids, comp: componentsOf(screen, new Set()) };
+        freeComponentsCache.set(screen, hit);
+    }
+    return hit.comp;
 }
 
 const pathBlockCache = new WeakMap();
@@ -359,7 +425,7 @@ export function blocksPath(screen, def) {
     if (cache.has(def.id)) return cache.get(def.id);
     const points = [...(screen.exits || []), ...(screen.npcs || []), ...(screen.chests || []), ...(screen.spawn ? [screen.spawn] : [])]
         .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
-    const free = componentsOf(screen, new Set());
+    const free = freeComponentsOf(screen);
     const zone = enemyZoneCells(screen, def);
     const cut = componentsOf(screen, zone);
     let blocks = false;
@@ -408,7 +474,9 @@ export function enterScreen(session, screenId, pos) {
     respawnRegularEnemies(session);
     initScreenRuntime(session);
     session.rt.grace = GRACE_MOVES;
-    if (!session.data.visitedScreens.includes(screenId)) session.data.visitedScreens.push(screenId);
+    if (session.data.visitedScreens.includes(screenId)) reclosePastChests(session);   // retour sur une carte déjà vue
+    else session.data.visitedScreens.push(screenId);
+    revealFog(session);
     discoverVillageWaypoint(session);
     return true;
 }
@@ -442,7 +510,7 @@ export function leaveArena(session) {
 }
 
 // Texte d'objectif dans l'arène.
-function arenaObjectiveText(session) {
+export function arenaObjectiveText(session) {
     const screen = currentScreen(session);
     const a = session.data.arena;
     if (screen.arena.hall) {
@@ -487,10 +555,13 @@ export function isEntityVisible(session, def) {
     return true;
 }
 
-export const visibleNpcs = session => currentScreen(session).npcs.filter(n => isEntityVisible(session, n));
-export const visibleChests = session => currentScreen(session).chests.filter(c => isEntityVisible(session, c));
+// PNJ en route vers le héros (`arrival`) : cachés tant que la vue n'a pas lancé leur arrivée (état volatil, jamais sauvegardé).
+export const beginNpcArrival = (session, npcId) => session.rt.pendingArrivals?.delete(npcId);
+export const visibleNpcs = session => session.rt.changeMode ? [...session.rt.changeMode.npcs, ...session.rt.changeMode.ambient] : currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
+export const visibleChests = session => session.rt.changeMode ? [] : currentScreen(session).chests.filter(c => isEntityVisible(session, c));
 
 export function aliveEnemies(session) {
+    if (session.rt.changeMode) return [];   // mode Chang'e : aucun ennemi
     const screen = currentScreen(session);
     return screen.enemies
         .filter(def => isEnemyAlive(session, def.id) && isEntityVisible(session, def))
@@ -544,7 +615,7 @@ export function entityAt(session, x, y) {
     if (npc) return { type: 'npc', npc };
     const chest = visibleChests(session).find(c => c.x === x && c.y === y);
     if (chest) return { type: 'chest', chest, opened: session.data.openedChests.includes(chest.id) };
-    const wp = currentScreen(session).waypoint;
+    const wp = session.rt.changeMode ? null : currentScreen(session).waypoint;
     if (wp && wp.x === x && wp.y === y) return { type: 'waypoint', screenId: session.data.screenId };
     const enemy = aliveEnemies(session).find(e => e.x === x && e.y === y);
     if (enemy) return { type: 'enemy', enemy };
@@ -685,9 +756,21 @@ export function tryMove(session, dx, dy, ctx = {}) {
     const playerLevel = Math.max(1, Math.floor(ctx.playerLevel || 1));
     const screen = currentScreen(session);
     session.rt.facing = { dx, dy };
-    const nx = session.data.x + dx;
-    const ny = session.data.y + dy;
-    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return crossMapBorder(session, screen, dx, dy, playerLevel);
+    let nx = session.data.x + dx;
+    let ny = session.data.y + dy;
+    const cm = session.rt.changeMode;   // mode Chang'e : on ne quitte pas le village (la vue fait dire au narrateur qu'il reste du monde)
+    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h) return cm ? { type: 'changeStay' } : crossMapBorder(session, screen, dx, dy, playerLevel);
+
+    // Corniche : franchissable d'un saut dans son seul sens, on atterrit sur la case d'après (libre) ; de tout autre côté, c'est un mur.
+    let jumped = false;
+    const ledge = ledgeAt(screen, nx, ny);
+    if (ledge) {
+        const lx = nx + dx, ly = ny + dy;
+        if (ledge[0] !== dx || ledge[1] !== dy || isTerrainBlocked(screen, lx, ly, canWalkOnWater(session)) || entityAt(session, lx, ly)) {
+            return { type: 'blocked', ledge: true };
+        }
+        nx = lx; ny = ly; jumped = true;
+    }
 
     const ent = entityAt(session, nx, ny);
     if (ent) {
@@ -700,6 +783,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (isTerrainBlocked(screen, nx, ny, canWalkOnWater(session))) return { type: 'blocked' };
 
     const exit = screen.exits.find(e => e.x === nx && e.y === ny);
+    if (exit && cm) return { type: 'changeStay' };
     if (exit?.leaveArena) {
         if (isExitLocked(session, exit)) return { type: 'exitBlocked', reason: 'quest', label: exit.label, message: exit.lockedMessage };
         const from = screen.id;
@@ -728,6 +812,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     // Dernière case d'un passage de bord : poser le pied dessus déclenche la transition (pas besoin de sortir de la carte).
     const dir = screen.connections && dirOfStep(dx, dy);
     if (dir && screen.connections[dir] && onSide(screen, dir, nx, ny)) {
+        if (cm) return { type: 'changeStay' };
         const res = crossMapBorder(session, screen, dx, dy, playerLevel, { x: nx, y: ny });
         if (res.type !== 'blocked') return res;   // sans case d'arrivée possible, la bordure reste une case ordinaire
     }
@@ -735,11 +820,17 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.x = nx;
     session.data.y = ny;
     session.rt.stillMs = 0;
+    revealFog(session);
+    const mk = markerOf(session);
+    const markerReached = Boolean(mk && mk.x === nx && mk.y === ny);
+    if (markerReached) clearMarker(session);   // arrivé sur le repère : il disparaît
     if (session.rt.grace > 0) session.rt.grace--;
     // Hautes herbes : le pas compte même si une aura prend le dessus (l'aura d'un ennemi reste prioritaire).
     const onGrass = isEncounterCell(screen, nx, ny);
     if (onGrass) session.rt.grassSteps = (session.rt.grassSteps || 0) + 1;
-    return checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved' };
+    const out = cm ? { type: 'moved' } : checkAura(session) || (onGrass && rollWildEncounter(session, ctx)) || { type: 'moved', ...(jumped ? { jumped: true } : {}) };
+    if (markerReached) out.markerReached = true;
+    return out;
 }
 
 // Tirage de rencontre après un pas sur l'herbe : null (rien) ou { type: 'combat', enemyId: 'wild:<écran>:<n>', wild: true }.
@@ -751,7 +842,8 @@ function rollWildEncounter(session, ctx = {}) {
     if (!g || g.table.length === 0) return null;
     if (session.rt.grace > 0 || isStealthy(session) || session.rt.grassSteps <= g.safeSteps) return null;
     const random = typeof ctx.random === 'function' ? ctx.random : Math.random;
-    if (random() >= g.rate) return null;
+    const rate = ctx.riding ? g.rate * MOUNTED_GRASS_FACTOR : g.rate;   // à cheval : rencontres plus rares
+    if (random() >= rate) return null;
     const total = g.table.reduce((sum, t) => sum + t.weight, 0);
     let pick = random() * total;
     const entry = g.table.find(t => (pick -= t.weight) < 0) || g.table[g.table.length - 1];
@@ -939,7 +1031,8 @@ export function levelFor(session, def) {
 // Niveau de région de l'écran qui porte l'ennemi `enemyId`.
 export function enemyRegionLevel(session, enemyId) {
     const screenId = session.rt.enemyIndex[enemyId]?.screenId ?? session.rt.wildDefs?.[enemyId]?.screenId;
-    return REGION_LEVEL[session.screens[screenId]?.region] || 1;
+    const screen = session.screens[screenId];
+    return screen?.levelBase || REGION_LEVEL[screen?.region] || 1;   // `levelBase` : écran d'événement qui garde son propre niveau (events/winterLanternFestival)
 }
 
 // Préparation du terrain : approche, observation, pièges et herbes, belvédère (voir terrain.js).
@@ -965,10 +1058,10 @@ function wildEncounter(session, { def, screenId }) {
     const screen = session.screens[screenId];
     const level = levelFor(session, def);
     return {
-        prep: buildPrep(),
+        prep: buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic }),   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
         biome: screen?.biome || null,
         enemyId: def.id,
-        spriteKey: def.templateId,
+        spriteKey: def.spriteKey || def.templateId,
         templateId: def.templateId,
         name: def.name,
         level,
@@ -1011,295 +1104,22 @@ export function encounterFor(session, enemyId, playerLevel) {
     };
 }
 
-// ── Quêtes ─────────────────────────────────────────────────────────────────
-
-const questById = (session, id) => session.quests.find(q => q.id === id) || null;
-
-function objectiveDone(session, obj) {
-    if (obj.type === 'kill') return session.data.defeated.includes(obj.target);
-    if (obj.type === 'chest') return session.data.openedChests.includes(obj.target);
-    if (obj.type === 'talk') return session.data.talked.includes(obj.target);
-    if (obj.type === 'item') return session.data.questItems.some(i => i.id === obj.target);
-    if (obj.type === 'visit') return session.data.visitedScreens.includes(obj.target);
-    if (obj.type === 'puzzleSet') return isSetComplete(obj.target, session.data.solvedPuzzles);
-    if (obj.type === 'killGroup') {
-        const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === obj.target);
-        return members.length > 0 && members.every(e => session.data.defeated.includes(e.def.id));
-    }
-    return false;
-}
-
-export function questStatus(session, quest) {
-    const stored = session.data.quests[quest.id];
-    if (stored === 'done') return 'done';
-    if (stored === 'active') return quest.objectives.every(o => objectiveDone(session, o)) ? 'ready' : 'active';
-    // `startWhen.puzzleSet` : la quête n'existe qu'une fois une énigme de la famille résolue (première pièce d'armure antique)
-    if (quest.startWhen?.puzzleSet && !puzzlesOfSet(quest.startWhen.puzzleSet).some(id => session.data.solvedPuzzles.includes(id))) return 'locked';
-    const unlocked = (quest.requires || []).every(id => session.data.quests[id] === 'done');
-    return unlocked ? 'available' : 'locked';
-}
-
-// Description « complète » d'un objet de quête (celle du coffre qui le contient), gardée telle quelle s'il n'est plus trouvé.
-function questItemDescription(session, item) {
-    for (const screen of Object.values(session.screens)) {
-        const chest = screen.chests.find(c => c.questItem?.id === item.id);
-        if (chest) return chest.questItem.description || item.description;
-    }
-    return item.description;
-}
-
-function startQuest(session, quest) {
-    session.data.quests[quest.id] = 'active';
-    // Objet trouvé avant la quête : sa description révèle enfin à quoi il sert.
-    session.data.questItems.forEach(i => { if (i.quest === quest.id) i.description = questItemDescription(session, i); });
-    return { type: 'questStarted', quest, lines: quest.offer };
-}
-
-function completeQuest(session, quest) {
-    session.data.quests[quest.id] = 'done';
-    // l'objet spécial est remis au PNJ
-    session.data.questItems = session.data.questItems.filter(i => i.quest !== quest.id);
-    if (quest.final) session.data.ended = true;
-    return {
-        type: 'questCompleted', quest, lines: quest.complete, reward: quest.reward || {}, gold: quest.reward?.gold || 0,
-        xp: quest.reward?.xp || 0,
-        ended: Boolean(quest.final)
-    };
-}
-
-// Démarre / valide automatiquement les quêtes sans PNJ, jusqu'à stabilité.
-export function checkAutoQuests(session) {
-    const events = [];
-    let changed = true;
-    while (changed) {
-        changed = false;
-        for (const quest of session.quests) {
-            const status = questStatus(session, quest);
-            if (quest.autoStart && status === 'available') {
-                events.push(startQuest(session, quest));
-                changed = true;
-            } else if (!quest.turnIn && status === 'ready') {
-                events.push(completeQuest(session, quest));
-                changed = true;
-            }
-        }
-    }
-    return events;
-}
-
-// Victoire dans l'arène : record du cercle ; un maître vaincu termine le cercle (et ouvre le suivant la 1re fois).
-function arenaVictory(session, def) {
-    const a = session.data.arena;
-    const tierId = def.arena.tier;
-    a.wins += 1;
-    a.best[tierId] = Math.max(a.best[tierId] || 0, def.arena.wave);
-    if (!def.arena.master) return [];
-    const firstClear = !a.cleared.includes(tierId);
-    if (firstClear) a.cleared = [...a.cleared, tierId].sort((x, y) => x - y);
-    return [{ type: 'arenaCleared', tier: tierId, firstClear, next: firstClear ? arenaTier(tierId + 1) : null }];
-}
-
-const sceneEvent = scene => ({ type: 'scene', speaker: { ...(scene.speaker || {}) }, lines: [...scene.lines] });
-
-// Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques,
-// puis l'interlude `afterScenes` (juste après le dernier texte de victoire, avant le démarrage des quêtes suivantes).
-// Nombre d'écrans (hors intérieurs) déjà visités dans une région.
-export function regionVisitCount(session, region) {
-    return session.data.visitedScreens.filter(id => { const sc = session.screens[id]; return sc && !sc.interior && sc.region === region; }).length;
-}
-
-export function markEnemyDefeated(session, enemyId) {
-    resetGrassSteps(session);   // après un combat, les pas d'herbe repartent de zéro
-    // Créature d'herbe : combat non persistant (rien dans `defeated`, ni scène, ni quête) ; l'or et l'XP viennent du combat.
-    if (isWildId(enemyId)) return [];
-    const events = [];
-    let after = [];
-    let chain = null;
-    if (!session.data.defeated.includes(enemyId)) {
-        session.data.defeated.push(enemyId);
-        const def = session.rt.enemyIndex[enemyId]?.def;
-        if (def?.chain) chain = { type: 'chain', enemyId: def.chain };
-        if (def?.defeatScene?.lines?.length) events.push(sceneEvent(def.defeatScene));
-        after = (def?.afterScenes || []).filter(sc => sc?.lines?.length).map(sceneEvent);
-        if (def?.arena) events.push(...arenaVictory(session, def));
-    }
-    const quests = checkAutoQuests(session);
-    const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
-    quests.splice(lastDone + 1 || quests.length, 0, ...after);
-    events.push(...quests);
-    if (chain) events.push(chain);   // le combat suivant démarre une fois toutes les scènes dites
-    return events;
-}
-
-// Nouvelle Partie + : possible une fois l'épilogue joué. Remet toute l'histoire à zéro (quêtes, ennemis, coffres,
-// écrans visités, pierres de voyage, compagnons, cinématiques vues, prologue) et replace le héros au point de départ ;
-// l'arène et le bestiaire observé sont conservés, `ngPlus` augmente la difficulté.
-export function startNewGamePlus(session) {
-    const data = session.data;
-    if (!data.ended) return false;
-    data.ngPlus = (data.ngPlus || 0) + 1;
-    data.quests = {};
-    data.defeated = [];
-    data.openedChests = [];
-    data.questItems = [];
-    data.visitedScreens = [];
-    data.talked = [];
-    data.banterSeen = [];
-    data.waypoints = [];
-    data.activeCompanion = null;
-    data.seenCinematics = {};
-    data.introSeen = false;
-    data.tracked = null;
-    data.ended = false;
-    const start = session.screens[START_SCREEN];
-    enterScreen(session, START_SCREEN, start.spawn);
-    return true;
-}
-
-export function resetAfterDefeat(session, enemyId = session.rt.pendingEnemyId) {
-    resetGrassSteps(session);
-    // Duel en plusieurs phases : battu dans la dernière, le héros doit refaire la première (aucun répit entre les phases).
-    const from = session.rt.enemyIndex[enemyId]?.def?.chainedFrom;
-    if (from) session.data.defeated = session.data.defeated.filter(id => id !== from && id !== enemyId);
-    // Défaite dans l'arène : on en est expulsé (retour au point d'entrée).
-    if (inArena(session)) {
-        leaveArena(session);
-        session.rt.grace = GRACE_MOVES + 1;
-        return;
-    }
-    const screen = currentScreen(session);
-    session.data.x = screen.spawn.x;
-    session.data.y = screen.spawn.y;
-    session.rt.grace = GRACE_MOVES + 1;
-}
-
-// Une condition d'avancement est remplie si l'id désigne une quête terminée, un ennemi
-// vaincu ou un coffre ouvert. Un tableau d'ids exige que toutes soient remplies.
-export function progressReached(session, cond) {
-    if (Array.isArray(cond)) return cond.length > 0 && cond.every(c => progressReached(session, c));
-    if (typeof cond !== 'string' || !cond) return false;
-    if (cond.startsWith('arena_cleared_')) return session.data.arena.cleared.includes(Number(cond.slice(14)));
-    return session.data.quests[cond] === 'done'
-        || session.data.defeated.includes(cond)
-        || session.data.openedChests.includes(cond)
-        || session.data.talked.includes(cond);
-}
-
-// ── Compagnons et dialogues contextuels (companions.js) ─────────────────────
-// Un compagnon rejoint le groupe quand sa condition `joinWhen` est remplie. Une réplique de groupe (`BANTER`) se joue une seule
-// fois (`data.banterSeen`) quand tous ses compagnons ont rejoint, que le héros est sur son `screen` (si précisé) et que sa
-// condition `whenDone` (si précisée) est remplie. Retourne des événements `scene` (comme `afterScenes`), au plus `limit` à la fois.
-export const companionJoined = (session, comp) => Boolean(comp) && (!comp.joinWhen || progressReached(session, comp.joinWhen));
-export const companionsOf = session => COMPANIONS.filter(c => companionJoined(session, c));
-
-// Un seul compagnon est actif à la fois (celui qui combat et suit le héros) : `data.activeCompanion`, ou le premier recruté par défaut.
-export function activeCompanionOf(session) {
-    const joined = companionsOf(session);
-    const chosen = session.data.activeCompanion;
-    if (chosen === 'none') return null;
-    return joined.find(c => c.id === chosen) || joined[0] || null;
-}
-export function setActiveCompanion(session, id) {
-    const ok = id === 'none' || companionsOf(session).some(c => c.id === id);
-    if (ok) session.data.activeCompanion = id;
-    return ok;
-}
-
-const asList = v => (v == null ? [] : [].concat(v));
-
-export function collectBanter(session, limit = 2) {
-    const here = session.data.screenId;
-    const events = [];
-    for (const b of BANTER) {
-        if (events.length >= limit) break;
-        if (session.data.banterSeen.includes(b.id)) continue;
-        if (!asList(b.companion).every(id => companionJoined(session, COMPANIONS.find(c => c.id === id)))) continue;
-        if (b.screen && !asList(b.screen).includes(here)) continue;
-        if (b.whenDone && !progressReached(session, b.whenDone)) continue;
-        if (b.unless && progressReached(session, b.unless)) continue;
-        session.data.banterSeen.push(b.id);
-        (b.scenes || [{ speaker: b.speaker, lines: b.lines }]).forEach(sc => events.push({ type: 'scene', banter: b.id, speaker: sc.speaker, lines: sc.lines }));
-    }
-    return events;
-}
-
-// Répliques d'ambiance d'un PNJ : la dernière entrée de `talk` dont la condition `whenDone`
-// est remplie l'emporte ; sinon `idle`.
-export function npcAmbientLines(session, npc) {
-    let lines = npc.idle;
-    (Array.isArray(npc.talk) ? npc.talk : []).forEach(entry => {
-        if (entry?.lines?.length && progressReached(session, entry.whenDone)) lines = entry.lines;
-    });
-    return lines;
-}
-
-// Objectif « parler » en cours qui vise ce PNJ : { quest, objective } ou null.
-function activeTalkObjective(session, npcId) {
-    for (const quest of session.quests) {
-        if (questStatus(session, quest) !== 'active') continue;
-        const objective = quest.objectives.find(o => o.type === 'talk' && o.target === npcId && !objectiveDone(session, o));
-        if (objective) return { quest, objective };
-    }
-    return null;
-}
-
-export function talkToNpc(session, npcId) {
-    const npc = visibleNpcs(session).find(n => n.id === npcId);
-    if (!npc) return null;
-
-    const related = session.quests.filter(q => q.giver === npcId || q.turnIn === npcId);
-    const withStatus = related.map(quest => ({ quest, status: questStatus(session, quest) }));
-
-    const ready = withStatus.find(q => q.status === 'ready' && q.quest.turnIn === npcId);
-    if (ready) {
-        const events = [completeQuest(session, ready.quest), ...checkAutoQuests(session)];
-        return { type: 'dialog', npc, lines: ready.quest.complete, events };
-    }
-
-    // PNJ de passage (`warp: { to, lines, label }`) : les lignes sont dites, puis le joueur choisit d'être emporté vers `warp.to` (voir `warpNpc`).
-    if (npc.warp) return { type: 'dialog', npc, lines: [...(npc.warp.lines?.length ? npc.warp.lines : npc.idle || ['...'])], events: [], warp: npc.warp };
-
-    // Appât : lui parler attire l'ennemi (`bait.enemy`) ; les lignes sont dites, puis le combat démarre.
-    if (npc.bait && !session.data.defeated.includes(npc.bait.enemy)) {
-        const first = !session.data.talked.includes(npcId);
-        if (first) session.data.talked.push(npcId);
-        const lines = first || !npc.bait.retry?.length ? npc.bait.lines : npc.bait.retry;
-        return { type: 'dialog', npc, lines: [...lines], events: [], combat: npc.bait.enemy };
-    }
-
-    // Objectif « parler à » : la réplique de la cible, puis éventuellement l'offre d'une autre quête.
-    const talk = activeTalkObjective(session, npcId);
-    let lines = [];
-    const events = [];
-    // Pourparlers (chemin relationnel) : la première conversation avec un PNJ `parley` lève l'obstacle sans combat.
-    if (npc.parley?.lines?.length && !session.data.talked.includes(npcId)) {
-        session.data.talked.push(npcId);
-        events.push({ type: 'parley', npc }, ...checkAutoQuests(session));
-        return { type: 'dialog', npc, lines: [...npc.parley.lines], events };
-    }
-    if (talk) {
-        session.data.talked.push(npcId);
-        lines = talk.objective.lines?.length ? [...talk.objective.lines] : [`${npc.name} vous écoute, puis hoche la tête.`];
-        events.push({ type: 'objective', quest: talk.quest, objective: talk.objective });
-    }
-    const available = withStatus.find(q => q.status === 'available' && q.quest.giver === npcId && !q.quest.autoStart);
-    if (available) {
-        events.push(startQuest(session, available.quest));
-        lines = [...lines, ...available.quest.offer];
-    }
-    if (talk || available) {
-        events.push(...checkAutoQuests(session));
-        return { type: 'dialog', npc, lines, events };
-    }
-    // Une réplique d'avancement du PNJ (`talk` + `whenDone`) l'emporte sur le simple indice d'une quête annexe en cours.
-    const ambient = npcAmbientLines(session, npc);
-    const active = withStatus.find(q => (q.status === 'active' || q.status === 'ready') && q.quest.hint?.length);
-    if (active && !(active.quest.side && ambient !== npc.idle)) return { type: 'dialog', npc, lines: active.quest.hint, events: [] };
-    return { type: 'dialog', npc, lines: ambient, events: [] };
-}
-
 // Objets spéciaux (quêtes à objet) : rangés dans `data.questItems`, jamais dans le sac, donc invendables.
 export const questItemsOf = session => session.data.questItems.map(i => ({ ...i }));
+
+// La mimique se démasque : combat d'herbe contre une créature de la carte (un cran plus forte), butin maigre à la victoire.
+function unmask(session, chest) {
+    const screen = currentScreen(session);
+    const rt = session.rt;
+    const table = grassOf(screen)?.table || grassOf(session.screens[`${screen.region}_wild`])?.table || [];
+    const entry = [...table].sort((a, b) => b.weight - a.weight)[0] || { templateId: 'shu_jing', offset: 0 };
+    const id = `${WILD_PREFIX}${screen.id}:${++rt.wildSeq}`;
+    rt.wildDefs[id] = {
+        screenId: screen.id, bonusGold: chest.mimicGold || Math.max(5, Math.round((chest.gold || 0) * 0.15)), bonusLabel: chest.label,
+        def: { id, templateId: entry.templateId, spriteKey: MIMIC_SPRITE, name: MIMIC_NAME, kind: 'wild', offset: Math.min(1, (entry.offset || 0) + 1), wild: true, mimic: true }
+    };
+    return { type: 'mimic', chest, enemyId: id, events: [] };
+}
 
 export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
@@ -1310,6 +1130,7 @@ export function openChest(session, chestId) {
     // Le coffre d'un objet de quête s'ouvre à tout moment : avant la quête, le texte et la description de l'objet restent évasifs.
     const early = Boolean(qi) && session.data.quests[qi.quest] !== 'active' && session.data.quests[qi.quest] !== 'done';
     session.data.openedChests.push(chestId);
+    if (isMimicChest(session, chest)) return unmask(session, chest);
     if (qi) session.data.questItems.push({ id: qi.id, name: qi.name, description: (early ? qi.earlyDescription : qi.description) || qi.description || '', quest: qi.quest });
     const { region, kind } = currentScreen(session);
     const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, questItem: qi || null, early, screen: { region, kind } }, ...checkAutoQuests(session)];
@@ -1338,346 +1159,3 @@ export function puzzleSetProgress(session, puzzleId) {
     const ids = puzzlesOfSet(PUZZLES[puzzleId]?.set);
     return { done: ids.filter(id => session.data.solvedPuzzles.includes(id)).length, total: ids.length };
 }
-
-function findNpcScreen(session, npcId) {
-    return Object.values(session.screens).find(s => s.npcs.some(n => n.id === npcId)) || null;
-}
-
-const REGION_NUMBER = id => Math.max(0, REGION_ORDER.indexOf(id));
-
-// Région d'une quête : celle de son donneur (ou, à défaut, de sa première cible).
-export function questRegion(session, quest) {
-    const npcScreen = quest.giver ? findNpcScreen(session, quest.giver) : null;
-    if (npcScreen) return npcScreen.region;
-    const target = questTargets(session, quest)[0];
-    return target ? session.screens[target.screenId]?.region || null : null;
-}
-
-// Écran où se trouve l'entité visée par un objectif (null si inconnue).
-function objectiveTarget(session, obj) {
-    const screens = Object.values(session.screens);
-    if (obj.type === 'talk') {
-        const scr = findNpcScreen(session, obj.target);
-        return scr ? { screenId: scr.id, kind: 'npc', id: obj.target } : null;
-    }
-    if (obj.type === 'visit') return session.screens[obj.target] ? { screenId: obj.target, kind: 'screen', id: obj.target } : null;
-    if (obj.type === 'chest') {
-        const scr = screens.find(sc => sc.chests.some(c => c.id === obj.target));
-        return scr ? { screenId: scr.id, kind: 'chest', id: obj.target } : null;
-    }
-    if (obj.type === 'kill') {
-        const entry = session.rt.enemyIndex[obj.target];
-        return entry ? { screenId: entry.screenId, kind: 'enemy', id: obj.target } : null;
-    }
-    if (obj.type === 'killGroup') {
-        const member = Object.values(session.rt.enemyIndex).find(e => e.def.group === obj.target && !session.data.defeated.includes(e.def.id));
-        return member ? { screenId: member.screenId, kind: 'enemy', id: member.def.id } : null;
-    }
-    return null;
-}
-
-// Lieux à rejoindre pour une quête : PNJ à qui la rendre, ou cibles des objectifs restants.
-export function questTargets(session, quest) {
-    const status = questStatus(session, quest);
-    if (status === 'ready' && quest.turnIn) {
-        const scr = findNpcScreen(session, quest.turnIn);
-        return scr ? [{ screenId: scr.id, kind: 'npc', id: quest.turnIn }] : [];
-    }
-    if (status === 'available' && quest.giver) {
-        const scr = findNpcScreen(session, quest.giver);
-        return scr ? [{ screenId: scr.id, kind: 'npc', id: quest.giver }] : [];
-    }
-    if (status === 'active') {
-        const obj = quest.objectives.find(o => !objectiveDone(session, o));
-        const t = obj && objectiveTarget(session, obj);
-        return t ? [t] : [];
-    }
-    return [];
-}
-
-// Type d'une quête, pour l'affichage : « main » (histoire principale) ou « side » (annexe).
-export function questKind(quest) {
-    return quest && quest.side ? 'side' : 'main';
-}
-
-// Après l'activation d'une quête : { mode: 'auto' } si aucune autre quête n'est suivie (la nouvelle est alors suivie),
-// { mode: 'ask', current } si une autre quête en cours est déjà suivie (le joueur choisit), null si déjà suivie.
-export function trackProposal(session, quest) {
-    const current = trackedQuest(session);
-    if (!current) {
-        setTrackedQuest(session, quest.id);
-        return { mode: 'auto', quest };
-    }
-    if (current.id === quest.id) return null;
-    return { mode: 'ask', quest, current };
-}
-
-export function setTrackedQuest(session, questId) {
-    session.data.tracked = questId && session.quests.some(q => q.id === questId) ? questId : null;
-    return session.data.tracked;
-}
-
-// Quêtes en cours (ou à rendre) avec leur prochain objectif, pour le rappel « Ça fait longtemps ».
-export function activeQuestSummaries(session) {
-    return session.quests.map(q => ({ q, status: questStatus(session, q) }))
-        .filter(({ status }) => status === 'active' || status === 'ready')
-        .map(({ q, status }) => {
-            const obj = q.objectives.find(o => !objectiveDone(session, o));
-            return { title: q.title, objective: status === 'ready' ? 'Objectif accompli, à rendre' : (obj?.text || ''), ready: status === 'ready' };
-        });
-}
-
-// Quête suivie (épinglée par le joueur) tant qu'elle est en cours ou à rendre.
-export function trackedQuest(session) {
-    const quest = session.data.tracked && questById(session, session.data.tracked);
-    if (!quest) return null;
-    const status = questStatus(session, quest);
-    return status === 'active' || status === 'ready' ? quest : null;
-}
-
-// Cibles de la quête suivie qui se trouvent sur l'écran courant (anneaux sur la carte).
-export function trackedMarkers(session) {
-    const quest = trackedQuest(session);
-    if (!quest) return [];
-    return questTargets(session, quest).filter(t => t.screenId === session.data.screenId);
-}
-
-function locationHint(session, target) {
-    if (!target) return '';
-    const scr = session.screens[target.screenId];
-    if (!scr) return '';
-    return target.screenId === session.data.screenId ? ' · ici' : ` · ${scr.name}`;
-}
-
-// Objectif affiché en permanence : prochaine étape de la quête suivie, sinon de la première quête en cours.
-export function currentObjectiveText(session) {
-    if (inArena(session)) return arenaObjectiveText(session);
-    const tracked = trackedQuest(session);
-    if (tracked) {
-        const status = questStatus(session, tracked);
-        const target = questTargets(session, tracked)[0];
-        if (status === 'ready' && tracked.turnIn) {
-            const scr = findNpcScreen(session, tracked.turnIn);
-            const npc = scr?.npcs.find(n => n.id === tracked.turnIn);
-            return `${tracked.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
-        }
-        const obj = tracked.objectives.find(o => !objectiveDone(session, o));
-        return `${tracked.title} : ${obj ? obj.text : 'objectif accompli'}${target ? '' : ''}`;
-    }
-    for (const quest of session.quests) {
-        const status = questStatus(session, quest);
-        if (status === 'ready' && quest.turnIn) {
-            const scr = findNpcScreen(session, quest.turnIn);
-            const npc = scr?.npcs.find(n => n.id === quest.turnIn);
-            return `${quest.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
-        }
-        if (status === 'active' && !quest.side) {
-            const obj = quest.objectives.find(o => !objectiveDone(session, o));
-            return `${quest.title} : ${obj ? obj.text : 'objectif accompli'}`;
-        }
-        if (status === 'available' && quest.giver && !quest.autoStart && !quest.side) {
-            const scr = findNpcScreen(session, quest.giver);
-            const npc = scr?.npcs.find(n => n.id === quest.giver);
-            if (npc && !isEntityVisible(session, npc)) continue;
-            return `Nouvelle quête : parlez à ${npc?.name || 'un PNJ'} (${scr?.name || '?'})`;
-        }
-    }
-    return session.data.ended
-        ? 'La légende est achevée ! Ouvrez le journal pour une Nouvelle Partie +.'
-        : 'Explorez le monde.';
-}
-
-export { locationHint as questLocationHint };
-
-export function journalEntries(session) {
-    return session.quests
-        .map(quest => ({ quest, status: questStatus(session, quest) }))
-        // Une quête n'apparaît au journal qu'une fois activée (en parlant à son donneur) : ni « locked » ni « available ».
-        .filter(e => e.status === 'active' || e.status === 'ready' || e.status === 'done')
-        .map(e => {
-            const target = questTargets(session, e.quest)[0] || null;
-            const giverScreen = e.quest.giver ? findNpcScreen(session, e.quest.giver) : null;
-            const giverNpc = giverScreen?.npcs.find(n => n.id === e.quest.giver);
-            return {
-                ...e,
-                region: questRegion(session, e.quest),
-                tracked: session.data.tracked === e.quest.id,
-                giverName: giverNpc?.name || '',
-                giverPlace: giverScreen?.name || '',
-                where: target ? session.screens[target.screenId]?.name || '' : '',
-                objectives: e.quest.objectives.map(o => ({ text: o.type === 'puzzleSet' ? `${o.text} (${puzzlesOfSet(o.target).filter(id => session.data.solvedPuzzles.includes(id)).length}/${puzzlesOfSet(o.target).length})` : o.text, done: objectiveDone(session, o) }))
-            };
-        });
-}
-
-// Indicateur au-dessus d'un PNJ : « ! » quête disponible, « ? » à rendre ou à qui parler, sinon rien.
-export function npcMarker(session, npcId) {
-    if (activeTalkObjective(session, npcId)) return '?';
-    for (const quest of session.quests) {
-        const status = questStatus(session, quest);
-        if (status === 'ready' && quest.turnIn === npcId) return '?';
-        if (status === 'available' && quest.giver === npcId && !quest.autoStart) return '!';
-    }
-    return '';
-}
-
-// Indicateur de quête d'un écran (maison) : « ? » si une quête y est à rendre / une cible de la quête suivie s'y trouve,
-// « ! » si un PNJ y propose une quête, sinon ''.
-export function screenQuestMarker(session, screenId) {
-    const screen = session.screens[screenId];
-    if (!screen) return '';
-    let marker = '';
-    for (const npc of screen.npcs) {
-        if (!isEntityVisible(session, npc)) continue;
-        const m = npcMarker(session, npc.id);
-        if (m === '?') return '?';
-        if (m) marker = m;
-    }
-    const tracked = trackedQuest(session);
-    if (tracked && questTargets(session, tracked).some(t => t.screenId === screenId)) return '?';
-    return marker;
-}
-
-// Maisons de l'écran courant (sorties « door ») qui abritent une quête : [{ exit, marker }].
-export function houseMarkers(session) {
-    return currentScreen(session).exits
-        .filter(ex => ex.door)
-        .map(exit => ({ exit, marker: screenQuestMarker(session, exit.to) }))
-        .filter(h => h.marker);
-}
-
-// Position (tuile) d'une cible de quête sur l'écran courant.
-function targetPosition(session, target) {
-    const screen = currentScreen(session);
-    const at = list => list.find(e => e.id === target.id);
-    if (target.kind === 'npc') return at(screen.npcs);
-    if (target.kind === 'chest') return at(screen.chests);
-    if (target.kind === 'enemy') return aliveEnemies(session).map(e => ({ id: e.def.id, x: e.x, y: e.y })).find(e => e.id === target.id);
-    return null;
-}
-
-// Premier écran à rejoindre (sortie à prendre depuis `fromId`) pour atteindre `toId`, en évitant les sorties verrouillées.
-function nextExitToward(session, fromId, toId) {
-    const attempt = allowLocked => {
-        const seen = new Map([[fromId, null]]);
-        const queue = [fromId];
-        while (queue.length) {
-            const id = queue.shift();
-            if (id === toId) break;
-            // sorties (portes, escaliers) et passages de bord (repère au milieu du passage)
-            for (const ex of [...session.screens[id].exits, ...connectionMarkers(session.screens, session.screens[id])]) {
-                if (seen.has(ex.to) || !session.screens[ex.to]) continue;
-                if (!allowLocked && isExitLocked(session, ex)) continue;
-                seen.set(ex.to, { from: id, exit: ex });
-                queue.push(ex.to);
-            }
-        }
-        if (!seen.has(toId)) return null;
-        let step = seen.get(toId);
-        while (step && step.from !== fromId) step = seen.get(step.from);
-        return step ? step.exit : null;
-    };
-    return attempt(false) || attempt(true);
-}
-
-// Indicateur de direction de la quête suivie : { x, y, label, kind: 'target' | 'exit' } (tuile de l'écran courant), ou null.
-// À défaut de quête épinglée, l'indicateur guide vers la quête principale en cours (ou à rendre).
-export function questDirection(session) {
-    const quest = trackedQuest(session)
-        || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)));
-    if (!quest) return null;
-    const target = questTargets(session, quest)[0];
-    if (!target) return null;
-    const here = session.data.screenId;
-    if (target.screenId === here) {
-        const pos = targetPosition(session, target);
-        return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
-    }
-    const exit = nextExitToward(session, here, target.screenId);
-    if (!exit) return null;
-    return { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' };
-}
-
-// ── Pierres de voyage (voyage rapide) ─────────────────────────────────────
-
-// Un village est un lieu de repos : sa pierre est découverte dès qu'on y entre.
-function discoverVillageWaypoint(session) {
-    const screen = currentScreen(session);
-    if (screen.waypoint && screen.kind === 'village' && !session.data.waypoints.includes(screen.id)) {
-        session.data.waypoints.push(screen.id);
-    }
-}
-
-export function activateWaypoint(session, screenId) {
-    const screen = session.screens[screenId];
-    if (!screen?.waypoint) return null;
-    const isNew = !session.data.waypoints.includes(screenId);
-    if (isNew) session.data.waypoints.push(screenId);
-    return { type: 'waypoint', screenId, name: screen.waypoint.name, isNew };
-}
-
-// Pierres activées, dans l'ordre du monde (région, puis village → zone sauvage → sanctuaire).
-export function waypointList(session) {
-    const kindRank = { village: 0, wild: 1 };
-    return session.data.waypoints
-        .map(id => session.screens[id])
-        .filter(screen => screen?.waypoint)
-        .map(screen => ({
-            screenId: screen.id, region: screen.region, name: screen.waypoint.name, screenName: screen.name,
-            kind: screen.kind || 'sanctuary', current: screen.id === session.data.screenId
-        }))
-        .sort((a, b) => REGION_NUMBER(a.region) - REGION_NUMBER(b.region)
-            || (kindRank[a.kind] ?? 2) - (kindRank[b.kind] ?? 2));
-}
-
-// Le héros se tient à côté d'une borne de voyage (la pierre de l'écran courant) : seul endroit d'où l'on peut voyager.
-export function nearWaypoint(session) {
-    const wp = currentScreen(session)?.waypoint;
-    return Boolean(wp) && Math.max(Math.abs(wp.x - session.data.x), Math.abs(wp.y - session.data.y)) <= 2;
-}
-
-// Voyage rapide : seulement depuis une borne de voyage, impossible vers une pierre non activée ; arrivée à côté de la pierre.
-export function fastTravel(session, screenId) {
-    const screen = session.screens[screenId];
-    if (!nearWaypoint(session)) return false;
-    if (!screen?.waypoint || !session.data.waypoints.includes(screenId)) return false;
-    return enterScreen(session, screenId, screen.waypoint.spot || screen.spawn);
-}
-
-// Progression par région : coffres, quêtes annexes, pierres.
-export function regionProgress(session) {
-    return REGION_ORDER.map(region => {
-        const zones = Object.values(session.screens).filter(s => s.region === region);
-        const chests = zones.flatMap(s => s.chests).filter(c => c.id !== 'moon_altar');
-        const side = session.quests.filter(q => q.side && questRegion(session, q) === region);
-        const stones = zones.filter(s => s.waypoint);
-        return {
-            region,
-            visited: zones.some(s => session.data.visitedScreens.includes(s.id)),
-            chestsOpened: chests.filter(c => session.data.openedChests.includes(c.id)).length,
-            chestsTotal: chests.length,
-            sideDone: side.filter(q => session.data.quests[q.id] === 'done').length,
-            sideTotal: side.length,
-            stonesFound: stones.filter(s => session.data.waypoints.includes(s.id)).length,
-            stonesTotal: stones.length
-        };
-    });
-}
-
-// Bestiaire : une créature (gabarit) y entre dès qu'on la combat ou qu'on l'observe. Renvoie true si elle est nouvelle.
-export function recordBestiary(session, templateId) {
-    if (typeof templateId !== 'string' || !templateId || session.data.bestiary.includes(templateId)) return false;
-    session.data.bestiary.push(templateId);
-    return true;
-}
-
-export function needsIntro(session) {
-    return !session.data.introSeen;
-}
-
-export function markIntroSeen(session) {
-    session.data.introSeen = true;
-    return STORY_INTRO;
-}
-
-export { questById };

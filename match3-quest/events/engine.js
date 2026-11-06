@@ -30,5 +30,12 @@ export function applyEvents(screens, quests, { modules, events = EVENTS } = {}) 
     return applied;
 }
 
+/**
+ * Annonces de lancement des événements activés (`module.launchNotice` : { id, title, lines }) qui ont réellement créé du contenu dans ce monde.
+ * Affichées une seule fois par partie, au premier chargement du jeu (voir `takeLaunchNotices`, exploration.js).
+ */
+export const launchNotices = (screens, modules, events = EVENTS) =>
+    activeModules(modules || [], events).filter(m => m.launchNotice && eventScreens(screens, m.id).length).map(m => m.launchNotice);
+
 /** Les écrans d'un événement donné (ou de tous les événements si `eventId` est omis). */
 export const eventScreens = (screens, eventId) => Object.values(screens).filter(s => s.event && (!eventId || s.event === eventId));

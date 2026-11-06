@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import './fixtures/xhrFromDisk.js';
 import { SCREENS, QUESTS, buildWorld } from '../../story.js';
 import { createSession, teleportToScreen, talkToNpc, openChest, markEnemyDefeated, questStatus, isExitLocked, isTerrainBlocked, enterScreen, tryMove, solvePuzzle, isShielded, visibleNpcs, visibleChests, aliveEnemies, bossEase } from '../../exploration.js';
-import { EVENTS, isEventEnabled } from '../../events/config.js';
+import { EVENTS, EVENTS_DEFAULT, isEventEnabled, parseEventOverrides, applyOverrides } from '../../events/config.js';
 import { applyEvents, activeModules, eventScreens } from '../../events/engine.js';
 import { EVENT_MODULES } from '../../events/registry.js';
 import * as D from '../../events/wanderingSouls/data.js';
@@ -20,7 +20,7 @@ import { decorSprite, DECOR_NAMES } from '../../sprites/decor.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
-const OFF = { wanderingSouls: { enabled: false } };
+const OFF = { wanderingSouls: { enabled: false }, winterLanternFestival: { enabled: true } };   // seule la Nuit des âmes errantes est coupée : la Fête des lanternes reste active, comme dans le monde réel
 const questOf = id => QUESTS.find(q => q.id === id);
 
 describe('configuration des événements', () => {
@@ -35,6 +35,26 @@ describe('configuration des événements', () => {
     test('chaque module du registre a une entrée dans la configuration, et aucun événement n\'est activé par la date', () => {
         EVENT_MODULES.forEach(m => expect(EVENTS[m.id]).toBeDefined());
         Object.values(EVENTS).forEach(cfg => expect(Object.keys(cfg)).toEqual(['enabled']));
+    });
+});
+
+describe('surcharge des événements par l\'URL', () => {
+    test('analyse : activer, désactiver, inconnus ignorés, vide', () => {
+        expect(parseEventOverrides('winterLanternFestival,-wanderingSouls')).toEqual({ winterLanternFestival: true, wanderingSouls: false });
+        expect(parseEventOverrides('+wanderingSouls, !winterLanternFestival, nimporte')).toEqual({ wanderingSouls: true, winterLanternFestival: false });
+        expect(parseEventOverrides('')).toEqual({});
+        expect(parseEventOverrides(null)).toEqual({});
+    });
+
+    test('application pure : la configuration versionnée n\'est pas modifiée', () => {
+        const out = applyOverrides(EVENTS_DEFAULT, { winterLanternFestival: false });
+        expect(out.winterLanternFestival.enabled).toBe(false);
+        expect(EVENTS_DEFAULT.winterLanternFestival.enabled).toBe(true);
+        expect(out.wanderingSouls).toEqual(EVENTS_DEFAULT.wanderingSouls);
+    });
+
+    test('sous Node (sans URL), EVENTS reprend la configuration versionnée', () => {
+        expect(EVENTS).toEqual(EVENTS_DEFAULT);
     });
 });
 
@@ -80,7 +100,7 @@ describe('La Nuit des âmes errantes : événement désactivé', () => {
         expect(off.screens[D.HOST.wild].chests.some(c => c.id === D.TALISMAN.chest.id)).toBe(false);
         expect(off.screens[D.HOST.village].npcs.some(n => n.id === D.GIVER.id)).toBe(false);
         expect(off.quests.some(q => q.event === D.ID || String(q.id).startsWith('sq_ws_'))).toBe(false);
-        expect(eventScreens(off.screens)).toEqual([]);
+        expect(eventScreens(off.screens, D.ID)).toEqual([]);
     });
 
     test('le reste du monde est identique à celui de l\'événement activé (hors contenu de l\'événement)', () => {
@@ -137,6 +157,13 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         doors.forEach(d => expect(d.sprite).toBe(D.GATE_SPRITE));
         expect(decorSprite(D.GATE_SPRITE)).toMatch(/^data:image\/png;base64,/);
         expect(DECOR_NAMES).toContain(D.GATE_SPRITE);
+    });
+
+    test('le royaume joue une animation de découverte à la première entrée (clip de biome ou scène procédurale)', async () => {
+        expect(realm.biomeIntro).toMatchObject({ id: D.BIOME, name: D.REALM.name });
+        const { readFileSync } = await import('fs');
+        const index = JSON.parse(readFileSync(new URL('../../sprites/ultimates/index.json', import.meta.url), 'utf8'));
+        expect(index[`biome_${D.BIOME}-seq`]).toMatchObject({ loop: true, size: [144, 256] });
     });
 
     test('le royaume joue une animation de découverte à la première entrée (clip de biome ou scène procédurale)', async () => {
@@ -273,10 +300,10 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(D.BELL.item.id);
     });
 
-    test('énigme des miroirs rituels : faisable en 3 coups, sans armure antique, et le coffre ne s\'ouvre qu\'une fois résolue', () => {
+    test('énigme des miroirs rituels : difficile (13 coups), sans armure antique, et le coffre ne s\'ouvre qu\'une fois résolue', () => {
         expect(PUZZLES[D.PUZZLE.id]).toBe(D.PUZZLE.def);
         expect(PUZZLES[D.PUZZLE.id].set).toBeUndefined();
-        expect(solve(puzzleDef(D.PUZZLE.id))).toBe(3);
+        expect(solve(puzzleDef(D.PUZZLE.id))).toBe(13);
         expect(createPuzzle(puzzleDef(D.PUZZLE.id)).won).toBe(false);
 
         const session = createSession(null);
@@ -289,12 +316,12 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(D.PUZZLE.item.id);
     });
 
-    test('énigme du cortège : niveau moyen (21 coups), coffre de palier 2', () => {
+    test('énigme du cortège : niveau difficile (26 coups), coffre de palier 3', () => {
         const P = D.PUZZLE_CORTEGE;
         expect(PUZZLES[P.id]).toBe(P.def);
-        expect(solve(puzzleDef(P.id))).toBe(21);
+        expect(solve(puzzleDef(P.id))).toBe(26);
         expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
-        expect(realm.chests.find(c => c.id === P.chest.id)).toMatchObject({ puzzle: P.id, lootTier: 2 });
+        expect(realm.chests.find(c => c.id === P.chest.id)).toMatchObject({ puzzle: P.id, lootTier: 3 });
         const session = createSession(null);
         teleportToScreen(session, D.REALM_ID);
         expect(openChest(session, P.chest.id)).toMatchObject({ type: 'puzzle', puzzleId: P.id });
@@ -303,11 +330,11 @@ describe('La Nuit des âmes errantes : événement activé', () => {
         expect(session.data.questItems.map(i => i.id)).toContain(P.item.id);
     });
 
-    test('énigme des urnes : faisable en 13 coups, verrouille son coffre', () => {
+    test('énigme des urnes : difficile (66 coups), verrouille son coffre', () => {
         const P = D.PUZZLE_BLOCKS;
         expect(PUZZLES[P.id]).toBe(P.def);
         expect(D.PUZZLE_LIST.map(p => p.id)).toEqual(['ws_miroirs', 'ws_urnes', 'ws_cortege']);
-        expect(solve(puzzleDef(P.id))).toBe(13);
+        expect(solve(puzzleDef(P.id))).toBe(66);
         expect(createPuzzle(puzzleDef(P.id)).won).toBe(false);
         const session = createSession(null);
         teleportToScreen(session, D.REALM_ID);
@@ -510,8 +537,8 @@ describe('La Nuit des âmes errantes : événement activé', () => {
     test('énigmes des terrains : solubles, sans armure antique, et leur coffre ne s\'ouvre qu\'une fois résolues', () => {
         expect(TR.TERRAIN_PUZZLES.map(p => p.id)).toEqual(['ws_souvenirs', 'ws_miroir_karma']);
         TR.TERRAIN_PUZZLES.forEach(p => { expect(PUZZLES[p.id]).toBe(p.def); expect(PUZZLES[p.id].set).toBeUndefined(); expect(createPuzzle(puzzleDef(p.id)).won).toBe(false); });
-        expect(solve(puzzleDef('ws_souvenirs'))).toBe(18);
-        expect(solve(puzzleDef('ws_miroir_karma'))).toBe(4);
+        expect(solve(puzzleDef('ws_souvenirs'))).toBe(60);
+        expect(solve(puzzleDef('ws_miroir_karma'))).toBe(13);
         const session = createSession(null);
         teleportToScreen(session, TR.TERRASSE);
         expect(openChest(session, 'ws_souvenir')).toMatchObject({ type: 'puzzle', puzzleId: 'ws_souvenirs' });

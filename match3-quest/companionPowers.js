@@ -11,7 +11,7 @@ export const COMPANION_POWERS = {
     braise: { name: 'Colère de Braise', kind: 'rage', chance: 0.15, ragePct: 0.5, text: '15 % : remplit 50 % de la jauge de rage.' },
     jian: { name: 'Volée de Jian', kind: 'arrows', chance: 0.05, text: '5 % : toutes les tuiles d\'une couleur au hasard deviennent des flèches.' },
     tou: { name: 'Larcin de Tou', kind: 'steal', chance: 0.30, text: "30 % : vole tout le qì d'une couleur au hasard à l'ennemi." },
-    etincelle: { name: "Étincelle d'Étincelle", kind: 'mana', chance: 0.30, amount: 4, text: '30 % : +4 qì dans une couleur au hasard.' }
+    etincelle: { name: "Foudre de Leigong", kind: 'mana', chance: 0.30, amount: 4, text: '30 % : +4 qì dans une couleur au hasard.' }
 };
 
 export const MANA_COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];

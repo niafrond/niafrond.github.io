@@ -31,7 +31,7 @@ export default {
     boatman_shan: { name: 'Laoshan', title: 'Batelier désœuvré', 
       idle: ['Je suis batelier sans bateau et sans fleuve. Un peu comme un poète sans mots : on tient quand même le coup.', 'Je répare ma barque tous les jours, pour qu\'elle soit prête quand l\'eau reviendra. L\'espoir, c\'est du goudron.'],
       talk: [{ whenDone: 'sun_2', lines: ['Le fleuve a gargouillé cette nuit. Ma barque a frémi. Elle l\'a senti avant moi.'] }] },
-    hua_fleuve: { name: 'Hua', title: 'Colporteuse aux mille babioles', 
+    hua_fleuve: { name: 'Xihe', title: 'Colporteuse aux mille babioles', 
       idle: ['Tiens, on se revoit ! Le monde est petit quand on marche vite. Une épingle ? Une rumeur ? Les deux ?', 'Je suis venue chercher du sel pour la route du désert. Hu me fait toujours un prix d\'ami, c\'est-à-dire pas du tout.'],
       talk: [{ whenDone: 'sun_2', lines: ['Je retourne au Gobi avec la caravane, vendre le sel de Hu. Si vous avez des lettres à faire voyager, je suis votre colporteuse.'] }] },
     carp_jin: { name: 'Jin', title: 'Carpe dorée dans sa flaque', 
@@ -77,10 +77,10 @@ export default {
   },
   quests: [
     { id: 'sq_lettre_bao_2', title: 'La lettre fait escale', chapter: '✦ Quête secondaire — Lit du Fleuve Jaune', giver: 'ferryman_gu', turnIn: 'hua_gobi', requires: ['sq_lettre_bao_1'], side: true,
-      objectives: [{ type: 'talk', target: 'hua_gobi', text: 'Confier la lettre de Petit Bao à Hua la colporteuse (caravansérail de Yueya, Désert de Gobi)', lines: ['La lettre de Petit Bao ? Donnez, donnez. Je la glisse dans mon sac à bonnes nouvelles. Elle ira loin.'] }],
-      offer: ['La lettre du petit Bao… Je ne quitte jamais mon fleuve, mais Hua la colporteuse repart pour le Gobi avec la caravane. Elle connaît toutes les routes, et tous les marins du coin.', 'Portez-lui la lettre. Elle sera au caravansérail de Yueya, entre deux marchandages.'],
-      hint: ['Hua la colporteuse est au caravansérail de Yueya, dans le désert de Gobi. Elle prend toujours les lettres.'],
-      complete: ['Hua tapote son sac : « Bien reçu ! Pour la mer, je ne vais pas jusque-là. Mais vous, si. »'],
+      objectives: [{ type: 'talk', target: 'hua_gobi', text: 'Confier la lettre de Petit Bao à Xihe la colporteuse (caravansérail de Yueya, Désert de Gobi)', lines: ['La lettre de Petit Bao ? Donnez, donnez. Je la glisse dans mon sac à bonnes nouvelles. Elle ira loin.'] }],
+      offer: ['La lettre du petit Bao… Je ne quitte jamais mon fleuve, mais Xihe la colporteuse repart pour le Gobi avec la caravane. Elle connaît toutes les routes, et tous les marins du coin.', 'Portez-lui la lettre. Elle sera au caravansérail de Yueya, entre deux marchandages.'],
+      hint: ['Xihe la colporteuse est au caravansérail de Yueya, dans le désert de Gobi. Elle prend toujours les lettres.'],
+      complete: ['Xihe tapote son sac : « Bien reçu ! Pour la mer, je ne vais pas jusque-là. Mais vous, si. »'],
       reward: { gold: 50, fragment: 'Sceau de cire', xp: 45 } },
     { id: 'sq_perle_carpe', title: 'La perle de la carpe Jin', chapter: '✦ Quête secondaire — Lit du Fleuve Jaune', giver: 'girl_lian', turnIn: 'girl_lian', requires: [], side: true,
       objectives: [

@@ -90,6 +90,16 @@ describe('déclenchement des rencontres', () => {
         expect(hit).toEqual({ type: 'combat', enemyId: 'wild:t:1', wild: true });
     });
 
+    test('à cheval : probabilité de rencontre réduite (MOUNTED_GRASS_FACTOR)', async () => {
+        const { MOUNTED_GRASS_FACTOR } = await import('../../exploration.js');
+        expect(MOUNTED_GRASS_FACTOR).toBeLessThan(1);
+        const s = sessionOf();
+        walk(s, 3, { random: always });
+        // 0,08 < 0,12 déclenche à pied, mais plus à cheval (seuil 0,12 × facteur)
+        expect(tryMove(s, 1, 0, { random: seq(0.08), riding: true }).type).toBe('moved');
+        expect(tryMove(s, 1, 0, { random: seq(0.08, 0) }).type).toBe('combat');
+    });
+
     test('rate 0 : jamais ; rate 1 : à chaque pas une fois la grâce passée', () => {
         const none = sessionOf({}, { rate: 0 });
         expect(walk(none, 10, { random: always }).every(r => r.type === 'moved')).toBe(true);
@@ -247,15 +257,16 @@ describe('créature d\'herbe : rencontre', () => {
         return { s, res, enc: encounterFor(s, res.enemyId, 1) };
     };
 
-    test('même forme qu\'un ennemi normal : dessin du gabarit, préparation neutre, biome', () => {
+    test('même forme qu\'un ennemi normal : dessin du gabarit, préparation d\'embuscade, biome', () => {
         const { enc } = encounter();
         expect(enc).toMatchObject({
             enemyId: 'wild:t:1', spriteKey: 'lingzhi_maudit', templateId: 'lingzhi_maudit', name: 'Crapaud de boue',
             biome: 'paddy', boss: null, duel: null, wild: true
         });
-        expect(enc.prep.tags).toEqual([]);
-        expect(enc.prep.lines).toEqual([]);
-        expect(enc.prep.playerFirst).toBe(false);
+        // une créature qui surgit des hautes herbes prend le joueur par surprise : elle joue en premier avec +2 PA
+        expect(enc.prep.tags).toEqual(['grassAmbush']);
+        expect(enc.prep.lines).toHaveLength(1);
+        expect(enc.prep).toMatchObject({ playerFirst: false, enemyFirst: true, enemyBonusPA: 2 });
         expect(enc.prep.enemyStatus).toBeNull();
         const normal = encounterFor(createSession({}), 'rizieres_shroom', 1);
         expect(Object.keys(enc).sort()).toEqual(expect.arrayContaining(Object.keys(normal).sort()));

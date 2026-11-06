@@ -12,89 +12,37 @@
 // région, la carte se fige (saisies bloquées) le temps de charger les nouveaux paquets de sprites, derrière un
 // écran de chargement si cela dure ; les images de l'ancienne région sont libérées.
 
+import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
-import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
+import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
+import { vibrate, armVibration } from './gameOptions.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
+import { openBook } from './change/view.js';
 import { dialogFlags } from './dialogState.js';
-import { playEndingAnimation, playCredits, playSunFallAnimation, playRegionDiscovery, playPortalTransition, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG, gbaSprite, gbaWalkSprite, hasGbaSprite, loadGbaSprites } from './sprites/index.js';
-import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
+import { playSunFallAnimation, playRegionDiscovery, playPortalTransition, playBossDialogue, prologueAnimationPlayed, playPrologueAnimation, playFengmengDuelCinematic } from './cinematics.js';
+import { spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, PX_GRID_BIG, gbaSprite, loadGbaSprites } from './sprites/index.js';
+import { viewDir } from './sprites/side.js';
 import { createTrail, recordHero, stepCompanion } from './companionTrail.js';
-import { withLoadingScreen, trackProgress } from './loader.js';
+import { withLoadingScreen, trackProgress, isLoadingScreenSuppressed } from './loader.js';
 import { loadSequence } from './ultimateCinematics.js';
-import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
+import { ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
-import { archiSprite } from './sprites/archi.js';
 import { DEAD_TREES } from './sprites/deadtrees.js';
-import { icon, manaIcon } from './icons.js';
+import { icon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
-import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
-import { connectionRows } from './mapConnections.js';
-import { BIOME_DECOR, pickDecor, hash, houseDecor, houseRug } from './decor.js';
-import { gridsOf, rectGrid } from './explorationGrids.js';
-import { wallDecoOf, paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex, drawGrassFront } from './tilePainter.js';
+import { bestiaryEntries } from './bestiary.js';
+import { createChangeFlow } from './explorationViewChange.js';
+import { createCarnet } from './explorationViewCarnet.js';
+import { createMapOverlay } from './explorationViewMap.js';
+import { createGroundLayer } from './explorationViewGround.js';
+import { createDraw } from './explorationViewDraw.js';
+import { createOverlays } from './explorationViewOverlays.js';
+import { createPainters } from './explorationViewPainters.js';
+import { COVERED_DRAW_MS, IDLE_DRAW_MS, IDLE_DRAW_LOW_MS, MOVE_DELAY_MS, MOUNTED_MOVE_DELAY_MS, BATTLE_TRANSITION_MS, BATTLE_STRIPS, DIRECTIONS, KEY_TO_DIR } from './explorationViewConsts.js';
 
-// Intervalle de redessin de la carte quand un modal la recouvre en partie (ms).
-const COVERED_DRAW_MS = 250;
-const IDLE_DRAW_MS = 33;        // héros immobile : seules les animations d'ambiance bougent, 30 i/s suffisent (batterie)
-const IDLE_DRAW_LOW_MS = 66;    // idem en effets réduits : ~15 i/s
-// Distance (cases) à une sortie en deçà de laquelle le sol de la carte voisine est préparé, et temps (ms) alloué à chaque image.
-const PREBUILD_RANGE = 14;
-const PREBUILD_BUDGET_MS = 6;
-
-const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
-const MAX_TILE = 96;
-const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
-const HUD_BOTTOM = 8;
-const MOVE_DELAY_MS = 150;
-const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
-const MOUNTED_SPRITE_TILES = 1.325; // sprite du cavalier (40 px) : 1,06 case pour 32 px (héros à pied) × 40/32, soit le même grain de pixel
-const BATTLE_TRANSITION_MS = 3400;   // durée de l'animation d'entrée en combat : le nom de l'adversaire reste lisible environ 2 s
-const BATTLE_STRIPS = 10;
-
-const DIRECTIONS = {
-    up: { dx: 0, dy: -1 },
-    down: { dx: 0, dy: 1 },
-    left: { dx: -1, dy: 0 },
-    right: { dx: 1, dy: 0 }
-};
-
-const KEY_TO_DIR = {
-    ArrowUp: 'up', w: 'up', z: 'up', W: 'up', Z: 'up',
-    ArrowDown: 'down', s: 'down', S: 'down',
-    ArrowLeft: 'left', a: 'left', q: 'left', A: 'left', Q: 'left',
-    ArrowRight: 'right', d: 'right', D: 'right'
-};
-
-// Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles.
-// Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
-const BIOMES = {
-    paddy: { a: '#c4a85c', b: '#b99d52', path: '#dcc88e', cliff: '#7a5a30', liquid: '#8a9a78', sky: ['#f0a860', '#fbe3b8'], decor: BIOME_DECOR.paddy },
-    riverbed: { a: '#6b5538', b: '#614d33', path: '#8c7550', cliff: '#3f3020', liquid: '#4f4129', sky: ['#e3b878', '#f7e6c6'], decor: BIOME_DECOR.riverbed },
-    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: BIOME_DECOR.bamboo },
-    gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: BIOME_DECOR.gobi },
-    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: BIOME_DECOR.storm },
-    volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: BIOME_DECOR.volcano },
-    savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: BIOME_DECOR.savanna },
-    coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: BIOME_DECOR.coast },
-    tides: { a: '#8a6a44', b: '#7d5f3c', path: '#b88b52', cliff: '#2c2018', liquid: '#123a52', sky: ['#08142a', '#1d3d63'], decor: BIOME_DECOR.tides },
-    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: BIOME_DECOR.fusang },
-    house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: BIOME_DECOR.house },
-    cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: BIOME_DECOR.cave },
-    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: BIOME_DECOR.moon },
-    // Royaume des âmes errantes (événement) : pierre grise, noir encre, brume bleu nuit, chemin d'or vieilli (palette de la spec)
-    wandering_souls: { a: '#686a70', b: '#5f6167', path: '#8c7b55', cliff: '#171a24', liquid: '#273b59', sky: ['#171a24', '#273b59'], decor: BIOME_DECOR.wandering_souls },
-    ...ARENA_BIOMES  // parvis et salles de l'Arène des Mille Flèches (arena.js)
-};
-
-const shade = (hex, amt) => {
-    const n = parseInt(hex.slice(1), 16);
-    const c = v => Math.max(0, Math.min(255, v + amt));
-    return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
-};
 
 /**
  * @param {object} cfg
@@ -129,6 +77,7 @@ export function createExplorationView(cfg) {
         mountBtn: root.querySelector('[data-explore="mount"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
         arenaBtn: root.querySelector('[data-explore="arena"]'),
+        mirrorBtn: root.querySelector('[data-explore="mirror"]'),
         menuBtn: root.querySelector('[data-explore="menu"]')
     };
 
@@ -145,6 +94,7 @@ export function createExplorationView(cfg) {
     let dialogIndex = 0;
     let toastTimer = null;
     let journalEl = null;
+    let mapEl = null;   // carte plein écran (clic sur la minimap) : pose d'un repère
     let merchantEl = null;
     let inCombat = false;
     let battleTransitionEl = null;
@@ -163,6 +113,103 @@ export function createExplorationView(cfg) {
     };
     let preparedRegion = null;   // région dont les dessins sont chargés et décodés
     let preparing = null;        // { region, promise } : chargement en cours
+
+    let changeEnd = null;       // résout startChangeEpisode quand le mode se termine
+    let healView = null;        // puzzle de soin ouvert (change/view.js)
+    let changeFarewell = false; // épisode 3 : musique de l'adieu pendant la dernière conversation
+    let stayAt = 0;
+    let groundCache = null;
+    let liquidCache = { screen: null, cells: [] };
+    let groundJob = null;     // { screen, biome, tile, dpr, canvas, paintRows, y, done }
+    let spareCanvas = null;   // canvas de sol recyclé (évite de réallouer ~30 Mo à chaque carte)
+    let fogHeroCell = '';
+    let lastBuzz = 0, auraAnnounced = false;
+    const env = {
+        cfg,
+        get GATE_SCALE() { return GATE_SCALE; },
+        get GROUND_MARGIN() { return GROUND_MARGIN; },
+        get MARKER_COLOR() { return MARKER_COLOR; },
+        get NARRATOR() { return NARRATOR; },
+        get NO_MINIMAP() { return NO_MINIMAP; },
+        get active() { return active; }, set active(v) { active = v; },
+        get auraAnnounced() { return auraAnnounced; }, set auraAnnounced(v) { auraAnnounced = v; },
+        get cam() { return cam; }, set cam(v) { cam = v; },
+        canvas,
+        get changeEnd() { return changeEnd; }, set changeEnd(v) { changeEnd = v; },
+        get changeFarewell() { return changeFarewell; }, set changeFarewell(v) { changeFarewell = v; },
+        get closeJournal() { return closeJournal; },
+        get confirmNewGamePlus() { return confirmNewGamePlus; },
+        ctx,
+        get dialogQueue() { return dialogQueue; },
+        get drawAura() { return drawAura; },
+        get drawBuilding() { return drawBuilding; },
+        get drawCachedObject() { return drawCachedObject; },
+        get drawCrown() { return drawCrown; },
+        get drawDarkness() { return drawDarkness; },
+        get drawDecor() { return drawDecor; },
+        get drawDpr() { return drawDpr; }, set drawDpr(v) { drawDpr = v; },
+        get drawFogOfWar() { return drawFogOfWar; },
+        get drawGateAura() { return drawGateAura; },
+        get drawLabel() { return drawLabel; },
+        get drawMarker() { return drawMarker; },
+        get drawMarkerCompass() { return drawMarkerCompass; },
+        get drawMerchantBadge() { return drawMerchantBadge; },
+        get drawMinimap() { return drawMinimap; },
+        get drawQuestCompass() { return drawQuestCompass; },
+        get drawShadow() { return drawShadow; },
+        get drawSprite() { return drawSprite; },
+        get ensureSession() { return ensureSession; },
+        get escapeHtml() { return escapeHtml; },
+        get fogHeroCell() { return fogHeroCell; }, set fogHeroCell(v) { fogHeroCell = v; },
+        get getGroundLayer() { return getGroundLayer; },
+        get getLiquidCells() { return getLiquidCells; },
+        get groundCache() { return groundCache; }, set groundCache(v) { groundCache = v; },
+        get groundJob() { return groundJob; }, set groundJob(v) { groundJob = v; },
+        get handleResult() { return handleResult; },
+        get healView() { return healView; }, set healView(v) { healView = v; },
+        get held() { return held; }, set held(v) { held = v; },
+        get inCombat() { return inCombat; },
+        get isDialogOpen() { return isDialogOpen; },
+        get isOnScreen() { return isOnScreen; },
+        get isRimTree() { return isRimTree; },
+        get journalEl() { return journalEl; }, set journalEl(v) { journalEl = v; },
+        get kindBadge() { return kindBadge; },
+        get lastBuzz() { return lastBuzz; }, set lastBuzz(v) { lastBuzz = v; },
+        get launchNewGamePlus() { return launchNewGamePlus; },
+        get liquidCache() { return liquidCache; }, set liquidCache(v) { liquidCache = v; },
+        get mapEl() { return mapEl; }, set mapEl(v) { mapEl = v; },
+        get miniBase() { return miniBase; },
+        get miniFog() { return miniFog; },
+        get miniRect() { return miniRect; }, set miniRect(v) { miniRect = v; },
+        get miniShift() { return miniShift; }, set miniShift(v) { miniShift = v; },
+        get npcMarkerCached() { return npcMarkerCached; },
+        get openDialog() { return openDialog; },
+        get paintGroundCells() { return paintGroundCells; },
+        get prepareRegion() { return prepareRegion; },
+        get refreshHud() { return refreshHud; },
+        get riding() { return riding; },
+        root,
+        get sceneSpeaker() { return sceneSpeaker; },
+        get session() { return session; },
+        get slide() { return slide; },
+        slideProgress,
+        get spareCanvas() { return spareCanvas; }, set spareCanvas(v) { spareCanvas = v; },
+        get stayAt() { return stayAt; }, set stayAt(v) { stayAt = v; },
+        get stopHoldRepeat() { return stopHoldRepeat; },
+        get syncVisual() { return syncVisual; },
+        get tileFor() { return tileFor; },
+        get toast() { return toast; },
+        get travelTo() { return travelTo; },
+        vis,
+        get walk() { return walk; }, set walk(v) { walk = v; },
+    };
+    const { NPC_HOP_SPEED, afterDialogs, askMirror, changeStay, eventsSpoken, kindBadge, openHealFor, openHouseMirror, playLegendEnd, playNpcArrival, proposeTracking, startChangeEpisode } = createChangeFlow(env);
+    const { bestiaryPanel, showJournal } = createCarnet(env);
+    const { MARKER_COLOR, changeArena, closeJournal, closeMapOverlay, drawMarkerCompass, openMapOverlay, travelTo } = createMapOverlay(env);
+    const { GROUND_MARGIN, getGroundLayer, getLiquidCells, npcMarkerCached, paintGroundCells, prebuildNeighborGround, tileFor } = createGroundLayer(env);
+    const { draw } = createDraw(env);
+    const { NO_MINIMAP, drawAura, drawDarkness, drawFogOfWar, drawMinimap, drawQuestCompass, miniBase, miniFog, overMinimap } = createOverlays(env);
+    const { GATE_SCALE, drawBuilding, drawCachedObject, drawCrown, drawDecor, drawGateAura, drawLabel, drawMarker, drawMerchantBadge, drawShadow, drawSprite, isRimTree } = createPainters(env);
 
     // ── Session ────────────────────────────────────────────────────────────
     function ensureSession() {
@@ -190,7 +237,17 @@ export function createExplorationView(cfg) {
         if (els.title) els.title.textContent = `${screen.name}${plus}`;
         if (els.objective) {
             const tq = X.trackedQuest(session);
-            els.objective.textContent = `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
+            const prog = X.changeProgress(session);
+            els.objective.textContent = prog.length
+                ? `Chang'e : soigner les habitants (${prog.filter(p => p.healed).length} / ${prog.length})`
+                : `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
+        }
+        // Mode Chang'e : les icônes habituelles (journal, carte, arène, sac, monture) n'ont plus lieu d'être, seule l'icône miroir reste (style.css `.change-mode`).
+        root.classList.toggle('change-mode', X.inChangeMode(session));
+        // Bouton miroir : visible tant qu'un épisode de Chang'e est commencé et inachevé (il le rouvre, après confirmation).
+        if (els.mirrorBtn) {
+            if (!els.mirrorBtn.innerHTML) els.mirrorBtn.innerHTML = icon('mirror');
+            els.mirrorBtn.hidden = !(X.inChangeMode(session) || X.pendingChangeEpisode(session));
         }
         // Dans l'arène, le bouton « Arène » (trophée) devient « Sortir » (porte) : on peut en sortir à tout moment.
         if (els.arenaBtn) {
@@ -212,11 +269,17 @@ export function createExplorationView(cfg) {
     let puzzleView = null;   // énigme à plateau ouverte (puzzle/view.js), au-dessus de la carte
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
-    const isOnScreen = () => root.getClientRects().length > 0;
+    // Lecture de layout (getClientRects) appelée plusieurs fois par image : mémorisée 100 ms.
+    let onScreenStamp = -Infinity, onScreenValue = false;
+    const isOnScreen = () => {
+        const t = performance.now();
+        if (t - onScreenStamp > 100) { onScreenValue = root.getClientRects().length > 0; onScreenStamp = t; }
+        return onScreenValue;
+    };
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || Boolean(puzzleView) || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => Boolean(vis.npcAnim?.blocking) || isDialogOpen() || Boolean(puzzleView) || Boolean(healView) || inCombat || Boolean(journalEl) || Boolean(mapEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // Biome de l'écran où se tient un ennemi (teinte de son dessin).
@@ -267,9 +330,9 @@ export function createExplorationView(cfg) {
         const zone = worldZones.find(z => z.id === region);
         const label = zone ? zone.name : region === ARENA_REGION ? ARENA_NAME : 'Chargement…';
         const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
-        const clip = portrait && zone ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
+        const clip = portrait && zone && !isLoadingScreenSuppressed() ? loadSequence(`biome_${region}`) : null;   // boucle d'arrivée du biome en fond de l'écran de chargement
         // sprites GBA de la région : héros, PNJ, ennemis et leurs gabarits (le reste se charge à la première apparition)
-        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
+        const gba = loadGbaSprites([cfg.getHero().classId, `${cfg.getHero().classId}_horse`, X.MIMIC_SPRITE, ...npcs, ...enemies.flatMap(([key, templateId]) => [key, templateId])]);
         const promise = withLoadingScreen(label, async progress => {
             await trackProgress([...packs.map(loadSpritePack), gba], r => progress(r * 0.5));
             const svgs = regionSprites(region);
@@ -427,238 +490,18 @@ export function createExplorationView(cfg) {
         // Duel en plusieurs phases : la suivante démarre dès que les scènes sont dites, sans retour libre sur la carte.
         const chain = events.find(e => e.type === 'chain');
         if (chain) afterDialogs(() => startEncounter(chain.enemyId)); else playBanter();
-        cfg.onSave();
-        refreshHud();
-    }
-
-    // Exécute `fn` quand la file de dialogues est vide (tout de suite si aucun dialogue n'est ouvert).
-    function afterDialogs(fn) {
-        const last = dialogQueue[dialogQueue.length - 1];
-        if (!last) { fn(); return; }
-        const prev = last.after;
-        last.after = () => { prev?.(); fn(); };
-    }
-
-    // Fin de la légende : animation de fin, générique, puis le choix entre continuer la partie et la Nouvelle Partie +.
-    async function playLegendEnd() {
-        await playEndingAnimation();
-        await playCredits();
-        openDialog({ ...NARRATOR, title: 'La légende continue' }, [
-            "Votre histoire s'achève, mais le monde, lui, reste ouvert : les soleils dorment, les routes sont sûres, l'Arène des Mille Flèches vous attend.",
-            "Continuez à parcourir les terres à votre rythme, ou exportez votre sauvegarde dans un fichier pour entamer la Nouvelle Partie + : l'histoire repart des Rizières, vous gardez tout votre équipement, et l'arène est ouverte dès le début."
-        ], null, [
-            { label: 'Continuer ma partie', run: () => { toast('Le monde est à vous : la Nouvelle Partie + reste disponible dans le carnet.', 5000); } },
-            { label: 'Exporter ma sauvegarde et lancer la Nouvelle Partie +', run: () => launchNewGamePlus() }
-        ]);
-    }
-
-    const kindBadge = quest => quest.side
-        ? `<span class="quest-badge side" title="Quête annexe">${icon('scroll')} Annexe</span>`
-        : `<span class="quest-badge main" title="Quête principale">${icon('star')} Principale</span>`;
-
-    // Après l'activation d'une quête : si une autre quête est déjà suivie, le joueur choisit laquelle suivre.
-    function proposeTracking(quest) {
-        const p = X.trackProposal(session, quest);
-        if (!p || p.mode !== 'ask') return;
-        openDialog({ ...NARRATOR, title: 'Suivre cette quête ?' }, [
-            `« ${p.quest.title} » vient d'être activée. Vous suivez actuellement « ${p.current.title} ».`
-        ], null, [
-            { label: 'Suivre cette quête', run: () => { X.setTrackedQuest(session, p.quest.id); toast(`Quête suivie : ${p.quest.title}`); cfg.onSave(); refreshHud(); } },
-            { label: 'Rester sur la quête actuelle', run: () => { toast(`Quête suivie : ${p.current.title}`); } }
-        ]);
-    }
-
-    function eventsSpoken(events) {
-        return new Set(events.filter(e => e.quest).map(e => e.quest.id));
-    }
-
-    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression (le bestiaire a son propre onglet) ──────
-    const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
-    const carnet = { tab: 'quests', filter: 'all', region: 'all', travelRegion: null };
-    const STATUS_LABEL = { available: `${icon('talk')} À démarrer`, active: `${icon('target')} En cours`, ready: `${icon('check')} À rendre`, done: `${icon('flag')} Terminée` };
-    const STATUS_ORDER = { ready: 0, active: 1, available: 2, done: 3 };
-
-    function questsPanel() {
-        const all = X.journalEntries(session);
-        const regions = [...new Set(all.map(e => e.region).filter(Boolean))];
-        if (carnet.region !== 'all' && !regions.includes(carnet.region)) carnet.region = 'all';
-        const counts = {
-            main: all.filter(e => !e.quest.side && e.status !== 'done').length,
-            side: all.filter(e => e.quest.side && e.status !== 'done').length,
-            done: all.filter(e => e.status === 'done').length
-        };
-        const entries = all
-            .filter(e => carnet.filter === 'all' ? e.status !== 'done'
-                : carnet.filter === 'main' ? !e.quest.side && e.status !== 'done'
-                    : carnet.filter === 'side' ? e.quest.side && e.status !== 'done' : e.status === 'done')
-            .filter(e => carnet.region === 'all' || e.region === carnet.region)
-            .sort((a, b) => Number(b.tracked) - Number(a.tracked) || STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-        const chip = (key, label) => `<button type="button" class="carnet-chip${carnet.filter === key ? ' on' : ''}" data-filter="${key}">${label}</button>`;
-        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${escapeHtml(r.fragment)}` : '', r.stuff ? `${icon('shield')} ${escapeHtml(getStuffById(r.stuff)?.name || 'Stuff')}` : ''].filter(Boolean).join(' · ');
-        return `
-            <div class="carnet-filters">
-                ${chip('all', 'En cours')}${chip('main', `Principale (${counts.main})`)}${chip('side', `Annexes (${counts.side})`)}${chip('done', `Terminées (${counts.done})`)}
-            </div>
-            <select class="carnet-region" aria-label="Région">
-                <option value="all">Toutes les régions</option>
-                ${regions.map(r => `<option value="${r}"${carnet.region === r ? ' selected' : ''}>${escapeHtml(REGION_LABEL[r] || r)}</option>`).join('')}
-            </select>
-            <div class="explore-journal-list">
-            ${entries.length === 0 ? '<p>Aucune quête dans cette liste. Parlez aux villageois, entrez dans les maisons.</p>' : entries.map(e => `
-                <div class="explore-quest ${e.status}${e.tracked ? ' tracked' : ''}">
-                    <div class="explore-quest-head"><b>${e.tracked ? `${icon('check')} ` : ''}${escapeHtml(e.quest.title)}</b> ${kindBadge(e.quest)} <span>${STATUS_LABEL[e.status] || ''}</span></div>
-                    <div class="explore-quest-chapter">${escapeHtml(e.quest.chapter)}${e.region && REGION_LABEL[e.region] ? ` · ${escapeHtml(REGION_LABEL[e.region])}` : ''}</div>
-                    ${e.status === 'available'
-                        ? `<div class="explore-quest-where">${icon('talk')} Parlez à ${escapeHtml(e.giverName || 'un PNJ')}${e.giverPlace ? ` (${escapeHtml(e.giverPlace)})` : ''}</div>`
-                        : `<ul>${e.objectives.map(o => `<li class="${o.done ? 'done' : ''}">${o.done ? icon('check') : '○'} ${escapeHtml(o.text)}</li>`).join('')}</ul>`}
-                    ${e.where && e.status !== 'done' && e.status !== 'available' ? `<div class="explore-quest-where">${icon('pin')} ${escapeHtml(e.where)}</div>` : ''}
-                    ${e.quest.reward ? `<div class="explore-quest-reward">${reward(e.quest.reward)}</div>` : ''}
-                    ${e.status === 'done' ? '' : `<button type="button" class="carnet-track" data-track="${e.tracked ? '' : e.quest.id}">${e.tracked ? 'Ne plus suivre' : `${icon('star')} Suivre`}</button>`}
-                </div>`).join('')}
-            </div>`;
-    }
-
-    function travelPanel() {
-        const stones = X.waypointList(session);
-        if (stones.length === 0) return '<p>Aucune pierre de voyage activée. Touchez une pierre de voyage dans un village ou en chemin.</p>';
-        if (!X.nearWaypoint(session)) {
-            return `<p class="carnet-hint">${icon('stone')} Le voyage rapide n'est possible que depuis une borne de voyage. Approchez-vous d'une pierre de voyage (dans chaque village, au milieu des terres sauvages et à l'entrée des sanctuaires), puis touchez-la.</p>`;
-        }
-        const byRegion = new Map();
-        stones.forEach(w => { if (!byRegion.has(w.region)) byRegion.set(w.region, []); byRegion.get(w.region).push(w); });
-        const kindIcon = { village: icon('village'), wild: icon('leafWild'), sanctuary: icon('sun') };
-        const chosen = byRegion.has(carnet.travelRegion) ? carnet.travelRegion : null;
-        const biomes = `<div class="carnet-travel-biomes">${[...byRegion.entries()].map(([region, list]) =>
-            `<button type="button" class="carnet-chip carnet-travel-biome${region === chosen ? ' active' : ''}" data-travel-region="${region}">${escapeHtml(REGION_LABEL[region] || region)} <small>(${list.length})</small></button>`).join('')}</div>`;
-        const list = chosen ? `<div class="carnet-travel-region"><h4>${escapeHtml(REGION_LABEL[chosen] || chosen)}</h4>
-            ${byRegion.get(chosen).map(w => `<button type="button" class="carnet-travel-btn" data-travel="${w.screenId}"${w.current ? ' disabled' : ''}>
-                ${kindIcon[w.kind] || icon('stone')} ${escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}</div>`
-            : '<p class="carnet-hint">Choisissez un biome pour voir ses pierres de voyage.</p>';
-        return `<p class="carnet-hint">Borne de voyage ${icon('stone')} : choisissez une destination.</p>${biomes}<div class="carnet-travel">${list}</div>`;
-    }
-
-    function progressPanel() {
-        const rows = X.regionProgress(session).filter(r => r.visited);
-        const bar = (n, total) => `<span class="carnet-bar"><i style="width:${total ? Math.round(100 * n / total) : 0}%"></i></span> ${n}/${total}`;
-        return `<div class="carnet-progress">${rows.map(r => `
-            <div class="carnet-progress-row"><b>${escapeHtml(REGION_LABEL[r.region] || r.region)}</b>
-                <div>${icon('chest')} Coffres ${bar(r.chestsOpened, r.chestsTotal)}</div>
-                <div>${icon('scroll')} Annexes ${bar(r.sideDone, r.sideTotal)}</div>
-                <div>${icon('stone')} Pierres ${bar(r.stonesFound, r.stonesTotal)}</div>
-            </div>`).join('')}</div>`;
-    }
-
-    // Bestiaire (onglet dédié, voir bestiaryHtml) : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
-    function bestiaryPanel() {
-        const { entries, known, total } = bestiaryEntries(enemyCatalogList(), session.data.bestiary);
-        const head = `<p class="carnet-hint">${icon('book')} ${known}/${total} créatures connues. Combattez ou observez une créature (immobile près d'elle) pour l'inscrire.</p>`;
-        if (entries.length === 0) return `${head}<p>Aucune créature dans le bestiaire pour l'instant.</p>`;
-        const element = (color, label) => color ? `${manaIcon(color)} ${escapeHtml(label || color)}` : '?';
-        return `${head}<div class="carnet-bestiary">${entries.map(e => {
-            const img = gbaSprite(e.id, 'front');
-            return `
-            <div class="carnet-beast">
-                <div class="carnet-beast-head">
-                    ${img ? `<img class="carnet-beast-sprite" alt="" loading="lazy" src="${img}">` : `<span class="carnet-beast-sprite">${icon('ghost')}</span>`}
-                    <div><b>${escapeHtml(e.name)}</b>${e.title ? ` <small>· ${escapeHtml(e.title)}</small>` : ''}<div class="carnet-beast-race">${escapeHtml(e.race)}</div></div>
-                </div>
-                <div class="carnet-beast-stats">
-                    <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${escapeHtml(e.traits.join(', '))}` : ''}</span>
-                    <span>${icon('target')} Faiblesse : ${element(e.weakColor, e.weakElement)}</span>
-                </div>
-                <p class="carnet-beast-lore">${icon('scroll')} ${escapeHtml(e.lore)}</p>
-                <div class="carnet-beast-source ${e.source}">${icon('book')} ${escapeHtml(SOURCE_LABELS[e.source] || e.source)}</div>
-            </div>`;
-        }).join('')}</div>`;
-    }
-
-    function renderCarnet() {
-        if (!journalEl) return;
-        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : questsPanel();
-        const tab = (key, label) => `<button type="button" class="carnet-tab${carnet.tab === key ? ' on' : ''}" data-tab="${key}">${label}</button>`;
-        journalEl.innerHTML = `
-            <div class="explore-journal-card">
-                <h3>${icon('scroll')} ${escapeHtml(STORY_TITLE)}</h3>
-                ${session.data.ended ? `<p class="explore-journal-end">${icon('moon')} La légende est achevée !</p>` : ''}
-                <div class="carnet-tabs">${tab('quests', `${icon('scroll')} Quêtes`)}${tab('travel', `${icon('stone')} Voyage`)}${tab('progress', `${icon('chart')} Progression`)}</div>
-                ${body}
-                ${session.data.ended ? `<button type="button" class="primary explore-journal-ngplus">${icon('moon')} Nouvelle Partie +</button>` : ''}
-                <button type="button" class="primary explore-journal-close">Fermer</button>
-            </div>`;
-    }
-
-    function showJournal(tab) {
-        if (journalEl) return closeJournal();
-        if (typeof tab === 'string') carnet.tab = tab;
-        journalEl = document.createElement('div');
-        journalEl.className = 'explore-journal';
-        journalEl.addEventListener('click', ev => {
-            if (ev.target.closest('.explore-journal-ngplus')) { confirmNewGamePlus(); return; }
-            if (ev.target === journalEl || ev.target.closest('.explore-journal-close')) { closeJournal(); return; }
-            const tabBtn = ev.target.closest('[data-tab]');
-            if (tabBtn) { carnet.tab = tabBtn.dataset.tab; renderCarnet(); return; }
-            const filterBtn = ev.target.closest('[data-filter]');
-            if (filterBtn) { carnet.filter = filterBtn.dataset.filter; renderCarnet(); return; }
-            const trackBtn = ev.target.closest('[data-track]');
-            if (trackBtn) {
-                X.setTrackedQuest(session, trackBtn.dataset.track || null);
-                cfg.onSave();
-                refreshHud();
-                renderCarnet();
-                return;
-            }
-            const biomeBtn = ev.target.closest('[data-travel-region]');
-            if (biomeBtn) { carnet.travelRegion = biomeBtn.dataset.travelRegion; renderCarnet(); return; }
-            const travelBtn = ev.target.closest('[data-travel]');
-            if (travelBtn) { closeJournal(); travelTo(travelBtn.dataset.travel); }
+        // Mode Chang'e : après la mort du soleil des régions 3, 6 et 9 et les dialogues, Hou Yi parle à Chang'e par le miroir, puis la transition se lance.
+        const changeEv = events.find(e => e.type === 'changeEpisode');
+        const episodeDone = changeEv ? new Promise(resolve => afterDialogs(() => startChangeEpisode(changeEv.episode).then(resolve))) : null;
+        // PNJ qui accourt vers le héros en sautillant : une fois tous les dialogues dits (et l'épisode de Chang'e terminé), juste avant sa propre conversation.
+        events.filter(e => e.type === 'npcArrival').forEach(e => {
+            if (episodeDone) episodeDone.then(() => afterDialogs(() => playNpcArrival(e.npcId)));
+            else afterDialogs(() => playNpcArrival(e.npcId));
         });
-        journalEl.addEventListener('change', ev => {
-            if (ev.target.classList.contains('carnet-region')) { carnet.region = ev.target.value; renderCarnet(); }
-        });
-        root.appendChild(journalEl);
-        renderCarnet();
-    }
-
-    // Voyage rapide vers une pierre activée (hors combat).
-    function travelTo(screenId) {
-        ensureSession();
-        if (inCombat || !X.fastTravel(session, screenId)) return false;
-        held = null;
-        walk = null;
-        vis.enemies = {};
-        syncVisual(true);
-        const screen = X.currentScreen(session);
-        cfg.onRegionVisited?.(screen.region);
-        refreshHud();
-        toast(`Voyage rapide : ${screen.name}`, 2600);
         cfg.onSave();
-        return true;
-    }
-
-    function changeArena(enter) {
-        ensureSession();
-        if (inCombat || isDialogOpen()) return false;
-        if (!(enter ? X.enterArena(session) : X.leaveArena(session))) return false;
-        held = null;
-        walk = null;
-        vis.enemies = {};
-        syncVisual(true);
         refreshHud();
-        const screen = X.currentScreen(session);
-        if (!enter) cfg.onRegionVisited?.(screen.region);
-        toast(enter ? screen.name : `Vous quittez l'arène : ${screen.name}`, 2600);
-        if (enter && !session.data.arenaIntroSeen) {
-            session.data.arenaIntroSeen = true;
-            if (screen.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, screen.arrival);
-        }
-        cfg.onSave();
-        return true;
     }
 
-    function closeJournal() {
-        journalEl?.remove();
-        journalEl = null;
-    }
 
     // Boutique d'un PNJ marchand (contenu et achats : shop.js via cfg.renderMerchant).
     function openMerchant(npc) {
@@ -712,10 +555,6 @@ export function createExplorationView(cfg) {
             toast(`Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
             return prepareRegion(X.currentScreen(session).region);
         }).then(() => startEncounter('fengmeng_1'));
-    }
-
-    function escapeHtml(str) {
-        return String(str).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     }
 
     // ── Actions ────────────────────────────────────────────────────────────
@@ -788,12 +627,18 @@ export function createExplorationView(cfg) {
     }
 
     function handleResult(res) {
+        if (res?.markerReached) toast('Repère atteint.', 1800);
         if (!res) return;
         switch (res.type) {
             case 'combat':
                 startEncounter(res.enemyId);
                 break;
+            case 'changeStay':
+                changeStay();
+                break;
             case 'talk': {
+                if (X.inChangeMode(session)) { openHealFor(res.npcId); break; }   // mode Chang'e : un habitant à soigner
+                if (res.npcId === 'houyi_mirror') { openHouseMirror(); break; }   // miroir de la maison : rejeu d'un épisode
                 const talk = X.talkToNpc(session, res.npcId);
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
@@ -829,6 +674,9 @@ export function createExplorationView(cfg) {
                         }
                     });
                     if (!puzzleView) toast('Le coffre ne bouge pas.', 3000);
+                } else if (chest?.type === 'mimic') {
+                    toast('Le coffre s\'ouvre sur une gueule pleine de dents : une mimique !', 3200);
+                    startEncounter(chest.enemyId);
                 } else if (chest) processEvents(chest.events);
                 break;
             }
@@ -918,7 +766,7 @@ export function createExplorationView(cfg) {
         syncStealth();
         const d = DIRECTIONS[dirName];
         if (!d) return;
-        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel() }));
+        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel(), riding: riding() }));
         lastMoveAt = performance.now();
     }
 
@@ -948,7 +796,17 @@ export function createExplorationView(cfg) {
     function onCanvasPointerDown(ev) {
         if (!active || isBlocked()) return;
         ev.preventDefault();
-        if (overMinimap(ev)) return;   // la minimap n'est qu'un indicateur : elle ne réagit pas aux clics
+        if (overMinimap(ev)) { openMapOverlay(); return; }   // un clic sur la minimap l'ouvre en plein écran (pose d'un repère)
+        // Toucher le héros lance la perception du qì (talent, 5 s) : le geste sert aussi à réarmer les vibrations.
+        const tile = tileFromEvent(ev);
+        if (tile.x === session.data.x && tile.y === session.data.y && X.hasAura(cfg.getPlayerLevel())) {
+            stopHoldRepeat();
+            armVibration();
+            const res = X.startPerception(session, cfg.getPlayerLevel());
+            toast(res.found ? 'Perception du qì : une flèche rouge indique le trésor caché le plus proche.' : 'Perception du qì : aucun trésor caché ici.', 2600);
+            vibrate(30);
+            return;
+        }
         stopHoldRepeat();
         holdPointer = { id: ev.pointerId, clientX: ev.clientX, clientY: ev.clientY };
         holdTimer = setInterval(() => {
@@ -1007,8 +865,9 @@ export function createExplorationView(cfg) {
         const dx = next.x - session.data.x;
         const dy = next.y - session.data.y;
         syncStealth();
-        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel() });
+        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel(), riding: riding() });
         lastMoveAt = performance.now();
+        if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
             walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
             handleResult(res);
@@ -1026,6 +885,7 @@ export function createExplorationView(cfg) {
             return;
         }
         if (ev.key === 'Escape' && merchantEl) { closeMerchant(); return; }
+        if (ev.key === 'Escape' && mapEl) { closeMapOverlay(); return; }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
         if (ev.key === 'c' || ev.key === 'C') { toggleMount(); return; }
@@ -1064,9 +924,10 @@ export function createExplorationView(cfg) {
             advanceDialog();
         });
         els.journalBtn?.addEventListener('click', showJournal);
-        els.mountBtn?.addEventListener('click', () => { if (!isBlocked()) toggleMount(); });
-        els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
-        els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
+        els.mountBtn?.addEventListener('click', () => { if (!isBlocked() && !X.inChangeMode(session)) toggleMount(); });
+        els.mapBtn?.addEventListener('click', () => { if (!isBlocked() && !X.inChangeMode(session)) cfg.onOpenMap?.(); });   // Chang'e reste au village
+        els.arenaBtn?.addEventListener('click', () => { if (!isBlocked() && !X.inChangeMode(session)) cfg.onOpenArena?.(); });
+        els.mirrorBtn?.addEventListener('click', () => { if (!isBlocked()) askMirror(); });
         els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
     }
 
@@ -1107,6 +968,8 @@ export function createExplorationView(cfg) {
         if (dist > 3) { vis.px = session.data.x; vis.py = session.data.y; }
         else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; }
         else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
+        // Mode Chang'e : les habitants de passage se baladent (en pause pendant un dialogue ou un puzzle)
+        if (X.inChangeMode(session) && !isDialogOpen() && !healView) X.stepChangeAmbient(session, dt);
         // Compagnon actif : il suit la piste du héros, toujours derrière lui (companionTrail.js)
         if (X.activeCompanionOf(session)) {
             const heroDir = viewDir(session.rt.facing);
@@ -1125,6 +988,13 @@ export function createExplorationView(cfg) {
             v.y += (e.y - v.y) * k;
         });
         vis.bob = now;
+        // PNJ qui accourt en sautillant (arrival) : avance vers sa cible et rebondit ; le saut s'arrête à l'arrivée.
+        const na = vis.npcAnim;
+        if (na && !na.idle) {
+            const ndx = na.tx - na.x, ndy = na.ty - na.y, nd = Math.hypot(ndx, ndy), step = dt / 1000 * NPC_HOP_SPEED;
+            if (nd <= step) { na.x = na.tx; na.y = na.ty; na.phase = 0; na.idle = true; const r = na.resolve; na.resolve = null; r?.(); }
+            else { na.x += ndx / nd * step; na.y += ndy / nd * step; na.phase += dt / 1000 * NPC_HOP_SPEED * Math.PI * 1.1; }
+        }
 
         // Dessin inutile (onglet caché, carte hors écran, cinématique opaque par-dessus) : on le saute. Sous un modal (voile à 70 %), la carte
         // ne bouge plus (la logique est bloquée) : 4 images/s suffisent. La logique ci-dessus reste exécutée à chaque image.
@@ -1139,1067 +1009,10 @@ export function createExplorationView(cfg) {
         rafId = requestAnimationFrame(frame);
     }
 
-    // ── Calque de sol mis en cache ─────────────────────────────────────────
-    const GROUND_MARGIN = 32;                 // marge (px CSS) du calque de sol autour de la carte (plus de falaise : simple tampon)
-    const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
-    let groundCache = null;
+    let drawDpr = 1;   // densité de pixels de l'image en cours (ombres pré-rendues)
 
-    // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
-    // Retourne la fonction qui peint les lignes [y0, y1[ du sol : le calque peut ainsi être construit d'un coup ou par tranches (carte voisine).
-    // Hautes-Eaux : l'eau des zones de combat est une « haute herbe » marine (algues), celle du village (sans rencontre) reste calme.
-    const tileBiomeId = screen => (screen.biome === 'tides' && !X.grassOf(screen) ? 'tides_calm' : screen.biome);
-    function groundPainter(g, screen, biome, tile, ox, oy) {
-        const inMap = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h;
-        const grids = gridsOf(screen);
-        // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
-        const isLiquid = (x, y) => inMap(x, y) && (grids.liq[y * screen.w + x] === 1 || (screen.aquatic && grids.obst[y * screen.w + x] === 1));
-        const isPath = (x, y) => !inMap(x, y) || (grids.path[y * screen.w + x] === 1 && !isLiquid(x, y));
-        const tiled = !!(screen.interior || screen.kind === 'arena');
-        // maison : un tapis au centre de la pièce, sur des cases libres (ni meuble ni sortie)
-        const rug = screen.interior ? houseRug((x, y) => grids.obst[y * screen.w + x] === 1 || (screen.exits || []).some(e => e.x === x && e.y === y), screen.w, screen.h) : null;
-        // hautes herbes (rencontres aléatoires) : touffes sombres peintes dans le calque de sol
-        const grassCells = X.grassOf(screen)?.cells || [];
-        const grassGrid = grassCells.length ? rectGrid(screen, grassCells) : null;
-        const isTall = grassGrid ? (x, y) => inMap(x, y) && grassGrid[y * screen.w + x] === 1 : null;
-        g.imageSmoothingEnabled = false;
-        return (y0, y1) => {
-            for (let y = y0; y < y1; y++) {
-                for (let x = 0; x < screen.w; x++) {
-                    paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: tileBiomeId(screen), isTall, rug });
-                }
-            }
-        };
-    }
-
-    function paintGroundCells(g, screen, biome, tile, ox, oy) {
-        groundPainter(g, screen, biome, tile, ox, oy)(0, screen.h);
-    }
-
-    let liquidCache = { screen: null, cells: [] };
-    function getLiquidCells(screen) {
-        if (liquidCache.screen === screen) return liquidCache.cells;
-        const cells = [];
-        const liq = gridsOf(screen).liq;
-        for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (liq[y * screen.w + x] === 1) cells.push([x, y]);
-        liquidCache = { screen, cells };
-        return cells;
-    }
-
-    // Taille de tuile d'un écran (la carte rétrécit jusqu'à MIN_TILE puis défile avec le héros).
-    function tileFor(screen, vw, vh) {
-        const availH = Math.max(1, vh - HUD_TOP - HUD_BOTTOM);
-        return Math.max(MIN_TILE, Math.min(MAX_TILE, Math.floor(Math.min(vw / screen.w, availH / screen.h))));
-    }
-
-    // Calque de sol de la carte voisine, construit par tranches pendant que le héros s'approche d'une sortie : à la transition il n'y a plus
-    // qu'à l'échanger, au lieu de peindre d'un coup des milliers de cases (0,5 à 0,8 s d'arrêt à CPU ×4).
-    let groundJob = null;     // { screen, biome, tile, dpr, canvas, paintRows, y, done }
-    let spareCanvas = null;   // canvas de sol recyclé (évite de réallouer ~30 Mo à chaque carte)
-    const sameGround = (c, screen, biome, tile, dpr) => c && c.screen === screen && c.biome === biome && c.tile === tile && c.dpr === dpr;
-
-    function groundCanvasSize(screen, tile, dpr) {
-        const M = GROUND_MARGIN;
-        return [Math.ceil((tile * screen.w + 2 * M) * dpr), Math.ceil((tile * screen.h + 2 * M) * dpr)];
-    }
-
-    function startGroundJob(screen, biome, tile, dpr) {
-        const [w, h] = groundCanvasSize(screen, tile, dpr);
-        if (w * h > GROUND_MAX_PIXELS || typeof document === 'undefined') return null;
-        const canvas = spareCanvas || document.createElement('canvas');
-        spareCanvas = null;
-        canvas.width = w;
-        canvas.height = h;
-        const g = canvas.getContext('2d');
-        if (!g) return null;
-        g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        return { screen, biome, tile, dpr, canvas, paintRows: groundPainter(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN), y: 0, done: false };
-    }
-
-    function dropGroundJob() {
-        if (groundJob) spareCanvas = groundJob.canvas;
-        groundJob = null;
-    }
-
-    // Avance la construction d'au plus `budgetMs` ; true quand le calque est terminé.
-    function stepGroundJob(job, budgetMs) {
-        const t0 = performance.now();
-        while (job.y < job.screen.h && performance.now() - t0 < budgetMs) job.paintRows(job.y++, job.y);
-        job.done = job.y >= job.screen.h;
-        return job.done;
-    }
-
-    function getGroundLayer(screen, biome, tile, dpr) {
-        const c = groundCache;
-        if (sameGround(c, screen, biome, tile, dpr)) return c;
-        if (sameGround(groundJob, screen, biome, tile, dpr)) {
-            // la carte voisine préparée est celle où l'on arrive : on termine les lignes restantes (s'il y en a) et on l'adopte
-            if (!groundJob.done) { groundJob.paintRows(groundJob.y, screen.h); groundJob.done = true; }
-            if (c?.canvas) spareCanvas = c.canvas;
-            groundCache = { screen, biome, tile, dpr, canvas: groundJob.canvas };
-            groundJob = null;
-            return groundCache;
-        }
-        const [w, h] = groundCanvasSize(screen, tile, dpr);
-        if (w * h > GROUND_MAX_PIXELS || typeof document === 'undefined') return null;
-        const canvas = c?.canvas || spareCanvas || document.createElement('canvas');
-        if (canvas === spareCanvas) spareCanvas = null;
-        canvas.width = w;
-        canvas.height = h;
-        const g = canvas.getContext('2d');
-        if (!g) return null;
-        g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        // Aucune bordure : ni falaise ni ombre autour de la carte (le décor se prolonge jusqu'au bord de l'écran).
-        paintGroundCells(g, screen, biome, tile, GROUND_MARGIN, GROUND_MARGIN);
-        groundCache = { screen, biome, tile, dpr, canvas };
-        return groundCache;
-    }
-
-    // Héros à moins de PREBUILD_RANGE cases d'une sortie : prépare (par tranches) le sol de la carte où elle mène ; ailleurs, libère le travail en cours.
-    function prebuildNeighborGround() {
-        const screen = X.currentScreen(session);
-        const hx = session.data.x, hy = session.data.y;
-        const exit = (screen.exits || []).find(e => e.to && e.to !== screen.id && session.screens[e.to] && Math.abs(e.x - hx) + Math.abs(e.y - hy) <= PREBUILD_RANGE);
-        if (!exit) { dropGroundJob(); return; }
-        const target = session.screens[exit.to];
-        const biome = BIOMES[target.biome] || BIOMES.paddy;
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
-        const tile = tileFor(target, Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientHeight));
-        if (!sameGround(groundJob, target, biome, tile, dpr)) {
-            dropGroundJob();
-            if (sameGround(groundCache, target, biome, tile, dpr)) return;
-            groundJob = startGroundJob(target, biome, tile, dpr);
-        }
-        if (groundJob && !groundJob.done) stepGroundJob(groundJob, PREBUILD_BUDGET_MS);
-    }
-
-    function draw(now) {
-        const screen = X.currentScreen(session);
-        const biome = BIOMES[screen.biome] || BIOMES.paddy;
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
-        const vw = Math.max(1, canvas.clientWidth);
-        const vh = Math.max(1, canvas.clientHeight);
-        if (canvas.width !== Math.round(vw * dpr) || canvas.height !== Math.round(vh * dpr)) {
-            canvas.width = Math.round(vw * dpr);
-            canvas.height = Math.round(vh * dpr);
-        }
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        // Défilement entre deux cartes : ancienne image qui sort, nouvelle carte qui entre (poussée dans le sens de la marche).
-        const sp = slideProgress(now);
-        let slideX = 0, slideY = 0;   // décalage de la carte pendant le défilement (repère pour ne dessiner que ce qui est à l'écran)
-        if (slide) {
-            const d = DIRECTIONS[slide.dir === 'north' ? 'up' : slide.dir === 'south' ? 'down' : slide.dir === 'west' ? 'left' : 'right'] || { dx: 0, dy: 0 };
-            const ease = 1 - (1 - sp) * (1 - sp);
-            ctx.drawImage(slide.snap, -d.dx * vw * ease, -d.dy * vh * ease, vw, vh);
-            slideX = d.dx * vw * (1 - ease);
-            slideY = d.dy * vh * (1 - ease);
-            ctx.translate(slideX, slideY);
-        }
-
-        // taille de tuile et caméra
-        const availH = Math.max(1, vh - HUD_TOP - HUD_BOTTOM);
-        const tile = tileFor(screen, vw, vh);
-        const mapW = tile * screen.w;
-        const mapH = tile * screen.h;
-        const follow = (size, avail, offset, pos) =>
-            size <= avail ? offset + (avail - size) / 2
-                : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
-        const ox = follow(mapW, vw, 0, vis.cx ?? vis.px);
-        const oy = follow(mapH, availH, HUD_TOP, vis.cy ?? vis.py);
-        cam = { ox, oy, tile, vw };
-        const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
-        // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran. Les cases de la carte sont opaques
-        // et repeintes juste après : on ne peint que ce qui est autour d'elles (jamais tout l'écran quand la carte le recouvre).
-        ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
-        const mx0 = Math.max(0, ox), my0 = Math.max(0, oy), mx1 = Math.min(vw, ox + mapW), my1 = Math.min(vh, oy + mapH);
-        if (slide || mx1 <= mx0 || my1 <= my0) ctx.fillRect(0, 0, vw, vh);
-        else {
-            // Chaque bande déborde d'un pixel sous la carte : le bord de la carte tombe sur des coordonnées fractionnaires (anti-crénelage),
-            // la carte repeint ce pixel et la couture reste celle de l'ancien fond plein.
-            if (my0 > 0) ctx.fillRect(0, 0, vw, my0 + 1);
-            if (my1 < vh) ctx.fillRect(0, my1 - 1, vw, vh - my1 + 1);
-            if (mx0 > 0) ctx.fillRect(0, my0, mx0 + 1, my1 - my0);
-            if (mx1 < vw) ctx.fillRect(mx1 - 1, my0, vw - mx1 + 1, my1 - my0);
-        }
-        // La carte (jusqu'à 48 colonnes) déborde de l'écran : tout ce qui est hors champ (avec `margin` cases de marge pour les grands sprites
-        // et les étiquettes) n'est pas dessiné. Rendu identique, beaucoup moins d'appels canvas.
-        const inView = (x, y, w = 1, h = 1, margin = 1) => {
-            const px = ox + x * tile + slideX, py = oy + y * tile + slideY;
-            return px + (w + margin) * tile >= 0 && px - margin * tile <= vw && py + (h + margin) * tile >= 0 && py - margin * tile <= vh;
-        };
-
-        const level = cfg.getPlayerLevel();
-        const aura = X.getAuraTiles(session);
-        const pulse = 0.5 + 0.5 * Math.sin(now / 320);
-        const grids = gridsOf(screen);
-        const isLiquidAt = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h && grids.liq[y * screen.w + x] === 1;
-        const cell = (x, y, fill, inset = 0) => {
-            if (!inView(x, y)) return;
-            const p = P(x, y);
-            ctx.fillStyle = fill;
-            ctx.fillRect(p.x + inset, p.y + inset, tile - inset * 2, tile - inset * 2);
-        };
-
-        // 1. Sol, chemins, liquides, zones de vigilance
-        // Le fond statique (sol, chemins, base des liquides) est dessiné une seule fois dans un calque hors écran puis
-        // simplement recopié à chaque image : des centaines de fillRect par image étaient le principal coût de rendu
-        // sur les vieux appareils. Rendu identique.
-        const ground = getGroundLayer(screen, biome, tile, dpr);
-        if (ground) {
-            ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
-                ground.canvas.width / dpr, ground.canvas.height / dpr);
-        } else {
-            paintGroundCells(ctx, screen, biome, tile, ox, oy);
-        }
-        // Parties animées : reflets des liquides et zones de vigilance qui pulsent
-        const liquidCells = getLiquidCells(screen);
-        liquidCells.forEach(([x, y]) => {
-            if (!inView(x, y)) return;
-            const shimmer = 0.10 + 0.10 * Math.sin(now / 500 + x * 1.7 + y * 1.1);
-            cell(x, y, `rgba(255,255,255,${shimmer.toFixed(3)})`, tile * 0.08);
-        });
-        if (aura.size) {
-            const auraFill = `rgba(220,38,38,${(0.16 + 0.12 * pulse).toFixed(3)})`;
-            aura.forEach(key => {
-                const [x, y] = key.split(',').map(Number);
-                if (!isLiquidAt(x, y)) cell(x, y, auraFill);
-            });
-        }
-        // contour des zones de vigilance (lecture claire de « où ne pas passer »)
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = `rgba(220,38,38,${(0.35 + 0.25 * pulse).toFixed(3)})`;
-        aura.forEach(key => {
-            const [x, y] = key.split(',').map(Number);
-            if (isLiquidAt(x, y) || !inView(x, y)) return;
-            const p = P(x, y);
-            ctx.strokeRect(p.x + 0.75, p.y + 0.75, tile - 1.5, tile - 1.5);
-        });
-
-        // sens du regard : un chevron par case de la zone, pointant vers l'avant de l'ennemi
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = `rgba(255,255,255,${(0.35 + 0.25 * pulse).toFixed(3)})`;
-        X.aliveEnemies(session).filter(e => !X.isShielded(session, e.def) && X.aggroOf(e.def) > 0).forEach(e => {
-            const f = e.face || { dx: 0, dy: 1 };
-            const fx = Math.abs(f.dx) >= Math.abs(f.dy) ? Math.sign(f.dx) : 0;
-            const fy = fx ? 0 : (Math.sign(f.dy) || 1);
-            X.auraCellsOf(session, e).forEach(({ x, y }) => {
-                if ((x === e.x && y === e.y) || isLiquidAt(x, y) || !inView(x, y)) return;
-                const c = P(x + 0.5, y + 0.5), a = tile * 0.14;
-                ctx.beginPath();
-                ctx.moveTo(c.x - fy * a - fx * a, c.y - fx * a - fy * a);
-                ctx.lineTo(c.x + fx * a, c.y + fy * a);
-                ctx.lineTo(c.x + fy * a - fx * a, c.y + fx * a - fy * a);
-                ctx.stroke();
-            });
-        });
-
-        // trajet du déplacement au clic : points le long du chemin et cercle sur la destination
-        if (walk && walk.path?.length) {
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            walk.path.slice(0, -1).forEach(step => {
-                const c = P(step.x + 0.5, step.y + 0.5);
-                ctx.beginPath();
-                ctx.arc(c.x, c.y, Math.max(3, tile * 0.07), 0, Math.PI * 2);
-                ctx.fill();
-            });
-            const t = P(walk.tx + 0.5, walk.ty + 0.5);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = `rgba(255,255,255,${(0.6 + 0.4 * pulse).toFixed(3)})`;
-            ctx.beginPath();
-            ctx.arc(t.x, t.y, tile * (0.28 + 0.06 * pulse), 0, Math.PI * 2);
-            ctx.stroke();
-        }
-
-        // sorties : case lumineuse, flèche vers le bord de la carte, nom de la destination
-        screen.exits.forEach(ex => {
-            if (ex.door) {
-                // porte de maison : tapis lumineux devant la porte du bâtiment (dessinée avec lui)
-                cell(ex.x, ex.y, `rgba(255,236,150,${(0.28 + 0.2 * pulse).toFixed(3)})`, tile * 0.1);
-                return;
-            }
-            if (ex.stairs) {
-                // escalier (étage caché) : volée de marches lumineuse et flèche ; vers le haut dans la maison, vers le bas à l'étage
-                const p = P(ex.x, ex.y), up = ex.stairs === 'up';
-                for (let k = 0; k < 5; k++) {
-                    const t = up ? k : 4 - k;
-                    ctx.fillStyle = `rgb(${150 + t * 14},${104 + t * 10},${60 + t * 6})`;
-                    ctx.fillRect(p.x + tile * 0.1, p.y + tile * (0.12 + k * 0.17), tile * 0.8, tile * 0.15);
-                }
-                ctx.fillStyle = `rgba(255,236,150,${(0.2 + 0.2 * pulse).toFixed(3)})`;
-                ctx.fillRect(p.x, p.y, tile, tile);
-                ctx.fillStyle = '#5a3e1b';
-                ctx.font = `bold ${Math.round(tile * 0.4)}px system-ui, sans-serif`;
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(up ? '▲' : '▼', p.x + tile / 2, p.y + tile / 2);
-                drawLabel(p.x + tile / 2, p.y - tile * 0.35, up ? 'Étage' : 'Escalier', '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
-                return;
-            }
-            if (screen.interior) {
-                // sortie d'une maison : porte de bois dans le mur du bas
-                const p = P(ex.x, ex.y);
-                ctx.fillStyle = '#7a4a26';
-                ctx.fillRect(p.x + tile * 0.12, p.y + tile * 0.05, tile * 0.76, tile * 0.95);
-                ctx.fillStyle = `rgba(255,236,150,${(0.25 + 0.2 * pulse).toFixed(3)})`;
-                ctx.fillRect(p.x + tile * 0.2, p.y + tile * 0.15, tile * 0.6, tile * 0.85);
-                drawLabel(p.x + tile / 2, p.y - tile * 0.35, 'Sortie', '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
-                return;
-            }
-            // Passage de bord : aucune porte ni flèche, le terrain se prolonge sur la carte voisine (les gardes et piliers dessinent le barrage).
-            if (ex.edge) return;
-            const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
-            const locked = X.isExitLocked(session, ex);
-            const gated = locked || (level < minLevel && session.screens[ex.to].region !== screen.region);
-            // Porte illustrée (`exit.sprite`, ex. la porte du royaume des âmes errantes) : halo vert qui pulse, sprite posé sur la case, nom au-dessus.
-            // Fermée par une quête, elle retombe sur la case grise habituelle.
-            if (ex.sprite && !locked) {
-                const base = P(ex.x + 0.5, ex.y + 1), c = P(ex.x + 0.5, ex.y + 0.5), size = tile * GATE_SCALE;
-                drawGateAura(base.x, base.y - tile * 0.2, tile, now, 'back');
-                cell(ex.x, ex.y, `rgba(120,184,160,${(0.16 + 0.16 * pulse).toFixed(3)})`, tile * 0.08);
-                drawDecor(ex.sprite, base.x, base.y + tile * 0.1, size);
-                drawGateAura(base.x, base.y - tile * 0.2, tile, now, 'front');
-                drawLabel(c.x, ex.y === 0 ? c.y + tile * 0.75 : base.y - size * 0.92 - tile * 0.25, ex.label, '#dff5ea', '#1d3a30', Math.max(11, Math.round(tile * 0.2)));
-                return;
-            }
-            cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
-            cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
-            // passage de bord de 3 cases : seule la case centrale porte la flèche et le nom (world/expand.js)
-            if (ex.span) return;
-            const c = P(ex.x + 0.5, ex.y + 0.5);
-            const arrow = locked ? '×' : ex.x === 0 ? '◄' : ex.x === screen.w - 1 ? '►' : ex.y === 0 ? '▲' : '▼';
-            ctx.fillStyle = '#5a3e1b';
-            ctx.font = `${Math.round(tile * 0.42)}px system-ui, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(arrow, c.x, c.y);
-            const labelY = ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.75;
-            const labelText = locked ? `${ex.label} (fermé)` : gated ? `${ex.label} (niv. ${minLevel})` : ex.label;
-            drawLabel(c.x, labelY, labelText,
-                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
-        });
-
-        // Passages de bord fermés par une quête : une grande porte de bois cerclée de fer barre les 3 cases (plutôt que du vide)
-        const questGateRows = connectionRows(session.screens, screen).filter(r => r.requires && (r.wall || session.quests.some(q => q.id === r.requires)) && X.isExitLocked(session, r));
-        questGateRows.forEach(r => {
-            const p = P(r.x, r.y), pad = tile * 0.04;
-            if (r.wall === 'sand') {   // mur de sable : blocs de grès empilés, levés quand le boss tombe
-                ctx.fillStyle = '#d8b878';
-                ctx.fillRect(p.x, p.y, tile, tile);
-                ctx.strokeStyle = '#a8864a';
-                ctx.lineWidth = Math.max(1, tile * 0.05);
-                for (let i = 0; i < 3; i++) {
-                    const by = p.y + tile * i / 3;
-                    ctx.strokeRect(p.x + pad, by + pad, tile - pad * 2, tile / 3 - pad * 2);
-                    ctx.beginPath(); ctx.moveTo(p.x + tile * (i % 2 ? 0.35 : 0.65), by + pad); ctx.lineTo(p.x + tile * (i % 2 ? 0.35 : 0.65), by + tile / 3 - pad); ctx.stroke();
-                }
-                if (!r.span) drawLabel(p.x + tile / 2, p.y + tile / 2 - tile * 0.75, `${r.label} (muré)`, '#e5e7eb', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
-                return;
-            }
-            ctx.fillStyle = '#5a3a22';
-            ctx.fillRect(p.x + pad, p.y + pad, tile - pad * 2, tile - pad * 2);
-            ctx.strokeStyle = '#3b2415';
-            ctx.lineWidth = Math.max(1, tile * 0.04);
-            const vertical = r.edge === 'west' || r.edge === 'east';   // planches le long du passage
-            for (let i = 1; i < 4; i++) {
-                ctx.beginPath();
-                if (vertical) { ctx.moveTo(p.x + tile * i / 4, p.y + pad); ctx.lineTo(p.x + tile * i / 4, p.y + tile - pad); }
-                else { ctx.moveTo(p.x + pad, p.y + tile * i / 4); ctx.lineTo(p.x + tile - pad, p.y + tile * i / 4); }
-                ctx.stroke();
-            }
-            ctx.fillStyle = '#8a8d96';   // bandes de fer
-            if (vertical) { ctx.fillRect(p.x + pad, p.y + tile * 0.18, tile - pad * 2, tile * 0.1); ctx.fillRect(p.x + pad, p.y + tile * 0.72, tile - pad * 2, tile * 0.1); }
-            else { ctx.fillRect(p.x + tile * 0.18, p.y + pad, tile * 0.1, tile - pad * 2); ctx.fillRect(p.x + tile * 0.72, p.y + pad, tile * 0.1, tile - pad * 2); }
-            if (!r.span) {   // case centrale : cadenas et nom du passage
-                const c = P(r.x + 0.5, r.y + 0.5);
-                ctx.fillStyle = '#f2c14e';
-                ctx.strokeStyle = '#2b1b17';
-                ctx.lineWidth = Math.max(1, tile * 0.05);
-                ctx.fillRect(c.x - tile * 0.14, c.y - tile * 0.02, tile * 0.28, tile * 0.22);
-                ctx.strokeRect(c.x - tile * 0.14, c.y - tile * 0.02, tile * 0.28, tile * 0.22);
-                ctx.beginPath(); ctx.arc(c.x, c.y - tile * 0.02, tile * 0.1, Math.PI, 0); ctx.stroke();
-                drawLabel(c.x, r.edge === 'north' ? c.y + tile * 0.75 : c.y - tile * 0.75, `${r.label} (fermé)`, '#e5e7eb', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
-            }
-        });
-
-        // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
-        const items = grids.blocks.slice();   // décors fixes mis en cache (voir gridsOf)
-        (screen.buildings || []).forEach(b => items.push({ depth: b.y + b.h - 0.5, kind: 'building', b, x: b.x, y: b.y }));
-        (screen.structures || []).forEach(st => items.push({ depth: st.cross ? st.y - 0.4 : st.y + st.h - 0.5, kind: 'structure', st, x: st.x, y: st.y }));   // bâtiments, tours, ponts… à leur échelle (world/structures.js)
-        X.bossWallsOf(session).forEach(w => items.push({ depth: w.y, kind: w.fire ? 'fire' : 'pillar', x: w.x, y: w.y }));   // piliers (flammes pour un Soleil) qui ferment le passage d'un boss, retirés à sa mort
-        if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
-        (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
-        X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
-        X.visibleChests(session).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
-        X.aliveEnemies(session).forEach(e => {
-            const v = vis.enemies[e.def.id] || e;
-            items.push({ depth: v.y + 0.2, kind: 'enemy', e, x: v.x, y: v.y });
-        });
-        items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
-        if (vis.trail && vis.trail.x !== null && X.activeCompanionOf(session)) items.push({ depth: vis.trail.y + 0.29, kind: 'companion', x: vis.trail.x, y: vis.trail.y });
-        items.sort((a, b) => a.depth - b.depth);
-        const drawItems = items.filter(it => it.kind === 'player' || it.kind === 'companion' || (it.kind === 'building' ? inView(it.b.x, it.b.y, it.b.w, it.b.h, 3) : it.kind === 'structure' ? inView(it.st.x, it.st.y, it.st.w, it.st.h, 3) : inView(it.x, it.y, 1, 1, 3)));
-
-        const labelSize = Math.max(11, Math.round(tile * 0.2));
-        const houseMk = X.houseMarkers(session);
-        // anneaux dorés sur les cibles de la quête suivie
-        X.trackedMarkers(session).forEach(t => {
-            let pos = null;
-            if (t.kind === 'npc') pos = screen.npcs.find(n => n.id === t.id);
-            else if (t.kind === 'chest') pos = screen.chests.find(ch => ch.id === t.id);
-            else if (t.kind === 'enemy') pos = X.aliveEnemies(session).find(e => e.def.id === t.id);
-            if (!pos) return;
-            const c = P(pos.x + 0.5, pos.y + 0.5);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = `rgba(250,204,21,${(0.55 + 0.4 * pulse).toFixed(3)})`;
-            ctx.beginPath();
-            ctx.ellipse(c.x, c.y + tile * 0.3, tile * (0.42 + 0.05 * pulse), tile * 0.17, 0, 0, Math.PI * 2);
-            ctx.stroke();
-        });
-        drawItems.forEach(it => {
-            const c = P(it.x + 0.5, it.y + 0.5);
-            switch (it.kind) {
-                case 'building': {
-                    drawBuilding(it.b, P(it.b.x, it.b.y), tile, labelSize, screen.biome === 'tides');
-                    // indicateur de quête : « ! » (quête à prendre) ou « ? » (à rendre / cible de la quête suivie) dans la maison
-                    const hm = houseMk.find(h => h.exit.x === it.b.door.x && h.exit.y === it.b.door.y);
-                    if (hm) {
-                        const top = P(it.b.x + it.b.w / 2, it.b.y);
-                        drawMarker(top.x, top.y - tile * 0.28 - 4 * Math.abs(Math.sin(now / 300)), hm.marker, tile, 1.35);
-                    }
-                    break;
-                }
-                case 'structure': {
-                    const cv = archiSprite(it.st.id);
-                    if (it.st.cross) { const q = P(it.st.x, it.st.y); ctx.fillStyle = biome.liquid; ctx.fillRect(Math.round(q.x), Math.round(q.y), Math.round(it.st.w * tile), Math.round(it.st.h * tile)); }   // l'eau sous le pont
-                    if (cv) {
-                        const p = P(it.st.x, it.st.y), was = ctx.imageSmoothingEnabled;
-                        ctx.imageSmoothingEnabled = false;
-                        ctx.drawImage(cv, Math.round(p.x), Math.round(p.y), Math.round(it.st.w * tile), Math.round(it.st.h * tile));
-                        ctx.imageSmoothingEnabled = was;
-                    }
-                    break;
-                }
-                case 'spot': {
-                    // préparation du terrain (terrain.js) : hautes herbes, piège, belvédère
-                    const feet = c.y + tile * 0.3;
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#2b1b17';
-                    if (it.sp.kind === 'tallGrass') {
-                        ctx.strokeStyle = '#2f7a2f';
-                        for (let k = -2; k <= 2; k++) {
-                            ctx.beginPath();
-                            ctx.moveTo(c.x + k * tile * 0.13, feet);
-                            ctx.lineTo(c.x + k * tile * 0.13 + (k % 2 ? 3 : -3), feet - tile * (0.38 + 0.05 * (k % 2)));
-                            ctx.stroke();
-                        }
-                    } else if (it.sp.kind === 'trap') {
-                        ctx.strokeStyle = '#6b4a2b';
-                        ctx.beginPath();
-                        ctx.ellipse(c.x, feet - tile * 0.1, tile * 0.28, tile * 0.1, 0, 0, Math.PI * 2);
-                        ctx.stroke();
-                        ctx.beginPath();
-                        for (let k = -2; k <= 2; k++) { ctx.moveTo(c.x + k * tile * 0.1, feet - tile * 0.1); ctx.lineTo(c.x + k * tile * 0.1, feet - tile * 0.26); }
-                        ctx.stroke();
-                    } else {
-                        ctx.strokeStyle = `rgba(255,255,255,${(0.5 + 0.3 * Math.sin(now / 400)).toFixed(3)})`;
-                        ctx.beginPath();
-                        ctx.ellipse(c.x, feet - tile * 0.05, tile * 0.3, tile * 0.11, 0, 0, Math.PI * 2);
-                        ctx.stroke();
-                        ctx.beginPath();
-                        ctx.moveTo(c.x, feet - tile * 0.05);
-                        ctx.lineTo(c.x, feet - tile * 0.5);
-                        ctx.lineTo(c.x + tile * 0.18, feet - tile * 0.42);
-                        ctx.lineTo(c.x, feet - tile * 0.34);
-                        ctx.stroke();
-                    }
-                    break;
-                }
-                case 'waypoint': {
-                    const active = session.data.waypoints.includes(session.data.screenId);
-                    const feet = c.y + tile * 0.38;
-                    drawShadow(c.x, feet, tile * 0.3, tile * 0.1);
-                    ctx.fillStyle = active ? '#8fa6b8' : '#7b7b86';
-                    ctx.strokeStyle = '#2b1b17';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(c.x - tile * 0.26, feet);
-                    ctx.lineTo(c.x - tile * 0.18, c.y - tile * 0.28);
-                    ctx.lineTo(c.x + tile * 0.18, c.y - tile * 0.28);
-                    ctx.lineTo(c.x + tile * 0.26, feet);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.stroke();
-                    const glow = active ? 0.55 + 0.35 * Math.sin(now / 350) : 0.15;
-                    ctx.beginPath();
-                    ctx.arc(c.x, c.y - tile * 0.5, tile * (active ? 0.2 : 0.14), 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(120,220,255,${glow.toFixed(3)})`;
-                    ctx.fill();
-                    ctx.stroke();
-                    drawDecor('swirl', c.x, c.y - tile * 0.05 + tile * 0.17, tile * 0.34);
-                    break;
-                }
-                case 'fire':
-                    drawDecor('campfire', c.x, c.y + tile * 0.4, tile * 0.95);
-                    break;
-                case 'pillar':
-                    drawShadow(c.x, c.y + tile * 0.34, tile * 0.34, tile * 0.11);
-                    drawDecor('pillar', c.x, c.y + tile * 0.4, tile * 0.95);
-                    break;
-                case 'block': {
-                    const px = c.x - tile / 2, py = c.y - tile / 2;
-                    if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
-                        const deco = screen.biome === 'house' && it.y === 0 ? wallDecoOf(it.x, screen.w) : 0;   // fenêtre à treillis ou rouleau au mur du fond
-                        drawCachedObject(`wall:${screen.biome}:${it.y === 0}:${deco}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0, deco));
-                        break;
-                    }
-                    const depth = Math.min(it.x, it.y, screen.w - 1 - it.x, screen.h - 1 - it.y);
-                    const border = depth === 0 || (screen.treeBorder && depth <= 1);   // couronne d'arbres (Rizières) : deux rangées d'arbres
-                    if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
-                        // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
-                        const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);
-                        drawCachedObject(`tree:${screen.biome}:${kind}:${seed}`, px, py, tile, tile, [tile * 0.6, tile * 1.1, tile * 0.6, tile * 0.3],
-                            (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
-                        break;
-                    }
-                    const decor = screen.interior ? houseDecor((x, y) => gridsOf(screen).obst[y * screen.w + x] === 1, it.x, it.y) : pickDecor(biome.decor, it.x, it.y);
-                    if (decor === 'rock') {
-                        drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
-                        break;
-                    }
-                    if (decor === 'deadtree') {   // arbre mort (objets Pixel Lab) : une des variantes, au hasard stable selon la case
-                        drawShadow(c.x, c.y + tile * 0.3, tile * 0.36, tile * 0.12);
-                        drawSprite(DEAD_TREES[Math.floor(hash(it.y + 5, it.x + 11) * DEAD_TREES.length)], c.x, c.y + tile * 0.4, tile * 1.35);
-                        break;
-                    }
-                    drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
-                    drawDecor(decor, c.x, c.y + tile * 0.36, tile * 0.85);
-                    break;
-                }
-                case 'npc': {
-                    const feet = c.y + tile * 0.4;
-                    drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
-                    const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    drawSprite(gbaSprite(it.n.id) || npcSprite(it.n.id), c.x, feet + bob, tile * (it.n.span || 1.02));   // `span` : PNJ immense (Changxi)
-                    const marker = X.npcMarker(session, it.n.id);
-                    if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
-                    else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
-                    drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
-                    break;
-                }
-                case 'chest': {
-                    const opened = session.data.openedChests.includes(it.c.id);
-                    const feet = c.y + tile * 0.36;
-                    drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
-                    if (it.c.altar) {
-                        // autel : décor dessiné (pas de sprite de coffre), orné une fois l'offrande déposée
-                        const glow = opened ? 0.25 : 0.55 + 0.25 * Math.sin(now / 400);
-                        ctx.beginPath();
-                        ctx.ellipse(c.x, feet - tile * 0.04, tile * 0.42, tile * 0.15, 0, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255,248,200,${glow.toFixed(3)})`;
-                        ctx.fill();
-                        drawDecor(opened ? 'altarLit' : 'altar', c.x, feet, tile * 0.9);
-                    } else {
-                        drawSprite(chestSprite(opened), c.x, feet, tile * 0.85);
-                    }
-                    break;
-                }
-                case 'enemy': {
-                    const def = it.e.def;
-                    const illusion = Boolean(def.illusion);
-                    // un mirage copie en tout point le vrai soleil (silhouette, ombre, étiquette « Boss · Nv »)
-                    const twin = illusion ? screen.enemies.find(e => e.boss && e.id === def.spriteKey) : null;
-                    const boss = Boolean(def.boss || twin);
-                    const big = boss || illusion;
-                    const shielded = X.isShielded(session, def);
-                    const lvl = X.levelFor(session, twin || def);
-                    const size = tile * (def.span || (big ? 1.55 : 1.08));   // `span` : boss immense (Changxi, 6 cases)
-                    const feet = c.y + tile * 0.4;
-                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
-                    const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
-                    ctx.save();
-                    const eKey = def.spriteKey || def.id;
-                    const eDir = viewDir(it.e.face);
-                    const baseSprite = enemySprite(eKey, def.templateId, screen.biome);
-                    const eSprite = gbaSprite(eKey, eDir) || gbaSprite(def.templateId, eDir)
-                        || viewSprite(baseSprite, eDir);
-                    drawSprite(eSprite, c.x, feet + bob, size, baseSprite);
-                    ctx.restore();
-                    if (shielded) {
-                        // bouclier de flammes tant que la meute n'est pas abattue
-                        ctx.beginPath();
-                        ctx.arc(c.x, feet - size * 0.42, size * 0.56, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255,150,60,${(0.12 + 0.08 * pulse).toFixed(3)})`;
-                        ctx.fill();
-                        ctx.lineWidth = 3;
-                        ctx.strokeStyle = `rgba(255,200,90,${(0.55 + 0.3 * pulse).toFixed(3)})`;
-                        ctx.stroke();
-                    }
-                    if (big) {
-                        ctx.save();
-                        drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
-                        ctx.restore();
-                    }
-                    const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
-                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? 'Bouclier · ' : boss ? 'Boss · ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
-                    break;
-                }
-                case 'companion': {
-                    // Compagnon actif : sprite animé `companion_<id>` (4 directions, 3 images de marche) s'il est chargé, sinon son PNJ figé qui sautille.
-                    const comp = X.activeCompanionOf(session);
-                    const tr = vis.trail;
-                    if (!comp || !tr) break;
-                    const key = `companion_${comp.id}`;
-                    const scale = comp.size || 0.8;
-                    const feet = c.y + tile * 0.4;
-                    const hover = comp.hover ? -tile * 0.16 + Math.sin(now / 260) * tile * 0.025 : 0;
-                    const tick = Math.floor(tr.phase), blend = tr.phase - tick;
-                    const walkView = tr.moving && gbaWalkSprite(key, tr.dir, tick);
-                    const idleView = gbaSprite(key, tr.dir);
-                    drawShadow(c.x, feet, tile * 0.2 * scale + tile * 0.06, tile * 0.07);
-                    if (walkView || idleView) {
-                        const view = walkView || idleView, y = feet + hover + tile * 0.04;
-                        drawSprite(view, c.x, y, tile * scale * 1.06);
-                        const next = tr.moving ? gbaWalkSprite(key, tr.dir, tick + 1) : null;
-                        if (next && next !== view) { ctx.save(); ctx.globalAlpha = blend; drawSprite(next, c.x, y, tile * scale * 1.06); ctx.restore(); }
-                    } else {
-                        const hop = tr.moving ? -tile * 0.06 * Math.abs(Math.sin(now / 85 + 1.2)) : Math.sin(now / 480 + 1.2) * tile * 0.01;
-                        drawSprite(npcSprite(comp.id === 'xiao_gui' ? 'xiao_gui' : comp.npc), c.x, feet + hop + hover + tile * 0.04, tile * scale * 0.85);
-                    }
-                    break;
-                }
-                case 'player': {
-                    const moving = now - (vis.lastMoveAt || -1e9) < 130 || Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
-                    const walkPhase = vis.walkPhase || 0;
-                    const hop = moving ? -tile * 0.07 * Math.abs(Math.sin(walkPhase * Math.PI)) : Math.sin(now / 500) * tile * 0.01;
-                    const feet = c.y + tile * 0.4;
-                    drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
-                    ctx.beginPath();
-                    ctx.ellipse(c.x, feet - tile * 0.02, tile * 0.36, tile * 0.13, 0, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#facc15';
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                    // Pas de Yu : sur l'eau, le héros glisse à la surface et des rides s'étendent sous ses pieds
-                    if (isLiquidAt(Math.round(vis.px), Math.round(vis.py))) {
-                        for (let r = 0; r < 2; r++) {
-                            const phase = ((now / 900) + r * 0.5) % 1;
-                            ctx.beginPath();
-                            ctx.ellipse(c.x, feet - tile * 0.02, tile * (0.3 + 0.35 * phase), tile * (0.1 + 0.12 * phase), 0, 0, Math.PI * 2);
-                            ctx.strokeStyle = `rgba(255,255,255,${(0.7 * (1 - phase)).toFixed(3)})`;
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                        }
-                    }
-                    const hero = cfg.getHero();
-                    const heroBase = heroSprite(hero.classId);
-                    const heroDir = viewDir(session.rt.facing);
-                    const heroView = (moving && gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase)))
-                        || gbaSprite(hero.classId, heroDir)
-                        || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
-                    // fondu entre l'image de marche courante et la suivante (progression fractionnaire de la phase)
-                    const nextView = moving ? gbaWalkSprite(hero.classId, heroDir, Math.floor(walkPhase) + 1) : null;
-                    const blend = walkPhase - Math.floor(walkPhase);
-
-                    const mountKey = `${hero.classId}_horse`;
-                    const mountView = riding() && ((moving && gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase))) || gbaSprite(mountKey, heroDir));
-                    if (mountView) {
-                        // à cheval : sprite du cavalier de la classe (tools/gen-mounted-heroes.py), 48 px au même grain que le héros à pied (32 px)
-                        const mountNext = moving ? gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase) + 1) : null;
-                        drawSprite(mountView, c.x, feet + hop * 0.5 + tile * 0.055, tile * MOUNTED_SPRITE_TILES);
-                        if (mountNext && mountNext !== mountView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(mountNext, c.x, feet + hop * 0.5 + tile * 0.055, tile * MOUNTED_SPRITE_TILES); ctx.restore(); }
-                    } else if (riding()) {
-                        // repli (sprite du cavalier pas encore chargé) : la monture au sol, le héros en selle
-                        drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
-                        drawSprite(heroView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase);
-                        if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(nextView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase); ctx.restore(); }
-                    } else {
-                        drawSprite(heroView, c.x, feet + hop, tile * 1.06, heroBase);
-                        if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; drawSprite(nextView, c.x, feet + hop, tile * 1.06, heroBase); ctx.restore(); }
-                    }
-                    // hautes herbes : des brins devant ses pieds, qui frémissent (davantage en marchant)
-                    if (X.isGrassCell(screen, Math.round(vis.px), Math.round(vis.py)) || X.isLowObstacle(screen, Math.round(vis.px), Math.round(vis.py))) {
-                        drawGrassFront(ctx, tile, c.x - tile / 2, c.y - tile / 2, biome, now, moving);
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        });
-        drawQuestCompass(P, vis, tile, pulse, now, labelSize);
-        if (screen.dark) { miniRect = null; drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight); }
-        else drawMinimap(screen, biome, P(vis.px + 0.5, vis.py + 0.5), { ox, oy, tile, vw, vh, dpr });
-    }
-
-    // Minimap : coin bas droit, glisse à gauche quand le héros s'approche de ce coin (pour ne pas le cacher).
-    // Le fond (sol, chemins, obstacles, liquides) est peint une fois par écran à 1 px par case, puis agrandi.
-    const miniCache = new WeakMap();
     let miniShift = 0;   // 0 = à droite, 1 = à gauche (animé)
     let miniRect = null; // zone occupée à l'écran (px CSS du canvas) lors du dernier dessin
-    function overMinimap(ev) {
-        if (!miniRect) return false;
-        const r = canvas.getBoundingClientRect();
-        const x = ev.clientX - r.left, y = ev.clientY - r.top;
-        return x >= miniRect.x && x <= miniRect.x + miniRect.w && y >= miniRect.y && y <= miniRect.y + miniRect.h;
-    }
-    function miniBase(screen, biome) {
-        const hit = miniCache.get(screen);
-        if (hit && hit.biome === biome) return hit.canvas;
-        const off = document.createElement('canvas');
-        off.width = screen.w;
-        off.height = screen.h;
-        const g = off.getContext('2d');
-        const img = g.createImageData(screen.w, screen.h);
-        const rgb = hex => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
-        const [fa, fp, fc, fl] = [biome.a, biome.path, biome.cliff, biome.liquid].map(rgb);
-        const grids = gridsOf(screen);
-        for (let i = 0; i < screen.w * screen.h; i++) {
-            const c = grids.liq[i] ? fl : grids.obst[i] ? fc : grids.path[i] ? fp : fa;
-            img.data[i * 4] = c[0]; img.data[i * 4 + 1] = c[1]; img.data[i * 4 + 2] = c[2]; img.data[i * 4 + 3] = 255;
-        }
-        g.putImageData(img, 0, 0);
-        miniCache.set(screen, { biome, canvas: off });
-        return off;
-    }
-
-    function drawMinimap(screen, biome, hero, { ox, oy, tile, vw, vh, dpr }) {
-        miniRect = null;
-        if (!screen.w || !screen.h) return;
-        const MARGIN = 8;
-        const scale = Math.max(1, Math.floor(Math.min(vw * 0.3 / screen.w, vh * 0.28 / screen.h, 4) * 2) / 2);
-        const mw = Math.round(screen.w * scale), mh = Math.round(screen.h * scale);
-        if (mw < 24 || mh < 16) return;
-        // le héros est « dans le coin » s'il est sous la minimap placée à droite (plus une case de garde)
-        const rightX = vw - MARGIN - mw, y0 = vh - MARGIN - mh;
-        const nearCorner = hero.x > rightX - tile && hero.y > y0 - tile;
-        miniShift += ((nearCorner ? 1 : 0) - miniShift) * 0.2;
-        if (Math.abs(miniShift - (nearCorner ? 1 : 0)) < 0.01) miniShift = nearCorner ? 1 : 0;
-        const x0 = Math.round(rightX + (MARGIN - rightX) * miniShift);
-        miniRect = { x: x0 - 4, y: y0 - 4, w: mw + 8, h: mh + 8 };
-        ctx.save();
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        // bord différenciant : liseré doré, filet sombre, puis la carte
-        ctx.fillStyle = '#f2c94c';
-        ctx.fillRect(x0 - 4, y0 - 4, mw + 8, mh + 8);
-        ctx.fillStyle = '#1a0f0a';
-        ctx.fillRect(x0 - 2, y0 - 2, mw + 4, mh + 4);
-        ctx.globalAlpha = 0.88;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(miniBase(screen, biome), x0, y0, mw, mh);
-        const dot = (cx, cy, color, r) => {
-            ctx.fillStyle = color;
-            ctx.fillRect(x0 + cx * scale - r, y0 + cy * scale - r, r * 2, r * 2);
-        };
-        screen.npcs.forEach(n => dot(n.x + 0.5, n.y + 0.5, '#5ab0ff', 1.5));
-        X.aliveEnemies(session).forEach(e => dot(e.x + 0.5, e.y + 0.5, '#ff4a3a', 1.5));
-        // zone visible à l'écran
-        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-        ctx.lineWidth = 1;
-        const vx = Math.max(0, -ox / tile), vy = Math.max(0, -oy / tile);
-        const vwT = Math.min(screen.w - vx, (vw - Math.max(0, ox)) / tile), vhT = Math.min(screen.h - vy, (vh - Math.max(0, oy)) / tile);
-        ctx.strokeRect(x0 + vx * scale + 0.5, y0 + vy * scale + 0.5, Math.max(1, vwT * scale - 1), Math.max(1, vhT * scale - 1));
-        dot(vis.px + 0.5, vis.py + 0.5, '#ffe14a', 2);
-        ctx.restore();
-    }
-
-    // Souterrain : tout est noir sauf un halo autour du héros (étroit à tâtons, large et vacillant avec la torche).
-    function drawDarkness(c, tile, torch, now, vw, vh) {
-        const r = tile * (torch ? 4.6 + 0.12 * Math.sin(now / 140) : 1.5);
-        const g = ctx.createRadialGradient(c.x, c.y, r * 0.2, c.x, c.y, r);
-        const tint = torch ? '30,14,0' : '0,0,0';
-        g.addColorStop(0, `rgba(${tint},0)`);
-        g.addColorStop(0.55, `rgba(${tint},${torch ? 0.25 : 0.55})`);
-        g.addColorStop(1, `rgba(${tint},0.97)`);
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, vw, vh);
-    }
-
-    // Indicateur de direction de la quête suivie : flèche dorée autour du héros, trait pointillé vers la cible
-    // (ou vers la sortie / la porte à prendre quand la cible est dans un autre écran), nom de la destination.
-    function drawQuestCompass(P, vis, tile, pulse, now, labelSize) {
-        const dir = X.questDirection(session);
-        if (!dir) return;
-        const hero = P(vis.px + 0.5, vis.py + 0.5);
-        const dest = P(dir.x + 0.5, dir.y + 0.5);
-        const dx = dest.x - hero.x;
-        const dy = dest.y - hero.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < tile * 1.3) return; // déjà tout près : l'anneau de la cible suffit
-        const ang = Math.atan2(dy, dx);
-        ctx.save();
-        ctx.setLineDash([tile * 0.12, tile * 0.18]);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = `rgba(250,204,21,${(0.28 + 0.12 * pulse).toFixed(3)})`;
-        ctx.beginPath();
-        ctx.moveTo(hero.x + Math.cos(ang) * tile * 1.1, hero.y + Math.sin(ang) * tile * 1.1);
-        ctx.lineTo(dest.x - Math.cos(ang) * tile * 0.4, dest.y - Math.sin(ang) * tile * 0.4);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        // flèche autour du héros
-        const r = tile * (0.95 + 0.08 * pulse);
-        ctx.translate(hero.x + Math.cos(ang) * r, hero.y + Math.sin(ang) * r - tile * 0.1);
-        ctx.rotate(ang);
-        ctx.beginPath();
-        ctx.moveTo(tile * 0.26, 0);
-        ctx.lineTo(-tile * 0.12, -tile * 0.2);
-        ctx.lineTo(-tile * 0.04, 0);
-        ctx.lineTo(-tile * 0.12, tile * 0.2);
-        ctx.closePath();
-        ctx.fillStyle = '#facc15';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#2b1b17';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-        ctx.restore();
-        // sortie / porte à prendre : halo + nom de la destination
-        if (dir.kind === 'exit') {
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = `rgba(250,204,21,${(0.55 + 0.4 * pulse).toFixed(3)})`;
-            ctx.strokeRect(dest.x - tile * 0.45, dest.y - tile * 0.45, tile * 0.9, tile * 0.9);
-            drawLabel(dest.x, dest.y - tile * 0.75, `➜ ${dir.label}`, '#fef08a', '#5a3e1b', labelSize);
-        }
-    }
-
-
-
-    // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
-    // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
-    // puis recopiés d'un seul appel par image (au lieu de dizaines de fillRect par objet et par image).
-    const objCache = new Map();
-    function drawCachedObject(key, x, y, w, h, pad, paint) {
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
-        const [pl, pt, pr, pb] = pad;
-        const k = `${key}|${Math.round(w)}x${Math.round(h)}|${dpr}`;
-        let cv = objCache.get(k);
-        if (!cv) {
-            if (typeof document === 'undefined') { paint(ctx, x, y); return; }
-            if (objCache.size > 300) objCache.clear();
-            cv = document.createElement('canvas');
-            cv.width = Math.ceil((w + pl + pr) * dpr);
-            cv.height = Math.ceil((h + pt + pb) * dpr);
-            const g = cv.getContext('2d');
-            g.setTransform(dpr, 0, 0, dpr, 0, 0);
-            g.imageSmoothingEnabled = false;
-            paint(g, pl, pt);
-            objCache.set(k, cv);
-        }
-        const was = ctx.imageSmoothingEnabled;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(cv, Math.round((x - pl) * dpr) / dpr, Math.round((y - pt) * dpr) / dpr, cv.width / dpr, cv.height / dpr);
-        ctx.imageSmoothingEnabled = was;
-    }
-
-    const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
-
-    function drawBuilding(b, p, tile, labelSize, stilts = false) {
-        const w = b.w * tile;
-        const h = b.h * tile;
-        const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
-        const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
-        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}${stilts ? ':stilts' : ''}`, p.x, p.y, w, h,
-            [tile * 0.5, tile * 0.4, tile * 0.9, tile * 0.5],
-            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }, stilts));
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
-    }
-
-    // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
-    // Retourne false tant que l'image n'est pas chargée (ou s'il n'y a pas de sprite).
-    // `fallback` : dessin de face montré le temps que la vue de côté / de dos (dérivée) se décode.
-    function drawSprite(svg, cx, feetY, size, fallback = null) {
-        if (!svg) return false;
-        let px = pixelSprite(svg);
-        if (!px) {
-            if (!fallback || fallback === svg) return true; // en cours de conversion : rien à dessiner (jamais de version floue)
-            px = pixelSprite(fallback);
-            if (!px) return true;
-        }
-        blitPixels(px, cx - size / 2, feetY - size * 0.92, size);
-        return true;
-    }
-
-    // Copie nette d'un sprite pixellisé : pas de lissage, destination arrondie au pixel de l'écran.
-    function blitPixels(px, x, y, size) {
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
-        const snap = v => Math.round(v * dpr) / dpr;
-        const was = ctx.imageSmoothingEnabled;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(px, snap(x), snap(y), Math.max(1 / dpr, snap(size)), Math.max(1 / dpr, snap(size)));
-        ctx.imageSmoothingEnabled = was;
-    }
-
-    // Pastille de quête au-dessus d'un PNJ : « ! » (quête à prendre) ou « ? » (à rendre).
-    function drawMarker(x, y, char, tile, scale = 1) {
-        const r = tile * 0.17 * scale;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = char === '?' ? '#38bdf8' : '#facc15';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#2b1b17';
-        ctx.stroke();
-        ctx.fillStyle = '#2b1b17';
-        ctx.font = `700 ${Math.round(r * 1.6)}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(char, x, y + r * 0.08);
-    }
-
-    // Pièce chinoise dorée (trou carré) au-dessus d'un PNJ marchand : repérable de loin.
-    function drawMerchantBadge(x, y, tile) {
-        const r = tile * 0.21;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#f2c14e';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#2b1b17';
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(x, y, r * 0.72, 0, Math.PI * 2);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#b8862a';
-        ctx.stroke();
-        const h = r * 0.5;
-        ctx.fillStyle = '#2b1b17';
-        ctx.fillRect(x - h / 2, y - h / 2, h, h);
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.beginPath();
-        ctx.arc(x - r * 0.4, y - r * 0.45, r * 0.18, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // Petite couronne dorée au-dessus des boss.
-    function drawCrown(x, y, w) {
-        const h = w * 0.7;
-        ctx.beginPath();
-        ctx.moveTo(x - w / 2, y + h / 2);
-        ctx.lineTo(x - w / 2, y - h / 4);
-        ctx.lineTo(x - w / 4, y + h / 12);
-        ctx.lineTo(x, y - h / 2);
-        ctx.lineTo(x + w / 4, y + h / 12);
-        ctx.lineTo(x + w / 2, y - h / 4);
-        ctx.lineTo(x + w / 2, y + h / 2);
-        ctx.closePath();
-        ctx.fillStyle = '#facc15';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#2b1b17';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-    }
-
-    function drawShadow(x, y, rx, ry) {
-        ctx.beginPath();
-        ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
-        ctx.fill();
-    }
-
-    // Porte d'événement : grande (GATE_SCALE cases de large, elle déborde sur les cases voisines), entourée d'une aura qui change de couleur
-    // (jade, violet, or), de flammes d'esprits en orbite, de braises qui montent et de deux lanternes qui vacillent. `layer` : 'back' (derrière le
-    // sprite) ou 'front' (devant). Sans mouvement (préférence système), l'animation est figée sur une image.
-    const GATE_SCALE = 2.8;
-    const reducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
-    function drawGateAura(x, y, tile, now, layer) {
-        const t = reducedMotion() ? 0 : now;
-        const cy = y - tile * 1.25;
-        ctx.save();
-        if (layer === 'back') {
-            // aura saturée (fusion normale : « lighter » délave les fonds clairs) qui change de couleur : jade → violet → or
-            const hue = 150 + 120 * Math.sin(t / 2600) + 40 * Math.sin(t / 900);
-            const r = tile * (2.0 + 0.15 * Math.sin(t / 420));
-            const g = ctx.createRadialGradient(x, cy, tile * 0.1, x, cy, r);
-            g.addColorStop(0, `hsla(${hue},100%,55%,0.62)`);
-            g.addColorStop(0.55, `hsla(${hue + 50},100%,48%,0.34)`);
-            g.addColorStop(1, `hsla(${hue + 90},100%,40%,0)`);
-            ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.arc(x, cy, r, 0, Math.PI * 2);
-            ctx.fill();
-            // cercle de runes au sol, qui tourne (tirets) et change de teinte
-            ctx.lineWidth = Math.max(2, tile * 0.07);
-            ctx.setLineDash([tile * 0.22, tile * 0.16]);
-            ctx.lineDashOffset = -t / 45;
-            ctx.strokeStyle = `hsla(${hue + 180},100%,62%,0.9)`;
-            ctx.beginPath();
-            ctx.ellipse(x, y + tile * 0.12, tile * 1.2, tile * 0.38, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.globalCompositeOperation = 'lighter';
-            // flammes d'esprits en orbite autour de la porte (de couleurs différentes)
-            for (let i = 0; i < 10; i++) {
-                const a = t / 1100 + (i * Math.PI * 2) / 10, rx = tile * 1.55, ry = tile * 1.75;
-                const px = x + Math.cos(a) * rx, py = cy + Math.sin(a) * ry * 0.85;
-                const behind = Math.sin(a) < 0;   // la moitié haute passe derrière la porte
-                if (!behind) continue;
-                ctx.fillStyle = `hsla(${[150, 280, 45, 190, 330][i % 5]},95%,70%,${(0.55 + 0.35 * Math.sin(t / 260 + i)).toFixed(3)})`;
-                ctx.beginPath();
-                ctx.arc(px, py, tile * (0.07 + 0.03 * Math.sin(t / 200 + i * 2)), 0, Math.PI * 2);
-                ctx.fill();
-            }
-        } else {
-            ctx.globalCompositeOperation = 'lighter';
-            for (let i = 0; i < 10; i++) {
-                const a = t / 1100 + (i * Math.PI * 2) / 10;
-                if (Math.sin(a) < 0) continue;   // la moitié basse passe devant
-                const px = x + Math.cos(a) * tile * 1.55, py = cy + Math.sin(a) * tile * 1.75 * 0.85;
-                ctx.fillStyle = `hsla(${[150, 280, 45, 190, 330][i % 5]},95%,72%,${(0.6 + 0.35 * Math.sin(t / 260 + i)).toFixed(3)})`;
-                ctx.beginPath();
-                ctx.arc(px, py, tile * (0.08 + 0.03 * Math.sin(t / 200 + i * 2)), 0, Math.PI * 2);
-                ctx.fill();
-            }
-            // braises qui montent du seuil et s'éteignent
-            for (let i = 0; i < 8; i++) {
-                const k = ((t / 2200 + i / 8) % 1 + 1) % 1;
-                const px = x + Math.sin(i * 12.9 + k * 5) * tile * 0.7, py = y - k * tile * 2.6;
-                ctx.fillStyle = `hsla(${[45, 20, 150, 290][i % 4]},95%,65%,${(0.8 * (1 - k)).toFixed(3)})`;
-                ctx.fillRect(Math.round(px), Math.round(py), Math.max(2, tile * 0.06), Math.max(2, tile * 0.06));
-            }
-            // lanternes rouges qui vacillent, de chaque côté du linteau
-            for (const side of [-1, 1]) {
-                const flick = 0.55 + 0.3 * Math.sin(t / 130 + side * 2) + 0.15 * Math.sin(t / 47 + side);
-                const lx = x + side * tile * 1.0, ly = y - tile * 1.3;
-                const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, tile * 0.55);
-                lg.addColorStop(0, `rgba(255,140,60,${(0.7 * flick).toFixed(3)})`);
-                lg.addColorStop(1, 'rgba(255,60,40,0)');
-                ctx.fillStyle = lg;
-                ctx.beginPath();
-                ctx.arc(lx, ly, tile * 0.55, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        ctx.restore();
-    }
-
-    // Élément de décor dessiné (sprites/decor.js), base posée en baseY.
-    function drawDecor(name, x, baseY, size) {
-        const svg = decorSprite(name);
-        if (!svg) return;
-        const px = pixelSprite(svg);
-        if (px) blitPixels(px, x - size / 2, baseY - size * 0.92, size);
-    }
-
-    function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {
-        ctx.font = `700 ${size}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
-        const w = ctx.measureText(text).width + 14;
-        const h = size + 8;
-        // carte plus large que l'écran (caméra qui suit le héros) : l'étiquette d'une entité hors cadre n'est pas dessinée
-        // (sinon elle s'empilerait contre le bord de l'écran)
-        if (x < -reach || x > cam.vw + reach) return;
-        // reste dans le cadre : une étiquette près du bord (sortie) ne doit pas être coupée
-        if (cam.vw > w) x = Math.min(Math.max(x, w / 2 + 4), cam.vw - w / 2 - 4);
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(x - w / 2, y - h / 2, w, h, 6);
-        else ctx.rect(x - w / 2, y - h / 2, w, h);
-        ctx.fillStyle = bg;
-        ctx.fill();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-        ctx.stroke();
-        ctx.fillStyle = fg;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, x, y + 0.5);
-    }
-
     // ── API publique ───────────────────────────────────────────────────────
     function applyQueuedEvents() {
         const queued = session.rt.queuedEvents;
@@ -2238,6 +1051,12 @@ export function createExplorationView(cfg) {
                 const lines = X.markIntroSeen(session);
                 // Le prologue a déjà été raconté par l'animation de nouvelle partie : pas de texte à dérouler en plus.
                 if (!prologueAnimationPlayed()) openDialog({ icon: 'scroll', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
+                cfg.onSave();
+            }
+            // Annonce d'un événement activé : une seule fois par partie, au premier chargement du jeu (après le prologue éventuel).
+            const launch = X.takeLaunchNotices(session);
+            if (launch.length) {
+                launch.forEach(n => openDialog({ ...NARRATOR, title: n.title }, n.lines, () => cfg.onSave()));
                 cfg.onSave();
             }
             applyQueuedEvents();
@@ -2371,6 +1190,11 @@ export function createExplorationView(cfg) {
         },
 
         isBusy: () => isBlocked(),
+        // Mode Chang'e : musique du village ou de l'adieu (main.js), et le jeu sait qu'on joue Chang'e
+        inChangeMode: () => Boolean(session && X.inChangeMode(session)),
+        getChangeScene: () => (session && X.inChangeMode(session) ? (changeFarewell ? 'change-farewell' : 'change-village') : null),
+        openChangeBook: () => openBook(root, session.data.change),
+        startChangeEpisode: (n, opts) => startChangeEpisode(n, opts),   // ouvre un épisode de Chang'e (la mort des soleils 3, 6, 9 l'appelle ; aussi pour les essais)
         toast
     };
 }

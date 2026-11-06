@@ -3,8 +3,10 @@ import { COMPANION_POWERS, rollCompanionPowers, turnPowerIds, MANA_COLORS } from
 import { COMPANIONS } from '../../companions.js';
 import { createSession, activeCompanionOf, setActiveCompanion } from '../../exploration.js';
 import { QUESTS } from '../../story.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
-const game = readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+const game = readGameSource();
 const hero = { maxHp: 100, level: 10 };
 
 describe('pouvoirs des compagnons', () => {
@@ -48,7 +50,7 @@ describe('pouvoirs des compagnons', () => {
     });
     test("game.js applique les pouvoirs une fois par tour", () => {
         expect(game).toContain('applyCompanionPowers()');
-        expect(game).toContain('companionsActedThisTurn');
+        expect(game).toContain('turnFlags.companionsActed');
     });
 });
 
@@ -82,7 +84,7 @@ describe('un seul compagnon actif, choisi dans le menu', () => {
         expect(game).toContain('companionSectionHtml()');
         const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
         expect(main).toContain('companionMenuHooks.setActive');
-        const view = readFileSync(new URL('../../explorationView.js', import.meta.url), 'utf8');
+        const view = readExplorationViewSource();
         expect(view).toContain('return active ? [active.id] : [];');
     });
 });

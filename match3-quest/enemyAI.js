@@ -1,15 +1,16 @@
 // Bibliothèque d'intelligence artificielle pour les ennemis
 // Gère les décisions stratégiques et le comportement des ennemis en combat
+// Paliers, difficulté choisie et personnalités : enemyAIProfiles.js (module pur). Tirage de l'action : enemyAIChoice.js.
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
+import { pickWeightedOption } from "./enemyAIChoice.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
 import { getOption } from "./gameOptions.js";
 import {
     AI_TIERS, resolveDifficulty, tierSettings, thinkingTimeFor,
-    PERSONALITIES, assignPersonality, personalityWeight, pickWeighted
+    PERSONALITIES, assignPersonality, personalityWeight
 } from "./enemyAIProfiles.js";
 
-// Voir enemyAIProfiles.js pour la séparation niveau / personnalité / qualité tactique / difficulté choisie.
 export { PERSONALITIES as enemyPersonalities, assignPersonality };
 export const aiDifficulty = AI_TIERS;
 
@@ -45,6 +46,34 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = n
     const { tier, special } = resolveDifficulty({ preference, enemyLevel, playerLevel, enemyProfile });
     currentDifficulty = special ? tierSettings(tier, special) : aiDifficulty[tier];
     return tier;
+}
+
+// ========================================
+// BESOINS EN QÌ
+// ========================================
+
+// Poids par couleur du qì manquant pour lancer les sorts de l'ennemi (0 si aucun manque).
+// Chaque point de qì manquant sur un sort pèse 0,35 (cumulé entre sorts), plafonné à 2,5 par tuile.
+export function enemyManaNeeds(spells = enemy.spells, mana = enemy.mana) {
+    const deficit = {};
+    for (const spell of spells || []) {
+        const cost = typeof spell.cost === 'number' ? { [spell.color]: spell.cost } : (spell.cost || {});
+        for (const [color, amount] of Object.entries(cost)) {
+            const missing = amount - ((mana && mana[color]) || 0);
+            if (missing > 0) deficit[color] = (deficit[color] || 0) + missing;
+        }
+    }
+    const needs = {};
+    for (const [color, missing] of Object.entries(deficit)) needs[color] = Math.min(2.5, missing * 0.35);
+    return needs;
+}
+
+// Options de choix de coup sur le plateau pour l'IA actuelle : null si elle n'est pas assez avancée.
+export function boardMoveOptions() {
+    if (!currentDifficulty.manaFocus) return null;
+    const colorNeeds = enemyManaNeeds();
+    if (!Object.keys(colorNeeds).length) return null;
+    return { colorNeeds, mana: enemy.mana };
 }
 
 // ========================================
@@ -250,12 +279,12 @@ export function evaluateBoardMove() {
 // DÉCISION PRINCIPALE DE L'IA
 // ========================================
 
-export function makeDecision(rng = Math.random) {
+export function makeDecision(rand = Math.random) {
     const difficulty = currentDifficulty;
     const context = analyzeBattleContext();
 
     // Temps de réflexion (plus court pour les ennemis de haut niveau)
-    const thinkingTime = thinkingTimeFor(difficulty, enemy.level, rng);
+    const thinkingTime = thinkingTimeFor(difficulty, enemy.level, rand);
 
     // Évaluer toutes les options disponibles (seules les actions réellement possibles sont proposées)
     const spellEval = evaluateSpells();
@@ -270,19 +299,17 @@ export function makeDecision(rng = Math.random) {
     let chosenOption;
     let isStupid = false;
 
-    if (difficulty.stupidityChance > 0 && rng() < difficulty.stupidityChance) {
+    if (difficulty.stupidityChance > 0 && rand() < difficulty.stupidityChance) {
         // Coup stupide : l'IA ignore tout (personnalité comprise) et choisit au hasard parmi les actions valides
         isStupid = true;
-        chosenOption = options[Math.floor(rng() * options.length)];
+        chosenOption = options[Math.floor(rand() * options.length)];
     } else {
-        // Poids = probabilité du palier (qualité tactique) x tendance de la personnalité (style).
-        // En mode stratégique, la personnalité « tactique » peut aussi suivre le meilleur score.
+        // Poids = probabilité du palier (qualité tactique) x tendance de la personnalité (style), borné ; tirage proportionnel
+        // renormalisé sur les actions disponibles (enemyAIChoice.js). La personnalité « tactique » suit en plus le meilleur score.
         const best = difficulty.strategicThinking ? options.reduce((a, b) => (b.score > a.score ? b : a)) : null;
         const ctx = { ...context, bestType: best?.type };
-        for (const option of options) {
-            option.weight = option.probability * personalityWeight(enemy.personality, option, ctx);
-        }
-        chosenOption = pickWeighted(options, rng);
+        for (const option of options) option.probability *= personalityWeight(enemy.personality, option, ctx);
+        chosenOption = pickWeightedOption(options, rand);
     }
 
     return {

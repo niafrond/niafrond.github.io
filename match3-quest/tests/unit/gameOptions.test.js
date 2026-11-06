@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { getOption, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { getOption, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { readFileSync } from 'node:fs';
 import { flyManaToCounter } from '../../manaFlight.js';
 
 const rect = (l, t) => ({ left: l, top: t, width: 20, height: 20 });
@@ -42,6 +43,60 @@ describe('options d\'affichage', () => {
         window.matchMedia = () => ({ matches: true });
         expect(effectsLevel()).toBe('low');
         applyOptions();
+    });
+});
+
+describe('vibrations', () => {
+    test('activées par défaut, coupées par l\'option, sans effet si l\'appareil ne vibre pas', () => {
+        const calls = [];
+        Object.defineProperty(navigator, 'vibrate', { value: ms => { calls.push(ms); return true; }, configurable: true });
+        expect(getOption('vibration')).toBe(true);
+        expect(vibrate(50)).toBe(true);
+        expect(calls).toEqual([50]);
+        expect(setOption('vibration', false)).toBe(true);
+        expect(vibrate(50)).toBe(false);
+        expect(calls).toEqual([50]);   // rien de plus : l'option est coupée
+        expect(setOption('vibration', 'oui')).toBe(false);   // valeur invalide refusée
+        setOption('vibration', true);
+        Object.defineProperty(navigator, 'vibrate', { value: undefined, configurable: true });
+        expect(vibrate(50)).toBe(false);
+    });
+    test('sans vibreur (iPhone, Firefox) : détection, et secousse de l\'écran seulement pour les dégâts', () => {
+        Object.defineProperty(navigator, 'vibrate', { value: undefined, configurable: true });
+        expect(canVibrate()).toBe(false);
+        document.body.className = '';
+        expect(vibrate(50)).toBe(false);                        // onde : rien
+        expect(document.body.classList.contains('shake')).toBe(false);
+        expect(vibrate(50, true)).toBe(false);                  // dégâts : secousse
+        expect(document.body.classList.contains('shake')).toBe(true);
+        setOption('vibration', false);
+        document.body.className = '';
+        vibrate(50, true);
+        expect(document.body.classList.contains('shake')).toBe(false);   // option coupée : rien du tout
+        setOption('vibration', true);
+        Object.defineProperty(navigator, 'vibrate', { value: () => true, configurable: true });
+        expect(canVibrate()).toBe(true);
+    });
+    test('Chrome exige un geste : un refus (false) signale le blocage, un geste réussi le lève', () => {
+        const events = [];
+        window.addEventListener('m3:vibration-blocked', () => events.push('blocked'));
+        let allowed = false;
+        Object.defineProperty(navigator, 'vibrate', { value: () => allowed, configurable: true });
+        expect(vibrate(50)).toBe(false);                 // pas de geste : refusé
+        expect(isVibrationBlocked()).toBe(true);
+        expect(events).toEqual(['blocked']);
+        expect(armVibration()).toBe(false);              // encore refusé
+        allowed = true;                                  // l'utilisateur a touché l'écran
+        expect(armVibration()).toBe(true);
+        expect(isVibrationBlocked()).toBe(false);
+        expect(vibrate(50)).toBe(true);
+        setOption('vibration', false);
+        expect(armVibration()).toBe(false);              // option coupée : on n'arme rien
+        setOption('vibration', true);
+    });
+    test('l\'option figure dans le menu Options (index.html)', () => {
+        const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+        expect(html).toContain('id="opt-vibration"');
     });
 });
 

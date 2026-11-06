@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Les 177 quêtes du jeu, région par région.">
+<meta name="description" content="Les 183 quêtes du jeu, région par région.">
 <title>Toutes les quêtes — Soluce Hou Yi et les Dix Soleils</title>
 <style>
 :root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
 @media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
+*{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,'Times New Roman',serif}
 a{color:var(--blue)}a:hover{color:var(--gold)}
 header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
@@ -47,6 +47,7 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .shotbox img{width:100%;height:auto;display:block}
 .ring{position:absolute;transform:translate(-50%,-50%);border:3px solid #ff1f1f;border-radius:50%;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
 .ring i{position:absolute;right:-6px;top:-10px;min-width:17px;height:17px;border-radius:9px;background:#ff1f1f;color:#fff;font:700 11px/17px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1px #fff}
+.ring.exit{border-color:#1f8bff;border-radius:10px}.ring.exit i{background:#1f8bff}.ring.door{border-color:#ffb020}.ring.door i{background:#d98a00}
 .shotbox{cursor:zoom-in}
 .lb{position:fixed;inset:0;z-index:1000;background:#0a0705;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .lb[hidden]{display:none}
@@ -64,6 +65,9 @@ svg.board{width:min(100%,420px);display:block;margin:8px 0;background:#fffaf0;bo
 .lb-cap b{color:#ff7a6a}
 .shot figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}
 .shot figcaption b{color:#ff5a4a}
+.phones{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.phones figure{margin:0;flex:1 1 170px;max-width:250px}.phones img{width:100%;height:auto;border:2px solid var(--line);border-radius:8px}.phones figcaption,.wide figcaption{font:.82rem system-ui,sans-serif;color:var(--dim);margin-top:4px}.wide{margin:10px 0}.wide img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+.tile-ico svg{width:26px;height:26px;vertical-align:middle;margin-right:4px;background:#efe7ff;border-radius:5px;padding:1px}
 ul.enemy{margin:4px 0;padding-left:20px;font-size:.92rem}
 .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;border:1px solid rgba(0,0,0,.4)}
 .search{width:100%;padding:10px 12px;font:1rem system-ui,sans-serif;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -74,13 +78,13 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="royaume-des-ames.html">Royaume des âmes</a></nav></div></header>
+<header class="top"><div class="in"><h1>Soluce complète<small>La Légende de Hou Yi — Match3 Quest</small></h1><nav class="menu"><a href="../soluce.html">Accueil</a><a href="parcours.html">Parcours principal</a><a href="zones.html">Zones et jonctions</a><a href="bases.html">Bases du combat</a><a href="compagnons.html">Compagnons</a><a href="quetes.html" class="on">Quêtes</a><a href="ultimes.html">Ultimes</a><a href="stuff.html">Stuff d’exception</a><a href="enigmes.html">Énigmes et armures</a><a href="bestiaire.html">Bestiaire</a><a href="royaume-des-ames.html">Royaume des âmes</a><a href="fete-des-lanternes.html">Fête des lanternes</a><a href="change.html">Chang’e</a></nav></div></header>
 <main>
 <div class="crumbs"><a href="../soluce.html">Accueil</a> › Quêtes</div>
 <h2>Toutes les quêtes</h2>
-<p class="lead">177 quêtes (12 principales et 165 secondaires), classées par région dans l’ordre où on les débloque.</p>
+<p class="lead">183 quêtes (12 principales et 171 secondaires), classées par région dans l’ordre où on les débloque.</p>
 <div class="box info"><b class="t">Lire une fiche</b>Chaque fiche donne les prérequis, qui la donne et où, les objectifs avec leur position approximative dans l’écran (nord, sud, ouest, est), l’itinéraire depuis le village, la faiblesse des ennemis à abattre et la récompense.</div>
-<div class="grid"><a class="card" href="quetes-rizieres.html"><b>Rizières Desséchées</b><span>Niveau 1 · 18 quêtes</span></a><a class="card" href="quetes-volcan.html"><b>Gorges du Volcan</b><span>Niveau 4 · 19 quêtes</span></a><a class="card" href="quetes-gobi.html"><b>Désert de Gobi</b><span>Niveau 6 · 17 quêtes</span></a><a class="card" href="quetes-fleuve.html"><b>Lit du Fleuve Jaune</b><span>Niveau 11 · 20 quêtes</span></a><a class="card" href="quetes-bambous.html"><b>Forêt de Bambous Calcinée</b><span>Niveau 17 · 20 quêtes</span></a><a class="card" href="quetes-tonnerre.html"><b>Monts du Tonnerre</b><span>Niveau 22 · 17 quêtes</span></a><a class="card" href="quetes-fauves.html"><b>Plaine des Fauves</b><span>Niveau 27 · 17 quêtes</span></a><a class="card" href="quetes-mer.html"><b>Rivage de la Mer Orientale</b><span>Niveau 32 · 19 quêtes</span></a><a class="card" href="quetes-fusang.html"><b>Cime du Fusang</b><span>Niveau 37 · 19 quêtes</span></a><a class="card" href="quetes-marees.html"><b>Autel de Mazu</b><span>Niveau 38 · 3 quêtes</span></a><a class="card" href="quetes-lune.html"><b>Pic de la Lune</b><span>Niveau 40 · 8 quêtes</span></a></div>
+<div class="grid"><a class="card" href="quetes-rizieres.html"><b>Rizières Desséchées</b><span>Niveau 1 · 24 quêtes</span></a><a class="card" href="quetes-volcan.html"><b>Gorges du Volcan</b><span>Niveau 4 · 19 quêtes</span></a><a class="card" href="quetes-gobi.html"><b>Désert de Gobi</b><span>Niveau 6 · 17 quêtes</span></a><a class="card" href="quetes-fleuve.html"><b>Lit du Fleuve Jaune</b><span>Niveau 11 · 20 quêtes</span></a><a class="card" href="quetes-bambous.html"><b>Forêt de Bambous Calcinée</b><span>Niveau 17 · 20 quêtes</span></a><a class="card" href="quetes-tonnerre.html"><b>Monts du Tonnerre</b><span>Niveau 22 · 17 quêtes</span></a><a class="card" href="quetes-fauves.html"><b>Plaine des Fauves</b><span>Niveau 27 · 17 quêtes</span></a><a class="card" href="quetes-mer.html"><b>Rivage de la Mer Orientale</b><span>Niveau 32 · 19 quêtes</span></a><a class="card" href="quetes-fusang.html"><b>Cime du Fusang</b><span>Niveau 37 · 19 quêtes</span></a><a class="card" href="quetes-marees.html"><b>Autel de Mazu</b><span>Niveau 38 · 3 quêtes</span></a><a class="card" href="quetes-lune.html"><b>Pic de la Lune</b><span>Niveau 40 · 8 quêtes</span></a></div>
 </main>
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
 <div class="lb-stage" id="lb-stage"></div>
@@ -165,6 +169,6 @@ lb.addEventListener('pointerup',up);lb.addEventListener('pointercancel',function
 window.addEventListener('resize',function(){if(!lb.hidden){FIT=Math.min(vw()/W,vh()/H)*0.96;if(S<FIT)fit();else{clampPan();apply();}}});
 })();
 </script>
-<footer>Soluce non officielle, générée depuis les données du jeu (<code>tools/build-soluce.mjs</code>). Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
+<footer>Soluce officielle. Attention : contient de nombreux spoilers. Page non listée, ne pas diffuser sans l’avis de l’auteur.</footer>
 </body>
 </html>

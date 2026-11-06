@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { JUNCTIONS } from '../../world/junctions.js';
+import { TURNS } from '../../world/index.js';
 import { buildLegacyWorld, SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING, STORY_INTRO, STORY_TITLE } from '../../story.js';
 import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
@@ -369,6 +370,11 @@ describe('cartes (story.js)', () => {
             expect(village.kind).toBe('village');
             expect(wild.kind).toBe('wild');
             const exitTo = (screen, to) => exitsOf(screen, SCREENS).find(e => e.to === to);
+            // parcours varié (world/index.js TURNS) : la route sort, et la zone sauvage s'ouvre, parfois par le haut ou le bas
+            const OPP = { east: 'west', west: 'east', north: 'south', south: 'north' };
+            const onEdge = (z, e, edge) => ({ east: e.x === z.w - 1, west: e.x === 0, north: e.y === 0, south: e.y === z.h - 1 })[edge];
+            const insideOf = (z, e, edge) => ({ east: e.arrive.x === z.w - 2, west: e.arrive.x === 1, north: e.arrive.y === 1, south: e.arrive.y === z.h - 2 })[edge];
+            const roadEdge = TURNS[id]?.road || 'east', wildEdge = TURNS[id]?.wild || 'west';
 
             // route d'accès : ouest = sanctuaire précédent, est = village
             if (i === 0) expect(road).toBeUndefined();
@@ -376,20 +382,20 @@ describe('cartes (story.js)', () => {
                 expect(road).toBeDefined();
                 expect(road.region).toBe(id);
                 expect(exitTo(road, ORDER[i - 1])).toMatchObject({ x: 0 });
-                expect(exitTo(road, village.id)).toMatchObject({ x: road.w - 1 });
-                expect(exitTo(road, village.id).arrive.x).toBe(1);            // un pas à l'intérieur du bord ouest du village
-                expect(exitTo(village, road.id).arrive.x).toBe(road.w - 2);   // et retour un pas à l'intérieur du bord est de la route
+                expect(onEdge(road, exitTo(road, village.id), roadEdge)).toBe(true);
+                expect(insideOf(village, exitTo(road, village.id), OPP[roadEdge])).toBe(true);   // un pas à l'intérieur du bord opposé du village
+                expect(insideOf(road, exitTo(village, road.id), roadEdge)).toBe(true);           // et retour un pas à l'intérieur du bord de la route
                 expect(new Set(exitsOf(road, SCREENS).map(e => e.to))).toEqual(new Set([ORDER[i - 1], village.id]));
             }
             // village : ouest = route d'accès (rien au départ), est = zone sauvage
             if (i === 0) expect(exitsOf(village, SCREENS).some(e => e.x === 0 && !e.door)).toBe(false);
             else {
-                expect(exitTo(village, road.id)).toMatchObject({ x: 0 });
+                expect(onEdge(village, exitTo(village, road.id), OPP[roadEdge])).toBe(true);
                 expect(exitTo(village, ORDER[i - 1])).toBeUndefined();   // plus de lien direct sanctuaire <-> village
             }
-            expect(exitTo(village, wild.id)).toMatchObject({ x: village.w - 1 });
-            // zone sauvage : ouest = village, est = sanctuaire (fermée par un gate)
-            expect(exitTo(wild, village.id)).toMatchObject({ x: 0 });
+            expect(onEdge(village, exitTo(village, wild.id), OPP[wildEdge])).toBe(true);
+            // zone sauvage : village (ouest ou haut), est = sanctuaire (fermée par un gate)
+            expect(onEdge(wild, exitTo(wild, village.id), wildEdge)).toBe(true);
             expect(exitTo(wild, id)).toMatchObject({ x: wild.w - 1 });
             // sanctuaire : ouest = zone sauvage, est = route d'accès de la région suivante (fermée par le soleil)
             const west = exitsOf(sanctuary, SCREENS).find(e => e.x === 0);
@@ -564,9 +570,9 @@ describe('cartes (story.js)', () => {
     });
 
     test('les PNJ vivent au village et dans les maisons, les sanctuaires abritent les soleils-boss', () => {
-        // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil et Chang'e à la Lune
+        // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil, Chang'e à la Lune et le messager du miroir (Fusang, après sun_9)
         // (+ les PNJ de pourparlers `parley_sunN` du chemin relationnel)
-        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon', 'changxi_calm']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
+        sanctuaries.forEach(s => s.npcs.filter(n => !n.id.startsWith('level_guard_')).forEach(n => expect(['sun_ten', 'change_moon', 'changxi_calm', 'moon_messenger']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
         ORDER.forEach(id => {
             const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
             expect(villagers.length).toBeGreaterThan(0);
@@ -613,7 +619,7 @@ describe('cartes (story.js)', () => {
         };
         Object.entries(REGION_OF).forEach(([id, region]) => expect([id, where(id)]).toEqual([id, region]));
         // seuls sun_ten et change_moon sont restés au sanctuaire (avec les PNJ de pourparlers parley_sunN)
-        expect(SCREENS.fusang.npcs.map(n => n.id).filter(id => !id.startsWith('level_guard_'))).toEqual(['sun_ten', 'parley_sun9']);
+        expect(SCREENS.fusang.npcs.map(n => n.id).filter(id => !id.startsWith('level_guard_'))).toEqual(['moon_messenger', 'sun_ten', 'parley_sun9']);
         expect(SCREENS.lune.npcs.map(n => n.id)).toEqual(['change_moon']);
         expect(SCREENS.rizieres_h_houyi.npcs.map(n => n.id)).toContain('change');
         expect(SCREENS.rizieres_h_wen.npcs.map(n => n.id)).toContain('elder_wen');
@@ -689,7 +695,7 @@ describe('quêtes (story.js)', () => {
         expect(quest('q_epilogue').requires).toEqual(['q_fengmeng']);
         expect(quest('q_epilogue').objectives[0]).toMatchObject({ type: 'chest', target: 'moon_altar' });
         expect(main.filter(q => q.final).map(q => q.id)).toEqual(['q_epilogue']);
-        expect(quest('q_epilogue').complete).toBe(STORY_ENDING);
+        expect(quest('q_epilogue').complete).toEqual(STORY_ENDING);
         // récompenses d'or croissantes
         const golds = main.map(q => q.reward.gold);
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);
@@ -1150,7 +1156,9 @@ describe('histoire complète', () => {
             expect(events[0].quest.id).toBe(`q_${SUN_ID[n - 1]}`);
             golds.push(events[0].gold);
             const started = events.find(e => e.type === 'questStarted');
-            expect(events.indexOf(started)).toBe(events.length - 1);   // après l'interlude avec Chang'e
+            // après l'interlude avec Chang'e (seuls l'épisode de Chang'e des soleils 4, 5 et 9, `changeEpisode`, et l'accourir d'un PNJ, `npcArrival`, peuvent encore suivre : ils viennent après toutes les scènes)
+            const lateEvents = new Set(['npcArrival', 'changeEpisode']);
+            expect(events.filter(e => !lateEvents.has(e.type)).indexOf(started)).toBe(events.filter(e => !lateEvents.has(e.type)).length - 1);
             expect(started.quest.id).toBe(n < 10 ? `q_${SUN_ID[n]}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);
@@ -1238,7 +1246,7 @@ describe('quêtes secondaires', () => {
             const n = side.filter(q => regionOf(q) === id).length;
             expect([id, n >= 2]).toEqual([id, true]);
         });
-        side.forEach(q => {
+        side.filter(q => !q.event).forEach(q => {   // les quêtes d'événement suivent le niveau de leur zone hôte (plafond propre)
             expect(q.reward.gold).toBeGreaterThanOrEqual(30);
             expect(q.reward.gold).toBeLessThanOrEqual(200);
             expect(q.reward.xp).toBeGreaterThan(0);
@@ -1259,7 +1267,7 @@ describe('quêtes secondaires', () => {
 
     test('les récompenses (or et XP) des quêtes secondaires croissent avec la région', () => {
         const rank = q => ORDER.indexOf(regionOf(q));
-        const byRegion = ORDER.map((_, i) => side.filter(q => rank(q) === i));
+        const byRegion = ORDER.map((_, i) => side.filter(q => !q.event && rank(q) === i));   // les quêtes d'événement ont leur propre niveau de référence
         for (let i = 1; i < ORDER.length; i++) {
             expect(Math.max(...byRegion[i].map(q => q.reward.xp))).toBeGreaterThanOrEqual(Math.max(...byRegion[i - 1].map(q => q.reward.xp)));
         }
@@ -1316,6 +1324,7 @@ describe('quêtes secondaires', () => {
     // offre, objectifs (tuer / coffre / groupe / parler / visiter), remise, avec traversée des gates.
     test.each(QUESTS.map(q => [q.id]))('%s : jouable de bout en bout depuis une nouvelle partie', id => {
         const s = createSession({});
+        if (id === 'sq_wlm_tangyuan') openChestAt(s, 'wlm_lanterne_1');   // le sésame enfoui n'apparaît qu'une fois la première lanterne allumée (Lanterne céleste)
         playQuest(s, id);
         expect(s.data.quests[id]).toBe('done');
         // aucune quête n'est restée coincée « active » sans pouvoir être terminée
@@ -2195,6 +2204,20 @@ describe('indicateurs de quête : maisons et direction', () => {
         expect(questDirection(s)).toMatchObject({ kind: 'target' });
     });
 
+    test('la flèche de quête ne passe jamais par le royaume des âmes (portails d\'événement)', () => {
+        const s = createSession({});
+        talkTo(s, 'elder_wen');
+        Object.values(s.screens).forEach(sc => {
+            if (sc.event) return;
+            s.data.screenId = sc.id;
+            const dir = questDirection(s);
+            if (dir && dir.kind === 'exit') {
+                const ex = [...exitsOf(sc, SCREENS)].find(e => e.x === dir.x && e.y === dir.y);
+                if (ex) expect(Boolean(ex.rememberReturn)).toBe(false);
+            }
+        });
+    });
+
     test('la quête épinglée prime sur la quête principale', () => {
         const s = createSession({});
         talkTo(s, 'elder_wen');
@@ -2344,5 +2367,18 @@ describe('quêtes des armures antiques', () => {
         jarres.forEach(id => solvePuzzle(s, id));
         checkAutoQuests(s);
         expect(questStatus(s, quest)).toBe('done');
+    });
+});
+
+describe('guidage de quête : bordures de mer', () => {
+    test('depuis le Lit du Fleuve, la flèche vers les Bambous suit la route à pied, pas la bordure de mer', () => {
+        const session = createSession({ screenId: 'fleuve', x: 2, y: 11 });
+        session.data.defeated.push('sun_1', 'sun_2');
+        session.data.quests.q_sun_3 = 'active';
+        const q = session.quests.find(x => x.id === 'q_sun_3');
+        setTrackedQuest(session, q.id);
+        const dir = questDirection(session);
+        expect(dir).toBeTruthy();
+        expect(dir.x).toBe(29);   // sortie est, vers la route des Bambous
     });
 });

@@ -1,3 +1,255 @@
+## [2.193.0](https://github.com/niafrond/niafrond.github.io/compare/v2.192.1...v2.193.0) (2026-11-06)
+
+### Features
+
+* **match3-quest:** ajouter les options d'accessibilité et trois styles de jeu pour Hou Yi ([#652](https://github.com/niafrond/niafrond.github.io/issues/652)) ([5024616](https://github.com/niafrond/niafrond.github.io/commit/5024616e284efaa5d287b20e3a5af3e9f37d85af))
+
+## [2.192.1](https://github.com/niafrond/niafrond.github.io/compare/v2.192.0...v2.192.1) (2026-11-06)
+
+### Bug Fixes
+
+* **match3-quest:** sécuriser l'import de sauvegarde et fiabiliser l'IA (lot 1) ([#651](https://github.com/niafrond/niafrond.github.io/issues/651)) ([8ea59e0](https://github.com/niafrond/niafrond.github.io/commit/8ea59e029934455e5b1a96dab8065080ec78e8c3))
+
+## [2.192.0](https://github.com/niafrond/niafrond.github.io/compare/v2.191.0...v2.192.0) (2026-11-05)
+
+### Features
+
+* **match3-quest:** afficher l'effet d'une case de biome au clic ([#647](https://github.com/niafrond/niafrond.github.io/issues/647)) ([76d9054](https://github.com/niafrond/niafrond.github.io/commit/76d90549b4ab03fed26122eb44fa501f4fe75dff))
+
+## [2.191.0](https://github.com/niafrond/niafrond.github.io/compare/v2.190.0...v2.191.0) (2026-11-05)
+
+### Features
+
+* **match3-quest:** réduire les rencontres dans les hautes herbes à cheval ([#646](https://github.com/niafrond/niafrond.github.io/issues/646)) ([34389f7](https://github.com/niafrond/niafrond.github.io/commit/34389f79020311859c20273a6871970721474059))
+
+## [2.190.0](https://github.com/niafrond/niafrond.github.io/compare/v2.189.1...v2.190.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** faire clignoter la fiche du héros et enflammer la rage quand l'ultime est prêt ([#644](https://github.com/niafrond/niafrond.github.io/issues/644)) ([b5d27b7](https://github.com/niafrond/niafrond.github.io/commit/b5d27b7ffc4606e891fc1baab82e13bf376262ff))
+
+## [2.189.1](https://github.com/niafrond/niafrond.github.io/compare/v2.189.0...v2.189.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** tutoriel sans PV gonflés à 500 et sans blocage de l'adversaire ([#643](https://github.com/niafrond/niafrond.github.io/issues/643)) ([8d4c547](https://github.com/niafrond/niafrond.github.io/commit/8d4c547b1773af62be714ae800edf4674ef923a4))
+
+## [2.189.0](https://github.com/niafrond/niafrond.github.io/compare/v2.188.1...v2.189.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** tutoriel scripté (tuiles pré-générées, Fengmeng inoffensif) ([#642](https://github.com/niafrond/niafrond.github.io/issues/642)) ([bf31ffa](https://github.com/niafrond/niafrond.github.io/commit/bf31ffa0aa76911ca1274ddab5fc3f13376facb5))
+
+## [2.188.1](https://github.com/niafrond/niafrond.github.io/compare/v2.188.0...v2.188.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** fiches de combat lisibles sur petits écrans et en paysage ([#641](https://github.com/niafrond/niafrond.github.io/issues/641)) ([9624527](https://github.com/niafrond/niafrond.github.io/commit/9624527b0db4579ceb7b1bcdb8a1ac82613615fa))
+
+## [2.188.0](https://github.com/niafrond/niafrond.github.io/compare/v2.187.0...v2.188.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** rage et qì de l'ultime en barres verticales ([#640](https://github.com/niafrond/niafrond.github.io/issues/640)) ([97cf920](https://github.com/niafrond/niafrond.github.io/commit/97cf9205f2c79e4353aac2ed1e25ca76f7a91f5a))
+
+## [2.187.0](https://github.com/niafrond/niafrond.github.io/compare/v2.186.0...v2.187.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** fiches de combat alignées et plafonds de qì abaissés ([#639](https://github.com/niafrond/niafrond.github.io/issues/639)) ([828d8e4](https://github.com/niafrond/niafrond.github.io/commit/828d8e41e19751a2f6c79d05a45d0929f52e0429))
+
+## [2.186.0](https://github.com/niafrond/niafrond.github.io/compare/v2.185.0...v2.186.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** launcher au démarrage, icône gâteau de lune, objectif translucide ([#638](https://github.com/niafrond/niafrond.github.io/issues/638)) ([b27d2ed](https://github.com/niafrond/niafrond.github.io/commit/b27d2ed1e69ff3065a001765d509f97464ef4874))
+
+## [2.185.0](https://github.com/niafrond/niafrond.github.io/compare/v2.184.3...v2.185.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** ajouter le brouillard de guerre à la vue d'exploration ([#636](https://github.com/niafrond/niafrond.github.io/issues/636)) ([39117bc](https://github.com/niafrond/niafrond.github.io/commit/39117bcc6bf49f8dac853870ce8d6a0e98ff6294))
+
+## [2.184.3](https://github.com/niafrond/niafrond.github.io/compare/v2.184.2...v2.184.3) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** afficher le sprite de la mimique à l'annonce de combat ([#637](https://github.com/niafrond/niafrond.github.io/issues/637)) ([597a68c](https://github.com/niafrond/niafrond.github.io/commit/597a68c5dff6ddf892723e4a6292234f0e884e81))
+
+## [2.184.2](https://github.com/niafrond/niafrond.github.io/compare/v2.184.1...v2.184.2) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** mettre les ennemis, les boss et les enfants à l'échelle sur la carte ([#635](https://github.com/niafrond/niafrond.github.io/issues/635)) ([e9645d1](https://github.com/niafrond/niafrond.github.io/commit/e9645d10494e88a15d7ce4c685b4a1e79983bdf7))
+
+## [2.184.1](https://github.com/niafrond/niafrond.github.io/compare/v2.184.0...v2.184.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** mettre les décors et les animaux à l'échelle sur le terrain ([#633](https://github.com/niafrond/niafrond.github.io/issues/633)) ([3917625](https://github.com/niafrond/niafrond.github.io/commit/391762561881a6da132d012fdca993569812e336))
+
+## [2.184.0](https://github.com/niafrond/niafrond.github.io/compare/v2.183.3...v2.184.0) (2026-11-04)
+
+### Features
+
+* **match3-quest:** ajouter une barre de chargement factice au démarrage ([1f8502d](https://github.com/niafrond/niafrond.github.io/commit/1f8502d02fa03338228ca2cc735d7b12d53edc4d))
+
+### Performance Improvements
+
+* **match3-quest:** ajouter un profil bas de gamme en CI et précalculer le monde ([99f140f](https://github.com/niafrond/niafrond.github.io/commit/99f140f88f97f32d9734f56f73ff60722b791f64))
+* **match3-quest:** fluidifier l'exploration sur vieux téléphone ([a34c980](https://github.com/niafrond/niafrond.github.io/commit/a34c9803fc8c8f6de12adbc6dc57eb80edb31fdf))
+
+## [2.183.3](https://github.com/niafrond/niafrond.github.io/compare/v2.183.2...v2.183.3) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** le miroir de la maison propose les épisodes dont le soleil est déjà abattu ([#631](https://github.com/niafrond/niafrond.github.io/issues/631)) ([dd40095](https://github.com/niafrond/niafrond.github.io/commit/dd400958d0b52b6600bf852ad3aa66854aa81ec5))
+
+## [2.183.2](https://github.com/niafrond/niafrond.github.io/compare/v2.183.1...v2.183.2) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** attendre la fin des mini-annonces avant de résoudre le plateau ([#630](https://github.com/niafrond/niafrond.github.io/issues/630)) ([7905387](https://github.com/niafrond/niafrond.github.io/commit/7905387940d24044ac5d2e7f62ef7e42d5ec2bef))
+
+## [2.183.1](https://github.com/niafrond/niafrond.github.io/compare/v2.183.0...v2.183.1) (2026-11-04)
+
+### Bug Fixes
+
+* **match3-quest:** guider la quête par la route à pied plutôt que par la bordure de mer ([#629](https://github.com/niafrond/niafrond.github.io/issues/629)) ([5fbfba6](https://github.com/niafrond/niafrond.github.io/commit/5fbfba6034b83403a658497e3b97fc9f1654d5b1))
+
+## [2.183.0](https://github.com/niafrond/niafrond.github.io/compare/v2.182.0...v2.183.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** attaque surprise des mimiques et des hautes herbes, bestiaire dans la soluce ([#622](https://github.com/niafrond/niafrond.github.io/issues/622)) ([2857809](https://github.com/niafrond/niafrond.github.io/commit/28578092514277448c382de25ef3e2bcf87ad53c))
+
+## [2.182.0](https://github.com/niafrond/niafrond.github.io/compare/v2.181.0...v2.182.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** miroir de la maison pour rejouer les épisodes de Chang'e ([#628](https://github.com/niafrond/niafrond.github.io/issues/628)) ([288fe76](https://github.com/niafrond/niafrond.github.io/commit/288fe76db92c09f6f7e7e89bf18b52cfffb19f71))
+
+## [2.181.0](https://github.com/niafrond/niafrond.github.io/compare/v2.180.0...v2.181.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** adapter le manifeste PWA et l'icône à Hou Yi ([#627](https://github.com/niafrond/niafrond.github.io/issues/627)) ([0650bcd](https://github.com/niafrond/niafrond.github.io/commit/0650bcdccfb8c5cba4d475a2986456f1745eb99e))
+* **match3-quest:** mode Chang'e en trois épisodes, puzzle de soin sans crâne ni flèche ([#626](https://github.com/niafrond/niafrond.github.io/issues/626)) ([64fcd34](https://github.com/niafrond/niafrond.github.io/commit/64fcd3419cfc901a3a210570698d24fd25bf9cd0))
+
+## [2.180.0](https://github.com/niafrond/niafrond.github.io/compare/v2.179.0...v2.180.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** faire accourir le messager du miroir en sautillant ([#625](https://github.com/niafrond/niafrond.github.io/issues/625)) ([ea7daac](https://github.com/niafrond/niafrond.github.io/commit/ea7daacc03e552d7743db052a0230cb21f05a929))
+
+## [2.179.0](https://github.com/niafrond/niafrond.github.io/compare/v2.178.0...v2.179.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** durcir les énigmes des événements neige et halloween ([#624](https://github.com/niafrond/niafrond.github.io/issues/624)) ([5d8922a](https://github.com/niafrond/niafrond.github.io/commit/5d8922a0137d71a1117f31122504399e4ad957ef))
+
+## [2.178.0](https://github.com/niafrond/niafrond.github.io/compare/v2.177.0...v2.178.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** refondre le scénario (Xihe, miroir coupé, fin de Fengmeng) ([#623](https://github.com/niafrond/niafrond.github.io/issues/623)) ([04f349c](https://github.com/niafrond/niafrond.github.io/commit/04f349c9ab13d3fdd694667da4892bbb49566b55))
+
+## [2.177.0](https://github.com/niafrond/niafrond.github.io/compare/v2.176.0...v2.177.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** sprite dédié de la mimique avec attaque par saut ([#621](https://github.com/niafrond/niafrond.github.io/issues/621)) ([b72d532](https://github.com/niafrond/niafrond.github.io/commit/b72d53247eb756116979357efb393b49bebc536a))
+
+## [2.176.0](https://github.com/niafrond/niafrond.github.io/compare/v2.175.0...v2.176.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** zoom de la carte plein écran et page soluce de la fête des lanternes ([#620](https://github.com/niafrond/niafrond.github.io/issues/620)) ([7e24a28](https://github.com/niafrond/niafrond.github.io/commit/7e24a2879596c1373bc82e5730a127db763fea6e))
+
+## [2.175.0](https://github.com/niafrond/niafrond.github.io/compare/v2.174.0...v2.175.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** contours mixtes, repère sur carte plein écran, soluce complète des zones ([#619](https://github.com/niafrond/niafrond.github.io/issues/619)) ([c284e69](https://github.com/niafrond/niafrond.github.io/commit/c284e6925853a37f8821bd0f45cf1510620116f1))
+
+## [2.174.0](https://github.com/niafrond/niafrond.github.io/compare/v2.173.0...v2.174.0) (2026-11-03)
+
+### Features
+
+* **match3-quest:** perception du qì au clic, vibrations réarmées par un geste, coffres refermés en mimiques ([#618](https://github.com/niafrond/niafrond.github.io/issues/618)) ([13eda86](https://github.com/niafrond/niafrond.github.io/commit/13eda86166c1cb2ca281f1ec57a6caa1a4d1f0ba))
+
+## [2.173.0](https://github.com/niafrond/niafrond.github.io/compare/v2.172.0...v2.173.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** level design à la Pokémon, brouillard de la minimap, perception du qì et mimiques ([#617](https://github.com/niafrond/niafrond.github.io/issues/617)) ([b3a7b0f](https://github.com/niafrond/niafrond.github.io/commit/b3a7b0f3ce9426affb93f6fbb77a2c3e8cc9c8fb))
+
+## [2.172.0](https://github.com/niafrond/niafrond.github.io/compare/v2.171.0...v2.172.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** potions de soin grisées à PV max et IA ennemie orientée qì ([#616](https://github.com/niafrond/niafrond.github.io/issues/616)) ([b0d943c](https://github.com/niafrond/niafrond.github.io/commit/b0d943cab37db0a133152efbd81f8ff96d5a4c16))
+
+## [2.171.0](https://github.com/niafrond/niafrond.github.io/compare/v2.170.1...v2.171.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** annoncer la fête des lanternes au premier chargement du jeu ([#615](https://github.com/niafrond/niafrond.github.io/issues/615)) ([a3121f4](https://github.com/niafrond/niafrond.github.io/commit/a3121f4a0142a41c3fc8ca3af10e10193e5a1d28))
+
+## [2.170.1](https://github.com/niafrond/niafrond.github.io/compare/v2.170.0...v2.170.1) (2026-11-02)
+
+### Bug Fixes
+
+* **match3-quest:** garder les ennemis de la montagne des lanternes au niveau 22 ([#614](https://github.com/niafrond/niafrond.github.io/issues/614)) ([2ca31b5](https://github.com/niafrond/niafrond.github.io/commit/2ca31b5fb630d4d9e5514472114e1a925806810d))
+
+## [2.170.0](https://github.com/niafrond/niafrond.github.io/compare/v2.169.1...v2.170.0) (2026-11-02)
+
+### Features
+
+* **match3-quest:** générer l'animation d'arrivée de la montagne des lanternes avec FLUX ([#612](https://github.com/niafrond/niafrond.github.io/issues/612)) ([e9f7dd1](https://github.com/niafrond/niafrond.github.io/commit/e9f7dd1b9a129175aacce02ea20d733b7c49031c))
+
+## [2.169.1](https://github.com/niafrond/niafrond.github.io/compare/v2.169.0...v2.169.1) (2026-11-02)
+
+### Bug Fixes
+
+* **match3-quest:** ne peindre que les cases visibles quand la carte dépasse le calque de sol ([#613](https://github.com/niafrond/niafrond.github.io/issues/613)) ([bca4a56](https://github.com/niafrond/niafrond.github.io/commit/bca4a5634f044a6e02175811a9384f27fb45ceac))
+
+## [2.169.0](https://github.com/niafrond/niafrond.github.io/compare/v2.168.0...v2.169.0) (2026-11-01)
+
+### Features
+
+* **match3-quest:** rendre la fête des lanternes accessible depuis les rizières ([#611](https://github.com/niafrond/niafrond.github.io/issues/611)) ([4274049](https://github.com/niafrond/niafrond.github.io/commit/42740498d0d85484a99de757734a1aa3d86984d4))
+
+## [2.168.0](https://github.com/niafrond/niafrond.github.io/compare/v2.167.1...v2.168.0) (2026-11-01)
+
+### Features
+
+* **match3-quest:** lancer l'événement La Fête des lanternes d'hiver ([#610](https://github.com/niafrond/niafrond.github.io/issues/610)) ([90a0b92](https://github.com/niafrond/niafrond.github.io/commit/90a0b922b52986bbd5d0de362ebdcc924fb68a73))
+
+## [2.167.1](https://github.com/niafrond/niafrond.github.io/compare/v2.167.0...v2.167.1) (2026-10-31)
+
+### Bug Fixes
+
+* **match3-quest:** corriger le tutoriel et accélérer l'apparition des tuiles ([#609](https://github.com/niafrond/niafrond.github.io/issues/609)) ([5a63d4a](https://github.com/niafrond/niafrond.github.io/commit/5a63d4af1464ab89429f308d85e8a8326ea42bca))
+
+## [2.167.0](https://github.com/niafrond/niafrond.github.io/compare/v2.166.0...v2.167.0) (2026-10-31)
+
+### Features
+
+* **match3-quest:** plus de hautes herbes et moins d'obstacles décoratifs ([#608](https://github.com/niafrond/niafrond.github.io/issues/608)) ([0bb2aa1](https://github.com/niafrond/niafrond.github.io/commit/0bb2aa196967f5778df6b81084b55ea130731b3d))
+
+## [2.166.0](https://github.com/niafrond/niafrond.github.io/compare/v2.165.1...v2.166.0) (2026-10-31)
+
+### Features
+
+* **match3-quest:** refaire les compagnons en chibi, renommer Leigong et refaire la porte des âmes ([#607](https://github.com/niafrond/niafrond.github.io/issues/607)) ([34bf71c](https://github.com/niafrond/niafrond.github.io/commit/34bf71c4a8a1022cb9071660060cee5f1c8813a2))
+
+## [2.165.1](https://github.com/niafrond/niafrond.github.io/compare/v2.165.0...v2.165.1) (2026-10-31)
+
+### Bug Fixes
+
+* **match3-quest:** empêcher la flèche de quête de passer par le royaume des âmes ([#606](https://github.com/niafrond/niafrond.github.io/issues/606)) ([b44533f](https://github.com/niafrond/niafrond.github.io/commit/b44533fbc1d48bf89b221c5925e8aa7e584823a2))
+
 ## [2.165.0](https://github.com/niafrond/niafrond.github.io/compare/v2.164.0...v2.165.0) (2026-10-30)
 
 ### Features

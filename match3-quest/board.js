@@ -3,37 +3,26 @@ import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
 import { BIOME_PROTECTION_TEXT } from "./stuff.js";
 import { flyManaToCounter } from "./manaFlight.js";
-import { requestTileBitmaps } from "./tileBitmaps.js";
+
 import { tutorialCallbacks } from "./tutorial.js";
-import {
-    hasMatches as hasMatchesOnBoard,
-    checkForMatchesOnly as checkForMatchesOnlyOnBoard,
-    checkMatchAtPosition,
-    findPossibleMatches,
-    collectMatches,
-    pickJokerSpawns,
-    getColorMatchManaBaseGain,
-    getEffectiveMatchLength,
-    getJokerMatchMultiplier
-} from "./matchMechanics.js";
-import { pickSmartMove } from "./companionMoves.js";
+import { hasMatches as hasMatchesOnBoard, checkForMatchesOnly as checkForMatchesOnlyOnBoard, checkMatchAtPosition, findPossibleMatches, collectMatches, pickJokerSpawns, getColorMatchManaBaseGain, getEffectiveMatchLength, getJokerMatchMultiplier } from "./matchMechanics.js";
+
+
 import { playSfx } from "./sound.js";
-import {
-    JOKER_TILE,
-    isJokerTile,
-    shouldCreateJokerFromMatchLength,
-    pickRandomNonJokerIndex,
-    rollTileWithJoker,
-    rollBalancedTile,
-    baseTile,
-    maybeSkull5
-} from "./joker.js";
+import { JOKER_TILE, isJokerTile, shouldCreateJokerFromMatchLength, pickRandomNonJokerIndex, rollTileWithJoker, rollBalancedTile, baseTile, maybeSkull5 } from "./joker.js";
 import { actionGuard } from "./actionGuard.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
+import { ensureBoardResizeListeners, syncBoardTileSize } from './boardLayout.js';
+export * from './boardLayout.js';
+import { clearSuggestion, clearSuggestionTimer, getSortedPossibleMoves, handleNoPossibleMoveForCurrentTurn, startSuggestionTimer } from './boardSuggestions.js';
+export * from './boardSuggestions.js';
+import { enemyMakeMove } from './boardEnemyMoves.js';
+export * from './boardEnemyMoves.js';
 
 // grille et sélection
 export let board = [];
 export let selected = null;
+export function clearSelectedTile(){ selected = null; }   // pour les modules extraits (une liaison importée ne s'assigne pas)
 
 // Pièges de zone (duel contre Fengmeng, voir duel.js) : cases piégées, positions fixes de la grille.
 let trappedCells = new Set();
@@ -61,7 +50,7 @@ export function setBiomeRule(key, protectedByStuff = false){
 }
 export const getBiomeRule = () => biomeRule;
 export const getBiomeCells = () => ({ ...biomeState.cells });
-const isBlocked = index => isBlockedCell(biomeState, index, biomeRule);
+export const isBlocked = index => isBlockedCell(biomeState, index, biomeRule);
 
 // Fin du tour du joueur : les cases évoluent. Retourne les dégâts de brûlure à infliger au héros.
 export function advanceBiomeTurn(){
@@ -97,6 +86,13 @@ function floatCellText(index, text){
     el.style.top = `${r.top + r.height / 2}px`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), BIOME_BANNER_MS);
+}
+
+// Clic sur une case de biome : affiche brièvement son effet (« Case brûlante - -6 PV pour l'ennemi », « Case gelée - indisponible 2 tours »…).
+function announceClickedBiomeCell(index){
+    const cell = biomeState.cells[index];
+    if(!biomeRule || !cell || cell.kind !== biomeRule.kind) return;
+    floatCellText(index, cellBanner(biomeRule, biomeRule.blocks ? biomeRule.cellEffect : (biomeRule.matchEffect || biomeRule.cellEffect)));
 }
 
 // Annonce « Case brûlante - 3 dégâts » sur chaque case brûlante avant que les dégâts ne tombent. Retourne le délai à attendre (ms).
@@ -160,8 +156,6 @@ function applyPlayerMatchExtras(indices, info){
 }
 
 // Minuteur pour suggestion de match
-let suggestionTimer = null;
-let suggestedMoveIndices = null;
 
 // Track si le jeu a vraiment commencé (un joueur a joué)
 let gameStarted = false;
@@ -173,8 +167,6 @@ let tileHighlightPredicate = null;
 let boardDropProbabilities = null;
 let pendingComboAnimations = 0;
 let boardSettledCallbacks = [];
-let boardResizeListenersAttached = false;
-let boardResizeObserver = null;
 
 // Les tuiles sont des dessins (gâteaux de lune, soleil ardent, flèche : voir retro.css et sprites/tiles/) :
 // plus de glyphe emoji dans la case, seulement une infobulle qui rappelle le rôle de la tuile.
@@ -206,171 +198,6 @@ const BOARD_DROP_PROBABILITIES = Object.freeze({
     combatProb: 0.17,
     jokerProb: 0.0035
 });
-
-function getOuterBlockSize(element){
-    if(!element) return 0;
-    if(element.offsetParent === null) return 0;
-
-    const rect = element.getBoundingClientRect();
-    const styles = window.getComputedStyle(element);
-    const marginTop = parseFloat(styles.marginTop || '0') || 0;
-    const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
-    return rect.height + marginTop + marginBottom;
-}
-
-// Paysage : la grille occupe les 2/3 de la largeur de l'écran (le tiers restant sert aux colonnes joueur / ennemi)
-const LANDSCAPE_BOARD_WIDTH_RATIO = 2 / 3;
-
-function isLandscapeLayout(){
-    return Boolean(typeof window !== 'undefined' && window.matchMedia?.('(orientation: landscape)').matches);
-}
-
-function getMaxTileSizeFromViewport(boardDiv){
-    // Paysage : la grille est centrée dans sa rangée, son propre haut ne dit rien ; on part du haut de la zone de combat
-    const topRef = isLandscapeLayout() ? (document.getElementById('tab-combat') || boardDiv) : boardDiv;
-    const top = Math.max(0, topRef.getBoundingClientRect().top);
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-    if(viewportHeight <= 0) return Infinity;
-
-    const spellsContainer = document.getElementById('spells-container');
-    const battleResultScreen = document.getElementById('battle-result-screen');
-    // Paysage : les sorts sont dans les colonnes latérales, pas sous la grille
-    const spellsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(spellsContainer);
-    // Paysage : les boutons de combat flottent en bas de la colonne joueur, ils ne prennent pas de hauteur à la grille
-    const controlsHeight = isLandscapeLayout() ? 0 : getOuterBlockSize(document.getElementById('combat-controls'));
-    const resultHeight = getOuterBlockSize(battleResultScreen) + controlsHeight;
-    // Paysage : la pastille de niveau (fixe, en bas de l'écran) ne doit pas recouvrir les boutons de combat
-    const hud = isLandscapeLayout() ? document.getElementById('level-hud') : null;
-    const hudBox = hud && hud.offsetParent !== null ? hud.getBoundingClientRect() : null;
-    const boardBox = boardDiv.getBoundingClientRect();
-    // Seulement si elle passe sous la grille (sur écran bas elle est rangée dans la colonne ennemi)
-    const hudRect = hudBox && hudBox.left < boardBox.right && hudBox.right > boardBox.left ? hudBox : null;
-    const bottomSafety = (hudRect ? 12 : 8) + (hudRect && hudRect.height > 0 ? Math.max(0, viewportHeight - hudRect.top) : 0);
-
-    const availableBoardHeight = viewportHeight - top - spellsHeight - resultHeight - bottomSafety;
-    if(availableBoardHeight <= 0) return 1;
-
-    const styles = window.getComputedStyle(boardDiv);
-    const paddingTop = parseFloat(styles.paddingTop || '0') || 0;
-    const paddingBottom = parseFloat(styles.paddingBottom || '0') || 0;
-    const borderY = (parseFloat(styles.borderTopWidth || '0') || 0) + (parseFloat(styles.borderBottomWidth || '0') || 0);
-    const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
-    const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
-    const usableHeight = availableBoardHeight - paddingTop - paddingBottom - borderY - marginBottom - (gap * (boardSize - 1));
-    if(usableHeight <= 0) return 1;
-
-    return Math.floor(usableHeight / boardSize);
-}
-
-// Plus petite tuile que le filet de hauteur (portrait) accepte : en dessous, la page défile plutôt que de rendre la grille illisible.
-const MIN_PORTRAIT_TILE = 30;
-
-function syncBoardTileSize(){
-    if(typeof window === 'undefined') return;
-    const boardDiv = document.getElementById('board');
-    if(!boardDiv) return;
-    if(boardDiv.offsetParent === null) return;
-
-    const parentWidth = boardDiv.parentElement?.clientWidth || 0;
-    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-    // Mobile en portrait : la grille occupe toute la largeur (priorité sur la hauteur : la page défile au besoin).
-    const fullWidth = Boolean(window.matchMedia?.('(orientation: portrait) and (max-width: 820px)').matches);
-    const landscape = !fullWidth && isLandscapeLayout();
-    // Écran bas : colonnes latérales de largeur fixe (--landscape-side, style.css) ; la grille ne déborde pas sur elles
-    const sideWidth = landscape ? (parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--landscape-side')) || 0) : 0;
-    const widthBudget = landscape && viewportWidth > 0
-        ? Math.floor(Math.min(viewportWidth * LANDSCAPE_BOARD_WIDTH_RATIO, sideWidth > 0 ? viewportWidth - 2 * sideWidth - 24 : Infinity))
-        : Math.min(
-            parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
-            viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
-            980
-        );
-
-    if(!Number.isFinite(widthBudget) || widthBudget <= 0) return;
-
-    const styles = window.getComputedStyle(boardDiv);
-    const paddingLeft = parseFloat(styles.paddingLeft || '0') || 0;
-    const paddingRight = parseFloat(styles.paddingRight || '0') || 0;
-    const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
-    const borderX = (parseFloat(styles.borderLeftWidth || '0') || 0) + (parseFloat(styles.borderRightWidth || '0') || 0);
-    const usableWidth = widthBudget - paddingLeft - paddingRight - borderX - (gap * (boardSize - 1));
-    if(usableWidth <= 0) return;
-
-    const tileSizeFromWidth = Math.floor(usableWidth / boardSize);
-    const spellsContainer = document.getElementById('spells-container');
-    if(spellsContainer){
-        if(fullWidth){
-            // Liste verticale si elle tient dans l'écran (avec une grille de taille raisonnable), sinon grille compacte
-            spellsContainer.classList.remove('spells-compact');
-            const boardSide = Math.max(10, Math.floor(usableWidth / boardSize)) * boardSize + paddingLeft + paddingRight + (gap * (boardSize - 1));
-            const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-            const top = Math.max(0, boardDiv.getBoundingClientRect().top);
-            const controls = getOuterBlockSize(document.getElementById('combat-controls'));
-            const needed = top + boardSide + getOuterBlockSize(spellsContainer) + controls + 8;
-            if(viewportHeight > 0 && needed > viewportHeight) spellsContainer.classList.add('spells-compact');
-        } else {
-            spellsContainer.classList.remove('spells-compact');
-        }
-    }
-    const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
-    const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
-    boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
-    // Filet : si la grille dépasse encore la largeur visible (bordures, marges, mesure faite avant un changement de mise en page),
-    // on rogne les tuiles plutôt que d'obliger à faire défiler la page vers la droite.
-    const docWidth = document.documentElement.clientWidth || viewportWidth;
-    const limit = Math.min(parentWidth > 0 ? parentWidth : Infinity, docWidth > 0 ? docWidth - 2 : Infinity);
-    const overflow = Math.max(boardDiv.getBoundingClientRect().width, boardDiv.scrollWidth) - limit;   // scrollWidth : le CSS plafonne la boîte à 100 %, pas son contenu
-    let fitted = tileSize;
-    if(Number.isFinite(limit) && overflow > 0.5) fitted = Math.max(10, fitted - Math.ceil(overflow / boardSize));
-    // Portrait : si la page déborde encore en hauteur (la pastille de niveau en bas n'est plus visible), on rogne aussi les tuiles.
-    if(fullWidth){
-        if(fitted !== tileSize) boardDiv.style.setProperty('--tile-size', `${fitted}px`);
-        const doc = document.documentElement;
-        const tall = doc.scrollHeight - doc.clientHeight;
-        if(tall > 1) fitted = Math.max(MIN_PORTRAIT_TILE, fitted - Math.ceil(tall / boardSize));
-    }
-    if(fitted !== tileSize){
-        boardDiv.style.setProperty('--tile-size', `${fitted}px`);
-        requestTileBitmaps(fitted);
-        return;
-    }
-    requestTileBitmaps(tileSize);   // fonds des tuiles rastérisés à la taille d'affichage (tileBitmaps.js)
-}
-
-function ensureBoardResizeListeners(){
-    if(boardResizeListenersAttached || typeof window === 'undefined') return;
-    const schedule = typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (callback) => setTimeout(callback, 0);
-
-    const handleResize = () => {
-        schedule(syncBoardTileSize);
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-
-    if(typeof window.ResizeObserver === 'function'){
-        boardResizeObserver = new window.ResizeObserver(() => {
-            schedule(syncBoardTileSize);
-        });
-
-        const observedElements = [
-            document.querySelector('.stats-container'),
-            document.getElementById('spells-container'),
-            document.getElementById('battle-result-screen'),
-            document.querySelector('.tabs')
-        ];
-
-        observedElements.forEach((element) => {
-            if(element){
-                boardResizeObserver.observe(element);
-            }
-        });
-    }
-
-    boardResizeListenersAttached = true;
-}
 
 /** Vrai tant que le plateau résout un échange/une chaîne ou joue des animations (armes/objets bloqués). */
 export function isBoardResolving(){
@@ -430,7 +257,8 @@ function refreshTargetingHighlights(){
 }
 
 function computeSpecialTileProbabilities(){
-    return { ...BOARD_DROP_PROBABILITIES };
+    // Tutoriel : répartition dédiée (plus de crânes, pas de flèches ni de joker) pour que les étapes aillent vite.
+    return { ...(tutorialCallbacks.dropProbabilities || BOARD_DROP_PROBABILITIES) };
 }
 
 function refreshBoardDropProbabilities(){
@@ -529,19 +357,17 @@ function generateNewBoard(){
     }while(hasMatchesOnBoard(board));
 }
 
-function generateRandomTile(options = {}){
-    if(!boardDropProbabilities){
-        refreshBoardDropProbabilities();
-    }
+export function generateRandomTile(options = {}){
+    refreshBoardDropProbabilities();   // relu à chaque tirage : la répartition change pendant le tutoriel
 
     return rollTileWithJoker(boardDropProbabilities, colors, options);
 }
 
 // Tuile qui tombe pour combler un trou : tirée pour que la répartition cible tienne sur tout le plateau après la chute.
-function generateBalancedDropTile(){
-    if(!boardDropProbabilities){
-        refreshBoardDropProbabilities();
-    }
+function generateBalancedDropTile(index){
+    const scripted = tutorialCallbacks.dropTile?.(index, board, currentTurn);   // tutoriel : tuile pré-générée / neutre
+    if(scripted) return scripted;
+    refreshBoardDropProbabilities();
     return rollBalancedTile(board, boardDropProbabilities, colors);
 }
 
@@ -569,7 +395,7 @@ function fillColumnByGravity(col){
     const newCount = writeRow + 1;
     while(writeRow >= 0){
         const writeIdx = writeRow * boardSize + col;
-        board[writeIdx] = generateBalancedDropTile();
+        board[writeIdx] = generateBalancedDropTile(writeIdx);
         writeRow--;
     }
     return { moved, newCount };
@@ -663,6 +489,8 @@ export function selectTile(index){
     if(pendingSwap || actionGuard.isBoardBusy()){
         return;
     }
+
+    announceClickedBiomeCell(index);
 
     // Regle commune joueur/ennemi: plateau bloque => regeneration puis meme acteur rejoue.
     if(getSortedPossibleMoves().length === 0){
@@ -770,8 +598,8 @@ export function swapTiles(i,j){
     };
     actionGuard.beginBoardAction();
 
-    // Notifier le tutoriel qu'un échange valide a eu lieu
-    tutorialCallbacks.onTileSwap?.(i, j, true);
+    // Notifier le tutoriel qu'un échange valide du joueur a eu lieu (les échanges de l'ennemi ne comptent pas)
+    if(currentTurn === 'player') tutorialCallbacks.onTileSwap?.(i, j, true);
 
     // Il y a un match : continuer normalement
     renderBoard();
@@ -882,7 +710,17 @@ export function checkForMatchesOnly(){
     return checkForMatchesOnlyOnBoard(board);
 }
 
+let announceWaitSince = 0;
 export function checkMatches(forceFullBoard = false){
+    // Une mini-annonce de sort / dégâts est affichée : on attend qu'elle parte (délai auto ou clic) avant de résoudre le plateau.
+    if(document.querySelector('#board .attack-overlay')){
+        if(!announceWaitSince) announceWaitSince = Date.now();
+        if(Date.now() - announceWaitSince < SPELL_HOLES_MAX_WAIT_MS){
+            setTimeout(() => checkMatches(forceFullBoard), 100);
+            return;
+        }
+    }
+    announceWaitSince = 0;
     if(pendingComboAnimations > 0){
         onBoardSettled(() => {
             setTimeout(() => checkMatches(forceFullBoard), 0);
@@ -1143,7 +981,7 @@ function dropTiles(removedIndices = []){
         // Ajouter des nouvelles tuiles en haut.
         while(writeRow >= 0){
             const idx = writeRow * boardSize + col;
-            board[idx] = generateBalancedDropTile();
+            board[idx] = generateBalancedDropTile(idx);
             writeRow--;
         }
     }
@@ -1285,265 +1123,6 @@ export function highlightCombo(indices, info){
     }, 300);
 }
 
-// Fonctions pour gérer la suggestion de match
-function startSuggestionTimer(){
-    // Arrêter l'ancien timer s'il existe
-    clearSuggestionTimer();
-
-    // Ne démarrer le timer que si c'est le tour du joueur et qu'aucune tuile n'est sélectionnée
-    if(currentTurn !== 'player' || selected !== null) return;
-    
-    // Démarrer un nouveau timer
-    suggestionTimer = setTimeout(() => {
-        showMatchSuggestion();
-    }, 3000); // 3 secondes
-}
-
-export function restartSuggestionTimer(){
-    clearSuggestion();
-    startSuggestionTimer();
-}
-
-function clearSuggestionTimer(){
-    if(suggestionTimer !== null){
-        clearTimeout(suggestionTimer);
-        suggestionTimer = null;
-    }
-}
-
-function getSortedPossibleMoves(){
-    const possibleMoves = findPossibleMatches(board).filter(m => !isBlocked(m.from) && !isBlocked(m.to));
-    possibleMoves.sort((a, b) => b.matchLength - a.matchLength);
-    return possibleMoves;
-}
-
-function handleNoPossibleMoveForCurrentTurn(){
-    const actor = currentTurn === 'player' ? 'joueur' : 'ennemi';
-    log(`Aucun coup possible pour le ${actor}, plateau régénéré.`);
-
-    selected = null;
-    regenerateBoard();
-
-    // regenerateBoard prend ~1300ms avec la nouvelle animation (900ms notice + 400ms disparition)
-    const retryDelay = currentTurn === 'enemy' ? 1800 : 1400;
-    setTimeout(() => {
-        if(currentTurn === 'enemy'){
-            enemyMakeMove();
-        } else if(currentTurn === 'player'){
-            startSuggestionTimer();
-        }
-    }, retryDelay);
-}
-
-function showMatchSuggestion(){
-    // Trouver un match potentiel
-    const possibleMoves = getSortedPossibleMoves();
-    
-    if(possibleMoves.length > 0){
-        const suggestedMove = possibleMoves[0];
-        
-        suggestedMoveIndices = [suggestedMove.from, suggestedMove.to];
-        
-        const boardDiv = document.getElementById('board');
-        const tiles = boardDiv.children;
-        
-        // Ajouter la classe de clignotement doux
-        suggestedMoveIndices.forEach(idx => {
-            tiles[idx].classList.add('suggested');
-        });
-        
-        log(`Conseil : essayez d'échanger ces deux tuiles !`);
-        return;
-    }
-
-    handleNoPossibleMoveForCurrentTurn();
-}
-
-function clearSuggestion(){
-    if(suggestedMoveIndices !== null){
-        const boardDiv = document.getElementById('board');
-        if(boardDiv){
-            const tiles = boardDiv.children;
-            suggestedMoveIndices.forEach(idx => {
-                tiles[idx].classList.remove('suggested');
-            });
-        }
-        suggestedMoveIndices = null;
-    }
-}
-
-// Petite animation de déplacement pour visualiser le swap de l'ennemi
-function animateEnemySwap(from, to, onComplete){
-    const boardDiv = document.getElementById('board');
-    if(!boardDiv){
-        onComplete();
-        return;
-    }
-
-    const tiles = boardDiv.children;
-    const fromTile = tiles[from];
-    const toTile = tiles[to];
-
-    if(!fromTile || !toTile){
-        onComplete();
-        return;
-    }
-
-    const fromRect = fromTile.getBoundingClientRect();
-    const toRect = toTile.getBoundingClientRect();
-    const deltaX = toRect.left - fromRect.left;
-    const deltaY = toRect.top - fromRect.top;
-
-    // Anime des copies visuelles pour eviter l'effet de double swap lors du rerender.
-    function createGhost(sourceTile, rect){
-        const ghost = sourceTile.cloneNode(true);
-        ghost.style.position = 'fixed';
-        ghost.style.left = `${rect.left}px`;
-        ghost.style.top = `${rect.top}px`;
-        ghost.style.width = `${rect.width}px`;
-        ghost.style.height = `${rect.height}px`;
-        ghost.style.margin = '0';
-        ghost.style.zIndex = '40';
-        ghost.style.pointerEvents = 'none';
-        ghost.style.transition = 'transform 0.32s ease, box-shadow 0.32s ease';
-        ghost.style.boxShadow = '0 0 12px rgba(231, 76, 60, 0.85)';
-        return ghost;
-    }
-
-    const fromGhost = createGhost(fromTile, fromRect);
-    const toGhost = createGhost(toTile, toRect);
-
-    fromTile.style.visibility = 'hidden';
-    toTile.style.visibility = 'hidden';
-    document.body.appendChild(fromGhost);
-    document.body.appendChild(toGhost);
-
-    requestAnimationFrame(() => {
-        fromGhost.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-        toGhost.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
-    });
-
-    setTimeout(() => {
-        fromGhost.remove();
-        toGhost.remove();
-        fromTile.style.visibility = '';
-        toTile.style.visibility = '';
-        onComplete();
-    }, 340);
-}
-
-// Fonction pour que l'ennemi fasse un mouvement sur le plateau
-export function enemyMakeMove(){
-    // En mode tutoriel, l'ennemi utilise toujours un mouvement aléatoire (IA stupide)
-    if(tutorialCallbacks.useDumbAI) {
-        enemyMakeRandomMove();
-        return;
-    }
-
-    clearSuggestionTimer();
-    clearSuggestion();
-    log('L\'ennemi réfléchit...');
-    
-    const possibleMoves = getSortedPossibleMoves();
-    
-    if(possibleMoves.length > 0){
-        const move = possibleMoves[0];
-        log(`L'ennemi échange les tuiles...`);
-        setTimeout(() => {
-            animateEnemySwap(move.from, move.to, () => {
-                swapTiles(move.from, move.to);
-            });
-        }, 800);
-    } else {
-        handleNoPossibleMoveForCurrentTurn();
-    }
-}
-
-// Mouvement aléatoire (ennemi stupide) : choisit un swap valide au hasard
-export function enemyMakeRandomMove(){
-    clearSuggestionTimer();
-    clearSuggestion();
-    log('L\'ennemi hésite...');
-
-    const possibleMoves = getSortedPossibleMoves();
-    if(possibleMoves.length === 0){ handleNoPossibleMoveForCurrentTurn(); return; }
-
-    // Prendre un mouvement aléatoire parmi tous les valides (pas forcément le meilleur)
-    const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-    log(`L'ennemi fait un move aléatoire...`);
-    setTimeout(() => {
-        animateEnemySwap(move.from, move.to, () => {
-            swapTiles(move.from, move.to);
-        });
-    }, 800);
-}
-
-// Xiao Gui joue le meilleur coup (simulation des cascades, voir companionMoves.js) pendant le tour du joueur (currentTurn reste 'player').
-export function foxMakeRandomMove(){
-    clearSuggestionTimer();
-    clearSuggestion();
-
-    const possibleMoves = getSortedPossibleMoves();
-    if(possibleMoves.length === 0){ finishPlayerTurn(); return; }
-
-    const move = pickSmartMove(board, possibleMoves, { mana: player.mana, refill: () => generateRandomTile() }) || possibleMoves[0];
-    setTimeout(() => {
-        animateFoxSwap(move.from, move.to, () => {
-            swapTiles(move.from, move.to);
-        });
-    }, 600);
-}
-
-function animateFoxSwap(from, to, onComplete){
-    const boardDiv = document.getElementById('board');
-    if(!boardDiv){ onComplete(); return; }
-
-    const tiles = boardDiv.children;
-    const fromTile = tiles[from];
-    const toTile = tiles[to];
-    if(!fromTile || !toTile){ onComplete(); return; }
-
-    const fromRect = fromTile.getBoundingClientRect();
-    const toRect = toTile.getBoundingClientRect();
-    const deltaX = toRect.left - fromRect.left;
-    const deltaY = toRect.top - fromRect.top;
-
-    function createGhost(sourceTile, rect){
-        const ghost = sourceTile.cloneNode(true);
-        ghost.style.position = 'fixed';
-        ghost.style.left = `${rect.left}px`;
-        ghost.style.top = `${rect.top}px`;
-        ghost.style.width = `${rect.width}px`;
-        ghost.style.height = `${rect.height}px`;
-        ghost.style.margin = '0';
-        ghost.style.zIndex = '40';
-        ghost.style.pointerEvents = 'none';
-        ghost.style.transition = 'transform 0.28s ease, box-shadow 0.28s ease';
-        ghost.style.boxShadow = '0 0 14px rgba(224, 122, 46, 0.9)';
-        return ghost;
-    }
-
-    const fromGhost = createGhost(fromTile, fromRect);
-    const toGhost = createGhost(toTile, toRect);
-
-    fromTile.style.visibility = 'hidden';
-    toTile.style.visibility = 'hidden';
-    document.body.appendChild(fromGhost);
-    document.body.appendChild(toGhost);
-
-    requestAnimationFrame(() => {
-        fromGhost.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-        toGhost.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
-    });
-
-    setTimeout(() => {
-        fromGhost.remove();
-        toGhost.remove();
-        fromTile.style.visibility = '';
-        toTile.style.visibility = '';
-        onComplete();
-    }, 300);
-}
 
 export function applyBoard(arr) {
     board.splice(0, board.length, ...arr);

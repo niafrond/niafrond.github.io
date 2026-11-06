@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { addXP } from '../../experience.js';
+import { readGameSource } from './fixtures/gameSource.js';
 
 const read = f => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
 
 // game.js dépend du DOM et n'est importé par aucun test : on vérifie le branchement par lecture du code.
 describe('niveau gagné hors combat (quêtes, exploration)', () => {
-    const game = read('game.js');
+    const game = readGameSource();
     const main = read('main.js');
     const body = name => { const i = game.indexOf(`function ${name}(`); return game.slice(i, game.indexOf('\n}\n', i)); };
 

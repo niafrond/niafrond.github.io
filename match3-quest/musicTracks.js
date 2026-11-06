@@ -8,10 +8,10 @@
  *        boss-<nom du boss en minuscules, tirets> (un thème par boss) · boss-a<0..7> (thème d'archétype, repli).
  */
 
-export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat', 'puzzle-push', 'puzzle-mirror', 'puzzle-slide'];
+export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat', 'puzzle-push', 'puzzle-mirror', 'puzzle-slide', 'change-village', 'change-puzzle', 'change-farewell'];
 export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'tides', 'fusang', 'moon'];
 // Biomes d'événement (events/) → piste de musique de leur zone. Ajouter une entrée par événement qui a sa musique.
-export const EVENT_TRACKS = { wandering_souls: 'event-wandering-souls' };
+export const EVENT_TRACKS = { wandering_souls: 'event-wandering-souls', winter_lantern_mountain: 'event-winter-lantern' };
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;
 export const MUSIC_DIR = 'audio/music/';

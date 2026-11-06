@@ -31,7 +31,8 @@ const SCENE_LABELS = {
     title: 'Écran titre', menu: 'Menus', village: 'Village', house: 'Maison', wild: 'Terres sauvages',
     sanctuary: 'Sanctuaire', moon: 'Pic de la Lune', ending: 'Épilogue', combat: 'Combat', boss: 'Boss',
     victory: 'Victoire', defeat: 'Défaite',
-    'puzzle-push': 'Énigme des jarres', 'puzzle-mirror': 'Énigme des miroirs', 'puzzle-slide': 'Énigme des charrettes'
+    'puzzle-push': 'Énigme des jarres', 'puzzle-mirror': 'Énigme des miroirs', 'puzzle-slide': 'Énigme des charrettes',
+    'change-village': 'Chang\'e : village', 'change-puzzle': 'Chang\'e : soins', 'change-farewell': 'Chang\'e : adieu'
 };
 
 export function getSceneList() {

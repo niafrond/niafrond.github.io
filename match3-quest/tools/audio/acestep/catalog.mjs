@@ -65,6 +65,13 @@ T('defeat', `somber defeat theme, fragments of the Hou Yi motif on lonely ${I.xi
 /* ───────────── Énigmes : un thème par type, calme et réfléchi (aucune urgence), boucle discrète ───────────── */
 T('puzzle-push', `puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, soft ${I.xiao} answering, muted felt drum on the beat, curious and patient mood, gentle repeating phrase, no tension, no climax`,
     { bpm: 76, keyScale: 'G major', dur: 180 });
+/* ───────────── Mode Chang'e (change/) : village des blessés, puzzle de soin, adieu par le miroir ───────────── */
+T('change-village', `Chang'e among the villagers she heals, tender warm moonlit village theme, ${I.guzheng} gentle rolling arpeggios, soft ${I.dizi} singing a kind simple melody, small woodblock heartbeat, slow lilting feel, comforting and hopeful, a steaming pot of soup and moon cakes, no drums, no tension, no climax`,
+    { bpm: 72, keyScale: 'F major', dur: 150 });
+T('change-puzzle', `calm healing puzzle theme, soft marimba-like plucks and harp, small bells like drops of moonlight, flowing steady gentle pulse, ${I.guzheng} pad, soothing and focused, gentle ascending phrases, no percussion, no tension, no climax`,
+    { bpm: 84, keyScale: 'A minor', dur: 180 });
+T('change-farewell', `Chang'e's last conversation through the bronze mirror, tender and sorrowful goodbye, solo ${I.erhu} with sparse ${I.guqin}, slow, long silences, quiet resignation and love, ends softly, no drums`,
+    { bpm: 54, keyScale: 'A minor', dur: 100 });
 T('puzzle-mirror', `puzzle theme for aligning mirrors of light, crystalline harp-like plucks and small bells, airy and spacious, slow arpeggios, soft ${I.sheng} pad, mysterious and calm, silence between phrases, no drums, no tension, no climax`,
     { bpm: 68, keyScale: 'E minor', dur: 180 });
 T('puzzle-slide', `puzzle theme for sliding carts along caravan tracks, light rolling rhythm, ${I.pipa} gently plucked, ${I.dizi} playful melody, small caravan clappers and woodblock, lightly bouncy and cheerful, relaxed pace, no tension, no climax`,
@@ -364,3 +371,11 @@ export function buildCaption(track, extra = '') {
     if (track.jingle) return [track.style, JINGLE_STYLE, extra].filter(Boolean).join(', ');   // jingles : pas de brief de boucle ni de références de style
     return [isEpic(track) ? EPIC_STYLE : GLOBAL_STYLE, track.style, extra].filter(Boolean).join(', ');
 }
+
+
+/* ───────────── Événement « La Fête des lanternes d'hiver » (events/winterLanternFestival/) ───────────── */
+// Thème de la montagne (écrans d'événement, musicTracks.js : `event-winter-lantern`) et thème du Gardien de la flamme hivernale.
+T('event-winter-lantern', `gentle Chinese winter solstice festival, snowy mountain village with glowing red and gold paper lanterns, ${I.guzheng} plucked pentatonic melody, soft ${I.dizi} flute, warm ${I.erhu}, light bells and wind chimes, cozy and magical, peaceful, slow and spacious`,
+    { bpm: 70, keyScale: 'D major', dur: 60 });
+T('boss-gardien-de-la-flamme-hivernale', `ancient stone guardian of a sacred flame, balance of fire and ice, warm yet epic Chinese boss battle, taiko-like drums, ${I.pipa}, ${I.erhu}, low horns, crystalline bells, noble and determined, ${BOSS_MOOD}, readable melody`,
+    { bpm: 108, keyScale: 'A minor', dur: 60 });

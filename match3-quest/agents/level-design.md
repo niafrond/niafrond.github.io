@@ -41,6 +41,23 @@ coffres, pierres de voyage, énigmes et verrous (`requires`).
 - Les gardes sont `permanent` et en `group` ; un chemin ne doit jamais devenir une impasse (le PNJ `parley` et les gardes restent
   atteignables sans traverser l'aura du soleil). Voir `agents/scenario.md` pour les règles narratives.
 
+## Contraintes de level design (à la Pokémon GBA)
+Catalogue de contraintes de parcours à appliquer (ou à dessiner à la main dans les grilles natives) pour que les routes ne soient pas
+des champs uniformes. Le générateur `world/levelDesign.js` en applique une partie automatiquement ; tout nouveau dessin doit les respecter.
+- **Tracé sans retour** : corniche (`screen.ledges`) franchie d'un saut dans un seul sens ; au moins une par route ou zone sauvage ; le retour impose un détour d'au moins 20 pas ;
+  jamais de zone réservée au saut (tout reste atteignable à pied).
+- **Passage obligé par les herbes** : haie percée d'un unique passage de 2 à 5 cases planté de hautes herbes ; une route tracée (`=`) reste sûre.
+- **Motifs d'obstacles** pour rompre la monotonie : chevron qui indique le sens, verger en quinconce, slalom, clairière d'herbes cernée, losange
+  à entrée, peigne d'alcôves, diagonale, escalier, haie, îlot. Couloirs de 2 cases au moins, aucune poche inatteignable.
+- **Caches invisibles** (`hidden`, 8 par route ou zone sauvage) nichées contre le relief, repérées par la Perception du qì (gǎn qì, niveau 8 ; « aura » est un terme occidental à éviter dans les textes) ; **coffres-pièges** (`mimic`, au moins 3 par carte de plein air, villages et sanctuaires compris) posés près d'un chemin,
+  butin maigre : la récompense d'un vrai détour reste supérieure (30 · rang contre 4 · rang) ; la mimique démasquée attaque par surprise (elle joue en premier avec +2 PA, `terrain.js` `buildPrep({ mimic: true })`).
+- **Coffres refermés** : au retour sur une carte, quelques coffres déjà ouverts se referment en mimiques (jamais ceux dont dépend une quête ou une condition) ; **perception du qì** : on touche le héros, 5 s, flèche rouge vers la cache la plus proche.
+- **Cartes vastes et contour irrégulier** : routes et zones sauvages natives agrandies par `world/enlarge.js` (64 de large, excroissances et coins rognés) ; ne pas dessiner de grille native au-delà de 64×64 / 1500 cases, l'agrandissement s'applique par-dessus.
+- **Entrées et sorties variées** : `world/index.js` `TURNS` fait entrer ou sortir certaines routes par le haut ou le bas (jamais toujours ouest → est) ; un village a quatre ancres `<` `>` `^` `v`, une zone sauvage mène toujours au sanctuaire par l'est.
+- **Cartes d'événement** (village enneigé, col et sanctuaire de la Fête des lanternes, royaume des âmes errantes) : mêmes préconisations, appliquées par `designLevel` (`isDesignable` accepte `screen.event`, taille minimale 22×12) : corniche, motifs, défilés, 8 caches invisibles, 3 coffres-pièges, et **contour rogné** (`carveContour` : arrondi ou rectangle collé à chaque coin, abandonné s'il toucherait une entité, une sortie ou l'arrivée, ou isolerait une case). Chaque carte d'événement qui a des ennemis a au moins un **passage obligé par des hautes herbes** (défilé) avec de vraies rencontres : sans table d'herbes d'origine, elle en reçoit une tirée de ses ennemis (hors boss), complétée à 3 espèces par celles du biome. Le village enneigé (aucun ennemi) reste sans rencontre. Exceptions admises : le hall d'entrée du royaume (22×13), le pont (44×12) et la salle des miroirs (26×16) n'ont pas la place d'une corniche de retour de 20 pas ni de huit caches (au mieux). Tout nouvel événement doit passer par là (`tests/unit/levelDesign.test.js`, « cartes d'événement »).
+- **Brouillard de guerre** : la minimap grise les cases jamais vues ; prévoir des repères visibles de loin (tours, arbres remarquables).
+- À envisager ensuite : cartes plus vastes et silhouettes non rectangulaires (grilles natives à redessiner), portes à clé de biome, ponts à sens unique.
+
 ## Livrables
 Cartes ASCII dans `world/maps/<R>.js` (jamais `world/mapKit.js`), entités référencées par des ids existants des textes
 (`world/text/<R>.js` fournis par l'agent Scénario), entrée `SPECS.md`.

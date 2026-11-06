@@ -79,7 +79,7 @@ export function rollChestLoot(chest, screen = {}, owner = {}, rng = Math.random)
     const tier = chestTier(chest, screen);
     const cfg = LOOT_TIERS[tier];
     if (!cfg) return { tier: 0, tierName: '', loot: [] };
-    const level = Math.max(owner.level || 1, REGION_LEVEL[screen.region] || 1);
+    const level = Math.max(owner.level || 1, screen.levelBase || REGION_LEVEL[screen.region] || 1);
     const maxLevel = level + cfg.levelBonus;
     const ownedWeapons = new Set((owner.weapons || []).map(w => w.id));
     const ownedArtifacts = new Set((owner.inventory || []).filter(i => i?.type === 'artifact').map(i => i.id));
