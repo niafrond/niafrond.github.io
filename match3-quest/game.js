@@ -37,6 +37,7 @@ import { gearManaBonus } from "./manaGear.js";
 
 import { resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
+import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
 export { TOOLTIP_LONG_PRESS_MS };
@@ -134,7 +135,8 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     const applyGainBonus = options.applyGainBonus !== false;
     const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
     const manaMultAmt = (entity === player && entity.manaMultiplier && entity.manaMultiplier.turnsLeft > 0 && applyGainBonus) ? entity.manaMultiplier.mult : 1;
-    const totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus) * manaMultAmt));
+    let totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus) * manaMultAmt));
+    if(entity === player && applyGainBonus) totalGain = styleManaGain(entity, totalGain, baseGain || 0);   // style de jeu (playStyles.js)
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
     entity.mana[color] = after;
@@ -162,17 +164,20 @@ export function isCheatFreeSpells(){ return player.cheatFreeSpells === true; }
 export function setCheatMaxRage(on){ Object.defineProperty(player, 'cheatMaxRage', { value: !!on, enumerable: false, writable: true, configurable: true }); }
 export function isCheatMaxRage(){ return player.cheatMaxRage === true; }
 
+// Coût réel d'une couleur de qì pour `entity` : le style de jeu du héros le modifie (playStyles.js), jamais celui d'un ennemi.
+export const spellCostFor = (entity, amount) => (entity === player ? styleSpellCost(entity, amount) : amount);
+
 export function canEntityCastSpell(entity, spell){
     if(!entity || !entity.mana || !spell) return false;
     if(entity.cheatFreeSpells === true) return true;
 
     if(typeof spell.cost === 'number') {
-        return (entity.mana[spell.color] || 0) >= spell.cost;
+        return (entity.mana[spell.color] || 0) >= spellCostFor(entity, spell.cost);
     }
 
     if(spell.cost && typeof spell.cost === 'object') {
         return Object.entries(spell.cost).every(([color, amount]) =>
-            (entity.mana[color] || 0) >= amount
+            (entity.mana[color] || 0) >= spellCostFor(entity, amount)
         );
     }
 
@@ -249,11 +254,12 @@ const costBadge = (color, text) => `<span class="cost-badge mana-${color}${color
 export function spellCostHtml(sp, entity = null){
     // Avec un lanceur : chaque couleur du coût d'un sort multi-qì est marquée atteinte (`met`) ou manquante (`unmet`).
     if(entity && sp.cost && typeof sp.cost === 'object'){
-        return Object.entries(sp.cost).map(([color, amount]) => `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= amount ? 'met' : 'unmet'}">${costBadge(color, amount)}</span>`).join('');
+        return Object.entries(sp.cost).map(([color, amount]) => { const real = spellCostFor(entity, amount); return `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= real ? 'met' : 'unmet'}">${costBadge(color, real)}</span>`; }).join('');
     }
-    if(typeof sp.cost === 'number') return costBadge(sp.color, sp.cost);
+    const shown = amount => spellCostFor(entity, amount);
+    if(typeof sp.cost === 'number') return costBadge(sp.color, shown(sp.cost));
     if(sp.cost && typeof sp.cost === 'object'){
-        return Object.entries(sp.cost).map(([color, amount]) => costBadge(color, amount)).join('');
+        return Object.entries(sp.cost).map(([color, amount]) => costBadge(color, shown(amount))).join('');
     }
     return '';
 }
@@ -364,6 +370,12 @@ export function applyDamage(target, damage, options = {}){
         if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
         if(strike.block === 'total') log(`${escapeHtml(target.name)} bloque entièrement ${options.sourceSpell.name}.`);
         else if(strike.block === 'partial') log(`${escapeHtml(target.name)} pare ${options.sourceSpell.name}.`);
+    }
+
+    // Style de jeu du héros (playStyles.js) : multiplicateurs de dégâts infligés et subis, sans toucher aux statistiques.
+    if(normalizedDamage > 0 && !options.sourceSpell?.ultimate) {
+        if(target === enemy) normalizedDamage = styleDamageDealt(player, normalizedDamage, Boolean(options.sourceSpell));
+        else if(target === player) normalizedDamage = styleDamageTaken(player, normalizedDamage);
     }
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
@@ -487,12 +499,12 @@ function getMissingManaColor(entity, spell){
     if(!entity || !entity.mana || !spell) return null;
 
     if(typeof spell.cost === 'number') {
-        return (entity.mana[spell.color] || 0) >= spell.cost ? null : spell.color;
+        return (entity.mana[spell.color] || 0) >= spellCostFor(entity, spell.cost) ? null : spell.color;
     }
 
     if(spell.cost && typeof spell.cost === 'object') {
         for(const [color, amount] of Object.entries(spell.cost)) {
-            if((entity.mana[color] || 0) < amount) return color;
+            if((entity.mana[color] || 0) < spellCostFor(entity, amount)) return color;
         }
     }
 
@@ -505,9 +517,9 @@ export function consumeSpellMana(entity, spell){
 
     const paid = {};
     if(typeof spell.cost === 'number') {
-        paid[spell.color] = spell.cost;
+        paid[spell.color] = spellCostFor(entity, spell.cost);
     } else if(spell.cost && typeof spell.cost === 'object') {
-        Object.assign(paid, spell.cost);
+        Object.entries(spell.cost).forEach(([color, amount]) => { paid[color] = spellCostFor(entity, amount); });
     }
     Object.entries(paid).forEach(([color, amount]) => {
         entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
@@ -1248,6 +1260,7 @@ export function loadGameData() {
             player.bonusTurn = normalizeBonusTurnValue(loaded.bonusTurn ?? player.bonusTurn);
             player.abilities = loaded.abilities ?? player.abilities;
             player.class = loaded.class ?? player.class;
+            player.playStyle = PLAY_STYLES[loaded.playStyle] ? loaded.playStyle : null;
             player.statusEffects = loaded.statusEffects ?? player.statusEffects;
             player.defense = loaded.defense ?? player.defense;
             player.inventory = loaded.inventory ?? player.inventory;
