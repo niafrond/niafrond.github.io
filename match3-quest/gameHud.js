@@ -1,5 +1,6 @@
 // Interface du combat : animation des barres de PV et des compteurs, portraits, mise à jour des stats et sorts ennemis, journal, sauvegarde.
 // Extrait de game.js.
+import { escapeHtml } from "./escapeHtml.js";
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from './sprites/index.js';
 import { hpBarTiming } from './combatFlow.js';
 import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
@@ -162,7 +163,7 @@ export function updateStats(){
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat row-name"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span>${bonusTurnBadge(player)}</div>
+            <div class="stat row-name"><span class="enemy-combat-name" title="${escapeHtml(player.name || 'Hou Yi')}">${emoji} ${escapeHtml((player.name || 'Hou Yi').split(' ')[0])}</span>${bonusTurnBadge(player)}</div>
             ${statusBadgesHtml(player)}
             <div class="stat row-hp">
                 <div class="hp-bar-container">

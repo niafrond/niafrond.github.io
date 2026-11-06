@@ -1,4 +1,5 @@
 // Sorts avancés multi-qì (balayage de lignes, couleur, pluie d étoiles, tempête, rage) et ultimes. Extrait de classSpellEffects.js.
+import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
@@ -248,7 +249,7 @@ export async function applySummonTempest(spell) {
 
     renderBoard();
     showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} qì récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
-    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${caster.name} récupère ${manaCollected.total} qì.`);
+    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
     return true;
 }
 

@@ -1,4 +1,5 @@
 // Sorts de classe : mage, ensorceleur et assassin (frappe, sphères, malédictions, glace, poison…). Extrait de classSpellEffects.js.
+import { escapeHtml } from "./escapeHtml.js";
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { colors, boardSize } from './constants.js';
@@ -104,7 +105,7 @@ export function applyDarkChannels(spell) {
                     // renderBoard applique la gravite (descente) puis genere les nouvelles tuiles.
                     renderBoard();
                     showCombatAnimation({ icon: 'swirl', title: "MÉRIDIENS OBSCURS", damage: `${count} gâteaux de lune détruits`, target: `+${manaCollected.total} qì récupéré` }, true);
-                    log(`Méridiens Obscurs détruit ${count} gâteaux de lune ${targetColor} et ${caster.name} récupère ${manaCollected.total} qì.`);
+                    log(`Méridiens Obscurs détruit ${count} gâteaux de lune ${targetColor} et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
                     saveUpdate();
                     checkMatches(true);
                     return;
@@ -246,7 +247,7 @@ export function applyChasm(spell) {
             setBoardTargetingMode(null);
             renderBoard();
             showCombatAnimation({ icon: 'fire', title: "FISSURE DU FLEUVE JAUNE", damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} qì récupéré` }, true);
-            log(`Abîme détruit une zone 5×5 et ${caster.name} récupère ${manaCollected.total} qì.`);
+            log(`Abîme détruit une zone 5×5 et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -283,7 +284,7 @@ export function applyFireballArea(spell) {
             const sphereDmg = lastSpellDamage(spell.dmg);
             renderBoard();
             showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${sphereDmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
-            log(`Sphère de Flammes détruit une zone 3×3, inflige ${sphereDmg} dégâts et fait récupérer ${manaCollected.total} qì à ${caster.name}.`);
+            log(`Sphère de Flammes détruit une zone 3×3, inflige ${sphereDmg} dégâts et fait récupérer ${manaCollected.total} qì à ${escapeHtml(caster.name)}.`);
             saveUpdate();
             checkMatches(true);
             return true;

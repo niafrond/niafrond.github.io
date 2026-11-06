@@ -1,5 +1,6 @@
 // Gestion des effets spéciaux des sorts de classe
 
+import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
 import { board, checkMatches } from "./board.js";
@@ -58,7 +59,7 @@ function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
     const skulls = destroyedTiles.reduce((n, t) => n + skullValue(t), 0);   // un crâne +5 vaut 5 crânes
     if(arrows > 0) {
         caster.combatPoints = (caster.combatPoints || 0) + arrows;
-        log(`+${arrows} point(s) de combat (flèches détruites) pour ${caster.name}.`);
+        log(`+${arrows} point(s) de combat (flèches détruites) pour ${escapeHtml(caster.name)}.`);
     }
     let skullDmg = 0;
     if(skulls > 0) {

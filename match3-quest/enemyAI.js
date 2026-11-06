@@ -2,6 +2,7 @@
 // Gère les décisions stratégiques et le comportement des ennemis en combat
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
+import { thinkingTimeFactor, pickWeightedOption } from "./enemyAIChoice.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
 
 // ========================================
@@ -396,20 +397,16 @@ export function evaluateBoardMove() {
 // DÉCISION PRINCIPALE DE L'IA
 // ========================================
 
-export function makeDecision() {
+export function makeDecision(rand = Math.random) {
     const difficulty = currentDifficulty;
     const context = analyzeBattleContext();
     
     // Temps de réflexion (réduit si l'ennemi a un niveau élevé)
     let thinkingTime = difficulty.thinkingTimeMin + 
-                        Math.random() * (difficulty.thinkingTimeMax - difficulty.thinkingTimeMin);
+                        rand() * (difficulty.thinkingTimeMax - difficulty.thinkingTimeMin);
     
     // Les ennemis de haut niveau réagissent plus vite
-    if (enemy.level >= 10) {
-        thinkingTime *= 0.7;
-    } else if (enemy.level >= 15) {
-        thinkingTime *= 0.5;
-    }
+    thinkingTime *= thinkingTimeFactor(enemy.level);
 
     // Évaluer toutes les options disponibles
     const spellEval = evaluateSpells();
@@ -448,45 +445,14 @@ export function makeDecision() {
     let isStupid = false;
 
     // Coup stupide : l'IA ignore la meilleure option et choisit au hasard
-    if (difficulty.stupidityChance > 0 && Math.random() < difficulty.stupidityChance) {
+    if (difficulty.stupidityChance > 0 && rand() < difficulty.stupidityChance) {
         isStupid = true;
-        chosenOption = options[Math.floor(Math.random() * options.length)];
-    } else if (difficulty.strategicThinking) {
-        // Mode stratégique: choisir la meilleure option avec un facteur de probabilité
-        options.sort((a, b) => b.score - a.score);
-        
-        // Appliquer les probabilités comme modificateurs
-        const rand = Math.random();
-        let cumulative = 0;
-        
-        for (const option of options) {
-            cumulative += option.probability;
-            if (rand <= cumulative) {
-                chosenOption = option;
-                break;
-            }
-        }
-        
-        // Si aucune option n'a été choisie (ne devrait pas arriver), prendre la meilleure
-        if (!chosenOption) {
-            chosenOption = options[0];
-        }
+        chosenOption = options[Math.floor(rand() * options.length)];
     } else {
-        // Mode aléatoire (facile): choisir selon les probabilités pures
-        const rand = Math.random();
-        let cumulative = 0;
-        
-        for (const option of options) {
-            cumulative += option.probability;
-            if (rand <= cumulative) {
-                chosenOption = option;
-                break;
-            }
-        }
-        
-        if (!chosenOption) {
-            chosenOption = options[options.length - 1];
-        }
+        // Mode stratégique : on teste d'abord les meilleures options. Mode facile : ordre d'origine.
+        if (difficulty.strategicThinking) options.sort((a, b) => b.score - a.score);
+        // Probabilités renormalisées sur les actions réellement disponibles (voir enemyAIChoice.js)
+        chosenOption = pickWeightedOption(options, rand);
     }
 
     return {

@@ -1,5 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
+import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
@@ -361,8 +362,8 @@ export function applyDamage(target, damage, options = {}){
         strike.damage = normalizedDamage;
         lastSpellStrike = strike;
         if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
-        if(strike.block === 'total') log(`${target.name} bloque entièrement ${options.sourceSpell.name}.`);
-        else if(strike.block === 'partial') log(`${target.name} pare ${options.sourceSpell.name}.`);
+        if(strike.block === 'total') log(`${escapeHtml(target.name)} bloque entièrement ${options.sourceSpell.name}.`);
+        else if(strike.block === 'partial') log(`${escapeHtml(target.name)} pare ${options.sourceSpell.name}.`);
     }
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
@@ -371,9 +372,9 @@ export function applyDamage(target, damage, options = {}){
     if(cheatOneShot && target === enemy && normalizedDamage > 0) normalizedDamage = Math.max(normalizedDamage, (enemy.hp || 0) + (enemy.shield || 0) + 1);
 
     if(affinityResult.affinityType === 'force' && affinityResult.delta > 0) {
-        log(`${target.name} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
+        log(`${escapeHtml(target.name)} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
     } else if(affinityResult.affinityType === 'faiblesse' && affinityResult.delta > 0) {
-        log(`${target.name} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
+        log(`${escapeHtml(target.name)} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
     }
 
     // Bouclier équipé : absorbe un total de dégâts par combat (`absorbDamage`).
@@ -519,7 +520,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
         addStatBuff(caster, buff);
         showCombatAnimation({ icon: buff.attack > 0 ? 'sword' : 'shield', title: spell.name, heal: describeStatBuff(buff), source: caster.name, target: `→ ${caster.name}` }, false);
-        log(`${caster.name} lance ${spell.name} : ${describeStatBuff(buff)}.`);
+        log(`${escapeHtml(caster.name)} lance ${spell.name} : ${describeStatBuff(buff)}.`);
         return;
     }
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
@@ -550,13 +551,13 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         } else {
             playSfx('spellHit', { isPlayer: false });
             showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
-            log(`${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
+            log(`${escapeHtml(caster.name)} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
 
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
         addBonusTurn(caster, 1);
-        log(`${spell.name} : ${caster.name} gagne un tour bonus !`);
+        log(`${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
     }
 
     if(spell.heal){
@@ -570,7 +571,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
             log(`${spell.name} soigne ${healAmount} HP.`);
         } else {
             showCombatAnimation({ icon: 'leaf', title: spell.name, heal: `+${healAmount} HP`, source: caster.name }, false);
-            log(`${caster.name} utilise ${spell.name} et soigne ${healAmount} HP.`);
+            log(`${escapeHtml(caster.name)} utilise ${spell.name} et soigne ${healAmount} HP.`);
         }
     }
 }

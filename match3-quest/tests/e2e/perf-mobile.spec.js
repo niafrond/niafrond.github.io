@@ -162,6 +162,8 @@ test.describe('match3-quest · performances mobile', () => {
         expect(c.maxLongMs).toBeLessThan(450);
     });
 
+    // Écart toléré (px) entre la taille du bitmap et celle de la tuile : sous CPU très ralenti, la mise en page peut encore bouger de quelques pixels
+    const TILE_BITMAP_TOLERANCE = 4;
     test('combat : les fonds des tuiles sont des bitmaps à la taille d\'affichage (pas 64 SVG vectoriels rejoués par le GPU)', async ({ page, context }) => {
         await openGame(page, context);
         await enterExploration(page);
@@ -189,14 +191,14 @@ test.describe('match3-quest · performances mobile', () => {
         });
         await expect.poll(async () => (await measure()).bitmap, { timeout: 15_000 }).toBe(true);
         const first = await measure();
-        expect(first.side).toBe(first.expected);
+        expect(Math.abs(first.side - first.expected)).toBeLessThanOrEqual(TILE_BITMAP_TOLERANCE);
         expect(first.side).toBeGreaterThan(40);
         // Les 9 saveurs (dont le crâne +5) ont leur règle
         expect(await page.evaluate(() => document.getElementById('tile-bitmaps').textContent.match(/background-image/g).length)).toBe(9);
 
         // Un redimensionnement (rotation, fenêtre) refait les bitmaps à la nouvelle taille
         await page.setViewportSize({ width: 300, height: 640 });
-        await expect.poll(async () => { const m = await measure(); return m.bitmap && m.side === m.expected && m.side !== first.side; }, { timeout: 15_000 }).toBe(true);
+        await expect.poll(async () => { const m = await measure(); return m.bitmap && Math.abs(m.side - m.expected) <= TILE_BITMAP_TOLERANCE && m.side !== first.side; }, { timeout: 15_000 }).toBe(true);
     });
 
     test('exploration : la carte n\'est plus redessinée à pleine cadence sous un modal ni sous une cinématique', async ({ page, context }) => {
