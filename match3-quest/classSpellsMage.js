@@ -1,7 +1,7 @@
 // Sorts de classe : mage, ensorceleur et assassin (frappe, sphères, malédictions, glace, poison…). Extrait de classSpellEffects.js.
 import { escapeHtml } from "./escapeHtml.js";
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage } from './game.js';
-import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
+import { board, renderBoard, setBoardTargetingMode, checkMatches, suppressMatchBonusTurnsUntilSettled } from './board.js';
 import { colors, boardSize } from './constants.js';
 import { JOKER_TILE, isTransformableToJoker } from './joker.js';
 
@@ -38,6 +38,7 @@ export function applyWildMana(spell) {
             showCombatAnimation({ icon: 'star', title: "QI SAUVAGE", damage: 'Joker créé !', target: '→ Plateau' }, true);
             log(`Qi Sauvage transforme la gemme choisie en joker !`);
             saveUpdate();
+            suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
             checkMatches(true);
             return true;
         }
@@ -107,6 +108,7 @@ export function applyDarkChannels(spell) {
                     showCombatAnimation({ icon: 'swirl', title: "MÉRIDIENS OBSCURS", damage: `${count} gâteaux de lune détruits`, target: `+${manaCollected.total} qì récupéré` }, true);
                     log(`Méridiens Obscurs détruit ${count} gâteaux de lune ${targetColor} et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
                     saveUpdate();
+                    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
                     checkMatches(true);
                     return;
                 }
@@ -213,6 +215,7 @@ export function applyFingerOfDeath(spell) {
             showCombatAnimation({ icon: 'skull', title: "DOIGT SOLAIRE", damage: `${created} crânes créés`, target: '→ Plateau' }, true);
             log(`Doigt Solaire crée ${created} crânes !`);
             saveUpdate();
+            suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
             checkMatches(true);
             return true;
         }
@@ -249,6 +252,7 @@ export function applyChasm(spell) {
             showCombatAnimation({ icon: 'fire', title: "FISSURE DU FLEUVE JAUNE", damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} qì récupéré` }, true);
             log(`Abîme détruit une zone 5×5 et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
             saveUpdate();
+            suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
             checkMatches(true);
             return true;
         }
@@ -286,6 +290,7 @@ export function applyFireballArea(spell) {
             showCombatAnimation({ icon: 'fire', title: "SPHÈRE DE FLAMMES", damage: `-${sphereDmg} dégâts`, target: `+${manaCollected.total} qì récupéré` }, true);
             log(`Sphère de Flammes détruit une zone 3×3, inflige ${sphereDmg} dégâts et fait récupérer ${manaCollected.total} qì à ${escapeHtml(caster.name)}.`);
             saveUpdate();
+            suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
             checkMatches(true);
             return true;
         }

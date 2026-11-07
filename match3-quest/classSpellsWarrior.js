@@ -2,7 +2,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyManaSteal, flyHeal } from './manaFlight.js';
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
-import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
+import { board, renderBoard, setBoardTargetingMode, checkMatches, suppressMatchBonusTurnsUntilSettled } from './board.js';
 import { stackStatusEffect, addStatBuff, describeStatBuff } from './combatStats.js';
 import { isJokerTile, skullValue } from './joker.js';
 import { collectDestroyedColorTilesMana, getCurrentCaster, getManaCap } from './classSpellEffects.js';
@@ -217,6 +217,7 @@ export function applyFocus(spell) {
             showCombatAnimation({ icon: 'sword', title: "CONCENTRATION DU QI", damage: 'Flèche créée', target: '→ Plateau' }, true);
             log(`Concentration du Qi transforme la gemme choisie en Action Gem.`);
             saveUpdate();
+            suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
             checkMatches(true);
             return true;
         }

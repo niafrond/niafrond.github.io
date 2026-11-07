@@ -3,7 +3,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain } from "./manaFlight.js";
 import { player, enemy, currentTurn, log, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
-import { board, checkMatches } from "./board.js";
+import { board, checkMatches, suppressMatchBonusTurnsUntilSettled } from "./board.js";
 import { colors } from "./constants.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { playSfx } from "./sound.js";
@@ -74,16 +74,10 @@ function collectDestroyedSpecialTiles(caster, destroyedTiles = []) {
         playSfx('skullHit', { matchType: 'skull', length: skulls, isPlayer: caster === player });
         if(skullDmg > 0) applyDamage(opponent, skullDmg);
         log(`${skulls} crâne(s) détruit(s) : -${skullDmg} PV pour ${opponent.name}.${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
-        // Comme un match de 4+ crânes : tour bonus, et XP des belles combinaisons pour le joueur.
-        if(skulls >= 4) {
-            addBonusTurn(caster);
-            playSfx('turnBonus');
-            log(`${skulls} crânes détruits : tour bonus gagné par ${caster === player ? 'le joueur' : "l'ennemi"}`);
-            showCombatAnimation({ icon: 'gift', title: 'TOUR BONUS !', damage: `${skulls} crânes détruits`, target: caster === player ? 'Vous rejouez !' : "L'ennemi rejoue !" }, caster === player);
-            if(caster === player) {
-                const bonusXp = grantBigMatchXP(skulls);
-                if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
-            }
+        // XP des belles combinaisons (4+ crânes) pour le joueur ; pas de tour bonus : un sort de plateau n'en donne jamais.
+        if(skulls >= 4 && caster === player) {
+            const bonusXp = grantBigMatchXP(skulls);
+            if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
         }
     }
     return { arrows, skulls, skullDmg };
@@ -96,11 +90,11 @@ export function snapshotBoard() {
 
 // Fin du tour après un sort de classe qui a réussi. Si le sort a modifié le plateau (cases détruites ou transformées, avec
 // régénération partielle ou complète), on NE passe PAS la main tout de suite : on attend la fin de la régénération, puis les
-// combinaisons déclenchées par la chute se résolvent encore pendant le tour de celui qui a lancé le sort (qì, dégâts, tours
-// bonus lui reviennent). `checkMatches` termine le tour du joueur quand plus rien ne bouge.
+// combinaisons déclenchées par la chute se résolvent encore pendant le tour de celui qui a lancé le sort (qì, dégâts ; pas de tours
+// bonus : voir suppressMatchBonusTurnsUntilSettled). `checkMatches` termine le tour du joueur quand plus rien ne bouge.
 export function endPlayerSpellTurn(before) {
     const changed = Array.isArray(before) && board.some((tile, i) => tile !== before[i]);
-    if(changed) checkMatches(true);
+    if(changed) { suppressMatchBonusTurnsUntilSettled(); checkMatches(true); }
     else finishPlayerTurn();
 }
 

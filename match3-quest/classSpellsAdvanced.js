@@ -123,6 +123,7 @@ export function applySweepLines(spell, shape) {
             previewIndices(spell, indices).then(() => {
                 destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : shape === 'col' ? 'Colonne détruite' : 'Ligne détruite');
                 saveUpdate();
+                suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
                 checkMatches(true);
             });
             return true;
@@ -144,6 +145,7 @@ export async function applyClearColor(spell) {
     await previewIndices(spell, indices);
     destroyIndices(spell, indices, spell.name.toUpperCase(), `${indices.length} gemmes détruites`);
     saveUpdate();
+    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
     checkMatches(true);
     return false;
 }
@@ -203,6 +205,7 @@ export async function applyStarRain(spell) {
     await previewIndices(spell, indices);
     destroyIndices(spell, indices, spell.name.toUpperCase(), `${rows} lignes et ${cols} colonnes détruites`);
     saveUpdate();
+    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
     checkMatches(true);
     return false;
 }
