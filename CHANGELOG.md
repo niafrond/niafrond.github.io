@@ -1,3 +1,15 @@
+## [2.204.0](https://github.com/niafrond/niafrond.github.io/compare/v2.203.0...v2.204.0) (2026-11-07)
+
+### Features
+
+* **stats:** mesure d'audience maison et déploiement de match3-quest sur houyi.fontaine.one ([#666](https://github.com/niafrond/niafrond.github.io/issues/666)) ([d631b6d](https://github.com/niafrond/niafrond.github.io/commit/d631b6d3d1f4024db3dc5781709ca1972796e97b))
+
+## [2.203.0](https://github.com/niafrond/niafrond.github.io/compare/v2.202.0...v2.203.0) (2026-11-07)
+
+### Features
+
+* **match3-quest:** prégénérer plateaux et tuiles du tutoriel, sans aucun hasard ([#665](https://github.com/niafrond/niafrond.github.io/issues/665)) ([e8fd27c](https://github.com/niafrond/niafrond.github.io/commit/e8fd27cbab5ca3e1046054ef83a54fb5b450e653))
+
 ## [2.202.0](https://github.com/niafrond/niafrond.github.io/compare/v2.201.0...v2.202.0) (2026-11-07)
 
 ### Features

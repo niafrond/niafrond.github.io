@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Fréquentation fontaine.one</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<style>
+/* Mise en page : une colonne étroite d'instrument de mesure : chiffres clés, courbe journalière, puis trois listes classées. */
+:root {
+  --bg: #f4f6f4; --surface: #ffffff; --fg: #17211d; --muted: #5d6b64; --line: #dde4df;
+  --accent: #0b7a64; --accent-soft: #d3ece4; --accent-fg: #ffffff;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101714; --surface: #18221e; --fg: #e6eee9; --muted: #92a39a; --line: #2b3832;
+    --accent: #4fc3a6; --accent-soft: #1f3a33; --accent-fg: #0b1713; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101714; --surface: #18221e; --fg: #e6eee9; --muted: #92a39a; --line: #2b3832;
+  --accent: #4fc3a6; --accent-soft: #1f3a33; --accent-fg: #0b1713; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font-body); margin: 0;
+  padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 820px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+h1 { font: 600 clamp(26px, 5vw, 34px)/1.1 var(--font-display); margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 0; font-size: 13px; }
+.ranges { display: flex; gap: 6px; }
+.ranges button { font: 500 13px var(--font-data); padding: 7px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; cursor: pointer; }
+.ranges button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.notice { background: var(--accent-soft); border-radius: 6px; padding: 10px 14px; font-size: 13px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0; }
+.kpis div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.kpis dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.kpis dd { margin: 4px 0 0; font: 500 28px/1.1 var(--font-data); font-variant-numeric: tabular-nums; }
+section { min-width: 0; }
+h2 small { font-weight: 400; text-transform: none; letter-spacing: 0; }
+h2 { font: 600 13px var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 8px 4px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { fill: var(--muted); font: 11px var(--font-data); }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .bar { fill: var(--accent); }
+.chart .bar.today { fill: var(--accent); opacity: .55; }
+.lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+li { position: relative; display: flex; justify-content: space-between; gap: 12px; padding: 7px 10px; border-radius: 5px; background: linear-gradient(90deg, var(--accent-soft) var(--w, 0%), transparent var(--w, 0%)); min-width: 0; }
+li span:first-child { overflow-wrap: anywhere; min-width: 0; }
+li span:last-child { font: 500 13px var(--font-data); font-variant-numeric: tabular-nums; }
+.login { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 24px; display: grid; gap: 14px; justify-items: start; }
+.login p { margin: 0; max-width: 52ch; }
+.btn { font: 500 14px var(--font-body); padding: 9px 16px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-fg); cursor: pointer; }
+.btn.quiet { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 12px; font-size: 13px; }
+.who { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.empty { color: var(--muted); font-size: 13px; padding: 7px 10px; }
+footer { color: var(--muted); font-size: 12px; max-width: 62ch; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Fréquentation</h1>
+      <p class="sub">Visites et pages vues sur les sites de fontaine.one, sans cookie ni identifiant.</p>
+    </div>
+    <div id="who" class="who" hidden><span id="who-mail"></span><button type="button" class="btn quiet" id="logout">Se déconnecter</button></div>
+    <div class="ranges" role="group" aria-label="Période">
+      <button type="button" data-days="7" aria-pressed="false">7 jours</button>
+      <button type="button" data-days="30" aria-pressed="true">30 jours</button>
+      <button type="button" data-days="90" aria-pressed="false">90 jours</button>
+    </div>
+  </header>
+  <div id="notice" class="notice" hidden></div>
+  <div id="login" class="login" hidden>
+    <p id="login-msg">Ce tableau de bord est privé. Connecte-toi avec ton compte Google pour voir la fréquentation.</p>
+    <button type="button" class="btn" id="login-btn">Se connecter avec Google</button>
+  </div>
+  <div id="board" hidden>
+  <dl class="kpis">
+    <div><dt>Visites</dt><dd id="k-visits">–</dd></div>
+    <div><dt>Pages vues</dt><dd id="k-total">–</dd></div>
+    <div><dt>Moyenne / jour</dt><dd id="k-avg">–</dd></div>
+    <div><dt>Meilleur jour</dt><dd id="k-best">–</dd></div>
+  </dl>
+  <section aria-labelledby="h-days"><h2 id="h-days">Pages vues par jour</h2><div class="chart" id="chart"></div></section>
+  <section aria-labelledby="h-hours"><h2 id="h-hours">Visites par heure <small>(heure locale)</small></h2><div class="chart" id="chart-hours"></div></section>
+  <div class="lists">
+    <section aria-labelledby="h-pages"><h2 id="h-pages">Pages</h2><ol id="l-pages"></ol></section>
+    <section aria-labelledby="h-hosts"><h2 id="h-hosts">Sites</h2><ol id="l-hosts"></ol></section>
+    <section aria-labelledby="h-src"><h2 id="h-src">Sources du trafic</h2><ol id="l-src"></ol></section>
+    <section aria-labelledby="h-refs"><h2 id="h-refs">Sites d'origine</h2><ol id="l-refs"></ol></section>
+    <section aria-labelledby="h-geo"><h2 id="h-geo">Pays <small>(d'après le fuseau horaire)</small></h2><ol id="l-geo"></ol></section>
+    <section aria-labelledby="h-br"><h2 id="h-br">Navigateurs</h2><ol id="l-br"></ol></section>
+    <section aria-labelledby="h-os"><h2 id="h-os">Systèmes</h2><ol id="l-os"></ol></section>
+    <section aria-labelledby="h-lang"><h2 id="h-lang">Langues</h2><ol id="l-lang"></ol></section>
+    <section aria-labelledby="h-w"><h2 id="h-w">Largeur d'écran</h2><ol id="l-w"></ol></section>
+    <section aria-labelledby="h-st"><h2 id="h-st">Codes HTTP <small>(de la page)</small></h2><ol id="l-st"></ol></section>
+    <section aria-labelledby="h-tt"><h2 id="h-tt">Temps de réponse</h2><ol id="l-tt"></ol></section>
+    <section aria-labelledby="h-peaks"><h2 id="h-peaks">Pics : pages vues par minute</h2><ol id="l-peaks"></ol></section>
+  </div>
+  </div>
+  <footer>Chaque page vue ajoute 1 à un compteur du jour et de la minute ; chaque arrivée sur le site ajoute 1 à des compteurs séparés : site d'origine, heure, navigateur et système (familles seulement), langue, fuseau horaire (qui sert à estimer le pays, sans adresse IP), largeur d'écran par tranche, temps de réponse par tranche et code HTTP de la page. Aucune combinaison de ces valeurs n'est conservée, et il n'y a ni cookie, ni identifiant, ni adresse IP. Le signal « Ne pas suivre » est respecté.</footer>
+</main>
+<script>
+(function () {
+  'use strict';
+  var P = 'fontaine-stats-one', K = 'AIzaSyAoHiXfQqqVykyK7ESnfYAShnNE9mbWydk';
+  var BASE = 'https://firestore.googleapis.com/v1/projects/' + P + '/databases/(default)/documents:runQuery?key=' + K;
+  var $ = function (id) { return document.getElementById(id); };
+  var nf = new Intl.NumberFormat('fr-FR');
+  var days = 30, cache = null, token = null, auth = null;
+  var AUTH = { apiKey: K, authDomain: P + '.firebaseapp.com', projectId: P };
+
+  function dayNum(d) { return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); }
+  function dayDate(n) { return new Date(Date.UTC(Math.floor(n / 10000), Math.floor(n / 100) % 100 - 1, n % 100)); }
+  function shortDate(n) { return dayDate(n).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+
+  function query(coll, from) {
+    return fetch(BASE, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ structuredQuery: { from: [{ collectionId: coll }], limit: 20000,
+        where: { fieldFilter: { field: { fieldPath: 'day' }, op: 'GREATER_THAN_OR_EQUAL', value: { integerValue: String(from) } } } } })
+    }).then(function (r) { if (!r.ok) { var e = new Error(r.status); e.status = r.status; throw e; } return r.json(); }).then(function (rows) {
+      return rows.filter(function (r) { return r.document; }).map(function (r) {
+        var f = r.document.fields, o = {};
+        Object.keys(f).forEach(function (k) { o[k] = f[k].integerValue !== undefined ? +f[k].integerValue : f[k].stringValue; });
+        return o;
+      });
+    });
+  }
+
+  /* Données d'exemple, affichées seulement si la lecture échoue (hors ligne ou aperçu isolé). */
+  function demo(from) {
+    var views = [], refs = [], pages = [['niafrond.github.io', '/match3-quest/', 62], ['houyi.fontaine.one', '/match3-quest/', 48], ['niafrond.github.io', '/quiz/', 21], ['niafrond.github.io', '/pendu/', 14], ['niafrond.github.io', '/karaoke-playlist/', 9]];
+    var rs = [['google.com', 9], ['reddit.com', 6], ['t.co', 4], ['duckduckgo.com', 3]];
+    for (var n = 0; n < 90; n++) {
+      var d = dayNum(new Date(Date.now() - n * 864e5)); if (d < from) continue;
+      var wave = 0.6 + 0.4 * Math.sin(n / 4) + (n % 7 === 5 ? 0.5 : 0);
+      pages.forEach(function (p) { views.push({ day: d, host: p[0], path: p[1], views: Math.round(p[2] * wave / 6) }); });
+      rs.forEach(function (r) { refs.push({ day: d, host: 'niafrond.github.io', ref: r[0], views: Math.round(r[1] * wave / 5) }); });
+    }
+    for (var q = 0; q < 90; q++) { var d3 = dayNum(new Date(Date.now() - q * 864e5)); if (d3 >= from) refs.push({ day: d3, host: 'niafrond.github.io', ref: '(direct)', views: 3 + (q % 4) }); }
+    var dims = [], pick = [['browser', 'chrome', 9], ['browser', 'safari', 5], ['browser', 'firefox', 2], ['browser', 'edge', 2], ['os', 'windows', 7], ['os', 'android', 6], ['os', 'ios', 4], ['os', 'macos', 2], ['os', 'linux', 1], ['lang', 'fr', 15], ['lang', 'en', 3], ['tz', 'Europe/Paris', 14], ['tz', 'America/Montreal', 3], ['tz', 'Europe/Brussels', 2], ['width', 'xs', 8], ['width', 'md', 4], ['width', 'lg', 6], ['ttfb', 'lt100', 10], ['ttfb', 'lt300', 6], ['ttfb', 'lt1000', 2], ['status', '200', 17], ['status', '404', 1]];
+    for (var m = 0; m < 90; m++) {
+      var dd = dayNum(new Date(Date.now() - m * 864e5)); if (dd < from) continue;
+      pick.forEach(function (x) { dims.push({ day: dd, host: 'niafrond.github.io', dim: x[0], value: x[1], views: Math.max(1, Math.round(x[2] * (0.6 + 0.4 * Math.sin(m / 4)) / 3)) }); });
+      for (var hr = 7; hr < 24; hr++) dims.push({ day: dd, host: 'niafrond.github.io', dim: 'hour', value: (hr < 10 ? '0' : '') + hr, views: Math.max(1, Math.round((hr > 17 && hr < 23 ? 6 : 2) * (0.6 + 0.4 * Math.sin(m / 3)))) });
+      dims.push({ day: dd, host: 'niafrond.github.io', dim: 'minute', value: '1912', views: 4 + (m % 5) }, { day: dd, host: 'niafrond.github.io', dim: 'minute', value: '2105', views: 2 + (m % 3) });
+    }
+    return { views: views, refs: refs, dims: dims, demo: true };
+  }
+
+  function load() {
+    var from = dayNum(new Date(Date.now() - 89 * 864e5));
+    return Promise.all([query('views', from), query('refs', from), query('dims', from)]).then(function (r) { return { views: r[0], refs: r[1], dims: r[2] }; })
+      .catch(function (e) { if (e && e.status) throw e; return demo(from); });
+  }
+
+  function top(rows, keyOf, labelOf) {
+    var m = {};
+    rows.forEach(function (r) { var k = keyOf(r); m[k] = (m[k] || 0) + r.views; });
+    return Object.keys(m).map(function (k) { return { label: labelOf(k), n: m[k] }; }).sort(function (a, b) { return b.n - a.n; });
+  }
+  function fillList(id, items, max) {
+    var ol = $(id); ol.textContent = '';
+    if (!items.length) { var e = document.createElement('li'); e.className = 'empty'; e.textContent = 'Aucune donnée sur la période.'; ol.appendChild(e); return; }
+    var peak = Math.max.apply(null, items.map(function (i) { return i.n; }));
+    items.slice(0, max).forEach(function (it) {
+      var li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('span');
+      li.style.setProperty('--w', Math.max(4, Math.round(100 * it.n / peak)) + '%');
+      a.textContent = it.label; b.textContent = nf.format(it.n);
+      li.appendChild(a); li.appendChild(b); ol.appendChild(li);
+    });
+  }
+
+  var SEARCH = /(^|\.)(google|bing|duckduckgo|qwant|ecosia|yahoo|brave|startpage|yandex|baidu|ask)\./i;
+  var SOCIAL = /(^|\.)(facebook|instagram|twitter|x|t|reddit|linkedin|youtube|tiktok|pinterest|discord|whatsapp|snapchat|bsky|mastodon)\.(com|co|app|social)$|^(t\.co|lnkd\.in|youtu\.be|fb\.me|l\.facebook\.com)$/i;
+  function sourceOf(ref) { return ref === '(direct)' ? 'Direct' : SEARCH.test(ref) ? 'Moteurs de recherche' : SOCIAL.test(ref) ? 'Réseaux sociaux' : 'Autres sites'; }
+  var COUNTRY = { 'Europe/Paris': 'France', 'Europe/Brussels': 'Belgique', 'Europe/Zurich': 'Suisse', 'Europe/Luxembourg': 'Luxembourg', 'Europe/London': 'Royaume-Uni', 'Europe/Dublin': 'Irlande', 'Europe/Madrid': 'Espagne', 'Europe/Lisbon': 'Portugal', 'Europe/Rome': 'Italie', 'Europe/Berlin': 'Allemagne', 'Europe/Amsterdam': 'Pays-Bas', 'Europe/Vienna': 'Autriche', 'Europe/Warsaw': 'Pologne', 'Europe/Prague': 'Tchéquie', 'Europe/Stockholm': 'Suède', 'Europe/Oslo': 'Norvège', 'Europe/Copenhagen': 'Danemark', 'Europe/Helsinki': 'Finlande', 'Europe/Athens': 'Grèce', 'Europe/Bucharest': 'Roumanie', 'Europe/Kiev': 'Ukraine', 'Europe/Kyiv': 'Ukraine', 'Europe/Istanbul': 'Turquie', 'Europe/Moscow': 'Russie', 'Africa/Casablanca': 'Maroc', 'Africa/Algiers': 'Algérie', 'Africa/Tunis': 'Tunisie', 'Africa/Dakar': 'Sénégal', 'Africa/Abidjan': 'Côte d\u2019Ivoire', 'Africa/Cairo': 'Égypte', 'Africa/Lagos': 'Nigeria', 'Africa/Johannesburg': 'Afrique du Sud', 'America/Montreal': 'Canada', 'America/Toronto': 'Canada', 'America/Vancouver': 'Canada', 'America/Edmonton': 'Canada', 'America/Halifax': 'Canada', 'America/New_York': 'États-Unis', 'America/Chicago': 'États-Unis', 'America/Denver': 'États-Unis', 'America/Los_Angeles': 'États-Unis', 'America/Phoenix': 'États-Unis', 'America/Mexico_City': 'Mexique', 'America/Sao_Paulo': 'Brésil', 'America/Argentina/Buenos_Aires': 'Argentine', 'America/Bogota': 'Colombie', 'America/Santiago': 'Chili', 'America/Martinique': 'Martinique', 'America/Guadeloupe': 'Guadeloupe', 'America/Cayenne': 'Guyane', 'Indian/Reunion': 'La Réunion', 'Indian/Mayotte': 'Mayotte', 'Pacific/Noumea': 'Nouvelle-Calédonie', 'Pacific/Tahiti': 'Polynésie française', 'Asia/Tokyo': 'Japon', 'Asia/Seoul': 'Corée du Sud', 'Asia/Shanghai': 'Chine', 'Asia/Hong_Kong': 'Hong Kong', 'Asia/Taipei': 'Taïwan', 'Asia/Singapore': 'Singapour', 'Asia/Bangkok': 'Thaïlande', 'Asia/Ho_Chi_Minh': 'Vietnam', 'Asia/Kolkata': 'Inde', 'Asia/Calcutta': 'Inde', 'Asia/Dubai': 'Émirats arabes unis', 'Asia/Jakarta': 'Indonésie', 'Asia/Manila': 'Philippines', 'Australia/Sydney': 'Australie', 'Australia/Melbourne': 'Australie', 'Australia/Perth': 'Australie', 'Pacific/Auckland': 'Nouvelle-Zélande' };
+  var LABEL = {
+    browser: { chrome: 'Chrome', safari: 'Safari', firefox: 'Firefox', edge: 'Edge', opera: 'Opera', samsung: 'Samsung Internet', autre: 'Autre' },
+    os: { windows: 'Windows', macos: 'macOS', linux: 'Linux', android: 'Android', ios: 'iOS', chromeos: 'ChromeOS', autre: 'Autre' },
+    width: { xs: 'Moins de 480 px (téléphone)', sm: '480 à 767 px', md: '768 à 1 199 px (tablette)', lg: '1 200 à 1 919 px', xl: '1 920 px et plus' },
+    ttfb: { lt100: 'Moins de 100 ms', lt300: '100 à 299 ms', lt1000: '300 à 999 ms', gte1000: '1 s et plus' }
+  };
+  var ORDER = { width: ['xs', 'sm', 'md', 'lg', 'xl'], ttfb: ['lt100', 'lt300', 'lt1000', 'gte1000'] };
+  function dimList(rows, dim, label, max) {
+    var items = top(rows.filter(function (x) { return x.dim === dim; }), function (x) { return x.value; }, function (k) { return k; });
+    if (ORDER[dim]) items.sort(function (a, b) { return ORDER[dim].indexOf(a.label) - ORDER[dim].indexOf(b.label); });
+    items.forEach(function (it) { it.label = label(it.label); });
+    return { items: items, max: max };
+  }
+  function utcToLocalHour(hh) { var d = new Date(Date.UTC(2000, 0, 1, +hh)); return d.getHours(); }
+  function drawHours(rows) {
+    var by = [], i; for (i = 0; i < 24; i++) by[i] = 0;
+    rows.forEach(function (x) { if (x.dim === 'hour') by[utcToLocalHour(x.value)] += x.views; });
+    var W = 760, H = 180, L = 38, R = 8, T = 10, B = 24, max = niceMax(Math.max.apply(null, by)), iw = W - L - R, ih = H - T - B, bw = iw / 24;
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Visites par heure">';
+    [0, 0.5, 1].forEach(function (f) { var y = T + ih - f * ih; s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + nf.format(max * f) + '</text>'; });
+    by.forEach(function (n, k) { var h2 = n / max * ih; s += '<rect class="bar" x="' + (L + k * bw + bw * 0.14).toFixed(1) + '" y="' + (T + ih - h2).toFixed(1) + '" width="' + (bw * 0.72).toFixed(1) + '" height="' + h2.toFixed(1) + '" rx="1.5"><title>' + k + ' h : ' + nf.format(n) + '</title></rect>'; if (k % 3 === 0) s += '<text x="' + (L + k * bw + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + k + ' h</text>'; });
+    $('chart-hours').innerHTML = s + '</svg>';
+  }
+  function niceMax(v) { var p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))), s = [1, 2, 5, 10]; for (var i = 0; i < s.length; i++) if (v <= s[i] * p) return s[i] * p; return 10 * p; }
+
+  function drawChart(perDay, from, to) {
+    var series = [];
+    for (var t = dayDate(from).getTime(); t <= dayDate(to).getTime(); t += 864e5) series.push({ day: dayNum(new Date(t)), n: perDay[dayNum(new Date(t))] || 0 });
+    var W = 760, H = 220, L = 38, R = 8, T = 10, B = 24, max = niceMax(Math.max.apply(null, series.map(function (s) { return s.n; })));
+    var iw = W - L - R, ih = H - T - B, bw = iw / series.length, s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Pages vues par jour">';
+    [0, 0.5, 1].forEach(function (f) {
+      var y = T + ih - f * ih;
+      s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + nf.format(max * f) + '</text>';
+    });
+    series.forEach(function (p, i) {
+      var h = p.n / max * ih, x = L + i * bw + bw * 0.14;
+      s += '<rect class="bar' + (i === series.length - 1 ? ' today' : '') + '" x="' + x.toFixed(1) + '" y="' + (T + ih - h).toFixed(1) + '" width="' + (bw * 0.72).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="1.5"><title>' + shortDate(p.day) + ' : ' + nf.format(p.n) + '</title></rect>';
+    });
+    var step = Math.ceil(series.length / 6);
+    series.forEach(function (p, i) { if (i % step === 0) s += '<text x="' + (L + i * bw + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + shortDate(p.day) + '</text>'; });
+    $('chart').innerHTML = s + '</svg>';
+    return series;
+  }
+
+  function render() {
+    var to = dayNum(new Date()), from = dayNum(new Date(Date.now() - (days - 1) * 864e5));
+    var v = cache.views.filter(function (r) { return r.day >= from; }), r = cache.refs.filter(function (x) { return x.day >= from; });
+    var perDay = {}, total = 0;
+    v.forEach(function (x) { perDay[x.day] = (perDay[x.day] || 0) + x.views; total += x.views; });
+    var series = drawChart(perDay, from, to), best = series.reduce(function (a, b) { return b.n > a.n ? b : a; }, { n: 0 });
+    var pages = top(v, function (x) { return x.host + x.path; }, function (k) { return k; });
+    $('k-total').textContent = nf.format(total);
+    $('k-avg').textContent = nf.format(Math.round(total / days));
+    $('k-best').textContent = best.n ? nf.format(best.n) : '–';
+    fillList('l-pages', pages, 10);
+    fillList('l-hosts', top(v, function (x) { return x.host; }, function (k) { return k; }), 10);
+    var visits = 0; r.forEach(function (x) { visits += x.views; });
+    $('k-visits').textContent = nf.format(visits);
+    var dm = cache.dims.filter(function (x) { return x.day >= from; });
+    drawHours(dm);
+    [['l-br', 'browser', function (k) { return LABEL.browser[k] || k; }], ['l-os', 'os', function (k) { return LABEL.os[k] || k; }], ['l-lang', 'lang', function (k) { return k.toUpperCase(); }],
+     ['l-w', 'width', function (k) { return LABEL.width[k] || k; }], ['l-st', 'status', function (k) { return k; }], ['l-tt', 'ttfb', function (k) { return LABEL.ttfb[k] || k; }]].forEach(function (d) {
+      var r2 = dimList(dm, d[1], d[2], 8); fillList(d[0], r2.items, 8);
+    });
+    fillList('l-geo', top(dm.filter(function (x) { return x.dim === 'tz'; }), function (x) { return COUNTRY[x.value] || x.value.replace(/_/g, ' '); }, function (k) { return k; }), 10);
+    var mins = dm.filter(function (x) { return x.dim === 'minute'; }).map(function (x) { var t = new Date(Date.UTC(Math.floor(x.day / 10000), Math.floor(x.day / 100) % 100 - 1, x.day % 100, +x.value.slice(0, 2), +x.value.slice(2))); return { label: t.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }), n: x.views }; }).sort(function (a, b) { return b.n - a.n; });
+    fillList('l-peaks', mins, 5);
+    fillList('l-refs', top(r.filter(function (x) { return x.ref !== '(direct)'; }), function (x) { return x.ref; }, function (k) { return k; }), 10);
+    fillList('l-src', top(r, function (x) { return sourceOf(x.ref); }, function (k) { return k; }), 4);
+    var n = $('notice'); n.hidden = !cache.demo; if (cache.demo) n.textContent = 'Les statistiques en direct ne sont pas joignables : ces chiffres sont des exemples.';
+  }
+
+  document.querySelectorAll('.ranges button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      days = +b.dataset.days;
+      document.querySelectorAll('.ranges button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      if (cache) render();
+    });
+  });
+  function show(state, msg) {
+    $('login').hidden = state !== 'login'; $('board').hidden = state !== 'board'; $('who').hidden = !(state === 'board' || (auth && auth.currentUser));
+    $('login-btn').hidden = !!(auth && auth.currentUser);
+    if (msg) $('login-msg').textContent = msg;
+  }
+  function start(user) {
+    $('login').hidden = true; $('who-mail').textContent = user.email; $('who').hidden = false;   // connecté : plus d'invitation à se connecter
+    user.getIdToken().then(function (t) {
+      token = t; $('who-mail').textContent = user.email;
+      return load();
+    }).then(function (d) { cache = d; show('board'); render(); })
+      .catch(function (e) { if (e && e.status === 403) auth.signOut(); show('login', e && e.status === 403 ? 'Ce compte Google n\u2019est pas autorisé : accès refusé.' : 'Lecture impossible pour le moment. Réessaie dans un instant.'); });
+  }
+
+  if (typeof firebase === 'undefined') {   // SDK injoignable (aperçu isolé, hors ligne) : exemples
+    token = ''; cache = demo(dayNum(new Date(Date.now() - 89 * 864e5))); show('board'); render();
+  } else {
+    firebase.initializeApp(AUTH);
+    auth = firebase.auth();
+    $('login-btn').addEventListener('click', function () {
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function (e) {
+        show('login', e && e.code === 'auth/operation-not-allowed' ? 'La connexion Google n\u2019est pas encore activée sur le projet.' : 'Connexion impossible : ' + (e && e.code || 'erreur inconnue'));
+      });
+    });
+    $('logout').addEventListener('click', function () { auth.signOut(); });
+    auth.onAuthStateChanged(function (u) { if (u) start(u); else { token = null; show('login'); } });
+  }
+})();
+</script>
+</body>
+</html>
