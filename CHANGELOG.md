@@ -1,3 +1,9 @@
+## [2.200.0](https://github.com/niafrond/niafrond.github.io/compare/v2.199.0...v2.200.0) (2026-11-07)
+
+### Features
+
+* **match3-quest:** animer les cases des sorts de flèches d'action et rendre la faux lisible ([#661](https://github.com/niafrond/niafrond.github.io/issues/661)) ([c4d0ff2](https://github.com/niafrond/niafrond.github.io/commit/c4d0ff2b60755f4b8364f2c528f860921d5f2163))
+
 ## [2.199.0](https://github.com/niafrond/niafrond.github.io/compare/v2.198.1...v2.199.0) (2026-11-07)
 
 ### Features
