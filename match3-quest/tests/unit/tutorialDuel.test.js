@@ -22,7 +22,7 @@ describe('duel-tutoriel', () => {
         const src = read('tutorial.js');
         expect(src).not.toMatch(/ENEMY_SPELL_HP_BUFFER/);   // plus de réserve de 500 PV affichée : un plancher de PV protège l'adversaire
         expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 1/);
-        expect(src).toMatch(/onSpellCast = \(\) => \{\s*if \(_game\?\.enemy\) \{ _game\.enemy\.hp = ENEMY_FINISH_HP;/);
+        expect(src).toMatch(/onSpellCast = \(\) => \{[^}]*\n\s*if \(_game\?\.enemy\) \{ _game\.enemy\.hp = ENEMY_FINISH_HP;/);
     });
 
     test("seuls les échanges du joueur font avancer le tutoriel (pas ceux de l'adversaire)", () => {
@@ -32,7 +32,8 @@ describe('duel-tutoriel', () => {
     test('le tutoriel a sa propre répartition de tuiles neuves, retirée à la fin', () => {
         const tuto = read('tutorial.js');
         expect(tuto).toMatch(/tutorialCallbacks\.dropProbabilities = TUTORIAL_DROP_PROBABILITIES/);
-        expect(tuto.match(/tutorialCallbacks\.dropProbabilities = null/g)).toHaveLength(2);   // quitter + terminer
+        expect(tuto.match(/tutorialCallbacks\.dropProbabilities = null/g)).toHaveLength(1);   // _resetCallbacks (quitter + terminer)
+        expect(tuto.match(/_resetCallbacks\(\);/g)).toHaveLength(2);
         expect(read('board.js')).toMatch(/tutorialCallbacks\.dropProbabilities \|\| BOARD_DROP_PROBABILITIES/);
     });
 });

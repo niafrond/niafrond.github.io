@@ -101,6 +101,7 @@ export function finishPlayerTurn(){
         const remaining = normalizeBonusTurnValue(player.bonusTurn);
         log(`Tour bonus utilisé : pas d'attaque ennemie.${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
         saveUpdate();
+        tutorialCallbacks.onPlayerTurn?.('bonus');   // tutoriel scripté : le joueur rejoue
         return;
     }
     // Pouvoirs des autres compagnons (Zhi, Dawa, Yu, Leigong) : tirés une fois par tour, en fin de tour du joueur.
@@ -270,7 +271,7 @@ export function enemyTurn(){
     updateStats();
     
     // Utiliser la nouvelle IA pour prendre une décision
-    const decision = makeDecision();
+    const decision = tutorialCallbacks.enemyDecision?.() || makeDecision();   // tutoriel scripté : action imposée à l'adversaire
     
     // Log la décision pour debug
     logDecision(decision);
@@ -522,6 +523,7 @@ export function finishEnemyTurn(){
         saveUpdate();
         updateStats(); // Pour mettre à jour le liseré
         restartSuggestionTimer();
+        tutorialCallbacks.onPlayerTurn?.('turn');   // tutoriel scripté : début du tour du joueur
     }
 }
 
