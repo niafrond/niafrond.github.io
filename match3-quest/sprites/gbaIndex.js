@@ -127,7 +127,7 @@ export const GBA_FILES = {
     fengmeng_2: 'fengmeng_2.1b620d71.js',
     fengmeng_3a: 'fengmeng_3a.f74050ba.js',
     fengmeng_3b: 'fengmeng_3b.4d49930a.js',
-    fengxi: 'fengxi.f3d6c36f.js',
+    fengxi: 'fengxi.ddf9bb52.js',
     fennec_lili: 'fennec_lili.36b9ee7f.js',
     ferry_pei: 'ferry_pei.81641297.js',
     ferryman_gu: 'ferryman_gu.8d6dc1d5.js',
