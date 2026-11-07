@@ -204,7 +204,7 @@ export function createExplorationView(cfg) {
         get walk() { return walk; }, set walk(v) { walk = v; },
     };
     const { NPC_HOP_SPEED, afterDialogs, askMirror, changeStay, eventsSpoken, kindBadge, openHealFor, openHouseMirror, playLegendEnd, playNpcArrival, proposeTracking, startChangeEpisode } = createChangeFlow(env);
-    const { bestiaryPanel, showJournal } = createCarnet(env);
+    const { bestiaryPanel, bindBestiary, showJournal } = createCarnet(env);
     const { MARKER_COLOR, changeArena, closeJournal, closeMapOverlay, drawMarkerCompass, openMapOverlay, travelTo } = createMapOverlay(env);
     const { GROUND_MARGIN, getGroundLayer, getLiquidCells, npcMarkerCached, paintGroundCells, prebuildNeighborGround, tileFor } = createGroundLayer(env);
     const { draw } = createDraw(env);
@@ -1123,6 +1123,7 @@ export function createExplorationView(cfg) {
             await loadGbaSprites(entries.map(e => e.id)).catch(() => {});
             return bestiaryPanel();
         },
+        bindBestiary,
         getTravelList() { ensureSession(); return X.waypointList(session); },
         canFastTravel() { ensureSession(); return X.nearWaypoint(session); },
 

@@ -7,7 +7,9 @@ import { worldZones } from './worldMap.js';
 import { gbaSprite } from './sprites/index.js';
 import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
-import { bestiaryEntries, SOURCE_LABELS } from './bestiary.js';
+import { bestiaryEntries, SOURCE_LABELS, creaturePlaces, matchesBestiary } from './bestiary.js';
+import { SCREENS } from './story.js';
+import { MANA_COLORS, elementName } from './elements.js';
 
 export function createCarnet(env) {
     const { cfg } = env;
@@ -89,18 +91,46 @@ export function createCarnet(env) {
     }
 
     // Bestiaire (onglet dédié, voir bestiaryHtml) : créatures croisées en combat ou observées, avec force, faiblesse et notice mythologique (bestiary.js).
+    // Filtres (recherche, famille, résistance, faiblesse, zone, boss) : appliqués sur le DOM (attribut `hidden`) par bindBestiary, sans rendu complet.
+    const beastFilter = { q: '', family: '', resist: '', weak: '', zone: '', boss: false };
     function bestiaryPanel() {
         const { entries, known, total } = bestiaryEntries(enemyCatalogList(), env.session.data.bestiary);
         const head = `<p class="carnet-hint">${icon('book')} ${known}/${total} créatures connues. Combattez ou observez une créature (immobile près d'elle) pour l'inscrire.</p>`;
         if (entries.length === 0) return `${head}<p>Aucune créature dans le bestiaire pour l'instant.</p>`;
         const element = (color, label) => color ? `${manaIcon(color)} ${env.escapeHtml(label || color)}` : '?';
-        return `${head}<div class="carnet-bestiary">${entries.map(e => {
+        const places = creaturePlaces(SCREENS);
+        const esc = env.escapeHtml;
+        const opts = (list, cur) => list.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
+        const colors = MANA_COLORS.map(c => [c, elementName(c)]);
+        const families = [...new Set(entries.map(e => e.family))].sort((a, b) => a.localeCompare(b, 'fr')).map(f => [f, f]);
+        // zones des seules créatures connues, groupées par région
+        const zoneIds = new Set(entries.flatMap(e => [...(places.get(e.id)?.zones || [])]));
+        const byRegion = new Map();
+        [...zoneIds].filter(id => SCREENS[id]).forEach(id => {
+            const r = SCREENS[id].region || id;
+            (byRegion.get(r) || byRegion.set(r, []).get(r)).push(id);
+        });
+        const zoneOpts = [...byRegion.entries()].map(([r, ids]) => `<optgroup label="${esc(REGION_LABEL[r] || SCREENS[r]?.name || r)}">${opts(ids.sort((a, b) => SCREENS[a].name.localeCompare(SCREENS[b].name, 'fr')).map(id => [id, SCREENS[id].name]), beastFilter.zone)}</optgroup>`).join('');
+        const sel = (key, label, options, all) => `<label class="carnet-bf">${label}<select data-bf="${key}"><option value="">${all}</option>${options}</select></label>`;
+        const filters = `<div class="carnet-bfilters">
+            <input type="search" class="carnet-bsearch" data-bf="q" value="${esc(beastFilter.q)}" placeholder="Rechercher une créature…" autocomplete="off" aria-label="Rechercher dans le bestiaire">
+            ${sel('family', 'Famille', opts(families, beastFilter.family), 'Toutes')}
+            ${sel('resist', 'Résiste à', opts(colors, beastFilter.resist), 'Toutes')}
+            ${sel('weak', 'Faible à', opts(colors, beastFilter.weak), 'Toutes')}
+            ${sel('zone', 'Zone', zoneOpts, 'Toutes')}
+            <label class="carnet-bf carnet-bf-check"><input type="checkbox" data-bf="boss"${beastFilter.boss ? ' checked' : ''}> Boss seulement</label>
+            <button type="button" class="carnet-chip" data-bf-reset>Réinitialiser</button>
+        </div>
+        <p class="carnet-hint carnet-bcount" role="status" aria-live="polite"></p>`;
+        return `${head}${filters}<div class="carnet-bestiary">${entries.map(e => {
             const img = gbaSprite(e.id, 'front');
+            const pl = places.get(e.id);
+            const data = `data-name="${esc(`${e.name} ${e.title} ${e.race}`.toLowerCase())}" data-family="${esc(e.family)}" data-resist="${e.strongColor || ''}" data-weak="${e.weakColor || ''}" data-zones="${esc([...(pl?.zones || [])].join(' '))}" data-boss="${pl?.boss ? 1 : ''}"`;
             return `
-            <div class="carnet-beast">
+            <div class="carnet-beast" ${data}>
                 <div class="carnet-beast-head">
                     ${img ? `<img class="carnet-beast-sprite" alt="" loading="lazy" src="${img}">` : `<span class="carnet-beast-sprite">${icon('ghost')}</span>`}
-                    <div><b>${env.escapeHtml(e.name)}</b>${e.title ? ` <small>· ${env.escapeHtml(e.title)}</small>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
+                    <div><b>${env.escapeHtml(e.name)}</b>${pl?.boss ? ' <span class="carnet-beast-boss">Boss</span>' : ''}${e.title ? ` <small>· ${env.escapeHtml(e.title)}</small>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
                 </div>
                 <div class="carnet-beast-stats">
                     <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${env.escapeHtml(e.traits.join(', '))}` : ''}</span>
@@ -109,7 +139,52 @@ export function createCarnet(env) {
                 <p class="carnet-beast-lore">${icon('scroll')} ${env.escapeHtml(e.lore)}</p>
                 <div class="carnet-beast-source ${e.source}">${icon('book')} ${env.escapeHtml(SOURCE_LABELS[e.source] || e.source)}</div>
             </div>`;
-        }).join('')}</div>`;
+        }).join('')}</div>
+        <button type="button" class="carnet-totop" hidden aria-label="Retour en haut" title="Retour en haut">↑ Haut</button>`;
+    }
+
+    // Branche les filtres, le compteur de résultats et « Retour en haut » sur le panneau fraîchement inséré (appelé après chaque innerHTML).
+    let offBeastScroll = null;
+    function bindBestiary(pane) {
+        if (offBeastScroll) { offBeastScroll(); offBeastScroll = null; }
+        if (!pane) return;
+        const cards = [...pane.querySelectorAll('.carnet-beast')];
+        const count = pane.querySelector('.carnet-bcount');
+        const apply = () => {
+            let shown = 0;
+            cards.forEach(el => {
+                const d = el.dataset;
+                const ok = matchesBestiary({ name: d.name, family: d.family, resist: d.resist, weak: d.weak, zones: d.zones.split(' ').filter(Boolean), boss: Boolean(d.boss) }, beastFilter);
+                el.hidden = !ok;
+                if (ok) shown++;
+            });
+            if (count) count.textContent = shown === 0 ? 'Aucune créature ne correspond à ces filtres.' : `${shown} ${shown > 1 ? 'créatures affichées' : 'créature affichée'} sur ${cards.length}.`;
+        };
+        pane.querySelectorAll('[data-bf]').forEach(ctl => {
+            ctl.addEventListener(ctl.type === 'search' ? 'input' : 'change', () => {
+                const key = ctl.dataset.bf;
+                beastFilter[key] = ctl.type === 'checkbox' ? ctl.checked : ctl.value;
+                apply();
+            });
+        });
+        pane.querySelector('[data-bf-reset]')?.addEventListener('click', () => {
+            Object.assign(beastFilter, { q: '', family: '', resist: '', weak: '', zone: '', boss: false });
+            pane.querySelectorAll('select[data-bf]').forEach(el => { el.value = ''; });
+            pane.querySelectorAll('input[data-bf]').forEach(el => { if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
+            apply();
+        });
+        const top = pane.querySelector('.carnet-totop');
+        if (top) {
+            const sync = () => { top.hidden = (window.scrollY || document.documentElement.scrollTop || 0) < 300; };
+            top.addEventListener('click', () => {
+                (pane.closest('.tab-panel') || pane).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            window.addEventListener('scroll', sync, { passive: true });
+            offBeastScroll = () => window.removeEventListener('scroll', sync);
+            sync();
+        }
+        apply();
     }
 
     function renderCarnet() {
@@ -159,5 +234,5 @@ export function createCarnet(env) {
         renderCarnet();
     }
 
-    return { bestiaryPanel, showJournal };
+    return { bestiaryPanel, bindBestiary, showJournal };
 }

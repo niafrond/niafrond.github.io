@@ -610,7 +610,7 @@ function init() {
     document.addEventListener('bestiary-tab-open', async () => {
         const html = await exploration.bestiaryHtml();
         const pane = document.getElementById('bestiary-content');
-        if(pane && document.getElementById('tab-bestiary')?.classList.contains('active')) pane.innerHTML = html;
+        if(pane && document.getElementById('tab-bestiary')?.classList.contains('active')) { pane.innerHTML = html; exploration.bindBestiary(pane); }
     });
 
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
