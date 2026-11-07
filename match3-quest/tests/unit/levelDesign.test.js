@@ -4,7 +4,7 @@ import './fixtures/playerForge.js';   // installe le stub XHR avant le chargemen
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
 import { createSession, tryMove, ledgeAt, isTerrainBlocked } from '../../exploration.js';
-import { isDesignable, isPopulable, designLevel, MOTIFS, MIN_DETOUR, LEDGE_MIN, LEDGE_MAX, CACHES_PER_MAP, MIMICS_PER_MAP } from '../../world/levelDesign.js';
+import { isDesignable, isPopulable, isVillage, designLevel, MOTIFS, MIN_DETOUR, LEDGE_MIN, LEDGE_MAX, CACHES_PER_MAP, MIMICS_PER_MAP } from '../../world/levelDesign.js';
 import { toSet } from '../../world/expand.js';
 
 const key = (x, y) => `${x},${y}`;
@@ -180,10 +180,15 @@ describe('caches invisibles, aura et coffres mimiques', () => {
         expect(CACHES_PER_MAP).toBeGreaterThanOrEqual(8);
         expect(designed.map(s => [s.id, s.chests.filter(c => c.hidden).length]).filter(([, n]) => n < CACHES_PER_MAP)).toEqual([]);
     });
-    test('toute carte de plein air (village, hameau, sanctuaire, route, zone sauvage) a au moins 3 mimiques', () => {
+    test('aucun village ni hameau ne contient de mimique', () => {
+        const villages = populated.filter(isVillage);
+        expect(villages.length).toBeGreaterThan(10);
+        expect(villages.filter(s => (s.chests || []).some(c => c.mimic))).toEqual([]);
+    });
+    test('toute autre carte de plein air (sanctuaire, route, zone sauvage) a au moins 3 mimiques', () => {
         expect(MIMICS_PER_MAP).toBeGreaterThanOrEqual(3);
         expect(populated.length).toBeGreaterThan(designed.length);
-        expect(populated.map(s => [s.id, s.chests.filter(c => c.mimic).length]).filter(([, n]) => n < MIMICS_PER_MAP)).toEqual([]);
+        expect(populated.filter(s => !isVillage(s)).map(s => [s.id, s.chests.filter(c => c.mimic).length]).filter(([, n]) => n < MIMICS_PER_MAP)).toEqual([]);
     });
     test('les caches et mimiques ont des identifiants uniques et ne se superposent à rien', () => {
         populated.forEach(s => {
