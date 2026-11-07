@@ -162,6 +162,11 @@ export function rollCrit(entity, rng = Math.random, weakened = 0) {
 
 // 'none' | 'partial' | 'total'
 export function rollBlock(entity, rng = Math.random) {
+    if (entity?.tutorialBlock) {   // tutoriel scripté : blocage imposé une seule fois (le sort de Fengmeng est bloqué par Hou Yi)
+        const forced = entity.tutorialBlock;
+        entity.tutorialBlock = null;
+        return forced;
+    }
     if (entity?.isTutorialEnemy) return 'none';   // tutoriel : l'adversaire (Fengmeng, mannequin) ne bloque ni ne pare jamais
     if (!(rng() * 100 < blockChance(entity))) return 'none';
     return rng() < TOTAL_BLOCK_SHARE ? 'total' : 'partial';

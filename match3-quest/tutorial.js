@@ -23,13 +23,17 @@ export const tutorialCallbacks = {
     dropTile: null,        // (index, board, turn) → tuile | null : tuile neuve imposée à cet emplacement (board.js, remplissage et tirage)
     pickEnemyMove: null,   // (moves) → coup | null : coup de l'adversaire imposé (board.js, enemyMakeRandomMove)
     allowSpell: null,      // (spell) → bool : refuse tout sort autre que celui demandé (game.js, castSpell)
+    enemyDecision: null,   // () → décision | null : action imposée à l'adversaire à son tour (gameTurnFlow.js, enemyTurn)
+    onPlayerTurn: null,    // ('turn' | 'bonus') → void : le joueur (re)prend la main (gameTurnFlow.js, finishEnemyTurn / finishPlayerTurn)
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 8;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
-const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : un dernier coup suffit à conclure
+const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
+const COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
+const COLOR_FR = { red: 'rouges', blue: 'bleus', green: 'verts', yellow: 'jaunes', purple: 'violets' };
 const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les premiers coups ne l'achèvent pas
 
 // Répartition des tuiles neuves pendant le tutoriel (le reste = gâteaux de lune) : beaucoup de crânes et de qì,
@@ -80,22 +84,23 @@ function _formsLine(board, size, index, tile) {
         || same(at(r - 1, c), at(r - 2, c)) || same(at(r + 1, c), at(r + 2, c)) || same(at(r - 1, c), at(r + 1, c));
 }
 
-// Tuile neuve du tutoriel. Tour du joueur : la suite pré-générée. Tour de l'adversaire : une couleur neutre qui ne forme aucune
-// ligne (ni crâne, ni épée), pour qu'il n'enchaîne pas de tours bonus et ne puisse pas infliger de dégâts avec ce qui tombe.
+// Tuile neuve du tutoriel. Tour du joueur : la suite pré-générée. Tour de l'adversaire : une couleur neutre (ni crâne, ni épée).
+// Dans les deux cas elle ne forme aucune ligne avec les tuiles déjà posées : pas de cascade, donc pas de tour bonus ni de dégâts
+// imprévus qui feraient dérailler le scénario.
 export function _dropTile(index, board, turn) {
     const size = Math.round(Math.sqrt(board.length));
-    if (turn === 'enemy') {
-        const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
-        const start = (_dropCursor + index) % colors.length;
-        for (let k = 0; k < colors.length; k++) {
-            const tile = colors[(start + k) % colors.length];
-            if (!_formsLine(board, size, index, tile)) return tile;
-        }
-        return colors[start];
+    let tile = null;
+    if (turn !== 'enemy') {
+        tile = TUTORIAL_DROPS[_dropCursor % TUTORIAL_DROPS.length];
+        _dropCursor++;
+        if (!_formsLine(board, size, index, tile)) return tile;
     }
-    const tile = TUTORIAL_DROPS[_dropCursor % TUTORIAL_DROPS.length];
-    _dropCursor++;
-    return tile;
+    const start = (_dropCursor + index) % COLORS.length;
+    for (let k = 0; k < COLORS.length; k++) {
+        const color = COLORS[(start + k) % COLORS.length];
+        if (!_formsLine(board, size, index, color)) return color;
+    }
+    return tile && COLORS.includes(tile) ? tile : COLORS[start];
 }
 
 // Coup de l'adversaire : jamais de crâne (donc aucun dégât), jamais de match de 4+ (donc aucun tour bonus), le plus petit gain possible.
@@ -142,50 +147,85 @@ export const TUTORIAL_ENEMY = {
     dropProfile: { dropChance: 0, goldMult: 0, weaponChance: 0 },
 };
 
-// Définition des 5 étapes du tutoriel
+// ─── Scénario ──────────────────────────────────────────────────────────────
+// Le duel est écrit d'avance : Hou Yi (J1, le joueur) et Fengmeng (J2) enchaînent des coups prévus. C'est le joueur qui déclenche
+// ses propres actions (échange de tuiles, lancer de sort), mais seule l'action demandée est acceptée ; les coups de Fengmeng sont imposés.
+//   who   : 'player' | 'enemy'
+//   kind  : 'swap' (échange de tuiles) | 'spell' (lancer de sort)
+//   match : alignement attendu { type: 'color' | 'skull', len, side: 'me' | 'foe' (couleur du joueur ou de Fengmeng) }
 const STEPS = [
-    {
-        step: 1,
-        icon: 'refresh',
-        title: 'Déplacer une tuile',
-        desc: 'Bienvenue au duel d\'entraînement, archer ! Cliquez sur l\'une des deux <strong>tuiles en surbrillance</strong>, puis sur l\'autre pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus : seul ce mouvement est autorisé pour l\'instant.',
+    {   // J1 joue en premier : 3 gâteaux de sa couleur
+        who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me' }, icon: 'spark',
+        title: () => `Hou Yi joue en premier : 3 gâteaux ${COLOR_FR[_myColor]}`,
+        desc: () => `Vous jouez en premier ! Échangez les deux <strong>tuiles en surbrillance</strong> pour aligner <strong>3 gâteaux de lune ${COLOR_FR[_myColor]}</strong> : chaque gâteau aligné vous donne du qì ${icon('mana_' + _myColor)}.`,
+        done: 'Bravo ! Vous avez gagné du qì.',
     },
-    {
-        step: 2,
-        icon: 'skull',
-        title: 'Frapper les crânes',
-        desc: `Alignez <strong>3 crânes ${icon('skull')} ou plus</strong> pour infliger des dégâts à votre adversaire ! Faites <strong>l\'échange en surbrillance</strong> : il frappera des crânes.`,
+    {   // J2 : 3 gâteaux de sa couleur
+        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
+        title: () => `Au tour de Fengmeng : 3 gâteaux ${COLOR_FR[_foeColor]}`,
+        desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.`,
+        done: 'Fengmeng a gagné du qì.',
     },
-    {
-        step: 3,
-        icon: 'spark',
-        title: 'Générer du qì',
-        desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du qì. Faites <strong>l\'échange en surbrillance</strong> : le qì est nécessaire pour lancer des sorts puissants !',
+    {   // J1 : 3 crânes
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
+        title: () => 'Frappez avec 3 crânes',
+        desc: () => `Alignez <strong>3 crânes ${icon('skull')}</strong> pour blesser Fengmeng. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Fengmeng a encaissé vos crânes !',
     },
-    {
-        step: 4,
-        icon: 'mana_red',
-        title: 'Lancer un sort',
-        desc: 'Cliquez sur le bouton de votre sort en bas pour le lancer et infliger des dégâts à votre adversaire.',
+    {   // J2 : 3 crânes (le joueur subit des dégâts)
+        who: 'enemy', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
+        title: () => 'Fengmeng frappe à son tour',
+        desc: () => `Fengmeng aligne <strong>3 crânes ${icon('skull')}</strong> : vous <strong>subissez des dégâts</strong>. Surveillez vos PV !`,
+        done: 'Aïe ! Vous avez perdu des PV.',
     },
-    {
-        step: 5,
-        icon: 'bow',
-        title: 'Terminer le combat',
-        desc: `Il ne reste plus que quelques PV à votre adversaire : <strong>un dernier coup</strong> suffit pour remporter la victoire ! Frappez les crânes ${icon('skull')}, gagnez des flèches ${icon('arrow')}, alignez des gâteaux de lune et lancez vos sorts.`,
+    {   // J1 : 4 gâteaux (tour bonus)
+        who: 'player', kind: 'swap', match: { type: 'color', len: 4, side: 'me' }, icon: 'gift',
+        title: () => `Alignez 4 gâteaux ${COLOR_FR[_myColor]} : tour bonus`,
+        desc: () => `Un alignement de <strong>4 tuiles ou plus</strong> offre un <strong>tour bonus</strong> : vous rejouez tout de suite, sans que l'adversaire ne joue. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Tour bonus ! Vous rejouez tout de suite.',
+    },
+    {   // J1 : lance un sort
+        who: 'player', kind: 'spell', icon: 'bow',
+        title: () => 'Lancez votre sort',
+        desc: () => `Vous avez assez de qì ${icon('mana_' + (_tutoSpell?.color || _myColor))} ! Cliquez sur le bouton du sort <strong>« ${_tutoSpell?.name || 'sort'} »</strong> en bas pour le lancer. Les échanges de tuiles sont suspendus.`,
+        done: 'Votre flèche a atteint sa cible : Fengmeng n\'a plus que 10 PV !',
+    },
+    {   // J2 : lance un sort, J1 le bloque
+        who: 'enemy', kind: 'spell', icon: 'shield',
+        title: () => 'Fengmeng lance un sort… vous bloquez !',
+        desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
+        done: 'Blocage réussi : aucun dégât !',
+    },
+    {   // J1 : 3 crânes, Fengmeng perd
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'bow',
+        title: () => 'Terminez le combat : 3 crânes',
+        desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>3 crânes ${icon('skull')}</strong> pour remporter la victoire ! Faites <strong>l'échange en surbrillance</strong>.`,
+        done: '',
     },
 ];
 
+// Sort de Fengmeng (étape 7) : un petit sort de dégâts de sa couleur, que le joueur bloque.
+function _foeSpell() {
+    return { id: 'tutorial_foe_spell', name: 'Rafale de Fengmeng', color: _foeColor, type: 'damage', cost: 3, dmg: 6, minLevel: 1, description: 'Sort de tutoriel.' };
+}
+
 // ─── État interne ──────────────────────────────────────────────────────────
 let _active = false;
-let _step = 0;
+let _step = 0;                // 1..TOTAL_STEPS : étape du scénario en cours
 let _spellInjected = false;
-let _tutoSpell = null;       // sort offensif utilisé à l'étape 4 (sort du joueur, ou sort d'entraînement injecté)
+let _tutoSpell = null;       // sort offensif utilisé à l'étape 6 (sort du joueur, ou sort d'entraînement injecté)
+let _myColor = 'red';        // couleur des gâteaux du joueur (celle de son sort)
+let _foeColor = 'blue';      // couleur des gâteaux de Fengmeng
+let _target = null;          // { from, to } : échange attendu à l'étape en cours (joueur) ou joué par Fengmeng
+let _enemyActed = false;     // Fengmeng a déjà joué son coup prévu à ce tour (un éventuel tour bonus imprévu est libre)
+let _freeMove = false;       // tour bonus imprévu du joueur : un échange libre est accepté
 let _highlightedElements = [];
 let _highlightTimer = null;
 let _game = null;
 let _bm = null;
 let _mm = null;
+
+const _cur = () => STEPS[_step - 1] || null;
 
 // ─── API publique ──────────────────────────────────────────────────────────
 
@@ -260,8 +300,11 @@ export function startTutorial(opts = {}) {
     tutorialCallbacks.noSuggestions = true;
     tutorialCallbacks.enemyHpFloor = 1;   // l'adversaire ne meurt qu'à l'étape finale
     tutorialCallbacks.dropTile = _dropTile;
-    tutorialCallbacks.pickEnemyMove = _pickEnemyMove;
+    tutorialCallbacks.pickEnemyMove = _pickScriptedEnemyMove;
+    tutorialCallbacks.enemyDecision = _enemyDecision;
+    tutorialCallbacks.onPlayerTurn = _onPlayerTurn;
     _dropCursor = 0;
+    _target = null;
 
     _injectTutorialSpell().then(() => {
         _startTutorialCombat();
@@ -277,12 +320,7 @@ export function quitTutorial() {
     _cleanupHighlights();
     _hideOverlay();
     _clearHooks();
-    tutorialCallbacks.useDumbAI = false;
-    tutorialCallbacks.dropProbabilities = null;
-    tutorialCallbacks.noSuggestions = false;
-    tutorialCallbacks.enemyHpFloor = 0;
-    tutorialCallbacks.dropTile = null;
-    tutorialCallbacks.pickEnemyMove = null;
+    _resetCallbacks();
     _active = false;
     _step = 0;
     _removeTutorialSpell();
@@ -342,6 +380,9 @@ async function _injectTutorialSpell() {
         m.player.availableSpells = [TUTORIAL_SPELL, ...(m.player.availableSpells || []).filter(s => s.id !== TUTO_SPELL_ID)];
         m.player.activeSpells = [TUTORIAL_SPELL, ...(m.player.activeSpells || []).filter(s => s.id !== TUTO_SPELL_ID)].slice(0, 4);
     }
+    // Les gâteaux du joueur sont de la couleur de son sort (rouge pour le sort d'entraînement) ; Fengmeng prend une autre couleur.
+    _myColor = COLORS.includes(_tutoSpell.color) ? _tutoSpell.color : 'red';
+    _foeColor = _myColor === 'blue' ? 'green' : 'blue';
 }
 
 async function _removeTutorialSpell() {
@@ -359,30 +400,27 @@ async function _removeTutorialSpell() {
 function _startTutorialCombat() {
     Promise.all([import('./game.js'), import('./board.js'), import('./matchMechanics.js')]).then(([g, b, mm]) => {
         _game = g; _bm = b; _mm = mm;
-    }).then(() => import('./game.js')).then(gameModule => {
-        const { startNewCombat, updateStats, createSpellButtons, log } = gameModule;
+        const { startNewCombat, updateStats, createSpellButtons, log } = g;
 
-        // Démarrer le combat d'entraînement
+        // Démarrer le duel d'entraînement
         let enemy = TUTORIAL_ENEMY;
         if (_duelEnemy) {
             // Duel contre un vrai adversaire (Fengmeng) : on garde son identité mais on l'adoucit pour apprendre.
             enemy = Object.assign(_duelEnemy, {
                 hp: Math.min(_duelEnemy.hp, 40), maxHp: Math.min(_duelEnemy.maxHp, 40),
                 attack: Math.min(_duelEnemy.attack, 4), defense: 0,
-                spells: [], abilities: [], useDumbAI: true, isTutorialEnemy: true,
-                attributes: { ..._duelEnemy.attributes, agility: 0 }   // Fengmeng sans agilité pendant le tutoriel
+                spells: [], abilities: [], useDumbAI: true, isTutorialEnemy: true, duel: null,   // pas de pièges ni de tirs rapides
+                attributes: { ..._duelEnemy.attributes, agility: 0 }   // Fengmeng sans agilité : Hou Yi (J1) joue en premier
             });
             _duelEnemy = null;
         }
         startNewCombat(enemy);
 
-        import('./board.js').then(boardModule => {
-            boardModule.generateBoard();
-            boardModule.applyBoard(TUTORIAL_BOARD);
-            updateStats();
-            createSpellButtons();
-            log('Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
-        });
+        b.generateBoard();
+        b.applyBoard(TUTORIAL_BOARD);
+        updateStats();
+        createSpellButtons();
+        log('Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
 
         // Afficher les éléments de combat et basculer sur l'onglet combat
         document.querySelector('.stats-container').style.display = 'flex';
@@ -395,85 +433,192 @@ function _startTutorialCombat() {
         const firstTabBtn = document.querySelectorAll('.tab-btn')[0];
         if (firstTabBtn) firstTabBtn.classList.add('active');
 
-        // Afficher l'overlay et activer l'étape 1
+        // Afficher l'overlay et lancer le scénario : Hou Yi joue en premier
+        const total = document.getElementById('tutorial-step-total');
+        if (total) total.textContent = TOTAL_STEPS;
         _renderOverlay();
-        _activateStep(1);
+        _step = 1;
+        _enemyActed = false;
+        _freeMove = false;
+        _installHooks();
+        _beginPlayerStep();
     });
+}
+
+// ─── Coups prévus : repérage et mise en place ─────────────────────────────
+
+// Alignement attendu par une étape (la couleur dépend de qui joue).
+function _wanted(match) {
+    return { type: match.type, len: match.len, color: match.type === 'color' ? (match.side === 'foe' ? _foeColor : _myColor) : null };
+}
+
+// Échange du plateau qui produit exactement l'alignement demandé, ou null.
+export function _findScriptedMove(board, want, mm = _mm) {
+    if (!mm || !board || board.some(t => !t) || mm.collectMatches(board).length) return null;
+    for (const mv of mm.findPossibleMatches(board)) {
+        const test = [...board];
+        [test[mv.from], test[mv.to]] = [test[mv.to], test[mv.from]];
+        const found = mm.collectMatches(test);
+        const info = found.length === 1 ? found[0].info : null;
+        if (info && info.type === want.type && info.len === want.len && (want.type !== 'color' || info.color === want.color)) return { from: mv.from, to: mv.to };
+    }
+    return null;
+}
+
+// Écrit sur le plateau un échange qui produit exactement l'alignement demandé : T T _ T (4) ou T T _ (3) dans une rangée, la case
+// vide recevant, par l'échange avec la case du dessous, la tuile manquante. Renvoie { board, from, to } ou null.
+export function _plantMove(board, want, mm = _mm) {
+    const size = Math.round(Math.sqrt(board.length));
+    const tile = want.type === 'skull' ? 'skull' : want.color;
+    const fillers = COLORS.filter(c => c !== tile);
+    for (let r = 0; r < size - 1; r++) {
+        for (let c = 0; c + want.len - 1 < size; c++) {
+            const gap = c + 2;
+            for (const filler of fillers) {
+                const planted = [...board];
+                for (let k = 0; k < want.len; k++) planted[r * size + c + k] = tile;
+                planted[r * size + gap] = filler;
+                planted[(r + 1) * size + gap] = tile;
+                if (mm.collectMatches(planted).length) continue;
+                const from = r * size + gap, to = (r + 1) * size + gap;
+                const test = [...planted];
+                [test[from], test[to]] = [test[to], test[from]];
+                const found = mm.collectMatches(test);
+                const info = found.length === 1 ? found[0].info : null;
+                if (info && info.type === want.type && info.len === want.len && (want.type !== 'color' || info.color === want.color)) {
+                    return { board: planted, from, to };
+                }
+            }
+        }
+    }
+    return null;
+}
+
+// Trouve (ou prépare, en arrangeant le plateau) l'échange demandé par l'étape ; renvoie { from, to } ou null.
+function _prepareMove(step) {
+    const want = _wanted(step.match);
+    const board = _bm.board;
+    const found = _findScriptedMove(board, want);
+    if (found) return found;
+    const planted = _plantMove(board, want);
+    if (!planted) return null;
+    _bm.applyBoard(planted.board);
+    return { from: planted.from, to: planted.to };
 }
 
 // ─── Gestion des étapes ────────────────────────────────────────────────────
 
-function _activateStep(step) {
-    _step = step;
+// Début d'une étape du joueur : on prépare le plateau (ou le qì) et on affiche la consigne.
+function _beginPlayerStep() {
+    if (!_active || !_game) return;
+    const step = _cur();
+    if (!step || step.who !== 'player') return;
     _cleanupHighlights();
     _stopHighlightLoop();
-    _adjustEnemyHp(step);
-    _installHooks(step);
+    _enemyActed = false;
+    _game.player.tutorialBlock = null;
+    _installHooks();
+    _adjustEnemyHp();
+    _target = null;
+    _updateOverlay(_step);
 
-    if (step === 4) {
+    if (step.kind === 'swap') {
+        _target = _prepareMove(step);
+        _startHighlightLoop();
+    } else if (_tutoSpell) {
         // Le joueur doit avoir assez de qì pour lancer le sort demandé
         const spell = _tutoSpell;
-        let extra = '';
-        if (spell) {
-            const m = _game;
-            if ((m.player.mana[spell.color] || 0) < spell.cost) {
-                m.player.mana[spell.color] = spell.cost;
-                m.updateStats();
-                m.log(`Tutoriel : le qì ${spell.color} nécessaire pour lancer ${spell.name} vous est offert !`);
-            }
-            m.createSpellButtons(); // Mettre à jour l'affichage (bouton actif)
-            extra = `Vous avez du qì ${icon('mana_' + spell.color)} ! Cliquez sur le bouton du sort <strong>"${spell.name}"</strong> en bas pour le lancer et infliger des dégâts à votre adversaire. Les échanges de tuiles sont suspendus.`;
+        if ((_game.player.mana[spell.color] || 0) < spell.cost) {
+            _game.player.mana[spell.color] = spell.cost;
+            _game.updateStats();
+            _game.log(`Tutoriel : le qì ${spell.color} nécessaire pour lancer ${spell.name} vous est offert !`);
         }
-        _updateOverlay(step, extra);
-        setTimeout(() => _highlightSpellButtons(), 400);
-    } else {
-        _updateOverlay(step);
-        _startHighlightLoop();
+        _game.createSpellButtons();   // met à jour l'affichage (bouton actif)
+        setTimeout(() => { if (_active && _cur() === step) _highlightSpellButtons(); }, 400);
     }
 }
 
+// Action imposée à Fengmeng à son tour (appelée par enemyTurn, à la place de la décision de l'IA).
+function _enemyDecision() {
+    const step = _cur();
+    const idle = { action: 'board', data: {}, thinkingTime: 700, reason: 'hésite', isStupid: false, randomBoardMove: true };
+    if (!_active || !_game || !step || step.who !== 'enemy' || _enemyActed) return _active ? idle : null;
+    _enemyActed = true;
+    _cleanupHighlights();
+    _stopHighlightLoop();
+    _updateOverlay(_step);
+
+    if (step.kind === 'spell') {
+        const spell = _foeSpell();
+        const foe = _game.enemy;
+        foe.spells = [spell];
+        if ((foe.mana[spell.color] || 0) < spell.cost) foe.mana[spell.color] = spell.cost;   // il a de quoi lancer son sort
+        _game.player.tutorialBlock = 'total';                                                 // Hou Yi bloque le coup (consommé par le tirage)
+        _game.updateStats();
+        return { action: 'spell', data: { spell, score: 100 }, thinkingTime: 900, reason: 'sort du tutoriel', isStupid: false };
+    }
+    _target = _prepareMove(step);
+    return { ...idle, thinkingTime: 900, reason: 'coup prévu' };
+}
+
+// Coup de Fengmeng : l'échange prévu s'il existe, sinon le moins dangereux (jamais de crâne ni de tour bonus).
+function _pickScriptedEnemyMove(moves) {
+    if (_active && _cur()?.who === 'enemy' && _target) {
+        const planned = moves.find(m => m.from === _target.from && m.to === _target.to) || moves.find(m => m.from === _target.to && m.to === _target.from);
+        if (planned) return planned;
+    }
+    return _pickEnemyMove(moves);
+}
+
+// Le joueur reprend la main : fin de l'étape de Fengmeng (tour normal) ou nouvelle action du joueur (tour bonus).
+function _onPlayerTurn(reason) {
+    if (!_active || !_game) return;
+    _enemyActed = false;
+    _game.player.tutorialBlock = null;
+    const step = _cur();
+    if (!step) return;
+    if (step.who === 'enemy') {
+        if (reason === 'bonus') {   // tour bonus imprévu (cascade) : le joueur rejoue librement, le scénario reprend ensuite
+            _freeMove = true;
+            _game.log('Tour bonus : rejouez librement.');
+            return;
+        }
+        _step++;                    // l'étape de Fengmeng est terminée
+        if (step.done) _showFeedbackBanner(step.done, null);
+    }
+    _beginPlayerStep();
+}
+
+// L'action demandée au joueur est faite : on passe à l'étape suivante (Fengmeng joue, ou le joueur enchaîne).
+function _completePlayerStep() {
+    if (!_active) return;
+    const step = _cur();
+    _cleanupHighlights();
+    _stopHighlightLoop();
+    _target = null;
+    if (_step >= TOTAL_STEPS) return;   // dernier coup : la victoire termine le tutoriel (onEnemyDefeated)
+    _step++;
+    if (step?.done) _showFeedbackBanner(step.done, null);
+    _updateOverlay(_step);
+}
+
 /**
- * Règle les PV de l'adversaire pour qu'il tienne juste assez longtemps : assez pour encaisser les premiers coups,
- * puis, à l'étape du sort, exactement les dégâts du sort + ENEMY_FINISH_HP (le dernier coup l'achève).
+ * Règle les PV de Fengmeng pour que le scénario tienne : assez pour encaisser les premiers coups, 10 PV après le sort, et le
+ * dernier coup (3 crânes) l'achève.
  */
-function _adjustEnemyHp(step) {
-    const m = _game;
-    const foe = m?.enemy;
+function _adjustEnemyHp() {
+    const foe = _game?.enemy;
     if (!foe) return;
-    if (step === 2 || step === 3) {
+    if (_step === 3 || _step === 6) {
         foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
-    } else if (step === 4 && _tutoSpell) {
-        // Les dégâts réels du sort dépassent son `dmg` de base (attributs, arme…) : le plancher de PV (enemyHpFloor = 1) l'empêche de
-        // conclure le duel à lui seul, sans gonfler les PV affichés ; les PV passent à ENEMY_FINISH_HP juste après le lancer (hook onSpellCast).
-        foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
-        foe.maxHp = Math.max(foe.maxHp, foe.hp);
-    } else if (step === 5) {
+    } else if (_step === TOTAL_STEPS) {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
         tutorialCallbacks.enemyHpFloor = 0;   // dernier coup : il peut mourir
     } else {
         return;
     }
-    m.updateStats();
-}
-
-function _advanceStep() {
-    if (!_active) return;
-    _cleanupHighlights();
-    _clearHooks();
-
-    const completedStep = _step;
-
-    if (completedStep >= TOTAL_STEPS) {
-        _completeTutorial();
-        return;
-    }
-
-    // Afficher un message de réussite, puis passer à l'étape suivante
-    const msg = _feedbackMessages[completedStep] || 'Étape réussie !';
-    _showFeedbackBanner(msg, () => {
-        if (_active) _activateStep(completedStep + 1);
-    });
+    _game.updateStats();
 }
 
 function _completeTutorial() {
@@ -481,12 +626,7 @@ function _completeTutorial() {
     _clearHooks();
     _cleanupHighlights();
     _hideOverlay();
-    tutorialCallbacks.useDumbAI = false;
-    tutorialCallbacks.dropProbabilities = null;
-    tutorialCallbacks.noSuggestions = false;
-    tutorialCallbacks.enemyHpFloor = 0;
-    tutorialCallbacks.dropTile = null;
-    tutorialCallbacks.pickEnemyMove = null;
+    _resetCallbacks();
     const wasActive = _active;
     _active = false;
     _step = 0;
@@ -504,49 +644,49 @@ function _completeTutorial() {
     }
 }
 
-const _feedbackMessages = {
-    1: 'Bravo ! Vous avez échangé deux tuiles !',
-    2: 'Excellent ! Les crânes encaissent vos coups !',
-    3: 'Parfait ! Les gâteaux de lune vous ont donné du qì !',
-    4: 'Super ! Votre flèche a atteint sa cible !',
-};
+function _resetCallbacks() {
+    tutorialCallbacks.useDumbAI = false;
+    tutorialCallbacks.dropProbabilities = null;
+    tutorialCallbacks.noSuggestions = false;
+    tutorialCallbacks.enemyHpFloor = 0;
+    tutorialCallbacks.dropTile = null;
+    tutorialCallbacks.pickEnemyMove = null;
+    tutorialCallbacks.enemyDecision = null;
+    tutorialCallbacks.onPlayerTurn = null;
+    if (_game?.player) _game.player.tutorialBlock = null;
+}
 
-// ─── Hooks par étape ──────────────────────────────────────────────────────
+// ─── Hooks ────────────────────────────────────────────────────────────────
 
-function _installHooks(step) {
+function _installHooks() {
     _clearHooks();
 
-    // Victoire à n'importe quel moment : le tutoriel est terminé (l'adversaire est réglé pour tomber à la fin)
+    // Victoire : le tutoriel est terminé (Fengmeng est réglé pour tomber au dernier coup)
     tutorialCallbacks.onEnemyDefeated = () => {
         // Petit délai pour laisser l'animation de victoire commencer
         setTimeout(() => _completeTutorial(), 200);
     };
 
-    // Contrainte : seul le mouvement / le sort demandé est accepté
+    // Contrainte : seul l'échange / le sort demandé est accepté
     tutorialCallbacks.allowSwap = _allowSwap;
     tutorialCallbacks.allowSpell = _allowSpell;
 
-    if (step === 1) {
-        tutorialCallbacks.onTileSwap = (i, j, hadMatch) => {
-            if (hadMatch) _advanceStep();
-        };
+    // Un échange valide du joueur : fin de son étape (le tour bonus imprévu ne compte pas)
+    tutorialCallbacks.onTileSwap = (i, j, hadMatch) => {
+        if (_freeMove) { _freeMove = false; return; }
+        if (hadMatch && _cur()?.who === 'player' && _cur().kind === 'swap') _completePlayerStep();
+    };
 
-    } else if (step === 2) {
-        tutorialCallbacks.onMatch = (type) => {
-            if (type === 'skull') _advanceStep();
-        };
+    // Un skull du joueur à la dernière étape : le dernier coup achève Fengmeng (les crânes seuls ne suffiraient pas à 10 PV)
+    tutorialCallbacks.onMatch = (type) => {
+        if (type === 'skull' && _step === TOTAL_STEPS && _game?.enemy) _game.enemy.hp = 1;
+    };
 
-    } else if (step === 3) {
-        tutorialCallbacks.onMatch = (type) => {
-            if (type === 'color') _advanceStep();
-        };
-
-    } else if (step === 4) {
-        tutorialCallbacks.onSpellCast = () => {
-            if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
-            _advanceStep();
-        };
-    }
+    tutorialCallbacks.onSpellCast = () => {
+        if (_cur()?.kind !== 'spell' || _cur().who !== 'player') return;
+        if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
+        _completePlayerStep();
+    };
 }
 
 function _clearHooks() {
@@ -562,30 +702,29 @@ function _warn(message) {
     _game?.log(message);
 }
 
-/**
- * Échange demandé par l'étape en cours : vérifie que le plateau le permet, sinon remet le plateau d'entraînement.
- * Étapes 1 à 3 : un seul échange accepté ; étape 4 : aucun échange (il faut lancer le sort) ; étape 5 : libre.
- */
+/** Échange demandé par l'étape en cours : seul cet échange est accepté (le plateau est arrangé si besoin). */
 function _allowSwap(i, j, board) {
-    if (_step === 4) {
+    if (_freeMove) return true;
+    const step = _cur();
+    if (!step || step.who !== 'player') return false;
+    if (step.kind === 'spell') {
         _warn(`Lancez d'abord le sort "${_tutoSpell?.name || ''}" en bas de l'écran.`);
         return false;
     }
-    if (_step < 1 || _step > 3) return true;
-    const target = _pickTarget(_step, board);
-    if (!target) {
-        // Le plateau actuel ne permet pas le coup demandé : on remet le plateau d'entraînement en place.
-        _bm?.applyBoard(TUTORIAL_BOARD);
-        _warn('Le plateau a été remis en place pour pouvoir faire le mouvement demandé.');
-        return false;
-    }
-    if ((i === target.from && j === target.to) || (i === target.to && j === target.from)) return true;
+    if (!_target) _target = _prepareMove(step);
+    if (!_target) return true;
+    if ((i === _target.from && j === _target.to) || (i === _target.to && j === _target.from)) return true;
     _warn('Faites l\'échange des deux tuiles en surbrillance.');
     return false;
 }
 
 function _allowSpell(spell) {
-    if (_step === 4 && _tutoSpell && spell.id !== _tutoSpell.id) {
+    const step = _cur();
+    if (!(step?.who === 'player' && step.kind === 'spell')) {
+        _warn('Pas encore : suivez les instructions du tutoriel.');
+        return false;
+    }
+    if (_tutoSpell && spell.id !== _tutoSpell.id) {
         _warn(`Lancez le sort "${_tutoSpell.name}".`);
         return false;
     }
@@ -594,48 +733,23 @@ function _allowSpell(spell) {
 
 // ─── Surbrillances ────────────────────────────────────────────────────────
 
-/**
- * Calcule l'échange attendu selon l'étape (null si le plateau ne le permet pas).
- * – step 2 : un échange qui crée un match de crânes
- * – step 3 : un échange qui crée un match de couleur
- * – step 5 : de préférence un échange qui frappe des crânes
- * – sinon  : le premier échange valide
- */
-function _pickTarget(step, board) {
-    if (!_mm || !board || board.some(t => !t)) return null;
-    const moves = _mm.findPossibleMatches(board);
-    if (!moves || moves.length === 0) return null;
-    const makes = (mv, wantType) => {
-        const testBoard = [...board];
-        [testBoard[mv.from], testBoard[mv.to]] = [testBoard[mv.to], testBoard[mv.from]];
-        return _mm.collectMatches(testBoard).some(m => m.info.type === wantType);
-    };
-    if (step === 2 || step === 3) {
-        const wantType = step === 2 ? 'skull' : 'color';
-        return moves.find(mv => makes(mv, wantType)) || null;
-    }
-    if (step === 5) return moves.find(mv => makes(mv, 'skull')) || moves[0];
-    return moves[0];
-}
-
 function _stopHighlightLoop() {
     if (_highlightTimer) clearInterval(_highlightTimer);
     _highlightTimer = null;
 }
 
-// Garde la surbrillance alignée sur l'échange attendu (le plateau change entre les tours, renderBoard réécrit les classes).
+// Garde la surbrillance alignée sur l'échange attendu (renderBoard réécrit les classes à chaque affichage).
 function _startHighlightLoop() {
     _stopHighlightLoop();
     _highlightTimer = setInterval(() => { if (!document.hidden) _refreshHighlight(); }, 400);
-    setTimeout(_refreshHighlight, 700);
+    setTimeout(_refreshHighlight, 300);
 }
 
 function _refreshHighlight() {
-    if (!_active || !_bm || _step === 4) return;
+    if (!_active || !_target || _cur()?.who !== 'player' || _cur().kind !== 'swap') return;
     const tiles = document.getElementById('board')?.children;
     if (!tiles) return;
-    const target = _pickTarget(_step, _bm.board);
-    const wanted = target ? [tiles[target.from], tiles[target.to]].filter(Boolean) : [];
+    const wanted = [tiles[_target.from], tiles[_target.to]].filter(Boolean);
     _highlightedElements = _highlightedElements.filter(el => {
         if (wanted.includes(el)) return true;
         el.classList.remove('tutorial-highlight');
@@ -684,8 +798,8 @@ function _hideOverlay() {
     if (overlay) overlay.classList.add('hidden');
 }
 
-function _updateOverlay(step, descOverride) {
-    const stepData = STEPS.find(s => s.step === step);
+function _updateOverlay(step) {
+    const stepData = STEPS[step - 1];
     if (!stepData) return;
 
     const elIcon = document.getElementById('tutorial-icon');
@@ -694,8 +808,8 @@ function _updateOverlay(step, descOverride) {
     const elCurrent = document.getElementById('tutorial-step-current');
 
     if (elIcon) elIcon.innerHTML = icon(stepData.icon);
-    if (elTitle) elTitle.textContent = stepData.title;
-    if (elDesc) { elDesc.innerHTML = descOverride || stepData.desc; elDesc.hidden = true; }   // seul le titre est affiché
+    if (elTitle) elTitle.textContent = stepData.title();
+    if (elDesc) { elDesc.innerHTML = stepData.desc(); elDesc.hidden = true; }   // seul le titre est affiché
     if (elCurrent) elCurrent.textContent = step;
 
     const overlay = document.getElementById('tutorial-overlay');

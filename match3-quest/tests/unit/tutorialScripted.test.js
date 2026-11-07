@@ -58,7 +58,7 @@ describe('tutoriel : conseils, agilité et PV de l\'adversaire', () => {
         expect(read('boardSuggestions.js')).toMatch(/if\(tutorialCallbacks\.noSuggestions\) return;/);
         const src = read('tutorial.js');
         expect(src).toMatch(/tutorialCallbacks\.noSuggestions = true/);
-        expect((src.match(/tutorialCallbacks\.noSuggestions = false/g) || []).length).toBeGreaterThanOrEqual(2);
+        expect(src).toMatch(/tutorialCallbacks\.noSuggestions = false/);   // _resetCallbacks : quitter et terminer
     });
 
     test("l'adversaire du tutoriel n'a aucune agilité (mannequin et Fengmeng)", () => {

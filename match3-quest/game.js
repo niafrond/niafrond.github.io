@@ -3,7 +3,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
-import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
+import { tutorialCallbacks } from "./tutorial.js";
 import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 
@@ -1467,11 +1467,6 @@ export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
-    // Blocage tutoriel : interdire les sorts avant l'étape 4
-    if(isTutorialActive() && getTutorialStep() < 4){
-        log("Générez d'abord du qì avec des alignements de gâteaux de lune colorés !");
-        return;
-    }
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
