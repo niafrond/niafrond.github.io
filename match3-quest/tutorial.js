@@ -30,7 +30,7 @@ export const tutorialCallbacks = {
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 12;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
@@ -198,10 +198,22 @@ const STEPS = [
         desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
         done: 'Blocage réussi : aucun dégât !',
     },
+    {   // J1 : 3 flèches (tuiles d'action) pour pouvoir utiliser son arme
+        who: 'player', kind: 'swap', match: { type: 'combat', len: 3 }, icon: 'arrow',
+        title: () => 'Combinez trois flèches',
+        desc: () => `Votre arme se déclenche avec des <strong>flèches ${icon('arrow')}</strong> : alignez <strong>3 tuiles d'action</strong> pour en gagner. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Vous avez gagné des flèches !',
+    },
+    {   // J2 : coup tranquille
+        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
+        title: () => "L'ennemi joue",
+        desc: () => `Fengmeng joue un coup tranquille sur le plateau.`,
+        done: '',
+    },
     {   // J1 : frappe avec son arme (flèches offertes si besoin)
         who: 'player', kind: 'weapon', icon: 'bow',
         title: () => 'Utilisez votre arme',
-        desc: () => `Votre arme se déclenche avec des flèches ${icon('arrow')} (gagnées en alignant des tuiles d'action). Vous en avez assez : cliquez sur <strong>« ${_game?.player?.equippedWeapon?.name || 'votre arme'} »</strong> en bas pour frapper. Les échanges de tuiles sont suspendus.`,
+        desc: () => `Vous avez gagné des flèches ${icon('arrow')} : cliquez sur <strong>« ${_game?.player?.equippedWeapon?.name || 'votre arme'} »</strong> en bas pour frapper. Les échanges de tuiles sont suspendus.`,
         done: 'Touché ! Votre arme frappe sans qu\'il faille aligner de crânes.',
     },
     {   // J2 : un petit coup sans danger
@@ -485,7 +497,7 @@ export function _findScriptedMove(board, want, mm = _mm) {
 // vide recevant, par l'échange avec la case du dessous, la tuile manquante. Renvoie { board, from, to } ou null.
 export function _plantMove(board, want, mm = _mm) {
     const size = Math.round(Math.sqrt(board.length));
-    const tile = want.type === 'skull' ? 'skull' : want.color;
+    const tile = want.type === 'color' ? want.color : want.type;   // 'skull' ou 'combat' : la tuile porte le nom du type
     const fillers = COLORS.filter(c => c !== tile);
     for (let r = 0; r < size - 1; r++) {
         for (let c = 0; c + want.len - 1 < size; c++) {
@@ -553,7 +565,7 @@ function _beginPlayerStep() {
         setTimeout(() => { if (_active && _cur() === step) _highlightSpellButtons(); }, 400);
     }
     if (step.kind === 'weapon') {
-        // Le joueur doit avoir assez de flèches pour utiliser son arme ; on les lui offre au besoin.
+        // Filet de sécurité : si les flèches gagnées ne suffisent pas pour l'arme équipée (arme plus chère), on complète.
         const weapon = _game.player.equippedWeapon;
         if (weapon && (_game.player.combatPoints || 0) < weapon.actionPoints) {
             _game.player.combatPoints = weapon.actionPoints;

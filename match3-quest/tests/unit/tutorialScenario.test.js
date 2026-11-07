@@ -22,6 +22,7 @@ describe('scénario du tutoriel : coups prévus', () => {
         { type: 'color', len: 3, color: 'red' },
         { type: 'color', len: 3, color: 'blue' },
         { type: 'skull', len: 3, color: null },
+        { type: 'combat', len: 3, color: null },
         { type: 'color', len: 4, color: 'red' },
     ];
 
@@ -43,7 +44,7 @@ describe('scénario du tutoriel : coups prévus', () => {
     });
 
     test("un alignement de 4 donne bien un tour bonus (4 tuiles ou plus), un de 3 non", () => {
-        const four = _plantMove(quietBoard(), wants[3], mm);
+        const four = _plantMove(quietBoard(), wants.find(w => w.len === 4), mm);
         const three = _plantMove(quietBoard(), wants[0], mm);
         const lenOf = p => { const b = [...p.board]; [b[p.from], b[p.to]] = [b[p.to], b[p.from]]; return mm.collectMatches(b)[0].info.len; };
         expect(lenOf(four)).toBeGreaterThanOrEqual(4);
@@ -67,16 +68,16 @@ describe('scénario du tutoriel : coups prévus', () => {
 describe('scénario du tutoriel : câblage', () => {
     const src = read('tutorial.js');
 
-    test('dix étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, arme, 3 gâteaux, 3 crânes)', () => {
-        expect(src).toMatch(/const TOTAL_STEPS = 10;/);
+    test('douze étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, 3 flèches, 3 gâteaux, arme, 3 gâteaux, 3 crânes)', () => {
+        expect(src).toMatch(/const TOTAL_STEPS = 12;/);
         const steps = src.slice(src.indexOf('const STEPS = ['), src.indexOf('// Sort de Fengmeng'));
-        const seq = [...steps.matchAll(/who: '(player|enemy)', kind: '(swap|spell|weapon)'(?:, match: \{ type: '(color|skull)', len: (\d)[^}]*\})?/g)]
+        const seq = [...steps.matchAll(/who: '(player|enemy)', kind: '(swap|spell|weapon)'(?:, match: \{ type: '(color|skull|combat)', len: (\d)[^}]*\})?/g)]
             .map(m => [m[1], m[2], m[3] || '', m[4] || ''].join(':'));
         expect(seq).toEqual([
             'player:swap:color:3', 'enemy:swap:color:3', 'player:swap:skull:3', 'enemy:swap:skull:3',
-            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:3',
+            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:swap:combat:3', 'enemy:swap:color:3', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:3',
         ]);
-        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">10<\/span>/);
+        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">12<\/span>/);
     });
 
     test("Fengmeng joue ses coups imposés, sans pièges ni agilité, et le tour du joueur rend la main au scénario", () => {
@@ -99,7 +100,7 @@ describe('scénario du tutoriel : câblage', () => {
     test("l'arme n'est acceptée qu'à l'étape de l'arme, et l'étape de Fengmeng dit seulement « L'ennemi joue »", () => {
         expect(read('game.js')).toMatch(/tutorialCallbacks\.allowWeapon && !tutorialCallbacks\.allowWeapon\(\)/);
         expect(read('game.js')).toMatch(/tutorialCallbacks\.onWeaponUsed\?\.\(\);\s+finishPlayerTurn\(\)/);
-        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(4);
+        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(5);
     });
 
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {
