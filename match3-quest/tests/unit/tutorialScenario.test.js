@@ -3,8 +3,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import * as mm from '../../matchMechanics.js';
-import { _findScriptedMove, _plantMove, _plantJokerMove, _dropTile } from '../../tutorial.js';
 import { rollBlock } from '../../combatStats.js';
 
 const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8');
@@ -16,70 +14,6 @@ function quietBoard() {
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) board.push(COLORS[(r * 2 + c * 3) % 5]);
     return board;
 }
-
-describe('scénario du tutoriel : coups prévus', () => {
-    const wants = [
-        { type: 'color', len: 3, color: 'red' },
-        { type: 'color', len: 3, color: 'blue' },
-        { type: 'skull', len: 3, color: null },
-        { type: 'combat', len: 4, color: null },
-        { type: 'skull', len: 5, color: null },
-        { type: 'color', len: 4, color: 'red' },
-    ];
-
-    test.each(wants)('on plante %j : un seul alignement, exactement celui demandé', want => {
-        const board = quietBoard();
-        expect(mm.collectMatches(board)).toHaveLength(0);
-        const planted = _plantMove(board, want, mm);
-        expect(planted).not.toBeNull();
-        expect(mm.collectMatches(planted.board)).toHaveLength(0);            // rien n'est déjà aligné
-        const found = _findScriptedMove(planted.board, want, mm);             // et le coup est repérable
-        expect(found).not.toBeNull();
-        const swapped = [...planted.board];
-        [swapped[planted.from], swapped[planted.to]] = [swapped[planted.to], swapped[planted.from]];
-        const matches = mm.collectMatches(swapped);
-        expect(matches).toHaveLength(1);
-        expect(matches[0].info.type).toBe(want.type);
-        expect(matches[0].info.len).toBe(want.len);
-        if (want.color) expect(matches[0].info.color).toBe(want.color);
-    });
-
-    test("un alignement de 4 donne bien un tour bonus (4 tuiles ou plus), un de 3 non", () => {
-        const four = _plantMove(quietBoard(), wants.find(w => w.len === 4), mm);
-        const three = _plantMove(quietBoard(), wants[0], mm);
-        const lenOf = p => { const b = [...p.board]; [b[p.from], b[p.to]] = [b[p.to], b[p.from]]; return mm.collectMatches(b)[0].info.len; };
-        expect(lenOf(four)).toBeGreaterThanOrEqual(4);
-        expect(lenOf(three)).toBe(3);
-    });
-
-    test('le joker du plateau est aligné avec deux gâteaux rouges par un seul échange (qì doublé)', () => {
-        const board = quietBoard();
-        board[3 * 8 + 3] = 'joker';
-        const planted = _plantJokerMove(board, { type: 'color', len: 3, color: 'red' }, mm);
-        expect(planted).not.toBeNull();
-        expect(mm.collectMatches(planted.board)).toHaveLength(0);
-        const swapped = [...planted.board];
-        [swapped[planted.from], swapped[planted.to]] = [swapped[planted.to], swapped[planted.from]];
-        const found = mm.collectMatches(swapped);
-        expect(found).toHaveLength(1);
-        expect(found[0].info.color).toBe('red');
-        expect(found[0].indices).toContain(3 * 8 + 3);
-        expect(_plantJokerMove(quietBoard(), { type: 'color', len: 3, color: 'red' }, mm)).toBeNull();   // pas de joker : rien à planter
-    });
-
-    test('une tuile neuve du joueur ne forme jamais de ligne avec les tuiles déjà posées', () => {
-        for (let trial = 0; trial < 300; trial++) {
-            const board = Array.from({ length: 64 }, (_, i) => COLORS[(i * 7 + trial * 3 + Math.floor(i / 8)) % 5]);
-            const idx = (trial * 5) % 64;
-            const tile = _dropTile(idx, board, 'player');
-            const at = (r, c) => (r < 0 || c < 0 || r >= 8 || c >= 8 ? undefined : board[r * 8 + c]);
-            const r = Math.floor(idx / 8), c = idx % 8;
-            const lines = [[at(r, c - 1), at(r, c - 2)], [at(r, c + 1), at(r, c + 2)], [at(r, c - 1), at(r, c + 1)], [at(r - 1, c), at(r - 2, c)], [at(r + 1, c), at(r + 2, c)], [at(r - 1, c), at(r + 1, c)]];
-            const forced = COLORS.every(col => lines.some(([a, b]) => a === col && b === col));
-            if (!forced) expect(lines.some(([a, b]) => a === tile && b === tile)).toBe(false);
-        }
-    });
-});
 
 describe('scénario du tutoriel : câblage', () => {
     const src = read('tutorial.js');

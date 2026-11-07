@@ -7,6 +7,7 @@
  */
 
 import { icon } from './icons.js';
+import { TUTORIAL_SCRIPT } from './tutorialScript.js';
 
 // ─── Callbacks — appelés par board.js / game.js ────────────────────────────
 // board.js et game.js lisent et appellent ces fonctions au moment opportun.
@@ -42,40 +43,19 @@ const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les prem
 // ni flèches ni joker, pour que chaque étape se résolve en quelques coups.
 const TUTORIAL_DROP_PROBABILITIES = Object.freeze({ skullProb: 0.30, combatProb: 0.05, jokerProb: 0 });
 
-// Plateau pré-généré garanti sans match initial, avec 8+ coups possibles dont :
-//   – 1 coup crâne : échanger index 35 (4,3)=skull et index 43 (5,3)=blue → 4 crânes alignés en ligne 5
-//   – plusieurs coups couleur disponibles dès le départ
-// prettier-ignore
-const TUTORIAL_BOARD = [
-    'red',   'red',    'green',  'blue',   'blue',   'yellow', 'purple', 'purple',  // ligne 0
-    'green', 'blue',   'red',    'red',    'green',  'purple', 'blue',   'blue',    // ligne 1
-    'blue',  'green',  'blue',   'green',  'yellow', 'red',    'green',  'red',     // ligne 2
-    'yellow','purple', 'yellow', 'purple', 'red',    'blue',   'red',    'yellow',  // ligne 3
-    'purple','yellow', 'green',  'skull',  'blue',   'green',  'yellow', 'purple',  // ligne 4 : skull idx 35
-    'green', 'skull',  'skull',  'blue',   'skull',  'red',    'yellow', 'blue',    // ligne 5 : skulls idx 41,42,44
-    'red',   'blue',   'yellow', 'green',  'purple', 'yellow', 'blue',   'red',     // ligne 6
-    'blue',  'red',    'purple', 'yellow', 'green',  'blue',   'purple', 'green',   // ligne 7
-];
+// Plateau et tuiles qui tombent PRÉ-GÉNÉRÉS (tutorialScript.js, produit par tools/build-tutorial-script.mjs) : aucun hasard dans le tutoriel.
+// Pour chaque étape d'échange : plateau au début de l'étape, échange attendu et suite exacte des tuiles neuves. Jetons génériques
+// (A = couleur du joueur, B = celle de Fengmeng, C = la troisième, D et E = le reste) traduits en vraies couleurs au lancement.
+const SCRIPT_BY_STEP = new Map(TUTORIAL_SCRIPT.map(entry => [entry.step, entry]));
+export const TUTORIAL_STEP_SCRIPT = SCRIPT_BY_STEP;
+let _dropQueue = [];         // tuiles neuves de l'étape en cours, dans l'ordre où le jeu les demande
+let _tokens = {};            // jeton → couleur réelle
 
-// Tuiles neuves PRÉ-GÉNÉRÉES (96, tirées une fois avec une graine fixe, jamais trois identiques d'affilée) : au tour du joueur,
-// les tuiles qui tombent suivent cette suite (beaucoup de crânes et de qì), donc le déroulement est le même à chaque partie.
-// prettier-ignore
-const TUTORIAL_DROPS = [
-    'red', 'purple', 'red', 'skull', 'blue', 'skull', 'skull', 'blue',
-    'red', 'yellow', 'green', 'yellow', 'purple', 'yellow', 'red', 'yellow',
-    'skull', 'purple', 'skull', 'skull', 'yellow', 'blue', 'skull', 'skull',
-    'red', 'red', 'purple', 'skull', 'purple', 'green', 'green', 'blue',
-    'yellow', 'blue', 'skull', 'skull', 'red', 'red', 'purple', 'skull',
-    'green', 'skull', 'green', 'skull', 'green', 'red', 'green', 'blue',
-    'combat', 'skull', 'green', 'green', 'purple', 'skull', 'green', 'red',
-    'skull', 'green', 'skull', 'skull', 'red', 'yellow', 'skull', 'purple',
-    'green', 'blue', 'yellow', 'blue', 'green', 'combat', 'purple', 'yellow',
-    'yellow', 'green', 'red', 'green', 'skull', 'green', 'skull', 'green',
-    'combat', 'skull', 'red', 'red', 'skull', 'yellow', 'red', 'blue',
-    'purple', 'blue', 'blue', 'skull', 'blue', 'yellow', 'green', 'yellow',
-];
-let _dropCursor = 0;
-export const TUTORIAL_DROPS_SCRIPT = TUTORIAL_DROPS;
+function _setTokens() {
+    const rest = COLORS.filter(c => c !== _myColor && c !== _foeColor && c !== _otherColor);
+    _tokens = { A: _myColor, B: _foeColor, C: _otherColor, D: rest[0], E: rest[1] };
+}
+const _tile = token => _tokens[token] || token;
 
 // Une tuile neuve ne doit jamais former une ligne de 3 avec les tuiles déjà posées (pas de cascade, donc pas de tour bonus).
 function _formsLine(board, size, index, tile) {
@@ -86,32 +66,12 @@ function _formsLine(board, size, index, tile) {
         || same(at(r - 1, c), at(r - 2, c)) || same(at(r + 1, c), at(r + 2, c)) || same(at(r - 1, c), at(r + 1, c));
 }
 
-// Tuile neuve du tutoriel. Tour du joueur : la suite pré-générée. Tour de l'adversaire : une couleur neutre (ni crâne, ni épée).
-// Dans les deux cas elle ne forme aucune ligne avec les tuiles déjà posées : pas de cascade, donc pas de tour bonus ni de dégâts
-// imprévus qui feraient dérailler le scénario.
-export function _dropTile(index, board, turn) {
+// Tuile neuve du tutoriel : la suivante de la file pré-générée de l'étape. File vide (ne devrait jamais arriver) : première couleur
+// qui ne forme aucune ligne, toujours la même pour un plateau donné.
+export function _dropTile(index, board) {
+    if (_dropQueue.length) return _tile(_dropQueue.shift());
     const size = Math.round(Math.sqrt(board.length));
-    let tile = null;
-    if (turn !== 'enemy') {
-        tile = TUTORIAL_DROPS[_dropCursor % TUTORIAL_DROPS.length];
-        _dropCursor++;
-        if (!_formsLine(board, size, index, tile)) return tile;
-    }
-    const start = (_dropCursor + index) % COLORS.length;
-    for (let k = 0; k < COLORS.length; k++) {
-        const color = COLORS[(start + k) % COLORS.length];
-        if (!_formsLine(board, size, index, color)) return color;
-    }
-    return tile && COLORS.includes(tile) ? tile : COLORS[start];
-}
-
-// Coup de l'adversaire : jamais de crâne (donc aucun dégât), jamais de match de 4+ (donc aucun tour bonus), le plus petit gain possible.
-export function _pickEnemyMove(moves) {
-    if (!moves?.length) return null;
-    const rank = m => (m.matchType === 'skull' ? 2 : 0) * 100 + (m.matchLength >= 4 ? 1 : 0) * 50 + m.matchLength;
-    const best = Math.min(...moves.map(rank));
-    const pool = moves.filter(m => rank(m) === best);
-    return pool[Math.floor(Math.random() * pool.length)];
+    return COLORS.find(color => !_formsLine(board, size, index, color)) || COLORS[0];
 }
 
 const TUTORIAL_SPELL = {
@@ -223,7 +183,7 @@ const STEPS = [
         done: 'Un joker est apparu ! Utilisez-le tout de suite.',
     },
     {   // J1 : utilise le joker pour avoir des tuiles rouges
-        who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me', joker: true }, icon: 'star',
+        who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me' }, icon: 'star',
         title: () => `Utilisez le joker : trois gâteaux ${COLOR_FR[_myColor]}`,
         desc: () => `Le joker remplace n'importe quelle tuile : alignez-le avec <strong>2 gâteaux ${COLOR_FR[_myColor]}</strong> pour obtenir du qì ${icon('mana_' + _myColor)}, doublé grâce au joker. Faites <strong>l'échange en surbrillance</strong>.`,
         done: 'Le joker a doublé votre qì !',
@@ -342,7 +302,7 @@ export function startTutorial(opts = {}) {
     tutorialCallbacks.pickEnemyMove = _pickScriptedEnemyMove;
     tutorialCallbacks.enemyDecision = _enemyDecision;
     tutorialCallbacks.onPlayerTurn = _onPlayerTurn;
-    _dropCursor = 0;
+    _dropQueue = [];
     _target = null;
 
     _injectTutorialSpell().then(() => {
@@ -456,8 +416,9 @@ function _startTutorialCombat() {
         }
         startNewCombat(enemy);
 
+        _setTokens();
+        _game.player.tutorialDeterministic = true;   // ni critique ni blocage au hasard (le seul blocage est celui du scénario)
         b.generateBoard();
-        b.applyBoard(TUTORIAL_BOARD);
         updateStats();
         createSpellButtons();
         log('Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
@@ -485,103 +446,18 @@ function _startTutorialCombat() {
     });
 }
 
-// ─── Coups prévus : repérage et mise en place ─────────────────────────────
+// ─── Coups prévus ─────────────────────────────────────────────────────────
 
-// Alignement attendu par une étape (la couleur dépend de qui joue).
-function _wanted(match) {
-    return { type: match.type, len: match.len, color: match.type === 'color' ? (match.side === 'foe' ? _foeColor : match.side === 'other' ? _otherColor : _myColor) : null };
-}
-
-// Échange du plateau qui produit exactement l'alignement demandé, ou null.
-export function _findScriptedMove(board, want, mm = _mm) {
-    if (!mm || !board || board.some(t => !t) || mm.collectMatches(board).length) return null;
-    for (const mv of mm.findPossibleMatches(board)) {
-        const test = [...board];
-        [test[mv.from], test[mv.to]] = [test[mv.to], test[mv.from]];
-        const found = mm.collectMatches(test);
-        const info = found.length === 1 ? found[0].info : null;
-        if (info && info.type === want.type && info.len === want.len && (want.type !== 'color' || info.color === want.color)) return { from: mv.from, to: mv.to };
-    }
-    return null;
-}
-
-// Écrit sur le plateau un échange qui produit exactement l'alignement demandé : T T _ T (4) ou T T _ (3) dans une rangée, la case
-// vide recevant, par l'échange avec la case du dessous, la tuile manquante. Renvoie { board, from, to } ou null.
-export function _plantMove(board, want, mm = _mm) {
-    const size = Math.round(Math.sqrt(board.length));
-    const tile = want.type === 'color' ? want.color : want.type;   // 'skull' ou 'combat' : la tuile porte le nom du type
-    const fillers = COLORS.filter(c => c !== tile);
-    for (let r = 0; r < size - 1; r++) {
-        for (let c = 0; c + want.len - 1 < size; c++) {
-            const gap = c + 2;
-            for (const filler of fillers) {
-                const planted = [...board];
-                for (let k = 0; k < want.len; k++) planted[r * size + c + k] = tile;
-                planted[r * size + gap] = filler;
-                planted[(r + 1) * size + gap] = tile;
-                if (mm.collectMatches(planted).length) continue;
-                const from = r * size + gap, to = (r + 1) * size + gap;
-                const test = [...planted];
-                [test[from], test[to]] = [test[to], test[from]];
-                const found = mm.collectMatches(test);
-                const info = found.length === 1 ? found[0].info : null;
-                if (info && info.type === want.type && info.len === want.len && (want.type !== 'color' || info.color === want.color)) {
-                    return { board: planted, from, to };
-                }
-            }
-        }
-    }
-    return null;
-}
-
-// Joker du plateau (la tuile 'joker') : arrange deux gâteaux autour de lui pour qu'un échange l'aligne avec eux (J R _ + R sous la case vide,
-// dans l'un des quatre sens). Renvoie { board, from, to } ou null (pas de joker sur le plateau).
-export function _plantJokerMove(board, want, mm = _mm) {
-    const size = Math.round(Math.sqrt(board.length));
-    const jIdx = board.indexOf('joker');
-    if (jIdx < 0) return null;
-    const jr = Math.floor(jIdx / size), jc = jIdx % size;
-    const fillers = COLORS.filter(c => c !== want.color);
-    for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
-        for (const [pr, pc] of [[dc, dr], [-dc, -dr]]) {   // sens perpendiculaire (le gâteau de l'échange arrive de ce côté)
-            const at = k => [jr + dr * k, jc + dc * k];
-            const [r1, c1] = at(1), [r2, c2] = at(2);
-            const [r3, c3] = [r2 + pr, c2 + pc];
-            if ([[r1, c1], [r2, c2], [r3, c3]].some(([r, c]) => r < 0 || c < 0 || r >= size || c >= size)) continue;
-            for (const filler of fillers) {
-                const planted = [...board];
-                planted[r1 * size + c1] = want.color;
-                planted[r2 * size + c2] = filler;
-                planted[r3 * size + c3] = want.color;
-                if (mm.collectMatches(planted).length) continue;
-                const from = r2 * size + c2, to = r3 * size + c3;
-                const test = [...planted];
-                [test[from], test[to]] = [test[to], test[from]];
-                const found = mm.collectMatches(test);
-                const info = found.length === 1 ? found[0].info : null;
-                if (info && info.type === 'color' && info.len === 3 && info.color === want.color && found[0].indices.includes(jIdx)) return { board: planted, from, to };
-            }
-        }
-    }
-    return null;
-}
-
-// Trouve (ou prépare, en arrangeant le plateau) l'échange demandé par l'étape ; renvoie { from, to } ou null.
-function _prepareMove(step) {
-    const want = _wanted(step.match);
-    const board = _bm.board;
-    if (step.match.joker) {   // le coup doit utiliser le joker présent sur le plateau
-        const planted = _plantJokerMove(board, want);
-        if (!planted) return null;
-        _bm.applyBoard(planted.board);
-        return { from: planted.from, to: planted.to };
-    }
-    const found = _findScriptedMove(board, want);
-    if (found) return found;
-    const planted = _plantMove(board, want);
-    if (!planted) return null;
-    _bm.applyBoard(planted.board);
-    return { from: planted.from, to: planted.to };
+// Prépare l'étape d'échange en cours à partir du script pré-généré : plateau attendu (remis en place s'il a divergé), file des tuiles
+// neuves, échange à faire. Renvoie { from, to } ou null (étape sans échange).
+function _prepareMove() {
+    const entry = SCRIPT_BY_STEP.get(_step);
+    if (!entry) return null;
+    const expected = entry.board.map(_tile);
+    const live = _bm.board;
+    if (live.length !== expected.length || expected.some((t, i) => live[i] !== t)) _bm.applyBoard(expected);
+    _dropQueue = entry.drops.map(_tile);
+    return { from: entry.swap[0], to: entry.swap[1] };
 }
 
 // ─── Gestion des étapes ────────────────────────────────────────────────────
@@ -601,7 +477,7 @@ function _beginPlayerStep() {
     _updateOverlay(_step);
 
     if (step.kind === 'swap') {
-        _target = _prepareMove(step);
+        _target = _prepareMove();
         _startHighlightLoop();
     } else if (step.kind === 'spell' && _tutoSpell) {
         // Le joueur doit avoir assez de qì pour lancer le sort demandé
@@ -648,7 +524,7 @@ function _enemyDecision() {
         _game.updateStats();
         return { action: 'spell', data: { spell, score: 100 }, thinkingTime: 900, reason: 'sort du tutoriel', isStupid: false };
     }
-    _target = _prepareMove(step);
+    _target = _prepareMove();
     return { ...idle, thinkingTime: 900, reason: 'coup prévu' };
 }
 
@@ -658,7 +534,7 @@ function _pickScriptedEnemyMove(moves) {
         const planned = moves.find(m => m.from === _target.from && m.to === _target.to) || moves.find(m => m.from === _target.to && m.to === _target.from);
         if (planned) return planned;
     }
-    return _pickEnemyMove(moves);
+    return moves[0] || null;
 }
 
 // Le joueur reprend la main : fin de l'étape de Fengmeng (tour normal) ou nouvelle action du joueur (tour bonus).
@@ -745,7 +621,7 @@ function _resetCallbacks() {
     tutorialCallbacks.pickEnemyMove = null;
     tutorialCallbacks.enemyDecision = null;
     tutorialCallbacks.onPlayerTurn = null;
-    if (_game?.player) _game.player.tutorialBlock = null;
+    if (_game?.player) { _game.player.tutorialBlock = null; _game.player.tutorialDeterministic = false; }
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────
@@ -815,7 +691,7 @@ function _allowSwap(i, j, board) {
         _warn(`Lancez d'abord le sort "${_tutoSpell?.name || ''}" en bas de l'écran.`);
         return false;
     }
-    if (!_target) _target = _prepareMove(step);
+    if (!_target) _target = _prepareMove();
     if (!_target) return true;
     if ((i === _target.from && j === _target.to) || (i === _target.to && j === _target.from)) return true;
     _warn('Faites l\'échange des deux tuiles en surbrillance.');

@@ -12,10 +12,11 @@ describe('duel-tutoriel', () => {
         expect(readGameSource()).toMatch(/selectedEnemy\?\.isBoss && !selectedEnemy\.isTutorialEnemy\) \? BOSS_BOARD_SIZE : BASE_BOARD_SIZE/);
     });
 
-    test('TUTORIAL_BOARD compte 8×8 tuiles', () => {
-        const src = read('tutorial.js');
-        const body = src.match(/const TUTORIAL_BOARD = \[([\s\S]*?)\];/)[1];
-        expect([...body.matchAll(/'(\w+)'/g)]).toHaveLength(64);
+    test('les plateaux pré-générés du tutoriel comptent 8×8 tuiles', () => {
+        const src = read('tutorialScript.js');
+        const boards = [...src.matchAll(/board: \[([^\]]*)\]/g)];
+        expect(boards.length).toBeGreaterThan(0);
+        boards.forEach(b => expect([...b[1].matchAll(/'(\w+)'/g)]).toHaveLength(64));
     });
 
     test("l'adversaire a une grande réserve de PV à l'étape du sort, ramenée à ENEMY_FINISH_HP après le lancer", () => {
