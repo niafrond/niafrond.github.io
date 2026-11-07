@@ -2,7 +2,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
-import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
+import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles, suppressMatchBonusTurnsUntilSettled } from './board.js';
 import { colors, boardSize } from './constants.js';
 import { stackStatusEffect, addStatBuff } from './combatStats.js';
 import { addRage, resetRage, rageToManaAmount, rageToDamageAmount } from './ultimates.js';
@@ -164,6 +164,7 @@ export function applySkullsFromColors(spell) {
     renderBoard();
     showCombatAnimation({ icon: 'skull', title: spell.name.toUpperCase(), damage: `${count} gemmes → crânes`, target: '→ Plateau' }, true);
     log(`${spell.name} transforme ${count} gemmes en crânes !`);
+    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via les gros alignements de crânes
     checkMatches(true);
     return false;
 }

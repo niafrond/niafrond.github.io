@@ -723,6 +723,12 @@ export function checkForMatchesOnly(){
     return checkForMatchesOnlyOnBoard(board);
 }
 
+// Quand un sort transforme massivement le plateau (Brasier des Sceaux), les gros alignements qui en
+// découlent ne donnent pas de tour bonus : sinon on enchaîne les tours jusqu'à la mort de l'ennemi.
+// Le drapeau retombe dès que la cascade est terminée.
+let suppressMatchBonusTurns = false;
+export function suppressMatchBonusTurnsUntilSettled(){ suppressMatchBonusTurns = true; }
+
 let announceWaitSince = 0;
 export function checkMatches(forceFullBoard = false){
     // Une mini-annonce de sort / dégâts est affichée : on attend qu'elle parte (délai auto ou clic) avant de résoudre le plateau.
@@ -774,7 +780,7 @@ export function checkMatches(forceFullBoard = false){
                 // Notifier le tutoriel d'un match de couleur du joueur
                 tutorialCallbacks.onMatch?.('color', info.color, info.len);
             }
-            if(info.len>=4){ 
+            if(info.len>=4 && !suppressMatchBonusTurns){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -792,7 +798,7 @@ export function checkMatches(forceFullBoard = false){
             flyManaToCounter(indices, null, { isPlayer: currentPlayer === player, type: 'combat' });
             log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
-            if(info.len>=4){ 
+            if(info.len>=4 && !suppressMatchBonusTurns){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -823,7 +829,7 @@ export function checkMatches(forceFullBoard = false){
             applyDamage(opponent, dmg);
             log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
             // Bonus de tour pour 4+ crânes
-            if(info.len>=4){ 
+            if(info.len>=4 && !suppressMatchBonusTurns){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -850,7 +856,7 @@ export function checkMatches(forceFullBoard = false){
             if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
         }
 
-        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
+        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered && !suppressMatchBonusTurns){
             comboMasteryTriggered = true;
             addBonusTurn(currentPlayer);
             playSfx('turnBonus');
@@ -912,6 +918,7 @@ export function checkMatches(forceFullBoard = false){
         actionGuard.endBoardAction();
         turnDistinctMatches = 0;
         comboMasteryTriggered = false;
+        suppressMatchBonusTurns = false;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
         // Si c'est le tour de l'ennemi et qu'il n'y a pas de combos, terminer son tour
         if(currentTurn === 'enemy'){
