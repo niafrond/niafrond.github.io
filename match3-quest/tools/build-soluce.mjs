@@ -13,6 +13,7 @@ import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
 import { bestiaryEntry, SOURCE_LABELS, familyOf } from '../bestiary.js';
+import { loadGbaSprites, gbaSprite } from '../sprites/index.js';
 import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
 import { overlapOf } from '../mapConnections.js';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
@@ -917,6 +918,7 @@ function buildBestiary() {
         const res = t.resistanceProfile ? Object.entries(t.resistanceProfile).sort((a, b) => b[1] - a[1]).map(([c, v]) => `${dot(c)} ${Math.round(v * 100)} %`).join(' · ') : '';
         const zoneIds = places.map(p => p.sc.id).join(' ');
         return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${t.title || ''} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor || ''}" data-weak="${be.weakColor || ''}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
+  ${gbaSprite(t.id, 'front') ? `<img class="be-sprite" alt="" loading="lazy" width="64" height="64" src="${gbaSprite(t.id, 'front')}">` : ''}
   <h3>${esc(t.name)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([t.title, be.race].filter(Boolean).join(' · '))}</small></h3>
   <dl>
     <dt>Force</dt><dd>${dot(be.strongColor)}</dd>
@@ -955,7 +957,7 @@ function buildBestiary() {
 ${cards}
 </div>
 <button type="button" id="totop" hidden aria-label="Retour en haut de la page">↑ Haut</button>
-<style>.bfilters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 0}.bfilters .search{flex:1 1 100%}.bfilters label{display:flex;flex-direction:column;gap:2px;font:.82rem system-ui,sans-serif;color:var(--dim)}.bfilters select{padding:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.95rem system-ui,sans-serif;max-width:100%}.bfilters .bcheck{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.bfilters button,#totop{padding:7px 12px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.9rem system-ui,sans-serif;cursor:pointer}#bcount{font:600 .9rem system-ui,sans-serif;color:var(--dim);margin:4px 0 10px}#totop{position:fixed;right:16px;bottom:16px;z-index:30;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.35)}#totop[hidden],.be[hidden]{display:none}</style>
+<style>.be{position:relative}.be-sprite{float:right;width:64px;height:64px;margin:0 0 8px 12px;object-fit:contain;image-rendering:pixelated;background:rgba(127,127,127,.12);border-radius:8px}.be dl{clear:none}.bfilters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 0}.bfilters .search{flex:1 1 100%}.bfilters label{display:flex;flex-direction:column;gap:2px;font:.82rem system-ui,sans-serif;color:var(--dim)}.bfilters select{padding:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.95rem system-ui,sans-serif;max-width:100%}.bfilters .bcheck{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.bfilters button,#totop{padding:7px 12px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.9rem system-ui,sans-serif;cursor:pointer}#bcount{font:600 .9rem system-ui,sans-serif;color:var(--dim);margin:4px 0 10px}#totop{position:fixed;right:16px;bottom:16px;z-index:30;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.35)}#totop[hidden],.be[hidden]{display:none}</style>
 <script>(function(){var $=function(i){return document.getElementById(i)},l=[].slice.call(document.querySelectorAll('#bestiary .be')),c=$('bcount'),t=$('totop');
 function run(){var q=$('bq').value.trim().toLowerCase(),f=$('bf-family').value,r=$('bf-resist').value,w=$('bf-weak').value,z=$('bf-zone').value,b=$('bf-boss').checked,n=0;
 l.forEach(function(a){var d=a.dataset,ok=(!q||d.name.indexOf(q)>=0)&&(!f||d.family===f)&&(!r||d.resist===r)&&(!w||d.weak===w)&&(!z||(' '+d.zones+' ').indexOf(' '+z+' ')>=0)&&(!b||d.boss);a.hidden=!ok;if(ok)n++;});
@@ -1198,6 +1200,7 @@ buildParcours();
 buildZones();
 buildEvent();
 buildWinter();
+await loadGbaSprites(BESTIARY_LIST.map(t => t.id));   // dessins des créatures (data URI incorporés à la page du bestiaire)
 buildBestiary();
 buildChange();
 buildHub();
