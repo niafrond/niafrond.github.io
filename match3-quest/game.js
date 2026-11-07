@@ -48,7 +48,7 @@ export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLe
 import { allSpells as spellsCatalog } from "./spells.js";
 import { _activeCounters, log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from './gameHud.js';
 export * from './gameHud.js';
-import { showCombatAnimation } from './gameStatsTab.js';
+import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
@@ -553,16 +553,19 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         applyDamage(target, dmg, { sourceSpell: spell });
         if(lastSpellStrike) {
             dmg = lastSpellStrike.damage;
-            spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}${blockLabel(lastSpellStrike.block) ? ` ${blockLabel(lastSpellStrike.block)}` : ''}`;
+            spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}`;
         }
+        const spellStrike = lastSpellStrike && lastSpellStrike.block !== 'none' ? lastSpellStrike : null;
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, target: `→ ${target.name}` }, true);
+            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, target: `→ ${target.name}` }, spellStrike, true, dmg);
+            else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, target: `→ ${target.name}` }, true);
             log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
+            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, source: caster.name, target: '→ Vous' }, spellStrike, false, dmg);
+            else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
             log(`${escapeHtml(caster.name)} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
@@ -1455,8 +1458,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
     const icon = getWeaponIcon(weapon.type);
 
-    const critSuffix = `${isCrit ? ' CRITIQUE !' : ''}${blockText ? ` ${blockText}` : ''}`;
-    showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
+    showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}` }, strike, true, dmg);
     log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
 }
 

@@ -22,7 +22,7 @@ import { flyHeal } from './manaFlight.js';
 import { getLeftHandWeapon, updateAvailableWeapons, updateInventoryTab } from './gameInventoryTabs.js';
 import { getSpellsByClass } from './spells.js';
 import { log, logActiveAction, saveUpdate, updateStats } from './gameHud.js';
-import { companionIconHtml, foxIconHtml, showCombatAnimation } from './gameStatsTab.js';
+import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
 import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
@@ -319,7 +319,7 @@ export function enemyTurn(){
             }
             playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
             const icon = getWeaponIcon(enemy.weapon.type);
-            showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts${strike.crit ? ' CRITIQUE !' : ''}${blockLabel(strike.block) ? ` ${blockLabel(strike.block)}` : ''}`, source: enemy.name, target: '→ Vous' }, false);
+            showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
             
             // Vérifier l'état après l'action
