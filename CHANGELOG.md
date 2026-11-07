@@ -1,3 +1,9 @@
+## [2.204.0](https://github.com/niafrond/niafrond.github.io/compare/v2.203.0...v2.204.0) (2026-11-07)
+
+### Features
+
+* **stats:** mesure d'audience maison et déploiement de match3-quest sur houyi.fontaine.one ([#666](https://github.com/niafrond/niafrond.github.io/issues/666)) ([d631b6d](https://github.com/niafrond/niafrond.github.io/commit/d631b6d3d1f4024db3dc5781709ca1972796e97b))
+
 ## [2.203.0](https://github.com/niafrond/niafrond.github.io/compare/v2.202.0...v2.203.0) (2026-11-07)
 
 ### Features
