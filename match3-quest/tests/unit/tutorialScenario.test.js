@@ -22,7 +22,8 @@ describe('scénario du tutoriel : coups prévus', () => {
         { type: 'color', len: 3, color: 'red' },
         { type: 'color', len: 3, color: 'blue' },
         { type: 'skull', len: 3, color: null },
-        { type: 'combat', len: 3, color: null },
+        { type: 'combat', len: 4, color: null },
+        { type: 'skull', len: 5, color: null },
         { type: 'color', len: 4, color: 'red' },
     ];
 
@@ -68,16 +69,16 @@ describe('scénario du tutoriel : coups prévus', () => {
 describe('scénario du tutoriel : câblage', () => {
     const src = read('tutorial.js');
 
-    test('douze étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, 3 flèches, 3 gâteaux, arme, 3 gâteaux, 3 crânes)', () => {
-        expect(src).toMatch(/const TOTAL_STEPS = 12;/);
+    test('onze étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, 4 flèches, arme, 3 gâteaux, 5 crânes)', () => {
+        expect(src).toMatch(/const TOTAL_STEPS = 11;/);
         const steps = src.slice(src.indexOf('const STEPS = ['), src.indexOf('// Sort de Fengmeng'));
         const seq = [...steps.matchAll(/who: '(player|enemy)', kind: '(swap|spell|weapon)'(?:, match: \{ type: '(color|skull|combat)', len: (\d)[^}]*\})?/g)]
             .map(m => [m[1], m[2], m[3] || '', m[4] || ''].join(':'));
         expect(seq).toEqual([
             'player:swap:color:3', 'enemy:swap:color:3', 'player:swap:skull:3', 'enemy:swap:skull:3',
-            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:swap:combat:3', 'enemy:swap:color:3', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:3',
+            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:swap:combat:4', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:5',
         ]);
-        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">12<\/span>/);
+        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">11<\/span>/);
     });
 
     test("Fengmeng joue ses coups imposés, sans pièges ni agilité, et le tour du joueur rend la main au scénario", () => {
@@ -100,7 +101,7 @@ describe('scénario du tutoriel : câblage', () => {
     test("l'arme n'est acceptée qu'à l'étape de l'arme, et l'étape de Fengmeng dit seulement « L'ennemi joue »", () => {
         expect(read('game.js')).toMatch(/tutorialCallbacks\.allowWeapon && !tutorialCallbacks\.allowWeapon\(\)/);
         expect(read('game.js')).toMatch(/tutorialCallbacks\.onWeaponUsed\?\.\(\);\s+finishPlayerTurn\(\)/);
-        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(5);
+        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(4);
     });
 
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {

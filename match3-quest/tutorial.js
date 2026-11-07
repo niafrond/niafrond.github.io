@@ -30,7 +30,7 @@ export const tutorialCallbacks = {
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 11;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
@@ -198,17 +198,11 @@ const STEPS = [
         desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
         done: 'Blocage réussi : aucun dégât !',
     },
-    {   // J1 : 3 flèches (tuiles d'action) pour pouvoir utiliser son arme
-        who: 'player', kind: 'swap', match: { type: 'combat', len: 3 }, icon: 'arrow',
-        title: () => 'Combinez trois flèches',
-        desc: () => `Votre arme se déclenche avec des <strong>flèches ${icon('arrow')}</strong> : alignez <strong>3 tuiles d'action</strong> pour en gagner. Faites <strong>l'échange en surbrillance</strong>.`,
-        done: 'Vous avez gagné des flèches !',
-    },
-    {   // J2 : coup tranquille
-        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
-        title: () => "L'ennemi joue",
-        desc: () => `Fengmeng joue un coup tranquille sur le plateau.`,
-        done: '',
+    {   // J1 : 4 flèches (tuiles d'action) : tour bonus, il utilise son arme tout de suite
+        who: 'player', kind: 'swap', match: { type: 'combat', len: 4 }, icon: 'arrow',
+        title: () => 'Combinez quatre flèches',
+        desc: () => `Votre arme se déclenche avec des <strong>flèches ${icon('arrow')}</strong> : alignez <strong>4 tuiles d'action</strong> pour en gagner, et gagner un tour bonus pour frapper tout de suite. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Tour bonus ! Frappez tout de suite avec votre arme.',
     },
     {   // J1 : frappe avec son arme (flèches offertes si besoin)
         who: 'player', kind: 'weapon', icon: 'bow',
@@ -223,9 +217,9 @@ const STEPS = [
         done: '',
     },
     {   // J1 : 3 crânes, Fengmeng perd
-        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'bow', hp: 'finish',
-        title: () => 'Combinez trois crânes',
-        desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>3 crânes ${icon('skull')}</strong> pour remporter la victoire ! Faites <strong>l'échange en surbrillance</strong>.`,
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 5 }, icon: 'bow', hp: 'finish',
+        title: () => 'Combinez cinq crânes pour créer un joker',
+        desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>5 crânes ${icon('skull')}</strong> pour remporter la victoire ! Un alignement de 5 fait aussi apparaître un <strong>joker</strong>, qui remplace n'importe quelle tuile. Faites <strong>l'échange en surbrillance</strong>.`,
         done: '',
     },
 ];
