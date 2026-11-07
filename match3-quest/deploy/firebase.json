@@ -1,0 +1,81 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
+    "cleanUrls": false,
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/**/*.@(html|js|json|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/**/*.@(png|jpg|webp|gif|svg|mp3|ogg|wav|woff|woff2)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/version.js",
+        "destination": "https://niafrond.github.io/version.js",
+        "type": 302
+      },
+      {
+        "source": "/match3-quest/:f*",
+        "destination": "/:f*",
+        "type": 302
+      },
+      {
+        "regex": "/((?:[^/]+/)+[^/]+|[^s/][^/]*|s|s[^w/][^/]*|sw[^/]+)\\.js",
+        "destination": "https://niafrond.github.io/match3-quest/:1.js",
+        "type": 302
+      },
+      {
+        "regex": "/((?:[^/]+/)+[^/]+\\.json|enemies\\.catalog\\.json|spells\\.json|precache-manifest\\.json)",
+        "destination": "https://niafrond.github.io/match3-quest/:1",
+        "type": 302
+      },
+      {
+        "regex": "/(.+\\.css)",
+        "destination": "https://niafrond.github.io/match3-quest/:1",
+        "type": 302
+      },
+      {
+        "source": "/audio/:f*",
+        "destination": "https://niafrond.github.io/match3-quest/audio/:f*",
+        "type": 302
+      },
+      {
+        "source": "/soluce/img/:f*",
+        "destination": "https://niafrond.github.io/match3-quest/soluce/img/:f*",
+        "type": 302
+      },
+      {
+        "regex": "/sprites/(.+\\.(?:png|gif|webp|jpg))",
+        "destination": "https://niafrond.github.io/match3-quest/sprites/:1",
+        "type": 302
+      }
+    ]
+  }
+}

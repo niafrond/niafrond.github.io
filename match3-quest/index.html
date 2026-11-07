@@ -12,8 +12,7 @@
     var v = '0';
     try {
         var x = new XMLHttpRequest();
-        x.open('GET', '../version.js', false);
-        x.setRequestHeader('Cache-Control', 'no-cache');
+        x.open('GET', '../version.js?_=' + Date.now(), false);   // pas d'en-tête personnalisé (pré-requête CORS refusée par GitHub Pages quand le jeu est servi depuis un autre domaine) : l'URL change à chaque fois pour contourner le cache
         x.send();
         var m = /buildDate:\s*'([^']+)'/.exec(x.responseText);
         if (m) { v = m[1].replace(/\D/g, ''); try { localStorage.setItem('match3.build', v); } catch (e) { /* stockage indisponible */ } }
@@ -42,8 +41,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="icon-192.png">
-    <script data-goatcounter="https://niafrond.goatcounter.com/count"
-            async src="//gc.zgo.at/count.js"></script>
+    <script async src="https://stats.fontaine.one/count.js"></script>
 </head>
 <body class="rt">
 <!-- Écran de chargement (loader.js) : visible dès l'ouverture pendant le téléchargement des modules, puis réutilisé
