@@ -24,11 +24,13 @@ export const tutorialCallbacks = {
     pickEnemyMove: null,   // (moves) → coup | null : coup de l'adversaire imposé (board.js, enemyMakeRandomMove)
     allowSpell: null,      // (spell) → bool : refuse tout sort autre que celui demandé (game.js, castSpell)
     enemyDecision: null,   // () → décision | null : action imposée à l'adversaire à son tour (gameTurnFlow.js, enemyTurn)
+    allowWeapon: null,     // () → bool : refuse l'arme hors de l'étape prévue (game.js, useWeapon)
+    onWeaponUsed: null,    // () → void : le joueur vient de frapper avec son arme (game.js, useWeapon)
     onPlayerTurn: null,    // ('turn' | 'bonus') → void : le joueur (re)prend la main (gameTurnFlow.js, finishEnemyTurn / finishPlayerTurn)
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 10;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
@@ -162,19 +164,19 @@ const STEPS = [
     },
     {   // J2 : 3 gâteaux de sa couleur
         who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
-        title: () => `Fengmeng combine trois gâteaux ${COLOR_FR[_foeColor]}`,
+        title: () => "L'ennemi joue",
         desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.`,
         done: 'Fengmeng a gagné du qì.',
     },
     {   // J1 : 3 crânes
-        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull', hp: 'min',
         title: () => 'Combinez trois crânes',
         desc: () => `Alignez <strong>3 crânes ${icon('skull')}</strong> pour blesser Fengmeng. Faites <strong>l'échange en surbrillance</strong>.`,
         done: 'Fengmeng a encaissé vos crânes !',
     },
     {   // J2 : 3 crânes (le joueur subit des dégâts)
         who: 'enemy', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
-        title: () => 'Fengmeng combine trois crânes',
+        title: () => "L'ennemi joue",
         desc: () => `Fengmeng aligne <strong>3 crânes ${icon('skull')}</strong> : vous <strong>subissez des dégâts</strong>. Surveillez vos PV !`,
         done: 'Aïe ! Vous avez perdu des PV.',
     },
@@ -185,19 +187,31 @@ const STEPS = [
         done: 'Tour bonus ! Vous rejouez tout de suite.',
     },
     {   // J1 : lance un sort
-        who: 'player', kind: 'spell', icon: 'bow',
+        who: 'player', kind: 'spell', icon: 'bow', hp: 'min',
         title: () => 'Lancez votre sort',
         desc: () => `Vous avez assez de qì ${icon('mana_' + (_tutoSpell?.color || _myColor))} ! Cliquez sur le bouton du sort <strong>« ${_tutoSpell?.name || 'sort'} »</strong> en bas pour le lancer. Les échanges de tuiles sont suspendus.`,
         done: 'Votre flèche a atteint sa cible : Fengmeng n\'a plus que 10 PV !',
     },
     {   // J2 : lance un sort, J1 le bloque
         who: 'enemy', kind: 'spell', icon: 'shield',
-        title: () => 'Fengmeng lance un sort : vous bloquez',
+        title: () => "L'ennemi joue",
         desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
         done: 'Blocage réussi : aucun dégât !',
     },
+    {   // J1 : frappe avec son arme (flèches offertes si besoin)
+        who: 'player', kind: 'weapon', icon: 'bow',
+        title: () => 'Utilisez votre arme',
+        desc: () => `Votre arme se déclenche avec des flèches ${icon('arrow')} (gagnées en alignant des tuiles d'action). Vous en avez assez : cliquez sur <strong>« ${_game?.player?.equippedWeapon?.name || 'votre arme'} »</strong> en bas pour frapper. Les échanges de tuiles sont suspendus.`,
+        done: 'Touché ! Votre arme frappe sans qu\'il faille aligner de crânes.',
+    },
+    {   // J2 : un petit coup sans danger
+        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'other' }, icon: 'refresh',
+        title: () => "L'ennemi joue",
+        desc: () => `Fengmeng joue un dernier coup tranquille sur le plateau.`,
+        done: '',
+    },
     {   // J1 : 3 crânes, Fengmeng perd
-        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'bow',
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'bow', hp: 'finish',
         title: () => 'Combinez trois crânes',
         desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>3 crânes ${icon('skull')}</strong> pour remporter la victoire ! Faites <strong>l'échange en surbrillance</strong>.`,
         done: '',
@@ -216,6 +230,7 @@ let _spellInjected = false;
 let _tutoSpell = null;       // sort offensif utilisé à l'étape 6 (sort du joueur, ou sort d'entraînement injecté)
 let _myColor = 'red';        // couleur des gâteaux du joueur (celle de son sort)
 let _foeColor = 'blue';      // couleur des gâteaux de Fengmeng
+let _otherColor = 'green';   // troisième couleur (dernier coup de Fengmeng)
 let _target = null;          // { from, to } : échange attendu à l'étape en cours (joueur) ou joué par Fengmeng
 let _enemyActed = false;     // Fengmeng a déjà joué son coup prévu à ce tour (un éventuel tour bonus imprévu est libre)
 let _freeMove = false;       // tour bonus imprévu du joueur : un échange libre est accepté
@@ -383,6 +398,7 @@ async function _injectTutorialSpell() {
     // Les gâteaux du joueur sont de la couleur de son sort (rouge pour le sort d'entraînement) ; Fengmeng prend une autre couleur.
     _myColor = COLORS.includes(_tutoSpell.color) ? _tutoSpell.color : 'red';
     _foeColor = _myColor === 'blue' ? 'green' : 'blue';
+    _otherColor = COLORS.find(c => c !== _myColor && c !== _foeColor);
 }
 
 async function _removeTutorialSpell() {
@@ -449,7 +465,7 @@ function _startTutorialCombat() {
 
 // Alignement attendu par une étape (la couleur dépend de qui joue).
 function _wanted(match) {
-    return { type: match.type, len: match.len, color: match.type === 'color' ? (match.side === 'foe' ? _foeColor : _myColor) : null };
+    return { type: match.type, len: match.len, color: match.type === 'color' ? (match.side === 'foe' ? _foeColor : match.side === 'other' ? _otherColor : _myColor) : null };
 }
 
 // Échange du plateau qui produit exactement l'alignement demandé, ou null.
@@ -525,7 +541,7 @@ function _beginPlayerStep() {
     if (step.kind === 'swap') {
         _target = _prepareMove(step);
         _startHighlightLoop();
-    } else if (_tutoSpell) {
+    } else if (step.kind === 'spell' && _tutoSpell) {
         // Le joueur doit avoir assez de qì pour lancer le sort demandé
         const spell = _tutoSpell;
         if ((_game.player.mana[spell.color] || 0) < spell.cost) {
@@ -535,6 +551,19 @@ function _beginPlayerStep() {
         }
         _game.createSpellButtons();   // met à jour l'affichage (bouton actif)
         setTimeout(() => { if (_active && _cur() === step) _highlightSpellButtons(); }, 400);
+    }
+    if (step.kind === 'weapon') {
+        // Le joueur doit avoir assez de flèches pour utiliser son arme ; on les lui offre au besoin.
+        const weapon = _game.player.equippedWeapon;
+        if (weapon && (_game.player.combatPoints || 0) < weapon.actionPoints) {
+            _game.player.combatPoints = weapon.actionPoints;
+            _game.log(`Tutoriel : les flèches nécessaires pour utiliser ${weapon.name} vous sont offertes !`);
+        }
+        _game.updateStats();
+        import('./gameInventoryTabs.js').then(m => {
+            m.createWeaponButton?.();
+            setTimeout(() => { if (_active && _cur() === step) _highlightWeaponButton(); }, 300);
+        });
     }
 }
 
@@ -609,10 +638,11 @@ function _completePlayerStep() {
 function _adjustEnemyHp() {
     const foe = _game?.enemy;
     if (!foe) return;
-    if (_step === 3 || _step === 6) {
+    const hp = _cur()?.hp;
+    if (hp === 'min') {
         foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
-    } else if (_step === TOTAL_STEPS) {
+    } else if (hp === 'finish') {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));
         tutorialCallbacks.enemyHpFloor = 0;   // dernier coup : il peut mourir
     } else {
@@ -682,6 +712,12 @@ function _installHooks() {
         if (type === 'skull' && _step === TOTAL_STEPS && _game?.enemy) _game.enemy.hp = 1;
     };
 
+    tutorialCallbacks.allowWeapon = _allowWeapon;
+    tutorialCallbacks.onWeaponUsed = () => {
+        if (_cur()?.kind !== 'weapon' || _cur().who !== 'player') return;
+        _completePlayerStep();
+    };
+
     tutorialCallbacks.onSpellCast = () => {
         if (_cur()?.kind !== 'spell' || _cur().who !== 'player') return;
         if (_game?.enemy) { _game.enemy.hp = ENEMY_FINISH_HP; _game.updateStats(); }
@@ -696,6 +732,8 @@ function _clearHooks() {
     tutorialCallbacks.onEnemyDefeated = null;
     tutorialCallbacks.allowSwap = null;
     tutorialCallbacks.allowSpell = null;
+    tutorialCallbacks.allowWeapon = null;
+    tutorialCallbacks.onWeaponUsed = null;
 }
 
 function _warn(message) {
@@ -707,6 +745,10 @@ function _allowSwap(i, j, board) {
     if (_freeMove) return true;
     const step = _cur();
     if (!step || step.who !== 'player') return false;
+    if (step.kind === 'weapon') {
+        _warn(`Utilisez d'abord votre arme en bas de l'écran.`);
+        return false;
+    }
     if (step.kind === 'spell') {
         _warn(`Lancez d'abord le sort "${_tutoSpell?.name || ''}" en bas de l'écran.`);
         return false;
@@ -715,6 +757,13 @@ function _allowSwap(i, j, board) {
     if (!_target) return true;
     if ((i === _target.from && j === _target.to) || (i === _target.to && j === _target.from)) return true;
     _warn('Faites l\'échange des deux tuiles en surbrillance.');
+    return false;
+}
+
+function _allowWeapon() {
+    const step = _cur();
+    if (step?.who === 'player' && step.kind === 'weapon') return true;
+    _warn('Pas encore : suivez les instructions du tutoriel.');
     return false;
 }
 
@@ -759,6 +808,17 @@ function _refreshHighlight() {
         el.classList.add('tutorial-highlight');
         if (!_highlightedElements.includes(el)) _highlightedElements.push(el);
     });
+}
+
+function _highlightWeaponButton() {
+    const container = document.getElementById('weapon-button');
+    if (!container) return;
+    container.querySelectorAll('.enemy-spell-item:not(.disabled)').forEach(btn => {
+        btn.classList.add('tutorial-highlight');
+        _highlightedElements.push(btn);
+    });
+    container.classList.add('tutorial-highlight-container');
+    _highlightedElements.push(container);
 }
 
 function _highlightSpellButtons() {

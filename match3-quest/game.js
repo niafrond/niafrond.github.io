@@ -1404,6 +1404,7 @@ export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
+    if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if(player.combatPoints < weapon.actionPoints){ 
@@ -1420,6 +1421,7 @@ export function useWeapon(hand = 'right'){
     player.combatPoints -= weapon.actionPoints;
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     strikeWithWeapon(weapon);
+    tutorialCallbacks.onWeaponUsed?.();
     finishPlayerTurn();
 }
 

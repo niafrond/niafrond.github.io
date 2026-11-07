@@ -67,16 +67,16 @@ describe('scénario du tutoriel : coups prévus', () => {
 describe('scénario du tutoriel : câblage', () => {
     const src = read('tutorial.js');
 
-    test('huit étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, 3 crânes)', () => {
-        expect(src).toMatch(/const TOTAL_STEPS = 8;/);
+    test('dix étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, arme, 3 gâteaux, 3 crânes)', () => {
+        expect(src).toMatch(/const TOTAL_STEPS = 10;/);
         const steps = src.slice(src.indexOf('const STEPS = ['), src.indexOf('// Sort de Fengmeng'));
-        const seq = [...steps.matchAll(/who: '(player|enemy)', kind: '(swap|spell)'(?:, match: \{ type: '(color|skull)', len: (\d)[^}]*\})?/g)]
+        const seq = [...steps.matchAll(/who: '(player|enemy)', kind: '(swap|spell|weapon)'(?:, match: \{ type: '(color|skull)', len: (\d)[^}]*\})?/g)]
             .map(m => [m[1], m[2], m[3] || '', m[4] || ''].join(':'));
         expect(seq).toEqual([
             'player:swap:color:3', 'enemy:swap:color:3', 'player:swap:skull:3', 'enemy:swap:skull:3',
-            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:swap:skull:3',
+            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:3',
         ]);
-        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">8<\/span>/);
+        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">10<\/span>/);
     });
 
     test("Fengmeng joue ses coups imposés, sans pièges ni agilité, et le tour du joueur rend la main au scénario", () => {
@@ -94,6 +94,12 @@ describe('scénario du tutoriel : câblage', () => {
         expect(rollBlock(hero, () => 0.99)).toBe('total');
         expect(hero.tutorialBlock).toBeNull();
         expect(rollBlock(hero, () => 0.99)).toBe('none');
+    });
+
+    test("l'arme n'est acceptée qu'à l'étape de l'arme, et l'étape de Fengmeng dit seulement « L'ennemi joue »", () => {
+        expect(read('game.js')).toMatch(/tutorialCallbacks\.allowWeapon && !tutorialCallbacks\.allowWeapon\(\)/);
+        expect(read('game.js')).toMatch(/tutorialCallbacks\.onWeaponUsed\?\.\(\);\s+finishPlayerTurn\(\)/);
+        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(4);
     });
 
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {
