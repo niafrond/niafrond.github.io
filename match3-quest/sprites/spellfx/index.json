@@ -768,5 +768,33 @@
     "size": 32,
     "fps": 8,
     "tier": 1
+  },
+  "legionForge": {
+    "name": "Forge des Légions",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "steelHarvest": {
+    "name": "Moisson d'Acier",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "brokenBlades": {
+    "name": "Lames Brisées",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "steelMoult": {
+    "name": "Mue d'Acier",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
   }
 }

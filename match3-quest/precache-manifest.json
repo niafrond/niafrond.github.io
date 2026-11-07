@@ -3388,6 +3388,11 @@
    "h": "9515cc26e2"
   },
   {
+   "p": "sprites/spellfx/brokenBlades.png",
+   "s": 7607,
+   "h": "19b1473cac"
+  },
+  {
    "p": "sprites/spellfx/burningTide.png",
    "s": 17164,
    "h": "5a6939f1b9"
@@ -3599,8 +3604,8 @@
   },
   {
    "p": "sprites/spellfx/index.json",
-   "s": 13300,
-   "h": "0e8f23db4e"
+   "s": 13767,
+   "h": "761bafc960"
   },
   {
    "p": "sprites/spellfx/inferno.png",
@@ -3641,6 +3646,11 @@
    "p": "sprites/spellfx/kunlunMountainFall.png",
    "s": 143904,
    "h": "7a242e9f92"
+  },
+  {
+   "p": "sprites/spellfx/legionForge.png",
+   "s": 18565,
+   "h": "9ab7adfe4c"
   },
   {
    "p": "sprites/spellfx/lightningStorm.png",
@@ -3791,6 +3801,16 @@
    "p": "sprites/spellfx/stealth.png",
    "s": 6627,
    "h": "7963d9b9ed"
+  },
+  {
+   "p": "sprites/spellfx/steelHarvest.png",
+   "s": 10305,
+   "h": "34afabbb91"
+  },
+  {
+   "p": "sprites/spellfx/steelMoult.png",
+   "s": 21609,
+   "h": "98c9034247"
   },
   {
    "p": "sprites/spellfx/stoneskin.png",
