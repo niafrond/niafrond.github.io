@@ -11,6 +11,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `arena.js` — Arène des Mille Flèches : un lieu à explorer, comme une arène de Pokémon. Ouverte dès le 3e terrain
 - `attributes.js` — Attributs du joueur : source unique des effets (appliqués par game.js) et de leur description affichée.
 - `bestiary.js` — Bestiaire du carnet : force, faiblesse et notice mythologique de chaque gabarit d'ennemi (enemies.catalog.json).
+- `bestiaryNames.js` — Noms du bestiaire : pinyin avec tons, caractères chinois et épithète française de chaque gabarit (affichage « Bái Zé (白泽) »).
 - `board.js` — (sans description)
 - `boardEnemyMoves.js` — Coups joués sur le plateau par l'ennemi et par le compagnon (Xiao Gui) : choix, animation de l'échange.
 - `boardLayout.js` — Dimensionnement du plateau : taille des cases selon la fenêtre (paysage / portrait), observateur de redimensionnement.

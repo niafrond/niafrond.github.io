@@ -917,9 +917,9 @@ function buildBestiary() {
             : '<p class="dim">Aucune rencontre sur les cartes : créature réservée à un combat scénarisé.</p>';
         const res = t.resistanceProfile ? Object.entries(t.resistanceProfile).sort((a, b) => b[1] - a[1]).map(([c, v]) => `${dot(c)} ${Math.round(v * 100)} %`).join(' · ') : '';
         const zoneIds = places.map(p => p.sc.id).join(' ');
-        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${t.title || ''} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor || ''}" data-weak="${be.weakColor || ''}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
+        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${be.pinyin} ${be.hanzi} ${t.title || ''} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor || ''}" data-weak="${be.weakColor || ''}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
   ${gbaSprite(t.id, 'front') ? `<img class="be-sprite" alt="" loading="lazy" width="64" height="64" src="${gbaSprite(t.id, 'front')}">` : ''}
-  <h3>${esc(t.name)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([t.title, be.race].filter(Boolean).join(' · '))}</small></h3>
+  <h3>${esc(be.heading)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([be.subtitle, be.race].filter(Boolean).join(' · '))}</small></h3>
   <dl>
     <dt>Force</dt><dd>${dot(be.strongColor)}</dd>
     <dt>Faiblesse</dt><dd><b>${dot(be.weakColor)}</b></dd>
@@ -1137,7 +1137,7 @@ function buildHub() {
             ? { t: p.title, k: `énigme ${p.mode} royaume des âmes errantes`, h: 'soluce/royaume-des-ames.html', c: 'Énigme' }
             : { t: p.title, k: `énigme ${p.mode} armure antique`, h: 'soluce/enigmes.html', c: 'Énigme' }),
         ...(EVENT_ON ? [{ t: SCREENS[WS.REALM_ID].name, k: 'événement fantômes lanternes talisman gardien du jugement', h: 'soluce/royaume-des-ames.html', c: 'Événement' }] : []),
-        ...CATALOG.filter(t => t.id !== 'fallback_enemy').map(t => ({ t: t.name, k: `bestiaire créature ennemi monstre ${t.race || ''} ${t.title || ''}`, h: `soluce/bestiaire.html#be-${t.id}`, c: 'Bestiaire' })),
+        ...CATALOG.filter(t => t.id !== 'fallback_enemy').map(t => ({ t: bestiaryEntry(t).heading, k: `bestiaire créature ennemi monstre ${t.name} ${t.race || ''} ${t.title || ''}`, h: `soluce/bestiaire.html#be-${t.id}`, c: 'Bestiaire' })),
         { t: 'Chang’e : soigner les villageois', k: 'chang e change soin soigner blessés villageois village miroir puzzle épisode', h: 'soluce/change.html', c: 'Mode Chang’e' },
         ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
         ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))

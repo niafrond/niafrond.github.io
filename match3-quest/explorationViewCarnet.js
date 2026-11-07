@@ -125,12 +125,12 @@ export function createCarnet(env) {
         return `${head}${filters}<div class="carnet-bestiary">${entries.map(e => {
             const img = gbaSprite(e.id, 'front');
             const pl = places.get(e.id);
-            const data = `data-name="${esc(`${e.name} ${e.title} ${e.race}`.toLowerCase())}" data-family="${esc(e.family)}" data-resist="${e.strongColor || ''}" data-weak="${e.weakColor || ''}" data-zones="${esc([...(pl?.zones || [])].join(' '))}" data-boss="${pl?.boss ? 1 : ''}"`;
+            const data = `data-name="${esc(`${e.name} ${e.pinyin} ${e.hanzi} ${e.title} ${e.race}`.toLowerCase())}" data-family="${esc(e.family)}" data-resist="${e.strongColor || ''}" data-weak="${e.weakColor || ''}" data-zones="${esc([...(pl?.zones || [])].join(' '))}" data-boss="${pl?.boss ? 1 : ''}"`;
             return `
             <div class="carnet-beast" ${data}>
                 <div class="carnet-beast-head">
                     ${img ? `<img class="carnet-beast-sprite" alt="" loading="lazy" src="${img}">` : `<span class="carnet-beast-sprite">${icon('ghost')}</span>`}
-                    <div><b>${env.escapeHtml(e.name)}</b>${pl?.boss ? ' <span class="carnet-beast-boss">Boss</span>' : ''}${e.title ? ` <small>· ${env.escapeHtml(e.title)}</small>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
+                    <div><b>${env.escapeHtml(e.heading)}</b>${pl?.boss ? ' <span class="carnet-beast-boss">Boss</span>' : ''}${e.subtitle ? `<div class="carnet-beast-sub">${env.escapeHtml(e.subtitle)}</div>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
                 </div>
                 <div class="carnet-beast-stats">
                     <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${env.escapeHtml(e.traits.join(', '))}` : ''}</span>
