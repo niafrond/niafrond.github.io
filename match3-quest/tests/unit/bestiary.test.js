@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, familyOf, creaturePlaces, matchesBestiary, weakColorOf, strongColorOf } from '../../bestiary.js';
-import { beastLabel } from '../../bestiaryNames.js';
+import { beastLabel, enemyNameLabel } from '../../bestiaryNames.js';
 import { weaknessOf } from '../../elements.js';
 import { createSession, recordBestiary, startNewGamePlus } from '../../exploration.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
@@ -163,5 +163,14 @@ describe('noms du bestiaire (pinyin + caractères)', () => {
         expect(get('bai_ze_savant')).toMatchObject({ heading: 'Bái Zé (白泽)', subtitle: '白泽 · Bête de la connaissance' });
         expect(get('zhulong_torche')).toMatchObject({ heading: 'Zhú Lóng (烛龙)', subtitle: '烛龙 · Dragon-Torche' });
         expect(get('changxi')).toMatchObject({ heading: 'Cháng Xī (常羲)', subtitle: '常羲 · Mère des douze lunes' });
+    });
+});
+
+describe('nom de l\'ennemi en combat', () => {
+    test('caractères chinois par défaut, pinyin si demandé, nom du gabarit en repli', async () => {
+                const e = { templateId: 'bai_ze', name: 'Bai Ze' };
+        expect(enemyNameLabel(e, true)).toBe('白泽');
+        expect(enemyNameLabel(e, false)).toBe('Bái Zé');
+        expect(enemyNameLabel({ templateId: 'inconnu', name: 'Machin' }, true)).toBe('Machin');
     });
 });
