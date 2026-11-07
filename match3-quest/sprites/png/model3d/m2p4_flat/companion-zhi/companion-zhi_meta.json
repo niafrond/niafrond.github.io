@@ -1,0 +1,100 @@
+{
+  "name": "companion-zhi",
+  "generated_by": "procedural",
+  "provider": "mesh2pixel",
+  "fallbacks": [],
+  "created": "2026-11-02T15:25:49+00:00",
+  "source": {
+    "file": "companion_zhi.ply",
+    "format": "ply",
+    "sha256": "9f47af37e412eac0092006af62fe70536d38181c8d3cdbf8f3e9b8fdee57c70a",
+    "triangles": 1233096
+  },
+  "frame": [
+    64,
+    96
+  ],
+  "sheet": {
+    "file": "companion-zhi_sheet.png",
+    "columns": 4,
+    "rows": 1,
+    "order": [
+      {
+        "view": "front",
+        "direction": "down",
+        "yaw": 0.0
+      },
+      {
+        "view": "right",
+        "direction": "right",
+        "yaw": 90.0
+      },
+      {
+        "view": "back",
+        "direction": "up",
+        "yaw": 180.0
+      },
+      {
+        "view": "left",
+        "direction": "left",
+        "yaw": 270.0
+      }
+    ]
+  },
+  "palette_size": 8,
+  "palette_usage": {
+    "per_view": {
+      "front": 8,
+      "right": 7,
+      "back": 8,
+      "left": 8
+    },
+    "shared_by_all": 7
+  },
+  "settings": {
+    "width": 64,
+    "height": 96,
+    "supersample": 14,
+    "bands": 3,
+    "clusters_per_role": 4,
+    "max_colors": 40,
+    "outline": true,
+    "inner_outline": true,
+    "band_thresholds": [
+      -1.0,
+      5.0
+    ],
+    "coverage_threshold": 0.45,
+    "up": "y",
+    "yaw_offset": 0.0,
+    "roles": "auto",
+    "light": [
+      -0.5,
+      0.6,
+      0.62
+    ],
+    "shadows": false,
+    "ambient": 0.99,
+    "detail_weight": 3.0,
+    "min_cluster": 4,
+    "min_shade_region": 4,
+    "detail_contrast": 0.3,
+    "texture_filter": "nearest",
+    "pixel_perfect": true,
+    "preview_scale": 4,
+    "palette_merge_tol": 14,
+    "seed": 0
+  },
+  "warnings": [],
+  "files": {
+    "companion-zhi_front.png": "cd786cc9a6645491aa884ea91ed21d4401742dfbc2846bdb9eb38cca4e645329",
+    "companion-zhi_right.png": "09536c967ba4f5571264eb23e76581945aa69d518f74d910f6ba5d27dba4f61f",
+    "companion-zhi_back.png": "136bab0cf6a9cd9342aa2d011ec895a1b4b00ef0ef756a4d38007740c0d0191a",
+    "companion-zhi_left.png": "67b78387b6715cbb1544efa7a57c60bef9f7fb22764453f905b75b8df1d484be",
+    "companion-zhi_sheet.png": "f19aa331d3d56663bd62e55d910675096a513ecbb687136e8cec26b3b462e051",
+    "companion-zhi_preview_x4.png": "a648eb1a55550abfae5a95c85915ae1406e22b7dbcd616b8dbe8ad3e566dbd6d",
+    "companion-zhi_palette.png": "1e5bdcc2cffde9e4e1a45269faa946d0b8bc3a8e2dbef1c445b38b5d2c5b8b04",
+    "companion-zhi_palette.pal": "e16b5d5d513bd2c2f386ff9fe237559eef0db8cc73190b5875c4ba0e74dc46c0",
+    "companion-zhi_palette.json": "c128fec2ba13dcc2db687704017d42c60dac410f2b256e300c0fdf331dc48f58"
+  }
+}
