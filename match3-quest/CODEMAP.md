@@ -29,6 +29,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `cinematicsSun.js` — Chute d'un soleil (animation plein écran). Extrait de cinematics.js.
 - `cinematicsTitle.js` — Écran de démarrage (launcher) : boucle pixel art de Hou Yi. Extrait de cinematics.js.
 - `classSpellEffects.js` — Gestion des effets spéciaux des sorts de classe
+- `classSpellsActionGems.js` — Sorts de classe qui détruisent ou remplacent les flèches d action (templier, barbare, assassin).
 - `classSpellsAdvanced.js` — Sorts avancés multi-qì (balayage de lignes, couleur, pluie d étoiles, tempête, rage) et ultimes. Extrait de classSpellEffects.js.
 - `classSpellsMage.js` — Sorts de classe : mage, ensorceleur et assassin (frappe, sphères, malédictions, glace, poison…). Extrait de classSpellEffects.js.
 - `classSpellsWarrior.js` — Sorts de classe : bonus de caractéristiques, guerrier, templier, barbare (renforts, barrière, enragement, hache…). Extrait de classSpellEffe

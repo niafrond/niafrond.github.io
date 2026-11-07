@@ -11,6 +11,7 @@ import { playSfx } from "./sound.js";
 
 import { skullValue } from "./joker.js";
 import { applyChasm, applyDarkChannels, applyFingerOfDeath, applyFireballArea, applyFlameBolts, applyFlameblade, applyHandOfIce, applyIceShield, applyMageStrike, applyShadowCurse, applyWeakness, applyWildMana } from './classSpellsMage.js';
+import { applyColorsToActionGems, applyActionGemsToMana, applyActionGemsToSkulls, applyActionGemsToColor } from './classSpellsActionGems.js';
 import { applyBarrier, applyBloodlust, applyCleave, applyConfuse, applyCounterAttack, applyDefensiveWall, applyDivinePower, applyDualShot, applyEnrage, applyFocus, applyHeavensWrath, applyHoldTheLine, applyIntimidate, applyManaSiphon, applyMirrorShield, applyPoison, applyReinforce, applyRush, applyShadowStrike, applyShieldBash, applySneakAttack, applyStatBuffSpell, applyStealth, applyStoneskin, applyStrength, applySwiftStrike, applyThrowAxe } from './classSpellsWarrior.js';
 import { applyBerserkerRage, applyCageEnemy, applyClearColor, applyDeathbringer, applyHarmony, applyRageGain, applyRageToDamage, applyRageToMana, applyRevenant, applySecondWind, applySingingBlades, applySkullsFromColors, applyStarRain, applySummonTempest, applySweepLines, applyUltimate } from './classSpellsAdvanced.js';
 
@@ -161,6 +162,14 @@ export function applyClassSpellEffect(spell) {
             return applyShieldBash(spell);
         case 'createActionGem': // Concentration du Qi
             return applyFocus(spell);
+        case 'colorsToActionGems': // Forge des Légions
+            return applyColorsToActionGems(spell);
+        case 'actionGemsToMana': // Moisson d'Acier
+            return applyActionGemsToMana(spell);
+        case 'actionGemsToSkulls': // Lames Brisées
+            return applyActionGemsToSkulls(spell);
+        case 'actionGemsToColor': // Mue d'Acier
+            return applyActionGemsToColor(spell);
         case 'stealCP': // Regard Impérial
             return applyIntimidate(spell);
         case 'stunEnemy': // Charge de Cavalerie

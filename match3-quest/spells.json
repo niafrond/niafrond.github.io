@@ -1457,6 +1457,18 @@
       "description": "Détruit tous les gâteaux de lune violets et inflige 2 dégâts par gâteau détruit"
     },
     {
+      "id": "steelMoult",
+      "name": "Mue d'Acier",
+      "class": "assassin",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 13,
+      "effect": "actionGemsToColor",
+      "gemColor": "purple",
+      "description": "Transforme toutes les flèches d'action en gâteaux de lune violets et donne 1 point d'action par flèche"
+    },
+    {
       "id": "dualShot",
       "name": "Flèches Jumelles",
       "class": "assassin",
@@ -1795,6 +1807,19 @@
       "description": "Transforme un gâteau de lune en flèche (point d'action)"
     },
     {
+      "id": "legionForge",
+      "name": "Forge des Légions",
+      "class": "templar",
+      "cost": {
+        "blue": 5,
+        "yellow": 5
+      },
+      "minLevel": 11,
+      "effect": "colorsToActionGems",
+      "gemCount": 4,
+      "description": "Transforme 4 gâteaux de lune au hasard en flèches d'action"
+    },
+    {
       "id": "intimidate",
       "name": "Regard Impérial",
       "class": "templar",
@@ -1842,6 +1867,19 @@
       "effect": "destroyActionGemHeal",
       "healPerGem": 10,
       "description": "Détruit les flèches d'action et soigne de 10 PV par flèche"
+    },
+    {
+      "id": "steelHarvest",
+      "name": "Moisson d'Acier",
+      "class": "templar",
+      "cost": {
+        "green": 5
+      },
+      "minLevel": 13,
+      "effect": "actionGemsToMana",
+      "manaColor": "blue",
+      "manaPerGem": 2,
+      "description": "Détruit toutes les flèches d'action et donne 2 qì bleu par flèche"
     },
     {
       "id": "barrier",
@@ -2245,6 +2283,17 @@
       "minLevel": 10,
       "effect": "redToSkulls",
       "description": "Transforme les gâteaux de lune rouges en soleils ardents"
+    },
+    {
+      "id": "brokenBlades",
+      "name": "Lames Brisées",
+      "class": "barbarian",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 12,
+      "effect": "actionGemsToSkulls",
+      "description": "Transforme toutes les flèches d'action en soleils ardents"
     },
     {
       "id": "singingBlades",
