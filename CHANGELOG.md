@@ -1,3 +1,9 @@
+## [2.198.1](https://github.com/niafrond/niafrond.github.io/compare/v2.198.0...v2.198.1) (2026-11-07)
+
+### Bug Fixes
+
+* **match3-quest:** plafonner les tours bonus et ajouter 4 sorts de flèches d'action ([#659](https://github.com/niafrond/niafrond.github.io/issues/659)) ([a8afba5](https://github.com/niafrond/niafrond.github.io/commit/a8afba5c6d325311023611d37d0edd424407b0f0))
+
 ## [2.198.0](https://github.com/niafrond/niafrond.github.io/compare/v2.197.1...v2.198.0) (2026-11-07)
 
 ### Features
