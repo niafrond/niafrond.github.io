@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, weakColorOf, strongColorOf } from '../../bestiary.js';
+import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, familyOf, creaturePlaces, matchesBestiary, weakColorOf, strongColorOf } from '../../bestiary.js';
 import { weaknessOf } from '../../elements.js';
 import { createSession, recordBestiary, startNewGamePlus } from '../../exploration.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
@@ -113,5 +113,36 @@ describe('Bestiaire aquatique : fiches lisibles', () => {
             expect({ id: t.id, lore: e.lore.length > 40, source: Boolean(SOURCE_LABELS[e.source]) }).toEqual({ id: t.id, lore: true, source: true });
             expect({ id: t.id, same: e.strongColor === e.weakColor }).toEqual({ id: t.id, same: false });
         });
+    });
+});
+
+describe('filtres du bestiaire', () => {
+    test('familyOf regroupe les races rares', () => {
+        expect(familyOf('Esprit-animal')).toBe('Esprit');
+        expect(familyOf('Gui')).toBe('Esprit');
+        expect(familyOf('Divinité guerrière')).toBe('Divinité');
+        expect(familyOf('Long')).toBe('Dragon');
+        expect(familyOf('Méduse')).toBe('Autre');
+        expect(familyOf('Bête')).toBe('Bête');
+        expect(familyOf('')).toBe('Autre');
+    });
+
+    test('creaturePlaces relève zones et boss (hautes herbes comprises)', () => {
+        const p = creaturePlaces({
+            a: { id: 'a', enemies: [{ templateId: 'x', boss: true }, { templateId: 'y' }], grass: { table: [{ templateId: 'y' }] } },
+            b: { id: 'b', enemies: [{ templateId: 'x' }] }
+        });
+        expect([...p.get('x').zones].sort()).toEqual(['a', 'b']);
+        expect(p.get('x').boss).toBe(true);
+        expect(p.get('y').boss).toBe(false);
+    });
+
+    test('matchesBestiary combine les critères', () => {
+        const c = { name: 'Chilong Ardent', family: 'Dragon', resist: 'red', weak: 'blue', zones: ['a'], boss: true };
+        expect(matchesBestiary(c, {})).toBe(true);
+        expect(matchesBestiary(c, { q: ' chilong ', family: 'Dragon', resist: 'red', weak: 'blue', zone: 'a', boss: true })).toBe(true);
+        expect(matchesBestiary(c, { family: 'Bête' })).toBe(false);
+        expect(matchesBestiary(c, { zone: 'z' })).toBe(false);
+        expect(matchesBestiary({ ...c, boss: false }, { boss: true })).toBe(false);
     });
 });

@@ -84,9 +84,18 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 <h2>Bestiaire</h2>
 <p class="lead">202 créatures, classées par ordre alphabétique. Pour chacune : la couleur de qì qu’elle encaisse le mieux, <b>sa faiblesse</b> (les sorts de cette couleur lui font plus mal), ses traits de combat, sa notice et les lieux où on la croise.</p>
 <div class="box tip"><b class="t">Astuce</b>Frappez la faiblesse : alignez des tuiles de la couleur indiquée pour lancer des sorts qui font plus de dégâts. Une créature qui surgit des hautes herbes ou une mimique attaque par surprise : elle joue en premier avec 2 PA de plus.</div>
+<div class="bfilters" role="search">
 <input class="search" id="bq" type="search" placeholder="Rechercher une créature, une espèce…" autocomplete="off" aria-label="Rechercher dans le bestiaire">
+<label>Famille<select id="bf-family"><option value="">Toutes</option><option>Autre</option><option>Bête</option><option>Divinité</option><option>Dragon</option><option>Esprit</option><option>Géant</option><option>Humain</option><option>Hybride</option><option>Oiseau</option><option>Poisson</option><option>Serpent</option><option>Soleil</option><option>Tortue</option></select></label>
+<label>Résiste le mieux à<select id="bf-resist"><option value="">Toutes les couleurs</option><option value="red">Feu (rouge)</option><option value="blue">Eau (bleu)</option><option value="green">Terre (vert)</option><option value="yellow">Air (jaune)</option><option value="purple">Arcane (violet)</option></select></label>
+<label>Faible à<select id="bf-weak"><option value="">Toutes les couleurs</option><option value="red">Feu (rouge)</option><option value="blue">Eau (bleu)</option><option value="green">Terre (vert)</option><option value="yellow">Air (jaune)</option><option value="purple">Arcane (violet)</option></select></label>
+<label>Zone<select id="bf-zone"><option value="">Toutes les zones</option><optgroup label="Rizières Desséchées"><option value="rizieres_wild">Digue et Marais Craquelés</option><option value="wlm_col">Le col des pins gelés</option><option value="wlm_sanctuaire">Le sanctuaire de la flamme</option><option value="rizieres">Rizières Desséchées</option><option value="rizieres_cave">Terrier de la Digue</option></optgroup><optgroup label="Gorges du Volcan"><option value="volcan_cave">Cavernes de Basalte</option><option value="volcan_wild">Coulées et Passerelles Rougeoyantes</option><option value="volcan_road">Galerie de Basalte</option><option value="volcan">Gorges du Volcan</option></optgroup><optgroup label="Désert de Gobi"><option value="gobi_crypt">Crypte Ensablée</option><option value="gobi">Désert de Gobi</option><option value="gobi_wild">Dunes des Voix Sablées</option><option value="gobi_road">Piste des Caravanes</option></optgroup><optgroup label="Lit du Fleuve Jaune"><option value="fleuve_road">Berge des Barques Échouées</option><option value="fleuve_cave">Grotte des Limons</option><option value="fleuve">Lit du Fleuve Jaune</option><option value="fleuve_wild">Méandres de Boue et d'Écluses</option></optgroup><optgroup label="Forêt de Bambous Calcinée"><option value="bambous_crypt">Crypte des Moines Cendrés</option><option value="ws_fengdu">Fengdu, la cité fantôme</option><option value="bambous">Forêt de Bambous Calcinée</option><option value="ws_roue">La Roue des six voies</option><option value="ws_sources">La Route des Sources Jaunes</option><option value="ws_terrasse">La Terrasse du Regard vers le pays</option><option value="ws_miroir">Le Miroir du Karma</option><option value="ws_pont">Le Pont Naihe</option><option value="wandering_souls_realm">Le Royaume des âmes errantes</option><option value="bambous_road">Sentier des Moines</option><option value="bambous_wild">Sentier des Tiges Cendrées</option></optgroup><optgroup label="Monts du Tonnerre"><option value="tonnerre_wild">Crêtes Foudroyées</option><option value="tonnerre_road">Escalier des Crêtes</option><option value="tonnerre_cave">Galeries du Tonnerre Sourd</option><option value="tonnerre">Monts du Tonnerre</option></optgroup><optgroup label="Plaine des Fauves"><option value="fauves_crypt">Crypte des Griffes Blanches</option><option value="fauves_wild">Hautes Herbes de Cendre</option><option value="fauves_road">Piste des Troupeaux</option><option value="fauves">Plaine des Fauves</option></optgroup><optgroup label="Rivage de la Mer Orientale"><option value="mer_wild">Falaises et Criques du Dragon</option><option value="mer_cave">Grotte des Marées</option><option value="mer_ile_dragon">Île de la Tortue-Dragon</option><option value="mer_road">Jetée des Écumeurs</option><option value="mer_archipel">Mer des Mille Îlots</option><option value="mer">Rivage de la Mer Orientale</option></optgroup><optgroup label="Cime du Fusang"><option value="fusang_road">Chemin des Racines Géantes</option><option value="fusang">Cime du Fusang</option><option value="fusang_crypt">Crypte des Branches Mortes</option><option value="fusang_wild">Racines et Branches Dorées</option></optgroup><optgroup label="Autel de Mazu"><option value="marees">Autel de Mazu</option><option value="marees_wild">Gouffre des Mirages</option><option value="marees_road">Haute Mer des Pontons</option></optgroup><optgroup label="Pic de la Lune"><option value="lune_crypt">Crypte du Lièvre de Jade</option><option value="lune">Pic de la Lune</option><option value="lune_wild">Sentier d'Argent</option><option value="lune_road">Sentier Lunaire</option></optgroup></select></label>
+<label class="bcheck"><input type="checkbox" id="bf-boss"> Boss seulement</label>
+<button type="button" id="bf-reset">Réinitialiser</button>
+</div>
+<p id="bcount" role="status" aria-live="polite"></p>
 <div id="bestiary">
-<article class="quest be" id="be-ao" data-name="ao tortue porteuse de montagne tortue">
+<article class="quest be" id="be-ao" data-name="ao tortue porteuse de montagne tortue" data-family="Tortue" data-resist="blue" data-weak="green" data-zones="fleuve_wild" data-boss="">
   <h3>Ao <small>Tortue Porteuse de Montagne · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -98,7 +107,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-assassin_masque" data-name="assassin masqué lame du voile noir humain">
+<article class="quest be" id="be-assassin_masque" data-name="assassin masqué lame du voile noir humain" data-family="Humain" data-resist="purple" data-weak="green" data-zones="arena_c5 arena_c2 rizieres_cave gobi_crypt gobi gobi_wild gobi_road fleuve_road fleuve_cave fleuve_wild bambous_crypt bambous bambous_road bambous_wild tonnerre_wild tonnerre_road mer_wild mer_cave mer_road lune_crypt lune lune_wild lune_road" data-boss="">
   <h3>Assassin Masqué <small>Lame du Voile Noir · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -110,7 +119,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Or <small>(arena — sentinelle)</small></li><li>Cercle de Cuivre <small>(arena — sentinelle)</small></li><li>Terrier de la Digue <small>(Rizières Desséchées — sentinelle)</small></li><li>Crypte Ensablée <small>(Désert de Gobi — sentinelle)</small></li><li>Désert de Gobi <small>(Désert de Gobi — sentinelle)</small></li><li>Dunes des Voix Sablées <small>(Désert de Gobi — patrouille, sentinelle, hautes herbes)</small></li><li>Piste des Caravanes <small>(Désert de Gobi — patrouille, hautes herbes)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — patrouille)</small></li><li>Grotte des Limons <small>(Lit du Fleuve Jaune — sentinelle)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — sentinelle)</small></li><li>Crypte des Moines Cendrés <small>(Forêt de Bambous Calcinée — sentinelle)</small></li><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — patrouille)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — patrouille, sentinelle, hautes herbes)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — sentinelle)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — patrouille)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — sentinelle, hautes herbes)</small></li><li>Grotte des Marées <small>(Rivage de la Mer Orientale — patrouille)</small></li><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — sentinelle)</small></li><li>Crypte du Lièvre de Jade <small>(Pic de la Lune — patrouille)</small></li><li>Pic de la Lune <small>(Pic de la Lune — sentinelle)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — sentinelle, patrouille, hautes herbes)</small></li><li>Sentier Lunaire <small>(Pic de la Lune — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bai_she" data-name="bai she serpent blanc serpent">
+<article class="quest be" id="be-bai_she" data-name="bai she serpent blanc serpent" data-family="Serpent" data-resist="blue" data-weak="green" data-zones="fleuve_road" data-boss="">
   <h3>Bai She <small>Serpent Blanc · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -122,7 +131,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bai_ze" data-name="bai ze bête blanche omnisciente bête">
+<article class="quest be" id="be-bai_ze" data-name="bai ze bête blanche omnisciente bête" data-family="Bête" data-resist="blue" data-weak="green" data-zones="fauves_wild" data-boss="">
   <h3>Bai Ze <small>Bête Blanche Omnisciente · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -134,7 +143,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bai_ze_savant" data-name="bai ze bête du savoir bête">
+<article class="quest be" id="be-bai_ze_savant" data-name="bai ze bête du savoir bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="fauves_road" data-boss="">
   <h3>Bai Ze <small>Bête du Savoir · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -146,7 +155,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Troupeaux <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-baihu" data-name="baihu tigre blanc de l'ouest bête">
+<article class="quest be" id="be-baihu" data-name="baihu tigre blanc de l'ouest bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="tonnerre_wild fauves_wild" data-boss="1">
   <h3>Baihu <span class="badge main">Boss</span><small>Tigre Blanc de l'Ouest · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -158,7 +167,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bailong" data-name="bailong dragon blanc dragon">
+<article class="quest be" id="be-bailong" data-name="bailong dragon blanc dragon" data-family="Dragon" data-resist="blue" data-weak="green" data-zones="fleuve_road" data-boss="">
   <h3>Bailong <small>Dragon Blanc · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -170,7 +179,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bashe" data-name="bashé avaleur d'éléphants serpent">
+<article class="quest be" id="be-bashe" data-name="bashé avaleur d'éléphants serpent" data-family="Serpent" data-resist="green" data-weak="yellow" data-zones="gobi_wild" data-boss="">
   <h3>Bashé <small>Avaleur d'Éléphants · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -182,7 +191,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bi_fang" data-name="bi fang oiseau à une patte oiseau">
+<article class="quest be" id="be-bi_fang" data-name="bi fang oiseau à une patte oiseau" data-family="Oiseau" data-resist="red" data-weak="blue" data-zones="volcan_wild" data-boss="">
   <h3>Bi Fang <small>Oiseau à Une Patte · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -194,7 +203,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bian" data-name="bian fauve des prisons bête">
+<article class="quest be" id="be-bian" data-name="bian fauve des prisons bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="fauves" data-boss="">
   <h3>Bian <small>Fauve des Prisons · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -206,7 +215,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bixi" data-name="bixi dragon-tortue porte-stèle dragon">
+<article class="quest be" id="be-bixi" data-name="bixi dragon-tortue porte-stèle dragon" data-family="Dragon" data-resist="green" data-weak="yellow" data-zones="fleuve" data-boss="">
   <h3>Bixi <small>Dragon-Tortue Porte-Stèle · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -218,7 +227,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-bixie" data-name="bixie lion ailé protecteur hybride">
+<article class="quest be" id="be-bixie" data-name="bixie lion ailé protecteur hybride" data-family="Hybride" data-resist="yellow" data-weak="red" data-zones="fauves_road" data-boss="">
   <h3>Bixie <small>Lion Ailé Protecteur · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -230,7 +239,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Troupeaux <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-brigand_sables" data-name="brigand des sables pillard des caravanes humain">
+<article class="quest be" id="be-brigand_sables" data-name="brigand des sables pillard des caravanes humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="gobi gobi_wild gobi_road" data-boss="">
   <h3>Brigand des sables <small>Pillard des Caravanes · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -242,7 +251,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Désert de Gobi <small>(Désert de Gobi — sentinelle)</small></li><li>Dunes des Voix Sablées <small>(Désert de Gobi — patrouille)</small></li><li>Piste des Caravanes <small>(Désert de Gobi — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-canglong" data-name="canglong de givre seigneur du grand froid long">
+<article class="quest be" id="be-canglong" data-name="canglong de givre seigneur du grand froid long" data-family="Dragon" data-resist="blue" data-weak="green" data-zones="fusang fusang_wild lune_wild" data-boss="">
   <h3>Canglong de Givre <small>Seigneur du Grand Froid · Long</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -254,7 +263,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cime du Fusang <small>(Cime du Fusang — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — sentinelle)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-cao_jing" data-name="cao jing petit esprit des herbes esprit végétal">
+<article class="quest be" id="be-cao_jing" data-name="cao jing petit esprit des herbes esprit végétal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="rizieres_wild" data-boss="">
   <h3>Cao Jing <small>Petit Esprit des Herbes · Esprit végétal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -266,7 +275,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-carpe_doree" data-name="carpe dorée gardienne du gué poisson">
+<article class="quest be" id="be-carpe_doree" data-name="carpe dorée gardienne du gué poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="fleuve marees_road" data-boss="">
   <h3>Carpe dorée <small>Gardienne du Gué · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -278,7 +287,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — sentinelle)</small></li><li>Haute Mer des Pontons <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-changxi" data-name="changxi mère des douze lunes divinité">
+<article class="quest be" id="be-changxi" data-name="changxi mère des douze lunes divinité" data-family="Divinité" data-resist="blue" data-weak="green" data-zones="marees" data-boss="1">
   <h3>Changxi <span class="badge main">Boss</span><small>Mère des douze lunes · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -290,7 +299,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Autel de Mazu <small>(Autel de Mazu — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-chaofeng" data-name="chaofeng sentinelle des hauteurs hybride">
+<article class="quest be" id="be-chaofeng" data-name="chaofeng sentinelle des hauteurs hybride" data-family="Hybride" data-resist="yellow" data-weak="red" data-zones="fauves_road" data-boss="">
   <h3>Chaofeng <small>Sentinelle des Hauteurs · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -302,7 +311,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Troupeaux <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-chef_de_dune" data-name="chef de dune bras-de-sable humain">
+<article class="quest be" id="be-chef_de_dune" data-name="chef de dune bras-de-sable humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="gobi_wild" data-boss="1">
   <h3>Chef de dune <span class="badge main">Boss</span><small>Bras-de-Sable · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -314,7 +323,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-chi_niao" data-name="chi niao oiseau ardent oiseau">
+<article class="quest be" id="be-chi_niao" data-name="chi niao oiseau ardent oiseau" data-family="Oiseau" data-resist="red" data-weak="blue" data-zones="volcan_road" data-boss="">
   <h3>Chi Niao <small>Oiseau Ardent · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -326,7 +335,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-chilong" data-name="chilong de braise gueule de magma long">
+<article class="quest be" id="be-chilong" data-name="chilong de braise gueule de magma long" data-family="Dragon" data-resist="red" data-weak="blue" data-zones="arena_c7 arena_c4 volcan_cave volcan_wild volcan" data-boss="">
   <h3>Chilong de Braise <small>Gueule de Magma · Long</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -338,7 +347,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — sentinelle)</small></li><li>Cercle d'Argent <small>(arena — sentinelle)</small></li><li>Cavernes de Basalte <small>(Gorges du Volcan — patrouille)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — patrouille, hautes herbes)</small></li><li>Gorges du Volcan <small>(Gorges du Volcan — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-chiwen" data-name="chiwen dragon-poisson des toits hybride">
+<article class="quest be" id="be-chiwen" data-name="chiwen dragon-poisson des toits hybride" data-family="Hybride" data-resist="blue" data-weak="green" data-zones="tonnerre_wild" data-boss="">
   <h3>Chiwen <small>Dragon-Poisson des Toits · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -350,7 +359,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-chiyou" data-name="chiyou hache de la lune rouge divinité guerrière">
+<article class="quest be" id="be-chiyou" data-name="chiyou hache de la lune rouge divinité guerrière" data-family="Divinité" data-resist="red" data-weak="blue" data-zones="arena_c5 arena_c8" data-boss="">
   <h3>Chiyou <small>Hache de la Lune Rouge · Divinité guerrière</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -362,7 +371,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Or <small>(arena — sentinelle)</small></li><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-corbeau_demon" data-name="corbeau-démon voleur des rizières oiseau">
+<article class="quest be" id="be-corbeau_demon" data-name="corbeau-démon voleur des rizières oiseau" data-family="Oiseau" data-resist="yellow" data-weak="red" data-zones="rizieres_wild" data-boss="">
   <h3>Corbeau-démon <small>Voleur des Rizières · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -374,7 +383,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lu_ci_gui" data-name="cormoran-fantôme noyé des pontons esprit">
+<article class="quest be" id="be-lu_ci_gui" data-name="cormoran-fantôme noyé des pontons esprit" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="marees_wild marees_road" data-boss="">
   <h3>Cormoran-fantôme <small>Noyé des Pontons · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -386,7 +395,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gouffre des Mirages <small>(Autel de Mazu — sentinelle, hautes herbes)</small></li><li>Haute Mer des Pontons <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-crabe_soldat" data-name="crabe-soldat lame des bancs de sable bête">
+<article class="quest be" id="be-crabe_soldat" data-name="crabe-soldat lame des bancs de sable bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="mer_wild mer_road marees_road" data-boss="">
   <h3>Crabe-soldat <small>Lame des Bancs de Sable · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -398,7 +407,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — sentinelle, patrouille)</small></li><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — patrouille)</small></li><li>Haute Mer des Pontons <small>(Autel de Mazu — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-crapaud_boue" data-name="crapaud de boue chanteur des marais bête">
+<article class="quest be" id="be-crapaud_boue" data-name="crapaud de boue chanteur des marais bête" data-family="Bête" data-resist="green" data-weak="yellow" data-zones="rizieres_wild rizieres" data-boss="">
   <h3>Crapaud de Boue <small>Chanteur des Marais · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -410,7 +419,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — sentinelle, patrouille, hautes herbes)</small></li><li>Rizières Desséchées <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-dame_bi_yu" data-name="dame bi yu la main de jade humain">
+<article class="quest be" id="be-dame_bi_yu" data-name="dame bi yu la main de jade humain" data-family="Humain" data-resist="green" data-weak="yellow" data-zones="arena_c6" data-boss="1">
   <h3>Dame Bi Yu <span class="badge main">Boss</span><small>la Main de Jade · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -422,7 +431,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Jade <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-dame_des_neiges" data-name="dame des neiges éventail de givre esprit">
+<article class="quest be" id="be-dame_des_neiges" data-name="dame des neiges éventail de givre esprit" data-family="Esprit" data-resist="blue" data-weak="green" data-zones="wlm_col wlm_sanctuaire mer_wild mer_road mer_archipel mer lune_crypt lune_wild lune_road" data-boss="">
   <h3>Dame des Neiges <small>Éventail de Givre · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -434,7 +443,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Le col des pins gelés <small>(Rizières Desséchées — sentinelle, hautes herbes)</small></li><li>Le sanctuaire de la flamme <small>(Rizières Desséchées — hautes herbes)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — sentinelle, hautes herbes)</small></li><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — sentinelle)</small></li><li>Mer des Mille Îlots <small>(Rivage de la Mer Orientale — sentinelle)</small></li><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — sentinelle, hautes herbes)</small></li><li>Crypte du Lièvre de Jade <small>(Pic de la Lune — sentinelle)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — patrouille, hautes herbes)</small></li><li>Sentier Lunaire <small>(Pic de la Lune — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-dame_yin_yue" data-name="dame yin yue la lune d'argent humain">
+<article class="quest be" id="be-dame_yin_yue" data-name="dame yin yue la lune d'argent humain" data-family="Humain" data-resist="purple" data-weak="green" data-zones="arena_c4" data-boss="1">
   <h3>Dame Yin Yue <span class="badge main">Boss</span><small>la Lune d'Argent · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -446,7 +455,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Argent <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-dian_mu" data-name="dian mu dame des éclairs divinité">
+<article class="quest be" id="be-dian_mu" data-name="dian mu dame des éclairs divinité" data-family="Divinité" data-resist="yellow" data-weak="red" data-zones="tonnerre_road" data-boss="">
   <h3>Dian Mu <small>Dame des Éclairs · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -458,7 +467,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-diaosi_gui" data-name="diao si gui pendu gui">
+<article class="quest be" id="be-diaosi_gui" data-name="diao si gui pendu gui" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="ws_terrasse ws_miroir lune_wild" data-boss="">
   <h3>Diao Si Gui <small>Pendu · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -470,7 +479,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>La Terrasse du Regard vers le pays <small>(Forêt de Bambous Calcinée — patrouille, hautes herbes)</small></li><li>Le Miroir du Karma <small>(Forêt de Bambous Calcinée — patrouille, hautes herbes)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-dijiang" data-name="dijiang sac rouge sans visage esprit informe">
+<article class="quest be" id="be-dijiang" data-name="dijiang sac rouge sans visage esprit informe" data-family="Esprit" data-resist="red" data-weak="blue" data-zones="volcan_road" data-boss="">
   <h3>Dijiang <small>Sac Rouge sans Visage · Esprit informe</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -482,7 +491,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-dilong" data-name="dilong dragon de la terre dragon">
+<article class="quest be" id="be-dilong" data-name="dilong dragon de la terre dragon" data-family="Dragon" data-resist="green" data-weak="yellow" data-zones="gobi_road" data-boss="">
   <h3>Dilong <small>Dragon de la Terre · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -494,7 +503,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-du_she" data-name="du she serpent à venin serpent">
+<article class="quest be" id="be-du_she" data-name="du she serpent à venin serpent" data-family="Serpent" data-resist="green" data-weak="yellow" data-zones="rizieres" data-boss="">
   <h3>Du She <small>Serpent à Venin · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -506,7 +515,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-esprit_cloche" data-name="esprit de la cloche écho perdu esprit">
+<article class="quest be" id="be-esprit_cloche" data-name="esprit de la cloche écho perdu esprit" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="bambous" data-boss="">
   <h3>Esprit de la cloche <small>Écho Perdu · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -518,7 +527,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-feilong" data-name="feilong dragon volant dragon">
+<article class="quest be" id="be-feilong" data-name="feilong dragon volant dragon" data-family="Dragon" data-resist="blue" data-weak="green" data-zones="tonnerre_wild" data-boss="">
   <h3>Feilong <small>Dragon Volant · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -530,7 +539,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-feima" data-name="feima cheval volant bête">
+<article class="quest be" id="be-feima" data-name="feima cheval volant bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="gobi_road" data-boss="">
   <h3>Feima <small>Cheval Volant · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -542,7 +551,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-feiyi" data-name="feiyi serpent à deux têtes serpent">
+<article class="quest be" id="be-feiyi" data-name="feiyi serpent à deux têtes serpent" data-family="Serpent" data-resist="purple" data-weak="green" data-zones="lune_wild" data-boss="">
   <h3>Feiyi <small>Serpent à Deux Têtes · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -554,7 +563,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier d'Argent <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-feiyu" data-name="feiyu poisson à contre-courant poisson">
+<article class="quest be" id="be-feiyu" data-name="feiyu poisson à contre-courant poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="fleuve_road" data-boss="">
   <h3>Feiyu <small>Poisson à Contre-Courant · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -566,7 +575,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-feng_bo" data-name="feng bo vieux maître du vent divinité">
+<article class="quest be" id="be-feng_bo" data-name="feng bo vieux maître du vent divinité" data-family="Divinité" data-resist="yellow" data-weak="red" data-zones="tonnerre_road" data-boss="">
   <h3>Feng Bo <small>Vieux Maître du Vent · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -578,7 +587,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-feng_shou" data-name="feng shou bête des vents bête">
+<article class="quest be" id="be-feng_shou" data-name="feng shou bête des vents bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="tonnerre_road" data-boss="">
   <h3>Feng Shou <small>Bête des Vents · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -590,7 +599,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fenghuang" data-name="fenghuang phénix auspicieux oiseau">
+<article class="quest be" id="be-fenghuang" data-name="fenghuang phénix auspicieux oiseau" data-family="Oiseau" data-resist="red" data-weak="blue" data-zones="fusang_road" data-boss="">
   <h3>Fenghuang <small>Phénix Auspicieux · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -602,7 +611,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fengmeng_3a" data-name="fengmeng, l'archer miroir voleur d'élixir humain">
+<article class="quest be" id="be-fengmeng_3a" data-name="fengmeng, l'archer miroir voleur d'élixir humain" data-family="Humain" data-resist="purple" data-weak="green" data-zones="lune" data-boss="1">
   <h3>Fengmeng, l'Archer Miroir <span class="badge main">Boss</span><small>Voleur d'Élixir · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -614,7 +623,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Pic de la Lune <small>(Pic de la Lune — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fengmeng_2" data-name="fengmeng, l'archer pressé rival de la route du volcan humain">
+<article class="quest be" id="be-fengmeng_2" data-name="fengmeng, l'archer pressé rival de la route du volcan humain" data-family="Humain" data-resist="purple" data-weak="green" data-zones="volcan" data-boss="1">
   <h3>Fengmeng, l'Archer Pressé <span class="badge main">Boss</span><small>Rival de la Route du Volcan · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -626,7 +635,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gorges du Volcan <small>(Gorges du Volcan — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fengmeng_1" data-name="fengmeng, le disciple élève jaloux de hou yi humain">
+<article class="quest be" id="be-fengmeng_1" data-name="fengmeng, le disciple élève jaloux de hou yi humain" data-family="Humain" data-resist="purple" data-weak="green" data-zones="rizieres" data-boss="1">
   <h3>Fengmeng, le Disciple <span class="badge main">Boss</span><small>Élève Jaloux de Hou Yi · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -638,7 +647,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fengmeng_3b" data-name="fengmeng, rage et désespoir disciple brisé humain">
+<article class="quest be" id="be-fengmeng_3b" data-name="fengmeng, rage et désespoir disciple brisé humain" data-family="Humain" data-resist="yellow" data-weak="red" data-zones="lune" data-boss="1">
   <h3>Fengmeng, Rage et Désespoir <span class="badge main">Boss</span><small>Disciple Brisé · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -650,7 +659,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Pic de la Lune <small>(Pic de la Lune — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-forgeron_lave" data-name="forgeron de lave gardien des gorges géant">
+<article class="quest be" id="be-forgeron_lave" data-name="forgeron de lave gardien des gorges géant" data-family="Géant" data-resist="red" data-weak="blue" data-zones="volcan_wild" data-boss="1">
   <h3>Forgeron de lave <span class="badge main">Boss</span><small>Gardien des Gorges · Géant</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -662,7 +671,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-forgeron_magma" data-name="forgeron de magma servant du temple du feu humain">
+<article class="quest be" id="be-forgeron_magma" data-name="forgeron de magma servant du temple du feu humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="volcan" data-boss="">
   <h3>Forgeron de magma <small>Servant du Temple du Feu · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -674,7 +683,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gorges du Volcan <small>(Gorges du Volcan — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-foudre_garde" data-name="foudre-garde du col fils du tonnerre esprit">
+<article class="quest be" id="be-foudre_garde" data-name="foudre-garde du col fils du tonnerre esprit" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="tonnerre" data-boss="">
   <h3>Foudre-garde du col <small>Fils du Tonnerre · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -686,7 +695,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Monts du Tonnerre <small>(Monts du Tonnerre — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fucanglong" data-name="fucanglong dragon des trésors enfouis dragon">
+<article class="quest be" id="be-fucanglong" data-name="fucanglong dragon des trésors enfouis dragon" data-family="Dragon" data-resist="green" data-weak="yellow" data-zones="gobi_wild" data-boss="">
   <h3>Fucanglong <small>Dragon des Trésors Enfouis · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -698,7 +707,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fuxi_dragon" data-name="fuxi fils du dragon dragon">
+<article class="quest be" id="be-fuxi_dragon" data-name="fuxi fils du dragon dragon" data-family="Dragon" data-resist="green" data-weak="yellow" data-zones="fauves_wild" data-boss="">
   <h3>Fuxi <small>Fils du Dragon · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -710,7 +719,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-fuxi" data-name="fuxi souverain des trigrammes divinité">
+<article class="quest be" id="be-fuxi" data-name="fuxi souverain des trigrammes divinité" data-family="Divinité" data-resist="green" data-weak="yellow" data-zones="lune_wild" data-boss="">
   <h3>Fuxi <small>Souverain des Trigrammes · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -722,7 +731,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier d'Argent <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-garde_solaire" data-name="garde solaire flamme sacrée humain">
+<article class="quest be" id="be-garde_solaire" data-name="garde solaire flamme sacrée humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="arena_c7 fusang_road fusang fusang_wild" data-boss="1">
   <h3>Garde Solaire <span class="badge main">Boss</span><small>Flamme Sacrée · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -734,7 +743,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — sentinelle)</small></li><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li><li>Cime du Fusang <small>(Cime du Fusang — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-garde_maree" data-name="garde-marée du roi-dragon escadre de la mer orientale esprit aquatique">
+<article class="quest be" id="be-garde_maree" data-name="garde-marée du roi-dragon escadre de la mer orientale esprit aquatique" data-family="Esprit" data-resist="blue" data-weak="green" data-zones="mer" data-boss="">
   <h3>Garde-marée du Roi-Dragon <small>Escadre de la Mer Orientale · Esprit aquatique</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -746,7 +755,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-grand_maitre_qian_jian" data-name="grand maître qian jian l'archer aux mille flèches humain">
+<article class="quest be" id="be-grand_maitre_qian_jian" data-name="grand maître qian jian l'archer aux mille flèches humain" data-family="Humain" data-resist="purple" data-weak="green" data-zones="arena_c8" data-boss="1">
   <h3>Grand Maître Qian Jian <span class="badge main">Boss</span><small>l'Archer aux Mille Flèches · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -758,7 +767,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle des Mille Flèches <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-grue_lige" data-name="grue-lige du fusang messagère des branches hautes oiseau">
+<article class="quest be" id="be-grue_lige" data-name="grue-lige du fusang messagère des branches hautes oiseau" data-family="Oiseau" data-resist="blue" data-weak="green" data-zones="fusang" data-boss="">
   <h3>Grue-lige du Fusang <small>Messagère des Branches Hautes · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -770,7 +779,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cime du Fusang <small>(Cime du Fusang — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-guai_niao" data-name="guai niao oiseau monstrueux oiseau">
+<article class="quest be" id="be-guai_niao" data-name="guai niao oiseau monstrueux oiseau" data-family="Oiseau" data-resist="purple" data-weak="green" data-zones="fusang_road" data-boss="">
   <h3>Guai Niao <small>Oiseau Monstrueux · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -782,7 +791,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-gui_esprit" data-name="gui errant du crépuscule gui">
+<article class="quest be" id="be-gui_esprit" data-name="gui errant du crépuscule gui" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="arena_c8 volcan fleuve ws_roue ws_sources ws_miroir ws_pont wandering_souls_realm fusang_crypt" data-boss="1">
   <h3>Gui <span class="badge main">Boss</span><small>Errant du Crépuscule · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -794,7 +803,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li><li>Gorges du Volcan <small>(Gorges du Volcan — sentinelle)</small></li><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — sentinelle)</small></li><li>La Roue des six voies <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li><li>La Route des Sources Jaunes <small>(Forêt de Bambous Calcinée — patrouille, hautes herbes)</small></li><li>Le Miroir du Karma <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li><li>Le Pont Naihe <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li><li>Le Royaume des âmes errantes <small>(Forêt de Bambous Calcinée — boss, hautes herbes)</small></li><li>Crypte des Branches Mortes <small>(Cime du Fusang — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-gui_guerrier" data-name="gui guerrier sabre rouillé gui">
+<article class="quest be" id="be-gui_guerrier" data-name="gui guerrier sabre rouillé gui" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="arena_c3 arena_c6 rizieres_wild volcan_wild gobi_crypt gobi_wild fleuve_road fleuve_cave fleuve fleuve_wild bambous_crypt ws_pont bambous_wild fauves_crypt fusang_crypt" data-boss="1">
   <h3>Gui Guerrier <span class="badge main">Boss</span><small>Sabre Rouillé · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -806,7 +815,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Fer <small>(arena — sentinelle)</small></li><li>Cercle de Jade <small>(arena — sentinelle)</small></li><li>Digue et Marais Craquelés <small>(Rizières Desséchées — sentinelle, hautes herbes)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — patrouille)</small></li><li>Crypte Ensablée <small>(Désert de Gobi — patrouille)</small></li><li>Dunes des Voix Sablées <small>(Désert de Gobi — sentinelle)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — patrouille)</small></li><li>Grotte des Limons <small>(Lit du Fleuve Jaune — boss)</small></li><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — sentinelle)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — patrouille, sentinelle, hautes herbes)</small></li><li>Crypte des Moines Cendrés <small>(Forêt de Bambous Calcinée — patrouille)</small></li><li>Le Pont Naihe <small>(Forêt de Bambous Calcinée — patrouille, hautes herbes)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — sentinelle, patrouille)</small></li><li>Crypte des Griffes Blanches <small>(Plaine des Fauves — patrouille)</small></li><li>Crypte des Branches Mortes <small>(Cime du Fusang — patrouille)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-gui_po" data-name="gui po vieille aux cheveux longs gui">
+<article class="quest be" id="be-gui_po" data-name="gui po vieille aux cheveux longs gui" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="lune_wild" data-boss="">
   <h3>Gui Po <small>Vieille aux Cheveux Longs · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -818,7 +827,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier d'Argent <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hai_gui" data-name="hai gui tortue des récifs tortue">
+<article class="quest be" id="be-hai_gui" data-name="hai gui tortue des récifs tortue" data-family="Tortue" data-resist="blue" data-weak="green" data-zones="mer marees_wild" data-boss="">
   <h3>Hai Gui <small>Tortue des Récifs · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -830,7 +839,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — hautes herbes)</small></li><li>Gouffre des Mirages <small>(Autel de Mazu — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hai_ruo" data-name="hai ruo esprit de la mer divinité">
+<article class="quest be" id="be-hai_ruo" data-name="hai ruo esprit de la mer divinité" data-family="Divinité" data-resist="blue" data-weak="green" data-zones="mer_wild" data-boss="">
   <h3>Hai Ruo <small>Esprit de la Mer · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -842,7 +851,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hai_she" data-name="hai she serpent des tourbillons serpent">
+<article class="quest be" id="be-hai_she" data-name="hai she serpent des tourbillons serpent" data-family="Serpent" data-resist="blue" data-weak="green" data-zones="mer_wild marees_wild marees_road" data-boss="">
   <h3>Hai She <small>Serpent des Tourbillons · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -854,7 +863,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — hautes herbes)</small></li><li>Gouffre des Mirages <small>(Autel de Mazu — hautes herbes)</small></li><li>Haute Mer des Pontons <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hai_shen" data-name="hai shen dieu de la mer divinité">
+<article class="quest be" id="be-hai_shen" data-name="hai shen dieu de la mer divinité" data-family="Divinité" data-resist="blue" data-weak="green" data-zones="mer_road" data-boss="">
   <h3>Hai Shen <small>Dieu de la Mer · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -866,7 +875,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hanba" data-name="hanba esprit de la sécheresse esprit">
+<article class="quest be" id="be-hanba" data-name="hanba esprit de la sécheresse esprit" data-family="Esprit" data-resist="red" data-weak="blue" data-zones="volcan_road" data-boss="">
   <h3>Hanba <small>Esprit de la Sécheresse · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -878,7 +887,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-he_bo" data-name="he bo seigneur du fleuve jaune divinité">
+<article class="quest be" id="be-he_bo" data-name="he bo seigneur du fleuve jaune divinité" data-family="Divinité" data-resist="blue" data-weak="green" data-zones="fleuve_road" data-boss="">
   <h3>He Bo <small>Seigneur du Fleuve Jaune · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -890,7 +899,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-he_jing" data-name="he jing grue esprit esprit-animal">
+<article class="quest be" id="be-he_jing" data-name="he jing grue esprit esprit-animal" data-family="Esprit" data-resist="blue" data-weak="green" data-zones="bambous_wild" data-boss="">
   <h3>He Jing <small>Grue Esprit · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -902,7 +911,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-heibai_wuchang" data-name="heibai wuchang messagers des morts esprit">
+<article class="quest be" id="be-heibai_wuchang" data-name="heibai wuchang messagers des morts esprit" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="ws_fengdu ws_roue lune_wild" data-boss="1">
   <h3>Heibai Wuchang <span class="badge main">Boss</span><small>Messagers des Morts · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -914,7 +923,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Fengdu, la cité fantôme <small>(Forêt de Bambous Calcinée — boss)</small></li><li>La Roue des six voies <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-heilong" data-name="heilong dragon noir des profondeurs dragon">
+<article class="quest be" id="be-heilong" data-name="heilong dragon noir des profondeurs dragon" data-family="Dragon" data-resist="purple" data-weak="green" data-zones="fleuve" data-boss="">
   <h3>Heilong <small>Dragon Noir des Profondeurs · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -926,7 +935,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-heishui_xuan_she" data-name="heishui xuan she serpent des eaux noires serpent">
+<article class="quest be" id="be-heishui_xuan_she" data-name="heishui xuan she serpent des eaux noires serpent" data-family="Serpent" data-resist="purple" data-weak="green" data-zones="fleuve_wild" data-boss="">
   <h3>Heishui Xuan She <small>Serpent des Eaux Noires · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -938,7 +947,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hai_ma_xing" data-name="hippocampe-lancier cavalier d'écume poisson">
+<article class="quest be" id="be-hai_ma_xing" data-name="hippocampe-lancier cavalier d'écume poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="marees_wild" data-boss="">
   <h3>Hippocampe-lancier <small>Cavalier d'Écume · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -950,7 +959,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gouffre des Mirages <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-houtu" data-name="houtu souveraine de la terre divinité">
+<article class="quest be" id="be-houtu" data-name="houtu souveraine de la terre divinité" data-family="Divinité" data-resist="green" data-weak="yellow" data-zones="gobi_wild" data-boss="">
   <h3>Houtu <small>Souveraine de la Terre · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -962,7 +971,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hu_jing" data-name="hu jing tigre esprit esprit-animal">
+<article class="quest be" id="be-hu_jing" data-name="hu jing tigre esprit esprit-animal" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="bambous_road" data-boss="">
   <h3>Hu Jing <small>Tigre Esprit · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -974,7 +983,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hua_jing" data-name="hua jing fée aux pétales esprit végétal">
+<article class="quest be" id="be-hua_jing" data-name="hua jing fée aux pétales esprit végétal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="rizieres" data-boss="">
   <h3>Hua Jing <small>Fée aux Pétales · Esprit végétal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -986,7 +995,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-huangdi" data-name="huangdi empereur jaune divinité">
+<article class="quest be" id="be-huangdi" data-name="huangdi empereur jaune divinité" data-family="Divinité" data-resist="yellow" data-weak="red" data-zones="fusang_wild" data-boss="">
   <h3>Huangdi <small>Empereur Jaune · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -998,7 +1007,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-huli_commun" data-name="huli renard des digues bête">
+<article class="quest be" id="be-huli_commun" data-name="huli renard des digues bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="rizieres_wild" data-boss="">
   <h3>Huli <small>Renard des Digues · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1010,7 +1019,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-huli_jing" data-name="huli jing chapardeur rusé esprit-renard">
+<article class="quest be" id="be-huli_jing" data-name="huli jing chapardeur rusé esprit-renard" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="arena_c3 rizieres_wild rizieres rizieres_cave volcan_wild volcan_road gobi_wild gobi_road fleuve_road fleuve fleuve_wild ws_fengdu wandering_souls_realm bambous_road bambous_wild tonnerre_wild tonnerre_road fusang_road fusang_wild" data-boss="">
   <h3>Huli Jing <small>Chapardeur Rusé · Esprit-renard</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1022,7 +1031,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Fer <small>(arena — sentinelle)</small></li><li>Digue et Marais Craquelés <small>(Rizières Desséchées — sentinelle, patrouille, hautes herbes)</small></li><li>Rizières Desséchées <small>(Rizières Desséchées — sentinelle, hautes herbes)</small></li><li>Terrier de la Digue <small>(Rizières Desséchées — patrouille)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — sentinelle, hautes herbes)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li><li>Piste des Caravanes <small>(Désert de Gobi — sentinelle, hautes herbes)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — hautes herbes)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — patrouille, hautes herbes)</small></li><li>Fengdu, la cité fantôme <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Le Royaume des âmes errantes <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — patrouille, hautes herbes)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — sentinelle, hautes herbes)</small></li><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-hundun" data-name="hundun du gobi titan du gobi esprit informe">
+<article class="quest be" id="be-hundun" data-name="hundun du gobi titan du gobi esprit informe" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="arena_c8 gobi_crypt gobi gobi_wild gobi_road" data-boss="1">
   <h3>Hundun du Gobi <span class="badge main">Boss</span><small>Titan du Gobi · Esprit informe</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1034,7 +1043,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li><li>Crypte Ensablée <small>(Désert de Gobi — boss)</small></li><li>Désert de Gobi <small>(Désert de Gobi — sentinelle)</small></li><li>Dunes des Voix Sablées <small>(Désert de Gobi — sentinelle, hautes herbes)</small></li><li>Piste des Caravanes <small>(Désert de Gobi — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-huo_shen" data-name="huo shen esprit de la flamme esprit de feu">
+<article class="quest be" id="be-huo_shen" data-name="huo shen esprit de la flamme esprit de feu" data-family="Esprit" data-resist="red" data-weak="blue" data-zones="volcan_road" data-boss="">
   <h3>Huo Shen <small>Esprit de la Flamme · Esprit de feu</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1046,7 +1055,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-huo_shou" data-name="huo shou bête de cendre bête">
+<article class="quest be" id="be-huo_shou" data-name="huo shou bête de cendre bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="volcan_wild" data-boss="">
   <h3>Huo Shou <small>Bête de Cendre · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1058,7 +1067,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-immortel_jade" data-name="immortel de jade oracle scintillant esprit de pierre">
+<article class="quest be" id="be-immortel_jade" data-name="immortel de jade oracle scintillant esprit de pierre" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="arena_c4 arena_c1 fusang fusang_wild lune_wild" data-boss="">
   <h3>Immortel de Jade <small>Oracle Scintillant · Esprit de pierre</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1070,7 +1079,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Argent <small>(arena — sentinelle)</small></li><li>Cercle de Bronze <small>(arena — sentinelle)</small></li><li>Cime du Fusang <small>(Cime du Fusang — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — sentinelle, hautes herbes)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-immortel_yun_zhong" data-name="immortel yun zhong celui-des-nuées humain">
+<article class="quest be" id="be-immortel_yun_zhong" data-name="immortel yun zhong celui-des-nuées humain" data-family="Humain" data-resist="blue" data-weak="green" data-zones="arena_c7" data-boss="1">
   <h3>Immortel Yun Zhong <span class="badge main">Boss</span><small>Celui-des-Nuées · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1082,7 +1091,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jiangshi" data-name="jiangshi sauteur de minuit cadavre sauteur">
+<article class="quest be" id="be-jiangshi" data-name="jiangshi sauteur de minuit cadavre sauteur" data-family="Autre" data-resist="purple" data-weak="green" data-zones="arena_c7 ws_fengdu wandering_souls_realm fusang_road fusang fusang_wild lune_crypt lune lune_wild lune_road" data-boss="1">
   <h3>Jiangshi <span class="badge main">Boss</span><small>Sauteur de Minuit · Cadavre sauteur</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1094,7 +1103,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — sentinelle)</small></li><li>Fengdu, la cité fantôme <small>(Forêt de Bambous Calcinée — patrouille, hautes herbes)</small></li><li>Le Royaume des âmes errantes <small>(Forêt de Bambous Calcinée — patrouille, sentinelle, hautes herbes)</small></li><li>Chemin des Racines Géantes <small>(Cime du Fusang — patrouille)</small></li><li>Cime du Fusang <small>(Cime du Fusang — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — patrouille, hautes herbes)</small></li><li>Crypte du Lièvre de Jade <small>(Pic de la Lune — boss)</small></li><li>Pic de la Lune <small>(Pic de la Lune — sentinelle)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — patrouille, hautes herbes)</small></li><li>Sentier Lunaire <small>(Pic de la Lune — patrouille, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jiao" data-name="jiao dragon des remous dragon">
+<article class="quest be" id="be-jiao" data-name="jiao dragon des remous dragon" data-family="Dragon" data-resist="blue" data-weak="green" data-zones="fleuve" data-boss="">
   <h3>Jiao <small>Dragon des Remous · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1106,7 +1115,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jiaolong" data-name="jiaolong du fleuve terreur des eaux profondes long">
+<article class="quest be" id="be-jiaolong" data-name="jiaolong du fleuve terreur des eaux profondes long" data-family="Dragon" data-resist="blue" data-weak="green" data-zones="arena_c6 fleuve_road fleuve_cave fleuve fleuve_wild mer_wild mer_cave mer_road mer_archipel mer marees_wild" data-boss="1">
   <h3>Jiaolong du Fleuve <span class="badge main">Boss</span><small>Terreur des Eaux Profondes · Long</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1118,7 +1127,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Jade <small>(arena — sentinelle)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — sentinelle, hautes herbes)</small></li><li>Grotte des Limons <small>(Lit du Fleuve Jaune — patrouille)</small></li><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — sentinelle, hautes herbes)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — patrouille, hautes herbes)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — boss, patrouille, sentinelle, hautes herbes)</small></li><li>Grotte des Marées <small>(Rivage de la Mer Orientale — boss)</small></li><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — sentinelle, hautes herbes)</small></li><li>Mer des Mille Îlots <small>(Rivage de la Mer Orientale — patrouille)</small></li><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — sentinelle, hautes herbes)</small></li><li>Gouffre des Mirages <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jiaoyu" data-name="jiaoyu poisson-dragon poisson">
+<article class="quest be" id="be-jiaoyu" data-name="jiaoyu poisson-dragon poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="fleuve_wild" data-boss="">
   <h3>Jiaoyu <small>Poisson-Dragon · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1130,7 +1139,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jing_jing" data-name="jing jing esprit d'objet ancien esprit">
+<article class="quest be" id="be-jing_jing" data-name="jing jing esprit d'objet ancien esprit" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="gobi_wild" data-boss="">
   <h3>Jing Jing <small>Esprit d'Objet Ancien · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1142,7 +1151,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jing_shou" data-name="jing shou bête aux yeux lumineux esprit-animal">
+<article class="quest be" id="be-jing_shou" data-name="jing shou bête aux yeux lumineux esprit-animal" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="bambous_road" data-boss="">
   <h3>Jing Shou <small>Bête aux Yeux Lumineux · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1154,7 +1163,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jingwei" data-name="jingwei oiseau qui comble la mer oiseau">
+<article class="quest be" id="be-jingwei" data-name="jingwei oiseau qui comble la mer oiseau" data-family="Oiseau" data-resist="blue" data-weak="green" data-zones="rizieres_wild" data-boss="">
   <h3>Jingwei <small>Oiseau qui Comble la Mer · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1166,7 +1175,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jinwu" data-name="jinwu oiseau d'or du soleil oiseau">
+<article class="quest be" id="be-jinwu" data-name="jinwu oiseau d'or du soleil oiseau" data-family="Oiseau" data-resist="red" data-weak="blue" data-zones="fusang_road" data-boss="">
   <h3>Jinwu <small>Oiseau d'Or du Soleil · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1178,7 +1187,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-jiuweihu" data-name="jiuweihu renard à neuf queues esprit-animal">
+<article class="quest be" id="be-jiuweihu" data-name="jiuweihu renard à neuf queues esprit-animal" data-family="Esprit" data-resist="red" data-weak="blue" data-zones="fauves" data-boss="">
   <h3>Jiuweihu <small>Renard à Neuf Queues · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1190,7 +1199,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-kuafu" data-name="kua fu poursuivant du soleil géant">
+<article class="quest be" id="be-kuafu" data-name="kua fu poursuivant du soleil géant" data-family="Géant" data-resist="yellow" data-weak="red" data-zones="fusang_wild" data-boss="">
   <h3>Kua Fu <small>Poursuivant du Soleil · Géant</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1202,7 +1211,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-kuafu_geant" data-name="kuafu géant du soleil géant">
+<article class="quest be" id="be-kuafu_geant" data-name="kuafu géant du soleil géant" data-family="Géant" data-resist="yellow" data-weak="red" data-zones="fauves" data-boss="">
   <h3>Kuafu <small>Géant du Soleil · Géant</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1214,7 +1223,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-kun" data-name="kun poisson colossal poisson">
+<article class="quest be" id="be-kun" data-name="kun poisson colossal poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="mer" data-boss="">
   <h3>Kun <small>Poisson Colossal · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1226,7 +1235,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lang_jing" data-name="lang jing loup esprit esprit-animal">
+<article class="quest be" id="be-lang_jing" data-name="lang jing loup esprit esprit-animal" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="bambous_road" data-boss="">
   <h3>Lang Jing <small>Loup Esprit · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1238,7 +1247,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lei_gong" data-name="lei gong lance d'éclair esprit">
+<article class="quest be" id="be-lei_gong" data-name="lei gong lance d'éclair esprit" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="arena_c1 arena_c8 tonnerre_wild tonnerre_road tonnerre_cave tonnerre fusang_wild" data-boss="">
   <h3>Lei Gong <small>Lance d'Éclair · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1250,7 +1259,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Bronze <small>(arena — sentinelle)</small></li><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — sentinelle)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li><li>Galeries du Tonnerre Sourd <small>(Monts du Tonnerre — sentinelle)</small></li><li>Monts du Tonnerre <small>(Monts du Tonnerre — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lei_shou" data-name="lei shou bête du tonnerre bête">
+<article class="quest be" id="be-lei_shou" data-name="lei shou bête du tonnerre bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="tonnerre_wild" data-boss="">
   <h3>Lei Shou <small>Bête du Tonnerre · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1262,7 +1271,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lettre_sorcier" data-name="lettré-sorcier maître du pinceau humain">
+<article class="quest be" id="be-lettre_sorcier" data-name="lettré-sorcier maître du pinceau humain" data-family="Humain" data-resist="blue" data-weak="green" data-zones="arena_c1 volcan_wild gobi_wild gobi_road fusang_crypt fusang_wild" data-boss="">
   <h3>Lettré-Sorcier <small>Maître du Pinceau · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1274,7 +1283,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Bronze <small>(arena — sentinelle)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — sentinelle)</small></li><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li><li>Crypte des Branches Mortes <small>(Cime du Fusang — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-linggui" data-name="linggui tortue des présages tortue">
+<article class="quest be" id="be-linggui" data-name="linggui tortue des présages tortue" data-family="Tortue" data-resist="blue" data-weak="green" data-zones="fleuve_road" data-boss="">
   <h3>Linggui <small>Tortue des Présages · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1286,7 +1295,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lingzhi_maudit" data-name="lingzhi maudit champignon aux spores rouges esprit végétal">
+<article class="quest be" id="be-lingzhi_maudit" data-name="lingzhi maudit champignon aux spores rouges esprit végétal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="arena_c5 arena_c8 rizieres_wild rizieres bambous bambous_road bambous_wild tonnerre_wild tonnerre_road tonnerre_cave" data-boss="">
   <h3>Lingzhi Maudit <small>Champignon aux Spores Rouges · Esprit végétal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1298,7 +1307,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Or <small>(arena — sentinelle)</small></li><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li><li>Digue et Marais Craquelés <small>(Rizières Desséchées — sentinelle)</small></li><li>Rizières Desséchées <small>(Rizières Desséchées — sentinelle)</small></li><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — sentinelle, hautes herbes)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — sentinelle, hautes herbes)</small></li><li>Galeries du Tonnerre Sourd <small>(Monts du Tonnerre — patrouille)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-long" data-name="long dragon céleste dragon">
+<article class="quest be" id="be-long" data-name="long dragon céleste dragon" data-family="Dragon" data-resist="yellow" data-weak="red" data-zones="mer_road" data-boss="">
   <h3>Long <small>Dragon Céleste · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1310,7 +1319,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-longma" data-name="longma cheval-dragon hybride">
+<article class="quest be" id="be-longma" data-name="longma cheval-dragon hybride" data-family="Hybride" data-resist="green" data-weak="yellow" data-zones="fauves" data-boss="">
   <h3>Longma <small>Cheval-Dragon · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1322,7 +1331,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-longwang" data-name="longwang roi-dragon des mers divinité">
+<article class="quest be" id="be-longwang" data-name="longwang roi-dragon des mers divinité" data-family="Divinité" data-resist="blue" data-weak="green" data-zones="mer_road" data-boss="">
   <h3>Longwang <small>Roi-Dragon des Mers · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1334,7 +1343,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-loup_braise" data-name="loup de braise croc incandescent bête">
+<article class="quest be" id="be-loup_braise" data-name="loup de braise croc incandescent bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="arena_c6 volcan_cave volcan_wild volcan_road volcan fauves_crypt fauves_wild fauves_road fauves fusang_wild" data-boss="">
   <h3>Loup de Braise <small>Croc Incandescent · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1346,7 +1355,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Jade <small>(arena — sentinelle)</small></li><li>Cavernes de Basalte <small>(Gorges du Volcan — sentinelle)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — sentinelle, hautes herbes)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — sentinelle, hautes herbes)</small></li><li>Gorges du Volcan <small>(Gorges du Volcan — sentinelle)</small></li><li>Crypte des Griffes Blanches <small>(Plaine des Fauves — sentinelle)</small></li><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — sentinelle, patrouille, hautes herbes)</small></li><li>Piste des Troupeaux <small>(Plaine des Fauves — patrouille, sentinelle, hautes herbes)</small></li><li>Plaine des Fauves <small>(Plaine des Fauves — sentinelle, hautes herbes)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — patrouille)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-lu_jing" data-name="lu jing cerf lumineux esprit-animal">
+<article class="quest be" id="be-lu_jing" data-name="lu jing cerf lumineux esprit-animal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="bambous_wild" data-boss="">
   <h3>Lu Jing <small>Cerf Lumineux · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1358,7 +1367,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-maitre_hong_gang" data-name="maître hong gang le gong de cuivre humain">
+<article class="quest be" id="be-maitre_hong_gang" data-name="maître hong gang le gong de cuivre humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="arena_c2" data-boss="1">
   <h3>Maître Hong Gang <span class="badge main">Boss</span><small>le Gong de Cuivre · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1370,7 +1379,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Cuivre <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-maitre_tie_bi" data-name="maître tie bi le bras de fer humain">
+<article class="quest be" id="be-maitre_tie_bi" data-name="maître tie bi le bras de fer humain" data-family="Humain" data-resist="yellow" data-weak="red" data-zones="arena_c3" data-boss="1">
   <h3>Maître Tie Bi <span class="badge main">Boss</span><small>le Bras de Fer · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1382,7 +1391,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Fer <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-maitresse_tong" data-name="maîtresse tong la lame de bronze humain">
+<article class="quest be" id="be-maitresse_tong" data-name="maîtresse tong la lame de bronze humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="arena_c1" data-boss="1">
   <h3>Maîtresse Tong <span class="badge main">Boss</span><small>la Lame de Bronze · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1394,7 +1403,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Bronze <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shuimu_denglong" data-name="méduse-lanterne lanterne des eaux noires méduse">
+<article class="quest be" id="be-shuimu_denglong" data-name="méduse-lanterne lanterne des eaux noires méduse" data-family="Autre" data-resist="blue" data-weak="green" data-zones="marees_wild marees_road" data-boss="">
   <h3>Méduse-lanterne <small>Lanterne des Eaux Noires · Méduse</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1406,7 +1415,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gouffre des Mirages <small>(Autel de Mazu — sentinelle, hautes herbes)</small></li><li>Haute Mer des Pontons <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-mei" data-name="mei esprit trompeur esprit">
+<article class="quest be" id="be-mei" data-name="mei esprit trompeur esprit" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="gobi_wild" data-boss="">
   <h3>Mei <small>Esprit Trompeur · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1418,7 +1427,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-meng_shou" data-name="meng shou bête des rêves bête">
+<article class="quest be" id="be-meng_shou" data-name="meng shou bête des rêves bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="gobi_road" data-boss="">
   <h3>Meng Shou <small>Bête des Rêves · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1430,7 +1439,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-ming_niao" data-name="ming niao oiseau des ténèbres oiseau">
+<article class="quest be" id="be-ming_niao" data-name="ming niao oiseau des ténèbres oiseau" data-family="Oiseau" data-resist="purple" data-weak="green" data-zones="fusang_wild" data-boss="">
   <h3>Ming Niao <small>Oiseau des Ténèbres · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1442,7 +1451,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-mu_gui" data-name="mu gui fantôme des arbres morts gui">
+<article class="quest be" id="be-mu_gui" data-name="mu gui fantôme des arbres morts gui" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="ws_sources bambous_road" data-boss="">
   <h3>Mu Gui <small>Fantôme des Arbres Morts · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1454,7 +1463,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>La Route des Sources Jaunes <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-mu_mei" data-name="mu mei esprit du bois esprit végétal">
+<article class="quest be" id="be-mu_mei" data-name="mu mei esprit du bois esprit végétal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="bambous_wild" data-boss="">
   <h3>Mu Mei <small>Esprit du Bois · Esprit végétal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1466,7 +1475,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-nian" data-name="nian monstre de la veille du nouvel an bête">
+<article class="quest be" id="be-nian" data-name="nian monstre de la veille du nouvel an bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="fauves_road" data-boss="">
   <h3>Nian <small>Monstre de la Veille du Nouvel An · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1478,7 +1487,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Troupeaux <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-noye_garde" data-name="noyé-garde des roches veilleur de l'eau perdue gui">
+<article class="quest be" id="be-noye_garde" data-name="noyé-garde des roches veilleur de l'eau perdue gui" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="fleuve" data-boss="">
   <h3>Noyé-garde des roches <small>Veilleur de l'Eau Perdue · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1490,7 +1499,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-nu_gui" data-name="nü gui fantôme aux cheveux défaits gui">
+<article class="quest be" id="be-nu_gui" data-name="nü gui fantôme aux cheveux défaits gui" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="ws_fengdu ws_terrasse ws_miroir lune_road" data-boss="">
   <h3>Nü Gui <small>Fantôme aux Cheveux Défaits · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1502,7 +1511,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Fengdu, la cité fantôme <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>La Terrasse du Regard vers le pays <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Le Miroir du Karma <small>(Forêt de Bambous Calcinée — patrouille, hautes herbes)</small></li><li>Sentier Lunaire <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-nuba" data-name="nüba déesse de la sécheresse divinité">
+<article class="quest be" id="be-nuba" data-name="nüba déesse de la sécheresse divinité" data-family="Divinité" data-resist="red" data-weak="blue" data-zones="volcan_wild" data-boss="">
   <h3>Nüba <small>Déesse de la Sécheresse · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1514,7 +1523,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-nuwa" data-name="nüwa mère des hommes divinité">
+<article class="quest be" id="be-nuwa" data-name="nüwa mère des hommes divinité" data-family="Divinité" data-resist="yellow" data-weak="red" data-zones="lune_road" data-boss="">
   <h3>Nüwa <small>Mère des Hommes · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1526,7 +1535,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier Lunaire <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-panlong" data-name="panlong dragon lové dragon">
+<article class="quest be" id="be-panlong" data-name="panlong dragon lové dragon" data-family="Dragon" data-resist="green" data-weak="yellow" data-zones="mer" data-boss="">
   <h3>Panlong <small>Dragon Lové · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1538,7 +1547,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-peng" data-name="peng oiseau gigantesque oiseau">
+<article class="quest be" id="be-peng" data-name="peng oiseau gigantesque oiseau" data-family="Oiseau" data-resist="blue" data-weak="green" data-zones="fusang_wild" data-boss="">
   <h3>Peng <small>Oiseau Gigantesque · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1550,7 +1559,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-petit_gui" data-name="petit gui chapardeur des flaques gui">
+<article class="quest be" id="be-petit_gui" data-name="petit gui chapardeur des flaques gui" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="volcan_road fleuve_road fleuve_wild" data-boss="">
   <h3>Petit gui <small>Chapardeur des Flaques · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1562,7 +1571,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Galerie de Basalte <small>(Gorges du Volcan — sentinelle)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — sentinelle)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-pixiu" data-name="pixiu cœur de fournaise hybride">
+<article class="quest be" id="be-pixiu" data-name="pixiu cœur de fournaise hybride" data-family="Hybride" data-resist="red" data-weak="blue" data-zones="arena_c5 arena_c2 arena_c8 volcan_cave volcan_wild volcan_road volcan" data-boss="1">
   <h3>Pixiu <span class="badge main">Boss</span><small>Cœur de Fournaise · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1574,7 +1583,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Or <small>(arena — sentinelle)</small></li><li>Cercle de Cuivre <small>(arena — sentinelle)</small></li><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li><li>Cavernes de Basalte <small>(Gorges du Volcan — boss)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — sentinelle)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li><li>Gorges du Volcan <small>(Gorges du Volcan — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-pixiu_tresor" data-name="pixiu gardien des richesses hybride">
+<article class="quest be" id="be-pixiu_tresor" data-name="pixiu gardien des richesses hybride" data-family="Hybride" data-resist="yellow" data-weak="red" data-zones="fauves_road" data-boss="">
   <h3>Pixiu <small>Gardien des Richesses · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1586,7 +1595,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Troupeaux <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-baoyu_jian" data-name="poisson-épée de tempête lame des orages poisson">
+<article class="quest be" id="be-baoyu_jian" data-name="poisson-épée de tempête lame des orages poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="marees_wild" data-boss="">
   <h3>Poisson-épée de tempête <small>Lame des Orages · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1598,7 +1607,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gouffre des Mirages <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-pretresse_lunaire" data-name="prêtresse lunaire servante de chang'e esprit">
+<article class="quest be" id="be-pretresse_lunaire" data-name="prêtresse lunaire servante de chang'e esprit" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="arena_c3 bambous bambous_wild lune lune_wild lune_road" data-boss="1">
   <h3>Prêtresse Lunaire <span class="badge main">Boss</span><small>Servante de Chang'e · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1610,7 +1619,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Fer <small>(arena — sentinelle)</small></li><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — sentinelle)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — sentinelle)</small></li><li>Pic de la Lune <small>(Pic de la Lune — patrouille)</small></li><li>Sentier d'Argent <small>(Pic de la Lune — boss)</small></li><li>Sentier Lunaire <small>(Pic de la Lune — patrouille, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-pulao" data-name="pulao dragon des cloches dragon">
+<article class="quest be" id="be-pulao" data-name="pulao dragon des cloches dragon" data-family="Dragon" data-resist="yellow" data-weak="red" data-zones="tonnerre_road" data-boss="">
   <h3>Pulao <small>Dragon des Cloches · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1622,7 +1631,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-qilin" data-name="qilin licorne de vertu hybride">
+<article class="quest be" id="be-qilin" data-name="qilin licorne de vertu hybride" data-family="Hybride" data-resist="green" data-weak="yellow" data-zones="bambous_road" data-boss="">
   <h3>Qilin <small>Licorne de Vertu · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1634,7 +1643,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-qing_she" data-name="qing she serpent vert de jade serpent">
+<article class="quest be" id="be-qing_she" data-name="qing she serpent vert de jade serpent" data-family="Serpent" data-resist="green" data-weak="yellow" data-zones="rizieres" data-boss="">
   <h3>Qing She <small>Serpent Vert de Jade · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1646,7 +1655,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-qinglong" data-name="qinglong dragon azur de l'est dragon">
+<article class="quest be" id="be-qinglong" data-name="qinglong dragon azur de l'est dragon" data-family="Dragon" data-resist="green" data-weak="yellow" data-zones="tonnerre_road fusang_wild" data-boss="1">
   <h3>Qinglong <span class="badge main">Boss</span><small>Dragon Azur de l'Est · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1658,7 +1667,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-qingniao" data-name="qingniao oiseau bleu messager oiseau">
+<article class="quest be" id="be-qingniao" data-name="qingniao oiseau bleu messager oiseau" data-family="Oiseau" data-resist="blue" data-weak="green" data-zones="fusang_wild" data-boss="">
   <h3>Qingniao <small>Oiseau Bleu Messager · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1670,7 +1679,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-qiongqi" data-name="qiongqi tigre ailé cruel bête">
+<article class="quest be" id="be-qiongqi" data-name="qiongqi tigre ailé cruel bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="tonnerre_wild" data-boss="">
   <h3>Qiongqi <small>Tigre Ailé Cruel · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -1682,7 +1691,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-ren_yu" data-name="ren yu sirène chantante hybride">
+<article class="quest be" id="be-ren_yu" data-name="ren yu sirène chantante hybride" data-family="Hybride" data-resist="blue" data-weak="green" data-zones="mer_road marees_wild marees_road" data-boss="">
   <h3>Ren Yu <small>Sirène Chantante · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1694,7 +1703,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — hautes herbes)</small></li><li>Gouffre des Mirages <small>(Autel de Mazu — hautes herbes)</small></li><li>Haute Mer des Pontons <small>(Autel de Mazu — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-ruiniao" data-name="rui niao oiseau de bon augure oiseau">
+<article class="quest be" id="be-ruiniao" data-name="rui niao oiseau de bon augure oiseau" data-family="Oiseau" data-resist="yellow" data-weak="red" data-zones="fusang_road" data-boss="">
   <h3>Rui Niao <small>Oiseau de Bon Augure · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1706,7 +1715,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sanglier_flammes" data-name="sanglier de flammes charge ardente bête">
+<article class="quest be" id="be-sanglier_flammes" data-name="sanglier de flammes charge ardente bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="arena_c3 arena_c6 volcan_wild volcan_road fauves_wild fauves_road fauves" data-boss="">
   <h3>Sanglier de Flammes <small>Charge Ardente · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1718,7 +1727,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Fer <small>(arena — sentinelle)</small></li><li>Cercle de Jade <small>(arena — sentinelle)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — patrouille, hautes herbes)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — patrouille, hautes herbes)</small></li><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — sentinelle, patrouille, hautes herbes)</small></li><li>Piste des Troupeaux <small>(Plaine des Fauves — sentinelle, hautes herbes)</small></li><li>Plaine des Fauves <small>(Plaine des Fauves — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sanzu_wu" data-name="sanzu wu corbeau à trois pattes oiseau">
+<article class="quest be" id="be-sanzu_wu" data-name="sanzu wu corbeau à trois pattes oiseau" data-family="Oiseau" data-resist="red" data-weak="blue" data-zones="fusang_wild" data-boss="">
   <h3>Sanzu Wu <small>Corbeau à Trois Pattes · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1730,7 +1739,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-seigneur_jin_long" data-name="seigneur jin long le dragon d'or humain">
+<article class="quest be" id="be-seigneur_jin_long" data-name="seigneur jin long le dragon d'or humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="arena_c5" data-boss="1">
   <h3>Seigneur Jin Long <span class="badge main">Boss</span><small>le Dragon d'Or · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1742,7 +1751,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Or <small>(arena — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shan_gui" data-name="shan gui esprit sauvage des cols esprit">
+<article class="quest be" id="be-shan_gui" data-name="shan gui esprit sauvage des cols esprit" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="wlm_col wlm_sanctuaire bambous" data-boss="">
   <h3>Shan Gui <small>Esprit Sauvage des Cols · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1754,7 +1763,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Le col des pins gelés <small>(Rizières Desséchées — hautes herbes)</small></li><li>Le sanctuaire de la flamme <small>(Rizières Desséchées — hautes herbes)</small></li><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shan_shen" data-name="shan shen esprit de la montagne divinité">
+<article class="quest be" id="be-shan_shen" data-name="shan shen esprit de la montagne divinité" data-family="Divinité" data-resist="green" data-weak="yellow" data-zones="wlm_sanctuaire bambous_wild" data-boss="1">
   <h3>Shan Shen <span class="badge main">Boss</span><small>Esprit de la Montagne · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1766,7 +1775,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Le sanctuaire de la flamme <small>(Rizières Desséchées — boss)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shanxiao" data-name="shanxiao démon des cols esprit de montagne">
+<article class="quest be" id="be-shanxiao" data-name="shanxiao démon des cols esprit de montagne" data-family="Esprit" data-resist="red" data-weak="blue" data-zones="arena_c5 arena_c8 tonnerre_wild fauves_wild fauves mer_wild" data-boss="">
   <h3>Shanxiao <small>Démon des Cols · Esprit de montagne</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1778,7 +1787,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle d'Or <small>(arena — sentinelle)</small></li><li>Cercle des Mille Flèches <small>(arena — sentinelle)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — sentinelle, hautes herbes)</small></li><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — sentinelle, hautes herbes)</small></li><li>Plaine des Fauves <small>(Plaine des Fauves — sentinelle)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — patrouille)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-she_jing" data-name="she jing serpent esprit esprit-animal">
+<article class="quest be" id="be-she_jing" data-name="she jing serpent esprit esprit-animal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="bambous" data-boss="">
   <h3>She Jing <small>Serpent Esprit · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1790,7 +1799,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-she_shen" data-name="she shen gardien du terroir esprit">
+<article class="quest be" id="be-she_shen" data-name="she shen gardien du terroir esprit" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="rizieres" data-boss="">
   <h3>She Shen <small>Gardien du Terroir · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1802,7 +1811,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shenlong" data-name="shenlong dragon divin dragon">
+<article class="quest be" id="be-shenlong" data-name="shenlong dragon divin dragon" data-family="Dragon" data-resist="blue" data-weak="green" data-zones="mer_wild" data-boss="">
   <h3>Shenlong <small>Dragon Divin · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1814,7 +1823,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shennong" data-name="shennong souverain des plantes divinité">
+<article class="quest be" id="be-shennong" data-name="shennong souverain des plantes divinité" data-family="Divinité" data-resist="green" data-weak="yellow" data-zones="fusang_road" data-boss="">
   <h3>Shennong <small>Souverain des Plantes · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1826,7 +1835,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shi_jing" data-name="shi jing esprit de pierre esprit de pierre">
+<article class="quest be" id="be-shi_jing" data-name="shi jing esprit de pierre esprit de pierre" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="wlm_col wlm_sanctuaire gobi_road" data-boss="">
   <h3>Shi Jing <small>Esprit de Pierre · Esprit de pierre</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1838,7 +1847,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Le col des pins gelés <small>(Rizières Desséchées — sentinelle)</small></li><li>Le sanctuaire de la flamme <small>(Rizières Desséchées — sentinelle)</small></li><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shouling" data-name="shouling âme de la bête esprit-animal">
+<article class="quest be" id="be-shouling" data-name="shouling âme de la bête esprit-animal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="bambous_wild" data-boss="">
   <h3>Shouling <small>Âme de la Bête · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1850,7 +1859,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shu_jing" data-name="shu jing gardien des vieux pins esprit">
+<article class="quest be" id="be-shu_jing" data-name="shu jing gardien des vieux pins esprit" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="arena_c6 rizieres_wild rizieres rizieres_cave bambous bambous_road bambous_wild fusang_road fusang_wild" data-boss="1">
   <h3>Shu Jing <span class="badge main">Boss</span><small>Gardien des Vieux Pins · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1862,7 +1871,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Jade <small>(arena — sentinelle)</small></li><li>Digue et Marais Craquelés <small>(Rizières Desséchées — boss, patrouille, sentinelle, hautes herbes)</small></li><li>Rizières Desséchées <small>(Rizières Desséchées — patrouille, hautes herbes)</small></li><li>Terrier de la Digue <small>(Rizières Desséchées — boss)</small></li><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — patrouille, sentinelle, hautes herbes)</small></li><li>Chemin des Racines Géantes <small>(Cime du Fusang — sentinelle, hautes herbes)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shui_gui" data-name="shui gui noyé des berges gui">
+<article class="quest be" id="be-shui_gui" data-name="shui gui noyé des berges gui" data-family="Esprit" data-resist="blue" data-weak="green" data-zones="rizieres_wild ws_sources ws_pont" data-boss="">
   <h3>Shui Gui <small>Noyé des Berges · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1874,7 +1883,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — hautes herbes)</small></li><li>La Route des Sources Jaunes <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Le Pont Naihe <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shui_shen" data-name="shui shen esprit des eaux esprit aquatique">
+<article class="quest be" id="be-shui_shen" data-name="shui shen esprit des eaux esprit aquatique" data-family="Esprit" data-resist="blue" data-weak="green" data-zones="fleuve_wild" data-boss="">
   <h3>Shui Shen <small>Esprit des Eaux · Esprit aquatique</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1886,7 +1895,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-shuihou" data-name="shuihou singe de la vase esprit aquatique">
+<article class="quest be" id="be-shuihou" data-name="shuihou singe de la vase esprit aquatique" data-family="Esprit" data-resist="blue" data-weak="green" data-zones="rizieres" data-boss="">
   <h3>Shuihou <small>Singe de la Vase · Esprit aquatique</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1898,7 +1907,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-singe_demon" data-name="singe-démon voleur de pêches bête">
+<article class="quest be" id="be-singe_demon" data-name="singe-démon voleur de pêches bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="fusang_road fusang_wild" data-boss="">
   <h3>Singe-démon <small>Voleur de Pêches · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1910,7 +1919,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — sentinelle)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-soldat_terre_cuite" data-name="soldat de terre cuite champion en armure de fer humain">
+<article class="quest be" id="be-soldat_terre_cuite" data-name="soldat de terre cuite champion en armure de fer humain" data-family="Humain" data-resist="red" data-weak="blue" data-zones="arena_c7 volcan_wild volcan_road fleuve_road fleuve_wild tonnerre_wild tonnerre_road mer_wild mer_road mer" data-boss="1">
   <h3>Soldat de Terre Cuite <span class="badge main">Boss</span><small>Champion en Armure de Fer · Humain</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1922,7 +1931,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — sentinelle)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — sentinelle)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — sentinelle)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — hautes herbes)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — boss, sentinelle, hautes herbes)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — patrouille)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — sentinelle)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — hautes herbes)</small></li><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — hautes herbes)</small></li><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_1" data-name="soleil ardent le plus jeune des dix soleil">
+<article class="quest be" id="be-sun_1" data-name="soleil ardent le plus jeune des dix soleil" data-family="Soleil" data-resist="yellow" data-weak="red" data-zones="rizieres" data-boss="1">
   <h3>Soleil Ardent <span class="badge main">Boss</span><small>Le Plus Jeune des Dix · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -1934,7 +1943,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rizières Desséchées <small>(Rizières Desséchées — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_3" data-name="soleil de cendres silence des bambous soleil">
+<article class="quest be" id="be-sun_3" data-name="soleil de cendres silence des bambous soleil" data-family="Soleil" data-resist="green" data-weak="yellow" data-zones="bambous" data-boss="1">
   <h3>Soleil de Cendres <span class="badge main">Boss</span><small>Silence des Bambous · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -1946,7 +1955,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_6" data-name="soleil de magma cœur du volcan soleil">
+<article class="quest be" id="be-sun_6" data-name="soleil de magma cœur du volcan soleil" data-family="Soleil" data-resist="red" data-weak="blue" data-zones="volcan" data-boss="1">
   <h3>Soleil de Magma <span class="badge main">Boss</span><small>Cœur du Volcan · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1958,7 +1967,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Gorges du Volcan <small>(Gorges du Volcan — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_7" data-name="soleil des bêtes folles fièvre de la plaine soleil">
+<article class="quest be" id="be-sun_7" data-name="soleil des bêtes folles fièvre de la plaine soleil" data-family="Soleil" data-resist="red" data-weak="blue" data-zones="fauves" data-boss="1">
   <h3>Soleil des Bêtes Folles <span class="badge main">Boss</span><small>Fièvre de la Plaine · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1970,7 +1979,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_2" data-name="soleil des eaux taries buveur du fleuve jaune soleil">
+<article class="quest be" id="be-sun_2" data-name="soleil des eaux taries buveur du fleuve jaune soleil" data-family="Soleil" data-resist="red" data-weak="blue" data-zones="fleuve" data-boss="1">
   <h3>Soleil des Eaux Taries <span class="badge main">Boss</span><small>Buveur du Fleuve Jaune · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -1982,7 +1991,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_8" data-name="soleil des marées seigneur des vagues chaudes soleil">
+<article class="quest be" id="be-sun_8" data-name="soleil des marées seigneur des vagues chaudes soleil" data-family="Soleil" data-resist="blue" data-weak="green" data-zones="mer" data-boss="1">
   <h3>Soleil des Marées <span class="badge main">Boss</span><small>Seigneur des Vagues Chaudes · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -1994,7 +2003,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_4" data-name="soleil des mirages mille reflets du gobi soleil">
+<article class="quest be" id="be-sun_4" data-name="soleil des mirages mille reflets du gobi soleil" data-family="Soleil" data-resist="blue" data-weak="green" data-zones="gobi" data-boss="1">
   <h3>Soleil des Mirages <span class="badge main">Boss</span><small>Mille Reflets du Gobi · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2006,7 +2015,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Désert de Gobi <small>(Désert de Gobi — sentinelle, boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_5" data-name="soleil des orages cage d'éclairs soleil">
+<article class="quest be" id="be-sun_5" data-name="soleil des orages cage d'éclairs soleil" data-family="Soleil" data-resist="yellow" data-weak="red" data-zones="tonnerre" data-boss="1">
   <h3>Soleil des Orages <span class="badge main">Boss</span><small>Cage d'Éclairs · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2018,7 +2027,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Monts du Tonnerre <small>(Monts du Tonnerre — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-sun_9" data-name="soleil lâche ombre du fusang soleil">
+<article class="quest be" id="be-sun_9" data-name="soleil lâche ombre du fusang soleil" data-family="Soleil" data-resist="red" data-weak="blue" data-zones="fusang" data-boss="1">
   <h3>Soleil Lâche <span class="badge main">Boss</span><small>Ombre du Fusang · Soleil</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2030,7 +2039,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cime du Fusang <small>(Cime du Fusang — boss)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-suanni" data-name="suanni de pierre gardien du temple gardien">
+<article class="quest be" id="be-suanni" data-name="suanni de pierre gardien du temple gardien" data-family="Autre" data-resist="green" data-weak="yellow" data-zones="bambous_crypt bambous_road bambous_wild tonnerre_wild tonnerre" data-boss="1">
   <h3>Suanni de Pierre <span class="badge main">Boss</span><small>Gardien du Temple · Gardien</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2042,7 +2051,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crypte des Moines Cendrés <small>(Forêt de Bambous Calcinée — boss)</small></li><li>Sentier des Moines <small>(Forêt de Bambous Calcinée — sentinelle)</small></li><li>Sentier des Tiges Cendrées <small>(Forêt de Bambous Calcinée — boss)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — boss, hautes herbes)</small></li><li>Monts du Tonnerre <small>(Monts du Tonnerre — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-taotie_bete" data-name="tao tie dévoreur sans fin bête">
+<article class="quest be" id="be-taotie_bete" data-name="tao tie dévoreur sans fin bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="fauves_road" data-boss="">
   <h3>Tao Tie <small>Dévoreur sans Fin · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2054,7 +2063,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Troupeaux <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-taotie_bronze" data-name="taotie masque de bronze masque">
+<article class="quest be" id="be-taotie_bronze" data-name="taotie masque de bronze masque" data-family="Autre" data-resist="yellow" data-weak="red" data-zones="fauves_wild" data-boss="">
   <h3>Taotie <small>Masque de Bronze · Masque</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2066,7 +2075,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-taureau_braise" data-name="taureau de braise corne ardente bête">
+<article class="quest be" id="be-taureau_braise" data-name="taureau de braise corne ardente bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="fauves_wild" data-boss="">
   <h3>Taureau de braise <small>Corne Ardente · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2078,7 +2087,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tengshe" data-name="tengshe serpent volant serpent">
+<article class="quest be" id="be-tengshe" data-name="tengshe serpent volant serpent" data-family="Serpent" data-resist="yellow" data-weak="red" data-zones="tonnerre_road" data-boss="">
   <h3>Tengshe <small>Serpent Volant · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2090,7 +2099,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tiangou_noir" data-name="tian gou chien céleste bête">
+<article class="quest be" id="be-tiangou_noir" data-name="tian gou chien céleste bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="gobi_road" data-boss="">
   <h3>Tian Gou <small>Chien Céleste · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2102,7 +2111,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tiangou_lune" data-name="tiangou chien dévoreur de lune bête">
+<article class="quest be" id="be-tiangou_lune" data-name="tiangou chien dévoreur de lune bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="lune_wild" data-boss="">
   <h3>Tiangou <small>Chien Dévoreur de Lune · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2114,7 +2123,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier d'Argent <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tianlu" data-name="tianlu gardien cornu hybride">
+<article class="quest be" id="be-tianlu" data-name="tianlu gardien cornu hybride" data-family="Hybride" data-resist="yellow" data-weak="red" data-zones="fauves" data-boss="">
   <h3>Tianlu <small>Gardien Cornu · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2126,7 +2135,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tianlu_gardien" data-name="tianlu gardien des portes hybride">
+<article class="quest be" id="be-tianlu_gardien" data-name="tianlu gardien des portes hybride" data-family="Hybride" data-resist="yellow" data-weak="red" data-zones="fauves_wild" data-boss="">
   <h3>Tianlu <small>Gardien des Portes · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2138,7 +2147,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tianma" data-name="tianma cheval céleste bête">
+<article class="quest be" id="be-tianma" data-name="tianma cheval céleste bête" data-family="Bête" data-resist="blue" data-weak="green" data-zones="tonnerre_road" data-boss="">
   <h3>Tianma <small>Cheval Céleste · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2150,7 +2159,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tigre_embrase" data-name="tigre embrasé rayures de braise bête">
+<article class="quest be" id="be-tigre_embrase" data-name="tigre embrasé rayures de braise bête" data-family="Bête" data-resist="red" data-weak="blue" data-zones="arena_c2 volcan_wild volcan_road fauves_crypt fauves_wild fauves_road fauves" data-boss="1">
   <h3>Tigre Embrasé <span class="badge main">Boss</span><small>Rayures de Braise · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2162,7 +2171,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle de Cuivre <small>(arena — sentinelle)</small></li><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — patrouille, hautes herbes)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — patrouille)</small></li><li>Crypte des Griffes Blanches <small>(Plaine des Fauves — boss)</small></li><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — boss, patrouille, sentinelle, hautes herbes)</small></li><li>Piste des Troupeaux <small>(Plaine des Fauves — sentinelle, hautes herbes)</small></li><li>Plaine des Fauves <small>(Plaine des Fauves — sentinelle, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-gui_tortue" data-name="tortue gui tortue spirituelle tortue">
+<article class="quest be" id="be-gui_tortue" data-name="tortue gui tortue spirituelle tortue" data-family="Tortue" data-resist="green" data-weak="yellow" data-zones="fleuve" data-boss="">
   <h3>Tortue Gui <small>Tortue Spirituelle · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2174,7 +2183,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-tortue_dragon" data-name="tortue-dragon dormeuse de l'île tortue">
+<article class="quest be" id="be-tortue_dragon" data-name="tortue-dragon dormeuse de l'île tortue" data-family="Tortue" data-resist="blue" data-weak="green" data-zones="mer_ile_dragon" data-boss="">
   <h3>Tortue-Dragon <small>Dormeuse de l'Île · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2186,7 +2195,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Île de la Tortue-Dragon <small>(Rivage de la Mer Orientale — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-wangliang" data-name="wangliang esprit des lieux sauvages esprit">
+<article class="quest be" id="be-wangliang" data-name="wangliang esprit des lieux sauvages esprit" data-family="Esprit" data-resist="yellow" data-weak="red" data-zones="gobi_road ws_sources" data-boss="">
   <h3>Wangliang <small>Esprit des Lieux Sauvages · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2198,7 +2207,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Piste des Caravanes <small>(Désert de Gobi — hautes herbes)</small></li><li>La Route des Sources Jaunes <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-wangxiang" data-name="wangxiang guetteur des tombes esprit">
+<article class="quest be" id="be-wangxiang" data-name="wangxiang guetteur des tombes esprit" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="gobi_wild" data-boss="">
   <h3>Wangxiang <small>Guetteur des Tombes · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2210,7 +2219,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-wen_shen" data-name="wen shen maître des gourdes de poison esprit de l'épidémie">
+<article class="quest be" id="be-wen_shen" data-name="wen shen maître des gourdes de poison esprit de l'épidémie" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="arena_c7 arena_c4 fleuve_road fleuve fleuve_wild mer_wild mer_cave mer_road mer" data-boss="">
   <h3>Wen Shen <small>Maître des Gourdes de Poison · Esprit de l'épidémie</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2222,7 +2231,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — sentinelle)</small></li><li>Cercle d'Argent <small>(arena — sentinelle)</small></li><li>Berge des Barques Échouées <small>(Lit du Fleuve Jaune — sentinelle, hautes herbes)</small></li><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — sentinelle, hautes herbes)</small></li><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — sentinelle, hautes herbes)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — patrouille, sentinelle)</small></li><li>Grotte des Marées <small>(Rivage de la Mer Orientale — sentinelle)</small></li><li>Jetée des Écumeurs <small>(Rivage de la Mer Orientale — patrouille, hautes herbes)</small></li><li>Rivage de la Mer Orientale <small>(Rivage de la Mer Orientale — sentinelle)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-wu_shou" data-name="wu shou bête de brume bête">
+<article class="quest be" id="be-wu_shou" data-name="wu shou bête de brume bête" data-family="Bête" data-resist="purple" data-weak="green" data-zones="gobi_wild" data-boss="">
   <h3>Wu Shou <small>Bête de Brume · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2234,7 +2243,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Dunes des Voix Sablées <small>(Désert de Gobi — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xiangliu" data-name="xiangliu serpent à neuf têtes serpent">
+<article class="quest be" id="be-xiangliu" data-name="xiangliu serpent à neuf têtes serpent" data-family="Serpent" data-resist="green" data-weak="yellow" data-zones="fauves_wild" data-boss="">
   <h3>Xiangliu <small>Serpent à Neuf Têtes · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2246,7 +2255,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xiezhi" data-name="xiezhi bête de justice bête">
+<article class="quest be" id="be-xiezhi" data-name="xiezhi bête de justice bête" data-family="Bête" data-resist="green" data-weak="yellow" data-zones="fauves_wild" data-boss="">
   <h3>Xiezhi <small>Bête de Justice · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2258,7 +2267,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xingtian" data-name="xingtian géant sans tête géant">
+<article class="quest be" id="be-xingtian" data-name="xingtian géant sans tête géant" data-family="Géant" data-resist="red" data-weak="blue" data-zones="fauves_wild" data-boss="">
   <h3>Xingtian <small>Géant sans Tête · Géant</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2270,7 +2279,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Hautes Herbes de Cendre <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xiong_jing" data-name="xiong jing ours esprit esprit-animal">
+<article class="quest be" id="be-xiong_jing" data-name="xiong jing ours esprit esprit-animal" data-family="Esprit" data-resist="green" data-weak="yellow" data-zones="bambous" data-boss="">
   <h3>Xiong Jing <small>Ours Esprit · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2282,7 +2291,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Forêt de Bambous Calcinée <small>(Forêt de Bambous Calcinée — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xuan_gui" data-name="xuan gui grande tortue noire tortue">
+<article class="quest be" id="be-xuan_gui" data-name="xuan gui grande tortue noire tortue" data-family="Tortue" data-resist="purple" data-weak="green" data-zones="fleuve_wild" data-boss="">
   <h3>Xuan Gui <small>Grande Tortue Noire · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2294,7 +2303,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xuan_she" data-name="xuan she serpent noir prodigieux serpent">
+<article class="quest be" id="be-xuan_she" data-name="xuan she serpent noir prodigieux serpent" data-family="Serpent" data-resist="purple" data-weak="green" data-zones="rizieres_wild" data-boss="">
   <h3>Xuan She <small>Serpent Noir Prodigieux · Serpent</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2306,7 +2315,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Digue et Marais Craquelés <small>(Rizières Desséchées — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xuanwu" data-name="xuanwu tortue noire du nord tortue">
+<article class="quest be" id="be-xuanwu" data-name="xuanwu tortue noire du nord tortue" data-family="Tortue" data-resist="purple" data-weak="green" data-zones="fleuve_wild mer_wild" data-boss="1">
   <h3>Xuanwu <span class="badge main">Boss</span><small>Tortue Noire du Nord · Tortue</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2318,7 +2327,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Méandres de Boue et d'Écluses <small>(Lit du Fleuve Jaune — boss)</small></li><li>Falaises et Criques du Dragon <small>(Rivage de la Mer Orientale — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-xue_niao" data-name="xue niao oiseau des neiges oiseau">
+<article class="quest be" id="be-xue_niao" data-name="xue niao oiseau des neiges oiseau" data-family="Oiseau" data-resist="blue" data-weak="green" data-zones="wlm_col wlm_sanctuaire tonnerre_road" data-boss="">
   <h3>Xue Niao <small>Oiseau des Neiges · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2330,7 +2339,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Le col des pins gelés <small>(Rizières Desséchées — patrouille, hautes herbes)</small></li><li>Le sanctuaire de la flamme <small>(Rizières Desséchées — hautes herbes)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yayu" data-name="yayu bête au destin tragique hybride">
+<article class="quest be" id="be-yayu" data-name="yayu bête au destin tragique hybride" data-family="Hybride" data-resist="red" data-weak="blue" data-zones="lune_road" data-boss="">
   <h3>Yayu <small>Bête au Destin Tragique · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2342,7 +2351,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier Lunaire <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yazi" data-name="yazi fauve à tête de dragon hybride">
+<article class="quest be" id="be-yazi" data-name="yazi fauve à tête de dragon hybride" data-family="Hybride" data-resist="red" data-weak="blue" data-zones="volcan_wild" data-boss="">
   <h3>Yazi <small>Fauve à Tête de Dragon · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2354,7 +2363,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yinglong" data-name="yinglong dragon ailé de la pluie long">
+<article class="quest be" id="be-yinglong" data-name="yinglong dragon ailé de la pluie long" data-family="Dragon" data-resist="yellow" data-weak="red" data-zones="arena_c7 arena_c4 tonnerre_wild tonnerre_road tonnerre_cave tonnerre mer_archipel fusang_road fusang_wild" data-boss="1">
   <h3>Yinglong <span class="badge main">Boss</span><small>Dragon Ailé de la Pluie · Long</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2366,7 +2375,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Cercle Céleste <small>(arena — sentinelle)</small></li><li>Cercle d'Argent <small>(arena — sentinelle)</small></li><li>Crêtes Foudroyées <small>(Monts du Tonnerre — patrouille, sentinelle, hautes herbes)</small></li><li>Escalier des Crêtes <small>(Monts du Tonnerre — patrouille, hautes herbes)</small></li><li>Galeries du Tonnerre Sourd <small>(Monts du Tonnerre — boss)</small></li><li>Monts du Tonnerre <small>(Monts du Tonnerre — sentinelle)</small></li><li>Mer des Mille Îlots <small>(Rivage de la Mer Orientale — sentinelle)</small></li><li>Chemin des Racines Géantes <small>(Cime du Fusang — patrouille, hautes herbes)</small></li><li>Racines et Branches Dorées <small>(Cime du Fusang — patrouille, hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yingyu" data-name="yingyu poisson ailé des crues poisson">
+<article class="quest be" id="be-yingyu" data-name="yingyu poisson ailé des crues poisson" data-family="Poisson" data-resist="blue" data-weak="green" data-zones="fleuve" data-boss="">
   <h3>Yingyu <small>Poisson Ailé des Crues · Poisson</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2378,7 +2387,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Lit du Fleuve Jaune <small>(Lit du Fleuve Jaune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yingzhao_cheval" data-name="yingzhao bête sacrée des monts hybride">
+<article class="quest be" id="be-yingzhao_cheval" data-name="yingzhao bête sacrée des monts hybride" data-family="Hybride" data-resist="green" data-weak="yellow" data-zones="fusang_wild" data-boss="">
   <h3>Yingzhao <small>Bête Sacrée des Monts · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#4cae5d"></span>Terre (vert)</dd>
@@ -2390,7 +2399,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Racines et Branches Dorées <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yingzhao_ailee" data-name="yingzhao bête ailée hybride">
+<article class="quest be" id="be-yingzhao_ailee" data-name="yingzhao bête ailée hybride" data-family="Hybride" data-resist="blue" data-weak="green" data-zones="lune_road" data-boss="">
   <h3>Yingzhao <small>Bête Ailée · Hybride</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2402,7 +2411,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier Lunaire <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yu_shi" data-name="yu shi maître de la pluie divinité">
+<article class="quest be" id="be-yu_shi" data-name="yu shi maître de la pluie divinité" data-family="Divinité" data-resist="blue" data-weak="green" data-zones="tonnerre_wild" data-boss="">
   <h3>Yu Shi <small>Maître de la Pluie · Divinité</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2414,7 +2423,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yuan_gui" data-name="yuan gui esprit vengeur gui">
+<article class="quest be" id="be-yuan_gui" data-name="yuan gui esprit vengeur gui" data-family="Esprit" data-resist="red" data-weak="blue" data-zones="ws_roue ws_terrasse ws_miroir lune_road" data-boss="1">
   <h3>Yuan Gui <span class="badge main">Boss</span><small>Esprit Vengeur · Gui</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2426,7 +2435,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>La Roue des six voies <small>(Forêt de Bambous Calcinée — boss, hautes herbes)</small></li><li>La Terrasse du Regard vers le pays <small>(Forêt de Bambous Calcinée — sentinelle, hautes herbes)</small></li><li>Le Miroir du Karma <small>(Forêt de Bambous Calcinée — boss)</small></li><li>Sentier Lunaire <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yun_shou" data-name="yun shou bête des nuées bête">
+<article class="quest be" id="be-yun_shou" data-name="yun shou bête des nuées bête" data-family="Bête" data-resist="blue" data-weak="green" data-zones="tonnerre_wild" data-boss="">
   <h3>Yun Shou <small>Bête des Nuées · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#3f8fe0"></span>Eau (bleu)</dd>
@@ -2438,7 +2447,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Crêtes Foudroyées <small>(Monts du Tonnerre — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-yutu" data-name="yutu lièvre de jade esprit-animal">
+<article class="quest be" id="be-yutu" data-name="yutu lièvre de jade esprit-animal" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="lune_road" data-boss="">
   <h3>Yutu <small>Lièvre de Jade · Esprit-animal</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2450,7 +2459,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Sentier Lunaire <small>(Pic de la Lune — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-zhulong_serpent" data-name="zhulong serpent rouge à visage humain dragon">
+<article class="quest be" id="be-zhulong_serpent" data-name="zhulong serpent rouge à visage humain dragon" data-family="Dragon" data-resist="red" data-weak="blue" data-zones="volcan_wild" data-boss="">
   <h3>Zhulong <small>Serpent Rouge à Visage Humain · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2462,7 +2471,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-zhulong_torche" data-name="zhulong dragon-torche dragon">
+<article class="quest be" id="be-zhulong_torche" data-name="zhulong dragon-torche dragon" data-family="Dragon" data-resist="red" data-weak="blue" data-zones="fusang_road" data-boss="">
   <h3>Zhulong <small>Dragon-Torche · Dragon</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2474,7 +2483,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Chemin des Racines Géantes <small>(Cime du Fusang — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-zhuque" data-name="zhuque oiseau vermillon du sud oiseau">
+<article class="quest be" id="be-zhuque" data-name="zhuque oiseau vermillon du sud oiseau" data-family="Oiseau" data-resist="red" data-weak="blue" data-zones="volcan_wild volcan_road" data-boss="1">
   <h3>Zhuque <span class="badge main">Boss</span><small>Oiseau Vermillon du Sud · Oiseau</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e0533d"></span>Feu (rouge)</dd>
@@ -2486,7 +2495,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Coulées et Passerelles Rougeoyantes <small>(Gorges du Volcan — boss)</small></li><li>Galerie de Basalte <small>(Gorges du Volcan — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-zouyu" data-name="zouyu tigre de bon augure bête">
+<article class="quest be" id="be-zouyu" data-name="zouyu tigre de bon augure bête" data-family="Bête" data-resist="yellow" data-weak="red" data-zones="fauves" data-boss="">
   <h3>Zouyu <small>Tigre de Bon Augure · Bête</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#e6c13a"></span>Air (jaune)</dd>
@@ -2498,7 +2507,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
     <dt>Où</dt><dd><ul class="enemy"><li>Plaine des Fauves <small>(Plaine des Fauves — hautes herbes)</small></li></ul></dd>
   </dl>
 </article>
-<article class="quest be" id="be-zu_xian" data-name="zu xian ancêtre mécontent esprit">
+<article class="quest be" id="be-zu_xian" data-name="zu xian ancêtre mécontent esprit" data-family="Esprit" data-resist="purple" data-weak="green" data-zones="rizieres_wild" data-boss="">
   <h3>Zu Xian <small>Ancêtre Mécontent · Esprit</small></h3>
   <dl>
     <dt>Force</dt><dd><span class="dot" style="background:#9b62d6"></span>Arcane (violet)</dd>
@@ -2511,7 +2520,15 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
   </dl>
 </article>
 </div>
-<script>(function(){var q=document.getElementById('bq'),l=[].slice.call(document.querySelectorAll('#bestiary .be'));q.addEventListener('input',function(){var v=q.value.trim().toLowerCase();l.forEach(function(a){a.hidden=v&&a.dataset.name.indexOf(v)<0;});});})();</script>
+<button type="button" id="totop" hidden aria-label="Retour en haut de la page">↑ Haut</button>
+<style>.bfilters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 0}.bfilters .search{flex:1 1 100%}.bfilters label{display:flex;flex-direction:column;gap:2px;font:.82rem system-ui,sans-serif;color:var(--dim)}.bfilters select{padding:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.95rem system-ui,sans-serif;max-width:100%}.bfilters .bcheck{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.bfilters button,#totop{padding:7px 12px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.9rem system-ui,sans-serif;cursor:pointer}#bcount{font:600 .9rem system-ui,sans-serif;color:var(--dim);margin:4px 0 10px}#totop{position:fixed;right:16px;bottom:16px;z-index:30;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.35)}#totop[hidden],.be[hidden]{display:none}</style>
+<script>(function(){var $=function(i){return document.getElementById(i)},l=[].slice.call(document.querySelectorAll('#bestiary .be')),c=$('bcount'),t=$('totop');
+function run(){var q=$('bq').value.trim().toLowerCase(),f=$('bf-family').value,r=$('bf-resist').value,w=$('bf-weak').value,z=$('bf-zone').value,b=$('bf-boss').checked,n=0;
+l.forEach(function(a){var d=a.dataset,ok=(!q||d.name.indexOf(q)>=0)&&(!f||d.family===f)&&(!r||d.resist===r)&&(!w||d.weak===w)&&(!z||(' '+d.zones+' ').indexOf(' '+z+' ')>=0)&&(!b||d.boss);a.hidden=!ok;if(ok)n++;});
+c.textContent=n?n+(n>1?' créatures affichées':' créature affichée')+' sur '+l.length+'.':'Aucune créature ne correspond à ces filtres.';}
+['bq','bf-family','bf-resist','bf-weak','bf-zone','bf-boss'].forEach(function(i){$(i).addEventListener(i==='bq'?'input':'change',run);});
+$('bf-reset').addEventListener('click',function(){$('bq').value='';['bf-family','bf-resist','bf-weak','bf-zone'].forEach(function(i){$(i).value='';});$('bf-boss').checked=false;run();});
+window.addEventListener('scroll',function(){t.hidden=(window.scrollY||0)<400;},{passive:true});t.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});run();})();</script>
 </main>
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Carte agrandie" hidden>
 <div class="lb-stage" id="lb-stage"></div>

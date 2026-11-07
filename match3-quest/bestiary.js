@@ -264,6 +264,44 @@ export function traitsOf(template) {
     return traits;
 }
 
+// Famille d'une créature pour le filtre : la race, regroupée (« Esprit-animal », « Esprit végétal »… → Esprit ; « Divinité guerrière » → Divinité ;
+// « Long » → Dragon, « Gui » (fantôme) → Esprit) ; les races uniques (Méduse, Masque, Gardien, Cadavre sauteur) vont dans « Autre ».
+const FAMILY_ALIAS = { Long: 'Dragon', Gui: 'Esprit', 'Cadavre sauteur': 'Autre', Méduse: 'Autre', Masque: 'Autre', Gardien: 'Autre' };
+export function familyOf(race) {
+    const r = String(race || '').trim();
+    if (!r) return 'Autre';
+    if (FAMILY_ALIAS[r]) return FAMILY_ALIAS[r];
+    const first = r.split(/[\s-]/)[0];
+    return first === 'Esprit' || first === 'Divinité' ? first : r;
+}
+
+// Lieux par créature à partir des cartes (`SCREENS`) : { zones: ids de cartes où on la croise, boss: vrai si elle y est boss }.
+export function creaturePlaces(screens) {
+    const places = new Map();
+    const mark = (id, sc, boss) => {
+        if (!id) return;
+        const p = places.get(id) || places.set(id, { zones: new Set(), boss: false }).get(id);
+        p.zones.add(sc.id);
+        if (boss) p.boss = true;
+    };
+    Object.values(screens || {}).forEach(sc => {
+        (sc.enemies || []).forEach(e => mark(e.templateId, sc, Boolean(e.boss)));
+        (sc.grass?.table || []).forEach(t => mark(t.templateId, sc, false));
+    });
+    return places;
+}
+
+// Un critère vide ne filtre rien. `c` = { name, family, resist, weak, zones: [ids], boss }, `f` = { q, family, resist, weak, zone, boss }.
+export function matchesBestiary(c, f) {
+    const q = String(f.q || '').trim().toLowerCase();
+    return (!q || String(c.name || '').toLowerCase().includes(q))
+        && (!f.family || c.family === f.family)
+        && (!f.resist || c.resist === f.resist)
+        && (!f.weak || c.weak === f.weak)
+        && (!f.zone || (c.zones || []).includes(f.zone))
+        && (!f.boss || Boolean(c.boss));
+}
+
 // Fiche d'un gabarit : nom, titre, race, force, faiblesse, traits et notice.
 export function bestiaryEntry(template) {
     const strong = strongColorOf(template);
@@ -273,6 +311,7 @@ export function bestiaryEntry(template) {
         name: template.name,
         title: template.title || '',
         race: template.race || '',
+        family: familyOf(template.race),
         strongColor: strong,
         strongElement: strong ? elementName(strong) : null,
         weakColor: weak,

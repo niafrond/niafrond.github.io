@@ -12,7 +12,7 @@ import { QUESTS, SCREENS, REGION_UNLOCK_LEVEL } from '../story.js';
 import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
-import { bestiaryEntry, SOURCE_LABELS } from '../bestiary.js';
+import { bestiaryEntry, SOURCE_LABELS, familyOf } from '../bestiary.js';
 import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
 import { overlapOf } from '../mapConnections.js';
 import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from '../puzzle/levels.js';
@@ -915,7 +915,8 @@ function buildBestiary() {
             ? `<ul class="enemy">${places.map(p => `<li>${esc(p.sc.name)} <small>(${esc(regionName(p.sc.region))} — ${[...p.what].map(w => WHAT_FR[w]).join(', ')})</small></li>`).join('')}</ul>`
             : '<p class="dim">Aucune rencontre sur les cartes : créature réservée à un combat scénarisé.</p>';
         const res = t.resistanceProfile ? Object.entries(t.resistanceProfile).sort((a, b) => b[1] - a[1]).map(([c, v]) => `${dot(c)} ${Math.round(v * 100)} %`).join(' · ') : '';
-        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${t.title || ''} ${t.race || ''}`.toLowerCase())}">
+        const zoneIds = places.map(p => p.sc.id).join(' ');
+        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${t.title || ''} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor || ''}" data-weak="${be.weakColor || ''}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
   <h3>${esc(t.name)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([t.title, be.race].filter(Boolean).join(' · '))}</small></h3>
   <dl>
     <dt>Force</dt><dd>${dot(be.strongColor)}</dd>
@@ -928,6 +929,11 @@ function buildBestiary() {
   </dl>
 </article>`;
     }).join('\n');
+    const families = [...new Set(BESTIARY_LIST.map(t => familyOf(t.race)))].sort((a, b) => a.localeCompare(b, 'fr'));
+    const colorOpts = Object.entries(COLOR_FR).map(([c, l]) => `<option value="${c}">${esc(l)}</option>`).join('');
+    const zonesByRegion = new Map();
+    seen.forEach(byScreen => byScreen.forEach(({ sc }) => { const r = sc.region; (zonesByRegion.get(r) || zonesByRegion.set(r, new Map()).get(r)).set(sc.id, sc.name); }));
+    const zoneOpts = REGION_ORDER.filter(r => zonesByRegion.has(r)).map(r => `<optgroup label="${esc(regionName(r))}">${[...zonesByRegion.get(r)].sort((a, b) => a[1].localeCompare(b[1], 'fr')).map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join('')}</optgroup>`).join('');
     write('bestiaire.html', page({
         file: 'bestiaire.html', title: 'Bestiaire', active: 'bestiaire.html',
         desc: 'Bestiaire complet : force, faiblesse, traits, notice et lieux de chaque créature.',
@@ -935,11 +941,28 @@ function buildBestiary() {
         body: `<h2>Bestiaire</h2>
 <p class="lead">${BESTIARY_COUNT} créatures, classées par ordre alphabétique. Pour chacune : la couleur de qì qu’elle encaisse le mieux, <b>sa faiblesse</b> (les sorts de cette couleur lui font plus mal), ses traits de combat, sa notice et les lieux où on la croise.</p>
 <div class="box tip"><b class="t">Astuce</b>Frappez la faiblesse : alignez des tuiles de la couleur indiquée pour lancer des sorts qui font plus de dégâts. Une créature qui surgit des hautes herbes ou une mimique attaque par surprise : elle joue en premier avec 2 PA de plus.</div>
+<div class="bfilters" role="search">
 <input class="search" id="bq" type="search" placeholder="Rechercher une créature, une espèce…" autocomplete="off" aria-label="Rechercher dans le bestiaire">
+<label>Famille<select id="bf-family"><option value="">Toutes</option>${families.map(f => `<option>${esc(f)}</option>`).join('')}</select></label>
+<label>Résiste le mieux à<select id="bf-resist"><option value="">Toutes les couleurs</option>${colorOpts}</select></label>
+<label>Faible à<select id="bf-weak"><option value="">Toutes les couleurs</option>${colorOpts}</select></label>
+<label>Zone<select id="bf-zone"><option value="">Toutes les zones</option>${zoneOpts}</select></label>
+<label class="bcheck"><input type="checkbox" id="bf-boss"> Boss seulement</label>
+<button type="button" id="bf-reset">Réinitialiser</button>
+</div>
+<p id="bcount" role="status" aria-live="polite"></p>
 <div id="bestiary">
 ${cards}
 </div>
-<script>(function(){var q=document.getElementById('bq'),l=[].slice.call(document.querySelectorAll('#bestiary .be'));q.addEventListener('input',function(){var v=q.value.trim().toLowerCase();l.forEach(function(a){a.hidden=v&&a.dataset.name.indexOf(v)<0;});});})();</script>`
+<button type="button" id="totop" hidden aria-label="Retour en haut de la page">↑ Haut</button>
+<style>.bfilters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 0}.bfilters .search{flex:1 1 100%}.bfilters label{display:flex;flex-direction:column;gap:2px;font:.82rem system-ui,sans-serif;color:var(--dim)}.bfilters select{padding:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.95rem system-ui,sans-serif;max-width:100%}.bfilters .bcheck{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.bfilters button,#totop{padding:7px 12px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.9rem system-ui,sans-serif;cursor:pointer}#bcount{font:600 .9rem system-ui,sans-serif;color:var(--dim);margin:4px 0 10px}#totop{position:fixed;right:16px;bottom:16px;z-index:30;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.35)}#totop[hidden],.be[hidden]{display:none}</style>
+<script>(function(){var $=function(i){return document.getElementById(i)},l=[].slice.call(document.querySelectorAll('#bestiary .be')),c=$('bcount'),t=$('totop');
+function run(){var q=$('bq').value.trim().toLowerCase(),f=$('bf-family').value,r=$('bf-resist').value,w=$('bf-weak').value,z=$('bf-zone').value,b=$('bf-boss').checked,n=0;
+l.forEach(function(a){var d=a.dataset,ok=(!q||d.name.indexOf(q)>=0)&&(!f||d.family===f)&&(!r||d.resist===r)&&(!w||d.weak===w)&&(!z||(' '+d.zones+' ').indexOf(' '+z+' ')>=0)&&(!b||d.boss);a.hidden=!ok;if(ok)n++;});
+c.textContent=n?n+(n>1?' créatures affichées':' créature affichée')+' sur '+l.length+'.':'Aucune créature ne correspond à ces filtres.';}
+['bq','bf-family','bf-resist','bf-weak','bf-zone','bf-boss'].forEach(function(i){$(i).addEventListener(i==='bq'?'input':'change',run);});
+$('bf-reset').addEventListener('click',function(){$('bq').value='';['bf-family','bf-resist','bf-weak','bf-zone'].forEach(function(i){$(i).value='';});$('bf-boss').checked=false;run();});
+window.addEventListener('scroll',function(){t.hidden=(window.scrollY||0)<400;},{passive:true});t.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});run();})();</script>`
     }));
 }
 
