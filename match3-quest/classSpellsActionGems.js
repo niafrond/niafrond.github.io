@@ -4,6 +4,7 @@ import { board, renderBoard } from './board.js';
 import { isJokerTile } from './joker.js';
 import { flyManaGain } from './manaFlight.js';
 import { colors } from './constants.js';
+import { playTileFx } from './spellTileFx.js';
 
 const ACTION_TILE = 'combat';
 
@@ -17,11 +18,15 @@ export function applyColorsToActionGems(spell) {
         return false;
     }
     const count = Math.min(Math.max(1, Math.floor(spell.gemCount || 1)), candidates.length);
+    const changed = [];
     for(let n = 0; n < count; n++) {
         const k = Math.floor(Math.random() * candidates.length);
-        board[candidates.splice(k, 1)[0]] = ACTION_TILE;
+        const i = candidates.splice(k, 1)[0];
+        board[i] = ACTION_TILE;
+        changed.push(i);
     }
     renderBoard();
+    playTileFx('forge', changed);
     showCombatAnimation({ icon: 'sword', title: spell.name.toUpperCase(), damage: `${count} flèches créées`, target: '→ Plateau' }, true);
     log(`${spell.name} transforme ${count} gâteaux de lune en flèches d'action !`);
     return true;
@@ -34,6 +39,7 @@ export function applyActionGemsToMana(spell) {
         log(`${spell.name} : aucune flèche d'action à détruire.`);
         return false;
     }
+    playTileFx('harvest', found);   // avant le retrait : les cases sont encore à l'écran
     found.forEach(i => { board[i] = null; });
     const color = spell.manaColor || 'blue';
     const gained = addManaForColor(player, color, found.length * Math.max(1, Math.floor(spell.manaPerGem || 1)), { applyGainBonus: false }).gained;
@@ -44,7 +50,7 @@ export function applyActionGemsToMana(spell) {
     return true;
 }
 
-// Lames Brisées : les flèches d'action deviennent des crânes (soleils ardents).
+// Lames Brisées : les flèches d'action deviennent des crânes (l'effet est animé sur le plateau).
 export function applyActionGemsToSkulls(spell) {
     const found = actionGemIndices();
     if(found.length === 0) {
@@ -53,8 +59,9 @@ export function applyActionGemsToSkulls(spell) {
     }
     found.forEach(i => { board[i] = 'skull'; });
     renderBoard();
+    playTileFx('skull', found);
     showCombatAnimation({ icon: 'skull', title: spell.name.toUpperCase(), damage: `${found.length} flèches → crânes`, target: '→ Plateau' }, true);
-    log(`${spell.name} transforme ${found.length} flèches d'action en soleils ardents !`);
+    log(`${spell.name} transforme ${found.length} flèches d'action en crânes !`);
     return true;
 }
 
@@ -69,6 +76,7 @@ export function applyActionGemsToColor(spell) {
     found.forEach(i => { board[i] = color; });
     player.combatPoints = (player.combatPoints || 0) + found.length;
     renderBoard();
+    playTileFx('moult', found);
     showCombatAnimation({ icon: 'moon', title: spell.name.toUpperCase(), damage: `${found.length} flèches → ${color}`, target: `+${found.length} point(s) d'action` }, true);
     log(`${spell.name} transforme ${found.length} flèches d'action en gâteaux de lune ${color} (+${found.length} point(s) d'action).`);
     return true;

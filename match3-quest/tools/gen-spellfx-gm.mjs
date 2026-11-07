@@ -28,7 +28,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // id -> [nom (comme spells.json), motif de l'image clé, mouvement]
 const SPELLS = {
   legionForge: ["Forge des Légions", 'a black iron blacksmith anvil seen from the side, glowing blue and golden embers on top', 'forge'],
-  steelHarvest: ["Moisson d'Acier", 'a long wooden scythe with a big curved crescent green steel blade, harvest sickle, diagonal', 'harvest'],
+  steelHarvest: ["Moisson d'Acier", 'a farmer harvest scythe, long straight wooden handle with a large curved crescent-shaped steel blade at the top, green glow, side view', 'harvest'],
   brokenBlades: ['Lames Brisées', 'a broken red sword blade snapped in two pieces', 'shatter'],
   steelMoult: ["Mue d'Acier", 'a shed steel snake skin shimmering with purple light, ring shape', 'moult']
 };

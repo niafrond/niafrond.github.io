@@ -107,6 +107,7 @@
   "shop.js",
   "sound.js",
   "spellFx.js",
+  "spellTileFx.js",
   "spells.js",
   "spells.json",
   "statusBadges.js",
@@ -3804,8 +3805,8 @@
   },
   {
    "p": "sprites/spellfx/steelHarvest.png",
-   "s": 10305,
-   "h": "34afabbb91"
+   "s": 15236,
+   "h": "9a378557b1"
   },
   {
    "p": "sprites/spellfx/steelMoult.png",
