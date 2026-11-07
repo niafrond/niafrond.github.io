@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
-import { BESTIARY } from './bestiary-data.mjs';
+import { BESTIARY, BOSS_ONLY } from './bestiary-data.mjs';
 
 const GAME = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DRY = process.argv.includes('--dry-run');
@@ -97,7 +97,7 @@ for (const [region, list] of Object.entries(byRegion)) {
   let src = readFileSync(file, 'utf8');
   // retire l'entrée (et sa virgule précédente) ; si elle était la dernière de la table, la virgule restante est ôtée plus bas
   for (const id of PENDING) src = src.replace(new RegExp(String.raw`,\n\s*\{ templateId: '${id}'[^\n]*?\}(?=,?\n)`, 'g'), '');
-  const todo = list.filter(b => !PENDING.has(b[0]) && !src.includes("templateId: '" + b[0] + "'"));
+  const todo = list.filter(b => !PENDING.has(b[0]) && !BOSS_ONLY.has(b[0]) && !src.includes("templateId: '" + b[0] + "'"));
   const re = /(table:\s*\[)([\s\S]*?)(\n\s*\])/g;
   const tables = [...src.matchAll(re)];
   if (!tables.length) throw new Error(region + ' : aucune table de hautes herbes');

@@ -134,8 +134,7 @@ export default {
                 { templateId: 'lu_jing', name: "Lu Jing", weight: 3, offset: 0 },
                 { templateId: 'he_jing', name: "He Jing", weight: 3, offset: 0 },
                 { templateId: 'shouling', name: "Shouling", weight: 5, offset: -1 },
-                { templateId: 'shan_shen', name: "Shan Shen", weight: 1, offset: 1 },
-                { templateId: 'fengxi', name: "Fengxi", weight: 1, offset: 1 }
+                { templateId: 'shan_shen', name: "Shan Shen", weight: 1, offset: 1 }
             ]
         },
         npcs: [
@@ -155,7 +154,7 @@ export default {
             { id: 'bambous_wild_incense_chest', x: 44, y: 12, gold: 90 }
         ],
         enemies: [
-            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'suanni', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 17 } },
+            { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'fengxi', spriteKey: 'fengxi', name: 'Fengxi, le Grand Sanglier', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Fengxi, le Grand Sanglier', level: 17 } },
             { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'assassin_masque', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },

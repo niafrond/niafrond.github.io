@@ -4275,14 +4275,14 @@
    "h": "62b3c9266f"
   },
   {
-   "p": "audio/music/boss-colosse-de-l-ecluse.mp3",
-   "s": 1855470,
-   "h": "f79005c07e"
-  },
-  {
    "p": "audio/music/boss-colosse-des-caravanes-ensevelies.mp3",
    "s": 1784626,
    "h": "2c13c5adf6"
+  },
+  {
+   "p": "audio/music/boss-dafeng-le-grand-vent.mp3",
+   "s": 1770520,
+   "h": "fec5663dab"
   },
   {
    "p": "audio/music/boss-dame-bi-yu-la-main-de-jade.mp3",
@@ -4315,6 +4315,11 @@
    "h": "7e685bcbad"
   },
   {
+   "p": "audio/music/boss-fengxi-le-grand-sanglier.mp3",
+   "s": 1748890,
+   "h": "f128a2df54"
+  },
+  {
    "p": "audio/music/boss-forgeron-de-lave.mp3",
    "s": 1847633,
    "h": "c627fab2b9"
@@ -4338,11 +4343,6 @@
    "p": "audio/music/boss-gardien-de-la-forge-noire.mp3",
    "s": 1831333,
    "h": "a553b8ed43"
-  },
-  {
-   "p": "audio/music/boss-gardien-des-cendres.mp3",
-   "s": 1790268,
-   "h": "f39f84c0bd"
   },
   {
    "p": "audio/music/boss-gardien-du-jugement.mp3",
@@ -4370,14 +4370,14 @@
    "h": "3b8c7ce772"
   },
   {
+   "p": "audio/music/boss-jiuying-neuf-gueules.mp3",
+   "s": 1901550,
+   "h": "67a340ff7d"
+  },
+  {
    "p": "audio/music/boss-lion-cendre-gardien-du-sutra.mp3",
    "s": 1898415,
    "h": "69a11f1012"
-  },
-  {
-   "p": "audio/music/boss-lion-gardien-fendu.mp3",
-   "s": 1933524,
-   "h": "5b1c1597db"
   },
   {
    "p": "audio/music/boss-long-du-tonnerre-sourd.mp3",
@@ -4413,11 +4413,6 @@
    "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or.mp3",
    "s": 1795284,
    "h": "37a0af8da0"
-  },
-  {
-   "p": "audio/music/boss-serpent-de-maree.mp3",
-   "s": 1887757,
-   "h": "18bf0ace33"
   },
   {
    "p": "audio/music/boss-serpent-des-marees-noires.mp3",
@@ -4470,11 +4465,6 @@
    "h": "01b888881f"
   },
   {
-   "p": "audio/music/boss-tigre-alpha-griffe-de-feu.mp3",
-   "s": 1962676,
-   "h": "db71d6d5f3"
-  },
-  {
    "p": "audio/music/boss-tigre-blanc-des-ancetres.mp3",
    "s": 1833840,
    "h": "6ecefa7a3c"
@@ -4485,9 +4475,19 @@
    "h": "8b17f5a8c0"
   },
   {
+   "p": "audio/music/boss-xiushe-le-long-serpent.mp3",
+   "s": 2000293,
+   "h": "62be52c113"
+  },
+  {
    "p": "audio/music/boss-xuanwu-la-tortue-noire.mp3",
    "s": 1751085,
    "h": "6542c9bb97"
+  },
+  {
+   "p": "audio/music/boss-zaochi-dents-de-ciseau.mp3",
+   "s": 1792463,
+   "h": "ba7efa0ed2"
   },
   {
    "p": "audio/music/boss-zhuque-l-oiseau-vermillon.mp3",

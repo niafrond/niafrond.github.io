@@ -16,6 +16,9 @@ export const EXISTING_MAP = {
   'Yinglong': 'storm_wyrm', 'Houyi': null, "Chang'e": null
 };
 
+// Créatures qui ne sortent pas des hautes herbes : elles sont boss de zone (world/maps/*.js, `boss:`).
+export const BOSS_ONLY = new Set(['jiuying', 'xiushe', 'zaochi', 'fengxi', 'dafeng']);
+
 export const BESTIARY = [
   // ── Rizières (niveau 1) : marais, esprits d'eau douce, petits esprits
   ['cao_jing', 'Cao Jing', 'Esprit végétal', 'Petit Esprit des Herbes', 'green', 'rizieres', 'm', 'Cao Jing, tiny grass spirit, small humanoid covered in green leaves and reeds, big curious eyes, hiding pose'],
