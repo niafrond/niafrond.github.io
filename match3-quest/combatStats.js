@@ -183,7 +183,7 @@ export function skullStrengthBonus(entity) {
     return Math.min(SKULL_STRENGTH_BONUS_CAP, Math.floor(getAttributePoints(entity, 'strength') / SKULL_STRENGTH_DIVISOR));
 }
 
-// Attaque (arme ou crânes) complète : critique puis blocage de la cible. Renvoie { damage, crit, block }.
+// Attaque (arme ou crânes) complète : critique puis blocage de la cible. Renvoie { damage, crit, block, intended } (intended = dégâts prévus avant blocage).
 export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, weakened = 0 } = {}) {
     let damage = Math.max(0, Math.floor(rawDamage || 0));
     // Fureur des Steppes : bonus fixe ajouté à chaque dégât infligé par le lanceur (crânes, armes, sorts). Il suit le critique
@@ -193,8 +193,9 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
     if (crit) damage = applyCrit(damage);
     const bonus = crit ? applyCrit(enrageBonus) : enrageBonus;
     const block = rollBlock(target, rng);
+    const intended = damage + bonus;   // dégâts prévus (critique inclus) avant blocage : 1re annonce de l'animation
     damage = applyBlock(damage, block) + bonus;
-    return { damage, crit, block };
+    return { damage, crit, block, intended };
 }
 
 // Libellé d'un blocage pour le journal / l'animation.

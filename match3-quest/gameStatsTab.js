@@ -208,13 +208,15 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     // Les annonces de critique / blocage / parade restent affichées jusqu'au clic du joueur.
     if(options.requireClick === undefined && options.autoHideMs === undefined && /CRITIQUE|BLOQUÉ|paré/.test(String(damage ?? ''))) options = { ...options, requireClick: true };
     // Coup d'arme ou sort offensif : le combattant joue aussi son animation d'attaque (tir à l'arc, coup d'arme…)
-    if(damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
+    if(!options.blocked && damage !== null && (isPlayerAttack ? typeof target === 'string' && target.includes(enemy.name) : /dégâts/.test(String(damage)))) playFighterAttack(isPlayerAttack);
     const boardEl = document.getElementById('board');   // zone intérieure (l'overlay est dans le padding du plateau)
     const boardPx = boardEl ? Math.min(boardEl.clientWidth, boardEl.clientHeight) || Infinity : Infinity;
     const fx = spellFxHtml(title, Number.isFinite(boardPx) ? boardPx : 0);   // les sorts très chers s'étalent sur le plateau ; mini-animation pixel art du sort (plus riche pour les sorts chers), sinon l'icône
     if(fx && options.requireClick === undefined && options.autoHideMs === undefined) options = { ...options, autoHideMs: Math.max(1000 * animationFactor(), spellFxDurationMs(title) * 2 + 500) };   // l'animation tourne en boucle : au moins deux passages
     const bigFx = Boolean(fx && fx.includes('spellfx-big'));
     let html = `<div class="attack-icon${fx ? ' has-spellfx' : ''}${bigFx ? ' has-spellfx-big' : ''}">${fx || svgIcon(icon) || icon}</div>`;
+    // 2e temps d'un blocage / d'une parade : gros bouclier (plein = bloqué, fendu = paré) et texte qui vibre.
+    if(options.blocked) html = `<div class="block-shield block-${options.blocked}">${svgIcon('wickershield')}</div>` + html;
     let caption = `<div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) caption += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) caption += `<div class="attack-heal">${heal}</div>`;
@@ -223,6 +225,24 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
     // Sort très cher : l'animation garde tout le plateau, titre et dégâts recouvrent les boutons de sorts.
     html += bigFx ? `<div class="attack-caption">${caption}</div>` : caption;
     showAttackAnimation(html, isPlayerAttack, options);
+}
+
+// Attaque en deux temps quand la cible bloque ou pare : 1) dégâts annoncés, 2) dégâts réellement subis avec bouclier et vibration.
+// `strike` vient de resolveStrike ({ damage, crit, block, intended }) ; `params` = paramètres de showCombatAnimation sans `damage`.
+export function showStrikeAnimation(params, strike, isPlayerAttack = true, finalDamage = strike.damage, options = {}) {
+    const crit = strike.crit ? ' CRITIQUE !' : '';
+    const real = Math.floor(finalDamage);
+    if(!strike.block || strike.block === 'none') {
+        showCombatAnimation({ ...params, damage: `-${real} dégâts${crit}` }, isPlayerAttack, options);
+        return;
+    }
+    const intended = Math.max(Math.floor(strike.intended ?? real), real);
+    showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
+        ...options, requireClick: false, autoHideMs: 900 * animationFactor(),
+        onContinue: () => showCombatAnimation(
+            { ...params, damage: `${strike.block === 'total' ? 'BLOQUÉ !' : 'PARÉ !'} -${real} dégâts`, title: params.title },
+            isPlayerAttack, { ...options, blocked: strike.block, requireClick: true, onContinue: options.onContinue })
+    });
 }
 
 // Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
