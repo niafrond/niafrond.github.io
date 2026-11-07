@@ -227,7 +227,7 @@ export const GBA_FILES = {
     jingwei: 'jingwei.21fadf9a.js',
     jinwu: 'jinwu.c96c919b.js',
     jiuweihu: 'jiuweihu.e3a27312.js',
-    jiuying: 'jiuying.2301f31c.js',
+    jiuying: 'jiuying.c9794c46.js',
     ke_paper: 'ke_paper.e6c20fcb.js',
     keeper_ao: 'keeper_ao.5f097ad0.js',
     keeper_lunar: 'keeper_lunar.30dec522.js',
