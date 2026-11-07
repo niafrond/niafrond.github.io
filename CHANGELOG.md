@@ -1,3 +1,9 @@
+## [2.198.0](https://github.com/niafrond/niafrond.github.io/compare/v2.197.1...v2.198.0) (2026-11-07)
+
+### Features
+
+* **match3-quest:** puzzle de soin de Chang'e (UI de Hou Yi, tutoriel) et soluce à jour ([#658](https://github.com/niafrond/niafrond.github.io/issues/658)) ([72b58a5](https://github.com/niafrond/niafrond.github.io/commit/72b58a5188d8ea33a31b802c6343722ed571988b))
+
 ## [2.197.1](https://github.com/niafrond/niafrond.github.io/compare/v2.197.0...v2.197.1) (2026-11-06)
 
 ### Bug Fixes
