@@ -1,0 +1,11 @@
+{
+  "firestore": { "rules": "firestore.rules" },
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      { "source": "/count.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }, { "key": "Access-Control-Allow-Origin", "value": "*" }] },
+      { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+rules_version = '2';
+// Mesure d'audience sans donnée personnelle : seuls des compteurs agrégés (jour, site, page, domaine de provenance) sont écrits.
+// Aucune écriture ne peut contenir autre chose, ni modifier autre chose qu'un +1 sur le jour en cours ; la lecture est publique
+// (que des totaux). `expireAt` (+400 jours) est prêt pour une politique TTL, qui exige la facturation : sans elle, purge manuelle.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+    function today() {
+      return request.time.year() * 10000 + request.time.month() * 100 + request.time.day();
+    }
+    function expiry() {
+      return timestamp.date(request.time.year(), request.time.month(), request.time.day()) + duration.value(400, 'd');
+    }
+    function okHost(h) {
+      return h in ['niafrond.github.io', 'houyi.fontaine.one', 'fontaine.one', 'stats.fontaine.one'];
+    }
+    function created(id, keys) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(keys) && d.keys().hasAll(keys)
+        && d.day == today() && d.views == 1 && d.expireAt == expiry()
+        && d.host is string && okHost(d.host)
+        && id.matches(string(d.day) + '_' + d.host + '_.*') && id.size() <= 120;
+    }
+    function bumped() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+        && request.resource.data.views == resource.data.views + 1
+        && resource.data.day == today();
+    }
+
+    match /views/{id} {
+      allow read: if isAdmin();
+      allow create: if created(id, ['day', 'host', 'path', 'views', 'expireAt'])
+        && request.resource.data.path is string && request.resource.data.path.matches('/.*')
+        && request.resource.data.path.size() <= 200;
+      allow update: if bumped();
+    }
+    match /refs/{id} {
+      allow read: if isAdmin();
+      allow create: if created(id, ['day', 'host', 'ref', 'views', 'expireAt'])
+        && request.resource.data.ref is string && request.resource.data.ref.size() > 0
+        && request.resource.data.ref.size() <= 100;
+      allow update: if bumped();
+    }
+  }
+}

@@ -21,3 +21,5 @@ Spécifications de `mix-blind-test/`, extraites de l'ancien §17 de `dj-mix/SPEC
 - **SPEC-1.2.5** Les vérifications de disponibilité du Cache API utilisent `'caches' in globalThis` (compatible browser et Node) au lieu de `'caches' in window`.
 ```
 - 2026-10-24 (mesure d'audience GoatCounter) : à la demande de l'utilisateur, sur tout le site. Script `data-goatcounter="https://niafrond.goatcounter.com/count"` (`//gc.zgo.at/count.js`, async) ajouté avant `</head>` des pages HTML.
+
+- 2026-11-07 (mesure d'audience) : GoatCounter remplacé par `https://stats.fontaine.one/count.js` (mesure maison sans cookie ni identifiant, voir `stats/SPECS.md`) dans `index.html`.
