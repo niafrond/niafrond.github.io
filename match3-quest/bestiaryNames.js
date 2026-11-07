@@ -59,7 +59,7 @@ export const BESTIARY_NAMES = {
     forgeron_magma: ['Yán Jiāng Jiàng', '岩浆匠'], forgeron_lave: ['Róng Yán Jiàng', '熔岩匠'], garde_maree: ['Cháo Wèi', '潮卫'],
     grue_lige: ['Hè Shǐ', '鹤使'], brigand_sables: ['Shā Fěi', '沙匪'], chef_de_dune: ['Shā Tóu Lǐng', '沙头领'],
     petit_gui: ['Xiǎo Guǐ', '小鬼'], corbeau_demon: ['Wū Yāo', '乌妖'], singe_demon: ['Hóu Yāo', '猴妖'], taureau_braise: ['Jìn Niú', '烬牛'],
-    crabe_soldat: ['Xiè Bīng', '蟹兵'], carpe_doree: ['Jīn Lǐ', '金鲤'], tortue_dragon: ['Lóng Guī', '龙龟'],
+    crabe_soldat: ['Xiè Jiàng', '蟹将'], carpe_doree: ['Jīn Lǐ', '金鲤'], tortue_dragon: ['Lóng Guī', '龙龟'],
     shuimu_denglong: ['Shuǐ Mǔ Dēng', '水母灯'], baoyu_jian: ['Bào Yǔ Jiàn Yú', '暴雨剑鱼'], lu_ci_gui: ['Lú Cí Guǐ', '鸬鹚鬼'],
     hai_ma_xing: ['Hǎi Mǎ Qiāng Bīng', '海马枪兵']
 };
