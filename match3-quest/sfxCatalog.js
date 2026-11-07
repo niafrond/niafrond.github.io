@@ -29,7 +29,7 @@ export const SPELL_SFX_IDS = [
     'shadowCurse', 'darkChannels', 'flameBolts', 'iceShield', 'flameblade', 'weakness', 'handOfIce', 'fingerOfDeath',
     'chasm', 'stoneskin', 'strength', 'flameSphere', 'mirrorShield', 'manaSiphon', 'manaBlast', 'tigerEye',
     'sneakAttack', 'swiftStrike', 'confuse', 'stealth', 'poisonBlade', 'shadowStrike', 'dualShot', 'shadowStep',
-    'sharpenedBlade', 'defensiveWall', 'shieldBash', 'focus', 'intimidate', 'rush', 'counterAttack', 'reinforce',
+    'sharpenedBlade', 'defensiveWall', 'shieldBash', 'focus', 'legionForge', 'steelHarvest', 'brokenBlades', 'steelMoult', 'intimidate', 'rush', 'counterAttack', 'reinforce',
     'barrier', 'divinePower', 'holdTheLine', 'heavensWrath', 'commandAura', 'enrage', 'cleave', 'throwAxe',
     'bloodlust', 'summonTempest', 'berserkerRage', 'singingBlades', 'deathbringer', 'revenant', 'warCry',
     'ultimateFiveElements', 'ultimateHeavenlyThunder', 'ultimateThousandArrows', 'ultimateSunPiercer',

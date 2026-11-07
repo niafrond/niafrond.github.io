@@ -1547,6 +1547,18 @@
   },
   "change-cut": {
    "seconds": 3.06
+  },
+  "spell-legionForge": {
+   "seconds": 0.5
+  },
+  "spell-steelHarvest": {
+   "seconds": 0.42
+  },
+  "spell-brokenBlades": {
+   "seconds": 0.4
+  },
+  "spell-steelMoult": {
+   "seconds": 0.45
   }
  }
 }
