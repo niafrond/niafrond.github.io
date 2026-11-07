@@ -42,7 +42,10 @@ export const isDesignable = screen =>
         ? screen.w >= 22 && screen.h >= 12
         : Boolean(screen.grass) && /_(wild|road)$/.test(screen.id) && screen.w >= 36 && screen.h >= 14);
 
-// Cartes de plein air d'une région (village, hameau, zone sauvage, route, sanctuaire) : elles reçoivent au moins les coffres-pièges.
+// Villages et hameaux : lieux sûrs, jamais de coffre-piège (ni de mimique par refermeture).
+export const isVillage = screen => screen.kind === 'village' || /_(village|hamlet)$/.test(screen.id || '');
+
+// Cartes de plein air d'une région (village, hameau, zone sauvage, route, sanctuaire) : elles reçoivent les coffres-pièges, sauf villages et hameaux.
 export const isPopulable = screen =>
     Boolean(screen.region) && !screen.interior && !screen.arena && !screen.aquatic && screen.kind !== 'house' && screen.biome !== 'tides' &&
     /^[a-z]+(_(village|hamlet|wild|road))?$/.test(screen.id) && screen.id.split('_')[0] === screen.region && screen.w >= 20 && screen.h >= 12;
@@ -692,8 +695,8 @@ function carveContour(c, seed) {
 export function designLevel(screen, options = {}) {
     const rank = Math.max(1, options.rank || 1);
     if (!isDesignable(screen)) {
-        // villages, hameaux, sanctuaires : pas de relief retouché, mais des coffres-pièges eux aussi
-        if (isPopulable(screen)) {
+        // villages et hameaux : ni relief retouché ni coffre-piège ; sanctuaires et cartes de région : des coffres-pièges sans relief retouché
+        if (isPopulable(screen) && !isVillage(screen)) {
             const c = makeContext(screen);
             const report = { motifs: [], ledges: 0, defiles: 0, hidden: 0, mimic: 0 };
             placeChests(c, screen, rank, seedOf(screen.id), report, { hidden: 0, mimic: MIMICS_PER_MAP });

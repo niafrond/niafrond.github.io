@@ -1,5 +1,6 @@
 // Perception du joueur : aura, caches invisibles et mimiques, coffres refermés, repère posé sur la carte, brouillard de guerre.
 // Extrait de exploration.js (ré-exporté par celui-ci).
+import { isVillage } from './world/levelDesign.js';
 import { canWalkOnWater, currentScreen, isEntityVisible, isTerrainBlocked } from './exploration.js';
 
 // ── Aura, caches invisibles et mimiques ──────────────────────────────
@@ -80,6 +81,7 @@ const reclosable = (session, chest, guarded) =>
 // Referme quelques coffres ouverts de la carte courante ; retourne les identifiants refermés.
 export function reclosePastChests(session) {
     const screen = currentScreen(session);
+    if (isVillage(screen)) return [];   // pas de mimique dans les villages et hameaux
     const returns = session.data.returns[screen.id] = (session.data.returns[screen.id] || 0) + 1;
     const guarded = protectedChestIds(session);
     const closed = [];
