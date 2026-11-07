@@ -13,7 +13,7 @@ import { tileSvg } from './art.js';
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const GIF = name => new URL(`../sprites/change/${name}`, import.meta.url).href;
-const MIRROR_MS = 6600;
+const MIRROR_MS = 6400;   // 156 images à 40 ms = 6,24 s : le GIF ne boucle plus (sinon la 1re image reviendrait à la fin)
 // Tutoriel du puzzle de soin (première ouverture, puis bouton « Aide ») : 3 étapes. `target` = ce qu'on met en lumière ; l'étape 0 attend un vrai coup du joueur.
 const TUTO = [
     { target: 'tiles', title: 'Échanger deux tuiles', text: 'Touchez une tuile, puis une voisine : elles s\'échangent. Alignez trois tuiles identiques (ou plus) pour les recueillir. Essayez avec les deux tuiles qui clignotent.' },
