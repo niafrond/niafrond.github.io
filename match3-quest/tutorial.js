@@ -30,7 +30,7 @@ export const tutorialCallbacks = {
 };
 
 // ─── Constantes internes ───────────────────────────────────────────────────
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 14;
 const TUTO_SPELL_ID = 'tutorial_fireball';
 const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
@@ -216,10 +216,28 @@ const STEPS = [
         desc: () => `Fengmeng joue un dernier coup tranquille sur le plateau.`,
         done: '',
     },
-    {   // J1 : 3 crânes, Fengmeng perd
-        who: 'player', kind: 'swap', match: { type: 'skull', len: 5 }, icon: 'bow', hp: 'finish',
+    {   // J1 : 5 crânes : un joker apparaît, et le tour bonus permet de l'utiliser tout de suite
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 5 }, icon: 'skull',
         title: () => 'Combinez cinq crânes pour créer un joker',
-        desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>5 crânes ${icon('skull')}</strong> pour remporter la victoire ! Un alignement de 5 fait aussi apparaître un <strong>joker</strong>, qui remplace n'importe quelle tuile. Faites <strong>l'échange en surbrillance</strong>.`,
+        desc: () => `Un alignement de <strong>5 tuiles</strong> fait apparaître un <strong>joker</strong>, qui remplace n'importe quelle tuile, et offre un tour bonus. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Un joker est apparu ! Utilisez-le tout de suite.',
+    },
+    {   // J1 : utilise le joker pour avoir des tuiles rouges
+        who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me', joker: true }, icon: 'star',
+        title: () => `Utilisez le joker : trois gâteaux ${COLOR_FR[_myColor]}`,
+        desc: () => `Le joker remplace n'importe quelle tuile : alignez-le avec <strong>2 gâteaux ${COLOR_FR[_myColor]}</strong> pour obtenir du qì ${icon('mana_' + _myColor)}, doublé grâce au joker. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Le joker a doublé votre qì !',
+    },
+    {   // J2 : coup tranquille
+        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
+        title: () => "L'ennemi joue",
+        desc: () => `Fengmeng joue un coup tranquille sur le plateau.`,
+        done: '',
+    },
+    {   // J1 : 3 crânes, Fengmeng perd
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'bow', hp: 'finish',
+        title: () => 'Combinez trois crânes',
+        desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>3 crânes ${icon('skull')}</strong> pour remporter la victoire ! Faites <strong>l'échange en surbrillance</strong>.`,
         done: '',
     },
 ];
@@ -516,10 +534,48 @@ export function _plantMove(board, want, mm = _mm) {
     return null;
 }
 
+// Joker du plateau (la tuile 'joker') : arrange deux gâteaux autour de lui pour qu'un échange l'aligne avec eux (J R _ + R sous la case vide,
+// dans l'un des quatre sens). Renvoie { board, from, to } ou null (pas de joker sur le plateau).
+export function _plantJokerMove(board, want, mm = _mm) {
+    const size = Math.round(Math.sqrt(board.length));
+    const jIdx = board.indexOf('joker');
+    if (jIdx < 0) return null;
+    const jr = Math.floor(jIdx / size), jc = jIdx % size;
+    const fillers = COLORS.filter(c => c !== want.color);
+    for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        for (const [pr, pc] of [[dc, dr], [-dc, -dr]]) {   // sens perpendiculaire (le gâteau de l'échange arrive de ce côté)
+            const at = k => [jr + dr * k, jc + dc * k];
+            const [r1, c1] = at(1), [r2, c2] = at(2);
+            const [r3, c3] = [r2 + pr, c2 + pc];
+            if ([[r1, c1], [r2, c2], [r3, c3]].some(([r, c]) => r < 0 || c < 0 || r >= size || c >= size)) continue;
+            for (const filler of fillers) {
+                const planted = [...board];
+                planted[r1 * size + c1] = want.color;
+                planted[r2 * size + c2] = filler;
+                planted[r3 * size + c3] = want.color;
+                if (mm.collectMatches(planted).length) continue;
+                const from = r2 * size + c2, to = r3 * size + c3;
+                const test = [...planted];
+                [test[from], test[to]] = [test[to], test[from]];
+                const found = mm.collectMatches(test);
+                const info = found.length === 1 ? found[0].info : null;
+                if (info && info.type === 'color' && info.len === 3 && info.color === want.color && found[0].indices.includes(jIdx)) return { board: planted, from, to };
+            }
+        }
+    }
+    return null;
+}
+
 // Trouve (ou prépare, en arrangeant le plateau) l'échange demandé par l'étape ; renvoie { from, to } ou null.
 function _prepareMove(step) {
     const want = _wanted(step.match);
     const board = _bm.board;
+    if (step.match.joker) {   // le coup doit utiliser le joker présent sur le plateau
+        const planted = _plantJokerMove(board, want);
+        if (!planted) return null;
+        _bm.applyBoard(planted.board);
+        return { from: planted.from, to: planted.to };
+    }
     const found = _findScriptedMove(board, want);
     if (found) return found;
     const planted = _plantMove(board, want);

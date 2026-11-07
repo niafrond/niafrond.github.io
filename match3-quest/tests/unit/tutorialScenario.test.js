@@ -4,7 +4,7 @@ import { describe, test, expect } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as mm from '../../matchMechanics.js';
-import { _findScriptedMove, _plantMove, _dropTile } from '../../tutorial.js';
+import { _findScriptedMove, _plantMove, _plantJokerMove, _dropTile } from '../../tutorial.js';
 import { rollBlock } from '../../combatStats.js';
 
 const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8');
@@ -52,6 +52,21 @@ describe('scénario du tutoriel : coups prévus', () => {
         expect(lenOf(three)).toBe(3);
     });
 
+    test('le joker du plateau est aligné avec deux gâteaux rouges par un seul échange (qì doublé)', () => {
+        const board = quietBoard();
+        board[3 * 8 + 3] = 'joker';
+        const planted = _plantJokerMove(board, { type: 'color', len: 3, color: 'red' }, mm);
+        expect(planted).not.toBeNull();
+        expect(mm.collectMatches(planted.board)).toHaveLength(0);
+        const swapped = [...planted.board];
+        [swapped[planted.from], swapped[planted.to]] = [swapped[planted.to], swapped[planted.from]];
+        const found = mm.collectMatches(swapped);
+        expect(found).toHaveLength(1);
+        expect(found[0].info.color).toBe('red');
+        expect(found[0].indices).toContain(3 * 8 + 3);
+        expect(_plantJokerMove(quietBoard(), { type: 'color', len: 3, color: 'red' }, mm)).toBeNull();   // pas de joker : rien à planter
+    });
+
     test('une tuile neuve du joueur ne forme jamais de ligne avec les tuiles déjà posées', () => {
         for (let trial = 0; trial < 300; trial++) {
             const board = Array.from({ length: 64 }, (_, i) => COLORS[(i * 7 + trial * 3 + Math.floor(i / 8)) % 5]);
@@ -69,16 +84,16 @@ describe('scénario du tutoriel : coups prévus', () => {
 describe('scénario du tutoriel : câblage', () => {
     const src = read('tutorial.js');
 
-    test('onze étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, 4 flèches, arme, 3 gâteaux, 5 crânes)', () => {
-        expect(src).toMatch(/const TOTAL_STEPS = 11;/);
+    test('quatorze étapes : J1 joue en premier, puis alternance prévue (3 couleur, 3 couleur, 3 crânes, 3 crânes, 4 couleur, sort, sort, 4 flèches, arme, 3 gâteaux, 5 crânes, 3 gâteaux avec le joker, 3 gâteaux, 3 crânes)', () => {
+        expect(src).toMatch(/const TOTAL_STEPS = 14;/);
         const steps = src.slice(src.indexOf('const STEPS = ['), src.indexOf('// Sort de Fengmeng'));
         const seq = [...steps.matchAll(/who: '(player|enemy)', kind: '(swap|spell|weapon)'(?:, match: \{ type: '(color|skull|combat)', len: (\d)[^}]*\})?/g)]
             .map(m => [m[1], m[2], m[3] || '', m[4] || ''].join(':'));
         expect(seq).toEqual([
             'player:swap:color:3', 'enemy:swap:color:3', 'player:swap:skull:3', 'enemy:swap:skull:3',
-            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:swap:combat:4', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:5',
+            'player:swap:color:4', 'player:spell::', 'enemy:spell::', 'player:swap:combat:4', 'player:weapon::', 'enemy:swap:color:3', 'player:swap:skull:5', 'player:swap:color:3', 'enemy:swap:color:3', 'player:swap:skull:3',
         ]);
-        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">11<\/span>/);
+        expect(read('index.html')).toMatch(/<span id="tutorial-step-total">14<\/span>/);
     });
 
     test("Fengmeng joue ses coups imposés, sans pièges ni agilité, et le tour du joueur rend la main au scénario", () => {
@@ -101,7 +116,7 @@ describe('scénario du tutoriel : câblage', () => {
     test("l'arme n'est acceptée qu'à l'étape de l'arme, et l'étape de Fengmeng dit seulement « L'ennemi joue »", () => {
         expect(read('game.js')).toMatch(/tutorialCallbacks\.allowWeapon && !tutorialCallbacks\.allowWeapon\(\)/);
         expect(read('game.js')).toMatch(/tutorialCallbacks\.onWeaponUsed\?\.\(\);\s+finishPlayerTurn\(\)/);
-        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(4);
+        expect((src.match(/title: \(\) => "L'ennemi joue"/g) || [])).toHaveLength(5);
     });
 
     test("les sorts ne sont acceptés qu'à l'étape du sort (plus de garde par numéro d'étape dans game.js)", () => {
