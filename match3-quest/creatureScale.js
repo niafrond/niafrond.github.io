@@ -134,6 +134,7 @@ export const ENEMY_SCALE = {
     jiuying: [1.3, 1.3],   // Jiuying (Monstre)
     dafeng: [1.4, 1.3],   // Dafeng (Oiseau)
     fengxi: [1.3, 1.3],   // Fengxi (Bête)
+    xiushe: [1.4, 1.3],   // Xiushé (Serpent)
     xiangliu: [1.1, 1.4],   // Xiangliu (Serpent)
     nian: [1.4, 1.4],   // Nian (Bête)
     kuafu_geant: [2.0, 1.1],   // Kuafu (Géant)

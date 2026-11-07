@@ -489,6 +489,7 @@ export const GBA_FILES = {
     xiezhi: 'xiezhi.79f7a4b0.js',
     xingtian: 'xingtian.9be34e69.js',
     xiong_jing: 'xiong_jing.03794f2b.js',
+    xiushe: 'xiushe.d5190810.js',
     xuan_gui: 'xuan_gui.3395f965.js',
     xuan_she: 'xuan_she.a3fadd69.js',
     xuanwu: 'xuanwu.7f282aaa.js',

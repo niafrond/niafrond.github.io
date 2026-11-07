@@ -36,7 +36,8 @@ export default {
                 { templateId: 'bailong', name: "Bailong", weight: 1, offset: 1 },
                 { templateId: 'linggui', name: "Linggui", weight: 3, offset: 0 },
                 { templateId: 'feiyu', name: "Feiyu", weight: 5, offset: -1 },
-                { templateId: 'jiuying', name: "Jiuying", weight: 1, offset: 1 }
+                { templateId: 'jiuying', name: "Jiuying", weight: 1, offset: 1 },
+                { templateId: 'xiushe', name: "Xiushé", weight: 1, offset: 1 }
             ]
         },
         npcs: [

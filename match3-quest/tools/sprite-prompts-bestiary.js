@@ -52,6 +52,7 @@ export const BESTIARY_MANIFEST = {
   jiaoyu: { desc: "Jiaoyu, dragon-like carp with a whiskered head, scaly body of green and gold, tail like a fan, leaping" },
   yingyu: { desc: "Yingyu, fish with feathered bird wings instead of fins, silver blue body, flying above water" },
   jiuying: { desc: "Jiuying, nine-headed water and fire monster, one serpentine body with nine mouths, three heads breathing flames and three spitting water, steaming scales, fierce" },
+  xiushe: { desc: "Xiushe, immense long serpent of a lake, thick coiled body with glossy dark blue scales, huge head with sharp teeth and a forked tongue, rising from water" },
   mu_mei: { desc: "Mu Mei, tree spirit, wooden figure with bark skin, twiggy hands and leaf hair, mossy, slow" },
   mu_gui: { desc: "Mu Gui, dead tree ghost, knotted grey dry wood body with roots, hollow face in the trunk, crawling vines" },
   shan_gui: { desc: "Shan Gui, mountain pass spirit, shaggy humanoid covered in leaves and fur, one-eyed look, wooden staff" },

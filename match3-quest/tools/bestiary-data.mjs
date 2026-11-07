@@ -76,6 +76,8 @@ export const BESTIARY = [
 
   ['jiuying', 'Jiuying', 'Monstre', 'Monstre des Neuf Gueules', 'red', 'fleuve', 'e', 'Jiuying, nine-headed water and fire monster, one serpentine body with nine mouths, three heads breathing flames and three spitting water, steaming scales, fierce'],
 
+  ['xiushe', 'Xiushé', 'Serpent', 'Long Serpent du Lac', 'blue', 'fleuve', 'e', 'Xiushe, immense long serpent of a lake, thick coiled body with glossy dark blue scales, huge head with sharp teeth and a forked tongue, rising from water'],
+
   // ── Bambous (niveau 17) : esprits de forêt, animaux-esprits
   ['mu_mei', 'Mu Mei', 'Esprit végétal', 'Esprit du Bois', 'green', 'bambous', 'm', 'Mu Mei, tree spirit, wooden figure with bark skin, twiggy hands and leaf hair, mossy, slow'],
   ['mu_gui', 'Mu Gui', 'Gui', 'Fantôme des Arbres Morts', 'green', 'bambous', 'm', 'Mu Gui, dead tree ghost, knotted grey dry wood body with roots, hollow face in the trunk, crawling vines'],
