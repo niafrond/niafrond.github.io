@@ -131,6 +131,7 @@
   "tilePainterDecor.js",
   "tilePainterTerrain.js",
   "tutorial.js",
+  "tutorialScript.js",
   "ultimateCinematics.js",
   "ultimates.js",
   "version.js",

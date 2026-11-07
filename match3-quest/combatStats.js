@@ -157,6 +157,7 @@ export function blockChance(entity) {
 }
 
 export function rollCrit(entity, rng = Math.random, weakened = 0) {
+    if (entity?.tutorialDeterministic || entity?.isTutorialEnemy) return false;   // tutoriel : aucun critique au hasard
     return rng() * 100 < critChance(entity, weakened);
 }
 
@@ -167,7 +168,7 @@ export function rollBlock(entity, rng = Math.random) {
         entity.tutorialBlock = null;
         return forced;
     }
-    if (entity?.isTutorialEnemy) return 'none';   // tutoriel : l'adversaire (Fengmeng, mannequin) ne bloque ni ne pare jamais
+    if (entity?.isTutorialEnemy || entity?.tutorialDeterministic) return 'none';   // tutoriel : l'adversaire (Fengmeng, mannequin) ne bloque ni ne pare jamais
     if (!(rng() * 100 < blockChance(entity))) return 'none';
     return rng() < TOTAL_BLOCK_SHARE ? 'total' : 'partial';
 }
