@@ -180,7 +180,7 @@ describe('état sauvegardé et déclencheur', () => {
         expect(normalizeChangeData(undefined)).toEqual(defaultChangeData());
         expect(normalizeChangeData('x')).toEqual(defaultChangeData());
         const d = normalizeChangeData({ done: [1, 1, 9, 'a'], pending: 2, hp: { farmer_lin: 7.9, inconnu: 3, ping: -1 }, healed: ['ping', 'ping', 'zzz'] });
-        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'], return: null, keep: null });
+        expect(d).toEqual({ done: [1], pending: 2, hp: { farmer_lin: 7 }, healed: ['ping'], return: null, keep: null, tuto: false });
         expect(normalizeChangeData({ return: { screenId: 'gobi', x: 3, y: 4 } }).return).toEqual({ screenId: 'gobi', x: 3, y: 4 });
         expect(normalizeChangeData({ return: { screenId: 'gobi', x: 'a', y: 4 } }).return).toBeNull();
         expect(normalizeChangeData({ pending: 7 }).pending).toBeNull();

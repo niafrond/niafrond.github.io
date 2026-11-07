@@ -7,13 +7,19 @@
 import { icon } from '../icons.js';
 import { gbaSprite } from '../sprites/index.js';
 import { EPISODES, ENERGY_LABEL } from './data.js';
-import { SIZE, GAUGE_MAX, createLevel, playMove, useBreath } from './engine.js';
+import { SIZE, GAUGE_MAX, createLevel, playMove, useBreath, possibleMoves } from './engine.js';
 import { tileSvg } from './art.js';
 
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const GIF = name => new URL(`../sprites/change/${name}`, import.meta.url).href;
 const MIRROR_MS = 6600;
+// Tutoriel du puzzle de soin (première ouverture, puis bouton « Aide ») : 3 étapes. `target` = ce qu'on met en lumière ; l'étape 0 attend un vrai coup du joueur.
+const TUTO = [
+    { target: 'tiles', title: 'Échanger deux tuiles', text: 'Touchez une tuile, puis une voisine : elles s\'échangent. Alignez trois tuiles identiques (ou plus) pour les recueillir. Essayez avec les deux tuiles qui clignotent.' },
+    { target: '.change-patient, .change-meter', title: 'Soigner', text: 'Chaque blessé réclame une énergie (indiquée à droite de son nom). Chaque tuile de cette énergie recueillie remplit la barre « Soin » ; quand elle est pleine, il est soigné. Rien ici ne fait de dégâts.' },
+    { target: '.change-stats', title: 'Coups et souffle', text: 'Vous avez un nombre de coups limité : à court, vos soins sont gardés et vous pouvez réessayer. Les autres énergies chargent la jauge : pleine, le souffle de l\'élixir transforme des tuiles en l\'énergie demandée. La goutte dorée remplace n\'importe quelle énergie dans un alignement.' }
+];
 const portrait = key => gbaSprite(key, 'front') || '';
 const img = (key, cls = '') => `<img class="change-sprite ${cls}" src="${portrait(key)}" alt="" draggable="false">`;
 
@@ -60,7 +66,7 @@ export function openHeal(host, { npc, data, save = () => {}, sfx = () => {}, onC
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', `Soigner ${npc.name}`);
     host.appendChild(el);
-    let level = null, selected = -1, busy = false, closed = false;
+    let level = null, selected = -1, busy = false, closed = false, tuto = data.tuto ? -1 : 0;   // tuto : étape en cours (-1 = aucune)
     const puzzle = document.createElement('div');
     puzzle.className = 'change-puzzle';
     el.appendChild(puzzle);
@@ -83,8 +89,32 @@ export function openHeal(host, { npc, data, save = () => {}, sfx = () => {}, onC
             </div>
             <div class="change-board" style="--board-cols:${SIZE}">${level.board.map((t, i) => `<button type="button" class="tile change-tile${i === selected ? ' selected' : ''}" data-i="${i}" data-kind="${t}" aria-label="${esc(ENERGY_LABEL[t] || 'Goutte d\'élixir')}">${tileSvg(t)}</button>`).join('')}</div>
             <div class="change-note" role="status" aria-live="polite">${esc(note)}</div>
-            <div class="change-foot"><button type="button" class="change-btn" data-act="retry">Recommencer</button><button type="button" class="change-btn" data-act="close">Retour à la carte</button></div>
+            <div class="change-foot"><button type="button" class="change-btn" data-act="retry">Recommencer</button><button type="button" class="change-btn" data-act="help">Aide</button><button type="button" class="change-btn" data-act="close">Retour à la carte</button></div>
           </div>`;
+        applyTuto();
+    }
+
+    // Tutoriel : met en lumière la cible de l'étape et affiche la bulle (en bas, hors du plateau). Refait à chaque rendu.
+    function applyTuto() {
+        el.querySelector('.change-tuto')?.remove();
+        if (tuto < 0 || !level) return;
+        const st = TUTO[tuto];
+        if (st.target === 'tiles') {
+            const mv = possibleMoves(level.board)[0];
+            if (mv) mv.forEach(i => puzzle.querySelectorAll('.change-tile')[i]?.classList.add('tuto-hint'));
+        } else puzzle.querySelectorAll(st.target).forEach(n => n.classList.add('tuto-hint'));
+        const last = tuto === TUTO.length - 1;
+        const bubble = document.createElement('div');
+        bubble.className = 'change-tuto';
+        bubble.setAttribute('role', 'status');
+        bubble.innerHTML = `<b>${esc(st.title)} <small>(${tuto + 1}/${TUTO.length})</small></b><p>${esc(st.text)}</p>
+            <div class="change-tuto-btns">${tuto > 0 ? `<button type="button" class="change-btn primary" data-act="tuto-next">${last ? 'Compris' : 'Suivant'}</button>` : ''}<button type="button" class="change-btn" data-act="tuto-skip">Passer</button></div>`;
+        el.appendChild(bubble);
+    }
+    function endTuto() {
+        tuto = -1;
+        if (!data.tuto) { data.tuto = true; save(); }
+        render();
     }
 
     async function animate(steps) {
@@ -107,6 +137,7 @@ export function openHeal(host, { npc, data, save = () => {}, sfx = () => {}, onC
         sfx(res.gain > 0 ? 'change-match' : 'change-swap');
         data.hp[npc.id] = level.hp;
         save();
+        if (tuto === 0) tuto = 1;
         await animate(res.steps);
         render(note || (res.reshuffled ? 'Plateau mélangé : plus de coup possible.' : ''));
         busy = false;
@@ -140,7 +171,7 @@ export function openHeal(host, { npc, data, save = () => {}, sfx = () => {}, onC
 
     el.addEventListener('click', async e => {
         const btn = e.target.closest('[data-act]'), tile = e.target.closest('.change-tile');
-        if (tile && level && !busy && !level.over) {
+        if (tile && level && !busy && !level.over && tuto < 1) {
             const i = Number(tile.dataset.i);
             if (selected < 0) { selected = i; render(); return; }
             if (selected === i) { selected = -1; render(); return; }
@@ -153,6 +184,9 @@ export function openHeal(host, { npc, data, save = () => {}, sfx = () => {}, onC
         if (!btn || busy) return;
         const act = btn.dataset.act;
         if (act === 'close' || act === 'continue') { sfx('uiClick'); close(); }
+        else if (act === 'help') { sfx('uiClick'); tuto = 0; selected = -1; render(); }
+        else if (act === 'tuto-next') { sfx('uiClick'); if (tuto >= TUTO.length - 1) endTuto(); else { tuto++; render(); } }
+        else if (act === 'tuto-skip') { sfx('uiClick'); endTuto(); }
         else if (act === 'retry') { sfx('uiClick'); startLevel(); render('Nouveau plateau : vos soins sont conservés.'); }
         else if (act === 'breath') {
             const res = useBreath(level);

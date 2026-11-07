@@ -885,3 +885,14 @@ body.a11y-colorblind .mana-green { background: #009e73; }
 body.a11y-colorblind .mana-yellow { background: #f0e442; }
 body.a11y-colorblind .mana-purple { background: #cc79a7; }
 .change-stats-container > .change-stat-card { grid-column: 1 / -1 !important; grid-row: auto !important; }
+
+/* Tutoriel du puzzle de soin (change/view.js) : cible en lumière + bulle en bas de l'écran. */
+.change-tile.tuto-hint { animation: change-tuto-pulse .8s ease-in-out infinite; z-index: 3; }
+.change-patient.tuto-hint, .change-meter.tuto-hint, .change-stats.tuto-hint { outline: 3px solid #ffb703; outline-offset: 2px; border-radius: 8px; animation: change-tuto-glow 1s ease-in-out infinite; }
+@keyframes change-tuto-pulse { 50% { transform: scale(1.18); filter: drop-shadow(0 0 6px #ffd23f); } }
+@keyframes change-tuto-glow { 50% { outline-color: #fff; } }
+.change-tuto { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 20; width: min(520px, calc(100% - 24px)); background: #fffaf0; color: #2b2140; border: 3px solid #2b2140; border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 0 rgba(43, 33, 64, .5); text-align: left; }
+.change-tuto p { margin: 4px 0 8px; font-size: 14px; line-height: 1.35; }
+.change-tuto small { font-weight: 400; opacity: .7; }
+.change-tuto-btns { display: flex; gap: 8px; justify-content: flex-end; }
+@media (prefers-reduced-motion: reduce) { .change-tile.tuto-hint, .change-tuto-hint { animation: none; } }

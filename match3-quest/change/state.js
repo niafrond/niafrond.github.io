@@ -3,8 +3,9 @@
 import { EPISODES } from './data.js';
 
 // `return` : où se trouvait Hou Yi quand l'épisode a commencé (écran et case), tant que Chang'e explore son village ; sert à le replacer au retour (et à la sauvegarde).
+// `tuto` : true une fois le tutoriel du puzzle de soin terminé (il ne se relance qu'avec le bouton « Aide »).
 // `keep` : soins d'un épisode déjà terminé, mis de côté le temps de le rejouer (le Livre des noms les garde) ; rendus à la fin du rejeu ou au chargement.
-export const defaultChangeData = () => ({ done: [], pending: null, hp: {}, healed: [], return: null, keep: null });
+export const defaultChangeData = () => ({ done: [], pending: null, hp: {}, healed: [], return: null, keep: null, tuto: false });
 
 /** Normalise `session.data.change` (sauvegardes anciennes ou abîmées). */
 export function normalizeChangeData(raw) {
@@ -19,7 +20,8 @@ export function normalizeChangeData(raw) {
         hp,
         healed: Array.isArray(d.healed) ? [...new Set(d.healed.filter(id => ids.has(id)))] : [],
         return: d.return && typeof d.return.screenId === 'string' && Number.isInteger(d.return.x) && Number.isInteger(d.return.y) ? { screenId: d.return.screenId, x: d.return.x, y: d.return.y } : null,
-        keep: null
+        keep: null,
+        tuto: d.tuto === true   // le tutoriel du puzzle de soin a été vu
     };
     // soins mis de côté pendant un rejeu interrompu (partie sauvegardée en plein rejeu) : on les rend, rien n'est perdu
     if (keepRaw) {
