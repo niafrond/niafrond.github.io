@@ -13,6 +13,8 @@ const PATHS = {
     // Combat et ressources
     skull: `<path d="M3 7.4 Q3 2 8 2 Q13 2 13 7.4 Q13 10 11 10.6 L11 13.4 L5 13.4 L5 10.6 Q3 10 3 7.4Z" fill="#f4ecd8" ${S}/><circle cx="6" cy="7.4" r="1.4" fill="${K}"/><circle cx="10" cy="7.4" r="1.4" fill="${K}"/><path d="M7 13.4 L7 11.8 M9 13.4 L9 11.8" fill="none" ${S}/>`,
     arrow: `<path d="M2.6 13.4 L12 4" fill="none" stroke="${K}" stroke-width="2.6" stroke-linecap="round"/><path d="M2.6 13.4 L12 4" fill="none" stroke="#c9a448" stroke-width="1.2" stroke-linecap="round"/><path d="M13.8 2.2 L9.6 3.6 L12.4 6.4Z" fill="#cfd6de" ${S}/><path d="M2 11 L4.2 11.8 L5 14 M3.6 9.6 L5.6 10.4 L6.4 12.4" fill="none" stroke="#d9452e" stroke-width="1.2"/>`,
+    // Rondache chinoise en osier tressé : disque de rotin, anneaux concentriques, brins rayonnants, bosse centrale
+    wickershield: `<circle cx="8" cy="8" r="6.6" fill="#c99a56" ${S}/><circle cx="8" cy="8" r="4.9" fill="none" stroke="#8a5a33" stroke-width=".9"/><circle cx="8" cy="8" r="3.2" fill="none" stroke="#8a5a33" stroke-width=".9"/><path d="M8 1.6 V14.4 M1.6 8 H14.4 M3.5 3.5 L12.5 12.5 M12.5 3.5 L3.5 12.5" fill="none" stroke="#e3c284" stroke-width=".7" opacity=".9"/><circle cx="8" cy="8" r="1.6" fill="#a8452f" ${S}/><circle cx="7.5" cy="7.5" r=".5" fill="#f4ecd8" opacity=".7"/>`,
     coin: `<circle cx="8" cy="8" r="6" fill="#f2c14e" ${S}/><rect x="6.4" y="6.4" width="3.2" height="3.2" fill="#b8862a" ${S}/>`,
     heart: `<path d="M8 13.6 Q2 9.6 2 5.8 Q2 2.8 5 2.8 Q7 2.8 8 4.8 Q9 2.8 11 2.8 Q14 2.8 14 5.8 Q14 9.6 8 13.6Z" fill="#e8452e" ${S}/><circle cx="5.2" cy="5.6" r="1.1" fill="#fff" opacity=".6"/>`,
     star: `<path d="M8 1.6 L9.9 5.8 L14.4 6.2 L11 9.2 L12 13.8 L8 11.4 L4 13.8 L5 9.2 L1.6 6.2 L6.1 5.8Z" fill="#f2c14e" ${S}/>`,
