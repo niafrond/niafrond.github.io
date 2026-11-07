@@ -1,3 +1,9 @@
+## [2.201.0](https://github.com/niafrond/niafrond.github.io/compare/v2.200.0...v2.201.0) (2026-11-07)
+
+### Features
+
+* **match3-quest:** décomposer attaque et blocage en deux animations ([#662](https://github.com/niafrond/niafrond.github.io/issues/662)) ([4a02c7f](https://github.com/niafrond/niafrond.github.io/commit/4a02c7f2f6b93e3875f9de9664b32563091b491a))
+
 ## [2.200.0](https://github.com/niafrond/niafrond.github.io/compare/v2.199.0...v2.200.0) (2026-11-07)
 
 ### Features
