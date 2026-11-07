@@ -1,3 +1,9 @@
+## [2.205.0](https://github.com/niafrond/niafrond.github.io/compare/v2.204.1...v2.205.0) (2026-11-07)
+
+### Features
+
+* **match3-quest:** filtres, compteur, retour en haut et sprites dans les bestiaires ([#668](https://github.com/niafrond/niafrond.github.io/issues/668)) ([e521c60](https://github.com/niafrond/niafrond.github.io/commit/e521c6072b8405f3d77b1b785746b7944ac73a74))
+
 ## [2.204.1](https://github.com/niafrond/niafrond.github.io/compare/v2.204.0...v2.204.1) (2026-11-07)
 
 ### Bug Fixes
