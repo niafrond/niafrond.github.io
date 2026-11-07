@@ -1,3 +1,9 @@
+## [2.199.0](https://github.com/niafrond/niafrond.github.io/compare/v2.198.1...v2.199.0) (2026-11-07)
+
+### Features
+
+* **match3-quest:** animer les sorts de flèches d'action et corriger la transition du miroir ([#660](https://github.com/niafrond/niafrond.github.io/issues/660)) ([a0bd436](https://github.com/niafrond/niafrond.github.io/commit/a0bd436912682d7d51229e69e633455b7de0e9ee))
+
 ## [2.198.1](https://github.com/niafrond/niafrond.github.io/compare/v2.198.0...v2.198.1) (2026-11-07)
 
 ### Bug Fixes
