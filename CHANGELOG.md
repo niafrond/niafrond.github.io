@@ -1,3 +1,9 @@
+## [2.204.1](https://github.com/niafrond/niafrond.github.io/compare/v2.204.0...v2.204.1) (2026-11-07)
+
+### Bug Fixes
+
+* **match3-quest:** retirer les mimiques des villages et hameaux ([#667](https://github.com/niafrond/niafrond.github.io/issues/667)) ([c5af686](https://github.com/niafrond/niafrond.github.io/commit/c5af686d4304135c4beab3f7041bdd6377485cf9))
+
 ## [2.204.0](https://github.com/niafrond/niafrond.github.io/compare/v2.203.0...v2.204.0) (2026-11-07)
 
 ### Features
