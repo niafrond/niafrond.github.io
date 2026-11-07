@@ -528,6 +528,7 @@ function buildStuff() {
 <dl><dt>Rareté</dt><dd>${esc(RARITY_FR[s.rarity])}</dd><dt>Niveau conseillé</dt><dd>${s.minLevel}</dd><dt>Effets</dt><dd>${esc(describeStuff(s))}</dd><dt>Prix de base</dt><dd>${s.quest ? 'Non vendable' : `${baseStuffPrice(s)} pièces d’or (prix de revente environ la moitié)`}</dd><dt>Où l’obtenir</dt><dd>${esc(SOURCE_TEXT(s))}</dd></dl>
 ${bio}${stealth}
 ${q ? `<h3>Obtention pas à pas</h3>${mc}` : ''}
+<p>Pour l’équiper : onglet « Stuff » du menu, puis « Équiper » (ou « Remplacer » si l’emplacement est déjà pris).</p>
 <h3>Autres ${esc(STUFF_SLOT_LABELS[s.slot].toLowerCase())}s</h3>
 <ul>${mine.map(o => `<li><a href="stuff-${o.id}.html">${esc(o.name)}</a> — ${esc(describeStuff(o))}</li>`).join('')}</ul>`
         }));
@@ -1085,13 +1086,14 @@ ${CHANGE_EPISODES.map(e => `<tr><td><a href="#episode-${e.id}">Épisode ${e.id}<
 <h3>Quoi faire</h3>
 <ol class="steps">
 <li><b>Marchez vers un blessé</b> (liseré rouge) pour ouvrir son puzzle de soin. Les autres habitants se baladent et n’ont rien à vous demander.</li>
-<li><b>Récoltez l’énergie qu’il demande</b> (indiquée en haut à droite) en alignant trois tuiles ou plus, avant la fin des coups. Un alignement de quatre ou cinq rend plus de points.</li>
+<li><b>Récoltez l’énergie qu’il demande</b> (indiquée à droite de son nom) en alignant trois tuiles ou plus, avant la fin des coups. Un alignement de quatre ou cinq rend plus de points.</li>
 <li>Son liseré tire vers le vert à mesure des soins. Une fois guéri, passez au suivant : quand les cinq sont soignés, l’épisode se termine.</li>
 </ol>
 <div class="phones">
-<figure><img src="img/change_puzzle.jpg" loading="lazy" alt="Le puzzle de soin"><figcaption>Le puzzle de soin : l’énergie demandée est en haut à droite.</figcaption></figure>
+<figure><img src="img/change_puzzle.jpg" loading="lazy" alt="Le puzzle de soin"><figcaption>Le puzzle de soin : en haut, le blessé, l’énergie demandée, la barre de soin et les coups restants.</figcaption></figure>
+<figure><img src="img/change_tuto.jpg" loading="lazy" alt="Le tutoriel du puzzle de soin"><figcaption>À la première visite, un court tutoriel explique l’échange de tuiles, le soin, les coups et le souffle de l’élixir.</figcaption></figure>
 </div>
-<div class="box tip"><b class="t">Bon à savoir</b>Plus de coups ? Rien n’est perdu : réessayez, les points déjà obtenus restent. Les autres couleurs chargent une jauge : pleine, le bouton « Souffle de l’élixir » change cinq tuiles en l’énergie demandée sans dépenser de coup. Chang’e ne quitte pas le village ; le bouton miroir en haut de l’écran permet de revenir auprès de Hou Yi et de reprendre plus tard.</div>
+<div class="box tip"><b class="t">Bon à savoir</b>Un doute sur les règles ? Le bouton « Aide » du puzzle relance le tutoriel. Plus de coups ? Rien n’est perdu : réessayez, les points déjà obtenus restent. Les autres couleurs chargent une jauge : pleine, le bouton « Souffle de l’élixir » change cinq tuiles en l’énergie demandée sans dépenser de coup. Chang’e ne quitte pas le village ; le bouton miroir en haut de l’écran permet de revenir auprès de Hou Yi et de reprendre plus tard.</div>
 <div class="box info"><b class="t">Revoir un épisode</b>Dans la <b>maison de Hou Yi et Chang’e</b> (aux Rizières), regardez dans le <b>miroir</b> posé près de Chang’e : il propose de retourner dans un village déjà soigné, de reprendre l’épisode resté ouvert, ou de <b>découvrir</b> un épisode dont le soleil est déjà tombé mais que vous n’avez pas encore joué (par exemple si vous l’avez abattu avant l’arrivée de ce mode). Pour un village déjà soigné, les habitants sont de nouveau blessés ; le Livre des noms ne perd rien.</div>
 
 ${episodes}`
