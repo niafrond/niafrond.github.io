@@ -156,31 +156,31 @@ export const TUTORIAL_ENEMY = {
 const STEPS = [
     {   // J1 joue en premier : 3 gâteaux de sa couleur
         who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me' }, icon: 'spark',
-        title: () => `Hou Yi joue en premier : 3 gâteaux ${COLOR_FR[_myColor]}`,
+        title: () => `Combinez trois gâteaux ${COLOR_FR[_myColor]}`,
         desc: () => `Vous jouez en premier ! Échangez les deux <strong>tuiles en surbrillance</strong> pour aligner <strong>3 gâteaux de lune ${COLOR_FR[_myColor]}</strong> : chaque gâteau aligné vous donne du qì ${icon('mana_' + _myColor)}.`,
         done: 'Bravo ! Vous avez gagné du qì.',
     },
     {   // J2 : 3 gâteaux de sa couleur
         who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
-        title: () => `Au tour de Fengmeng : 3 gâteaux ${COLOR_FR[_foeColor]}`,
+        title: () => `Fengmeng combine trois gâteaux ${COLOR_FR[_foeColor]}`,
         desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.`,
         done: 'Fengmeng a gagné du qì.',
     },
     {   // J1 : 3 crânes
         who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
-        title: () => 'Frappez avec 3 crânes',
+        title: () => 'Combinez trois crânes',
         desc: () => `Alignez <strong>3 crânes ${icon('skull')}</strong> pour blesser Fengmeng. Faites <strong>l'échange en surbrillance</strong>.`,
         done: 'Fengmeng a encaissé vos crânes !',
     },
     {   // J2 : 3 crânes (le joueur subit des dégâts)
         who: 'enemy', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
-        title: () => 'Fengmeng frappe à son tour',
+        title: () => 'Fengmeng combine trois crânes',
         desc: () => `Fengmeng aligne <strong>3 crânes ${icon('skull')}</strong> : vous <strong>subissez des dégâts</strong>. Surveillez vos PV !`,
         done: 'Aïe ! Vous avez perdu des PV.',
     },
     {   // J1 : 4 gâteaux (tour bonus)
         who: 'player', kind: 'swap', match: { type: 'color', len: 4, side: 'me' }, icon: 'gift',
-        title: () => `Alignez 4 gâteaux ${COLOR_FR[_myColor]} : tour bonus`,
+        title: () => `Combinez quatre gâteaux ${COLOR_FR[_myColor]}`,
         desc: () => `Un alignement de <strong>4 tuiles ou plus</strong> offre un <strong>tour bonus</strong> : vous rejouez tout de suite, sans que l'adversaire ne joue. Faites <strong>l'échange en surbrillance</strong>.`,
         done: 'Tour bonus ! Vous rejouez tout de suite.',
     },
@@ -192,13 +192,13 @@ const STEPS = [
     },
     {   // J2 : lance un sort, J1 le bloque
         who: 'enemy', kind: 'spell', icon: 'shield',
-        title: () => 'Fengmeng lance un sort… vous bloquez !',
+        title: () => 'Fengmeng lance un sort : vous bloquez',
         desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
         done: 'Blocage réussi : aucun dégât !',
     },
     {   // J1 : 3 crânes, Fengmeng perd
         who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'bow',
-        title: () => 'Terminez le combat : 3 crânes',
+        title: () => 'Combinez trois crânes',
         desc: () => `Il ne reste que quelques PV à Fengmeng : alignez <strong>3 crânes ${icon('skull')}</strong> pour remporter la victoire ! Faites <strong>l'échange en surbrillance</strong>.`,
         done: '',
     },
