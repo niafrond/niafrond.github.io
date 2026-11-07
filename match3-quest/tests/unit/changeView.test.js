@@ -39,7 +39,7 @@ async function playUntil(pred) {
 
 describe('puzzle de soin (openHeal)', () => {
     test.each(EPISODES.flatMap(e => e.injured.map(n => [e.id, n.id])))('épisode %i : %s se soigne, le gâteau est offert', async (_ep, id) => {
-        const npc = EPISODES.flatMap(e => e.injured).find(n => n.id === id), data = defaultChangeData();
+        const npc = EPISODES.flatMap(e => e.injured).find(n => n.id === id), data = { ...defaultChangeData(), tuto: true };
         let closed = null;
         openHeal(document.body, { npc, data, save: () => {}, onClose: r => { closed = r; } });
         await waitFor(() => q('.change-puzzle .change-board'), 'puzzle');
@@ -54,7 +54,7 @@ describe('puzzle de soin (openHeal)', () => {
     }, 60000);
 
     test('quitter garde les soins obtenus ; le blessé n\'est pas soigné', async () => {
-        const npc = EPISODES[0].injured[0], data = defaultChangeData();
+        const npc = EPISODES[0].injured[0], data = { ...defaultChangeData(), tuto: true };
         let closed = null;
         openHeal(document.body, { npc, data, save: () => {}, onClose: r => { closed = r; } });
         await waitFor(() => q('.change-board'), 'puzzle');
@@ -86,7 +86,7 @@ describe('transition et Livre des noms', () => {
     });
 
     test('le Livre des noms liste les habitants soignés avec leur gâteau', () => {
-        const data = defaultChangeData();
+        const data = { ...defaultChangeData(), tuto: true };
         data.healed.push('farmer_lin');
         openBook(document.body, data);
         expect(q('.change-book').textContent).toContain('Lin');
@@ -98,5 +98,36 @@ describe('transition et Livre des noms', () => {
     test('le Livre vide explique ce qu\'il contiendra', () => {
         openBook(document.body, defaultChangeData());
         expect(q('.change-confirm').textContent).toContain('Aucun nom');
+    });
+});
+
+describe('tutoriel du puzzle de soin', () => {
+    const npc = EPISODES[0].injured[0];
+    test('première ouverture : étape 1 sur un coup, puis soin, coups ; mémorisé et rejouable par « Aide »', async () => {
+        const data = defaultChangeData();
+        openHeal(document.body, { npc, data });
+        expect(q('.change-tuto')).not.toBeNull();
+        expect(document.body.querySelectorAll('.change-tile.tuto-hint').length).toBe(2);
+        const hints = [...document.body.querySelectorAll('.change-tile')].map((t, i) => t.classList.contains('tuto-hint') ? i : -1).filter(i => i >= 0);
+        click(document.body.querySelectorAll('.change-tile')[hints[0]]);
+        click(document.body.querySelectorAll('.change-tile')[hints[1]]);
+        await waitFor(() => q('.change-tuto b')?.textContent.includes('Soigner'), 'étape 2');
+        click(q('[data-act="tuto-next"]'));
+        await waitFor(() => q('.change-tuto b')?.textContent.includes('Coups'), 'étape 3');
+        expect(data.tuto).toBe(false);
+        click(q('[data-act="tuto-next"]'));
+        expect(q('.change-tuto')).toBeNull();
+        expect(data.tuto).toBe(true);
+        click(q('[data-act="help"]'));
+        expect(q('.change-tuto')).not.toBeNull();
+    });
+    test('déjà vu : aucune bulle ; « Passer » le mémorise', () => {
+        openHeal(document.body, { npc, data: { ...defaultChangeData(), tuto: true } });
+        expect(q('.change-tuto')).toBeNull();
+        document.body.innerHTML = '';
+        const data = defaultChangeData();
+        openHeal(document.body, { npc, data });
+        click(q('[data-act="tuto-skip"]'));
+        expect(data.tuto).toBe(true);
     });
 });
