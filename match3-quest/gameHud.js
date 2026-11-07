@@ -1,6 +1,7 @@
 // Interface du combat : animation des barres de PV et des compteurs, portraits, mise à jour des stats et sorts ennemis, journal, sauvegarde.
 // Extrait de game.js.
 import { escapeHtml } from "./escapeHtml.js";
+import { enemyNameLabel } from './bestiaryNames.js';
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from './sprites/index.js';
 import { hpBarTiming, hpShieldSegment } from './combatFlow.js';
 import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
@@ -15,6 +16,10 @@ import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons } from './gameSpellList.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+
+// Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
+// Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
+let enemyNameAsHanzi = true;
 
 // --- Animation compteur (tick 1 par 1) ---
 export const _activeCounters = {};
@@ -251,7 +256,7 @@ export function updateStats(){
         `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat row-name"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name}</span>${bonusTurnBadge(enemy)}</div>
+        <div class="stat row-name"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy)}
         <div class="stat row-hp">
             <div class="hp-bar-container">
@@ -293,6 +298,14 @@ export function updateStats(){
         enemyNameEl.addEventListener('touchcancel', hideName);
     }
     bindEnemyCardTap(enemyDiv);
+    if(!enemyDiv.dataset.nameToggleBound) {
+        enemyDiv.dataset.nameToggleBound = '1';
+        enemyDiv.addEventListener('click', () => {
+            enemyNameAsHanzi = !enemyNameAsHanzi;
+            const el = enemyDiv.querySelector('.enemy-combat-name');
+            if(el) el.textContent = `${classIcon(enemy.playerClass)} ${enemyNameLabel(enemy, enemyNameAsHanzi)}`;
+        });
+    }
     
     updateEnemySpells();
 }

@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, familyOf, creaturePlaces, matchesBestiary, weakColorOf, strongColorOf } from '../../bestiary.js';
+import { beastLabel, enemyNameLabel } from '../../bestiaryNames.js';
 import { weaknessOf } from '../../elements.js';
 import { createSession, recordBestiary, startNewGamePlus } from '../../exploration.js';
 import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
@@ -144,5 +145,32 @@ describe('filtres du bestiaire', () => {
         expect(matchesBestiary(c, { family: 'Bête' })).toBe(false);
         expect(matchesBestiary(c, { zone: 'z' })).toBe(false);
         expect(matchesBestiary({ ...c, boss: false }, { boss: true })).toBe(false);
+    });
+});
+
+describe('noms du bestiaire (pinyin + caractères)', () => {
+    test('chaque gabarit a un pinyin avec tons, des caractères chinois et un affichage « Pinyin (汉字) »', () => {
+        catalog.filter(t => t.id !== 'fallback_enemy').forEach(t => {
+            const l = beastLabel(t);
+            expect({ id: t.id, ok: /^[A-Za-zÀ-ɏ ]+$/.test(l.pinyin) && /^[一-鿿]+$/.test(l.hanzi) }).toEqual({ id: t.id, ok: true });
+            expect(l.heading).toBe(`${l.pinyin} (${l.hanzi})`);
+            expect(l.subtitle.startsWith(`${l.hanzi} · `)).toBe(true);
+        });
+    });
+
+    test('exemples : Bái Zé, Zhú Lóng, Cháng Xī', () => {
+        const get = id => beastLabel(catalog.find(t => t.id === id));
+        expect(get('bai_ze_savant')).toMatchObject({ heading: 'Bái Zé (白泽)', subtitle: '白泽 · Bête de la connaissance' });
+        expect(get('zhulong_torche')).toMatchObject({ heading: 'Zhú Lóng (烛龙)', subtitle: '烛龙 · Dragon-Torche' });
+        expect(get('changxi')).toMatchObject({ heading: 'Cháng Xī (常羲)', subtitle: '常羲 · Mère des douze lunes' });
+    });
+});
+
+describe('nom de l\'ennemi en combat', () => {
+    test('caractères chinois par défaut, pinyin si demandé, nom du gabarit en repli', async () => {
+                const e = { templateId: 'bai_ze', name: 'Bai Ze' };
+        expect(enemyNameLabel(e, true)).toBe('白泽');
+        expect(enemyNameLabel(e, false)).toBe('Bái Zé');
+        expect(enemyNameLabel({ templateId: 'inconnu', name: 'Machin' }, true)).toBe('Machin');
     });
 });
