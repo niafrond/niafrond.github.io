@@ -506,7 +506,7 @@ export const GBA_FILES = {
     yuan_gui: 'yuan_gui.4d4246b5.js',
     yun_shou: 'yun_shou.e8081eff.js',
     yutu: 'yutu.55d02cb7.js',
-    zaochi: 'zaochi.df81cb94.js',
+    zaochi: 'zaochi.2f9e9fcc.js',
     zhulong_serpent: 'zhulong_serpent.d651871a.js',
     zhulong_torche: 'zhulong_torche.d65454c6.js',
     zhuque: 'zhuque.b380811f.js',
