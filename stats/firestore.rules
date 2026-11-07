@@ -1,5 +1,5 @@
 rules_version = '2';
-// Mesure d'audience sans donnée personnelle : seuls des compteurs agrégés (jour, site, page, domaine de provenance) sont écrits.
+// Mesure d'audience sans donnée personnelle : seuls des compteurs agrégés (jour, site, page, provenance, navigateur, système, langue, fuseau horaire, largeur d'écran, temps de réponse, code HTTP, minute, heure) sont écrits.
 // Aucune écriture ne peut contenir autre chose, ni modifier autre chose qu'un +1 sur le jour en cours ; la lecture est publique
 // (que des totaux). `expireAt` (+400 jours) est prêt pour une politique TTL, qui exige la facturation : sans elle, purge manuelle.
 service cloud.firestore {
@@ -16,7 +16,7 @@ service cloud.firestore {
       return timestamp.date(request.time.year(), request.time.month(), request.time.day()) + duration.value(400, 'd');
     }
     function okHost(h) {
-      return h in ['niafrond.github.io', 'houyi.fontaine.one', 'fontaine.one', 'stats.fontaine.one'];
+      return h in ['niafrond.github.io', 'houyi.fontaine.one', 'houyi-match3-quest.web.app', 'fontaine.one', 'stats.fontaine.one'];
     }
     function created(id, keys) {
       let d = request.resource.data;
@@ -36,6 +36,26 @@ service cloud.firestore {
       allow create: if created(id, ['day', 'host', 'path', 'views', 'expireAt'])
         && request.resource.data.path is string && request.resource.data.path.matches('/.*')
         && request.resource.data.path.size() <= 200;
+      allow update: if bumped();
+    }
+    function validDim(dim, v) {
+      return dim == 'minute' ? v.matches('^([01][0-9]|2[0-3])[0-5][0-9]$')
+        : dim == 'hour' ? v.matches('^([01][0-9]|2[0-3])$')
+        : dim == 'browser' ? v in ['chrome', 'safari', 'firefox', 'edge', 'opera', 'samsung', 'autre']
+        : dim == 'os' ? v in ['windows', 'macos', 'linux', 'android', 'ios', 'chromeos', 'autre']
+        : dim == 'lang' ? v.matches('^[a-z]{2}$')
+        : dim == 'tz' ? v.matches('^[A-Za-z_]+(/[A-Za-z_+-]+){0,2}$')
+        : dim == 'width' ? v in ['xs', 'sm', 'md', 'lg', 'xl']
+        : dim == 'ttfb' ? v in ['lt100', 'lt300', 'lt1000', 'gte1000']
+        : dim == 'status' ? v.matches('^[1-5][0-9][0-9]$')
+        : false;
+    }
+    match /dims/{id} {
+      allow read: if isAdmin();
+      allow create: if created(id, ['day', 'host', 'dim', 'value', 'views', 'expireAt'])
+        && request.resource.data.dim is string && request.resource.data.value is string
+        && request.resource.data.value.size() <= 40
+        && validDim(request.resource.data.dim, request.resource.data.value);
       allow update: if bumped();
     }
     match /refs/{id} {

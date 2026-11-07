@@ -6,15 +6,19 @@
 - Pas de visiteurs « uniques » (il faudrait un identifiant) : uniquement des pages vues.
 
 ## Métriques collectées (et pourquoi)
-Règle : on ne collecte que ce qui ne demande aucun avertissement ni consentement. Tout le reste est exclu.
-- **Pages vues** (par jour, site, page ; pages les plus vues) : `views`.
-- **Visites** = arrivées sur le site (pas de navigation interne : référent différent du site) : somme de `refs`.
-- **Sources du trafic** : `refs` = nom de domaine du site d'origine ou `(direct)` ; le tableau de bord les classe en Direct, Moteurs de recherche, Réseaux sociaux, Autres sites.
-- **Non collecté volontairement** : visiteurs uniques (exigent un identifiant ou un hachage d'IP), pays/fuseau horaire, type d'appareil, langue, navigateur, système, résolution, adresse IP. (Appareil et fuseau horaire ont été essayés puis retirés le 2026-11-07 à la demande de l'utilisateur : « s'il faut des avertissements, ne pas collecter ».)
+Chaque valeur est un compteur **séparé** (jamais de combinaison : appareil × pays × page…), sans cookie, sans identifiant, sans adresse IP conservée.
+- **Pages vues** (par jour, site, page ; pages les plus vues) : `views`. **Pics** : `dims` `minute` (`HHMM` UTC) à chaque page vue ; le tableau de bord liste les 5 minutes les plus chargées.
+- **Visites** = arrivées sur le site (pas de navigation interne : référent différent du site) : somme de `refs`. **Visites par heure** : `dims` `hour` (`HH` UTC, affichée en heure locale).
+- **Sources du trafic** : `refs` = nom de domaine du site d'origine ou `(direct)` ; classées en Direct, Moteurs de recherche, Réseaux sociaux, Autres sites.
+- À chaque visite, `dims` : `browser` (famille : chrome, safari, firefox, edge, opera, samsung, autre), `os` (windows, macos, linux, android, ios, chromeos, autre), `lang` (2 lettres de `navigator.language`), `tz` (fuseau IANA), `width` (tranches xs < 480, sm < 768, md < 1200, lg < 1920, xl), `ttfb` (temps de réponse de la page, `responseStart - requestStart` : lt100, lt300, lt1000, gte1000), `status` (code HTTP de la page via `responseStatus`, Chromium seulement).
+- **Pays** : estimé à partir du fuseau horaire par une table du tableau de bord (fuseau inconnu affiché tel quel). Pas de géolocalisation par IP : ce site n'a pas de serveur qui voie l'IP, et appeler un service tiers lui enverrait l'IP du visiteur. Approximatif (VPN sans effet, voyageur compté dans son fuseau).
+- **Codes HTTP** : seulement ceux de la page qui charge le script (une 404 n'est vue que si la page d'erreur inclut le script) ; pas de journaux serveur. **Temps de réponse** : délai du serveur (TTFB) côté navigateur.
+- **Non collecté** : visiteurs uniques (exigent un identifiant ou un hachage d'IP), version précise du navigateur ou du système, résolution exacte, adresse IP.
+- **Quota Spark** : 20 000 écritures par jour pour tout le projet ; une visite en consomme jusqu'à 11 (1 page + minute + provenance + 8 caractéristiques), soit environ 1 800 visites par jour avant refus des écritures (la page continue de fonctionner).
 
 ## Technique (aucun serveur, palier gratuit)
 - Projet GCP dédié `fontaine-stats-one` (sans facturation) ; Firestore natif en `europe-west1` ; site Firebase Hosting `fontaine-stats-one` (`stats.fontaine.one`, URL de secours `fontaine-stats-one.web.app`).
-- `count.js` écrit via l'API REST Firestore (`documents:commit`, transformation `increment`) deux compteurs par visite : `views/{jour}_{site}_{hash page}` {day, host, path, views, expireAt} et `refs/{jour}_{site}_{hash domaine}` {day, host, ref, views, expireAt}. `day` = AAAAMMJJ en UTC.
+- `count.js` écrit via l'API REST Firestore (`documents:commit`, transformation `increment`) des compteurs par visite : `dims/{jour}_{site}_{hash}` {day, host, dim, value, views, expireAt} ; `views/{jour}_{site}_{hash page}` {day, host, path, views, expireAt} et `refs/{jour}_{site}_{hash domaine}` {day, host, ref, views, expireAt}. `day` = AAAAMMJJ en UTC.
 - `firestore.rules` : création seulement avec `views == 1`, jour = aujourd'hui (heure serveur), hôte dans la liste blanche, clés exactes ; mise à jour seulement « +1 sur `views` » du jour en cours ; aucune suppression ; lecture réservée aux administrateurs : documents `admins/{uid}` (créés avec les droits du projet, jamais par un client). Clé d'API restreinte aux sites autorisés (referrers) et à Firestore.
 - Pas de TTL automatique (exige la facturation) : `expireAt` (+400 jours) est prêt pour une politique TTL ; purge manuelle sinon.
 - Ajouter un nouveau site : ajouter son nom d'hôte dans `okHost` (`firestore.rules`) et son origine dans les referrers de la clé d'API.

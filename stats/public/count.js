@@ -1,6 +1,7 @@
 /* count.js : mesure d'audience sans cookie, sans stockage local, sans identifiant, sans adresse IP ni user-agent conservés.
  * On incrémente seulement des compteurs par jour dans Firestore via l'API REST : page vue ; à l'arrivée sur le site (visite) provenance
- * (nom de domaine ou « direct »). Rien d'autre : ni appareil, ni pays, ni langue, ni identifiant.
+ * (nom de domaine ou « direct »), navigateur, système, langue, fuseau horaire (sert à estimer le pays, sans IP), largeur d'écran, temps de réponse
+ * et code HTTP de la page, plus la minute et l'heure (UTC). Chaque valeur est un compteur séparé : jamais de combinaison, jamais d'identifiant.
  * Respecte Do Not Track et Global Privacy Control ; ignore robots, navigateurs pilotés et localhost.
  * Usage : <script async src="https://stats.fontaine.one/count.js"></script> */
 (function () {
@@ -39,8 +40,30 @@
         var writes = [doc('views', hash(host + path), { path: path })];
         var ref = '';
         try { ref = new URL(document.referrer).hostname.replace(/^www\./, '').slice(0, 100); } catch (e) { /* pas de provenance */ }
-        if (ref !== host) {   // arrivée sur le site (visite) et non navigation interne : provenance
+        var dim = function (name, value) { if (value) writes.push(doc('dims', hash(name + value), { dim: name, value: String(value) })); };
+        var two = function (x) { return ('0' + x).slice(-2); };
+        dim('minute', two(now.getUTCHours()) + two(now.getUTCMinutes()));   // chaque page vue : pics de requêtes par minute (UTC)
+        if (ref !== host) {   // arrivée sur le site (visite) et non navigation interne
             writes.push(doc('refs', hash(ref || '(direct)'), { ref: ref || '(direct)' }));
+            var ua = n.userAgent;
+            dim('hour', two(now.getUTCHours()));
+            dim('browser', /Edg\//.test(ua) ? 'edge' : /OPR\/|Opera/.test(ua) ? 'opera' : /SamsungBrowser/.test(ua) ? 'samsung' : /Firefox|FxiOS/.test(ua) ? 'firefox' : /Chrome|CriOS/.test(ua) ? 'chrome' : /Safari/.test(ua) ? 'safari' : 'autre');
+            dim('os', /Android/.test(ua) ? 'android' : /iPhone|iPad|iPod/.test(ua) ? 'ios' : /Windows/.test(ua) ? 'windows' : /Mac OS X|Macintosh/.test(ua) ? 'macos' : /CrOS/.test(ua) ? 'chromeos' : /Linux|X11/.test(ua) ? 'linux' : 'autre');
+            var lang = (n.language || '').slice(0, 2).toLowerCase();
+            if (/^[a-z]{2}$/.test(lang)) dim('lang', lang);
+            var tz = '';
+            try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { /* pas de fuseau */ }
+            if (tz.length <= 40 && /^[A-Za-z_]+(\/[A-Za-z_+-]+){0,2}$/.test(tz)) dim('tz', tz);
+            var w = window.innerWidth || 0;
+            if (w) dim('width', w < 480 ? 'xs' : w < 768 ? 'sm' : w < 1200 ? 'md' : w < 1920 ? 'lg' : 'xl');
+            try {
+                var nav = performance.getEntriesByType('navigation')[0];
+                if (nav && nav.responseStart > 0) {
+                    var t = nav.responseStart - nav.requestStart;
+                    dim('ttfb', t < 100 ? 'lt100' : t < 300 ? 'lt300' : t < 1000 ? 'lt1000' : 'gte1000');
+                    if (nav.responseStatus) dim('status', nav.responseStatus);
+                }
+            } catch (e) { /* API de performance absente */ }
         }
 
         fetch('https://firestore.googleapis.com/v1/projects/' + P + '/databases/(default)/documents:commit?key=' + K, {

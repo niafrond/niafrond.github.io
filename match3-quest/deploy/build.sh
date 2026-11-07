@@ -13,4 +13,9 @@ rsync -a match3-quest/ "$OUT/" \
   --exclude='/sprites/house/cand' --exclude='/sprites/png/back-cand' --exclude='/sprites/cinematics-change' \
   --exclude='/sprites/png' --exclude='/audio' --exclude='/soluce/img' --exclude='/sprites/**.png' --exclude='/sprites/**.gif' --exclude='*.md' --exclude='*.bat' --exclude='test-*'
 find "$OUT/sprites" -type d -empty -delete
+# Le jeu importe « ./version.js » (alias MATCH3_*) : sur ce domaine, un module qui réexporte celui de GitHub Pages (toujours à jour).
+cat > "$OUT/version.js" <<'JS'
+export * from 'https://niafrond.github.io/version.js';
+export { SITE_SEMVER as MATCH3_SEMVER, getVersion as getMatch3Version, getBuildDate as getMatch3BuildDate } from 'https://niafrond.github.io/version.js';
+JS
 du -sh "$OUT"
