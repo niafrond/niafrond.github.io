@@ -723,11 +723,15 @@ export function checkForMatchesOnly(){
     return checkForMatchesOnlyOnBoard(board);
 }
 
-// Quand un sort transforme massivement le plateau (Brasier des Sceaux), les gros alignements qui en
-// découlent ne donnent pas de tour bonus : sinon on enchaîne les tours jusqu'à la mort de l'ennemi.
-// Le drapeau retombe dès que la cascade est terminée.
-let suppressMatchBonusTurns = false;
-export function suppressMatchBonusTurnsUntilSettled(){ suppressMatchBonusTurns = true; }
+// Un seul tour bonus par tour, quelles que soient les cascades (matchs de 4+, combo magistral, crânes détruits par un sort) :
+// sinon un sort qui remplit le plateau de crânes enchaîne les tours jusqu'à la mort de l'ennemi.
+// Le plafond retombe dès que la cascade est terminée (le tour suivant peut en gagner un nouveau).
+let matchBonusTurnClaimed = false;
+export function claimMatchBonusTurn(){
+    if(matchBonusTurnClaimed) return false;
+    matchBonusTurnClaimed = true;
+    return true;
+}
 
 let announceWaitSince = 0;
 export function checkMatches(forceFullBoard = false){
@@ -780,7 +784,7 @@ export function checkMatches(forceFullBoard = false){
                 // Notifier le tutoriel d'un match de couleur du joueur
                 tutorialCallbacks.onMatch?.('color', info.color, info.len);
             }
-            if(info.len>=4 && !suppressMatchBonusTurns){
+            if(info.len>=4 && claimMatchBonusTurn()){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -798,7 +802,7 @@ export function checkMatches(forceFullBoard = false){
             flyManaToCounter(indices, null, { isPlayer: currentPlayer === player, type: 'combat' });
             log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
-            if(info.len>=4 && !suppressMatchBonusTurns){
+            if(info.len>=4 && claimMatchBonusTurn()){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -829,7 +833,7 @@ export function checkMatches(forceFullBoard = false){
             applyDamage(opponent, dmg);
             log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
             // Bonus de tour pour 4+ crânes
-            if(info.len>=4 && !suppressMatchBonusTurns){
+            if(info.len>=4 && claimMatchBonusTurn()){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -856,10 +860,13 @@ export function checkMatches(forceFullBoard = false){
             if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
         }
 
-        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered && !suppressMatchBonusTurns){
+        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
-            addBonusTurn(currentPlayer);
-            playSfx('turnBonus');
+            const comboBonusTurn = claimMatchBonusTurn();
+            if(comboBonusTurn){
+                addBonusTurn(currentPlayer);
+                playSfx('turnBonus');
+            }
             const comboXp = grantComboMasteryRewards();
 
             const randomIndex = pickRandomNonJokerIndex(board);
@@ -868,10 +875,10 @@ export function checkMatches(forceFullBoard = false){
             }
 
             showCombatAnimation(
-                { icon: 'star', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé, vous rejouez !` },
+                { icon: 'star', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé${comboBonusTurn ? ', vous rejouez !' : ''}` },
                 true
             );
-            log(`Combo magistral : +${comboXp} XP, création d'un Joker et tour bonus !`);
+            log(`Combo magistral : +${comboXp} XP, création d'un Joker${comboBonusTurn ? ' et tour bonus' : ''} !`);
         }
 
         highlightCombo(indices, info);
@@ -918,7 +925,7 @@ export function checkMatches(forceFullBoard = false){
         actionGuard.endBoardAction();
         turnDistinctMatches = 0;
         comboMasteryTriggered = false;
-        suppressMatchBonusTurns = false;
+        matchBonusTurnClaimed = false;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
         // Si c'est le tour de l'ennemi et qu'il n'y a pas de combos, terminer son tour
         if(currentTurn === 'enemy'){

@@ -2,7 +2,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
-import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles, suppressMatchBonusTurnsUntilSettled } from './board.js';
+import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
 import { colors, boardSize } from './constants.js';
 import { stackStatusEffect, addStatBuff } from './combatStats.js';
 import { addRage, resetRage, rageToManaAmount, rageToDamageAmount } from './ultimates.js';
@@ -123,7 +123,6 @@ export function applySweepLines(spell, shape) {
             previewIndices(spell, indices).then(() => {
                 destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : shape === 'col' ? 'Colonne détruite' : 'Ligne détruite');
                 saveUpdate();
-                suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
                 checkMatches(true);
             });
             return true;
@@ -145,7 +144,6 @@ export async function applyClearColor(spell) {
     await previewIndices(spell, indices);
     destroyIndices(spell, indices, spell.name.toUpperCase(), `${indices.length} gemmes détruites`);
     saveUpdate();
-    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
     checkMatches(true);
     return false;
 }
@@ -166,7 +164,6 @@ export function applySkullsFromColors(spell) {
     renderBoard();
     showCombatAnimation({ icon: 'skull', title: spell.name.toUpperCase(), damage: `${count} gemmes → crânes`, target: '→ Plateau' }, true);
     log(`${spell.name} transforme ${count} gemmes en crânes !`);
-    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via les gros alignements de crânes
     checkMatches(true);
     return false;
 }
@@ -205,7 +202,6 @@ export async function applyStarRain(spell) {
     await previewIndices(spell, indices);
     destroyIndices(spell, indices, spell.name.toUpperCase(), `${rows} lignes et ${cols} colonnes détruites`);
     saveUpdate();
-    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via un sort de plateau
     checkMatches(true);
     return false;
 }
@@ -306,7 +302,6 @@ export function applyBerserkerRage(spell) {
             count++;
         }
     }
-    if(count > 0) suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via les alignements de crânes
     renderBoard();
     showCombatAnimation({ icon: 'anger', title: "FUREUR DU LOUP DES STEPPES", damage: `${count} rouges → crânes`, target: '→ Plateau' }, true);
     log(`Fureur du Loup des Steppes transforme ${count} gâteaux de lune rouges en crânes !`);
@@ -349,7 +344,6 @@ export function applyDeathbringer(spell) {
         created.push(target.index);
     }
 
-    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via les alignements de crânes
     renderBoard();
     // une fois l'animation du sort terminée, on montre où les crânes sont apparus
     showCombatAnimation({ icon: 'poison', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true, { onContinue: () => flashTiles(created) });
