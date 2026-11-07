@@ -1,0 +1,113 @@
+{
+  "id": "hou_yi_change_miroir",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, cinematic, bamboo forest, soft glowing golden light, rich colors, no text",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "first": "sprites/cinematics-change/hou_yi_first.png",
+  "elements": {
+    "mirror": {
+      "prompt": "a half of a round ancient Chinese bronze mirror, a semicircle cut straight along its diameter, polished silvery glowing surface, carved cloud pattern bronze rim, small red tassel at the top, no hand, centered",
+      "w": 768,
+      "h": 768,
+      "seed": 600,
+      "bg": "white",
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, cropped, extra limbs, full circle, hand, person, pink, magenta",
+      "tries": 6
+    },
+    "change": {
+      "prompt": "Chang'e, the beautiful Chinese moon goddess, young woman with a gentle face, flowing white and pale silver hanfu with long wide sleeves and silver cloud embroidery, black hair in an elaborate updo with a gold hairpin and long ribbons, holding half of a bronze mirror in one hand, full body, standing, facing the viewer",
+      "w": 768,
+      "h": 1024,
+      "seed": 700,
+      "bg": "white",
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, cropped, extra limbs, man, male, beard, moon, circle, halo, pink, window, bricks, clouds, flowers, floor, base",
+      "tries": 6
+    }
+  },
+  "keys": [
+    {
+      "prompt": "the archer in green hanfu holds a half round bronze mirror up in front of his chest and looks at it, speaking softly to it, the mirror reflects a pale silver light",
+      "denoise": 0.5,
+      "paste": [
+        {
+          "el": "mirror",
+          "cx": 0.66,
+          "cy": 0.7,
+          "w": 0.34
+        }
+      ]
+    },
+    {
+      "prompt": "a blinding silver moonlight flash bursts from the half bronze mirror, light rays fill the bamboo forest, the faint reflection of a woman in white appears in the mirror",
+      "denoise": 0.5,
+      "paste": [
+        {
+          "el": "mirror",
+          "cx": 0.66,
+          "cy": 0.7,
+          "w": 0.34
+        },
+        {
+          "el": "change",
+          "cx": 0.5,
+          "cy": 0.55,
+          "w": 0.7,
+          "alpha": 0.5
+        }
+      ],
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.66,
+          "cy": 0.7,
+          "r": 0.5,
+          "color": [
+            240,
+            248,
+            255
+          ],
+          "alpha": 200
+        }
+      ]
+    },
+    {
+      "prompt": "the goddess Chang'e in white and silver hanfu stands in the same bamboo forest at dusk, a pale full moon behind her, holding half of a bronze mirror, gentle smile, silver moonlight glow, fireflies",
+      "denoise": 0.55,
+      "paste": [
+        {
+          "el": "change",
+          "cx": 0.5,
+          "cy": 0.62,
+          "w": 0.78
+        }
+      ],
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.4,
+          "r": 0.35,
+          "color": [
+            225,
+            235,
+            255
+          ],
+          "alpha": 120
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "the archer slowly lifts a half bronze mirror and speaks to it, his lips move, bamboo leaves sway, fireflies drift"
+    },
+    {
+      "frames": 25,
+      "motion": "the mirror starts to shine, a silver flash blooms from the mirror and engulfs the scene"
+    },
+    {
+      "frames": 25,
+      "motion": "the flash fades revealing Chang'e in the reflection, she turns toward the viewer with a swirl of moonlight and petals"
+    }
+  ]
+}

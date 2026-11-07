@@ -137,7 +137,8 @@ export default {
                 { templateId: 'hai_ruo', name: "Hai Ruo", weight: 1, offset: 1 },
                 { templateId: 'hai_she', name: "Hai She", weight: 3, offset: 0 },
                 { templateId: 'xuanwu', name: "Xuanwu", weight: 1, offset: 1 },
-                { templateId: 'shenlong', name: "Shenlong", weight: 1, offset: 1 }
+                { templateId: 'shenlong', name: "Shenlong", weight: 1, offset: 1 },
+                { templateId: 'dafeng', name: "Dafeng", weight: 1, offset: 1 }
         ] },
         npcs: [
             { id: 'mermaid_jiaoren', at: '0' },

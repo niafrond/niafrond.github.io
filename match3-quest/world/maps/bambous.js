@@ -134,7 +134,8 @@ export default {
                 { templateId: 'lu_jing', name: "Lu Jing", weight: 3, offset: 0 },
                 { templateId: 'he_jing', name: "He Jing", weight: 3, offset: 0 },
                 { templateId: 'shouling', name: "Shouling", weight: 5, offset: -1 },
-                { templateId: 'shan_shen', name: "Shan Shen", weight: 1, offset: 1 }
+                { templateId: 'shan_shen', name: "Shan Shen", weight: 1, offset: 1 },
+                { templateId: 'fengxi', name: "Fengxi", weight: 1, offset: 1 }
             ]
         },
         npcs: [

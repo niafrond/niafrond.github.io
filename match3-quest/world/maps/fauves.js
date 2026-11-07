@@ -138,7 +138,8 @@ export default {
                 { templateId: 'fuxi_dragon', name: "Fuxi", weight: 5, offset: -1 },
                 { templateId: 'taotie_bronze', name: "Taotie", weight: 3, offset: 0 },
                 { templateId: 'xiangliu', name: "Xiangliu", weight: 1, offset: 1 },
-                { templateId: 'xingtian', name: "Xingtian", weight: 3, offset: 0 }
+                { templateId: 'xingtian', name: "Xingtian", weight: 3, offset: 0 },
+                { templateId: 'zaochi', name: "Zaochi", weight: 1, offset: 1 }
         ] },
         npcs: [
             { id: 'hare_tuzi', at: '0' },

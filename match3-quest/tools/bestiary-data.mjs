@@ -74,6 +74,8 @@ export const BESTIARY = [
   ['jiaoyu', 'Jiaoyu', 'Poisson', 'Poisson-Dragon', 'blue', 'fleuve', 'm', 'Jiaoyu, dragon-like carp with a whiskered head, scaly body of green and gold, tail like a fan, leaping'],
   ['yingyu', 'Yingyu', 'Poisson', 'Poisson Ailé des Crues', 'blue', 'fleuve', 'm', 'Yingyu, fish with feathered bird wings instead of fins, silver blue body, flying above water'],
 
+  ['jiuying', 'Jiuying', 'Monstre', 'Monstre des Neuf Gueules', 'red', 'fleuve', 'e', 'Jiuying, nine-headed water and fire monster, one serpentine body with nine mouths, three heads breathing flames and three spitting water, steaming scales, fierce'],
+
   // ── Bambous (niveau 17) : esprits de forêt, animaux-esprits
   ['mu_mei', 'Mu Mei', 'Esprit végétal', 'Esprit du Bois', 'green', 'bambous', 'm', 'Mu Mei, tree spirit, wooden figure with bark skin, twiggy hands and leaf hair, mossy, slow'],
   ['mu_gui', 'Mu Gui', 'Gui', 'Fantôme des Arbres Morts', 'green', 'bambous', 'm', 'Mu Gui, dead tree ghost, knotted grey dry wood body with roots, hollow face in the trunk, crawling vines'],
@@ -88,6 +90,8 @@ export const BESTIARY = [
   ['jing_shou', 'Jing Shou', 'Esprit-animal', 'Bête aux Yeux Lumineux', 'purple', 'bambous', 'm', 'Jing Shou, ordinary-looking beast with glowing eyes and strange markings on its body, watchful'],
   ['shan_shen', 'Shan Shen', 'Divinité', 'Esprit de la Montagne', 'green', 'bambous', 'e', 'Shan Shen, mountain god, imposing bearded giant in a stone-green robe, horned crown of rock, wooden staff'],
   ['qilin', 'Qilin', 'Hybride', 'Licorne de Vertu', 'green', 'bambous', 'e', 'Qilin, Chinese chimera with a deer body, dragon scales, hooves, a single horn and a bushy tail, gentle glow'],
+
+  ['fengxi', 'Fengxi', 'Bête', 'Sanglier Monstrueux', 'purple', 'bambous', 'e', 'Fengxi, gigantic monstrous wild boar, iron-hard bristles, huge curved tusks, dark hide, charging, destroyer of crops'],
 
   // ── Tonnerre (niveau 22) : vent, pluie, éclairs, neige
   ['feng_bo', 'Feng Bo', 'Divinité', 'Vieux Maître du Vent', 'yellow', 'tonnerre', 'c', 'Feng Bo, wind god, old man with a long beard riding a cloud, holding a big wind bag, swirling robe'],
@@ -105,6 +109,7 @@ export const BESTIARY = [
   ['tianma', 'Tianma', 'Bête', 'Cheval Céleste', 'blue', 'tonnerre', 'm', 'Tianma, celestial white horse with a flowing mane and a faintly glowing hoofprint trail, galloping on clouds'],
   ['chiwen', 'Chiwen', 'Hybride', 'Dragon-Poisson des Toits', 'blue', 'tonnerre', 'm', 'Chiwen, dragon-headed fish creature with a wide open mouth and a curled tail, roof ornament look, blue-green'],
   ['pulao', 'Pulao', 'Dragon', 'Dragon des Cloches', 'yellow', 'tonnerre', 'm', 'Pulao, small coiled dragon with a mane and a gaping mouth, shaped like a bell handle, bronze color'],
+
 
   // ── Fauves (niveau 27) : grands fauves, chimères, monstres anciens
   ['bai_ze', 'Bai Ze', 'Bête', 'Bête Blanche Omnisciente', 'blue', 'fauves', 'c', 'Bai Ze, white lion-like beast with horns and several eyes along its flanks, wise expression, mist aura'],
@@ -127,6 +132,8 @@ export const BESTIARY = [
   ['kuafu_geant', 'Kuafu', 'Géant', 'Géant du Soleil', 'yellow', 'fauves', 'e', 'Kuafu, colossal giant with a huge club, rough tunic, sun-burnt skin, tired determined face, running pose'],
   ['xingtian', 'Xingtian', 'Géant', 'Géant sans Tête', 'red', 'fauves', 'b', 'Xingtian, headless giant with eyes on the chest and a mouth in the navel, wielding an axe and a shield, fierce'],
 
+  ['zaochi', 'Zaochi', 'Monstre', 'Dents de Ciseau', 'yellow', 'fauves', 'e', 'Zaochi, humanoid monster with a tall ape-like body, a mouth with one enormous chisel-like tooth five or six feet long protruding, holding a shield, brutish'],
+
   // ── Mer (niveau 32) : océan, rois-dragons, créatures marines
   ['hai_ruo', 'Hai Ruo', 'Divinité', 'Esprit de la Mer', 'blue', 'mer', 'e', 'Hai Ruo, sea spirit, aquatic humanoid with a fish tail and blue skin, coral crown, pearl necklace'],
   ['hai_shen', 'Hai Shen', 'Divinité', 'Dieu de la Mer', 'blue', 'mer', 'e', 'Hai Shen, sea god, stern king with a scaly torso and a wave crown, holding a trident, waves around'],
@@ -139,6 +146,8 @@ export const BESTIARY = [
   ['panlong', 'Panlong', 'Dragon', 'Dragon Lové', 'green', 'mer', 'b', 'Panlong, coiled dragon wrapped around itself like a pillar, tight scales, mane, calm'],
   ['shenlong', 'Shenlong', 'Dragon', 'Dragon Divin', 'blue', 'mer', 'l', 'Shenlong, divine dragon, long wingless body in blue and gold, swirling in clouds, wise eyes'],
   ['long', 'Long', 'Dragon', 'Dragon Céleste', 'yellow', 'mer', 'e', 'Long, Chinese celestial dragon, long serpentine body with four clawed legs, antlers and whiskers, shining golden scales'],
+
+  ['dafeng', 'Dafeng', 'Oiseau', 'Grand Vent', 'green', 'mer', 'e', 'Dafeng, monstrous great wind bird, huge storm-grey raptor with vast wings stirring a whirlwind, hooked beak, swirling air around the body'],
 
   // ── Fusang (niveau 37) : soleil, oiseaux divins, héros-géants
   ['jinwu', 'Jinwu', 'Oiseau', 'Oiseau d\'Or du Soleil', 'red', 'fusang', 'e', 'Jinwu, golden sun bird with three legs and a halo of fire, brilliant wings, noble'],
