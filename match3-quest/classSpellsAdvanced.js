@@ -303,6 +303,7 @@ export function applyBerserkerRage(spell) {
             count++;
         }
     }
+    if(count > 0) suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via les alignements de crânes
     renderBoard();
     showCombatAnimation({ icon: 'anger', title: "FUREUR DU LOUP DES STEPPES", damage: `${count} rouges → crânes`, target: '→ Plateau' }, true);
     log(`Fureur du Loup des Steppes transforme ${count} gâteaux de lune rouges en crânes !`);
@@ -345,6 +346,7 @@ export function applyDeathbringer(spell) {
         created.push(target.index);
     }
 
+    suppressMatchBonusTurnsUntilSettled(); // pas de tours bonus en chaîne via les alignements de crânes
     renderBoard();
     // une fois l'animation du sort terminée, on montre où les crânes sont apparus
     showCombatAnimation({ icon: 'poison', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true, { onContinue: () => flashTiles(created) });
