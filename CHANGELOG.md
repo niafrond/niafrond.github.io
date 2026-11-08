@@ -1,3 +1,13 @@
+## [2.209.0](https://github.com/niafrond/niafrond.github.io/compare/v2.208.0...v2.209.0) (2026-11-08)
+
+### Features
+
+* **match3-quest:** faire se promener les PNJ des villages et hameaux ([120bc4f](https://github.com/niafrond/niafrond.github.io/commit/120bc4f4127a98e2edb060ae1e8e225d931899b6))
+
+### Bug Fixes
+
+* **match3-quest:** déclarer villageLife.js dans l'import map et le manifeste de précache ([6138dae](https://github.com/niafrond/niafrond.github.io/commit/6138dae52bf369a7ebeb317e155a07f0efc561ea))
+
 ## [2.208.0](https://github.com/niafrond/niafrond.github.io/compare/v2.207.1...v2.208.0) (2026-11-08)
 
 ### Features
