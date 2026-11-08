@@ -33,6 +33,7 @@ export const BESTIARY_NAMES = {
     bai_ze_savant: ['Bái Zé', '白泽', 'Bête de la connaissance'], zouyu: ['Zōu Yú', '驺虞'], xiezhi: ['Xiè Zhì', '獬豸'],
     bixie: ['Bì Xié', '辟邪'], tianlu: ['Tiān Lù', '天禄'], tianlu_gardien: ['Tiān Lù', '天禄'], pixiu_tresor: ['Pí Xiū', '貔貅'],
     bian: ['Bì Àn', '狴犴'], fuxi_dragon: ['Fù Xì', '负屃'], chaofeng: ['Cháo Fēng', '嘲风'], longma: ['Lóng Mǎ', '龙马'],
+    zaochi: ['Záo Chǐ', '凿齿'], jiuying: ['Jiǔ Yīng', '九婴'], dafeng: ['Dà Fēng', '大风'], fengxi: ['Fēng Xī', '封豨'], xiushe: ['Xiū Shé', '修蛇'],
     taotie_bronze: ['Tāo Tiè', '饕餮'], taotie_bete: ['Tāo Tiè', '饕餮'], jiuweihu: ['Jiǔ Wěi Hú', '九尾狐'], xiangliu: ['Xiāng Liǔ', '相柳'],
     nian: ['Nián', '年'], kuafu_geant: ['Kuā Fù', '夸父'], xingtian: ['Xíng Tiān', '刑天'], hai_ruo: ['Hǎi Ruò', '海若'],
     hai_shen: ['Hǎi Shén', '海神'], hai_gui: ['Hǎi Guī', '海龟'], hai_she: ['Hǎi Shé', '海蛇'], ren_yu: ['Rén Yú', '人鱼'], kun: ['Kūn', '鲲'],
