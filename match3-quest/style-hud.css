@@ -826,13 +826,24 @@ body.a11y-shapes .tile.green::after, body.a11y-shapes .mana-green::before { cont
 body.a11y-shapes .tile.yellow::after, body.a11y-shapes .mana-yellow::before { content: "\25A0"; } /* carré */
 body.a11y-shapes .tile.purple::after, body.a11y-shapes .mana-purple::before { content: "\271A"; } /* croix */
 body.a11y-shapes .tile { position: relative; }
+/* Symbole centré au milieu du gâteau de lune, en grand (taille proportionnelle à la case). */
 body.a11y-shapes .tile.red::after, body.a11y-shapes .tile.blue::after, body.a11y-shapes .tile.green::after,
 body.a11y-shapes .tile.yellow::after, body.a11y-shapes .tile.purple::after {
-    position: absolute; right: 6%; bottom: 4%; z-index: 3; font-size: .55em; line-height: 1; pointer-events: none;
-    color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 3px #000;
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;
+    font-size: calc(var(--tile-size, 48px) * .55); line-height: 1; pointer-events: none;
+    color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 3px #000, 0 0 5px #000;
 }
-body.a11y-shapes .mana-red::before, body.a11y-shapes .mana-blue::before, body.a11y-shapes .mana-green::before,
-body.a11y-shapes .mana-yellow::before, body.a11y-shapes .mana-purple::before { font-size: .6em; margin-right: 2px; }
+/* Pastilles de qì : symbole grand et centré, derrière le chiffre. */
+body.a11y-shapes .cost-badge.mana-red, body.a11y-shapes .cost-badge.mana-blue, body.a11y-shapes .cost-badge.mana-green,
+body.a11y-shapes .cost-badge.mana-yellow, body.a11y-shapes .cost-badge.mana-purple { position: relative; isolation: isolate; }
+body.a11y-shapes .cost-badge.mana-red::before, body.a11y-shapes .cost-badge.mana-blue::before, body.a11y-shapes .cost-badge.mana-green::before,
+body.a11y-shapes .cost-badge.mana-yellow::before, body.a11y-shapes .cost-badge.mana-purple::before {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; z-index: -1;
+    font-size: 1.5em; line-height: 1; opacity: .5; pointer-events: none;
+    color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000;
+}
+body.a11y-shapes .mana-red:not(.cost-badge)::before, body.a11y-shapes .mana-blue:not(.cost-badge)::before, body.a11y-shapes .mana-green:not(.cost-badge)::before,
+body.a11y-shapes .mana-yellow:not(.cost-badge)::before, body.a11y-shapes .mana-purple:not(.cost-badge)::before { font-size: .6em; margin-right: 2px; }
 /* Camps : bordure pleine pour le joueur, pointillée pour l'ennemi ; PV bas = motif hachuré en plus du rouge. */
 body.a11y-shapes #player-stats { border-style: solid; }
 body.a11y-shapes #enemy-stats { border-style: dashed; }
