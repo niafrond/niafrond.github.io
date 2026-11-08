@@ -95,16 +95,23 @@ export function vibrate(pattern, shakeIfUnsupported = false) {
 
 // Dans l'APK (Capacitor), le WebView ne vibre pas sans la permission VIBRATE, que n'a pas l'application : on passe par le plugin Haptics
 // (installé avec l'APK, il apporte la permission). Aucune exigence de geste de l'utilisateur côté natif.
+let hapticsProxy;
 function nativeHaptics() {
     const c = typeof window !== 'undefined' ? window.Capacitor : null;
-    try { return c && typeof c.isNativePlatform === 'function' && c.isNativePlatform() && c.Plugins && c.Plugins.Haptics || null; } catch (e) { return null; }
+    try {
+        if (!c || typeof c.isNativePlatform !== 'function' || !c.isNativePlatform()) return null;
+        // `registerPlugin` (toujours présent dans le pont natif) vaut mieux que `Capacitor.Plugins.Haptics`, qui n'existe pas toujours sans bundler.
+        if (hapticsProxy === undefined) hapticsProxy = typeof c.registerPlugin === 'function' ? c.registerPlugin('Haptics') : (c.Plugins && c.Plugins.Haptics) || null;
+        return hapticsProxy || (c.Plugins && c.Plugins.Haptics) || null;
+    } catch (e) { return null; }
 }
+let lastNativeError = '';
 // Motif de `navigator.vibrate` (durée ou [vibre, pause, vibre…]) rejoué en appels Haptics.vibrate({ duration }).
 function nativeVibrate(haptics, pattern) {
     const parts = (Array.isArray(pattern) ? pattern : [pattern]).map(Number);
     let at = 0;
     parts.forEach((ms, i) => {
-        if (i % 2 === 0 && ms > 0) { const d = Math.min(ms, 1000); setTimeout(() => { try { haptics.vibrate({ duration: d }); } catch (e) { /* plugin absent */ } }, at); }
+        if (i % 2 === 0 && ms > 0) { const d = Math.min(ms, 1000); setTimeout(() => { try { const r = haptics.vibrate({ duration: d }); if (r && r.catch) r.catch((e) => { lastNativeError = String((e && e.message) || e); }); } catch (e) { lastNativeError = String((e && e.message) || e); } }, at); }
         at += ms;
     });
     vibrationBlocked = false;
@@ -173,7 +180,13 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 // Diagnostic pour le bouton « Tester » des options : vibre (geste en cours) et dit pourquoi ça ne marche pas le cas échéant.
 export function testVibration() {
     const haptics = nativeHaptics();
-    if (haptics) { nativeVibrate(haptics, [200, 100, 200]); return { ok: true, message: 'Vibration envoyée (application). Rien ressenti ? Vérifiez les réglages de vibration et le mode silencieux du téléphone.' }; }
+    if (haptics) {
+        lastNativeError = '';
+        nativeVibrate(haptics, [200, 100, 200]);
+        return new Promise((resolve) => setTimeout(() => resolve(lastNativeError
+            ? { ok: false, message: 'Le plugin de vibration de l\'application a répondu : ' + lastNativeError }
+            : { ok: true, message: 'Vibration envoyée par l\'application (plugin Haptics). Rien ressenti ? Vérifiez le mode silencieux et la vibration système du téléphone.' }), 700));
+    }
     if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return { ok: false, message: "Ce navigateur n'a pas de vibration (iPhone, iPad, Firefox ordinateur)." };
     const ok = navigator.vibrate([200, 100, 200]);
     if (ok === false) return { ok: false, message: 'Le navigateur refuse la vibration (économie d\'énergie, ou site non autorisé).' };

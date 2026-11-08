@@ -77,11 +77,11 @@ describe('vibrations', () => {
         Object.defineProperty(navigator, 'vibrate', { value: () => true, configurable: true });
         expect(canVibrate()).toBe(true);
     });
-    test('dans l\'APK (Capacitor) : le plugin Haptics vibre, motif rejoué en segments, sans passer par navigator.vibrate', () => {
+    test('dans l\'APK (Capacitor) : le plugin Haptics vibre, motif rejoué en segments, sans passer par navigator.vibrate', async () => {
         jest.useFakeTimers();
         const calls = [], web = [];
         Object.defineProperty(navigator, 'vibrate', { value: ms => { web.push(ms); return true; }, configurable: true });
-        window.Capacitor = { isNativePlatform: () => true, Plugins: { Haptics: { vibrate: o => calls.push(o.duration) } } };
+        window.Capacitor = { isNativePlatform: () => true, registerPlugin: () => ({ vibrate: o => calls.push(o.duration) }) };   // pas de Capacitor.Plugins : seul registerPlugin est supposé
         try {
             expect(canVibrate()).toBe(true);
             expect(armVibration()).toBe(true);
@@ -89,8 +89,9 @@ describe('vibrations', () => {
             jest.advanceTimersByTime(200);
             expect(calls).toEqual([60, 80]);
             expect(web).toEqual([]);
-            expect(testVibration().ok).toBe(true);
+            const pending = testVibration();
             jest.advanceTimersByTime(1000);   // segments différés du test
+            expect((await pending).ok).toBe(true);
             setOption('vibration', false);
             calls.length = 0;
             expect(vibrate(50)).toBe(false);

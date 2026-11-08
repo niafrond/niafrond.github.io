@@ -464,8 +464,8 @@ function init() {
     syncVibrationBtn();
     document.getElementById('opt-vibration-test')?.addEventListener('click', () => {
         const out = document.getElementById('vibration-test-result');
-        const r = testVibration();
-        if(out) { out.textContent = r.message; out.hidden = false; }
+        if(out) { out.textContent = 'Test en cours…'; out.hidden = false; }
+        Promise.resolve(testVibration()).then((r) => { if(out) out.textContent = r.message; });
     });
     // Le navigateur refuse les vibrations tant que l'utilisateur n'a pas fait de geste : on redemande, d'un toucher (gameOptions.js).
     window.addEventListener('m3:vibration-blocked', () => {
