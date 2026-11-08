@@ -41,6 +41,7 @@ import { createGroundLayer } from './explorationViewGround.js';
 import { createDraw } from './explorationViewDraw.js';
 import { createOverlays } from './explorationViewOverlays.js';
 import { createPainters } from './explorationViewPainters.js';
+import { stepVillageLife } from './villageLife.js';
 import { COVERED_DRAW_MS, IDLE_DRAW_MS, IDLE_DRAW_LOW_MS, MOVE_DELAY_MS, MOUNTED_MOVE_DELAY_MS, BATTLE_TRANSITION_MS, BATTLE_STRIPS, DIRECTIONS, KEY_TO_DIR } from './explorationViewConsts.js';
 
 
@@ -970,6 +971,8 @@ export function createExplorationView(cfg) {
         else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
         // Mode Chang'e : les habitants de passage se baladent (en pause pendant un dialogue ou un puzzle)
         if (X.inChangeMode(session) && !isDialogOpen() && !healView) X.stepChangeAmbient(session, dt);
+        // Villages et hameaux : les habitants se baladent (en pause pendant un dialogue, un puzzle, un PNJ qui accourt)
+        if (!isBlocked() && !X.inChangeMode(session)) stepVillageLife(session, dt);
         // Compagnon actif : il suit la piste du héros, toujours derrière lui (companionTrail.js)
         if (X.activeCompanionOf(session)) {
             const heroDir = viewDir(session.rt.facing);

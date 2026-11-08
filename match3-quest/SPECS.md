@@ -747,3 +747,12 @@ Spécifications et journal de session de `match3-quest/`.
 - 2026-11-08 (noms en hanzi) : en combat, le nom de l'ennemi affiché en hanzi reçoit la classe `name-hanzi` (`gameHud.js`) : police CJK lisible et taille agrandie (20 px en mode rétro) ; le nom latin garde sa taille (`style-hud.css`).
 - 2026-11-08 (combo magistral : second tour bonus) : à la demande de l'utilisateur, le plafond d'un seul tour bonus par tour (`claimMatchBonusTurn`, `board.js`) passe à **2 au maximum**, mais seul un combo magistral peut offrir le second. `claimMatchBonusTurn(limit = 1)` : les matchs de 4+ (couleur, épées, crânes) et les 4+ crânes détruits par un sort restent plafonnés à 1 ; le combo magistral appelle `claimMatchBonusTurn(MAX_MATCH_BONUS_TURNS)` (= 2). Un match de 4+ avant le combo + le combo = 2 tours bonus ; combo seul = 1 ; après 2 tours bonus plus rien ne s'ajoute pendant la cascade. Le compteur retombe à 0 quand le plateau est stable.
 - 2026-11-08 (précision : la Pilule du Temps Suspendu n'est pas plafonnée) : à la demande de l'utilisateur, le plafond de 2 tours bonus par tour ne concerne que les gains issus du plateau (matchs de 4+, crânes détruits par un sort, combo magistral) via `claimMatchBonusTurn`. La Pilule du Temps Suspendu (`timeWarpPotion`, `effect.extraTurn: 3`) ajoute ses 3 tours directement à `player.bonusTurn` (`items.js`) et les tours dédiés (Tir Furtif, Souffle de Jade Céleste…) passent par `addBonusTurn` : aucun n'est limité, et ils ne consomment pas le compteur du plateau.
+
+
+## Vie des villages et hameaux (PNJ qui se promènent)
+
+- Dans un village ou un hameau (`kind: 'village'`), les PNJ se déplacent d'une case à la fois, avec des pauses de 2 à 6 s, dans un rayon de 3 cases autour de leur place d'origine (`villageLife.js`, `stepVillageLife`).
+- Restent à leur poste : marchands, PNJ géants (`span`), PNJ marqués `stay`, blessés/habitants du mode Chang'e. Aucun pas sur une case occupée (PNJ, coffre, point d'intérêt, balise, sortie, héros), un obstacle, une structure, un bâtiment, de l'herbe haute ou la bande de bord des passages.
+- Un PNJ à côté du héros ne bouge pas (le dialogue reste stable). La promenade est en pause pendant un dialogue, un puzzle, un combat ou un PNJ qui accourt.
+- Les données de la carte (`screen.npcs`) ne sont jamais modifiées : la position vivante est dans `session.rt.villageLife`, lue par `visibleNpcs`. Le dessin glisse en douceur vers la case logique, avec un léger rebond (comme les habitants de passage).
+- Tests : `tests/unit/villageLife.test.js`.
