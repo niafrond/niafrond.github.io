@@ -756,3 +756,4 @@ Spécifications et journal de session de `match3-quest/`.
 - Un PNJ à côté du héros ne bouge pas (le dialogue reste stable). La promenade est en pause pendant un dialogue, un puzzle, un combat ou un PNJ qui accourt.
 - Les données de la carte (`screen.npcs`) ne sont jamais modifiées : la position vivante est dans `session.rt.villageLife`, lue par `visibleNpcs`. Le dessin glisse en douceur vers la case logique, avec un léger rebond (comme les habitants de passage).
 - Tests : `tests/unit/villageLife.test.js`.
+- `villageLife.js` est déclaré dans l'import map d'`index.html` (anti-cache) et dans `precache-manifest.json` (régénéré par `npm run precache:build`) ; des tests le vérifient.
