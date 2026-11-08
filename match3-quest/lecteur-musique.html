@@ -56,6 +56,7 @@ li[aria-current=true] .n{color:var(--red)}
 <section class="player" aria-label="Lecteur">
   <div class="now" id="now">Choisis une piste</div>
   <div class="now-sub" id="nowSub"></div>
+  <div class="now-sub" id="queue"></div>
   <div class="seek"><span id="cur">0:00</span><input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position"><span id="dur">0:00</span></div>
   <div class="row">
     <div class="btns">
@@ -101,6 +102,16 @@ const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 
 const store = { get(k, d) { try { return localStorage.getItem('lecteur.' + k) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('lecteur.' + k, v); } catch (e) {} } };
 let T = [], visible = [], cur = -1, shuffle = store.get('shuf', '0') === '1', repeat = Number(store.get('rep', '0')) || 0;
 const history = [];
+let queue = [], played = new Set();
+function buildQueue() {
+  const c = T[cur];
+  queue = pool().filter(t => t !== c && !played.has(t));
+  for (let i = queue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [queue[i], queue[j]] = [queue[j], queue[i]]; }
+  paintQueue();
+}
+function paintQueue() {
+  el('queue').textContent = shuffle ? 'Aléatoire : ' + queue.length + ' piste' + (queue.length > 1 ? 's' : '') + ' restante' + (queue.length > 1 ? 's' : '') + (queue[0] ? ' · suivante : ' + queue[0].title : '') : '';
+}
 const REP = ['Boucle : non', 'Boucle : liste', 'Boucle : piste'];
 
 function paintModes() {
@@ -108,9 +119,11 @@ function paintModes() {
   el('rep').setAttribute('aria-pressed', repeat > 0);
   el('rep').textContent = REP[repeat];
   a.loop = repeat === 2;
+  paintQueue();
 }
 function render() {
   const g = el('grp').value, v = el('ver').value, q = el('q').value.trim().toLowerCase();
+  const was = visible.length;
   visible = T.filter(t => (!g || t.group === g) && (!v || (v === 'b') === t.alt) && (!q || (t.title + ' ' + t.group + ' ' + t.key + ' ' + t.sub).toLowerCase().includes(q)));
   const box = el('lists'); box.textContent = '';
   let last = null, ol = null;
@@ -129,6 +142,7 @@ function render() {
     li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); load(t, true); } };
     ol.appendChild(li);
   });
+  if (shuffle) buildQueue();
   el('count').textContent = visible.length + ' piste' + (visible.length > 1 ? 's' : '') + ' sur ' + T.length;
 }
 function load(t, play) {
@@ -149,8 +163,14 @@ function next(auto) {
   const at = p.indexOf(T[cur]);
   let t;
   if (shuffle) {
-    if (p.length === 1) t = p[0];
-    else { do { t = p[Math.floor(Math.random() * p.length)]; } while (t === T[cur]); }
+    if (T[cur]) played.add(T[cur]);
+    queue = queue.filter(x => p.includes(x));
+    if (!queue.length) {
+      if (auto && repeat === 0 && T[cur]) { a.pause(); return; }
+      played.clear(); buildQueue();
+      if (!queue.length) queue = p.slice();
+    }
+    t = queue.shift(); played.add(t); paintQueue();
   } else if (at < 0) t = p[0];
   else if (at === p.length - 1) { if (auto && repeat === 0) { a.pause(); return; } t = p[0]; }
   else t = p[at + 1];
@@ -167,7 +187,7 @@ function prev() {
 el('play').onclick = () => { if (cur < 0) { next(false); return; } a.paused ? a.play().catch(() => {}) : a.pause(); };
 el('next').onclick = () => next(false);
 el('prev').onclick = prev;
-el('shuf').onclick = () => { shuffle = !shuffle; store.set('shuf', shuffle ? '1' : '0'); paintModes(); };
+el('shuf').onclick = () => { shuffle = !shuffle; store.set('shuf', shuffle ? '1' : '0'); played.clear(); if (shuffle) buildQueue(); paintModes(); };
 el('rep').onclick = () => { repeat = (repeat + 1) % 3; store.set('rep', repeat); paintModes(); };
 el('vol').oninput = e => { a.volume = e.target.value / 100; store.set('vol', e.target.value); };
 el('seek').oninput = e => { if (a.duration) a.currentTime = e.target.value / 1000 * a.duration; };
