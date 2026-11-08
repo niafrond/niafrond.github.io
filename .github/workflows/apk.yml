@@ -3,7 +3,7 @@ name: Build Flash Guess APK
 on:
   workflow_dispatch:
   push:
-    branches: ['**']
+    branches: [main]   # pas sur les autres branches : une nouvelle branche embarque les commits de main qui touchent flash-guess et déclencherait le job à tort
     # Pas de déclencheur `tags` : les filtres `paths` ne s'appliquent pas aux tags,
     # ce qui reconstruirait l'APK à chaque release même sans changement du dossier.
     paths:
