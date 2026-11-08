@@ -156,7 +156,7 @@ export default {
             { id: 'fauves_wild_hollow_chest', at: '9', gold: 315 }
         ],
         enemies: [
-            { id: 'fauves_alpha_tiger', x: 45, y: 17, templateId: 'tigre_embrase', name: 'Tigre alpha, Griffe-de-Feu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Tigre alpha, Griffe-de-Feu', level: 27 } },
+            { id: 'fauves_alpha_tiger', x: 45, y: 17, templateId: 'zaochi', spriteKey: 'zaochi', name: 'Zaochi, Dents de Ciseau', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Zaochi, Dents de Ciseau', level: 27 } },
             { id: 'fauves_lamb_wolf', x: 6, y: 20, templateId: 'loup_braise', name: 'Loup chapardeur de braise', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fauves_boar_chief', x: 24, y: 20, templateId: 'sanglier_flammes', name: 'Hure, sanglier de flammes', kind: 'sentinel', offset: 1, permanent: true },
             { id: 'fauves_w_pack_a', at: 'i', templateId: 'loup_braise', name: 'Loup de la meute', kind: 'patrol', offset: 0, patrol: ['i', [23, 5]] },

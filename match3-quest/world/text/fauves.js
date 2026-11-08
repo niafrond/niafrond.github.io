@@ -4,7 +4,7 @@ export default {
     fauves_village: { name: 'Enclos de Caoyuan', arrival: [
       'À Caoyuan, on dort un œil ouvert : la palissade est neuve, les moutons sont rares et la bergère compte à voix haute.',
       'Quelque part dans la plaine, des meutes de feu rôdent encore. Mais ici, il y a du thé.'] },
-    fauves_wild: { name: 'Hautes Herbes de Cendre', gateMessage: 'Griffe-de-Feu, le tigre alpha, rôde dans les hautes herbes : tant qu\'il est là, la route du sanctuaire reste fermée.', arrival: [
+    fauves_wild: { name: 'Hautes Herbes de Cendre', gateMessage: 'Zaochi, le monstre aux dents de ciseau, rôde dans les hautes herbes : tant qu\'il est là, la route du sanctuaire reste fermée.', arrival: [
       'L\'herbe haute ondule en vagues dorées. Un grondement lointain vous rappelle que la plaine ne dort jamais vraiment.'] },
     fauves_road: { name: 'Piste des Troupeaux', arrival: [
       'Des milliers de sabots ont tracé cette piste dans l\'herbe sèche, et le vent y remue encore leur poussière dorée. Elle serpente entre des crêtes basses, puis s\'oublie à l\'est, vers la fumée d\'un enclos.',
@@ -59,7 +59,7 @@ export default {
     shaman_drum_box: { label: 'Boîte à tambours', openText: 'Sous les peaux de tambour, des offrandes de voyageurs : pièces, plumes et un vœu écrit sur un os.' },
     grass_cache: { label: 'Cache dans les herbes', openText: 'Une cache de chasseur, enfouie dans les herbes : quelques pièces et un bout de fromage dur.' },
     lost_lamb_pen: { label: 'Enclos oublié', openText: 'Dans l\'enclos oublié, un petit agneau tout ébouriffé qui vous regarde, soulagé. Une bourse est restée sur la paille.' },
-    alpha_den: { label: 'Tanière de l\'alpha', openText: 'La tanière de Griffe-de-Feu. Des pièces arrachées à des voyageurs, et des os de mouton qu\'on ne détaillera pas.' },
+    alpha_den: { label: 'Tanière de Zaochi', openText: 'La tanière de Zaochi. Des pièces arrachées à des voyageurs, et des os de mouton qu\'on ne détaillera pas.' },
     fauves_road_trough_chest: { label: 'Coffre de l\'abreuvoir', openText: 'Sous la planche d\'un abreuvoir, un coffre étanche que des bouviers y cachent depuis des générations : quelques pièces, et un mot sur l\'état des puits.' },
     fauves_road_camp_chest: { label: 'Cache du bivouac', openText: 'Près d\'un foyer froid, une cache de caravaniers : des pièces dans un sac de feutre, et un peigne d\'os que quelqu\'un cherche sûrement.' },
     fauves_road_cairn_chest: { label: 'Coffre du cairn de la combe', openText: 'Dans la combe sans vent, au pied d\'un cairn, un coffre d\'offrandes. Les bergers y laissent des pièces pour que la meute détourne les yeux.' },

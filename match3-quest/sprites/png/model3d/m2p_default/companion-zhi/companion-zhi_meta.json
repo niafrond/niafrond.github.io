@@ -1,0 +1,81 @@
+{
+  "name": "companion-zhi",
+  "generated_by": "procedural",
+  "provider": "mesh2pixel",
+  "fallbacks": [],
+  "created": "2026-11-02T14:35:59+00:00",
+  "source": {
+    "file": "companion_zhi.ply",
+    "format": "ply",
+    "sha256": "09fe91dcd52e13240c4fe426edbf4bbb173d99f65f8709a94ae8a37f86323b45",
+    "triangles": 701060
+  },
+  "frame": [
+    64,
+    96
+  ],
+  "sheet": {
+    "file": "companion-zhi_sheet.png",
+    "columns": 4,
+    "rows": 1,
+    "order": [
+      {
+        "view": "front",
+        "direction": "down",
+        "yaw": 0.0
+      },
+      {
+        "view": "right",
+        "direction": "right",
+        "yaw": 90.0
+      },
+      {
+        "view": "back",
+        "direction": "up",
+        "yaw": 180.0
+      },
+      {
+        "view": "left",
+        "direction": "left",
+        "yaw": 270.0
+      }
+    ]
+  },
+  "palette_size": 28,
+  "settings": {
+    "width": 64,
+    "height": 96,
+    "supersample": 6,
+    "bands": 3,
+    "clusters_per_role": 2,
+    "max_colors": 32,
+    "outline": true,
+    "inner_outline": true,
+    "band_thresholds": [],
+    "coverage_threshold": 0.45,
+    "up": "y",
+    "yaw_offset": 0.0,
+    "roles": "auto",
+    "light": [
+      -0.5,
+      0.6,
+      0.62
+    ],
+    "shadows": true,
+    "ambient": 0.35,
+    "detail_weight": 2.0,
+    "seed": 0
+  },
+  "warnings": [],
+  "files": {
+    "companion-zhi_front.png": "bb4fea5ce7a70ee7c87fb042ee783738ed417be87c43f422d34bf2b49c7442cc",
+    "companion-zhi_right.png": "2743cfb22a243446b7d624bde47cab41de642ed2787b224eac18b654370bb4c2",
+    "companion-zhi_back.png": "9a6dd946691eb08dc9dc13d2b73fc29c299ce25d87b93d5c928adb95d3f2b707",
+    "companion-zhi_left.png": "370da779e7d1391d33633c16ac6a6a00a02b135a1096f39e84d6952152520ffe",
+    "companion-zhi_sheet.png": "759a9d8d7c72a6cdc2896b3478c7da92982d3649139d1aa7ddd25f8adf2f49a5",
+    "companion-zhi_preview_x4.png": "ae13dfb55668dd3845b33189ae14e0485324f34cc7fc83d972d75c55719fa9ee",
+    "companion-zhi_palette.png": "f329da447aaed57289c0659f355e8a56d09ab4fffa577c051d3ecb7e2da9ebd9",
+    "companion-zhi_palette.pal": "3d030e379a369db2768f6b45d733988750c30b73d73b50e5567a9a7c43f2027a",
+    "companion-zhi_palette.json": "9f2ee334425c6183bb84a91389a5a190ae80cfa2d93524d722a4012e8079be76"
+  }
+}

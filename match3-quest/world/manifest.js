@@ -104,7 +104,7 @@ export const MANIFEST = {
       { id: 'wreck_hoard', where: 'wild', tier: 3, label: 'Cale d\'une épave' }
     ],
     enemies: [
-      { id: 'fleuve_sluice_golem', name: 'Colosse de l\'écluse', templateHint: 'soldat_terre_cuite', role: 'elite' },
+      { id: 'fleuve_sluice_golem', name: 'Jiuying, Neuf Gueules', templateHint: 'jiuying', role: 'elite' },
       { id: 'fleuve_salt_thief', name: 'Voleur de sel masqué', templateHint: 'assassin_masque', role: 'quest' }
     ],
     quests: [
@@ -161,7 +161,7 @@ export const MANIFEST = {
       { id: 'monk_hoard', where: 'wild', tier: 3, label: 'Réserve oubliée du temple' }
     ],
     enemies: [
-      { id: 'bambous_seal_keeper', name: 'Gardien des cendres', templateHint: 'suanni', role: 'gate' },
+      { id: 'bambous_seal_keeper', name: 'Fengxi, le Grand Sanglier', templateHint: 'fengxi', role: 'gate' },
       { id: 'bambous_ember_wisp', name: 'Lingzhi des cendres', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' },
       { id: 'bambous_ember_wisp_b', name: 'Lingzhi des cendres', templateHint: 'lingzhi_maudit', role: 'quest', group: 'ember_lingzhi' }
     ],
@@ -277,7 +277,7 @@ export const MANIFEST = {
       { id: 'lightning_vault', where: 'wild', tier: 3, label: 'Caveau foudroyé' }
     ],
     enemies: [
-      { id: 'tonnerre_stone_lion', name: 'Lion-gardien fendu', templateHint: 'suanni', role: 'elite' },
+      { id: 'tonnerre_stone_lion', name: 'Dafeng, le Grand Vent', templateHint: 'dafeng', role: 'elite' },
       { id: 'tonnerre_crest_general', name: 'Général de la crête', templateHint: 'lei_gong', role: 'quest' }
     ],
     quests: [
@@ -362,7 +362,7 @@ export const MANIFEST = {
       id: 'fauves_wild', name: 'Hautes Herbes de Cendre',
       mood: 'Une savane dorée où chaque ondulation d\'herbe peut cacher une bête de braise ou un lièvre insolent.',
       arrival: ['L\'herbe haute ondule en vagues dorées. Un grondement lointain vous rappelle que la plaine ne dort jamais vraiment.'],
-      gate: { type: 'kill', id: 'fauves_alpha_tiger', hint: 'Le tigre alpha de la plaine barre les hautes herbes : tant qu\'il est là, la meute ne laissera aucun voyageur approcher du sanctuaire.' }
+      gate: { type: 'kill', id: 'fauves_alpha_tiger', hint: 'Zaochi, le monstre aux dents de ciseau, barre les hautes herbes : tant qu\'il est là, aucun voyageur n\'approchera du sanctuaire.' }
     },
     houses: [
       { id: 'fauves_h_wu', name: 'Pavillon du chasseur Wu', desc: 'Des trophées de cornes et un râtelier d\'arcs. On y raconte beaucoup, on y prouve moins.', residents: ['hunter_wu'], chests: ['wu_quiver_box'] },
@@ -388,10 +388,10 @@ export const MANIFEST = {
       { id: 'shaman_drum_box', where: 'house:fauves_h_chaman', tier: 2, label: 'Boîte à tambours' },
       { id: 'grass_cache', where: 'wild', tier: 1, label: 'Cache dans les herbes' },
       { id: 'lost_lamb_pen', where: 'wild', tier: 2, label: 'Enclos oublié' },
-      { id: 'alpha_den', where: 'wild', tier: 3, label: 'Tanière de l\'alpha' }
+      { id: 'alpha_den', where: 'wild', tier: 3, label: 'Tanière de Zaochi' }
     ],
     enemies: [
-      { id: 'fauves_alpha_tiger', name: 'Tigre alpha, Griffe-de-Feu', templateHint: 'tigre_embrase', role: 'gate' },
+      { id: 'fauves_alpha_tiger', name: 'Zaochi, Dents de Ciseau', templateHint: 'zaochi', role: 'gate' },
       { id: 'fauves_lamb_wolf', name: 'Loup chapardeur de braise', templateHint: 'loup_braise', role: 'quest' },
       { id: 'fauves_boar_chief', name: 'Hure, sanglier de flammes', templateHint: 'sanglier_flammes', role: 'elite' }
     ],
@@ -450,7 +450,7 @@ export const MANIFEST = {
       { id: 'dragon_grotto', where: 'wild', tier: 3, label: 'Coffre de la grotte du dragon' }
     ],
     enemies: [
-      { id: 'mer_tide_serpent', name: 'Serpent de marée', templateHint: 'jiaolong', role: 'elite' },
+      { id: 'mer_tide_serpent', name: 'Xiushé, le Long Serpent', templateHint: 'xiushe', role: 'elite' },
       { id: 'mer_kelp_witch', name: 'Dame des algues givrées', templateHint: 'dame_des_neiges', role: 'quest' }
     ],
     quests: [

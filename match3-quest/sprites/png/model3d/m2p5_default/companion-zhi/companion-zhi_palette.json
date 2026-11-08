@@ -1,0 +1,50 @@
+[
+  {
+    "hex": "#654430",
+    "role": "skin"
+  },
+  {
+    "hex": "#c8854e",
+    "role": "skin"
+  },
+  {
+    "hex": "#75635d",
+    "role": "skin"
+  },
+  {
+    "hex": "#e5c1a3",
+    "role": "skin"
+  },
+  {
+    "hex": "#523829",
+    "role": "skin:outline"
+  },
+  {
+    "hex": "#331011",
+    "role": "hair"
+  },
+  {
+    "hex": "#661c19",
+    "role": "hair"
+  },
+  {
+    "hex": "#3d1710",
+    "role": "cloth"
+  },
+  {
+    "hex": "#7b2b17",
+    "role": "cloth"
+  },
+  {
+    "hex": "#66330a",
+    "role": "cloth"
+  },
+  {
+    "hex": "#cc6403",
+    "role": "cloth"
+  },
+  {
+    "hex": "#351614",
+    "role": "cloth:outline"
+  }
+]

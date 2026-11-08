@@ -4,7 +4,7 @@ export default {
     bambous_village: { name: 'Village des Cent Tiges', arrival: [
       'Le village des Cent Tiges n\'en compte plus que dix-neuf debout. Les autres sont devenues des flûtes, des balais et des souvenirs.',
       'Quelqu\'un, quelque part, essaie encore de jouer un air.'] },
-    bambous_wild: { name: 'Sentier des Tiges Cendrées', gateMessage: 'Les sceaux du moine Zhen ne tiennent plus : le gardien des cendres barre le sentier du temple.', arrival: [
+    bambous_wild: { name: 'Sentier des Tiges Cendrées', gateMessage: 'Les sceaux du moine Zhen ne tiennent plus : Fengxi, le grand sanglier, barre le sentier du temple.', arrival: [
       'La forêt brûlée respire à peine. Des sceaux de papier pendent aux tiges : le moine Zhen a tenté de contenir quelque chose.'] },
     bambous_road: { name: 'Sentier des Moines', arrival: [
       'Un sentier de pèlerins serpente entre les tiges roussies, d\'un ruisseau à l\'autre. Des bols d\'offrande, vides pour la plupart, jalonnent la berge.',
@@ -36,7 +36,7 @@ export default {
       talk: [{ whenDone: 'sun_3', lines: ['Ah, l\'archer ! J\'ai senti le parfum de la victoire sur vos vêtements. Cendres, suie, et un soupçon de triomphe. Mon préféré.'] }] },
     lantern_old: { name: 'Vieux Lanternier', title: 'Esprit des sentiers', 
       idle: ['Je suis une lanterne qui a perdu sa mèche mais pas son sens de l\'orientation. Avancez, je vous guide… par principe.', 'Les gardiens des cendres sont des esprits en colère. Ne leur en voulez pas : ils ont perdu leur forêt.'],
-      talk: [{ whenDone: 'bambous_seal_keeper', lines: ['Le gardien est calmé. Le sentier est libre, et ma flamme a repris un peu de couleur. Je dirais même que je rougis.'] }] },
+      talk: [{ whenDone: 'bambous_seal_keeper', lines: ['Le sanglier est abattu. Le sentier est libre, et ma flamme a repris un peu de couleur. Je dirais même que je rougis.'] }] },
     bambous_village_fan_seller: { name: 'Shan', title: 'Vendeuse d\'éventails',
       idle: ['Un éventail en bambou brûlé garde la fraîcheur du feu. Ne me demandez pas comment : c\'est un secret de famille.', 'Je vends du vent à la pièce. Les affaires vont mieux quand il fait chaud, ce qui est une satisfaction triste.'],
       talk: [{ whenDone: 'sun_3', lines: ['Le Soleil de Cendres est tombé et je vends encore des éventails. La preuve : la fraîcheur ne se démode pas.'] }] },
@@ -91,9 +91,9 @@ export default {
       complete: ['Écoutez ! Le sentier respire, la flûte chante ! Je joue pour vous, une fois, rien que pour vous. Ensuite, je reviens aux enterrements. Non, je plaisante, c\'est pour la pluie.'],
       reward: { gold: 80, fragment: 'Souffle de bambou', xp: 100 } },
     { id: 'sq_sentier_sceaux', title: 'Les sceaux du sentier', chapter: '✦ Quête secondaire — Forêt de Bambous Calcinée', giver: 'monk_zhen', turnIn: 'monk_zhen', requires: [], side: true,
-      objectives: [{ type: 'kill', target: 'bambous_seal_keeper', text: 'Maîtriser le gardien des cendres qui barre le sentier du temple (Sentier des Tiges Cendrées)' }],
-      offer: ['Seigneur archer, j\'ai posé des sceaux de papier sur le sentier pour retenir un esprit en colère. Mais le gardien des cendres s\'est réveillé, et plus rien ne tient.', 'Abattez-le sans insulter les bambous, je vous prie. Ils ont déjà assez souffert.'],
-      hint: ['Le gardien des cendres se dresse au bout du sentier des Tiges Cendrées. Il garde la route du sanctuaire.'],
+      objectives: [{ type: 'kill', target: 'bambous_seal_keeper', text: 'Abattre Fengxi, le grand sanglier, qui barre le sentier du temple (Sentier des Tiges Cendrées)' }],
+      offer: ['Seigneur archer, j\'ai posé des sceaux de papier sur le sentier pour retenir une bête. Mais Fengxi, le grand sanglier, s\'est réveillé, et plus rien ne tient.', 'Abattez-le sans insulter les bambous, je vous prie. Ils ont déjà assez souffert.'],
+      hint: ['Fengxi, le grand sanglier, se dresse au bout du sentier des Tiges Cendrées. Il garde la route du sanctuaire.'],
       complete: ['Les sceaux tiennent à nouveau. Le sentier est libre, le temple pourra être rebâti. Acceptez ce fragment de sceau : c\'est un papier qui retient plus que les mots.'],
       reward: { gold: 90, fragment: 'Sceau de papier', xp: 120 } }
   ]

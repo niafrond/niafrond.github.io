@@ -1,0 +1,82 @@
+[
+  {
+    "hex": "#5f453c",
+    "role": "skin"
+  },
+  {
+    "hex": "#d6b69e",
+    "role": "skin"
+  },
+  {
+    "hex": "#725e59",
+    "role": "skin"
+  },
+  {
+    "hex": "#ecd3bd",
+    "role": "skin"
+  },
+  {
+    "hex": "#4d3832",
+    "role": "skin:outline"
+  },
+  {
+    "hex": "#151316",
+    "role": "hair"
+  },
+  {
+    "hex": "#7e7b77",
+    "role": "hair"
+  },
+  {
+    "hex": "#231e1f",
+    "role": "hair"
+  },
+  {
+    "hex": "#908982",
+    "role": "hair"
+  },
+  {
+    "hex": "#141219",
+    "role": "hair:outline"
+  },
+  {
+    "hex": "#39140f",
+    "role": "cloth"
+  },
+  {
+    "hex": "#ac7c6f",
+    "role": "cloth"
+  },
+  {
+    "hex": "#64330c",
+    "role": "cloth"
+  },
+  {
+    "hex": "#dea166",
+    "role": "cloth"
+  },
+  {
+    "hex": "#321314",
+    "role": "cloth:outline"
+  },
+  {
+    "hex": "#2f2d30",
+    "role": "accessory"
+  },
+  {
+    "hex": "#9e9a95",
+    "role": "accessory"
+  },
+  {
+    "hex": "#656067",
+    "role": "accessory"
+  },
+  {
+    "hex": "#dcd5cf",
+    "role": "accessory"
+  },
+  {
+    "hex": "#29272c",
+    "role": "accessory:outline"
+  }
+]

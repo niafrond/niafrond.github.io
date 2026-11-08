@@ -1,0 +1,81 @@
+{
+  "name": "companion-zhi",
+  "generated_by": "procedural",
+  "provider": "mesh2pixel",
+  "fallbacks": [],
+  "created": "2026-11-02T14:36:03+00:00",
+  "source": {
+    "file": "companion_zhi.ply",
+    "format": "ply",
+    "sha256": "09fe91dcd52e13240c4fe426edbf4bbb173d99f65f8709a94ae8a37f86323b45",
+    "triangles": 701060
+  },
+  "frame": [
+    64,
+    96
+  ],
+  "sheet": {
+    "file": "companion-zhi_sheet.png",
+    "columns": 4,
+    "rows": 1,
+    "order": [
+      {
+        "view": "front",
+        "direction": "down",
+        "yaw": 0.0
+      },
+      {
+        "view": "right",
+        "direction": "right",
+        "yaw": 90.0
+      },
+      {
+        "view": "back",
+        "direction": "up",
+        "yaw": 180.0
+      },
+      {
+        "view": "left",
+        "direction": "left",
+        "yaw": 270.0
+      }
+    ]
+  },
+  "palette_size": 20,
+  "settings": {
+    "width": 64,
+    "height": 96,
+    "supersample": 6,
+    "bands": 2,
+    "clusters_per_role": 2,
+    "max_colors": 32,
+    "outline": true,
+    "inner_outline": true,
+    "band_thresholds": [],
+    "coverage_threshold": 0.45,
+    "up": "y",
+    "yaw_offset": 0.0,
+    "roles": "auto",
+    "light": [
+      -0.5,
+      0.6,
+      0.62
+    ],
+    "shadows": false,
+    "ambient": 0.35,
+    "detail_weight": 2.0,
+    "seed": 0
+  },
+  "warnings": [],
+  "files": {
+    "companion-zhi_front.png": "7693ce9b4b1e84a1a9537774789f5d74fe221d265c95b06b08134267459ae892",
+    "companion-zhi_right.png": "ef85c7207299a6dd9496845f83512f34370545589fc734f226961820409b267d",
+    "companion-zhi_back.png": "cac6a1777764da5148312313c7ff97412946cadd3288f0387b2ed315ae9ce7ed",
+    "companion-zhi_left.png": "00f56c65e21acae0b759a582c8ae743c53abed3c44348ec6d3fe1b614a4d02e7",
+    "companion-zhi_sheet.png": "87abedcee160c8c066014156054d130ab1d904097f42f91e6f6bcd420ab01dfb",
+    "companion-zhi_preview_x4.png": "92e72ef91caf6aec212085f1c83834631dc057deb3852a3f2cd73da1cff6ec5d",
+    "companion-zhi_palette.png": "c0d87c2baf68add55336c0ea7fe8b5f5bee1362d232d7458a136deb23270aeee",
+    "companion-zhi_palette.pal": "49059367ecdb56387c58751c3f8d83fabe518781b840ff40f0b9285caf8ee42e",
+    "companion-zhi_palette.json": "5a32a316665db85319917e31aedc933e6ecfa69aea3788b76098b62e802d0641"
+  }
+}

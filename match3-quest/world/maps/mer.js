@@ -155,7 +155,7 @@ export default {
             { id: 'mer_wild_dune_chest', at: 'i', gold: 240 }
         ],
         enemies: [
-            { id: 'mer_tide_serpent', at: 'j', templateId: 'jiaolong', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 32 } },
+            { id: 'mer_tide_serpent', at: 'j', templateId: 'xiushe', spriteKey: 'xiushe', name: 'Xiushé, le Long Serpent', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Xiushé, le Long Serpent', level: 32 } },
             { id: 'mer_kelp_witch', at: 'k', templateId: 'dame_des_neiges', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'mer_w_crab', at: 'l', templateId: 'shanxiao', name: 'Démon des falaises', kind: 'patrol', offset: 0, patrol: ['l', 'm'] },
             { id: 'mer_w_wraith', at: 'n', templateId: 'wen_shen', name: 'Spectre de la marée', kind: 'patrol', offset: -1, patrol: ['n', [12, 15]] },

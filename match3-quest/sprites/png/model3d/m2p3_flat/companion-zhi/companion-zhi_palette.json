@@ -1,0 +1,38 @@
+[
+  {
+    "hex": "#b16f46",
+    "role": "skin"
+  },
+  {
+    "hex": "#d0a88b",
+    "role": "skin"
+  },
+  {
+    "hex": "#e3c7af",
+    "role": "skin"
+  },
+  {
+    "hex": "#492f26",
+    "role": "skin:outline"
+  },
+  {
+    "hex": "#232020",
+    "role": "hair"
+  },
+  {
+    "hex": "#631b17",
+    "role": "cloth"
+  },
+  {
+    "hex": "#ab4a0d",
+    "role": "cloth"
+  },
+  {
+    "hex": "#d26b06",
+    "role": "cloth"
+  },
+  {
+    "hex": "#2c0f15",
+    "role": "cloth:outline"
+  }
+]

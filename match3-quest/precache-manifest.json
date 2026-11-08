@@ -951,6 +951,11 @@
    "h": "6bbc31a51f"
   },
   {
+   "p": "sprites/gba/dafeng.84f2789a.js",
+   "s": 8681,
+   "h": "84f2789a17"
+  },
+  {
    "p": "sprites/gba/dame_bi_yu.69302fab.js",
    "s": 20441,
    "h": "69302fab8f"
@@ -1144,6 +1149,11 @@
    "p": "sprites/gba/fengmeng_3b.4d49930a.js",
    "s": 20009,
    "h": "4d49930a1f"
+  },
+  {
+   "p": "sprites/gba/fengxi.ddf9bb52.js",
+   "s": 10277,
+   "h": "ddf9bb525d"
   },
   {
    "p": "sprites/gba/fennec_lili.36b9ee7f.js",
@@ -1639,6 +1649,11 @@
    "p": "sprites/gba/jiuweihu.e3a27312.js",
    "s": 10869,
    "h": "e3a27312d4"
+  },
+  {
+   "p": "sprites/gba/jiuying.c9794c46.js",
+   "s": 11473,
+   "h": "c9794c46fe"
   },
   {
    "p": "sprites/gba/ke_paper.e6c20fcb.js",
@@ -2946,6 +2961,11 @@
    "h": "03794f2bea"
   },
   {
+   "p": "sprites/gba/xiushe.d5190810.js",
+   "s": 11533,
+   "h": "d5190810e2"
+  },
+  {
    "p": "sprites/gba/xuan_gui.3395f965.js",
    "s": 4013,
    "h": "3395f96562"
@@ -3029,6 +3049,11 @@
    "p": "sprites/gba/yutu.55d02cb7.js",
    "s": 23709,
    "h": "55d02cb7b9"
+  },
+  {
+   "p": "sprites/gba/zaochi.2f9e9fcc.js",
+   "s": 9757,
+   "h": "2f9e9fcce0"
   },
   {
    "p": "sprites/gba/zhulong_serpent.d651871a.js",
@@ -4251,14 +4276,14 @@
    "h": "62b3c9266f"
   },
   {
-   "p": "audio/music/boss-colosse-de-l-ecluse.mp3",
-   "s": 1855470,
-   "h": "f79005c07e"
-  },
-  {
    "p": "audio/music/boss-colosse-des-caravanes-ensevelies.mp3",
    "s": 1784626,
    "h": "2c13c5adf6"
+  },
+  {
+   "p": "audio/music/boss-dafeng-le-grand-vent.mp3",
+   "s": 1770520,
+   "h": "fec5663dab"
   },
   {
    "p": "audio/music/boss-dame-bi-yu-la-main-de-jade.mp3",
@@ -4291,6 +4316,11 @@
    "h": "7e685bcbad"
   },
   {
+   "p": "audio/music/boss-fengxi-le-grand-sanglier.mp3",
+   "s": 1748890,
+   "h": "f128a2df54"
+  },
+  {
    "p": "audio/music/boss-forgeron-de-lave.mp3",
    "s": 1847633,
    "h": "c627fab2b9"
@@ -4314,11 +4344,6 @@
    "p": "audio/music/boss-gardien-de-la-forge-noire.mp3",
    "s": 1831333,
    "h": "a553b8ed43"
-  },
-  {
-   "p": "audio/music/boss-gardien-des-cendres.mp3",
-   "s": 1790268,
-   "h": "f39f84c0bd"
   },
   {
    "p": "audio/music/boss-gardien-du-jugement.mp3",
@@ -4346,14 +4371,14 @@
    "h": "3b8c7ce772"
   },
   {
+   "p": "audio/music/boss-jiuying-neuf-gueules.mp3",
+   "s": 1901550,
+   "h": "67a340ff7d"
+  },
+  {
    "p": "audio/music/boss-lion-cendre-gardien-du-sutra.mp3",
    "s": 1898415,
    "h": "69a11f1012"
-  },
-  {
-   "p": "audio/music/boss-lion-gardien-fendu.mp3",
-   "s": 1933524,
-   "h": "5b1c1597db"
   },
   {
    "p": "audio/music/boss-long-du-tonnerre-sourd.mp3",
@@ -4389,11 +4414,6 @@
    "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or.mp3",
    "s": 1795284,
    "h": "37a0af8da0"
-  },
-  {
-   "p": "audio/music/boss-serpent-de-maree.mp3",
-   "s": 1887757,
-   "h": "18bf0ace33"
   },
   {
    "p": "audio/music/boss-serpent-des-marees-noires.mp3",
@@ -4446,11 +4466,6 @@
    "h": "01b888881f"
   },
   {
-   "p": "audio/music/boss-tigre-alpha-griffe-de-feu.mp3",
-   "s": 1962676,
-   "h": "db71d6d5f3"
-  },
-  {
    "p": "audio/music/boss-tigre-blanc-des-ancetres.mp3",
    "s": 1833840,
    "h": "6ecefa7a3c"
@@ -4461,9 +4476,19 @@
    "h": "8b17f5a8c0"
   },
   {
+   "p": "audio/music/boss-xiushe-le-long-serpent.mp3",
+   "s": 2000293,
+   "h": "62be52c113"
+  },
+  {
    "p": "audio/music/boss-xuanwu-la-tortue-noire.mp3",
    "s": 1751085,
    "h": "6542c9bb97"
+  },
+  {
+   "p": "audio/music/boss-zaochi-dents-de-ciseau.mp3",
+   "s": 1792463,
+   "h": "ba7efa0ed2"
   },
   {
    "p": "audio/music/boss-zhuque-l-oiseau-vermillon.mp3",
