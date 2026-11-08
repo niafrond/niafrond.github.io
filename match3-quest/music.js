@@ -16,7 +16,7 @@
  *       bonne piste. Retourne false si la scène est inconnue. Ne lève jamais.
  *   stopMusic({ fadeMs })  pauseMusic() / resumeMusic()  isMusicPlaying()  getSceneList()
  */
-import { SCENE_IDS, BIOMES, trackCandidates, trackUrl, withVariants } from './musicTracks.js';
+import { SCENE_IDS, BIOMES, trackCandidates, trackUrl, playlist } from './musicTracks.js';
 import { getMatch3Version } from './version.js';
 
 export { SCENE_IDS, BIOMES };
@@ -202,8 +202,8 @@ export function setMusicScene(sceneId, options = {}) {
     if (!candidates.length) return false;
     const key = candidates.join('|');
     if (S.desired && S.desired.key === key) return true;
-    // deux variantes par piste (`<clé>` et `<clé>-b`) : une au hasard à chaque nouvelle scène, l'autre en repli si elle manque
-    S.desired = { key, candidates: withVariants(candidates, S.env.random), state: 'idle', retryAt: 0 };
+    // version traditionnelle (`<clé>-b`) d'abord, piste de base en repli si elle manque ; combat ordinaire : toujours `combat-0`
+    S.desired = { key, candidates: playlist(sceneId, candidates), state: 'idle', retryAt: 0 };
     ensureTimer();
     tick();
     return true;

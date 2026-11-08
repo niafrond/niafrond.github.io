@@ -22,11 +22,15 @@ describe('precache-manifest.json', () => {
 
     test('les médias couvrent toutes les musiques et tous les dessins des cinématiques, sorts et ultimes', () => {
         const media = new Set(committed.media.map(f => f.p));
-        const music = readdirSync(`${GAME_DIR}/audio/music`).filter(n => n.endsWith('.mp3') && !n.endsWith('-b.mp3'));   // les variantes -b se chargent à la demande
-        expect(music.length).toBeGreaterThan(80);
-        expect(music.every(n => !n.endsWith("-b.mp3"))).toBe(true);
-        expect(committed.media.some(f => f.p.endsWith("-b.mp3"))).toBe(false);   // variantes traditionnelles : rangées par le service worker à la première lecture
-        music.forEach(n => expect(media.has(`audio/music/${n}`)).toBe(true));
+        // pistes jouées : variante traditionnelle `-b` si elle existe (sinon la base), `combat-0` seul pour le combat ordinaire
+        const files = readdirSync(`${GAME_DIR}/audio/music`).filter(n => n.endsWith('.mp3')).map(n => n.replace(/\.mp3$/, ''));
+        const played = files.filter(k => (/^combat-/.test(k) ? k === 'combat-0' : k.endsWith('-b') || !files.includes(`${k}-b`)));
+        expect(played.length).toBeGreaterThan(80);
+        expect(played).toContain('title-b');
+        expect(played).not.toContain('title');           // doublée par title-b
+        expect(played).toContain('boss-dafeng-le-grand-vent');   // sans variante : la base reste
+        expect(played).not.toContain('combat-1');
+        played.forEach(k => expect(media.has(`audio/music/${k}.mp3`)).toBe(true));
         MEDIA_SPRITE_DIRS.forEach(dir => {
             const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json') || n.endsWith('.gif'));
             expect(files.length).toBeGreaterThan(0);

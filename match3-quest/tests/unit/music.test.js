@@ -7,7 +7,7 @@ import {
     setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, duckMusic, __internals
 } from '../../music.js';
 import { getMatch3Version } from '../../version.js';
-import { trackCandidates, trackUrl, withVariants, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
+import { trackCandidates, trackUrl, playlist, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
 import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl, sfxFallbackKey, sfxDuckFor, SPELL_SFX_IDS, WEAPON_RARITIES } from '../../sfxCatalog.js';
 import { spellFx, bowHitFx, sfxRecipe } from '../../tools/audio/sfxRecipes.js';
 import { readFileSync, existsSync } from 'node:fs';
@@ -361,29 +361,35 @@ describe('lecteur de musique', () => {
         const ctx = makeCtx(); const { fetchFn } = setup(ctx);
         setMusicScene('title');
         await flush();
-        expect(fetchFn.calls).toEqual([`http://x/match3-quest/audio/music/title.mp3?v=${getMatch3Version()}`]);   // ?v : pas de copie périmée en cache
+        expect(fetchFn.calls).toEqual(['title-b', 'title'].map((k) => `http://x/match3-quest/audio/music/${k}.mp3?v=${getMatch3Version()}`));   // ?v : pas de copie périmée en cache ; variante traditionnelle absente -> repli sur la piste de base
         const src = ctx.nodes.find((n) => n.kind === 'source');
         expect(src.started).toBe(true);
         expect(src.loop).toBe(true);
         expect(isMusicPlaying()).toBe(true);
         setMusicScene('title'); await flush();                        // même scène : no-op
-        expect(fetchFn.calls).toHaveLength(1);
+        expect(fetchFn.calls).toHaveLength(2);   // title-b (absente) puis title
         setMusicScene('menu'); await flush();
         setMusicScene('title'); await flush();                        // piste en cache : pas de nouveau téléchargement
         expect(fetchFn.calls.filter((u) => /title\.mp3/.test(u))).toHaveLength(1);
         expect(ctx.decoded).toBe(2);
     });
 
-    test('deux variantes par piste : le hasard choisit laquelle jouer, l\'autre sert de repli si elle manque', async () => {
-        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['title', 'title-b', 'menu']), { random: () => 0.9 });
+    test('version traditionnelle d\'abord, piste de base en repli si elle manque', async () => {
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['title', 'title-b', 'menu']));
         setMusicScene('title'); await flush();
         expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['title-b']);
-        expect(withVariants(['a', 'b'], () => 0.1)).toEqual(['a', 'a-b', 'b', 'b-b']);
-        expect(withVariants(['a', 'b'], () => 0.9)).toEqual(['a-b', 'a', 'b-b', 'b']);
+        expect(playlist('menu', ['menu', 'x'])).toEqual(['menu-b', 'menu', 'x-b', 'x']);
         fetchFn.calls.length = 0;
-        setMusicScene('menu'); await flush();     // random 0.9 : 'menu-b' d'abord, absente -> repli sur 'menu'
+        setMusicScene('menu'); await flush();     // 'menu-b' absente -> repli sur 'menu'
         expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['menu-b', 'menu']);
         expect(isMusicPlaying()).toBe(true);
+    });
+
+    test('combat ordinaire : toujours combat-0, sans variante traditionnelle', async () => {
+        expect(playlist('combat', ['combat-tides', 'combat-3'])).toEqual(['combat-0']);
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['combat-0', 'combat-0-b', 'combat-3', 'combat-3-b']));
+        setMusicScene('combat', { variant: 3 }); await flush();
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['combat-0']);
     });
 
     test('fondu enchaîné : l\'ancienne piste s\'arrête, une seule piste reste active', async () => {
@@ -400,12 +406,12 @@ describe('lecteur de musique', () => {
     test('boss : sa piste dédiée, sinon repli sur le thème d\'archétype', async () => {
         const ctx = makeCtx(); const { fetchFn } = setup(ctx);
         setMusicScene('boss', { boss: 'Soleil Ardent' }); await flush();
-        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['boss-soleil-ardent']);
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['boss-soleil-ardent-b', 'boss-soleil-ardent']);
         __internals.reset();
         const ctx2 = makeCtx(); const s2 = setup(ctx2, new Set(['boss-a0', 'boss-a1', 'boss-a2', 'boss-a3', 'boss-a4', 'boss-a5', 'boss-a6', 'boss-a7']));
         setMusicScene('boss', { boss: 'Boss Inconnu' }); await flush();
         const keys = s2.fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1]);
-        expect(keys).toEqual(['boss-boss-inconnu', 'boss-boss-inconnu-b', `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
+        expect(keys).toEqual(['boss-boss-inconnu-b', 'boss-boss-inconnu', `boss-a${bossArchetypeIndex('Boss Inconnu')}-b`, `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
         expect(ctx2.nodes.some((n) => n.kind === 'source' && n.started)).toBe(true);
     });
 

@@ -1,5 +1,5 @@
 // Le jeu n'affiche aucun emoji : icônes et décors sont des dessins SVG (icons.js, sprites/decor.js, sprites/creatures.js).
-// Ce test parcourt toutes les sources du jeu (hors tests) et échoue au premier caractère pictographique.
+// Ce test parcourt toutes les sources du jeu (hors tests, déploiement et pages annexes : soluce, lecteur de musique) et échoue au premier caractère pictographique.
 // Seuls des glyphes typographiques sans présentation emoji restent permis (★ du joker, flèches ► ▲ ▼ ➜).
 import { describe, test, expect } from '@jest/globals';
 import fs from 'fs';
@@ -8,10 +8,11 @@ import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ALLOWED = new Set(['★']);
+const EXCLUDED = ['node_modules', 'tests', 'fonts', '.git', 'ACE-Step-1.5', 'deploy', 'soluce', 'soluce.html', 'lecteur-musique.html', 'musiques.html'];
 
 function sources(dir, out = []) {
     for (const f of fs.readdirSync(dir)) {
-        if (['node_modules', 'tests', 'fonts', '.git', 'ACE-Step-1.5'].includes(f)) continue;
+        if (EXCLUDED.includes(f)) continue;
         const p = path.join(dir, f);
         if (fs.statSync(p).isDirectory()) sources(p, out);
         else if (/\.(js|mjs|html|css|json|svg)$/.test(f)) out.push(p);
