@@ -16,7 +16,7 @@ import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefe
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems, allItems } from "./items.js";
-import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
+import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration, testVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { initDialogs } from "./a11y.js";
 import { createBreakWatcher } from "./breakReminder.js";
@@ -462,6 +462,11 @@ function init() {
         }
     };
     syncVibrationBtn();
+    document.getElementById('opt-vibration-test')?.addEventListener('click', () => {
+        const out = document.getElementById('vibration-test-result');
+        const r = testVibration();
+        if(out) { out.textContent = r.message; out.hidden = false; }
+    });
     // Le navigateur refuse les vibrations tant que l'utilisateur n'a pas fait de geste : on redemande, d'un toucher (gameOptions.js).
     window.addEventListener('m3:vibration-blocked', () => {
         if(document.getElementById('vibe-notice')) return;

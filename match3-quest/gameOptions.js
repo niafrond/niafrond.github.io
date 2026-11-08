@@ -84,11 +84,31 @@ export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effe
 export function vibrate(pattern, shakeIfUnsupported = false) {
     if (!current.vibration) return false;
     try {
+        const haptics = nativeHaptics();
+        if (haptics) return nativeVibrate(haptics, pattern);
         if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') { if (shakeIfUnsupported) shake(); return false; }
         const ok = navigator.vibrate(pattern) !== false;
         if (!ok) notifyBlocked(); else vibrationBlocked = false;
         return ok;
     } catch (e) { return false; }   // vibration refusée (pas de geste utilisateur, mode économie…)
+}
+
+// Dans l'APK (Capacitor), le WebView ne vibre pas sans la permission VIBRATE, que n'a pas l'application : on passe par le plugin Haptics
+// (installé avec l'APK, il apporte la permission). Aucune exigence de geste de l'utilisateur côté natif.
+function nativeHaptics() {
+    const c = typeof window !== 'undefined' ? window.Capacitor : null;
+    try { return c && typeof c.isNativePlatform === 'function' && c.isNativePlatform() && c.Plugins && c.Plugins.Haptics || null; } catch (e) { return null; }
+}
+// Motif de `navigator.vibrate` (durée ou [vibre, pause, vibre…]) rejoué en appels Haptics.vibrate({ duration }).
+function nativeVibrate(haptics, pattern) {
+    const parts = (Array.isArray(pattern) ? pattern : [pattern]).map(Number);
+    let at = 0;
+    parts.forEach((ms, i) => {
+        if (i % 2 === 0 && ms > 0) { const d = Math.min(ms, 1000); setTimeout(() => { try { haptics.vibrate({ duration: d }); } catch (e) { /* plugin absent */ } }, at); }
+        at += ms;
+    });
+    vibrationBlocked = false;
+    return true;
 }
 
 // Depuis Chrome 60, navigator.vibrate() exige un geste de l'utilisateur (sinon il renvoie false) : tant qu'il n'a rien touché, les vibrations
@@ -107,6 +127,7 @@ function notifyBlocked() {
 // À appeler DANS un geste de l'utilisateur : une micro-vibration qui valide l'autorisation. Retourne true si elle est accordée.
 export function armVibration() {
     if (!current.vibration || !canVibrate()) return false;
+    if (nativeHaptics()) return true;
     try {
         const ok = navigator.vibrate(1) !== false;
         if (ok) vibrationBlocked = false;
@@ -116,7 +137,7 @@ export function armVibration() {
 
 // L'appareil sait-il vibrer ? (Absent sur iPhone / iPad et Firefox ordinateur : l'API Vibration n'y existe pas.)
 export function canVibrate() {
-    return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+    return Boolean(nativeHaptics()) || (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function');
 }
 
 // À défaut de vibreur : une brève secousse de l'écran (classe `shake` du body, style.css) à la place.
@@ -147,4 +168,14 @@ load();
 if (typeof window !== 'undefined' && window.addEventListener) {
     const arm = () => { if (armVibration()) ['pointerdown', 'touchend', 'keydown', 'click'].forEach(t => window.removeEventListener(t, arm, true)); };
     ['pointerdown', 'touchend', 'keydown', 'click'].forEach(t => window.addEventListener(t, arm, true));
+}
+
+// Diagnostic pour le bouton « Tester » des options : vibre (geste en cours) et dit pourquoi ça ne marche pas le cas échéant.
+export function testVibration() {
+    const haptics = nativeHaptics();
+    if (haptics) { nativeVibrate(haptics, [200, 100, 200]); return { ok: true, message: 'Vibration envoyée (application). Rien ressenti ? Vérifiez les réglages de vibration et le mode silencieux du téléphone.' }; }
+    if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return { ok: false, message: "Ce navigateur n'a pas de vibration (iPhone, iPad, Firefox ordinateur)." };
+    const ok = navigator.vibrate([200, 100, 200]);
+    if (ok === false) return { ok: false, message: 'Le navigateur refuse la vibration (économie d\'énergie, ou site non autorisé).' };
+    return { ok: true, message: 'Vibration envoyée. Rien ressenti ? Le téléphone est peut-être en mode silencieux ou la vibration système coupée (réglages Android > Son et vibration).' };
 }

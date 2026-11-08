@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
-import { describe, test, expect, beforeEach } from '@jest/globals';
-import { getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, testVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
 import { readFileSync } from 'node:fs';
 import { flyManaToCounter } from '../../manaFlight.js';
 
@@ -76,6 +76,35 @@ describe('vibrations', () => {
         setOption('vibration', true);
         Object.defineProperty(navigator, 'vibrate', { value: () => true, configurable: true });
         expect(canVibrate()).toBe(true);
+    });
+    test('dans l\'APK (Capacitor) : le plugin Haptics vibre, motif rejoué en segments, sans passer par navigator.vibrate', () => {
+        jest.useFakeTimers();
+        const calls = [], web = [];
+        Object.defineProperty(navigator, 'vibrate', { value: ms => { web.push(ms); return true; }, configurable: true });
+        window.Capacitor = { isNativePlatform: () => true, Plugins: { Haptics: { vibrate: o => calls.push(o.duration) } } };
+        try {
+            expect(canVibrate()).toBe(true);
+            expect(armVibration()).toBe(true);
+            expect(vibrate([60, 40, 80])).toBe(true);
+            jest.advanceTimersByTime(200);
+            expect(calls).toEqual([60, 80]);
+            expect(web).toEqual([]);
+            expect(testVibration().ok).toBe(true);
+            jest.advanceTimersByTime(1000);   // segments différés du test
+            setOption('vibration', false);
+            calls.length = 0;
+            expect(vibrate(50)).toBe(false);
+            jest.advanceTimersByTime(500);
+            expect(calls).toEqual([]);
+        } finally { delete window.Capacitor; setOption('vibration', true); jest.useRealTimers(); }
+    });
+    test('testVibration : explique l\'échec ou le succès dans le navigateur', () => {
+        Object.defineProperty(navigator, 'vibrate', { value: undefined, configurable: true });
+        expect(testVibration().ok).toBe(false);
+        Object.defineProperty(navigator, 'vibrate', { value: () => false, configurable: true });
+        expect(testVibration().ok).toBe(false);
+        Object.defineProperty(navigator, 'vibrate', { value: () => true, configurable: true });
+        expect(testVibration().ok).toBe(true);
     });
     test('Chrome exige un geste : un refus (false) signale le blocage, un geste réussi le lève', () => {
         const events = [];
