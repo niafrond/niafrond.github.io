@@ -1,3 +1,9 @@
+## [2.208.0](https://github.com/niafrond/niafrond.github.io/compare/v2.207.1...v2.208.0) (2026-11-08)
+
+### Features
+
+* **match3-quest:** permettre au combo magistral d'offrir un second tour bonus ([#674](https://github.com/niafrond/niafrond.github.io/issues/674)) ([5ea2864](https://github.com/niafrond/niafrond.github.io/commit/5ea2864c7b81e464fe9192674c1a270992de7de0))
+
 ## [2.207.1](https://github.com/niafrond/niafrond.github.io/compare/v2.207.0...v2.207.1) (2026-11-08)
 
 ### Bug Fixes
