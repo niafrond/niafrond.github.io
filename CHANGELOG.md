@@ -1,3 +1,10 @@
+## [2.207.1](https://github.com/niafrond/niafrond.github.io/compare/v2.207.0...v2.207.1) (2026-11-08)
+
+### Bug Fixes
+
+* **match3-quest:** afficher l'animation des sorts ennemis sans dégâts ni soin ([3a9a45e](https://github.com/niafrond/niafrond.github.io/commit/3a9a45e60e19a89d2d0848a247380d80b6de09c7))
+* **match3-quest:** élargir le plateau en PWA portrait et le recalculer au retour dans l'app ([3cd53b4](https://github.com/niafrond/niafrond.github.io/commit/3cd53b4754caf7fcb3a2e091f6b0f1bd37aba279))
+
 ## [2.207.0](https://github.com/niafrond/niafrond.github.io/compare/v2.206.1...v2.207.0) (2026-11-08)
 
 ### Features
