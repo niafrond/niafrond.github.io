@@ -28,7 +28,7 @@ export function registerServiceWorkerWhenLoaded(env = globalThis) {
     return Promise.resolve(null);
 }
 
-// ── Pré-téléchargement de tout le jeu (≈ 120 Mo de musiques et de dessins) ────────────────────────────────────────────
+// ── Pré-téléchargement de tout le jeu (≈ 270 Mo de musiques et de dessins) ────────────────────────────────────────────
 // Le service worker (sw.js) range dans `match3-media-v1` tout média qu'il voit passer : il suffit donc de demander chaque fichier du manifeste
 // (precache-manifest.json). Reprenable (ce qui est déjà en cache avec la bonne empreinte n'est pas redemandé), prudent (quota, hors ligne,
 // économiseur de données) et sans effet sur le jeu (2 téléchargements à la fois, en tâche de fond).
