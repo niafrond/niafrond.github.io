@@ -41,7 +41,7 @@ describe('blocage', () => {
     test('resolveStrike : critique ×1,5 puis blocage', () => {
         const attacker = { attack: 100 };
         const target = { defense: 0 };
-        expect(resolveStrike(10, attacker, target, { rng: () => 0.5 })).toEqual({ damage: 15, crit: true, block: 'none' });
+        expect(resolveStrike(10, attacker, target, { rng: () => 0.5 })).toEqual({ damage: 15, crit: true, block: 'none', intended: 15 });
         expect(resolveStrike(10, { attack: 0 }, { defense: 100 }, { rng: seq(0.5, 0.1, 0.1) }).damage).toBe(0);
     });
 
@@ -54,7 +54,7 @@ describe('blocage', () => {
         // Le bonus suit le critique de l'attaque : (10 × 1.5) + (10 × 1.5).
         expect(resolveStrike(10, { attack: 100, statusEffects: enraged.statusEffects }, target, { rng: () => 0 }).damage).toBe(30);
         // Attaque bloquée entièrement : seul le bonus passe.
-        expect(resolveStrike(10, enraged, { defense: 100 }, { rng: seq(0.99, 0.1, 0.1) })).toEqual({ damage: 10, crit: false, block: 'total' });
+        expect(resolveStrike(10, enraged, { defense: 100 }, { rng: seq(0.99, 0.1, 0.1) })).toEqual({ damage: 10, crit: false, block: 'total', intended: 20 });
     });
 
     test('displayAttack : l\'attaque affichée tient compte du malus d\'affaiblissement', () => {
