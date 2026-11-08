@@ -291,7 +291,7 @@ export const MOTIF_NAMES = ['houyi', 'fengmeng', 'suns'];
 
 /* ───────────── Morceaux traditionnels chinois (variantes `-b` du jeu de base) ───────────── */
 // Interprétations acoustiques inspirées de pièces du répertoire traditionnel (brief : ace_step_prompts_musique_chinoise.txt). Elles n'utilisent PAS le
-// préfixe GBA/chiptune (`raw`) et se jouent en alternance avec la piste de même scène : `<clé>-b.mp3` (voir musicTracks.js `withVariants`).
+// préfixe GBA/chiptune (`raw`) et se jouent à la place de la piste de même scène : `<clé>-b.mp3` (voir musicTracks.js `playlist`).
 // Le texte seul ne garantit pas la fidélité mélodique : pour une reprise note pour note, fournir une partition ou un MIDI vérifié.
 const TRAD = 'authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music';
 T('combat-0-b', `traditional Chinese classical instrumental inspired by the ancient piece "Ambush on Ten Sides" (Shi Mian Mai Fu), virtuosic solo Chinese pipa in the foreground with rapid repeated-note figures, tremolo, ascending and descending runs and dramatic sequences, A pentatonic Yu mode, free-rhythm tense introduction then fast strongly articulated binary martial sections with traditional Chinese war drums and restrained gongs, accelerations, building to a powerful virtuosic climax and a decisive ending, epic martial tense imperial China, ${TRAD}`,

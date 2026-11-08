@@ -58,13 +58,17 @@ export function trackCandidates(sceneId, { biome, boss, variant } = {}) {
 
 export const trackUrl = (key) => `${MUSIC_DIR}${key}.mp3`;
 
-/** Suffixe de la 2e variante d'une piste (`<clé>-b.mp3`), générée avec la même consigne que `<clé>.mp3`. */
+/** Suffixe de la variante traditionnelle d'une piste (`<clé>-b.mp3`). */
 export const VARIANT_SUFFIX = '-b';
 
+/** Seule piste de combat ordinaire jouée en jeu (la « musique 1 », version du jeu et non traditionnelle). */
+export const COMBAT_TRACK = 'combat-0';
+
 /**
- * Liste de lecture : pour chaque clé candidate, ses deux variantes dans un ordre tiré au hasard (`random()` dans [0, 1[).
- * L'ordre des candidates (piste précise puis repli) est conservé ; une variante absente est simplement sautée.
+ * Liste de lecture d'une scène : les musiques traditionnelles (`<clé>-b`) partout, avec la piste de base en repli quand la variante manque
+ * (ex. boss sans variante). Exception : le combat ordinaire joue toujours `combat-0`, sans variante.
  */
-export function withVariants(candidates, random = Math.random) {
-    return candidates.flatMap((key) => (random() < 0.5 ? [key, key + VARIANT_SUFFIX] : [key + VARIANT_SUFFIX, key]));
+export function playlist(sceneId, candidates) {
+    if (sceneId === 'combat') return [COMBAT_TRACK];
+    return candidates.flatMap((key) => [key + VARIANT_SUFFIX, key]);
 }

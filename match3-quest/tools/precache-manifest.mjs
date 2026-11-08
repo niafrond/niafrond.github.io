@@ -62,7 +62,7 @@ export function buildManifest(root = GAME_DIR) {
         ...list(root, 'audio', ext('.json')),
         ...list(root, 'audio/sfx', ext('.mp3'))
     ];
-    // Les variantes `-b` (musiques traditionnelles alternées avec la piste de base, musicTracks.js `withVariants`) ne sont PAS préchargées : le service
+    // Les variantes `-b` (musiques traditionnelles jouées en premier, musicTracks.js `playlist`) ne sont PAS préchargées : le service
     // worker les range à leur première lecture (mediaResponse) ; hors ligne et jamais écoutée, la variante manque et music.js la saute.
     const music = list(root, 'audio/music', ext('.mp3')).filter(p => !/-b\.mp3$/.test(p));
     const art = [...list(root, GBA_SPRITE_DIR, ext('.js')), ...MEDIA_SPRITE_DIRS.flatMap(dir => list(root, `sprites/${dir}`, ext('.png', '.json', '.gif')))];
