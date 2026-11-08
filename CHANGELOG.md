@@ -1,3 +1,9 @@
+## [2.206.1](https://github.com/niafrond/niafrond.github.io/compare/v2.206.0...v2.206.1) (2026-11-08)
+
+### Bug Fixes
+
+* **match3-quest:** afficher l'icône de classe au clic sur le nom de l'ennemi ([#671](https://github.com/niafrond/niafrond.github.io/issues/671)) ([4b9b7fc](https://github.com/niafrond/niafrond.github.io/commit/4b9b7fc5739db6f6eab225b4f54378032e2e8ae7))
+
 ## [2.206.0](https://github.com/niafrond/niafrond.github.io/compare/v2.205.0...v2.206.0) (2026-11-07)
 
 ### Features
