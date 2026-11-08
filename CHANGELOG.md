@@ -1,3 +1,9 @@
+## [2.210.0](https://github.com/niafrond/niafrond.github.io/compare/v2.209.0...v2.210.0) (2026-11-08)
+
+### Features
+
+* **match3-quest:** ajouter un lecteur musical externe pour la bande-son ([#677](https://github.com/niafrond/niafrond.github.io/issues/677)) ([dafb07f](https://github.com/niafrond/niafrond.github.io/commit/dafb07fc6d24a00b4954290338c2fbb71dae9583))
+
 ## [2.209.0](https://github.com/niafrond/niafrond.github.io/compare/v2.208.0...v2.209.0) (2026-11-08)
 
 ### Features
