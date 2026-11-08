@@ -1,3 +1,9 @@
+## [2.207.0](https://github.com/niafrond/niafrond.github.io/compare/v2.206.1...v2.207.0) (2026-11-08)
+
+### Features
+
+* **match3-quest:** monstres de Hou Yi du Huainanzi en boss de zone et origines du bestiaire ([#672](https://github.com/niafrond/niafrond.github.io/issues/672)) ([c78680f](https://github.com/niafrond/niafrond.github.io/commit/c78680fee1d21fc6e9166ab586216b9e00442698))
+
 ## [2.206.1](https://github.com/niafrond/niafrond.github.io/compare/v2.206.0...v2.206.1) (2026-11-08)
 
 ### Bug Fixes
