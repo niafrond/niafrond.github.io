@@ -303,7 +303,7 @@ export function updateStats(){
         enemyDiv.addEventListener('click', () => {
             enemyNameAsHanzi = !enemyNameAsHanzi;
             const el = enemyDiv.querySelector('.enemy-combat-name');
-            if(el) el.textContent = `${classIcon(enemy.playerClass)} ${enemyNameLabel(enemy, enemyNameAsHanzi)}`;
+            if(el) el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}`;
         });
     }
     
