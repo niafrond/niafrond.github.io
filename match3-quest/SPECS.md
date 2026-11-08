@@ -742,3 +742,4 @@ Spécifications et journal de session de `match3-quest/`.
 
 - 2026-11-07 (mesure d'audience) : GoatCounter remplacé par `https://stats.fontaine.one/count.js` (mesure maison sans cookie ni identifiant, voir `stats/SPECS.md`) dans `index.html`.
 - 2026-11-08 (plateau trop étroit en PWA) : en portrait mobile, le filet de hauteur de `boardLayout.js` ne rogne plus les tuiles que si la page rétrécit réellement (un débordement dû à une hauteur minimale ne compte plus) ; le plateau est aussi recalculé au retour dans l'app (`pageshow`, `visibilitychange`), au chargement et quand les polices sont prêtes.
+- 2026-11-08 (animation des sorts ennemis) : tout sort lancé par l'ennemi affiche son animation, même sans dégâts ni soin (tour bonus, défense, statut…) — annonce générique en fin d'`applyStandardSpellEffects` (`game.js`) quand ni dégâts, ni soin, ni bonus de stats n'ont déjà déclenché la leur.
