@@ -281,7 +281,7 @@ export function createDraw(env) {
         (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(env.session).forEach(n => {
             const a = vis.npcAnim?.id === n.id ? vis.npcAnim : null;   // PNJ en train d'accourir : position et saut animés
-            if (n.ambient) {   // habitant de passage : glisse en douceur vers sa case logique (2,2 cases par seconde), léger rebond en marchant
+            if (n.ambient || n.wanders) {   // habitant de passage / promeneur de village : glisse en douceur vers sa case logique (2,2 cases par seconde), léger rebond en marchant
                 const v = ((vis.amb ||= {})[n.id] ||= { x: n.x, y: n.y, t: now });
                 const step = Math.min(100, now - v.t) / 1000 * 2.2; v.t = now;
                 const d = Math.hypot(n.x - v.x, n.y - v.y);

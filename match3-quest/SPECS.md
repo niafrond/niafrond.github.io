@@ -741,3 +741,11 @@ Spécifications et journal de session de `match3-quest/`.
 - Limites Spark : 10 Go de stockage (≈ 24 Mo utilisés), 360 Mo/jour de transfert.
 
 - 2026-11-07 (mesure d'audience) : GoatCounter remplacé par `https://stats.fontaine.one/count.js` (mesure maison sans cookie ni identifiant, voir `stats/SPECS.md`) dans `index.html`.
+
+## Vie des villages et hameaux (PNJ qui se promènent)
+
+- Dans un village ou un hameau (`kind: 'village'`), les PNJ se déplacent d'une case à la fois, avec des pauses de 2 à 6 s, dans un rayon de 3 cases autour de leur place d'origine (`villageLife.js`, `stepVillageLife`).
+- Restent à leur poste : marchands, PNJ géants (`span`), PNJ marqués `stay`, blessés/habitants du mode Chang'e. Aucun pas sur une case occupée (PNJ, coffre, point d'intérêt, balise, sortie, héros), un obstacle, une structure, un bâtiment, de l'herbe haute ou la bande de bord des passages.
+- Un PNJ à côté du héros ne bouge pas (le dialogue reste stable). La promenade est en pause pendant un dialogue, un puzzle, un combat ou un PNJ qui accourt.
+- Les données de la carte (`screen.npcs`) ne sont jamais modifiées : la position vivante est dans `session.rt.villageLife`, lue par `visibleNpcs`. Le dessin glisse en douceur vers la case logique, avec un léger rebond (comme les habitants de passage).
+- Tests : `tests/unit/villageLife.test.js`.

@@ -557,7 +557,7 @@ export function isEntityVisible(session, def) {
 
 // PNJ en route vers le héros (`arrival`) : cachés tant que la vue n'a pas lancé leur arrivée (état volatil, jamais sauvegardé).
 export const beginNpcArrival = (session, npcId) => session.rt.pendingArrivals?.delete(npcId);
-export const visibleNpcs = session => session.rt.changeMode ? [...session.rt.changeMode.npcs, ...session.rt.changeMode.ambient] : currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id));
+export const visibleNpcs = session => session.rt.changeMode ? [...session.rt.changeMode.npcs, ...session.rt.changeMode.ambient] : currentScreen(session).npcs.filter(n => isEntityVisible(session, n) && !session.rt.pendingArrivals?.has(n.id)).map(n => session.rt.villageLife?.walkers.get(n.id) || n);   // village : PNJ promeneurs (villageLife.js)
 export const visibleChests = session => session.rt.changeMode ? [] : currentScreen(session).chests.filter(c => isEntityVisible(session, c));
 
 export function aliveEnemies(session) {
