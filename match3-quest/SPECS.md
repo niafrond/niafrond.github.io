@@ -741,3 +741,4 @@ Spécifications et journal de session de `match3-quest/`.
 - Limites Spark : 10 Go de stockage (≈ 24 Mo utilisés), 360 Mo/jour de transfert.
 
 - 2026-11-07 (mesure d'audience) : GoatCounter remplacé par `https://stats.fontaine.one/count.js` (mesure maison sans cookie ni identifiant, voir `stats/SPECS.md`) dans `index.html`.
+- 2026-11-08 (plateau trop étroit en PWA) : en portrait mobile, le filet de hauteur de `boardLayout.js` ne rogne plus les tuiles que si la page rétrécit réellement (un débordement dû à une hauteur minimale ne compte plus) ; le plateau est aussi recalculé au retour dans l'app (`pageshow`, `visibilitychange`), au chargement et quand les polices sont prêtes.

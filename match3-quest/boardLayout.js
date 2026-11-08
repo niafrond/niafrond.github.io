@@ -126,7 +126,18 @@ export function syncBoardTileSize(){
         if(fitted !== tileSize) boardDiv.style.setProperty('--tile-size', `${fitted}px`);
         const doc = document.documentElement;
         const tall = doc.scrollHeight - doc.clientHeight;
-        if(tall > 1) fitted = Math.max(MIN_PORTRAIT_TILE, fitted - Math.ceil(tall / boardSize));
+        if(tall > 1){
+            const shrunk = Math.max(MIN_PORTRAIT_TILE, fitted - Math.ceil(tall / boardSize));
+            if(shrunk < fitted){
+                // PWA (écran de veille / barre système) : le débordement peut venir d'une hauteur minimale (100dvh) et non de la grille.
+                // On ne rogne donc que si la page rétrécit réellement ; sinon on garde la pleine largeur.
+                const before = doc.scrollHeight;
+                boardDiv.style.setProperty('--tile-size', `${shrunk}px`);
+                const gained = before - doc.scrollHeight;
+                if(gained >= (fitted - shrunk) * boardSize * 0.5) fitted = shrunk;
+                else boardDiv.style.setProperty('--tile-size', `${fitted}px`);
+            }
+        }
     }
     if(fitted !== tileSize){
         boardDiv.style.setProperty('--tile-size', `${fitted}px`);
@@ -148,6 +159,13 @@ export function ensureBoardResizeListeners(){
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
+    // PWA : la mesure faite au lancement (barres système, polices, mise en page pas stabilisée) peut être fausse ;
+    // on recalcule au retour dans l'app, une fois la page chargée et quand les polices sont prêtes.
+    window.addEventListener('pageshow', handleResize);
+    window.addEventListener('load', handleResize);
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) handleResize(); });
+    document.fonts?.ready?.then(handleResize);
+    setTimeout(handleResize, 400);
 
     if(typeof window.ResizeObserver === 'function'){
         boardResizeObserver = new window.ResizeObserver(() => {
