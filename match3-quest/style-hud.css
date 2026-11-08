@@ -119,6 +119,7 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 
 /* Bouton « cheval » du HUD d'exploration : caché sans monture, allumé quand on est en selle */
 .explore-hud-buttons button[hidden] { display: none; }
+.options-row[hidden] { display: none; }
 .explore-hud-buttons button.on { outline: 2px solid #facc15; }
 
 /* Onglet Stats : répartition / réinitialisation des points d'attribut */
