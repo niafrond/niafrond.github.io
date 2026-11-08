@@ -1,3 +1,9 @@
+## [2.211.0](https://github.com/niafrond/niafrond.github.io/compare/v2.210.0...v2.211.0) (2026-11-08)
+
+### Features
+
+* **match3-quest:** jouer les musiques traditionnelles partout sauf au combat ([#678](https://github.com/niafrond/niafrond.github.io/issues/678)) ([d34d8f2](https://github.com/niafrond/niafrond.github.io/commit/d34d8f29e684bddd6b21d038e460fbeefc7d0131))
+
 ## [2.210.0](https://github.com/niafrond/niafrond.github.io/compare/v2.209.0...v2.210.0) (2026-11-08)
 
 ### Features
