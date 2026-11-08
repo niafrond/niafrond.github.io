@@ -536,8 +536,10 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         return;
     }
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
+    let enemyAnimShown = false;   // sort ennemi sans dégâts ni soin : une annonce générique est affichée en fin de fonction
 
     if(spell.dmg){
+        enemyAnimShown = true;
         let spellFlags = '';
         const spellColors = spellColorsOf(spell);
         const targetResistance = spellColors.length
@@ -576,6 +578,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
     }
 
     if(spell.heal){
+        enemyAnimShown = true;
         const healAmount = spell.heal + intelligenceBonus;
         caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
         flyHeal(isPlayerCaster, healAmount);
@@ -588,6 +591,12 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
             showCombatAnimation({ icon: 'leaf', title: spell.name, heal: `+${healAmount} HP`, source: caster.name }, false);
             log(`${escapeHtml(caster.name)} utilise ${spell.name} et soigne ${healAmount} HP.`);
         }
+    }
+
+    // Tout sort lancé par l'ennemi (tour bonus, défense, statut…) doit montrer son animation, même sans dégâts ni soin.
+    if(!isPlayerCaster && !enemyAnimShown){
+        const detail = spell.effect === 'bonusTurn' ? 'Rejoue !' : null;
+        showCombatAnimation({ icon: 'spark', title: spell.name, heal: detail, source: caster.name, target: `→ ${caster.name}` }, false);
     }
 }
 
