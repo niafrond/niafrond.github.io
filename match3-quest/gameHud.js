@@ -20,6 +20,8 @@ import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, clas
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
 let enemyNameAsHanzi = true;
+// Le nom affiché est-il en caractères chinois ? (agrandi par .name-hanzi : les hanzi sont illisibles à la taille du texte latin)
+const enemyNameIsHanzi = (e, asHanzi) => /[\u3400-\u9fff]/.test(enemyNameLabel(e, asHanzi));
 
 // --- Animation compteur (tick 1 par 1) ---
 export const _activeCounters = {};
@@ -256,7 +258,7 @@ export function updateStats(){
         `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat row-name"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${bonusTurnBadge(enemy)}</div>
+        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy)}
         <div class="stat row-hp">
             <div class="hp-bar-container">
@@ -303,7 +305,10 @@ export function updateStats(){
         enemyDiv.addEventListener('click', () => {
             enemyNameAsHanzi = !enemyNameAsHanzi;
             const el = enemyDiv.querySelector('.enemy-combat-name');
-            if(el) el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}`;
+            if(el){
+                el.innerHTML = `${classIcon(enemy.playerClass)} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}`;
+                el.classList.toggle('name-hanzi', enemyNameIsHanzi(enemy, enemyNameAsHanzi));
+            }
         });
     }
     

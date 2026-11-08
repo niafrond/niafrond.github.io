@@ -907,3 +907,13 @@ body.a11y-colorblind .mana-purple { background: #cc79a7; }
 .change-tuto small { font-weight: 400; opacity: .7; }
 .change-tuto-btns { display: flex; gap: 8px; justify-content: flex-end; }
 @media (prefers-reduced-motion: reduce) { .change-tile.tuto-hint, .change-tuto-hint { animation: none; } }
+
+/* Nom d'ennemi en hanzi : agrandi (la police pixel du mode rétro est minuscule pour les caractères chinois) et tracé dans une police CJK lisible. */
+.enemy-combat-name.name-hanzi,
+body.rt .enemy-combat-name.name-hanzi,
+body.rt #enemy-stats .enemy-combat-name.name-hanzi,
+.stats-container.has-rage #enemy-stats .enemy-combat-name.name-hanzi {
+    font-family: "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+    font-size: 1.5em; font-weight: 700; line-height: 1.1; letter-spacing: .05em;
+}
+body.rt .enemy-combat-name.name-hanzi { font-size: 20px; }
