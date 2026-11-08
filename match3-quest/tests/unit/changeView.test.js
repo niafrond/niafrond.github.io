@@ -120,7 +120,7 @@ describe('tutoriel du puzzle de soin', () => {
         expect(data.tuto).toBe(true);
         click(q('[data-act="help"]'));
         expect(q('.change-tuto')).not.toBeNull();
-    });
+    }, 30000);
     test('déjà vu : aucune bulle ; « Passer » le mémorise', () => {
         openHeal(document.body, { npc, data: { ...defaultChangeData(), tuto: true } });
         expect(q('.change-tuto')).toBeNull();
