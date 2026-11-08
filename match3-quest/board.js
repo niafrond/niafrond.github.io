@@ -723,13 +723,15 @@ export function checkForMatchesOnly(){
     return checkForMatchesOnlyOnBoard(board);
 }
 
-// Un seul tour bonus par tour, quelles que soient les cascades (matchs de 4+, combo magistral, crânes détruits par un sort) :
+// Un seul tour bonus par tour pour les matchs de 4+ et les crânes détruits par un sort, cascades comprises :
 // sinon un sort qui remplit le plateau de crânes enchaîne les tours jusqu'à la mort de l'ennemi.
-// Le plafond retombe dès que la cascade est terminée (le tour suivant peut en gagner un nouveau).
-let matchBonusTurnClaimed = false;
-export function claimMatchBonusTurn(){
-    if(matchBonusTurnClaimed) return false;
-    matchBonusTurnClaimed = true;
+// Seul un combo magistral peut offrir un second tour bonus : 2 au maximum par tour.
+// Le plafond retombe dès que la cascade est terminée (le tour suivant peut en gagner de nouveaux).
+export const MAX_MATCH_BONUS_TURNS = 2;
+let matchBonusTurnsClaimed = 0;
+export function claimMatchBonusTurn(limit = 1){
+    if(matchBonusTurnsClaimed >= Math.min(limit, MAX_MATCH_BONUS_TURNS)) return false;
+    matchBonusTurnsClaimed++;
     return true;
 }
 
@@ -862,7 +864,7 @@ export function checkMatches(forceFullBoard = false){
 
         if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
-            const comboBonusTurn = claimMatchBonusTurn();
+            const comboBonusTurn = claimMatchBonusTurn(MAX_MATCH_BONUS_TURNS);
             if(comboBonusTurn){
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
@@ -925,7 +927,7 @@ export function checkMatches(forceFullBoard = false){
         actionGuard.endBoardAction();
         turnDistinctMatches = 0;
         comboMasteryTriggered = false;
-        matchBonusTurnClaimed = false;
+        matchBonusTurnsClaimed = 0;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
         // Si c'est le tour de l'ennemi et qu'il n'y a pas de combos, terminer son tour
         if(currentTurn === 'enemy'){
