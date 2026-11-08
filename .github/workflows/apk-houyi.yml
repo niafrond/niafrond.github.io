@@ -51,13 +51,13 @@ jobs:
         working-directory: match3-quest-android
         run: npm install
 
+      - name: Assemble the game (everything local, needed before cap add)
+        working-directory: match3-quest-android
+        run: node build-www.mjs
+
       - name: Add Android platform
         working-directory: match3-quest-android
         run: npx cap add android
-
-      - name: Assemble the game (everything local)
-        working-directory: match3-quest-android
-        run: node build-www.mjs
 
       - name: Copy web assets
         working-directory: match3-quest-android
