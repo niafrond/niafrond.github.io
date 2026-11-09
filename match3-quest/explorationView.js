@@ -562,7 +562,6 @@ export function createExplorationView(cfg) {
     // Animation « à la Pokémon » : éclairs blancs, volets noirs qui se referment en alternance,
     // puis le nom de l'adversaire. Le combat démarre à la fin (les saisies sont bloquées entre-temps).
     function playBattleTransition(enc, done) {
-        playSfx(enc.boss ? 'bossStart' : 'battleStart');   // avant tout le reste : le jingle part avant l'animation, pas après
         removeBattleTransition();
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const overlay = document.createElement('div');

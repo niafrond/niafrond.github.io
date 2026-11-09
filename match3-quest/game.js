@@ -1184,7 +1184,6 @@ export function startNewCombat(selectedEnemy = null){
     // Restaurer les PV (sauf phase enchaînée d'un duel) et préparer le combat
     restartCombat({ keepHp: Boolean(selectedEnemy?.carryHp) });
     newEnemy(selectedEnemy);
-    if(!enemy?.isBoss) playSfx('combatStart');   // boss : bossStart a déjà joué pendant l'annonce du combat (explorationView.js)
 }
 
 // Abandonner le combat en cours
