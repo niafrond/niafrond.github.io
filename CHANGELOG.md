@@ -1,3 +1,9 @@
+## [2.219.0](https://github.com/niafrond/niafrond.github.io/compare/v2.218.0...v2.219.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** appui long complet sur l'ennemi et pastilles des sorts multi-qì ([#689](https://github.com/niafrond/niafrond.github.io/issues/689)) ([34c6d2d](https://github.com/niafrond/niafrond.github.io/commit/34c6d2de7d9d434bc0b016da27b33f5222482e46))
+
 ## [2.218.0](https://github.com/niafrond/niafrond.github.io/compare/v2.217.0...v2.218.0) (2026-11-09)
 
 ### Features
