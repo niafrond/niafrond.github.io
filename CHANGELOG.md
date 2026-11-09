@@ -1,3 +1,9 @@
+## [2.219.2](https://github.com/niafrond/niafrond.github.io/compare/v2.219.1...v2.219.2) (2026-11-09)
+
+### Bug Fixes
+
+* **match3-quest:** lancer la musique de combat dès le début de l'interaction avec l'ennemi ([#691](https://github.com/niafrond/niafrond.github.io/issues/691)) ([49f48bc](https://github.com/niafrond/niafrond.github.io/commit/49f48bc1bba9637d8d1fe5a5cf511b48993a8814))
+
 ## [2.219.1](https://github.com/niafrond/niafrond.github.io/compare/v2.219.0...v2.219.1) (2026-11-09)
 
 ### Bug Fixes
