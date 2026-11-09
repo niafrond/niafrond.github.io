@@ -101,7 +101,7 @@ describe('coups d\'ouverture et faiblesse repérée', () => {
         expect(game).not.toMatch(/t === 'observed'/);
         expect(game).not.toMatch(/showPrepBanner/);
         expect(game).toMatch(/showCombatIntro\(/);
-        expect(game).toMatch(/bindEnemyCardTap\(enemyDiv\)/);
+        expect(game).not.toMatch(/bindEnemyCardTap/);   // le clic simple ne fait que changer le nom (appui long : infobulle complète)
     });
 });
 

@@ -123,7 +123,8 @@ export function createSpellButtons(){
         `;
         if(player.level<sp.minLevel || !hasEnoughMana) {
             btn.classList.add('disabled');
-            // Sort multi-qì : tant qu'il manque du qì (même d'une seule couleur), toute la tuile reste grisée.
+            // Sort multi-qì : la tuile reste grisée tant qu'il manque du qì, mais la pastille d'une couleur déjà atteinte garde sa couleur.
+            if(player.level >= sp.minLevel && btn.querySelector('.cost-part.met') && btn.querySelector('.cost-part.unmet')) btn.classList.add('spell-partial');
             btn.tabIndex = -1;
         } else {
             btn.onclick=()=>castSpell(sp.id);

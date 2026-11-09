@@ -237,7 +237,7 @@ function getEnemyResistanceInsights(enemyEntity) {
 
 // Infobulle de l'ennemi : sa force est toujours indiquée ; sa faiblesse (couleur + élément) seulement une fois repérée
 // (avantage « Faiblesse repérée » du terrain, prep.weaknessRevealed).
-function getEnemyNameTooltipHtml(fullName, enemyEntity) {
+function getEnemyNameTooltipHtml(fullName, enemyEntity, { showAll = false } = {}) {
     const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
     const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
 
@@ -247,7 +247,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
         lines.push(`<div class="enemy-tooltip-row enemy-tooltip-strong">Force : ${manaIcon(strongest.color)} ${strongMeta.name} (${strongPercent}% res.)</div>`);
     }
 
-    if(isWeaknessShown(enemyEntity?.prep)) {
+    if(showAll || isWeaknessShown(enemyEntity?.prep)) {
         const weakColor = enemyEntity.weakColor || weakest?.color;
         if(weakColor && MANA_COLOR_META[weakColor]) {
             const element = elementName(weakColor);
@@ -261,8 +261,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
     return lines.join('');
 }
 
-// Un clic / toucher sur la carte ou le portrait de l'ennemi affiche son infobulle (faiblesse incluse si elle est repérée),
-// qui se referme seule après quelques secondes. Lié une seule fois : le panneau est reconstruit à chaque updateStats.
+// Un clic simple sur l'ennemi ne fait que changer son nom (hanzi / français, gameHud.js) ; seul l'appui long affiche son infobulle complète.
 export const ENEMY_TAP_TOOLTIP_MS = 3500;
 let enemyTapTimer = null;
 let playerTapTimer = null;
@@ -272,18 +271,6 @@ export function showPlayerGearTooltipBriefly(targetEl){
     clearTimeout(playerTapTimer);
     playerTapTimer = setTimeout(hideSpellTooltip, ENEMY_TAP_TOOLTIP_MS);
 }
-export function bindEnemyCardTap(enemyDiv){
-    if(!enemyDiv || enemyDiv.dataset.tapBound) return;
-    enemyDiv.dataset.tapBound = '1';
-    enemyDiv.addEventListener('click', () => {
-        const nameEl = enemyDiv.querySelector('.enemy-combat-name');
-        if(!nameEl) return;
-        showEnemyNameTooltip(nameEl, nameEl.dataset.fullName || enemy.name, enemy);
-        clearTimeout(enemyTapTimer);
-        enemyTapTimer = setTimeout(hideEnemyNameTooltip, ENEMY_TAP_TOOLTIP_MS);
-    });
-}
-
 export function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     if(!targetEl || !fullName) return;
     const tooltip = ensureEnemyNameTooltip();
@@ -293,15 +280,16 @@ export function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     placeTooltip(tooltip, targetEl, 250);
 }
 
-// Stuff porté par l'ennemi (appui long sur son nom) : une ligne par emplacement, avec les effets de la pièce.
+// Appui long sur le nom de l'ennemi : force, faiblesse et stuff (une ligne par emplacement, avec les effets de la pièce).
 const STUFF_RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
-    const lines = [`<div class="enemy-tooltip-title">${escapeHtml(fullName)}</div>`];
+    // Appui long : force, faiblesse (toujours montrée) et stuff réunis.
+    const lines = [getEnemyNameTooltipHtml(escapeHtml(fullName), enemyEntity, { showAll: true })];
     const pieces = enemyStuffPieces(enemyEntity);
     if(!pieces.length) {
         lines.push('<div class="enemy-tooltip-row">Aucun stuff équipé.</div>');
     } else {
-        lines.push('<div class="enemy-tooltip-row"><strong>Stuff équipé</strong> (à récupérer en le battant)</div>');
+        lines.push('<div class="enemy-tooltip-row"><strong>Stuff équipé</strong></div>');
         pieces.forEach(s => lines.push(`<div class="enemy-tooltip-row">${STUFF_SLOT_LABELS[s.slot]} : <strong>${escapeHtml(s.name)}</strong> (${STUFF_RARITY_LABEL[s.rarity] || ''}, niv. ${s.minLevel})<br><small>${escapeHtml(describeStuff(s))}</small></div>`));
     }
     return lines.join('');
