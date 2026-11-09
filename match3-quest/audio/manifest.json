@@ -117,6 +117,10 @@
       "sections": 2
     },
     "combat-1": {
+      "seconds": 219.8,
+      "sections": 1
+    },
+    "boss-combat-1": {
       "seconds": 158.2,
       "sections": 2
     },

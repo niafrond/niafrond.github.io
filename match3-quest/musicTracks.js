@@ -14,6 +14,8 @@ export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano'
 export const EVENT_TRACKS = { wandering_souls: 'event-wandering-souls', winter_lantern_mountain: 'event-winter-lantern' };
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;
+/** Ancien « Combat 2 » (combat-1), thème de boss commun aux boss sans thème propre. */
+export const BOSS_TRACK = 'boss-combat-1';
 export const MUSIC_DIR = 'audio/music/';
 
 /** Hash FNV-1a 32 bits d'une chaîne. */
@@ -50,7 +52,7 @@ export function trackCandidates(sceneId, { biome, boss, variant } = {}) {
     if (sceneId === 'combat') return [...(biome === 'tides' ? ['combat-tides'] : []), `combat-${combatStyleIndex(variant ?? 0)}`];   // Hautes-Eaux : « Tourbillon des Eaux »
     if (sceneId === 'boss') {
         const name = boss ?? variant;
-        return name ? [`boss-${bossSlug(name)}`, `boss-a${bossArchetypeIndex(name)}`] : ['boss-a0'];
+        return name ? [`boss-${bossSlug(name)}`, BOSS_TRACK, `boss-a${bossArchetypeIndex(name)}`] : [BOSS_TRACK, 'boss-a0'];
     }
     if (sceneId === 'victory' || sceneId === 'defeat') return [sceneId];
     return [sceneId];
