@@ -57,7 +57,8 @@ function destroyIndices(spell, indices, title, label) {
     const special = manaCollected.special;
     renderBoard();
     const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
-    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât', target: `${label} • ${hits} case(s) de la couleur du sort • +${manaCollected.total} qì${extras}` }, true);
+    // Sans dégâts, l'animation annonce ce que le sort a changé (qì récupéré) au lieu de « Aucun dégât ».
+    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : null, heal: dmg > 0 ? null : `+${manaCollected.total} qì récupéré`, target: `${label} • ${hits} case(s) de la couleur du sort${dmg > 0 ? ` • +${manaCollected.total} qì` : ''}${extras}` }, true);
     log(`${spell.name} : ${label}, ${hits} case(s) de la couleur du sort, ${dmg} dégâts, +${manaCollected.total} qì récupéré.`);
     return { count: unique.length, hits, dmg, mana: manaCollected.total };
 }
@@ -248,7 +249,7 @@ export async function applySummonTempest(spell) {
     const special = manaCollected.special;
 
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : 'Aucun dégât') : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} qì récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: spell.dmgPerTile ? (dmg > 0 ? `-${dmg} dégâts` : `+${manaCollected.total} qì récupéré`) : `${pickedCols.length} colonnes détruites`, target: `${pickedCols.length} colonnes détruites • +${manaCollected.total} qì récupéré${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}` }, true);
     log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s)${spell.dmgPerTile ? `, ${hits} case(s) de la couleur du sort, ${dmg} dégâts` : ''} et ${escapeHtml(caster.name)} récupère ${manaCollected.total} qì.`);
     return true;
 }
