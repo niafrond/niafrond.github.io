@@ -1,3 +1,9 @@
+## [2.212.1](https://github.com/niafrond/niafrond.github.io/compare/v2.212.0...v2.212.1) (2026-11-09)
+
+### Bug Fixes
+
+* **match3-quest:** annoncer l'effet des sorts sans dégâts dans l'animation ([cefb1b6](https://github.com/niafrond/niafrond.github.io/commit/cefb1b6c0298467b28a835b7166942256c69829e))
+
 ## [2.212.0](https://github.com/niafrond/niafrond.github.io/compare/v2.211.0...v2.212.0) (2026-11-09)
 
 ### Features
