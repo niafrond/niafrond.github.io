@@ -49,7 +49,7 @@ test.describe('match3-quest · hors ligne (service worker)', () => {
 
         await context.setOffline(true);
         const fetched = await page.evaluate(async () => {
-            const urls = ['audio/music/title.mp3', 'audio/music/boss-a0.mp3', 'sprites/ultimates/ultimateFiveElements-1.png', 'sprites/spellfx/index.json', 'sprites/prologue/index.json'];
+            const urls = ['audio/music/title-b.mp3', 'audio/music/boss-a0-b.mp3', 'sprites/ultimates/ultimateFiveElements-1.png', 'sprites/spellfx/index.json', 'sprites/prologue/index.json'];
             const out = {};
             for (const url of urls) {
                 try { const res = await fetch(url); out[url] = [res.status, (await res.arrayBuffer()).byteLength > 0]; } catch (e) { out[url] = ['erreur', false]; }

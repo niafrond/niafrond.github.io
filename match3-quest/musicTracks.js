@@ -61,7 +61,7 @@ export const trackUrl = (key) => `${MUSIC_DIR}${key}.mp3`;
 /** Suffixe de la variante traditionnelle d'une piste (`<clé>-b.mp3`). */
 export const VARIANT_SUFFIX = '-b';
 
-/** Seule piste de combat ordinaire jouée en jeu (la « musique 1 », version du jeu et non traditionnelle). */
+/** Seule piste de combat ordinaire jouée en jeu (la « musique 1 »). */
 export const COMBAT_TRACK = 'combat-0';
 
 /**

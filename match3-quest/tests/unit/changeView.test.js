@@ -112,8 +112,11 @@ describe('tutoriel du puzzle de soin', () => {
         click(document.body.querySelectorAll('.change-tile')[hints[0]]);
         click(document.body.querySelectorAll('.change-tile')[hints[1]]);
         await waitFor(() => q('.change-tuto b')?.textContent.includes('Soigner'), 'étape 2');
-        click(q('[data-act="tuto-next"]'));
-        await waitFor(() => q('.change-tuto b')?.textContent.includes('Coups'), 'étape 3');
+        // « Suivant » est ignoré tant que l'animation du coup tourne : on recommence jusqu'à ce qu'il soit pris en compte (une seule fois à l'étape 2)
+        await waitFor(() => {
+            if (q('.change-tuto b')?.textContent.includes('Soigner')) click(q('[data-act="tuto-next"]'));
+            return q('.change-tuto b')?.textContent.includes('Coups');
+        }, 'étape 3');
         expect(data.tuto).toBe(false);
         click(q('[data-act="tuto-next"]'));
         expect(q('.change-tuto')).toBeNull();
