@@ -1,3 +1,9 @@
+## [2.219.1](https://github.com/niafrond/niafrond.github.io/compare/v2.219.0...v2.219.1) (2026-11-09)
+
+### Bug Fixes
+
+* **match3-quest:** retirer le silence au début de la musique de combat ordinaire ([b09a0ba](https://github.com/niafrond/niafrond.github.io/commit/b09a0baa57d188a723da28bbff8a507d5c38bfac))
+
 ## [2.219.0](https://github.com/niafrond/niafrond.github.io/compare/v2.218.0...v2.219.0) (2026-11-09)
 
 ### Features
