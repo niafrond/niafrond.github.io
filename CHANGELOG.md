@@ -1,3 +1,9 @@
+## [2.215.0](https://github.com/niafrond/niafrond.github.io/compare/v2.214.0...v2.215.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** remplacer combat-1 et réserver l'ancien thème aux boss ([#685](https://github.com/niafrond/niafrond.github.io/issues/685)) ([2798ba6](https://github.com/niafrond/niafrond.github.io/commit/2798ba677db45a87c819daf3a5f15b73309b557d))
+
 ## [2.214.0](https://github.com/niafrond/niafrond.github.io/compare/v2.213.1...v2.214.0) (2026-11-09)
 
 ### Features
