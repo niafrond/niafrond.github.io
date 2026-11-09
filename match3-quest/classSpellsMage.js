@@ -48,9 +48,16 @@ export function applyWildMana(spell) {
 }
 
 export function applyShadowCurse(spell) {
-    enemy.statusEffects.itemBlocked = spell.duration || 3;
-    showCombatAnimation({ icon: 'moon', title: "TALISMAN DE SCELLEMENT", damage: 'Objets bloqués', target: `→ ${enemy.name} (${enemy.statusEffects.itemBlocked} tours)` }, true);
-    log(`Talisman de Scellement bloque les objets ennemis pendant ${enemy.statusEffects.itemBlocked} tours.`);
+    const turns = spell.duration || 3;
+    const malus = Math.max(0, Math.floor(spell.weakenAmount ?? 4));
+    enemy.statusEffects.sealed = Math.max(enemy.statusEffects.sealed || 0, turns);
+    // Malus d'attaque pendant le scellement (même mécanique que l'affaiblissement : attaque et chance de critique réduites).
+    if(malus > 0){
+        enemy.statusEffects.weakened = Math.max(enemy.statusEffects.weakened || 0, turns);
+        enemy.statusEffects.weakenedAmount = Math.max(enemy.statusEffects.weakenedAmount || 0, malus);
+    }
+    showCombatAnimation({ icon: 'moon', title: "TALISMAN DE SCELLEMENT", damage: `Armes et objets scellés${malus ? ` • -${malus} attaque` : ''}`, target: `→ ${enemy.name} (${turns} tours)` }, true);
+    log(`Talisman de Scellement empêche ${enemy.name} d'utiliser armes et objets pendant ${turns} tours${malus ? ` et lui retire ${malus} d'attaque` : ''}.`);
     return true;
 }
 

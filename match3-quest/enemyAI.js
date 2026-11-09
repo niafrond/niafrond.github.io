@@ -210,7 +210,7 @@ export function evaluateSpells() {
 // ========================================
 
 export function evaluateWeapon() {
-    if (!enemy.weapon || enemy.combatPoints < enemy.weapon.actionPoints) {
+    if (!enemy.weapon || (enemy.statusEffects?.sealed || 0) > 0 || enemy.combatPoints < enemy.weapon.actionPoints) {   // scellé (Talisman de Scellement) : pas d'arme
         return null;
     }
 

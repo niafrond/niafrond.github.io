@@ -109,7 +109,8 @@ function appendWeaponButton(container, weapon, hand){
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
-    const icon = getWeaponIcon(weapon.type);
+    const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, arme inutilisable
+    const icon = sealed ? svgIcon('lock') : getWeaponIcon(weapon.type);
     btn.innerHTML = `
         <div class="spell-name">${icon} ${weapon.name}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
@@ -117,7 +118,7 @@ function appendWeaponButton(container, weapon, hand){
     const showDetails = () => showWeaponTooltip(btn, weapon);
     const hideDetails = () => hideSpellTooltip();
     bindTooltip(btn, showDetails, hideDetails);
-    if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
+    if(sealed || player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
         btn.tabIndex = -1;
         btn.onclick = null;
@@ -453,13 +454,14 @@ export function updateItemButton(){
     const pa = item.actionPoints || 2;
     const exhausted = item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
     const healUseless = isUselessHeal(item);
-    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted && !healUseless;
+    const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
+    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
 
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     btn.innerHTML = `
-        <div class="spell-name">${svgIcon('bag')} ${item.name}</div>
+        <div class="spell-name">${svgIcon(sealed ? 'lock' : 'bag')} ${item.name}</div>
         <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` • ${describeRecharge(item)}` : ''}` : ''}</div>
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
@@ -512,6 +514,7 @@ export function useInventoryItem(itemId, index){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
+    if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return; }
 
     normalizeActiveInventoryIndex();
     const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;

@@ -399,11 +399,18 @@ export function finishEnemyTurn(){
             }
         }
         tickStatBuffs(enemy).forEach(stat => log(`Le bonus ${stat === 'attack' ? 'd\'attaque' : 'de défense'} de ${enemy.name} se dissipe.`));
-        if((enemy.statusEffects?.itemBlocked || 0) > 0) {
-            enemy.statusEffects.itemBlocked--;
-            if(enemy.statusEffects.itemBlocked <= 0) {
-                delete enemy.statusEffects.itemBlocked;
-                log(`Le blocage d'objets de ${enemy.name} se dissipe.`);
+        if((enemy.statusEffects?.sealed || 0) > 0) {
+            enemy.statusEffects.sealed--;
+            if(enemy.statusEffects.sealed <= 0) {
+                delete enemy.statusEffects.sealed;
+                log(`Le scellement de ${enemy.name} se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.sealed || 0) > 0) {
+            player.statusEffects.sealed--;
+            if(player.statusEffects.sealed <= 0) {
+                delete player.statusEffects.sealed;
+                log('Le scellement qui vous frappait se dissipe.');
             }
         }
 

@@ -33,7 +33,7 @@ export function activeStatuses(entity) {
     if (n(se.stunned) > 0) add('stunned', 'dizzy', 'Étourdi', 'debuff', 'Passe son prochain tour.', n(se.stunned));
     if (n(se.weakened) > 0) add('weakened', 'snow', 'Affaibli', 'debuff', `-${n(se.weakenedAmount)} attaque (chance de critique réduite).`, n(se.weakened));
     if (n(se.confused) > 0) add('confused', 'brain', 'Confus', 'debuff', 'Ses actions peuvent échouer ou viser au hasard.', n(se.confused));
-    if (n(se.itemBlocked) > 0) add('itemBlocked', 'lock', 'Objets scellés', 'debuff', 'Ne peut pas utiliser d\'objets.', n(se.itemBlocked));
+    if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
     return out;
 }
 

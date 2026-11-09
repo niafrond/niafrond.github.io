@@ -1418,6 +1418,7 @@ export function useWeapon(hand = 'right'){
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
+    if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
     if(player.combatPoints < weapon.actionPoints){ 
         log(`Il faut ${weapon.actionPoints} points d'action pour utiliser ${weapon.name}.`); 
         return; 

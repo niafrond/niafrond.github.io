@@ -940,7 +940,8 @@
       "minLevel": 4,
       "effect": "preventItems",
       "duration": 3,
-      "description": "Empêche l'ennemi d'utiliser des objets pendant 3 tours"
+      "weakenAmount": 4,
+      "description": "Scelle l'ennemi pendant 3 tours : il ne peut plus utiliser d'arme ni d'objet et perd 4 d'attaque"
     },
     {
       "id": "darkChannels",
