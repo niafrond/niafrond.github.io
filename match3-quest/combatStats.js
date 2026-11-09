@@ -17,6 +17,7 @@ export const TOTAL_BLOCK_SHARE = 0.4;
 export const HEAVY_HIT_HP_SHARE = 0.3;
 export const HEAVY_HIT_MIN = 12;
 export const HEAVY_BLOCK_FACTOR = 0.75;
+export const UNBLOCKABLE_DAMAGE = 500;   // à partir de 500 dégâts (critique inclus), le coup est INBLOCABLE : aucun jet de blocage
 export function isHeavyHit(damage, target) {
     const maxHp = Math.max(0, Math.floor(target?.maxHp || 0));
     return maxHp > 0 && damage >= Math.max(HEAVY_HIT_MIN, Math.ceil(maxHp * HEAVY_HIT_HP_SHARE));
@@ -209,16 +210,16 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
     if (crit) damage = applyCrit(damage);
     const bonus = crit ? applyCrit(enrageBonus) : enrageBonus;
     const forced = !!target?.tutorialBlock;   // blocage imposé du tutoriel : jamais requalifié
-    let block = rollBlock(target, rng);
+    const unblockable = damage >= UNBLOCKABLE_DAMAGE && !forced;
+    let block = unblockable ? 'none' : rollBlock(target, rng);
     const intended = damage + bonus;   // dégâts prévus (critique inclus) avant blocage : 1re annonce de l'animation
     const heavy = !forced && block !== 'none' && isHeavyHit(damage, target);
     if (heavy) block = 'partial';   // un coup très puissant ne se bloque pas entièrement
     damage = applyBlock(damage, block, heavy) + bonus;
-    return { damage, crit, block, intended, heavy };
+    return { damage, crit, block, intended, heavy, unblockable };
 }
 
 // Libellé d'un blocage pour le journal / l'animation.
-export function blockLabel(block, heavy = false) {
-    if (heavy && block === 'partial') return 'paré de justesse';
+export function blockLabel(block) {
     return block === 'total' ? 'BLOQUÉ !' : block === 'partial' ? 'paré' : '';
 }

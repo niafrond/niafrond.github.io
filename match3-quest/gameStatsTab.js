@@ -232,12 +232,12 @@ export function showCombatAnimation({ icon, title, damage = null, heal = null, s
 // `strike` vient de resolveStrike ({ damage, crit, block, intended }) ; `params` = paramètres de showCombatAnimation sans `damage`.
 // Durée d'affichage d'une annonce de coup : plus longue pour un critique et surtout pour un coup très puissant (≥ 30 % des PV max de la cible).
 export function strikeHoldMs(strike, isPlayerAttack, damage, base = 1100) {
-    const heavy = strike.heavy || isHeavyHit(damage, isPlayerAttack ? enemy : player);
+    const heavy = strike.heavy || strike.unblockable || isHeavyHit(damage, isPlayerAttack ? enemy : player);
     return (heavy ? base * 2.2 : strike.crit ? base * 1.45 : base) * animationFactor();
 }
 
 export function showStrikeAnimation(params, strike, isPlayerAttack = true, finalDamage = strike.damage, options = {}) {
-    const crit = strike.crit ? ' CRITIQUE !' : '';
+    const crit = (strike.crit ? ' CRITIQUE !' : '') + (strike.unblockable ? ' INBLOCABLE !' : '');
     const real = Math.floor(finalDamage);
     const intended = Math.max(Math.floor(strike.intended ?? real), real);
     if(!strike.block || strike.block === 'none') {
