@@ -113,7 +113,7 @@
       "sections": 1
     },
     "combat-0": {
-      "seconds": 166.9,
+      "seconds": 153.5,
       "sections": 2
     },
     "combat-1": {
@@ -358,10 +358,6 @@
     },
     "boss-gardien-du-jugement": {
       "seconds": 155.7,
-      "sections": 1
-    },
-    "combat-0-b": {
-      "seconds": 167.2,
       "sections": 1
     },
     "moon-b": {

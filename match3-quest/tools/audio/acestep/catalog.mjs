@@ -294,8 +294,6 @@ export const MOTIF_NAMES = ['houyi', 'fengmeng', 'suns'];
 // préfixe GBA/chiptune (`raw`) et se jouent à la place de la piste de même scène : `<clé>-b.mp3` (voir musicTracks.js `playlist`).
 // Le texte seul ne garantit pas la fidélité mélodique : pour une reprise note pour note, fournir une partition ou un MIDI vérifié.
 const TRAD = 'authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music';
-T('combat-0-b', `traditional Chinese classical instrumental inspired by the ancient piece "Ambush on Ten Sides" (Shi Mian Mai Fu), virtuosic solo Chinese pipa in the foreground with rapid repeated-note figures, tremolo, ascending and descending runs and dramatic sequences, A pentatonic Yu mode, free-rhythm tense introduction then fast strongly articulated binary martial sections with traditional Chinese war drums and restrained gongs, accelerations, building to a powerful virtuosic climax and a decisive ending, epic martial tense imperial China, ${TRAD}`,
-    { bpm: 128, keyScale: 'A minor', dur: 180, raw: true });
 T('moon-b', `traditional Chinese classical instrumental inspired by Hua Yanjun "Erquan Yingyue" (Reflection of the Moon on the Second Spring), expressive solo erhu dominant with sustained notes, expressive vibrato, delicate portamento and slides, lyrical descending phrases, very subtle guzheng and occasional xiao, D minor pentatonic Yu mode, slow flexible rubato without percussion, restrained intimate introduction, ornamented variations, deeply expressive climax, quiet contemplative ending, profound melancholy and nostalgia, solitary moonlit lake in ancient China, intimate acoustic recording, ${TRAD}`,
     { bpm: 62, keyScale: 'D minor', dur: 180, raw: true });
 T('wild-bamboo-b', `ancient Chinese guqin instrumental inspired by "Yangguan Sandie" (Three Variations on Yang Pass), solo guqin dominant with sliding notes, harmonics and natural string resonance, delicate dizi and occasional xiao, D pentatonic Shang mode, free rhythm with rubato and spacious pauses, one theme stated three times with growing ornamentation, peaceful ending, literati farewell, nostalgia, distant mountains and misty landscapes, intimate acoustic, ${TRAD}`,
@@ -355,7 +353,7 @@ const TRAD_PIECES = {
     ]
 };
 const TRAD_SCOPE = /^(village|wild|combat|boss|puzzle)-|^defeat$/;
-Object.keys(TRACKS).filter(k => TRAD_SCOPE.test(k) && !k.endsWith('-b') && !TRACKS[`${k}-b`] && !/^boss-gardien-du-jugement$/.test(k)).forEach((k, n) => {
+Object.keys(TRACKS).filter(k => TRAD_SCOPE.test(k) && !k.endsWith('-b') && !TRACKS[`${k}-b`] && !/^(boss-gardien-du-jugement|combat-0)$/.test(k)).forEach((k, n) => {
     const t = TRACKS[k], cat = /^(village|wild|combat|boss)-/.exec(k)?.[1];
     const pool = TRAD_PIECES[cat];
     const place = t.style.split(',').slice(0, 3).join(',').replace(/\$\{[^}]*\}/g, '');
