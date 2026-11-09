@@ -123,33 +123,39 @@ export function convertRandomColorToArrows(rng = Math.random){
     return color;
 }
 
-// Effet d'une case de biome traversée par un match du joueur (terrain.js).
-function applyPlayerMatchExtras(indices, info){
+// Effet d'une case de biome traversée par un match (terrain.js) : le héros ou l'ennemi en profite de la même façon (qì, points de combat,
+// dégâts des crânes) et la lave blesse l'adversaire de celui qui joue. Un héros protégé par son collier ne subit pas la lave de l'ennemi.
+function applyMatchExtras(indices, info, side = 'player'){
     if(biomeRule){
         const rule = biomeRule;
+        const isPlayer = side === 'player';
+        const who = isPlayer ? player : enemy;
+        const opponent = isPlayer ? enemy : player;
         const res = resolveBiomeMatch(biomeState, biomeRule, indices);
-        res.cleared.forEach(i => floatCellText(i, cellBanner(rule, rule.matchEffect)));
-        if(res.damage > 0){
-            applyDamage(enemy, res.damage);
-            log(`${rule.label} : -${res.damage} PV pour l'ennemi.`);
+        const matchEffect = !isPlayer && res.damage > 0 && !biomeProtected ? `-${res.damage} PV pour le héros` : (!isPlayer && res.damage > 0 ? 'protégé par votre collier' : rule.matchEffect);
+        res.cleared.forEach(i => floatCellText(i, cellBanner(rule, matchEffect)));
+        if(res.damage > 0 && !(opponent === player && biomeProtected)){
+            applyDamage(opponent, res.damage);
+            log(`${rule.label} : -${res.damage} PV pour ${isPlayer ? "l'ennemi" : 'le héros'}.`);
         }
+        const whoLabel = isPlayer ? '' : " (ennemi)";
         if(info.type === 'color' && info.color){
-            if(res.manaDelta > 0) addManaForColor(player, info.color, res.manaDelta);
-            if(res.manaDelta < 0) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
+            if(res.manaDelta > 0) addManaForColor(who, info.color, res.manaDelta);
+            if(res.manaDelta < 0) who.mana[info.color] = Math.max(0, (who.mana[info.color] || 0) + res.manaDelta);
             if(res.manaMultiplier > 1){
-                addManaForColor(player, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
-                log(`${biomeRule.label} : tuile dorée, qì ×${res.manaMultiplier} !`);
+                addManaForColor(who, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
+                log(`${biomeRule.label} : tuile dorée, qì ×${res.manaMultiplier} !${whoLabel}`);
             }
-            if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} qì.`);
+            if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} qì${whoLabel}.`);
         } else if(info.type === 'combat' || info.type === 'skull'){
             // Crânes et flèches : le bonus de la case s'applique à leur gain (dégâts ou points de combat) au lieu du qì.
             const isSkull = info.type === 'skull';
-            const base = getEffectiveMatchLength(info) * (isSkull ? skullDamage + skullStrengthBonus(player) : 1);
+            const base = getEffectiveMatchLength(info) * (isSkull ? skullDamage + skullStrengthBonus(who) : 1);
             const bonus = Math.round(res.manaDelta + base * (res.manaMultiplier - 1));
             if(bonus){
-                if(isSkull){ if(bonus > 0) applyDamage(enemy, bonus); }
-                else player.combatPoints = Math.max(0, player.combatPoints + bonus);
-                if(bonus > 0 || !isSkull) log(`${biomeRule.label} : ${bonus > 0 ? '+' : ''}${bonus} ${isSkull ? 'dégâts' : 'points de combat'}${res.manaMultiplier > 1 ? ` (×${res.manaMultiplier})` : ''}.`);
+                if(isSkull){ if(bonus > 0) applyDamage(opponent, bonus); }
+                else who.combatPoints = Math.max(0, who.combatPoints + bonus);
+                if(bonus > 0 || !isSkull) log(`${biomeRule.label} : ${bonus > 0 ? '+' : ''}${bonus} ${isSkull ? 'dégâts' : 'points de combat'}${res.manaMultiplier > 1 ? ` (×${res.manaMultiplier})` : ''}${whoLabel}.`);
             }
         }
     }
@@ -848,7 +854,7 @@ export function checkMatches(forceFullBoard = false){
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         }
 
-        if(currentTurn === 'player') applyPlayerMatchExtras(indices, info);
+        applyMatchExtras(indices, info, currentTurn === 'player' ? 'player' : 'enemy');
 
         // Sons : crânes = coup porté ; couleur = qì récolté (scintillement magique) ; épées = son de match classique.
         const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
