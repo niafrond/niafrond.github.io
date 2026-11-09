@@ -1,3 +1,9 @@
+## [2.219.4](https://github.com/niafrond/niafrond.github.io/compare/v2.219.3...v2.219.4) (2026-11-09)
+
+### Bug Fixes
+
+* **match3-quest:** infobulles hors tour et accents du pinyin ([#693](https://github.com/niafrond/niafrond.github.io/issues/693)) ([317f133](https://github.com/niafrond/niafrond.github.io/commit/317f133bd4c2ea5ea8894f4e5d101862ddc59b1f))
+
 ## [2.219.3](https://github.com/niafrond/niafrond.github.io/compare/v2.219.2...v2.219.3) (2026-11-09)
 
 ### Bug Fixes
