@@ -3,6 +3,8 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { BIOME_LABELS } from "./weapons.js";
 import { STUFF_SLOT_LABELS, getStuffById, normalizeStuff } from "./stuff.js";
+import { enemyStuffPieces } from "./enemyStuff.js";
+import { describeStuff } from "./stuff.js";
 import { elementName } from "./elements.js";
 import { isWeaknessShown } from "./combatFlow.js";
 import { describeRecharge } from "./items.js";
@@ -289,6 +291,52 @@ export function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     tooltip.classList.add('visible');
 
     placeTooltip(tooltip, targetEl, 250);
+}
+
+// Stuff porté par l'ennemi (appui long sur son nom) : une ligne par emplacement, avec les effets de la pièce.
+const STUFF_RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
+export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
+    const lines = [`<div class="enemy-tooltip-title">${escapeHtml(fullName)}</div>`];
+    const pieces = enemyStuffPieces(enemyEntity);
+    if(!pieces.length) {
+        lines.push('<div class="enemy-tooltip-row">Aucun stuff équipé.</div>');
+    } else {
+        lines.push('<div class="enemy-tooltip-row"><strong>Stuff équipé</strong> (à récupérer en le battant)</div>');
+        pieces.forEach(s => lines.push(`<div class="enemy-tooltip-row">${STUFF_SLOT_LABELS[s.slot]} : <strong>${escapeHtml(s.name)}</strong> (${STUFF_RARITY_LABEL[s.rarity] || ''}, niv. ${s.minLevel})<br><small>${escapeHtml(describeStuff(s))}</small></div>`));
+    }
+    return lines.join('');
+}
+
+export function showEnemyStuffTooltip(targetEl, fullName, enemyEntity = enemy) {
+    if(!targetEl) return;
+    const tooltip = ensureEnemyNameTooltip();
+    tooltip.innerHTML = getEnemyStuffTooltipHtml(fullName || enemyEntity.name, enemyEntity);
+    tooltip.classList.add('visible');
+    placeTooltip(tooltip, targetEl, 280);
+}
+
+// Appui long (souris ou doigt) sur le nom de l'ennemi : affiche son stuff, qui reste quelques secondes après le relâchement.
+export const ENEMY_STUFF_LONG_PRESS_MS = 500;
+export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
+    if(!nameEl) return;
+    let timer = null;
+    let shown = false;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    nameEl.addEventListener('pointerdown', () => {
+        cancel();
+        shown = false;
+        delete nameEl.dataset.stuffShown;
+        timer = setTimeout(() => {
+            timer = null; shown = true;
+            nameEl.dataset.stuffShown = '1';
+            showEnemyStuffTooltip(nameEl, fullName, enemyEntity);
+            clearTimeout(enemyTapTimer);
+            enemyTapTimer = setTimeout(() => { delete nameEl.dataset.stuffShown; hideEnemyNameTooltip(); }, ENEMY_TAP_TOOLTIP_MS + 1500);
+        }, ENEMY_STUFF_LONG_PRESS_MS);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => nameEl.addEventListener(t, cancel));
+    // Le clic qui suit un appui long ne doit ni basculer le nom (kanji) ni remplacer l'infobulle.
+    nameEl.addEventListener('click', e => { if(!shown) return; shown = false; e.stopImmediatePropagation(); e.preventDefault(); }, true);
 }
 
 export function hideEnemyNameTooltip() {

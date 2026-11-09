@@ -1,5 +1,7 @@
 // Système d'ennemis piloté par un catalogue JSON
 
+import { growEnemy } from './enemyGrowth.js';
+import { rollEnemyStuff, enemyStuffMaxHp } from './enemyStuff.js';
 import { allWeapons } from "./weapons.js";
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
@@ -213,13 +215,14 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const baseHp = 55 + enemyLevel * 12;
     const baseDef = enemyDefenseForLevel(enemyLevel);
 
-    const hp = Math.floor(baseHp * (stats.hpMult || 1));
-    // Force et agilité proportionnelles au niveau (l'agilité n'est que très rarement nulle).
-    const strength = Math.max(0, Math.round(enemyLevel * (0.3 + Math.random() * 0.5) * (stats.atkMult || 1)));
-    const agility = Math.random() < 0.04 ? 0 : Math.max(1, Math.round(enemyLevel * (0.25 + Math.random() * 0.4) * (stats.defMult || 1)));
+    // Comme si le monstre avait fait (niveau − 1) montées de niveau (+ quelques-unes de plus) avec les choix d'attributs de sa nature (enemyGrowth.js).
+    const preferredColor = resolvePreferredColor(template);
+    const growth = growEnemy(enemyLevel, { playerClass: template.playerClass, preferredColor, boss });
+    const attributes = growth.attributes;
+    const hp = Math.floor(baseHp * (stats.hpMult || 1)) + growth.hpBonus;
     // Attaque = chance de critique, défense = chance de blocage (en %, plafonnées à 98 % à l'usage : voir combatStats.js).
-    const atk = Math.max(0, Math.round((5 + enemyLevel * 1.0) * (stats.atkMult || 1)));
-    const def = Math.max(0, Math.floor(baseDef * 0.3 * (stats.defMult || 1))) + agility;
+    const atk = Math.max(0, Math.round((5 + enemyLevel * 0.5) * (stats.atkMult || 1)) + growth.attack);
+    const def = Math.max(0, Math.floor(baseDef * 0.4 * (stats.defMult || 1)) + growth.defense);
     // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
     const power = Math.min(Math.floor((6 + enemyLevel * 5) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
 
@@ -251,7 +254,10 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         } catch(e) {}
     }
 
-    const preferredColor = resolvePreferredColor(template);
+    // Stuff porté (casque, collier, bracelet, bague) : cohérent avec le niveau et la puissance ; ses PV max s'ajoutent à ceux de l'ennemi.
+    const enemyStuff = rollEnemyStuff(enemyLevel, { statsModifiers: template.statsModifiers, boss });
+    const stuffHp = enemyStuffMaxHp({ stuff: enemyStuff });
+
     const weakColor = resolveWeakColor(preferredColor);
 
     return {
@@ -260,13 +266,15 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         class: template.title,
         playerClass: template.playerClass,
         name: `${template.name} ${template.title}`,
-        hp: hp,
-        maxHp: hp,
+        hp: hp + stuffHp,
+        maxHp: hp + stuffHp,
+        stuff: enemyStuff,
         attack: atk,
         defense: def,
         power,
         weaponPower,
-        attributes: { strength, agility, intelligence: 0, stamina: 0, morale: 0 },
+        attributes,
+        levelUps: growth.levelUps,
         resistances: buildResistances(template, enemyLevel),
         combatPoints: 0,
         mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },

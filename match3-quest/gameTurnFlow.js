@@ -4,7 +4,8 @@ import { boardSize } from './constants.js';
 import { tutorialCallbacks } from './tutorial.js';
 import { getAvailableWeapons } from './weapons.js';
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches } from './board.js';
-import { stuffTotals, inflictPoison, isVenomous, rollStuffDrop, VICTORY_STUFF_DROP, OVERLEVELED_STUFF_DROP, POISON_CHANCE } from './stuff.js';
+import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE } from './stuff.js';
+import { rollEnemyStuffDrops } from './enemyStuff.js';
 import { recordVictory } from './bossTips.js';
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from './duel.js';
 import { arenaRewardBonus, arenaTier } from './arena.js';
@@ -240,10 +241,11 @@ export function enemyTurn(){
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
 
     if((enemy.statusEffects?.poisoned || 0) > 0) {
-        const poisonDmg = Math.max(1, Math.floor(enemy.statusEffects.poisonDamage || 1));
-        applyDamage(enemy, poisonDmg);
+        // le stuff de l'ennemi peut le protéger du poison (comme celui du héros)
+        const poisonDmg = Math.max(0, Math.round(Math.max(1, Math.floor(enemy.statusEffects.poisonDamage || 1)) * (1 - stuffTotals(enemy).poisonResist / 100)));
+        if(poisonDmg > 0) applyDamage(enemy, poisonDmg);
         enemy.statusEffects.poisoned--;
-        log(`Poison: ${enemy.name} subit ${poisonDmg} dégâts.`);
+        log(poisonDmg > 0 ? `Poison: ${enemy.name} subit ${poisonDmg} dégâts.` : `Poison: ${enemy.name} y résiste grâce à son stuff.`);
         if(enemy.statusEffects.poisoned <= 0) {
             delete enemy.statusEffects.poisoned;
             delete enemy.statusEffects.poisonDamage;
@@ -651,12 +653,11 @@ export function handleEnemyDefeated(){
         }
     });
 
-    // Stuff : garanti (rare) contre un ennemi plus fort, sinon une petite chance.
-    const stuffDrop = rollStuffDrop(player, levelGap > 0 ? OVERLEVELED_STUFF_DROP : VICTORY_STUFF_DROP);
-    if(stuffDrop){
-        const label = grantStuffPiece(stuffDrop.id, `${enemy.name} laisse`);
+    // Stuff : on peut récupérer ce que l'ennemi portait (enemyStuff.js) ; la meilleure pièce est garantie contre un ennemi plus fort.
+    rollEnemyStuffDrops(enemy, player, { gap: levelGap }).forEach(piece => {
+        const label = grantStuffPiece(piece.id, `${enemy.name} portait`);
         if(label) combatRewards.items.push(label);
-    }
+    });
 
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.leveledUp) {

@@ -49,6 +49,8 @@
   "enemyAI.js",
   "enemyAIChoice.js",
   "enemyAIProfiles.js",
+  "enemyGrowth.js",
+  "enemyStuff.js",
   "equipPreview.js",
   "equipment.js",
   "escapeHtml.js",

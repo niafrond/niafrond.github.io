@@ -1841,7 +1841,7 @@ export function decideFirstTurn(){
         log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
     } else {
         const playerAgility = agilityScore(player);
-        const enemyAgility = enemy.attributes?.agility || 0;
+        const enemyAgility = agilityScore(enemy);
         if(playerAgility > enemyAgility){
             starter = 'player';
             log(`Vous êtes plus agile ! Vous commencez en premier.`);
