@@ -1,3 +1,9 @@
+## [2.218.0](https://github.com/niafrond/niafrond.github.io/compare/v2.217.0...v2.218.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** barre de vie, musique de combat, sorts multi-qì et animation des objets ([#688](https://github.com/niafrond/niafrond.github.io/issues/688)) ([3ad16b4](https://github.com/niafrond/niafrond.github.io/commit/3ad16b49ee611ff9bf2d84f5ec196cae2df22628))
+
 ## [2.217.0](https://github.com/niafrond/niafrond.github.io/compare/v2.216.0...v2.217.0) (2026-11-09)
 
 ### Features
