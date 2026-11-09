@@ -19,6 +19,8 @@ export function activeStatuses(entity) {
     if (n(se.counterOnBlock) > 0) add('counter', 'sword', 'Riposte du Garde', 'buff', `Contre-attaque (${n(se.counterOnBlockDmg)} dégâts) quand un coup est bloqué.`, n(se.counterOnBlock));
     if (n(se.manaShield?.turns) > 0) add('manaShield', 'mana', 'Bouclier de qì', 'buff', `Les dégâts subis sont absorbés par le qì ${se.manaShield.color}.`, n(se.manaShield.turns));
     if (n(se.immunityEffects) > 0) add('immunity', 'yinyang', 'Formation de la Tortue', 'buff', 'Immunisé aux effets négatifs (poison, étourdissement, affaiblissement…).', n(se.immunityEffects));
+    if (n(se.controlResist) > 0) add('controlResist', 'shield', 'Résistance aux contrôles', 'buff', 'Ne peut plus être étourdi ni endormi pendant ce temps.', n(se.controlResist));
+    if (n(se.shieldWall) > 0) add('shieldWall', 'shield', 'Bastion Infranchissable', 'buff', 'Bloque totalement toutes les attaques.', n(se.shieldWall));
     if (n(se.drainOnHit) > 0) add('drain', 'swirl', 'Flèches Sifflantes', 'buff', `Chaque coup draine ${n(se.drainOnHitAmount)} qì à l'adversaire.`, n(se.drainOnHit));
     if (n(se.flameblade) > 0) add('flameblade', 'fire', 'Lame de Feu Pourpre', 'buff', `Le prochain coup d'arme inflige +${n(se.flameblade)} dégâts.`);
     if (se.revenant) add('revenant', 'ghost', 'Revenant', 'buff', 'Revient à la vie une fois à 0 PV.');

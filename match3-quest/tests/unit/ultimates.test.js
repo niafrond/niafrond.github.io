@@ -169,13 +169,14 @@ describe('sorts de rage (gain, conversion en qì, conversion en dégâts)', () =
         expect(rageToDamageAmount(0, 3)).toBe(0);
     });
 
-    test('chaque classe a, pour chaque effet de rage, un sort tous les 10 niveaux de 20 à 70, de plus en plus fort', () => {
+    test('chaque classe a, pour chaque effet de rage, quelques sorts aux grands paliers, de plus en plus forts', () => {
+        const levels = { rageGain: [8, 40], rageToMana: [9, 40], rageToDamage: [12, 30, 60] };
         const field = { rageGain: 'rageGain', rageToMana: 'manaPerRage', rageToDamage: 'dmgPerRage' };
         const byClass = { barbarian: barbarianSpells, sorcerer: sorcererSpells, assassin: assassinSpells, templar: templarSpells };
         for(const [className, list] of Object.entries(byClass)) {
             for(const [effect, key] of Object.entries(field)) {
                 const tiers = list.filter(spell => spell.effect === effect).sort((a, b) => a.minLevel - b.minLevel);
-                for(const level of [20, 30, 40, 50, 60, 70]) expect(tiers.some(spell => spell.minLevel === level)).toBe(true);
+                expect(tiers.map(spell => spell.minLevel)).toEqual(levels[effect]);
                 tiers.forEach((spell, i) => { if(i > 0) expect(spell[key]).toBeGreaterThan(tiers[i - 1][key]); });
                 expect(tiers.length).toBeGreaterThan(0);
                 expect(getSpellsByClass(className, 70).filter(spell => spell.effect === effect)).toHaveLength(tiers.length);
@@ -183,3 +184,41 @@ describe('sorts de rage (gain, conversion en qì, conversion en dégâts)', () =
         }
     });
 });
+
+describe('équilibrage des ultimes', () => {
+    const byId = id => ultimateSpells.find(sp => sp.id === id);
+    test('les ultimes de classe se débloquent aux niveaux 30 puis 45', () => {
+        const classOnes = ultimateSpells.filter(sp => !isQuestUltimate(sp));
+        ['sorcerer', 'assassin', 'templar', 'barbarian'].forEach(cls => {
+            expect(classOnes.filter(sp => sp.class === cls).map(sp => sp.minLevel).sort((a, b) => a - b)).toEqual([30, 45]);
+        });
+    });
+    test('le premier ultime ne dépasse pas 1 100 dégâts, le second à effets reste plus modeste', () => {
+        ultimateSpells.forEach(sp => expect(sp.dmg).toBeLessThanOrEqual(1150));
+        expect(byId('ultimateHeavenlyThunder').dmg).toBe(700);
+        expect(byId('ultimateEternalBastion').dmg).toBe(700);
+        expect(byId('ultimateSunPiercer').dmg).toBe(1150);
+    });
+    test('les ultimes de légende gagnent en puissance avec leur niveau', () => {
+        const legends = ultimateSpells.filter(isQuestUltimate).sort((a, b) => a.minLevel - b.minLevel);
+        legends.forEach((sp, i) => { if (i > 0) expect(sp.dmg).toBeGreaterThanOrEqual(legends[i - 1].dmg); });
+    });
+});
+
+describe('rage différenciée par classe', () => {
+    const all = { sorcerer: sorcererSpells, assassin: assassinSpells, templar: templarSpells, barbarian: barbarianSpells };
+    const dmgSpells = cls => all[cls].filter(sp => sp.effect === 'rageToDamage');
+    test("l'archer tire en plusieurs coups, le templier gagne de la défense, les autres frappent d'un seul coup", () => {
+        dmgSpells('assassin').forEach(sp => expect(sp.shots).toBeGreaterThan(1));
+        dmgSpells('templar').forEach(sp => expect(sp.defPerRage).toBeGreaterThan(0));
+        [...dmgSpells('sorcerer'), ...dmgSpells('barbarian')].forEach(sp => { expect(sp.shots).toBeUndefined(); expect(sp.defPerRage).toBeUndefined(); });
+    });
+    test('le barbare frappe le plus fort, le sorcier convertit le plus de qì', () => {
+        const top = cls => Math.max(...dmgSpells(cls).map(sp => sp.dmgPerRage));
+        expect(top('barbarian')).toBeGreaterThan(top('sorcerer'));
+        expect(top('sorcerer')).toBeGreaterThan(top('templar'));
+        const mana = cls => Math.max(...all[cls].filter(sp => sp.effect === 'rageToMana').map(sp => sp.manaPerRage));
+        expect(mana('sorcerer')).toBeGreaterThan(mana('barbarian'));
+    });
+});
+

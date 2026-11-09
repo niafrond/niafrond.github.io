@@ -3,6 +3,7 @@ import { escapeHtml } from "./escapeHtml.js";
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { colors, boardSize } from './constants.js';
+import { inflictTurnLoss } from './alterations.js';
 import { JOKER_TILE, isTransformableToJoker } from './joker.js';
 
 import { collectDestroyedColorTilesMana, getCurrentCaster } from './classSpellEffects.js';
@@ -184,9 +185,9 @@ export function applyWeakness(spell) {
 
 export function applyHandOfIce(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
-    enemy.statusEffects.stunned = Math.max(enemy.statusEffects.stunned || 0, turns);
-    showCombatAnimation({ icon: 'snow', title: "PAUME DE GIVRE", damage: `Étourdi ${turns} tours`, target: `→ ${enemy.name}` }, true);
-    log(`Paume de Givre étourdit l'ennemi pendant ${turns} tours.`);
+    const stun = inflictTurnLoss(enemy, 'stunned', turns);
+    showCombatAnimation({ icon: 'snow', title: "PAUME DE GIVRE", damage: stun.landed ? `Étourdi ${stun.turns} tours` : 'Résisté', target: `→ ${enemy.name}` }, true);
+    log(stun.landed ? `Paume de Givre étourdit l'ennemi pendant ${stun.turns} tours.` : `${enemy.name} résiste à la Paume de Givre (contrôle déjà en cours ou résistance).`);
     return true;
 }
 
@@ -194,7 +195,7 @@ export function applyFingerOfDeath(spell) {
     const available = board.filter(tile => colors.includes(tile)).length;
     const maxTargets = Math.min(3, available);
     if(maxTargets <= 0) {
-        log(`Aucun gâteau de lune de couleur à transformer en soleil.`);
+        log(`Aucun gâteau de lune de couleur à transformer en crâne.`);
         return false;
     }
 
@@ -203,7 +204,7 @@ export function applyFingerOfDeath(spell) {
         highlightPredicate: (_index, tile) => colors.includes(tile),
         onTileClick: (index, tile) => {
             if(!colors.includes(tile)) {
-                log(`Choisissez une gemme de couleur pour Doigt Solaire.`);
+                log(`Choisissez une gemme de couleur pour Doigt de la Mort.`);
                 return true;
             }
 
@@ -212,20 +213,20 @@ export function applyFingerOfDeath(spell) {
             renderBoard();
 
             if(created < maxTargets) {
-                log(`Doigt Solaire: choisissez encore ${maxTargets - created} cible(s).`);
+                log(`Doigt de la Mort: choisissez encore ${maxTargets - created} cible(s).`);
                 return true;
             }
 
             setBoardTargetingMode(null);
-            showCombatAnimation({ icon: 'skull', title: "DOIGT SOLAIRE", damage: `${created} crânes créés`, target: '→ Plateau' }, true);
-            log(`Doigt Solaire crée ${created} crânes !`);
+            showCombatAnimation({ icon: 'skull', title: "DOIGT DE LA MORT", damage: `${created} crânes créés`, target: '→ Plateau' }, true);
+            log(`Doigt de la Mort crée ${created} crânes !`);
             saveUpdate();
             checkMatches(true);
             return true;
         }
     });
 
-    log(`Doigt Solaire: choisissez ${maxTargets} gâteau(x) de lune à transformer en soleil.`);
+    log(`Doigt de la Mort: choisissez ${maxTargets} gâteau(x) de lune à transformer en crâne.`);
     return false;
 }
 

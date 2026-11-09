@@ -175,7 +175,7 @@ let boardDropProbabilities = null;
 let pendingComboAnimations = 0;
 let boardSettledCallbacks = [];
 
-// Les tuiles sont des dessins (gâteaux de lune, soleil ardent, flèche : voir retro.css et sprites/tiles/) :
+// Les tuiles sont des dessins (gâteaux de lune, crâne, flèche : voir retro.css et sprites/tiles/) :
 // plus de glyphe emoji dans la case, seulement une infobulle qui rappelle le rôle de la tuile.
 const TILE_LABELS = {
     red: 'Gâteau de lune au haricot rouge',

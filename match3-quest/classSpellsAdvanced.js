@@ -1,11 +1,11 @@
 // Sorts avancés multi-qì (balayage de lignes, couleur, pluie d étoiles, tempête, rage) et ultimes. Extrait de classSpellEffects.js.
-import { healEntity } from './alterations.js';
+import { healEntity, inflictTurnLoss } from './alterations.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
 import { colors, boardSize } from './constants.js';
-import { stackStatusEffect, addStatBuff } from './combatStats.js';
+import { stackStatusEffect, addStatBuff, resolveStrike } from './combatStats.js';
 import { addRage, resetRage, rageToManaAmount, rageToDamageAmount } from './ultimates.js';
 import { boostedRageGain } from './attributes.js';
 import { collectDestroyedColorTilesMana, getCurrentCaster, getManaCap } from './classSpellEffects.js';
@@ -43,6 +43,9 @@ function previewIndices(spell, indices) {
     }, PREVIEW_MS));
 }
 
+// Adversaire du lanceur : le héros vise l'ennemi, l'ennemi vise le héros.
+const opponentOf = caster => (caster === player ? enemy : player);
+
 // Détruit les cases `indices` : récupère le qì des gemmes de couleur et inflige `dmgPerTile` par case détruite
 // dont la couleur est l'une de celles du sort (les autres cases sont détruites sans dégâts).
 function destroyIndices(spell, indices, title, label) {
@@ -54,12 +57,12 @@ function destroyIndices(spell, indices, title, label) {
     const hitColors = spellDamageColors(spell);
     const hits = destroyedTiles.filter(t => hitColors.includes(t)).length;
     let dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
-    if(dmg > 0) { applyDamage(enemy, dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
+    if(dmg > 0) { applyDamage(opponentOf(caster), dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
     const special = manaCollected.special;
     renderBoard();
     const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
     // Sans dégâts, l'animation annonce ce que le sort a changé (qì récupéré) au lieu de « Aucun dégât ».
-    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : null, heal: dmg > 0 ? null : `+${manaCollected.total} qì récupéré`, target: `${label} • ${hits} case(s) de la couleur du sort${dmg > 0 ? ` • +${manaCollected.total} qì` : ''}${extras}` }, true);
+    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : null, heal: dmg > 0 ? null : `+${manaCollected.total} qì récupéré`, source: caster === player ? undefined : caster.name, target: `${label} • ${hits} case(s) de la couleur du sort${dmg > 0 ? ` • +${manaCollected.total} qì` : ''}${extras}` }, caster === player);
     log(`${spell.name} : ${label}, ${hits} case(s) de la couleur du sort, ${dmg} dégâts, +${manaCollected.total} qì récupéré.`);
     return { count: unique.length, hits, dmg, mana: manaCollected.total };
 }
@@ -114,7 +117,18 @@ function pickLines(spell, plan) {
 
 const picksToIndices = picks => picks.flatMap(p => (p.kind === 'row' ? rowIndices(p.n) : colIndices(p.n)));
 
-export function applySweepLines(spell, shape) {
+export async function applySweepLines(spell, shape) {
+    if(currentTurn === 'enemy' || !document.getElementById('board')) {   // l'ennemi ne vise pas : ligne, colonne ou centre de croix tirés au hasard
+        const index = Math.floor(Math.random() * board.length);
+        const row = Math.floor(index / boardSize);
+        const col = index % boardSize;
+        const indices = shape === 'cross' ? [...rowIndices(row), ...colIndices(col)] : shape === 'col' ? colIndices(col) : rowIndices(row);
+        await previewIndices(spell, indices);
+        destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : shape === 'col' ? 'Colonne détruite' : 'Ligne détruite');
+        saveUpdate();
+        checkMatches(true);
+        return false;
+    }
     setBoardTargetingMode({
         highlightPredicate: () => true,
         onTileClick: (index) => {
@@ -173,15 +187,15 @@ export function applySkullsFromColors(spell) {
 export function applyCageEnemy(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     if(!enemy.statusEffects) enemy.statusEffects = {};
-    enemy.statusEffects.stunned = Math.max(enemy.statusEffects.stunned || 0, turns);
+    const stun = inflictTurnLoss(enemy, 'stunned', turns);
     const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
     let drained = 0;
     MANA_COLORS.forEach(color => {
         const amount = Math.min(drain, enemy.mana?.[color] || 0);
         if(amount > 0) { enemy.mana[color] -= amount; drained += amount; }
     });
-    showCombatAnimation({ icon: 'snow', title: spell.name.toUpperCase(), damage: `Étourdi ${turns} tours`, target: `→ ${enemy.name} • -${drained} qì` }, true);
-    log(`${spell.name} étourdit l'ennemi ${turns} tours et lui retire ${drained} qì.`);
+    showCombatAnimation({ icon: 'snow', title: spell.name.toUpperCase(), damage: stun.landed ? `Étourdi ${stun.turns} tours` : 'Résisté', target: `→ ${enemy.name} • -${drained} qì` }, true);
+    log(stun.landed ? `${spell.name} étourdit l'ennemi ${stun.turns} tours et lui retire ${drained} qì.` : `${enemy.name} résiste à l'étourdissement mais perd ${drained} qì.`);
     return true;
 }
 
@@ -246,7 +260,7 @@ export async function applySummonTempest(spell) {
     let hits = destroyedTiles.length;
     if(spell.colors?.length || spell.color) hits = destroyedTiles.filter(t => spellDamageColors(spell).includes(t)).length;
     let dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
-    if(dmg > 0) { applyDamage(enemy, dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
+    if(dmg > 0) { applyDamage(opponentOf(caster), dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
     const special = manaCollected.special;
 
     renderBoard();
@@ -282,17 +296,39 @@ export function applyRageToMana(spell) {
     return true;
 }
 
+// Dépense de rage, selon la classe : coup unique (Sorcier, Barbare), `shots` tirs séparés qui peuvent chacun être critiques ou bloqués (Archer),
+// et défense gagnée en plus (`defPerRage` par point de rage, 3 tours : Templier).
 export function applyRageToDamage(spell) {
-    let dmg = rageToDamageAmount(player.rage, spell.dmgPerRage);
-    if(dmg <= 0) {
+    const total = rageToDamageAmount(player.rage, spell.dmgPerRage);
+    if(total <= 0) {
         log(`Pas de rage à libérer.`);
         return false;
     }
+    const rage = Math.floor(player.rage || 0);
     resetRage(player);
-    applyDamage(enemy, dmg, { sourceSpell: spell });
-    dmg = lastSpellDamage(dmg);
-    showCombatAnimation({ icon: 'anger', title: (spell.name || "COUP DE LA FUREUR BRISÉE").toUpperCase(), damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`${spell.name} libère toute la rage : ${dmg} dégâts.`);
+    const title = (spell.name || "COUP DE LA FUREUR BRISÉE").toUpperCase();
+    let dmg = 0;
+    if(spell.shots > 1) {
+        const share = Math.max(1, Math.floor(total / spell.shots));
+        for(let i = 0; i < spell.shots; i++) {
+            const strike = resolveStrike(share, player, enemy);
+            applyDamage(enemy, strike.damage, { sourceSpell: spell });
+            dmg += lastSpellDamage(strike.damage);
+        }
+    } else {
+        applyDamage(enemy, total, { sourceSpell: spell });
+        dmg = lastSpellDamage(total);
+    }
+    let bonus = '';
+    if(spell.defPerRage) {
+        const defense = Math.floor(rage * spell.defPerRage);
+        if(defense > 0) {
+            addStatBuff(player, { defense, turns: 3 });
+            bonus = ` • +${defense} défense (3 tours)`;
+        }
+    }
+    showCombatAnimation({ icon: 'anger', title, damage: `-${dmg} dégâts${spell.shots > 1 ? ` (${spell.shots} tirs)` : ''}`, target: `→ ${enemy.name}${bonus}` }, true);
+    log(`${spell.name} libère toute la rage : ${dmg} dégâts${spell.shots > 1 ? ` en ${spell.shots} tirs` : ''}${bonus ? `${bonus.replace(' • ', ', ')}` : ''}.`);
     return true;
 }
 
@@ -348,8 +384,8 @@ export function applyDeathbringer(spell) {
 
     renderBoard();
     // une fois l'animation du sort terminée, on montre où les crânes sont apparus
-    showCombatAnimation({ icon: 'poison', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true, { onContinue: () => flashTiles(created) });
-    log(`Porte-Soleil crée ${count} crânes (basé sur le qì rouge).`);
+    showCombatAnimation({ icon: 'poison', title: "PORTE-CRÂNES", damage: `${count} crânes créés`, target: '→ Plateau' }, true, { onContinue: () => flashTiles(created) });
+    log(`Porte-Crânes crée ${count} crânes (basé sur le qì rouge).`);
     return true;
 }
 
@@ -371,8 +407,8 @@ export function applyUltimate(spell) {
         log(`${spell.name} soigne ${heal} PV.`);
     }
     if(spell.stunTurns) {
-        enemy.statusEffects.stunned = Math.max(enemy.statusEffects.stunned || 0, spell.stunTurns);
-        log(`${enemy.name} est étourdi pendant ${spell.stunTurns} tours.`);
+        const stun = inflictTurnLoss(enemy, 'stunned', spell.stunTurns);
+        log(stun.landed ? `${enemy.name} est étourdi pendant ${stun.turns} tours.` : `${enemy.name} résiste à l'étourdissement.`);
     }
     if(spell.defBuff) addStatBuff(player, { defense: spell.defBuff, turns: spell.duration || 1 });
     if(spell.weakenAmount) {

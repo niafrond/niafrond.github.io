@@ -1,7 +1,7 @@
 // Sorts de classe : bonus de caractéristiques, guerrier, templier, barbare (renforts, barrière, enragement, hache…). Extrait de classSpellEffects.js.
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyManaSteal, flyHeal } from './manaFlight.js';
-import { healEntity } from './alterations.js';
+import { healEntity, inflictTurnLoss } from './alterations.js';
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { stackStatusEffect, addStatBuff, describeStatBuff } from './combatStats.js';
@@ -237,12 +237,14 @@ export function applyIntimidate(spell) {
 }
 
 export function applyRush(spell) {
-    const yellowMana = player.mana.yellow;
-    const extraTurns = Math.floor(yellowMana / 7);
-    const totalTurns = 2 + extraTurns;
-    enemy.statusEffects.stunned = totalTurns;
-    showCombatAnimation({ icon: 'wind', title: "CHARGE DE CAVALERIE", damage: `Étourdi ${totalTurns} tours`, target: `→ ${enemy.name}` }, true);
-    log(`Charge de Cavalerie étourdit l'ennemi pour ${totalTurns} tours !`);
+    const stun = inflictTurnLoss(enemy, 'stunned', 2);   // plafonné à 2 tours ; ne se cumule pas avec un autre étourdissement ou sommeil
+    if(!stun.landed) {
+        showCombatAnimation({ icon: 'wind', title: "CHARGE DE CAVALERIE", damage: 'Résisté', target: `→ ${enemy.name}` }, true);
+        log(stun.reason === 'immune' ? `${enemy.name} est immunisé contre la Charge de Cavalerie.` : `${enemy.name} résiste à la Charge de Cavalerie (résistance aux contrôles).`);
+        return true;
+    }
+    showCombatAnimation({ icon: 'wind', title: "CHARGE DE CAVALERIE", damage: `Étourdi ${stun.turns} tours`, target: `→ ${enemy.name}` }, true);
+    log(`Charge de Cavalerie étourdit l'ennemi pour ${stun.turns} tours !`);
     return true;
 }
 
@@ -307,6 +309,14 @@ export function applyHoldTheLine(spell) {
     player.statusEffects.immunityEffects = turns;
     showCombatAnimation({ icon: 'shield', title: "FORMATION DE LA TORTUE", damage: 'Immunité aux effets', target: `→ Vous (${turns} tours)` }, true);
     log(`Formation de la Tortue: immunité aux effets négatifs pendant ${turns} tours.`);
+    return true;
+}
+
+export function applyBlockAll(spell) {
+    const turns = Math.max(1, Math.floor(spell.duration || 1));
+    player.statusEffects.shieldWall = Math.max(player.statusEffects.shieldWall || 0, turns);
+    showCombatAnimation({ icon: 'shield', title: "BASTION INFRANCHISSABLE", damage: 'Blocage total', target: `→ Vous (${turns} tours)` }, true);
+    log(`Bastion Infranchissable: toutes les attaques sont bloquées pendant ${turns} tours.`);
     return true;
 }
 

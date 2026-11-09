@@ -175,7 +175,7 @@ Même grille que le jeu de base (`board.js`, `matchMechanics.js`). Les tuiles re
 | Énergie argentée | `tile-yellow` | soin standard |
 | Goutte d'élixir (joker) | `tile-joker` | joker ; un 5 en ligne le crée |
 
-**Retirés** de ce mode : `tile-skull` (soleil ardent) et `tile-combat` (flèche). Il n'y a ni tuile de dégât, ni attaque d'adversaire.
+**Retirés** de ce mode : `tile-skull` (crâne) et `tile-combat` (flèche). Il n'y a ni tuile de dégât, ni attaque d'adversaire.
 
 > **Taux d'apparition : 0 % de crânes et 0 % de flèches.** Ni au tirage initial du plateau, ni au remplissage après une combinaison, ni par un
 > pouvoir, un bonus ou un gâteau. Les tables de tirage du mode ne contiennent que les cinq énergies de soin (et le joker créé par un 5 en ligne) ;

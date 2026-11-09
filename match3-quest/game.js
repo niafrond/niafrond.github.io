@@ -602,6 +602,12 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         }
     }
 
+    if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
+        const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
+        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: spell.poisonDmg });
+        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${spell.poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
+    }
+
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
         addBonusTurn(caster, 1);
         log(`${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
@@ -1071,7 +1077,7 @@ export function showEndCombatAnimation(isVictory){
 
 // règles de combat
 export const combatCost = 5;             // points nécessaires pour une attaque normale
-export const skullDamage = 1;           // dégâts infligés par soleil lors d'un match
+export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
 export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
@@ -1123,7 +1129,7 @@ export function restartCombat({ keepHp = false } = {}){
     player.tempCritChance = 0;
     clearStatBuffs(player);
     clearStatBuffs(enemy);
-    if(player.statusEffects){ delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; }   // le poison ne survit pas au combat
+    if(player.statusEffects){ delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; delete player.statusEffects.controlResist; }   // le poison et la résistance aux contrôles ne survivent pas au combat
     // Réinitialiser le statut du jeu
     setGameStarted(false);
     // Appliquer les aptitudes de début de combat

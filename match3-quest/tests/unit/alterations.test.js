@@ -78,3 +78,42 @@ test('chaque altération a au moins un sort de classe', () => {
     const keys = [...catalog.sorcererSpells, ...catalog.assassinSpells, ...catalog.templarSpells].map(s => alterationOfSpell(s)?.key).filter(Boolean);
     ['muted', 'cursed', 'petrified', 'asleep', 'exhausted', 'corrupted'].forEach(k => expect(keys).toContain(k));
 });
+
+import { inflictTurnLoss, hasControlResist, isTurnLossControlled, CONTROL_RESIST_TURNS } from '../../alterations.js';
+
+describe('résistance aux contrôles successifs', () => {
+    test("un étourdissement pose la résistance pour sa durée plus %s tours".replace('%s', CONTROL_RESIST_TURNS), () => {
+        const e = mk();
+        const r = inflictTurnLoss(e, 'stunned', 2);
+        expect(r).toMatchObject({ landed: true, turns: 2 });
+        expect(e.statusEffects.controlResist).toBe(2 + CONTROL_RESIST_TURNS);
+    });
+    test("pas de second étourdissement ni de sommeil pendant un contrôle ou la résistance", () => {
+        const e = mk();
+        inflictTurnLoss(e, 'stunned', 2);
+        expect(inflictTurnLoss(e, 'stunned', 2)).toMatchObject({ landed: false, reason: 'resist' });
+        expect(inflictAlteration(e, 'asleep', 2)).toBe(false);
+        e.statusEffects.stunned = 0;   // contrôle terminé : la résistance continue
+        expect(isTurnLossControlled(e)).toBe(false);
+        expect(hasControlResist(e)).toBe(true);
+        expect(inflictTurnLoss(e, 'stunned', 1).landed).toBe(false);
+    });
+    test('la résistance s\'use avec les tours, puis un nouveau contrôle est possible', () => {
+        const e = mk();
+        inflictTurnLoss(e, 'asleep', 1);
+        wakeIfAsleep(e);
+        for (let i = 0; i < 1 + CONTROL_RESIST_TURNS; i++) tickAlterations(e);
+        expect(hasControlResist(e)).toBe(false);
+        expect(inflictTurnLoss(e, 'stunned', 2).landed).toBe(true);
+    });
+    test('les autres contrôles restent combinables avec un étourdissement', () => {
+        const e = mk();
+        inflictTurnLoss(e, 'stunned', 2);
+        expect(inflictAlteration(e, 'muted', 2)).toBe(true);
+        expect(inflictAlteration(e, 'petrified', 2)).toBe(true);
+    });
+    test('la Formation de la Tortue bloque aussi les contrôles qui font perdre des tours', () => {
+        const e = mk({ statusEffects: { immunityEffects: 2 } });
+        expect(inflictTurnLoss(e, 'stunned', 2)).toMatchObject({ landed: false, reason: 'immune' });
+    });
+});

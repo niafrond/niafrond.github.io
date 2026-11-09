@@ -35,9 +35,29 @@ export const isAsleep = entity => hasStatus(entity, 'asleep');
 export const isPetrified = entity => hasStatus(entity, 'petrified');
 export const isCorrupted = entity => hasStatus(entity, 'corrupted');
 
+// Contrôles qui font perdre des tours (étourdissement, sommeil) : une seule fois à la fois, puis la cible leur résiste CONTROL_RESIST_TURNS tours
+// de plus que la durée du contrôle (`controlResist`). Les autres contrôles (silence, scellement, pétrification…) restent combinables avec eux.
+export const TURN_LOSS_CONTROLS = ['stunned', 'asleep'];
+export const CONTROL_RESIST_TURNS = 2;
+export const hasControlResist = entity => hasStatus(entity, 'controlResist');
+export const isTurnLossControlled = entity => TURN_LOSS_CONTROLS.some(key => hasStatus(entity, key));
+
+// Pose un contrôle qui fait perdre des tours. Renvoie { landed, reason } : reason = 'immune' (Formation de la Tortue) ou 'resist' (contrôle déjà en cours ou résistance).
+export function inflictTurnLoss(entity, key, turns) {
+    if (!entity) return { landed: false, reason: 'immune' };
+    if (!entity.statusEffects) entity.statusEffects = {};
+    if (hasStatus(entity, 'immunityEffects')) return { landed: false, reason: 'immune' };
+    if (isTurnLossControlled(entity) || hasControlResist(entity)) return { landed: false, reason: 'resist' };
+    const duration = Math.max(1, Math.floor(turns || 1));
+    entity.statusEffects[key] = duration;
+    entity.statusEffects.controlResist = duration + CONTROL_RESIST_TURNS;
+    return { landed: true, reason: null, turns: duration };
+}
+
 // Pose une altération. Refusée si la cible est immunisée (Formation de la Tortue). Renvoie true si elle est posée.
 export function inflictAlteration(entity, key, turns, extra = {}) {
     if (!entity) return false;
+    if (TURN_LOSS_CONTROLS.includes(key)) return inflictTurnLoss(entity, key, turns).landed;
     if (!entity.statusEffects) entity.statusEffects = {};
     if (hasStatus(entity, 'immunityEffects')) return false;
     entity.statusEffects[key] = Math.max(entity.statusEffects[key] || 0, Math.max(1, Math.floor(turns || 1)));
@@ -91,6 +111,10 @@ export function tickAlterations(entity, rng = Math.random) {
             entity.mana[c] -= lost;
             msgs.push(`Épuisé : ${name} perd ${lost} qì ${c}.`);
         }
+    }
+    if (hasStatus(entity, 'controlResist')) {
+        entity.statusEffects.controlResist--;
+        if (entity.statusEffects.controlResist <= 0) delete entity.statusEffects.controlResist;
     }
     const ends = { muted: 'retrouve la voix', cursed: 'n\'est plus maudit', petrified: 'retrouve sa souplesse', asleep: 'se réveille', exhausted: 'reprend son souffle', corrupted: 'n\'est plus corrompu' };
     for (const key of ALTERATION_KEYS) {

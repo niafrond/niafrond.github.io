@@ -172,6 +172,9 @@ export function rollCrit(entity, rng = Math.random, weakened = 0) {
     return rng() * 100 < critChance(entity, weakened);
 }
 
+// Bastion Infranchissable actif (sans effet sur une cible Pétrifiée : elle ne peut plus bloquer).
+export const hasShieldWall = entity => (entity?.statusEffects?.shieldWall || 0) > 0 && !((entity.statusEffects.petrified || 0) > 0);
+
 // 'none' | 'partial' | 'total'
 export function rollBlock(entity, rng = Math.random) {
     if (entity?.tutorialBlock) {   // tutoriel scripté : blocage imposé une seule fois (le sort de Fengmeng est bloqué par Hou Yi)
@@ -211,10 +214,11 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
     if (crit) damage = applyCrit(damage);
     const bonus = crit ? applyCrit(enrageBonus) : enrageBonus;
     const forced = !!target?.tutorialBlock;   // blocage imposé du tutoriel : jamais requalifié
-    const unblockable = damage >= UNBLOCKABLE_DAMAGE && !forced;
-    let block = unblockable ? 'none' : rollBlock(target, rng);
+    const wall = hasShieldWall(target);   // Bastion Infranchissable : tout est bloqué, même les coups très puissants ou inblocables
+    const unblockable = damage >= UNBLOCKABLE_DAMAGE && !forced && !wall;
+    let block = wall ? 'total' : unblockable ? 'none' : rollBlock(target, rng);
     const intended = damage + bonus;   // dégâts prévus (critique inclus) avant blocage : 1re annonce de l'animation
-    const heavy = !forced && block !== 'none' && isHeavyHit(damage, target);
+    const heavy = !forced && !wall && block !== 'none' && isHeavyHit(damage, target);
     if (heavy) block = 'partial';   // un coup très puissant ne se bloque pas entièrement
     damage = applyBlock(damage, block, heavy) + bonus;
     return { damage, crit, block, intended, heavy, unblockable };

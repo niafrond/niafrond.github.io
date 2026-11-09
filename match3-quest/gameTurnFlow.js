@@ -3,7 +3,7 @@
 import { boardSize } from './constants.js';
 import { tutorialCallbacks } from './tutorial.js';
 import { getAvailableWeapons } from './weapons.js';
-import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches } from './board.js';
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, board } from './board.js';
 import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE } from './stuff.js';
 import { rollEnemyStuffDrops } from './enemyStuff.js';
 import { recordVictory } from './bossTips.js';
@@ -310,6 +310,10 @@ export function enemyTurn(){
 
             consumeSpellMana(enemy, spell);
             playSfx('spellCast', { isPlayer: false, spellId: spell.id });
+            if(spell.boardSpell) {   // sort de plateau : lignes et colonnes tirées au hasard ; checkMatches rend la main une fois le plateau stabilisé
+                castEnemyBoardSpell(spell);
+                return;
+            }
             applyStandardSpellEffects(enemy, player, spell, false);
             
             // Vérifier l'état après l'action
@@ -378,6 +382,18 @@ export function applyAncientTurnPowers(){
 }
 
 // Fonction pour terminer le tour de l'ennemi
+// Sort de plateau lancé par l'ennemi. Les sorts de balayage et de purge relancent eux-mêmes la résolution du plateau (checkMatches finit alors le tour
+// de l'ennemi) ; sinon (rien à détruire, plateau inchangé) le tour se termine ici.
+async function castEnemyBoardSpell(spell){
+    const { snapshotBoard, applyClassSpellEffect } = await import('./classSpellEffects.js');   // import différé : classSpellEffects.js dépend de game.js
+    const before = snapshotBoard();
+    let applied = false;
+    try { applied = await applyClassSpellEffect(spell); } catch(error) { console.error(error); }
+    const changed = board.some((tile, i) => tile !== before[i]);
+    if(applied === true && changed) checkMatches(true);
+    else if(!changed) finishEnemyTurn();
+}
+
 export function finishEnemyTurn(){
     if(gameState.combatState !== 'active'){
         return;
@@ -517,6 +533,13 @@ export function finishEnemyTurn(){
                 delete player.statusEffects.counterOnBlock;
                 delete player.statusEffects.counterOnBlockDmg;
                 log(`Riposte du Garde se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.shieldWall || 0) > 0) {
+            player.statusEffects.shieldWall--;
+            if(player.statusEffects.shieldWall <= 0) {
+                delete player.statusEffects.shieldWall;
+                log(`Le Bastion Infranchissable se dissipe.`);
             }
         }
         if((player.statusEffects?.immunityEffects || 0) > 0) {
