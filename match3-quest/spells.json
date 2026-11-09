@@ -337,7 +337,8 @@
         "red",
         "yellow"
       ],
-      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes (les crânes ainsi créés ne donnent pas de tour bonus)"
+      "cooldown": 2,
+      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes. Recharge : 2 tours (inutilisable au tour suivant)"
     },
     {
       "id": "threeDragons",

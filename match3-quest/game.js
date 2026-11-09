@@ -41,6 +41,7 @@ import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleM
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
 export { TOOLTIP_LONG_PRESS_MS };
+import { spellCooldownLeft, startSpellCooldown, resetSpellCooldowns } from "./spellCooldown.js";
 import { equipSpell, equipUltimate, unequipSpell, archiveSpell, unarchiveSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
 export { equipSpell, equipUltimate, unequipSpell, updateSpellsTab };
 import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
@@ -1162,6 +1163,7 @@ export function startNewCombat(selectedEnemy = null){
     delete document.body.dataset.combatEnd;
     preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
     gameState.combatState = 'active';
+    resetSpellCooldowns();
     setBoardSize((selectedEnemy?.isBoss && !selectedEnemy.isTutorialEnemy) ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon (et pour le duel-tutoriel, dont le plateau figé est en 8×8)
     window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
     ensureCombatUsableActiveItem();
@@ -1483,6 +1485,7 @@ export function castSpell(spellId){
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
+    if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
     if(!canEntityCastSpell(player, spell)){
         const missingColor = getMissingManaColor(player, spell);
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
@@ -1490,6 +1493,7 @@ export function castSpell(spellId){
     }
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
+    startSpellCooldown(spell);
     playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     
     // Gérer les sorts avec effet spécial

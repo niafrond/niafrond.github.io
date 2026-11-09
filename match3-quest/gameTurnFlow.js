@@ -11,6 +11,7 @@ import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } fro
 import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
+import { tickSpellCooldowns } from './spellCooldown.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
 import { MANA_COLOR_LABELS } from './attributes.js';
@@ -517,6 +518,7 @@ export function finishEnemyTurn(){
         }
         // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
         tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
+        tickSpellCooldowns();   // temps de recharge des sorts (Brasier des Sceaux…)
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         turnFlags.foxActed = false;
         turnFlags.companionsActed = false;

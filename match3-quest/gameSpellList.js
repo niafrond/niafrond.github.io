@@ -3,6 +3,7 @@
 import { MAX_ACTIVE_SPELLS } from './constants.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
+import { spellCooldownLeft } from './spellCooldown.js';
 import { bindTooltip, showSpellTooltip, hideSpellTooltip } from './gameTooltips.js';
 import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
@@ -121,7 +122,9 @@ export function createSpellButtons(){
             <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
             <div class="spell-cost">${costHTML}${damageText}${healText}</div>
         `;
-        if(player.level<sp.minLevel || !hasEnoughMana) {
+        const coolLeft = spellCooldownLeft(sp.id);
+        if(coolLeft > 0) btn.querySelector('.spell-cost').insertAdjacentHTML('beforeend', ` <span class="spell-cooldown">Recharge : ${coolLeft} tour${coolLeft > 1 ? 's' : ''}</span>`);
+        if(player.level<sp.minLevel || !hasEnoughMana || coolLeft > 0) {
             btn.classList.add('disabled');
             // Sort multi-qì : la tuile reste grisée tant qu'il manque du qì, mais la pastille d'une couleur déjà atteinte garde sa couleur.
             if(player.level >= sp.minLevel && btn.querySelector('.cost-part.met') && btn.querySelector('.cost-part.unmet')) btn.classList.add('spell-partial');

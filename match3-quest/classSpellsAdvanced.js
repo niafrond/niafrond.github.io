@@ -2,7 +2,7 @@
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
-import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles, claimMatchBonusTurn, MAX_MATCH_BONUS_TURNS } from './board.js';
+import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
 import { colors, boardSize } from './constants.js';
 import { stackStatusEffect, addStatBuff } from './combatStats.js';
 import { addRage, resetRage, rageToManaAmount, rageToDamageAmount } from './ultimates.js';
@@ -162,9 +162,6 @@ export function applySkullsFromColors(spell) {
         log(`Aucune gemme à transformer en crâne.`);
         return false;
     }
-    // Équilibrage : les crânes que le sort fabrique ne rapportent aucun tour bonus (plafond de la cascade consommé d'avance),
-    // sinon chaque lancer se rembourse en tour bonus et les tours s'enchaînent presque sans fin.
-    for(let n = 0; n < MAX_MATCH_BONUS_TURNS; n++) claimMatchBonusTurn(MAX_MATCH_BONUS_TURNS);
     renderBoard();
     showCombatAnimation({ icon: 'skull', title: spell.name.toUpperCase(), damage: `${count} gemmes → crânes`, target: '→ Plateau' }, true);
     log(`${spell.name} transforme ${count} gemmes en crânes !`);

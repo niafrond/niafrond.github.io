@@ -924,3 +924,4 @@ body.rt .enemy-combat-name.name-hanzi { font-size: 20px; }
 .archived-spells > summary { cursor: pointer; font-weight: bold; padding: 6px 10px; list-style-position: inside; }
 .archived-spells[open] > summary { margin-bottom: 6px; }
 .archived-spell { opacity: .85; }
+#spell-buttons .spell-cooldown { display: block; font-weight: bold; color: var(--accent, #a8321f); }

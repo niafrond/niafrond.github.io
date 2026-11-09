@@ -109,6 +109,7 @@
   "sfxCatalog.js",
   "shop.js",
   "sound.js",
+  "spellCooldown.js",
   "spellFx.js",
   "spellTileFx.js",
   "spells.js",
