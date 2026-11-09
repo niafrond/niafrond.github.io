@@ -230,8 +230,8 @@ describe('pistes pré-enregistrées : correspondance scène → fichier (musicTr
         keys.forEach((k) => expect(/^combat-[0-4]$/.test(k)).toBe(true));
         const [exact, fallback] = trackCandidates('boss', { boss: "Fengmeng, l'Archer Pressé" });
         expect(exact).toBe('boss-fengmeng-l-archer-presse');
-        expect(fallback).toBe(`boss-a${bossArchetypeIndex("Fengmeng, l'Archer Pressé")}`);
-        expect(trackCandidates('boss')).toEqual(['boss-a0']);
+        expect(fallback).toBe('boss-combat-1');
+        expect(trackCandidates('boss')).toEqual(['boss-combat-1', 'boss-a0']);
         expect(combatStyleIndex('x')).toBeLessThan(5);
     });
     test('l\'archétype de repli est celui que compose le thème du boss (même hachage)', () => {
@@ -411,7 +411,7 @@ describe('lecteur de musique', () => {
         const ctx2 = makeCtx(); const s2 = setup(ctx2, new Set(['boss-a0', 'boss-a1', 'boss-a2', 'boss-a3', 'boss-a4', 'boss-a5', 'boss-a6', 'boss-a7']));
         setMusicScene('boss', { boss: 'Boss Inconnu' }); await flush();
         const keys = s2.fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1]);
-        expect(keys).toEqual(['boss-boss-inconnu-b', 'boss-boss-inconnu', `boss-a${bossArchetypeIndex('Boss Inconnu')}-b`, `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
+        expect(keys).toEqual(['boss-boss-inconnu-b', 'boss-boss-inconnu', 'boss-combat-1-b', 'boss-combat-1', `boss-a${bossArchetypeIndex('Boss Inconnu')}-b`, `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
         expect(ctx2.nodes.some((n) => n.kind === 'source' && n.started)).toBe(true);
     });
 
