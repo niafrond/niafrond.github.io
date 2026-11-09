@@ -305,8 +305,10 @@ export function showEnemyStuffTooltip(targetEl, fullName, enemyEntity = enemy) {
 
 // Appui long (souris ou doigt) sur le nom de l'ennemi : affiche son stuff, qui reste quelques secondes après le relâchement.
 export const ENEMY_STUFF_LONG_PRESS_MS = 500;
+// `nameEl` est la zone d'appui (toute la fiche stats de l'ennemi) ; `fullName` et `enemyEntity` peuvent être des fonctions pour suivre l'ennemi courant.
 export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
     if(!nameEl) return;
+    const resolve = v => (typeof v === 'function' ? v() : v);
     let timer = null;
     let shown = false;
     const cancel = () => { clearTimeout(timer); timer = null; };
@@ -317,7 +319,7 @@ export function bindEnemyStuffLongPress(nameEl, fullName, enemyEntity = enemy) {
         timer = setTimeout(() => {
             timer = null; shown = true;
             nameEl.dataset.stuffShown = '1';
-            showEnemyStuffTooltip(nameEl, fullName, enemyEntity);
+            showEnemyStuffTooltip(nameEl, resolve(fullName), resolve(enemyEntity));
             clearTimeout(enemyTapTimer);
             enemyTapTimer = setTimeout(() => { delete nameEl.dataset.stuffShown; hideEnemyNameTooltip(); }, ENEMY_TAP_TOOLTIP_MS + 1500);
         }, ENEMY_STUFF_LONG_PRESS_MS);
