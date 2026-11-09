@@ -276,7 +276,7 @@ describe('coups très puissants', () => {
         const heavy = resolveStrike(40, { attack: 0 }, target, { rng: () => 0 });   // rng 0 : blocage total tiré
         expect(heavy.heavy).toBe(true);
         expect(heavy.block).toBe('partial');
-        expect(heavy.damage).toBe(30);
+        expect(heavy.damage).toBe(34);
         const light = resolveStrike(10, { attack: 0 }, target, { rng: () => 0 });
         expect(light.heavy).toBe(false);
         expect(light.block).toBe('total');

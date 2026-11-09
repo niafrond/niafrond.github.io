@@ -1,7 +1,7 @@
 // Attaque / Défense : ce sont des probabilités, pas des dégâts.
 //  - Attaque = chance de COUP CRITIQUE (×1,5) d'une attaque armée ou d'un match de crânes ;
 //  - Défense = chance de BLOQUER une attaque armée ou un match de crânes subi : le blocage est total (aucun dégât)
-//    ou partiel (dégâts divisés par 2). Un coup très puissant (isHeavyHit) ne peut qu'être très partiellement paré (-25 %).
+//    ou partiel (dégâts divisés par 2). Un coup très puissant (isHeavyHit) ne peut qu'être très partiellement paré (-15 %).
 // Les valeurs peuvent dépasser 100 à l'écran (cumul d'objets, de sorts, de niveaux) mais la chance réelle reste
 // plafonnée à STAT_CHANCE_CAP (98 %). Les sorts ne sont ni bloqués ni critiques. Module pur, sans DOM.
 
@@ -13,10 +13,10 @@ export const CRIT_MULTIPLIER = 1.5;
 export const PARTIAL_BLOCK_FACTOR = 0.5;   // dégâts restants après un blocage partiel
 export const TOTAL_BLOCK_SHARE = 0.4;
 // Coup très puissant : dégâts (critique inclus) >= HEAVY_HIT_HP_SHARE des PV max de la cible (et au moins HEAVY_HIT_MIN). Il ne peut jamais
-// être bloqué entièrement : un blocage devient une parade très partielle (HEAVY_BLOCK_FACTOR des dégâts restants, ici -25 % seulement).
+// être bloqué entièrement : un blocage devient une parade très partielle (HEAVY_BLOCK_FACTOR des dégâts restants, ici -15 % seulement).
 export const HEAVY_HIT_HP_SHARE = 0.3;
 export const HEAVY_HIT_MIN = 12;
-export const HEAVY_BLOCK_FACTOR = 0.75;
+export const HEAVY_BLOCK_FACTOR = 0.85;
 export const UNBLOCKABLE_DAMAGE = 500;   // à partir de 500 dégâts (critique inclus), le coup est INBLOCABLE : aucun jet de blocage
 export function isHeavyHit(damage, target) {
     const maxHp = Math.max(0, Math.floor(target?.maxHp || 0));
