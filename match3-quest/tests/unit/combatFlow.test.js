@@ -216,20 +216,18 @@ describe('début de combat : jingles avant l\'animation, nom de l\'adversaire pl
     const view = readExplorationViewSource();
     const main = readFileSync(new URL('../../main.js', import.meta.url), 'utf8');
 
-    test("le jingle d'annonce part avant même la construction de l'animation", () => {
+    test("aucun jingle de début de combat n'est joué à l'annonce", () => {
         const fn = view.slice(view.indexOf('function playBattleTransition'));
-        expect(fn.indexOf("playSfx(enc.boss ? 'bossStart' : 'battleStart')")).toBeGreaterThan(-1);
-        expect(fn.indexOf("playSfx(enc.boss ? 'bossStart' : 'battleStart')")).toBeLessThan(fn.indexOf('removeBattleTransition()'));
-        expect(fn.indexOf("playSfx(enc.boss ? 'bossStart' : 'battleStart')")).toBeLessThan(fn.indexOf("createElement('div')"));
+        expect(fn.slice(0, fn.indexOf('removeBattleTransition()'))).not.toMatch(/battleStart|bossStart/);
     });
 
     test("l'annonce dure au moins 3 s (le nom de l'adversaire reste lisible environ 2 s)", () => {
         expect(Number(view.match(/BATTLE_TRANSITION_MS = (\d+)/)[1])).toBeGreaterThanOrEqual(3000);
     });
 
-    test("un boss ne rejoue pas son jingle au début du combat, et la musique n'attend pas de jingle de combat", () => {
-        expect(game).toMatch(/if\(!enemy\?\.isBoss\) playSfx\('combatStart'\)/);
-        expect(main).toMatch(/e\.detail\?\.boss \? 0 : Date\.now\(\) \+ COMBAT_INTRO_MS/);
+    test("pas de jingle au début du combat et la musique de combat n'attend rien", () => {
+        expect(game).not.toMatch(/playSfx\('combatStart'\)/);
+        expect(main).not.toMatch(/COMBAT_INTRO_MS|combatIntroUntil/);
     });
 });
 

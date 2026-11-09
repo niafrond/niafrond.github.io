@@ -9,7 +9,7 @@ import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./clas
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
 import { weaknessLabel } from "./terrain.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
-import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
+import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { getUltimateById, playUltimateCinematic } from "./ultimates.js";
 import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefetch, bindOfflineOptions } from "./offlineCache.js";
@@ -207,9 +207,7 @@ function init() {
 
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
-    let combatIntroUntil = 0;
     let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
-    window.addEventListener('match3:combat-start', e => { combatIntroUntil = e.detail?.boss ? 0 : Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
@@ -226,7 +224,7 @@ function init() {
         // « actif » (combat quitté sans passer par l'écran de résultat) ne doit pas garder la musique de combat.
         const info = exploration.getSceneInfo();
         const fight = info ? null : getCombatMusicScene();
-        if(fight) return Date.now() < combatIntroUntil ? null : [fight, getCombatMusicOptions()];   // jingle d'entrée d'abord, puis la musique
+        if(fight) return [fight, getCombatMusicOptions()];   // pas de jingle d'entrée : la musique de combat démarre directement
         if(document.getElementById('battle-result-screen')?.classList.contains('active')) return [lastCombatVictory ? 'victory' : 'defeat'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
