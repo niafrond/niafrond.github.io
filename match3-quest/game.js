@@ -41,7 +41,7 @@ import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleM
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
 export { TOOLTIP_LONG_PRESS_MS };
-import { equipSpell, equipUltimate, unequipSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
+import { equipSpell, equipUltimate, unequipSpell, archiveSpell, unarchiveSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
 export { equipSpell, equipUltimate, unequipSpell, updateSpellsTab };
 import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
 export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem };
@@ -615,6 +615,7 @@ export let player = {
     attributes: { strength:0, agility:0, intelligence:0, stamina:0, morale:0 },
     spells: [],
     activeSpells: [],  // sorts équipés (max 4)
+    archivedSpells: [], // ids des sorts rangés dans les archives (masqués de la liste des sorts disponibles)
     equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
     unlockedUltimates: [],   // ultimes de légende (Quatre Gardiens Célestes) gagnés par quête, toutes classes (ultimates.js)
     availableSpells: [], // sorts débloqués
@@ -1257,6 +1258,7 @@ export function loadGameData() {
             player.attributes = { ...player.attributes, ...(loaded.attributes || {}) };
             player.spells = loaded.spells ?? player.spells;
             player.activeSpells = loaded.activeSpells ?? player.activeSpells;
+            player.archivedSpells = Array.isArray(loaded.archivedSpells) ? loaded.archivedSpells.filter(id => typeof id === 'string') : [];
             player.equippedUltimate = loaded.equippedUltimate ?? player.equippedUltimate;
             player.unlockedUltimates = normalizeUnlockedUltimates(loaded.unlockedUltimates);
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
@@ -1913,6 +1915,8 @@ function runOpeningStrikes(count, delayMs, done){
 // Exports pour les fonctions accessibles globalement
 window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
+window.archiveSpell = archiveSpell;
+window.unarchiveSpell = unarchiveSpell;
 window.equipUltimate = equipUltimate;
 window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;

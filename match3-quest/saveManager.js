@@ -268,6 +268,7 @@ function sanitizePlayer(player) {
         torch: player.torch,
         abilities: player.abilities,
         activeSpells: ids(player.activeSpells),
+        archivedSpells: player.archivedSpells,
         equippedUltimate: player.equippedUltimate,
         unlockedUltimates: player.unlockedUltimates,
         weapons: ids(player.weapons),
@@ -385,7 +386,7 @@ function sanitizeImportedPlayer(player) {
         else if (typeof player[key] === 'string') player[key] = cleanText(player[key], MAX_ID_LENGTH);
     }
     for (const key of ['equippedUltimate', 'currentZoneId']) assign(player, key, cleanText(player[key], MAX_ID_LENGTH));
-    for (const key of ['abilities', 'unlockedUltimates', 'stuffOwned', 'merchantSold', 'sellTags', 'defeatedBossTiers', 'visitedZoneIds']) {
+    for (const key of ['abilities', 'archivedSpells', 'unlockedUltimates', 'stuffOwned', 'merchantSold', 'sellTags', 'defeatedBossTiers', 'visitedZoneIds']) {
         if (player[key] === undefined) continue;
         if (!Array.isArray(player[key])) { delete player[key]; continue; }
         player[key] = player[key].slice(0, MAX_LIST_LENGTH).filter(v => typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string').map(v => typeof v === 'string' ? cleanText(v, MAX_ID_LENGTH) : v);

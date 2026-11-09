@@ -2242,7 +2242,7 @@
       "minLevel": 5,
       "effect": "skullBonus",
       "baseDmg": 12,
-      "description": "12 dégâts +2 par soleil présent"
+      "description": "12 dégâts +2 par crâne présent sur le plateau"
     },
     {
       "id": "bloodlust",
