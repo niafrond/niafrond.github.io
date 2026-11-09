@@ -1,3 +1,9 @@
+## [2.212.0](https://github.com/niafrond/niafrond.github.io/compare/v2.211.0...v2.212.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** remplacer la musique du combat 1 par un thème martial traditionnel ([6682a11](https://github.com/niafrond/niafrond.github.io/commit/6682a114a33eba7722800ae07a46ea3884841532))
+
 ## [2.211.0](https://github.com/niafrond/niafrond.github.io/compare/v2.210.0...v2.211.0) (2026-11-08)
 
 ### Features
