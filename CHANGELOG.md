@@ -1,3 +1,9 @@
+## [2.220.0](https://github.com/niafrond/niafrond.github.io/compare/v2.219.4...v2.220.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** coups très puissants, inblocables et annonces plus longues ([#694](https://github.com/niafrond/niafrond.github.io/issues/694)) ([e10f848](https://github.com/niafrond/niafrond.github.io/commit/e10f8484f965c7db8a7632217faba2b9af41c4ff))
+
 ## [2.219.4](https://github.com/niafrond/niafrond.github.io/compare/v2.219.3...v2.219.4) (2026-11-09)
 
 ### Bug Fixes
