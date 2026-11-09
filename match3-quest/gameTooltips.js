@@ -261,8 +261,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity, { showAll = false } = {}
     return lines.join('');
 }
 
-// Un clic / toucher sur la carte ou le portrait de l'ennemi affiche son infobulle (faiblesse incluse si elle est repérée),
-// qui se referme seule après quelques secondes. Lié une seule fois : le panneau est reconstruit à chaque updateStats.
+// Un clic simple sur l'ennemi ne fait que changer son nom (hanzi / français, gameHud.js) ; seul l'appui long affiche son infobulle complète.
 export const ENEMY_TAP_TOOLTIP_MS = 3500;
 let enemyTapTimer = null;
 let playerTapTimer = null;
@@ -272,18 +271,6 @@ export function showPlayerGearTooltipBriefly(targetEl){
     clearTimeout(playerTapTimer);
     playerTapTimer = setTimeout(hideSpellTooltip, ENEMY_TAP_TOOLTIP_MS);
 }
-export function bindEnemyCardTap(enemyDiv){
-    if(!enemyDiv || enemyDiv.dataset.tapBound) return;
-    enemyDiv.dataset.tapBound = '1';
-    enemyDiv.addEventListener('click', () => {
-        const nameEl = enemyDiv.querySelector('.enemy-combat-name');
-        if(!nameEl) return;
-        showEnemyNameTooltip(nameEl, nameEl.dataset.fullName || enemy.name, enemy);
-        clearTimeout(enemyTapTimer);
-        enemyTapTimer = setTimeout(hideEnemyNameTooltip, ENEMY_TAP_TOOLTIP_MS);
-    });
-}
-
 export function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     if(!targetEl || !fullName) return;
     const tooltip = ensureEnemyNameTooltip();
