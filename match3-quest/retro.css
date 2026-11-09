@@ -740,7 +740,9 @@ body.rt[data-combat-biome="moon"]     { --rt-bg: #151a4a; background-image: radi
 /* ── Fiches de combat : contraste et lisibilité (thème rétro) ───────────────── */
 body.rt .level-pill { background: var(--rt-ink); color: var(--rt-gold); border: 2px solid var(--rt-gold); border-radius: 4px; font-family: var(--rt-title); font-size: 9px; padding: 3px 6px; }
 body.rt .level-pill-danger { background: #b71c1c; color: #fff; border-color: #fff; }
-body.rt #player-stats .hp-text, body.rt #enemy-stats .hp-text { font-size: 11px; }
+body.rt #player-stats .hp-text, body.rt #enemy-stats .hp-text { font-size: 9px; letter-spacing: -0.03em; }
+/* Héros avec jauge de rage : la barre de PV est plus étroite, texte encore réduit pour ne pas masquer le bouclier (+N) ni la barre. */
+body.rt #player-stats:has(.rage-stat) .row-hp .hp-text { font-size: 8px; letter-spacing: -0.05em; }
 body.rt #player-stats progress, body.rt #enemy-stats progress { height: 24px; }
 body.rt .stat-chip { background: rgba(0,0,0,.1); border: 2px solid var(--rt-ink); border-radius: 4px; color: var(--rt-text); font-size: 12px; }
 body.rt .stat-chip strong { margin-left: 0; opacity: .85; }

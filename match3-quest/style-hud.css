@@ -328,11 +328,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 .compare-table th, .compare-table td { padding: 4px 6px; border-bottom: 1px solid rgba(128,128,128,.3); text-align: left; }
 .compare-table td.cmp-better { color: #2e7d32; font-weight: bold; }
 
-/* Sort multi-qì incomplet : seules les couleurs manquantes sont grisées, celles atteintes gardent leur couleur */
-#spell-buttons .enemy-spell-item.disabled.spell-partial { opacity: 1; filter: none; }
-#spell-buttons .enemy-spell-item.disabled.spell-partial .spell-name { opacity: 0.6; }
-#spell-buttons .enemy-spell-item .cost-part.unmet { opacity: 0.4; filter: grayscale(1); }
-#spell-buttons .enemy-spell-item .cost-part.met { font-weight: bold; }
+/* Sort multi-qì : tant que tout son qì n'est pas réuni, la tuile entière reste grisée (.disabled), sans couleur partielle. */
 /* Coût en gomettes dans le comparateur (compareView.js) */
 .cost-badge { display: inline-flex; vertical-align: middle; padding: 0 3px; box-sizing: border-box; align-items: center; justify-content: center; min-width: 1.7em; height: 1.7em; margin-right: 4px; border-radius: 50%; border: 2px solid rgba(0,0,0,.45); color: #fff; font-weight: bold; font-size: .9em; text-shadow: 0 1px 1px rgba(0,0,0,.5); box-shadow: inset -2px -2px 0 rgba(0,0,0,.18), inset 2px 2px 0 rgba(255,255,255,.3); }
 .cost-badge-light { color: #3a2a00; text-shadow: none; }

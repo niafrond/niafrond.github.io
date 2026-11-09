@@ -8,6 +8,7 @@ import { icon as svgIcon } from "./icons.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
 import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
+import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
 import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
 import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn } from "./game.js";
@@ -539,6 +540,8 @@ export function useInventoryItem(itemId, index){
     if(result.success){
         logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
         log(result.message);
+        // Animation d'utilisation (comme un sort ou une arme) : nom de l'objet et ses effets, au-dessus du plateau.
+        showCombatAnimation({ icon: getItemIcon(item), title: item.name, heal: String(result.message || '').trim() || null, target: '→ Vous' }, true);
         normalizeActiveInventoryIndex();
         updateInventoryTab();
         updateItemButton();
