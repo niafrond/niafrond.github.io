@@ -32,7 +32,13 @@ export function activeStatuses(entity) {
     if (n(se.poisoned) > 0) add('poisoned', 'poison', 'Poison', 'debuff', `Perd ${n(se.poisonDamage)} PV à chaque tour.`, n(se.poisoned));
     if (n(se.stunned) > 0) add('stunned', 'dizzy', 'Étourdi', 'debuff', 'Passe son prochain tour.', n(se.stunned));
     if (n(se.weakened) > 0) add('weakened', 'snow', 'Affaibli', 'debuff', `-${n(se.weakenedAmount)} attaque (chance de critique réduite).`, n(se.weakened));
-    if (n(se.confused) > 0) add('confused', 'brain', 'Confus', 'debuff', 'Ses actions peuvent échouer ou viser au hasard.', n(se.confused));
+    if (n(se.confused) > 0) add('confused', 'brain', 'Confus', 'debuff', 'Gagne moins de qì et peut subir ses propres attaques.', n(se.confused));
+    if (n(se.muted) > 0) add('muted', 'mask', 'Muet', 'debuff', 'Ne peut plus lancer de sorts.', n(se.muted));
+    if (n(se.cursed) > 0) add('cursed', 'ghost', 'Maudit', 'debuff', `Subit ${n(se.cursePct) || 30} % de dégâts en plus.`, n(se.cursed));
+    if (n(se.petrified) > 0) add('petrified', 'rock', 'Pétrifié', 'debuff', 'Ne peut plus bloquer ni parer.', n(se.petrified));
+    if (n(se.asleep) > 0) add('asleep', 'moon', 'Endormi', 'debuff', 'Ne peut pas agir tant qu\'il ne subit pas de dégâts.', n(se.asleep));
+    if (n(se.exhausted) > 0) add('exhausted', 'hourglass', 'Épuisé', 'debuff', `Perd ${n(se.exhaustDrain) || 3} qì d'une couleur au hasard à chaque tour.`, n(se.exhausted));
+    if (n(se.corrupted) > 0) add('corrupted', 'blood', 'Corrompu', 'debuff', 'Ses soins deviennent des dégâts.', n(se.corrupted));
     if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
     return out;
 }

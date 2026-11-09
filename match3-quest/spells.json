@@ -1383,6 +1383,46 @@
       "effect": "rageToDamage",
       "dmgPerRage": 9,
       "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
+    },
+    {
+      "id": "silenceSeal",
+      "name": "Sceau du Silence",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 5
+      },
+      "minLevel": 7,
+      "effect": "alterEnemy",
+      "alteration": "muted",
+      "duration": 3,
+      "description": "Rend l'ennemi muet 3 tours : il ne peut plus lancer de sorts"
+    },
+    {
+      "id": "cursedMark",
+      "name": "Marque Maudite",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 9,
+      "effect": "alterEnemy",
+      "alteration": "cursed",
+      "duration": 3,
+      "cursePct": 30,
+      "description": "Maudit l'ennemi 3 tours : il subit 30 % de dégâts en plus"
+    },
+    {
+      "id": "impureBreath",
+      "name": "Souffle Impur",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 8
+      },
+      "minLevel": 11,
+      "effect": "alterEnemy",
+      "alteration": "corrupted",
+      "duration": 3,
+      "description": "Corrompt l'ennemi 3 tours : ses soins deviennent des dégâts"
     }
   ],
   "assassinSpells": [
@@ -1422,7 +1462,7 @@
       "minLevel": 5,
       "effect": "reduceManaGain",
       "duration": 4,
-      "description": "L'ennemi ne gagne que 1 qì par combinaison pendant 4 tours"
+      "description": "Confond l'ennemi 4 tours : il ne gagne que 1 qì par combinaison et ses attaques peuvent se retourner contre lui"
     },
     {
       "id": "stealth",
@@ -1771,6 +1811,33 @@
       "effect": "rageToDamage",
       "dmgPerRage": 9,
       "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
+    },
+    {
+      "id": "sleepDust",
+      "name": "Poudre de Sommeil",
+      "class": "assassin",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 9,
+      "effect": "alterEnemy",
+      "alteration": "asleep",
+      "duration": 3,
+      "description": "Endort l'ennemi jusqu'à 3 tours : il n'agit pas tant qu'il ne subit pas de dégâts"
+    },
+    {
+      "id": "exhaustArrow",
+      "name": "Flèche d'Épuisement",
+      "class": "assassin",
+      "cost": {
+        "green": 6
+      },
+      "minLevel": 11,
+      "effect": "alterEnemy",
+      "alteration": "exhausted",
+      "duration": 4,
+      "exhaustDrain": 3,
+      "description": "Épuise l'ennemi 4 tours : il perd 3 qì d'une couleur au hasard à chaque tour"
     }
   ],
   "templarSpells": [
@@ -2206,6 +2273,19 @@
       "effect": "rageToDamage",
       "dmgPerRage": 9,
       "description": "Libère toute la rage en un coup : 9 dégâts par point de rage"
+    },
+    {
+      "id": "stoneGaze",
+      "name": "Regard Pétrifiant",
+      "class": "templar",
+      "cost": {
+        "yellow": 7
+      },
+      "minLevel": 10,
+      "effect": "alterEnemy",
+      "alteration": "petrified",
+      "duration": 3,
+      "description": "Pétrifie l'ennemi 3 tours : il ne peut plus bloquer ni parer"
     }
   ],
   "barbarianSpells": [

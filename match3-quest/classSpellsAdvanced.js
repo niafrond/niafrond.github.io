@@ -1,4 +1,5 @@
 // Sorts avancés multi-qì (balayage de lignes, couleur, pluie d étoiles, tempête, rage) et ultimes. Extrait de classSpellEffects.js.
+import { healEntity } from './alterations.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
 import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
@@ -186,9 +187,9 @@ export function applyCageEnemy(spell) {
 
 export function applySecondWind(spell) {
     const heal = Math.max(0, Math.floor(spell.heal || 0));
-    player.hp = Math.min(player.maxHp, player.hp + heal);
+    healEntity(player, heal);   // Corrompu : le soin blesse
     flyHeal(true, heal);
-    ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused'].forEach(k => { delete player.statusEffects[k]; });
+    ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused', 'sealed', 'muted', 'cursed', 'cursePct', 'petrified', 'asleep', 'exhausted', 'exhaustDrain', 'corrupted'].forEach(k => { delete player.statusEffects[k]; });
     addBonusTurn(player);
     showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: '→ Vous • rejouez !' }, true);
     log(`${spell.name} soigne ${heal} PV, retire les statuts négatifs et vous laisse rejouer.`);
@@ -213,7 +214,7 @@ export function applyHarmony(spell) {
     const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
     applyDamage(enemy, dmg, { sourceSpell: spell });
     dmg = lastSpellDamage(dmg);
-    player.hp = Math.min(player.maxHp, player.hp + heal);
+    healEntity(player, heal);
     flyHeal(true, heal);
     MANA_COLORS.forEach(color => { enemy.mana[color] = Math.max(0, (enemy.mana[color] || 0) - drain); });
     showCombatAnimation({ icon: 'yinyang', title: spell.name.toUpperCase(), damage: `-${dmg} dégâts`, heal: `+${heal} PV`, target: `→ ${enemy.name} • -${drain} qì de chaque couleur` }, true);
@@ -366,7 +367,7 @@ export function applyUltimate(spell) {
     showCombatAnimation({ icon: 'fire', title: spell.name.toUpperCase(), damage: `ULTIME ! -${lastSpellDamage(spell.dmg)} dégâts`, target: `→ ${enemy.name}` }, true);
     if(spell.healPercent) {
         const heal = Math.floor(player.maxHp * spell.healPercent / 100);
-        player.hp = Math.min(player.maxHp, player.hp + heal);
+        healEntity(player, heal);
         log(`${spell.name} soigne ${heal} PV.`);
     }
     if(spell.stunTurns) {

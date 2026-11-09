@@ -163,6 +163,7 @@ export function critChance(entity, weakened = 0) {
     return clampChance(levelEdgeBonus(entity, rawAttack(entity)) - Math.max(0, Math.floor(weakened || 0)));
 }
 export function blockChance(entity) {
+    if ((entity?.statusEffects?.petrified || 0) > 0) return 0;   // Pétrifié : ni blocage ni parade
     return clampChance(levelEdgeBonus(entity, rawDefense(entity)));
 }
 

@@ -11,6 +11,7 @@ import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } fro
 import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
+import { healEntity, tickAlterations, isAsleep, confusedSelfHit } from './alterations.js';
 import { tickSpellCooldowns } from './spellCooldown.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
@@ -38,7 +39,7 @@ function applyCompanionPowers(){
         const announce = text => outcome.announcements.push({ id, title: who, damage: power.name, target: text });
         if(power.kind === 'heal'){
             const healed = Math.max(0, Math.min(player.maxHp - player.hp, amount));
-            player.hp += healed;
+            healEntity(player, healed);
             if(healed > 0) flyHeal(true, healed);
             announce(`+${healed} PV`);
             log(`${power.name} : ${who} rend ${healed} PV.`);
@@ -269,6 +270,14 @@ export function enemyTurn(){
         return;
     }
 
+    if(isAsleep(enemy)) {   // Endormi : n'agit que s'il subit des dégâts (qui le réveillent)
+        log(`${enemy.name} dort et ne peut pas agir.`);
+        setCurrentTurn('enemy');
+        updateStats();
+        setTimeout(() => { finishEnemyTurn(); }, 500);
+        return;
+    }
+
     setCurrentTurn('enemy');
     // show turn change before action
     updateStats();
@@ -311,6 +320,14 @@ export function enemyTurn(){
             enemy.combatPoints -= enemy.weapon.actionPoints;
             const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
             // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
+            if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
+                const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
+                applyDamage(enemy, selfStrike.damage);
+                playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+                log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
+                finishEnemyTurn();
+                return;
+            }
             const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
             let dmg = strike.damage;
             if(dmg > 0 && player.damageReduction > 0) {
@@ -348,7 +365,7 @@ export function applyAncientTurnPowers(){
     const { turnHealPct, turnArrowsPct } = stuffTotals(player);
     if(turnHealPct > 0 && player.hp > 0 && player.hp < player.maxHp){
         const heal = Math.min(player.maxHp - player.hp, Math.max(1, Math.round(player.maxHp * turnHealPct / 100)));
-        player.hp += heal;
+        healEntity(player, heal);
         flyHeal(true, heal);
         log(`Heaume antique : +${heal} PV.`);
     }
@@ -406,6 +423,7 @@ export function finishEnemyTurn(){
                 log(`Le scellement de ${enemy.name} se dissipe.`);
             }
         }
+        tickAlterations(enemy).forEach(m => log(m));
         if((player.statusEffects?.sealed || 0) > 0) {
             player.statusEffects.sealed--;
             if(player.statusEffects.sealed <= 0) {
@@ -431,7 +449,7 @@ export function finishEnemyTurn(){
         applyAncientTurnPowers();
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
-            player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
+            healEntity(player, player.regenEffect.hp);
             flyHeal(true, player.regenEffect.hp);
             log(`Régénération : +${player.regenEffect.hp} HP.`);
             player.regenEffect.turnsLeft--;
@@ -526,6 +544,8 @@ export function finishEnemyTurn(){
         // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
         tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
         tickSpellCooldowns();   // temps de recharge des sorts (Brasier des Sceaux…)
+        const playerSleeps = isAsleep(player);   // Endormi : le héros perd ce tour (sauf s'il a été réveillé par des dégâts)
+        tickAlterations(player).forEach(m => log(m));
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         turnFlags.foxActed = false;
         turnFlags.companionsActed = false;
@@ -534,6 +554,11 @@ export function finishEnemyTurn(){
         saveUpdate();
         updateStats(); // Pour mettre à jour le liseré
         restartSuggestionTimer();
+        if(playerSleeps){
+            log('Vous dormez et ne pouvez pas agir ce tour-ci.');
+            setTimeout(() => { if(gameState.combatState === 'active' && player.hp > 0) enemyTurn(); }, 900);
+            return;
+        }
         tutorialCallbacks.onPlayerTurn?.('turn');   // tutoriel scripté : début du tour du joueur
     }
 }

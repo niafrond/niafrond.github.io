@@ -119,6 +119,7 @@ export function analyzeBattleContext() {
 // ========================================
 
 export function evaluateSpells() {
+    if ((enemy.statusEffects?.muted || 0) > 0) return null;   // Muet : aucun sort
     const context = analyzeBattleContext();
     // un sort de soin n'a aucun intérêt quand l'ennemi est déjà à pleine vie
     const useableSpells = enemy.spells.filter(s => canAffordSpell(s) && !(s.heal && !s.dmg && enemy.hp >= enemy.maxHp));

@@ -1,6 +1,7 @@
 // Sorts de classe : bonus de caractéristiques, guerrier, templier, barbare (renforts, barrière, enragement, hache…). Extrait de classSpellEffects.js.
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyManaSteal, flyHeal } from './manaFlight.js';
+import { healEntity } from './alterations.js';
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { stackStatusEffect, addStatBuff, describeStatBuff } from './combatStats.js';
@@ -103,7 +104,7 @@ export function applySwiftStrike(spell) {
 export function applyConfuse(spell) {
     enemy.statusEffects.confused = spell.duration;
     showCombatAnimation({ icon: 'dizzy', title: "FLÈCHE DE BRUME", damage: '−qì/combo', target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
-    log(`Flèche de Brume : l'ennemi ne gagne que 1 qì par combinaison pendant ${spell.duration} tours !`);
+    log(`Flèche de Brume : l'ennemi est confus pendant ${spell.duration} tours : 1 qì par combinaison, et ses attaques peuvent se retourner contre lui !`);
     return true;
 }
 
@@ -270,7 +271,7 @@ export function applyReinforce(spell) {
     }
 
     const heal = count * Math.max(1, Math.floor(spell.healPerGem || 1));
-    player.hp = Math.min(player.maxHp, player.hp + heal);
+    healEntity(player, heal);   // Corrompu : le soin blesse
     flyHeal(true, heal);
     renderBoard();
     showCombatAnimation({ icon: 'spark', title: "RENFORT DES TROUPES", heal: `+${heal} HP`, target: '→ Vous' }, true);

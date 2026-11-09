@@ -35,6 +35,7 @@ import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
+import { setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
@@ -379,6 +380,8 @@ export function applyDamage(target, damage, options = {}){
         else if(target === player) normalizedDamage = styleDamageTaken(player, normalizedDamage);
     }
 
+    normalizedDamage = cursedDamage(target, normalizedDamage);   // Maudit : dégâts majorés
+
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
     normalizedDamage = affinityResult.modifiedDamage;
@@ -424,6 +427,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
+    if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
 
@@ -537,6 +541,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         return;
     }
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
+    if(spell.dmg && confusedSelfHit(caster)){ target = caster; log(`${escapeHtml(caster.name)} est confus : ${spell.name} se retourne contre lui !`); }   // Confus : peut subir ses propres attaques
     let enemyAnimShown = false;   // sort ennemi sans dégâts ni soin : une annonce générique est affichée en fin de fonction
 
     if(spell.dmg){
@@ -581,8 +586,8 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
     if(spell.heal){
         enemyAnimShown = true;
         const healAmount = spell.heal + intelligenceBonus;
-        caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
-        flyHeal(isPlayerCaster, healAmount);
+        const healResult = healEntity(caster, healAmount);   // Corrompu : le soin devient des dégâts
+        if(healResult.harmed === 0) flyHeal(isPlayerCaster, healAmount);
         playSfx('heal', { isPlayer: isPlayerCaster });
 
         if(isPlayerCaster) {
@@ -1454,20 +1459,23 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     }
 
     // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
-    const strike = resolveStrike(dmg, player, enemy);
+    const selfHit = confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
+    const strike = resolveStrike(dmg, player, selfHit ? player : enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
     dmg = strike.damage;
 
-    applyDamage(enemy, dmg);
+    if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
+    applyDamage(selfHit ? player : enemy, dmg);
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
     if(player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
-        player.hp = Math.min(player.maxHp, player.hp + heal);
-        flyHeal(true, heal);
-        log(`Vol de vie : +${heal} HP.`);
+        if(healEntity(player, heal).harmed === 0){
+            flyHeal(true, heal);
+            log(`Vol de vie : +${heal} HP.`);
+        }
     }
 
     const icon = getWeaponIcon(weapon.type);
@@ -1486,6 +1494,7 @@ export function castSpell(spellId){
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
+    if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un sort."); return; }
     if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
     if(!canEntityCastSpell(player, spell)){
         const missingColor = getMissingManaColor(player, spell);
@@ -1537,6 +1546,7 @@ export async function castUltimate(spellId){
     const spell = getUltimateById(spellId);
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
@@ -1921,6 +1931,7 @@ function runOpeningStrikes(count, delayMs, done){
 window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
 window.archiveSpell = archiveSpell;
+setAlterationHooks({ damage: (t, d) => applyDamage(t, d), log });
 window.unarchiveSpell = unarchiveSpell;
 window.equipUltimate = equipUltimate;
 window.equipWeapon = equipWeapon;
