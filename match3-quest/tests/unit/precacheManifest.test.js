@@ -22,14 +22,14 @@ describe('precache-manifest.json', () => {
 
     test('les médias couvrent toutes les musiques et tous les dessins des cinématiques, sorts et ultimes', () => {
         const media = new Set(committed.media.map(f => f.p));
-        // pistes jouées : variante traditionnelle `-b` si elle existe (sinon la base), `combat-0` seul pour le combat ordinaire
+        // pistes jouées : variante traditionnelle `-b` si elle existe (sinon la base), `combat-1` seul pour le combat ordinaire
         const files = readdirSync(`${GAME_DIR}/audio/music`).filter(n => n.endsWith('.mp3')).map(n => n.replace(/\.mp3$/, ''));
-        const played = files.filter(k => (/^combat-/.test(k) ? k === 'combat-0' : k.endsWith('-b') || !files.includes(`${k}-b`)));
+        const played = files.filter(k => (/^combat-/.test(k) ? k === 'combat-1' : k.endsWith('-b') || !files.includes(`${k}-b`)));
         expect(played.length).toBeGreaterThan(80);
         expect(played).toContain('title-b');
         expect(played).not.toContain('title');           // doublée par title-b
         expect(played).toContain('boss-dafeng-le-grand-vent');   // sans variante : la base reste
-        expect(played).not.toContain('combat-1');
+        expect(played).not.toContain('combat-0');
         played.forEach(k => expect(media.has(`audio/music/${k}.mp3`)).toBe(true));
         MEDIA_SPRITE_DIRS.forEach(dir => {
             const files = readdirSync(`${GAME_DIR}/sprites/${dir}`).filter(n => n.endsWith('.png') || n.endsWith('.json') || n.endsWith('.gif'));

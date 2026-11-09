@@ -209,7 +209,7 @@ function makeFetch(existing) {
 }
 const noopTimer = { set: () => 1, clear: () => {} };
 const flush = async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); await new Promise((r) => setImmediate(r)); };
-function setup(ctx, existing = new Set(['title', 'menu', 'combat-0', 'boss-a0', 'boss-soleil-ardent', 'village-paddy']), extra = {}) {
+function setup(ctx, existing = new Set(['title', 'menu', 'combat-1', 'boss-a0', 'boss-soleil-ardent', 'village-paddy']), extra = {}) {
     const state = { volume: 1, muted: false };
     const fetchFn = makeFetch(existing);
     setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, fetch: fetchFn, baseUrl: 'http://x/match3-quest/', timer: noopTimer, random: () => 0, ...extra });
@@ -230,8 +230,8 @@ describe('pistes pré-enregistrées : correspondance scène → fichier (musicTr
         keys.forEach((k) => expect(/^combat-[0-4]$/.test(k)).toBe(true));
         const [exact, fallback] = trackCandidates('boss', { boss: "Fengmeng, l'Archer Pressé" });
         expect(exact).toBe('boss-fengmeng-l-archer-presse');
-        expect(fallback).toBe('boss-combat-1');
-        expect(trackCandidates('boss')).toEqual(['boss-combat-1', 'boss-a0']);
+        expect(fallback).toBe('boss-combat');
+        expect(trackCandidates('boss')).toEqual(['boss-combat', 'boss-a0']);
         expect(combatStyleIndex('x')).toBeLessThan(5);
     });
     test('l\'archétype de repli est celui que compose le thème du boss (même hachage)', () => {
@@ -385,11 +385,11 @@ describe('lecteur de musique', () => {
         expect(isMusicPlaying()).toBe(true);
     });
 
-    test('combat ordinaire : toujours combat-0, sans variante traditionnelle', async () => {
-        expect(playlist('combat', ['combat-tides', 'combat-3'])).toEqual(['combat-0']);
-        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['combat-0', 'combat-0-b', 'combat-3', 'combat-3-b']));
+    test('combat ordinaire : toujours combat-1, sans variante traditionnelle', async () => {
+        expect(playlist('combat', ['combat-tides', 'combat-3'])).toEqual(['combat-1']);
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['combat-1', 'combat-1-b', 'combat-3', 'combat-3-b']));
         setMusicScene('combat', { variant: 3 }); await flush();
-        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['combat-0']);
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['combat-1']);
     });
 
     test('fondu enchaîné : l\'ancienne piste s\'arrête, une seule piste reste active', async () => {
@@ -411,7 +411,7 @@ describe('lecteur de musique', () => {
         const ctx2 = makeCtx(); const s2 = setup(ctx2, new Set(['boss-a0', 'boss-a1', 'boss-a2', 'boss-a3', 'boss-a4', 'boss-a5', 'boss-a6', 'boss-a7']));
         setMusicScene('boss', { boss: 'Boss Inconnu' }); await flush();
         const keys = s2.fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1]);
-        expect(keys).toEqual(['boss-boss-inconnu-b', 'boss-boss-inconnu', 'boss-combat-1-b', 'boss-combat-1', `boss-a${bossArchetypeIndex('Boss Inconnu')}-b`, `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
+        expect(keys).toEqual(['boss-boss-inconnu-b', 'boss-boss-inconnu', 'boss-combat-b', 'boss-combat', `boss-a${bossArchetypeIndex('Boss Inconnu')}-b`, `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
         expect(ctx2.nodes.some((n) => n.kind === 'source' && n.started)).toBe(true);
     });
 
