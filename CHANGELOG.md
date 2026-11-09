@@ -1,3 +1,9 @@
+## [2.216.0](https://github.com/niafrond/niafrond.github.io/compare/v2.215.0...v2.216.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** jouer combat-1 en combat ordinaire et l'ancien combat-0 pour les boss ([#686](https://github.com/niafrond/niafrond.github.io/issues/686)) ([641845b](https://github.com/niafrond/niafrond.github.io/commit/641845b725f33700efca5387687fb0aacef13997))
+
 ## [2.215.0](https://github.com/niafrond/niafrond.github.io/compare/v2.214.0...v2.215.0) (2026-11-09)
 
 ### Features

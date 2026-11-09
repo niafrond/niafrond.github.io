@@ -63,12 +63,12 @@ export function buildManifest(root = GAME_DIR) {
         ...list(root, 'audio/sfx', ext('.mp3'))
     ];
     // Pistes réellement jouées (musicTracks.js `playlist`) : version traditionnelle `-b` en priorité, piste de base seulement quand la variante n'existe pas ;
-    // combat ordinaire : `combat-0` uniquement. Les autres pistes de combat et les bases doublées par une variante ne sont jamais demandées.
+    // combat ordinaire : `combat-1` uniquement. Les autres pistes de combat et les bases doublées par une variante ne sont jamais demandées.
     const all = list(root, 'audio/music', ext('.mp3'));
     const names = new Set(all.map(p => p.replace(/^.*\//, '').replace(/\.mp3$/, '')));
     const music = all.filter(p => {
         const k = p.replace(/^.*\//, '').replace(/\.mp3$/, '');
-        if (/^combat-/.test(k)) return k === 'combat-0';
+        if (/^combat-/.test(k)) return k === 'combat-1';
         return k.endsWith('-b') || !names.has(`${k}-b`);
     });
     const art = [...list(root, GBA_SPRITE_DIR, ext('.js')), ...MEDIA_SPRITE_DIRS.flatMap(dir => list(root, `sprites/${dir}`, ext('.png', '.json', '.gif')))];

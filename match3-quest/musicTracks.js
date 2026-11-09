@@ -14,8 +14,8 @@ export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano'
 export const EVENT_TRACKS = { wandering_souls: 'event-wandering-souls', winter_lantern_mountain: 'event-winter-lantern' };
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;
-/** Ancien « Combat 2 » (combat-1), thème de boss commun aux boss sans thème propre. */
-export const BOSS_TRACK = 'boss-combat-1';
+/** Ancien combat-0, thème de boss commun aux boss sans thème propre. */
+export const BOSS_TRACK = 'boss-combat';
 export const MUSIC_DIR = 'audio/music/';
 
 /** Hash FNV-1a 32 bits d'une chaîne. */
@@ -63,12 +63,12 @@ export const trackUrl = (key) => `${MUSIC_DIR}${key}.mp3`;
 /** Suffixe de la variante traditionnelle d'une piste (`<clé>-b.mp3`). */
 export const VARIANT_SUFFIX = '-b';
 
-/** Seule piste de combat ordinaire jouée en jeu (la « musique 1 »). */
-export const COMBAT_TRACK = 'combat-0';
+/** Seule piste de combat ordinaire jouée en jeu (« Decision at Dawn »). */
+export const COMBAT_TRACK = 'combat-1';
 
 /**
  * Liste de lecture d'une scène : les musiques traditionnelles (`<clé>-b`) partout, avec la piste de base en repli quand la variante manque
- * (ex. boss sans variante). Exception : le combat ordinaire joue toujours `combat-0`, sans variante.
+ * (ex. boss sans variante). Exception : le combat ordinaire joue toujours `combat-1`, sans variante.
  */
 export function playlist(sceneId, candidates) {
     if (sceneId === 'combat') return [COMBAT_TRACK];
