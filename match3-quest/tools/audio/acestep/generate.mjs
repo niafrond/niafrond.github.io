@@ -46,7 +46,7 @@ const MIN_DURATION = 180;
 /** Suffixe de la 2e variante d'une piste (`<clé>-b.mp3`) : le jeu en tire une au hasard à chaque scène. */
 const ALT_SUFFIX = '-b';
 /** Traitements d'installation par piste. Combat 2 et 3 (trop doux) : compression + limiteur qui relève les passages calmes ; village volcan (aigus agressifs) : coupe des hautes fréquences. */
-const PUNCH_FILTER = 'acompressor=threshold=-26dB:ratio=3.5:attack=8:release=120:makeup=3.8,alimiter=limit=0.95';
+const PUNCH_FILTER = 'acompressor=threshold=-26dB:ratio=3.5:attack=8:release=120:makeup=2.6,alimiter=limit=0.95';
 /** Pistes dont seule une première partie est gardée (fraction de la durée utile) : le reste était faux ou nasillard ; la boucle reprend alors plus tôt. */
 const KEEP_FRACTION = {};
 const POST_FILTERS = { 'combat-1': PUNCH_FILTER, 'combat-2': PUNCH_FILTER, 'village-volcano': 'lowpass=f=5000,treble=g=-4:f=2500' };

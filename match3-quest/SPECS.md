@@ -763,3 +763,4 @@ Spécifications et journal de session de `match3-quest/`.
 - Les données de la carte (`screen.npcs`) ne sont jamais modifiées : la position vivante est dans `session.rt.villageLife`, lue par `visibleNpcs`. Le dessin glisse en douceur vers la case logique, avec un léger rebond (comme les habitants de passage).
 - Tests : `tests/unit/villageLife.test.js`.
 - `villageLife.js` est déclaré dans l'import map d'`index.html` (anti-cache) et dans `precache-manifest.json` (régénéré par `npm run precache:build`) ; des tests le vérifient.
+- 2026-11-09 (BO : égalisation du niveau des combats) : mesure EBU R128 de toute la bande-son (≈ −14 LUFS médian) ; `combat-1` (−10,5 LUFS, crêtes +1,3 dBTP) et `combat-2` (−11,0 LUFS) ressortaient nettement plus fortes. Les deux fichiers sont abaissés de 3,3 dB (+ limiteur) → −13,6 et −14,1 LUFS, et `PUNCH_FILTER` de `generate.mjs` passe à `makeup=2.6` (au lieu de 3,8) pour qu'une réinstallation donne le même niveau.
