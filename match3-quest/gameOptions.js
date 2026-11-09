@@ -5,7 +5,7 @@
 //  - vibration  : vibrations du téléphone (dégâts subis, onde de la perception du qì), désactivables.
 // Accessibilité :
 //  - textSize   : 'normal' | 'large' | 'xlarge' — taille du texte des menus, de la fiche des combattants et du journal ;
-//  - shapes     : symboles en plus des couleurs (tuiles, qì, camps) pour ne pas dépendre de la seule couleur ;
+//  - shapes     : tuiles et pastilles de qì remplacées par des formes pleines, une par couleur (+ camps distingués par la bordure) pour ne pas dépendre de la seule couleur ;
 //  - colorblind : mode daltonien — palette des tuiles et du qì séparée par la teinte ET la luminosité (rouge/vert, bleu/violet), symboles activés d'office ;
 //  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
 //  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
