@@ -1,3 +1,9 @@
+## [2.214.0](https://github.com/niafrond/niafrond.github.io/compare/v2.213.1...v2.214.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** supprimer les jingles de début de combat ([#684](https://github.com/niafrond/niafrond.github.io/issues/684)) ([309d41f](https://github.com/niafrond/niafrond.github.io/commit/309d41f3ba4e9130fae56cc1e4e8ce9ffadd54f6))
+
 ## [2.213.1](https://github.com/niafrond/niafrond.github.io/compare/v2.213.0...v2.213.1) (2026-11-09)
 
 ### Bug Fixes

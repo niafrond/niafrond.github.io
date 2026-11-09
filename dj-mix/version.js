@@ -2,10 +2,10 @@
 // It mirrors root /version.js so that Capacitor (webDir: dj-mix) can bundle it.
 export const SITE_SEMVER = {
   major: 2,
-  minor: 213,
-  patch: 1,
+  minor: 214,
+  patch: 0,
   prerelease: '',
-  buildDate: '2026-11-09T09:33:05.107Z',
+  buildDate: '2026-11-09T11:25:49.606Z',
 };
 
 export function getVersion() {
