@@ -1,7 +1,7 @@
 // Attaque / Défense : ce sont des probabilités, pas des dégâts.
 //  - Attaque = chance de COUP CRITIQUE (×1,5) d'une attaque armée ou d'un match de crânes ;
 //  - Défense = chance de BLOQUER une attaque armée ou un match de crânes subi : le blocage est total (aucun dégât)
-//    ou partiel (dégâts divisés par 2).
+//    ou partiel (dégâts divisés par 2). Un coup très puissant (isHeavyHit) ne peut qu'être très partiellement paré (-15 %).
 // Les valeurs peuvent dépasser 100 à l'écran (cumul d'objets, de sorts, de niveaux) mais la chance réelle reste
 // plafonnée à STAT_CHANCE_CAP (98 %). Les sorts ne sont ni bloqués ni critiques. Module pur, sans DOM.
 
@@ -11,7 +11,17 @@ import { stuffTotals } from "./stuff.js";
 export const STAT_CHANCE_CAP = 98;
 export const CRIT_MULTIPLIER = 1.5;
 export const PARTIAL_BLOCK_FACTOR = 0.5;   // dégâts restants après un blocage partiel
-export const TOTAL_BLOCK_SHARE = 0.4;      // part des blocages qui sont totaux (le reste est partiel)
+export const TOTAL_BLOCK_SHARE = 0.4;
+// Coup très puissant : dégâts (critique inclus) >= HEAVY_HIT_HP_SHARE des PV max de la cible (et au moins HEAVY_HIT_MIN). Il ne peut jamais
+// être bloqué entièrement : un blocage devient une parade très partielle (HEAVY_BLOCK_FACTOR des dégâts restants, ici -15 % seulement).
+export const HEAVY_HIT_HP_SHARE = 0.3;
+export const HEAVY_HIT_MIN = 12;
+export const HEAVY_BLOCK_FACTOR = 0.85;
+export const UNBLOCKABLE_DAMAGE = 500;   // à partir de 500 dégâts (critique inclus), le coup est INBLOCABLE : aucun jet de blocage
+export function isHeavyHit(damage, target) {
+    const maxHp = Math.max(0, Math.floor(target?.maxHp || 0));
+    return maxHp > 0 && damage >= Math.max(HEAVY_HIT_MIN, Math.ceil(maxHp * HEAVY_HIT_HP_SHARE));
+}      // part des blocages qui sont totaux (le reste est partiel)
 export const SKULL_STRENGTH_DIVISOR = 2;   // 1 dégât de plus par crâne tous les 2 points de force
 export const SKULL_STRENGTH_BONUS_CAP = 6;
 
@@ -173,8 +183,9 @@ export function rollBlock(entity, rng = Math.random) {
     return rng() < TOTAL_BLOCK_SHARE ? 'total' : 'partial';
 }
 
-export function applyBlock(damage, outcome) {
+export function applyBlock(damage, outcome, heavy = false) {
     const dmg = Math.max(0, Math.floor(damage || 0));
+    if (heavy && outcome !== 'none') return Math.max(1, Math.floor(dmg * HEAVY_BLOCK_FACTOR));   // coup très puissant : jamais de blocage total
     if (outcome === 'total') return 0;
     if (outcome === 'partial') return Math.max(1, Math.floor(dmg * PARTIAL_BLOCK_FACTOR));
     return dmg;
@@ -198,10 +209,14 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
     const crit = rollCrit(attacker, rng, weakened);
     if (crit) damage = applyCrit(damage);
     const bonus = crit ? applyCrit(enrageBonus) : enrageBonus;
-    const block = rollBlock(target, rng);
+    const forced = !!target?.tutorialBlock;   // blocage imposé du tutoriel : jamais requalifié
+    const unblockable = damage >= UNBLOCKABLE_DAMAGE && !forced;
+    let block = unblockable ? 'none' : rollBlock(target, rng);
     const intended = damage + bonus;   // dégâts prévus (critique inclus) avant blocage : 1re annonce de l'animation
-    damage = applyBlock(damage, block) + bonus;
-    return { damage, crit, block, intended };
+    const heavy = !forced && block !== 'none' && isHeavyHit(damage, target);
+    if (heavy) block = 'partial';   // un coup très puissant ne se bloque pas entièrement
+    damage = applyBlock(damage, block, heavy) + bonus;
+    return { damage, crit, block, intended, heavy, unblockable };
 }
 
 // Libellé d'un blocage pour le journal / l'animation.

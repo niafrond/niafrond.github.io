@@ -323,7 +323,7 @@ export function enemyTurn(){
             playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
             const icon = getWeaponIcon(enemy.weapon.type);
             showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
-            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
+            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
             
             // Vérifier l'état après l'action
             finishEnemyTurn();
