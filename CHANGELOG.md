@@ -1,3 +1,9 @@
+## [2.221.0](https://github.com/niafrond/niafrond.github.io/compare/v2.220.1...v2.221.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** archives des sorts, temps de recharge et altérations ([#696](https://github.com/niafrond/niafrond.github.io/issues/696)) ([f79e1ee](https://github.com/niafrond/niafrond.github.io/commit/f79e1eed550c1bf4d1a0dcde594ac74998b7f93f))
+
 ## [2.220.1](https://github.com/niafrond/niafrond.github.io/compare/v2.220.0...v2.220.1) (2026-11-09)
 
 ### Bug Fixes
