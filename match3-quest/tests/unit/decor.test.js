@@ -16,7 +16,7 @@ describe('obstacles bas', () => {
     test('les biomes à roseaux ont des décors bas, les autres non', () => {
         const hasLow = id => BIOME_DECOR[id].some(d => LOW_DECOR.has(d));
         expect(['paddy', 'riverbed', 'savanna'].every(hasLow)).toBe(true);
-        expect(['bamboo', 'volcano', 'cave', 'house'].some(hasLow)).toBe(false);
+        expect(['cave', 'house'].some(hasLow)).toBe(false);
     });
 
     test('une carte de rizières a des roseaux franchissables ET des obstacles pleins', () => {

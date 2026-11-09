@@ -24,7 +24,12 @@ export const BIOME_DECOR = {
 
 // Décors franchissables : tout ce qui ressemble à de l'herbe (roseaux, jonc, herbe sèche, algues) est trop bas pour arrêter un héros ;
 // ces cases se parcourent comme des hautes herbes, avec leurs rencontres aléatoires.
-export const LOW_DECOR = new Set(['rice', 'deadreed', 'drygrass', 'seaweed', 'kelp']);
+// Les petits obstacles (champignons, coquillages, fleurs, plumes…, ≤ 0,6 case) comptent aussi comme de l'herbe haute.
+export const LOW_DECOR = new Set([
+    'rice', 'deadreed', 'drygrass', 'seaweed', 'kelp',
+    'mushroom', 'glowmush', 'shoot', 'shell', 'conch', 'crab', 'starfish', 'anemone', 'hermit',
+    'goldleaves', 'blackfeather', 'moonflower'
+]);
 
 // ── Échelle des décors ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Jusqu'ici tous les décors étaient dessinés à 0,85 case : un lit, une armoire et un coquillage avaient la même taille. Ici chaque décor a sa taille :
