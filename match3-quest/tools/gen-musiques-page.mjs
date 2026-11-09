@@ -31,7 +31,7 @@ const ZH = {
 };
 
 // Les quatre premiers morceaux citent leur pièce autrement dans le catalogue (« inspired by Hua Yanjun "…" ») : titre forcé.
-const FIRST_FOUR = { 'combat-0-b': 'Shi Mian Mai Fu', 'moon-b': 'Erquan Yingyue', 'wild-bamboo-b': 'Yangguan Sandie', 'village-paddy-b': 'Fengyang Huagu' };
+const FIRST_FOUR = { 'moon-b': 'Erquan Yingyue', 'wild-bamboo-b': 'Yangguan Sandie', 'village-paddy-b': 'Fengyang Huagu' };
 
 // Texte de la pièce citée : après « the ancient piece » jusqu'à la première virgule hors parenthèses.
 function pieceOf(style) {
