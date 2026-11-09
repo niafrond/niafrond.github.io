@@ -178,16 +178,26 @@ jobs:
           path: mob-rush-android/android/app/build/outputs/apk/release/mob-rush.apk
           retention-days: 30
 
-      - name: Attach APK to latest GitHub release
+      # Release « roulante » propre à cette appli (tag fixe `apk-mob-rush`, prerelease donc jamais
+      # « latest ») : l'APK est toujours joint à une release qui existe déjà, indépendamment de
+      # semantic-release, et ne dépend que du dossier de l'appli. L'appli lit ce tag pour se mettre à jour.
+      - name: Publish APK to rolling release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          TAG="apk-mob-rush"
           APK_PATH="mob-rush-android/android/app/build/outputs/apk/release/mob-rush.apk"
-          RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
-          if [ -n "$RELEASE_TAG" ]; then
-            gh release upload "$RELEASE_TAG" "$APK_PATH#mob-rush.apk" --clobber
-            echo "APK attached to release $RELEASE_TAG"
+          VERSION=$(node -e "
+            const c = require('fs').readFileSync('version.js','utf8');
+            const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
+            process.stdout.write(m[1]+'.'+m[2]+'.'+m[3]);
+          ")
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "Mob Rush APK $VERSION" --notes "$VERSION"
           else
-            echo "No release found, APK available as workflow artifact only"
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Mob Rush APK $VERSION" --notes "$VERSION"
           fi
+          gh release upload "$TAG" "$APK_PATH#mob-rush.apk" --clobber
+          echo "APK $VERSION publié sur la release $TAG"

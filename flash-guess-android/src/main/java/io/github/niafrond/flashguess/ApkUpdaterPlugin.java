@@ -106,7 +106,7 @@ public class ApkUpdaterPlugin extends Plugin {
             // En cas d'échec (ex. permission non accordée), ouvrir l'URL dans le navigateur
             try {
                 Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse(
-                        "https://github.com/niafrond/niafrond.github.io/releases/latest/download/flash-guess.apk"));
+                        "https://github.com/niafrond/niafrond.github.io/releases/download/apk-flash-guess/flash-guess.apk"));
                 fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 ctx.startActivity(fallback);
             } catch (Exception fallbackEx) {
