@@ -1,3 +1,9 @@
+## [2.219.3](https://github.com/niafrond/niafrond.github.io/compare/v2.219.2...v2.219.3) (2026-11-09)
+
+### Bug Fixes
+
+* **flash-guess:** publier chaque APK sur sa propre release roulante ([#692](https://github.com/niafrond/niafrond.github.io/issues/692)) ([fcd33b0](https://github.com/niafrond/niafrond.github.io/commit/fcd33b0c88bc72d67cb53959985899e760762b55))
+
 ## [2.219.2](https://github.com/niafrond/niafrond.github.io/compare/v2.219.1...v2.219.2) (2026-11-09)
 
 ### Bug Fixes
