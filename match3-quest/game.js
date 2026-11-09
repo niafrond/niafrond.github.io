@@ -369,7 +369,7 @@ export function applyDamage(target, damage, options = {}){
         lastSpellStrike = strike;
         if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
         if(strike.block === 'total') log(`${escapeHtml(target.name)} bloque entièrement ${options.sourceSpell.name}.`);
-        else if(strike.block === 'partial') log(`${escapeHtml(target.name)} pare ${options.sourceSpell.name}.`);
+        else if(strike.block === 'partial') log(`${escapeHtml(target.name)} pare ${options.sourceSpell.name}${strike.heavy ? ' de justesse (coup trop puissant)' : ''}.`);
     }
 
     // Style de jeu du héros (playStyles.js) : multiplicateurs de dégâts infligés et subis, sans toucher aux statistiques.
@@ -1469,7 +1469,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     const icon = getWeaponIcon(weapon.type);
 
     showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}` }, strike, true, dmg);
-    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
+    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}${strike.heavy ? ' (coup trop puissant : parade très partielle)' : ''}.` : ''}`);
 }
 
 
