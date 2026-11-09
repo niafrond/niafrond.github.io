@@ -1,3 +1,9 @@
+## [2.220.1](https://github.com/niafrond/niafrond.github.io/compare/v2.220.0...v2.220.1) (2026-11-09)
+
+### Bug Fixes
+
+* **match3-quest:** déclencher l'appui long sur toute la zone stats de l'ennemi ([#695](https://github.com/niafrond/niafrond.github.io/issues/695)) ([c82b0cf](https://github.com/niafrond/niafrond.github.io/commit/c82b0cfb850d346a3f321f322d4c7bba45c6e56c))
+
 ## [2.220.0](https://github.com/niafrond/niafrond.github.io/compare/v2.219.4...v2.220.0) (2026-11-09)
 
 ### Features
