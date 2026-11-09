@@ -3,6 +3,7 @@
 // Paliers, difficulté choisie et personnalités : enemyAIProfiles.js (module pur). Tirage de l'action : enemyAIChoice.js.
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
+import { alterationOfSpell } from "./alterations.js";
 import { pickWeightedOption } from "./enemyAIChoice.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
 import { getOption } from "./gameOptions.js";
@@ -122,7 +123,15 @@ export function evaluateSpells() {
     if ((enemy.statusEffects?.muted || 0) > 0) return null;   // Muet : aucun sort
     const context = analyzeBattleContext();
     // un sort de soin n'a aucun intérêt quand l'ennemi est déjà à pleine vie
-    const useableSpells = enemy.spells.filter(s => canAffordSpell(s) && !(s.heal && !s.dmg && enemy.hp >= enemy.maxHp));
+    // Un sort d'altération est inutile si le héros l'a déjà (ou s'il est immunisé).
+    const alreadyAfflicted = s => {
+        if (s.effect === 'preventItems') return (player.statusEffects?.sealed || 0) > 0;
+        const alt = alterationOfSpell(s);
+        return !!alt && (player.statusEffects?.[alt.key] || 0) > 0;
+    };
+    const immune = (player.statusEffects?.immunityEffects || 0) > 0;
+    const useableSpells = enemy.spells.filter(s => canAffordSpell(s) && !(s.heal && !s.dmg && enemy.hp >= enemy.maxHp)
+        && !((alterationOfSpell(s) || s.effect === 'preventItems') && (alreadyAfflicted(s) || immune)));
     
     if (useableSpells.length === 0) {
         return null;
@@ -184,6 +193,18 @@ export function evaluateSpells() {
                 score += 20;
                 reason = "affaiblissement";
             }
+        }
+
+        // SORTS D'ALTÉRATION (Muet, Maudit, Pétrifié, Endormi, Épuisé, Corrompu, Scellé)
+        const alteration = alterationOfSpell(spell);
+        if (alteration || spell.effect === 'preventItems') {
+            const key = alteration?.key || 'sealed';
+            score += 45;
+            if (key === 'muted' && (player.activeSpells || []).length >= 3) score += 20;
+            if (key === 'exhausted' && context.playerManaAvailable > 20) score += 25;
+            if (key === 'cursed' || key === 'petrified') score += 15;
+            if (key === 'asleep' && context.isEnemyLowHealth) score -= 25;   // dormir ne sauve pas : le joueur se réveille au premier dégât
+            reason = 'altérer le joueur';
         }
 
         // Tendance de la personnalité (pondération bornée, jamais d'exclusion)

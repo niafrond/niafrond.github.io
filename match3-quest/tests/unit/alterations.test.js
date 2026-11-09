@@ -62,3 +62,19 @@ test('Confus : se frappe lui-même selon la chance', () => {
     expect(confusedSelfHit(e, () => 0.1)).toBe(true);
     expect(confusedSelfHit(e, () => 0.9)).toBe(false);
 });
+
+import { alterationOfSpell } from '../../alterations.js';
+import { readFileSync } from 'node:fs';
+const catalog = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));   // spells.js charge le JSON par XHR (absent sous Jest)
+
+test('alterationOfSpell lit les champs du sort', () => {
+    const alt = alterationOfSpell({ effect: 'alterEnemy', alteration: 'cursed', duration: 3, cursePct: 40 });
+    expect(alt).toMatchObject({ key: 'cursed', turns: 3, extra: { cursePct: 40 } });
+    expect(alterationOfSpell({ effect: 'freezeEnemy' })).toBeNull();
+    expect(alterationOfSpell({ effect: 'alterEnemy', alteration: 'inconnue' })).toBeNull();
+});
+
+test('chaque altération a au moins un sort de classe', () => {
+    const keys = [...catalog.sorcererSpells, ...catalog.assassinSpells, ...catalog.templarSpells].map(s => alterationOfSpell(s)?.key).filter(Boolean);
+    ['muted', 'cursed', 'petrified', 'asleep', 'exhausted', 'corrupted'].forEach(k => expect(keys).toContain(k));
+});

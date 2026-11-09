@@ -35,7 +35,7 @@ import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
+import { alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
@@ -532,12 +532,36 @@ export function consumeSpellMana(entity, spell){
     flyManaSpend(entity === player, paid, { toSpellId: entity === player ? spell.id : null });
 }
 
+function enemyInflictsAlteration(caster, target, spell){
+    const turns = Math.max(1, Math.floor(spell.duration || 1));
+    let label, landed;
+    if(spell.effect === 'preventItems'){
+        label = { icon: 'lock', name: 'Scellé', text: 'armes et objets bloqués' };
+        landed = inflictAlteration(target, 'sealed', turns);
+        if(landed && (spell.weakenAmount ?? 4) > 0) inflictAlteration(target, 'weakened', turns, { weakenedAmount: spell.weakenAmount ?? 4 });
+    } else {
+        const alt = alterationOfSpell(spell);
+        if(!alt) return;
+        label = alt.label;
+        landed = inflictAlteration(target, alt.key, alt.turns, alt.extra);
+    }
+    showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: '→ Vous' }, false);
+    log(landed
+        ? `${escapeHtml(caster.name)} lance ${spell.name} : vous êtes ${label.name.toLowerCase()} pendant ${turns} tours (${label.text}).`
+        : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité aux effets négatifs).`);
+}
+
 export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.effect === 'statBuff' && !isPlayerCaster){
         const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
         addStatBuff(caster, buff);
         showCombatAnimation({ icon: buff.attack > 0 ? 'sword' : 'shield', title: spell.name, heal: describeStatBuff(buff), source: caster.name, target: `→ ${caster.name}` }, false);
         log(`${escapeHtml(caster.name)} lance ${spell.name} : ${describeStatBuff(buff)}.`);
+        return;
+    }
+    // Altérations lancées par l'ennemi contre le héros (Muet, Maudit, Pétrifié, Endormi, Épuisé, Corrompu, Scellé).
+    if(!isPlayerCaster && (spell.effect === 'alterEnemy' || spell.effect === 'preventItems')){
+        enemyInflictsAlteration(caster, target, spell);
         return;
     }
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");

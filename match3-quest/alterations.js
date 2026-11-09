@@ -6,6 +6,24 @@ export const EXHAUST_DRAIN = 3;         // Épuisé : qì perdu chaque tour dans
 export const CONFUSION_SELF_HIT = 0.35; // Confus : chance qu'une attaque se retourne contre son auteur
 const QI_COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
 
+export const ALTERATION_LABELS = {
+    muted: { icon: 'mask', name: 'Muet', text: 'ne peut plus lancer de sorts' },
+    cursed: { icon: 'ghost', name: 'Maudit', text: 'subit davantage de dégâts' },
+    petrified: { icon: 'rock', name: 'Pétrifié', text: 'ne peut plus bloquer ni parer' },
+    asleep: { icon: 'moon', name: 'Endormi', text: 'n\'agit plus tant qu\'il ne subit pas de dégâts' },
+    exhausted: { icon: 'hourglass', name: 'Épuisé', text: 'perd du qì chaque tour' },
+    corrupted: { icon: 'blood', name: 'Corrompu', text: 'ses soins deviennent des dégâts' }
+};
+
+// Altération qu'un sort inflige (`alterEnemy`), avec ses champs annexes ; null si le sort n'en pose pas.
+export function alterationOfSpell(spell) {
+    if (spell?.effect !== 'alterEnemy' || !ALTERATION_LABELS[spell.alteration]) return null;
+    const extra = {};
+    if (spell.alteration === 'cursed' && spell.cursePct) extra.cursePct = spell.cursePct;
+    if (spell.alteration === 'exhausted' && spell.exhaustDrain) extra.exhaustDrain = spell.exhaustDrain;
+    return { key: spell.alteration, turns: Math.max(1, Math.floor(spell.duration || 1)), extra, label: ALTERATION_LABELS[spell.alteration] };
+}
+
 export const ALTERATION_KEYS = ['muted', 'cursed', 'petrified', 'asleep', 'exhausted', 'corrupted'];
 
 let hooks = { damage: (t, d) => { t.hp = Math.max(0, (t.hp || 0) - d); }, log: () => {} };
