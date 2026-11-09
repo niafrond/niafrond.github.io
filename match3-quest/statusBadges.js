@@ -19,6 +19,8 @@ export function activeStatuses(entity) {
     if (n(se.counterOnBlock) > 0) add('counter', 'sword', 'Riposte du Garde', 'buff', `Contre-attaque (${n(se.counterOnBlockDmg)} dégâts) quand un coup est bloqué.`, n(se.counterOnBlock));
     if (n(se.manaShield?.turns) > 0) add('manaShield', 'mana', 'Bouclier de qì', 'buff', `Les dégâts subis sont absorbés par le qì ${se.manaShield.color}.`, n(se.manaShield.turns));
     if (n(se.immunityEffects) > 0) add('immunity', 'yinyang', 'Formation de la Tortue', 'buff', 'Immunisé aux effets négatifs (poison, étourdissement, affaiblissement…).', n(se.immunityEffects));
+    if (n(se.controlResist) > 0) add('controlResist', 'shield', 'Résistance aux contrôles', 'buff', 'Ne peut plus être étourdi ni endormi pendant ce temps.', n(se.controlResist));
+    if (n(se.shieldWall) > 0) add('shieldWall', 'shield', 'Bastion Infranchissable', 'buff', 'Bloque totalement toutes les attaques.', n(se.shieldWall));
     if (n(se.drainOnHit) > 0) add('drain', 'swirl', 'Flèches Sifflantes', 'buff', `Chaque coup draine ${n(se.drainOnHitAmount)} qì à l'adversaire.`, n(se.drainOnHit));
     if (n(se.flameblade) > 0) add('flameblade', 'fire', 'Lame de Feu Pourpre', 'buff', `Le prochain coup d'arme inflige +${n(se.flameblade)} dégâts.`);
     if (se.revenant) add('revenant', 'ghost', 'Revenant', 'buff', 'Revient à la vie une fois à 0 PV.');
@@ -32,8 +34,14 @@ export function activeStatuses(entity) {
     if (n(se.poisoned) > 0) add('poisoned', 'poison', 'Poison', 'debuff', `Perd ${n(se.poisonDamage)} PV à chaque tour.`, n(se.poisoned));
     if (n(se.stunned) > 0) add('stunned', 'dizzy', 'Étourdi', 'debuff', 'Passe son prochain tour.', n(se.stunned));
     if (n(se.weakened) > 0) add('weakened', 'snow', 'Affaibli', 'debuff', `-${n(se.weakenedAmount)} attaque (chance de critique réduite).`, n(se.weakened));
-    if (n(se.confused) > 0) add('confused', 'brain', 'Confus', 'debuff', 'Ses actions peuvent échouer ou viser au hasard.', n(se.confused));
-    if (n(se.itemBlocked) > 0) add('itemBlocked', 'lock', 'Objets scellés', 'debuff', 'Ne peut pas utiliser d\'objets.', n(se.itemBlocked));
+    if (n(se.confused) > 0) add('confused', 'brain', 'Confus', 'debuff', 'Gagne moins de qì et peut subir ses propres attaques.', n(se.confused));
+    if (n(se.muted) > 0) add('muted', 'mask', 'Muet', 'debuff', 'Ne peut plus lancer de sorts.', n(se.muted));
+    if (n(se.cursed) > 0) add('cursed', 'ghost', 'Maudit', 'debuff', `Subit ${n(se.cursePct) || 30} % de dégâts en plus.`, n(se.cursed));
+    if (n(se.petrified) > 0) add('petrified', 'rock', 'Pétrifié', 'debuff', 'Ne peut plus bloquer ni parer.', n(se.petrified));
+    if (n(se.asleep) > 0) add('asleep', 'moon', 'Endormi', 'debuff', 'Ne peut pas agir tant qu\'il ne subit pas de dégâts.', n(se.asleep));
+    if (n(se.exhausted) > 0) add('exhausted', 'hourglass', 'Épuisé', 'debuff', `Perd ${n(se.exhaustDrain) || 3} qì d'une couleur au hasard à chaque tour.`, n(se.exhausted));
+    if (n(se.corrupted) > 0) add('corrupted', 'blood', 'Corrompu', 'debuff', 'Ses soins deviennent des dégâts.', n(se.corrupted));
+    if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
     return out;
 }
 

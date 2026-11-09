@@ -44,7 +44,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'soluce');
 const IMG = join(OUT, 'img');
 const CATALOG = JSON.parse(readFileSync(join(ROOT, 'enemies.catalog.json'), 'utf8'));
-const ultimateSpells = JSON.parse(readFileSync(join(ROOT, 'spells.json'), 'utf8')).ultimateSpells;
+const SPELLS = JSON.parse(readFileSync(join(ROOT, 'spells.json'), 'utf8'));
+const ultimateSpells = SPELLS.ultimateSpells;
 const TEMPLATE = Object.fromEntries(CATALOG.map(t => [t.id, t]));
 
 // ───────────────────────── Utilitaires ─────────────────────────
@@ -211,7 +212,7 @@ footer{max-width:980px;margin:0 auto;padding:16px;font:.78rem system-ui,sans-ser
 
 const NAV = [
     ['soluce.html', 'Accueil'], ['parcours.html', 'Parcours principal'], ['zones.html', 'Zones et jonctions'], ['bases.html', 'Bases du combat'],
-    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
+    ['compagnons.html', 'Compagnons'], ['quetes.html', 'Quêtes'], ['sorts.html', 'Sorts'], ['ultimes.html', 'Ultimes'], ['stuff.html', 'Stuff d’exception'], ['enigmes.html', 'Énigmes et armures'],
     ['bestiaire.html', 'Bestiaire'],
     ...(EVENT_ON ? [['royaume-des-ames.html', 'Royaume des âmes']] : []),
     ...(WINTER_ON ? [['fete-des-lanternes.html', 'Fête des lanternes']] : []),
@@ -637,6 +638,41 @@ function buildBases() {
 <div class="scroll"><table><tr><th>Compagnon</th><th>Pouvoir</th><th>Effet</th></tr>${pw}</table></div>
 <h3>Protections de biome</h3>
 <div class="scroll"><table><tr><th>Collier</th><th>Biome</th><th>Effet</th></tr>${bio}</table></div>`
+    }));
+}
+
+// Sorts du jeu, vus par le joueur : niveau, coût, effet, recharge, et si les ennemis peuvent les lancer.
+const SPELL_FAMILIES = [['allSpells', 'Sorts communs', 'Accessibles à toutes les classes.'], ['sorcererSpells', 'Sorcier', ''], ['assassinSpells', 'Archer', ''],
+    ['templarSpells', 'Templier', ''], ['barbarianSpells', 'Barbare', '']];
+const PLAYER_ONLY_SPELLS = new Set(['brasierSeals', 'thunderPrison']);   // sorts de plateau que l'ennemi ne peut pas rejouer
+const spellCostText = sp => Object.entries(typeof sp.cost === 'number' ? { [sp.color]: sp.cost } : sp.cost).map(([c, n]) => `${n} ${(COLOR_FR[c] || c).toLowerCase()}`).join(', ');
+const spellEffectText = (sp, family) => {
+    if (family === 'allSpells' && !sp.effect && !sp.poisonDmg) {
+        if (sp.type === 'damage') return `${sp.dmg} dégâts`;
+        if (sp.type === 'heal') return `Restaure ${sp.heal} PV`;
+    }
+    return sp.description;
+};
+const spellAnchor = key => `sorts-${key}`;
+
+function buildSorts() {
+    const head = '<tr><th>Sort</th><th>Niveau</th><th>Coût</th><th>Effet</th><th>Recharge</th><th>Ennemis</th></tr>';
+    const sections = SPELL_FAMILIES.map(([key, title, intro]) => {
+        const rows = SPELLS[key].map(sp => `<tr><td><b>${esc(sp.name)}</b></td><td>${sp.minLevel}</td><td>${esc(spellCostText(sp))}</td><td>${esc(spellEffectText(sp, key))}</td><td>${sp.cooldown ? `${sp.cooldown} tours` : ''}</td><td>${PLAYER_ONLY_SPELLS.has(sp.id) ? 'Non' : 'Oui'}</td></tr>`).join('');
+        return `<h2 id="${spellAnchor(key)}">${esc(title)} <small>${SPELLS[key].length} sorts</small></h2>${intro ? `<p>${esc(intro)}</p>` : ''}<div class="scroll"><table>${head}${rows}</table></div>`;
+    }).join('');
+    const total = SPELL_FAMILIES.reduce((n, [key]) => n + SPELLS[key].length, 0);
+    write('sorts.html', page({
+        file: 'sorts.html', title: 'Sorts', active: 'sorts.html',
+        desc: 'Tous les sorts des classes et les sorts communs : niveau, coût, effet et recharge.',
+        crumbs: [['soluce.html', 'Accueil'], [null, 'Sorts']],
+        body: `<h2>Les ${total} sorts</h2>
+<p class="lead">Quatre sorts peuvent être équipés à la fois. Un sort se lance en dépensant du qì des couleurs indiquées ; il apparaît dans l’onglet Sorts dès que vous atteignez son niveau. Les ultimes ont leur propre page.</p>
+<div class="box info"><b class="t">Les ennemis aussi</b>Les ennemis lancent les sorts communs et ceux de leur classe. Quand un ennemi lance un sort de plateau, il détruit des lignes, des colonnes ou des gemmes tirées au hasard ; ses dégâts viennent des gemmes détruites et il récupère leur qì.</div>
+<div class="box tip"><b class="t">Rage</b>Chaque classe a ses sorts de rage : l’un en gagne, l’autre la convertit en qì, le dernier la libère en dégâts. Le Sorcier libère une magie pure et convertit le plus de qì ; l’Archer tire en plusieurs coups qui peuvent chacun être critiques ; le Templier gagne de la défense en plus des dégâts ; le Barbare frappe le plus fort d’un seul coup.</div>
+<div class="box warn"><b class="t">Contrôles</b>Un étourdissement ou un sommeil ne peut pas être enchaîné : une fois posé, la cible y résiste pendant sa durée puis 2 tours de plus. Silence, scellement et pétrification se combinent librement avec eux.</div>
+${sections}
+<p><a href="ultimes.html">Voir les ultimes</a></p>`
     }));
 }
 
@@ -1140,7 +1176,8 @@ function buildHub() {
         ...CATALOG.filter(t => t.id !== 'fallback_enemy').map(t => ({ t: bestiaryEntry(t).heading, k: `bestiaire créature ennemi monstre ${t.name} ${t.race || ''} ${t.title || ''}`, h: `soluce/bestiaire.html#be-${t.id}`, c: 'Bestiaire' })),
         { t: 'Chang’e : soigner les villageois', k: 'chang e change soin soigner blessés villageois village miroir puzzle épisode', h: 'soluce/change.html', c: 'Mode Chang’e' },
         ...(WINTER_ON ? [{ t: SCREENS[WL.REALM_ID].name, k: 'événement neige hiver fête lanternes solstice tangyuan flamme gardien jade', h: 'soluce/fete-des-lanternes.html', c: 'Événement' }] : []),
-        ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' }))
+        ...allStuff.map(s => ({ t: s.name, k: `${s.description} ${STUFF_SLOT_LABELS[s.slot]}`, h: `soluce/stuff-${s.id}.html`, c: 'Stuff' })),
+        ...SPELL_FAMILIES.flatMap(([key, title]) => SPELLS[key].map(sp => ({ t: sp.name, k: `sort ${title} ${spellEffectText(sp, key)}`, h: `soluce/sorts.html#${spellAnchor(key)}`, c: 'Sort' })))
     ];
     write('soluce.html', page({
         file: 'soluce.html', title: 'Accueil', active: 'soluce.html',
@@ -1161,6 +1198,7 @@ ${EVENT_ON ? `<a class="card" href="soluce/royaume-des-ames.html"><b>Royaume des
 <a class="card" href="soluce/change.html"><b>Chang’e</b><span>Trois épisodes de soin dans les villages</span></a>
 ${WINTER_ON ? `<a class="card" href="soluce/fete-des-lanternes.html"><b>Fête des lanternes</b><span>Événement d’hiver : ${QUESTS.filter(q => q.event === WL.ID).length} quêtes, ${WINTER_PUZZLES.length} énigmes, 4 cartes</span></a>` : ''}
 <a class="card" href="soluce/bestiaire.html"><b>Bestiaire</b><span>${BESTIARY_COUNT} créatures : force, faiblesse, lieux</span></a>
+<a class="card" href="soluce/sorts.html"><b>Sorts</b><span>${SPELL_FAMILIES.reduce((n, [key]) => n + SPELLS[key].length, 0)} sorts : niveau, coût, effet</span></a>
 <a class="card" href="soluce/ultimes.html"><b>Ultimes</b><span>Rage, qì, sorts de classe et de légende</span></a>
 <a class="card" href="soluce/stuff.html"><b>Stuff d’exception</b><span>${allStuff.length} pièces dont ${allStuff.filter(s => s.quest).length} colliers de quête</span></a>
 </div>
@@ -1196,6 +1234,7 @@ buildStuff();
 buildBases();
 buildPuzzles();
 buildUltimes();
+buildSorts();
 buildParcours();
 buildZones();
 buildEvent();

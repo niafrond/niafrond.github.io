@@ -12,6 +12,7 @@ import { playSfx } from "./sound.js";
 import { JOKER_TILE, isJokerTile, shouldCreateJokerFromMatchLength, pickRandomNonJokerIndex, rollTileWithJoker, rollBalancedTile, baseTile, maybeSkull5 } from "./joker.js";
 import { actionGuard } from "./actionGuard.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
+import { confusedSelfHit } from "./alterations.js";
 import { ensureBoardResizeListeners, syncBoardTileSize } from './boardLayout.js';
 export * from './boardLayout.js';
 import { clearSuggestion, clearSuggestionTimer, getSortedPossibleMoves, handleNoPossibleMoveForCurrentTurn, startSuggestionTimer } from './boardSuggestions.js';
@@ -174,7 +175,7 @@ let boardDropProbabilities = null;
 let pendingComboAnimations = 0;
 let boardSettledCallbacks = [];
 
-// Les tuiles sont des dessins (gâteaux de lune, soleil ardent, flèche : voir retro.css et sprites/tiles/) :
+// Les tuiles sont des dessins (gâteaux de lune, crâne, flèche : voir retro.css et sprites/tiles/) :
 // plus de glyphe emoji dans la case, seulement une infobulle qui rappelle le rôle de la tuile.
 const TILE_LABELS = {
     red: 'Gâteau de lune au haricot rouge',
@@ -827,7 +828,9 @@ export function checkMatches(forceFullBoard = false){
             const attacker = currentTurn === 'player' ? player : enemy;
             // Les crânes sont des dégâts, pas un gain : la pastille vole vers l'adversaire, pas vers celui qui attaque.
             flyManaToCounter(indices, null, { isPlayer: attacker !== player, type: 'skull' });
-            const opponent = currentTurn === 'player' ? enemy : player;
+            const selfHit = confusedSelfHit(attacker);   // Confus : les crânes se retournent contre leur auteur
+            const opponent = selfHit ? attacker : (currentTurn === 'player' ? enemy : player);
+            if(selfHit) log(`${attacker.name} est confus : ses crânes se retournent contre lui !`);
             // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
             const attackBonus = skullStrengthBonus(attacker);
             const rawDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);

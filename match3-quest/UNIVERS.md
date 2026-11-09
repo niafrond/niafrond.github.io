@@ -108,7 +108,7 @@ rethématisées :
 | `tile-green` | gemme verte | gâteau au thé matcha (vert jade, motif de bambou) |
 | `tile-yellow` | gemme jaune | gâteau doré au jaune d'œuf salé (croûte dorée brillante, motif de soleil) |
 | `tile-purple` | gemme violette | gâteau au taro violet (motif de nuage) |
-| `tile-skull` | crâne (dégâts) | disque de **soleil ardent** (flammes), rouge-orangé |
+| `tile-skull` | crâne (dégâts) | **crâne** (tête de mort), rouge-orangé |
 | `tile-combat` | épées (points de combat) | **flèche** sacrée croisée sur un carquois |
 | `tile-joker` | joker | gâteau de **pleine lune** nacré avec reflets arc-en-ciel |
 

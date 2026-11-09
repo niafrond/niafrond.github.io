@@ -58,16 +58,52 @@ export function updateSpellsTab(){
     // sorts disponibles (non équipés)
     availableList.innerHTML = '';
     const sortFn = SPELL_SORTS[sortChoice('spells-sort')];
-    const unequipped = player.availableSpells.filter(sp => !player.activeSpells.some(active => active.id === sp.id));
+    const archived = archivedIds();
+    const unequipped = player.availableSpells.filter(sp => !player.activeSpells.some(active => active.id === sp.id) && !archived.includes(sp.id));
     if(sortFn) unequipped.sort(sortFn);
-    if(unequipped.length === 0){
-        availableList.innerHTML = '<p class="shop-empty">Tous vos sorts sont équipés.</p>';
-        return;
-    }
     const full = player.activeSpells.length >= MAX_ACTIVE_SPELLS;   // plus de place : le bouton propose de remplacer un sort
+    if(unequipped.length === 0){
+        availableList.innerHTML = '<p class="shop-empty">Aucun sort à équiper.</p>';
+    }
     unequipped.forEach(sp => {
-        availableList.appendChild(spellCard(sp, `<button type="button" class="weapon-action" onclick="window.equipSpell('${sp.id}')">${full ? 'Remplacer…' : 'Équiper'}</button>`, 'available-spell'));
+        const actions = `<button type="button" class="weapon-action" onclick="window.archiveSpell('${sp.id}')" title="Ranger ce sort dans les archives">Archiver</button>`
+            + `<button type="button" class="weapon-action" onclick="window.equipSpell('${sp.id}')">${full ? 'Remplacer…' : 'Équiper'}</button>`;
+        availableList.appendChild(spellCard(sp, actions, 'available-spell'));
     });
+    updateArchivedSpells(sortFn);
+}
+
+// ── Archives : sorts rangés hors de la liste des sorts disponibles (pour épurer la vue) ──
+const archivedIds = () => Array.isArray(player.archivedSpells) ? player.archivedSpells : [];
+
+function updateArchivedSpells(sortFn){
+    const box = document.getElementById('archived-spells');
+    const list = document.getElementById('archived-spells-list');
+    const count = document.getElementById('archived-spells-count');
+    if(!box || !list) return;
+    const archived = archivedIds();
+    const spells = player.availableSpells.filter(sp => archived.includes(sp.id));
+    if(sortFn) spells.sort(sortFn);
+    if(count) count.textContent = `(${spells.length})`;
+    list.innerHTML = spells.length ? '' : '<p class="shop-empty">Aucun sort archivé.</p>';
+    spells.forEach(sp => {
+        list.appendChild(spellCard(sp, `<button type="button" class="weapon-action" onclick="window.unarchiveSpell('${sp.id}')">Désarchiver</button>`, 'archived-spell'));
+    });
+}
+
+export function archiveSpell(spellId){
+    if(!player.availableSpells.some(s => s.id === spellId)) return;
+    if(player.activeSpells.some(s => s.id === spellId)) return;   // un sort équipé ne s'archive pas
+    if(!Array.isArray(player.archivedSpells)) player.archivedSpells = [];
+    if(!player.archivedSpells.includes(spellId)) player.archivedSpells.push(spellId);
+    saveUpdate();
+    updateSpellsTab();
+}
+
+export function unarchiveSpell(spellId){
+    player.archivedSpells = archivedIds().filter(id => id !== spellId);
+    saveUpdate();
+    updateSpellsTab();
 }
 
 // Appui long (ou survol à la souris) sur un sort de la liste : affiche son effet.

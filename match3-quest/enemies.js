@@ -3,7 +3,7 @@
 import { growEnemy } from './enemyGrowth.js';
 import { rollEnemyStuff, enemyStuffMaxHp } from './enemyStuff.js';
 import { allWeapons } from "./weapons.js";
-import { MAX_ACTIVE_SPELLS } from "./constants.js";
+import { MAX_ACTIVE_SPELLS, BASE_BOARD_SIZE } from "./constants.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
@@ -142,9 +142,39 @@ export function enemySpellSlots(level){
     return Math.min(MAX_ACTIVE_SPELLS, 2 + Math.floor(Math.max(1, level) / 3));
 }
 
+// Version ennemie d'un sort générique. Un sort de plateau (lignes, colonnes, couleur détruites) reste un vrai sort de plateau : l'ennemi le lance
+// sur le plateau, lignes et colonnes tirées au hasard (voir classSpellsAdvanced.js). Son `dmg` n'est qu'une estimation pour l'IA
+// (dégâts par case × nombre de cases attendu de la couleur du sort sur un plateau de BASE_BOARD_SIZE). Renvoie null si le sort n'a pas d'équivalent.
+const BOARD_SPELL_TILES = {
+    sweepRow: () => BASE_BOARD_SIZE,
+    sweepCol: () => BASE_BOARD_SIZE,
+    sweepCross: () => 2 * BASE_BOARD_SIZE - 1,
+    clearColor: () => BASE_BOARD_SIZE * BASE_BOARD_SIZE,
+    destroyColumns: sp => (sp.columns || 1) * BASE_BOARD_SIZE,
+    starRain: sp => (sp.rows || 1) * BASE_BOARD_SIZE + (sp.columns || 1) * BASE_BOARD_SIZE - (sp.rows || 1) * (sp.columns || 1)
+};
+export function enemyVersionOfSpell(sp){
+    if(!sp.effect) return sp;
+    const tiles = BOARD_SPELL_TILES[sp.effect];
+    if(tiles){
+        const colorShare = Math.max(1, (sp.colors || [sp.color]).filter(Boolean).length) / 5;
+        const dmg = Math.max(1, Math.round((sp.dmgPerTile || 0) * tiles(sp) * colorShare));
+        return { ...sp, type: 'damage', dmg, boardSpell: true };
+    }
+    if(sp.effect === 'harmony'){   // dégâts + soin ; le qì retiré au joueur n'est pas rejoué
+        const { effect, manaDrain, ...rest } = sp;
+        return { ...rest, type: 'damage' };
+    }
+    if(sp.effect === 'secondWind'){   // soin seul : ni tour bonus ni purge pour l'ennemi
+        const { effect, cooldown, ...rest } = sp;
+        return { ...rest, type: 'heal' };
+    }
+    return null;   // Brasier des Sceaux (crânes qui profiteraient au joueur), Prison du Tonnerre Glacé (étourdissement du héros non géré)
+}
+
 function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
     const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
-    const genericSpells = getAllSpells().filter(sp => !sp.class && !sp.effect && !sp.playerOnly && sp.minLevel <= enemyLevel);   // sorts avancés (effets de plateau) : réservés au joueur
+    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel).map(enemyVersionOfSpell).filter(Boolean);
 
     const preferredColors = template.spellProfile?.preferredColors || [];
     const slots = enemySpellSlots(enemyLevel);

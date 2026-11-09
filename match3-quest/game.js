@@ -35,13 +35,15 @@ import { applyGrowth } from "./progression.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
+import { alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
 export { TOOLTIP_LONG_PRESS_MS };
-import { equipSpell, equipUltimate, unequipSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
+import { spellCooldownLeft, startSpellCooldown, resetSpellCooldowns } from "./spellCooldown.js";
+import { equipSpell, equipUltimate, unequipSpell, archiveSpell, unarchiveSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
 export { equipSpell, equipUltimate, unequipSpell, updateSpellsTab };
 import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
 export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem };
@@ -378,6 +380,8 @@ export function applyDamage(target, damage, options = {}){
         else if(target === player) normalizedDamage = styleDamageTaken(player, normalizedDamage);
     }
 
+    normalizedDamage = cursedDamage(target, normalizedDamage);   // Maudit : dégâts majorés
+
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
     normalizedDamage = affinityResult.modifiedDamage;
@@ -423,6 +427,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
+    if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
 
@@ -527,6 +532,25 @@ export function consumeSpellMana(entity, spell){
     flyManaSpend(entity === player, paid, { toSpellId: entity === player ? spell.id : null });
 }
 
+function enemyInflictsAlteration(caster, target, spell){
+    const turns = Math.max(1, Math.floor(spell.duration || 1));
+    let label, landed;
+    if(spell.effect === 'preventItems'){
+        label = { icon: 'lock', name: 'Scellé', text: 'armes et objets bloqués' };
+        landed = inflictAlteration(target, 'sealed', turns);
+        if(landed && (spell.weakenAmount ?? 4) > 0) inflictAlteration(target, 'weakened', turns, { weakenedAmount: spell.weakenAmount ?? 4 });
+    } else {
+        const alt = alterationOfSpell(spell);
+        if(!alt) return;
+        label = alt.label;
+        landed = inflictAlteration(target, alt.key, alt.turns, alt.extra);
+    }
+    showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: '→ Vous' }, false);
+    log(landed
+        ? `${escapeHtml(caster.name)} lance ${spell.name} : vous êtes ${label.name.toLowerCase()} pendant ${turns} tours (${label.text}).`
+        : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité aux effets négatifs).`);
+}
+
 export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.effect === 'statBuff' && !isPlayerCaster){
         const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
@@ -535,7 +559,13 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         log(`${escapeHtml(caster.name)} lance ${spell.name} : ${describeStatBuff(buff)}.`);
         return;
     }
+    // Altérations lancées par l'ennemi contre le héros (Muet, Maudit, Pétrifié, Endormi, Épuisé, Corrompu, Scellé).
+    if(!isPlayerCaster && (spell.effect === 'alterEnemy' || spell.effect === 'preventItems')){
+        enemyInflictsAlteration(caster, target, spell);
+        return;
+    }
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
+    if(spell.dmg && confusedSelfHit(caster)){ target = caster; log(`${escapeHtml(caster.name)} est confus : ${spell.name} se retourne contre lui !`); }   // Confus : peut subir ses propres attaques
     let enemyAnimShown = false;   // sort ennemi sans dégâts ni soin : une annonce générique est affichée en fin de fonction
 
     if(spell.dmg){
@@ -572,6 +602,12 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         }
     }
 
+    if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
+        const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
+        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: spell.poisonDmg });
+        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${spell.poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
+    }
+
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
         addBonusTurn(caster, 1);
         log(`${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
@@ -580,8 +616,8 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
     if(spell.heal){
         enemyAnimShown = true;
         const healAmount = spell.heal + intelligenceBonus;
-        caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
-        flyHeal(isPlayerCaster, healAmount);
+        const healResult = healEntity(caster, healAmount);   // Corrompu : le soin devient des dégâts
+        if(healResult.harmed === 0) flyHeal(isPlayerCaster, healAmount);
         playSfx('heal', { isPlayer: isPlayerCaster });
 
         if(isPlayerCaster) {
@@ -615,6 +651,7 @@ export let player = {
     attributes: { strength:0, agility:0, intelligence:0, stamina:0, morale:0 },
     spells: [],
     activeSpells: [],  // sorts équipés (max 4)
+    archivedSpells: [], // ids des sorts rangés dans les archives (masqués de la liste des sorts disponibles)
     equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
     unlockedUltimates: [],   // ultimes de légende (Quatre Gardiens Célestes) gagnés par quête, toutes classes (ultimates.js)
     availableSpells: [], // sorts débloqués
@@ -1040,7 +1077,7 @@ export function showEndCombatAnimation(isVictory){
 
 // règles de combat
 export const combatCost = 5;             // points nécessaires pour une attaque normale
-export const skullDamage = 1;           // dégâts infligés par soleil lors d'un match
+export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
 export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
@@ -1092,7 +1129,7 @@ export function restartCombat({ keepHp = false } = {}){
     player.tempCritChance = 0;
     clearStatBuffs(player);
     clearStatBuffs(enemy);
-    if(player.statusEffects){ delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; }   // le poison ne survit pas au combat
+    if(player.statusEffects){ delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; delete player.statusEffects.controlResist; }   // le poison et la résistance aux contrôles ne survivent pas au combat
     // Réinitialiser le statut du jeu
     setGameStarted(false);
     // Appliquer les aptitudes de début de combat
@@ -1161,6 +1198,7 @@ export function startNewCombat(selectedEnemy = null){
     delete document.body.dataset.combatEnd;
     preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
     gameState.combatState = 'active';
+    resetSpellCooldowns();
     setBoardSize((selectedEnemy?.isBoss && !selectedEnemy.isTutorialEnemy) ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon (et pour le duel-tutoriel, dont le plateau figé est en 8×8)
     window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
     ensureCombatUsableActiveItem();
@@ -1257,6 +1295,7 @@ export function loadGameData() {
             player.attributes = { ...player.attributes, ...(loaded.attributes || {}) };
             player.spells = loaded.spells ?? player.spells;
             player.activeSpells = loaded.activeSpells ?? player.activeSpells;
+            player.archivedSpells = Array.isArray(loaded.archivedSpells) ? loaded.archivedSpells.filter(id => typeof id === 'string') : [];
             player.equippedUltimate = loaded.equippedUltimate ?? player.equippedUltimate;
             player.unlockedUltimates = normalizeUnlockedUltimates(loaded.unlockedUltimates);
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
@@ -1414,6 +1453,7 @@ export function useWeapon(hand = 'right'){
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
+    if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
     if(player.combatPoints < weapon.actionPoints){ 
         log(`Il faut ${weapon.actionPoints} points d'action pour utiliser ${weapon.name}.`); 
         return; 
@@ -1449,20 +1489,23 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     }
 
     // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
-    const strike = resolveStrike(dmg, player, enemy);
+    const selfHit = confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
+    const strike = resolveStrike(dmg, player, selfHit ? player : enemy);
     const isCrit = strike.crit;
     const blockText = blockLabel(strike.block);
     dmg = strike.damage;
 
-    applyDamage(enemy, dmg);
+    if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
+    applyDamage(selfHit ? player : enemy, dmg);
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
     if(player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
-        player.hp = Math.min(player.maxHp, player.hp + heal);
-        flyHeal(true, heal);
-        log(`Vol de vie : +${heal} HP.`);
+        if(healEntity(player, heal).harmed === 0){
+            flyHeal(true, heal);
+            log(`Vol de vie : +${heal} HP.`);
+        }
     }
 
     const icon = getWeaponIcon(weapon.type);
@@ -1481,6 +1524,8 @@ export function castSpell(spellId){
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
+    if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un sort."); return; }
+    if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
     if(!canEntityCastSpell(player, spell)){
         const missingColor = getMissingManaColor(player, spell);
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
@@ -1488,6 +1533,7 @@ export function castSpell(spellId){
     }
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
+    startSpellCooldown(spell);
     playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     
     // Gérer les sorts avec effet spécial
@@ -1530,6 +1576,7 @@ export async function castUltimate(spellId){
     const spell = getUltimateById(spellId);
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
     if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
@@ -1913,6 +1960,9 @@ function runOpeningStrikes(count, delayMs, done){
 // Exports pour les fonctions accessibles globalement
 window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
+window.archiveSpell = archiveSpell;
+setAlterationHooks({ damage: (t, d) => applyDamage(t, d), log });
+window.unarchiveSpell = unarchiveSpell;
 window.equipUltimate = equipUltimate;
 window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;

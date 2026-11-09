@@ -918,3 +918,10 @@ body.rt #enemy-stats .enemy-combat-name.name-hanzi,
     font-size: 1.5em; font-weight: 700; line-height: 1.1; letter-spacing: .05em;
 }
 body.rt .enemy-combat-name.name-hanzi { font-size: 20px; }
+
+/* Archives des sorts : section repliable sous la liste des sorts disponibles */
+.archived-spells { margin-top: 12px; }
+.archived-spells > summary { cursor: pointer; font-weight: bold; padding: 6px 10px; list-style-position: inside; }
+.archived-spells[open] > summary { margin-bottom: 6px; }
+.archived-spell { opacity: .85; }
+#spell-buttons .spell-cooldown { display: block; font-weight: bold; color: var(--accent, #a8321f); }

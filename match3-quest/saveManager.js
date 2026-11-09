@@ -268,6 +268,7 @@ function sanitizePlayer(player) {
         torch: player.torch,
         abilities: player.abilities,
         activeSpells: ids(player.activeSpells),
+        archivedSpells: player.archivedSpells,
         equippedUltimate: player.equippedUltimate,
         unlockedUltimates: player.unlockedUltimates,
         weapons: ids(player.weapons),
@@ -313,6 +314,66 @@ function sanitizePlayer(player) {
     });
 }
 
+// Sorts de rage regroupés en moins de paliers : un sort supprimé d'une sauvegarde devient le palier conservé le plus proche.
+const REMOVED_SPELL_ALIASES = {
+    moonSpring: 'awakenQi',
+    spiritFlow: 'awakenQi',
+    immortalFury: 'stormTide',
+    daoHeart: 'stormTide',
+    celestialAwakening: 'stormTide',
+    rageAlchemy: 'cinnabarTransmute',
+    wrathElixir: 'cinnabarTransmute',
+    emotionFurnace: 'innerCrucible',
+    celestialDistill: 'innerCrucible',
+    philosopherStone: 'innerCrucible',
+    wrathLightning: 'furyBolt',
+    etherLance: 'innerThunder',
+    immortalStorm: 'innerThunder',
+    daoCataclysm: 'skyJudgement',
+    silentHunt: 'bloodThirst',
+    shadowTrack: 'bloodThirst',
+    bladeFever: 'hunterThrill',
+    tigerAppetite: 'hunterThrill',
+    slayerRapture: 'hunterThrill',
+    shadowSiphon: 'furyTheft',
+    wrathLarceny: 'furyTheft',
+    celestialRapine: 'innerPlunder',
+    nightTithe: 'innerPlunder',
+    voidTribute: 'innerPlunder',
+    vengefulBlade: 'spiteStrike',
+    bloodEclipse: 'furiousLunge',
+    thousandBladesDance: 'furiousLunge',
+    instantDeath: 'absoluteShadowBlow',
+    righteousAnger: 'battleOath',
+    imperialIndignation: 'battleOath',
+    mandateWrath: 'guardFervor',
+    celestialZeal: 'guardFervor',
+    sacredGuardianRage: 'guardFervor',
+    jadeSacrifice: 'wrathOffering',
+    furiousIncense: 'wrathOffering',
+    warriorPrayer: 'furyAltar',
+    imperialRite: 'furyAltar',
+    furiousBlessing: 'furyAltar',
+    imperialPunishment: 'righteousStrike',
+    jadeHammer: 'guardSentence',
+    celestialVerdict: 'guardSentence',
+    throneWrath: 'mandateJudgement',
+    bloodTide: 'bloodBoil',
+    warDrums: 'bloodBoil',
+    heavenFury: 'dragonBlood',
+    asuraRoar: 'dragonBlood',
+    warGodBlood: 'dragonBlood',
+    wrathBreath: 'furyToQi',
+    rageWell: 'furyToQi',
+    stormMind: 'angerCirculation',
+    fireHeart: 'angerCirculation',
+    rageNirvana: 'angerCirculation',
+    shatteredWrath: 'furyBlow',
+    dragonRage: 'tigerBreaker',
+    thunderFist: 'tigerBreaker',
+    worldEnder: 'skySplitter'
+};
+
 /**
  * Reconstitue un objet joueur utilisable par loadGameData() depuis un export compact (format 2).
  * @param {Object} data - Le contenu `player` de la sauvegarde
@@ -320,8 +381,8 @@ function sanitizePlayer(player) {
  */
 function expandPlayer(data) {
     const player = { ...data };
-    const spell = id => getSpellById(id) || getClassSpellById(id);
-    player.activeSpells = (data.activeSpells || []).map(spell).filter(Boolean);
+    const spell = id => getSpellById(id) || getClassSpellById(id) || getClassSpellById(REMOVED_SPELL_ALIASES[id]);   // sort supprimé : remplacé par son palier conservé
+    player.activeSpells = [...new Map((data.activeSpells || []).map(spell).filter(Boolean).map(sp => [sp.id, sp])).values()];
     player.spells = player.activeSpells;
     player.weapons = (data.weapons || []).map(getWeaponById).filter(Boolean);
     player.equippedWeapon = (data.equippedWeapon && getWeaponById(data.equippedWeapon)) || null;
@@ -385,7 +446,7 @@ function sanitizeImportedPlayer(player) {
         else if (typeof player[key] === 'string') player[key] = cleanText(player[key], MAX_ID_LENGTH);
     }
     for (const key of ['equippedUltimate', 'currentZoneId']) assign(player, key, cleanText(player[key], MAX_ID_LENGTH));
-    for (const key of ['abilities', 'unlockedUltimates', 'stuffOwned', 'merchantSold', 'sellTags', 'defeatedBossTiers', 'visitedZoneIds']) {
+    for (const key of ['abilities', 'archivedSpells', 'unlockedUltimates', 'stuffOwned', 'merchantSold', 'sellTags', 'defeatedBossTiers', 'visitedZoneIds']) {
         if (player[key] === undefined) continue;
         if (!Array.isArray(player[key])) { delete player[key]; continue; }
         player[key] = player[key].slice(0, MAX_LIST_LENGTH).filter(v => typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string').map(v => typeof v === 'string' ? cleanText(v, MAX_ID_LENGTH) : v);

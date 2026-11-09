@@ -791,7 +791,7 @@ describe('sorts avancés (3 à 5 couleurs) et effets de classe', () => {
         });
     });
 
-    test('les sorts avancés sont réservés au joueur : les ennemis n\'en tirent pas (tirages simulés, niveaux 10 à 70)', () => {
+    test('les ennemis peuvent tirer les sorts génériques réservés au joueur, y compris de plateau (lignes tirées au hasard) (tirages simulés, niveaux 10 à 70)', () => {
         const rng = lcg(7);
         randomSpy.mockImplementation(rng);
         const templates = ['chiyou', 'gui_esprit', 'pretresse_lunaire', 'lei_gong', 'assassin_masque', 'dame_des_neiges'];
@@ -799,8 +799,8 @@ describe('sorts avancés (3 à 5 couleurs) et effets de classe', () => {
             for (const level of [10, 17, 30, 50, 70]) {
                 const enemy = createMapEnemy({ templateId, level, enemyId: 'x' });
                 (enemy.spells || []).filter(s => !s.class).forEach(s => {
-                    expect(s.playerOnly).toBeFalsy();
-                    expect(s.effect).toBeUndefined();
+                    expect(['skullsFromColors', 'cageEnemy']).not.toContain(s.effect);   // exclus (enemies.js) ; les sorts de plateau restent, lancés au hasard
+                    if(s.effect) expect(s.boardSpell).toBe(true);
                 });
                 if (enemy.weapon) expect(enemy.weapon.playerOnly).toBeFalsy();
             }

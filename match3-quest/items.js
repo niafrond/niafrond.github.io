@@ -1,4 +1,5 @@
 import { flyManaGain, flyHeal } from './manaFlight.js';
+import { healEntity } from './alterations.js';
 import { manaIcon, itemIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 
@@ -259,9 +260,13 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     // Appliquer l'effet de l'objet
     let message = "";
     if(item.effect.heal) {
-        player.hp = Math.min(player.maxHp, player.hp + item.effect.heal);
-        flyHeal(true, item.effect.heal);
-        message += `Vous récupérez ${item.effect.heal} HP. `;
+        const potion = healEntity(player, item.effect.heal);   // Corrompu : la potion blesse
+        if(potion.harmed > 0){
+            message += `Corrompu : la potion vous inflige ${potion.harmed} dégâts ! `;
+        } else {
+            flyHeal(true, item.effect.heal);
+            message += `Vous récupérez ${item.effect.heal} HP. `;
+        }
     }
     if(item.effect.mana) {
         flyManaGain(true, Object.fromEntries(Object.keys(player.mana).map(color => [color, item.effect.mana])), { fromId: 'item-button' });
