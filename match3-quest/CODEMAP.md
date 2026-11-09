@@ -52,6 +52,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `enemyAI.js` — Bibliothèque d'intelligence artificielle pour les ennemis
 - `enemyAIChoice.js` — Fonctions pures de l'IA ennemie : facteur du temps de réflexion et tirage pondéré renormalisé
 - `equipPreview.js` — Aperçu d'un équipement chez le marchand : stats globales du héros avant / après avoir porté la pièce à la place de celle équipée.
+- `enemyStuff.js` — Stuff porté par les ennemis (tirage selon niveau/puissance, butin des pièces portées, PV max). Module pur.
 - `equipment.js` — Système d'équipement multi-slot (main droite, main gauche, objet)
 - `experience.js` — Système d'expérience et de progression du joueur
 - `exploration.js` — Moteur de la phase d'exploration (logique pure, sans DOM).

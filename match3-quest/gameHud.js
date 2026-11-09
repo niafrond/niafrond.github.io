@@ -10,7 +10,7 @@ import { RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from '
 import { statusBadgesHtml } from './statusBadges.js';
 import { animationFactor } from './gameOptions.js';
 import { announce, notify } from './a11y.js';
-import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyCardTap, showEnemyNameTooltip, hideEnemyNameTooltip } from './gameTooltips.js';
+import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyCardTap, bindEnemyStuffLongPress, showEnemyNameTooltip, hideEnemyNameTooltip } from './gameTooltips.js';
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
@@ -295,9 +295,11 @@ export function updateStats(){
         enemyNameEl.addEventListener('mouseleave', hideName);
         enemyNameEl.addEventListener('focus', showName);
         enemyNameEl.addEventListener('blur', hideName);
+        // tactile : un appui bref montre l'infobulle de l'ennemi (touchend la masque), un appui long montre son stuff (bindEnemyStuffLongPress)
         enemyNameEl.addEventListener('touchstart', showName, { passive: true });
-        enemyNameEl.addEventListener('touchend', hideName);
+        enemyNameEl.addEventListener('touchend', () => setTimeout(() => { if(!enemyNameEl.dataset.stuffShown) hideName(); }, 0));
         enemyNameEl.addEventListener('touchcancel', hideName);
+        bindEnemyStuffLongPress(enemyNameEl, fullName, enemy);
     }
     bindEnemyCardTap(enemyDiv);
     if(!enemyDiv.dataset.nameToggleBound) {

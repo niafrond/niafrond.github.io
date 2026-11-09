@@ -1,5 +1,6 @@
 // Système d'ennemis piloté par un catalogue JSON
 
+import { rollEnemyStuff, enemyStuffMaxHp } from './enemyStuff.js';
 import { allWeapons } from "./weapons.js";
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
@@ -251,6 +252,10 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         } catch(e) {}
     }
 
+    // Stuff porté (casque, collier, bracelet, bague) : cohérent avec le niveau et la puissance ; ses PV max s'ajoutent à ceux de l'ennemi.
+    const enemyStuff = rollEnemyStuff(enemyLevel, { statsModifiers: template.statsModifiers, boss });
+    const stuffHp = enemyStuffMaxHp({ stuff: enemyStuff });
+
     const preferredColor = resolvePreferredColor(template);
     const weakColor = resolveWeakColor(preferredColor);
 
@@ -260,8 +265,9 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         class: template.title,
         playerClass: template.playerClass,
         name: `${template.name} ${template.title}`,
-        hp: hp,
-        maxHp: hp,
+        hp: hp + stuffHp,
+        maxHp: hp + stuffHp,
+        stuff: enemyStuff,
         attack: atk,
         defense: def,
         power,
