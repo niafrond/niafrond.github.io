@@ -337,7 +337,7 @@
         "red",
         "yellow"
       ],
-      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes"
+      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes (les crânes ainsi créés ne donnent pas de tour bonus)"
     },
     {
       "id": "threeDragons",
