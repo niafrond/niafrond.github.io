@@ -914,7 +914,7 @@ body.dark-mode :focus-visible { outline-color: #ffd54a; box-shadow: 0 0 0 5px #0
 }
 
 /* Mode daltonien : palette inspirée d'Okabe-Ito. Les teintes sont décalées ET les luminosités échelonnées (le vert devient sombre et bleuté,
-   le jaune clair, le violet rosé) pour que rouge/vert et bleu/violet ne se confondent plus ; les symboles (a11y-shapes) remplacent alors les tuiles et pastilles par des formes pleines aux couleurs Okabe-Ito. */
+   le jaune clair, le violet rosé) pour que rouge/vert et bleu/violet ne se confondent plus ; les symboles (a11y-shapes) (activés seulement avec l'option Symboles ; le mode daltonien seul garde les gâteaux de lune) remplacent alors les tuiles et pastilles par des formes pleines aux couleurs Okabe-Ito. */
 body.a11y-colorblind .tile.red { filter: hue-rotate(22deg) saturate(1.2) brightness(1.05); }
 body.a11y-colorblind .tile.green { filter: hue-rotate(35deg) saturate(1.1) brightness(.78); }
 body.a11y-colorblind .tile.blue { filter: saturate(1.2) brightness(.95); }
