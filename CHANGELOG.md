@@ -1,3 +1,9 @@
+## [2.213.0](https://github.com/niafrond/niafrond.github.io/compare/v2.212.1...v2.213.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** traiter les petits obstacles comme de l'herbe haute ([cf598c1](https://github.com/niafrond/niafrond.github.io/commit/cf598c13f3aaa2e1baa3d3ca7144a9bf93a95f88))
+
 ## [2.212.1](https://github.com/niafrond/niafrond.github.io/compare/v2.212.0...v2.212.1) (2026-11-09)
 
 ### Bug Fixes
