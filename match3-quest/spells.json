@@ -424,7 +424,8 @@
       "effect": "secondWind",
       "minLevel": 13,
       "heal": 50,
-      "description": "Soigne 50 PV, retire les statuts négatifs et vous laisse rejouer"
+      "cooldown": 2,
+      "description": "Soigne 50 PV, retire les statuts négatifs et vous laisse rejouer. Recharge : 2 tours"
     },
     {
       "id": "starRain",
@@ -1394,7 +1395,8 @@
       "minLevel": 1,
       "dmg": 6,
       "effect": "bonusTurn",
-      "description": "6 dégâts et vous donne un tour bonus"
+      "cooldown": 2,
+      "description": "6 dégâts et vous donne un tour bonus. Recharge : 2 tours"
     },
     {
       "id": "swiftStrike",
@@ -2218,7 +2220,8 @@
       "effect": "damageBoost",
       "atkBonus": 10,
       "duration": 3,
-      "description": "Ajoute 10 dégâts inblocables à chaque attaque que vous infligez (crânes, armes, sorts) pendant 3 tours et ne termine pas le tour"
+      "cooldown": 2,
+      "description": "Ajoute 10 dégâts inblocables à chaque attaque que vous infligez (crânes, armes, sorts) pendant 3 tours et ne termine pas le tour. Recharge : 2 tours"
     },
     {
       "id": "cleave",
@@ -2283,7 +2286,8 @@
       },
       "minLevel": 10,
       "effect": "redToSkulls",
-      "description": "Transforme les gâteaux de lune rouges en soleils ardents"
+      "cooldown": 2,
+      "description": "Transforme les gâteaux de lune rouges en soleils ardents. Recharge : 2 tours"
     },
     {
       "id": "brokenBlades",
@@ -2294,7 +2298,8 @@
       },
       "minLevel": 12,
       "effect": "actionGemsToSkulls",
-      "description": "Transforme toutes les flèches d'action en crânes"
+      "cooldown": 2,
+      "description": "Transforme toutes les flèches d'action en crânes. Recharge : 2 tours"
     },
     {
       "id": "singingBlades",
@@ -2322,7 +2327,8 @@
       },
       "minLevel": 14,
       "effect": "redToSkullsHalf",
-      "description": "Crée des soleils ardents = ½ du qì rouge possédé"
+      "cooldown": 2,
+      "description": "Crée des soleils ardents = ½ du qì rouge possédé. Recharge : 2 tours"
     },
     {
       "id": "revenant",
