@@ -373,6 +373,8 @@ body.rt #enemy-stats.active-turn {
 body.rt .stats-container { gap: 8px; padding: 6px; background: transparent; }
 
 body.rt .enemy-combat-name { font-family: var(--rt-title); font-size: 10px; }
+/* Pinyin : Press Start 2P n'a pas les lettres à ton (ǎ, è, ū…), le navigateur les tirait d'une autre police, minuscules à côté des autres. Tout le nom passe en Pixelify Sans, plus grand. */
+body.rt .enemy-combat-name:not(.name-hanzi) { font-family: 'Pixelify Sans', ui-monospace, monospace; font-size: 15px; font-weight: 700; line-height: 1.15; }
 
 /* ── Barres de vie / d'XP segmentées ────────────────────────────────────────── */
 body.rt progress { height: 20px; }
