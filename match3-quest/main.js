@@ -10,7 +10,7 @@ import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
 import { weaknessLabel } from "./terrain.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
-import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
+import { setMusicEnvironment, setMusicScene, stopMusic, preloadMusic } from "./music.js";
 import { getUltimateById, playUltimateCinematic } from "./ultimates.js";
 import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefetch, bindOfflineOptions } from "./offlineCache.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
@@ -208,6 +208,7 @@ function init() {
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
     let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
+    let pendingFight = null;        // musique du combat annoncé par l'animation d'entrée (match3:encounter-start), jouée dès son début
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
@@ -217,7 +218,7 @@ function init() {
         if(changeScene) return [changeScene];   // Chang'e explore son village : musique du village ou de l'adieu
         const puzzle = document.querySelector('.puzzle-overlay');
         if(puzzle) return puzzle.dataset.won ? ['victory'] : [`puzzle-${puzzle.dataset.mode}`];   // énigme à plateau : une piste par type (push, mirror, slide)
-        if(document.querySelector('.battle-transition')) return null;
+        if(document.querySelector('.battle-transition')) return pendingFight;   // la musique de combat démarre avec l'animation d'entrée, sans silence
         if(document.body.dataset.combatEnd) return [document.body.dataset.combatEnd];   // Victoire / Défaite : la musique de l'issue démarre avec le mot plein écran et boucle jusqu'au retour à l'exploration
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
         // En exploration (carte visible, pas de rencontre en cours), seule la musique d'exploration joue : un état de combat resté
@@ -241,8 +242,20 @@ function init() {
         if(!want) { if(!musicStopped) { stopMusic({ fadeMs: 700 }); musicStopped = true; } return; }
         musicStopped = false;
         setMusicScene(want[0], want[1]);
+        if(['village', 'wild', 'house', 'sanctuary', 'moon'].includes(want[0])) preloadCombatMusic();
     };
     setInterval(() => { if(!document.hidden) syncMusic(); }, 400);   // inutile onglet masqué (batterie)
+    // Interaction avec un ennemi sur la carte : la musique de combat se lance à l'instant, sans attendre le prochain passage du minuteur.
+    window.addEventListener('match3:encounter-start', e => {
+        pendingFight = e.detail?.scene ? [e.detail.scene, e.detail.options || {}] : null;
+        if(pendingFight) syncMusic();
+    });
+    // Piste de combat téléchargée et décodée à l'avance pendant l'exploration : elle attaque sans attente au premier contact.
+    let combatPreloadAt = 0;
+    const preloadCombatMusic = () => {
+        if(combatPreloadAt || navigator.connection?.saveData) return;
+        combatPreloadAt = setTimeout(() => preloadMusic('combat'), 3000);
+    };
     // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
     // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
     // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
@@ -325,6 +338,7 @@ function init() {
     });
     // Tout combat (y compris le tutoriel) masque la carte.
     window.addEventListener('match3:combat-start', () => {
+        syncMusic();   // combat lancé hors de la carte : pas d'attente du minuteur
         exploration.hide();
     });
 

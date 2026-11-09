@@ -15,6 +15,7 @@
  *       Démarre/enchaîne (fondu enchaîné ~1,2 s) la piste de la scène (voir musicTracks.js). No-op si c'est déjà la
  *       bonne piste. Retourne false si la scène est inconnue. Ne lève jamais.
  *   stopMusic({ fadeMs })  pauseMusic() / resumeMusic()  isMusicPlaying()  getSceneList()
+ *   preloadMusic(sceneId, options)  Télécharge et décode la piste d'une scène sans la jouer (combat : prête avant le contact avec l'ennemi).
  */
 import { SCENE_IDS, BIOMES, trackCandidates, trackUrl, playlist } from './musicTracks.js';
 import { getMatch3Version } from './version.js';
@@ -22,6 +23,8 @@ import { getMatch3Version } from './version.js';
 export { SCENE_IDS, BIOMES };
 
 const FADE_S = 1.2;           // fondu enchaîné entre pistes
+const FAST_IN_S = 0.06;       // combat et boss : la musique attaque tout de suite (juste de quoi éviter un clic)
+const FAST_OUT_S = 0.4;       // ... et la piste précédente s'efface vite
 const MUSIC_GAIN = 0.35;      // niveau des pistes (normalisées) par rapport au volume utilisateur
 const TICK_MS = 250;          // volume / mute / visibilité : léger, aucun calcul audio
 const RETRY_MS = 8000;        // piste introuvable ou réseau en panne : nouvel essai après ce délai
@@ -133,12 +136,12 @@ function fadeOutAndStop(entry, fadeS, ctx) {
     entry.source.onended = () => { safe(() => entry.source.disconnect()); safe(() => entry.gain.disconnect()); };
 }
 
-function startTrack(ctx, key, buffer) {
+function startTrack(ctx, key, buffer, fast = false) {
     const master = ensureMaster(ctx);
     const gain = ctx.createGain();
     const t = ctx.currentTime;
     gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(1, t + FADE_S);
+    gain.gain.linearRampToValueAtTime(1, t + (fast ? FAST_IN_S : FADE_S));
     gain.connect(master);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
@@ -147,7 +150,7 @@ function startTrack(ctx, key, buffer) {
     source.start(0);
     const previous = S.current;
     S.current = { key, source, gain, ctx };
-    fadeOutAndStop(previous, FADE_S, ctx);
+    fadeOutAndStop(previous, fast ? FAST_OUT_S : FADE_S, ctx);
 }
 
 // Charge la première piste disponible parmi les candidates (précise, puis repli) et la lance si la scène n'a pas changé.
@@ -155,7 +158,7 @@ async function pickAndPlay(ctx, desired) {
     for (const key of desired.candidates) {
         const buf = await loadTrack(ctx, key);
         if (S.desired !== desired) return;                              // la scène a changé pendant le chargement
-        if (buf) { startTrack(ctx, key, buf); desired.state = 'playing'; return; }
+        if (buf) { startTrack(ctx, key, buf, desired.fast); desired.state = 'playing'; return; }
     }
     desired.state = 'failed';
     desired.retryAt = now() + RETRY_MS;
@@ -200,12 +203,26 @@ function stopTimer() {
 export function setMusicScene(sceneId, options = {}) {
     const candidates = trackCandidates(sceneId, options || {});
     if (!candidates.length) return false;
-    const key = candidates.join('|');
-    if (S.desired && S.desired.key === key) return true;
     // version traditionnelle (`<clé>-b`) d'abord, piste de base en repli si elle manque ; combat ordinaire : toujours `combat-1`
-    S.desired = { key, candidates: playlist(sceneId, candidates), state: 'idle', retryAt: 0 };
+    const list = playlist(sceneId, candidates);
+    const key = list.join('|');   // deux scènes qui jouent la même liste (ex. deux ennemis ordinaires) ne relancent pas la piste
+    if (S.desired && S.desired.key === key) return true;
+    S.desired = { key, candidates: list, state: 'idle', retryAt: 0, fast: sceneId === 'combat' || sceneId === 'boss' };
     ensureTimer();
     tick();
+    return true;
+}
+
+/**
+ * Télécharge et décode à l'avance la piste d'une scène sans la jouer (ex. le combat, pendant l'exploration) : quand la scène
+ * démarre, la piste est déjà prête et la musique attaque sans attente. Sans effet si le contexte audio n'existe pas encore.
+ */
+export function preloadMusic(sceneId, options = {}) {
+    const ctx = safe(() => S.env.getContext(), null);
+    if (!ctx || ctx.state === 'closed') return false;
+    const first = playlist(sceneId, trackCandidates(sceneId, options || {}))[0];
+    if (!first) return false;
+    loadTrack(ctx, first).catch(() => {});
     return true;
 }
 

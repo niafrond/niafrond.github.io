@@ -563,6 +563,10 @@ export function createExplorationView(cfg) {
     // puis le nom de l'adversaire. Le combat démarre à la fin (les saisies sont bloquées entre-temps).
     function playBattleTransition(enc, done) {
         removeBattleTransition();
+        // La musique de combat démarre dès que l'interaction commence, pas à la fin de l'animation (main.js : `desiredMusic`)
+        window.dispatchEvent(new CustomEvent('match3:encounter-start', {
+            detail: enc.boss ? { scene: 'boss', options: { boss: enc.boss.name } } : { scene: 'combat', options: { variant: enc.name, biome: enc.biome || null } }
+        }));
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const overlay = document.createElement('div');
         const eKey = enc.spriteKey || enc.enemyId;
