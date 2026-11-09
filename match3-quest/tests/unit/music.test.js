@@ -4,7 +4,7 @@ import {
 } from '../../tools/audio/composer.js';
 import { sectionCountFor } from '../../tools/audio/synth.js';
 import {
-    setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, duckMusic, __internals
+    setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, duckMusic, preloadMusic, __internals
 } from '../../music.js';
 import { getMatch3Version } from '../../version.js';
 import { trackCandidates, trackUrl, playlist, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
@@ -183,7 +183,7 @@ describe('rythmes, exploration calme, combat, boss', () => {
 
 // ── Lecteur (runtime) : pistes pré-enregistrées, faux AudioContext et faux fetch ─────────────────────────
 function makeParam(initial = 0) {
-    return { value: initial, targets: [], setValueAtTime(v) { this.value = v; }, linearRampToValueAtTime(v) { this.value = v; },
+    return { value: initial, targets: [], ramps: [], setValueAtTime(v) { this.value = v; }, linearRampToValueAtTime(v, t) { this.value = v; this.ramps.push([v, t]); },
         setTargetAtTime(v) { this.targets.push(v); }, cancelScheduledValues() {} };
 }
 function makeCtx() {
@@ -390,6 +390,42 @@ describe('lecteur de musique', () => {
         const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set(['combat-1', 'combat-1-b', 'combat-3', 'combat-3-b']));
         setMusicScene('combat', { variant: 3 }); await flush();
         expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['combat-1']);
+    });
+
+    test('combat et boss : la musique attaque en un clin d\'œil, l\'ancienne piste s\'efface vite ; ailleurs, fondu de 1,2 s', async () => {
+        const ctx = makeCtx(); setup(ctx);
+        setMusicScene('menu'); await flush();
+        const menuGain = ctx.nodes.filter((n) => n.kind === 'gain').at(-1);
+        expect(menuGain.gain.ramps.at(-1)[1]).toBeCloseTo(1.2, 5);          // piste ordinaire : fondu d'entrée de 1,2 s
+        setMusicScene('combat', { variant: 'Gobelin' }); await flush();
+        const combatGain = ctx.nodes.filter((n) => n.kind === 'gain').at(-1);
+        expect(combatGain.gain.ramps[0]).toEqual([1, expect.closeTo(0.06, 5)]);   // combat : attaque immédiate
+        expect(menuGain.gain.ramps.at(-1)).toEqual([0, expect.closeTo(0.4, 5)]);  // l'exploration s'efface en 0,4 s
+        setMusicScene('boss', { boss: 'Soleil Ardent' }); await flush();
+        const bossGain = ctx.nodes.filter((n) => n.kind === 'gain').at(-1);
+        expect(bossGain.gain.ramps[0][1]).toBeCloseTo(0.06, 5);
+    });
+
+    test('deux ennemis ordinaires de suite : la même piste continue, sans redémarrer', async () => {
+        const ctx = makeCtx(); setup(ctx);
+        setMusicScene('combat', { variant: 'Gobelin', biome: 'paddy' }); await flush();
+        setMusicScene('combat', { variant: 'Orc', biome: 'gobi' }); await flush();
+        expect(ctx.nodes.filter((n) => n.kind === 'source')).toHaveLength(1);
+        expect(ctx.nodes.find((n) => n.kind === 'source').stopped).toBe(false);
+    });
+
+    test('préchargement : la piste de combat est prête avant la scène, qui démarre sans nouveau téléchargement', async () => {
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx);
+        expect(preloadMusic('combat')).toBe(true); await flush();
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['combat-1']);
+        expect(ctx.nodes.filter((n) => n.kind === 'source')).toHaveLength(0);   // rien n'est joué
+        setMusicScene('combat', { variant: 'Gobelin' }); await flush();
+        expect(fetchFn.calls).toHaveLength(1);                                   // déjà en mémoire
+        expect(ctx.nodes.filter((n) => n.kind === 'source')).toHaveLength(1);
+        __internals.reset();
+        setMusicEnvironment({ getContext: () => null });
+        expect(preloadMusic('combat')).toBe(false);                              // pas encore de contexte audio
+        expect(preloadMusic('inconnue')).toBe(false);
     });
 
     test('fondu enchaîné : l\'ancienne piste s\'arrête, une seule piste reste active', async () => {
