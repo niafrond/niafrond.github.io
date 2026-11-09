@@ -135,3 +135,5 @@ Un rouge en mouvement vers le canon applique la même collision de rangée qu'un
 - 2026-10-24 (mesure d'audience GoatCounter) : à la demande de l'utilisateur, sur tout le site. Script `data-goatcounter="https://niafrond.goatcounter.com/count"` (`//gc.zgo.at/count.js`, async) ajouté avant `</head>` des pages HTML.
 
 - 2026-11-07 (mesure d'audience) : GoatCounter remplacé par `https://stats.fontaine.one/count.js` (mesure maison sans cookie ni identifiant, voir `stats/SPECS.md`) dans `index.html`.
+
+- 2026-11-09 (publication APK) : `apk-mobrush.yml` publie l'APK sur une release roulante dédiée au tag fixe `apk-mob-rush` (prerelease, indépendante de semantic-release) au lieu de la joindre à la dernière release.

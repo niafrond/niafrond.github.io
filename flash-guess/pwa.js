@@ -85,8 +85,8 @@ function isAndroidBrowser() {
 }
 
 // ─── Mise à jour APK (Capacitor) ───────────────────────────────────────────────
-const APK_URL = 'https://github.com/niafrond/niafrond.github.io/releases/latest/download/flash-guess.apk';
-const APK_VERSION_API = 'https://api.github.com/repos/niafrond/niafrond.github.io/releases/latest';
+const APK_URL = 'https://github.com/niafrond/niafrond.github.io/releases/download/apk-flash-guess/flash-guess.apk';
+const APK_VERSION_API = 'https://api.github.com/repos/niafrond/niafrond.github.io/releases/tags/apk-flash-guess';
 const APK_UPDATE_CHECK_KEY = 'fg_apk_update_check';
 
 function _parseVersionParts(str) {
@@ -125,7 +125,9 @@ export async function checkApkUpdate() {
       headers: { Accept: 'application/vnd.github.v3+json' },
     });
     if (!res.ok) return;
-    const { tag_name: latestTag } = await res.json();
+    // La release roulante `apk-flash-guess` porte la version de l'APK dans son corps (notes).
+    const { body } = await res.json();
+    const latestTag = String(body || '').trim();
 
     localStorage.setItem(APK_UPDATE_CHECK_KEY, JSON.stringify({ latestTag, checked: Date.now() }));
 
