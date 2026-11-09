@@ -1,3 +1,9 @@
+## [2.213.1](https://github.com/niafrond/niafrond.github.io/compare/v2.213.0...v2.213.1) (2026-11-09)
+
+### Bug Fixes
+
+* **match3-quest:** égaliser à la baisse le niveau sonore de combat-1 et combat-2 ([#683](https://github.com/niafrond/niafrond.github.io/issues/683)) ([11eed9b](https://github.com/niafrond/niafrond.github.io/commit/11eed9b9ae0f205c42a3bd27d810155d50e69efd))
+
 ## [2.213.0](https://github.com/niafrond/niafrond.github.io/compare/v2.212.1...v2.213.0) (2026-11-09)
 
 ### Features
