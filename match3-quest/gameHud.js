@@ -285,11 +285,10 @@ export function updateStats(){
         _animateCounter(`enemy-mana-${c}`, snapEnemyMana[c], targetEnemyMana[c]);
     }
 
-    const enemyNameEl = enemyDiv.querySelector('.enemy-combat-name');
-    if(enemyNameEl) {
-        const fullName = enemyNameEl.dataset.fullName || enemy.name;
-        // Ni survol ni appui bref : le clic simple ne fait que changer le nom ; seul l'appui long montre force, faiblesse et stuff.
-        bindEnemyStuffLongPress(enemyNameEl, fullName, enemy);
+    if(!enemyDiv.dataset.stuffPressBound) {
+        enemyDiv.dataset.stuffPressBound = '1';
+        // Ni survol ni appui bref : le clic simple ne fait que changer le nom ; seul l'appui long, n'importe où sur la zone stats, montre force, faiblesse et stuff.
+        bindEnemyStuffLongPress(enemyDiv, () => enemyDiv.querySelector('.enemy-combat-name')?.dataset.fullName || enemy.name, () => enemy);
     }
     if(!enemyDiv.dataset.nameToggleBound) {
         enemyDiv.dataset.nameToggleBound = '1';
