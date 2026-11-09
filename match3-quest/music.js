@@ -202,7 +202,7 @@ export function setMusicScene(sceneId, options = {}) {
     if (!candidates.length) return false;
     const key = candidates.join('|');
     if (S.desired && S.desired.key === key) return true;
-    // version traditionnelle (`<clé>-b`) d'abord, piste de base en repli si elle manque ; combat ordinaire : toujours `combat-0`
+    // version traditionnelle (`<clé>-b`) d'abord, piste de base en repli si elle manque ; combat ordinaire : toujours `combat-1`
     S.desired = { key, candidates: playlist(sceneId, candidates), state: 'idle', retryAt: 0 };
     ensureTimer();
     tick();
