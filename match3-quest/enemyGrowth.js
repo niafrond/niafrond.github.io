@@ -4,7 +4,7 @@
 // Un monstre peut avoir fait « un peu plus » de montées que son niveau ne l'annonce (`extraLevelUps`). Les statistiques en découlent :
 //  - Force → attaque (+1 chacune), Agilité et Moral → défense (+1 chacune), Endurance → PV max (+1 chacune) ; Intelligence → puissance
 //    magique et qì (appliqués par game.js comme pour le héros) ;
-//  - croissance innée après le niveau 18 (attaque) et 20 (PV), identique à celle du héros (progression.js, growthExtras).
+//  - croissance innée de PV après le niveau 20, identique à celle du héros (progression.js, growthExtras).
 
 import { growthExtras } from './progression.js';
 
@@ -61,7 +61,7 @@ export function growEnemy(level, { playerClass, preferredColor, boss = false, rn
     return {
         levelUps,
         attributes,
-        attack: attributes.strength + innate.attack,
+        attack: attributes.strength,   // la croissance innée d'attaque du héros (niveau 18+) vient de ses armes et armures : un monstre n'en a pas, son critique reste raisonnable
         defense: attributes.agility + attributes.morale,
         hpBonus: attributes.stamina + innate.maxHp + extra * ENEMY_HP_PER_LEVEL
     };

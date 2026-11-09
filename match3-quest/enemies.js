@@ -222,7 +222,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const hp = Math.floor(baseHp * (stats.hpMult || 1)) + growth.hpBonus;
     // Attaque = chance de critique, défense = chance de blocage (en %, plafonnées à 98 % à l'usage : voir combatStats.js).
     const atk = Math.max(0, Math.round((5 + enemyLevel * 0.5) * (stats.atkMult || 1)) + growth.attack);
-    const def = Math.max(0, Math.floor(baseDef * 0.3 * (stats.defMult || 1)) + growth.defense);
+    const def = Math.max(0, Math.floor(baseDef * 0.4 * (stats.defMult || 1)) + growth.defense);
     // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
     const power = Math.min(Math.floor((6 + enemyLevel * 5) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
 

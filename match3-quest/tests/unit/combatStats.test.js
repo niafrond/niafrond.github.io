@@ -135,15 +135,12 @@ describe('force et crânes', () => {
 describe('ennemis', () => {
     const enc = (level, extra = {}) => ({ templateId: 'chiyou', level, ...extra });
 
-    test('agilité proportionnelle au niveau, très rarement nulle', () => {
-        let zeros = 0;
-        const N = 300;
-        for (let i = 0; i < N; i++) {
+    test('agilité issue des montées de niveau : bornée par les points dépensés et croissante avec le niveau', () => {
+        for (let i = 0; i < 100; i++) {
             const e = createMapEnemy(enc(10));
-            if (e.attributes.agility === 0) zeros++;
-            expect(e.attributes.agility).toBeLessThanOrEqual(10);
+            expect(e.attributes.agility).toBeLessThanOrEqual(e.levelUps);
+            expect(e.levelUps).toBeGreaterThanOrEqual(9);
         }
-        expect(zeros).toBeLessThan(N * 0.15);
         const avg = lvl => Array.from({ length: 100 }, () => createMapEnemy(enc(lvl)).attributes.agility).reduce((a, b) => a + b, 0) / 100;
         expect(avg(30)).toBeGreaterThan(avg(5) * 3);
     });
