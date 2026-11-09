@@ -1,3 +1,9 @@
+## [2.217.0](https://github.com/niafrond/niafrond.github.io/compare/v2.216.0...v2.217.0) (2026-11-09)
+
+### Features
+
+* **match3-quest:** stuff, montées de niveau et cases de biome pour les monstres ([#687](https://github.com/niafrond/niafrond.github.io/issues/687)) ([7b87687](https://github.com/niafrond/niafrond.github.io/commit/7b87687801bbb8a7dcea0d16d108a79db7e7eede))
+
 ## [2.216.0](https://github.com/niafrond/niafrond.github.io/compare/v2.215.0...v2.216.0) (2026-11-09)
 
 ### Features
