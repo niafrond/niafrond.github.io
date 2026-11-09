@@ -255,7 +255,7 @@ img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-
 @media (prefers-reduced-motion: reduce) { .combat-intro { animation: none; } }
 
 /* Boutons du joueur désactivés dès la fin de son tour (voir syncPlayerControlsLock). */
-#player-spells.turn-locked { pointer-events: none; }
+/* Pas de pointer-events:none : les infobulles (appui long / survol) restent accessibles, les clics sont refusés par actionGuard. */
 #player-spells.turn-locked .enemy-spell-item { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; }
 #abandon-combat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 

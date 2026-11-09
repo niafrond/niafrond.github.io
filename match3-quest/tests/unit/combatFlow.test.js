@@ -123,6 +123,9 @@ describe('boutons du joueur verrouillés hors de son tour', () => {
         expect(game).toMatch(/export function updateStats\(\)\{\s*syncPlayerControlsLock\(\)/);
         expect(game).toMatch(/actionGuard\.setTurnLocked\(locked\)/);
         expect(css).toMatch(/#player-spells\.turn-locked/);
+        // infobulles (appui long / survol) possibles à tout moment : la colonne n'est ni inerte ni sans pointeur
+        expect(css).not.toMatch(/#player-spells\.turn-locked\s*\{[^}]*pointer-events/);
+        expect(game).not.toMatch(/setAttribute\('inert'/);
     });
 });
 

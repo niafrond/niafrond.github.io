@@ -1382,7 +1382,7 @@ export function isPlayerActionBlocked(){
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
-// armes, objets, sorts (colonne #player-spells rendue inerte : ni clic ni focus) et abandon ; l'actionGuard refuse aussi
+// armes, objets, sorts (colonne #player-spells grisée ; l'appui long / survol des infobulles reste possible) et abandon ; l'actionGuard refuse aussi
 // tout clic. Réactivés dès que le tour revient au joueur. Appelé à chaque updateStats().
 export function syncPlayerControlsLock(){
     const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || turnFlags.foxPlaying);
@@ -1392,8 +1392,7 @@ export function syncPlayerControlsLock(){
     if(column){
         column.classList.toggle('turn-locked', locked);
         column.setAttribute('aria-disabled', String(locked));
-        if(locked) column.setAttribute('inert', '');
-        else column.removeAttribute('inert');
+        column.removeAttribute('inert');   // la colonne reste interactive : appui long / survol des sorts à tout moment
     }
     const abandonBtn = document.getElementById('abandon-combat-btn');
     if(abandonBtn) abandonBtn.disabled = locked;
