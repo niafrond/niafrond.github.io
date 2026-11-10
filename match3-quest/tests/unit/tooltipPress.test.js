@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+import { readFileSync } from 'node:fs';
 import { readGameSource } from './fixtures/gameSource.js';
 
 // game.js dépend du DOM : vérification statique que sorts, armes et objets passent tous par bindTooltip (appui long).
@@ -49,7 +50,7 @@ describe('absorption par bouclier : annoncée comme un blocage', () => {
         expect(src).toMatch(/ABSORBÉ \$\{absorbed\} ! /);
     });
     it('crânes, arme et sorts de l\'ennemi passent l\'absorption à showStrikeAnimation', () => {
-        expect(src).toMatch(/\{ absorbed: absorbedBySkulls \}/);
+        expect(readFileSync(new URL('../../board.js', import.meta.url), 'utf8')).toMatch(/\{ absorbed: absorbedBySkulls \}/);
         expect(src).toMatch(/\{ absorbed: absorbedByShield \}/);
         expect(src).toMatch(/\{ absorbed: absorbedBySpell \}/);
     });
