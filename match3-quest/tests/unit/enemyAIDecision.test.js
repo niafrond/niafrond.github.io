@@ -73,3 +73,30 @@ describe('chemin de décision ennemie', () => {
         }
     });
 });
+
+describe('IA selon la difficulté : estocade', () => {
+    const lethalShare = (pref, n = 1500) => {
+        Object.assign(enemy, { spells: [{ ...damageSpell, dmg: 500 }], weapon: null, hp: 100, personality: undefined });
+        player.hp = 100;
+        ai.setAIDifficultyByLevel(5, 5, enemy, pref);
+        const rng = seeded(5);
+        let spell = 0;
+        for (let i = 0; i < n; i++) if (ai.makeDecision(rng).action === 'spell') spell++;
+        player.hp = 100;
+        return spell / n;
+    };
+
+    test('plus la difficulté monte, plus l\'IA achève un héros qu\'elle peut tuer', () => {
+        const easy = lethalShare('easy'), normal = lethalShare('normal'), hard = lethalShare('hard'), expert = lethalShare('expert');
+        expect(easy).toBeLessThan(normal);
+        expect(normal).toBeLessThan(hard);
+        expect(hard).toBeLessThan(expert);
+        expect(expert).toBeGreaterThan(0.75);
+    });
+
+    test('la profondeur d\'analyse du plateau croît avec la difficulté', () => {
+        const la = ['easy', 'normal', 'hard', 'expert'].map(t => ai.aiDifficulty[t].boardLookahead);
+        expect(la).toEqual([...la].sort((a, b) => a - b));
+        expect(la[3]).toBeGreaterThan(la[2]);
+    });
+});

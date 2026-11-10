@@ -32,3 +32,28 @@ export function pickWeightedOption(options, rand = Math.random) {
     for (let i = options.length - 1; i >= 0; i--) if (weights[i] > 0) return options[i];
     return options[options.length - 1];
 }
+
+/** Raison portée par un coup qui achève le héros (posée par enemyAI.js). */
+export const FATAL_REASON = 'coup fatal';
+
+/** Option la plus forte parmi celles qui achèvent le héros ; null s'il n'y en a pas. */
+export function findLethalOption(options) {
+    let best = null;
+    for (const o of options || []) {
+        if (o?.data?.reason === FATAL_REASON && (!best || o.score > best.score)) best = o;
+    }
+    return best;
+}
+
+/**
+ * Pondère la probabilité de chaque option par son score relatif : (score / meilleur score)^sharpness.
+ * sharpness 0 : inchangé ; plus il monte, plus l'IA favorise l'action la mieux notée sans jamais exclure les autres
+ * (plancher 0,05 : un tour reste imprévisible). Modifie les options en place et les renvoie.
+ */
+export function applyScoreSharpness(options, sharpness) {
+    if (!sharpness || !options?.length) return options;
+    const best = Math.max(...options.map(o => o.score || 0));
+    if (!(best > 0)) return options;
+    for (const o of options) o.probability *= Math.max(0.05, Math.min(1, (o.score || 0) / best)) ** sharpness;
+    return options;
+}

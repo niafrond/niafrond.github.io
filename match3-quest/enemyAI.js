@@ -4,7 +4,7 @@
 
 import { player, enemy, canEntityCastSpell } from "./game.js";
 import { alterationOfSpell } from "./alterations.js";
-import { pickWeightedOption } from "./enemyAIChoice.js";
+import { pickWeightedOption, findLethalOption, applyScoreSharpness } from "./enemyAIChoice.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
 import { getOption } from "./gameOptions.js";
 import {
@@ -74,7 +74,7 @@ export function boardMoveOptions() {
     if (!currentDifficulty.manaFocus) return null;
     const colorNeeds = enemyManaNeeds();
     if (!Object.keys(colorNeeds).length) return null;
-    return { colorNeeds, mana: enemy.mana };
+    return { colorNeeds, mana: enemy.mana, samples: currentDifficulty.boardLookahead || 0 };
 }
 
 // ========================================
@@ -141,6 +141,7 @@ export function evaluateSpells() {
     const scoredSpells = useableSpells.map(spell => {
         let score = 0;
         let reason = "";
+        let fatal = false;
 
         // SORTS DE SOIN - Priorité si en danger
         if (spell.heal) {
@@ -172,6 +173,7 @@ export function evaluateSpells() {
             if (potentialDamage >= player.hp) {
                 score += 200; // PRIORITÉ ABSOLUE
                 reason = "coup fatal";
+                fatal = true;
             }
 
             // Bonus pour les sorts puissants
@@ -206,6 +208,8 @@ export function evaluateSpells() {
             if (key === 'asleep' && context.isEnemyLowHealth) score -= 25;   // dormir ne sauve pas : le joueur se réveille au premier dégât
             reason = 'altérer le joueur';
         }
+
+        if (fatal) reason = "coup fatal";   // un buff ou un debuff du même sort ne masque pas l'estocade
 
         // Tendance de la personnalité (pondération bornée, jamais d'exclusion)
         score *= personalityWeight(enemy.personality, { type: 'spell', data: { spell, reason } }, context);
@@ -329,9 +333,17 @@ export function makeDecision(rand = Math.random) {
         // Poids = probabilité du palier (qualité tactique) x tendance de la personnalité (style), borné ; tirage proportionnel
         // renormalisé sur les actions disponibles (enemyAIChoice.js). La personnalité « tactique » suit en plus le meilleur score.
         const best = difficulty.strategicThinking ? options.reduce((a, b) => (b.score > a.score ? b : a)) : null;
-        const ctx = { ...context, bestType: best?.type };
-        for (const option of options) option.probability *= personalityWeight(enemy.personality, option, ctx);
-        chosenOption = pickWeightedOption(options, rand);
+        const lethal = findLethalOption(options);
+        if (lethal && rand() < (difficulty.lethalAwareness || 0)) {
+            // Estocade repérée : l'IA achève le héros plutôt que de tirer au sort
+            chosenOption = lethal;
+        } else {
+            const ctx = { ...context, bestType: best?.type };
+            // Le score des actions pèse selon le palier, puis la personnalité module (bornée), puis tirage proportionnel
+            if (difficulty.strategicThinking) applyScoreSharpness(options, difficulty.scoreSharpness);
+            for (const option of options) option.probability *= personalityWeight(enemy.personality, option, ctx);
+            chosenOption = pickWeightedOption(options, rand);
+        }
     }
 
     return {
