@@ -1,4 +1,4 @@
-import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, lastDamageAbsorbed, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
+import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
 import { BIOME_PROTECTION_TEXT } from "./stuff.js";
@@ -843,10 +843,9 @@ export function checkMatches(forceFullBoard = false){
             }
             playFighterAttack(attacker === player);
             applyDamage(opponent, dmg);
-            // Blocage, parade ou absorption par un bouclier : annoncés par une animation (sinon le coup semble « ne rien faire »).
-            const absorbedBySkulls = lastDamageAbsorbed();
-            if(strike.block !== 'none' || absorbedBySkulls > 0) {
-                showStrikeAnimation({ icon: 'skull', title: `${info.len} crânes`, source: attacker.name, target: `→ ${opponent === player ? 'Vous' : opponent.name}` }, strike, attacker === player, dmg, { absorbed: absorbedBySkulls });
+            // Blocage ou parade : annoncés par une animation (sinon le coup semble « ne rien faire »).
+            if(strike.block !== 'none') {
+                showStrikeAnimation({ icon: 'skull', title: `${info.len} crânes`, source: attacker.name, target: `→ ${opponent === player ? 'Vous' : opponent.name}` }, strike, attacker === player, dmg);
             }
             log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
             // Bonus de tour pour 4+ crânes

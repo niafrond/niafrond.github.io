@@ -829,3 +829,5 @@ Spécifications et journal de session de `match3-quest/`.
 - 2026-11-10 (absorption prime sur parade) : à la demande de l'utilisateur, « PARÉ ! ABSORBÉ ! » ne peut pas être simultané. `showStrikeAnimation` n'annonce plus qu'un effet : « ABSORBÉ ! » si le bouclier a absorbé quelque chose, sinon « BLOQUÉ ! » / « PARÉ ! ».
 
 - 2026-11-10 (« aucun dégât » au lieu de -0) : à la demande de l'utilisateur, le 2e message de `showStrikeAnimation` affiche « aucun dégât » quand rien n'est subi (au lieu de « -0 dégâts »).
+
+- 2026-11-10 (suppression de la notion « absorbé ») : à la demande de l'utilisateur, la réserve du bouclier étant visible sur la barre de PV, ce qu'elle absorbe est vu comme des dégâts classiques. Retrait de `lastDamageAbsorbed` (`game.js`, `board.js`, `gameTurnFlow.js`) et de l'option `absorbed` de `showStrikeAnimation` (`gameStatsTab.js`) : seuls « BLOQUÉ ! » / « PARÉ ! » sont annoncés (« aucun dégât » si rien n'est subi), un coup simplement absorbé s'affiche comme un coup normal. Le journal garde les lignes « absorbe N dégâts ». Remplace les entrées « absorption » du jour.
