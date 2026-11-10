@@ -1767,7 +1767,7 @@ const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth
 function calibrateEnemyForCombat(target){
     const template = enemyCatalogList().find(t => t.id === target.templateId);
     const category = enemyCategory({ boss: Boolean(target.isBoss), easy: Boolean(target.isEasyChoice), hpMult: template?.statsModifiers?.hpMult ?? 1 });
-    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, records: loadCombatRecords() });
+    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords() });
     target.maxHp = result.hp;
     target.hp = result.hp;
     target.damageScale = Math.round(result.damageScale * result.heroDamageScale * 100) / 100;   // réglage de l'ennemi × neutralisation des PV du héros au-delà du plafond
