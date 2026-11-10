@@ -1,3 +1,14 @@
+## [2.227.0](https://github.com/niafrond/niafrond.github.io/compare/v2.226.0...v2.227.0) (2026-11-10)
+
+### Features
+
+* **match3-quest:** affiner l'IA des ennemis selon la difficulté ([633796a](https://github.com/niafrond/niafrond.github.io/commit/633796a377e55b617e5bf0744480b4ad4055bd6e))
+* **match3-quest:** annoncer par une animation l'absorption du bouclier et les blocages de crânes ([ddb1d14](https://github.com/niafrond/niafrond.github.io/commit/ddb1d141454f753b7309a0f22407c61fad36115f))
+
+### Bug Fixes
+
+* **match3-quest:** plafonner la chance de blocage à 75 % pour qu'un héros reste touchable ([e36d8cf](https://github.com/niafrond/niafrond.github.io/commit/e36d8cf8b43e917f0425787a33cdbfbfdedc2c73))
+
 ## [2.226.0](https://github.com/niafrond/niafrond.github.io/compare/v2.225.0...v2.226.0) (2026-11-10)
 
 ### Features
