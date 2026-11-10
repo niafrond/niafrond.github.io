@@ -249,12 +249,12 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
     }
     const taken = Math.max(0, real - absorbed);
     const label = strike.block === 'total' ? 'BLOQUÉ ! ' : strike.block === 'partial' ? 'PARÉ ! ' : '';
-    const absorbText = absorbed > 0 ? `ABSORBÉ ${absorbed} ! ` : '';
+    const absorbText = absorbed > 0 ? 'ABSORBÉ ! ' : '';
     const shield = strike.block && strike.block !== 'none' ? strike.block : (taken === 0 ? 'total' : 'partial');
     showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
         ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
         onContinue: () => showCombatAnimation(
-            { ...params, damage: `${label}${absorbText}-${taken} dégâts`, title: params.title },
+            { ...params, damage: `${label}${absorbText}-${taken} dégâts${absorbed > 0 ? ` (${absorbed} absorbés)` : ''}`, title: params.title },
             isPlayerAttack, { ...options, blocked: shield, requireClick: true, onContinue: options.onContinue })
     });
 }

@@ -47,7 +47,7 @@ describe('infobulle d\'un sort : coût en qì coloré', () => {
 describe('absorption par bouclier : annoncée comme un blocage', () => {
     it('applyDamage mémorise ce que le bouclier absorbe et l\'animation de coup l\'affiche', () => {
         expect(src).toMatch(/export const lastDamageAbsorbed = \(\) => lastAbsorbed;/);
-        expect(src).toMatch(/ABSORBÉ \$\{absorbed\} ! /);
+        expect(src).toMatch(/ABSORBÉ ! /);
     });
     it('crânes, arme et sorts de l\'ennemi passent l\'absorption à showStrikeAnimation', () => {
         expect(readFileSync(new URL('../../board.js', import.meta.url), 'utf8')).toMatch(/\{ absorbed: absorbedBySkulls \}/);
