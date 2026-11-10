@@ -255,7 +255,7 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
     showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
         ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
         onContinue: () => showCombatAnimation(
-            { ...params, damage: `${label}${absorbText}-${taken} dégâts${absorbed > 0 ? ` (${absorbed} absorbés)` : ''}`, title: params.title },
+            { ...params, damage: `${label}${absorbText}${taken > 0 ? `-${taken} dégâts` : 'aucun dégât'}${absorbed > 0 ? ` (${absorbed} absorbés)` : ''}`, title: params.title },
             isPlayerAttack, { ...options, blocked: shield, requireClick: true, onContinue: options.onContinue })
     });
 }

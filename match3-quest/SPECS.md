@@ -827,3 +827,5 @@ Spécifications et journal de session de `match3-quest/`.
 - 2026-11-10 (message d'absorption lisible) : à la demande de l'utilisateur, « ABSORBÉ 36 ! -0 dégâts » affichait deux chiffres ambigus. `showStrikeAnimation` (`gameStatsTab.js`) affiche désormais « ABSORBÉ ! -X dégâts (N absorbés) » : un seul nombre en gros (les dégâts réellement subis), la part absorbée entre parenthèses. Test `tooltipPress.test.js` adapté.
 
 - 2026-11-10 (absorption prime sur parade) : à la demande de l'utilisateur, « PARÉ ! ABSORBÉ ! » ne peut pas être simultané. `showStrikeAnimation` n'annonce plus qu'un effet : « ABSORBÉ ! » si le bouclier a absorbé quelque chose, sinon « BLOQUÉ ! » / « PARÉ ! ».
+
+- 2026-11-10 (« aucun dégât » au lieu de -0) : à la demande de l'utilisateur, le 2e message de `showStrikeAnimation` affiche « aucun dégât » quand rien n'est subi (au lieu de « -0 dégâts »).
