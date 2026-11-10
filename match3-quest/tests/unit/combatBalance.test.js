@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, heroDamagePerCycleModel } from '../../combatBalance.js';
+import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, heroDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -66,24 +66,42 @@ describe('combatBalance : calibrage des ennemis', () => {
     });
     test('sans mesure : PV d\'après le modèle, dégâts inchangés ; plus la catégorie est haute, plus les PV sont élevés', () => {
         const order = ['weak', 'normal', 'aggressive', 'elite', 'miniBoss', 'boss'];
-        const hps = order.map(category => calibrateEnemy({ category, heroMaxHp: 500 }).hp);
+        const hps = order.map(category => calibrateEnemy({ category, heroMaxHp: 150 }).hp);
         expect(hps).toEqual([...hps].sort((a, b) => a - b));
-        const n = calibrateEnemy({ category: 'normal', heroMaxHp: 500 });
+        const n = calibrateEnemy({ category: 'normal', heroMaxHp: 150 });
         expect(n.damageScale).toBe(1);
         expect(n.measured).toBe(false);
-        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(500) * (210 / DEFAULT_CYCLE_SECONDS) * 1));
+        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(150) * (210 / DEFAULT_CYCLE_SECONDS) * 1));
     });
     test('avec mesures : l\'ennemi tue le héros en ENEMY_WIN_RATIO × la durée cible', () => {
         const rec = { outcome: 'victory', playerLevel: 10, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };   // 20 dégâts bruts/cycle, cycle 30 s
-        const r = calibrateEnemy({ category: 'normal', heroMaxHp: 420, heroLevel: 10, records: [rec, rec, rec, rec] });
+        const r = calibrateEnemy({ category: 'normal', heroMaxHp: 240, heroLevel: 10, records: [rec, rec, rec, rec] });
         expect(r.measured).toBe(true);
         expect(r.hp).toBe(Math.round(50 * 7));
-        // héros 420 PV, 7 cycles × 1,2 = 8,4 cycles → 50 dégâts/cycle voulus (20 mesurés → ×2,5)
-        expect(r.damageScale).toBe(2.5);
-        expect(420 / (20 * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO, 0);
+        // héros 240 PV, 7 cycles × 1,2 = 8,4 cycles → ~28,6 dégâts/cycle voulus (20 mesurés → ×1,43)
+        expect(r.damageScale).toBe(1.43);
+        expect(240 / (20 * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO, 0);
     });
     test('mesures lointaines (autre niveau) ignorées', () => {
         const rec = { outcome: 'victory', playerLevel: 50, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };
         expect(calibrateEnemy({ category: 'normal', heroMaxHp: 420, heroLevel: 10, records: [rec, rec, rec, rec] }).measured).toBe(false);
+    });
+});
+
+describe('combatBalance : le héros n\'est pas un sac à PV', () => {
+    test('référence : 100 au niveau 1, +6 par niveau, +5 de plus après le 20', () => {
+        expect(heroReferenceHp(1)).toBe(100);
+        expect(heroReferenceHp(20)).toBe(214);
+        expect(heroReferenceHp(21)).toBe(225);
+    });
+    test('sous le plafond (+60 %) : tout compte ; au-delà : un quart seulement', () => {
+        expect(heroEffectiveHp(300, 20)).toBe(300);
+        expect(heroEffectiveHp(1226, 29)).toBe(Math.round(heroReferenceHp(29) * 1.6 + (1226 - heroReferenceHp(29) * 1.6) * 0.25));
+    });
+    test('calibrage : un héros gonflé voit ses dégâts subis majorés, pas ses PV changés', () => {
+        const r = calibrateEnemy({ category: 'normal', heroMaxHp: 1226, heroLevel: 29 });
+        expect(r.heroDamageScale).toBeGreaterThan(1);
+        expect(r.heroEffectiveHp).toBeLessThan(1226);
+        expect(calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 29 }).heroDamageScale).toBe(1);
     });
 });

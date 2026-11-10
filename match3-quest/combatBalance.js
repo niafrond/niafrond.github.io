@@ -142,6 +142,16 @@ export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niv
 export const DAMAGE_SCALE_BOUNDS = [0.5, 2.5];
 export const heroDamagePerCycleModel = heroMaxHp => 6 + 0.08 * Math.max(1, heroMaxHp);   // provisoire : remplacé par la mesure dès MIN_SAMPLE victoires
 
+// Le héros n'est pas non plus un sac à PV : au-delà du budget de sa progression (base + niveaux + Endurance, plus une marge de stuff), seule une part
+// de ses PV compte pour la durée du combat. Les statistiques affichées ne changent pas ; l'excédent est neutralisé par un surcroît de dégâts subis.
+export const HERO_HP_ALLOWANCE = 0.6;     // marge de PV d'équipement tolérée au-dessus de la progression (+60 %)
+export const HERO_SURPLUS_SHARE = 0.25;   // part des PV au-delà de ce plafond qui compte encore
+export const heroReferenceHp = level => { const L = Math.max(1, Math.floor(level) || 1); return 100 + 6 * (L - 1) + 5 * Math.max(0, L - 20); };   // 100 + (5 PV + 1 Endurance) / niveau, +5 après le niveau 20
+export function heroEffectiveHp(maxHp, level) {
+    const ceiling = heroReferenceHp(level) * (1 + HERO_HP_ALLOWANCE);
+    return maxHp <= ceiling ? maxHp : Math.round(ceiling + (maxHp - ceiling) * HERO_SURPLUS_SHARE);
+}
+
 /** Catégorie de durée d'un ennemi : boss, facile, sinon d'après la robustesse de son gabarit (hpMult du catalogue). */
 export function enemyCategory({ boss = false, easy = false, hpMult = 1 } = {}) {
     if (boss) return 'boss';
@@ -160,7 +170,9 @@ const PROFILE_OF_CATEGORY = { weak: 'weak', normal: 'normal', aggressive: 'norma
  *  - damageScale : multiplicateur des dégâts que l'ennemi inflige, pour qu'il vainque un héros de `heroMaxHp` PV en ENEMY_WIN_RATIO × la durée cible.
  * `records` : combats mesurés (récents) ; on n'en retient que ceux joués à ±3 niveaux du héros.
  */
-export function calibrateEnemy({ category, heroMaxHp, heroLevel = 1, records = [] }) {
+export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, records = [] }) {
+    const heroMaxHp = heroEffectiveHp(rawHeroMaxHp, heroLevel);   // PV qui comptent vraiment (plafond de progression)
+    const heroDamageScale = rawHeroMaxHp > heroMaxHp ? Math.round((rawHeroMaxHp / heroMaxHp) * 100) / 100 : 1;
     const near = records.filter(r => r && r.outcome === 'victory' && Math.abs((r.playerLevel || 0) - heroLevel) <= 3);
     const measured = near.length >= MIN_SAMPLE ? summarizeCombats(near) : null;
     const cycleSeconds = measured?.averageCycleSeconds > 0 ? measured.averageCycleSeconds : DEFAULT_CYCLE_SECONDS;
@@ -175,5 +187,5 @@ export function calibrateEnemy({ category, heroMaxHp, heroLevel = 1, records = [
         damageScale = Math.min(DAMAGE_SCALE_BOUNDS[1], Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / measured.rawDamageTakenPerCycle));
         damageScale = Math.round(damageScale * 100) / 100;
     }
-    return { hp, damageScale, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
+    return { hp, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
 }

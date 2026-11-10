@@ -1770,7 +1770,7 @@ function calibrateEnemyForCombat(target){
     const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, records: loadCombatRecords() });
     target.maxHp = result.hp;
     target.hp = result.hp;
-    target.damageScale = result.damageScale;
+    target.damageScale = Math.round(result.damageScale * result.heroDamageScale * 100) / 100;   // réglage de l'ennemi × neutralisation des PV du héros au-delà du plafond
     target.balanceCategory = category;
 }
 
