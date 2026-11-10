@@ -3,12 +3,15 @@
 //  - Défense = chance de BLOQUER une attaque armée ou un match de crânes subi : le blocage est total (aucun dégât)
 //    ou partiel (dégâts divisés par 2). Un coup très puissant (isHeavyHit) ne peut qu'être très partiellement paré (-15 %).
 // Les valeurs peuvent dépasser 100 à l'écran (cumul d'objets, de sorts, de niveaux) mais la chance réelle reste
-// plafonnée à STAT_CHANCE_CAP (98 %). Les sorts ne sont ni bloqués ni critiques. Module pur, sans DOM.
+// plafonnée à STAT_CHANCE_CAP (98 %) pour le critique et à BLOCK_CHANCE_CAP (75 %) pour le blocage. Les sorts ne sont ni bloqués ni critiques. Module pur, sans DOM.
 
 import { getAttributePoints } from "./attributes.js";
 import { stuffTotals } from "./stuff.js";
 
 export const STAT_CHANCE_CAP = 98;
+// La chance de BLOQUER est plafonnée plus bas que celle de critique : avec 98 %, un héros à Déf. 95 bloquait 95 % des coups (dont 40 % en blocage total,
+// soit ~38 % des coups sans aucun dégât) et devenait quasi invulnérable. À 75 %, au plus 30 % des coups sont annulés et 25 % passent en entier.
+export const BLOCK_CHANCE_CAP = 75;
 export const CRIT_MULTIPLIER = 1.5;
 export const PARTIAL_BLOCK_FACTOR = 0.5;   // dégâts restants après un blocage partiel
 export const TOTAL_BLOCK_SHARE = 0.4;
@@ -47,7 +50,7 @@ export function describeLevelEdge(entity) {
     return `${gap} niveau${gap > 1 ? 'x' : ''} d'avance : +${points} % de critique et de blocage`;
 }
 
-const clampChance = value => Math.max(0, Math.min(STAT_CHANCE_CAP, Math.floor(Number(value) || 0)));
+const clampChance = (value, cap = STAT_CHANCE_CAP) => Math.max(0, Math.min(cap, Math.floor(Number(value) || 0)));
 
 // Bonus d'Atk/Déf apportés par l'arme en main droite/gauche et le bouclier (champs `atkBonus` / `defBonus`).
 // Les `defense` historiques des boucliers sont déjà ajoutées à entity.defense à l'équipement : on ne les recompte pas.
@@ -158,13 +161,13 @@ export function statModifier(entity, stat) {
     return statBuffAmount(entity, 'defense') + Math.floor(entity?.tempDefense || 0) + (on('stoneskin') ? Math.floor(fx.stoneskinDefense || 0) : 0);
 }
 
-// Chances réelles (plafonnées à 98 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
+// Chances réelles (critique plafonné à 98 %, blocage à 75 %). `weakened` : points d'attaque retirés (Sceau d'Affaiblissement).
 export function critChance(entity, weakened = 0) {
     return clampChance(levelEdgeBonus(entity, rawAttack(entity)) - Math.max(0, Math.floor(weakened || 0)));
 }
 export function blockChance(entity) {
     if ((entity?.statusEffects?.petrified || 0) > 0) return 0;   // Pétrifié : ni blocage ni parade
-    return clampChance(levelEdgeBonus(entity, rawDefense(entity)));
+    return clampChance(levelEdgeBonus(entity, rawDefense(entity)), BLOCK_CHANCE_CAP);
 }
 
 export function rollCrit(entity, rng = Math.random, weakened = 0) {

@@ -95,7 +95,7 @@ export const allItems = [
  description:"Restaure 8 HP par tour pendant 3 tours (rechargé en 6 tours)", effect:{regen:8, duration:3}},
 
     // === OBJETS DE HAUT NIVEAU (au-delà du niveau 18) ===
-    // L'attaque et la défense étant des chances plafonnées à 98 %, les paliers misent sur les PV, le qì, les soins et la réduction de dégâts.
+    // L'attaque et la défense étant des chances plafonnées (98 % le critique, 75 % le blocage), les paliers misent sur les PV, le qì, les soins et la réduction de dégâts.
     // Boucliers
     {id:"qilin_shield", name:"Rondache du Qilin", type:"shield", minLevel:28, rarity:"rare",
      description:"Un bouclier orné du Qilin, défense +45, critique +8, absorbe 150 dégâts", defense:45, atkBonus:8, absorbDamage:150},

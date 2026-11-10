@@ -3,7 +3,7 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
 import {
-    STAT_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
+    STAT_CHANCE_CAP, BLOCK_CHANCE_CAP, critChance, blockChance, rawAttack, displayAttack, rawDefense, rollBlock, applyBlock, resolveStrike,
     skullStrengthBonus, levelEdgeBonus, describeLevelEdge, addStatBuff, stackStatusEffect, tickStatBuffs, statBuffAmount, gearBonus
 } from '../../combatStats.js';
 import { createMapEnemy, createBossEnemyForTier } from '../../enemies.js';
@@ -19,12 +19,13 @@ describe('plafond à 98 %', () => {
         expect(rawAttack(e)).toBe(150);
         expect(rawDefense(e)).toBe(120);
         expect(critChance(e)).toBe(STAT_CHANCE_CAP);
-        expect(blockChance(e)).toBe(STAT_CHANCE_CAP);
+        expect(blockChance(e)).toBe(BLOCK_CHANCE_CAP);
         expect(STAT_CHANCE_CAP).toBe(98);
+        expect(BLOCK_CHANCE_CAP).toBe(75);
     });
 
     test('jamais de coup garanti : 99,5 % de jet ne passe pas à 98 %', () => {
-        expect(rollBlock({ defense: 500 }, seq(0.99, 0))).toBe('none');
+        expect(rollBlock({ defense: 500 }, seq(0.76, 0))).toBe('none');
     });
 });
 
@@ -228,7 +229,7 @@ describe('écart de niveau : avantage borné du plus haut niveau', () => {
                 expect(crit).toBeGreaterThanOrEqual(previous);
                 expect(crit - Math.min(98, raw)).toBeLessThanOrEqual(18);
                 expect(crit).toBeLessThanOrEqual(98);
-                expect(blockChance(entity)).toBe(crit);        // même courbe pour la défense
+                expect(blockChance(entity)).toBe(Math.min(75, crit));   // même courbe pour la défense, plafonnée plus bas
                 previous = crit;
             }
         }
@@ -292,5 +293,21 @@ describe('coups inblocables', () => {
         expect(r.block).toBe('none');
         expect(r.damage).toBe(500);
         expect(resolveStrike(499, { attack: 0 }, { maxHp: 2000, defense: 500 }, { rng: () => 0 }).unblockable).toBe(false);
+    });
+});
+
+describe('équilibrage : un héros à forte défense reste touchable', () => {
+    test('Déf. 95 (sauvegarde niveau 29) : 75 % de blocage au plus, 30 % des coups annulés, 25 % passent en entier', () => {
+        const hero = { defense: 95 };
+        expect(blockChance(hero)).toBe(BLOCK_CHANCE_CAP);
+        const rolls = 10000;
+        let none = 0, total = 0;
+        for (let i = 0; i < rolls; i++) {
+            let call = 0;   // deux jets indépendants : blocage, puis part totale
+            const outcome = rollBlock(hero, () => (call++ === 0 ? (i * 7919) % rolls : (i * 104729 + 13) % rolls) / rolls);
+            if (outcome === 'none') none++; else if (outcome === 'total') total++;
+        }
+        expect(none / rolls).toBeGreaterThan(0.2);
+        expect(total / rolls).toBeLessThan(0.35);
     });
 });
