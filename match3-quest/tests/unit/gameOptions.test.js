@@ -151,11 +151,14 @@ describe('animations et prefers-reduced-motion', () => {
 });
 
 describe('mode daltonien', () => {
-    test('active la palette et impose les symboles, sans toucher à l\'option Symboles', () => {
+    test('active la palette sans les symboles (gâteaux de lune conservés), sauf si Symboles est aussi activé', () => {
         setOption('colorblind', true);
         expect(document.body.classList.contains('a11y-colorblind')).toBe(true);
-        expect(document.body.classList.contains('a11y-shapes')).toBe(true);
+        expect(document.body.classList.contains('a11y-shapes')).toBe(false);
         expect(getOption('shapes')).toBe(false);
+        setOption('shapes', true);
+        expect(document.body.classList.contains('a11y-shapes')).toBe(true);
+        setOption('shapes', false);
         setOption('colorblind', false);
         expect(document.body.classList.contains('a11y-shapes')).toBe(false);
     });

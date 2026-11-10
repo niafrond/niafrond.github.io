@@ -5,8 +5,8 @@
 //  - vibration  : vibrations du téléphone (dégâts subis, onde de la perception du qì), désactivables.
 // Accessibilité :
 //  - textSize   : 'normal' | 'large' | 'xlarge' — taille du texte des menus, de la fiche des combattants et du journal ;
-//  - shapes     : symboles en plus des couleurs (tuiles, qì, camps) pour ne pas dépendre de la seule couleur ;
-//  - colorblind : mode daltonien — palette des tuiles et du qì séparée par la teinte ET la luminosité (rouge/vert, bleu/violet), symboles activés d'office ;
+//  - shapes     : tuiles et pastilles de qì remplacées par des formes pleines, une par couleur (+ camps distingués par la bordure) pour ne pas dépendre de la seule couleur ;
+//  - colorblind : mode daltonien — palette des tuiles et du qì séparée par la teinte ET la luminosité (rouge/vert, bleu/violet), les gâteaux de lune sont conservés, sauf si « Symboles » est aussi activé (formes à la palette daltonienne) ;
 //  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
 //  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
 //    Tant que le joueur n'a pas choisi lui-même « Animations », le réglage « réduire les animations » du système (prefers-reduced-motion) s'applique ;
@@ -136,7 +136,7 @@ export function applyOptions() {
     const b = document.body.classList;
     b.toggle('text-large', current.textSize === 'large');
     b.toggle('text-xlarge', current.textSize === 'xlarge');
-    b.toggle('a11y-shapes', current.shapes || current.colorblind);   // le mode daltonien impose les symboles
+    b.toggle('a11y-shapes', current.shapes);   // le mode daltonien seul garde les gâteaux de lune ; avec Symboles, formes à la palette daltonienne
     b.toggle('a11y-colorblind', current.colorblind);
     b.toggle('no-anim', !animationsEnabled());
     b.toggle('fx-reduced', current.reduceFx);
