@@ -26,6 +26,7 @@ import { getLeftHandWeapon, updateAvailableWeapons, updateInventoryTab } from '.
 import { getSpellsByClass } from './spells.js';
 import { log, logActiveAction, saveUpdate, updateStats } from './gameHud.js';
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
+import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
 import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
@@ -91,6 +92,7 @@ export function finishPlayerTurn(){
     if(gameState.combatState !== 'active'){
         return;
     }
+    recordPlayerTurn();
 
     // Vérifier si le joueur est mort
     if(player.hp<=0){
@@ -240,6 +242,7 @@ export function enemyTurn(){
         return;
     }
 
+    recordEnemyTurn();
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
 
     if((enemy.statusEffects?.poisoned || 0) > 0) {
@@ -592,6 +595,7 @@ export function handleEnemyDefeated(){
     const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
     player.bossLossStreak = recordVictory();
+    saveCombatRecord(finishCombatRecord('victory'));   // mesure d'équilibrage : durée, cycles et dégâts du combat
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)

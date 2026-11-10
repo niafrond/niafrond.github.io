@@ -1,5 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
+import { abandonCombatRecord, beginCombatRecord, recordDamageDealt, recordDamageTaken } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
@@ -428,6 +429,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
+    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp); else if(target === player) recordDamageTaken(currentHp - nextHp); }   // mesures d'équilibrage (combatBalance.js)
     if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
@@ -1143,6 +1145,7 @@ export function restartCombat({ keepHp = false } = {}){
 
 // Gérer la mort du joueur
 export function handlePlayerDeath(){
+    abandonCombatRecord();
     if(gameState.combatState === 'finished') {
         return;
     }
@@ -1199,6 +1202,7 @@ export function startNewCombat(selectedEnemy = null){
     delete document.body.dataset.combatEnd;
     preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
     gameState.combatState = 'active';
+    beginCombatRecord({ enemyLevel: selectedEnemy?.level || 0, playerLevel: player.level || 0, boss: Boolean(selectedEnemy?.isBoss), enemyMaxHp: selectedEnemy?.maxHp || 0 });
     resetSpellCooldowns();
     setBoardSize((selectedEnemy?.isBoss && !selectedEnemy.isTutorialEnemy) ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon (et pour le duel-tutoriel, dont le plateau figé est en 8×8)
     window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
@@ -1227,6 +1231,7 @@ export function startNewCombat(selectedEnemy = null){
 
 // Abandonner le combat en cours
 export function abandonCombat(){
+    abandonCombatRecord();
     if(gameState.combatState !== 'active') {
         return;
     }
