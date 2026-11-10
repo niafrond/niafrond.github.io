@@ -26,10 +26,10 @@ describe('ennemis générés : plus de PV que le héros au niveau supérieur', (
         expect(raiseEnemyHpAboveHero(enemy, hero)).toBe(0);
         expect(enemy.maxHp).toBe(5000);
     });
-    it('un ennemi blessé garde ses PV perdus', () => {
+    it('un ennemi blessé repart avec tous ses PV', () => {
         const enemy = { level: 29, hp: 300, maxHp: 658 };
-        const added = raiseEnemyHpAboveHero(enemy, hero);
-        expect(enemy.hp).toBe(300 + added);
+        raiseEnemyHpAboveHero(enemy, hero);
+        expect(enemy.hp).toBe(enemy.maxHp);
     });
     it('l\'ennemi facile (moins de PV que le héros) est exclu', () => {
         const enemy = { level: 27, hp: 600, maxHp: 600, isEasyChoice: true };

@@ -88,8 +88,7 @@ export function raiseEnemyHpAboveHero(enemy, hero) {
     const target = heroMaxHpAtLevel(hero.maxHp, hero.level, (enemy.level || 1) + 1) + 1;
     const current = Math.max(1, Math.floor(enemy.maxHp) || 1);
     if (current >= target) return 0;
-    const full = !(enemy.hp < current);   // un ennemi déjà blessé garde ses PV perdus
     enemy.maxHp = target;
-    enemy.hp = full ? target : enemy.hp + (target - current);
+    enemy.hp = target;   // l'ennemi généré démarre le combat en pleine forme : pas de PV perdus conservés
     return target - current;
 }
