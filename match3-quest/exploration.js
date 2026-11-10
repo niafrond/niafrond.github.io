@@ -1028,6 +1028,14 @@ export function levelFor(session, def) {
     return Math.max(1, level - bossEase(session, def));
 }
 
+// Niveau du « kit » d'un ennemi (arme, stuff, sorts : enemies.js > createMapEnemy) : son niveau sans Nouvelle Partie + et, pour un
+// boss, diminué de l'affaiblissement maximal. Il ne bouge jamais : l'ennemi garde le même équipement à chaque rencontre, et ce kit
+// n'est jamais d'un niveau supérieur à celui de l'ennemi.
+export function kitLevelFor(session, def) {
+    const base = enemyLevel(def, enemyRegionLevel(session, def.id), 0);
+    return Math.max(1, base - (def.boss ? BOSS_EASE_MAX : 0));
+}
+
 // Niveau de région de l'écran qui porte l'ennemi `enemyId`.
 export function enemyRegionLevel(session, enemyId) {
     const screenId = session.rt.enemyIndex[enemyId]?.screenId ?? session.rt.wildDefs?.[enemyId]?.screenId;
@@ -1065,6 +1073,7 @@ function wildEncounter(session, { def, screenId }) {
         templateId: def.templateId,
         name: def.name,
         level,
+        kitLevel: kitLevelFor(session, def),
         boss: null,
         duel: null,
         carryHp: false,
@@ -1098,6 +1107,7 @@ export function encounterFor(session, enemyId, playerLevel) {
         templateId: def.templateId,
         name: def.name,
         level,
+        kitLevel: kitLevelFor(session, def),
         boss: def.boss ? { ...def.boss, level } : null,
         duel: def.duel ? { ...def.duel } : null,
         carryHp: Boolean(def.carryHp)

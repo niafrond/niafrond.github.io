@@ -360,18 +360,36 @@ export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, pr
     });
 }
 
+// Remplace l'équipement d'un ennemi par celui d'un « kit » fixe (même gabarit) ; les PV du stuff suivent.
+function transplantKit(target, kit){
+    target.maxHp = Math.max(1, target.maxHp - enemyStuffMaxHp(target) + enemyStuffMaxHp(kit));
+    target.hp = target.maxHp;
+    target.stuff = kit.stuff;
+    target.spells = kit.spells;
+    target.weapon = kit.weapon;
+    target.weaponPower = kit.weapon ? Math.floor((target.power || 0) * 0.45) : 0;
+    target.inventoryItem = kit.inventoryItem;
+    target.abilities = kit.abilities;
+    return target;
+}
+
 // Ennemi rencontré sur la carte d'exploration (voir exploration.js > encounterFor) :
 // { templateId, level, boss?: { name, level } } → ennemi prêt pour startNewCombat.
 export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     const catalog = loadEnemyCatalogSync();
     const template = catalog.find(t => t.id === encounter?.templateId) || pickRandom(catalog);
     const level = Math.max(1, Math.floor(encounter?.level || 1));
-    // Boss : équipement, sorts et objet pré-générés d'après son identité (ils ne bougent pas quand on revient le voir).
-    // une copie de gabarit (`copyOf`) tire le même équipement que l'original : seuls le nom et la fiche du bestiaire changent
-    const bossKey = encounter?.boss ? `map-boss|${encounter.enemyId || ''}|${template.copyOf || template.id}|${level}` : null;
-    const enemyEntity = bossKey
-        ? withSeededRandom(bossKey, () => buildEnemyFromTemplate(template, level, allWeaponsArg, { boss: true }))
-        : buildEnemyFromTemplate(template, level, allWeaponsArg);
+    // Équipement FIXE (« kit » : arme, stuff, sorts, objet, aptitudes) : tiré une fois pour toutes d'après l'identité de l'ennemi
+    // (son id sur la carte + son gabarit, une copie `copyOf` partageant le kit de l'original) et un niveau de kit stable
+    // (`encounter.kitLevel` : niveau sans Nouvelle Partie + ni affaiblissement du boss, voir exploration.js). Ainsi un boss ou un
+    // ennemi garde le même stuff et les mêmes sorts à chaque nouvelle rencontre, même affaibli ou en NG+ ; seules ses
+    // statistiques suivent son niveau du moment (graine propre à ce niveau, donc stables elles aussi).
+    const boss = Boolean(encounter?.boss);
+    const identity = `${encounter?.enemyId || ''}|${template.copyOf || template.id}`;
+    const kitLevel = Math.max(1, Math.min(level, Math.floor(Number(encounter?.kitLevel) || level)));
+    const enemyEntity = withSeededRandom(`map|${identity}|${level}`, () => buildEnemyFromTemplate(template, level, allWeaponsArg, { boss }));
+    const kit = withSeededRandom(`map-kit|${identity}|${kitLevel}`, () => buildEnemyFromTemplate(template, kitLevel, allWeaponsArg, { boss }));
+    transplantKit(enemyEntity, kit);
 
     if(encounter?.boss){
         applyBossScaling(enemyEntity, template);
