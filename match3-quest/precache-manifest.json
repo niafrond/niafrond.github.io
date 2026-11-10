@@ -43,6 +43,7 @@
   "compareView.js",
   "constants.js",
   "creatureScale.js",
+  "damageCorridor.js",
   "decor.js",
   "dialogState.js",
   "duel.js",
