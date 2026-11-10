@@ -1,9 +1,9 @@
 export const SITE_SEMVER = {
   major: 2,
-  minor: 225,
+  minor: 226,
   patch: 0,
   prerelease: '',
-  buildDate: '2026-11-10T08:08:33.276Z',
+  buildDate: '2026-11-10T09:52:17.427Z',
 };
 
 export function getVersion() {

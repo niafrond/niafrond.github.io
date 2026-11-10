@@ -1,3 +1,9 @@
+## [2.226.0](https://github.com/niafrond/niafrond.github.io/compare/v2.225.0...v2.226.0) (2026-11-10)
+
+### Features
+
+* **match3-quest:** annoncer l'absorption du bouclier et plafonner le blocage à 75 % ([#702](https://github.com/niafrond/niafrond.github.io/issues/702)) ([72e479c](https://github.com/niafrond/niafrond.github.io/commit/72e479cacb5db6e5d490df533060acd1a4f23d76))
+
 ## [2.225.0](https://github.com/niafrond/niafrond.github.io/compare/v2.224.0...v2.225.0) (2026-11-10)
 
 ### Features
