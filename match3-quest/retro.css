@@ -356,18 +356,18 @@ body.rt #enemy-stats { transition: opacity 0.2s; }
 body.rt .stats-container:has(.active-turn) > :not(.active-turn) { opacity: 0.6; }
 body.rt #player-stats.active-turn,
 body.rt #enemy-stats.active-turn {
-    border-width: 4px;
+    border-width: 3px;   /* même épaisseur que la fiche inactive : le cadre actif ne doit pas allonger la ligne et rogner le plateau (le surplus passe dans l'ombre) */
     animation: none;
 }
 body.rt #player-stats.active-turn {
     border-color: #00c853;
     background-image: linear-gradient(rgba(0, 200, 83, 0.28), rgba(0, 200, 83, 0.28));
-    box-shadow: 0 0 0 2px var(--rt-ink), 0 0 14px 3px rgba(0, 200, 83, 0.75);
+    box-shadow: 0 0 0 3px var(--rt-ink), 0 0 14px 3px rgba(0, 200, 83, 0.75);
 }
 body.rt #enemy-stats.active-turn {
     border-color: #ff1744;
     background-image: linear-gradient(rgba(255, 23, 68, 0.26), rgba(255, 23, 68, 0.26));
-    box-shadow: 0 0 0 2px var(--rt-ink), 0 0 14px 3px rgba(255, 23, 68, 0.75);
+    box-shadow: 0 0 0 3px var(--rt-ink), 0 0 14px 3px rgba(255, 23, 68, 0.75);
 }
 
 body.rt .stats-container { gap: 8px; padding: 6px; background: transparent; }

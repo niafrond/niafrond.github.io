@@ -963,3 +963,17 @@ body.rt .enemy-combat-name.name-hanzi { font-size: 20px; }
 .archived-spells[open] > summary { margin-bottom: 6px; }
 .archived-spell { opacity: .85; }
 #spell-buttons .spell-cooldown { display: block; font-weight: bold; color: var(--accent, #a8321f); }
+
+/* Zones stats plus basses : la ligne « Recharge : X tour » des sorts allonge la page et rogne le plateau (boardLayout.js), on regagne la hauteur
+   sur les fiches du héros et de l'ennemi (marges, remplissages, barre de PV et pastilles resserrés), sauf en paysage téléphone déjà compact. */
+@media not all and (orientation: landscape) and (max-height: 520px) {
+    body .stats-container { margin: 3px 0; gap: 4px; }
+    body #player-stats, body #enemy-stats { padding: 2px 5px; }
+    body #player-stats .stat, body #enemy-stats .stat { margin: 1px 0; }
+    body #player-stats .status-badges, body #enemy-stats .status-badges { margin: 0; }
+    body #player-stats .status-badges-empty, body #enemy-stats .status-badges-empty { min-height: 1.1em; margin: 0; }
+    body #player-stats .hp-bar-container progress, body #enemy-stats .hp-bar-container progress { height: 18px; }
+    body #player-stats .stat-chip, body #enemy-stats .stat-chip, body #player-stats .level-pill, body #enemy-stats .level-pill { padding-top: 0; padding-bottom: 0; line-height: 1.25; }
+    body #player-stats .mana-dots .cost-badge, body #enemy-stats .mana-dots .cost-badge { width: 1.55em; height: 1.55em; min-width: 0; }
+    body #player-stats .mana-dots .pa-stat, body #enemy-stats .mana-dots .pa-stat { padding: 0 3px; line-height: 1.3; }
+}
