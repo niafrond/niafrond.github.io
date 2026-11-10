@@ -1,3 +1,9 @@
+## [2.224.0](https://github.com/niafrond/niafrond.github.io/compare/v2.223.0...v2.224.0) (2026-11-10)
+
+### Features
+
+* **match3-quest:** donner aux ennemis générés plus de PV que le héros du niveau supérieur ([07521b7](https://github.com/niafrond/niafrond.github.io/commit/07521b7f1200281f2a5fa8eae0e8144af9142896))
+
 ## [2.223.0](https://github.com/niafrond/niafrond.github.io/compare/v2.222.0...v2.223.0) (2026-11-10)
 
 ### Features
