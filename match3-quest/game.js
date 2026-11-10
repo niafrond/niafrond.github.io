@@ -32,6 +32,7 @@ import { playSfx } from "./sound.js";
 import { loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
 import { getEquippedUltimate, getUltimateById, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
 import { applyGrowth } from "./progression.js";
+import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
@@ -1758,6 +1759,9 @@ export function newEnemy(selectedEnemy = null){
     // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
     enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
+
+    // Un ennemi généré a plus de PV max que le héros n'en aurait au niveau supérieur au sien (hors ennemi facile et duel-tutoriel).
+    if(!enemy.isTutorialEnemy) raiseEnemyHpAboveHero(enemy, player);
 
     // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
