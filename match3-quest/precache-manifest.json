@@ -34,6 +34,7 @@
   "classSpellsWarrior.js",
   "classes.js",
   "combatFlow.js",
+  "combatBalance.js",
   "combatStats.js",
   "companionMoves.js",
   "companionPowers.js",
