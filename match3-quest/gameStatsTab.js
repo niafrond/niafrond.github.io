@@ -135,7 +135,7 @@ export function updatePlayerStatsTab(){
                 <span class="stat-value">${statValueHtml(player, 'attack')}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 98 %">${svgIcon('shield')} Défense (blocage):</span>
+                <span class="stat-label" title="Chance de bloquer en tout ou partie une attaque armée ou de crânes — plafonnée à 75 %">${svgIcon('shield')} Défense (blocage):</span>
                 <span class="stat-value">${statValueHtml(player, 'defense')}</span>
             </div>
             <div class="stat-line">
