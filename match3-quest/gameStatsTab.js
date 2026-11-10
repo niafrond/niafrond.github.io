@@ -248,8 +248,9 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
         return;
     }
     const taken = Math.max(0, real - absorbed);
-    const label = strike.block === 'total' ? 'BLOQUÉ ! ' : strike.block === 'partial' ? 'PARÉ ! ' : '';
-    const absorbText = absorbed > 0 ? 'ABSORBÉ ! ' : '';
+    // Un seul effet est annoncé : l'absorption prime sur le blocage / la parade.
+    const label = absorbed > 0 ? 'ABSORBÉ ! ' : strike.block === 'total' ? 'BLOQUÉ ! ' : strike.block === 'partial' ? 'PARÉ ! ' : '';
+    const absorbText = '';
     const shield = strike.block && strike.block !== 'none' ? strike.block : (taken === 0 ? 'total' : 'partial');
     showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
         ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
