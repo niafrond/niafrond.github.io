@@ -66,3 +66,30 @@ export function growEnemy(level, { playerClass, preferredColor, boss = false, rn
         hpBonus: attributes.stamina + innate.maxHp + extra * ENEMY_HP_PER_LEVEL
     };
 }
+
+// PV max que le héros aurait au niveau `level`, estimés d'après son état actuel : chaque niveau d'écart apporte +5 PV (gain de base), +1 (un point
+// d'Endurance) et +5 de plus au-delà du niveau 20 (progression.js). Sert à garder les ennemis générés plus costauds que le héros du niveau suivant.
+export const HERO_HP_PER_LEVEL = 6;
+export function heroMaxHpAtLevel(heroMaxHp, heroLevel, level) {
+    const from = Math.max(1, Math.floor(heroLevel) || 1), to = Math.max(1, Math.floor(level) || 1);
+    const step = lvl => HERO_HP_PER_LEVEL + (lvl > 20 ? 5 : 0);   // gain du passage au niveau `lvl`
+    let hp = Math.max(1, Math.floor(heroMaxHp) || 1);
+    for (let lvl = from + 1; lvl <= to; lvl++) hp += step(lvl);
+    for (let lvl = from; lvl > to; lvl--) hp -= step(lvl);
+    return Math.max(1, hp);
+}
+
+/**
+ * Relève les PV max d'un ennemi généré pour qu'ils dépassent ceux du héros au niveau supérieur (niveau de l'ennemi + 1).
+ * Un ennemi « facile » (moins de PV que le héros par construction) n'est pas touché. Renvoie les PV max ajoutés.
+ */
+export function raiseEnemyHpAboveHero(enemy, hero) {
+    if (!enemy || !hero || enemy.isEasyChoice) return 0;
+    const target = heroMaxHpAtLevel(hero.maxHp, hero.level, (enemy.level || 1) + 1) + 1;
+    const current = Math.max(1, Math.floor(enemy.maxHp) || 1);
+    if (current >= target) return 0;
+    const full = !(enemy.hp < current);   // un ennemi déjà blessé garde ses PV perdus
+    enemy.maxHp = target;
+    enemy.hp = full ? target : enemy.hp + (target - current);
+    return target - current;
+}
