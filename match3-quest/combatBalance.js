@@ -148,6 +148,9 @@ export function saveCombatRecord(record, storage = globalThis.localStorage) {
 // est serré (l'ennemi peut gagner dans la fenêtre). Valeurs trouvées par simulation (tools/balance-search.mjs search) pour viser un taux
 // de victoire du joueur standard simulé de 95 % (faible), 85 % (normal), 80 % (agressif), 75 % (élite), 70 % (mini-boss) et 60 % (boss).
 export const ENEMY_WIN_RATIO = { weak: 1.2, normal: 1.2, aggressive: 1.2, elite: 1.2, miniBoss: 1.2, boss: 1.2 };
+// Correction des PV par catégorie (simulation) : durée cible ÷ durée moyenne observée des victoires (le héros ne tape pas au maximum
+// à chaque cycle : il prépare ses PA et son qì, l'ennemi bloque…).
+export const HP_DURATION_FACTOR = { weak: 0.65, normal: 0.82, aggressive: 0.83, elite: 0.93, miniBoss: 0.88, boss: 1 };
 export const DEFAULT_CYCLE_SECONDS = 30;     // tant que le jeu n'a pas mesuré le rythme (exemple du document)
 export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niveau du héros) avant de préférer les mesures au modèle
 export const DAMAGE_SCALE_BOUNDS = [0.5, 4];
@@ -178,7 +181,6 @@ export function enemyCategory({ boss = false, easy = false, hpMult = 1 } = {}) {
     return 'miniBoss';
 }
 const mid = ([a, b]) => (a + b) / 2;
-const PROFILE_OF_CATEGORY = { weak: 'weak', normal: 'normal', aggressive: 'normal', elite: 'elite', miniBoss: 'miniBoss', boss: 'boss' };
 
 /**
  * PV et réglage des dégâts d'un ennemi pour que le combat dure la durée cible, dans les deux sens :
@@ -195,9 +197,9 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const damagePerCycle = measured?.effectiveDamagePerCycle > 0 ? measured.effectiveDamagePerCycle : heroDamagePerCycleModel(heroLevel);
     const targetSeconds = mid(TARGET_DURATION_SECONDS[category] || TARGET_DURATION_SECONDS.normal);
     const cycles = targetCycles(targetSeconds, cycleSeconds);
-    // Pas de coefficient de profil ici : la durée cible de la catégorie traduit déjà sa robustesse (élite, boss…). L'appliquer en plus
-    // allongeait les combats d'autant (simulation : élite 413 s pour 300-360 s, boss 522 s pour 420-480 s).
-    const coefficient = 1;
+    // Coefficient de profil : non pas une robustesse en plus (la durée cible de la catégorie la traduit déjà ; l'appliquer allongeait les
+    // combats d'autant), mais une correction mesurée par simulation pour que la durée moyenne des victoires tombe sur la cible.
+    const coefficient = HP_DURATION_FACTOR[category] ?? 1;
     const hp = Math.max(1, estimateEnemyHp({ effectiveDamagePerCycle: damagePerCycle, targetDurationSeconds: targetSeconds, averageCycleSeconds: cycleSeconds, profileMultiplier: coefficient }));
     // Dégâts bruts attendus de l'ennemi par cycle : mesure du joueur (pondérée par la catégorie) ou modèle de simulation.
     const rawEnemy = measured?.rawDamageTakenPerCycle > 0

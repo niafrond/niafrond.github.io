@@ -77,7 +77,7 @@ const winRate = list => list.filter(r => r.heroWon).length / list.length;
 
 /** Rapport ENEMY_WIN_RATIO qui donne le taux de victoire visé (dichotomie : plus le rapport est grand, plus l'ennemi est lent à tuer). */
 export function searchRatio(cat, { fights = 6 } = {}) {
-    let lo = 0.6, hi = 3;
+    let lo = 0.6, hi = 5;
     for (let step = 0; step < 7; step++) {
         const mid = (lo + hi) / 2;
         if (winRate(calibratedFights(cat, { winRatio: mid, fights })) < TARGET_WIN_RATE[cat]) lo = mid; else hi = mid;
