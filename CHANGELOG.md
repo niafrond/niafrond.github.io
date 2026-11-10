@@ -1,3 +1,9 @@
+## [2.227.2](https://github.com/niafrond/niafrond.github.io/compare/v2.227.1...v2.227.2) (2026-11-10)
+
+### Bug Fixes
+
+* **match3-quest:** critique jamais bloqué totalement, stuff ennemi limité à son niveau ([#705](https://github.com/niafrond/niafrond.github.io/issues/705)) ([c8b6956](https://github.com/niafrond/niafrond.github.io/commit/c8b6956cf0e2b206c2c7d6c6655b327d78277ab9))
+
 ## [2.227.1](https://github.com/niafrond/niafrond.github.io/compare/v2.227.0...v2.227.1) (2026-11-10)
 
 ### Bug Fixes
