@@ -3,7 +3,8 @@
 // Quatre notions distinctes, ne pas les confondre :
 //  1. niveau et statistiques de l'ennemi  -> enemies.js (PV, attaque, défense...), jamais touchés ici ;
 //  2. style / personnalité                -> PERSONALITIES : tendances de choix (attaquer, soigner, affaiblir...) ;
-//  3. qualité tactique des décisions      -> AI_TIERS : probabilités d'action et fréquence des coups hasardeux ;
+//  3. qualité tactique des décisions      -> AI_TIERS : probabilités d'action, fréquence des coups hasardeux, repérage du coup fatal
+//     (lethalAwareness), poids du score des actions (scoreSharpness) et profondeur d'analyse du plateau (boardLookahead) ;
 //  4. difficulté choisie par le joueur    -> préférence 'auto' | 'easy' | 'normal' | 'hard' | 'expert' (Options).
 // Aucun niveau de difficulté ne donne de bonus de statistiques : seule la qualité des décisions change.
 
@@ -23,6 +24,9 @@ export const AI_TIERS = {
         aggressiveThreshold: 0.7,       // joueur « vulnérable » si PV < 70 %
         stupidityChance: 0.80,          // part des tours joués au hasard
         randomBoardMove: true,
+        lethalAwareness: 0,             // chance de repérer un coup fatal et de le jouer à coup sûr
+        scoreSharpness: 0,              // exposant du score dans le tirage de l'action (0 = le score est ignoré)
+        boardLookahead: 0,              // simulations par coup de plateau (0 = premier coup de la liste)
     },
     normal: {
         name: "Normal",
@@ -32,6 +36,7 @@ export const AI_TIERS = {
         healThreshold: 0.4, aggressiveThreshold: 0.6,
         stupidityChance: 0.55,
         randomBoardMove: true,
+        lethalAwareness: 0.5, scoreSharpness: 0.5, boardLookahead: 0,
     },
     hard: {
         name: "Difficile",
@@ -42,6 +47,7 @@ export const AI_TIERS = {
         stupidityChance: 0.35,
         randomBoardMove: false,
         manaFocus: true,                // choisit les combinaisons qui donnent le qì dont il manque
+        lethalAwareness: 0.85, scoreSharpness: 1, boardLookahead: 8,
     },
     expert: {
         name: "Expert",
@@ -52,6 +58,7 @@ export const AI_TIERS = {
         stupidityChance: 0.20,
         randomBoardMove: false,
         manaFocus: true,
+        lethalAwareness: 1, scoreSharpness: 1.5, boardLookahead: 16,
     },
 };
 
@@ -61,12 +68,14 @@ export const SPECIAL_TIERS = {
         base: 'easy', name: "Affaibli",
         spellUseProbability: 0.08, weaponUseProbability: 0.07, boardMoveProbability: 0.85,
         strategicThinking: false, stupidityChance: 0.97, randomBoardMove: true,
+        lethalAwareness: 0, scoreSharpness: 0, boardLookahead: 0,
         thinkingTimeMin: 450, thinkingTimeMax: 850,
     },
     overleveled: {
         base: 'expert', name: "Hors niveau",
         spellUseProbability: 0.45, weaponUseProbability: 0.35, boardMoveProbability: 0.20,
         strategicThinking: true, stupidityChance: 0.02, randomBoardMove: false, manaFocus: true,
+        lethalAwareness: 1, scoreSharpness: 2, boardLookahead: 24,
         thinkingTimeMin: 180, thinkingTimeMax: 320,
     },
 };

@@ -80,3 +80,26 @@ describe('pickWeightedOption', () => {
         expect(counts.board).toBe(4000);
     });
 });
+
+import { findLethalOption, applyScoreSharpness } from '../../enemyAIChoice.js';
+
+describe('estocade et poids du score', () => {
+    test('findLethalOption renvoie le coup fatal le mieux noté, sinon null', () => {
+        const a = { type: 'spell', score: 250, data: { reason: 'coup fatal' } };
+        const b = { type: 'weapon', score: 260, data: { reason: 'coup fatal' } };
+        const c = { type: 'board', score: 300, data: { reason: 'besoin de qì' } };
+        expect(findLethalOption([a, b, c])).toBe(b);
+        expect(findLethalOption([c])).toBeNull();
+        expect(findLethalOption([])).toBeNull();
+    });
+
+    test('applyScoreSharpness : 0 inchangé, sinon favorise le meilleur score sans exclure les autres', () => {
+        const mk = () => [{ score: 100, probability: 0.5 }, { score: 50, probability: 0.5 }, { score: 0, probability: 0.5 }];
+        expect(applyScoreSharpness(mk(), 0).map(o => o.probability)).toEqual([0.5, 0.5, 0.5]);
+        const [hi, mid, lo] = applyScoreSharpness(mk(), 1);
+        expect(hi.probability).toBeCloseTo(0.5);
+        expect(mid.probability).toBeCloseTo(0.25);
+        expect(lo.probability).toBeCloseTo(0.025);   // plancher 0,05
+        expect(lo.probability).toBeGreaterThan(0);
+    });
+});
