@@ -147,10 +147,10 @@ export function saveCombatRecord(record, storage = globalThis.localStorage) {
 // Temps que l'ennemi met à vaincre le héros, en multiple de la durée cible, par catégorie : plus le rapport est proche de 1, plus le combat
 // est serré (l'ennemi peut gagner dans la fenêtre). Valeurs trouvées par simulation (tools/balance-search.mjs search) pour viser un taux
 // de victoire du joueur standard simulé de 95 % (faible), 85 % (normal), 80 % (agressif), 75 % (élite), 70 % (mini-boss) et 60 % (boss).
-export const ENEMY_WIN_RATIO = { weak: 1.2, normal: 1.2, aggressive: 1.2, elite: 1.2, miniBoss: 1.2, boss: 1.2 };
+export const ENEMY_WIN_RATIO = { weak: 3.25, normal: 1.8, aggressive: 1.9, elite: 1.35, miniBoss: 1.05, boss: 1.15 };
 // Correction des PV par catégorie (simulation) : durée cible ÷ durée moyenne observée des victoires (le héros ne tape pas au maximum
 // à chaque cycle : il prépare ses PA et son qì, l'ennemi bloque…).
-export const HP_DURATION_FACTOR = { weak: 0.65, normal: 0.82, aggressive: 0.83, elite: 0.93, miniBoss: 0.88, boss: 1 };
+export const HP_DURATION_FACTOR = { weak: 0.5, normal: 0.82, aggressive: 0.83, elite: 0.93, miniBoss: 0.88, boss: 1 };
 export const DEFAULT_CYCLE_SECONDS = 30;     // tant que le jeu n'a pas mesuré le rythme (exemple du document)
 export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niveau du héros) avant de préférer les mesures au modèle
 export const DAMAGE_SCALE_BOUNDS = [0.5, 4];
