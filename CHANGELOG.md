@@ -1,3 +1,9 @@
+## [2.222.0](https://github.com/niafrond/niafrond.github.io/compare/v2.221.0...v2.222.0) (2026-11-10)
+
+### Features
+
+* **match3-quest:** remplacer tuiles et pastilles de qì par des formes avec l'option Symboles ([#697](https://github.com/niafrond/niafrond.github.io/issues/697)) ([d36da91](https://github.com/niafrond/niafrond.github.io/commit/d36da91d30b5561b074b3c11e3dda800d64559bb))
+
 ## [2.221.0](https://github.com/niafrond/niafrond.github.io/compare/v2.220.1...v2.221.0) (2026-11-09)
 
 ### Features
