@@ -1,3 +1,9 @@
+## [2.225.0](https://github.com/niafrond/niafrond.github.io/compare/v2.224.0...v2.225.0) (2026-11-10)
+
+### Features
+
+* **match3-quest:** barre d'altérations compacte et ennemis plus costauds que le héros du niveau supérieur ([#701](https://github.com/niafrond/niafrond.github.io/issues/701)) ([4a9c02e](https://github.com/niafrond/niafrond.github.io/commit/4a9c02e2946e5142054fa1075b3cf31a52808ef3))
+
 ## [2.224.0](https://github.com/niafrond/niafrond.github.io/compare/v2.223.0...v2.224.0) (2026-11-10)
 
 ### Features
