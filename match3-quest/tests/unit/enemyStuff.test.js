@@ -6,11 +6,11 @@ import { gearManaBonus } from '../../manaGear.js';
 const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; };
 
 describe('stuff des ennemis', () => {
-    test('un boss porte les quatre emplacements, jamais au-dessus de son niveau effectif ni de pièce de quête', () => {
+    test('un boss porte les quatre emplacements, jamais au-dessus de son niveau ni de pièce de quête', () => {
         for (let n = 0; n < 30; n++) {
             const level = 5 + n;
             const stuff = rollEnemyStuff(level, { boss: true });
-            const eff = stuffLevelFor(level, null, true);
+            const eff = level;
             STUFF_SLOTS.forEach(slot => {
                 const s = getStuffById(stuff[slot]);
                 expect(s).toBeTruthy();
@@ -20,9 +20,15 @@ describe('stuff des ennemis', () => {
             });
         }
     });
-    test('plus l\'ennemi est haut, plus il porte de pièces ; sa puissance relève le niveau du stuff', () => {
+    test('plus l\'ennemi est haut, plus il porte de pièces ; son stuff ne dépasse jamais son niveau', () => {
         expect(slotWearChance(1)).toBeLessThan(slotWearChance(30));
-        expect(stuffLevelFor(10, { hpMult: 1.5, atkMult: 1.5, defMult: 1.5 })).toBeGreaterThan(stuffLevelFor(10, { hpMult: 1, atkMult: 1, defMult: 1 }));
+        expect(stuffLevelFor(27)).toBe(27);
+    });
+    test('un boss de niveau 27 ne porte jamais de pièce de niveau 28 ou plus', () => {
+        for (let n = 0; n < 200; n++) {
+            const stuff = rollEnemyStuff(27, { boss: true });
+            STUFF_SLOTS.forEach(slot => expect(getStuffById(stuff[slot]).minLevel).toBeLessThanOrEqual(27));
+        }
     });
     test('le stuff agit sur l\'ennemi : Atk/Déf, PV max, qì max', () => {
         const e = { stuff: { head: 'casque_du_sage_celeste', neck: null, wrist: 'bracelet_de_foudre', ring: null } };

@@ -285,7 +285,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     }
 
     // Stuff porté (casque, collier, bracelet, bague) : cohérent avec le niveau et la puissance ; ses PV max s'ajoutent à ceux de l'ennemi.
-    const enemyStuff = rollEnemyStuff(enemyLevel, { statsModifiers: template.statsModifiers, boss });
+    const enemyStuff = rollEnemyStuff(enemyLevel, { boss });
     const stuffHp = enemyStuffMaxHp({ stuff: enemyStuff });
 
     const weakColor = resolveWeakColor(preferredColor);
