@@ -575,6 +575,10 @@ body.rt #player-stats .status-badge, body.rt #enemy-stats .status-badge { border
 #player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 56px; }
 @media (max-height: 520px) and (orientation: landscape) { #player-stats[style*="--portrait"] .status-badges, #enemy-stats[style*="--portrait"] .status-badges { margin-right: 38px; } }
 
+/* Ligne des états vide (aucune altération) : réserve la hauteur d'une rangée de pastilles pour que la barre de PV reste sous le portrait, pleine largeur. */
+#player-stats .status-badges-empty, #enemy-stats .status-badges-empty { min-height: 1.9em; margin: 3px 0; pointer-events: none; }
+@media (orientation: landscape) and (max-height: 520px) { #player-stats .status-badges-empty, #enemy-stats .status-badges-empty { display: none; } }
+
 /* Pastilles sans bordure épaisse ; PA = sprite des doubles flèches */
 #player-stats .stat-chip, #enemy-stats .stat-chip, #player-stats .status-badge, #enemy-stats .status-badge { border: 0; }
 .pa-ic { width: 1.5em; height: 1.5em; margin: -2px 0; image-rendering: pixelated; }

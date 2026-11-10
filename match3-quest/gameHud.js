@@ -8,6 +8,8 @@ import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
 import { icon as svgIcon } from './icons.js';
 import { RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
+// Sans altération, la ligne des états reste réservée (vide) : la barre de PV passe toujours sous le portrait, sur toute la largeur de la fiche.
+const STATUS_ROW_PLACEHOLDER = '<div class="status-badges status-badges-empty" aria-hidden="true"></div>';
 import { animationFactor } from './gameOptions.js';
 import { announce, notify } from './a11y.js';
 import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSpellTooltip, showPlayerGearTooltip, showPlayerGearTooltipBriefly, showItemTooltip, hideSpellTooltip, bindEnemyStuffLongPress } from './gameTooltips.js';
@@ -189,7 +191,7 @@ export function updateStats(){
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
             <div class="stat row-name"><span class="enemy-combat-name" title="${escapeHtml(player.name || 'Hou Yi')}">${emoji} ${escapeHtml((player.name || 'Hou Yi').split(' ')[0])}</span>${bonusTurnBadge(player)}</div>
-            ${statusBadgesHtml(player)}
+            ${statusBadgesHtml(player) || STATUS_ROW_PLACEHOLDER}
             <div class="stat row-hp">
                 <div class="hp-bar-container">
                     <progress value="${initPlayerHp}" max="${playerShield.max}"></progress>${playerShield.bar}
@@ -259,7 +261,7 @@ export function updateStats(){
     
     enemyDiv.innerHTML = `
         <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${bonusTurnBadge(enemy)}</div>
-        ${statusBadgesHtml(enemy)}
+        ${statusBadgesHtml(enemy) || STATUS_ROW_PLACEHOLDER}
         <div class="stat row-hp">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
@@ -368,7 +370,7 @@ export function updateEnemySpells(){
         div.title = effectText;
         markMultiManaSpell(div, sp);
 
-        const showDetails = () => showSpellTooltip(div, sp);
+        const showDetails = () => showSpellTooltip(div, sp, costDisplay);
         const hideDetails = () => hideSpellTooltip();
         bindTooltip(div, showDetails, hideDetails);
 

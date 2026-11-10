@@ -30,3 +30,15 @@ describe('bouclier et arme à deux mains', () => {
         expect(src).toMatch(/if\(freedWeapon\) createWeaponButton\(\);/);
     });
 });
+
+describe('infobulle d\'un sort : coût en qì coloré', () => {
+    it('showSpellTooltip affiche les pastilles de coût en tête de la fiche', () => {
+        expect(src).toMatch(/showSpellTooltip\(button, spell, costHtml = ''\)/);
+        expect(src).toMatch(/Qì : \$\{costHtml\}/);
+    });
+    it('les trois listes de sorts passent leur coût (spellCostHtml) à l\'infobulle', () => {
+        expect(src).toMatch(/showSpellTooltip\(btn, sp, costHTML\)/);
+        expect(src).toMatch(/showSpellTooltip\(div, sp, costDisplay\)/);
+        expect(src).toMatch(/showSpellTooltip\(div, sp, spellCostHtml\(sp, player\)\)/);
+    });
+});

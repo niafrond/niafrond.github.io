@@ -142,7 +142,7 @@ export function createSpellButtons(){
             };
         }
 
-        const showDetails = () => showSpellTooltip(btn, sp);
+        const showDetails = () => showSpellTooltip(btn, sp, costHTML);
         const hideDetails = () => hideSpellTooltip();
         bindTooltip(btn, showDetails, hideDetails);
 
