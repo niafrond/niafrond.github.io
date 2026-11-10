@@ -42,7 +42,7 @@ describe('combatBalance : enregistreur', () => {
     });
     test('synthèse : ne garde que les victoires', () => {
         const s = summarizeCombats([{ outcome: 'victory', seconds: 120, cycles: 4, dealt: 160 }, { outcome: 'victory', seconds: 180, cycles: 6, dealt: 240 }, { outcome: 'defeat', seconds: 10, cycles: 1, dealt: 0 }]);
-        expect(s).toEqual({ count: 2, averageCycleSeconds: 30, effectiveDamagePerCycle: 40, rawDamageTakenPerCycle: 0, averageSeconds: 150 });
+        expect(s).toEqual({ count: 2, averageCycleSeconds: 30, effectiveDamagePerCycle: 40, damageBySourcePerCycle: { weapon: 0, spell: 0, skull: 0, other: 0 }, rawDamageTakenPerCycle: 0, averageSeconds: 150 });
     });
     test('stockage borné', () => {
         const mem = {}; const storage = { getItem: k => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } };
@@ -103,5 +103,24 @@ describe('combatBalance : le héros n\'est pas un sac à PV', () => {
         expect(r.heroDamageScale).toBeGreaterThan(1);
         expect(r.heroEffectiveHp).toBeLessThan(1226);
         expect(calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 29 }).heroDamageScale).toBe(1);
+    });
+});
+
+import { recordDamageDealt as dealt, damageShares, DAMAGE_SOURCES } from '../../combatBalance.js';
+describe('combatBalance : source des dégâts', () => {
+    test('arme, sort, crânes et autres sont comptés à part', () => {
+        beginCombatRecord({}, 0);
+        recordPlayerTurn(1000); recordEnemyTurn(2000);
+        dealt(30, 3000, 'weapon'); dealt(50, 4000, 'spell'); dealt(15, 5000, 'skull'); dealt(5, 6000, 'poison?'); dealt(10, 7000);
+        const r = finishCombatRecord('victory', 8000);
+        expect(r.dealt).toBe(110);
+        expect(r.dealtBy).toEqual({ weapon: 30, spell: 50, skull: 15, other: 15 });
+    });
+    test('synthèse par source et parts', () => {
+        const rec = { outcome: 'victory', seconds: 60, cycles: 2, dealt: 100, dealtBy: { weapon: 20, spell: 60, skull: 20, other: 0 } };
+        const s = summarizeCombats([rec, rec]);
+        expect(s.damageBySourcePerCycle).toEqual({ weapon: 10, spell: 30, skull: 10, other: 0 });
+        expect(damageShares(s)).toEqual({ weapon: 0.2, spell: 0.6, skull: 0.2, other: 0 });
+        expect(DAMAGE_SOURCES).toHaveLength(4);
     });
 });

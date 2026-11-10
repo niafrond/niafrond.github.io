@@ -70,7 +70,7 @@ export function durationVerdict(category, seconds) {
 let current = null;
 
 export function beginCombatRecord(info = {}, now = Date.now()) {
-    current = { lastEventAt: now, startedAt: now, pausedMs: 0, pausedAt: null, playerTurns: 0, enemyTurns: 0, dealt: 0, taken: 0, takenRaw: 0, healed: 0, ...info };
+    current = { lastEventAt: now, startedAt: now, pausedMs: 0, pausedAt: null, playerTurns: 0, enemyTurns: 0, dealt: 0, dealtBy: { weapon: 0, spell: 0, skull: 0, other: 0 }, taken: 0, takenRaw: 0, healed: 0, ...info };
 }
 // Chaque événement relève le temps écoulé depuis le précédent : l'excédent au-delà de THINK_PAUSE_CAP_MS (pause de réflexion longue) est retiré de la durée.
 function touch(now) {
@@ -83,7 +83,14 @@ function touch(now) {
 }
 export function recordPlayerTurn(now = Date.now()) { if (current) { touch(now); current.playerTurns++; } }
 export function recordEnemyTurn(now = Date.now()) { if (current) { touch(now); current.enemyTurns++; } }
-export function recordDamageDealt(amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.dealt += Math.floor(amount); } }
+export const DAMAGE_SOURCES = ['weapon', 'spell', 'skull', 'other'];   // arme, sort, crânes d'un match ; le reste : poison, lave, compagnons, altérations
+export function recordDamageDealt(amount, now = Date.now(), source = 'other') {
+    if (!current || !(amount > 0)) return;
+    touch(now);
+    const dealt = Math.floor(amount), key = DAMAGE_SOURCES.includes(source) ? source : 'other';
+    current.dealt += dealt;
+    current.dealtBy[key] += dealt;
+}
 // `raw` : dégâts avant le réglage `damageScale` de l'ennemi (sert à recalibrer sans boucle de rétroaction).
 export function recordDamageTaken(amount, raw = amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.taken += Math.floor(amount); current.takenRaw += Math.floor(raw > 0 ? raw : amount); } }
 export function recordHealing(amount) { if (current && amount > 0) current.healed += Math.floor(amount); }
@@ -111,13 +118,14 @@ export function finishCombatRecord(outcome = 'victory', now = Date.now()) {
 /** Moyennes sur un échantillon de combats gagnés : rythme d'un cycle et dégâts effectifs par cycle (à injecter dans `estimateEnemyHp`). */
 export function summarizeCombats(records = []) {
     const won = records.filter(r => r && r.outcome === 'victory' && r.cycles > 0);
-    if (!won.length) return { count: 0, averageCycleSeconds: 0, effectiveDamagePerCycle: 0, rawDamageTakenPerCycle: 0, averageSeconds: 0 };
+    if (!won.length) return { count: 0, averageCycleSeconds: 0, effectiveDamagePerCycle: 0, damageBySourcePerCycle: Object.fromEntries(DAMAGE_SOURCES.map(k => [k, 0])), rawDamageTakenPerCycle: 0, averageSeconds: 0 };
     const sum = key => won.reduce((total, r) => total + (r[key] || 0), 0);
     const cycles = sum('cycles');
     return {
         count: won.length,
         averageCycleSeconds: Math.round((sum('seconds') / cycles) * 10) / 10,
         effectiveDamagePerCycle: Math.round((sum('dealt') / cycles) * 10) / 10,
+        damageBySourcePerCycle: Object.fromEntries(DAMAGE_SOURCES.map(k => [k, Math.round((won.reduce((total, r) => total + (r.dealtBy?.[k] || 0), 0) / cycles) * 10) / 10])),
         rawDamageTakenPerCycle: Math.round((sum('takenRaw') / cycles) * 10) / 10,
         averageSeconds: Math.round(sum('seconds') / won.length)
     };
@@ -188,4 +196,11 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
         damageScale = Math.round(damageScale * 100) / 100;
     }
     return { hp, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
+}
+
+/** Part de chaque source dans les dégâts infligés (0 à 1) ; sert à repérer un levier qui fait toute la durée (arme, sort ou crânes). */
+export function damageShares(summary) {
+    const by = summary?.damageBySourcePerCycle || {};
+    const total = DAMAGE_SOURCES.reduce((t, k) => t + (by[k] || 0), 0);
+    return Object.fromEntries(DAMAGE_SOURCES.map(k => [k, total > 0 ? Math.round((by[k] || 0) / total * 100) / 100 : 0]));
 }

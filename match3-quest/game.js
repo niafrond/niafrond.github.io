@@ -432,7 +432,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
-    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / enemyDamageScale); }   // mesures d'équilibrage (combatBalance.js)
+    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp, Date.now(), options.sourceSpell ? 'spell' : (options.damageSource || 'other')); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / enemyDamageScale); }   // mesures d'équilibrage (combatBalance.js)
     if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
@@ -1507,7 +1507,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     dmg = strike.damage;
 
     if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
-    applyDamage(selfHit ? player : enemy, dmg);
+    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon' });
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
