@@ -108,7 +108,7 @@ export function unarchiveSpell(spellId){
 
 // Appui long (ou survol à la souris) sur un sort de la liste : affiche son effet.
 function bindSpellRowTooltip(div, sp){
-    bindTooltip(div, () => showSpellTooltip(div, sp), hideSpellTooltip);
+    bindTooltip(div, () => showSpellTooltip(div, sp, spellCostHtml(sp, player)), hideSpellTooltip);
 }
 
 // Choix de l'ultime : un seul, le seul lançable en combat (en cliquant sur la jauge de rage pleine).

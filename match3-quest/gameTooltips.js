@@ -155,10 +155,11 @@ export function placeTooltip(tooltip, targetEl, tooltipWidth) {
     tooltip.style.top = `${Math.max(margin, top)}px`;
 }
 
-export function showSpellTooltip(button, spell) {
+// `costHtml` : coût en qì déjà mis en forme (pastilles colorées, `spellCostHtml` de game.js) ; affiché en tête de la fiche.
+export function showSpellTooltip(button, spell, costHtml = '') {
     if(!button || !spell) return;
     const tooltip = ensureSpellTooltip();
-    tooltip.innerHTML = getSpellTooltipHtml(spell);
+    tooltip.innerHTML = (costHtml ? `<div class="spell-tooltip-line">Qì : ${costHtml}</div>` : '') + getSpellTooltipHtml(spell);
     tooltip.classList.add('visible');
 
     placeTooltip(tooltip, button, 260);

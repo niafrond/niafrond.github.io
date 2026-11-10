@@ -368,7 +368,7 @@ export function updateEnemySpells(){
         div.title = effectText;
         markMultiManaSpell(div, sp);
 
-        const showDetails = () => showSpellTooltip(div, sp);
+        const showDetails = () => showSpellTooltip(div, sp, costDisplay);
         const hideDetails = () => hideSpellTooltip();
         bindTooltip(div, showDetails, hideDetails);
 
