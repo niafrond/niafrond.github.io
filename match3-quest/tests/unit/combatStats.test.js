@@ -303,7 +303,8 @@ describe('équilibrage : un héros à forte défense reste touchable', () => {
         const rolls = 10000;
         let none = 0, total = 0;
         for (let i = 0; i < rolls; i++) {
-            const outcome = rollBlock(hero, () => (i * 7919 % rolls) / rolls);
+            let call = 0;   // deux jets indépendants : blocage, puis part totale
+            const outcome = rollBlock(hero, () => (call++ === 0 ? (i * 7919) % rolls : (i * 104729 + 13) % rolls) / rolls);
             if (outcome === 'none') none++; else if (outcome === 'total') total++;
         }
         expect(none / rolls).toBeGreaterThan(0.2);
