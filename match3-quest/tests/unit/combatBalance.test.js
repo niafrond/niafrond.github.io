@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
+import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -70,7 +70,7 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(hps).toEqual([...hps].sort((a, b) => a - b));
         const n = calibrateEnemy({ category: 'normal', heroMaxHp: 150, heroLevel: 10 });
         expect(n.measured).toBe(false);
-        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(10) * (210 / DEFAULT_CYCLE_SECONDS)));
+        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(10) * (210 / DEFAULT_CYCLE_SECONDS) * HP_DURATION_FACTOR.normal));
         // l'ennemi vainc le héros en ENEMY_WIN_RATIO × la durée cible, d'après ses dégâts bruts modélisés
         const raw = enemyRawDamagePerCycleModel(10, 'normal');
         expect(150 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal, 0);
@@ -84,7 +84,7 @@ describe('combatBalance : calibrage des ennemis', () => {
         const rec = { outcome: 'victory', playerLevel: 10, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };   // 20 dégâts bruts/cycle, cycle 30 s
         const r = calibrateEnemy({ category: 'normal', heroMaxHp: 240, heroLevel: 10, records: [rec, rec, rec, rec] });
         expect(r.measured).toBe(true);
-        expect(r.hp).toBe(Math.round(50 * 7));
+        expect(r.hp).toBe(Math.round(50 * 7 * HP_DURATION_FACTOR.normal));
         // héros 240 PV, en 7 cycles × rapport de la catégorie ; 20 dégâts bruts mesurés × facteur de catégorie
         const raw = 20 * ENEMY_RAW_CATEGORY_FACTOR.normal;
         expect(240 / (raw * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal, 0);
