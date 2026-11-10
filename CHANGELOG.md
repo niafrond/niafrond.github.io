@@ -1,3 +1,9 @@
+## [2.227.1](https://github.com/niafrond/niafrond.github.io/compare/v2.227.0...v2.227.1) (2026-11-10)
+
+### Bug Fixes
+
+* **match3-quest:** retirer l'annonce d'absorption des dégâts ([#704](https://github.com/niafrond/niafrond.github.io/issues/704)) ([9d82815](https://github.com/niafrond/niafrond.github.io/commit/9d82815e81551710fba2b76260a9f9be5c8aa4e5))
+
 ## [2.227.0](https://github.com/niafrond/niafrond.github.io/compare/v2.226.0...v2.227.0) (2026-11-10)
 
 ### Features
