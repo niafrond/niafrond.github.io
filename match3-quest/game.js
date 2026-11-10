@@ -356,7 +356,12 @@ export function lastSpellDamage(fallback){
     return lastSpellStrike ? lastSpellStrike.damage : fallback;
 }
 
+// Dégâts absorbés par le bouclier équipé et le bouclier de qì lors du dernier applyDamage (0 sinon) : sert à annoncer l'absorption au joueur.
+let lastAbsorbed = 0;
+export const lastDamageAbsorbed = () => lastAbsorbed;
+
 export function applyDamage(target, damage, options = {}){
+    lastAbsorbed = 0;
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
 
@@ -399,6 +404,7 @@ export function applyDamage(target, damage, options = {}){
         const absorbedByShield = Math.min(player.shieldAbsorbLeft, normalizedDamage);
         player.shieldAbsorbLeft -= absorbedByShield;
         normalizedDamage -= absorbedByShield;
+        lastAbsorbed += absorbedByShield;
         log(`${player.equipment?.leftHand?.name || 'Votre bouclier'} absorbe ${absorbedByShield} dégâts.`);
     }
 
@@ -413,6 +419,7 @@ export function applyDamage(target, damage, options = {}){
             if(absorbed > 0) {
                 player.mana[shieldColor] = availableMana - absorbed;
                 normalizedDamage -= absorbed;
+                lastAbsorbed += absorbed;
                 log(`Bouclier de qì (${shieldColor}) absorbe ${absorbed} dégâts.`);
             }
 
@@ -584,11 +591,12 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
         applyDamage(target, dmg, { sourceSpell: spell });
+        const absorbedBySpell = lastAbsorbed;
         if(lastSpellStrike) {
             dmg = lastSpellStrike.damage;
             spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}`;
         }
-        const spellStrike = lastSpellStrike && lastSpellStrike.block !== 'none' ? lastSpellStrike : null;
+        const spellStrike = lastSpellStrike && (lastSpellStrike.block !== 'none' || absorbedBySpell > 0) ? lastSpellStrike : null;
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });
@@ -597,7 +605,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
             log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, source: caster.name, target: '→ Vous' }, spellStrike, false, dmg);
+            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, source: caster.name, target: '→ Vous' }, spellStrike, false, dmg, { absorbed: absorbedBySpell });
             else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
             log(`${escapeHtml(caster.name)} lance ${spell.name} ! ${dmg} dégâts.`);
         }

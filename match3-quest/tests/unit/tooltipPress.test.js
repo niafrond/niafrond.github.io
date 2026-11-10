@@ -42,3 +42,15 @@ describe('infobulle d\'un sort : coût en qì coloré', () => {
         expect(src).toMatch(/showSpellTooltip\(div, sp, spellCostHtml\(sp, player\)\)/);
     });
 });
+
+describe('absorption par bouclier : annoncée comme un blocage', () => {
+    it('applyDamage mémorise ce que le bouclier absorbe et l\'animation de coup l\'affiche', () => {
+        expect(src).toMatch(/export const lastDamageAbsorbed = \(\) => lastAbsorbed;/);
+        expect(src).toMatch(/ABSORBÉ \$\{absorbed\} ! /);
+    });
+    it('crânes, arme et sorts de l\'ennemi passent l\'absorption à showStrikeAnimation', () => {
+        expect(src).toMatch(/\{ absorbed: absorbedBySkulls \}/);
+        expect(src).toMatch(/\{ absorbed: absorbedByShield \}/);
+        expect(src).toMatch(/\{ absorbed: absorbedBySpell \}/);
+    });
+});

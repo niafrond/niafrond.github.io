@@ -240,16 +240,22 @@ export function showStrikeAnimation(params, strike, isPlayerAttack = true, final
     const crit = (strike.crit ? ' CRITIQUE !' : '') + (strike.unblockable ? ' INBLOCABLE !' : '');
     const real = Math.floor(finalDamage);
     const intended = Math.max(Math.floor(strike.intended ?? real), real);
-    if(!strike.block || strike.block === 'none') {
+    const absorbed = Math.max(0, Math.floor(options.absorbed || 0));   // part absorbée par le bouclier (équipé ou de qì) : annoncée en 2e temps, comme un blocage
+    options = { ...options, absorbed: undefined };
+    if((!strike.block || strike.block === 'none') && absorbed <= 0) {
         if(options.autoHideMs === undefined && options.requireClick === undefined) options = { ...options, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended) };
         showCombatAnimation({ ...params, damage: `-${real} dégâts${crit}` }, isPlayerAttack, options);
         return;
     }
+    const taken = Math.max(0, real - absorbed);
+    const label = strike.block === 'total' ? 'BLOQUÉ ! ' : strike.block === 'partial' ? 'PARÉ ! ' : '';
+    const absorbText = absorbed > 0 ? `ABSORBÉ ${absorbed} ! ` : '';
+    const shield = strike.block && strike.block !== 'none' ? strike.block : (taken === 0 ? 'total' : 'partial');
     showCombatAnimation({ ...params, damage: `-${intended} dégâts${crit}` }, isPlayerAttack, {
         ...options, requireClick: false, autoHideMs: strikeHoldMs(strike, isPlayerAttack, intended, 1000),
         onContinue: () => showCombatAnimation(
-            { ...params, damage: `${strike.block === 'total' ? 'BLOQUÉ !' : 'PARÉ !'} -${real} dégâts`, title: params.title },
-            isPlayerAttack, { ...options, blocked: strike.block, requireClick: true, onContinue: options.onContinue })
+            { ...params, damage: `${label}${absorbText}-${taken} dégâts`, title: params.title },
+            isPlayerAttack, { ...options, blocked: shield, requireClick: true, onContinue: options.onContinue })
     });
 }
 
