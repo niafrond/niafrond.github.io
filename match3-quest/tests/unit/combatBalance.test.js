@@ -42,7 +42,7 @@ describe('combatBalance : enregistreur', () => {
     });
     test('synthèse : ne garde que les victoires', () => {
         const s = summarizeCombats([{ outcome: 'victory', seconds: 120, cycles: 4, dealt: 160 }, { outcome: 'victory', seconds: 180, cycles: 6, dealt: 240 }, { outcome: 'defeat', seconds: 10, cycles: 1, dealt: 0 }]);
-        expect(s).toEqual({ count: 2, averageCycleSeconds: 30, effectiveDamagePerCycle: 40, averageSeconds: 150 });
+        expect(s).toEqual({ count: 2, averageCycleSeconds: 30, effectiveDamagePerCycle: 40, rawDamageTakenPerCycle: 0, averageSeconds: 150 });
     });
     test('stockage borné', () => {
         const mem = {}; const storage = { getItem: k => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } };
@@ -50,5 +50,40 @@ describe('combatBalance : enregistreur', () => {
         const list = loadCombatRecords(storage);
         expect(list).toHaveLength(COMBAT_STATS_KEEP);
         expect(list.at(-1).seconds).toBe(COMBAT_STATS_KEEP + 4);
+    });
+});
+
+import { calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, heroDamagePerCycleModel } from '../../combatBalance.js';
+
+describe('combatBalance : calibrage des ennemis', () => {
+    test('catégories', () => {
+        expect(enemyCategory({ boss: true, hpMult: 1 })).toBe('boss');
+        expect(enemyCategory({ easy: true, hpMult: 2 })).toBe('weak');
+        expect(enemyCategory({ hpMult: 1 })).toBe('normal');
+        expect(enemyCategory({ hpMult: 1.5 })).toBe('aggressive');
+        expect(enemyCategory({ hpMult: 1.8 })).toBe('elite');
+        expect(enemyCategory({ hpMult: 3 })).toBe('miniBoss');
+    });
+    test('sans mesure : PV d\'après le modèle, dégâts inchangés ; plus la catégorie est haute, plus les PV sont élevés', () => {
+        const order = ['weak', 'normal', 'aggressive', 'elite', 'miniBoss', 'boss'];
+        const hps = order.map(category => calibrateEnemy({ category, heroMaxHp: 500 }).hp);
+        expect(hps).toEqual([...hps].sort((a, b) => a - b));
+        const n = calibrateEnemy({ category: 'normal', heroMaxHp: 500 });
+        expect(n.damageScale).toBe(1);
+        expect(n.measured).toBe(false);
+        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(500) * (210 / DEFAULT_CYCLE_SECONDS) * 1));
+    });
+    test('avec mesures : l\'ennemi tue le héros en ENEMY_WIN_RATIO × la durée cible', () => {
+        const rec = { outcome: 'victory', playerLevel: 10, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };   // 20 dégâts bruts/cycle, cycle 30 s
+        const r = calibrateEnemy({ category: 'normal', heroMaxHp: 420, heroLevel: 10, records: [rec, rec, rec, rec] });
+        expect(r.measured).toBe(true);
+        expect(r.hp).toBe(Math.round(50 * 7));
+        // héros 420 PV, 7 cycles × 1,2 = 8,4 cycles → 50 dégâts/cycle voulus (20 mesurés → ×2,5)
+        expect(r.damageScale).toBe(2.5);
+        expect(420 / (20 * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO, 0);
+    });
+    test('mesures lointaines (autre niveau) ignorées', () => {
+        const rec = { outcome: 'victory', playerLevel: 50, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };
+        expect(calibrateEnemy({ category: 'normal', heroMaxHp: 420, heroLevel: 10, records: [rec, rec, rec, rec] }).measured).toBe(false);
     });
 });

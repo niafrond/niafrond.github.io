@@ -70,7 +70,7 @@ export function durationVerdict(category, seconds) {
 let current = null;
 
 export function beginCombatRecord(info = {}, now = Date.now()) {
-    current = { lastEventAt: now, startedAt: now, pausedMs: 0, pausedAt: null, playerTurns: 0, enemyTurns: 0, dealt: 0, taken: 0, healed: 0, ...info };
+    current = { lastEventAt: now, startedAt: now, pausedMs: 0, pausedAt: null, playerTurns: 0, enemyTurns: 0, dealt: 0, taken: 0, takenRaw: 0, healed: 0, ...info };
 }
 // Chaque événement relève le temps écoulé depuis le précédent : l'excédent au-delà de THINK_PAUSE_CAP_MS (pause de réflexion longue) est retiré de la durée.
 function touch(now) {
@@ -84,7 +84,8 @@ function touch(now) {
 export function recordPlayerTurn(now = Date.now()) { if (current) { touch(now); current.playerTurns++; } }
 export function recordEnemyTurn(now = Date.now()) { if (current) { touch(now); current.enemyTurns++; } }
 export function recordDamageDealt(amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.dealt += Math.floor(amount); } }
-export function recordDamageTaken(amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.taken += Math.floor(amount); } }
+// `raw` : dégâts avant le réglage `damageScale` de l'ennemi (sert à recalibrer sans boucle de rétroaction).
+export function recordDamageTaken(amount, raw = amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.taken += Math.floor(amount); current.takenRaw += Math.floor(raw > 0 ? raw : amount); } }
 export function recordHealing(amount) { if (current && amount > 0) current.healed += Math.floor(amount); }
 /** Met le chrono en pause (page masquée, cinématique) : le temps n'est pas compté dans la durée du combat. */
 export function pauseCombatRecord(now = Date.now()) { if (current && current.pausedAt == null) { touch(now); current.pausedAt = now; } }
@@ -110,13 +111,14 @@ export function finishCombatRecord(outcome = 'victory', now = Date.now()) {
 /** Moyennes sur un échantillon de combats gagnés : rythme d'un cycle et dégâts effectifs par cycle (à injecter dans `estimateEnemyHp`). */
 export function summarizeCombats(records = []) {
     const won = records.filter(r => r && r.outcome === 'victory' && r.cycles > 0);
-    if (!won.length) return { count: 0, averageCycleSeconds: 0, effectiveDamagePerCycle: 0, averageSeconds: 0 };
+    if (!won.length) return { count: 0, averageCycleSeconds: 0, effectiveDamagePerCycle: 0, rawDamageTakenPerCycle: 0, averageSeconds: 0 };
     const sum = key => won.reduce((total, r) => total + (r[key] || 0), 0);
     const cycles = sum('cycles');
     return {
         count: won.length,
         averageCycleSeconds: Math.round((sum('seconds') / cycles) * 10) / 10,
         effectiveDamagePerCycle: Math.round((sum('dealt') / cycles) * 10) / 10,
+        rawDamageTakenPerCycle: Math.round((sum('takenRaw') / cycles) * 10) / 10,
         averageSeconds: Math.round(sum('seconds') / won.length)
     };
 }
@@ -131,4 +133,47 @@ export function loadCombatRecords(storage = globalThis.localStorage) {
 export function saveCombatRecord(record, storage = globalThis.localStorage) {
     if (!record) return;
     try { storage.setItem(COMBAT_STATS_STORAGE_KEY, JSON.stringify([...loadCombatRecords(storage), record].slice(-COMBAT_STATS_KEEP))); } catch (e) { /* ignoré */ }
+}
+
+// --- Calibration des ennemis ------------------------------------------------------------------------------------------------------------------
+export const ENEMY_WIN_RATIO = 1.2;          // l'ennemi doit pouvoir vaincre le héros « moyen » en ≤ 1,2 × la durée cible : le combat se perd aussi dans la fenêtre 3-8 min
+export const DEFAULT_CYCLE_SECONDS = 30;     // provisoire, tant que le jeu n'a pas mesuré le rythme (exemple du document)
+export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niveau du héros) avant de préférer les mesures au modèle
+export const DAMAGE_SCALE_BOUNDS = [0.5, 2.5];
+export const heroDamagePerCycleModel = heroMaxHp => 6 + 0.08 * Math.max(1, heroMaxHp);   // provisoire : remplacé par la mesure dès MIN_SAMPLE victoires
+
+/** Catégorie de durée d'un ennemi : boss, facile, sinon d'après la robustesse de son gabarit (hpMult du catalogue). */
+export function enemyCategory({ boss = false, easy = false, hpMult = 1 } = {}) {
+    if (boss) return 'boss';
+    if (easy || hpMult < 1) return 'weak';
+    if (hpMult < 1.3) return 'normal';
+    if (hpMult < 1.6) return 'aggressive';
+    if (hpMult < 2) return 'elite';
+    return 'miniBoss';
+}
+const mid = ([a, b]) => (a + b) / 2;
+const PROFILE_OF_CATEGORY = { weak: 'weak', normal: 'normal', aggressive: 'normal', elite: 'elite', miniBoss: 'miniBoss', boss: 'boss' };
+
+/**
+ * PV et réglage des dégâts d'un ennemi pour que le combat dure la durée cible, dans les deux sens :
+ *  - PV = dégâts effectifs du héros par cycle × cycles cibles × coefficient du profil ;
+ *  - damageScale : multiplicateur des dégâts que l'ennemi inflige, pour qu'il vainque un héros de `heroMaxHp` PV en ENEMY_WIN_RATIO × la durée cible.
+ * `records` : combats mesurés (récents) ; on n'en retient que ceux joués à ±3 niveaux du héros.
+ */
+export function calibrateEnemy({ category, heroMaxHp, heroLevel = 1, records = [] }) {
+    const near = records.filter(r => r && r.outcome === 'victory' && Math.abs((r.playerLevel || 0) - heroLevel) <= 3);
+    const measured = near.length >= MIN_SAMPLE ? summarizeCombats(near) : null;
+    const cycleSeconds = measured?.averageCycleSeconds > 0 ? measured.averageCycleSeconds : DEFAULT_CYCLE_SECONDS;
+    const damagePerCycle = measured?.effectiveDamagePerCycle > 0 ? measured.effectiveDamagePerCycle : heroDamagePerCycleModel(heroMaxHp);
+    const targetSeconds = mid(TARGET_DURATION_SECONDS[category] || TARGET_DURATION_SECONDS.normal);
+    const cycles = targetCycles(targetSeconds, cycleSeconds);
+    const coefficient = mid(PROFILE_HP_COEFFICIENTS[PROFILE_OF_CATEGORY[category]] || [1, 1]);
+    const hp = Math.max(1, estimateEnemyHp({ effectiveDamagePerCycle: damagePerCycle, targetDurationSeconds: targetSeconds, averageCycleSeconds: cycleSeconds, profileMultiplier: coefficient }));
+    let damageScale = 1;
+    if (measured?.rawDamageTakenPerCycle > 0) {
+        const wanted = heroMaxHp / (cycles * ENEMY_WIN_RATIO);
+        damageScale = Math.min(DAMAGE_SCALE_BOUNDS[1], Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / measured.rawDamageTakenPerCycle));
+        damageScale = Math.round(damageScale * 100) / 100;
+    }
+    return { hp, damageScale, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
 }

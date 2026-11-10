@@ -1,9 +1,9 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { abandonCombatRecord, beginCombatRecord, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
+import { abandonCombatRecord, beginCombatRecord, calibrateEnemy, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
-import { generateRandomEnemy } from "./enemies.js";
+import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
@@ -383,6 +383,9 @@ export function applyDamage(target, damage, options = {}){
     }
 
     normalizedDamage = cursedDamage(target, normalizedDamage);   // Maudit : dégâts majorés
+    // Calibrage de la durée (combatBalance.js) : multiplicateur des dégâts infligés au héros par l'ennemi (1 tant qu'il n'y a pas de mesures).
+    const enemyDamageScale = (target === player && enemy.damageScale > 0) ? enemy.damageScale : 1;
+    if(enemyDamageScale !== 1 && normalizedDamage > 0) normalizedDamage = Math.max(1, Math.round(normalizedDamage * enemyDamageScale));
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
@@ -429,7 +432,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
-    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp); else if(target === player) recordDamageTaken(currentHp - nextHp); }   // mesures d'équilibrage (combatBalance.js)
+    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / enemyDamageScale); }   // mesures d'équilibrage (combatBalance.js)
     if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
@@ -1759,6 +1762,18 @@ export function setCombatBackdrop(biome){
     else delete document.body.dataset.combatBiome;
 }
 
+const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth.js), abandonné au profit du calibrage de durée
+
+function calibrateEnemyForCombat(target){
+    const template = enemyCatalogList().find(t => t.id === target.templateId);
+    const category = enemyCategory({ boss: Boolean(target.isBoss), easy: Boolean(target.isEasyChoice), hpMult: template?.statsModifiers?.hpMult ?? 1 });
+    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, records: loadCombatRecords() });
+    target.maxHp = result.hp;
+    target.hp = result.hp;
+    target.damageScale = result.damageScale;
+    target.balanceCategory = category;
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
     // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
@@ -1768,7 +1783,9 @@ export function newEnemy(selectedEnemy = null){
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
 
     // Un ennemi généré a plus de PV max que le héros n'en aurait au niveau supérieur au sien (hors ennemi facile et duel-tutoriel).
-    if(!enemy.isTutorialEnemy) raiseEnemyHpAboveHero(enemy, player);
+    // Calibrage de la durée du combat (3 à 8 min selon la catégorie, combatBalance.js) ; remplace l'ancien plancher « plus de PV que le héros ».
+    if(!enemy.isTutorialEnemy && !enemy.arena && !enemy.duel) calibrateEnemyForCombat(enemy);
+    else if(!enemy.isTutorialEnemy && ENEMY_HP_FLOOR_ABOVE_HERO) raiseEnemyHpAboveHero(enemy, player);
 
     // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
