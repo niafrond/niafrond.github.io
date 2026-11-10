@@ -1,3 +1,9 @@
+## [2.223.0](https://github.com/niafrond/niafrond.github.io/compare/v2.222.0...v2.223.0) (2026-11-10)
+
+### Features
+
+* **match3-quest:** coût en qì dans l'infobulle des sorts et PV toujours sous le portrait ([#698](https://github.com/niafrond/niafrond.github.io/issues/698)) ([7ee3a75](https://github.com/niafrond/niafrond.github.io/commit/7ee3a75878c2aeba564b8b79aca31be73b281300))
+
 ## [2.222.0](https://github.com/niafrond/niafrond.github.io/compare/v2.221.0...v2.222.0) (2026-11-10)
 
 ### Features
