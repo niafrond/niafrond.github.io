@@ -223,6 +223,7 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
     const intended = damage + bonus;   // dégâts prévus (critique inclus) avant blocage : 1re annonce de l'animation
     const heavy = !forced && !wall && block !== 'none' && isHeavyHit(damage, target);
     if (heavy) block = 'partial';   // un coup très puissant ne se bloque pas entièrement
+    if (crit && !forced && !wall && block === 'total') block = 'partial';   // un coup critique ne se bloque pas entièrement (il peut être paré)
     damage = applyBlock(damage, block, heavy) + bonus;
     return { damage, crit, block, intended, heavy, unblockable };
 }
