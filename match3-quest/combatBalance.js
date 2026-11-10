@@ -4,6 +4,7 @@
 // Module pur (sans DOM) ; seul le stockage local est protégé par try/catch.
 
 export const COMBAT_STATS_STORAGE_KEY = 'match3quest.combatStats';
+export const THINK_PAUSE_CAP_MS = 20000;   // entre deux événements du combat, au-delà de 20 s on considère que le joueur réfléchit : l'excédent n'est pas compté
 export const COMBAT_STATS_KEEP = 60;   // combats gardés (les plus récents)
 
 // Durée cible en secondes (min, max) par catégorie d'ennemi.
@@ -69,17 +70,26 @@ export function durationVerdict(category, seconds) {
 let current = null;
 
 export function beginCombatRecord(info = {}, now = Date.now()) {
-    current = { startedAt: now, pausedMs: 0, pausedAt: null, playerTurns: 0, enemyTurns: 0, dealt: 0, taken: 0, healed: 0, ...info };
+    current = { lastEventAt: now, startedAt: now, pausedMs: 0, pausedAt: null, playerTurns: 0, enemyTurns: 0, dealt: 0, taken: 0, healed: 0, ...info };
 }
-export function recordPlayerTurn() { if (current) current.playerTurns++; }
-export function recordEnemyTurn() { if (current) current.enemyTurns++; }
-export function recordDamageDealt(amount) { if (current && amount > 0) current.dealt += Math.floor(amount); }
-export function recordDamageTaken(amount) { if (current && amount > 0) current.taken += Math.floor(amount); }
+// Chaque événement relève le temps écoulé depuis le précédent : l'excédent au-delà de THINK_PAUSE_CAP_MS (pause de réflexion longue) est retiré de la durée.
+function touch(now) {
+    if (!current) return;
+    if (current.pausedAt == null) {
+        const gap = now - current.lastEventAt;
+        if (gap > THINK_PAUSE_CAP_MS) current.pausedMs += gap - THINK_PAUSE_CAP_MS;
+    }
+    current.lastEventAt = now;
+}
+export function recordPlayerTurn(now = Date.now()) { if (current) { touch(now); current.playerTurns++; } }
+export function recordEnemyTurn(now = Date.now()) { if (current) { touch(now); current.enemyTurns++; } }
+export function recordDamageDealt(amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.dealt += Math.floor(amount); } }
+export function recordDamageTaken(amount, now = Date.now()) { if (current && amount > 0) { touch(now); current.taken += Math.floor(amount); } }
 export function recordHealing(amount) { if (current && amount > 0) current.healed += Math.floor(amount); }
 /** Met le chrono en pause (page masquée, cinématique) : le temps n'est pas compté dans la durée du combat. */
-export function pauseCombatRecord(now = Date.now()) { if (current && current.pausedAt == null) current.pausedAt = now; }
+export function pauseCombatRecord(now = Date.now()) { if (current && current.pausedAt == null) { touch(now); current.pausedAt = now; } }
 export function resumeCombatRecord(now = Date.now()) {
-    if (current && current.pausedAt != null) { current.pausedMs += now - current.pausedAt; current.pausedAt = null; }
+    if (current && current.pausedAt != null) { current.pausedMs += now - current.pausedAt; current.pausedAt = null; current.lastEventAt = now; }
 }
 export function hasCombatRecord() { return Boolean(current); }
 export function abandonCombatRecord() { current = null; }
@@ -88,9 +98,10 @@ export function abandonCombatRecord() { current = null; }
 export function finishCombatRecord(outcome = 'victory', now = Date.now()) {
     if (!current) return null;
     resumeCombatRecord(now);
+    touch(now);
     const seconds = Math.max(0, Math.round((now - current.startedAt - current.pausedMs) / 1000));
     const cycles = Math.max(1, Math.max(current.playerTurns, current.enemyTurns));
-    const { startedAt, pausedMs, pausedAt, ...rest } = current;
+    const { startedAt, pausedMs, pausedAt, lastEventAt, ...rest } = current;
     const record = { ...rest, outcome, seconds, cycles, damagePerCycle: Math.round((current.dealt / cycles) * 10) / 10, secondsPerCycle: Math.round((seconds / cycles) * 10) / 10 };
     current = null;
     return record;

@@ -22,13 +22,22 @@ describe('combatBalance : formules', () => {
 });
 
 describe('combatBalance : enregistreur', () => {
+    test('une longue pause de réflexion n\'est comptée que jusqu\'à 20 s', () => {
+        beginCombatRecord({}, 0);
+        recordPlayerTurn(10000);
+        recordEnemyTurn(15000);
+        recordPlayerTurn(315000);   // 5 min de réflexion : 20 s comptées
+        const r = finishCombatRecord('victory', 320000);
+        expect(r.seconds).toBe(40);
+    });
+
     test('durée sans pause, cycles et dégâts par cycle', () => {
         beginCombatRecord({ boss: false }, 0);
-        for (let i = 0; i < 4; i++) { recordPlayerTurn(); recordEnemyTurn(); }
-        recordDamageDealt(160);
+        for (let i = 0; i < 4; i++) { recordPlayerTurn(i * 1000); recordEnemyTurn(i * 1000); }
+        recordDamageDealt(160, 4000);
         pauseCombatRecord(60000); resumeCombatRecord(90000);
-        const r = finishCombatRecord('victory', 150000);
-        expect(r).toMatchObject({ seconds: 120, cycles: 4, damagePerCycle: 40, secondsPerCycle: 30, outcome: 'victory' });
+        const r = finishCombatRecord('victory', 105000);   // 105 s − 36 s de réflexion longue − 30 s de pause
+        expect(r).toMatchObject({ seconds: 39, cycles: 4, damagePerCycle: 40, outcome: 'victory' });
         expect(finishCombatRecord('victory')).toBeNull();
     });
     test('synthèse : ne garde que les victoires', () => {

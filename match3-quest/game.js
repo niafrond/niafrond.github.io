@@ -1,6 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { abandonCombatRecord, beginCombatRecord, recordDamageDealt, recordDamageTaken } from './combatBalance.js';
+import { abandonCombatRecord, beginCombatRecord, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
@@ -1194,6 +1194,8 @@ export function handlePlayerDeath(){
         showEndCombatAnimation(false);
     }, PLAYER_DEATH_DELAY_MS);
 }
+
+document.addEventListener('visibilitychange', () => { if(document.hidden) pauseCombatRecord(); else resumeCombatRecord(); });   // page masquée : le chrono du combat s'arrête
 
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
