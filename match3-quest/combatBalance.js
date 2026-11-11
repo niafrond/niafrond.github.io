@@ -165,7 +165,7 @@ export const enemyRawDamagePerCycleModel = (enemyLevel, category = 'normal') => 
 
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui
 // (Zhi, objets de soin, sorts de soin dès le niveau 17-20), donc à niveau élevé l'ennemi doit pouvoir frapper relativement plus fort.
-export const WIN_RATIO_LEVEL_ANCHORS = [[5, 1], [15, 1], [30, 1], [50, 1], [68, 1]];
+export const WIN_RATIO_LEVEL_ANCHORS = [[5, 0.66], [15, 1.08], [30, 0.79], [50, 0.7], [68, 0.7]];   // tools/balance-search.mjs search-levels
 export function winRatioLevelFactor(level, anchors = WIN_RATIO_LEVEL_ANCHORS) {
     const L = Math.max(1, Number(level) || 1);
     if (L <= anchors[0][0]) return anchors[0][1];
