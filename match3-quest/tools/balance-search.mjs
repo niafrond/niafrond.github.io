@@ -3,7 +3,11 @@
 // 2. search : avec ces taux, cherche pour chaque catégorie le rapport ENEMY_WIN_RATIO qui donne le taux de victoire visé, puis vérifie
 //    durée (cycles × 30 s) et victoires sur des combats calibrés comme dans le jeu.
 await import('../tests/unit/fixtures/playerForge.js');   // catalogues JSON lus depuis le disque (XMLHttpRequest simulé)
-const { MILESTONES } = await import('../tests/unit/fixtures/playerForge.js');
+const { MILESTONES, forgePlayer, bestWeapon } = await import('../tests/unit/fixtures/playerForge.js');
+const { lootableStuff, STUFF_SLOTS } = await import('../stuff.js');
+const { allItems } = await import('../items.js');
+const { getEquippedUltimate } = await import('../ultimates.js');
+const { MAX_LEVEL } = await import('../experience.js');
 const { createMapEnemy, enemyCatalogList } = await import('../enemies.js');
 const { simulateFight } = await import('./combatSim.mjs');
 const CB = await import('../combatBalance.js');
@@ -23,7 +27,36 @@ export function makeEnemy(cat, level, i) {
 
 export function enemyLevelFor(cat, heroLevel) { return Math.max(1, heroLevel + (cat === 'weak' ? -2 : cat === 'boss' || cat === 'miniBoss' ? 1 : 0)); }
 
-const mean = a => a.reduce((s, x) => s + x, 0) / Math.max(1, a.length);
+// --- Héros « complet » à n'importe quel niveau ----------------------------------------------------------------------------------------------
+// Compagnons dans l'ordre où ils rejoignent le héros (quêtes annexes débloquées région par région, voir storyQuests.js / REGION_LEVEL).
+export const COMPANION_FROM_LEVEL = { xiao_gui: 1, braise: 4, zhi: 6, etincelle: 11, yu: 17, tou: 22, dawa: 27, jian: 32 };
+export const companionAt = level => (level >= COMPANION_FROM_LEVEL.zhi ? 'zhi' : 'xiao_gui');   // Zhi (soin) dès qu'il est là, sinon Xiao Gui
+export const healItemAt = level => allItems.filter(i => i.type === 'reusable' && i.minLevel <= level && i.effect.heal)
+    .sort((a, b) => b.effect.heal - a.effect.heal)[0] || null;
+const stuffScore = s => (s.maxHp || 0) + 3 * ((s.atkBonus || 0) + (s.defBonus || 0));
+
+/** Héros d'une classe au niveau `level` : meilleure arme et meilleur stuff accessibles (profil complet), sorts par défaut, ultime de classe. */
+export function heroAt(classId, level, profile = 'complet') {
+    const weapon = bestWeapon(level);
+    const hero = forgePlayer({ classId, level, weaponIds: [weapon.id] });
+    if (profile === 'complet') {
+        hero.stuff = { head: null, neck: null, wrist: null, ring: null };
+        STUFF_SLOTS.forEach(slot => {
+            const piece = lootableStuff().filter(p => p.slot === slot && p.minLevel <= level).sort((a, b) => stuffScore(b) - stuffScore(a))[0];
+            if (piece) { hero.stuff[slot] = piece.id; hero.maxHp += piece.maxHp || 0; }
+        });
+        hero.hp = hero.maxHp;
+    }
+    return {
+        hero,
+        options: profile === 'complet'
+            ? { profile, item: healItemAt(level), companion: companionAt(level), ultimate: getEquippedUltimate(hero) }
+            : { profile }
+    };
+}
+export const ALL_LEVELS = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
+
+const mean = a => (Array.isArray(a) ? a : []).reduce((s, x) => s + x, 0) / Math.max(1, (Array.isArray(a) ? a : []).length);
 
 /** Taux par niveau de jalon : dégâts effectifs du héros par cycle, dégâts bruts de l'ennemi par cycle (par catégorie). */
 export function measureRates({ fights = 12, cycles = 25 } = {}) {
@@ -59,28 +92,30 @@ export function measureRates({ fights = 12, cycles = 25 } = {}) {
 export const TARGET_WIN_RATE = { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 };
 
 /** Combats calibrés comme dans le jeu (sans mesures du joueur : modèles) ; `winRatio` remplace ENEMY_WIN_RATIO de la catégorie. */
-export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES } = {}) {
+export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null } = {}) {
     const out = [];
     let seed = seed0;
-    for (const m of milestones) for (const cls of CLASSES) for (let i = 0; i < fights; i++) {
-        const hero = m.forge(cls);
-        const level = enemyLevelFor(cat, m.level);
+    // Héros : jalons des tests (profil standard d'origine) ou tous les niveaux `levels` (héros fabriqués par heroAt).
+    const builds = levels ? levels.map(level => ({ level, make: cls => heroAt(cls, level, profile) })) : milestones.map(m => ({ level: m.level, make: cls => ({ hero: m.forge(cls), options: { profile } }) }));
+    for (const b of builds) for (const cls of CLASSES) for (let i = 0; i < fights; i++) {
+        const { hero, options } = b.make(cls);
+        const level = enemyLevelFor(cat, b.level);
         const enemy = makeEnemy(cat, level, i + seed);
-        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio });
+        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, ...(model ? { model } : {}) });
         enemy.maxHp = enemy.hp = c.hp;
-        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageScale * c.heroDamageScale });
-        out.push({ ...r, level: m.level, cls, targetCycles: c.cycles, cycleSeconds: c.cycleSeconds });
+        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageScale * c.heroDamageScale, ...options });
+        out.push({ ...r, level: b.level, cls, targetCycles: c.cycles, cycleSeconds: c.cycleSeconds, enemyHp: c.hp });
     }
     return out;
 }
 const winRate = list => list.filter(r => r.heroWon).length / list.length;
 
 /** Rapport ENEMY_WIN_RATIO qui donne le taux de victoire visé (dichotomie : plus le rapport est grand, plus l'ennemi est lent à tuer). */
-export function searchRatio(cat, { fights = 6 } = {}) {
+export function searchRatio(cat, { fights = 6, levels = null, profile = 'standard' } = {}) {
     let lo = 0.6, hi = 5;
     for (let step = 0; step < 7; step++) {
         const mid = (lo + hi) / 2;
-        if (winRate(calibratedFights(cat, { winRatio: mid, fights })) < TARGET_WIN_RATE[cat]) lo = mid; else hi = mid;
+        if (winRate(calibratedFights(cat, { winRatio: mid, fights, levels, profile, seed0: 1000 + step * 7919 })) < TARGET_WIN_RATE[cat]) lo = mid; else hi = mid;
     }
     return Math.round((lo + hi) / 2 * 20) / 20;
 }
@@ -114,6 +149,56 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             return { niveau: m.level, combats: l.length, 'victoires %': Math.round(winRate(l) * 100), 'cycles moyens (victoire)': +mean(won.map(r => r.cycles)).toFixed(1), 'cycles visés (moy.)': +mean(l.map(r => r.targetCycles)).toFixed(1) };
         }));
         console.table(CLASSES.map(cls => ({ classe: cls, 'victoires %': Math.round(winRate(all.filter(r => r.cls === cls)) * 100) })));
+    }
+    // Simulations sur TOUS les niveaux du héros (1 à MAX_LEVEL), profils standard et complet, calibrage actuel du jeu.
+    if (mode === 'all-levels') {
+        const fights = Number(process.argv[3]) || 1;
+        const profiles = (process.argv[4] || 'standard,complet').split(',');
+        for (const profile of profiles) {
+            const all = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels: ALL_LEVELS, profile, seed0: 123000 }).map(r => ({ ...r, cat })));
+            console.log(`\n=== Héros ${profile} : ${all.length} combats, niveaux 1 à ${MAX_LEVEL} ===`);
+            console.table(CATEGORIES.map(cat => report(cat, all.filter(r => r.cat === cat))));
+            const bands = [[1, 5], [6, 10], [11, 20], [21, 30], [31, 40], [41, 50], [51, 60], [61, MAX_LEVEL]];
+            console.table(bands.map(([a, b]) => {
+                const l = all.filter(r => r.level >= a && r.level <= b), won = l.filter(r => r.heroWon);
+                const boss = l.filter(r => r.cat === 'boss');
+                return { niveaux: `${a}-${b}`, combats: l.length, 'victoires %': Math.round(winRate(l) * 100), 'victoires boss %': Math.round(winRate(boss) * 100), 'durée victoire (s)': Math.round(mean(won.map(r => r.cycles * r.cycleSeconds))), 'dégâts héros/cycle': +mean(l.map(r => (r.dealtBy.weapon + r.dealtBy.spell + r.dealtBy.skull + (r.dealtBy.other || 0)) / r.cycles)).toFixed(1) };
+            }));
+            console.table(CLASSES.map(cls => { const l = all.filter(r => r.cls === cls); return { classe: cls, 'victoires %': Math.round(winRate(l) * 100), 'victoires boss %': Math.round(winRate(l.filter(r => r.cat === 'boss')) * 100) }; }));
+            const tot = k => all.reduce((a, r) => a + (r.dealtBy[k] || 0), 0), sum = tot('weapon') + tot('spell') + tot('skull') + tot('other');
+            const used = all.reduce((a, r) => ({ sorts: a.sorts + r.used.spells, ultimes: a.ultimes + r.used.ultimate, objets: a.objets + r.used.item, compagnon: a.compagnon + r.used.companion }), { sorts: 0, ultimes: 0, objets: 0, compagnon: 0 });
+            console.log('Part des dégâts : armes', Math.round(tot('weapon') / sum * 100), '% · sorts', Math.round(tot('spell') / sum * 100), '% · crânes', Math.round(tot('skull') / sum * 100), '% · autres', Math.round(tot('other') / sum * 100), '%', '| par combat :', Object.entries(used).map(([k, v]) => `${k} ${(v / all.length).toFixed(2)}`).join(', '));
+            if (process.argv[5] === 'json') console.log('JSON', JSON.stringify(all.map(r => ({ l: r.level, c: r.cat, k: r.cls, w: r.heroWon, cy: r.cycles, d: r.dealtBy.weapon + r.dealtBy.spell + r.dealtBy.skull + (r.dealtBy.other || 0), t: r.takenRaw }))));
+        }
+    }
+    // Modèles refaits sur le héros complet (tous niveaux) : régression linéaire des dégâts par cycle, facteurs de catégorie et de durée.
+    if (mode === 'fit') {
+        const profile = process.argv[4] || 'complet';
+        const fights = Number(process.argv[3]) || 1;
+        const all = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels: ALL_LEVELS, profile, seed0: 321000 }).map(r => ({ ...r, cat })));
+        const fit = pts => {   // moindres carrés y = a + b x
+            const mx = mean(pts.map(p => p[0])), my = mean(pts.map(p => p[1]));
+            const b = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0);
+            return { a: +(my - b * mx).toFixed(2), b: +b.toFixed(3) };
+        };
+        const dealt = r => r.dealtBy.weapon + r.dealtBy.spell + r.dealtBy.skull + (r.dealtBy.other || 0);
+        const hero = fit(all.map(r => [r.level, dealt(r) / r.cycles]));
+        const normal = all.filter(r => r.cat === 'normal');
+        const enemy = fit(normal.map(r => [enemyLevelFor('normal', r.level), r.takenRaw / r.cycles]));
+        const model = (lvl) => enemy.a + enemy.b * lvl;
+        const factors = Object.fromEntries(CATEGORIES.map(cat => [cat, +mean(all.filter(r => r.cat === cat).map(r => (r.takenRaw / r.cycles) / Math.max(0.5, model(enemyLevelFor(cat, r.level))))).toFixed(2)]));
+        const duration = Object.fromEntries(CATEGORIES.map(cat => {
+            const won = all.filter(r => r.cat === cat && r.heroWon);
+            return [cat, +(mean(CB.TARGET_DURATION_SECONDS[cat]) / Math.max(1, mean(won.map(r => r.cycles * r.cycleSeconds)))).toFixed(2)];
+        }));
+        console.log(JSON.stringify({ profile, combats: all.length, heroDpc: hero, enemyRaw: enemy, categoryFactor: factors, durationCorrection: duration }));
+    }
+    if (mode === 'search-all') {
+        const profile = process.argv[4] || 'complet';
+        const fights = Number(process.argv[3]) || 1;
+        const levels = ALL_LEVELS.filter(l => l % 2 === 1 || l === MAX_LEVEL);   // un niveau sur deux (et le dernier) pour la dichotomie
+        const found = Object.fromEntries(CATEGORIES.map(cat => [cat, searchRatio(cat, { fights, levels, profile })]));
+        console.log('ENEMY_WIN_RATIO =', JSON.stringify(found));
     }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;
