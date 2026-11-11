@@ -1,3 +1,10 @@
+## [2.229.0](https://github.com/niafrond/niafrond.github.io/compare/v2.228.0...v2.229.0) (2026-11-11)
+
+### Features
+
+* **match3-quest:** afficher l'attaque préparée du boss comme un sort avec un coût en qì ([2d825d9](https://github.com/niafrond/niafrond.github.io/commit/2d825d92a8627467a1ad32b6e70971556cc09d52))
+* **match3-quest:** afficher l'attaque préparée du boss comme un sort gratuit, inactif puis décompté ([60594c4](https://github.com/niafrond/niafrond.github.io/commit/60594c409d6c3194ec7b9185c3b4163957de9ddb))
+
 ## [2.228.0](https://github.com/niafrond/niafrond.github.io/compare/v2.227.2...v2.228.0) (2026-11-11)
 
 ### Features
