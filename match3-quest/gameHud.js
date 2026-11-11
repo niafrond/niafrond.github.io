@@ -361,9 +361,11 @@ export function updateEnemySpells(){
     container.innerHTML = '';
     
     // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
-    if(!enemy.spells || enemy.spells.length === 0) return;
+    if((!enemy.spells || enemy.spells.length === 0) && !enemy.bossScript?.spell) return;
     
-    enemy.spells.forEach(rawSpell => {
+    // Attaque dévastatrice du boss (bossScript.js) : affichée comme un sort, avec son coût en qì (les dégâts ne sont pas annoncés).
+    const signature = enemy.bossScript?.spell ? [{ ...enemy.bossScript.spell, bossSignature: true }] : [];
+    [...(enemy.spells || []), ...signature].forEach(rawSpell => {
         const sp = enemySpellAsShown(rawSpell);
         const div = document.createElement('div');
         div.className = 'enemy-spell-item';

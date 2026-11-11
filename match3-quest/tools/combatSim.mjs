@@ -21,7 +21,7 @@ import { resolveDifficulty, tierSettings } from '../enemyAIProfiles.js';
 import { pickWeightedOption, applyScoreSharpness, FATAL_REASON } from '../enemyAIChoice.js';
 import { critChance, blockChance, CRIT_MULTIPLIER } from '../combatStats.js';
 import { cappedEnemyHit } from '../combatBalance.js';
-import { createBossScript, stepBossScript, signatureDamage } from '../bossScript.js';
+import { createBossScript, stepBossScript, signatureDamage, canPaySignature, paySignature } from '../bossScript.js';
 
 export const SKULL_PROB = 0.19;   // board.js : BOARD_DROP_PROBABILITIES
 export const COMBAT_PROB = 0.17;
@@ -506,7 +506,8 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         if (st.poisoned > 0) { hit(hero, enemy, st.poisonDamage || 1, 'other', { strike: false }); st.poisoned--; }
         if (enemy.hp <= 0) return;
         if (script) {
-            const step = stepBossScript(script, enemy, { lostTurn: (st.stunned > 0) || (st.mirage > 0) });
+            const step = stepBossScript(script, enemy, { lostTurn: (st.stunned > 0) || (st.mirage > 0), canPay: canPaySignature(script, enemy.mana) });
+            if (step.action === 'start') paySignature(script, enemy.mana);
             if (step.action === 'interrupted') stats.signature.interrupted++;
             if (step.action === 'start' || step.action === 'release') {
                 if (step.action === 'release') {

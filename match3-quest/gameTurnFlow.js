@@ -12,7 +12,7 @@ import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
 import { healEntity, tickAlterations, isAsleep, confusedSelfHit } from './alterations.js';
-import { stepBossScript, signatureDamage } from './bossScript.js';
+import { stepBossScript, signatureDamage, canPaySignature, paySignature } from './bossScript.js';
 import { tickSpellCooldowns } from './spellCooldown.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
@@ -267,7 +267,8 @@ export function enemyTurn(){
     if(enemy.bossScript) {
         const script = enemy.bossScript;
         const lostTurn = (enemy.statusEffects?.stunned || 0) > 0 || isAsleep(enemy);
-        const step = stepBossScript(script, enemy, { lostTurn });
+        const step = stepBossScript(script, enemy, { lostTurn, canPay: canPaySignature(script, enemy.mana) });
+        if(step.action === 'start') paySignature(script, enemy.mana);   // coût en qì de l'attaque préparée
         if(step.action === 'interrupted') {
             log(`${enemy.name} est interrompu : ${script.name} n'aura pas lieu !`);
             showCombatAnimation({ icon: 'dizzy', title: 'ÉCHAUFFEMENT INTERROMPU', damage: script.name, target: `→ ${enemy.name}` }, true);
