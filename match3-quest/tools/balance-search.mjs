@@ -92,7 +92,7 @@ export function measureRates({ fights = 12, cycles = 25 } = {}) {
 export const TARGET_WIN_RATE = { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 };
 
 /** Combats calibrés comme dans le jeu (sans mesures du joueur : modèles) ; `winRatio` remplace ENEMY_WIN_RATIO de la catégorie. */
-export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null } = {}) {
+export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors } = {}) {
     const out = [];
     let seed = seed0;
     // Héros : jalons des tests (profil standard d'origine) ou tous les niveaux `levels` (héros fabriqués par heroAt).
@@ -101,7 +101,7 @@ export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, mile
         const { hero, options } = b.make(cls);
         const level = enemyLevelFor(cat, b.level);
         const enemy = makeEnemy(cat, level, i + seed);
-        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, ...(model ? { model } : {}) });
+        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, ...(levelAnchors ? { levelAnchors } : {}) });
         enemy.maxHp = enemy.hp = c.hp;
         const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageScale * c.heroDamageScale, ...options });
         out.push({ ...r, level: b.level, cls, targetCycles: c.cycles, cycleSeconds: c.cycleSeconds, enemyHp: c.hp });
@@ -200,6 +200,32 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const cats = process.argv[5] ? process.argv[5].split(',') : CATEGORIES;
         const found = Object.fromEntries(cats.map(cat => [cat, searchRatio(cat, { fights, levels, profile })]));
         console.log('ENEMY_WIN_RATIO =', JSON.stringify(found));
+    }
+    // Ajustement par niveau : pour chaque point d'ancrage, dichotomie sur le multiplicateur du rapport de victoire pour que le héros complet
+    // gagne en moyenne le taux visé (moyenne des cibles des 6 catégories) sur sa tranche de niveaux.
+    if (mode === 'search-levels') {
+        const profile = process.argv[4] || 'complet';
+        const fights = Number(process.argv[3]) || 1;
+        const goal = mean(Object.values(TARGET_WIN_RATE));
+        const anchors = CB.WIN_RATIO_LEVEL_ANCHORS.map(a => [...a]);
+        const bands = anchors.map(([lvl], i) => {
+            const lo = i === 0 ? 1 : Math.floor((anchors[i - 1][0] + lvl) / 2) + 1;
+            const hi = i === anchors.length - 1 ? MAX_LEVEL : Math.floor((lvl + anchors[i + 1][0]) / 2);
+            return ALL_LEVELS.filter(l => l >= lo && l <= hi && (l - lo) % 2 === 0);
+        });
+        anchors.forEach((anchor, i) => {
+            let lo = 0.3, hi = 3;
+            for (let step = 0; step < 6; step++) {
+                const m = (lo + hi) / 2;
+                // le multiplicateur s'applique uniformément à la tranche (les autres ancrages ne jouent pas ici)
+                const flat = anchors.map(([l]) => [l, m]);
+                const list = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels: bands[i], profile, levelAnchors: flat, seed0: 9000 + step * 131 + i * 17 }));
+                if (winRate(list) < goal) lo = m; else hi = m;
+            }
+            anchor[1] = Math.round((lo + hi) / 2 * 100) / 100;
+            console.log('ancrage', anchor[0], 'niveaux', bands[i][0] + '-' + bands[i][bands[i].length - 1], 'multiplicateur', anchor[1]);
+        });
+        console.log('WIN_RATIO_LEVEL_ANCHORS =', JSON.stringify(anchors));
     }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;
