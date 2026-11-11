@@ -180,11 +180,11 @@ export const EXPERT_CATEGORY_FACTOR = { weak: 1.44, normal: 1, aggressive: 0.73,
 export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-delà, un coup d'arme suffirait à emporter le héros)
 // Diviseur des PV et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors). Expert = 1.
 export const HP_DIVISOR = {
-    easy: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
-    normal: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
-    auto: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
-    hard: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
-    expert: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 }
+    easy: { weak: 1.32, normal: 3.53, aggressive: 3.37, elite: 4.67, miniBoss: 4.67, boss: 3.53 },
+    normal: { weak: 0.87, normal: 2.31, aggressive: 1.92, elite: 1.59, miniBoss: 1.75, boss: 1.75 },
+    auto: { weak: 1.45, normal: 2.54, aggressive: 2.31, elite: 2.31, miniBoss: 3.06, boss: 2.01 },
+    hard: { weak: 0.87, normal: 1.38, aggressive: 1.32, elite: 1.59, miniBoss: 1.45, boss: 1.59 },
+    expert: { weak: 0.87, normal: 0.79, aggressive: 1.09, elite: 0.95, miniBoss: 1, boss: 1.09 }
 };
 
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui

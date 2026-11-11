@@ -329,6 +329,15 @@ export function updateEnemySpells(){
                 </div>
             `;
         }
+        if (enemy.spellAmplifier && enemy.spellAmplifier.mult !== 1) {   // objet magique de l'ennemi, non récupérable (combatBalance.js)
+            const mult = String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',');
+            weaponHtml += `
+                <div class="enemy-spell-item disabled" title="Objet magique de l'ennemi : amplifie en continu tous ses sorts (dégâts et poison). Il ne peut pas être récupéré.">
+                    <div class="spell-name">${svgIcon('star')} ${escapeHtml(enemy.spellAmplifier.name)}</div>
+                    <div class="spell-cost">Sorts ×${mult} · non récupérable</div>
+                </div>
+            `;
+        }
         if (enemy.inventoryItem) {
             weaponHtml += `
                 <div class="enemy-spell-item disabled enemy-item-card" tabindex="0">
@@ -368,7 +377,8 @@ export function updateEnemySpells(){
         // Gestion des coûts multiples pour les sorts de classe
         const costDisplay = spellCostHtml(sp);
         
-        const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
+        const amp = enemy.spellAmplifier?.mult && enemy.spellAmplifier.mult !== 1 ? ` (×${String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',')})` : '';   // talisman de l'ennemi
+        const damageText = sp.dmg ? ` • ${sp.dmg} dmg${amp}` : '';
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
         const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
         div.innerHTML = `

@@ -360,6 +360,8 @@ export function lastSpellDamage(fallback){
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
+    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = Math.round(normalizedDamage * spellAmplifierOf(enemy));
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -588,7 +590,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
-        applyDamage(target, dmg, { sourceSpell: spell });
+        applyDamage(target, dmg, { sourceSpell: spell, caster });
         if(lastSpellStrike) {
             dmg = lastSpellStrike.damage;
             spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}`;
@@ -610,8 +612,9 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
         const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
-        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: spell.poisonDmg });
-        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${spell.poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
+        const poisonDmg = Math.max(1, Math.round(spell.poisonDmg * spellAmplifierOf(caster)));   // talisman de l'ennemi
+        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: poisonDmg });
+        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
     }
 
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
@@ -1776,9 +1779,12 @@ function calibrateEnemyForCombat(target){
     target.balanceCategory = category;
 }
 
-// Intègre le réglage de dégâts aux chiffres de l'ennemi (arme, sorts, crânes) : ce qui est affiché est ce qui est subi. L'arme reçoit
-// aussi la puissance de l'ennemi (`weaponPower`), autrefois ajoutée sans être affichée.
+// Intègre le réglage de dégâts à l'ennemi : chiffres de l'arme (avec sa puissance `weaponPower`, autrefois ajoutée sans être affichée)
+// et dégâts par crâne, affichés sur sa fiche ; pour les sorts, un talisman visible et non récupérable les amplifie.
 const scaleDamageNumber = (value, mult) => Math.max(1, Math.round(value * mult));
+export const SPELL_AMPLIFIER_NAME = 'Talisman de Résonance';
+/** Multiplicateur des sorts d'un ennemi (son talisman), 1 sinon. */
+export const spellAmplifierOf = entity => (entity && entity === enemy && entity.spellAmplifier?.mult > 0 ? entity.spellAmplifier.mult : 1);
 function bakeEnemyDamage(target, mult){
     const m = Math.max(0.1, Number(mult) || 1);
     target.bakedDamageMult = m;
@@ -1787,20 +1793,9 @@ function bakeEnemyDamage(target, mult){
         target.weapon = { ...target.weapon, damage: scaleDamageNumber(target.weapon.damage + (target.weaponPower || 0), m) };
         target.weaponPower = 0;
     }
-    target.spells = (target.spells || []).map(sp => {
-        if(!sp.dmg && !sp.dmgPerTile && !sp.poisonDmg) return sp;
-        const scaled = { ...sp };
-        if(sp.dmg) {
-            scaled.dmg = scaleDamageNumber(sp.dmg, m);
-            if(typeof sp.description === 'string') scaled.description = sp.description.replace(new RegExp(`\\b${sp.dmg}\\b`), String(scaled.dmg));
-        }
-        if(sp.dmgPerTile) scaled.dmgPerTile = scaleDamageNumber(sp.dmgPerTile, m);
-        if(sp.poisonDmg) {   // poison posé par le sort (ex. Lotus Noir) : même réglage, description comprise
-            scaled.poisonDmg = scaleDamageNumber(sp.poisonDmg, m);
-            if(typeof scaled.description === 'string') scaled.description = scaled.description.replace(new RegExp(`\\b${sp.poisonDmg}\\b`), String(scaled.poisonDmg));
-        }
-        return scaled;
-    });
+    // Sorts : leurs chiffres restent ceux du grimoire ; l'ennemi porte un objet magique (non récupérable) qui amplifie en continu
+    // tous ses sorts (dégâts directs, dégâts par case, poison). Il est affiché à côté de son arme (gameHud.js).
+    target.spellAmplifier = { name: SPELL_AMPLIFIER_NAME, mult: m };
     target.skullMult = m;
 }
 
