@@ -65,7 +65,9 @@ export function gearBonus(entity, stat) {
     }, 0);
     // Casque, collier, bracelet et bague (stuff.js) : seulement pour qui en porte (le héros).
     const totals = entity?.stuff ? stuffTotals(entity) : null;
-    return worn + (totals ? (stat === 'attack' ? totals.atk : totals.def) : 0);
+    // `gearScale` : stuff d'un ennemi affaibli par le mode de difficulté (combatBalance.js : diviseur de PV et de stuff).
+    const fromStuff = totals ? (stat === 'attack' ? totals.atk : totals.def) : 0;
+    return worn + Math.floor(fromStuff * (entity?.gearScale ?? 1) + 1e-9);
 }
 
 // Bonus temporaires (sorts, `entity.statBuffs = { attack: { amount, turns }, defense: { amount, turns } }`) : ils ne modifient pas

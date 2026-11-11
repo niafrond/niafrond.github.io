@@ -92,7 +92,7 @@ export function measureRates({ fights = 12, cycles = 25 } = {}) {
 export const TARGET_WIN_RATE = { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 };
 
 /** Combats calibrés comme dans le jeu (sans mesures du joueur : modèles) ; `winRatio` remplace ENEMY_WIN_RATIO de la catégorie. */
-export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors, aiPreference = process.env.AI || 'greedy', difficulty = process.env.AI && process.env.AI !== 'greedy' ? process.env.AI : 'auto', difficultyFactor } = {}) {
+export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors, aiPreference = process.env.AI || 'greedy', difficulty = process.env.AI && process.env.AI !== 'greedy' ? process.env.AI : 'auto', hpDivisor } = {}) {
     const out = [];
     let seed = seed0;
     // Héros : jalons des tests (profil standard d'origine) ou tous les niveaux `levels` (héros fabriqués par heroAt).
@@ -101,9 +101,10 @@ export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, mile
         const { hero, options } = b.make(cls);
         const level = enemyLevelFor(cat, b.level);
         const enemy = makeEnemy(cat, level, i + seed);
-        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, difficulty, difficultyFactor, ...(levelAnchors ? { levelAnchors } : {}) });
+        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, difficulty, hpDivisor, ...(levelAnchors ? { levelAnchors } : {}) });
         enemy.maxHp = enemy.hp = c.hp;
-        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageScale * c.heroDamageScale, aiPreference, ...options });
+        enemy.gearScale = c.gearScale;
+        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageMult, aiPreference, ...options });
         out.push({ ...r, level: b.level, cls, targetCycles: c.cycles, cycleSeconds: c.cycleSeconds, enemyHp: c.hp });
     }
     return out;
@@ -229,48 +230,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         });
         console.log('WIN_RATIO_LEVEL_ANCHORS =', JSON.stringify(anchors));
     }
-    // Mode de difficulté : multiplicateur du rapport de victoire pour que le héros complet atteigne la cible moyenne du mode
-    // (l'ennemi joue avec le palier d'IA du mode). Dichotomie, un niveau sur quatre.
-    if (mode === 'search-modes') {
+    // Diviseur des PV et du stuff par mode et catégorie (dégâts toujours au niveau Expert) : dichotomie géométrique pour la cible du mode.
+    if (mode === 'search-divisors') {
         const fights = Number(process.argv[3]) || 1;
-        const modes = (process.argv[4] || 'easy,normal,hard,expert').split(',');
-        const levels = ALL_LEVELS.filter(l => (l - 1) % 4 === 0 || l === MAX_LEVEL);
-        const found = {};
-        for (const m of modes) {
-            const goal = mean(Object.values(CB.DIFFICULTY_TARGET_WIN_RATE[m]));
-            let lo = Number(process.env.LO) || 0.15, hi = Number(process.env.HI) || 8;
-            for (let step = 0; step < 7; step++) {
-                const f = Math.sqrt(lo * hi);   // dichotomie géométrique (multiplicateur)
-                const list = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, difficultyFactor: f, seed0: 40000 + step * 977 }));
-                if (winRate(list) < goal) lo = f; else hi = f;
-                console.log(m, 'essai', f.toFixed(3), 'victoires', Math.round(winRate(list) * 100), '% (cible', Math.round(goal * 100), '%)');
-            }
-            found[m] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
-        }
-        console.log('DIFFICULTY_WIN_RATIO_FACTOR =', JSON.stringify(found));
-    }
-    // Correction par mode et par catégorie : dichotomie sur le multiplicateur total (mode × catégorie) pour la cible de la catégorie.
-    if (mode === 'search-mode-cats') {
-        const fights = Number(process.argv[3]) || 1;
-        const modes = (process.argv[4] || 'easy,normal,hard,expert').split(',');
+        const modes = (process.argv[4] || 'expert,hard,auto,normal,easy').split(',');
         const levels = ALL_LEVELS.filter(l => (l - 1) % 4 === 0 || l === MAX_LEVEL);
         const table = {};
         for (const m of modes) {
             table[m] = {};
-            const base = CB.DIFFICULTY_WIN_RATIO_FACTOR[m];
             for (const cat of CATEGORIES) {
                 const goal = CB.DIFFICULTY_TARGET_WIN_RATE[m][cat];
-                let lo = base / 6, hi = base * 6;
+                let lo = 0.4, hi = 8;
                 for (let step = 0; step < 6; step++) {
-                    const f = Math.sqrt(lo * hi);
-                    const list = calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, difficultyFactor: f, seed0: 60000 + step * 613 });
-                    if (winRate(list) < goal) lo = f; else hi = f;
+                    const d = Math.sqrt(lo * hi);
+                    const list = calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, hpDivisor: d, seed0: 70000 + step * 613 });
+                    if (winRate(list) < goal) lo = d; else hi = d;   // plus le diviseur est grand, plus l'ennemi est fragile
                 }
-                table[m][cat] = Math.round(Math.sqrt(lo * hi) / base * 100) / 100;
-                console.log(m, cat, 'correction', table[m][cat]);
+                table[m][cat] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
+                console.log(m, cat, 'diviseur', table[m][cat]);
             }
         }
-        console.log('DIFFICULTY_CATEGORY_FACTOR =', JSON.stringify(table));
+        console.log('HP_DIVISOR =', JSON.stringify(table));
     }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;

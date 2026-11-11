@@ -154,7 +154,7 @@ export const ENEMY_WIN_RATIO = { weak: 2.65, normal: 1.3, aggressive: 1.25, elit
 export const HP_DURATION_FACTOR = { weak: 0.5, normal: 0.77, aggressive: 0.85, elite: 1.02, miniBoss: 0.98, boss: 1.15 };
 export const DEFAULT_CYCLE_SECONDS = 30;     // tant que le jeu n'a pas mesuré le rythme (exemple du document)
 export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niveau du héros) avant de préférer les mesures au modèle
-export const DAMAGE_SCALE_BOUNDS = [0.5, 4];
+export const DAMAGE_SCALE_BOUNDS = [0.5, 7];
 // Modèles tirés de la simulation d'un héros « complet » (tools/balance-search.mjs fit : 1 680 combats, niveaux 1 à 70, 4 classes, meilleur
 // équipement de son niveau, sorts équipés avec leurs effets, ultime, objet de soin, compagnon) ; remplacés par les mesures du joueur
 // dès MIN_SAMPLE victoires proches de son niveau.
@@ -163,9 +163,10 @@ export const ENEMY_RAW_CATEGORY_FACTOR = { weak: 1.48, normal: 1.03, aggressive:
 export const enemyRawDamagePerCycleModel = (enemyLevel, category = 'normal') =>                   // dégâts bruts de l'ennemi par cycle, avant réglage
     (2.5 + 0.32 * Math.max(1, enemyLevel)) * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1);   // pente du héros complet, base des premiers niveaux
 
-// Mode de difficulté (Options > Difficulté des ennemis) : en plus de la qualité des décisions de l'IA (enemyAIProfiles.js), il règle la
-// vitesse à laquelle l'ennemi peut vaincre le héros, donc ses dégâts. Taux de victoire visés du héros complet par mode et catégorie ;
-// Auto garde le calibrage de référence (TARGET des simulations). Multiplicateurs trouvés par simulation (tools/balance-search.mjs search-modes).
+// Mode de difficulté (Options > Difficulté des ennemis). Les DÉGÂTS de l'ennemi sont toujours réglés au niveau le plus dur (Expert) et
+// intégrés à ses chiffres affichés (arme, sorts, crânes) : ce que le joueur lit est ce qu'il subit. Un mode plus doux ne touche jamais aux
+// dégâts : il DIVISE la barre de vie de l'ennemi et les bonus de son stuff (`HP_DIVISOR`). En plus, l'IA joue selon le palier du mode
+// (enemyAIProfiles.js). Taux de victoire visés du héros complet par mode et catégorie (Auto : calibrage de référence).
 export const DIFFICULTY_TARGET_WIN_RATE = {
     easy: { weak: 0.98, normal: 0.95, aggressive: 0.92, elite: 0.9, miniBoss: 0.88, boss: 0.85 },
     normal: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.72, boss: 0.7 },
@@ -173,17 +174,18 @@ export const DIFFICULTY_TARGET_WIN_RATE = {
     hard: { weak: 0.9, normal: 0.72, aggressive: 0.68, elite: 0.62, miniBoss: 0.56, boss: 0.5 },
     expert: { weak: 0.85, normal: 0.6, aggressive: 0.55, elite: 0.48, miniBoss: 0.42, boss: 0.35 }
 };
-export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1.22, normal: 0.74, hard: 0.58, expert: 0.5 };
-// Correction par mode ET par catégorie (simulation : avec le seul multiplicateur du mode, les boss étaient trop durs en Normal / Difficile /
-// Expert et les ennemis normaux trop faciles en Normal). 1 = pas de correction.
-export const DIFFICULTY_CATEGORY_FACTOR = {
+// Référence « ultra difficile » des dégâts (simulation, mode Expert) : rapport de victoire ×0,5, corrigé par catégorie.
+export const EXPERT_WIN_RATIO_FACTOR = 0.5;
+export const EXPERT_CATEGORY_FACTOR = { weak: 1.44, normal: 1, aggressive: 0.73, elite: 1.03, miniBoss: 1.22, boss: 1.22 };
+export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-delà, un coup d'arme suffirait à emporter le héros)
+// Diviseur des PV et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors). Expert = 1.
+export const HP_DIVISOR = {
     easy: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
     normal: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
+    auto: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
     hard: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
     expert: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 }
 };
-// Borne haute du multiplicateur de dégâts de l'ennemi selon le mode (à 4, l'Expert ne pouvait pas atteindre sa cible).
-export const DIFFICULTY_DAMAGE_CAP = { auto: 4, easy: 4, normal: 4, hard: 5, expert: 7 };
 
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui
 // (Zhi, objets de soin, sorts de soin dès le niveau 17-20), donc à niveau élevé l'ennemi doit pouvoir frapper relativement plus fort.
@@ -225,7 +227,7 @@ const mid = ([a, b]) => (a + b) / 2;
  *  - damageScale : multiplicateur des dégâts que l'ennemi inflige, pour qu'il vainque un héros de `heroMaxHp` PV en ENEMY_WIN_RATIO × la durée cible.
  * `records` : combats mesurés (récents) ; on n'en retient que ceux joués à ±3 niveaux du héros.
  */
-export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', difficultyFactor }) {
+export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', hpDivisor }) {
     const heroMaxHp = heroEffectiveHp(rawHeroMaxHp, heroLevel);   // PV qui comptent vraiment (plafond de progression)
     const heroDamageScale = rawHeroMaxHp > heroMaxHp ? Math.round((rawHeroMaxHp / heroMaxHp) * 100) / 100 : 1;
     const near = records.filter(r => r && r.outcome === 'victory' && Math.abs((r.playerLevel || 0) - heroLevel) <= 3);
@@ -242,12 +244,16 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const rawEnemy = measured?.rawDamageTakenPerCycle > 0
         ? measured.rawDamageTakenPerCycle * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1)
         : enemyRawDamagePerCycleModel(enemyLevel, category);
+    // Dégâts réglés au niveau Expert, quel que soit le mode.
     const ratio = (winRatio ?? ENEMY_WIN_RATIO[category] ?? 1.2) * winRatioLevelFactor(heroLevel, levelAnchors)
-        * (difficultyFactor ?? (DIFFICULTY_WIN_RATIO_FACTOR[difficulty] ?? 1) * (DIFFICULTY_CATEGORY_FACTOR[difficulty]?.[category] ?? 1));
+        * EXPERT_WIN_RATIO_FACTOR * (EXPERT_CATEGORY_FACTOR[category] ?? 1);
     const wanted = heroMaxHp / (cycles * ratio);
-    const cap = DIFFICULTY_DAMAGE_CAP[difficulty] ?? DAMAGE_SCALE_BOUNDS[1];
-    const damageScale = Math.round(Math.min(cap, Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;
-    return { hp, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
+    const damageScale = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;
+    // Multiplicateur à intégrer aux chiffres de l'ennemi : réglage de durée × neutralisation des PV du héros au-delà du plafond.
+    const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale) * 100) / 100;
+    // Mode plus doux : diviseur des PV (la durée cible baisse d'autant) et des bonus du stuff.
+    const divisor = Math.max(0.25, hpDivisor ?? HP_DIVISOR[difficulty]?.[category] ?? 1);
+    return { hp: Math.max(1, Math.round(hp / divisor)), hpBase: hp, hpDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
 }
 
 /** Part de chaque source dans les dégâts infligés (0 à 1) ; sert à repérer un levier qui fait toute la durée (arme, sort ou crânes). */

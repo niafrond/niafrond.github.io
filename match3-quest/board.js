@@ -834,7 +834,8 @@ export function checkMatches(forceFullBoard = false){
             if(selfHit) log(`${attacker.name} est confus : ses crânes se retournent contre lui !`);
             // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
             const attackBonus = skullStrengthBonus(attacker);
-            const rawDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
+            // `skullMult` : dégâts par crâne de l'ennemi réglés par le calibrage de durée (affichés sur sa fiche)
+            const rawDmg = Math.round(getEffectiveMatchLength(info) * (skullDamage + attackBonus) * (attacker.skullMult || 1));
             const weakened = attacker === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
             const strike = resolveStrike(rawDmg, attacker, opponent, { weakened });
             let dmg = strike.damage;

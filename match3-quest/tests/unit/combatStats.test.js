@@ -200,8 +200,10 @@ describe('ennemis', () => {
         }
     });
 
-    test('un ennemi normal reste aléatoire', () => {
-        const ids = new Set(Array.from({ length: 40 }, () => createMapEnemy(enc(15)).weapon?.id));
+    test('un ennemi garde le même kit à chaque rencontre ; des ennemis différents sont variés', () => {
+        const same = new Set(Array.from({ length: 10 }, () => createMapEnemy(enc(15)).weapon?.id));
+        expect(same.size).toBe(1);
+        const ids = new Set(Array.from({ length: 40 }, (_, i) => createMapEnemy({ ...enc(15), enemyId: `garde_${i}` }).weapon?.id));
         expect(ids.size).toBeGreaterThan(1);
     });
 });

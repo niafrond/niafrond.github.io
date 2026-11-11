@@ -432,7 +432,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
-    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp, Date.now(), options.sourceSpell ? 'spell' : (options.damageSource || 'other')); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / enemyDamageScale); }   // mesures d'équilibrage (combatBalance.js)
+    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp, Date.now(), options.sourceSpell ? 'spell' : (options.damageSource || 'other')); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / (enemyDamageScale * (enemy.bakedDamageMult || 1))); }   // mesures d'équilibrage (combatBalance.js)
     if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
@@ -1770,8 +1770,34 @@ function calibrateEnemyForCombat(target){
     const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto' });
     target.maxHp = result.hp;
     target.hp = result.hp;
-    target.damageScale = Math.round(result.damageScale * result.heroDamageScale * 100) / 100;   // réglage de l'ennemi × neutralisation des PV du héros au-delà du plafond
+    target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme les PV
+    target.hpDivisor = result.hpDivisor;
+    bakeEnemyDamage(target, result.damageMult);
     target.balanceCategory = category;
+}
+
+// Intègre le réglage de dégâts aux chiffres de l'ennemi (arme, sorts, crânes) : ce qui est affiché est ce qui est subi. L'arme reçoit
+// aussi la puissance de l'ennemi (`weaponPower`), autrefois ajoutée sans être affichée.
+const scaleDamageNumber = (value, mult) => Math.max(1, Math.round(value * mult));
+function bakeEnemyDamage(target, mult){
+    const m = Math.max(0.1, Number(mult) || 1);
+    target.bakedDamageMult = m;
+    target.damageScale = 1;   // plus de multiplicateur caché
+    if(target.weapon) {
+        target.weapon = { ...target.weapon, damage: scaleDamageNumber(target.weapon.damage + (target.weaponPower || 0), m) };
+        target.weaponPower = 0;
+    }
+    target.spells = (target.spells || []).map(sp => {
+        if(!sp.dmg && !sp.dmgPerTile) return sp;
+        const scaled = { ...sp };
+        if(sp.dmg) {
+            scaled.dmg = scaleDamageNumber(sp.dmg, m);
+            if(typeof sp.description === 'string') scaled.description = sp.description.replace(new RegExp(`\\b${sp.dmg}\\b`), String(scaled.dmg));
+        }
+        if(sp.dmgPerTile) scaled.dmgPerTile = scaleDamageNumber(sp.dmgPerTile, m);
+        return scaled;
+    });
+    target.skullMult = m;
 }
 
 export function newEnemy(selectedEnemy = null){

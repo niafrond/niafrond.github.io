@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
+import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -73,7 +73,7 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(30) * (210 / DEFAULT_CYCLE_SECONDS) * HP_DURATION_FACTOR.normal));
         // l'ennemi vainc le héros en ENEMY_WIN_RATIO × la durée cible, d'après ses dégâts bruts modélisés
         const raw = enemyRawDamagePerCycleModel(30, 'normal');
-        expect(300 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(30), 0);
+        expect(300 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(30) * EXPERT_WIN_RATIO_FACTOR * EXPERT_CATEGORY_FACTOR.normal, 0);
     });
     test('ajustement par niveau : interpolé entre les points d\'ancrage', () => {
         expect(winRatioLevelFactor(1, [[5, 0.5], [15, 1]])).toBe(0.5);
@@ -92,7 +92,7 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(r.hp).toBe(Math.round(50 * 7 * HP_DURATION_FACTOR.normal));
         // héros 240 PV, en 7 cycles × rapport de la catégorie ; 20 dégâts bruts mesurés × facteur de catégorie
         const raw = 20 * ENEMY_RAW_CATEGORY_FACTOR.normal;
-        expect(240 / (raw * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(10), 0);
+        expect(240 / (raw * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(10) * EXPERT_WIN_RATIO_FACTOR * EXPERT_CATEGORY_FACTOR.normal, 0);
     });
     test('mesures lointaines (autre niveau) ignorées', () => {
         const rec = { outcome: 'victory', playerLevel: 50, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };
@@ -137,19 +137,19 @@ describe('combatBalance : source des dégâts', () => {
     });
 });
 
-import { DIFFICULTY_WIN_RATIO_FACTOR, DIFFICULTY_TARGET_WIN_RATE } from '../../combatBalance.js';
+import { DIFFICULTY_TARGET_WIN_RATE, HP_DIVISOR } from '../../combatBalance.js';
 describe('combatBalance : mode de difficulté', () => {
-    test('plus le mode est difficile, plus l\'ennemi frappe fort ; les PV ne changent pas', () => {
+    test('les dégâts ne dépendent pas du mode ; un mode plus doux divise les PV et le stuff', () => {
         const base = { category: 'boss', heroMaxHp: 400, heroLevel: 40 };
-        const scale = d => calibrateEnemy({ ...base, difficulty: d }).damageScale;
-        expect(scale('easy')).toBeLessThanOrEqual(scale('normal'));
-        expect(scale('normal')).toBeLessThanOrEqual(scale('hard'));
-        expect(scale('hard')).toBeLessThanOrEqual(scale('expert'));
-        expect(calibrateEnemy({ ...base, difficulty: 'expert' }).hp).toBe(calibrateEnemy({ ...base, difficulty: 'easy' }).hp);
+        const r = d => calibrateEnemy({ ...base, difficulty: d });
+        expect(new Set(['easy', 'normal', 'auto', 'hard', 'expert'].map(d => r(d).damageMult)).size).toBe(1);
+        const forced = calibrateEnemy({ ...base, hpDivisor: 2 });
+        expect(forced.hp).toBe(Math.round(forced.hpBase / 2));
+        expect(forced.gearScale).toBe(0.5);
+        expect(calibrateEnemy({ ...base, hpDivisor: 1 }).gearScale).toBe(1);
     });
-    test('cibles décroissantes de Facile à Expert ; Auto garde le calibrage de référence', () => {
-        expect(DIFFICULTY_WIN_RATIO_FACTOR.auto).toBe(1);
+    test('cibles décroissantes de Facile à Expert ; diviseurs décroissants aussi', () => {
         expect(DIFFICULTY_TARGET_WIN_RATE.easy.boss).toBeGreaterThan(DIFFICULTY_TARGET_WIN_RATE.expert.boss);
-        expect(calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 30 }).damageScale).toBe(calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 30, difficulty: 'auto' }).damageScale);
+        Object.keys(HP_DIVISOR.easy).forEach(cat => expect(HP_DIVISOR.easy[cat]).toBeGreaterThanOrEqual(HP_DIVISOR.expert[cat]));
     });
 });

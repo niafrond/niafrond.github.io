@@ -321,6 +321,14 @@ export function updateEnemySpells(){
                 </div>
             `;
         }
+        if ((enemy.skullMult || 1) !== 1) {   // dégâts par crâne réglés par le calibrage (combatBalance.js)
+            weaponHtml += `
+                <div class="enemy-spell-item disabled">
+                    <div class="spell-name">${svgIcon('skull')} Crânes</div>
+                    <div class="spell-cost">×${Math.round(enemy.skullMult * 10) / 10} dégâts par crâne</div>
+                </div>
+            `;
+        }
         if (enemy.inventoryItem) {
             weaponHtml += `
                 <div class="enemy-spell-item disabled enemy-item-card" tabindex="0">
