@@ -174,6 +174,14 @@ export const DIFFICULTY_TARGET_WIN_RATE = {
     expert: { weak: 0.85, normal: 0.6, aggressive: 0.55, elite: 0.48, miniBoss: 0.42, boss: 0.35 }
 };
 export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1.22, normal: 0.74, hard: 0.58, expert: 0.5 };
+// Correction par mode ET par catégorie (simulation : avec le seul multiplicateur du mode, les boss étaient trop durs en Normal / Difficile /
+// Expert et les ennemis normaux trop faciles en Normal). 1 = pas de correction.
+export const DIFFICULTY_CATEGORY_FACTOR = {
+    easy: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
+    normal: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
+    hard: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },
+    expert: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 }
+};
 // Borne haute du multiplicateur de dégâts de l'ennemi selon le mode (à 4, l'Expert ne pouvait pas atteindre sa cible).
 export const DIFFICULTY_DAMAGE_CAP = { auto: 4, easy: 4, normal: 4, hard: 5, expert: 7 };
 
@@ -235,7 +243,7 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
         ? measured.rawDamageTakenPerCycle * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1)
         : enemyRawDamagePerCycleModel(enemyLevel, category);
     const ratio = (winRatio ?? ENEMY_WIN_RATIO[category] ?? 1.2) * winRatioLevelFactor(heroLevel, levelAnchors)
-        * (difficultyFactor ?? DIFFICULTY_WIN_RATIO_FACTOR[difficulty] ?? 1);
+        * (difficultyFactor ?? (DIFFICULTY_WIN_RATIO_FACTOR[difficulty] ?? 1) * (DIFFICULTY_CATEGORY_FACTOR[difficulty]?.[category] ?? 1));
     const wanted = heroMaxHp / (cycles * ratio);
     const cap = DIFFICULTY_DAMAGE_CAP[difficulty] ?? DAMAGE_SCALE_BOUNDS[1];
     const damageScale = Math.round(Math.min(cap, Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;

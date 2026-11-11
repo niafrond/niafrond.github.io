@@ -249,6 +249,29 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         }
         console.log('DIFFICULTY_WIN_RATIO_FACTOR =', JSON.stringify(found));
     }
+    // Correction par mode et par catégorie : dichotomie sur le multiplicateur total (mode × catégorie) pour la cible de la catégorie.
+    if (mode === 'search-mode-cats') {
+        const fights = Number(process.argv[3]) || 1;
+        const modes = (process.argv[4] || 'easy,normal,hard,expert').split(',');
+        const levels = ALL_LEVELS.filter(l => (l - 1) % 4 === 0 || l === MAX_LEVEL);
+        const table = {};
+        for (const m of modes) {
+            table[m] = {};
+            const base = CB.DIFFICULTY_WIN_RATIO_FACTOR[m];
+            for (const cat of CATEGORIES) {
+                const goal = CB.DIFFICULTY_TARGET_WIN_RATE[m][cat];
+                let lo = base / 6, hi = base * 6;
+                for (let step = 0; step < 6; step++) {
+                    const f = Math.sqrt(lo * hi);
+                    const list = calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, difficultyFactor: f, seed0: 60000 + step * 613 });
+                    if (winRate(list) < goal) lo = f; else hi = f;
+                }
+                table[m][cat] = Math.round(Math.sqrt(lo * hi) / base * 100) / 100;
+                console.log(m, cat, 'correction', table[m][cat]);
+            }
+        }
+        console.log('DIFFICULTY_CATEGORY_FACTOR =', JSON.stringify(table));
+    }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;
         console.table(CATEGORIES.map(cat => report(cat, calibratedFights(cat, { fights, seed0: 90000 }))));
