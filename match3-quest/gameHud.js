@@ -323,18 +323,18 @@ export function updateEnemySpells(){
         }
         if ((enemy.skullMult || 1) !== 1) {   // dégâts par crâne réglés par le calibrage (combatBalance.js)
             weaponHtml += `
-                <div class="enemy-spell-item disabled">
+                <div class="enemy-spell-item disabled" title="Dégâts par crâne de l'ennemi multipliés par ${String(Math.round(enemy.skullMult * 10) / 10).replace('.', ',')}.">
                     <div class="spell-name">${svgIcon('skull')} Crânes</div>
-                    <div class="spell-cost">×${Math.round(enemy.skullMult * 10) / 10} dégâts par crâne</div>
+                    <div class="spell-cost">×${String(Math.round(enemy.skullMult * 10) / 10).replace('.', ',')} / crâne</div>
                 </div>
             `;
         }
         if (enemy.spellAmplifier && enemy.spellAmplifier.mult !== 1) {   // objet magique de l'ennemi, non récupérable (combatBalance.js)
             const mult = String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',');
             weaponHtml += `
-                <div class="enemy-spell-item disabled" title="Objet magique de l'ennemi : amplifie en continu tous ses sorts (dégâts et poison). Il ne peut pas être récupéré.">
-                    <div class="spell-name">${svgIcon('star')} ${escapeHtml(enemy.spellAmplifier.name)}</div>
-                    <div class="spell-cost">Sorts ×${mult} · non récupérable</div>
+                <div class="enemy-spell-item disabled" title="${escapeHtml(enemy.spellAmplifier.name)} : objet magique de l'ennemi qui amplifie en continu tous ses sorts (dégâts et poison). Il ne peut pas être récupéré.">
+                    <div class="spell-name">${svgIcon('star')} Talisman</div>
+                    <div class="spell-cost">Sorts ×${mult}</div>
                 </div>
             `;
         }
@@ -377,8 +377,8 @@ export function updateEnemySpells(){
         // Gestion des coûts multiples pour les sorts de classe
         const costDisplay = spellCostHtml(sp);
         
-        const amp = enemy.spellAmplifier?.mult && enemy.spellAmplifier.mult !== 1 ? ` (×${String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',')})` : '';   // talisman de l'ennemi
-        const damageText = sp.dmg ? ` • ${sp.dmg} dmg${amp}` : '';
+        const amp = enemy.spellAmplifier?.mult && enemy.spellAmplifier.mult !== 1 ? ` ×${String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',')}` : '';   // talisman de l'ennemi
+        const damageText = sp.dmg ? ` • ${sp.dmg}${amp} dmg` : '';
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
         const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
         div.innerHTML = `
