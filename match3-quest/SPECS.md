@@ -884,3 +884,9 @@ Spécifications et journal de session de `match3-quest/`.
 - 2026-11-11 (attaque préparée du boss affichée comme un sort) : à la demande de l'utilisateur. `bossScript.js` : `script.spell` (fiche de sort `bossSignature` : nom, couleur du boss, GRATUIT, description sans puissance). `gameHud.js` (`updateEnemySpells`) : la carte s'affiche à la suite des sorts du boss ; elle est grisée (« Inactive ») tant que le boss n'a pas annoncé son attaque, puis allumée avec son délai (« Dans 2 tours », « Dans 1 tour »), rafraîchie par `gameTurnFlow.js` à l'annonce, à chaque tour d'échauffement, au déclenchement et à l'interruption. Un essai avec un coût en qì payé à l'échauffement a été abandonné : il rendait les boss trop faciles (88 % de victoires du héros contre 61 %, le boss manquant de qì). Tests : `bossScript.test.js`.
 - 2026-11-11 (texte du talisman) : à la demande de l'utilisateur, l'infobulle de l'appui long affiche seulement « Talisman de Résonance : dégâts xN.N » (`getEnemyStuffTooltipHtml`, `gameTooltips.js`).
 - 2026-11-11 (dégâts de l'attaque dévastatrice affichés) : la tuile et l'infobulle de l'attaque préparée du boss (gameHud.js, gameTooltips.js) indiquent les dégâts prévus sur le héros (`signatureDamage`, préparation actuelle comprise), la brûlure du Dragon de feu et le blocage par le Bastion, au lieu de « Aucun effet ».
+
+
+## Butin déjà possédé et grille d'actions du combat
+- Un objet de butin (coffre, drop, ennemi plus fort) déjà présent dans le sac est converti en or (prix de revente) sans message ; idem pour une arme déjà possédée.
+- Le bouton « Activer » n'apparaît plus sur les objets non utilisables (reliques).
+- Grille compacte des actions du joueur (`applyActionGrid`, `boardLayout.js`) : 4 cartes max par ligne au-delà de 6 actions, lignes réparties à parts égales et cartes étirées (7 actions → 4 + 3), pour ne plus avoir de ligne à moitié vide qui réduit le plateau.

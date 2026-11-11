@@ -1,5 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
+import { sellPriceOf } from './merchants.js';
 import { createBossScript, noteChargeDamage } from './bossScript.js';
 import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
 import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
@@ -745,6 +746,13 @@ export function grantStartingWeapon(weaponId){
     return weapon;
 }
 
+// Un butin déjà possédé (même id dans le sac) est converti en or au prix de revente, sans message. Retourne vrai si converti.
+export function sellDuplicateItem(item){
+    if(!item || !Array.isArray(player.inventory) || !player.inventory.some(i => i?.id === item.id)) return false;
+    player.gold = (player.gold || 0) + sellPriceOf('item', item);
+    return true;
+}
+
 // Range dans le sac le butin d'un coffre d'exploration (tiré par chestLoot.js : rollChestLoot).
 // Retourne les libellés à afficher en texte (ex. « Bague d'Archer en Jade (rare) »).
 const RARITY_LABEL = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
@@ -762,6 +770,7 @@ export function grantChestLoot({ loot = [] } = {}){
             labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
             log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
         } else if(entry.kind === 'item' && entry.item) {
+            if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en or, sans le dire
             player.inventory.push({ ...entry.item, applied: false });
             // Une relique n'a pas d'emplacement : on dit où elle va (bonus permanent, listée dans l'onglet Stuff).
             labels.push(entry.item.type === 'artifact' ? `${entry.item.name} (relique permanente, ${rarityText}, onglet Stuff)` : `${entry.item.name} (${rarityText})`);

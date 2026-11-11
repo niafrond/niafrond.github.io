@@ -111,6 +111,7 @@ export function syncBoardTileSize(){
             spellsContainer.classList.remove('spells-compact');
         }
     }
+    applyActionGrid();
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
     const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
@@ -187,4 +188,34 @@ export function ensureBoardResizeListeners(){
     }
 
     boardResizeListenersAttached = true;
+}
+
+
+// Grille compacte des actions du joueur (arme, objets, sorts) : au plus 4 par ligne et les lignes sont réparties à parts égales,
+// chaque carte s'étire pour remplir la sienne (7 actions → 4 + 3, sans ligne à moitié vide qui mange la hauteur du plateau).
+export function applyActionGrid(){
+    const grid = document.getElementById('player-spells');
+    if(!grid) return;
+    const cards = [...grid.querySelectorAll('#weapon-button > *, #item-button > *, #spell-buttons > *')];
+    const compact = document.getElementById('spells-container')?.classList.contains('spells-compact');
+    if(!compact || cards.length <= 3){
+        grid.style.gridTemplateColumns = '';
+        cards.forEach(c => { c.style.gridColumn = ''; });
+        return;
+    }
+    const rows = Math.ceil(cards.length / (cards.length > 6 ? 4 : 3));
+    grid.style.gridTemplateColumns = 'repeat(60, minmax(0, 1fr))';
+    let i = 0;
+    for(let r = 0; r < rows; r++){
+        const n = Math.floor(cards.length / rows) + (r < cards.length % rows ? 1 : 0);
+        for(let k = 0; k < n; k++) cards[i++].style.gridColumn = `span ${60 / n}`;
+    }
+}
+if(typeof document !== 'undefined' && typeof MutationObserver !== 'undefined'){
+    const watch = () => {
+        const grid = document.getElementById('player-spells');
+        if(!grid) return;
+        new MutationObserver(() => applyActionGrid()).observe(grid, { childList: true, subtree: true });
+    };
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
 }
