@@ -1,3 +1,10 @@
+## [2.230.0](https://github.com/niafrond/niafrond.github.io/compare/v2.229.0...v2.230.0) (2026-11-11)
+
+### Features
+
+* **match3-quest:** ajouter les effets d'équipement, les remèdes, le second objet et les comportements de boss ([b355638](https://github.com/niafrond/niafrond.github.io/commit/b3556387f53182071c686ef2e27f943826d7f194))
+* **match3-quest:** générer les bruitages et animations des boss avec gm ([bcab0f9](https://github.com/niafrond/niafrond.github.io/commit/bcab0f95d3bcd93b8822175d7b2353e7cc527565))
+
 ## [2.229.0](https://github.com/niafrond/niafrond.github.io/compare/v2.228.0...v2.229.0) (2026-11-11)
 
 ### Features
