@@ -174,7 +174,30 @@ Durée moyenne des victoires : de 2 min 35 (ennemis faibles) à 7 min 37 (boss),
 
 `damageCorridor.js` et son test vérifient que chaque arme (dégâts par point d'action) et chaque sort de dégâts (dégâts par qì) reste à ±25 % d'une courbe selon son niveau. Les 37 armes et les 30 sorts actuels passent ; le test protège surtout les ajouts futurs.
 
-## 8. Limites et points à surveiller
+## 8. Fiabilité des mesures, coups fatals et boss semi-scriptés
+
+### 8.1 Défaites mesurées
+Chaque combat terminé est enregistré : victoire, **défaite** (après une éventuelle résurrection) ou abandon (gardé à part, exclu des calculs). Il est annoté de la catégorie, du mode et de l'ennemi. Ne mesurer que les victoires aurait biaisé l'équilibrage vers des héros plus forts que la moyenne.
+
+### 8.2 Calibration progressive
+Les mesures du joueur corrigent les modèles de simulation sans les remplacer : rapports mesure / modèle de chaque combat (à ±5 niveaux du héros), **médiane** (résiste aux combats aberrants), mélange avec un poids n / (n + 20) (rien sous 5 combats, 50 % à 20 combats, jamais 100 %), écart borné à ×0,5 / ×2.
+
+### 8.3 Aucun coup ordinaire n'élimine le héros d'un coup
+Le multiplicateur de puissance ne peut jamais porter un coup d'arme, de crânes, de sort ou de poison au-delà de **40 % des PV max** du héros (60 % avec un critique), sauf si les chiffres bruts de l'ennemi dépassaient déjà ce seuil.
+
+### 8.4 Boss semi-scriptés : l'attaque dévastatrice
+Les boss de la carte ont une attaque signature (Brasier dévastateur, Raz-de-marée, Ronces de jade, Foudre céleste, Ombre dévorante selon leur couleur), à rythme fixe : premier échauffement au tour 4 ou 5, puis tous les 7 à 9 tours, plus un échauffement au passage sous 66 % puis 33 % de leurs PV (environ 2 attaques par combat).
+
+- **Déroulé** : « <Boss> prépare <attaque> — Il frappera dans 2 tours ». Le boss n'agit pas ce tour-là, joue normalement au suivant, puis frappe.
+- **Aucun indice** : ni dégâts annoncés, ni conseil. Le joueur apprend en l'affrontant.
+- **Puissance** : 30 % (Facile), 35 % (Normal, Auto), 40 % (Difficile), 45 % (Expert) des PV max du héros, sans critique.
+- **Contre-jeu** : buffs de défense et réduction de dégâts (jusqu'à −75 %), Bastion Infranchissable (annule), bouclier de qì (absorbe), soin ; étourdir ou endormir le boss pendant l'échauffement l'interrompt.
+- Les coups ordinaires des boss sont réglés en conséquence (ils peuvent descendre à la moitié de leur grimoire).
+
+### 8.5 Vérification des modes
+`node match3-quest/tools/balance-search.mjs mode-report` rend des verdicts réussi / échec : victoires à ±10 points de la cible (catégories et boss de la carte), ordre Facile ≥ Normal ≥ Difficile ≥ Expert, durées dans la fenêtre. Dernier résultat : 76 contrôles sur 77 réussis ; seul échec, Expert contre les ennemis normaux (75 % pour 60 % visés). Boss de la carte en mode Auto : 61 % de victoires (écart-type 12 points), durée moyenne 7 min 24 ; cinq boss encore hors de 40-80 % (Zhuque, Gardien du jugement, Zaochi, Soleil des Orages, Soleil des Bêtes Folles).
+
+## 9. Limites et points à surveiller
 
 - **Simulation, pas jeu réel** : le héros simulé prend toujours les mêmes sorts et le même compagnon ; les jokers, cases de biome, sorts à cible d'une seule case et altérations posées par l'ennemi ne sont pas simulés. Un vrai joueur peut faire mieux ou moins bien.
 - **Incertitude** : chaque taux repose sur des dizaines de combats ; compter environ ±7 points par boss et ±5 points par catégorie.
