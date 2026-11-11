@@ -1773,8 +1773,8 @@ function calibrateEnemyForCombat(target){
     const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto' });
     target.maxHp = result.hp;
     target.hp = result.hp;
-    target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme les PV
-    target.hpDivisor = result.hpDivisor;
+    target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque
+    target.modeDivisor = result.modeDivisor;
     bakeEnemyDamage(target, result.damageMult);
     target.balanceCategory = category;
 }

@@ -92,7 +92,7 @@ export function measureRates({ fights = 12, cycles = 25 } = {}) {
 export const TARGET_WIN_RATE = { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 };
 
 /** Combats calibrés comme dans le jeu (sans mesures du joueur : modèles) ; `winRatio` remplace ENEMY_WIN_RATIO de la catégorie. */
-export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors, aiPreference = process.env.AI || 'greedy', difficulty = process.env.AI && process.env.AI !== 'greedy' ? process.env.AI : 'auto', hpDivisor } = {}) {
+export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors, aiPreference = process.env.AI || 'greedy', difficulty = process.env.AI && process.env.AI !== 'greedy' ? process.env.AI : 'auto', modeDivisor } = {}) {
     const out = [];
     let seed = seed0;
     // Héros : jalons des tests (profil standard d'origine) ou tous les niveaux `levels` (héros fabriqués par heroAt).
@@ -101,7 +101,7 @@ export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, mile
         const { hero, options } = b.make(cls);
         const level = enemyLevelFor(cat, b.level);
         const enemy = makeEnemy(cat, level, i + seed);
-        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, difficulty, hpDivisor, ...(levelAnchors ? { levelAnchors } : {}) });
+        const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, difficulty, modeDivisor, ...(levelAnchors ? { levelAnchors } : {}) });
         enemy.maxHp = enemy.hp = c.hp;
         enemy.gearScale = c.gearScale;
         const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageMult, aiPreference, ...options });
@@ -230,7 +230,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         });
         console.log('WIN_RATIO_LEVEL_ANCHORS =', JSON.stringify(anchors));
     }
-    // Diviseur des PV et du stuff par mode et catégorie (dégâts toujours au niveau Expert) : dichotomie géométrique pour la cible du mode.
+    // Diviseur de l'attaque et du stuff par mode et catégorie (PV fixes : durée 3 à 8 min ; base au niveau Expert) : dichotomie géométrique pour la cible du mode.
     if (mode === 'search-divisors') {
         const fights = Number(process.argv[3]) || 1;
         const modes = (process.argv[4] || 'expert,hard,auto,normal,easy').split(',');
@@ -243,14 +243,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                 let lo = 0.4, hi = 8;
                 for (let step = 0; step < 6; step++) {
                     const d = Math.sqrt(lo * hi);
-                    const list = calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, hpDivisor: d, seed0: 70000 + step * 613 });
+                    const list = calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, modeDivisor: d, seed0: 70000 + step * 613 });
                     if (winRate(list) < goal) lo = d; else hi = d;   // plus le diviseur est grand, plus l'ennemi est fragile
                 }
                 table[m][cat] = Math.round(Math.sqrt(lo * hi) * 100) / 100;
                 console.log(m, cat, 'diviseur', table[m][cat]);
             }
         }
-        console.log('HP_DIVISOR =', JSON.stringify(table));
+        console.log('MODE_DIVISOR =', JSON.stringify(table));
     }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;

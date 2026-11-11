@@ -292,7 +292,7 @@ export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
     } else {
         lines.push('<div class="enemy-tooltip-row"><strong>Stuff équipé</strong></div>');
         pieces.forEach(s => lines.push(`<div class="enemy-tooltip-row">${STUFF_SLOT_LABELS[s.slot]} : <strong>${escapeHtml(s.name)}</strong> (${STUFF_RARITY_LABEL[s.rarity] || ''}, niv. ${s.minLevel})<br><small>${escapeHtml(describeStuff(s))}</small></div>`));
-        // Mode de difficulté plus doux : les bonus d'attaque et de défense du stuff sont réduits (combatBalance.js, HP_DIVISOR).
+        // Mode de difficulté plus doux : les bonus d'attaque et de défense du stuff sont réduits (combatBalance.js, MODE_DIVISOR).
         const scale = enemyEntity?.gearScale ?? 1;
         if(scale < 1) lines.push(`<div class="enemy-tooltip-row"><small>Stuff affaibli par la difficulté : bonus d'attaque et de défense ×${String(Math.round(scale * 100) / 100).replace('.', ',')}.</small></div>`);
     }

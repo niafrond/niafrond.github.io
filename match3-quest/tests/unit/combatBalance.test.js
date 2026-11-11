@@ -71,7 +71,7 @@ describe('combatBalance : calibrage des ennemis', () => {
         const n = calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 30 });
         expect(n.measured).toBe(false);
         expect(n.hpBase).toBe(Math.round(heroDamagePerCycleModel(30) * (210 / DEFAULT_CYCLE_SECONDS) * HP_DURATION_FACTOR.normal));
-        expect(n.hp).toBe(Math.max(1, Math.round(n.hpBase / n.hpDivisor)));
+        expect(n.hp).toBe(n.hpBase);
         // l'ennemi vainc le héros en ENEMY_WIN_RATIO × la durée cible, d'après ses dégâts bruts modélisés
         const raw = enemyRawDamagePerCycleModel(30, 'normal');
         expect(300 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(30) * EXPERT_WIN_RATIO_FACTOR * EXPERT_CATEGORY_FACTOR.normal, 0);
@@ -138,19 +138,18 @@ describe('combatBalance : source des dégâts', () => {
     });
 });
 
-import { DIFFICULTY_TARGET_WIN_RATE, HP_DIVISOR } from '../../combatBalance.js';
+import { DIFFICULTY_TARGET_WIN_RATE, MODE_DIVISOR, MIN_DAMAGE_MULT } from '../../combatBalance.js';
 describe('combatBalance : mode de difficulté', () => {
-    test('les dégâts ne dépendent pas du mode ; un mode plus doux divise les PV et le stuff', () => {
+    test('les PV ne dépendent pas du mode (durée 3 à 8 min) ; un mode plus doux divise l\'attaque et le stuff', () => {
         const base = { category: 'boss', heroMaxHp: 400, heroLevel: 40 };
-        const r = d => calibrateEnemy({ ...base, difficulty: d });
-        expect(new Set(['easy', 'normal', 'auto', 'hard', 'expert'].map(d => r(d).damageMult)).size).toBe(1);
-        const forced = calibrateEnemy({ ...base, hpDivisor: 2 });
-        expect(forced.hp).toBe(Math.round(forced.hpBase / 2));
-        expect(forced.gearScale).toBe(0.5);
-        expect(calibrateEnemy({ ...base, hpDivisor: 1 }).gearScale).toBe(1);
+        expect(new Set(['easy', 'normal', 'auto', 'hard', 'expert'].map(d => calibrateEnemy({ ...base, difficulty: d }).hp)).size).toBe(1);
+        const hard = calibrateEnemy({ ...base, modeDivisor: 1 }), soft = calibrateEnemy({ ...base, modeDivisor: 2 });
+        expect(soft.hp).toBe(hard.hp);
+        expect(soft.damageMult).toBe(Math.max(MIN_DAMAGE_MULT, Math.round(hard.damageMult / 2 * 100) / 100));
+        expect(soft.gearScale).toBe(0.5);
     });
     test('cibles décroissantes de Facile à Expert ; diviseurs décroissants aussi', () => {
         expect(DIFFICULTY_TARGET_WIN_RATE.easy.boss).toBeGreaterThan(DIFFICULTY_TARGET_WIN_RATE.expert.boss);
-        Object.keys(HP_DIVISOR.easy).forEach(cat => expect(HP_DIVISOR.easy[cat]).toBeGreaterThanOrEqual(HP_DIVISOR.expert[cat]));
+        Object.keys(MODE_DIVISOR.easy).forEach(cat => expect(MODE_DIVISOR.easy[cat]).toBeGreaterThanOrEqual(MODE_DIVISOR.expert[cat]));
     });
 });
