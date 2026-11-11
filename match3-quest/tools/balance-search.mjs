@@ -155,7 +155,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const fights = Number(process.argv[3]) || 1;
         const profiles = (process.argv[4] || 'standard,complet').split(',');
         for (const profile of profiles) {
-            const all = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels: ALL_LEVELS, profile, seed0: 123000 }).map(r => ({ ...r, cat })));
+            const all = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels: ALL_LEVELS, profile, seed0: Number(process.env.SEED) || 123000 }).map(r => ({ ...r, cat })));
             console.log(`\n=== Héros ${profile} : ${all.length} combats, niveaux 1 à ${MAX_LEVEL} ===`);
             console.table(CATEGORIES.map(cat => report(cat, all.filter(r => r.cat === cat))));
             const bands = [[1, 5], [6, 10], [11, 20], [21, 30], [31, 40], [41, 50], [51, 60], [61, MAX_LEVEL]];

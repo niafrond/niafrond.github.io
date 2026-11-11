@@ -68,12 +68,12 @@ describe('combatBalance : calibrage des ennemis', () => {
         const order = ['weak', 'normal', 'aggressive', 'elite', 'miniBoss', 'boss'];
         const hps = order.map(category => calibrateEnemy({ category, heroMaxHp: 150, heroLevel: 10 }).hp);
         expect(hps).toEqual([...hps].sort((a, b) => a - b));
-        const n = calibrateEnemy({ category: 'normal', heroMaxHp: 150, heroLevel: 10 });
+        const n = calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 30 });
         expect(n.measured).toBe(false);
-        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(10) * (210 / DEFAULT_CYCLE_SECONDS) * HP_DURATION_FACTOR.normal));
+        expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(30) * (210 / DEFAULT_CYCLE_SECONDS) * HP_DURATION_FACTOR.normal));
         // l'ennemi vainc le héros en ENEMY_WIN_RATIO × la durée cible, d'après ses dégâts bruts modélisés
-        const raw = enemyRawDamagePerCycleModel(10, 'normal');
-        expect(150 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal, 0);
+        const raw = enemyRawDamagePerCycleModel(30, 'normal');
+        expect(300 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal, 0);
     });
     test('modèles : croissants avec le niveau ; boss plus dangereux qu\'un normal', () => {
         expect(heroDamagePerCycleModel(70)).toBeGreaterThan(heroDamagePerCycleModel(10));

@@ -145,9 +145,10 @@ export function saveCombatRecord(record, storage = globalThis.localStorage) {
 
 // --- Calibration des ennemis ------------------------------------------------------------------------------------------------------------------
 // Temps que l'ennemi met à vaincre le héros, en multiple de la durée cible, par catégorie : plus le rapport est proche de 1, plus le combat
-// est serré (l'ennemi peut gagner dans la fenêtre). Valeurs trouvées par simulation (tools/balance-search.mjs search) pour viser un taux
-// de victoire du joueur standard simulé de 95 % (faible), 85 % (normal), 80 % (agressif), 75 % (élite), 70 % (mini-boss) et 60 % (boss).
-export const ENEMY_WIN_RATIO = { weak: 3.25, normal: 1.8, aggressive: 1.9, elite: 1.35, miniBoss: 1.05, boss: 1.15 };
+// est serré (l'ennemi peut gagner dans la fenêtre). Valeurs trouvées par simulation (tools/balance-search.mjs search-all, héros complet,
+// tous niveaux) pour viser 95 % (faible), 85 % (normal), 80 % (agressif), 75 % (élite), 70 % (mini-boss) et 60 % (boss) de victoires.
+// Sous 1, l'ennemi pourrait vaincre un héros sans soins avant la fin de la durée cible : ce sont les soins (sorts, objets, Zhi) qui tiennent.
+export const ENEMY_WIN_RATIO = { weak: 2.65, normal: 1.3, aggressive: 1.25, elite: 1.15, miniBoss: 0.8, boss: 0.6 };
 // Correction des PV par catégorie (simulation) : durée cible ÷ durée moyenne observée des victoires (le héros ne tape pas au maximum
 // à chaque cycle : il prépare ses PA et son qì, l'ennemi bloque…).
 export const HP_DURATION_FACTOR = { weak: 0.5, normal: 0.77, aggressive: 0.85, elite: 1.02, miniBoss: 0.98, boss: 1.15 };
