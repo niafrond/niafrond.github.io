@@ -1,4 +1,6 @@
 {
+ "armorMelt": "gm",
+ "burn": "gm",
  "change-breath": "gm",
  "change-cake": "gm",
  "change-cut": "gm",
@@ -6,6 +8,11 @@
  "change-match": "gm",
  "change-mirror": "gm",
  "change-swap": "gm",
+ "cure": "gm",
+ "dragonBreath": "gm",
+ "iceStorm": "gm",
+ "knightCounter": "gm",
+ "parryQi": "gm",
  "spell-azureDragonRoar": "gm",
  "spell-barrier": "gm",
  "spell-berserkerRage": "gm",

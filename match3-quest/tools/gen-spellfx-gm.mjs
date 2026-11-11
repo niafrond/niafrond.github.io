@@ -30,6 +30,10 @@ const SPELLS = {
   legionForge: ["Forge des Légions", 'a black iron blacksmith anvil seen from the side, glowing blue and golden embers on top', 'forge'],
   steelHarvest: ["Moisson d'Acier", 'a farmer harvest scythe, long straight wooden handle with a large curved crescent-shaped steel blade at the top, green glow, side view', 'harvest'],
   brokenBlades: ['Lames Brisées', 'a broken red sword blade snapped in two pieces', 'shatter'],
+  // Comportements de boss (enemyBehaviors.js) : le nom est le titre de l'annonce de combat (gameTurnFlow.js), l'animation s'y accroche par ce nom.
+  iceStorm: ['Tempête de Givre', 'a large ice crystal snowflake, six symmetric pointed arms, pale blue and white', 'blizzard'],
+  dragonBreath: ['Souffle de Braise', 'a red chinese dragon head in profile with open jaws and a small plume of flame, no circle, no sun, no round shape behind it', 'breath'],
+  knightCounter: ['Contre-attaque', 'a dark steel longsword with a black crossguard and a faint purple glow, pointing up', 'slash'],
   steelMoult: ["Mue d'Acier", 'a shed steel snake skin shimmering with purple light, ring shape', 'moult']
 };
 
@@ -230,6 +234,35 @@ const MOTIONS = {
       const a = (i / 8) * Math.PI * 2 + t * 1.5, rr = 8 + 14 * ease(t);
       put(out, 24 + Math.cos(a) * rr, 24 + Math.sin(a) * rr * 0.8, i % 2 ? PURPLE : WHITE);
     }
+    return out;
+  },
+  // Reine de glace : le cristal tourne sur lui-même en pulsant bleu/blanc, des flocons tombent en diagonale.
+  blizzard(key, f) {
+    const t = f / (FRAMES - 1), out = tint(transform(key, t * Math.PI * 0.9, 0, 0, 1 + 0.08 * Math.sin(t * Math.PI * 2)), WHITE, 0.25 * Math.sin(t * Math.PI));
+    for (let i = 0; i < 14; i++) {
+      const x = (i * 13 + f * 5) % SIZE, y = (i * 7 + f * 6) % SIZE, c = i % 3 ? WHITE : BLUE;
+      put(out, x, y, c); if (i % 2) put(out, x + 1, y, c);
+    }
+    return out;
+  },
+  // Dragon de feu : le souffle enfle vers la droite, braises dorées et rouges dans son sillage.
+  breath(key, f) {
+    const t = f / (FRAMES - 1), swell = 0.85 + 0.15 * ease(t), out = tint(transform(key, 0, 3 * ease(t), 0, swell), GOLD, 0.3 * Math.sin(t * Math.PI));
+    for (let i = 0; i < 16; i++) {
+      const u = ((i * 5 + f * 6) % 24) / 24, x = 18 + u * 28, y = 24 + ((i * 7) % 17) - 8 + Math.sin(u * 6 + i) * 2;
+      put(out, x, y, mix(GOLD, RED, u)); if (i % 3 === 0) put(out, x + 1, y, WHITE);
+    }
+    return out;
+  },
+  // Chevalier noir : l'épée balaie de gauche à droite, éclair rouge à l'impact, étincelles violettes.
+  slash(key, f) {
+    const t = f / (FRAMES - 1), a = -0.9 + 1.8 * ease(t), out = tint(transform(key, a, Math.sin(t * Math.PI) * 3, 0), RED, t > 0.55 ? 0.35 : 0);
+    for (let i = 0; i < 12; i++) {
+      const u = i / 11, ang = -0.9 + 1.8 * ease(Math.max(0, t - 0.1)) * u - 0.2;
+      if (u * 1.8 - 0.9 > a) continue;
+      put(out, 24 + Math.cos(ang - 1.5) * 19, 30 - Math.sin(ang - 1.5) * 12 + 6, mix(WHITE, RED, u));
+    }
+    if (t > 0.55) for (let i = 0; i < 7; i++) { const u = (t - 0.55) / 0.45, an = i * 0.9; put(out, 34 + Math.cos(an) * 12 * u, 24 + Math.sin(an) * 12 * u, i % 2 ? PURPLE : WHITE); }
     return out;
   }
 };
