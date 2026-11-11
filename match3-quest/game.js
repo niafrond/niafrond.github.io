@@ -1788,13 +1788,17 @@ function bakeEnemyDamage(target, mult){
         target.weaponPower = 0;
     }
     target.spells = (target.spells || []).map(sp => {
-        if(!sp.dmg && !sp.dmgPerTile) return sp;
+        if(!sp.dmg && !sp.dmgPerTile && !sp.poisonDmg) return sp;
         const scaled = { ...sp };
         if(sp.dmg) {
             scaled.dmg = scaleDamageNumber(sp.dmg, m);
             if(typeof sp.description === 'string') scaled.description = sp.description.replace(new RegExp(`\\b${sp.dmg}\\b`), String(scaled.dmg));
         }
         if(sp.dmgPerTile) scaled.dmgPerTile = scaleDamageNumber(sp.dmgPerTile, m);
+        if(sp.poisonDmg) {   // poison posé par le sort (ex. Lotus Noir) : même réglage, description comprise
+            scaled.poisonDmg = scaleDamageNumber(sp.poisonDmg, m);
+            if(typeof scaled.description === 'string') scaled.description = scaled.description.replace(new RegExp(`\\b${sp.poisonDmg}\\b`), String(scaled.poisonDmg));
+        }
         return scaled;
     });
     target.skullMult = m;
