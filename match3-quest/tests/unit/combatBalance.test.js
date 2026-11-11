@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
+import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -73,7 +73,12 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(n.hp).toBe(Math.round(heroDamagePerCycleModel(30) * (210 / DEFAULT_CYCLE_SECONDS) * HP_DURATION_FACTOR.normal));
         // l'ennemi vainc le héros en ENEMY_WIN_RATIO × la durée cible, d'après ses dégâts bruts modélisés
         const raw = enemyRawDamagePerCycleModel(30, 'normal');
-        expect(300 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal, 0);
+        expect(300 / (raw * n.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(30), 0);
+    });
+    test('ajustement par niveau : interpolé entre les points d\'ancrage', () => {
+        expect(winRatioLevelFactor(1, [[5, 0.5], [15, 1]])).toBe(0.5);
+        expect(winRatioLevelFactor(10, [[5, 0.5], [15, 1]])).toBeCloseTo(0.75, 5);
+        expect(winRatioLevelFactor(99, [[5, 0.5], [15, 1]])).toBe(1);
     });
     test('modèles : croissants avec le niveau ; boss plus dangereux qu\'un normal', () => {
         expect(heroDamagePerCycleModel(70)).toBeGreaterThan(heroDamagePerCycleModel(10));
@@ -87,7 +92,7 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(r.hp).toBe(Math.round(50 * 7 * HP_DURATION_FACTOR.normal));
         // héros 240 PV, en 7 cycles × rapport de la catégorie ; 20 dégâts bruts mesurés × facteur de catégorie
         const raw = 20 * ENEMY_RAW_CATEGORY_FACTOR.normal;
-        expect(240 / (raw * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal, 0);
+        expect(240 / (raw * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(10), 0);
     });
     test('mesures lointaines (autre niveau) ignorées', () => {
         const rec = { outcome: 'victory', playerLevel: 50, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };
