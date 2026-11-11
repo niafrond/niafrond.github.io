@@ -173,7 +173,7 @@ export const DIFFICULTY_TARGET_WIN_RATE = {
     hard: { weak: 0.9, normal: 0.72, aggressive: 0.68, elite: 0.62, miniBoss: 0.56, boss: 0.5 },
     expert: { weak: 0.85, normal: 0.6, aggressive: 0.55, elite: 0.48, miniBoss: 0.42, boss: 0.35 }
 };
-export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1.22, normal: 0.74, hard: 0.58, expert: 1 };
+export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1.22, normal: 0.74, hard: 0.58, expert: 0.5 };
 // Borne haute du multiplicateur de dégâts de l'ennemi selon le mode (à 4, l'Expert ne pouvait pas atteindre sa cible).
 export const DIFFICULTY_DAMAGE_CAP = { auto: 4, easy: 4, normal: 4, hard: 5, expert: 7 };
 
