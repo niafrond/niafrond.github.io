@@ -54,6 +54,7 @@ export function heroAt(classId, level, profile = 'complet') {
             : { profile }
     };
 }
+export const BOSS_OVERRIDE = {};   // réglages propres à un boss (remplis après simulation, voir combatBalance.js > BOSS_ADJUST)
 export const ALL_LEVELS = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
 
 const mean = a => (Array.isArray(a) ? a : []).reduce((s, x) => s + x, 0) / Math.max(1, (Array.isArray(a) ? a : []).length);
@@ -251,6 +252,32 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             }
         }
         console.log('MODE_DIVISOR =', JSON.stringify(table));
+    }
+    // Chaque boss de la carte (story.js > SCREENS, hors duels) contre le héros complet d'un niveau de moins, dans le mode AI (défaut auto).
+    if (mode === 'bosses') {
+        const fights = Number(process.argv[3]) || 8;
+        const aiMode = process.env.AI || 'auto';
+        const { SCREENS } = await import('../story.js');
+        const bosses = [];
+        for (const sc of Object.values(SCREENS)) for (const e of (sc.enemies || [])) if (e.boss && !e.duel && !e.arena) bosses.push({ id: e.id, templateId: e.templateId, name: e.boss.name || e.name, level: e.boss.level });
+        bosses.sort((a, b) => a.level - b.level);
+        const rows = [];
+        let seed = Number(process.env.SEED) || 31000;
+        for (const b of bosses) {
+            const list = [];
+            for (const cls of CLASSES) for (let i = 0; i < fights; i++) {
+                const { hero, options } = heroAt(cls, Math.max(1, b.level - 1), 'complet');
+                const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
+                const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: aiMode, ...(BOSS_OVERRIDE[b.id] || {}) });
+                enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
+                const r = simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: aiMode, ...options });
+                list.push({ ...r, cycleSeconds: c.cycleSeconds });
+            }
+            const won = list.filter(r => r.heroWon);
+            rows.push({ boss: b.name.slice(0, 34), id: b.id, niveau: b.level, 'victoires %': Math.round(winRate(list) * 100), 'durée victoire (s)': Math.round(mean(won.map(r => r.cycles * r.cycleSeconds))), 'durée moyenne (s)': Math.round(mean(list.map(r => r.cycles * r.cycleSeconds))), 'PV restants (%)': Math.round(mean(won.map(r => r.heroHpLeft / r.heroMaxHp)) * 100) });
+        }
+        console.table(rows);
+        console.log('JSON', JSON.stringify(rows));
     }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;
