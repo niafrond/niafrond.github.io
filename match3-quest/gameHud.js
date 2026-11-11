@@ -1,5 +1,6 @@
 // Interface du combat : animation des barres de PV et des compteurs, portraits, mise à jour des stats et sorts ennemis, journal, sauvegarde.
 // Extrait de game.js.
+import { cappedEnemyHit } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { enemyNameLabel } from './bestiaryNames.js';
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from './sprites/index.js';
@@ -307,6 +308,22 @@ export function updateStats(){
     updateEnemySpells();
 }
 
+
+// Sort de l'ennemi tel qu'affiché : dégâts (et poison) déjà multipliés par son talisman.
+export function enemySpellAsShown(sp){
+    const m = enemy.spellAmplifier?.mult || 1;
+    if(m === 1 || !(sp.dmg || sp.dmgPerTile || sp.poisonDmg)) return sp;
+    const shown = { ...sp };
+    let desc = typeof sp.description === 'string' ? sp.description : null;
+    for(const key of ['dmg', 'dmgPerTile', 'poisonDmg']) {
+        if(!sp[key]) continue;
+        shown[key] = key === 'dmgPerTile' ? Math.max(1, Math.round(sp[key] * m)) : cappedEnemyHit(sp[key], m, player.maxHp);   // comme en combat (plafond des coups)
+        if(desc) desc = desc.replace(new RegExp(`\\b${sp[key]}\\b`), String(shown[key]));
+    }
+    if(desc) shown.description = desc;
+    return shown;
+}
+
 export function updateEnemySpells(){
     // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
     const weaponContainer = document.getElementById('enemy-weapon-button');
@@ -346,7 +363,8 @@ export function updateEnemySpells(){
     // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
     if(!enemy.spells || enemy.spells.length === 0) return;
     
-    enemy.spells.forEach(sp => {
+    enemy.spells.forEach(rawSpell => {
+        const sp = enemySpellAsShown(rawSpell);
         const div = document.createElement('div');
         div.className = 'enemy-spell-item';
         const hasEnoughMana = canEntityCastSpell(enemy, sp);
@@ -360,7 +378,7 @@ export function updateEnemySpells(){
         // Gestion des coûts multiples pour les sorts de classe
         const costDisplay = spellCostHtml(sp);
         
-        const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
+        const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';   // dégâts déjà multipliés par le talisman (enemySpellAsShown)
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
         const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
         div.innerHTML = `

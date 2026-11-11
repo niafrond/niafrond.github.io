@@ -1,3 +1,4 @@
+import { cappedEnemyHit } from './combatBalance.js';
 import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
@@ -155,7 +156,7 @@ function applyMatchExtras(indices, info, side = 'player'){
             const base = getEffectiveMatchLength(info) * (isSkull ? skullDamage + skullStrengthBonus(who) : 1);
             const bonus = Math.round(res.manaDelta + base * (res.manaMultiplier - 1));
             if(bonus){
-                if(isSkull){ if(bonus > 0) applyDamage(opponent, bonus); }
+                if(isSkull){ if(bonus > 0) applyDamage(opponent, bonus, { damageSource: 'skull' }); }
                 else who.combatPoints = Math.max(0, who.combatPoints + bonus);
                 if(bonus > 0 || !isSkull) log(`${biomeRule.label} : ${bonus > 0 ? '+' : ''}${bonus} ${isSkull ? 'dégâts' : 'points de combat'}${res.manaMultiplier > 1 ? ` (×${res.manaMultiplier})` : ''}${whoLabel}.`);
             }
@@ -834,7 +835,9 @@ export function checkMatches(forceFullBoard = false){
             if(selfHit) log(`${attacker.name} est confus : ses crânes se retournent contre lui !`);
             // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
             const attackBonus = skullStrengthBonus(attacker);
-            const rawDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
+            // `skullMult` : dégâts par crâne de l'ennemi réglés par le calibrage de durée (affichés sur sa fiche)
+            const baseSkullDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
+            const rawDmg = (attacker.skullMult || 1) !== 1 ? cappedEnemyHit(baseSkullDmg, attacker.skullMult, opponent.maxHp) : baseSkullDmg;   // plafond : pas de coup fatal par le multiplicateur
             const weakened = attacker === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
             const strike = resolveStrike(rawDmg, attacker, opponent, { weakened });
             let dmg = strike.damage;
@@ -842,7 +845,7 @@ export function checkMatches(forceFullBoard = false){
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
             playFighterAttack(attacker === player);
-            applyDamage(opponent, dmg);
+            applyDamage(opponent, dmg, { damageSource: 'skull' });
             // Blocage ou parade : annoncés par une animation (sinon le coup semble « ne rien faire »).
             if(strike.block !== 'none') {
                 showStrikeAnimation({ icon: 'skull', title: `${info.len} crânes`, source: attacker.name, target: `→ ${opponent === player ? 'Vous' : opponent.name}` }, strike, attacker === player, dmg);

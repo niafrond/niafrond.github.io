@@ -6,7 +6,8 @@
 //  3. qualité tactique des décisions      -> AI_TIERS : probabilités d'action, fréquence des coups hasardeux, repérage du coup fatal
 //     (lethalAwareness), poids du score des actions (scoreSharpness) et profondeur d'analyse du plateau (boardLookahead) ;
 //  4. difficulté choisie par le joueur    -> préférence 'auto' | 'easy' | 'normal' | 'hard' | 'expert' (Options).
-// Aucun niveau de difficulté ne donne de bonus de statistiques : seule la qualité des décisions change.
+// Ici, seule la qualité des décisions change. Le mode choisi règle aussi, ailleurs, la vitesse à laquelle l'ennemi peut vaincre le héros
+// (dégâts calibrés : combatBalance.js, DIFFICULTY_WIN_RATIO_FACTOR) ; les PV et l'équipement de l'ennemi n'en dépendent pas.
 
 import { thinkingTimeFactor } from "./enemyAIChoice.js";
 

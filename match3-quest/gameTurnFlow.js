@@ -12,6 +12,7 @@ import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
 import { healEntity, tickAlterations, isAsleep, confusedSelfHit } from './alterations.js';
+import { stepBossScript, signatureDamage } from './bossScript.js';
 import { tickSpellCooldowns } from './spellCooldown.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
@@ -26,6 +27,7 @@ import { getLeftHandWeapon, updateAvailableWeapons, updateInventoryTab } from '.
 import { getSpellsByClass } from './spells.js';
 import { log, logActiveAction, saveUpdate, updateStats } from './gameHud.js';
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
+import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
 import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
@@ -91,6 +93,7 @@ export function finishPlayerTurn(){
     if(gameState.combatState !== 'active'){
         return;
     }
+    recordPlayerTurn();
 
     // Vérifier si le joueur est mort
     if(player.hp<=0){
@@ -240,6 +243,7 @@ export function enemyTurn(){
         return;
     }
 
+    recordEnemyTurn();
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
 
     if((enemy.statusEffects?.poisoned || 0) > 0) {
@@ -256,6 +260,41 @@ export function enemyTurn(){
         if(enemy.hp <= 0) {
             handleEnemyDefeated();
             return;
+        }
+    }
+
+    // Boss semi-scripté (bossScript.js) : échauffement annoncé, puis attaque dévastatrice ; étourdi ou endormi pendant l'échauffement, il est interrompu.
+    if(enemy.bossScript) {
+        const script = enemy.bossScript;
+        const lostTurn = (enemy.statusEffects?.stunned || 0) > 0 || isAsleep(enemy);
+        const step = stepBossScript(script, enemy, { lostTurn });
+        if(step.action === 'interrupted') {
+            log(`${enemy.name} est interrompu : ${script.name} n'aura pas lieu !`);
+            showCombatAnimation({ icon: 'dizzy', title: 'ÉCHAUFFEMENT INTERROMPU', damage: script.name, target: `→ ${enemy.name}` }, true);
+        } else if(step.action === 'start') {
+            setCurrentTurn('enemy');
+            log(`${enemy.name} prépare ${script.name}${step.phase ? ' (sa colère monte)' : ''} : il frappera dans ${step.left} tours.`);
+            showCombatAnimation({ icon: 'fire', title: `${enemy.name} prépare ${script.name}`, damage: `Il frappera dans ${step.left} tours` }, false, { requireClick: true });
+            updateStats();
+            setTimeout(() => finishEnemyTurn(), 900);
+            return;
+        } else if(step.action === 'release') {
+            setCurrentTurn('enemy');
+            const hit = signatureDamage(script, player);
+            if(hit.blocked) {
+                log(`${enemy.name} déchaîne ${script.name}… le Bastion Infranchissable l'arrête net !`);
+                showCombatAnimation({ icon: 'shield', title: script.name.toUpperCase(), heal: 'Bloqué par le Bastion', source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
+            } else {
+                applyDamage(player, hit.damage, { damageSource: 'boss' });
+                const prepared = hit.reduction > 0 ? ` (préparation : -${Math.round(hit.reduction * 100)} %)` : '';
+                log(`${enemy.name} déchaîne ${script.name} : ${hit.damage} dégâts${prepared}.`);
+                showCombatAnimation({ icon: 'fire', title: script.name.toUpperCase(), damage: `-${hit.damage} dégâts${prepared}`, source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
+            }
+            updateStats();
+            setTimeout(() => finishEnemyTurn(), 900);
+            return;
+        } else if(step.action === 'charging') {
+            log(`${enemy.name} : ${script.name} frappera au prochain tour !`);
         }
     }
 
@@ -592,6 +631,7 @@ export function handleEnemyDefeated(){
     const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
     player.bossLossStreak = recordVictory();
+    saveCombatRecord(finishCombatRecord('victory'));   // mesure d'équilibrage : durée, cycles et dégâts du combat
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)

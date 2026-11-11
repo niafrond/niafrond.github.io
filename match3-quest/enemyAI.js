@@ -159,7 +159,7 @@ export function evaluateSpells() {
 
         // SORTS DE DÉGÂTS - Priorité si le joueur est vulnérable
         if (spell.dmg) {
-            const potentialDamage = spell.dmg * (1 - (player.resistances && player.resistances[spell.color] || 0));
+            const potentialDamage = spell.dmg * (enemy.spellAmplifier?.mult || 1) * (1 - (player.resistances && player.resistances[spell.color] || 0));   // talisman de l'ennemi
             
             if (context.isPlayerVulnerable) {
                 score += 80; // Augmenter les dégâts si le joueur est faible

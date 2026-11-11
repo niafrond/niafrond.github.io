@@ -1,8 +1,10 @@
 // logique globale du joueur, ennemis, combat et interface
 
+import { createBossScript } from './bossScript.js';
+import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
-import { generateRandomEnemy } from "./enemies.js";
+import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
@@ -38,7 +40,7 @@ import { gearManaBonus } from "./manaGear.js";
 
 import { alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
-import { animationFactor, vibrate } from "./gameOptions.js";
+import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
 import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
@@ -359,6 +361,8 @@ export function lastSpellDamage(fallback){
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
+    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp);   // plafond : pas de coup fatal par le multiplicateur
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -382,6 +386,9 @@ export function applyDamage(target, damage, options = {}){
     }
 
     normalizedDamage = cursedDamage(target, normalizedDamage);   // Maudit : dégâts majorés
+    // Calibrage de la durée (combatBalance.js) : multiplicateur des dégâts infligés au héros par l'ennemi (1 tant qu'il n'y a pas de mesures).
+    const enemyDamageScale = (target === player && enemy.damageScale > 0) ? enemy.damageScale : 1;
+    if(enemyDamageScale !== 1 && normalizedDamage > 0) normalizedDamage = Math.max(1, Math.round(normalizedDamage * enemyDamageScale));
 
     const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
@@ -428,6 +435,7 @@ export function applyDamage(target, damage, options = {}){
     const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
     const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
     target.hp = nextHp;
+    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp, Date.now(), options.sourceSpell ? 'spell' : (options.damageSource || 'other')); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / (options.damageSource === 'boss' ? 1 : enemyDamageScale * (enemy.bakedDamageMult || 1))); }   // mesures d'équilibrage (combatBalance.js)
     if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
     // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
     if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
@@ -583,7 +591,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
-        applyDamage(target, dmg, { sourceSpell: spell });
+        applyDamage(target, dmg, { sourceSpell: spell, caster });
         if(lastSpellStrike) {
             dmg = lastSpellStrike.damage;
             spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}`;
@@ -605,8 +613,9 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
         const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
-        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: spell.poisonDmg });
-        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${spell.poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
+        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp);   // talisman de l'ennemi (plafonné)
+        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: poisonDmg });
+        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
     }
 
     if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
@@ -1158,6 +1167,7 @@ export function handlePlayerDeath(){
         saveUpdate();
         return;
     }
+    saveCombatRecord(finishCombatRecord('defeat'));   // mesure d'équilibrage : les défaites comptent autant que les victoires
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.xpApplied > 0) {
@@ -1192,6 +1202,8 @@ export function handlePlayerDeath(){
     }, PLAYER_DEATH_DELAY_MS);
 }
 
+document.addEventListener('visibilitychange', () => { if(document.hidden) pauseCombatRecord(); else resumeCombatRecord(); });   // page masquée : le chrono du combat s'arrête
+
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
@@ -1199,6 +1211,7 @@ export function startNewCombat(selectedEnemy = null){
     delete document.body.dataset.combatEnd;
     preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
     gameState.combatState = 'active';
+    beginCombatRecord({ enemyLevel: selectedEnemy?.level || 0, playerLevel: player.level || 0, boss: Boolean(selectedEnemy?.isBoss), enemyMaxHp: selectedEnemy?.maxHp || 0 });
     resetSpellCooldowns();
     setBoardSize((selectedEnemy?.isBoss && !selectedEnemy.isTutorialEnemy) ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon (et pour le duel-tutoriel, dont le plateau figé est en 8×8)
     window.dispatchEvent(new CustomEvent('match3:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
@@ -1227,6 +1240,8 @@ export function startNewCombat(selectedEnemy = null){
 
 // Abandonner le combat en cours
 export function abandonCombat(){
+    if(gameState.combatState === 'active') saveCombatRecord(finishCombatRecord('abandon'));   // gardé à part (exclu des mesures)
+    else abandonCombatRecord();
     if(gameState.combatState !== 'active') {
         return;
     }
@@ -1497,7 +1512,7 @@ function strikeWithWeapon(weapon, { free = false } = {}){
     dmg = strike.damage;
 
     if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
-    applyDamage(selfHit ? player : enemy, dmg);
+    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon' });
     playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
 
     // Vol de vie
@@ -1752,6 +1767,41 @@ export function setCombatBackdrop(biome){
     else delete document.body.dataset.combatBiome;
 }
 
+const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth.js), abandonné au profit du calibrage de durée
+
+function calibrateEnemyForCombat(target){
+    const template = enemyCatalogList().find(t => t.id === target.templateId);
+    const category = enemyCategory({ boss: Boolean(target.isBoss), easy: Boolean(target.isEasyChoice), hpMult: template?.statsModifiers?.hpMult ?? 1 });
+    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto', adjust: target.isBoss ? BOSS_ADJUST[target.mapEnemyId] || null : null });
+    target.maxHp = result.hp;
+    target.hp = result.hp;
+    target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque
+    target.modeDivisor = result.modeDivisor;
+    bakeEnemyDamage(target, result.damageMult);
+    target.balanceCategory = category;
+    target.bossScript = createBossScript(target, getOption('aiDifficulty') || 'auto');   // boss semi-scripté : attaque dévastatrice annoncée
+    annotateCombatRecord({ category, difficulty: getOption('aiDifficulty') || 'auto', enemyId: target.mapEnemyId || target.templateId || null, damageMult: result.damageMult, measuredWeight: result.measuredWeight });
+}
+
+// Intègre le réglage de dégâts à l'ennemi : chiffres de l'arme (avec sa puissance `weaponPower`, autrefois ajoutée sans être affichée)
+// et dégâts par crâne, affichés sur sa fiche ; pour les sorts, un talisman visible et non récupérable les amplifie.
+export const SPELL_AMPLIFIER_NAME = 'Talisman de Résonance';
+/** Multiplicateur des sorts d'un ennemi (son talisman), 1 sinon. */
+export const spellAmplifierOf = entity => (entity && entity === enemy && entity.spellAmplifier?.mult > 0 ? entity.spellAmplifier.mult : 1);
+function bakeEnemyDamage(target, mult){
+    const m = Math.max(0.1, Number(mult) || 1);
+    target.bakedDamageMult = m;
+    target.damageScale = 1;   // plus de multiplicateur caché
+    if(target.weapon) {
+        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp) };   // jamais un coup fatal par le seul multiplicateur
+        target.weaponPower = 0;
+    }
+    // Sorts : leurs chiffres restent ceux du grimoire ; l'ennemi porte un objet magique (non récupérable) qui amplifie en continu
+    // tous ses sorts (dégâts directs, dégâts par case, poison). Il est affiché à côté de son arme (gameHud.js).
+    target.spellAmplifier = { name: SPELL_AMPLIFIER_NAME, mult: m };
+    target.skullMult = m;
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
     // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
@@ -1761,7 +1811,9 @@ export function newEnemy(selectedEnemy = null){
     if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
 
     // Un ennemi généré a plus de PV max que le héros n'en aurait au niveau supérieur au sien (hors ennemi facile et duel-tutoriel).
-    if(!enemy.isTutorialEnemy) raiseEnemyHpAboveHero(enemy, player);
+    // Calibrage de la durée du combat (3 à 8 min selon la catégorie, combatBalance.js) ; remplace l'ancien plancher « plus de PV que le héros ».
+    if(!enemy.isTutorialEnemy && !enemy.arena && !enemy.duel) calibrateEnemyForCombat(enemy);
+    else if(!enemy.isTutorialEnemy && ENEMY_HP_FLOOR_ABOVE_HERO) raiseEnemyHpAboveHero(enemy, player);
 
     // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));

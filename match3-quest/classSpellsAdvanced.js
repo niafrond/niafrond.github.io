@@ -57,7 +57,7 @@ function destroyIndices(spell, indices, title, label) {
     const hitColors = spellDamageColors(spell);
     const hits = destroyedTiles.filter(t => hitColors.includes(t)).length;
     let dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * hits;
-    if(dmg > 0) { applyDamage(opponentOf(caster), dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
+    if(dmg > 0) { applyDamage(opponentOf(caster), dmg, { sourceSpell: spell, caster }); dmg = lastSpellDamage(dmg); }
     const special = manaCollected.special;
     renderBoard();
     const extras = `${special.arrows ? ` • +${special.arrows} flèche(s)` : ''}${special.skulls ? ` • ${special.skulls} crâne(s) : -${special.skullDmg} PV` : ''}`;
@@ -260,7 +260,7 @@ export async function applySummonTempest(spell) {
     let hits = destroyedTiles.length;
     if(spell.colors?.length || spell.color) hits = destroyedTiles.filter(t => spellDamageColors(spell).includes(t)).length;
     let dmg = spell.dmgPerTile ? Math.floor(spell.dmgPerTile) * hits : 0;
-    if(dmg > 0) { applyDamage(opponentOf(caster), dmg, { sourceSpell: spell }); dmg = lastSpellDamage(dmg); }
+    if(dmg > 0) { applyDamage(opponentOf(caster), dmg, { sourceSpell: spell, caster }); dmg = lastSpellDamage(dmg); }
     const special = manaCollected.special;
 
     renderBoard();

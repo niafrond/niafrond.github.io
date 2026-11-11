@@ -15,7 +15,8 @@
 //  - breakReminder : rappel de pause bienveillant (breakReminder.js), désactivable.
 // Difficulté des ennemis :
 //  - aiDifficulty : 'auto' | 'easy' | 'normal' | 'hard' | 'expert' (enemyAI.js). 'auto' (défaut) adapte la qualité des décisions au
-//    niveau de l'ennemi, de façon bornée ; un palier fixe est appliqué tel quel à chaque combat (jamais de bonus de statistiques).
+//    niveau de l'ennemi, de façon bornée ; un palier fixe est appliqué tel quel à chaque combat. Le mode règle aussi la vitesse à laquelle
+//    l'ennemi peut vaincre le héros (dégâts calibrés : combatBalance.js, DIFFICULTY_WIN_RATIO_FACTOR).
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
