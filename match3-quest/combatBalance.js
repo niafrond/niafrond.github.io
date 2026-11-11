@@ -194,11 +194,11 @@ export const EXPERT_CATEGORY_FACTOR = { weak: 1.44, normal: 1, aggressive: 0.73,
 export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-delà, un coup d'arme suffirait à emporter le héros)
 // Diviseur de l'attaque et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors).
 export const MODE_DIVISOR = {
-    easy: { weak: 1.26, normal: 2.21, aggressive: 2.31, elite: 2.01, miniBoss: 2.11, boss: 2.31 },
-    normal: { weak: 0.95, normal: 1.83, aggressive: 1.2, elite: 1.52, miniBoss: 1.67, boss: 1.52 },
-    auto: { weak: 1.2, normal: 1.83, aggressive: 1.59, elite: 1.52, miniBoss: 1.83, boss: 1.52 },
-    hard: { weak: 0.87, normal: 1.2, aggressive: 1.2, elite: 1.26, miniBoss: 1.45, boss: 1.32 },
-    expert: { weak: 0.83, normal: 0.45, aggressive: 1.09, elite: 1.04, miniBoss: 1.32, boss: 1.09 }
+    easy: { weak: 0.57, normal: 1.38, aggressive: 1.32, elite: 1.52, miniBoss: 2.11, boss: 2.13 },
+    normal: { weak: 0.43, normal: 0.49, aggressive: 0.87, elite: 0.91, miniBoss: 1.2, boss: 1.92 },
+    auto: { weak: 0.83, normal: 1.32, aggressive: 1.59, elite: 1.52, miniBoss: 1.45, boss: 2.13 },
+    hard: { weak: 0.6, normal: 0.87, aggressive: 0.91, elite: 1.04, miniBoss: 1.38, boss: 2.13 },
+    expert: { weak: 0.43, normal: 0.41, aggressive: 0.41, elite: 0.72, miniBoss: 0.95, boss: 2.02 }
 };
 export const MIN_DAMAGE_MULT = 1;
 // Boss semi-scriptés (bossScript.js) : le danger vient surtout de leur attaque annoncée, leurs coups ordinaires peuvent donc descendre sous
