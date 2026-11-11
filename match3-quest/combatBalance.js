@@ -202,8 +202,8 @@ export const MODE_DIVISOR = {
 };
 export const MIN_DAMAGE_MULT = 1;
 // Coup fatal : le multiplicateur ne peut jamais porter un coup ordinaire de l'ennemi (arme, match de crânes, sort, poison) au-delà de
-// HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 45 %), sauf si ses chiffres bruts dépassaient déjà ce seuil.
-export const HIT_SHARE_CAP = 0.3;
+// HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 60 %), sauf si ses chiffres bruts dépassaient déjà ce seuil.
+export const HIT_SHARE_CAP = 0.4;
 export function cappedEnemyHit(base, mult, heroMaxHp) {
     const b = Math.max(0, Number(base) || 0);
     if (b <= 0) return 0;

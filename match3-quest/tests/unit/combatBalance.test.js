@@ -114,9 +114,9 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(r.measuredWeight).toBe(0.5);
         expect(r.hpBase).toBe(Math.round(heroDamagePerCycleModel(10) * 1.5 * 7 * HP_DURATION_FACTOR.normal));
     });
-    test('coup fatal : le multiplicateur ne porte jamais un coup au-delà de 30 % des PV max du héros', () => {
+    test('coup fatal : le multiplicateur ne porte jamais un coup au-delà du plafond des PV max du héros', () => {
         expect(cappedEnemyHit(30, 2, 1000)).toBe(60);       // sous le plafond : multiplié
-        expect(cappedEnemyHit(100, 7, 400)).toBe(120);      // 700 → plafonné à 30 % de 400
+        expect(cappedEnemyHit(100, 7, 400)).toBe(Math.round(400 * HIT_SHARE_CAP));      // 700 → plafonné
         expect(cappedEnemyHit(200, 3, 400)).toBe(200);      // chiffres bruts déjà au-dessus : gardés, jamais augmentés
         expect(cappedEnemyHit(0, 5, 400)).toBe(0);
         expect(HIT_SHARE_CAP * 1.5).toBeLessThan(1);         // même critique (×1,5), un coup plein ne tue pas
