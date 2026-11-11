@@ -259,6 +259,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const bosses = [];
         for (const sc of Object.values(SCREENS)) for (const e of (sc.enemies || [])) if (e.boss && !e.duel && !e.arena) bosses.push({ id: e.id, templateId: e.templateId, name: e.boss.name || e.name, level: e.boss.level });
         bosses.sort((a, b) => a.level - b.level);
+        const only = process.env.BOSSES ? process.env.BOSSES.split(',') : null;   // seconde passe : seulement ces boss, autour de leur réglage actuel
+        if (only) bosses.splice(0, bosses.length, ...bosses.filter(b => only.includes(b.id)));
         const goal = CB.DIFFICULTY_TARGET_WIN_RATE.auto.boss, targetSec = mean(CB.TARGET_DURATION_SECONDS.boss);
         const run = (b, adjust, seed0) => {
             const list = []; let seed = seed0;
@@ -274,7 +276,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const table = {};
         for (const b of bosses) {
             // 1. Attaque : dichotomie géométrique pour la cible du mode Auto (PV du calibrage).
-            let lo = 0.15, hi = 8;
+            const cur = only ? (CB.BOSS_ADJUST[b.id]?.attack ?? 1) : null;
+            let lo = cur ? cur / 2.5 : 0.15, hi = cur ? cur * 2.5 : 8;
             for (let step = 0; step < 6; step++) {
                 const f = Math.sqrt(lo * hi);
                 if (winRate(run(b, { attack: f }, 90000 + step * 211)) < goal) lo = f; else hi = f;
