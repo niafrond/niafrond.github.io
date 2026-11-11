@@ -56,8 +56,8 @@ describe('boss semi-scriptés', () => {
         const s = createBossScript(boss({ level: 30 })), e = boss();
         expect(s.spell).toMatchObject({ id: 'bossSignature', name: 'Brasier dévastateur', color: 'red', cost: { red: signatureCost(30) } });
         expect(s.spell.description).not.toMatch(/\d+ ?%|dégâts?\b.*\d/);   // aucune puissance annoncée
-        expect(signatureCost(1)).toBe(16);
-        expect(signatureCost(200)).toBe(45);
+        expect(signatureCost(1)).toBe(10);
+        expect(signatureCost(200)).toBe(25);
         s.nextAt = 1;
         expect(stepBossScript(s, e, { canPay: false })).toEqual({ action: 'none', waiting: true });   // pas de qì : il attend
         expect(s.charge).toBe(0);

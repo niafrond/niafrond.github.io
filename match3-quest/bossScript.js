@@ -14,8 +14,8 @@ export const HP_TRIGGERS = [0.66, 0.33];             // phases : seuils de PV du
 export const SIGNATURE_SHARE = { easy: 0.3, normal: 0.35, auto: 0.35, hard: 0.4, expert: 0.45 };
 export const MAX_REDUCTION = 0.75;
 export const PERIOD = { min: 7, spread: 3, first: 4 };   // rythme : tous les 7 à 9 tours, premier au tour 4 ou 5 (≈ 2 attaques par combat avec les phases)                   // la préparation peut retirer au plus 75 % de l'attaque (le Bastion l'annule)
-// Coût en qì de la couleur du boss, payé au début de l'échauffement : 15 + 0,5 × niveau, plafonné à 45. Sans ce qì en réserve, l'échauffement attend.
-export const signatureCost = level => Math.min(45, 15 + Math.round(0.5 * Math.max(1, Number(level) || 1)));
+// Coût en qì de la couleur du boss, payé au début de l'échauffement : 10 + 0,2 × niveau, plafonné à 25. Sans ce qì en réserve, l'échauffement attend.
+export const signatureCost = level => Math.min(25, 10 + Math.round(0.2 * Math.max(1, Number(level) || 1)));
 export const SIGNATURE_NAMES = { red: 'Brasier dévastateur', blue: 'Raz-de-marée', green: 'Ronces de jade', yellow: 'Foudre céleste', purple: 'Ombre dévorante' };
 
 function hash(text) {
