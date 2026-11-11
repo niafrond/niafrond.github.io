@@ -1,5 +1,6 @@
 // Interface du combat : animation des barres de PV et des compteurs, portraits, mise à jour des stats et sorts ennemis, journal, sauvegarde.
 // Extrait de game.js.
+import { cappedEnemyHit } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { enemyNameLabel } from './bestiaryNames.js';
 import { heroSprite, enemySprite, spriteUri, gbaSprite, gbaAttackFrames } from './sprites/index.js';
@@ -316,7 +317,7 @@ export function enemySpellAsShown(sp){
     let desc = typeof sp.description === 'string' ? sp.description : null;
     for(const key of ['dmg', 'dmgPerTile', 'poisonDmg']) {
         if(!sp[key]) continue;
-        shown[key] = Math.max(1, Math.round(sp[key] * m));
+        shown[key] = key === 'dmgPerTile' ? Math.max(1, Math.round(sp[key] * m)) : cappedEnemyHit(sp[key], m, player.maxHp);   // comme en combat (plafond des coups)
         if(desc) desc = desc.replace(new RegExp(`\\b${sp[key]}\\b`), String(shown[key]));
     }
     if(desc) shown.description = desc;

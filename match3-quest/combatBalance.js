@@ -100,6 +100,8 @@ export function resumeCombatRecord(now = Date.now()) {
     if (current && current.pausedAt != null) { current.pausedMs += now - current.pausedAt; current.pausedAt = null; current.lastEventAt = now; }
 }
 export function hasCombatRecord() { return Boolean(current); }
+/** Ajoute au combat en cours ce que le calibrage a décidé (catégorie, mode, ennemi) : sert à analyser victoires et défaites par mode. */
+export function annotateCombatRecord(info = {}) { if (current) Object.assign(current, info); }
 export function abandonCombatRecord() { current = null; }
 
 /** Clôt le combat : renvoie l'enregistrement (durée en secondes, cycles, dégâts par cycle) ou null s'il n'y en avait pas. */
@@ -117,17 +119,23 @@ export function finishCombatRecord(outcome = 'victory', now = Date.now()) {
 
 /** Moyennes sur un échantillon de combats gagnés : rythme d'un cycle et dégâts effectifs par cycle (à injecter dans `estimateEnemyHp`). */
 export function summarizeCombats(records = []) {
-    const won = records.filter(r => r && r.outcome === 'victory' && r.cycles > 0);
-    if (!won.length) return { count: 0, averageCycleSeconds: 0, effectiveDamagePerCycle: 0, damageBySourcePerCycle: Object.fromEntries(DAMAGE_SOURCES.map(k => [k, 0])), rawDamageTakenPerCycle: 0, averageSeconds: 0 };
-    const sum = key => won.reduce((total, r) => total + (r[key] || 0), 0);
+    // Victoires ET défaites : ne mesurer que les victoires biaiserait l'équilibrage (combats gagnés = héros plus fort que la moyenne).
+    // Les abandons sont exclus (combat incomplet).
+    const done = records.filter(r => r && (r.outcome === 'victory' || r.outcome === 'defeat') && r.cycles > 0);
+    const victories = done.filter(r => r.outcome === 'victory').length;
+    if (!done.length) return { count: 0, victories: 0, defeats: 0, winRate: 0, averageCycleSeconds: 0, effectiveDamagePerCycle: 0, damageBySourcePerCycle: Object.fromEntries(DAMAGE_SOURCES.map(k => [k, 0])), rawDamageTakenPerCycle: 0, averageSeconds: 0 };
+    const sum = key => done.reduce((total, r) => total + (r[key] || 0), 0);
     const cycles = sum('cycles');
     return {
-        count: won.length,
+        count: done.length,
+        victories,
+        defeats: done.length - victories,
+        winRate: Math.round(victories / done.length * 100) / 100,
         averageCycleSeconds: Math.round((sum('seconds') / cycles) * 10) / 10,
         effectiveDamagePerCycle: Math.round((sum('dealt') / cycles) * 10) / 10,
-        damageBySourcePerCycle: Object.fromEntries(DAMAGE_SOURCES.map(k => [k, Math.round((won.reduce((total, r) => total + (r.dealtBy?.[k] || 0), 0) / cycles) * 10) / 10])),
+        damageBySourcePerCycle: Object.fromEntries(DAMAGE_SOURCES.map(k => [k, Math.round((done.reduce((total, r) => total + (r.dealtBy?.[k] || 0), 0) / cycles) * 10) / 10])),
         rawDamageTakenPerCycle: Math.round((sum('takenRaw') / cycles) * 10) / 10,
-        averageSeconds: Math.round(sum('seconds') / won.length)
+        averageSeconds: Math.round(sum('seconds') / done.length)
     };
 }
 
@@ -151,13 +159,19 @@ export function saveCombatRecord(record, storage = globalThis.localStorage) {
 export const ENEMY_WIN_RATIO = { weak: 2.65, normal: 1.3, aggressive: 1.25, elite: 1.15, miniBoss: 0.8, boss: 0.6 };
 // Correction des PV par catégorie (simulation) : durée cible ÷ durée moyenne observée des victoires (le héros ne tape pas au maximum
 // à chaque cycle : il prépare ses PA et son qì, l'ennemi bloque…).
-export const HP_DURATION_FACTOR = { weak: 0.5, normal: 0.77, aggressive: 0.85, elite: 1.02, miniBoss: 0.98, boss: 1.15 };
+export const HP_DURATION_FACTOR = { weak: 0.55, normal: 0.77, aggressive: 0.85, elite: 1.02, miniBoss: 0.98, boss: 1.15 };
 export const DEFAULT_CYCLE_SECONDS = 30;     // tant que le jeu n'a pas mesuré le rythme (exemple du document)
-export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niveau du héros) avant de préférer les mesures au modèle
+// Calibration par les mesures du joueur : progressive et robuste. Chaque combat terminé (victoire OU défaite) proche du niveau du héros donne
+// des rapports mesure / modèle (ramenés au niveau de ce combat) ; leur MÉDIANE est mélangée au modèle avec un poids n / (n + CALIBRATION_PRIOR)
+// (à 20 combats, mesure et modèle pèsent autant ; jamais 100 % mesure), et l'écart au modèle est borné.
+export const CALIBRATION_MIN = 5;                 // en dessous : modèle seul
+export const CALIBRATION_PRIOR = 20;              // poids du modèle, exprimé en combats
+export const CALIBRATION_LEVEL_SPAN = 5;          // combats retenus : ±5 niveaux du héros
+export const CALIBRATION_RATIO_BOUNDS = [0.5, 2]; // la mesure ne peut pas diviser ni multiplier le modèle par plus de 2
 export const DAMAGE_SCALE_BOUNDS = [0.5, 7];
 // Modèles tirés de la simulation d'un héros « complet » (tools/balance-search.mjs fit : 1 680 combats, niveaux 1 à 70, 4 classes, meilleur
-// équipement de son niveau, sorts équipés avec leurs effets, ultime, objet de soin, compagnon) ; remplacés par les mesures du joueur
-// dès MIN_SAMPLE victoires proches de son niveau.
+// équipement de son niveau, sorts équipés avec leurs effets, ultime, objet de soin, compagnon) ; corrigés par les mesures du joueur
+// progressivement, au fil des combats terminés (victoires et défaites), voir measuredCorrections.
 export const heroDamagePerCycleModel = heroLevel => 6.2 + 0.71 * Math.max(1, heroLevel);            // dégâts effectifs du héros par cycle
 export const ENEMY_RAW_CATEGORY_FACTOR = { weak: 1.48, normal: 1.03, aggressive: 1.42, elite: 1.35, miniBoss: 1.24, boss: 2.09 };   // rapport mesuré à l'ennemi normal
 export const enemyRawDamagePerCycleModel = (enemyLevel, category = 'normal') =>                   // dégâts bruts de l'ennemi par cycle, avant réglage
@@ -187,6 +201,15 @@ export const MODE_DIVISOR = {
     expert: { weak: 0.83, normal: 0.45, aggressive: 1.09, elite: 1.04, miniBoss: 1.32, boss: 1.09 }
 };
 export const MIN_DAMAGE_MULT = 1;
+// Coup fatal : le multiplicateur ne peut jamais porter un coup ordinaire de l'ennemi (arme, match de crânes, sort, poison) au-delà de
+// HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 45 %), sauf si ses chiffres bruts dépassaient déjà ce seuil.
+export const HIT_SHARE_CAP = 0.3;
+export function cappedEnemyHit(base, mult, heroMaxHp) {
+    const b = Math.max(0, Number(base) || 0);
+    if (b <= 0) return 0;
+    const cap = Math.max(b, HIT_SHARE_CAP * Math.max(1, Number(heroMaxHp) || 1));
+    return Math.max(1, Math.round(Math.min(b * Math.max(1, Number(mult) || 1), cap)));
+}
 // Réglage propre à chaque boss de la carte (id → { attack, hp }), trouvé par simulation (tools/balance-search.mjs boss-adjust) : le calibrage
 // par catégorie est une moyenne, or chaque boss a son kit fixe (arme ou non, sorts plus ou moins forts). `attack` divise son attaque en plus du
 // mode (> 1 : moins fort), `hp` multiplie ses PV (durée ramenée vers le milieu de la fenêtre des boss).
@@ -269,6 +292,26 @@ export function enemyCategory({ boss = false, easy = false, hpMult = 1 } = {}) {
 }
 const mid = ([a, b]) => (a + b) / 2;
 
+const median = list => { const a = [...list].sort((x, y) => x - y); const m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+const clampRatio = r => Math.min(CALIBRATION_RATIO_BOUNDS[1], Math.max(CALIBRATION_RATIO_BOUNDS[0], r));
+
+/**
+ * Corrections mesurées (multiplicateurs des modèles) : { n, weight, hero, enemy, cycle }. 1 = modèle seul.
+ * hero : dégâts du héros par cycle ; enemy : dégâts bruts de l'ennemi par cycle ; cycle : durée d'un cycle.
+ */
+export function measuredCorrections(records = [], heroLevel = 1) {
+    const usable = records.filter(r => r && (r.outcome === 'victory' || r.outcome === 'defeat') && r.cycles > 0
+        && Math.abs((r.playerLevel || 0) - heroLevel) <= CALIBRATION_LEVEL_SPAN);
+    const n = usable.length;
+    if (n < CALIBRATION_MIN) return { n, weight: 0, hero: 1, enemy: 1, cycle: 1 };
+    const weight = Math.round(n / (n + CALIBRATION_PRIOR) * 100) / 100;
+    const blend = ratios => (ratios.length ? 1 + weight * (clampRatio(median(ratios)) - 1) : 1);
+    const hero = blend(usable.map(r => (r.dealt || 0) / r.cycles / heroDamagePerCycleModel(r.playerLevel || heroLevel)));
+    const enemy = blend(usable.filter(r => r.takenRaw > 0).map(r => r.takenRaw / r.cycles / enemyRawDamagePerCycleModel(r.enemyLevel || r.playerLevel || heroLevel, r.category || 'normal')));
+    const cycle = blend(usable.filter(r => r.seconds > 0).map(r => r.seconds / r.cycles / DEFAULT_CYCLE_SECONDS));
+    return { n, weight, hero, enemy, cycle };
+}
+
 /**
  * PV et réglage des dégâts d'un ennemi pour que le combat dure la durée cible, dans les deux sens :
  *  - PV = dégâts effectifs du héros par cycle × cycles cibles × coefficient du profil ;
@@ -278,20 +321,17 @@ const mid = ([a, b]) => (a + b) / 2;
 export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', modeDivisor, adjust = null }) {
     const heroMaxHp = heroEffectiveHp(rawHeroMaxHp, heroLevel);   // PV qui comptent vraiment (plafond de progression)
     const heroDamageScale = rawHeroMaxHp > heroMaxHp ? Math.round((rawHeroMaxHp / heroMaxHp) * 100) / 100 : 1;
-    const near = records.filter(r => r && r.outcome === 'victory' && Math.abs((r.playerLevel || 0) - heroLevel) <= 3);
-    const measured = near.length >= MIN_SAMPLE ? summarizeCombats(near) : null;
-    const cycleSeconds = measured?.averageCycleSeconds > 0 ? measured.averageCycleSeconds : DEFAULT_CYCLE_SECONDS;
-    const damagePerCycle = measured?.effectiveDamagePerCycle > 0 ? measured.effectiveDamagePerCycle : heroDamagePerCycleModel(heroLevel);
+    const corr = measuredCorrections(records, heroLevel);
+    const cycleSeconds = DEFAULT_CYCLE_SECONDS * corr.cycle;
+    const damagePerCycle = heroDamagePerCycleModel(heroLevel) * corr.hero;
     const targetSeconds = mid(TARGET_DURATION_SECONDS[category] || TARGET_DURATION_SECONDS.normal);
     const cycles = targetCycles(targetSeconds, cycleSeconds);
     // Coefficient de profil : non pas une robustesse en plus (la durée cible de la catégorie la traduit déjà ; l'appliquer allongeait les
     // combats d'autant), mais une correction mesurée par simulation pour que la durée moyenne des victoires tombe sur la cible.
     const coefficient = HP_DURATION_FACTOR[category] ?? 1;
     const hp = Math.max(1, estimateEnemyHp({ effectiveDamagePerCycle: damagePerCycle, targetDurationSeconds: targetSeconds, averageCycleSeconds: cycleSeconds, profileMultiplier: coefficient }));
-    // Dégâts bruts attendus de l'ennemi par cycle : mesure du joueur (pondérée par la catégorie) ou modèle de simulation.
-    const rawEnemy = measured?.rawDamageTakenPerCycle > 0
-        ? measured.rawDamageTakenPerCycle * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1)
-        : enemyRawDamagePerCycleModel(enemyLevel, category);
+    // Dégâts bruts attendus de l'ennemi par cycle : modèle de simulation, corrigé par les mesures du joueur.
+    const rawEnemy = enemyRawDamagePerCycleModel(enemyLevel, category) * corr.enemy;
     // Dégâts réglés au niveau Expert, quel que soit le mode.
     const ratio = (winRatio ?? ENEMY_WIN_RATIO[category] ?? 1.2) * winRatioLevelFactor(heroLevel, levelAnchors)
         * EXPERT_WIN_RATIO_FACTOR * (EXPERT_CATEGORY_FACTOR[category] ?? 1);
@@ -302,7 +342,7 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const expertMult = Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale);
     const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(MIN_DAMAGE_MULT, expertMult / divisor)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
-    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
+    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
 }
 
 /** Part de chaque source dans les dégâts infligés (0 à 1) ; sert à repérer un levier qui fait toute la durée (arme, sort ou crânes). */

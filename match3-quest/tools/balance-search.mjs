@@ -333,6 +333,65 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         console.table(rows);
         console.log('JSON', JSON.stringify(rows));
     }
+    // Rapport de vérification des modes : catégories (tous niveaux) et boss de la carte, verdicts réussi / échoué.
+    //   cibles : victoires à ±10 points de DIFFICULTY_TARGET_WIN_RATE ; ordre : Facile ≥ Normal ≥ Difficile ≥ Expert (tolérance 3 points) ;
+    //   durées : durée moyenne d'un combat dans la fenêtre de sa catégorie (±15 %), et de 3 à 8 min en moyenne générale.
+    if (mode === 'mode-report') {
+        const fights = Number(process.argv[3]) || 1, bossFights = Number(process.argv[4]) || 6;
+        const MODES = ['easy', 'normal', 'auto', 'hard', 'expert'];
+        const { SCREENS } = await import('../story.js');
+        const bosses = [];
+        for (const sc of Object.values(SCREENS)) for (const e of (sc.enemies || [])) if (e.boss && !e.duel && !e.arena) bosses.push({ id: e.id, templateId: e.templateId, name: e.boss.name || e.name, level: e.boss.level });
+        const res = {};
+        for (const m of MODES) {
+            res[m] = {};
+            for (const cat of CATEGORIES) {
+                const list = calibratedFights(cat, { fights, levels: ALL_LEVELS, profile: 'complet', aiPreference: m, difficulty: m, seed0: 610000 });
+                res[m][cat] = { win: winRate(list), sec: mean(list.map(r => r.cycles * r.cycleSeconds)) };
+            }
+            const bl = [];
+            let seed = 620000;
+            for (const b of bosses) for (const cls of CLASSES) for (let i = 0; i < bossFights; i++) {
+                const { hero, options } = heroAt(cls, Math.max(1, b.level - 1), 'complet');
+                const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
+                const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: m, adjust: CB.BOSS_ADJUST[b.id] || null });
+                enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
+                bl.push({ ...simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: m, ...options }), cycleSeconds: c.cycleSeconds, id: b.id });
+            }
+            const perBoss = bosses.map(b => winRate(bl.filter(r => r.id === b.id)));
+            res[m].mapBosses = { win: winRate(bl), sec: mean(bl.map(r => r.cycles * r.cycleSeconds)), min: Math.min(...perBoss), max: Math.max(...perBoss) };
+            console.log('mode', m, 'terminé');
+        }
+        const pct = v => Math.round(v * 100);
+        const mmss = sec => `${Math.floor(sec / 60)} min ${String(Math.round(sec % 60)).padStart(2, '0')}`;
+        const checks = [];
+        const check = (label, ok, detail) => checks.push({ verdict: ok ? 'réussi' : 'ÉCHEC', contrôle: label, détail: detail });
+        for (const m of MODES) for (const cat of CATEGORIES) {
+            const t = CB.DIFFICULTY_TARGET_WIN_RATE[m][cat], w = res[m][cat].win;
+            check(`victoires ${m} / ${cat}`, Math.abs(w - t) <= 0.1, `${pct(w)} % pour ${pct(t)} % visés`);
+        }
+        for (const m of MODES) {
+            const t = CB.DIFFICULTY_TARGET_WIN_RATE[m].boss, w = res[m].mapBosses.win;
+            check(`victoires ${m} / boss de la carte`, Math.abs(w - t) <= 0.1, `${pct(w)} % pour ${pct(t)} % visés (de ${pct(res[m].mapBosses.min)} à ${pct(res[m].mapBosses.max)} % selon le boss)`);
+        }
+        const chain = ['easy', 'normal', 'hard', 'expert'];
+        for (const cat of [...CATEGORIES, 'mapBosses']) {
+            const ws = chain.map(m => res[m][cat].win);
+            check(`ordre des modes / ${cat}`, ws.every((w, i) => i === 0 || w <= ws[i - 1] + 0.03), chain.map((m, i) => `${m} ${pct(ws[i])} %`).join(' ≥ '));
+        }
+        for (const m of MODES) {
+            for (const cat of CATEGORIES) {
+                const [lo, hi] = CB.TARGET_DURATION_SECONDS[cat], sec = res[m][cat].sec;
+                check(`durée ${m} / ${cat}`, sec >= lo * 0.85 && sec <= hi * 1.15, `${mmss(sec)} (fenêtre ${mmss(lo)} à ${mmss(hi)})`);
+            }
+            const all = mean([...CATEGORIES.map(c => res[m][c].sec), res[m].mapBosses.sec]);
+            check(`durée moyenne ${m}`, all >= 180 && all <= 480, mmss(all));
+        }
+        console.table(checks);
+        const failed = checks.filter(c => c.verdict !== 'réussi').length;
+        console.log(`${checks.length - failed} contrôles réussis sur ${checks.length}`);
+        console.log('JSON', JSON.stringify({ res, checks }));
+    }
     if (mode === 'check') {
         const fights = Number(process.argv[3]) || 10;
         console.table(CATEGORIES.map(cat => report(cat, calibratedFights(cat, { fights, seed0: 90000 }))));

@@ -40,9 +40,9 @@ describe('combatBalance : enregistreur', () => {
         expect(r).toMatchObject({ seconds: 39, cycles: 4, damagePerCycle: 40, outcome: 'victory' });
         expect(finishCombatRecord('victory')).toBeNull();
     });
-    test('synthèse : ne garde que les victoires', () => {
-        const s = summarizeCombats([{ outcome: 'victory', seconds: 120, cycles: 4, dealt: 160 }, { outcome: 'victory', seconds: 180, cycles: 6, dealt: 240 }, { outcome: 'defeat', seconds: 10, cycles: 1, dealt: 0 }]);
-        expect(s).toEqual({ count: 2, averageCycleSeconds: 30, effectiveDamagePerCycle: 40, damageBySourcePerCycle: { weapon: 0, spell: 0, skull: 0, other: 0 }, rawDamageTakenPerCycle: 0, averageSeconds: 150 });
+    test('synthèse : victoires ET défaites, abandons exclus', () => {
+        const s = summarizeCombats([{ outcome: 'victory', seconds: 120, cycles: 4, dealt: 160 }, { outcome: 'victory', seconds: 180, cycles: 6, dealt: 240 }, { outcome: 'defeat', seconds: 60, cycles: 2, dealt: 40 }, { outcome: 'abandon', seconds: 10, cycles: 1, dealt: 0 }]);
+        expect(s).toEqual({ count: 3, victories: 2, defeats: 1, winRate: 0.67, averageCycleSeconds: 30, effectiveDamagePerCycle: 36.7, damageBySourcePerCycle: { weapon: 0, spell: 0, skull: 0, other: 0 }, rawDamageTakenPerCycle: 0, averageSeconds: 120 });
     });
     test('stockage borné', () => {
         const mem = {}; const storage = { getItem: k => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } };
@@ -53,7 +53,7 @@ describe('combatBalance : enregistreur', () => {
     });
 });
 
-import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
+import { heroEffectiveHp, heroReferenceHp, calibrateEnemy, enemyCategory, DEFAULT_CYCLE_SECONDS, ENEMY_WIN_RATIO, ENEMY_RAW_CATEGORY_FACTOR, HP_DURATION_FACTOR, winRatioLevelFactor, measuredCorrections, cappedEnemyHit, HIT_SHARE_CAP, EXPERT_WIN_RATIO_FACTOR, EXPERT_CATEGORY_FACTOR, heroDamagePerCycleModel, enemyRawDamagePerCycleModel } from '../../combatBalance.js';
 
 describe('combatBalance : calibrage des ennemis', () => {
     test('catégories', () => {
@@ -86,18 +86,40 @@ describe('combatBalance : calibrage des ennemis', () => {
         expect(enemyRawDamagePerCycleModel(30, 'boss')).toBeGreaterThan(enemyRawDamagePerCycleModel(30, 'normal'));
         expect(ENEMY_RAW_CATEGORY_FACTOR.boss).toBeGreaterThan(1);
     });
-    test('avec mesures : l\'ennemi tue le héros en ENEMY_WIN_RATIO × la durée cible', () => {
-        const rec = { outcome: 'victory', playerLevel: 10, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };   // 20 dégâts bruts/cycle, cycle 30 s
-        const r = calibrateEnemy({ category: 'normal', heroMaxHp: 240, heroLevel: 10, records: [rec, rec, rec, rec] });
-        expect(r.measured).toBe(true);
-        expect(r.hpBase).toBe(Math.round(50 * 7 * HP_DURATION_FACTOR.normal));
-        // héros 240 PV, en 7 cycles × rapport de la catégorie ; 20 dégâts bruts mesurés × facteur de catégorie
-        const raw = 20 * ENEMY_RAW_CATEGORY_FACTOR.normal;
-        expect(240 / (raw * r.damageScale)).toBeCloseTo(7 * ENEMY_WIN_RATIO.normal * winRatioLevelFactor(10) * EXPERT_WIN_RATIO_FACTOR * EXPERT_CATEGORY_FACTOR.normal, 0);
+    // Combat mesuré où le héros fait 2× le modèle et l'ennemi 0,5× le modèle, au niveau 10, cycles de 30 s.
+    const rec = (outcome = 'victory', level = 10) => ({ outcome, playerLevel: level, enemyLevel: level, category: 'normal', seconds: 240, cycles: 8,
+        dealt: 8 * 2 * heroDamagePerCycleModel(level), takenRaw: 8 * 0.5 * enemyRawDamagePerCycleModel(level, 'normal') });
+    test('calibration : rien sous 5 combats, puis un mélange progressif (jamais 100 % mesure)', () => {
+        expect(measuredCorrections(Array(4).fill(rec()), 10)).toMatchObject({ weight: 0, hero: 1, enemy: 1 });
+        const at5 = measuredCorrections(Array(5).fill(rec()), 10), at20 = measuredCorrections(Array(20).fill(rec()), 10), at60 = measuredCorrections(Array(60).fill(rec()), 10);
+        expect(at5.weight).toBeCloseTo(0.2, 2);
+        expect(at20.weight).toBe(0.5);
+        expect(at20.hero).toBeCloseTo(1.5, 5);     // 1 + 0,5 × (2 − 1)
+        expect(at20.enemy).toBeCloseTo(0.75, 5);   // 1 + 0,5 × (0,5 − 1)
+        expect(at60.weight).toBeLessThan(1);
     });
-    test('mesures lointaines (autre niveau) ignorées', () => {
-        const rec = { outcome: 'victory', playerLevel: 50, seconds: 240, cycles: 8, dealt: 400, takenRaw: 160 };
-        expect(calibrateEnemy({ category: 'normal', heroMaxHp: 420, heroLevel: 10, records: [rec, rec, rec, rec] }).measured).toBe(false);
+    test('calibration : les défaites comptent, la médiane résiste aux combats aberrants, l\'écart est borné', () => {
+        const mixed = [...Array(10).fill(rec('victory')), ...Array(10).fill(rec('defeat'))];
+        expect(measuredCorrections(mixed, 10).n).toBe(20);
+        const outliers = [...Array(17).fill(rec()), ...Array(3).fill({ ...rec(), dealt: 1e6 })];
+        expect(measuredCorrections(outliers, 10).hero).toBeCloseTo(1.5, 5);
+        const extreme = Array(20).fill({ ...rec(), dealt: 8 * 10 * heroDamagePerCycleModel(10) });   // ×10 mesuré → borné à ×2
+        expect(measuredCorrections(extreme, 10).hero).toBeCloseTo(1.5, 5);
+        expect(measuredCorrections(Array(20).fill(rec('abandon')), 10).n).toBe(0);
+    });
+    test('calibration : combats d\'un autre niveau ignorés ; le calibrage en tient compte', () => {
+        expect(measuredCorrections(Array(20).fill(rec('victory', 40)), 10).n).toBe(0);
+        const r = calibrateEnemy({ category: 'normal', heroMaxHp: 240, heroLevel: 10, records: Array(20).fill(rec()) });
+        expect(r.measured).toBe(true);
+        expect(r.measuredWeight).toBe(0.5);
+        expect(r.hpBase).toBe(Math.round(heroDamagePerCycleModel(10) * 1.5 * 7 * HP_DURATION_FACTOR.normal));
+    });
+    test('coup fatal : le multiplicateur ne porte jamais un coup au-delà de 30 % des PV max du héros', () => {
+        expect(cappedEnemyHit(30, 2, 1000)).toBe(60);       // sous le plafond : multiplié
+        expect(cappedEnemyHit(100, 7, 400)).toBe(120);      // 700 → plafonné à 30 % de 400
+        expect(cappedEnemyHit(200, 3, 400)).toBe(200);      // chiffres bruts déjà au-dessus : gardés, jamais augmentés
+        expect(cappedEnemyHit(0, 5, 400)).toBe(0);
+        expect(HIT_SHARE_CAP * 1.5).toBeLessThan(1);         // même critique (×1,5), un coup plein ne tue pas
     });
 });
 

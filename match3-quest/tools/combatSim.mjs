@@ -20,6 +20,7 @@ import { RAGE_MAX, rageFromDamage, addRage, ultimateCostEntries, rageToDamageAmo
 import { resolveDifficulty, tierSettings } from '../enemyAIProfiles.js';
 import { pickWeightedOption, applyScoreSharpness, FATAL_REASON } from '../enemyAIChoice.js';
 import { critChance, blockChance, CRIT_MULTIPLIER } from '../combatStats.js';
+import { cappedEnemyHit } from '../combatBalance.js';
 
 export const SKULL_PROB = 0.19;   // board.js : BOARD_DROP_PROBABILITIES
 export const COMBAT_PROB = 0.17;
@@ -137,10 +138,11 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
     // Dégâts : `strike` (arme, crânes, sorts) passe par critique / blocage ; sinon dégâts directs (poison, compagnon).
     const hit = (attacker, target, raw, source, { strike = true, unblockable = false } = {}) => {
         if (raw <= 0 || target.hp <= 0) return 0;
-        let dmg = strike ? resolveStrike(raw, attacker, unblockable ? {} : target, { rng }).damage : Math.floor(raw);
+        // Coup de l'ennemi : multiplicateur appliqué AVANT critique / blocage et plafonné comme dans le jeu (cappedEnemyHit).
+        const scaled = target.isHero ? cappedEnemyHit(raw, enemyDamageScale, target.maxHp) : raw;
+        let dmg = strike ? resolveStrike(scaled, attacker, unblockable ? {} : target, { rng }).damage : Math.floor(scaled);
         if (target.isHero) {
-            stats.takenRaw += dmg;
-            dmg = Math.max(dmg > 0 ? 1 : 0, Math.round(dmg * enemyDamageScale));
+            stats.takenRaw += dmg * raw / Math.max(1, scaled);   // brut, sans le multiplicateur
             const shield = hero.statusEffects.manaShield;   // Furtivité : le qì violet absorbe les dégâts
             if (shield > 0 && dmg > 0) { const absorbed = Math.min(hero.mana.purple || 0, dmg); hero.mana.purple -= absorbed; dmg -= absorbed; }
             hero.hp -= dmg;
@@ -417,14 +419,14 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         const options = [];
         const spell = e.damageSpells.filter(sp => canPay(e, sp)).sort((a, b) => spellDamage(e, target, b) - spellDamage(e, target, a))[0];
         if (spell) {
-            const dmg = spellDamage(e, target, spell) * enemyDamageScale;
+            const dmg = cappedEnemyHit(spellDamage(e, target, spell), enemyDamageScale, target.maxHp);
             const fatal = dmg >= target.hp;
             let score = (vulnerable ? 80 : 40) + Math.floor(dmg / 5) + (fatal ? 200 : 0);
             score = d.strategicThinking ? score + rng() * 20 : rng() * 100;
             options.push({ type: 'spell', spell, dmg, score, probability: d.spellUseProbability, data: { reason: fatal ? FATAL_REASON : '' } });
         }
         if (weaponReady(e)) {
-            const dmg = Math.floor(weaponRaw(e) * (1 + (critChance(e) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(target) / 100) * 0.7)) * enemyDamageScale;
+            const dmg = Math.floor(cappedEnemyHit(weaponRaw(e), enemyDamageScale, target.maxHp) * (1 + (critChance(e) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(target) / 100) * 0.7));
             const fatal = dmg >= target.hp;
             let score = (fatal ? 200 : vulnerable ? 70 : 40) + Math.floor(dmg / 3);
             score = d.strategicThinking ? score + rng() * 15 : rng() * 100;

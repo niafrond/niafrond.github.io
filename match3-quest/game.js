@@ -1,6 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { abandonCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
+import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
@@ -361,7 +361,7 @@ export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
     // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
-    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = Math.round(normalizedDamage * spellAmplifierOf(enemy));
+    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp);   // plafond : pas de coup fatal par le multiplicateur
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -612,7 +612,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
         const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
-        const poisonDmg = Math.max(1, Math.round(spell.poisonDmg * spellAmplifierOf(caster)));   // talisman de l'ennemi
+        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp);   // talisman de l'ennemi (plafonné)
         const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: poisonDmg });
         log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
     }
@@ -1151,7 +1151,6 @@ export function restartCombat({ keepHp = false } = {}){
 
 // Gérer la mort du joueur
 export function handlePlayerDeath(){
-    abandonCombatRecord();
     if(gameState.combatState === 'finished') {
         return;
     }
@@ -1167,6 +1166,7 @@ export function handlePlayerDeath(){
         saveUpdate();
         return;
     }
+    saveCombatRecord(finishCombatRecord('defeat'));   // mesure d'équilibrage : les défaites comptent autant que les victoires
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.xpApplied > 0) {
@@ -1239,7 +1239,8 @@ export function startNewCombat(selectedEnemy = null){
 
 // Abandonner le combat en cours
 export function abandonCombat(){
-    abandonCombatRecord();
+    if(gameState.combatState === 'active') saveCombatRecord(finishCombatRecord('abandon'));   // gardé à part (exclu des mesures)
+    else abandonCombatRecord();
     if(gameState.combatState !== 'active') {
         return;
     }
@@ -1777,11 +1778,11 @@ function calibrateEnemyForCombat(target){
     target.modeDivisor = result.modeDivisor;
     bakeEnemyDamage(target, result.damageMult);
     target.balanceCategory = category;
+    annotateCombatRecord({ category, difficulty: getOption('aiDifficulty') || 'auto', enemyId: target.mapEnemyId || target.templateId || null, damageMult: result.damageMult, measuredWeight: result.measuredWeight });
 }
 
 // Intègre le réglage de dégâts à l'ennemi : chiffres de l'arme (avec sa puissance `weaponPower`, autrefois ajoutée sans être affichée)
 // et dégâts par crâne, affichés sur sa fiche ; pour les sorts, un talisman visible et non récupérable les amplifie.
-const scaleDamageNumber = (value, mult) => Math.max(1, Math.round(value * mult));
 export const SPELL_AMPLIFIER_NAME = 'Talisman de Résonance';
 /** Multiplicateur des sorts d'un ennemi (son talisman), 1 sinon. */
 export const spellAmplifierOf = entity => (entity && entity === enemy && entity.spellAmplifier?.mult > 0 ? entity.spellAmplifier.mult : 1);
@@ -1790,7 +1791,7 @@ function bakeEnemyDamage(target, mult){
     target.bakedDamageMult = m;
     target.damageScale = 1;   // plus de multiplicateur caché
     if(target.weapon) {
-        target.weapon = { ...target.weapon, damage: scaleDamageNumber(target.weapon.damage + (target.weaponPower || 0), m) };
+        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp) };   // jamais un coup fatal par le seul multiplicateur
         target.weaponPower = 0;
     }
     // Sorts : leurs chiffres restent ceux du grimoire ; l'ennemi porte un objet magique (non récupérable) qui amplifie en continu

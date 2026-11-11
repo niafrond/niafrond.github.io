@@ -1,3 +1,4 @@
+import { cappedEnemyHit } from './combatBalance.js';
 import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
@@ -835,7 +836,8 @@ export function checkMatches(forceFullBoard = false){
             // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
             const attackBonus = skullStrengthBonus(attacker);
             // `skullMult` : dégâts par crâne de l'ennemi réglés par le calibrage de durée (affichés sur sa fiche)
-            const rawDmg = Math.round(getEffectiveMatchLength(info) * (skullDamage + attackBonus) * (attacker.skullMult || 1));
+            const baseSkullDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
+            const rawDmg = (attacker.skullMult || 1) > 1 ? cappedEnemyHit(baseSkullDmg, attacker.skullMult, opponent.maxHp) : baseSkullDmg;   // plafond : pas de coup fatal par le multiplicateur
             const weakened = attacker === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
             const strike = resolveStrike(rawDmg, attacker, opponent, { weakened });
             let dmg = strike.damage;
