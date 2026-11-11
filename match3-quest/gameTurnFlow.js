@@ -12,6 +12,7 @@ import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
 import { healEntity, tickAlterations, isAsleep, confusedSelfHit } from './alterations.js';
+import { stepBossScript, signatureDamage } from './bossScript.js';
 import { tickSpellCooldowns } from './spellCooldown.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
@@ -259,6 +260,42 @@ export function enemyTurn(){
         if(enemy.hp <= 0) {
             handleEnemyDefeated();
             return;
+        }
+    }
+
+    // Boss semi-scripté (bossScript.js) : échauffement annoncé, puis attaque dévastatrice ; étourdi ou endormi pendant l'échauffement, il est interrompu.
+    if(enemy.bossScript) {
+        const script = enemy.bossScript;
+        const lostTurn = (enemy.statusEffects?.stunned || 0) > 0 || isAsleep(enemy);
+        const step = stepBossScript(script, enemy, { lostTurn });
+        if(step.action === 'interrupted') {
+            log(`${enemy.name} est interrompu : ${script.name} n'aura pas lieu !`);
+            showCombatAnimation({ icon: 'dizzy', title: 'ÉCHAUFFEMENT INTERROMPU', damage: script.name, target: `→ ${enemy.name}` }, true);
+        } else if(step.action === 'start') {
+            setCurrentTurn('enemy');
+            const pct = Math.round(script.share * 100);
+            log(`${enemy.name} s'échauffe${step.phase ? ' (sa colère monte)' : ''} : ${script.name} dans ${step.left} tours (${pct} % de vos PV max). Défense, Bastion, bouclier de qì ou soin pour l'encaisser ; l'étourdir ou l'endormir l'interrompt.`);
+            showCombatAnimation({ icon: 'fire', title: `${script.name.toUpperCase()} !`, damage: `Dans ${step.left} tours : ${pct} % de vos PV max`, source: enemy.name, target: 'Préparez-vous (défense, Bastion, bouclier, soin) ou étourdissez-le' }, false, { requireClick: true });
+            updateStats();
+            setTimeout(() => finishEnemyTurn(), 900);
+            return;
+        } else if(step.action === 'release') {
+            setCurrentTurn('enemy');
+            const hit = signatureDamage(script, player);
+            if(hit.blocked) {
+                log(`${enemy.name} déchaîne ${script.name}… le Bastion Infranchissable l'arrête net !`);
+                showCombatAnimation({ icon: 'shield', title: script.name.toUpperCase(), heal: 'Bloqué par le Bastion', source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
+            } else {
+                applyDamage(player, hit.damage, { damageSource: 'boss' });
+                const prepared = hit.reduction > 0 ? ` (préparation : -${Math.round(hit.reduction * 100)} %)` : '';
+                log(`${enemy.name} déchaîne ${script.name} : ${hit.damage} dégâts${prepared}.`);
+                showCombatAnimation({ icon: 'fire', title: script.name.toUpperCase(), damage: `-${hit.damage} dégâts${prepared}`, source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
+            }
+            updateStats();
+            setTimeout(() => finishEnemyTurn(), 900);
+            return;
+        } else if(step.action === 'charging') {
+            log(`${enemy.name} : ${script.name} au prochain tour !`);
         }
     }
 

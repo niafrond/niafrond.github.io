@@ -21,6 +21,7 @@ import { resolveDifficulty, tierSettings } from '../enemyAIProfiles.js';
 import { pickWeightedOption, applyScoreSharpness, FATAL_REASON } from '../enemyAIChoice.js';
 import { critChance, blockChance, CRIT_MULTIPLIER } from '../combatStats.js';
 import { cappedEnemyHit } from '../combatBalance.js';
+import { createBossScript, stepBossScript, signatureDamage } from '../bossScript.js';
 
 export const SKULL_PROB = 0.19;   // board.js : BOARD_DROP_PROBABILITIES
 export const COMBAT_PROB = 0.17;
@@ -105,7 +106,7 @@ const weaponRaw = e => (e.weaponUsed ? e.weaponUsed.damage + (e.isHero ? 0 : (e.
  * `profile` : 'standard' ou 'complet' ; `item` : objet actif rechargeable du héros ; `companion` : id du compagnon actif.
  * Renvoie { heroWon, cycles, dealtBy: {weapon, spell, skull, other}, takenRaw, heroHpLeft, heroMaxHp, enemyHpLeft, used: {...} }.
  */
-export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enemyDamageScale = 1, maxCycles = MAX_CYCLES, immortal = false, profile = 'standard', item = null, companion = null, ultimate = null, aiPreference = 'greedy' } = {}) {
+export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enemyDamageScale = 1, maxCycles = MAX_CYCLES, immortal = false, profile = 'standard', item = null, companion = null, ultimate = null, aiPreference = 'greedy', difficulty = 'auto', bossScript = true } = {}) {
     const rng = mulberry32(seed);
     const full = profile === 'complet';
     const hero = fighter(heroSrc, { isHero: true }), enemy = fighter(enemySrc);
@@ -118,9 +119,11 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         const { tier, special } = resolveDifficulty({ preference: aiPreference, enemyLevel: enemy.level || 1, playerLevel: hero.level || 1, enemyProfile: enemySrc });
         return { tier: special || tier, ...tierSettings(tier, special) };
     })();
+    // Boss semi-scripté (bossScript.js) : même script que dans le jeu.
+    const script = bossScript ? createBossScript(enemySrc, difficulty) : null;
     const n = boardSize;
     let board = newBoard(n, rng);
-    const stats = { dealtBy: { weapon: 0, spell: 0, skull: 0, other: 0 }, takenRaw: 0, healed: 0, used: { spells: 0, ultimate: 0, item: 0, companion: 0 } };
+    const stats = { dealtBy: { weapon: 0, spell: 0, skull: 0, other: 0 }, takenRaw: 0, healed: 0, used: { spells: 0, ultimate: 0, item: 0, companion: 0 }, signature: { released: 0, interrupted: 0, blocked: 0, damage: 0 } };
     const itemState = item ? { def: item, charges: item.chargesPerCycle || 1, recharge: 0 } : null;
     const revive = { used: false };
 
@@ -136,13 +139,13 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
     };
 
     // Dégâts : `strike` (arme, crânes, sorts) passe par critique / blocage ; sinon dégâts directs (poison, compagnon).
-    const hit = (attacker, target, raw, source, { strike = true, unblockable = false } = {}) => {
+    const hit = (attacker, target, raw, source, { strike = true, unblockable = false, direct = false } = {}) => {
         if (raw <= 0 || target.hp <= 0) return 0;
         // Coup de l'ennemi : multiplicateur appliqué AVANT critique / blocage et plafonné comme dans le jeu (cappedEnemyHit).
-        const scaled = target.isHero ? cappedEnemyHit(raw, enemyDamageScale, target.maxHp) : raw;
+        const scaled = target.isHero && !direct ? cappedEnemyHit(raw, enemyDamageScale, target.maxHp) : raw;
         let dmg = strike ? resolveStrike(scaled, attacker, unblockable ? {} : target, { rng }).damage : Math.floor(scaled);
         if (target.isHero) {
-            stats.takenRaw += dmg * raw / Math.max(1, scaled);   // brut, sans le multiplicateur
+            if (!direct) stats.takenRaw += dmg * raw / Math.max(1, scaled);   // brut, sans le multiplicateur (hors attaque dévastatrice)
             const shield = hero.statusEffects.manaShield;   // Furtivité : le qì violet absorbe les dégâts
             if (shield > 0 && dmg > 0) { const absorbed = Math.min(hero.mana.purple || 0, dmg); hero.mana.purple -= absorbed; dmg -= absorbed; }
             hero.hp -= dmg;
@@ -353,6 +356,21 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
             if (ultimate.stunTurns) target.statusEffects.stunned = Math.max(target.statusEffects.stunned || 0, ultimate.stunTurns);
             return false;
         }
+        // Attaque dévastatrice annoncée : l'interrompre (étourdissement), sinon s'y préparer (Bastion, défense, bouclier de qì, soin).
+        if (script && script.charge > 0) {
+            const stun = has('stunEnemy'); if (stun && !(target.statusEffects.stunned > 0)) return castEffect(stun);
+            const wall = has('blockAll'); if (wall && !(hero.statusEffects.shieldWall > 0)) return castEffect(wall);
+            const guard = spells.find(s => s.effect === 'statBuff' && s.defBuff > 0); if (guard && !(hero.statBuffs?.defense)) return castEffect(guard);
+            const stealth = has('damageToManaPurple'); if (stealth && !(hero.statusEffects.manaShield > 0) && (hero.mana.purple || 0) >= 15) return castEffect(stealth);
+            if (hero.hp <= hero.maxHp * (script.share + 0.1)) {
+                if (itemState && itemState.charges > 0 && itemState.def.effect.heal && hero.combatPoints >= (itemState.def.actionPoints || 0)) {
+                    itemState.charges--; itemState.recharge = itemState.def.rechargeTurns || 6; hero.combatPoints -= itemState.def.actionPoints || 0; stats.used.item++;
+                    heal(itemState.def.effect.heal); return false;
+                }
+                const healSpell = spells.find(s => (s.heal && s.effect !== 'harmony') || s.effect === 'secondWind') || has('harmony');
+                if (healSpell) return castEffect(healSpell);
+            }
+        }
         // Survie : objet de soin, sort de soin, Bastion, bouclier de qì.
         if (hpPct < 0.4) {
             if (itemState && itemState.charges > 0 && (itemState.def.effect.heal || itemState.def.effect.regen) && hero.combatPoints >= (itemState.def.actionPoints || 0)) {
@@ -487,6 +505,21 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         const st = enemy.statusEffects;
         if (st.poisoned > 0) { hit(hero, enemy, st.poisonDamage || 1, 'other', { strike: false }); st.poisoned--; }
         if (enemy.hp <= 0) return;
+        if (script) {
+            const step = stepBossScript(script, enemy, { lostTurn: (st.stunned > 0) || (st.mirage > 0) });
+            if (step.action === 'interrupted') stats.signature.interrupted++;
+            if (step.action === 'start' || step.action === 'release') {
+                if (step.action === 'release') {
+                    const r = signatureDamage(script, hero);
+                    stats.signature.released++;
+                    if (r.blocked) stats.signature.blocked++;
+                    else { stats.signature.damage += r.damage; hit(enemy, hero, r.damage, 'other', { strike: false, direct: true }); }
+                }
+                tickStatBuffs(enemy);
+                ['sealed', 'confused'].forEach(k => { if (st[k] > 0) st[k]--; });
+                return;
+            }
+        }
         const skip = (st.stunned > 0) || (st.mirage > 0);
         if (st.stunned > 0) st.stunned--;
         if (st.mirage > 0) st.mirage--;

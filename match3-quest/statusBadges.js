@@ -42,6 +42,9 @@ export function activeStatuses(entity) {
     if (n(se.exhausted) > 0) add('exhausted', 'hourglass', 'Épuisé', 'debuff', `Perd ${n(se.exhaustDrain) || 3} qì d'une couleur au hasard à chaque tour.`, n(se.exhausted));
     if (n(se.corrupted) > 0) add('corrupted', 'blood', 'Corrompu', 'debuff', 'Ses soins deviennent des dégâts.', n(se.corrupted));
     if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
+    // Boss semi-scripté (bossScript.js) : échauffement en cours, attaque dévastatrice dans `charge` tour(s).
+    const script = entity?.bossScript;
+    if (n(script?.charge) > 0) add('bossCharge', 'fire', script.name, 'debuff', `Prépare son attaque dévastatrice : ${Math.round(script.share * 100)} % de vos PV max dans ${n(script.charge)} tour(s). Défense, Bastion, bouclier de qì ou soin pour l'encaisser ; l'étourdir ou l'endormir l'interrompt.`, n(script.charge));
     return out;
 }
 

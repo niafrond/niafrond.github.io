@@ -13,6 +13,7 @@
   "boardEnemyMoves.js",
   "boardLayout.js",
   "boardSuggestions.js",
+  "bossScript.js",
   "bossTips.js",
   "breakReminder.js",
   "cheatMode.js",
