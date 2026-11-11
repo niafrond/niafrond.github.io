@@ -268,7 +268,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>${enemyPowerRowHtml()}
+        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>
         <div class="stat row-pills">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -307,13 +307,6 @@ export function updateStats(){
     updateEnemySpells();
 }
 
-// Puissance de l'ennemi (Talisman de Résonance : calibrage combatBalance.js) : une statistique, pas un objet affiché à part.
-const formatMult = m => String(Math.round(m * 10) / 10).replace('.', ',');
-function enemyPowerRowHtml(){
-    const m = enemy.spellAmplifier?.mult || enemy.skullMult || 1;
-    if(m === 1) return '';
-    return `<div class="stat stat-row row-stats"><span class="stat-chip" title="${escapeHtml(enemy.spellAmplifier?.name || 'Talisman de Résonance')} : ses sorts et ses crânes infligent ×${formatMult(m)} dégâts (déjà compté dans les dégâts affichés de ses sorts)."><strong>Puiss.</strong> ×${formatMult(m)}</span></div>`;
-}
 
 // Sort de l'ennemi tel qu'affiché : dégâts (et poison) déjà multipliés par son talisman.
 export function enemySpellAsShown(sp){
