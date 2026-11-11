@@ -173,7 +173,9 @@ export const DIFFICULTY_TARGET_WIN_RATE = {
     hard: { weak: 0.9, normal: 0.72, aggressive: 0.68, elite: 0.62, miniBoss: 0.56, boss: 0.5 },
     expert: { weak: 0.85, normal: 0.6, aggressive: 0.55, elite: 0.48, miniBoss: 0.42, boss: 0.35 }
 };
-export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1, normal: 1, hard: 1, expert: 1 };
+export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1.22, normal: 0.74, hard: 0.58, expert: 1 };
+// Borne haute du multiplicateur de dégâts de l'ennemi selon le mode (à 4, l'Expert ne pouvait pas atteindre sa cible).
+export const DIFFICULTY_DAMAGE_CAP = { auto: 4, easy: 4, normal: 4, hard: 5, expert: 7 };
 
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui
 // (Zhi, objets de soin, sorts de soin dès le niveau 17-20), donc à niveau élevé l'ennemi doit pouvoir frapper relativement plus fort.
@@ -235,7 +237,8 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const ratio = (winRatio ?? ENEMY_WIN_RATIO[category] ?? 1.2) * winRatioLevelFactor(heroLevel, levelAnchors)
         * (difficultyFactor ?? DIFFICULTY_WIN_RATIO_FACTOR[difficulty] ?? 1);
     const wanted = heroMaxHp / (cycles * ratio);
-    const damageScale = Math.round(Math.min(DAMAGE_SCALE_BOUNDS[1], Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;
+    const cap = DIFFICULTY_DAMAGE_CAP[difficulty] ?? DAMAGE_SCALE_BOUNDS[1];
+    const damageScale = Math.round(Math.min(cap, Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;
     return { hp, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
 }
 

@@ -238,7 +238,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const found = {};
         for (const m of modes) {
             const goal = mean(Object.values(CB.DIFFICULTY_TARGET_WIN_RATE[m]));
-            let lo = 0.15, hi = 8;
+            let lo = Number(process.env.LO) || 0.15, hi = Number(process.env.HI) || 8;
             for (let step = 0; step < 7; step++) {
                 const f = Math.sqrt(lo * hi);   // dichotomie géométrique (multiplicateur)
                 const list = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, difficultyFactor: f, seed0: 40000 + step * 977 }));
