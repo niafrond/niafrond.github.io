@@ -112,7 +112,7 @@ const winRate = list => list.filter(r => r.heroWon).length / list.length;
 
 /** Rapport ENEMY_WIN_RATIO qui donne le taux de victoire visé (dichotomie : plus le rapport est grand, plus l'ennemi est lent à tuer). */
 export function searchRatio(cat, { fights = 6, levels = null, profile = 'standard' } = {}) {
-    let lo = 0.6, hi = 5;
+    let lo = 0.2, hi = 5;
     for (let step = 0; step < 7; step++) {
         const mid = (lo + hi) / 2;
         if (winRate(calibratedFights(cat, { winRatio: mid, fights, levels, profile, seed0: 1000 + step * 7919 })) < TARGET_WIN_RATE[cat]) lo = mid; else hi = mid;
@@ -197,7 +197,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const profile = process.argv[4] || 'complet';
         const fights = Number(process.argv[3]) || 1;
         const levels = ALL_LEVELS.filter(l => l % 2 === 1 || l === MAX_LEVEL);   // un niveau sur deux (et le dernier) pour la dichotomie
-        const found = Object.fromEntries(CATEGORIES.map(cat => [cat, searchRatio(cat, { fights, levels, profile })]));
+        const cats = process.argv[5] ? process.argv[5].split(',') : CATEGORIES;
+        const found = Object.fromEntries(cats.map(cat => [cat, searchRatio(cat, { fights, levels, profile })]));
         console.log('ENEMY_WIN_RATIO =', JSON.stringify(found));
     }
     if (mode === 'check') {
