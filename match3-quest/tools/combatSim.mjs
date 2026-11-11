@@ -17,6 +17,9 @@ import { resolveStrike, skullStrengthBonus, addStatBuff, tickStatBuffs } from '.
 import { ATTRIBUTE_MANA_RULES, boostedRageGain } from '../attributes.js';
 import { rollCompanionPowers, COMPANION_POWERS } from '../companionPowers.js';
 import { RAGE_MAX, rageFromDamage, addRage, ultimateCostEntries, rageToDamageAmount, rageToManaAmount } from '../ultimates.js';
+import { resolveDifficulty, tierSettings } from '../enemyAIProfiles.js';
+import { pickWeightedOption, applyScoreSharpness, FATAL_REASON } from '../enemyAIChoice.js';
+import { critChance, blockChance, CRIT_MULTIPLIER } from '../combatStats.js';
 
 export const SKULL_PROB = 0.19;   // board.js : BOARD_DROP_PROBABILITIES
 export const COMBAT_PROB = 0.17;
@@ -101,13 +104,19 @@ const weaponRaw = e => (e.weaponUsed ? e.weaponUsed.damage + (e.isHero ? 0 : (e.
  * `profile` : 'standard' ou 'complet' ; `item` : objet actif rechargeable du héros ; `companion` : id du compagnon actif.
  * Renvoie { heroWon, cycles, dealtBy: {weapon, spell, skull, other}, takenRaw, heroHpLeft, heroMaxHp, enemyHpLeft, used: {...} }.
  */
-export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enemyDamageScale = 1, maxCycles = MAX_CYCLES, immortal = false, profile = 'standard', item = null, companion = null, ultimate = null } = {}) {
+export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enemyDamageScale = 1, maxCycles = MAX_CYCLES, immortal = false, profile = 'standard', item = null, companion = null, ultimate = null, aiPreference = 'greedy' } = {}) {
     const rng = mulberry32(seed);
     const full = profile === 'complet';
     const hero = fighter(heroSrc, { isHero: true }), enemy = fighter(enemySrc);
     if (immortal) { hero.hp = hero.maxHp = 1e9; enemy.hp = enemy.maxHp = 1e9; }   // mesure des taux : personne ne meurt
     hero.levelEdge = Math.max(0, (hero.level || 0) - (enemy.level || 0));
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (hero.level || 0));
+    // IA de l'ennemi : 'greedy' (toujours le meilleur choix) ou préférence du jeu ('auto', 'easy', 'normal', 'hard', 'expert'),
+    // résolue comme dans le jeu (enemyAIProfiles.js : palier selon le niveau, ennemi affaibli ou hors niveau, boss compris).
+    const ai = aiPreference === 'greedy' ? null : (() => {
+        const { tier, special } = resolveDifficulty({ preference: aiPreference, enemyLevel: enemy.level || 1, playerLevel: hero.level || 1, enemyProfile: enemySrc });
+        return { tier: special || tier, ...tierSettings(tier, special) };
+    })();
     const n = boardSize;
     let board = newBoard(n, rng);
     const stats = { dealtBy: { weapon: 0, spell: 0, skull: 0, other: 0 }, takenRaw: 0, healed: 0, used: { spells: 0, ultimate: 0, item: 0, companion: 0 } };
@@ -195,9 +204,14 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         if (info.type === 'combat') return e.weaponUsed ? info.len * 2.5 : 0.5 * info.len;
         return info.len * (needs.has(info.color) ? 2 : 0.7);
     };
-    const boardMove = (e, target) => {
+    const boardMove = (e, target, random = false) => {
         const moves = findPossibleMatches(board);
         if (!moves.length) { board = newBoard(n, rng); return false; }
+        if (random) {   // coup de plateau au hasard (IA facile / normale, ou coup « stupide »)
+            const m = moves[Math.floor(rng() * moves.length)];
+            [board[m.from], board[m.to]] = [board[m.to], board[m.from]];
+            return cascade(e, target);
+        }
         let best = null, bestScore = -1;
         for (const m of moves) {
             [board[m.from], board[m.to]] = [board[m.to], board[m.from]];
@@ -395,6 +409,46 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         return boardMove(e, target);
     };
 
+    // Décision de l'ennemi selon son palier : mêmes scores et même tirage que enemyAI.js (makeDecision, evaluateSpells / Weapon / BoardMove),
+    // sans personnalité ; seuls ses sorts de dégâts sont pris en compte.
+    const enemyTierAction = () => {
+        const target = hero, e = enemy, d = ai;
+        const vulnerable = target.hp < target.maxHp * (d.aggressiveThreshold ?? 0.6);
+        const options = [];
+        const spell = e.damageSpells.filter(sp => canPay(e, sp)).sort((a, b) => spellDamage(e, target, b) - spellDamage(e, target, a))[0];
+        if (spell) {
+            const dmg = spellDamage(e, target, spell) * enemyDamageScale;
+            const fatal = dmg >= target.hp;
+            let score = (vulnerable ? 80 : 40) + Math.floor(dmg / 5) + (fatal ? 200 : 0);
+            score = d.strategicThinking ? score + rng() * 20 : rng() * 100;
+            options.push({ type: 'spell', spell, dmg, score, probability: d.spellUseProbability, data: { reason: fatal ? FATAL_REASON : '' } });
+        }
+        if (weaponReady(e)) {
+            const dmg = Math.floor(weaponRaw(e) * (1 + (critChance(e) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(target) / 100) * 0.7)) * enemyDamageScale;
+            const fatal = dmg >= target.hp;
+            let score = (fatal ? 200 : vulnerable ? 70 : 40) + Math.floor(dmg / 3);
+            score = d.strategicThinking ? score + rng() * 15 : rng() * 100;
+            options.push({ type: 'weapon', score, probability: d.weaponUseProbability, data: { reason: fatal ? FATAL_REASON : '' } });
+        }
+        const manaTotal = colors.reduce((t, c) => t + (e.mana[c] || 0), 0);
+        let boardScore = 30 + (manaTotal < 10 ? 40 : 0) + (!spell && e.combatPoints < 5 ? 50 : 0);
+        if (!d.strategicThinking) boardScore += rng() * 30;
+        options.push({ type: 'board', score: boardScore, probability: d.boardMoveProbability, data: { reason: '' } });
+        let chosen, stupid = false;
+        if (d.stupidityChance > 0 && rng() < d.stupidityChance) { stupid = true; chosen = options[Math.floor(rng() * options.length)]; }
+        else {
+            const lethal = options.filter(o => o.data.reason === FATAL_REASON).sort((a, b) => b.score - a.score)[0];
+            if (lethal && rng() < (d.lethalAwareness || 0)) chosen = lethal;
+            else {
+                if (d.strategicThinking) applyScoreSharpness(options, d.scoreSharpness);
+                chosen = pickWeightedOption(options, rng);
+            }
+        }
+        if (chosen.type === 'weapon') return useWeapon(e, target);
+        if (chosen.type === 'spell') { pay(e, chosen.spell); hit(e, target, spellDamage(e, target, chosen.spell), 'spell'); return false; }
+        return boardMove(e, target, stupid || d.randomBoardMove);
+    };
+
     const endHeroTurn = () => {
         tickStatBuffs(hero);
         ['shieldWall', 'manaShield'].forEach(k => { if (hero.statusEffects[k] > 0) hero.statusEffects[k]--; });
@@ -437,7 +491,7 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         if (!skip) {
             let bonusLeft = 1;
             while (enemy.hp > 0 && hero.hp > 0) {
-                const bonus = standardAction(enemy, hero);
+                const bonus = ai ? enemyTierAction() : standardAction(enemy, hero);
                 if (!(bonus && bonusLeft-- > 0)) break;
             }
         }
@@ -452,6 +506,7 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         if (enemy.hp <= 0) break;
         enemyTurn();
     }
+    stats.aiTier = ai?.tier || 'greedy';
     stats.rageEnd = hero.rage; stats.ultMana = { ...hero.ultimateMana };
     return { heroWon: enemy.hp <= 0 && hero.hp > 0, cycles, ...stats, heroHpLeft: Math.max(0, hero.hp), heroMaxHp: hero.maxHp, enemyHpLeft: Math.max(0, enemy.hp), timeout: hero.hp > 0 && enemy.hp > 0 };
 }

@@ -92,7 +92,7 @@ export function measureRates({ fights = 12, cycles = 25 } = {}) {
 export const TARGET_WIN_RATE = { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 };
 
 /** Combats calibrés comme dans le jeu (sans mesures du joueur : modèles) ; `winRatio` remplace ENEMY_WIN_RATIO de la catégorie. */
-export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors } = {}) {
+export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, milestones = MILESTONES, levels = null, profile = 'standard', model = null, levelAnchors, aiPreference = process.env.AI || 'greedy' } = {}) {
     const out = [];
     let seed = seed0;
     // Héros : jalons des tests (profil standard d'origine) ou tous les niveaux `levels` (héros fabriqués par heroAt).
@@ -103,7 +103,7 @@ export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, mile
         const enemy = makeEnemy(cat, level, i + seed);
         const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, ...(levelAnchors ? { levelAnchors } : {}) });
         enemy.maxHp = enemy.hp = c.hp;
-        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageScale * c.heroDamageScale, ...options });
+        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageScale * c.heroDamageScale, aiPreference, ...options });
         out.push({ ...r, level: b.level, cls, targetCycles: c.cycles, cycleSeconds: c.cycleSeconds, enemyHp: c.hp });
     }
     return out;
@@ -156,7 +156,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const profiles = (process.argv[4] || 'standard,complet').split(',');
         for (const profile of profiles) {
             const all = CATEGORIES.flatMap(cat => calibratedFights(cat, { fights, levels: ALL_LEVELS, profile, seed0: Number(process.env.SEED) || 123000 }).map(r => ({ ...r, cat })));
-            console.log(`\n=== Héros ${profile} : ${all.length} combats, niveaux 1 à ${MAX_LEVEL} ===`);
+            console.log(`\n=== Héros ${profile}, IA ennemie « ${process.env.AI || 'greedy'} » : ${all.length} combats, niveaux 1 à ${MAX_LEVEL} ===`);
+            const tiers = {}; all.forEach(r => { tiers[r.aiTier] = (tiers[r.aiTier] || 0) + 1; });
+            console.log('Paliers joués :', JSON.stringify(tiers));
             console.table(CATEGORIES.map(cat => report(cat, all.filter(r => r.cat === cat))));
             const bands = [[1, 5], [6, 10], [11, 20], [21, 30], [31, 40], [41, 50], [51, 60], [61, MAX_LEVEL]];
             console.table(bands.map(([a, b]) => {
