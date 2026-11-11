@@ -278,6 +278,7 @@ function sanitizePlayer(player) {
         stuffOwned: player.stuffOwned,
         stuff: compact(player.stuff || {}),
         activeInventoryIndex: player.activeInventoryIndex,
+        activeInventoryIndex2: player.activeInventoryIndex2,
         merchantSold: player.merchantSold,
         sellTags: player.sellTags,
         defeatedBossTiers: player.defeatedBossTiers,
@@ -426,7 +427,7 @@ function sanitizeImportedPlayer(player) {
     assign(player, 'playStyle', cleanText(player.playStyle, MAX_ID_LENGTH));
     player.level = cleanNumber(player.level, 1, MAX_LEVEL, true);
 
-    for (const key of ['xp', 'xpToNextLevel', 'unspentLevelPoints', 'growthLevel', 'hp', 'maxHp', 'maxMana', 'attack', 'defense', 'gold', 'activeInventoryIndex']) {
+    for (const key of ['xp', 'xpToNextLevel', 'unspentLevelPoints', 'growthLevel', 'hp', 'maxHp', 'maxMana', 'attack', 'defense', 'gold', 'activeInventoryIndex', 'activeInventoryIndex2']) {
         assign(player, key, cleanNumber(player[key], 0, MAX_STAT, true));
     }
     // Série de défaites contre un boss : { id, count }

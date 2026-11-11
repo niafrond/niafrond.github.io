@@ -10,7 +10,7 @@
  * Les prix sont ceux du barème de base multipliés par `PRICE_MULT` (très cher). Les armes, boucliers et reliques sont
  * uniques (une fois achetés, plus en rayon) ; les objets rechargeables restent en vente.
  */
-import { allItems } from './items.js';
+import { allItems, shiftActiveItemIndexes } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 import { lootableStuff, getStuffById, baseStuffPrice, grantStuff } from './stuff.js';
 
@@ -256,7 +256,7 @@ const equippedWeaponIds = hero => new Set([hero.equippedWeapon?.id, hero.equipme
 export function sellLockReason(hero, kind, obj, inventoryIndex = null) {
     if (kind === 'stuff') return Object.values(hero.stuff || {}).includes(obj.id) ? 'Porté' : null;
     if (kind === 'weapon') return equippedWeaponIds(hero).has(obj.id) ? 'Équipée' : null;
-    if (inventoryIndex !== null && inventoryIndex === hero.activeInventoryIndex && obj.type !== 'shield') return 'Objet actif';
+    if (inventoryIndex !== null && (inventoryIndex === hero.activeInventoryIndex || inventoryIndex === hero.activeInventoryIndex2) && obj.type !== 'shield') return 'Objet actif';
     if (obj.type === 'artifact' && obj.applied) return 'Relique portée';
     return null;
 }
@@ -281,10 +281,8 @@ export function sellEntry(hero, key) {
         hero.weapons = hero.weapons.filter(w => w.id !== entry.obj.id);
     } else {
         hero.inventory.splice(entry.index, 1);
-        if (Number.isInteger(hero.activeInventoryIndex)) {
-            if (hero.activeInventoryIndex > entry.index) hero.activeInventoryIndex--;
-            if (hero.inventory.length === 0) hero.activeInventoryIndex = null;
-        }
+        shiftActiveItemIndexes(hero, entry.index);
+        if (hero.inventory.length === 0) { hero.activeInventoryIndex = null; hero.activeInventoryIndex2 = null; }
     }
     hero.gold = (hero.gold || 0) + entry.price;
     return { ok: true, message: `${entry.obj.name} vendu pour ${entry.price} pièces d'or.`, entry };

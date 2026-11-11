@@ -796,5 +796,26 @@
     "size": 48,
     "fps": 10,
     "tier": 2
+  },
+  "iceStorm": {
+    "name": "Tempête de Givre",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "dragonBreath": {
+    "name": "Souffle de Braise",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
+  },
+  "knightCounter": {
+    "name": "Contre-attaque",
+    "frames": 8,
+    "size": 48,
+    "fps": 10,
+    "tier": 2
   }
 }

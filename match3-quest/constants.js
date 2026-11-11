@@ -10,3 +10,5 @@ export function setBoardSize(n) { boardSize = Math.max(3, Math.floor(n) || BASE_
 // Limites communes au joueur, aux ennemis et aux boss : 4 sorts équipés au plus, 2 armes (main droite + main gauche).
 export const MAX_ACTIVE_SPELLS = 4;
 export const MAX_WEAPONS = 2;
+// Objets d'usage équipés pour le combat (boutons « objet » au-dessus des sorts) : un objet 1 et un objet 2, de natures différentes.
+export const MAX_ACTIVE_ITEMS = 2;

@@ -9,6 +9,9 @@
 // Puissance : une part des PV max du héros selon le mode (30 % en Facile à 45 % en Expert), sans critique : un héros en pleine santé n'en
 // meurt jamais d'un coup. Les coups ordinaires du boss sont réglés en conséquence (le danger vient surtout de l'attaque annoncée).
 
+import { signatureReduction } from './gearEffects.js';
+import { FIRE_DRAGON } from './enemyBehaviors.js';
+
 export const CHARGE_TURNS = 2;                       // tours entre l'annonce et l'attaque
 export const HP_TRIGGERS = [0.66, 0.33];             // phases : seuils de PV du boss qui déclenchent un échauffement
 export const SIGNATURE_SHARE = { easy: 0.3, normal: 0.35, auto: 0.35, hard: 0.4, expert: 0.45 };
@@ -23,15 +26,16 @@ function hash(text) {
 }
 
 /** Script d'un boss de la carte (null pour les autres ennemis). `difficulty` : mode de difficulté. */
-export function createBossScript(enemy, difficulty = 'auto') {
+export function createBossScript(enemy, difficulty = 'auto', behaviorId = null) {
     if (!enemy?.isBoss || enemy.arena || enemy.duel || enemy.isTutorialEnemy) return null;
     const h = hash(enemy.mapEnemyId || enemy.templateId || enemy.name || 'boss');
     const period = PERIOD.min + (h % PERIOD.spread);
     const first = PERIOD.first + ((h >>> 3) % 2);
     const color = ['red', 'blue', 'green', 'yellow', 'purple'].includes(enemy.preferredColor) ? enemy.preferredColor : 'red';
-    const name = SIGNATURE_NAMES[color] || 'Frappe dévastatrice';
+    const dragon = behaviorId === 'fireDragon';   // Dragon de feu (enemyBehaviors.js) : attaque de zone interruptible par les dégâts, qui brûle
+    const name = dragon ? FIRE_DRAGON.name : (SIGNATURE_NAMES[color] || 'Frappe dévastatrice');
     return {
-        name, color,
+        name, color: dragon ? 'red' : color, ...(dragon ? { interruptShare: FIRE_DRAGON.interruptShare, burn: true, chargeDamage: 0, broken: false } : {}),
         // Fiche de sort affichée parmi les sorts du boss (gameHud.js) : gratuite, désactivée tant que le boss ne l'a pas annoncée, puis active
         // avec son délai ; les dégâts ne sont pas annoncés.
         spell: { id: 'bossSignature', name, color, colors: [color], cost: {}, type: 'bossSignature', description: `Attaque dévastatrice : ${name}. Inactive jusqu'à ce que le boss s'échauffe, puis il frappe 2 tours plus tard.` },
@@ -49,7 +53,7 @@ export function stepBossScript(script, enemy, { lostTurn = false } = {}) {
     if (!script) return { action: 'none' };
     script.turn++;
     if (script.charge > 0) {
-        if (lostTurn) { script.charge = 0; script.nextAt = script.turn + script.period; return { action: 'interrupted' }; }
+        if (lostTurn || script.broken) { script.charge = 0; script.chargeDamage = 0; script.broken = false; script.nextAt = script.turn + script.period; return { action: 'interrupted' }; }
         script.charge--;
         if (script.charge === 0) { script.nextAt = script.turn + script.period; return { action: 'release' }; }
         return { action: 'charging', left: script.charge };
@@ -60,6 +64,8 @@ export function stepBossScript(script, enemy, { lostTurn = false } = {}) {
     if (phase >= 0 || script.turn >= script.nextAt) {
         if (phase >= 0) script.triggers.splice(0, phase + 1);    // une phase franchie (et celles d'avant) ne se redéclenche pas
         script.charge = CHARGE_TURNS;
+        script.chargeDamage = 0;
+        script.broken = false;
         return { action: 'start', left: CHARGE_TURNS, phase: phase >= 0 };
     }
     return { action: 'none' };
@@ -75,8 +81,16 @@ export function preparationReduction(hero) {
 export function signatureDamage(script, hero) {
     const shieldWall = (hero?.statusEffects?.shieldWall || 0) > 0 && !((hero?.statusEffects?.petrified || 0) > 0);
     if (shieldWall) return { damage: 0, blocked: true, reduction: 1 };
-    const reduction = preparationReduction(hero);
+    const reduction = Math.min(MAX_REDUCTION, preparationReduction(hero) + signatureReduction(hero));
     const base = script.share * Math.max(1, hero?.maxHp || 1);
     return { damage: Math.max(1, Math.round(base * (1 - reduction))), blocked: false, reduction };
 }
 
+
+/** Dégâts reçus par le boss pendant son échauffement : au-delà de `interruptShare` de ses PV max, la préparation est rompue (Dragon de feu). Renvoie true à la rupture. */
+export function noteChargeDamage(script, enemy, damage) {
+    if (!script?.interruptShare || !(script.charge > 0) || script.broken || damage <= 0) return false;
+    script.chargeDamage = (script.chargeDamage || 0) + damage;
+    if (script.chargeDamage >= script.interruptShare * Math.max(1, enemy?.maxHp || 1)) { script.broken = true; return true; }
+    return false;
+}

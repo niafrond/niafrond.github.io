@@ -1392,6 +1392,27 @@
   },
   "spell-unbreakableGuard": {
    "seconds": 1.62
+  },
+  "iceStorm": {
+   "seconds": 2.05
+  },
+  "knightCounter": {
+   "seconds": 1.26
+  },
+  "burn": {
+   "seconds": 1.04
+  },
+  "cure": {
+   "seconds": 1.37
+  },
+  "parryQi": {
+   "seconds": 0.94
+  },
+  "armorMelt": {
+   "seconds": 1.66
+  },
+  "dragonBreath": {
+   "seconds": 2.45
   }
  }
 }

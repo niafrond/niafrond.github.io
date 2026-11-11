@@ -101,6 +101,19 @@ CHANGE_SFX = {
 }
 
 
+# Effets de combat des comportements de boss et de l'équipement (enemyBehaviors.js, gearEffects.js) : même format que CHANGE_SFX, fusionnés dedans.
+BEHAVIOR_SFX = {
+    "iceStorm":      ("a howling icy blizzard gust with crackling frost and glass shards tinkling", "a violent howling icy blizzard gust sweeping in, frost crackling and tiny glass shards tinkling, cold and sudden, no music", 2.0, 0.4),
+    "knightCounter": ("a heavy sword counter strike, metal clang on armor with a deep thud", "a dark knight parrying then slashing back, a heavy sword clang on plate armor followed by a deep thud, menacing, no music", 1.2, 0.25),
+    "burn":          ("fire crackling and sizzling flesh burn, a short flame whoosh", "a short flame whoosh engulfing and crackling, sizzling burn, hot and painful, no music", 1.0, 0.25),
+    "cure":          ("a soft healing chime with a gentle breath, herbal potion sip and sparkle", "a calm herbal potion being sipped, then a soft purifying chime with a gentle breath of light, soothing, no music", 1.3, 0.3),
+    "parryQi":       ("a bright short metal parry clink with a rising magical sparkle", "a crisp sword parry clink followed by a short rising sparkle of magical energy, bright, no music", 0.9, 0.2),
+    "armorMelt":     ("ice cracking and melting with hissing steam and dripping water", "a shell of thick ice cracking loudly then melting with hissing steam and dripping water, no music", 1.6, 0.35),
+    "dragonBreath":  ("a huge dragon fire breath roar, roaring flames and a deep growl", "a gigantic dragon inhaling then roaring a torrent of fire, deep growl and roaring flames, epic, no music", 2.4, 0.5),
+}
+CHANGE_SFX.update(BEHAVIOR_SFX)
+
+
 def caption(key: str, meta: dict, kind: str = "short") -> str:
     idx = 1 if kind == "short" else 2
     if key in CHANGE_SFX:
@@ -150,7 +163,8 @@ def all_keys() -> list:
     for r in ("common", "uncommon", "rare", "legendary"):
         for s in ("p", "e"):
             keys.append((f"weaponHit-{r}-{s}", {"name": f"Coup d'arc {r} ({'joueur' if s == 'p' else 'ennemi'})"}))
-    keys += [(k, {"name": f"Mode Chang'e : {k}"}) for k in CHANGE_SFX]
+    prefix = lambda k: "Mode Chang'e" if k.startswith("change-") else "Combat"
+    keys += [(k, {"name": f"{prefix(k)} : {k}"}) for k in CHANGE_SFX]
     return keys
 
 

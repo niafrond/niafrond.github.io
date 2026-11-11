@@ -30,12 +30,12 @@ describe('sorts génériques lancés par les ennemis', () => {
     });
     test("les sorts qui agissent sur le plateau du joueur n'ont pas d'équivalent", () => {
         expect(enemyVersionOfSpell(byId('brasierSeals'))).toBeNull();
-        expect(enemyVersionOfSpell(byId('thunderPrison'))).toBeNull();
+        expect(enemyVersionOfSpell(byId('thunderPrison'))).toMatchObject({ effect: 'alterEnemy', alteration: 'stunned' });   // l'ennemi étourdit le héros
     });
     test('chaque sort générique à effet de plateau est marqué boardSpell ; harmonie et souffle de jade sont convertis', () => {
         genericSpells.forEach(sp => {
             const v = enemyVersionOfSpell(sp);
-            if(!v || !v.effect) return;
+            if(!v || !v.effect || v.effect === 'alterEnemy') return;   // alterEnemy : étourdissement du héros (Prison du Tonnerre Glacé)
             expect(['sweepRow', 'sweepCol', 'sweepCross', 'clearColor', 'destroyColumns', 'starRain']).toContain(v.effect);
             expect(v.boardSpell).toBe(true);
         });

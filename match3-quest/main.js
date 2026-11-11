@@ -540,7 +540,7 @@ function init() {
                 if(!it) return { label: 'Non possédé', disabled: true };
                 if(it.type !== 'shield' && it.type !== 'reusable') return { label: 'Passif', disabled: true };
                 const index = player.inventory.indexOf(it);
-                if(it.type === 'reusable') return { label: index === player.activeInventoryIndex ? 'Objet actif' : 'Choisir', disabled: index === player.activeInventoryIndex || player.level < (it.minLevel || 1) };
+                if(it.type === 'reusable') return { label: (index === player.activeInventoryIndex || index === player.activeInventoryIndex2) ? 'Objet actif' : 'Choisir', disabled: index === player.activeInventoryIndex || index === player.activeInventoryIndex2 || player.level < (it.minLevel || 1) };
                 return { label: player.equipment?.leftHand?.type === 'shield' ? 'Remplacer' : 'Équiper', disabled: player.level < (it.minLevel || 1) };
             },
             stuff: id => {

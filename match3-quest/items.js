@@ -1,5 +1,5 @@
 import { flyManaGain, flyHeal } from './manaFlight.js';
-import { healEntity } from './alterations.js';
+import { healEntity, cureStatuses, afflictionsOf, CURE_NAMES } from './alterations.js';
 import { manaIcon, itemIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 
@@ -49,6 +49,20 @@ export const allItems = [
     {id:"phoenixFeather", name:"Plume de Fenghuang", type:"reusable", minLevel:12, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:8,
      description:"Ressuscite avec 50% HP si vous mourrez, une fois par combat (rechargé en 8 tours)", effect:{revive:0.5}},
     
+    // Remèdes : guérissent des altérations (effet `cure`). Inutilisables, au combat, tant qu'on n'en souffre pas.
+    {id:"antidotePill", name:"Pilule d'Antidote", type:"reusable", minLevel:3, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:5,
+     description:"Guérit le poison (rechargé en 5 tours)", effect:{cure:['poisoned']}},
+    {id:"clearIncense", name:"Encens de Clarté", type:"reusable", minLevel:12, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+     description:"Guérit le silence et la confusion (rechargé en 6 tours)", effect:{cure:['muted', 'confused']}},
+    {id:"lotusBalm", name:"Baume de Lotus", type:"reusable", minLevel:18, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+     description:"Guérit la brûlure et le ralentissement (rechargé en 6 tours)", effect:{cure:['burning', 'chilled']}},
+    {id:"breakingStonePill", name:"Pilule de Pierre Brisée", type:"reusable", minLevel:22, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
+     description:"Guérit la pétrification, l'affaiblissement et l'épuisement (rechargé en 6 tours)", effect:{cure:['petrified', 'weakened', 'exhausted']}},
+    {id:"jadeSaltTalisman", name:"Talisman de Sel de Jade", type:"reusable", minLevel:34, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:7,
+     description:"Guérit la malédiction et la corruption (rechargé en 7 tours)", effect:{cure:['cursed', 'corrupted']}},
+    {id:"purificationElixir", name:"Élixir de Purification", type:"reusable", minLevel:48, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Guérit toutes les altérations négatives (rechargé en 8 tours)", effect:{cure:'all'}},
+
     // Reliques permanentes (niveau 8+)
     {id:"amuletOfPower", name:"Amulette du Tigre Blanc", type:"artifact", minLevel:10, rarity:"rare",
      description:"Augmente attaque de 8 (permanent)", effect:{permAttack:8}},
@@ -212,6 +226,21 @@ export function getRarityColor(rarity) {
     return colors[rarity] || '#aaa';
 }
 
+// Objets actifs du héros : `activeInventoryIndex` (objet 1) et `activeInventoryIndex2` (objet 2), des index du sac.
+export const ACTIVE_ITEM_KEYS = ['activeInventoryIndex', 'activeInventoryIndex2'];
+
+/** Index du sac actifs (objet 1 puis objet 2), `null` pour un emplacement vide. */
+export const activeItemIndexes = hero => ACTIVE_ITEM_KEYS.map(k => (Number.isInteger(hero?.[k]) ? hero[k] : null));
+
+/** Le sac vient de perdre l'objet `removed` (vente, jet, bouclier équipé) : les index qui le suivent reculent, l'objet 2 retiré se vide. */
+export function shiftActiveItemIndexes(hero, removed) {
+    ACTIVE_ITEM_KEYS.forEach((k, slot) => {
+        if (!Number.isInteger(hero[k])) return;
+        if (hero[k] > removed) hero[k]--;
+        else if (hero[k] === removed && slot === 1) hero[k] = null;
+    });
+}
+
 // Utiliser un objet de l'inventaire
 export function useItem(itemId, player, enemy, preferredIndex = null) {
     const isPreferredIndexValid = Number.isInteger(preferredIndex)
@@ -267,6 +296,10 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
             flyHeal(true, item.effect.heal);
             message += `Vous récupérez ${item.effect.heal} HP. `;
         }
+    }
+    if(item.effect.cure) {   // remède : guérit des altérations (une liste de clés, ou 'all')
+        const cured = cureStatuses(player, item.effect.cure);
+        message += cured.length ? `Vous guérissez ${cured.map(k => CURE_NAMES[k]).join(', ')}. ` : `Aucune altération à guérir. `;
     }
     if(item.effect.mana) {
         flyManaGain(true, Object.fromEntries(Object.keys(player.mana).map(color => [color, item.effect.mana])), { fromId: 'item-button' });

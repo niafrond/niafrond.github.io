@@ -116,6 +116,8 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `storyQuests.js` — Quêtes de base de l'histoire : histoire principale puis quêtes annexes. Données pures, extraites de story.js.
 - `storyScreens.js` — Écrans de base de l'histoire (un par région/sanctuaire : décor, PNJ, ennemis, coffres, sorties).
 - `storyText.js` — Textes de l'histoire : titre, introduction et épilogue de « La Légende de Hou Yi ». Extrait de story.js (ré-exporté).
+- `enemyBehaviors.js` — Comportements distinctifs de boss (Dragon de feu, Reine de glace, Chevalier noir) : armure, garde, contre-attaque, tempête, pastilles. Module pur.
+- `gearEffects.js` — Effets de combat de l'équipement (`effects` : dégâts contre altération, bonus de sorts, résistances par source, signature, parade → qì, résistance aux contrôles). Module pur.
 - `stuff.js` — Stuff : casque, collier, bracelet et bague. Module pur (sans DOM).
 - `stuffView.js` — Onglet « Stuff » : casque, collier, bracelet et bague (stuff.js). Affichage et actions du joueur ; la logique est dans stuff.js.
 - `sw.js` — (sans description)

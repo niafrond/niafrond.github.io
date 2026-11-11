@@ -54,6 +54,7 @@
   "enemyAI.js",
   "enemyAIChoice.js",
   "enemyAIProfiles.js",
+  "enemyBehaviors.js",
   "enemyGrowth.js",
   "enemyStuff.js",
   "equipPreview.js",
@@ -88,6 +89,7 @@
   "gameStatsTab.js",
   "gameTooltips.js",
   "gameTurnFlow.js",
+  "gearEffects.js",
   "icon.svg",
   "icons.js",
   "items.js",
@@ -265,8 +267,10 @@
   "fonts/press-start-2p.woff2",
   "audio/manifest.json",
   "audio/sfx-models.json",
+  "audio/sfx/armorMelt.mp3",
   "audio/sfx/battleStart.mp3",
   "audio/sfx/bossStart.mp3",
+  "audio/sfx/burn.mp3",
   "audio/sfx/change-breath.mp3",
   "audio/sfx/change-cake.mp3",
   "audio/sfx/change-cut.mp3",
@@ -275,12 +279,16 @@
   "audio/sfx/change-mirror.mp3",
   "audio/sfx/change-swap.mp3",
   "audio/sfx/combatStart.mp3",
+  "audio/sfx/cure.mp3",
   "audio/sfx/default.mp3",
   "audio/sfx/defeat.mp3",
+  "audio/sfx/dragonBreath.mp3",
   "audio/sfx/endingJingle.mp3",
   "audio/sfx/heal.mp3",
+  "audio/sfx/iceStorm.mp3",
   "audio/sfx/introJingle.mp3",
   "audio/sfx/invalid.mp3",
+  "audio/sfx/knightCounter.mp3",
   "audio/sfx/manaGain-3.mp3",
   "audio/sfx/manaGain-4.mp3",
   "audio/sfx/manaGain-5.mp3",
@@ -293,6 +301,7 @@
   "audio/sfx/match-skull-3.mp3",
   "audio/sfx/match-skull-4.mp3",
   "audio/sfx/match-skull-5.mp3",
+  "audio/sfx/parryQi.mp3",
   "audio/sfx/skullHit-e-3.mp3",
   "audio/sfx/skullHit-e-4.mp3",
   "audio/sfx/skullHit-e-5.mp3",
@@ -3436,6 +3445,11 @@
    "h": "2b81ab3aed"
   },
   {
+   "p": "sprites/spellfx/dragonBreath.png",
+   "s": 17024,
+   "h": "879d3ff40b"
+  },
+  {
    "p": "sprites/spellfx/dragonCross.png",
    "s": 78598,
    "h": "a618c0daee"
@@ -3586,14 +3600,19 @@
    "h": "0f6558ea30"
   },
   {
+   "p": "sprites/spellfx/iceStorm.png",
+   "s": 22295,
+   "h": "e3d738d5f9"
+  },
+  {
    "p": "sprites/spellfx/immortalPeach.png",
    "s": 66495,
    "h": "8fb3e4400a"
   },
   {
    "p": "sprites/spellfx/index.json",
-   "s": 13771,
-   "h": "a13c533c6e"
+   "s": 14125,
+   "h": "22c5a9430b"
   },
   {
    "p": "sprites/spellfx/inferno.png",
@@ -3629,6 +3648,11 @@
    "p": "sprites/spellfx/jadeSpringBlessing.png",
    "s": 65227,
    "h": "ed33b8a327"
+  },
+  {
+   "p": "sprites/spellfx/knightCounter.png",
+   "s": 8230,
+   "h": "3797a2a649"
   },
   {
    "p": "sprites/spellfx/kunlunMountainFall.png",

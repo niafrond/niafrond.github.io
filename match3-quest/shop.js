@@ -7,6 +7,7 @@ import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus } from './merchants.js';
 import { describeManaMax } from './manaGear.js';
+import { describeEffects } from './gearEffects.js';
 import { BIOME_LABELS } from './weapons.js';
 import { previewEquip, equippedCounterpart, isComparable } from './equipPreview.js';
 import { compareButtonHtml, equipDeltaGroupsHtml } from './compareView.js';
@@ -55,6 +56,7 @@ function attributesOf(kind, obj) {
     }
     const mana = describeManaMax(obj);
     if (mana) out.push(`<span class="rc-attr">${escapeHtml(mana)}</span>`);
+    describeEffects(obj).forEach(t => out.push(`<span class="rc-attr">${escapeHtml(t)}</span>`));
     return out.concat(level(obj.minLevel || 1));
 }
 
