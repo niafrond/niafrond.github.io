@@ -31,7 +31,7 @@ import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimatio
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -744,7 +744,9 @@ export function handleEnemyDefeated(){
         if(itemOrWeapon >= weaponChance) {
             // chance d'obtenir un objet (1 - weaponChance)
             const droppedItem = getRandomItem(player.level);
-            if(droppedItem) {
+            if(droppedItem && sellDuplicateItem(droppedItem)) {
+                // déjà possédé : converti en or, sans le dire
+            } else if(droppedItem) {
                 player.inventory.push({...droppedItem, applied: false});
                 normalizeActiveInventoryIndex();
                 combatRewards.items.push(droppedItem.name);
@@ -776,7 +778,6 @@ export function handleEnemyDefeated(){
                     const bonusGold = Math.floor(randomWeapon.minLevel * 2 + 5);
                     player.gold = (player.gold || 0) + bonusGold;
                     combatRewards.gold += bonusGold;
-                    log(`Arme déjà possédée, convertie en ${bonusGold} pièce${bonusGold > 1 ? 's' : ''} d'or.`);
                 }
             }
         }
@@ -792,6 +793,8 @@ export function handleEnemyDefeated(){
             combatRewards.weapons.push(entry.weapon.name);
             updateAvailableWeapons();
             log(`${rarityEmoji} ${enemy.name} était plus fort que vous : vous obtenez ${entry.weapon.name} !`);
+        } else if(sellDuplicateItem(entry.item)) {
+            // déjà possédé : converti en or, sans le dire
         } else {
             player.inventory.push({...entry.item, applied: false});
             normalizeActiveInventoryIndex();

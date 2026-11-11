@@ -412,7 +412,7 @@ export function updateInventoryTab(){
         const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : sameAsOther ? 'Un objet identique est déjà actif' : `Équiper en objet ${freeSlot}`;
         const primary = slot === 2
             ? `<button type="button" class="rc-btn rc-btn-alt" ${inCombat ? 'disabled' : ''} onclick="window.unsetSecondItem()">Retirer</button>`
-            : isActive ? '' : `<button type="button" class="rc-btn" ${levelLocked || inCombat || sameAsOther ? 'disabled' : ''} title="${escapeHtml(activateTitle)}" onclick="window.setActiveInventoryItem(${index}, ${freeSlot})">${levelLocked ? `Niv. ${item.minLevel}` : 'Activer'}</button>`;
+            : (isActive || !usable) ? '' : `<button type="button" class="rc-btn" ${levelLocked || inCombat || sameAsOther ? 'disabled' : ''} title="${escapeHtml(activateTitle)}" onclick="window.setActiveInventoryItem(${index}, ${freeSlot})">${levelLocked ? `Niv. ${item.minLevel}` : 'Activer'}</button>`;
         const slotChoice = usable && !isActive && !levelLocked && !inCombat && !sameAsOther && activeItem
             ? `<button type="button" class="item-discard-btn" onclick="window.setActiveInventoryItem(${index}, 1)">En objet 1</button>` : '';
         const more = slotChoice + sellTagButton(item, count) + `<button type="button" class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>`;
