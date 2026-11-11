@@ -163,6 +163,18 @@ export const ENEMY_RAW_CATEGORY_FACTOR = { weak: 1.48, normal: 1.03, aggressive:
 export const enemyRawDamagePerCycleModel = (enemyLevel, category = 'normal') =>                   // dégâts bruts de l'ennemi par cycle, avant réglage
     (2.5 + 0.32 * Math.max(1, enemyLevel)) * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1);   // pente du héros complet, base des premiers niveaux
 
+// Mode de difficulté (Options > Difficulté des ennemis) : en plus de la qualité des décisions de l'IA (enemyAIProfiles.js), il règle la
+// vitesse à laquelle l'ennemi peut vaincre le héros, donc ses dégâts. Taux de victoire visés du héros complet par mode et catégorie ;
+// Auto garde le calibrage de référence (TARGET des simulations). Multiplicateurs trouvés par simulation (tools/balance-search.mjs search-modes).
+export const DIFFICULTY_TARGET_WIN_RATE = {
+    easy: { weak: 0.98, normal: 0.95, aggressive: 0.92, elite: 0.9, miniBoss: 0.88, boss: 0.85 },
+    normal: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.72, boss: 0.7 },
+    auto: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 },
+    hard: { weak: 0.9, normal: 0.72, aggressive: 0.68, elite: 0.62, miniBoss: 0.56, boss: 0.5 },
+    expert: { weak: 0.85, normal: 0.6, aggressive: 0.55, elite: 0.48, miniBoss: 0.42, boss: 0.35 }
+};
+export const DIFFICULTY_WIN_RATIO_FACTOR = { auto: 1, easy: 1, normal: 1, hard: 1, expert: 1 };
+
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui
 // (Zhi, objets de soin, sorts de soin dès le niveau 17-20), donc à niveau élevé l'ennemi doit pouvoir frapper relativement plus fort.
 export const WIN_RATIO_LEVEL_ANCHORS = [[5, 0.66], [15, 1.08], [30, 0.79], [50, 0.7], [68, 0.7]];   // tools/balance-search.mjs search-levels
@@ -203,7 +215,7 @@ const mid = ([a, b]) => (a + b) / 2;
  *  - damageScale : multiplicateur des dégâts que l'ennemi inflige, pour qu'il vainque un héros de `heroMaxHp` PV en ENEMY_WIN_RATIO × la durée cible.
  * `records` : combats mesurés (récents) ; on n'en retient que ceux joués à ±3 niveaux du héros.
  */
-export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors }) {
+export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', difficultyFactor }) {
     const heroMaxHp = heroEffectiveHp(rawHeroMaxHp, heroLevel);   // PV qui comptent vraiment (plafond de progression)
     const heroDamageScale = rawHeroMaxHp > heroMaxHp ? Math.round((rawHeroMaxHp / heroMaxHp) * 100) / 100 : 1;
     const near = records.filter(r => r && r.outcome === 'victory' && Math.abs((r.playerLevel || 0) - heroLevel) <= 3);
@@ -220,7 +232,8 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const rawEnemy = measured?.rawDamageTakenPerCycle > 0
         ? measured.rawDamageTakenPerCycle * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1)
         : enemyRawDamagePerCycleModel(enemyLevel, category);
-    const ratio = (winRatio ?? ENEMY_WIN_RATIO[category] ?? 1.2) * winRatioLevelFactor(heroLevel, levelAnchors);
+    const ratio = (winRatio ?? ENEMY_WIN_RATIO[category] ?? 1.2) * winRatioLevelFactor(heroLevel, levelAnchors)
+        * (difficultyFactor ?? DIFFICULTY_WIN_RATIO_FACTOR[difficulty] ?? 1);
     const wanted = heroMaxHp / (cycles * ratio);
     const damageScale = Math.round(Math.min(DAMAGE_SCALE_BOUNDS[1], Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;
     return { hp, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };

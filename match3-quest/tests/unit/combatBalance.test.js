@@ -136,3 +136,20 @@ describe('combatBalance : source des dégâts', () => {
         expect(DAMAGE_SOURCES).toHaveLength(4);
     });
 });
+
+import { DIFFICULTY_WIN_RATIO_FACTOR, DIFFICULTY_TARGET_WIN_RATE } from '../../combatBalance.js';
+describe('combatBalance : mode de difficulté', () => {
+    test('plus le mode est difficile, plus l\'ennemi frappe fort ; les PV ne changent pas', () => {
+        const base = { category: 'boss', heroMaxHp: 400, heroLevel: 40 };
+        const scale = d => calibrateEnemy({ ...base, difficulty: d }).damageScale;
+        expect(scale('easy')).toBeLessThanOrEqual(scale('normal'));
+        expect(scale('normal')).toBeLessThanOrEqual(scale('hard'));
+        expect(scale('hard')).toBeLessThanOrEqual(scale('expert'));
+        expect(calibrateEnemy({ ...base, difficulty: 'expert' }).hp).toBe(calibrateEnemy({ ...base, difficulty: 'easy' }).hp);
+    });
+    test('cibles décroissantes de Facile à Expert ; Auto garde le calibrage de référence', () => {
+        expect(DIFFICULTY_WIN_RATIO_FACTOR.auto).toBe(1);
+        expect(DIFFICULTY_TARGET_WIN_RATE.easy.boss).toBeGreaterThan(DIFFICULTY_TARGET_WIN_RATE.expert.boss);
+        expect(calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 30 }).damageScale).toBe(calibrateEnemy({ category: 'normal', heroMaxHp: 300, heroLevel: 30, difficulty: 'auto' }).damageScale);
+    });
+});
