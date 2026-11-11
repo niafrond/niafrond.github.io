@@ -1,3 +1,9 @@
+## [2.230.1](https://github.com/niafrond/niafrond.github.io/compare/v2.230.0...v2.230.1) (2026-11-11)
+
+### Bug Fixes
+
+* **match3-quest:** simplifier le texte du talisman de résonance en « dégâts xN.N » ([2970c47](https://github.com/niafrond/niafrond.github.io/commit/2970c47a8b64053f1e961128c4647809e4c13c56))
+
 ## [2.230.0](https://github.com/niafrond/niafrond.github.io/compare/v2.229.0...v2.230.0) (2026-11-11)
 
 ### Features
