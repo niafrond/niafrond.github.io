@@ -1,3 +1,9 @@
+## [2.231.0](https://github.com/niafrond/niafrond.github.io/compare/v2.230.1...v2.231.0) (2026-11-11)
+
+### Features
+
+* **match3-quest:** afficher les dégâts de l'attaque préparée des boss ([#710](https://github.com/niafrond/niafrond.github.io/issues/710)) ([00795ec](https://github.com/niafrond/niafrond.github.io/commit/00795ec2a56b03d01cf03023f28693d7cd41ba25))
+
 ## [2.230.1](https://github.com/niafrond/niafrond.github.io/compare/v2.230.0...v2.230.1) (2026-11-11)
 
 ### Bug Fixes
