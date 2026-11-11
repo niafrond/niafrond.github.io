@@ -28,8 +28,13 @@ export function createBossScript(enemy, difficulty = 'auto') {
     const h = hash(enemy.mapEnemyId || enemy.templateId || enemy.name || 'boss');
     const period = PERIOD.min + (h % PERIOD.spread);
     const first = PERIOD.first + ((h >>> 3) % 2);
+    const color = ['red', 'blue', 'green', 'yellow', 'purple'].includes(enemy.preferredColor) ? enemy.preferredColor : 'red';
+    const name = SIGNATURE_NAMES[color] || 'Frappe dévastatrice';
     return {
-        name: SIGNATURE_NAMES[enemy.preferredColor] || 'Frappe dévastatrice',
+        name, color,
+        // Fiche de sort affichée parmi les sorts du boss (gameHud.js) : gratuite, désactivée tant que le boss ne l'a pas annoncée, puis active
+        // avec son délai ; les dégâts ne sont pas annoncés.
+        spell: { id: 'bossSignature', name, color, colors: [color], cost: {}, type: 'bossSignature', description: `Attaque dévastatrice : ${name}. Inactive jusqu'à ce que le boss s'échauffe, puis il frappe 2 tours plus tard.` },
         share: SIGNATURE_SHARE[difficulty] ?? SIGNATURE_SHARE.auto,
         period, turn: 0, nextAt: first, charge: 0, triggers: [...HP_TRIGGERS]
     };
@@ -52,8 +57,8 @@ export function stepBossScript(script, enemy, { lostTurn = false } = {}) {
     if (lostTurn) return { action: 'none' };
     const hpPct = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 1;
     const phase = script.triggers.findIndex(t => hpPct <= t);
-    if (phase >= 0) script.triggers.splice(0, phase + 1);   // une phase franchie (et celles d'avant) ne se redéclenche pas
     if (phase >= 0 || script.turn >= script.nextAt) {
+        if (phase >= 0) script.triggers.splice(0, phase + 1);    // une phase franchie (et celles d'avant) ne se redéclenche pas
         script.charge = CHARGE_TURNS;
         return { action: 'start', left: CHARGE_TURNS, phase: phase >= 0 };
     }
@@ -74,3 +79,4 @@ export function signatureDamage(script, hero) {
     const base = script.share * Math.max(1, hero?.maxHp || 1);
     return { damage: Math.max(1, Math.round(base * (1 - reduction))), blocked: false, reduction };
 }
+

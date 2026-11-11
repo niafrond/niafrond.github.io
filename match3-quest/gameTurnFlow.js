@@ -25,7 +25,7 @@ import { animationFactor } from './gameOptions.js';
 import { flyHeal } from './manaFlight.js';
 import { getLeftHandWeapon, updateAvailableWeapons, updateInventoryTab } from './gameInventoryTabs.js';
 import { getSpellsByClass } from './spells.js';
-import { log, logActiveAction, saveUpdate, updateStats } from './gameHud.js';
+import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from './gameHud.js';
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
@@ -270,12 +270,14 @@ export function enemyTurn(){
         const step = stepBossScript(script, enemy, { lostTurn });
         if(step.action === 'interrupted') {
             log(`${enemy.name} est interrompu : ${script.name} n'aura pas lieu !`);
+            updateEnemySpells();
             showCombatAnimation({ icon: 'dizzy', title: 'ÉCHAUFFEMENT INTERROMPU', damage: script.name, target: `→ ${enemy.name}` }, true);
         } else if(step.action === 'start') {
             setCurrentTurn('enemy');
             log(`${enemy.name} prépare ${script.name}${step.phase ? ' (sa colère monte)' : ''} : il frappera dans ${step.left} tours.`);
             showCombatAnimation({ icon: 'fire', title: `${enemy.name} prépare ${script.name}`, damage: `Il frappera dans ${step.left} tours` }, false, { requireClick: true });
             updateStats();
+            updateEnemySpells();
             setTimeout(() => finishEnemyTurn(), 900);
             return;
         } else if(step.action === 'release') {
@@ -291,10 +293,12 @@ export function enemyTurn(){
                 showCombatAnimation({ icon: 'fire', title: script.name.toUpperCase(), damage: `-${hit.damage} dégâts${prepared}`, source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
             }
             updateStats();
+            updateEnemySpells();   // la carte du sort redevient inactive
             setTimeout(() => finishEnemyTurn(), 900);
             return;
         } else if(step.action === 'charging') {
             log(`${enemy.name} : ${script.name} frappera au prochain tour !`);
+            updateEnemySpells();   // le délai affiché sur le sort du boss
         }
     }
 

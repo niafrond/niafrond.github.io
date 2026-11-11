@@ -52,4 +52,14 @@ describe('boss semi-scriptés', () => {
         expect(preparationReduction({ statBuffs: { defense: { amount: 300 } }, damageReduction: 0.45 })).toBe(MAX_REDUCTION);
         expect(createBossScript(boss(), 'easy').share).toBeLessThan(createBossScript(boss(), 'expert').share);
     });
+    test('attaque préparée = un sort gratuit du boss, inactif tant qu\'il ne l\'a pas annoncée, sans puissance annoncée', () => {
+        const s = createBossScript(boss({ level: 30 }));
+        expect(s.spell).toMatchObject({ id: 'bossSignature', name: 'Brasier dévastateur', color: 'red', cost: {} });
+        expect(s.spell.description).not.toMatch(/\d+ ?%|dégâts?\b.*\d/);
+        expect(s.charge).toBe(0);   // inactif au départ : la fiche s'allume quand charge > 0
+        const e = boss();
+        s.nextAt = 1;
+        expect(stepBossScript(s, e).action).toBe('start');
+        expect(s.charge).toBe(CHARGE_TURNS);
+    });
 });
