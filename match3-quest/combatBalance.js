@@ -150,16 +150,17 @@ export function saveCombatRecord(record, storage = globalThis.localStorage) {
 export const ENEMY_WIN_RATIO = { weak: 3.25, normal: 1.8, aggressive: 1.9, elite: 1.35, miniBoss: 1.05, boss: 1.15 };
 // Correction des PV par catégorie (simulation) : durée cible ÷ durée moyenne observée des victoires (le héros ne tape pas au maximum
 // à chaque cycle : il prépare ses PA et son qì, l'ennemi bloque…).
-export const HP_DURATION_FACTOR = { weak: 0.5, normal: 0.82, aggressive: 0.83, elite: 0.93, miniBoss: 0.88, boss: 1 };
+export const HP_DURATION_FACTOR = { weak: 0.5, normal: 0.77, aggressive: 0.85, elite: 1.02, miniBoss: 0.98, boss: 1.15 };
 export const DEFAULT_CYCLE_SECONDS = 30;     // tant que le jeu n'a pas mesuré le rythme (exemple du document)
 export const MIN_SAMPLE = 4;                 // combats mesurés (proches du niveau du héros) avant de préférer les mesures au modèle
 export const DAMAGE_SCALE_BOUNDS = [0.5, 4];
-// Modèles tirés de la simulation (tools/balance-search.mjs rates : 2 016 combats, héros types sans stuff) ; remplacés par les mesures du joueur
+// Modèles tirés de la simulation d'un héros « complet » (tools/balance-search.mjs fit : 1 680 combats, niveaux 1 à 70, 4 classes, meilleur
+// équipement de son niveau, sorts équipés avec leurs effets, ultime, objet de soin, compagnon) ; remplacés par les mesures du joueur
 // dès MIN_SAMPLE victoires proches de son niveau.
-export const heroDamagePerCycleModel = heroLevel => 4 + 0.78 * Math.max(1, heroLevel);              // dégâts effectifs du héros par cycle
-export const ENEMY_RAW_CATEGORY_FACTOR = { weak: 1.5, normal: 1.05, aggressive: 1.2, elite: 1.15, miniBoss: 1.15, boss: 1.55 };   // rapport mesuré à l'ennemi normal
+export const heroDamagePerCycleModel = heroLevel => 6.2 + 0.71 * Math.max(1, heroLevel);            // dégâts effectifs du héros par cycle
+export const ENEMY_RAW_CATEGORY_FACTOR = { weak: 1.48, normal: 1.03, aggressive: 1.42, elite: 1.35, miniBoss: 1.24, boss: 2.09 };   // rapport mesuré à l'ennemi normal
 export const enemyRawDamagePerCycleModel = (enemyLevel, category = 'normal') =>                   // dégâts bruts de l'ennemi par cycle, avant réglage
-    (2.5 + 0.38 * Math.max(1, enemyLevel)) * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1);
+    Math.max(1.5, 0.35 * Math.max(1, enemyLevel)) * (ENEMY_RAW_CATEGORY_FACTOR[category] || 1);
 
 // Le héros n'est pas non plus un sac à PV : au-delà du budget de sa progression (base + niveaux + Endurance, plus une marge de stuff), seule une part
 // de ses PV compte pour la durée du combat. Les statistiques affichées ne changent pas ; l'excédent est neutralisé par un surcroît de dégâts subis.
