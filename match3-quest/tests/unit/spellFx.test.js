@@ -8,11 +8,14 @@ const spells = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.
 describe('spellFx', () => {
     beforeEach(() => setSpellFxIndex(index));
 
-    test('chaque entrée a sa planche et un nom de sort du catalogue', () => {
+    // Attaques de boss (enemyBehaviors.js) : pas des sorts du catalogue, leur nom est le titre de l'annonce de combat.
+    const BOSS_FX = { iceStorm: 'Tempête de Givre', dragonBreath: 'Souffle de Braise', knightCounter: 'Contre-attaque' };
+
+    test('chaque entrée a sa planche et un nom de sort du catalogue (ou d\'attaque de boss)', () => {
         const names = new Set(Object.values(spells).flat().filter(s => s && s.id).map(s => s.name));
         for (const [id, e] of Object.entries(index)) {
             expect(existsSync(new URL(`../../sprites/spellfx/${id}.png`, import.meta.url))).toBe(true);
-            expect(names.has(e.name)).toBe(true);
+            expect(BOSS_FX[id] ? e.name === BOSS_FX[id] : names.has(e.name)).toBe(true);
             expect(e.frames).toBeGreaterThanOrEqual(5);
         }
     });

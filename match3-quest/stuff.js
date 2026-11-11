@@ -10,7 +10,8 @@
 //
 // Le héros garde `stuffOwned` (ids possédés) et `stuff` ({ head, neck, wrist, ring } : id porté ou null).
 
-import { describeManaMax } from './manaGear.js';   // cycle assumé : utilisé seulement à l'exécution
+import { describeManaMax } from './manaGear.js';
+import { describeEffects } from './gearEffects.js';   // cycle assumé (gearEffects importe stuff.js) : utilisé seulement à l'exécution   // cycle assumé : utilisé seulement à l'exécution
 
 const allColors = n => ({ red: n, blue: n, green: n, yellow: n, purple: n });
 
@@ -88,6 +89,15 @@ export const allStuff = [
     piece('bague_de_l_orage_pourpre', 'ring', 'Bague de l\'orage pourpre', 13, 'rare', 'Une améthyste où gronde un orage lointain.', { manaMax: { yellow: 12, purple: 12 }, defBonus: 2 }),
     piece('bracelet_des_cinq_souffles', 'wrist', 'Bracelet des cinq souffles', 18, 'rare', 'Cinq perles, une par élément, enfilées sur un fil de soie.', { manaMax: allColors(5), atkBonus: 2 }),
     piece('casque_du_sage_celeste', 'head', 'Diadème du sage céleste', 26, 'legendary', 'Un diadème d\'argent que seuls portent les maîtres des cinq éléments.', { manaMax: allColors(10), maxHp: 20, defBonus: 4 }),
+    // Effets de combat (`effects`, gearEffects.js) : le joueur prépare son équipement selon l'adversaire.
+    piece('bracelet_garde_crane', 'wrist', 'Brassard du garde-crânes', 6, 'uncommon', 'Un brassard de cuir clouté qui encaisse les coups de masse.', { effects: { resist: { skull: 15 } } }),
+    piece('bague_de_braise', 'ring', 'Bague de braise vive', 7, 'uncommon', 'Un rubis sombre où rougeoie une braise : les sorts de feu y puisent.', { effects: { spellBoost: { red: 12 } } }),
+    piece('collier_des_fleches_detournees', 'neck', 'Collier des flèches détournées', 9, 'uncommon', 'Une plaque de jade poli : les traits glissent dessus.', { effects: { resist: { weapon: 15 } } }),
+    piece('bague_de_la_parade_fluide', 'ring', 'Bague de la parade fluide', 10, 'rare', 'Un anneau d\'argent : chaque parade rouvre une source de qì.', { defBonus: 2, effects: { parryQi: { chance: 35, amount: 2 } } }),
+    piece('collier_de_la_maree', 'neck', 'Collier de la marée', 11, 'rare', 'Une perle bleue où gronde la marée : les sorts d\'Eau déferlent plus fort.', { maxHp: 10, effects: { spellBoost: { blue: 15 } } }),
+    piece('casque_du_veilleur', 'head', 'Casque du veilleur', 12, 'rare', 'Un casque de bronze à visière : ni coup à la tête ni berceuse ne vous font tomber.', { defBonus: 3, effects: { controlResist: { stunned: 100, asleep: 50 } } }),
+    piece('bague_du_sceau_etanche', 'ring', 'Bague du sceau étanche', 13, 'rare', 'Un sceau de cire noire qui dévie les sortilèges.', { effects: { resist: { spell: 15 } } }),
+    piece('bracelet_de_l_inflexible', 'wrist', 'Bracelet de l\'inflexible', 14, 'rare', 'Un bracelet d\'acier trempé : les attaques annoncées des seigneurs y perdent de leur fureur.', { defBonus: 2, effects: { signatureReduce: 25 } }),
     // Colliers de biome : uniquement en récompense de leur quête (world/collars.js), jamais en boutique ni en butin.
     piece('collier_obsidienne', 'neck', 'Collier d\'obsidienne froide', 4, 'rare', 'Une obsidienne qui ne chauffe jamais : la lave vous est indifférente.', { biomeProtect: 'volcano', maxHp: 10, quest: true }),
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
@@ -123,6 +133,7 @@ export function describeStuff(stuff) {
         stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
         describeManaMax(stuff),
         stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
+        ...describeEffects(stuff),
         stuff.armor ? `${ANTIQUE_ARMORS[stuff.armor].name} (4 pièces : ${ANTIQUE_ARMORS[stuff.armor].powerText.toLowerCase()})` : '',
         stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',
         stuff.stealth ? 'Indétectable : évite les combats (sauf boss)' : ''

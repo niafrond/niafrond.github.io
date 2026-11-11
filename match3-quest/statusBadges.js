@@ -1,4 +1,5 @@
 import { icon } from './icons.js';
+import { behaviorBadges } from './enemyBehaviors.js';
 
 // Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
 
@@ -42,6 +43,9 @@ export function activeStatuses(entity) {
     if (n(se.exhausted) > 0) add('exhausted', 'hourglass', 'Épuisé', 'debuff', `Perd ${n(se.exhaustDrain) || 3} qì d'une couleur au hasard à chaque tour.`, n(se.exhausted));
     if (n(se.corrupted) > 0) add('corrupted', 'blood', 'Corrompu', 'debuff', 'Ses soins deviennent des dégâts.', n(se.corrupted));
     if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
+    if (n(se.chilled) > 0) add('chilled', 'snow', 'Ralenti', 'debuff', 'Gagne 1 point de combat de moins par match de flèches. Un sort de Feu sur la reine de glace le dissipe.', n(se.chilled));
+    if (n(se.burning) > 0) add('burning', 'fire', 'Brûlé', 'debuff', `Subit ${n(se.burnDamage)} dégâts de feu à chaque tour.`, n(se.burning));
+    behaviorBadges(entity?.behavior).forEach(b => add(b.id, b.icon, b.label, b.kind, b.text, b.turns));   // comportement de boss (enemyBehaviors.js)
     // Boss semi-scripté (bossScript.js) : échauffement en cours, attaque dévastatrice dans `charge` tour(s).
     const script = entity?.bossScript;
     if (n(script?.charge) > 0) add('bossCharge', 'fire', script.name, 'debuff', `Frappera dans ${n(script.charge)} tour(s).`, n(script.charge));

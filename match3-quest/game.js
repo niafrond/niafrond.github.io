@@ -1,6 +1,7 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { createBossScript } from './bossScript.js';
+import { createBossScript, noteChargeDamage } from './bossScript.js';
+import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
 import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
@@ -13,6 +14,7 @@ import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from 
 import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, stuffTotals, normalizeStuff, grantStuff } from "./stuff.js";
+import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
 import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, HP_BAR_EMPTY_PAUSE_MS } from "./combatFlow.js";
@@ -38,8 +40,8 @@ import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
-import { describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
+import { cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
+import { setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
@@ -48,8 +50,8 @@ export { TOOLTIP_LONG_PRESS_MS };
 import { spellCooldownLeft, startSpellCooldown, resetSpellCooldowns } from "./spellCooldown.js";
 import { equipSpell, equipUltimate, unequipSpell, archiveSpell, unarchiveSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
 export { equipSpell, equipUltimate, unequipSpell, updateSpellsTab };
-import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
-export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem };
+import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, unsetSecondItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
+export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, unsetSecondItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem };
 import { allSpells as spellsCatalog } from "./spells.js";
 import { _activeCounters, log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from './gameHud.js';
 export * from './gameHud.js';
@@ -385,6 +387,33 @@ export function applyDamage(target, damage, options = {}){
         else if(target === player) normalizedDamage = styleDamageTaken(player, normalizedDamage);
     }
 
+    // Effets d'équipement (gearEffects.js) : bonus du héros contre une altération ou une couleur de sort, résistances selon la source des dégâts.
+    // Ni poison, ni reflet, ni ultime : seulement les coups (crânes, armes, sorts).
+    if(normalizedDamage > 0 && !options.sourceSpell?.ultimate && (options.sourceSpell || options.damageSource === 'skull' || options.damageSource === 'weapon')){
+        if(target === enemy){
+            const boosted = boostedDamageDealt(player, enemy, normalizedDamage, { colors: options.sourceSpell ? spellColorsOf(options.sourceSpell) : [] });
+            if(boosted.damage > normalizedDamage){ log(`Équipement : +${boosted.damage - normalizedDamage} dégâts (${boosted.notes.join(', ')}).`); normalizedDamage = boosted.damage; }
+        } else if(target === player){
+            const source = options.sourceSpell ? 'spell' : options.damageSource;
+            const resisted = resistedDamageTaken(player, normalizedDamage, source);
+            if(resisted.damage < normalizedDamage){ log(`Équipement : −${normalizedDamage - resisted.damage} dégâts subis (résistance ${resisted.pct} %).`); normalizedDamage = resisted.damage; }
+        }
+    }
+
+    // Comportement du boss (enemyBehaviors.js) : armure de givre, garde du chevalier, rupture de l'échauffement du dragon.
+    if(target === enemy && normalizedDamage > 0 && !options.sourceSpell?.ultimate && enemy.behavior){
+        const kind = damageKindOf(options);
+        const adj = adjustDamageTaken(enemy.behavior, normalizedDamage, { kind, colors: options.sourceSpell ? spellColorsOf(options.sourceSpell) : [] });
+        if(adj.notes.length) log(`${escapeHtml(enemy.name)} : ${adj.notes.join(', ')}.`);
+        normalizedDamage = adj.damage;
+        if(adj.melted) playSfx('armorMelt');
+        if(adj.melted && cureStatuses(player, ['chilled']).length) log('La chaleur dissipe le ralentissement : vous retrouvez votre rythme !');
+        if(adj.counterReady) log(`${escapeHtml(enemy.name)} prépare une contre-attaque !`);
+    }
+    if(target === enemy && normalizedDamage > 0 && enemy.bossScript && noteChargeDamage(enemy.bossScript, enemy, normalizedDamage)){
+        log(`Brèche ! ${escapeHtml(enemy.name)} est déséquilibré : ${enemy.bossScript.name} sera interrompu.`);
+    }
+
     normalizedDamage = cursedDamage(target, normalizedDamage);   // Maudit : dégâts majorés
     // Calibrage de la durée (combatBalance.js) : multiplicateur des dégâts infligés au héros par l'ennemi (1 tant qu'il n'y a pas de mesures).
     const enemyDamageScale = (target === player && enemy.damageScale > 0) ? enemy.damageScale : 1;
@@ -557,7 +586,7 @@ function enemyInflictsAlteration(caster, target, spell){
     showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: '→ Vous' }, false);
     log(landed
         ? `${escapeHtml(caster.name)} lance ${spell.name} : vous êtes ${label.name.toLowerCase()} pendant ${turns} tours (${label.text}).`
-        : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité aux effets négatifs).`);
+        : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité ou équipement).`);
 }
 
 export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
@@ -678,7 +707,8 @@ export let player = {
     statusEffects: {},  // effets de statut actifs (poison, stun, buffs, etc.)
     defense: 0,  // défense du joueur
     inventory: [],  // inventaire des objets possédés
-    activeInventoryIndex: null,  // index de l'objet actuellement actif
+    activeInventoryIndex: null,  // index de l'objet actif n°1
+    activeInventoryIndex2: null,  // index de l'objet actif n°2 (optionnel, d'un autre type que le n°1)
     sellTags: [],  // ids des objets dont l'excédent est à vendre au prochain marchand
     tempAttack: 0,  // bonus d'attaque temporaire
     tempDefense: 0,  // bonus de défense temporaire
@@ -1337,6 +1367,7 @@ export function loadGameData() {
             normalizeStuff(player);
             if(player.equipment.leftHand && player.equipment.leftHand.type !== 'shield') player.equipment.leftHand = catalogWeapon(player.equipment.leftHand);
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
+            player.activeInventoryIndex2 = loaded.activeInventoryIndex2 ?? null;
             player.tempAttack = loaded.tempAttack ?? player.tempAttack;
             player.tempDefense = loaded.tempDefense ?? player.tempDefense;
             player.hasRevive = loaded.hasRevive ?? player.hasRevive;
@@ -1383,6 +1414,7 @@ export function loadGameData() {
 export function normalizeActiveInventoryIndex() {
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) {
         player.activeInventoryIndex = null;
+        player.activeInventoryIndex2 = null;
         return;
     }
 
@@ -1393,6 +1425,17 @@ export function normalizeActiveInventoryIndex() {
         const usable = player.inventory.findIndex(item => item?.type !== 'shield');
         player.activeInventoryIndex = usable >= 0 ? usable : null;
     }
+    // Objet n°2 : un objet d'usage du sac, différent du n°1 (sinon l'emplacement se vide)
+    const second = player.activeInventoryIndex2;
+    const item2 = Number.isInteger(second) ? player.inventory[second] : null;
+    if(!item2 || second === player.activeInventoryIndex || item2.type === 'shield' || item2.type === 'artifact' || item2.id === player.inventory[player.activeInventoryIndex]?.id) {
+        player.activeInventoryIndex2 = null;
+    }
+}
+
+export function getSecondActiveInventoryItem() {
+    normalizeActiveInventoryIndex();
+    return Number.isInteger(player.activeInventoryIndex2) ? player.inventory[player.activeInventoryIndex2] || null : null;
 }
 
 export function getActiveInventoryItem() {
@@ -1779,7 +1822,8 @@ function calibrateEnemyForCombat(target){
     target.modeDivisor = result.modeDivisor;
     bakeEnemyDamage(target, result.damageMult);
     target.balanceCategory = category;
-    target.bossScript = createBossScript(target, getOption('aiDifficulty') || 'auto');   // boss semi-scripté : attaque dévastatrice annoncée
+    target.behavior = createBehavior(target, template);   // comportement distinctif (Dragon de feu, Reine de glace, Chevalier noir)
+    target.bossScript = createBossScript(target, getOption('aiDifficulty') || 'auto', target.behavior?.id || null);   // boss semi-scripté : attaque dévastatrice annoncée
     annotateCombatRecord({ category, difficulty: getOption('aiDifficulty') || 'auto', enemyId: target.mapEnemyId || target.templateId || null, damageMult: result.damageMult, measuredWeight: result.measuredWeight });
 }
 
@@ -2018,6 +2062,17 @@ window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
 window.archiveSpell = archiveSpell;
 setAlterationHooks({ damage: (t, d) => applyDamage(t, d), log });
+// Équipement : après un blocage ou une parade du héros, chance de récupérer du qì (gearEffects.js, `parryQi`).
+setStrikeHooks({ onBlock: (target) => {
+    if(target !== player) return;
+    const gain = parryQiGain(player);
+    if(gain.amount <= 0) return;
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    playSfx('parryQi');
+    addManaForColor(player, color, gain.amount, { applyGainBonus: false });
+    log(`Équipement : la parade vous rend ${gain.amount} qì ${color}.`);
+} });
 window.unarchiveSpell = unarchiveSpell;
 window.equipUltimate = equipUltimate;
 window.equipWeapon = equipWeapon;
@@ -2028,3 +2083,4 @@ window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
 window.toggleSellSurplus = toggleSellSurplus;
 window.setActiveInventoryItem = setActiveInventoryItem;
+window.unsetSecondItem = unsetSecondItem;

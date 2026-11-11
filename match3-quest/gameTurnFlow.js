@@ -3,7 +3,7 @@
 import { boardSize } from './constants.js';
 import { tutorialCallbacks } from './tutorial.js';
 import { getAvailableWeapons } from './weapons.js';
-import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, board } from './board.js';
+import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, scrambleTiles, board } from './board.js';
 import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE } from './stuff.js';
 import { rollEnemyStuffDrops } from './enemyStuff.js';
 import { recordVictory } from './bossTips.js';
@@ -11,8 +11,9 @@ import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } fro
 import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
-import { healEntity, tickAlterations, isAsleep, confusedSelfHit } from './alterations.js';
+import { healEntity, tickAlterations, isAsleep, confusedSelfHit, inflictAlteration } from './alterations.js';
 import { stepBossScript, signatureDamage } from './bossScript.js';
+import { stepBehavior, burnOf, BEHAVIOR_INFO, ICE_QUEEN } from './enemyBehaviors.js';
 import { tickSpellCooldowns } from './spellCooldown.js';
 import { getRandomItem, getRarityIcon, applyArtifactEffects, tickReusableRecharge } from './items.js';
 import { rollCompanionPowers } from './companionPowers.js';
@@ -288,6 +289,11 @@ export function enemyTurn(){
                 showCombatAnimation({ icon: 'shield', title: script.name.toUpperCase(), heal: 'Bloqué par le Bastion', source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
             } else {
                 applyDamage(player, hit.damage, { damageSource: 'boss' });
+                if(script.burn) playSfx('dragonBreath');
+                if(script.burn && player.hp > 0){   // Dragon de feu : attaque de zone, elle brûle aussi
+                    const burn = burnOf(player);
+                    if(inflictAlteration(player, 'burning', burn.turns, { burnDamage: burn.damage })) log(`Les flammes vous gagnent : ${burn.damage} dégâts par tour pendant ${burn.turns} tours.`);
+                }
                 const prepared = hit.reduction > 0 ? ` (préparation : -${Math.round(hit.reduction * 100)} %)` : '';
                 log(`${enemy.name} déchaîne ${script.name} : ${hit.damage} dégâts${prepared}.`);
                 showCombatAnimation({ icon: 'fire', title: script.name.toUpperCase(), damage: `-${hit.damage} dégâts${prepared}`, source: enemy.name, target: '→ Vous' }, false, { requireClick: true });
@@ -319,6 +325,40 @@ export function enemyTurn(){
         updateStats();
         setTimeout(() => { finishEnemyTurn(); }, 500);
         return;
+    }
+
+    // Comportement du boss (enemyBehaviors.js) : annonce au premier tour, puis tempête de la Reine de glace ou contre-attaque du Chevalier noir.
+    if(enemy.behavior || enemy.bossScript?.burn){
+        const id = enemy.behavior?.id;
+        if(!enemy.behaviorAnnounced){
+            enemy.behaviorAnnounced = true;
+            const info = BEHAVIOR_INFO[id || 'fireDragon'];
+            if(info) log(`${info.name} : ${info.summary}`);
+        }
+        const step = stepBehavior(enemy.behavior, enemy, player);
+        step.notes.forEach(m => log(m));
+        if(step.action === 'storm') {
+            setCurrentTurn('enemy');
+            playSfx('iceStorm');
+            const chilled = inflictAlteration(player, 'chilled', ICE_QUEEN.chillTurns);
+            const scrambled = scrambleTiles(ICE_QUEEN.scrambleTiles);
+            log(`${enemy.name} déchaîne une tempête de givre !${chilled ? ' Vous êtes ralenti.' : ' Vous résistez au ralentissement.'}${scrambled ? ' Le plateau est brouillé.' : ''}`);
+            showCombatAnimation({ icon: 'snow', title: 'TEMPÊTE DE GIVRE', damage: chilled ? 'Ralenti' : 'Résisté', source: enemy.name, target: '→ Vous' }, false);
+            updateStats();
+            setTimeout(() => finishEnemyTurn(), 900);   // le brouillage ne crée aucune combinaison : le plateau est déjà stable
+            return;
+        }
+        if(step.action === 'counter') {
+            setCurrentTurn('enemy');
+            const strike = resolveStrike(step.damage, enemy, player);
+            applyDamage(player, strike.damage, { damageSource: 'boss' });
+            playSfx('knightCounter');
+            showStrikeAnimation({ icon: 'sword', title: 'CONTRE-ATTAQUE', source: enemy.name, target: '→ Vous' }, strike, false, strike.damage);
+            log(`${enemy.name} contre-attaque : ${strike.damage} dégâts.${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
+            updateStats();
+            setTimeout(() => finishEnemyTurn(), 900);
+            return;
+        }
     }
 
     setCurrentTurn('enemy');
@@ -505,6 +545,14 @@ export function finishEnemyTurn(){
             updateStats();
             if(player.hp <= 0){ handlePlayerDeath(); return; }
         }
+        if((player.statusEffects?.burning || 0) > 0){   // Brûlé (Souffle de braise) : dégâts de feu à chaque tour
+            const burnDmg = Math.max(1, Math.floor(player.statusEffects.burnDamage || 1));
+            applyDamage(player, burnDmg);
+            playSfx('burn');
+            log(`Brûlure : vous subissez ${burnDmg} dégâts.`);
+            updateStats();
+            if(player.hp <= 0){ handlePlayerDeath(); return; }
+        }
         applyAncientTurnPowers();
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
@@ -610,7 +658,9 @@ export function finishEnemyTurn(){
         // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
         tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
         tickSpellCooldowns();   // temps de recharge des sorts (Brasier des Sceaux…)
-        const playerSleeps = isAsleep(player);   // Endormi : le héros perd ce tour (sauf s'il a été réveillé par des dégâts)
+        const playerStunned = (player.statusEffects?.stunned || 0) > 0;   // Étourdi (sort ennemi) : le héros perd aussi ce tour
+        if(playerStunned) player.statusEffects.stunned--;
+        const playerSleeps = isAsleep(player) || playerStunned;   // Endormi : le héros perd ce tour (sauf s'il a été réveillé par des dégâts)
         tickAlterations(player).forEach(m => log(m));
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         turnFlags.foxActed = false;
@@ -621,7 +671,7 @@ export function finishEnemyTurn(){
         updateStats(); // Pour mettre à jour le liseré
         restartSuggestionTimer();
         if(playerSleeps){
-            log('Vous dormez et ne pouvez pas agir ce tour-ci.');
+            log(playerStunned ? 'Vous êtes étourdi et perdez ce tour.' : 'Vous dormez et ne pouvez pas agir ce tour-ci.');
             setTimeout(() => { if(gameState.combatState === 'active' && player.hp > 0) enemyTurn(); }, 900);
             return;
         }

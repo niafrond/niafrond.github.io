@@ -169,6 +169,10 @@ export function enemyVersionOfSpell(sp){
         const { effect, cooldown, ...rest } = sp;
         return { ...rest, type: 'heal' };
     }
+    if(sp.effect === 'cageEnemy'){   // Prison du Tonnerre Glacé : l'ennemi étourdit le héros (un casque peut l'en protéger)
+        const { effect, manaDrain, ...rest } = sp;
+        return { ...rest, effect: 'alterEnemy', alteration: 'stunned' };
+    }
     return null;   // Brasier des Sceaux (crânes qui profiteraient au joueur), Prison du Tonnerre Glacé (étourdissement du héros non géré)
 }
 

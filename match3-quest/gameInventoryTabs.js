@@ -3,7 +3,9 @@
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareButtonHtml, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
-import { getItemIcon, getRarityColor, useItem, describeRecharge } from "./items.js";
+import { getItemIcon, getRarityColor, useItem, describeRecharge, shiftActiveItemIndexes } from "./items.js";
+import { afflictionsOf } from "./alterations.js";
+import { playSfx } from "./sound.js";
 import { icon as svgIcon } from "./icons.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { itemGroupKey, toggleSellTag, allShieldsTagged } from "./merchants.js";
@@ -11,7 +13,7 @@ import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
 import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
 import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
-import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn } from "./game.js";
+import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn } from "./game.js";
 
 // -------------------------------------
 // Armes
@@ -316,7 +318,7 @@ export function equipGear(inventoryIndex){
     if(previous?.type === 'shield'){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
     if(it.defense) player.defense = (player.defense || 0) + it.defense;
     // L'index de l'objet actif suit le décalage de l'inventaire
-    if(Number.isInteger(player.activeInventoryIndex) && player.activeInventoryIndex > inventoryIndex) player.activeInventoryIndex--;
+    shiftActiveItemIndexes(player, inventoryIndex);
     saveUpdate();
     log(`${it.name} équipé.`);
     updateWeaponsTab();
@@ -344,7 +346,7 @@ function groupInventoryEntries(entries){
         const key = itemGroupKey(e.it);
         const g = groups.get(key);
         if(!g) groups.set(key, { ...e, count: 1 });
-        else { g.count++; if(e.index === player.activeInventoryIndex) g.index = e.index; }
+        else { g.count++; if(e.index === player.activeInventoryIndex || e.index === player.activeInventoryIndex2) g.index = e.index; }
     });
     return [...groups.values()];
 }
@@ -392,17 +394,28 @@ export function updateInventoryTab(){
     const entries = groupInventoryEntries(sortedEntries(player.inventory.map((item, index) => ({ it: item, index })).filter(({ it }) => it.type !== 'shield'), 'items-sort'));
     const activeItem = getActiveInventoryItem();
     const inCombat = gameState.combatState === 'active';
-    inventoryList.innerHTML = entries.map(({ it: item, index, count }) => {
-        const isActive = index === player.activeInventoryIndex;
+    const secondName = getSecondActiveInventoryItem()?.name;
+    const hint = `<p class="rc-hint" style="margin:0 0 6px;font-size:12px;opacity:.75">Au combat : <b>2 objets</b> au plus (objet 1${secondName ? ` : ${escapeHtml(activeItem?.name || '—')} • objet 2 : ${escapeHtml(secondName)}` : ' ; un 2e emplacement est libre'}). « Activer » équipe l'objet, « ⋯ » choisit l'emplacement.</p>`;
+    inventoryList.innerHTML = hint + entries.map(({ it: item, index, count }) => {
+        const slot = index === player.activeInventoryIndex ? 1 : index === player.activeInventoryIndex2 ? 2 : 0;   // objet actif n°1 / n°2
+        const isActive = slot > 0;
         const usable = item.type === 'consumable' || item.type === 'reusable';
         const levelLocked = player.level < (item.minLevel || 1);
         const charges = item.type === 'reusable' ? `${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : '';
         // Écarts avec l'objet actif (seulement entre objets d'usage qui ont un effet en commun), sinon la première phrase de l'effet.
         const deltas = !isActive && usable && sharesEffect(item, activeItem) ? deltaBadgesHtml(itemNumbers(item), itemNumbers(activeItem), ITEM_DELTA_FIELDS) : '';
         const chips = (usable ? `<span class="rc-chip">${item.actionPoints || 2} ${svgIcon('arrow')}</span>` : '') + (charges ? `<span class="rc-chip" title="Charges">${charges}</span>` : '');
-        const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : 'Utiliser cet objet en combat';
-        const primary = isActive ? '' : `<button type="button" class="rc-btn" ${levelLocked || inCombat ? 'disabled' : ''} title="${escapeHtml(activateTitle)}" onclick="window.setActiveInventoryItem(${index})">${levelLocked ? `Niv. ${item.minLevel}` : 'Activer'}</button>`;
-        const more = sellTagButton(item, count) + `<button type="button" class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>`;
+        // Deux objets actifs : « Activer » prend la place libre (sinon remplace l'objet 2) ; le menu « ⋯ » permet de choisir l'emplacement.
+        // Deux objets du même nom ne se partagent pas les deux emplacements.
+        const sameAsOther = usable && !isActive && [player.activeInventoryIndex, player.activeInventoryIndex2].some(i => Number.isInteger(i) && player.inventory[i]?.id === item.id);
+        const freeSlot = activeItem ? 2 : 1;
+        const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : sameAsOther ? 'Un objet identique est déjà actif' : `Équiper en objet ${freeSlot}`;
+        const primary = slot === 2
+            ? `<button type="button" class="rc-btn rc-btn-alt" ${inCombat ? 'disabled' : ''} onclick="window.unsetSecondItem()">Retirer</button>`
+            : isActive ? '' : `<button type="button" class="rc-btn" ${levelLocked || inCombat || sameAsOther ? 'disabled' : ''} title="${escapeHtml(activateTitle)}" onclick="window.setActiveInventoryItem(${index}, ${freeSlot})">${levelLocked ? `Niv. ${item.minLevel}` : 'Activer'}</button>`;
+        const slotChoice = usable && !isActive && !levelLocked && !inCombat && !sameAsOther && activeItem
+            ? `<button type="button" class="item-discard-btn" onclick="window.setActiveInventoryItem(${index}, 1)">En objet 1</button>` : '';
+        const more = slotChoice + sellTagButton(item, count) + `<button type="button" class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>`;
         const tip = cardTipHtml(escapeHtml(item.name), [
             usable ? `${item.actionPoints || 2} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • Charges ${charges}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` (${escapeHtml(describeRecharge(item))})` : ''}` : ''}` : 'Relique permanente',
             count > 1 ? `Exemplaires : ${count}` : ''
@@ -412,7 +425,7 @@ export function updateInventoryTab(){
             cls: `${isActive ? 'rc-equipped' : ''}${levelLocked ? ' is-locked' : ''}`,
             border: getRarityColor(item.rarity),
             name: `${getItemIcon(item)} ${escapeHtml(item.name)}`,
-            badges: (count > 1 ? badgeHtml(`×${count}`) : '') + (isActive ? badgeHtml('Actif', 'rc-badge-on') : ''),
+            badges: (count > 1 ? badgeHtml(`×${count}`) : '') + (isActive ? badgeHtml(`Objet ${slot}`, 'rc-badge-on') : ''),
             sub: chips + (deltas ? `<span class="card-deltas" title="Par rapport à l'objet actif">${deltas}</span>` : `<span class="rc-short">${escapeHtml(shortText(item.description))}</span>`),
             primary, more, tip
         });
@@ -433,9 +446,13 @@ export function updateItemButton(){
 
     if(!player.inventory || player.inventory.length === 0) return;
 
-    const item = getActiveInventoryItem();
-    if(!item) return;
+    // Objet 1 puis objet 2 (s'il y en a un) : un bouton chacun, au-dessus des sorts.
+    [[getActiveInventoryItem(), player.activeInventoryIndex], [getSecondActiveInventoryItem(), player.activeInventoryIndex2]].forEach(([item, index]) => {
+        if(item) container.appendChild(buildItemButton(item, index));
+    });
+}
 
+function buildItemButton(item, index){
     if(item.type === 'artifact'){
         const div = document.createElement('div');
         div.className = 'enemy-spell-item disabled';
@@ -447,8 +464,7 @@ export function updateItemButton(){
         const showDetails = () => showItemTooltip(div, item, { isEnemyItem: false });
         const hideDetails = () => hideSpellTooltip();
         bindTooltip(div, showDetails, hideDetails);
-        container.appendChild(div);
-        return;
+        return div;
     }
 
     const pa = item.actionPoints || 2;
@@ -473,32 +489,55 @@ export function updateItemButton(){
         btn.tabIndex = -1;
         btn.onclick = null;
     } else {
-        btn.onclick = () => useInventoryItem(item.id, player.activeInventoryIndex);
+        btn.onclick = () => useInventoryItem(item.id, index);
         btn.onkeydown = (event) => {
             if(event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                useInventoryItem(item.id, player.activeInventoryIndex);
+                useInventoryItem(item.id, index);
             }
         };
     }
-    container.appendChild(btn);
+    return btn;
 }
 
-export function setActiveInventoryItem(index){
+// Choisit l'objet actif n°1 ou n°2 (hors combat). Choisir un objet déjà actif dans l'autre emplacement échange les deux ;
+// l'objet 2 doit être un objet d'usage différent du n°1.
+export function setActiveInventoryItem(index, slot = 1){
     if(gameState.combatState === 'active'){
         log('Vous ne pouvez pas changer d\'objet actif pendant le combat !');
         return;
     }
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
     if(!Number.isInteger(index) || index < 0 || index >= player.inventory.length) return;
-    if(player.activeInventoryIndex === index) return;
     const chosen = player.inventory[index];
     if(chosen.type === 'shield') return;
     if(player.level < (chosen.minLevel || 1)){ log(`Nécessite niveau ${chosen.minLevel} pour utiliser ${chosen.name}.`); return; }
+    const key = slot === 2 ? 'activeInventoryIndex2' : 'activeInventoryIndex';
+    const otherKey = slot === 2 ? 'activeInventoryIndex' : 'activeInventoryIndex2';
+    if(player[key] === index) return;
+    if(player[otherKey] === index){   // déjà dans l'autre emplacement : on échange
+        player[otherKey] = player[key] ?? null;
+        player[key] = index;
+    } else {
+        const other = Number.isInteger(player[otherKey]) ? player.inventory[player[otherKey]] : null;
+        if(other && other.id === chosen.id){ log(`${chosen.name} est déjà équipé dans l'autre emplacement.`); return; }
+        if(slot === 2 && chosen.type === 'artifact') return;
+        player[key] = index;
+    }
+    normalizeActiveInventoryIndex();
+    log(`Objet ${slot === 2 ? 2 : 1} : ${chosen.name}.`);
+    updateInventoryTab();
+    updateItemButton();
+    saveUpdate();
+}
 
-    player.activeInventoryIndex = index;
-    const item = player.inventory[index];
-    log(`Objet actif : ${item.name}.`);
+// Libère l'emplacement de l'objet n°2 (hors combat).
+export function unsetSecondItem(){
+    if(gameState.combatState === 'active'){ log('Vous ne pouvez pas changer d\'objet actif pendant le combat !'); return; }
+    if(!Number.isInteger(player.activeInventoryIndex2)) return;
+    const item = player.inventory[player.activeInventoryIndex2];
+    player.activeInventoryIndex2 = null;
+    if(item) log(`${item.name} n'est plus équipé.`);
     updateInventoryTab();
     updateItemButton();
     saveUpdate();
@@ -507,6 +546,7 @@ export function setActiveInventoryItem(index){
 // Objet de pur soin inutile quand les PV sont déjà au maximum
 function isUselessHeal(item){
     const keys = Object.keys(item?.effect || {});
+    if(keys.length === 1 && keys[0] === 'cure') return afflictionsOf(player, item.effect.cure === 'all' ? undefined : item.effect.cure).length === 0;   // remède : rien à guérir
     return keys.length === 1 && keys[0] === 'heal' && player.hp >= player.maxHp;
 }
 
@@ -529,7 +569,7 @@ export function useInventoryItem(itemId, index){
         return;
     }
     if(!item){ log("Objet introuvable."); return; }
-    if(isUselessHeal(item)){ log("Vos PV sont déjà au maximum."); return; }
+    if(isUselessHeal(item)){ log(item.effect?.cure ? "Vous ne souffrez d'aucune altération que cet objet guérit." : "Vos PV sont déjà au maximum."); return; }
 
     const pa = item.actionPoints || 2;
     if(player.combatPoints < pa){
@@ -541,6 +581,7 @@ export function useInventoryItem(itemId, index){
     player.combatPoints -= pa;
     const result = useItem(itemId, player, enemy, resolvedIndex);
     if(result.success){
+        if(item.effect?.cure) playSfx('cure');
         logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
         log(result.message);
         // Animation d'utilisation (comme un sort ou une arme) : nom de l'objet et ses effets, au-dessus du plateau.
@@ -565,6 +606,7 @@ export function discardInventoryItem(index){
 
     const item = player.inventory[targetIndex];
     player.inventory.splice(targetIndex, 1);
+    shiftActiveItemIndexes(player, targetIndex);
     normalizeActiveInventoryIndex();
     log(`Vous avez jeté ${item.name}.`);
     updateInventoryTab();

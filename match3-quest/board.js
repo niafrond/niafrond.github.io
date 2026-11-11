@@ -15,6 +15,7 @@ import { actionGuard } from "./actionGuard.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
 import { showStrikeAnimation } from "./gameStatsTab.js";
 import { confusedSelfHit } from "./alterations.js";
+import { chilledGain } from "./enemyBehaviors.js";
 import { ensureBoardResizeListeners, syncBoardTileSize } from './boardLayout.js';
 export * from './boardLayout.js';
 import { clearSuggestion, clearSuggestionTimer, getSortedPossibleMoves, handleNoPossibleMoveForCurrentTurn, startSuggestionTimer } from './boardSuggestions.js';
@@ -124,6 +125,24 @@ export function convertRandomColorToArrows(rng = Math.random){
     board.forEach((tile, i) => { if(tile === color) board[i] = 'combat'; });
     renderBoard();
     return color;
+}
+
+// Brouille des cases du plateau (tempête de la Reine de glace) : mélange la couleur de `count` cases ordinaires, sans jamais créer de combinaison
+// (jusqu'à 12 essais). Renvoie true si le plateau a changé.
+export function scrambleTiles(count = 5, rng = Math.random){
+    const cells = board.map((tile, i) => (colors.includes(tile) ? i : -1)).filter(i => i >= 0);
+    if(cells.length < 2) return false;
+    const picked = [];
+    while(picked.length < Math.min(count, cells.length)) picked.push(cells.splice(Math.floor(rng() * cells.length), 1)[0]);
+    const before = board.slice();
+    for(let attempt = 0; attempt < 12; attempt++){
+        const tiles = picked.map(i => before[i]);
+        for(let k = tiles.length - 1; k > 0; k--){ const j = Math.floor(rng() * (k + 1)); [tiles[k], tiles[j]] = [tiles[j], tiles[k]]; }
+        picked.forEach((cell, k) => { board[cell] = tiles[k]; });
+        if(!hasMatchesOnBoard(board) && board.some((t, i) => t !== before[i])){ renderBoard(); return true; }
+    }
+    board.splice(0, board.length, ...before);
+    return false;
 }
 
 // Effet d'une case de biome traversée par un match (terrain.js) : le héros ou l'ennemi en profite de la même façon (qì, points de combat,
@@ -808,7 +827,7 @@ export function checkMatches(forceFullBoard = false){
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='combat'){
-            const actionGain = getEffectiveMatchLength(info);
+            const actionGain = chilledGain(getEffectiveMatchLength(info), currentPlayer);   // Ralenti (Reine de glace) : −1 flèche par match
             currentPlayer.combatPoints += actionGain;
             flyManaToCounter(indices, null, { isPlayer: currentPlayer === player, type: 'combat' });
             log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);

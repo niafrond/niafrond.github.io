@@ -1,6 +1,7 @@
 // Bibliothèque complète des armes du jeu
 
 import { describeManaMax } from './manaGear.js';
+import { describeEffects } from './gearEffects.js';
 
 // Types d'armes
 export const WeaponType = {
@@ -419,6 +420,19 @@ export const allWeapons = [
         description: "Un arc légendaire qui amplifie toute magie"
     },
 
+    // Arme à effet de combat (`effects`, gearEffects.js) : plus de dégâts contre un ennemi empoisonné.
+    {
+        id: "arc_de_la_vipere",
+        name: "Arc de la Vipère",
+        type: WeaponType.BOW,
+        damage: 28,
+        actionPoints: 3,
+        minLevel: 10,
+        rarity: WeaponRarity.RARE,
+        effects: { vsStatus: { poisoned: 25 } },
+        description: "Un arc de bois noir dont les flèches sont trempées de venin : il achève ce que le poison a commencé"
+    },
+
     // Armes qui augmentent le qì max (`manaMax` : une, deux ou cinq couleurs).
     {
         id: "arc_de_braise_de_qi",
@@ -526,7 +540,7 @@ export const WEAPON_STAT_BONUSES = {
 
 // Texte court des bonus d'une arme ou d'un bouclier (« Atk +5 • Déf +3 »), vide s'il n'en a pas.
 export function describeStatBonuses(piece) {
-    return [piece?.atkBonus ? `Atk +${piece.atkBonus}` : '', piece?.defBonus ? `Déf +${piece.defBonus}` : '', describeManaMax(piece)].filter(Boolean).join(' • ');
+    return [piece?.atkBonus ? `Atk +${piece.atkBonus}` : '', piece?.defBonus ? `Déf +${piece.defBonus}` : '', describeManaMax(piece), ...describeEffects(piece)].filter(Boolean).join(' • ');
 }
 
 /**

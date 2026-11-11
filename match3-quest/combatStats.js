@@ -227,8 +227,13 @@ export function resolveStrike(rawDamage, attacker, target, { rng = Math.random, 
     if (heavy) block = 'partial';   // un coup très puissant ne se bloque pas entièrement
     if (crit && !forced && !wall && block === 'total') block = 'partial';   // un coup critique ne se bloque pas entièrement (il peut être paré)
     damage = applyBlock(damage, block, heavy) + bonus;
+    if (block !== 'none') strikeHooks.onBlock(target, block);
     return { damage, crit, block, intended, heavy, unblockable };
 }
+
+// Hook posé par game.js : appelé quand une cible bloque ou pare un coup (effets d'équipement « après une parade », voir gearEffects.js).
+let strikeHooks = { onBlock: () => {} };
+export const setStrikeHooks = h => { strikeHooks = { ...strikeHooks, ...h }; };
 
 // Libellé d'un blocage pour le journal / l'animation.
 export function blockLabel(block) {

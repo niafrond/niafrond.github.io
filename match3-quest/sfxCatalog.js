@@ -11,6 +11,8 @@ export const SFX_RENDER_GAIN = 0.5;
 const SINGLE = ['uiClick', 'toggleOn', 'swap', 'invalid', 'turnBonus', 'spellCast', 'heal', 'victory', 'defeat',
     'battleStart', 'combatStart', 'bossStart', 'introJingle', 'endingJingle',
     // Mode Chang'e (change/view.js) : échange de tuiles, alignement, soin, gâteau offert, souffle lunaire, transition par le miroir, miroir qui s'éteint
+    // Combat : tempête de la Reine de glace, contre-attaque du Chevalier noir, brûlure, remède, qì après parade, armure de givre qui fond, Souffle de braise
+    'iceStorm', 'knightCounter', 'burn', 'cure', 'parryQi', 'armorMelt', 'dragonBreath',
     'change-swap', 'change-match', 'change-heal', 'change-cake', 'change-breath', 'change-mirror', 'change-cut'];
 const MATCH_TYPES = ['color', 'skull', 'combat'];
 const LENGTHS = [3, 4, 5];   // 3, 4, 5 et plus
