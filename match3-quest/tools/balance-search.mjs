@@ -314,6 +314,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const bosses = [];
         for (const sc of Object.values(SCREENS)) for (const e of (sc.enemies || [])) if (e.boss && !e.duel && !e.arena) bosses.push({ id: e.id, templateId: e.templateId, name: e.boss.name || e.name, level: e.boss.level });
         bosses.sort((a, b) => a.level - b.level);
+        if (process.env.BOSSES) bosses.splice(0, bosses.length, ...bosses.filter(b => process.env.BOSSES.split(',').includes(b.id)));
         const rows = [];
         let seed = Number(process.env.SEED) || 31000;
         for (const b of bosses) {
