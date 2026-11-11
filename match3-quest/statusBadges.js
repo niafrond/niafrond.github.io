@@ -44,7 +44,7 @@ export function activeStatuses(entity) {
     if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
     // Boss semi-scripté (bossScript.js) : échauffement en cours, attaque dévastatrice dans `charge` tour(s).
     const script = entity?.bossScript;
-    if (n(script?.charge) > 0) add('bossCharge', 'fire', script.name, 'debuff', `Frappera dans ${n(script.charge)} tour(s) : environ ${Math.round(script.share * 100)} % de vos PV max.`, n(script.charge));
+    if (n(script?.charge) > 0) add('bossCharge', 'fire', script.name, 'debuff', `Frappera dans ${n(script.charge)} tour(s).`, n(script.charge));
     return out;
 }
 

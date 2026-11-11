@@ -273,9 +273,8 @@ export function enemyTurn(){
             showCombatAnimation({ icon: 'dizzy', title: 'ÉCHAUFFEMENT INTERROMPU', damage: script.name, target: `→ ${enemy.name}` }, true);
         } else if(step.action === 'start') {
             setCurrentTurn('enemy');
-            const expected = Math.round(script.share * Math.max(1, player.maxHp));
-            log(`${enemy.name} prépare ${script.name}${step.phase ? ' (sa colère monte)' : ''} : il frappera dans ${step.left} tours, environ ${expected} dégâts.`);
-            showCombatAnimation({ icon: 'fire', title: `${enemy.name} prépare ${script.name}`, damage: `Il frappera dans ${step.left} tours`, target: `Environ ${expected} dégâts` }, false, { requireClick: true });
+            log(`${enemy.name} prépare ${script.name}${step.phase ? ' (sa colère monte)' : ''} : il frappera dans ${step.left} tours.`);
+            showCombatAnimation({ icon: 'fire', title: `${enemy.name} prépare ${script.name}`, damage: `Il frappera dans ${step.left} tours` }, false, { requireClick: true });
             updateStats();
             setTimeout(() => finishEnemyTurn(), 900);
             return;
