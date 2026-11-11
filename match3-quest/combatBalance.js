@@ -190,7 +190,50 @@ export const MIN_DAMAGE_MULT = 1;
 // Réglage propre à chaque boss de la carte (id → { attack, hp }), trouvé par simulation (tools/balance-search.mjs boss-adjust) : le calibrage
 // par catégorie est une moyenne, or chaque boss a son kit fixe (arme ou non, sorts plus ou moins forts). `attack` divise son attaque en plus du
 // mode (> 1 : moins fort), `hp` multiplie ses PV (durée ramenée vers le milieu de la fenêtre des boss).
-export const BOSS_ADJUST = {};   // un mode doux n'affaiblit jamais l'ennemi sous les chiffres de son grimoire et de son arme
+export const BOSS_ADJUST = {
+    fengmeng_1: { attack: 2.24, hp: 1.36 },
+    rizieres_warden: { attack: 2.38, hp: 1.4 },
+    volcan_forge_giant: { attack: 1.13, hp: 1.3 },
+    rizieres_cave_gardien: { attack: 2.24, hp: 1.41 },
+    sun_1: { attack: 1.98, hp: 1.24 },
+    gobi_dune_warlord: { attack: 2.87, hp: 1.2 },
+    volcan_cave_behemoth: { attack: 0.88, hp: 1.37 },
+    fengmeng_2: { attack: 2.24, hp: 0.9 },
+    gobi_crypt_gardien: { attack: 1.45, hp: 0.85 },
+    sun_6: { attack: 1.98, hp: 0.96 },
+    legend_zhuque_boss: { attack: 1.54, hp: 0.84 },
+    fleuve_sluice_golem: { attack: 1.45, hp: 0.85 },
+    fleuve_cave_gardien: { attack: 7.76, hp: 1.01 },
+    sun_4: { attack: 0.33, hp: 0.98 },
+    legend_xuanwu_boss: { attack: 0.65, hp: 1.13 },
+    bambous_seal_keeper: { attack: 0.69, hp: 1.23 },
+    sun_2: { attack: 7.76, hp: 0.74 },
+    bambous_crypt_abbe: { attack: 7.76, hp: 0.9 },
+    ws_gardien_jugement: { attack: 0.69, hp: 1.02 },
+    ws_wuchang_blanc: { attack: 0.94, hp: 1.02 },
+    ws_wuchang_noir: { attack: 0.5, hp: 0.94 },
+    ws_reflet_peche: { attack: 1, hp: 0.97 },
+    tonnerre_stone_lion: { attack: 1.13, hp: 0.91 },
+    ws_yanluo: { attack: 1.06, hp: 1.08 },
+    sun_3: { attack: 0.37, hp: 1.14 },
+    tonnerre_cave_wyrm: { attack: 0.65, hp: 0.94 },
+    wlm_gardien_flamme: { attack: 1, hp: 1 },
+    fauves_alpha_tiger: { attack: 0.54, hp: 1.04 },
+    fauves_crypt_tigre: { attack: 1.28, hp: 0.98 },
+    sun_5: { attack: 7.76, hp: 0.81 },
+    mer_tide_serpent: { attack: 0.69, hp: 1.5 },
+    legend_baihu_boss: { attack: 0.65, hp: 1.18 },
+    mer_cave_serpent: { attack: 0.73, hp: 1.5 },
+    sun_7: { attack: 2.1, hp: 1.49 },
+    fusang_root_guard: { attack: 2.38, hp: 1.29 },
+    fusang_crypt_liche: { attack: 0.88, hp: 1.48 },
+    sun_8: { attack: 0.94, hp: 1.6 },
+    changxi: { attack: 1.13, hp: 1.01 },
+    lune_crypt_vampire: { attack: 1.98, hp: 0.99 },
+    legend_qinglong_boss: { attack: 0.83, hp: 1.12 },
+    lune_frost_priestess: { attack: 2.38, hp: 0.85 },
+    sun_9: { attack: 1.2, hp: 0.98 }
+};   // un mode doux n'affaiblit jamais l'ennemi sous les chiffres de son grimoire et de son arme
 
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui
 // (Zhi, objets de soin, sorts de soin dès le niveau 17-20), donc à niveau élevé l'ennemi doit pouvoir frapper relativement plus fort.
