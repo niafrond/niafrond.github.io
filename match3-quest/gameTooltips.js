@@ -77,9 +77,11 @@ export function getSpellTooltipHtml(spell) {
     } else if(spell.dmg && spell.heal) {
         effectText = `Inflige ${spell.dmg} ${svgIcon('skull')} et soigne ${spell.heal} ${svgIcon('heart')}`;
     } else if(spell.dmg) {
-        effectText = `Inflige ${spell.dmg} ${svgIcon('skull')}`;
+        effectText = `Inflige ${spell.dmg} ${svgIcon('skull')}${spell.bossSignature && spell.description?.includes('brûle') ? ' et brûle' : ''}`;
     } else if(spell.heal) {
         effectText = `Soigne ${spell.heal} ${svgIcon('heart')}`;
+    } else if(spell.bossSignature && spell.description) {
+        effectText = spell.description;
     }
 
     return `<div class="spell-tooltip-line">${effectText}</div>`;

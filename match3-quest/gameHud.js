@@ -9,6 +9,7 @@ import { setAIDifficulty, getAIDifficulty } from './enemyAI.js';
 import { icon as svgIcon } from './icons.js';
 import { RAGE_MAX, getEquippedUltimate, isRageFull, canCastUltimateMana } from './ultimates.js';
 import { statusBadgesHtml } from './statusBadges.js';
+import { signatureDamage } from './bossScript.js';
 // Sans altération, la ligne des états reste réservée (vide) : la barre de PV passe toujours sous le portrait, sur toute la largeur de la fiche.
 const STATUS_ROW_PLACEHOLDER = '<div class="status-badges status-badges-empty" aria-hidden="true"></div>';
 import { animationFactor } from './gameOptions.js';
@@ -363,10 +364,17 @@ export function updateEnemySpells(){
     // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
     if((!enemy.spells || enemy.spells.length === 0) && !enemy.bossScript?.spell) return;
     
-    // Attaque dévastatrice du boss (bossScript.js) : affichée comme un sort, avec son coût en qì (les dégâts ne sont pas annoncés).
+    // Attaque dévastatrice du boss (bossScript.js) : affichée comme un sort, avec son coût en qì (dégâts prévus affichés, gameHud.js).
     const signature = enemy.bossScript?.spell ? [{ ...enemy.bossScript.spell, bossSignature: true }] : [];
     [...(enemy.spells || []), ...signature].forEach(rawSpell => {
-        const sp = enemySpellAsShown(rawSpell);
+        let sp = enemySpellAsShown(rawSpell);
+        // Attaque dévastatrice : dégâts prévus sur le héros, avec sa préparation actuelle (buffs, réduction, bouclier de Bastion).
+        if(sp.bossSignature && enemy.bossScript) {
+            const hit = signatureDamage(enemy.bossScript, player);
+            sp = hit.blocked
+                ? { ...sp, dmg: 0, description: `${sp.name} : bloquée par le Bastion, aucun dégât.` }
+                : { ...sp, dmg: hit.damage, description: `${sp.name} : inflige ${hit.damage} dégâts au héros${enemy.bossScript.burn ? ' et le brûle' : ''}${hit.reduction > 0 ? ` (réduits de ${Math.round(hit.reduction * 100)} % par ta préparation)` : ''}.` };
+        }
         const div = document.createElement('div');
         div.className = 'enemy-spell-item';
         // Attaque dévastatrice du boss : gratuite, désactivée jusqu'à son annonce, puis active avec son délai.
