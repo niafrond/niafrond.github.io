@@ -1,6 +1,6 @@
 // Boss semi-scriptés (bossScript.js) : échauffement annoncé, attaque dévastatrice, préparation du héros, interruption.
 import { describe, test, expect } from '@jest/globals';
-import { createBossScript, stepBossScript, signatureDamage, preparationReduction, CHARGE_TURNS, SIGNATURE_SHARE, MAX_REDUCTION } from '../../bossScript.js';
+import { createBossScript, stepBossScript, signatureDamage, preparationReduction, CHARGE_TURNS, SIGNATURE_SHARE, MAX_REDUCTION, PERIOD } from '../../bossScript.js';
 
 const boss = (extra = {}) => ({ isBoss: true, mapEnemyId: 'sun_1', preferredColor: 'red', hp: 1000, maxHp: 1000, ...extra });
 
@@ -12,13 +12,13 @@ describe('boss semi-scriptés', () => {
         const a = createBossScript(boss()), b = createBossScript(boss());
         expect(a).toEqual(b);
         expect(a.name).toBe('Brasier dévastateur');
-        expect(a.period).toBeGreaterThanOrEqual(4);
-        expect(a.period).toBeLessThanOrEqual(6);
+        expect(a.period).toBeGreaterThanOrEqual(PERIOD.min);
+        expect(a.period).toBeLessThan(PERIOD.min + PERIOD.spread);
     });
     test('déroulé : échauffement (pas d\'action), un tour normal, puis l\'attaque ; le rythme reprend ensuite', () => {
         const s = createBossScript(boss()), e = boss();
         const actions = [];
-        for (let t = 0; t < 14; t++) actions.push(stepBossScript(s, e).action);
+        for (let t = 0; t < 24; t++) actions.push(stepBossScript(s, e).action);
         const start = actions.indexOf('start');
         expect(actions.slice(start, start + 3)).toEqual(['start', 'charging', 'release']);
         expect(actions.filter(a => a === 'release').length).toBeGreaterThanOrEqual(2);
@@ -46,8 +46,8 @@ describe('boss semi-scriptés', () => {
         expect(s.share).toBe(SIGNATURE_SHARE.expert);
         expect(Math.max(...Object.values(SIGNATURE_SHARE))).toBeLessThan(1);
         const hero = { maxHp: 500, statusEffects: {}, statBuffs: {} };
-        expect(signatureDamage(s, hero).damage).toBe(300);
-        expect(signatureDamage(s, { ...hero, statBuffs: { defense: { amount: 25, turns: 3 } } }).damage).toBe(225);
+        expect(signatureDamage(s, hero).damage).toBe(Math.round(500 * SIGNATURE_SHARE.expert));
+        expect(signatureDamage(s, { ...hero, statBuffs: { defense: { amount: 25, turns: 3 } } }).damage).toBe(Math.round(500 * SIGNATURE_SHARE.expert * 0.75));
         expect(signatureDamage(s, { ...hero, statusEffects: { shieldWall: 2 } })).toMatchObject({ damage: 0, blocked: true });
         expect(preparationReduction({ statBuffs: { defense: { amount: 300 } }, damageReduction: 0.45 })).toBe(MAX_REDUCTION);
         expect(createBossScript(boss(), 'easy').share).toBeLessThan(createBossScript(boss(), 'expert').share);

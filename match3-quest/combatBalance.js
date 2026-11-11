@@ -201,6 +201,9 @@ export const MODE_DIVISOR = {
     expert: { weak: 0.83, normal: 0.45, aggressive: 1.09, elite: 1.04, miniBoss: 1.32, boss: 1.09 }
 };
 export const MIN_DAMAGE_MULT = 1;
+// Boss semi-scriptés (bossScript.js) : le danger vient surtout de leur attaque annoncée, leurs coups ordinaires peuvent donc descendre sous
+// les chiffres du grimoire (affichés tels qu'ils frappent).
+export const MIN_DAMAGE_MULT_BOSS = 0.5;
 // Coup fatal : le multiplicateur ne peut jamais porter un coup ordinaire de l'ennemi (arme, match de crânes, sort, poison) au-delà de
 // HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 60 %), sauf si ses chiffres bruts dépassaient déjà ce seuil.
 export const HIT_SHARE_CAP = 0.4;
@@ -208,7 +211,7 @@ export function cappedEnemyHit(base, mult, heroMaxHp) {
     const b = Math.max(0, Number(base) || 0);
     if (b <= 0) return 0;
     const cap = Math.max(b, HIT_SHARE_CAP * Math.max(1, Number(heroMaxHp) || 1));
-    return Math.max(1, Math.round(Math.min(b * Math.max(1, Number(mult) || 1), cap)));
+    return Math.max(1, Math.round(Math.min(b * Math.max(0.1, Number(mult) || 1), cap)));
 }
 // Réglage propre à chaque boss de la carte (id → { attack, hp }), trouvé par simulation (tools/balance-search.mjs boss-adjust) : le calibrage
 // par catégorie est une moyenne, or chaque boss a son kit fixe (arme ou non, sorts plus ou moins forts). `attack` divise son attaque en plus du
@@ -340,7 +343,7 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     // Mode : diviseur de l'attaque (réglage Expert × neutralisation des PV du héros au-delà du plafond) et des bonus du stuff ; PV inchangés.
     const divisor = Math.max(0.25, (modeDivisor ?? MODE_DIVISOR[difficulty]?.[category] ?? 1) * (adjust?.attack ?? 1));
     const expertMult = Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale);
-    const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(MIN_DAMAGE_MULT, expertMult / divisor)) * 100) / 100;
+    const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT, expertMult / divisor)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
     return { hp: finalHp, hpBase: hp, modeDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
 }

@@ -235,12 +235,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const fights = Number(process.argv[3]) || 1;
         const modes = (process.argv[4] || 'expert,hard,auto,normal,easy').split(',');
         const levels = ALL_LEVELS.filter(l => (l - 1) % 4 === 0 || l === MAX_LEVEL);
+        const cats = process.env.CATS ? process.env.CATS.split(',') : CATEGORIES;
         const table = {};
         for (const m of modes) {
             table[m] = {};
-            for (const cat of CATEGORIES) {
+            for (const cat of cats) {
                 const goal = CB.DIFFICULTY_TARGET_WIN_RATE[m][cat];
-                let lo = 0.4, hi = 8;
+                let lo = 0.4, hi = Number(process.env.HI) || 8;
                 for (let step = 0; step < 6; step++) {
                     const d = Math.sqrt(lo * hi);
                     const list = calibratedFights(cat, { fights, levels, profile: 'complet', aiPreference: m, difficulty: m, modeDivisor: d, seed0: 70000 + step * 613 });
