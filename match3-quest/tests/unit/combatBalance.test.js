@@ -153,3 +153,23 @@ describe('combatBalance : mode de difficulté', () => {
         Object.keys(MODE_DIVISOR.easy).forEach(cat => expect(MODE_DIVISOR.easy[cat]).toBeGreaterThanOrEqual(MODE_DIVISOR.expert[cat]));
     });
 });
+
+import { BOSS_ADJUST } from '../../combatBalance.js';
+describe('combatBalance : réglage propre à chaque boss', () => {
+    test('attack divise l\'attaque (jamais sous les chiffres du grimoire), hp multiplie les PV', () => {
+        const base = { category: 'boss', heroMaxHp: 400, heroLevel: 40, enemyLevel: 41 };
+        const plain = calibrateEnemy(base), adj = calibrateEnemy({ ...base, adjust: { attack: 2, hp: 1.5 } });
+        expect(adj.hp).toBe(Math.round(plain.hp * 1.5));
+        expect(adj.damageMult).toBeLessThan(plain.damageMult);
+        expect(calibrateEnemy({ ...base, adjust: { attack: 100 } }).damageMult).toBe(1);
+    });
+    test('chaque réglage de boss est borné', () => {
+        Object.values(BOSS_ADJUST).forEach(a => {
+            expect(a.attack).toBeGreaterThan(0.1);
+            expect(a.attack).toBeLessThan(10);
+            expect(a.hp).toBeGreaterThanOrEqual(0.6);
+            expect(a.hp).toBeLessThanOrEqual(1.6);
+        });
+        expect(Object.keys(BOSS_ADJUST).length).toBeGreaterThan(30);
+    });
+});
