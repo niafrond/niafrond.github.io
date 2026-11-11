@@ -277,16 +277,31 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         for (const b of bosses) {
             // 1. Attaque : dichotomie géométrique pour la cible du mode Auto (PV du calibrage).
             const cur = only ? (CB.BOSS_ADJUST[b.id]?.attack ?? 1) : null;
-            let lo = cur ? cur / 2.5 : 0.15, hi = cur ? cur * 2.5 : 8;
+            const curHp = only ? (CB.BOSS_ADJUST[b.id]?.hp ?? 1) : 1;
+            let lo = cur ? cur / 2.5 : 0.15, hi = cur ? cur * 8 : 8;
             for (let step = 0; step < 6; step++) {
                 const f = Math.sqrt(lo * hi);
-                if (winRate(run(b, { attack: f }, 90000 + step * 211)) < goal) lo = f; else hi = f;
+                if (winRate(run(b, { attack: f, hp: curHp }, 90000 + step * 211)) < goal) lo = f; else hi = f;
             }
             const attack = Math.round(Math.sqrt(lo * hi) * 100) / 100;
-            // 2. PV : durée des victoires ramenée vers le milieu de la fenêtre (bornée à ×0,6 - ×1,6).
-            const won = run(b, { attack }, 95000).filter(r => r.heroWon);
-            const dur = won.length ? mean(won.map(r => r.cycles * r.cycleSeconds)) : targetSec;
-            const hp = Math.round(Math.min(1.6, Math.max(0.6, targetSec / dur)) * 100) / 100;
+            let hp;
+            if (only) {
+                // Seconde passe : PV gardés ; si l'attaque est au plancher et que le boss reste trop dur, ses PV baissent (≥ ×0,6).
+                hp = curHp;
+                if (winRate(run(b, { attack, hp }, 97000)) < goal - 0.1) {
+                    let hlo = 0.6, hhi = curHp;
+                    for (let step = 0; step < 5; step++) {
+                        const h = (hlo + hhi) / 2;
+                        if (winRate(run(b, { attack, hp: h }, 98000 + step * 97)) < goal) hhi = h; else hlo = h;
+                    }
+                    hp = Math.round((hlo + hhi) / 2 * 100) / 100;
+                }
+            } else {
+                // 2. PV : durée des victoires ramenée vers le milieu de la fenêtre (bornée à ×0,6 - ×1,6).
+                const won = run(b, { attack }, 95000).filter(r => r.heroWon);
+                const dur = won.length ? mean(won.map(r => r.cycles * r.cycleSeconds)) : targetSec;
+                hp = Math.round(Math.min(1.6, Math.max(0.6, targetSec / dur)) * 100) / 100;
+            }
             table[b.id] = { attack, hp };
             console.log(b.id, b.level, JSON.stringify(table[b.id]));
         }
