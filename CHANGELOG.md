@@ -1,3 +1,9 @@
+## [2.232.0](https://github.com/niafrond/niafrond.github.io/compare/v2.231.0...v2.232.0) (2026-11-11)
+
+### Features
+
+* **match3-quest:** convertir les doublons de butin en or et répartir les actions du combat en lignes pleines ([c669a13](https://github.com/niafrond/niafrond.github.io/commit/c669a138d449b00598db847d720761d22b6b3794))
+
 ## [2.231.0](https://github.com/niafrond/niafrond.github.io/compare/v2.230.1...v2.231.0) (2026-11-11)
 
 ### Features
