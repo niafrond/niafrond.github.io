@@ -1,3 +1,52 @@
+## [2.228.0](https://github.com/niafrond/niafrond.github.io/compare/v2.227.2...v2.228.0) (2026-11-11)
+
+### Features
+
+* **match3-quest:** affiner le réglage de huit boss et tester les réglages par boss ([6941d22](https://github.com/niafrond/niafrond.github.io/commit/6941d22b37cfebe7dd66fc2256b20a2139430be2))
+* **match3-quest:** affiner le réglage de quinze boss hors fourchette ([635dc53](https://github.com/niafrond/niafrond.github.io/commit/635dc533a3117eef4ae9e99c0b91aebb0a2103df))
+* **match3-quest:** ajouter des boss semi-scriptés à l'attaque dévastatrice annoncée ([0c862c5](https://github.com/niafrond/niafrond.github.io/commit/0c862c5e37389a2b52de9bd642c65140e6eeb12b))
+* **match3-quest:** ajuster le rapport de victoire selon le niveau du héros ([0b3f2c4](https://github.com/niafrond/niafrond.github.io/commit/0b3f2c4da7808a57f81d25c14bd22a4e5c79122b))
+* **match3-quest:** amplifier les sorts ennemis par un Talisman de Résonance visible et non récupérable ([3085c9d](https://github.com/niafrond/niafrond.github.io/commit/3085c9d9fb3532332c87a87e5728917ba82f2957))
+* **match3-quest:** appliquer l'ajustement par tranche de niveau ([2eb8a2f](https://github.com/niafrond/niafrond.github.io/commit/2eb8a2fa2c3771feeac2e17372438bb276d0926a))
+* **match3-quest:** appliquer la troisième passe de réglage des boss ([47193d6](https://github.com/niafrond/niafrond.github.io/commit/47193d63caa80da646dcc3a1144596c962195e7e))
+* **match3-quest:** appliquer le multiplicateur du mode Expert ([1111b14](https://github.com/niafrond/niafrond.github.io/commit/1111b14846d1589e8baa68b6fff7604f1b505867))
+* **match3-quest:** appliquer le réglage de chaque boss trouvé par simulation ([ef77773](https://github.com/niafrond/niafrond.github.io/commit/ef77773689462ea4c9c1b2ae842e91bdcec6cc4a))
+* **match3-quest:** appliquer les diviseurs d'attaque et de stuff par mode ([070f050](https://github.com/niafrond/niafrond.github.io/commit/070f050c3bc41eeb46f63f47c2474eff9cc1c86a))
+* **match3-quest:** appliquer les diviseurs recalculés avec le plafond des coups et l'attaque dévastatrice ([dd120a5](https://github.com/niafrond/niafrond.github.io/commit/dd120a5f434661f54de169dce877bffe826c5eb4))
+* **match3-quest:** appliquer les multiplicateurs Facile, Normal et Difficile ([55bae6a](https://github.com/niafrond/niafrond.github.io/commit/55bae6aec1b2447d68f938144a3744e446498db7))
+* **match3-quest:** appliquer les rapports de victoire trouvés par simulation ([4b59f28](https://github.com/niafrond/niafrond.github.io/commit/4b59f283262dfa9de4328db196d7c3149cace2b2))
+* **match3-quest:** calibrer PV et dégâts des ennemis sur la durée des combats ([3422fe9](https://github.com/niafrond/niafrond.github.io/commit/3422fe99df9081b186463d517ed79f6047d189a2))
+* **match3-quest:** corriger les PV par catégorie d'après la durée simulée ([e26e246](https://github.com/niafrond/niafrond.github.io/commit/e26e2467a96f092bf6e2409e92cf4a62b202fa7c))
+* **match3-quest:** distinguer armes, sorts et crânes dans les mesures de combat ([1d90eb3](https://github.com/niafrond/niafrond.github.io/commit/1d90eb3749b768f2b80d6e007493f34b587992c9))
+* **match3-quest:** espacer l'attaque dévastatrice et laisser les boss frapper sous leur grimoire ([6388964](https://github.com/niafrond/niafrond.github.io/commit/63889649c9bd25d0ab486001e4b9bfaa11c15f09))
+* **match3-quest:** exclure les pauses de réflexion longues de la durée des combats ([3b01a2b](https://github.com/niafrond/niafrond.github.io/commit/3b01a2bd577747bf93f16d4a6f1edc0268d3ccd5))
+* **match3-quest:** garder les PV pour la durée et diviser l'attaque et le stuff selon le mode ([dd6e236](https://github.com/niafrond/niafrond.github.io/commit/dd6e236f218531bf1147a1e4b2fe58cc52a5862d))
+* **match3-quest:** intégrer les dégâts calibrés aux chiffres de l'ennemi et diviser PV et stuff selon le mode ([053fb4a](https://github.com/niafrond/niafrond.github.io/commit/053fb4ab4dba62c546f4c35258fa2716c2b33ce5))
+* **match3-quest:** mesurer la durée des combats et ajouter les formules d'équilibrage ([eb7c07e](https://github.com/niafrond/niafrond.github.io/commit/eb7c07ecaea6520ee0527d200659ce2f27613a2f))
+* **match3-quest:** mesurer les défaites, calibrer progressivement, plafonner les coups et vérifier les modes ([7fe8438](https://github.com/niafrond/niafrond.github.io/commit/7fe8438a6a986bb41b64dd87afe6cbfdf1f0096b))
+* **match3-quest:** plafonner les PV efficaces du héros pour la durée des combats ([cb25c5a](https://github.com/niafrond/niafrond.github.io/commit/cb25c5a8cd0993b9defaa2e4930de825fb6b06d8))
+* **match3-quest:** préparer la correction par mode et par catégorie ([a86f569](https://github.com/niafrond/niafrond.github.io/commit/a86f569690950025b052546df52dde2343cc669c))
+* **match3-quest:** prévoir un réglage propre à chaque boss ([4de063e](https://github.com/niafrond/niafrond.github.io/commit/4de063e78db8c2c12182b2ff908b5d4c79faae2e))
+* **match3-quest:** recalculer les modèles de dégâts sur le héros complet ([6374ac6](https://github.com/niafrond/niafrond.github.io/commit/6374ac63d2b91b47a31c881fba6ea9529ab85e48))
+* **match3-quest:** régler à nouveau les 42 boss avec l'attaque dévastatrice ([bbcbd9a](https://github.com/niafrond/niafrond.github.io/commit/bbcbd9af4163b14633793d9dfa4fece85d4cc981))
+* **match3-quest:** régler les dégâts calibrés selon le mode de difficulté ([11419a7](https://github.com/niafrond/niafrond.github.io/commit/11419a79f1cdc5181d6ccda752cd9cf171dc67ab))
+* **match3-quest:** régler les rapports de victoire sur le héros complet ([4894478](https://github.com/niafrond/niafrond.github.io/commit/4894478d8d03a11d5d902d53780684d362811655))
+* **match3-quest:** régler les trois derniers boss hors cible ([f8b8b85](https://github.com/niafrond/niafrond.github.io/commit/f8b8b855483dcf45defe3eb7389f8dcc7de18385))
+* **match3-quest:** simuler chaque boss de la carte ([d974a19](https://github.com/niafrond/niafrond.github.io/commit/d974a191ff9246a3c88ca2d1926e36ddd5eafe5a))
+* **match3-quest:** simuler des combats et calibrer sur des modèles mesurés ([65f7f5e](https://github.com/niafrond/niafrond.github.io/commit/65f7f5e979474512a48632b2e1c28d99e20fe08b))
+* **match3-quest:** simuler l'IA ennemie selon le mode de difficulté ([3b85ca8](https://github.com/niafrond/niafrond.github.io/commit/3b85ca8327deb75d933940d2e32650f1c573c923))
+* **match3-quest:** simuler un héros complet (sorts à effet, ultime, objet, compagnon) à tous les niveaux ([cb2aeec](https://github.com/niafrond/niafrond.github.io/commit/cb2aeeca4a5c375b2d81e7c9f7f57933ab4b7213))
+
+### Bug Fixes
+
+* **match3-quest:** annoncer l'attaque dévastatrice en clair (délai et dégâts en PV) ([bbaac3c](https://github.com/niafrond/niafrond.github.io/commit/bbaac3cc9a197d4a59369336960cb86af1b97c5d))
+* **match3-quest:** déclarer combatBalance.js dans l'import map et régénérer le précache ([ed0fd44](https://github.com/niafrond/niafrond.github.io/commit/ed0fd447f3c935548c3b8b0c42a707eff22b8140))
+* **match3-quest:** garder le stuff et les sorts des boss et ennemis d'une rencontre à l'autre ([5370dc7](https://github.com/niafrond/niafrond.github.io/commit/5370dc71459a25b3eb8902b986677785dd5fe0a3))
+* **match3-quest:** ne pas annoncer les dégâts de l'attaque dévastatrice ([dd30db1](https://github.com/niafrond/niafrond.github.io/commit/dd30db1d2ec2ac950fc560a50e6c0eb11d450fe1))
+* **match3-quest:** précacher combatBalance.js ([ab609ce](https://github.com/niafrond/niafrond.github.io/commit/ab609ced0cc66398b979af019869cd39515ff828))
+* **match3-quest:** régler aussi le poison des sorts ennemis ([0a3aa7a](https://github.com/niafrond/niafrond.github.io/commit/0a3aa7ada1a0c7c1340201a8b1e78f179d6d852e))
+* **match3-quest:** retirer les conseils de l'annonce d'attaque dévastatrice ([d86da5c](https://github.com/niafrond/niafrond.github.io/commit/d86da5c1b81801da3c8b24fba106c4ba0d7d98a7))
+
 ## [2.227.2](https://github.com/niafrond/niafrond.github.io/compare/v2.227.1...v2.227.2) (2026-11-10)
 
 ### Bug Fixes
