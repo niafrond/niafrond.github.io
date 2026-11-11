@@ -274,8 +274,8 @@ export function enemyTurn(){
         } else if(step.action === 'start') {
             setCurrentTurn('enemy');
             const pct = Math.round(script.share * 100);
-            log(`${enemy.name} s'échauffe${step.phase ? ' (sa colère monte)' : ''} : ${script.name} dans ${step.left} tours (${pct} % de vos PV max). Défense, Bastion, bouclier de qì ou soin pour l'encaisser ; l'étourdir ou l'endormir l'interrompt.`);
-            showCombatAnimation({ icon: 'fire', title: `${script.name.toUpperCase()} !`, damage: `Dans ${step.left} tours : ${pct} % de vos PV max`, source: enemy.name, target: 'Préparez-vous (défense, Bastion, bouclier, soin) ou étourdissez-le' }, false, { requireClick: true });
+            log(`${enemy.name} s'échauffe${step.phase ? ' (sa colère monte)' : ''} : ${script.name} dans ${step.left} tours (${pct} % de vos PV max).`);
+            showCombatAnimation({ icon: 'fire', title: `${script.name.toUpperCase()} !`, damage: `Dans ${step.left} tours : ${pct} % de vos PV max`, source: enemy.name }, false, { requireClick: true });
             updateStats();
             setTimeout(() => finishEnemyTurn(), 900);
             return;
