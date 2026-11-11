@@ -268,7 +268,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>
+        <div class="stat stat-row row-stats">${levelIndicator}<span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(enemy, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(enemy, 'defense')}</span></div>${enemyPowerRowHtml()}
         <div class="stat row-pills">
             <div class="mana-dots">
                 <span id="enemy-mana-red" class="cost-badge mana-red" title="red">${targetEnemyMana.red}</span>
@@ -307,6 +307,29 @@ export function updateStats(){
     updateEnemySpells();
 }
 
+// Puissance de l'ennemi (Talisman de Résonance : calibrage combatBalance.js) : une statistique, pas un objet affiché à part.
+const formatMult = m => String(Math.round(m * 10) / 10).replace('.', ',');
+function enemyPowerRowHtml(){
+    const m = enemy.spellAmplifier?.mult || enemy.skullMult || 1;
+    if(m === 1) return '';
+    return `<div class="stat stat-row row-stats"><span class="stat-chip" title="${escapeHtml(enemy.spellAmplifier?.name || 'Talisman de Résonance')} : ses sorts et ses crânes infligent ×${formatMult(m)} dégâts (déjà compté dans les dégâts affichés de ses sorts)."><strong>Puiss.</strong> ×${formatMult(m)}</span></div>`;
+}
+
+// Sort de l'ennemi tel qu'affiché : dégâts (et poison) déjà multipliés par son talisman.
+export function enemySpellAsShown(sp){
+    const m = enemy.spellAmplifier?.mult || 1;
+    if(m === 1 || !(sp.dmg || sp.dmgPerTile || sp.poisonDmg)) return sp;
+    const shown = { ...sp };
+    let desc = typeof sp.description === 'string' ? sp.description : null;
+    for(const key of ['dmg', 'dmgPerTile', 'poisonDmg']) {
+        if(!sp[key]) continue;
+        shown[key] = Math.max(1, Math.round(sp[key] * m));
+        if(desc) desc = desc.replace(new RegExp(`\\b${sp[key]}\\b`), String(shown[key]));
+    }
+    if(desc) shown.description = desc;
+    return shown;
+}
+
 export function updateEnemySpells(){
     // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
     const weaponContainer = document.getElementById('enemy-weapon-button');
@@ -318,23 +341,6 @@ export function updateEnemySpells(){
                 <div class="enemy-spell-item disabled">
                     <div class="spell-name">${icon} ${enemy.weapon.name}</div>
                     <div class="spell-cost">${enemy.weapon.actionPoints} ${svgIcon('arrow')} - ${enemy.weapon.damage} ${svgIcon('skull')}</div>
-                </div>
-            `;
-        }
-        if ((enemy.skullMult || 1) !== 1) {   // dégâts par crâne réglés par le calibrage (combatBalance.js)
-            weaponHtml += `
-                <div class="enemy-spell-item disabled" title="Dégâts par crâne de l'ennemi multipliés par ${String(Math.round(enemy.skullMult * 10) / 10).replace('.', ',')}.">
-                    <div class="spell-name">${svgIcon('skull')} Crânes</div>
-                    <div class="spell-cost">×${String(Math.round(enemy.skullMult * 10) / 10).replace('.', ',')} / crâne</div>
-                </div>
-            `;
-        }
-        if (enemy.spellAmplifier && enemy.spellAmplifier.mult !== 1) {   // objet magique de l'ennemi, non récupérable (combatBalance.js)
-            const mult = String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',');
-            weaponHtml += `
-                <div class="enemy-spell-item disabled" title="${escapeHtml(enemy.spellAmplifier.name)} : objet magique de l'ennemi qui amplifie en continu tous ses sorts (dégâts et poison). Il ne peut pas être récupéré.">
-                    <div class="spell-name">${svgIcon('star')} Talisman</div>
-                    <div class="spell-cost">Sorts ×${mult}</div>
                 </div>
             `;
         }
@@ -363,7 +369,8 @@ export function updateEnemySpells(){
     // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
     if(!enemy.spells || enemy.spells.length === 0) return;
     
-    enemy.spells.forEach(sp => {
+    enemy.spells.forEach(rawSpell => {
+        const sp = enemySpellAsShown(rawSpell);
         const div = document.createElement('div');
         div.className = 'enemy-spell-item';
         const hasEnoughMana = canEntityCastSpell(enemy, sp);
@@ -377,8 +384,7 @@ export function updateEnemySpells(){
         // Gestion des coûts multiples pour les sorts de classe
         const costDisplay = spellCostHtml(sp);
         
-        const amp = enemy.spellAmplifier?.mult && enemy.spellAmplifier.mult !== 1 ? ` ×${String(Math.round(enemy.spellAmplifier.mult * 10) / 10).replace('.', ',')}` : '';   // talisman de l'ennemi
-        const damageText = sp.dmg ? ` • ${sp.dmg}${amp} dmg` : '';
+        const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';   // dégâts déjà multipliés par le talisman (enemySpellAsShown)
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
         const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
         div.innerHTML = `
