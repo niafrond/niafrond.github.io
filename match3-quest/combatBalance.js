@@ -186,7 +186,11 @@ export const MODE_DIVISOR = {
     hard: { weak: 0.87, normal: 1.2, aggressive: 1.2, elite: 1.26, miniBoss: 1.45, boss: 1.32 },
     expert: { weak: 0.83, normal: 0.45, aggressive: 1.09, elite: 1.04, miniBoss: 1.32, boss: 1.09 }
 };
-export const MIN_DAMAGE_MULT = 1;   // un mode doux n'affaiblit jamais l'ennemi sous les chiffres de son grimoire et de son arme
+export const MIN_DAMAGE_MULT = 1;
+// Réglage propre à chaque boss de la carte (id → { attack, hp }), trouvé par simulation (tools/balance-search.mjs boss-adjust) : le calibrage
+// par catégorie est une moyenne, or chaque boss a son kit fixe (arme ou non, sorts plus ou moins forts). `attack` divise son attaque en plus du
+// mode (> 1 : moins fort), `hp` multiplie ses PV (durée ramenée vers le milieu de la fenêtre des boss).
+export const BOSS_ADJUST = {};   // un mode doux n'affaiblit jamais l'ennemi sous les chiffres de son grimoire et de son arme
 
 // Ajustement du rapport de victoire selon le niveau du héros (points d'ancrage interpolés) : ses soins et ses défenses grandissent avec lui
 // (Zhi, objets de soin, sorts de soin dès le niveau 17-20), donc à niveau élevé l'ennemi doit pouvoir frapper relativement plus fort.
@@ -228,7 +232,7 @@ const mid = ([a, b]) => (a + b) / 2;
  *  - damageScale : multiplicateur des dégâts que l'ennemi inflige, pour qu'il vainque un héros de `heroMaxHp` PV en ENEMY_WIN_RATIO × la durée cible.
  * `records` : combats mesurés (récents) ; on n'en retient que ceux joués à ±3 niveaux du héros.
  */
-export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', modeDivisor }) {
+export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', modeDivisor, adjust = null }) {
     const heroMaxHp = heroEffectiveHp(rawHeroMaxHp, heroLevel);   // PV qui comptent vraiment (plafond de progression)
     const heroDamageScale = rawHeroMaxHp > heroMaxHp ? Math.round((rawHeroMaxHp / heroMaxHp) * 100) / 100 : 1;
     const near = records.filter(r => r && r.outcome === 'victory' && Math.abs((r.playerLevel || 0) - heroLevel) <= 3);
@@ -251,10 +255,11 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const wanted = heroMaxHp / (cycles * ratio);
     const damageScale = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(DAMAGE_SCALE_BOUNDS[0], wanted / Math.max(0.1, rawEnemy))) * 100) / 100;
     // Mode : diviseur de l'attaque (réglage Expert × neutralisation des PV du héros au-delà du plafond) et des bonus du stuff ; PV inchangés.
-    const divisor = Math.max(0.25, modeDivisor ?? MODE_DIVISOR[difficulty]?.[category] ?? 1);
+    const divisor = Math.max(0.25, (modeDivisor ?? MODE_DIVISOR[difficulty]?.[category] ?? 1) * (adjust?.attack ?? 1));
     const expertMult = Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale);
     const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(MIN_DAMAGE_MULT, expertMult / divisor)) * 100) / 100;
-    return { hp, hpBase: hp, modeDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
+    const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
+    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: Boolean(measured) };
 }
 
 /** Part de chaque source dans les dégâts infligés (0 à 1) ; sert à repérer un levier qui fait toute la durée (arme, sort ou crânes). */

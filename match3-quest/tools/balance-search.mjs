@@ -54,7 +54,6 @@ export function heroAt(classId, level, profile = 'complet') {
             : { profile }
     };
 }
-export const BOSS_OVERRIDE = {};   // réglages propres à un boss (remplis après simulation, voir combatBalance.js > BOSS_ADJUST)
 export const ALL_LEVELS = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
 
 const mean = a => (Array.isArray(a) ? a : []).reduce((s, x) => s + x, 0) / Math.max(1, (Array.isArray(a) ? a : []).length);
@@ -254,6 +253,42 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         console.log('MODE_DIVISOR =', JSON.stringify(table));
     }
     // Chaque boss de la carte (story.js > SCREENS, hors duels) contre le héros complet d'un niveau de moins, dans le mode AI (défaut auto).
+    if (mode === 'boss-adjust') {
+        const fights = Number(process.argv[3]) || 8;
+        const { SCREENS } = await import('../story.js');
+        const bosses = [];
+        for (const sc of Object.values(SCREENS)) for (const e of (sc.enemies || [])) if (e.boss && !e.duel && !e.arena) bosses.push({ id: e.id, templateId: e.templateId, name: e.boss.name || e.name, level: e.boss.level });
+        bosses.sort((a, b) => a.level - b.level);
+        const goal = CB.DIFFICULTY_TARGET_WIN_RATE.auto.boss, targetSec = mean(CB.TARGET_DURATION_SECONDS.boss);
+        const run = (b, adjust, seed0) => {
+            const list = []; let seed = seed0;
+            for (const cls of CLASSES) for (let i = 0; i < fights; i++) {
+                const { hero, options } = heroAt(cls, Math.max(1, b.level - 1), 'complet');
+                const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
+                const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: 'auto', adjust });
+                enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
+                list.push({ ...simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: 'auto', ...options }), cycleSeconds: c.cycleSeconds });
+            }
+            return list;
+        };
+        const table = {};
+        for (const b of bosses) {
+            // 1. Attaque : dichotomie géométrique pour la cible du mode Auto (PV du calibrage).
+            let lo = 0.15, hi = 8;
+            for (let step = 0; step < 6; step++) {
+                const f = Math.sqrt(lo * hi);
+                if (winRate(run(b, { attack: f }, 90000 + step * 211)) < goal) lo = f; else hi = f;
+            }
+            const attack = Math.round(Math.sqrt(lo * hi) * 100) / 100;
+            // 2. PV : durée des victoires ramenée vers le milieu de la fenêtre (bornée à ×0,6 - ×1,6).
+            const won = run(b, { attack }, 95000).filter(r => r.heroWon);
+            const dur = won.length ? mean(won.map(r => r.cycles * r.cycleSeconds)) : targetSec;
+            const hp = Math.round(Math.min(1.6, Math.max(0.6, targetSec / dur)) * 100) / 100;
+            table[b.id] = { attack, hp };
+            console.log(b.id, b.level, JSON.stringify(table[b.id]));
+        }
+        console.log('BOSS_ADJUST =', JSON.stringify(table));
+    }
     if (mode === 'bosses') {
         const fights = Number(process.argv[3]) || 8;
         const aiMode = process.env.AI || 'auto';
@@ -268,7 +303,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             for (const cls of CLASSES) for (let i = 0; i < fights; i++) {
                 const { hero, options } = heroAt(cls, Math.max(1, b.level - 1), 'complet');
                 const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
-                const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: aiMode, ...(BOSS_OVERRIDE[b.id] || {}) });
+                const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: aiMode, adjust: process.env.NO_ADJUST ? null : (CB.BOSS_ADJUST[b.id] || null) });
                 enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
                 const r = simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: aiMode, ...options });
                 list.push({ ...r, cycleSeconds: c.cycleSeconds });

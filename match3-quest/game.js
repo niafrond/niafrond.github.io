@@ -1,6 +1,6 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { abandonCombatRecord, beginCombatRecord, calibrateEnemy, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
+import { abandonCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
@@ -1770,7 +1770,7 @@ const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth
 function calibrateEnemyForCombat(target){
     const template = enemyCatalogList().find(t => t.id === target.templateId);
     const category = enemyCategory({ boss: Boolean(target.isBoss), easy: Boolean(target.isEasyChoice), hpMult: template?.statsModifiers?.hpMult ?? 1 });
-    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto' });
+    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto', adjust: target.isBoss ? BOSS_ADJUST[target.mapEnemyId] || null : null });
     target.maxHp = result.hp;
     target.hp = result.hp;
     target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque
