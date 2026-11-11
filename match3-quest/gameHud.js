@@ -369,16 +369,19 @@ export function updateEnemySpells(){
         const sp = enemySpellAsShown(rawSpell);
         const div = document.createElement('div');
         div.className = 'enemy-spell-item';
-        const hasEnoughMana = canEntityCastSpell(enemy, sp);
+        // Attaque dévastatrice du boss : gratuite, désactivée jusqu'à son annonce, puis active avec son délai.
+        const charge = sp.bossSignature ? Math.max(0, Math.floor(enemy.bossScript?.charge || 0)) : 0;
+        const hasEnoughMana = sp.bossSignature ? charge > 0 : canEntityCastSpell(enemy, sp);
         if(!hasEnoughMana) {
             div.classList.add('disabled');
         }
-        
+        if(sp.bossSignature && charge > 0) div.classList.add('boss-signature-ready');
+
         // Sort de classe : icône de la classe
         const spellClassIndicator = sp.class ? classIcon(sp.class) : '';
         
         // Gestion des coûts multiples pour les sorts de classe
-        const costDisplay = spellCostHtml(sp);
+        const costDisplay = sp.bossSignature ? `<span class="boss-signature-delay">${charge > 0 ? `Dans ${charge} tour${charge > 1 ? 's' : ''}` : 'Inactive'}</span>` : spellCostHtml(sp);
         
         const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';   // dégâts déjà multipliés par le talisman (enemySpellAsShown)
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';

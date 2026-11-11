@@ -14,8 +14,6 @@ export const HP_TRIGGERS = [0.66, 0.33];             // phases : seuils de PV du
 export const SIGNATURE_SHARE = { easy: 0.3, normal: 0.35, auto: 0.35, hard: 0.4, expert: 0.45 };
 export const MAX_REDUCTION = 0.75;
 export const PERIOD = { min: 7, spread: 3, first: 4 };   // rythme : tous les 7 à 9 tours, premier au tour 4 ou 5 (≈ 2 attaques par combat avec les phases)                   // la préparation peut retirer au plus 75 % de l'attaque (le Bastion l'annule)
-// Coût en qì de la couleur du boss, payé au début de l'échauffement : 10 + 0,2 × niveau, plafonné à 25. Sans ce qì en réserve, l'échauffement attend.
-export const signatureCost = level => Math.min(25, 10 + Math.round(0.2 * Math.max(1, Number(level) || 1)));
 export const SIGNATURE_NAMES = { red: 'Brasier dévastateur', blue: 'Raz-de-marée', green: 'Ronces de jade', yellow: 'Foudre céleste', purple: 'Ombre dévorante' };
 
 function hash(text) {
@@ -32,11 +30,11 @@ export function createBossScript(enemy, difficulty = 'auto') {
     const first = PERIOD.first + ((h >>> 3) % 2);
     const color = ['red', 'blue', 'green', 'yellow', 'purple'].includes(enemy.preferredColor) ? enemy.preferredColor : 'red';
     const name = SIGNATURE_NAMES[color] || 'Frappe dévastatrice';
-    const cost = { [color]: signatureCost(enemy.level) };
     return {
-        name, color, cost,
-        // Fiche de sort affichée parmi les sorts du boss (gameHud.js) : le coût est réel, les dégâts ne sont pas annoncés.
-        spell: { id: 'bossSignature', name, color, colors: [color], cost, type: 'bossSignature', description: `Attaque dévastatrice : ${name}. Le boss s'échauffe, puis frappe 2 tours plus tard.` },
+        name, color,
+        // Fiche de sort affichée parmi les sorts du boss (gameHud.js) : gratuite, désactivée tant que le boss ne l'a pas annoncée, puis active
+        // avec son délai ; les dégâts ne sont pas annoncés.
+        spell: { id: 'bossSignature', name, color, colors: [color], cost: {}, type: 'bossSignature', description: `Attaque dévastatrice : ${name}. Inactive jusqu'à ce que le boss s'échauffe, puis il frappe 2 tours plus tard.` },
         share: SIGNATURE_SHARE[difficulty] ?? SIGNATURE_SHARE.auto,
         period, turn: 0, nextAt: first, charge: 0, triggers: [...HP_TRIGGERS]
     };
@@ -47,7 +45,7 @@ export function createBossScript(enemy, difficulty = 'auto') {
  * Renvoie { action } : 'start' (échauffement : le boss n'agit pas), 'charging' (il joue normalement, attaque au tour suivant),
  * 'release' (attaque dévastatrice à la place de son action), 'interrupted' (échauffement cassé), ou 'none'.
  */
-export function stepBossScript(script, enemy, { lostTurn = false, canPay = true } = {}) {
+export function stepBossScript(script, enemy, { lostTurn = false } = {}) {
     if (!script) return { action: 'none' };
     script.turn++;
     if (script.charge > 0) {
@@ -60,7 +58,6 @@ export function stepBossScript(script, enemy, { lostTurn = false, canPay = true 
     const hpPct = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 1;
     const phase = script.triggers.findIndex(t => hpPct <= t);
     if (phase >= 0 || script.turn >= script.nextAt) {
-        if (!canPay) return { action: 'none', waiting: true };   // pas assez de qì : l'échauffement attend (la phase n'est pas perdue)
         if (phase >= 0) script.triggers.splice(0, phase + 1);    // une phase franchie (et celles d'avant) ne se redéclenche pas
         script.charge = CHARGE_TURNS;
         return { action: 'start', left: CHARGE_TURNS, phase: phase >= 0 };
@@ -83,7 +80,3 @@ export function signatureDamage(script, hero) {
     return { damage: Math.max(1, Math.round(base * (1 - reduction))), blocked: false, reduction };
 }
 
-/** Le boss a-t-il le qì de son attaque ? */
-export const canPaySignature = (script, mana) => Object.entries(script?.cost || {}).every(([c, v]) => (Number(mana?.[c]) || 0) >= v);
-/** Paie le coût (au début de l'échauffement). */
-export function paySignature(script, mana) { Object.entries(script?.cost || {}).forEach(([c, v]) => { mana[c] = Math.max(0, (Number(mana[c]) || 0) - v); }); }

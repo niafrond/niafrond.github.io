@@ -1,6 +1,6 @@
 // Boss semi-scriptés (bossScript.js) : échauffement annoncé, attaque dévastatrice, préparation du héros, interruption.
 import { describe, test, expect } from '@jest/globals';
-import { createBossScript, stepBossScript, signatureDamage, preparationReduction, signatureCost, canPaySignature, paySignature, CHARGE_TURNS, SIGNATURE_SHARE, MAX_REDUCTION, PERIOD } from '../../bossScript.js';
+import { createBossScript, stepBossScript, signatureDamage, preparationReduction, CHARGE_TURNS, SIGNATURE_SHARE, MAX_REDUCTION, PERIOD } from '../../bossScript.js';
 
 const boss = (extra = {}) => ({ isBoss: true, mapEnemyId: 'sun_1', preferredColor: 'red', hp: 1000, maxHp: 1000, ...extra });
 
@@ -52,20 +52,14 @@ describe('boss semi-scriptés', () => {
         expect(preparationReduction({ statBuffs: { defense: { amount: 300 } }, damageReduction: 0.45 })).toBe(MAX_REDUCTION);
         expect(createBossScript(boss(), 'easy').share).toBeLessThan(createBossScript(boss(), 'expert').share);
     });
-    test('attaque préparée = un sort du boss : coût en qì de sa couleur, payé à l\'échauffement, qui attend sans qì', () => {
-        const s = createBossScript(boss({ level: 30 })), e = boss();
-        expect(s.spell).toMatchObject({ id: 'bossSignature', name: 'Brasier dévastateur', color: 'red', cost: { red: signatureCost(30) } });
-        expect(s.spell.description).not.toMatch(/\d+ ?%|dégâts?\b.*\d/);   // aucune puissance annoncée
-        expect(signatureCost(1)).toBe(10);
-        expect(signatureCost(200)).toBe(25);
+    test('attaque préparée = un sort gratuit du boss, inactif tant qu\'il ne l\'a pas annoncée, sans puissance annoncée', () => {
+        const s = createBossScript(boss({ level: 30 }));
+        expect(s.spell).toMatchObject({ id: 'bossSignature', name: 'Brasier dévastateur', color: 'red', cost: {} });
+        expect(s.spell.description).not.toMatch(/\d+ ?%|dégâts?\b.*\d/);
+        expect(s.charge).toBe(0);   // inactif au départ : la fiche s'allume quand charge > 0
+        const e = boss();
         s.nextAt = 1;
-        expect(stepBossScript(s, e, { canPay: false })).toEqual({ action: 'none', waiting: true });   // pas de qì : il attend
-        expect(s.charge).toBe(0);
-        const mana = { red: 50 };
-        expect(canPaySignature(s, mana)).toBe(true);
-        expect(stepBossScript(s, e, { canPay: true }).action).toBe('start');
-        paySignature(s, mana);
-        expect(mana.red).toBe(50 - signatureCost(30));
-        expect(canPaySignature(s, { red: 5 })).toBe(false);
+        expect(stepBossScript(s, e).action).toBe('start');
+        expect(s.charge).toBe(CHARGE_TURNS);
     });
 });
