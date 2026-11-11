@@ -289,8 +289,8 @@ export function getEnemyStuffTooltipHtml(fullName, enemyEntity) {
     // Talisman de Résonance (calibrage combatBalance.js) : visible seulement ici, à l'appui long sur l'ennemi.
     const power = enemyEntity?.spellAmplifier?.mult || enemyEntity?.skullMult || 1;
     if(power !== 1) {
-        const mult = String(Math.round(power * 10) / 10).replace('.', ',');
-        lines.push(`<div class="enemy-tooltip-row"><strong>${escapeHtml(enemyEntity.spellAmplifier?.name || 'Talisman de Résonance')}</strong> : ses sorts et ses crânes infligent ×${mult} dégâts (déjà compté dans les dégâts affichés de ses sorts).</div>`);
+        const mult = (Math.round(power * 10) / 10).toFixed(1);
+        lines.push(`<div class="enemy-tooltip-row"><strong>${escapeHtml(enemyEntity.spellAmplifier?.name || 'Talisman de Résonance')}</strong> : dégâts x${mult}</div>`);
     }
     const pieces = enemyStuffPieces(enemyEntity);
     if(!pieces.length) {
