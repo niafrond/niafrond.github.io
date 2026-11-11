@@ -44,7 +44,7 @@ describe('déclenchement de l\'animation d\'attaque', () => {
         expect(fn.slice(0, 1200)).toMatch(/damage !== null[\s\S]*playFighterAttack\(isPlayerAttack\)/);
     });
     test('les matchs de crânes aussi', () => {
-        expect(board).toMatch(/playFighterAttack\(attacker === player\);\s*applyDamage\(opponent, dmg\)/);
+        expect(board).toMatch(/playFighterAttack\(attacker === player\);\s*applyDamage\(opponent, dmg(, \{ damageSource: .skull. \})?\)/);
     });
     test('Hou Yi regarde à droite, l\'ennemi à gauche', () => {
         expect(game).toMatch(/gbaSprite\(player\.class, 'right'\)/);
