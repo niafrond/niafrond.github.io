@@ -2,7 +2,7 @@
 // Extrait de game.js.
 import { bigMatchXpFor } from './matchMechanics.js';
 import { icon as svgIcon, manaIcon } from './icons.js';
-import { ATTRIBUTE_ORDER, describeAttributeChoice, respecAttributes } from './attributes.js';
+import { ATTRIBUTE_ORDER, describeAttributeChoice, respecAttributes, manaPerMatch } from './attributes.js';
 import { MAX_LEVEL, getXPProgress, getXPToNextLevel } from './experience.js';
 import { log, saveUpdate, updateStats } from './gameHud.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
@@ -126,7 +126,7 @@ function selectAttribute(attr) {
     player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
     applyAttributeBonus(attr);
     const d = describeAttributeChoice(player, attr);
-    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, qì ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
+    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, qì ${d.colorLabel} ${manaPerMatch(attr, player.attributes[attr])} par match de 3`);
     updateLevelHud();
     updatePlayerStatsTab();
     saveUpdate();

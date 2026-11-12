@@ -1,9 +1,11 @@
 // Progression au-delà du niveau 18 : les armes et les sorts s'arrêtent au niveau 18 (dégâts ≤ 100 / 150) alors que les ennemis
-// continuent de croître jusqu'au niveau 70. Chaque niveau gagné apporte donc, en plus des points d'attribut, une croissance
-// innée : de l'attaque après le niveau 18 et plus de PV après le niveau 20. Module pur, sans DOM.
+// continuent de croître jusqu'au niveau 70. Chaque niveau gagné apporte donc, en plus des points d'attribut, plus de PV après le
+// niveau 20. Il n'y a plus de croissance innée d'attaque : l'Attaque et la Défense sont des pourcentages (100 au maximum) qui doivent
+// atteindre 100 au niveau 70 (15 de départ + 69 points + 16 d'équipement) et non le dépasser dès le niveau 20 (voir statBudget.js).
+// Module pur, sans DOM.
 
-export const INNATE_ATTACK_FROM_LEVEL = 18;   // +2 attaque par niveau à partir du niveau 19
-export const INNATE_ATTACK_PER_LEVEL = 2;
+export const INNATE_ATTACK_FROM_LEVEL = 18;   // seuil conservé (sauvegardes) : sans effet tant que INNATE_ATTACK_PER_LEVEL vaut 0
+export const INNATE_ATTACK_PER_LEVEL = 0;
 export const BONUS_HP_FROM_LEVEL = 20;        // +5 PV max supplémentaires par niveau à partir du niveau 21
 export const BONUS_HP_PER_LEVEL = 5;
 

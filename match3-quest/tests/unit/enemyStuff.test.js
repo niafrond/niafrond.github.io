@@ -32,10 +32,11 @@ describe('stuff des ennemis', () => {
     });
     test('le stuff agit sur l\'ennemi : Atk/Déf, PV max, qì max', () => {
         const e = { stuff: { head: 'casque_du_sage_celeste', neck: null, wrist: 'bracelet_de_foudre', ring: null } };
-        expect(gearBonus(e, 'attack')).toBe(8);
-        expect(gearBonus(e, 'defense')).toBe(8);
+        const sage = getStuffById('casque_du_sage_celeste'), foudre = getStuffById('bracelet_de_foudre');
+        expect(gearBonus(e, 'attack')).toBe((sage.atkBonus || 0) + foudre.atkBonus);
+        expect(gearBonus(e, 'defense')).toBe((sage.defBonus || 0) + (foudre.defBonus || 0));
         expect(enemyStuffMaxHp(e)).toBe(20);
-        expect(gearManaBonus(e, 'red')).toBe(10);
+        expect(gearManaBonus(e, 'red')).toBe(sage.manaMax.red);
     });
     test('butin : chaque pièce portée non possédée a sa chance, la meilleure est garantie contre un ennemi plus fort', () => {
         const e = { stuff: { head: 'casque_de_cuir', neck: null, wrist: null, ring: 'bague_de_l_immortel' } };

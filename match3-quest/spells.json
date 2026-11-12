@@ -541,13 +541,13 @@
       "name": "Colère du Duc du Tonnerre",
       "type": "damage",
       "cost": {
-        "yellow": 60,
-        "blue": 60
+        "yellow": 55,
+        "blue": 55
       },
-      "dmg": 385,
+      "dmg": 353,
       "minLevel": 33,
       "playerOnly": true,
-      "description": "Le Duc du Tonnerre déchaîne orage et pluie : 385 dégâts"
+      "description": "Le Duc du Tonnerre déchaîne orage et pluie : 353 dégâts"
     },
     {
       "id": "fiveElementsSeal",
@@ -570,54 +570,54 @@
       "name": "Crue du Fleuve Céleste",
       "type": "damage",
       "cost": {
-        "blue": 80,
-        "green": 60
+        "blue": 58,
+        "green": 55
       },
-      "dmg": 490,
+      "dmg": 420,
       "minLevel": 43,
       "playerOnly": true,
-      "description": "La Voie lactée déborde et emporte tout : 490 dégâts"
+      "description": "La Voie lactée déborde et emporte tout : 420 dégâts"
     },
     {
       "id": "nineSunsFall",
       "name": "Chute des Neuf Soleils",
       "type": "damage",
       "cost": {
-        "red": 75,
-        "yellow": 75
+        "red": 57,
+        "yellow": 57
       },
-      "dmg": 540,
+      "dmg": 440,
       "minLevel": 48,
       "playerOnly": true,
-      "description": "Les neuf soleils retombent sur la terre : 540 dégâts"
+      "description": "Les neuf soleils retombent sur la terre : 440 dégâts"
     },
     {
       "id": "kunlunMountainFall",
       "name": "Chute du Mont Kunlun",
       "type": "damage",
       "cost": {
-        "green": 60,
-        "purple": 60,
-        "red": 60
+        "green": 56,
+        "purple": 55,
+        "red": 55
       },
-      "dmg": 665,
+      "dmg": 613,
       "minLevel": 54,
       "playerOnly": true,
-      "description": "Le mont Kunlun s'abat sur l'ennemi : 665 dégâts"
+      "description": "Le mont Kunlun s'abat sur l'ennemi : 613 dégâts"
     },
     {
       "id": "pangusAxe",
       "name": "Hache de Pangu",
       "type": "damage",
       "cost": {
-        "red": 70,
-        "yellow": 70,
-        "blue": 70
+        "red": 56,
+        "yellow": 56,
+        "blue": 56
       },
-      "dmg": 820,
+      "dmg": 656,
       "minLevel": 60,
       "playerOnly": true,
-      "description": "La hache qui sépara le ciel et la terre : 820 dégâts"
+      "description": "La hache qui sépara le ciel et la terre : 656 dégâts"
     },
     {
       "id": "jadeEmperorDecree",
@@ -640,15 +640,15 @@
       "name": "Fin de la Tribulation",
       "type": "damage",
       "cost": {
-        "red": 70,
-        "blue": 70,
-        "yellow": 70,
-        "green": 60
+        "red": 56,
+        "blue": 56,
+        "yellow": 55,
+        "green": 53
       },
-      "dmg": 1260,
+      "dmg": 1027,
       "minLevel": 70,
       "playerOnly": true,
-      "description": "La dernière foudre du Ciel : 1260 dégâts"
+      "description": "La dernière foudre du Ciel : 1027 dégâts"
     },
     {
       "id": "jadeSpringBlessing",
@@ -681,14 +681,14 @@
       "name": "Élixir de la Reine Mère d'Occident",
       "type": "heal",
       "cost": {
-        "green": 60,
+        "green": 55,
         "blue": 40,
         "purple": 40
       },
-      "heal": 294,
+      "heal": 283,
       "minLevel": 60,
       "playerOnly": true,
-      "description": "Restaure 294 points de vie"
+      "description": "Restaure 283 points de vie"
     },
     {
       "id": "emberScythe",

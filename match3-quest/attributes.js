@@ -1,16 +1,20 @@
 // Attributs du joueur : source unique des effets (appliqués par game.js) et de leur description affichée.
 // Module pur (aucun accès au DOM) pour rester testable.
 
-// Règles paramétrables : un attribut influence la couleur de qì associée.
-//  initial : qì de cette couleur au début de chaque combat, par point
-//  gain    : qì en plus à chaque match de cette couleur, par point (3 tuiles => 3 + gain)
-//  max     : plafond de qì de cette couleur, par point (1,3 : 100 est atteint au niveau 40 en mettant tous ses points dans une couleur, 50 + ⌊39 × 1,3⌋)
+// Règles paramétrables : un attribut influence la couleur de qì associée, mais PAS à chaque point (pas de virgules : tout est entier).
+// Chaque bonus est un rythme [période, reste] : le point n° n (1, 2, 3…) donne +1 si n % période === reste. Ainsi un point peut donner
+// +1 d'attaque sans rien de plus pour la couleur, et les bonus de couleur alternent d'un point à l'autre :
+//  initial : qì de cette couleur au début de chaque combat   -> points 1, 5, 9…    (1 point sur 4 : 18 aux 69 points)
+//  gain    : qì en plus à chaque match de cette couleur      -> points 3, 7, 11…   (1 point sur 4 : 17 aux 69 points)
+//  max     : plafond de qì de cette couleur                  -> points multiples de 3 (1 point sur 3 : 23 aux 69 points du niveau 70,
+//            soit 50 + 23 = 73 ; les 27 restants viennent de l'équipement, soit 100 au total : voir statBudget.js)
+const COLOR_RHYTHM = { initial: [4, 1], gain: [4, 3], max: [3, 0] };
 export const ATTRIBUTE_MANA_RULES = {
-    strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 1.3 } },
-    agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 1.3 } },
-    stamina: { color: "green", bonuses: { initial: 1, gain: 1, max: 1.3 } },
-    intelligence: { color: "blue", bonuses: { initial: 1, gain: 1, max: 1.3 } },
-    morale: { color: "purple", bonuses: { initial: 1, gain: 1, max: 1.3 } }
+    strength: { color: "red", rhythm: COLOR_RHYTHM },
+    agility: { color: "yellow", rhythm: COLOR_RHYTHM },
+    stamina: { color: "green", rhythm: COLOR_RHYTHM },
+    intelligence: { color: "blue", rhythm: COLOR_RHYTHM },
+    morale: { color: "purple", rhythm: COLOR_RHYTHM }
 };
 
 // Effet direct d'un point (stat de combat), appliqué par applyAttributeBonus.
@@ -22,11 +26,15 @@ export const ATTRIBUTE_STAT_EFFECTS = {
     morale: { stat: "defense", amount: 1 } // le moral donne de l'agilité (défense et initiative), pas de l'attaque
 };
 
-// Jauge de rage (ultimes) : un point de Battle donne de la rage dès le début du combat (quantité), un point de Moral accélère
-// son accumulation (la rage gagnée en perdant des PV est majorée de ce pourcentage).
+// Jauge de rage (ultimes, sur 100) : Battle donne de la rage dès le début du combat, Moral accélère son accumulation (la rage gagnée
+// en perdant des PV est majorée d'un pourcentage). Même principe que la couleur : des paliers entiers qui alternent, et un plafond
+// atteint au niveau 70 (69 points) : rage de départ 1 par point + 1 de plus aux points pairs = 103, plafonnée à 100 ; rage gagnée
+// +3 % aux points pairs = +102 %, plafonnée à +100 % (jamais plus du double).
+//  chaque palier : { rhythm: [période, reste], amount } (voir manaBonusFor) ; `cap` plafond du total.
+export const RAGE_CAP = 100;
 export const ATTRIBUTE_RAGE_RULES = {
-    strength: { initial: 3 },
-    morale: { gainPct: 5 }
+    strength: { initial: { cap: RAGE_CAP, steps: [{ rhythm: [1, 0], amount: 1 }, { rhythm: [2, 0], amount: 1 }] } },
+    morale: { gainPct: { cap: 100, steps: [{ rhythm: [2, 0], amount: 3 }] } }
 };
 
 export const ATTRIBUTE_ORDER = ["strength", "agility", "intelligence", "stamina", "morale"];
@@ -70,15 +78,22 @@ export function getAttributePoints(entity, attr) {
     return Math.max(0, Math.floor(entity?.attributes?.[attr] || 0));
 }
 
-// Bonus de qì d'une couleur pour un nombre de points donné.
+// Nombre de points parmi les `points` premiers (n = 1..points) qui donnent un bonus au rythme [période, reste].
+const countRhythm = (points, [period, rest]) => {
+    const p = Math.max(0, Math.floor(points || 0));
+    return rest === 0 ? Math.floor(p / period) : p >= rest ? Math.floor((p - rest) / period) + 1 : 0;
+};
+
+// Bonus de qì d'une couleur (initial | gain | max) pour un nombre de points donné.
 export function manaBonusFor(attr, points, type) {
-    const rule = ATTRIBUTE_MANA_RULES[attr];
-    return Math.floor((rule?.bonuses?.[type] || 0) * Math.max(0, Math.floor(points || 0)) + 1e-9);
+    const rhythm = ATTRIBUTE_MANA_RULES[attr]?.rhythm?.[type];
+    return rhythm ? countRhythm(points, rhythm) : 0;
 }
 
 // Rage de départ (sur 100) et majoration (%) de la rage gagnée pour `points` points d'un attribut.
-export const rageInitialFor = (attr, points) => (ATTRIBUTE_RAGE_RULES[attr]?.initial || 0) * Math.max(0, Math.floor(points || 0));
-export const rageGainPctFor = (attr, points) => (ATTRIBUTE_RAGE_RULES[attr]?.gainPct || 0) * Math.max(0, Math.floor(points || 0));
+const rageTotal = (rule, points) => rule ? Math.min(rule.cap, rule.steps.reduce((sum, st) => sum + st.amount * countRhythm(points, st.rhythm), 0)) : 0;
+export const rageInitialFor = (attr, points) => rageTotal(ATTRIBUTE_RAGE_RULES[attr]?.initial, points);
+export const rageGainPctFor = (attr, points) => rageTotal(ATTRIBUTE_RAGE_RULES[attr]?.gainPct, points);
 
 /** Rage dont le héros dispose au début de chaque combat (points de Battle). */
 export const startingRage = entity => rageInitialFor("strength", getAttributePoints(entity, "strength"));
@@ -105,17 +120,25 @@ export function describeAttributeChoice(entity, attr) {
     const next = pts + 1;
     const color = MANA_COLOR_LABELS[rule.color];
     const stat = STAT_TEXT[attr](eff.amount);
-    const b = rule.bonuses;
     const rageLines = [];
-    const rageInit = ATTRIBUTE_RAGE_RULES[attr]?.initial;
-    const rageGain = ATTRIBUTE_RAGE_RULES[attr]?.gainPct;
-    if (rageInit) rageLines.push(`Rage : +${rageInit} de jauge dès le début du combat (${rageInitialFor(attr, next)} au total).`);
-    if (rageGain) rageLines.push(`Rage : +${rageGain} % de rage gagnée en perdant des PV (${rageGainPctFor(attr, next)} % au total).`);
+    if (ATTRIBUTE_RAGE_RULES[attr]?.initial) {
+        const gain = rageInitialFor(attr, next) - rageInitialFor(attr, pts);
+        rageLines.push(`Rage : ${gain > 0 ? `+${gain} de jauge` : 'pas de jauge en plus'} dès le début du combat (${rageInitialFor(attr, next)} au total, ${ATTRIBUTE_RAGE_RULES[attr].initial.cap} au plus).`);
+    }
+    if (ATTRIBUTE_RAGE_RULES[attr]?.gainPct) {
+        const gain = rageGainPctFor(attr, next) - rageGainPctFor(attr, pts);
+        rageLines.push(`Rage : ${gain > 0 ? `+${gain} %` : 'pas de bonus'} de rage gagnée en perdant des PV (${rageGainPctFor(attr, next)} % au total, ${ATTRIBUTE_RAGE_RULES[attr].gainPct.cap} % au plus).`);
+    }
     const lines = [
         stat.line,
-        `Couleur ${color} : un match de 3 tuiles ${color}s donne ${manaPerMatch(attr, next)} qì ${color} au lieu de ${manaPerMatch(attr, pts)}.`,
+        `Couleur ${color} : un match de 3 tuiles ${color}s donne ${manaPerMatch(attr, next)} qì ${color}${manaBonusFor(attr, next, "gain") > manaBonusFor(attr, pts, "gain") ? ` au lieu de ${manaPerMatch(attr, pts)}` : ' (pas de gain de match avec ce point)'}.`,
         `Un match de 4 donne ${manaPerMatch(attr, next, 4)} qì ${color} (tour bonus) ; de 5, ${manaPerMatch(attr, next, 5)}.`,
-        `+${b.initial} qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total) ; réserve maximale de qì ${color} +${String(b.max).replace('.', ',')} par point (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`,
+        manaBonusFor(attr, next, "initial") > manaBonusFor(attr, pts, "initial")
+            ? `+1 qì ${color} en début de combat (${manaBonusFor(attr, next, "initial")} au total).`
+            : `Pas de qì ${color} de départ en plus avec ce point (${manaBonusFor(attr, next, "initial")} au total).`,
+        manaBonusFor(attr, next, "max") > manaBonusFor(attr, pts, "max")
+            ? `Réserve maximale de qì ${color} +1 (${baseCap(entity) + manaBonusFor(attr, next, "max")} au total).`
+            : `Réserve maximale de qì ${color} inchangée avec ce point (${baseCap(entity) + manaBonusFor(attr, next, "max")}).`,
         ...rageLines
     ];
     return {

@@ -442,7 +442,7 @@ export const allWeapons = [
         actionPoints: 3,
         minLevel: 6,
         rarity: WeaponRarity.UNCOMMON,
-        manaMax: { red: 10 },
+        manaMax: { red: 1 },
         description: "Un arc de bois de cinabre dont la corde garde la chaleur du feu"
     },
     {
@@ -453,7 +453,7 @@ export const allWeapons = [
         actionPoints: 3,
         minLevel: 8,
         rarity: WeaponRarity.UNCOMMON,
-        manaMax: { blue: 10 },
+        manaMax: { blue: 1 },
         description: "Un arc de roseau laqué, serein comme un étang sans vent"
     },
     {
@@ -464,7 +464,7 @@ export const allWeapons = [
         actionPoints: 4,
         minLevel: 12,
         rarity: WeaponRarity.RARE,
-        manaMax: { green: 12, yellow: 12 },
+        manaMax: { green: 2, yellow: 2 },
         description: "Un arc où se mêlent la sève et la foudre, de part et d'autre de la poignée"
     },
     {
@@ -475,7 +475,7 @@ export const allWeapons = [
         actionPoints: 5,
         minLevel: 20,
         rarity: WeaponRarity.LEGENDARY,
-        manaMax: { red: 8, blue: 8, green: 8, yellow: 8, purple: 8 },
+        manaMax: { red: 1, blue: 1, green: 1, yellow: 1, purple: 1 },
         description: "Cinq vents soufflent dans ses branches, un par élément"
     }
 ];
@@ -512,35 +512,36 @@ export const LEGACY_WEAPON_IDS = {
 // Bonus d'Attaque (atkBonus : % de critique) et de Défense (defBonus : % de blocage) apportés par certaines armes tant qu'elles
 // sont en main (voir combatStats.js) ; les boucliers portent les leurs dans items.js.
 export const WEAPON_STAT_BONUSES = {
-    arc_de_precision: { atkBonus: 5 },
-    arc_de_feu: { atkBonus: 8 },
-    arc_des_dix_soleils: { atkBonus: 12 },
-    arc_lourd: { defBonus: 5 },
-    arc_de_jade: { defBonus: 8 },
-    arc_du_juge_celeste: { atkBonus: 6, defBonus: 6 },
-    arc_du_dragon_de_jade: { atkBonus: 8, defBonus: 4 },
-    arc_du_mont_tai: { defBonus: 12 },
-    arc_de_la_foudre_celeste: { atkBonus: 15 },
-    arc_des_marees_de_l_est: { atkBonus: 10, defBonus: 10 },
-    arc_de_la_forge_de_zhurong: { atkBonus: 18 },
-    arc_des_neuf_fleuves: { atkBonus: 8, defBonus: 18 },
-    arc_du_grand_leviathan: { atkBonus: 15, defBonus: 15 },
-    arc_fendeur_de_ciel: { atkBonus: 20, defBonus: 10 },
-    arc_venimeux: { atkBonus: 4 },
-    arc_du_voile_noir: { atkBonus: 7 },
-    arc_a_pointes: { defBonus: 3 },
-    arc_de_forge: { defBonus: 6 },
-    arc_de_lei_gong: { atkBonus: 8 },
-    arc_composite_de_corne: { atkBonus: 5 },
-    arc_rouge_celeste: { atkBonus: 9 },
-    arc_a_talisman: { defBonus: 3 },
-    arc_du_maitre_taoiste: { defBonus: 6 },
-    arc_de_l_immortel: { atkBonus: 7, defBonus: 7 }
+    arc_de_precision: { atkBonus: 1 },
+    arc_de_feu: { atkBonus: 1 },
+    arc_des_dix_soleils: { atkBonus: 2 },
+    arc_lourd: { defBonus: 1 },
+    arc_de_jade: { defBonus: 2 },
+    arc_du_juge_celeste: { atkBonus: 1, defBonus: 1 },
+    arc_du_dragon_de_jade: { atkBonus: 1, defBonus: 1 },
+    arc_du_mont_tai: { defBonus: 3 },
+    arc_de_la_foudre_celeste: { atkBonus: 2 },
+    arc_des_marees_de_l_est: { atkBonus: 1, defBonus: 2 },
+    arc_de_la_forge_de_zhurong: { atkBonus: 3 },
+    arc_des_neuf_fleuves: { atkBonus: 1, defBonus: 4 },
+    arc_du_grand_leviathan: { atkBonus: 2, defBonus: 4 },
+    arc_fendeur_de_ciel: { atkBonus: 3, defBonus: 2 },
+    arc_venimeux: { atkBonus: 1 },
+    arc_du_voile_noir: { atkBonus: 1 },
+    arc_a_pointes: { defBonus: 1 },
+    arc_de_forge: { defBonus: 1 },
+    arc_de_lei_gong: { atkBonus: 1 },
+    arc_composite_de_corne: { atkBonus: 1 },
+    arc_rouge_celeste: { atkBonus: 1 },
+    arc_a_talisman: { defBonus: 1 },
+    arc_du_maitre_taoiste: { defBonus: 1 },
+    arc_de_l_immortel: { atkBonus: 1, defBonus: 2 }
 };
 
+const signed = n => (n > 0 ? `+${n}` : `${n}`);
 // Texte court des bonus d'une arme ou d'un bouclier (« Atk +5 • Déf +3 »), vide s'il n'en a pas.
 export function describeStatBonuses(piece) {
-    return [piece?.atkBonus ? `Atk +${piece.atkBonus}` : '', piece?.defBonus ? `Déf +${piece.defBonus}` : '', describeManaMax(piece), ...describeEffects(piece)].filter(Boolean).join(' • ');
+    return [piece?.atkBonus ? `Atk ${signed(piece.atkBonus)}` : '', piece?.defBonus ? `Déf ${signed(piece.defBonus)}` : '', describeManaMax(piece), ...describeEffects(piece)].filter(Boolean).join(' • ');
 }
 
 /**

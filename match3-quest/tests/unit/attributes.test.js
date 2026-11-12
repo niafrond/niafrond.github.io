@@ -1,5 +1,5 @@
 import { startingRage, boostedRageGain, ATTRIBUTE_RAGE_RULES,
-    ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, ATTRIBUTE_STAT_EFFECTS, agilityScore, describeAttributeChoice, manaPerMatch, summarizeColorBonuses
+    ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, ATTRIBUTE_STAT_EFFECTS, agilityScore, describeAttributeChoice, manaPerMatch, manaBonusFor, summarizeColorBonuses
 } from '../../attributes.js';
 import { getColorMatchManaBaseGain } from '../../matchMechanics.js';
 
@@ -11,26 +11,41 @@ describe('attributs de niveau et bonus de couleur', () => {
         expect(new Set(colors).size).toBe(5);
     });
 
-    test('Bleu (intelligence) : un match de 3 donne 4 qì bleu au lieu de 3', () => {
+    test('Bleu (intelligence) : le gain par match alterne (+1 aux points 3, 7, 11…, tout est entier)', () => {
         expect(manaPerMatch('intelligence', 0, 3)).toBe(3);
-        expect(manaPerMatch('intelligence', 1, 3)).toBe(4);
-        expect(manaPerMatch('intelligence', 2, 3)).toBe(5);
-        const info = { type: 'color', color: 'blue', len: 3 };
-        expect(getColorMatchManaBaseGain(info) + 1).toBe(4);
+        expect(manaPerMatch('intelligence', 1, 3)).toBe(3);   // le 1er point : +1 qì de départ, pas de gain de match
+        expect(manaPerMatch('intelligence', 2, 3)).toBe(3);
+        expect(manaPerMatch('intelligence', 3, 3)).toBe(4);
+        expect(manaPerMatch('intelligence', 7, 3)).toBe(5);
+    });
+
+    test('rythme des bonus de couleur : départ aux points 1, 5, 9…, match aux points 3, 7, 11…, réserve tous les 3 points', () => {
+        expect(manaBonusFor('intelligence', 5, 'initial')).toBe(2);
+        expect(manaBonusFor('intelligence', 5, 'gain')).toBe(1);
+        expect(manaBonusFor('intelligence', 5, 'max')).toBe(1);
+        expect(manaBonusFor('intelligence', 69, 'max')).toBe(23);
+        expect(manaBonusFor('intelligence', 69, 'initial')).toBe(18);
+        expect(manaBonusFor('intelligence', 69, 'gain')).toBe(17);
+        for (const type of ['initial', 'gain', 'max']) for (let n = 0; n < 80; n++) {
+            expect(Number.isInteger(manaBonusFor('strength', n, type))).toBe(true);
+            expect(manaBonusFor('strength', n + 1, type) - manaBonusFor('strength', n, type)).toBeLessThanOrEqual(1);
+        }
     });
 
     test('la description annonce les valeurs réelles avant -> après', () => {
         const d = describeAttributeChoice(hero({ intelligence: 1 }), 'intelligence');
         expect(d.points).toBe(1);
         expect(d.nextPoints).toBe(2);
-        expect(d.lines.join(' ')).toMatch(/donne 5 qì bleu au lieu de 4/);
-        expect(d.lines.join(' ')).toMatch(/\+1 qì bleu en début de combat/);
+        expect(d.lines.join(' ')).toMatch(/pas de gain de match/);   // le point n° 2 ne donne rien de plus au match
+        expect(d.lines.join(' ')).toMatch(/Pas de qì bleu de départ en plus/);
+        expect(describeAttributeChoice(hero({ intelligence: 2 }), 'intelligence').lines.join(' ')).toMatch(/donne 4 qì bleu au lieu de 3/);
+        expect(describeAttributeChoice(hero({ intelligence: 4 }), 'intelligence').lines.join(' ')).toMatch(/\+1 qì bleu en début de combat/);
         expect(describeAttributeChoice(hero(), 'agility').lines[0]).toMatch(/\+1 défense/);
     });
 
     test('le résumé permanent reflète les points acquis', () => {
         const s = summarizeColorBonuses(hero({ strength: 2 })).find(c => c.attr === 'strength');
-        expect(s).toMatchObject({ color: 'red', perMatch3: 5, initial: 2, cap: 52 });
+        expect(s).toMatchObject({ color: 'red', perMatch3: 3, initial: 1, cap: 50 });
     });
 });
 
@@ -104,21 +119,25 @@ describe('le Moral (violet) donne de l\'agilité, pas de l\'attaque', () => {
 describe('la rage dépend des attributs de montée de niveau', () => {
     test('Battle donne de la rage dès le début du combat (quantité)', () => {
         expect(startingRage(hero())).toBe(0);
-        expect(startingRage(hero({ strength: 4 }))).toBe(4 * ATTRIBUTE_RAGE_RULES.strength.initial);
-        expect(describeAttributeChoice(hero({ strength: 1 }), 'strength').lines.join(' ')).toMatch(/Rage : \+3 de jauge/);
+        expect(startingRage(hero({ strength: 4 }))).toBe(6);   // 1 par point + 1 de plus aux points pairs
+        expect(startingRage(hero({ strength: 69 }))).toBe(100);   // plafonnée à la jauge
+        expect(startingRage(hero({ strength: 200 }))).toBe(100);
+        expect(describeAttributeChoice(hero({ strength: 1 }), 'strength').lines.join(' ')).toMatch(/Rage : \+2 de jauge/);
     });
 
     test("le Moral accélère l'accumulation de la rage", () => {
         expect(boostedRageGain(hero(), 20)).toBe(20);
-        expect(boostedRageGain(hero({ morale: 4 }), 20)).toBe(24);
+        expect(boostedRageGain(hero({ morale: 4 }), 20)).toBe(21);   // +6 % (3 % aux points pairs)
+        expect(boostedRageGain(hero({ morale: 200 }), 20)).toBe(40);   // jamais plus du double
         expect(boostedRageGain(hero({ morale: 4 }), 0)).toBe(0);
-        expect(describeAttributeChoice(hero(), 'morale').lines.join(' ')).toMatch(/\+5 % de rage gagnée/);
+        expect(describeAttributeChoice(hero(), 'morale').lines.join(' ')).toMatch(/pas de bonus de rage gagnée/);   // le 1er point est impair
+        expect(describeAttributeChoice(hero({ morale: 1 }), 'morale').lines.join(' ')).toMatch(/\+3 % de rage gagnée/);
     });
 });
 
 describe('plafond de qì par niveau', () => {
-    test('100 de qì est atteint au niveau 40 (39 points dans une même couleur)', () => {
-        expect(summarizeColorBonuses(hero({ strength: 39 })).find(c => c.attr === 'strength').cap).toBe(100);
-        expect(summarizeColorBonuses(hero({ strength: 38 })).find(c => c.attr === 'strength').cap).toBeLessThan(100);
+    test('73 de qì par les points au niveau 70 (69 points dans une couleur), les 27 restants viennent de l\'équipement', () => {
+        expect(summarizeColorBonuses(hero({ strength: 69 })).find(c => c.attr === 'strength').cap).toBe(73);
+        expect(summarizeColorBonuses(hero({ strength: 39 })).find(c => c.attr === 'strength').cap).toBe(63);
     });
 });

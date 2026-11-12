@@ -121,6 +121,7 @@
   "spellTileFx.js",
   "spells.js",
   "spells.json",
+  "statBudget.js",
   "statusBadges.js",
   "story.js",
   "storyMirror.js",

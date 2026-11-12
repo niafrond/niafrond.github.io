@@ -1,7 +1,8 @@
 // Onglet « Stuff » : casque, collier, bracelet et bague (stuff.js). Affichage et actions du joueur ; la logique est dans stuff.js.
 
 import { player, gameState, log, saveUpdate, updateStats } from './game.js';
-import { getRarityColor } from './items.js';
+import { getRarityColor, relicSlots, wornRelics, equipRelic, unequipRelic } from './items.js';
+import { MAX_LEVEL } from './experience.js';
 import { compareButtonHtml, gearDeltasHtml } from './compareView.js';
 import { rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, escapeHtml as esc, shortText } from './gameCardUi.js';
 import { bindCardTips } from './gameTooltips.js';
@@ -61,7 +62,7 @@ export function renderStuffTab() {
     const totals = stuffTotals(player);
     const spare = player.stuffOwned.map(getStuffById).filter(s => s && player.stuff[s.slot] !== s.id).sort(bySlotUsableLevel);
     const summary = [
-        totals.atk ? `Atk +${totals.atk}` : '', totals.def ? `Déf +${totals.def}` : '',
+        totals.atk ? `Atk ${totals.atk > 0 ? '+' : ''}${totals.atk}` : '', totals.def ? `Déf ${totals.def > 0 ? '+' : ''}${totals.def}` : '',
         totals.maxHp ? `PV max +${totals.maxHp}` : '',
         totals.poisonResist ? (totals.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${totals.poisonResist} %`) : '',
         ...[...totals.biomes].map(b => `Protégé : ${BIOME_PROTECTION_LABEL[b]}`),
@@ -80,15 +81,22 @@ export function renderStuffTab() {
 function relicsHtml() {
     const relics = relicsOf(player);
     if (!relics.length) return '';
-    // Reliques identiques : une seule ligne avec une pastille ×N.
-    const groups = new Map();
-    relics.forEach(r => { const k = r.id || r.name; groups.set(k, { r, count: (groups.get(k)?.count || 0) + 1 }); });
-    const rows = [...groups.values()].map(({ r, count }) => rowCardHtml({
-        key: `rel:${r.id || r.name}`, border: getRarityColor(r.rarity), name: escapeHtml(r.name), badges: badgeHtml('Relique') + (count > 1 ? badgeHtml(`×${count}`) : ''),
-        sub: `<span class="rc-short">${escapeHtml(shortText(r.description))}</span>`,
-        tip: cardTipHtml(escapeHtml(r.name), [escapeHtml(RARITY_LABEL[r.rarity] || ''), count > 1 ? `Exemplaires : ${count}` : ''], escapeHtml(r.description || ''))
-    })).join('');
-    return `<h3>Reliques (${groups.size})</h3>${rows}`;
+    const slots = relicSlots(player.level), worn = wornRelics(player);
+    const lockedInCombat = gameState.combatState === 'active';
+    const wornIds = new Set(worn.map(r => r.id));
+    const rows = relics.map((r, index) => {
+        const isWorn = !!r.applied;
+        const dup = !isWorn && wornIds.has(r.id);
+        const full = !isWorn && worn.length >= slots;
+        const label = isWorn ? 'Retirer' : dup ? 'Déjà portée' : full ? 'Complet' : 'Porter';
+        return rowCardHtml({
+            key: `rel:${r.id || r.name}:${index}`, border: getRarityColor(r.rarity), name: escapeHtml(r.name), badges: badgeHtml(isWorn ? 'Portée' : 'Relique'),
+            sub: `<span class="rc-short">${escapeHtml(shortText(r.description))}</span>`,
+            primary: `<button type="button" class="rc-btn${isWorn ? ' rc-btn-alt' : ''}" data-relic="${index}" ${lockedInCombat || dup || full ? 'disabled' : ''}>${label}</button>`,
+            tip: cardTipHtml(escapeHtml(r.name), [escapeHtml(RARITY_LABEL[r.rarity] || '')], escapeHtml(r.description || ''))
+        });
+    }).join('');
+    return `<h3>Reliques portées ${worn.length} / ${slots}</h3><p class="shop-empty">Une seule relique par type ; un emplacement de plus à chaque palier de niveau (10 au niveau ${MAX_LEVEL}).</p>${rows}`;
 }
 
 // Onglet « Spéciaux » : objets de quête rangés dans exploration.questItems (jamais dans le sac, donc invendables).
@@ -116,6 +124,13 @@ function afterChange(message) {
 function onClick(ev) {
     const equip = ev.target.closest('[data-equip]');
     if (equip) { if (gameState.combatState !== 'active') afterChange(equipStuff(player, equip.dataset.equip).message); return; }
+    const relic = ev.target.closest('[data-relic]');
+    if (relic) {
+        if (gameState.combatState === 'active') return;
+        const item = relicsOf(player)[Number(relic.dataset.relic)];
+        if (item) afterChange((item.applied ? unequipRelic(player, item) : equipRelic(player, item)).message);
+        return;
+    }
     const off = ev.target.closest('[data-unequip]');
     if (off) { if (gameState.combatState !== 'active') afterChange(unequipStuff(player, off.dataset.unequip).message); return; }
 }
