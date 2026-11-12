@@ -1,3 +1,9 @@
+## [2.233.0](https://github.com/niafrond/niafrond.github.io/compare/v2.232.0...v2.233.0) (2026-11-12)
+
+### Features
+
+* **match3-quest:** plafonner attaque, défense et qì à 100 au niveau 70 ([#712](https://github.com/niafrond/niafrond.github.io/issues/712)) ([deda184](https://github.com/niafrond/niafrond.github.io/commit/deda1843dac54e63c481eee0678afc63a65123f1))
+
 ## [2.232.0](https://github.com/niafrond/niafrond.github.io/compare/v2.231.0...v2.232.0) (2026-11-11)
 
 ### Features
