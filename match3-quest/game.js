@@ -25,12 +25,12 @@ import { recordBossLoss, pickBossTip } from "./bossTips.js";
 
 import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
 
-import { getRarityIcon, applyArtifactEffects } from "./items.js";
+import { getRarityIcon, applyArtifactEffects, normalizeRelics } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 
 
 
-import { startingRage, boostedRageGain, ATTRIBUTE_MANA_RULES, agilityScore } from "./attributes.js";
+import { startingRage, boostedRageGain, ATTRIBUTE_MANA_RULES, agilityScore, manaBonusFor } from "./attributes.js";
 import { initializeXP, addXP, normalizeXP } from "./experience.js";
 
 import { playSfx } from "./sound.js";
@@ -107,9 +107,7 @@ function getAssociatedAttributeByColor(color){
 export function getAttributeManaBonus(entity, color, bonusType){
     const attribute = getAssociatedAttributeByColor(color);
     if(!attribute) return 0;
-    const fixedBonus = ATTRIBUTE_MANA_RULES[attribute]?.bonuses?.[bonusType] || 0;
-    if(fixedBonus <= 0) return 0;
-    return Math.floor(getPrimaryAttributeEffect(entity, attribute) * fixedBonus + 1e-9);
+    return manaBonusFor(attribute, getPrimaryAttributeEffect(entity, attribute), bonusType);
 }
 
 export function getManaCapForColor(entity, color){
@@ -871,6 +869,7 @@ function applyLevelUpRewards(levelUpResult){
         }
         // croissance innée (attaque après le niveau 18, PV après le niveau 20) : voir progression.js
         const extras = applyGrowth(player);
+        applyArtifactEffects(player);   // un niveau de plus peut libérer un emplacement de relique
         maxHpGained += extras.maxHp;
         if(extras.attack > 0) log(`+${extras.attack} attaque (maîtrise du niveau ${player.level}).`);
 
@@ -1473,6 +1472,7 @@ function ensureCombatUsableActiveItem() {
 // Chargement de la sauvegarde au démarrage
 loadGameData();
 // Appliquer les effets des artefacts
+normalizeRelics(player);   // sauvegarde ancienne : doublons et reliques au-delà des emplacements du niveau retirés
 applyArtifactEffects(player);
 normalizeActiveInventoryIndex();
 clampManaToCaps(player);

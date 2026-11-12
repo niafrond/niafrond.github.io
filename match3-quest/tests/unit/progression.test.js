@@ -46,23 +46,23 @@ describe('courbe d\'XP', () => {
 });
 
 describe('croissance innée après le niveau 18', () => {
-    test('+2 attaque par niveau au-delà de 18, +5 PV max supplémentaires au-delà de 20', () => {
+    test('plus d\'attaque innée (le budget plafonne l\'Attaque à 100 au niveau 70), +5 PV max supplémentaires au-delà de 20', () => {
         expect(growthExtras(1, 18)).toEqual({ attack: 0, maxHp: 0 });
-        expect(growthExtras(18, 19)).toEqual({ attack: 2, maxHp: 0 });
-        expect(growthExtras(18, 22)).toEqual({ attack: 8, maxHp: 10 });
-        expect(growthExtras(1, 70)).toEqual({ attack: 104, maxHp: 250 });
+        expect(growthExtras(18, 19)).toEqual({ attack: 0, maxHp: 0 });
+        expect(growthExtras(18, 22)).toEqual({ attack: 0, maxHp: 10 });
+        expect(growthExtras(1, 70)).toEqual({ attack: 0, maxHp: 250 });
     });
 
     test('applyGrowth ne compte jamais deux fois le même niveau (rattrapage unique)', () => {
         const p = { level: 30, attack: 20, maxHp: 200, hp: 100 };
         const first = applyGrowth(p);
-        expect(first).toEqual({ attack: 24, maxHp: 50 });
-        expect(p).toMatchObject({ attack: 44, maxHp: 250, growthLevel: 30 });
+        expect(first).toEqual({ attack: 0, maxHp: 50 });
+        expect(p).toMatchObject({ attack: 20, maxHp: 250, growthLevel: 30 });
         expect(applyGrowth(p)).toEqual({ attack: 0, maxHp: 0 });
-        expect(p.attack).toBe(44);
+        expect(p.attack).toBe(20);
         p.level = 31;
         applyGrowth(p);
-        expect(p).toMatchObject({ attack: 46, maxHp: 255, growthLevel: 31 });
+        expect(p).toMatchObject({ attack: 20, maxHp: 255, growthLevel: 31 });
     });
 });
 
@@ -75,7 +75,7 @@ describe('combats jouables jusqu\'au niveau 70 (modèle : meilleure arme du nive
     };
     const bestWeapon = L => Math.max(...allWeapons.filter(w => w.minLevel <= L && !w.playerOnly).map(w => w.damage));
 
-    test.each([1, 5, 10, 20, 30, 40, 50, 60, 70])('niveau %i : tuer l\'ennemi du même niveau demande 2 à 7 coups, il en faut 3 à 9 pour tuer le héros', L => {
+    test.each([1, 5, 10, 20, 30, 40, 50, 60, 70])('niveau %i : tuer l\'ennemi du même niveau demande 2 à 10 coups, il en faut 3 à 9 pour tuer le héros', L => {
         const p = player(L);
         const enHp = 40 + 10 * L, def = enemyDefenseForLevel(L);
         const dmg = Math.max(1, bestWeapon(L) + p.attack - def);
@@ -83,7 +83,7 @@ describe('combats jouables jusqu\'au niveau 70 (modèle : meilleure arme du nive
         const enHit = Math.max(1, Math.min(Math.floor(enHp / 4), 5 + 4 * L + 20) - p.def);
         const hitsToDie = p.hp / enHit;
         expect(hitsToKill).toBeGreaterThanOrEqual(1.5);
-        expect(hitsToKill).toBeLessThanOrEqual(7);
+        expect(hitsToKill).toBeLessThanOrEqual(10);   // 7 avant la suppression de l'attaque innée (+2 par niveau dès le 19), que ce modèle compte en dégâts ; les arcs lourds et les sorts comblent l'écart
         expect(hitsToDie).toBeGreaterThanOrEqual(3);
         expect(hitsToDie).toBeLessThanOrEqual(9);
     });

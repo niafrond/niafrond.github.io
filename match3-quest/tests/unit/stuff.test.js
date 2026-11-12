@@ -56,9 +56,11 @@ describe('porter du stuff', () => {
     test('Atk / Déf s\'ajoutent à celles des armes (combatStats)', () => {
         const h = hero({ equippedWeapon: { atkBonus: 5 } });
         ['bracelet_de_tendon', 'bague_de_cuivre'].forEach(id => { grantStuff(h, id); equipStuff(h, id); });
-        expect(gearBonus(h, 'attack')).toBe(5 + 3 + 2);
-        expect(gearBonus(h, 'defense')).toBe(2);
-        expect(stuffTotals(h)).toMatchObject({ atk: 5, def: 2, maxHp: 8 });
+        const tendon = getStuffById('bracelet_de_tendon'), cuivre = getStuffById('bague_de_cuivre');
+        const atk = tendon.atkBonus + cuivre.atkBonus, def = (tendon.defBonus || 0) + (cuivre.defBonus || 0);
+        expect(gearBonus(h, 'attack')).toBe(5 + atk);
+        expect(gearBonus(h, 'defense')).toBe(def);
+        expect(stuffTotals(h)).toMatchObject({ atk, def });
     });
     test('normalizeStuff écarte les ids inconnus ou mal rangés', () => {
         const h = { stuffOwned: ['casque_de_cuir', 'inconnu'], stuff: { head: 'casque_de_cuir', neck: 'casque_de_cuir', ring: 'bague_de_bois' } };

@@ -2,6 +2,7 @@ import { flyManaGain, flyHeal } from './manaFlight.js';
 import { healEntity, cureStatuses, afflictionsOf, CURE_NAMES } from './alterations.js';
 import { manaIcon, itemIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
+import { MAX_LEVEL } from './experience.js';
 
 // Système d'objets et inventaire
 
@@ -9,13 +10,19 @@ import { canEquip, equip, unequip } from './equipment.js';
 export const allItems = [
     // === BOUCLIERS ===
     {id:"jade_shield", name:"Bouclier de Jade", type:"shield", minLevel:5, rarity:"uncommon",
-     description:"Un bouclier poli en jade, renforce la défense (blocage) de 10", defense:10},
+     description:"Un bouclier poli en jade, renforce la défense (blocage) de 2", defense:2},
     {id:"dragon_shield", name:"Bouclier du Dragon Blanc", type:"shield", minLevel:10, rarity:"rare",
-     description:"Un bouclier gravé du dragon blanc, défense +20, critique +5", defense:20, atkBonus:5},
+     description:"Un bouclier gravé du dragon blanc, défense +5, critique +1", defense:5, atkBonus:1},
     {id:"ancestral_shield", name:"Rondache Ancestrale", type:"shield", minLevel:15, rarity:"rare",
-     description:"Un bouclier ancien renforcé par le temps, défense +28, absorbe 70 dégâts par combat", defense:28, absorbDamage:70},
+     description:"Un bouclier ancien renforcé par le temps, défense +7, absorbe 70 dégâts par combat", defense:7, absorbDamage:70},
     {id:"legendary_shield", name:"Bouclier de l'Empereur Jaune", type:"shield", minLevel:18, rarity:"legendary",
-     description:"Le bouclier mythique de l'Empereur Jaune, défense +42, critique +10, absorbe 150 dégâts", defense:42, atkBonus:10, absorbDamage:150},
+     description:"Le bouclier mythique de l'Empereur Jaune, défense +10, critique +1, absorbe 150 dégâts", defense:10, atkBonus:1, absorbDamage:150},
+
+    // Boucliers à compromis : beaucoup d'un côté, un malus de l'autre (atkBonus / defBonus négatifs permis).
+    {id:"spiked_buckler", name:"Targe Hérissée du Tigre", type:"shield", minLevel:24, rarity:"rare",
+     description:"Une targe garnie de pointes : défense +4, critique +14, mais la garde est grande ouverte (défense -10)", defense:4, atkBonus:14, defBonus:-10},
+    {id:"rampart_pavise", name:"Pavois du Rempart", type:"shield", minLevel:50, rarity:"legendary",
+     description:"Un pavois de muraille, défense +30, absorbe 400 dégâts, mais il alourdit tant le bras (critique -16)", defense:30, atkBonus:-16, absorbDamage:400},
 
     // === OBJETS RECHARGEABLES ===
     {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:2, rechargeTurns:8,
@@ -65,24 +72,24 @@ export const allItems = [
 
     // Reliques permanentes (niveau 8+)
     {id:"amuletOfPower", name:"Amulette du Tigre Blanc", type:"artifact", minLevel:10, rarity:"rare",
-     description:"Augmente attaque de 8 (permanent)", effect:{permAttack:8}},
+     description:"Augmente attaque de 1 (permanent)", effect:{permAttack:1}},
     {id:"shieldCharm", name:"Charme de la Tortue Noire", type:"artifact", minLevel:12, rarity:"rare",
-     description:"Augmente défense de 8 (permanent)", effect:{permDefense:8}},
+     description:"Augmente défense de 2 (permanent)", effect:{permDefense:2}},
     
     // Objets légendaires (niveau 15+)
     {id:"crownOfTheArchmage", name:"Couronne de Perles de l'Immortel", type:"artifact", minLevel:15, rarity:"legendary",
-     description:"Augmente le qì max de 30 (permanent)", effect:{permMaxMana:30}},
+     description:"Augmente le qì max de 4 (permanent)", effect:{permMaxMana:4}},
     {id:"dragonHeart", name:"Perle du Dragon", type:"artifact", minLevel:17, rarity:"legendary",
-     description:"Augmente HP max de 80 et attaque de 15 (permanent)", effect:{permMaxHp:80, permAttack:15}},
+     description:"Augmente HP max de 80 et attaque de 2 (permanent)", effect:{permMaxHp:80, permAttack:2}},
 
      {id:"ringOfPrecision", name:"Bague d'Archer en Jade", type:"artifact", minLevel:9, rarity:"rare",
- description:"Augmente les chances de critique de 8% (permanent)", effect:{permCritChance:8}},
+ description:"Augmente les chances de critique de 1% (permanent)", effect:{permCritChance:1}},
 
 {id:"bootsOfSwiftness", name:"Sandales du Vent Léger", type:"artifact", minLevel:11, rarity:"rare",
  description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
 
 {id:"orbOfWisdom", name:"Orbe de Jade de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
- description:"Augmente le qì max de 15 (permanent)", effect:{permMaxMana:15}},
+ description:"Augmente le qì max de 2 (permanent)", effect:{permMaxMana:2}},
  {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"reusable", minLevel:11, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
  description:"Jouez immédiatement 3 tours supplémentaires (rechargé en 8 tours)", effect:{extraTurn:3}},
 
@@ -112,11 +119,11 @@ export const allItems = [
     // L'attaque et la défense étant des chances plafonnées (98 % le critique, 75 % le blocage), les paliers misent sur les PV, le qì, les soins et la réduction de dégâts.
     // Boucliers
     {id:"qilin_shield", name:"Rondache du Qilin", type:"shield", minLevel:28, rarity:"rare",
-     description:"Un bouclier orné du Qilin, défense +45, critique +8, absorbe 150 dégâts", defense:45, atkBonus:8, absorbDamage:150},
+     description:"Un bouclier orné du Qilin, défense +11, critique +1, absorbe 150 dégâts", defense:11, atkBonus:1, absorbDamage:150},
     {id:"golden_tortoise_aegis", name:"Égide de la Tortue d'Or", type:"shield", minLevel:45, rarity:"legendary",
-     description:"L'égide de la Tortue d'Or, défense +55, critique +12, absorbe 300 dégâts", defense:55, atkBonus:12, absorbDamage:300},
+     description:"L'égide de la Tortue d'Or, défense +13, critique +2, absorbe 300 dégâts", defense:13, atkBonus:2, absorbDamage:300},
     {id:"celestial_mandate_shield", name:"Bouclier du Mandat Céleste", type:"shield", minLevel:60, rarity:"legendary",
-     description:"Le bouclier du Mandat Céleste, défense +65, critique +15, absorbe 500 dégâts", defense:65, atkBonus:15, absorbDamage:500},
+     description:"Le bouclier du Mandat Céleste, défense +16, critique +2, absorbe 500 dégâts", defense:16, atkBonus:2, absorbDamage:500},
 
     // Soins, qì et effets de combat
     {id:"celestial_jade_elixir", name:"Élixir de Jade Céleste", type:"reusable", minLevel:25, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
@@ -150,21 +157,21 @@ export const allItems = [
     {id:"ancient_jade_heart", name:"Cœur de Jade Antique", type:"artifact", minLevel:22, rarity:"rare",
      description:"Augmente HP max de 60 (permanent)", effect:{permMaxHp:60}},
     {id:"azure_dragon_pendant", name:"Pendentif du Dragon Azur", type:"artifact", minLevel:26, rarity:"rare",
-     description:"Augmente le qì max de 25 (permanent)", effect:{permMaxMana:25}},
+     description:"Augmente le qì max de 3 (permanent)", effect:{permMaxMana:3}},
     {id:"red_phoenix_ring", name:"Anneau du Phénix Rouge", type:"artifact", minLevel:30, rarity:"rare",
      description:"Augmente HP max de 90 (permanent)", effect:{permMaxHp:90}},
     {id:"celestial_tortoise_seal", name:"Sceau de la Tortue Céleste", type:"artifact", minLevel:34, rarity:"rare",
-     description:"Augmente défense de 12 (permanent)", effect:{permDefense:12}},
+     description:"Augmente défense de 3 (permanent)", effect:{permDefense:3}},
     {id:"piercing_eye_ring", name:"Bague de l'Œil Perçant", type:"artifact", minLevel:38, rarity:"rare",
-     description:"Augmente les chances de critique de 10% (permanent)", effect:{permCritChance:10}},
+     description:"Augmente les chances de critique de 1% (permanent)", effect:{permCritChance:1}},
     {id:"imperial_jade_crown", name:"Couronne de Jade Impériale", type:"artifact", minLevel:45, rarity:"legendary",
-     description:"Augmente HP max de 150 et le qì max de 40 (permanent)", effect:{permMaxHp:150, permMaxMana:40}},
+     description:"Augmente HP max de 150 et le qì max de 5 (permanent)", effect:{permMaxHp:150, permMaxMana:5}},
     {id:"dragon_emperor_pearl", name:"Perle de l'Empereur Dragon", type:"artifact", minLevel:55, rarity:"legendary",
-     description:"Augmente HP max de 220 et défense de 10 (permanent)", effect:{permMaxHp:220, permDefense:10}},
+     description:"Augmente HP max de 220 et défense de 2 (permanent)", effect:{permMaxHp:220, permDefense:2}},
     {id:"golden_clouds_boots", name:"Bottes des Nuages Dorés", type:"artifact", minLevel:60, rarity:"legendary",
      description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
     {id:"heaven_seal", name:"Sceau du Ciel", type:"artifact", minLevel:65, rarity:"legendary",
-     description:"Augmente HP max de 300, le qì max de 60 et les chances de critique de 10% (permanent)", effect:{permMaxHp:300, permMaxMana:60, permCritChance:10}},
+     description:"Augmente HP max de 300, le qì max de 5 et les chances de critique de 1% (permanent)", effect:{permMaxHp:300, permMaxMana:5, permCritChance:1}},
 ];
 
 // Chances de drop selon la rareté
@@ -372,34 +379,75 @@ export function isCombatLongEffect(effect) {
     return Boolean(effect && (effect.tempAttack || effect.tempDefense || effect.lifesteal || effect.damageReduction || effect.critChance || effect.revive));
 }
 
-// Appliquer les effets permanents des artefacts
+// Reliques permanentes : le héros n'en PORTE qu'un nombre limité, qui croît avec son niveau (3 au niveau 1, 10 au niveau 70), et
+// une seule par identifiant (sinon cinq Cœurs de Jade ou trois Charmes de la Tortue Noire dépasseraient le budget de statistiques :
+// statBudget.js). `applied` = portée (son effet est dans les statistiques du héros) ; une relique non portée reste dans le sac,
+// vendable. `stowed` = retirée volontairement : elle n'est plus remise toute seule.
+export const RELIC_SLOTS_MIN = 3;
+export const RELIC_SLOTS_MAX = 10;
+export function relicSlots(level) {
+    const lvl = Math.max(1, Math.min(MAX_LEVEL, Math.floor(level) || 1));
+    return RELIC_SLOTS_MIN + Math.floor((lvl - 1) * (RELIC_SLOTS_MAX - RELIC_SLOTS_MIN) / (MAX_LEVEL - 1));
+}
+export const wornRelics = player => (player?.inventory || []).filter(i => i.type === "artifact" && i.applied);
+
+function shiftRelicEffect(player, item, sign) {
+    const e = item.effect || {};
+    if(e.permMaxHp) {
+        player.maxHp = Math.max(1, player.maxHp + sign * e.permMaxHp);
+        player.hp = sign > 0 ? player.hp + e.permMaxHp : Math.min(player.hp, player.maxHp);
+    }
+    if(e.permAttack) player.attack = Math.max(0, player.attack + sign * e.permAttack);
+    if(e.permDefense) player.defense = Math.max(0, (player.defense || 0) + sign * e.permDefense);
+    if(e.permMaxMana) player.maxMana = Math.max(0, player.maxMana + sign * e.permMaxMana);
+    if(e.permCritChance) player.critChance = Math.max(0, (player.critChance || 0) + sign * e.permCritChance);
+    if(e.permStartActionPoints) player.startActionPoints = Math.max(0, (player.startActionPoints || 0) + sign * e.permStartActionPoints);
+}
+
+/** Porte une relique du sac. Renvoie { ok, message }. */
+export function equipRelic(player, item) {
+    if(!item || item.type !== "artifact" || item.applied) return { ok: false, message: "" };
+    if(wornRelics(player).some(i => i.id === item.id)) return { ok: false, message: `${item.name} est déjà portée.` };
+    const slots = relicSlots(player.level);
+    if(wornRelics(player).length >= slots) return { ok: false, message: `Toutes vos reliques sont portées (${slots} au niveau ${player.level}). Retirez-en une.` };
+    shiftRelicEffect(player, item, 1);
+    item.applied = true;
+    delete item.stowed;
+    return { ok: true, message: `Relique portée : ${item.name}.` };
+}
+
+/** Retire une relique portée (son effet disparaît). */
+export function unequipRelic(player, item) {
+    if(!item || item.type !== "artifact" || !item.applied) return { ok: false, message: "" };
+    shiftRelicEffect(player, item, -1);
+    item.applied = false;
+    item.stowed = true;
+    return { ok: true, message: `Relique retirée : ${item.name}.` };
+}
+
+// Remplit les emplacements libres avec les reliques du sac (ramassage, gain de niveau, chargement), sauf celles retirées à la main.
 export function applyArtifactEffects(player) {
     if(!player.inventory) return;
-
     player.inventory.forEach(item => {
-        if(item.type === "artifact" && !item.applied) {
-            if(item.effect.permMaxHp) {
-                player.maxHp += item.effect.permMaxHp;
-                player.hp += item.effect.permMaxHp;
-            }
-            if(item.effect.permAttack) {
-                player.attack += item.effect.permAttack;
-            }
-            if(item.effect.permDefense) {
-                player.defense = (player.defense || 0) + item.effect.permDefense;
-            }
-            if(item.effect.permMaxMana) {
-                player.maxMana += item.effect.permMaxMana;
-            }
-            if(item.effect.permCritChance) {
-                player.critChance = (player.critChance || 0) + item.effect.permCritChance;
-            }
-            if(item.effect.permStartActionPoints) {
-                player.startActionPoints = (player.startActionPoints || 0) + item.effect.permStartActionPoints;
-            }
-            item.applied = true;
-        }
+        if(item.type === "artifact" && !item.applied && !item.stowed) equipRelic(player, item);
     });
+}
+
+// Sauvegarde ancienne (reliques toutes portées, en double) : retire l'effet des doublons et des reliques au-delà du nombre
+// d'emplacements du niveau. Renvoie le nombre de reliques retirées.
+export function normalizeRelics(player) {
+    if(!player?.inventory) return 0;
+    const seen = new Set();
+    let worn = 0, removed = 0;
+    const slots = relicSlots(player.level);
+    player.inventory.forEach(item => {
+        if(item.type !== "artifact" || !item.applied) return;
+        if(!seen.has(item.id) && worn < slots) { seen.add(item.id); worn++; return; }
+        shiftRelicEffect(player, item, -1);
+        item.applied = false;
+        removed++;
+    });
+    return removed;
 }
 
 // Convertit un ancien consommable (usage unique) en objet rechargeable, sans jamais le détruire.

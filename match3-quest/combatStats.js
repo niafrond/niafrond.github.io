@@ -61,7 +61,7 @@ export function gearBonus(entity, stat) {
     const worn = gear.reduce((sum, piece) => {
         if (!piece || seen.has(piece)) return sum;
         seen.add(piece);
-        return sum + Math.max(0, Math.floor(piece[key] || 0));
+        return sum + Math.floor(piece[key] || 0);   // un bonus négatif est permis : objet puissant en attaque qui coûte de la défense (ou l'inverse)
     }, 0);
     // Casque, collier, bracelet et bague (stuff.js) : seulement pour qui en porte (le héros).
     const totals = entity?.stuff ? stuffTotals(entity) : null;
@@ -137,11 +137,11 @@ export function describeStatBuff({ attack = 0, defense = 0, turns = 1 } = {}) {
 
 // Valeurs affichées (non plafonnées).
 export function rawAttack(entity) {
-    return Math.max(0, Math.floor(entity?.attack || 0)) + gearBonus(entity, 'attack') + statBuffAmount(entity, 'attack')
-        + Math.max(0, Math.floor(entity?.critChance || 0)) + Math.max(0, Math.floor(entity?.tempCritChance || 0));
+    return Math.max(0, Math.max(0, Math.floor(entity?.attack || 0)) + gearBonus(entity, 'attack') + statBuffAmount(entity, 'attack')
+        + Math.max(0, Math.floor(entity?.critChance || 0)) + Math.max(0, Math.floor(entity?.tempCritChance || 0)));
 }
 export function rawDefense(entity) {
-    return Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense');
+    return Math.max(0, Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense'));
 }
 
 // Attaque affichée : attaque brute moins le malus d'affaiblissement en cours (Sceau d'Affaiblissement).

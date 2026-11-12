@@ -38,8 +38,8 @@ function attributesOf(kind, obj) {
     if (kind === 'weapon') {
         out.push(attr('dégâts', `${obj.damage} ${svgIcon('skull')}`), attr('PA', `${obj.actionPoints} ${svgIcon('arrow')}`));
         if (obj.twoHanded) out.push('<span class="rc-attr"><b>Deux mains</b></span>');
-        if (obj.atkBonus) out.push(attr('Atk', `+${obj.atkBonus}`));
-        if (obj.defBonus) out.push(attr('Déf', `+${obj.defBonus}`));
+        if (obj.atkBonus) out.push(attr('Atk', `${obj.atkBonus > 0 ? '+' : ''}${obj.atkBonus}`));
+        if (obj.defBonus) out.push(attr('Déf', `${obj.defBonus > 0 ? '+' : ''}${obj.defBonus}`));
         if (obj.biome) out.push(`<span class="rc-attr">Bonus : <b>${escapeHtml(BIOME_LABELS[obj.biome] || obj.biome)}</b></span>`);
     } else if (kind === 'stuff') {
         out.push(`<span class="rc-attr"><b>${escapeHtml(STUFF_SLOT_LABELS[obj.slot])}</b></span>`);

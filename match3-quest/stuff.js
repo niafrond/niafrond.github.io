@@ -33,28 +33,28 @@ export const ANTIQUE_ARMORS = {
     lumiere: {
         name: 'Armure antique du Prisme', power: { turnHealPct: 10 }, powerText: 'Soigne 10 % des PV max à chaque tour',
         pieces: [
-            { id: 'prisme_heaume', slot: 'head', name: 'Heaume du Prisme', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière.' },
+            { id: 'prisme_heaume', slot: 'head', name: 'Heaume du Prisme', bonus: { defBonus: 1, maxHp: 40 }, description: 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière.' },
             { id: 'prisme_gorgerin', slot: 'neck', name: 'Gorgerin du Prisme', bonus: { maxHp: 60 }, description: 'Un gorgerin de verre fumé : la lumière le traverse sans l\'user.' },
-            { id: 'prisme_brassard', slot: 'wrist', name: 'Brassard du Prisme', bonus: { atkBonus: 5 }, description: 'Un brassard dont les facettes renvoient chaque rayon vers sa cible.' },
-            { id: 'prisme_anneau', slot: 'ring', name: 'Anneau du Prisme', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau où dort un éclat de lumière : il manque à l\'armure pour s\'éveiller.' }
+            { id: 'prisme_brassard', slot: 'wrist', name: 'Brassard du Prisme', bonus: { atkBonus: 1 }, description: 'Un brassard dont les facettes renvoient chaque rayon vers sa cible.' },
+            { id: 'prisme_anneau', slot: 'ring', name: 'Anneau du Prisme', bonus: { atkBonus: 1, defBonus: 1 }, description: 'Un anneau où dort un éclat de lumière : il manque à l\'armure pour s\'éveiller.' }
         ]
     },
     jarres: {
         name: 'Armure antique des Jarres', power: { turnArrowsPct: 100 }, powerText: '100 % du coût en flèches de l\'arme à flèches active la plus coûteuse, une fois par tour',
         pieces: [
-            { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
+            { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 1, maxHp: 40 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
             { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 60 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },
-            { id: 'jarres_brassard', slot: 'wrist', name: 'Brassard des Jarres', bonus: { atkBonus: 5 }, description: 'Un brassard d\'archer ancien : la corde y claque comme sur un tambour.' },
-            { id: 'jarres_anneau', slot: 'ring', name: 'Anneau des Jarres', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau d\'argile où dort le carquois sans fond de l\'armure.' }
+            { id: 'jarres_brassard', slot: 'wrist', name: 'Brassard des Jarres', bonus: { atkBonus: 1 }, description: 'Un brassard d\'archer ancien : la corde y claque comme sur un tambour.' },
+            { id: 'jarres_anneau', slot: 'ring', name: 'Anneau des Jarres', bonus: { atkBonus: 1, defBonus: 1 }, description: 'Un anneau d\'argile où dort le carquois sans fond de l\'armure.' }
         ]
     },
     charrette: {
         name: 'Armure antique de la Charrette', power: { reflectPct: 50 }, powerText: 'Renvoie 50 % des dégâts reçus',
         pieces: [
-            { id: 'charrette_heaume', slot: 'head', name: 'Heaume de la Charrette', bonus: { defBonus: 5, maxHp: 40 }, description: 'Un heaume de bronze aux rivets en forme de moyeux.' },
+            { id: 'charrette_heaume', slot: 'head', name: 'Heaume de la Charrette', bonus: { defBonus: 1, maxHp: 40 }, description: 'Un heaume de bronze aux rivets en forme de moyeux.' },
             { id: 'charrette_gorgerin', slot: 'neck', name: 'Gorgerin de la Charrette', bonus: { maxHp: 60 }, description: 'Un gorgerin de bronze aux roues rivetées.' },
-            { id: 'charrette_brassard', slot: 'wrist', name: 'Brassard de la Charrette', bonus: { atkBonus: 5 }, description: 'Un brassard à essieu : chaque coup reçu y fait tourner une roue.' },
-            { id: 'charrette_anneau', slot: 'ring', name: 'Anneau de la Charrette', bonus: { atkBonus: 3, defBonus: 3 }, description: 'Un anneau en forme de roue : celui qui l\'achève rend les coups.' }
+            { id: 'charrette_brassard', slot: 'wrist', name: 'Brassard de la Charrette', bonus: { atkBonus: 1 }, description: 'Un brassard à essieu : chaque coup reçu y fait tourner une roue.' },
+            { id: 'charrette_anneau', slot: 'ring', name: 'Anneau de la Charrette', bonus: { atkBonus: 1, defBonus: 1 }, description: 'Un anneau en forme de roue : celui qui l\'achève rend les coups.' }
         ]
     }
 };
@@ -63,41 +63,46 @@ const piece = (id, slot, name, minLevel, rarity, description, bonus = {}) => ({ 
 
 export const allStuff = [
     // Casques
-    piece('casque_de_cuir', 'head', 'Casque de cuir bouilli', 1, 'common', 'Un bonnet de cuir durci à la cire : mieux que rien.', { defBonus: 2 }),
-    piece('casque_de_bronze', 'head', 'Casque de bronze des rizières', 6, 'uncommon', 'Un casque de bronze martelé, orné d\'un épi.', { defBonus: 4, maxHp: 10 }),
-    piece('casque_de_jade', 'head', 'Diadème de jade', 14, 'rare', 'Un diadème de jade pâle qui garde l\'esprit clair.', { defBonus: 6, maxHp: 20 }),
-    piece('casque_du_dragon', 'head', 'Heaume du dragon céleste', 28, 'legendary', 'Un heaume à cornes de dragon, chaud comme une braise.', { atkBonus: 4, defBonus: 8, maxHp: 40 }),
+    piece('casque_de_cuir', 'head', 'Casque de cuir bouilli', 1, 'common', 'Un bonnet de cuir durci à la cire : mieux que rien.', { defBonus: 1 }),
+    piece('casque_de_bronze', 'head', 'Casque de bronze des rizières', 6, 'uncommon', 'Un casque de bronze martelé, orné d\'un épi.', { defBonus: 1, maxHp: 10 }),
+    piece('casque_de_jade', 'head', 'Diadème de jade', 14, 'rare', 'Un diadème de jade pâle qui garde l\'esprit clair.', { defBonus: 1, maxHp: 20 }),
+    piece('casque_du_dragon', 'head', 'Heaume du dragon céleste', 28, 'legendary', 'Un heaume à cornes de dragon, chaud comme une braise.', { atkBonus: 1, defBonus: 2, maxHp: 40 }),
     // Colliers
     piece('collier_de_perles', 'neck', 'Collier de perles d\'eau douce', 3, 'common', 'Des perles de rivière enfilées sur un fil de soie.', { maxHp: 8 }),
     piece('collier_antivenin', 'neck', 'Collier d\'antivenin', 8, 'uncommon', 'Une dent de mangouste montée sur cuivre : les venins s\'y brisent.', { poisonResist: 50 }),
-    piece('collier_du_tigre', 'neck', 'Collier du tigre blanc', 16, 'rare', 'Trois crocs de tigre blanc : l\'audace du chasseur.', { atkBonus: 5, maxHp: 15 }),
+    piece('collier_du_tigre', 'neck', 'Collier du tigre blanc', 16, 'rare', 'Trois crocs de tigre blanc : l\'audace du chasseur.', { atkBonus: 1, maxHp: 15 }),
     piece('collier_du_phenix', 'neck', 'Collier du phénix', 30, 'legendary', 'Une plume de phénix sertie d\'or : le poison s\'y consume.', { maxHp: 50, poisonResist: 100 }),
     // Bracelets
-    piece('bracelet_de_cuivre', 'wrist', 'Bracelet de cuivre', 2, 'common', 'Un jonc de cuivre poli.', { atkBonus: 2 }),
-    piece('bracelet_de_tendon', 'wrist', 'Bracelet de tendon', 7, 'uncommon', 'Du tendon de buffle tressé : il raffermit le poignet.', { atkBonus: 3, defBonus: 2 }),
+    piece('bracelet_de_cuivre', 'wrist', 'Bracelet de cuivre', 2, 'common', 'Un jonc de cuivre poli.', { atkBonus: 1 }),
+    piece('bracelet_de_tendon', 'wrist', 'Bracelet de tendon', 7, 'uncommon', 'Du tendon de buffle tressé : il raffermit le poignet.', { atkBonus: 1, defBonus: 1 }),
     piece('bracelet_de_jade_vital', 'wrist', 'Bracelet de Jade Vital', 8, 'rare', 'Un jonc de jade vif, tiède comme une peau vivante : il fortifie le corps.', { maxHp: 40 }),
-    piece('bracelet_antidote', 'wrist', 'Bracelet d\'antidote', 12, 'rare', 'Des graines d\'angélique dans un bracelet de jade.', { defBonus: 3, poisonResist: 60 }),
-    piece('bracelet_de_foudre', 'wrist', 'Bracelet de foudre', 24, 'legendary', 'Un cercle de fer d\'orage qui crépite au moindre tir.', { atkBonus: 8, defBonus: 4 }),
+    piece('bracelet_antidote', 'wrist', 'Bracelet d\'antidote', 12, 'rare', 'Des graines d\'angélique dans un bracelet de jade.', { defBonus: 1, poisonResist: 60 }),
+    piece('bracelet_de_foudre', 'wrist', 'Bracelet de foudre', 24, 'legendary', 'Un cercle de fer d\'orage qui crépite au moindre tir.', { atkBonus: 1, defBonus: 1 }),
     // Bagues
     piece('bague_de_bois', 'ring', 'Bague de bois de pêcher', 1, 'common', 'Une bague taillée dans un noyau de pêche, porte-bonheur.', { maxHp: 5 }),
-    piece('bague_de_cuivre', 'ring', 'Bague de cuivre rouge', 5, 'uncommon', 'Un anneau de cuivre rouge gravé d\'une flèche.', { atkBonus: 2, maxHp: 8 }),
-    piece('bague_de_sagesse', 'ring', 'Bague du lettré', 15, 'rare', 'Le sceau d\'un lettré : le calme avant le tir.', { defBonus: 3, maxHp: 25 }),
-    piece('bague_de_l_immortel', 'ring', 'Bague de l\'immortel', 32, 'legendary', 'Une bague d\'ambre où dort un souffle d\'immortel.', { atkBonus: 6, defBonus: 6, maxHp: 40, poisonResist: 30 }),
+    piece('bague_de_cuivre', 'ring', 'Bague de cuivre rouge', 5, 'uncommon', 'Un anneau de cuivre rouge gravé d\'une flèche.', { atkBonus: 1, maxHp: 8 }),
+    piece('bague_de_sagesse', 'ring', 'Bague du lettré', 15, 'rare', 'Le sceau d\'un lettré : le calme avant le tir.', { defBonus: 1, maxHp: 25 }),
+    piece('bague_de_l_immortel', 'ring', 'Bague de l\'immortel', 32, 'legendary', 'Une bague d\'ambre où dort un souffle d\'immortel.', { atkBonus: 1, defBonus: 1, maxHp: 40, poisonResist: 30 }),
     // Qì max (`manaMax`) : une couleur, deux couleurs, ou les cinq.
-    piece('bague_du_souffle_rouge', 'ring', 'Bague du souffle rouge', 4, 'uncommon', 'Un anneau de cinabre : le qì du feu s\'y accumule.', { manaMax: { red: 8 } }),
-    piece('collier_de_la_source', 'neck', 'Collier de la source', 9, 'uncommon', 'Une perle de jade bleu-vert, fraîche comme une source de montagne.', { manaMax: { blue: 8, green: 8 }, maxHp: 8 }),
-    piece('bague_de_l_orage_pourpre', 'ring', 'Bague de l\'orage pourpre', 13, 'rare', 'Une améthyste où gronde un orage lointain.', { manaMax: { yellow: 12, purple: 12 }, defBonus: 2 }),
-    piece('bracelet_des_cinq_souffles', 'wrist', 'Bracelet des cinq souffles', 18, 'rare', 'Cinq perles, une par élément, enfilées sur un fil de soie.', { manaMax: allColors(5), atkBonus: 2 }),
-    piece('casque_du_sage_celeste', 'head', 'Diadème du sage céleste', 26, 'legendary', 'Un diadème d\'argent que seuls portent les maîtres des cinq éléments.', { manaMax: allColors(10), maxHp: 20, defBonus: 4 }),
+    piece('bague_du_souffle_rouge', 'ring', 'Bague du souffle rouge', 4, 'uncommon', 'Un anneau de cinabre : le qì du feu s\'y accumule.', { manaMax: { red: 1 } }),
+    piece('collier_de_la_source', 'neck', 'Collier de la source', 9, 'uncommon', 'Une perle de jade bleu-vert, fraîche comme une source de montagne.', { manaMax: { blue: 1, green: 1 }, maxHp: 8 }),
+    piece('bague_de_l_orage_pourpre', 'ring', 'Bague de l\'orage pourpre', 13, 'rare', 'Une améthyste où gronde un orage lointain.', { manaMax: { yellow: 2, purple: 2 }, defBonus: 1 }),
+    piece('bracelet_des_cinq_souffles', 'wrist', 'Bracelet des cinq souffles', 18, 'rare', 'Cinq perles, une par élément, enfilées sur un fil de soie.', { manaMax: allColors(1), atkBonus: 1 }),
+    piece('casque_du_sage_celeste', 'head', 'Diadème du sage céleste', 26, 'legendary', 'Un diadème d\'argent que seuls portent les maîtres des cinq éléments.', { manaMax: allColors(1), maxHp: 20, defBonus: 1 }),
+    // Objets à compromis : un bonus fort dans une statistique contre un malus dans une autre (valeurs négatives permises, voir statBudget.js).
+    piece('bracelet_du_berserker', 'wrist', 'Bracelet du berserker', 20, 'rare', 'Un jonc de fer taché de rouille : il rend le bras féroce et la garde imprudente.', { atkBonus: 10, defBonus: -6 }),
+    piece('casque_du_bastion', 'head', 'Heaume du bastion', 22, 'rare', 'Un casque sans visière, si lourd qu\'il gêne le tir.', { defBonus: 12, atkBonus: -7 }),
+    piece('collier_de_l_ermite', 'neck', 'Collier de l\'ermite', 18, 'rare', 'Une perle de silence : le qì afflue, l\'élan se fait rare.', { manaMax: allColors(10), atkBonus: -6 }),
+    piece('bague_du_pacte_de_qi', 'ring', 'Bague du pacte de qì', 24, 'rare', 'Une bague gravée d\'un pacte : le souffle contre la garde.', { manaMax: allColors(10), defBonus: -6 }),
     // Effets de combat (`effects`, gearEffects.js) : le joueur prépare son équipement selon l'adversaire.
     piece('bracelet_garde_crane', 'wrist', 'Brassard du garde-crânes', 6, 'uncommon', 'Un brassard de cuir clouté qui encaisse les coups de masse.', { effects: { resist: { skull: 15 } } }),
     piece('bague_de_braise', 'ring', 'Bague de braise vive', 7, 'uncommon', 'Un rubis sombre où rougeoie une braise : les sorts de feu y puisent.', { effects: { spellBoost: { red: 12 } } }),
     piece('collier_des_fleches_detournees', 'neck', 'Collier des flèches détournées', 9, 'uncommon', 'Une plaque de jade poli : les traits glissent dessus.', { effects: { resist: { weapon: 15 } } }),
-    piece('bague_de_la_parade_fluide', 'ring', 'Bague de la parade fluide', 10, 'rare', 'Un anneau d\'argent : chaque parade rouvre une source de qì.', { defBonus: 2, effects: { parryQi: { chance: 35, amount: 2 } } }),
+    piece('bague_de_la_parade_fluide', 'ring', 'Bague de la parade fluide', 10, 'rare', 'Un anneau d\'argent : chaque parade rouvre une source de qì.', { defBonus: 1, effects: { parryQi: { chance: 35, amount: 2 } } }),
     piece('collier_de_la_maree', 'neck', 'Collier de la marée', 11, 'rare', 'Une perle bleue où gronde la marée : les sorts d\'Eau déferlent plus fort.', { maxHp: 10, effects: { spellBoost: { blue: 15 } } }),
-    piece('casque_du_veilleur', 'head', 'Casque du veilleur', 12, 'rare', 'Un casque de bronze à visière : ni coup à la tête ni berceuse ne vous font tomber.', { defBonus: 3, effects: { controlResist: { stunned: 100, asleep: 50 } } }),
+    piece('casque_du_veilleur', 'head', 'Casque du veilleur', 12, 'rare', 'Un casque de bronze à visière : ni coup à la tête ni berceuse ne vous font tomber.', { defBonus: 1, effects: { controlResist: { stunned: 100, asleep: 50 } } }),
     piece('bague_du_sceau_etanche', 'ring', 'Bague du sceau étanche', 13, 'rare', 'Un sceau de cire noire qui dévie les sortilèges.', { effects: { resist: { spell: 15 } } }),
-    piece('bracelet_de_l_inflexible', 'wrist', 'Bracelet de l\'inflexible', 14, 'rare', 'Un bracelet d\'acier trempé : les attaques annoncées des seigneurs y perdent de leur fureur.', { defBonus: 2, effects: { signatureReduce: 25 } }),
+    piece('bracelet_de_l_inflexible', 'wrist', 'Bracelet de l\'inflexible', 14, 'rare', 'Un bracelet d\'acier trempé : les attaques annoncées des seigneurs y perdent de leur fureur.', { defBonus: 1, effects: { signatureReduce: 25 } }),
     // Colliers de biome : uniquement en récompense de leur quête (world/collars.js), jamais en boutique ni en butin.
     piece('collier_obsidienne', 'neck', 'Collier d\'obsidienne froide', 4, 'rare', 'Une obsidienne qui ne chauffe jamais : la lave vous est indifférente.', { biomeProtect: 'volcano', maxHp: 10, quest: true }),
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),

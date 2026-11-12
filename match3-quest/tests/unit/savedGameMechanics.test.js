@@ -542,10 +542,10 @@ describe('progression des joueurs sauvegardés', () => {
         summarizeColorBonuses(p).forEach(row => {
             const rule = ATTRIBUTE_MANA_RULES[row.attr];
             expect(row.color).toBe(rule.color);
-            expect(row.perMatch3).toBe(3 + rule.bonuses.gain * row.points);
-            expect(row.initial).toBe(rule.bonuses.initial * row.points);
-            expect(row.cap).toBe(p.maxMana + Math.floor(rule.bonuses.max * row.points + 1e-9));
-            expect(manaPerMatch(row.attr, row.points, 5)).toBe(5 + rule.bonuses.gain * row.points);
+            expect(row.perMatch3).toBe(3 + manaBonusFor(row.attr, row.points, 'gain'));
+            expect(row.initial).toBe(manaBonusFor(row.attr, row.points, 'initial'));
+            expect(row.cap).toBe(p.maxMana + manaBonusFor(row.attr, row.points, 'max'));
+            expect(manaPerMatch(row.attr, row.points, 5)).toBe(5 + manaBonusFor(row.attr, row.points, 'gain'));
         });
         expect(manaBonusFor('strength', -4, 'gain')).toBe(0);   // points négatifs : jamais de malus
     });
@@ -693,9 +693,9 @@ describe('garde-fous d\'équilibrage sur des héros sauvegardés', () => {
     });
 
     test('un sort multi-mana est lançable avec les points d\'attribut du niveau où il apparaît (couleurs cumulées)', () => {
-        const maxPerPoint = ATTRIBUTE_MANA_RULES.strength.bonuses.max;
+        const pointsForCap = extra => { let n = 0; while (manaBonusFor('strength', n, 'max') < extra) n++; return n; };   // points pour +extra de réserve (1 tous les 3 points)
         allSpells.filter(s => s.minLevel > HIGH_SPELL_FROM_LEVEL && typeof s.cost === 'object').forEach(s => {
-            const pointsNeeded = Object.values(costOf(s)).reduce((sum, amount) => sum + Math.max(0, Math.ceil((amount - BASE_MANA_CAP) / maxPerPoint)), 0);
+            const pointsNeeded = Object.values(costOf(s)).reduce((sum, amount) => sum + (amount > BASE_MANA_CAP ? pointsForCap(amount - BASE_MANA_CAP) : 0), 0);
             expect(pointsNeeded).toBeLessThanOrEqual(s.minLevel - 1);
         });
     });
