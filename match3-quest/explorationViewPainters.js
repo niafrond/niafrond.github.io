@@ -22,26 +22,48 @@ export function createPainters(env) {
         return grid[y * screen.w + x] === 1;
     }
     const objCache = new Map();
+    // Rogne les marges transparentes d'un objet mis en cache : la marge demandée (ombre, feuillage qui dépasse) est large par prudence,
+    // et chaque pixel transparent recopié coûte autant qu'un pixel plein (mélange alpha par image, sur 60+ arbres de bordure).
+    // Retourne { cv, ox, oy } : le canvas réduit et son décalage (px du canvas d'origine).
+    function trimObject(src) {
+        const W = src.width, H = src.height;
+        let x0 = 0, y0 = 0, x1 = W - 1, y1 = H - 1;
+        try {
+            const d = src.getContext('2d').getImageData(0, 0, W, H).data;
+            const rowEmpty = y => { for (let i = y * W * 4 + 3, e = (y + 1) * W * 4; i < e; i += 4) if (d[i]) return false; return true; };
+            const colEmpty = x => { for (let y = y0; y <= y1; y++) if (d[(y * W + x) * 4 + 3]) return false; return true; };
+            while (y0 < y1 && rowEmpty(y0)) y0++;
+            while (y1 > y0 && rowEmpty(y1)) y1--;
+            while (x0 < x1 && colEmpty(x0)) x0++;
+            while (x1 > x0 && colEmpty(x1)) x1--;
+        } catch { x0 = 0; y0 = 0; x1 = W - 1; y1 = H - 1; }   // lecture impossible : on garde tout
+        const cv = document.createElement('canvas');
+        cv.width = x1 - x0 + 1;
+        cv.height = y1 - y0 + 1;
+        cv.getContext('2d').drawImage(src, -x0, -y0);
+        return { cv, ox: x0, oy: y0 };
+    }
     function drawCachedObject(key, x, y, w, h, pad, paint) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         const [pl, pt, pr, pb] = pad;
         const k = `${key}|${Math.round(w)}x${Math.round(h)}|${dpr}`;
-        let cv = objCache.get(k);
-        if (!cv) {
+        let obj = objCache.get(k);
+        if (!obj) {
             if (typeof document === 'undefined') { paint(ctx, x, y); return; }
             if (objCache.size > 300) objCache.clear();
-            cv = document.createElement('canvas');
+            const cv = document.createElement('canvas');
             cv.width = Math.ceil((w + pl + pr) * dpr);
             cv.height = Math.ceil((h + pt + pb) * dpr);
-            const g = cv.getContext('2d');
+            const g = cv.getContext('2d', { willReadFrequently: true });   // lu une fois (rognage) : canvas en mémoire, pas de relecture GPU
             g.setTransform(dpr, 0, 0, dpr, 0, 0);
             g.imageSmoothingEnabled = false;
             paint(g, pl, pt);
-            objCache.set(k, cv);
+            obj = trimObject(cv);
+            objCache.set(k, obj);
         }
         const was = ctx.imageSmoothingEnabled;
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(cv, Math.round((x - pl) * dpr) / dpr, Math.round((y - pt) * dpr) / dpr, cv.width / dpr, cv.height / dpr);
+        ctx.drawImage(obj.cv, (Math.round((x - pl) * dpr) + obj.ox) / dpr, (Math.round((y - pt) * dpr) + obj.oy) / dpr, obj.cv.width / dpr, obj.cv.height / dpr);
         ctx.imageSmoothingEnabled = was;
     }
 

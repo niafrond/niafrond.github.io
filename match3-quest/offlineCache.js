@@ -96,8 +96,12 @@ export function createPrefetcher(env = globalThis, { concurrency = 2, retries = 
         const hashes = await readHashes(env, cache);
         const missing = [];
         let done = 0, bytesDone = 0;
+        // Une seule lecture de la liste du cache (au lieu d'une recherche par fichier, ≈ 840 allers-retours à chaque lancement du jeu)
+        const base = new URL('./', env.location.href);
+        const keys = typeof cache.keys === 'function' ? new Set((await cache.keys()).map(r => r.url)) : null;
         for (const m of manifest.media) {
-            const cached = hashes[m.p] === m.h && await cache.match(new URL(m.p, new URL('./', env.location.href)).href);
+            const url = new URL(m.p, base).href;
+            const cached = hashes[m.p] === m.h && (keys ? keys.has(url) : await cache.match(url));
             if (cached) { done++; bytesDone += m.s; } else missing.push(m);
         }
         return { missing, done, bytesDone, total: manifest.media.length, bytesTotal: manifest.media.reduce((sum, m) => sum + m.s, 0) };
@@ -204,17 +208,54 @@ export function createPrefetcher(env = globalThis, { concurrency = 2, retries = 
     };
 }
 
+// Batterie faible (hors charge) : le téléchargement automatique attend le chargeur.
+export const LOW_BATTERY_LEVEL = 0.3;
+
+/** Connexion facturée ou lente (réseau mobile, 2G/3G) : ≈ 270 Mo n'y sont pas téléchargés sans que le joueur le demande. */
+export function isMeteredConnection(env = globalThis) {
+    const conn = env.navigator && (env.navigator.connection || env.navigator.mozConnection);
+    return Boolean(conn && (conn.saveData || conn.type === 'cellular' || /^(slow-2g|2g|3g)$/.test(conn.effectiveType || '')));
+}
+
 /**
- * Démarre le téléchargement en arrière-plan une fois la page chargée et le navigateur au repos, sauf économiseur de données (l'utilisateur peut
- * alors le lancer à la main depuis les Options). Reprend tout seul au retour du réseau.
+ * Démarre le téléchargement en arrière-plan une fois la page chargée et le navigateur au repos. Pour ne vider ni la batterie ni le forfait, il ne
+ * part pas tout seul avec l'économiseur de données, sur le réseau mobile (ou une connexion lente), ni batterie faible hors charge : il démarre
+ * alors au retour du Wi-Fi ou au branchement du chargeur, et le joueur peut toujours le lancer à la main depuis les Options. Un téléchargement
+ * automatique en cours se met en pause si l'appareil passe sur le réseau mobile. Reprend tout seul au retour du réseau.
  */
 export function startBackgroundPrefetch(prefetcher, env = globalThis, { idleDelayMs = 8000 } = {}) {
-    const conn = env.navigator && (env.navigator.connection || env.navigator.mozConnection);
+    const nav = env.navigator || {};
+    const conn = nav.connection || nav.mozConnection;
     const saveData = Boolean(conn && conn.saveData);
-    const launch = () => { if (!saveData && env.navigator.onLine !== false) prefetcher.start(); };
+    let battery = null;       // BatteryManager, quand le navigateur l'expose
+    let auto = false;         // téléchargement lancé par nous (et non par le joueur depuis les Options)
+    let pausedByUs = false;   // mis en pause par nous au passage sur le réseau mobile
+    const lowBattery = () => Boolean(battery && battery.charging === false && battery.level < LOW_BATTERY_LEVEL);
+    const allowed = () => !saveData && nav.onLine !== false && !isMeteredConnection(env) && !lowBattery();
+    const launch = () => {
+        if (!allowed()) return;
+        const { phase } = prefetcher.state;
+        if (phase !== 'idle' && !(phase === 'paused' && pausedByUs)) return;   // déjà fini, en cours, ou mis en pause par le joueur
+        auto = true;
+        pausedByUs = false;
+        prefetcher.start();
+    };
     const schedule = () => (env.requestIdleCallback ? env.requestIdleCallback(launch, { timeout: idleDelayMs }) : setTimeout(launch, idleDelayMs));
-    if (env.addEventListener) env.addEventListener('online', () => { if (!saveData && prefetcher.state.phase === 'paused' && prefetcher.state.reason === 'offline') prefetcher.start(); });
-    const run = () => { prefetcher.refresh().then(schedule); };
+    if (env.addEventListener) env.addEventListener('online', () => { if (allowed() && prefetcher.state.phase === 'paused' && prefetcher.state.reason === 'offline') prefetcher.start(); });
+    // Changement de réseau : pause sur le réseau mobile (si c'est nous qui avions lancé), départ ou reprise au retour du Wi-Fi.
+    if (conn && typeof conn.addEventListener === 'function') conn.addEventListener('change', () => {
+        if (isMeteredConnection(env)) {
+            if (auto && prefetcher.state.phase === 'running') { auto = false; pausedByUs = true; prefetcher.pause(); }
+        } else launch();
+    });
+    const run = async () => {
+        try {
+            battery = typeof nav.getBattery === 'function' ? await nav.getBattery() : null;
+            if (battery && typeof battery.addEventListener === 'function') battery.addEventListener('chargingchange', launch);
+        } catch (e) { battery = null; }   // API absente ou refusée : pas de condition de batterie
+        await prefetcher.refresh();
+        schedule();
+    };
     if (!env.document || env.document.readyState === 'complete') run();
     else env.addEventListener('load', run, { once: true });
 }

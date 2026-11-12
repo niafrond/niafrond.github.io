@@ -59,7 +59,7 @@ export function createOverlays(env) {
     // Brouillard de guerre de la vue principale : les cases jamais vues (masque X.fogMask, rayon X.FOG_RADIUS autour du héros) sont voilées,
     // personnages et ennemis compris, jusqu'à ce que le héros s'en approche (définitif). Le voile est une image w x h (1 px par case, opaque
     // sur l'inconnu) agrandie avec lissage : la lisière est un dégradé d'environ une case. Seule la partie visible est recopiée.
-    const viewFog = { screen: null, rev: -1, canvas: null };
+    const viewFog = { screen: null, rev: -1, canvas: null, mask: null, seenKey: '', box: null };
     function drawFogOfWar(P, screen, tile, vw, vh) {
         if (NO_FOG || !screen.w || !screen.h) return;
         const cell = `${screen.id}|${env.session.data.x},${env.session.data.y}`;
@@ -77,15 +77,32 @@ export function createOverlays(env) {
                 img.data[i * 4] = 10; img.data[i * 4 + 1] = 12; img.data[i * 4 + 2] = 24; img.data[i * 4 + 3] = 255;
             }
             g.putImageData(img, 0, 0);
-            Object.assign(viewFog, { screen, rev, canvas: off });
+            Object.assign(viewFog, { screen, rev, canvas: off, mask, seenKey: '' });
         }
         const o = P(0, 0);
         const x0 = Math.max(0, Math.floor(-o.x / tile) - 1), y0 = Math.max(0, Math.floor(-o.y / tile) - 1);
         const x1 = Math.min(screen.w, Math.ceil((vw - o.x) / tile) + 1), y1 = Math.min(screen.h, Math.ceil((vh - o.y) / tile) + 1);
         if (x1 <= x0 || y1 <= y0) return;
+        // On ne recopie que le rectangle qui contient des cases inconnues (plus une case de marge pour le dégradé de lisière), et rien du
+        // tout quand toute la partie visible est explorée (village connu, zone finie) : sinon c'est plus d'un plein écran de pixels
+        // transparents mélangés à chaque image. Recalculé seulement quand la vue ou le masque change.
+        const seenKey = `${x0},${y0},${x1},${y1}`;
+        if (viewFog.seenKey !== seenKey) {
+            let bx0 = Infinity, by0 = Infinity, bx1 = -1, by1 = -1;
+            for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (!viewFog.mask[y * screen.w + x]) {
+                if (x < bx0) bx0 = x;
+                if (x > bx1) bx1 = x;
+                if (y < by0) by0 = y;
+                if (y > by1) by1 = y;
+            }
+            viewFog.seenKey = seenKey;
+            viewFog.box = bx1 < 0 ? null : [Math.max(x0, bx0 - 1), Math.max(y0, by0 - 1), Math.min(x1, bx1 + 2), Math.min(y1, by1 + 2)];
+        }
+        if (!viewFog.box) return;
+        const [fx0, fy0, fx1, fy1] = viewFog.box;
         const smoothing = ctx.imageSmoothingEnabled;
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(viewFog.canvas, x0, y0, x1 - x0, y1 - y0, o.x + x0 * tile, o.y + y0 * tile, (x1 - x0) * tile, (y1 - y0) * tile);
+        ctx.drawImage(viewFog.canvas, fx0, fy0, fx1 - fx0, fy1 - fy0, o.x + fx0 * tile, o.y + fy0 * tile, (fx1 - fx0) * tile, (fy1 - fy0) * tile);
         ctx.imageSmoothingEnabled = smoothing;
     }
 

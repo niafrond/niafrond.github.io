@@ -11,6 +11,7 @@ export class FakeCache {
         return hit ? new Response(hit.body, { status: hit.status, headers: hit.headers }) : undefined;
     }
     async delete(req) { return this.map.delete(this.keyOf(req)); }
+    async keys() { return [...this.map.keys()].map(url => ({ url })); }
     text(key) { return this.map.has(key) ? this.map.get(key).body.toString() : undefined; }
 }
 export class FakeCaches {
