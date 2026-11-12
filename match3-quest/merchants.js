@@ -324,17 +324,40 @@ export function surplusEntries(hero) {
             if (!w || sellLockReason(hero, 'weapon', w)) return null;
             return { id, kind: 'weapon', obj: w, qty: 1, price: sellPriceOf('weapon', w), rarity: weaponRarity(w), indices: [] };
         }
-        const all = inv.map((it, index) => ({ it, index })).filter(({ it }) => itemGroupKey(it) === id);
-        if (!all.length) return null;
-        const shield = all[0].it.type === 'shield';
-        if (!shield && all.length < 2) return null;
-        const free = all.filter(({ it, index }) => !sellLockReason(hero, 'item', it, index));
-        const keep = shield || all.length - free.length >= 1 ? null : free[0];   // un exemplaire verrouillé suffit à « garder » l'objet
-        const indices = free.filter(e => e !== keep).map(e => e.index);
-        if (!indices.length) return null;
-        const obj = all[0].it;
-        return { id, kind: 'item', obj, qty: indices.length, price: sellPriceOf('item', obj), rarity: obj.rarity || 'common', indices };
+        return itemSurplus(hero, id, false);
     }).filter(Boolean);
+}
+
+/** Excédent d'un groupe d'objets du sac. `strictDuplicates` : un bouclier compte comme les autres (un exemplaire gardé), au lieu d'être vendu en entier. */
+function itemSurplus(hero, id, strictDuplicates) {
+    const all = (hero.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => itemGroupKey(it) === id);
+    if (!all.length) return null;
+    const shield = !strictDuplicates && all[0].it.type === 'shield';
+    if (!shield && all.length < 2) return null;
+    const free = all.filter(({ it, index }) => !sellLockReason(hero, 'item', it, index));
+    const keep = shield || all.length - free.length >= 1 ? null : free[0];   // un exemplaire verrouillé suffit à « garder » l'objet
+    const indices = free.filter(e => e !== keep).map(e => e.index);
+    if (!indices.length) return null;
+    const obj = all[0].it;
+    return { id, kind: 'item', obj, qty: indices.length, price: sellPriceOf('item', obj), rarity: obj.rarity || 'common', indices };
+}
+
+/** Tous les doublons du sac (un exemplaire gardé par objet) : [{ id, obj, qty, price, indices }], sans tenir compte des tags. */
+export function duplicateEntries(hero) {
+    const ids = [...new Set((hero.inventory || []).map(itemGroupKey))];
+    return ids.map(id => itemSurplus(hero, id, true)).filter(Boolean);
+}
+
+/** Vend tous les doublons du sac. Renvoie { ok, gain, count, message }. */
+export function sellDuplicates(hero) {
+    const entries = duplicateEntries(hero);
+    if (!entries.length) return { ok: false, gain: 0, count: 0, message: 'Vous n\'avez aucun doublon à vendre.' };
+    const idx = entries.flatMap(e => e.indices).sort((a, b) => b - a);
+    idx.forEach(i => sellEntry(hero, `inv:${i}`));
+    const gain = entries.reduce((n, e) => n + e.price * e.qty, 0);
+    const ids = entries.map(e => e.id);
+    hero.sellTags = (hero.sellTags || []).filter(t => !ids.includes(t));
+    return { ok: true, gain, count: idx.length, message: `${idx.length} doublon${idx.length > 1 ? 's' : ''} vendu${idx.length > 1 ? 's' : ''} pour ${gain} pièces d'or.` };
 }
 
 /** Vend l'excédent tagué d'un objet (du dernier index au premier) et retire le tag. */
