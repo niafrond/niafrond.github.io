@@ -263,6 +263,82 @@ describe('startBackgroundPrefetch', () => {
         expect(pf.state.phase).toBe('done');
     });
 
+    test('réseau mobile : ne démarre pas tout seul (batterie, forfait), puis démarre au retour du Wi-Fi', async () => {
+        const env = makeEnv();
+        let onChange = null;
+        env.navigator.connection = { saveData: false, type: 'cellular', addEventListener: (t, fn) => { if (t === 'change') onChange = fn; } };
+        const pf = createPrefetcher(env, quick);
+        startBackgroundPrefetch(pf, page(env), { idleDelayMs: 0 });
+        await new Promise(resolve => setTimeout(resolve, 30));
+        expect(env.calls).toEqual([]);
+        expect(pf.state.phase).toBe('idle');
+        env.navigator.connection.type = 'wifi';
+        onChange();
+        await pf.start();
+        expect(pf.state.phase).toBe('done');
+        expect(env.calls.length).toBe(3);
+    });
+
+    test('connexion lente (3G) : ne démarre pas tout seul, le lancement manuel reste possible', async () => {
+        const env = makeEnv();
+        env.navigator.connection = { saveData: false, effectiveType: '3g' };
+        const pf = createPrefetcher(env, quick);
+        startBackgroundPrefetch(pf, page(env), { idleDelayMs: 0 });
+        await new Promise(resolve => setTimeout(resolve, 30));
+        expect(env.calls).toEqual([]);
+        await pf.start();
+        expect(pf.state.phase).toBe('done');
+    });
+
+    test('batterie faible hors charge : attend le chargeur', async () => {
+        const env = makeEnv();
+        let onCharging = null;
+        const battery = { charging: false, level: 0.2, addEventListener: (t, fn) => { if (t === 'chargingchange') onCharging = fn; } };
+        env.navigator.getBattery = async () => battery;
+        const pf = createPrefetcher(env, quick);
+        startBackgroundPrefetch(pf, page(env), { idleDelayMs: 0 });
+        await new Promise(resolve => setTimeout(resolve, 30));
+        expect(env.calls).toEqual([]);
+        battery.charging = true;
+        onCharging();
+        await pf.start();
+        expect(pf.state.phase).toBe('done');
+    });
+
+    test('batterie suffisante : démarre normalement', async () => {
+        const env = makeEnv();
+        env.navigator.getBattery = async () => ({ charging: false, level: 0.8, addEventListener() {} });
+        const pf = createPrefetcher(env, quick);
+        startBackgroundPrefetch(pf, page(env), { idleDelayMs: 0 });
+        await new Promise(resolve => setTimeout(resolve, 30));
+        await pf.start();
+        expect(pf.state.phase).toBe('done');
+    });
+
+    test('passage sur le réseau mobile pendant le téléchargement automatique : pause, puis reprise au retour du Wi-Fi', async () => {
+        const env = makeEnv();
+        let onChange = null;
+        env.navigator.connection = { saveData: false, type: 'wifi', addEventListener: (t, fn) => { if (t === 'change') onChange = fn; } };
+        let release;
+        env.stats.hold = () => new Promise(resolve => { release = resolve; });
+        const pf = createPrefetcher(env, { ...quick, concurrency: 1 });
+        startBackgroundPrefetch(pf, page(env), { idleDelayMs: 0 });
+        await new Promise(resolve => setTimeout(resolve, 30));
+        expect(pf.state.phase).toBe('running');
+        env.navigator.connection.type = 'cellular';
+        onChange();
+        release();
+        await pf.pause();
+        expect(pf.state).toMatchObject({ phase: 'paused', reason: 'pause' });
+        const before = env.calls.length;
+        expect(before).toBeLessThan(3);
+        env.stats.hold = null;
+        env.navigator.connection.type = 'wifi';
+        onChange();
+        await pf.start();
+        expect(pf.state.phase).toBe('done');
+    });
+
     test('attend la fin du chargement de la page', async () => {
         const env = makeEnv();
         const pf = createPrefetcher(env, quick);
