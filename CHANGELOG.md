@@ -1,3 +1,9 @@
+## [2.236.0](https://github.com/niafrond/niafrond.github.io/compare/v2.235.1...v2.236.0) (2026-11-12)
+
+### Features
+
+* **match3-quest:** durcir le mode Expert (qì de l'ennemi, dégâts, rattrapage d'Att/Déf) ([8b3518e](https://github.com/niafrond/niafrond.github.io/commit/8b3518e23258efe773f4c05c8c1dd92ed82395fe))
+
 ## [2.235.1](https://github.com/niafrond/niafrond.github.io/compare/v2.235.0...v2.235.1) (2026-11-12)
 
 ### Bug Fixes
