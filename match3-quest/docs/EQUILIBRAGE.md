@@ -82,6 +82,16 @@ Le multiplicateur Expert est **divisé** par le diviseur du mode (`MODE_DIVISOR`
 
 Le mode règle aussi la qualité de jeu de l'IA (`enemyAIProfiles.js`) : part de coups joués au hasard, coups de plateau aléatoires, repérage du coup fatal. Le mode Auto choisit le palier selon le niveau de l'ennemi (Facile jusqu'au niveau 3, Normal 4 à 7, Difficile 8 à 12, Expert ensuite ; un cran de plus si l'ennemi dépasse le héros ; les boss jouent en « Hors niveau »).
 
+#### Leviers supplémentaires du mode Expert
+
+La préférence « Expert » (pas l'Auto, même contre un ennemi de niveau 13+) ajoute trois leviers, sans toucher aux PV de l'ennemi :
+
+- **Qì** : ses sorts coûtent 70 % du grimoire (arrondi au-dessus, au moins 1), et sans sort lançable l'IA préfère le plateau pour remplir son qì (`refillMana`). Avant, l'ennemi avait trop peu de qì pour lancer ses sorts.
+- **Dégâts** : multiplicateur ×1,1 et plafond d'un coup relevé de 40 % à 50 % des PV max du héros (75 % avec un critique : un coup plein ne tue toujours pas).
+- **Rattrapage d'Att/Déf** : si le héros dépasse l'ennemi de plus de 20 points d'Att ou de Déf, l'ennemi gagne la moitié de l'excédent, au plus 20 points.
+
+Taux de victoire mesurés du héros complet (`mode-report 1 3`) : faible 66 %, normal 59 %, agressif 46 %, élite 31 %, mini-boss 24 %, boss 29 % (boss de la carte 33 %).
+
 ### 3.4 Où le multiplicateur s'applique (et ce que le joueur voit)
 
 - **Arme** : ses dégâts affichés sont les vrais, puissance de l'ennemi comprise (cette puissance s'ajoutait autrefois sans être affichée).

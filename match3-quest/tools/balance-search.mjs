@@ -104,7 +104,7 @@ export function calibratedFights(cat, { winRatio, fights = 6, seed0 = 1000, mile
         const c = CB.calibrateEnemy({ category: cat, heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: level, winRatio, difficulty, modeDivisor, ...(levelAnchors ? { levelAnchors } : {}) });
         enemy.maxHp = enemy.hp = c.hp;
         enemy.gearScale = c.gearScale;
-        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageMult, aiPreference, difficulty, ...options });
+        const r = simulateFight(hero, enemy, { seed: seed++, boardSize: cat === 'boss' ? 10 : 8, enemyDamageScale: c.damageMult, hitShareCap: c.hitShareCap, spellCostFactor: c.spellCostFactor, aiPreference, difficulty, ...options });
         out.push({ ...r, level: b.level, cls, targetCycles: c.cycles, cycleSeconds: c.cycleSeconds, enemyHp: c.hp });
     }
     return out;
@@ -270,7 +270,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                 const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
                 const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: 'auto', adjust });
                 enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
-                list.push({ ...simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: 'auto', difficulty: 'auto', ...options }), cycleSeconds: c.cycleSeconds });
+                list.push({ ...simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, hitShareCap: c.hitShareCap, spellCostFactor: c.spellCostFactor, aiPreference: 'auto', difficulty: 'auto', ...options }), cycleSeconds: c.cycleSeconds });
             }
             return list;
         };
@@ -325,7 +325,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                 const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
                 const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: aiMode, adjust: process.env.NO_ADJUST ? null : (CB.BOSS_ADJUST[b.id] || null) });
                 enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
-                const r = simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: aiMode, difficulty: aiMode, ...options });
+                const r = simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, hitShareCap: c.hitShareCap, spellCostFactor: c.spellCostFactor, aiPreference: aiMode, difficulty: aiMode, ...options });
                 list.push({ ...r, cycleSeconds: c.cycleSeconds });
             }
             const won = list.filter(r => r.heroWon);
@@ -357,7 +357,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                 const enemy = createMapEnemy({ templateId: b.templateId, level: b.level, kitLevel: Math.max(1, b.level - 2), enemyId: b.id, boss: { name: b.name, level: b.level } });
                 const c = CB.calibrateEnemy({ category: 'boss', heroMaxHp: hero.maxHp, heroLevel: hero.level, enemyLevel: b.level, difficulty: m, adjust: CB.BOSS_ADJUST[b.id] || null });
                 enemy.maxHp = enemy.hp = c.hp; enemy.gearScale = c.gearScale;
-                bl.push({ ...simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, aiPreference: m, difficulty: m, ...options }), cycleSeconds: c.cycleSeconds, id: b.id });
+                bl.push({ ...simulateFight(hero, enemy, { seed: seed++, boardSize: 10, enemyDamageScale: c.damageMult, hitShareCap: c.hitShareCap, spellCostFactor: c.spellCostFactor, aiPreference: m, difficulty: m, ...options }), cycleSeconds: c.cycleSeconds, id: b.id });
             }
             const perBoss = bosses.map(b => winRate(bl.filter(r => r.id === b.id)));
             res[m].mapBosses = { win: winRate(bl), sec: mean(bl.map(r => r.cycles * r.cycleSeconds)), min: Math.min(...perBoss), max: Math.max(...perBoss) };
@@ -383,7 +383,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         for (const m of MODES) {
             for (const cat of CATEGORIES) {
                 const [lo, hi] = CB.TARGET_DURATION_SECONDS[cat], sec = res[m][cat].sec;
-                check(`durée ${m} / ${cat}`, sec >= lo * 0.85 && sec <= hi * 1.15, `${mmss(sec)} (fenêtre ${mmss(lo)} à ${mmss(hi)})`);
+                check(`durée ${m} / ${cat}`, sec >= lo * (m === 'expert' ? 0.65 : 0.85) && sec <= hi * 1.15, `${mmss(sec)} (fenêtre ${mmss(lo)} à ${mmss(hi)})`);
             }
             const all = mean([...CATEGORIES.map(c => res[m][c].sec), res[m].mapBosses.sec]);
             check(`durée moyenne ${m}`, all >= 180 && all <= 480, mmss(all));

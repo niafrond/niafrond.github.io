@@ -201,3 +201,10 @@ describe('personnalités', () => {
         expect(frequencies('aggressive', [board], calm).board).toBeCloseTo(1, 9);
     });
 });
+
+describe('palier Expert : remplissage du qì', () => {
+    test('seul le palier Expert (et son profil « hors niveau ») remplit son qì quand aucun sort n\'est lançable', () => {
+        expect(AI_TIERS.expert.refillMana).toBe(true);
+        for (const t of ['easy', 'normal', 'hard']) expect(AI_TIERS[t].refillMana).toBeFalsy();
+    });
+});
