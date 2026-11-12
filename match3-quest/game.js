@@ -14,7 +14,7 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 
-import { protectsFromBiome, stuffTotals, normalizeStuff, grantStuff } from "./stuff.js";
+import { protectsFromBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -581,11 +581,63 @@ function enemyInflictsAlteration(caster, target, spell){
         if(!alt) return;
         label = alt.label;
         landed = inflictAlteration(target, alt.key, alt.turns, alt.extra);
+        if(spell.alsoChill){   // Paume de Givre : étourdi et ralenti ; le ralentissement est posé même si l'étourdissement est refusé
+            const chilled = inflictAlteration(target, 'chilled', turns);
+            if(chilled && !landed){ label = { icon: 'snow', name: 'Ralenti', text: 'gagne moins de points de combat' }; landed = true; }
+            else if(chilled) label = { icon: 'snow', name: 'Étourdi et ralenti', text: 'perd son prochain tour et gagne moins de points de combat' };
+        }
     }
     showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: '→ Vous' }, false);
     log(landed
         ? `${escapeHtml(caster.name)} lance ${spell.name} : vous êtes ${label.name.toLowerCase()} pendant ${turns} tours (${label.text}).`
         : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité ou équipement).`);
+}
+
+// Équivalents ennemis des sorts du héros (`enemyOps`, voir enemies.js) : l'ennemi se renforce, vole du qì ou des points d'action, ou affaiblit le héros.
+// Renvoie les textes d'effet (animation) ; chaque effet est aussi écrit dans le journal.
+function runEnemyOps(caster, target, spell){
+    const out = [];
+    const name = escapeHtml(caster.name);
+    (spell.enemyOps || []).forEach(op => {
+        if(op.op === 'buff'){
+            addStatBuff(caster, { attack: op.attack || 0, defense: op.defense || 0, turns: op.turns });
+            out.push(describeStatBuff({ attack: op.attack || 0, defense: op.defense || 0, turns: op.turns }));
+        } else if(op.op === 'status'){
+            caster.statusEffects = caster.statusEffects || {};
+            caster.statusEffects[op.key] = Math.max(caster.statusEffects[op.key] || 0, op.turns);
+            out.push(`${op.key === 'immunityEffects' ? 'Immunisé' : op.key} ${op.turns} tours`);
+        } else if(op.op === 'alter'){
+            const landed = inflictAlteration(target, op.key, op.turns, op.extra || {});
+            out.push(landed ? `Vous : ${op.key === 'weakened' ? 'affaibli' : 'ralenti'} ${op.turns} tours` : 'Résisté');
+        } else if(op.op === 'poison'){
+            const dmg = inflictPoison(target, op.dmg, op.turns);
+            out.push(dmg > 0 ? `Empoisonné (${dmg}/tour)` : 'Résisté');
+        } else if(op.op === 'gainMana'){
+            const colorsToFill = op.color && caster.mana && op.color in caster.mana ? [op.color] : Object.keys(caster.mana || {});
+            colorsToFill.forEach(c => addManaForColor(caster, c, op.amount, { applyGainBonus: false }));
+            out.push(`+${op.amount} qì`);
+        } else if(op.op === 'drainMana'){
+            let total = 0;
+            Object.keys(target.mana || {}).forEach(c => {
+                const lost = Math.min(Math.floor(target.mana[c] || 0), op.amount);
+                if(lost <= 0) return;
+                target.mana[c] -= lost;
+                total += lost;
+                addManaForColor(caster, c, lost, { applyGainBonus: false });
+            });
+            out.push(total ? `-${total} qì` : 'Aucun qì à absorber');
+        } else if(op.op === 'gainCP'){
+            caster.combatPoints = (caster.combatPoints || 0) + op.amount;
+            out.push(`+${op.amount} point${op.amount > 1 ? 's' : ''} d'action`);
+        } else if(op.op === 'stealCP'){
+            const stolen = Math.min(Math.max(0, Math.floor(target.combatPoints || 0)), op.amount);
+            target.combatPoints = (target.combatPoints || 0) - stolen;
+            caster.combatPoints = (caster.combatPoints || 0) + stolen;
+            out.push(stolen ? `Vole ${stolen} point${stolen > 1 ? 's' : ''} d'action` : 'Aucun point à voler');
+        }
+    });
+    if(out.length) log(`${name} lance ${spell.name} : ${out.join(', ')}.`);
+    return out;
 }
 
 export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
@@ -601,6 +653,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
         enemyInflictsAlteration(caster, target, spell);
         return;
     }
+    const opsText = !isPlayerCaster && spell.enemyOps ? runEnemyOps(caster, target, spell) : [];   // équivalents ennemis des sorts du héros (rage, gemmes, bouclier…)
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
     if(spell.dmg && confusedSelfHit(caster)){ target = caster; log(`${escapeHtml(caster.name)} est confus : ${spell.name} se retourne contre lui !`); }   // Confus : peut subir ses propres attaques
     let enemyAnimShown = false;   // sort ennemi sans dégâts ni soin : une annonce générique est affichée en fin de fonction
@@ -669,7 +722,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     // Tout sort lancé par l'ennemi (tour bonus, défense, statut…) doit montrer son animation, même sans dégâts ni soin.
     if(!isPlayerCaster && !enemyAnimShown){
-        const detail = spell.effect === 'bonusTurn' ? 'Rejoue !' : null;
+        const detail = spell.effect === 'bonusTurn' ? 'Rejoue !' : (opsText.join(' • ') || null);
         showCombatAnimation({ icon: 'spark', title: spell.name, heal: detail, source: caster.name, target: `→ ${caster.name}` }, false);
     }
 }

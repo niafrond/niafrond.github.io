@@ -3,7 +3,7 @@ import { escapeHtml } from "./escapeHtml.js";
 import { player, enemy, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from './board.js';
 import { colors, boardSize } from './constants.js';
-import { inflictTurnLoss } from './alterations.js';
+import { inflictTurnLoss, inflictAlteration } from './alterations.js';
 import { JOKER_TILE, isTransformableToJoker } from './joker.js';
 
 import { collectDestroyedColorTilesMana, getCurrentCaster } from './classSpellEffects.js';
@@ -183,11 +183,17 @@ export function applyWeakness(spell) {
     return true;
 }
 
+// « Gel ou ralentissement » : l'ennemi est étourdi (perd des tours) ET ralenti (−1 flèche par match). Si l'étourdissement est refusé (contrôle déjà en cours,
+// résistance), le ralentissement est posé quand même : la Paume de Givre crée toujours une altération, sauf sur un ennemi immunisé.
 export function applyHandOfIce(spell) {
     const turns = Math.max(1, Math.floor(spell.duration || 1));
     const stun = inflictTurnLoss(enemy, 'stunned', turns);
-    showCombatAnimation({ icon: 'snow', title: "PAUME DE GIVRE", damage: stun.landed ? `Étourdi ${stun.turns} tours` : 'Résisté', target: `→ ${enemy.name}` }, true);
-    log(stun.landed ? `Paume de Givre étourdit l'ennemi pendant ${stun.turns} tours.` : `${enemy.name} résiste à la Paume de Givre (contrôle déjà en cours ou résistance).`);
+    const chilled = inflictAlteration(enemy, 'chilled', turns);
+    const parts = [stun.landed ? `Étourdi ${stun.turns} tours` : '', chilled ? `Ralenti ${turns} tours` : ''].filter(Boolean);
+    showCombatAnimation({ icon: 'snow', title: "PAUME DE GIVRE", damage: parts.join(' • ') || 'Résisté', target: `→ ${enemy.name}` }, true);
+    log(parts.length
+        ? `Paume de Givre : ${enemy.name} est ${[stun.landed ? 'étourdi' : '', chilled ? 'ralenti' : ''].filter(Boolean).join(' et ')} pendant ${turns} tours.`
+        : `${enemy.name} résiste à la Paume de Givre (immunisé aux effets négatifs).`);
     return true;
 }
 

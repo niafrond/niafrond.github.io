@@ -173,11 +173,95 @@ export function enemyVersionOfSpell(sp){
         const { effect, manaDrain, ...rest } = sp;
         return { ...rest, effect: 'alterEnemy', alteration: 'stunned' };
     }
+    if(sp.effect === 'freezeEnemy'){   // Paume de Givre : l'ennemi étourdit ET ralentit le héros
+        const { effect, manaDrain, ...rest } = sp;
+        return { ...rest, effect: 'alterEnemy', alteration: 'stunned', alsoChill: true };
+    }
+    if(sp.effect === 'stunEnemy'){   // Charge de Cavalerie : l'ennemi étourdit le héros
+        const { effect, manaDrain, cooldown, ...rest } = sp;
+        return { ...rest, effect: 'alterEnemy', alteration: 'stunned', duration: 2 };
+    }
     return null;   // Brasier des Sceaux (crânes qui profiteraient au joueur), Prison du Tonnerre Glacé (étourdissement du héros non géré)
 }
 
+// Effets que l'ennemi sait lancer tels quels contre le héros (voir applyStandardSpellEffects, game.js).
+const ENEMY_NATIVE_EFFECTS = new Set(['statBuff', 'alterEnemy', 'preventItems', 'bonusTurn']);
+
+const costTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
+const costDamage = sp => Math.max(5, Math.round(costTotal(sp) * 2.2));   // ~2,2 dégâts par qì, comme les sorts de dégâts génériques (balance.test.js)
+
+// Équivalent ennemi des effets pensés pour le héros (rage, gemmes d'action, plateau du héros, bouclier de qì…) : { dmg?, heal?, ops: [...], debuff? }.
+// `ops` : { op: 'buff', attack, defense, turns } | { op: 'alter', key, turns, extra } | { op: 'status', key, turns } | { op: 'gainMana', color?, amount }
+//       | { op: 'drainMana', amount } | { op: 'gainCP', amount } | { op: 'stealCP', amount } | { op: 'poison', dmg, turns }   (exécutées par game.js : runEnemyOps)
+const ENEMY_EQUIVALENTS = {
+    createJoker: () => ({ ops: [{ op: 'gainMana', amount: 6 }] }),
+    destroyColor: () => ({ ops: [{ op: 'drainMana', amount: 6 }], debuff: true }),
+    yellowBolts: () => ({ dmg: 15 }),
+    damageToMana: sp => ({ ops: [{ op: 'buff', defense: 12, turns: sp.duration || 3 }] }),
+    damageToManaPurple: sp => ({ ops: [{ op: 'buff', defense: 12, turns: sp.duration || 3 }] }),
+    enchantWeapon: () => ({ ops: [{ op: 'buff', attack: 10, turns: 2 }] }),
+    reduceEnemyAtk: sp => ({ ops: [{ op: 'alter', key: 'weakened', turns: sp.duration || 3, extra: { weakenedAmount: sp.reduction || 5 } }], debuff: true }),
+    createSkull: sp => ({ dmg: costDamage(sp) }),
+    destroyArea: sp => ({ dmg: costDamage(sp) }),
+    increaseDefense: sp => ({ ops: [{ op: 'buff', defense: sp.defenseBonus || 10, turns: sp.duration || 3 }] }),
+    massiveDefense: sp => ({ ops: [{ op: 'buff', defense: sp.defenseBonus || 20, turns: sp.duration || 3 }] }),
+    purpleToDefense: () => ({ ops: [{ op: 'buff', defense: 15, turns: 3 }] }),
+    reflectDamage: sp => ({ ops: [{ op: 'buff', defense: 10, turns: sp.duration || 3 }] }),
+    counterOnBlock: sp => ({ ops: [{ op: 'buff', defense: 8, turns: sp.duration || 3 }] }),
+    blockAll: sp => ({ ops: [{ op: 'buff', defense: 30, turns: sp.duration || 3 }] }),
+    immunityEffects: sp => ({ ops: [{ op: 'status', key: 'immunityEffects', turns: sp.duration || 3 }] }),
+    increasePhysical: sp => ({ ops: [{ op: 'buff', attack: sp.atkBonus || 8, turns: sp.duration || 3 }] }),
+    damageBoost: sp => ({ ops: [{ op: 'buff', attack: sp.atkBonus || 8, turns: sp.duration || 3 }] }),
+    drainMana: sp => ({ ops: [{ op: 'drainMana', amount: sp.manaSteal || 8 }], debuff: true }),
+    drainOnHit: sp => ({ ops: [{ op: 'drainMana', amount: sp.manaDrain || 5 }], debuff: true }),
+    rageGain: sp => ({ ops: [{ op: 'buff', attack: (sp.rageGain || 40) >= 100 ? 12 : 6, turns: 3 }] }),   // pas de jauge de rage chez l'ennemi : la rage devient un bonus d'attaque
+    rageToMana: sp => ({ ops: [{ op: 'gainMana', amount: Math.max(2, Math.round((sp.manaPerRage || 0.1) * 50)) }] }),
+    rageToDamage: sp => ({ dmg: costDamage(sp) }),
+    yellowToPurple: sp => ({ dmg: costDamage(sp) }),
+    destroyPurple: sp => ({ dmg: costDamage(sp) }),
+    yellowDamage: sp => ({ dmg: costDamage(sp) }),
+    dualWeaponAttack: sp => ({ dmg: costDamage(sp) }),
+    explodeActionGems: sp => ({ dmg: costDamage(sp) }),
+    redToSkulls: sp => ({ dmg: costDamage(sp) }),
+    redToSkullsHalf: sp => ({ dmg: costDamage(sp) }),
+    actionGemsToSkulls: sp => ({ dmg: costDamage(sp) }),
+    reduceManaGain: sp => ({ ops: [{ op: 'alter', key: 'chilled', turns: sp.duration || 3 }], debuff: true }),
+    applyPoison: sp => ({ ops: [{ op: 'poison', dmg: sp.poisonDmg || 3, turns: sp.duration || 4 }], debuff: true }),
+    actionGemsToColor: () => ({ ops: [{ op: 'gainCP', amount: 3 }] }),
+    createActionGem: () => ({ ops: [{ op: 'gainCP', amount: 1 }] }),
+    colorsToActionGems: sp => ({ ops: [{ op: 'gainCP', amount: sp.gemCount || 3 }] }),
+    doubleBattle: () => ({ ops: [{ op: 'gainCP', amount: 6 }] }),
+    stealCP: sp => ({ ops: [{ op: 'stealCP', amount: sp.cpSteal || 3 }], debuff: true }),
+    destroyActionGemHeal: sp => ({ heal: (sp.healPerGem || 10) * 2 }),
+    actionGemsToMana: sp => ({ ops: [{ op: 'gainMana', color: sp.manaColor, amount: (sp.manaPerGem || 2) * 3 }] }),
+    defenseToMana: () => ({ ops: [{ op: 'gainMana', color: 'yellow', amount: 8 }] }),
+    giveRedMana: sp => ({ ops: [{ op: 'gainMana', color: 'red', amount: sp.manaGain || 15 }] })
+};
+
+/**
+ * Version ennemie d'un sort de classe : tous les sorts du héros sont accessibles aux ennemis de la classe (le tirage du grimoire respecte déjà la
+ * classe et les couleurs préférées du gabarit). Sort sans effet : tel quel. Sort de plateau, harmonie, souffle, étourdissement, gel : version dédiée
+ * (`enemyVersionOfSpell`). Effets que l'ennemi sait lancer : tels quels. Sorts de dégâts à effet propre au héros (Sphère de Flammes, Frappe du Maître
+ * Taoïste, Coup de Bouclier, Lancer de Hache) : dégâts seuls. Les autres effets (rage, gemmes d'action, bouclier de qì, plateau du héros…) deviennent leur
+ * équivalent chez l'ennemi (`ENEMY_EQUIVALENTS`). Renvoie null si aucun équivalent n'existe (le sort est alors écarté du grimoire).
+ */
+export function enemyClassSpell(sp){
+    if(!sp.effect) return sp;
+    const converted = enemyVersionOfSpell(sp);
+    if(converted) return converted;
+    if(ENEMY_NATIVE_EFFECTS.has(sp.effect)) return sp;
+    const { effect, manaDrain, cooldown, baseDmg, ...rest } = sp;
+    const dmg = sp.dmg || baseDmg;
+    if(dmg) return { ...rest, type: 'damage', dmg };
+    const equivalent = ENEMY_EQUIVALENTS[sp.effect]?.(sp);
+    if(!equivalent) return null;
+    const { ops, debuff, ...out } = equivalent;
+    const type = out.dmg ? 'damage' : out.heal ? 'heal' : debuff ? 'debuff' : 'buff';
+    return { ...rest, type, ...out, ...(ops ? { enemyOps: ops } : {}), ...(debuff ? { debuff: true } : {}), ...(!debuff && type === 'buff' ? { buff: true } : {}) };
+}
+
 function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
-    const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
+    const classSpells = getSpellsByClass(template.playerClass, enemyLevel).map(enemyClassSpell).filter(Boolean);   // sans version ennemie, un sort de classe ne ferait rien
     const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel).map(enemyVersionOfSpell).filter(Boolean);
 
     const preferredColors = template.spellProfile?.preferredColors || [];

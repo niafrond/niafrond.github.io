@@ -342,15 +342,18 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         message += `Vous gagnez ${extraTurns} tour${extraTurns > 1 ? 's' : ''} supplémentaire${extraTurns > 1 ? 's' : ''} ! `;
     }
     if(item.effect.randomMana !== undefined) {
-        // Tire parmi les couleurs qui ont encore de la place : une couleur pleine ne donnerait rien (repli : toutes si tout est plein).
+        // Tire parmi les couleurs qui absorbent tout le gain ; sinon, parmi celles qui ont le plus de place (le gain n'est jamais rogné inutilement).
         const allColors = Object.keys(player.mana);
-        const roomy = allColors.filter(c => player.mana[c] < (player.manaCaps?.[c] ?? player.maxMana));
-        const manaColors = roomy.length ? roomy : allColors;
+        const room = c => (player.manaCaps?.[c] ?? player.maxMana) - player.mana[c];
+        const best = Math.max(...allColors.map(room));
+        const needed = Math.min(item.effect.randomMana, best);
+        const manaColors = allColors.filter(c => room(c) >= needed);
         const chosenColor = manaColors[Math.floor(Math.random() * manaColors.length)];
-        flyManaGain(true, { [chosenColor]: item.effect.randomMana }, { fromId: 'item-button' });
         const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;
-        player.mana[chosenColor] = Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana);
-        message += `Vous gagnez ${item.effect.randomMana} qì ${chosenColor}. `;
+        const gained = Math.max(0, Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana) - player.mana[chosenColor]);
+        flyManaGain(true, { [chosenColor]: gained }, { fromId: 'item-button' });
+        player.mana[chosenColor] += gained;
+        message += `Vous gagnez ${gained} qì ${chosenColor}. `;
     }
     if(item.effect.regen) {
         player.regenEffect = { hp: item.effect.regen, turnsLeft: item.effect.duration || 3 };

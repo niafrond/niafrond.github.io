@@ -1,4 +1,4 @@
-import { enemyVersionOfSpell } from '../../enemies.js';
+import { enemyVersionOfSpell, enemyClassSpell } from '../../enemies.js';
 import { readFileSync } from 'node:fs';
 
 const genericSpells = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8')).allSpells;   // spells.js charge le catalogue par XHR : absent sous jest
@@ -32,6 +32,10 @@ describe('sorts génériques lancés par les ennemis', () => {
         expect(enemyVersionOfSpell(byId('brasierSeals'))).toBeNull();
         expect(enemyVersionOfSpell(byId('thunderPrison'))).toMatchObject({ effect: 'alterEnemy', alteration: 'stunned' });   // l'ennemi étourdit le héros
     });
+    test('la Paume de Givre a une version ennemie : étourdissement et ralentissement du héros', () => {
+        const hand = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8')).sorcererSpells.find(s => s.id === 'handOfIce');
+        expect(enemyVersionOfSpell(hand)).toMatchObject({ effect: 'alterEnemy', alteration: 'stunned', alsoChill: true });
+    });
     test('chaque sort générique à effet de plateau est marqué boardSpell ; harmonie et souffle de jade sont convertis', () => {
         genericSpells.forEach(sp => {
             const v = enemyVersionOfSpell(sp);
@@ -39,5 +43,33 @@ describe('sorts génériques lancés par les ennemis', () => {
             expect(['sweepRow', 'sweepCol', 'sweepCross', 'clearColor', 'destroyColumns', 'starRain']).toContain(v.effect);
             expect(v.boardSpell).toBe(true);
         });
+    });
+});
+
+describe('sorts de classe lancés par les ennemis : tous font quelque chose', () => {
+    const catalog = JSON.parse(readFileSync(new URL('../../spells.json', import.meta.url), 'utf8'));
+    const classSpells = ['sorcererSpells', 'assassinSpells', 'templarSpells', 'barbarianSpells'].flatMap(k => catalog[k]);
+    const NATIVE = ['statBuff', 'alterEnemy', 'preventItems', 'bonusTurn'];
+    test('tous les sorts du héros ont une version ennemie qui inflige des dégâts, soigne, agit sur le plateau ou applique des effets', () => {
+        classSpells.forEach(sp => {
+            const v = enemyClassSpell(sp);
+            expect([sp.id, !!v]).toEqual([sp.id, true]);
+            const works = !v.effect || v.dmg || v.heal || v.boardSpell || v.enemyOps?.length || NATIVE.includes(v.effect);
+            expect([sp.id, !!works]).toEqual([sp.id, true]);
+            expect(v.id).toBe(sp.id);   // reste le même sort (classe et couleurs conservées)
+            expect(v.class).toBe(sp.class);
+        });
+    });
+    test('les sorts de rage deviennent des bonus ; les gemmes d\'action, des points d\'action', () => {
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'awakenQi')).enemyOps[0]).toMatchObject({ op: 'buff', attack: 6 });
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'focus')).enemyOps[0]).toMatchObject({ op: 'gainCP' });
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'furyBolt'))).toMatchObject({ type: 'damage' });
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'weakness')).enemyOps[0]).toMatchObject({ op: 'alter', key: 'weakened' });
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'poisonBlade')).enemyOps[0]).toMatchObject({ op: 'poison' });
+    });
+    test('Charge de Cavalerie et Paume de Givre étourdissent le héros', () => {
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'rush'))).toMatchObject({ effect: 'alterEnemy', alteration: 'stunned', duration: 2 });
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'handOfIce'))).toMatchObject({ effect: 'alterEnemy', alsoChill: true });
+        expect(enemyClassSpell(classSpells.find(s => s.id === 'mageStrike'))).toMatchObject({ type: 'damage', dmg: 10 });
     });
 });
