@@ -111,7 +111,10 @@ body.fx-low .spellfx,
 body.fx-low .attack-continue,
 body.fx-low .wm-pulse,
 body.fx-low .wm-hero,
-body.fx-low .wm-cloud { animation: none !important; }
+body.fx-low .wm-cloud,
+body.fx-low #player-stats.ultimate-ready::before,
+body.fx-low .rage-bar-container.ultimate-ready .rage-fill,
+body.fx-low .rage-bar-container.ultimate-ready .rage-bar::after { animation: none !important; }
 body.fx-low .tile.suggested { animation: blink 0.85s ease-in-out infinite; }
 body.fx-low .mana-fly-dot { box-shadow: none; }
 .options-row select { font: inherit; max-width: 55%; }
@@ -793,20 +796,25 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 }
 
 /* ── Ultime disponible : la fiche du héros clignote, la barre de rage prend feu ──────────────────────────────── */
-@keyframes ult-stats-blink {
-    0%, 100% { box-shadow: 0 0 6px 1px rgba(255, 170, 40, .55); border-color: #f2c14e; filter: brightness(1); }
-    50% { box-shadow: 0 0 20px 7px rgba(255, 110, 20, .95); border-color: #ff7a18; filter: brightness(1.22); }
+/* Fiche du joueur, ultime prête : le grand halo est dessiné une fois sur un pseudo-élément dont seule l'opacité varie
+   (animer box-shadow / border-color / filter sur toute la fiche la repeignait à chaque image : batterie). */
+@keyframes ult-stats-blink { 50% { opacity: 1; } }
+#player-stats.ultimate-ready, body.rt #player-stats.ultimate-ready { box-shadow: 0 0 6px 1px rgba(255, 170, 40, .55); border-color: #f2c14e; }
+#player-stats.ultimate-ready::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 20px 7px rgba(255, 110, 20, .95); opacity: 0;
+    animation: ult-stats-blink .9s ease-in-out infinite;
 }
-#player-stats.ultimate-ready, body.rt #player-stats.ultimate-ready { animation: ult-stats-blink .9s ease-in-out infinite; }
 @keyframes rage-flicker { 0% { filter: brightness(1) saturate(1); } 100% { filter: brightness(1.3) saturate(1.25); } }
-@keyframes flame-rise { from { background-position: 0 0, 0 0, 0 0; } to { background-position: 0 -36px, 0 -36px, 0 -36px; } }
+/* Flammes : le calque (36 px plus haut que la jauge, motif répété) monte par `transform` (composé par le GPU, sans repeindre). */
+@keyframes flame-rise { from { transform: translateY(0); } to { transform: translateY(-36px); } }
 .rage-bar-container.ultimate-ready .rage-bar { position: relative; box-shadow: 0 0 10px 2px rgba(255, 120, 20, .85); }
 .rage-bar-container.ultimate-ready .rage-fill {
     background: linear-gradient(0deg, #b3101f 0%, #ff5a0a 35%, #ffa31a 70%, #ffe27a 100%);
     animation: rage-flicker .32s ease-in-out infinite alternate;
 }
 .rage-bar-container.ultimate-ready .rage-bar::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .85;
+    content: ''; position: absolute; inset: 0 0 -36px 0; pointer-events: none; mix-blend-mode: screen; opacity: .85;
     background:
         radial-gradient(ellipse 45% 70% at 25% 100%, rgba(255, 238, 150, .95) 0 25%, transparent 60%),
         radial-gradient(ellipse 40% 60% at 70% 100%, rgba(255, 190, 70, .9) 0 25%, transparent 60%),
@@ -816,7 +824,8 @@ body.rt .level-pill { font-size: 8px; padding: 2px 5px; }
 }
 .rage-bar-container.ultimate-ready .rage-text { text-shadow: 0 0 3px #7a1000, 0 0 6px #ff6a00; }
 @media (prefers-reduced-motion: reduce) {
-    #player-stats.ultimate-ready, body.rt #player-stats.ultimate-ready { animation: none; box-shadow: 0 0 14px 4px rgba(255, 140, 30, .9); }
+    #player-stats.ultimate-ready, body.rt #player-stats.ultimate-ready { box-shadow: 0 0 14px 4px rgba(255, 140, 30, .9); }
+    #player-stats.ultimate-ready::before { animation: none; }
     .rage-bar-container.ultimate-ready .rage-fill, .rage-bar-container.ultimate-ready .rage-bar::after { animation: none; }
 }
 

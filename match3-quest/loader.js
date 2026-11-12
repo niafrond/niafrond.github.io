@@ -15,6 +15,7 @@ let shownAt = 0;
 let hideTimer = null;
 let minVisible = MIN_VISIBLE_MS;
 let clipRaf = 0;
+let clipTimer = 0;
 let suppressed = false;   // démarrage : le launcher est à l'écran, le chargement se fait en arrière-plan sans écran de chargement
 
 const screenEl = () => (typeof document === 'undefined' ? null : document.getElementById('loading-screen'));
@@ -44,14 +45,17 @@ function startClip(el, seq) {
     const draw = now => {
         const n = Math.floor((now - t0) / 1000 * seq.fps) % seq.frames;
         ctx.drawImage(seq.img, (n % seq.cols) * seq.size[0], Math.floor(n / seq.cols) * seq.size[1], seq.size[0], seq.size[1], 0, 0, seq.size[0], seq.size[1]);
-        clipRaf = requestAnimationFrame(draw);
+        // une image par pas de la planche (quelques i/s), pas à chaque rafraîchissement de l'écran : batterie
+        clipTimer = setTimeout(() => { clipRaf = requestAnimationFrame(draw); }, Math.max(16, 1000 / (seq.fps || 12) - 8));
     };
     clipRaf = requestAnimationFrame(draw);
 }
 
 function stopClip(el) {
     cancelAnimationFrame(clipRaf);
+    clearTimeout(clipTimer);
     clipRaf = 0;
+    clipTimer = 0;
     el?.querySelector('.loading-clip')?.remove();
     el?.classList.remove('has-clip');
 }

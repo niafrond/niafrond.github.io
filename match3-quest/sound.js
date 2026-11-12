@@ -102,6 +102,7 @@ function applyMuteMode(mode) {
             break;
     }
     settings.muted = settings.mutedMusic && settings.mutedSfx;
+    syncAudioActivity();   // tout coupé : le contexte audio se met en veille (batterie)
 }
 
 // ===============================
@@ -192,11 +193,27 @@ function getAudioContext(options = {}) {
 }
 
 function resumeAudioContext(options = {}) {
-    const ctx = getAudioContext(options);
-    if (!ctx) return;
-    if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
-    }
+    if (!getAudioContext(options)) return;
+    syncAudioActivity();
+}
+
+// Batterie : un contexte audio actif fait tourner le fil audio (et garde l'appareil éveillé) même quand il ne joue que du
+// silence. On le suspend onglet masqué / application en arrière-plan et quand tout le son est coupé ; il repart au retour.
+function audioShouldRun() {
+    if (typeof document !== 'undefined' && document.hidden) return false;
+    return getMuteMode() !== 'all';
+}
+function syncAudioActivity() {
+    const ctx = audioContext;
+    if (!ctx || ctx.state === 'closed') return;
+    if (!audioShouldRun()) { if (ctx.state === 'running') ctx.suspend().catch(() => {}); }
+    else if (audioPrimed && ctx.state !== 'running') ctx.resume().catch(() => {});
+}
+/** Le contexte audio peut-il être relancé (premier plan, son pas entièrement coupé) ? Utilisé par music.js. */
+export const isAudioAllowed = audioShouldRun;
+if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', syncAudioActivity);
+    if (typeof window !== 'undefined') window.addEventListener?.('pagehide', () => { if (audioContext?.state === 'running') audioContext.suspend().catch(() => {}); });
 }
 
 // ===============================

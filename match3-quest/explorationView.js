@@ -42,7 +42,7 @@ import { createDraw } from './explorationViewDraw.js';
 import { createOverlays } from './explorationViewOverlays.js';
 import { createPainters } from './explorationViewPainters.js';
 import { stepVillageLife } from './villageLife.js';
-import { COVERED_DRAW_MS, IDLE_DRAW_MS, IDLE_DRAW_LOW_MS, MOVE_DELAY_MS, MOUNTED_MOVE_DELAY_MS, BATTLE_TRANSITION_MS, BATTLE_STRIPS, DIRECTIONS, KEY_TO_DIR } from './explorationViewConsts.js';
+import { COVERED_DRAW_MS, IDLE_DRAW_MS, IDLE_DRAW_LOW_MS, MOVING_DRAW_MS, DEEP_IDLE_AFTER_MS, DEEP_IDLE_DRAW_MS, SLEEP_TICK_MS, MOVE_DELAY_MS, MOUNTED_MOVE_DELAY_MS, BATTLE_TRANSITION_MS, BATTLE_STRIPS, DIRECTIONS, KEY_TO_DIR } from './explorationViewConsts.js';
 
 
 /**
@@ -85,6 +85,8 @@ export function createExplorationView(cfg) {
     let session = null;
     let active = false;
     let rafId = null;
+    let sleepTimer = null;   // boucle en veille (rien ne bouge) : prochaine image par minuteur plutôt qu'à chaque rafraîchissement d'écran
+    let lastInputAt = 0;     // dernière saisie du joueur (veille profonde au-delà de DEEP_IDLE_AFTER_MS)
     let lastDrawAt = 0;   // dernier dessin réel (la carte est redessinée au ralenti sous un modal)
     let lastFrame = 0;
     let held = null;
@@ -909,6 +911,8 @@ export function createExplorationView(cfg) {
     }
 
     function bindControls() {
+        // Toute saisie (carte, boutons, dialogues) réveille la boucle de rendu en veille.
+        for (const type of ['pointerdown', 'keydown', 'wheel']) window.addEventListener(type, wakeLoop, { capture: true, passive: true });
         window.addEventListener('keydown', onKeyDown);
         window.addEventListener('keyup', onKeyUp);
         canvas.addEventListener('pointerdown', onCanvasPointerDown);
@@ -1003,15 +1007,39 @@ export function createExplorationView(cfg) {
         }
 
         // Dessin inutile (onglet caché, carte hors écran, cinématique opaque par-dessus) : on le saute. Sous un modal (voile à 70 %), la carte
-        // ne bouge plus (la logique est bloquée) : 4 images/s suffisent. La logique ci-dessus reste exécutée à chaque image.
+        // ne bouge plus (la logique est bloquée) : 4 images/s suffisent. Héros immobile : cadence réduite (ambiance seulement).
         const covered = document.hidden || !isOnScreen() || Boolean(document.querySelector('.cine-overlay'));
-        const moving = sliding || Boolean(held) || Boolean(walk);
-        const minGap = isModalOpen() ? COVERED_DRAW_MS : moving ? 0 : (document.body.classList.contains('fx-low') ? IDLE_DRAW_LOW_MS : IDLE_DRAW_MS);
-        if (!covered && now - lastDrawAt >= minGap - 2) {
+        const moving = sliding || Boolean(held) || Boolean(walk) || Boolean(na && !na.idle)
+            || Math.abs(session.data.x - vis.px) + Math.abs(session.data.y - vis.py) > 0.001
+            || Math.abs(vis.px - vis.cx) + Math.abs(vis.py - vis.cy) > 0.01;   // caméra qui rattrape le héros
+        const modal = isModalOpen();
+        const idleGap = now - lastInputAt > DEEP_IDLE_AFTER_MS ? DEEP_IDLE_DRAW_MS
+            : document.body.classList.contains('fx-low') ? IDLE_DRAW_LOW_MS : IDLE_DRAW_MS;
+        const minGap = modal ? COVERED_DRAW_MS : moving ? MOVING_DRAW_MS : idleGap;
+        // tolérance : au repos, l'image réveillée par le minuteur (aligné sur l'écran) dessine même avec quelques ms d'avance
+        if (!covered && now - lastDrawAt >= minGap - (moving ? 2 : 10)) {
             lastDrawAt = now;
             draw(now);
             if (!slide) prebuildNeighborGround();
         }
+        // Batterie : en mouvement, on suit le rafraîchissement de l'écran ; sinon la boucle dort jusqu'à la prochaine image utile
+        // (au lieu de se réveiller 60 à 120 fois par seconde pour rien). Une saisie la réveille aussitôt (wakeLoop).
+        if (moving && !covered && !modal) rafId = requestAnimationFrame(frame);
+        else sleepUntil(covered || modal ? SLEEP_TICK_MS : Math.max(0, Math.min(SLEEP_TICK_MS, lastDrawAt + minGap - now)));
+    }
+
+    function sleepUntil(delay) {
+        rafId = null;
+        if (sleepTimer) clearTimeout(sleepTimer);
+        // le minuteur se réveille un peu avant l'échéance, l'image suivante s'aligne sur le rafraîchissement de l'écran
+        sleepTimer = setTimeout(() => { sleepTimer = null; if (active && !rafId) rafId = requestAnimationFrame(frame); }, Math.max(0, delay - 4));
+    }
+
+    // Saisie du joueur : la boucle repart tout de suite à pleine cadence (pas d'attente du minuteur de veille).
+    function wakeLoop() {
+        lastInputAt = performance.now();
+        if (!active || rafId) return;
+        if (sleepTimer) { clearTimeout(sleepTimer); sleepTimer = null; }
         rafId = requestAnimationFrame(frame);
     }
 
@@ -1052,6 +1080,8 @@ export function createExplorationView(cfg) {
             lastFrame = 0;
             syncVisual(true);
             refreshHud();
+            lastInputAt = performance.now();
+            if (sleepTimer) { clearTimeout(sleepTimer); sleepTimer = null; }
             if (!rafId) rafId = requestAnimationFrame(frame);
             if (X.needsIntro(session)) {
                 const lines = X.markIntroSeen(session);
@@ -1076,6 +1106,8 @@ export function createExplorationView(cfg) {
             held = null;
             if (rafId) cancelAnimationFrame(rafId);
             rafId = null;
+            if (sleepTimer) clearTimeout(sleepTimer);
+            sleepTimer = null;
             root.style.display = 'none';
             removeBattleTransition();
             closeJournal();

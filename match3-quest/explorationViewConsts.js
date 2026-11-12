@@ -7,6 +7,14 @@ import { BIOME_DECOR } from './decor.js';
 export const COVERED_DRAW_MS = 250;
 export const IDLE_DRAW_MS = 33;        // héros immobile : seules les animations d'ambiance bougent, 30 i/s suffisent (batterie)
 export const IDLE_DRAW_LOW_MS = 66;    // idem en effets réduits : ~15 i/s
+// En mouvement : 60 i/s au plus (sur un écran 120 Hz, dessiner à chaque rafraîchissement double la consommation sans gain visible).
+export const MOVING_DRAW_MS = 16;
+// Aucune saisie depuis DEEP_IDLE_AFTER_MS (téléphone posé, écran allumé) : ~11 i/s suffisent aux animations d'ambiance.
+export const DEEP_IDLE_AFTER_MS = 20000;
+export const DEEP_IDLE_DRAW_MS = 90;
+// Carte cachée (combat, menus, cinématique) ou sous un modal : la boucle ne se réveille que toutes les SLEEP_TICK_MS.
+// Reste sous le plafond de 100 ms du pas de temps (la logique ne doit pas ralentir).
+export const SLEEP_TICK_MS = 90;
 // Distance (cases) à une sortie en deçà de laquelle le sol de la carte voisine est préparé, et temps (ms) alloué à chaque image.
 export const PREBUILD_RANGE = 14;
 export const PREBUILD_BUDGET_MS = 8;

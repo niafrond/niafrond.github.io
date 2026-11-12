@@ -166,7 +166,9 @@ async function pickAndPlay(ctx, desired) {
 
 function tickInner() {
     const ctx = safe(() => S.env.getContext(), null);
-    if (ctx && (ctx.state === 'suspended' || ctx.state === 'interrupted')) safe(() => ctx.resume().catch(() => {}));
+    // Onglet masqué ou musique coupée : on ne relance pas un contexte mis en veille exprès (batterie, voir sound.js).
+    const wanted = isForeground() && !safe(() => S.env.isMuted(), false);
+    if (ctx && wanted && (ctx.state === 'suspended' || ctx.state === 'interrupted')) safe(() => ctx.resume().catch(() => {}));
     if (!ctx || ctx.state === 'suspended' || ctx.state === 'interrupted' || ctx.state === 'closed') return;   // on réessaiera
     if (S.masterCtx && S.masterCtx !== ctx) { S.master = null; S.masterCtx = null; S.current = null; }
 

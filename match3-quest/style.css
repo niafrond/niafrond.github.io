@@ -87,15 +87,9 @@ body {
     }
 }
 
+/* Lueur du joker : seul `filter` varie (animation composée par le GPU, sans repeindre la tuile à chaque image : batterie). */
 @keyframes joker-glow {
-    0%, 100% {
-        background-position: 0% 50%;
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.6), 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    50% {
-        background-position: 100% 50%;
-        box-shadow: 0 0 30px rgba(118, 75, 162, 0.8), 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
+    50% { filter: brightness(1.18) saturate(1.2); }
 }
 
 @keyframes joker-shine {
@@ -126,15 +120,6 @@ body {
     70%           { opacity: 1; }
 }
 
-@keyframes suggestionOutline {
-    0%, 100% {
-        outline-color: rgba(255, 82, 82, 0.95);
-    }
-    50% {
-        outline-color: rgba(255, 234, 0, 0.98);
-    }
-}
-
 .tile.blink {
     animation: blink 0.4s ease-in-out 2;
 }
@@ -159,7 +144,7 @@ body {
 }
 .tile.suggested {
     will-change: transform, opacity;
-    animation: softGlow 0.85s ease-in-out infinite, blink 0.85s ease-in-out infinite, suggestionOutline 0.85s linear infinite;
+    animation: softGlow 0.85s ease-in-out infinite, blink 0.85s ease-in-out infinite;   /* contour fixe : animer outline-color repeindrait à chaque image */
     outline: 4px solid rgba(255, 82, 82, 0.95);
     outline-offset: -4px;
     z-index: 8;
