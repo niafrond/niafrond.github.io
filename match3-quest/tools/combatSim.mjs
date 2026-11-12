@@ -13,14 +13,14 @@
 // résistances élémentaires du héros et altérations posées par l'ennemi sont ignorés ; un seul tour bonus par tour.
 import { colors, setBoardSize } from '../constants.js';
 import { collectMatches, findPossibleMatches } from '../matchMechanics.js';
-import { resolveStrike, skullStrengthBonus, addStatBuff, tickStatBuffs } from '../combatStats.js';
+import { rawAttack, rawDefense, resolveStrike, skullStrengthBonus, addStatBuff, tickStatBuffs } from '../combatStats.js';
 import { ATTRIBUTE_MANA_RULES, boostedRageGain } from '../attributes.js';
 import { rollCompanionPowers, COMPANION_POWERS } from '../companionPowers.js';
 import { RAGE_MAX, rageFromDamage, addRage, ultimateCostEntries, rageToDamageAmount, rageToManaAmount } from '../ultimates.js';
 import { resolveDifficulty, tierSettings } from '../enemyAIProfiles.js';
 import { pickWeightedOption, applyScoreSharpness, FATAL_REASON } from '../enemyAIChoice.js';
 import { critChance, blockChance, CRIT_MULTIPLIER } from '../combatStats.js';
-import { cappedEnemyHit } from '../combatBalance.js';
+import { cappedEnemyHit, enemySpellCost, expertCatchUpPoints } from '../combatBalance.js';
 import { createBossScript, stepBossScript, signatureDamage } from '../bossScript.js';
 
 export const SKULL_PROB = 0.19;   // board.js : BOARD_DROP_PROBABILITIES
@@ -78,8 +78,9 @@ const attrOfColor = Object.fromEntries(Object.entries(ATTRIBUTE_MANA_RULES).map(
 const attrPoints = (e, color) => Math.max(0, Math.floor(e.attributes?.[attrOfColor[color]] || 0));
 const manaCap = (e, color) => BASE_MANA_CAP + Math.floor(attrPoints(e, color) * 1.3 + 1e-9);
 const costOf = spell => (typeof spell.cost === 'number' ? { [spell.color || 'red']: spell.cost } : { ...(spell.cost || {}) });
-const canPay = (e, spell) => Object.entries(costOf(spell)).every(([c, v]) => (e.mana[c] || 0) >= v);
-const pay = (e, spell) => Object.entries(costOf(spell)).forEach(([c, v]) => { e.mana[c] -= v; });
+const costFactorOf = e => (e.isHero ? 1 : e.spellCostFactor || 1);   // Expert : sorts d'ennemi moins chers (combatBalance.js)
+const canPay = (e, spell) => Object.entries(costOf(spell)).every(([c, v]) => (e.mana[c] || 0) >= enemySpellCost(v, costFactorOf(e)));
+const pay = (e, spell) => Object.entries(costOf(spell)).forEach(([c, v]) => { e.mana[c] -= enemySpellCost(v, costFactorOf(e)); });
 const spellColors = spell => spell.colors || (typeof spell.cost === 'object' ? Object.keys(spell.cost) : [spell.color]);
 
 /** Prépare un combattant (copie) : qì de départ (1 par point d'attribut), PA à 0. */
@@ -106,11 +107,21 @@ const weaponRaw = e => (e.weaponUsed ? e.weaponUsed.damage + (e.isHero ? 0 : (e.
  * `profile` : 'standard' ou 'complet' ; `item` : objet actif rechargeable du héros ; `companion` : id du compagnon actif.
  * Renvoie { heroWon, cycles, dealtBy: {weapon, spell, skull, other}, takenRaw, heroHpLeft, heroMaxHp, enemyHpLeft, used: {...} }.
  */
-export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enemyDamageScale = 1, maxCycles = MAX_CYCLES, immortal = false, profile = 'standard', item = null, companion = null, ultimate = null, aiPreference = 'greedy', difficulty = 'auto', bossScript = true } = {}) {
+export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enemyDamageScale = 1, maxCycles = MAX_CYCLES, immortal = false, profile = 'standard', item = null, companion = null, ultimate = null, aiPreference = 'greedy', difficulty = 'auto', bossScript = true, hitShareCap = undefined, spellCostFactor = 1 } = {}) {
     const rng = mulberry32(seed);
     const full = profile === 'complet';
     const hero = fighter(heroSrc, { isHero: true }), enemy = fighter(enemySrc);
     if (immortal) { hero.hp = hero.maxHp = 1e9; enemy.hp = enemy.maxHp = 1e9; }   // mesure des taux : personne ne meurt
+    enemy.spellCostFactor = spellCostFactor;
+    if (spellCostFactor < 1) {   // mode Expert : rattrapage d'Att / Déf face à un héros plus fort (comme game.js)
+        enemy.attack = (enemy.attack || 0) + expertCatchUpPoints(rawAttack(hero), rawAttack(enemy));
+        enemy.defense = (enemy.defense || 0) + expertCatchUpPoints(rawDefense(hero), rawDefense(enemy));
+    }
+    enemy.spellCostFactor = spellCostFactor;
+    if (spellCostFactor < 1) {   // mode Expert : rattrapage d'Att / Déf face à un héros plus fort (comme game.js)
+        enemy.attack = (enemy.attack || 0) + expertCatchUpPoints(rawAttack(hero), rawAttack(enemy));
+        enemy.defense = (enemy.defense || 0) + expertCatchUpPoints(rawDefense(hero), rawDefense(enemy));
+    }
     hero.levelEdge = Math.max(0, (hero.level || 0) - (enemy.level || 0));
     enemy.levelEdge = Math.max(0, (enemy.level || 0) - (hero.level || 0));
     // IA de l'ennemi : 'greedy' (toujours le meilleur choix) ou préférence du jeu ('auto', 'easy', 'normal', 'hard', 'expert'),
@@ -142,7 +153,7 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
     const hit = (attacker, target, raw, source, { strike = true, unblockable = false, direct = false } = {}) => {
         if (raw <= 0 || target.hp <= 0) return 0;
         // Coup de l'ennemi : multiplicateur appliqué AVANT critique / blocage et plafonné comme dans le jeu (cappedEnemyHit).
-        const scaled = target.isHero && !direct ? cappedEnemyHit(raw, enemyDamageScale, target.maxHp) : raw;
+        const scaled = target.isHero && !direct ? cappedEnemyHit(raw, enemyDamageScale, target.maxHp, hitShareCap) : raw;
         let dmg = strike ? resolveStrike(scaled, attacker, unblockable ? {} : target, { rng }).damage : Math.floor(scaled);
         if (target.isHero) {
             if (!direct) stats.takenRaw += dmg * raw / Math.max(1, scaled);   // brut, sans le multiplicateur (hors attaque dévastatrice)
@@ -437,21 +448,21 @@ export function simulateFight(heroSrc, enemySrc, { seed = 1, boardSize = 8, enem
         const options = [];
         const spell = e.damageSpells.filter(sp => canPay(e, sp)).sort((a, b) => spellDamage(e, target, b) - spellDamage(e, target, a))[0];
         if (spell) {
-            const dmg = cappedEnemyHit(spellDamage(e, target, spell), enemyDamageScale, target.maxHp);
+            const dmg = cappedEnemyHit(spellDamage(e, target, spell), enemyDamageScale, target.maxHp, hitShareCap);
             const fatal = dmg >= target.hp;
             let score = (vulnerable ? 80 : 40) + Math.floor(dmg / 5) + (fatal ? 200 : 0);
             score = d.strategicThinking ? score + rng() * 20 : rng() * 100;
             options.push({ type: 'spell', spell, dmg, score, probability: d.spellUseProbability, data: { reason: fatal ? FATAL_REASON : '' } });
         }
         if (weaponReady(e)) {
-            const dmg = Math.floor(cappedEnemyHit(weaponRaw(e), enemyDamageScale, target.maxHp) * (1 + (critChance(e) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(target) / 100) * 0.7));
+            const dmg = Math.floor(cappedEnemyHit(weaponRaw(e), enemyDamageScale, target.maxHp, hitShareCap) * (1 + (critChance(e) / 100) * (CRIT_MULTIPLIER - 1)) * (1 - (blockChance(target) / 100) * 0.7));
             const fatal = dmg >= target.hp;
             let score = (fatal ? 200 : vulnerable ? 70 : 40) + Math.floor(dmg / 3);
             score = d.strategicThinking ? score + rng() * 15 : rng() * 100;
             options.push({ type: 'weapon', score, probability: d.weaponUseProbability, data: { reason: fatal ? FATAL_REASON : '' } });
         }
         const manaTotal = colors.reduce((t, c) => t + (e.mana[c] || 0), 0);
-        let boardScore = 30 + (manaTotal < 10 ? 40 : 0) + (!spell && e.combatPoints < 5 ? 50 : 0);
+        let boardScore = 30 + (manaTotal < 10 ? 40 : 0) + (!spell && e.combatPoints < 5 ? 50 : 0) + (d.refillMana && spellCostFactor < 1 && !spell && e.damageSpells.length ? 30 : 0);
         if (!d.strategicThinking) boardScore += rng() * 30;
         options.push({ type: 'board', score: boardScore, probability: d.boardMoveProbability, data: { reason: '' } });
         let chosen, stupid = false;

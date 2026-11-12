@@ -856,7 +856,7 @@ export function checkMatches(forceFullBoard = false){
             const attackBonus = skullStrengthBonus(attacker);
             // `skullMult` : dégâts par crâne de l'ennemi réglés par le calibrage de durée (affichés sur sa fiche)
             const baseSkullDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
-            const rawDmg = (attacker.skullMult || 1) !== 1 ? cappedEnemyHit(baseSkullDmg, attacker.skullMult, opponent.maxHp) : baseSkullDmg;   // plafond : pas de coup fatal par le multiplicateur
+            const rawDmg = (attacker.skullMult || 1) !== 1 ? cappedEnemyHit(baseSkullDmg, attacker.skullMult, opponent.maxHp, attacker.hitShareCap) : baseSkullDmg;   // plafond : pas de coup fatal par le multiplicateur
             const weakened = attacker === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
             const strike = resolveStrike(rawDmg, attacker, opponent, { weakened });
             let dmg = strike.damage;

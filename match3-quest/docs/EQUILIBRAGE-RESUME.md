@@ -25,7 +25,7 @@ Version courte de `EQUILIBRAGE.md` (PR #706). Les valeurs vivent dans `combatBal
 2. **Dégâts de l'ennemi** : réglés au niveau Expert, visibles sur sa fiche.
    - **Arme** : elle affiche ses vrais dégâts.
    - **Sorts** : ils sont amplifiés par un Talisman de Résonance, objet non récupérable, visible seulement à l'appui long sur l'ennemi. Les sorts affichent directement le résultat de la multiplication.
-3. **Mode de difficulté** : un mode plus doux **divise l'attaque** de l'ennemi et le bonus de son stuff, jamais ses PV. L'IA joue aussi mieux ou moins bien selon le mode.
+3. **Mode de difficulté** : un mode plus doux **divise l'attaque** de l'ennemi et le bonus de son stuff, jamais ses PV. L'IA joue aussi mieux ou moins bien selon le mode. Le mode **Expert** ajoute : sorts à 70 % de leur coût en qì, plafond de coup à 50 % des PV du héros, dégâts ×1,1 et rattrapage d'Att/Déf face à un héros bien plus fort.
 4. **Héros** : ses PV sont plafonnés pour le calcul (référence de progression + 60 %, puis un quart de l'excédent). Son équipement ne change pas.
 5. **Coups fatals** : le multiplicateur ne porte jamais un coup ordinaire (arme, crânes, sort, poison) au-delà de 40 % des PV max du héros.
 
@@ -51,7 +51,7 @@ Version courte de `EQUILIBRAGE.md` (PR #706). Les valeurs vivent dans `combatBal
 
 Héros complet (sorts à effet, ultime, objet, compagnon), niveaux 1 à 70, 4 classes.
 
-- **Modes** : 76 contrôles réussis sur 77. Le seul échec est le mode Expert contre les ennemis normaux : 75 % de victoires pour 60 % visés.
+- **Modes** : 70 contrôles réussis sur 77 (`mode-report 1 3`, peu de combats par case : le bruit fait échouer Difficile / mini-boss). Expert, durci : 59 % de victoires contre les ennemis normaux, 31 % contre les élites, 33 % contre les boss de la carte.
 - **Boss de la carte, mode Auto** : 61 % de victoires en moyenne (cible 60 %), écart-type de 12 points, durée moyenne 7 min 24.
 
 ## Limites

@@ -59,6 +59,7 @@ export const AI_TIERS = {
         stupidityChance: 0.20,
         randomBoardMove: false,
         manaFocus: true,
+        refillMana: true,               // aucun sort lançable : le plateau pour remplir son qì passe devant (enemyAI.js)
         lethalAwareness: 1, scoreSharpness: 1.5, boardLookahead: 16,
     },
 };
