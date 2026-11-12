@@ -15,7 +15,7 @@ const instrument = ({ cores }) => {
     Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => cores });
     Object.defineProperty(navigator, 'deviceMemory', { get: () => (cores <= 4 ? 2 : 8) });
 
-    const c = (window.__perf = { shadowBlur: 0, fillRect: 0, frames: 0, longTasks: 0, blockingMs: 0, maxLongMs: 0, fullFills: 0, audioArgs: [] });
+    const c = (window.__perf = { shadowBlur: 0, fillRect: 0, mapFrames: 0, frames: 0, longTasks: 0, blockingMs: 0, maxLongMs: 0, fullFills: 0, audioArgs: [] });
     const P = CanvasRenderingContext2D.prototype;
     const blur = Object.getOwnPropertyDescriptor(P, 'shadowBlur');
     Object.defineProperty(P, 'shadowBlur', {
@@ -25,6 +25,8 @@ const instrument = ({ cores }) => {
     const fillRect = P.fillRect;
     P.fillRect = function (...a) {
         c.fillRect++;
+        // images où la carte d'exploration a été (re)dessinée : `frames` avance à chaque rafraîchissement d'écran
+        if (this.canvas && this.canvas.id === 'explore-canvas' && c.mapMark !== c.frames) { c.mapMark = c.frames; c.mapFrames++; }
         // remplissage couvrant tout le canvas d'exploration (le fond plein écran d'avant, repeint à chaque image)
         if (this.canvas && this.canvas.id === 'explore-canvas' && a[2] >= this.canvas.clientWidth && a[3] >= this.canvas.clientHeight) c.fullFills++;
         return fillRect.apply(this, a);
@@ -45,7 +47,7 @@ const instrument = ({ cores }) => {
 
 const resetCounters = page => page.evaluate(() => {
     const c = window.__perf;
-    c.shadowBlur = c.fillRect = c.frames = c.longTasks = c.blockingMs = c.maxLongMs = c.fullFills = 0;
+    c.shadowBlur = c.fillRect = c.mapFrames = c.frames = c.longTasks = c.blockingMs = c.maxLongMs = c.fullFills = 0;
 });
 
 async function openGame(page, context, { cores = DEFAULT_CORES } = {}) {
@@ -207,15 +209,18 @@ test.describe('match3-quest · performances mobile', () => {
         const measure = async ms => {
             await resetCounters(page);
             await page.waitForTimeout(ms);
-            return page.evaluate(() => window.__perf.fillRect);
+            return page.evaluate(() => window.__perf.mapFrames);   // images de carte dessinées (pas le nombre d'appels : il varie d'une image à l'autre)
         };
+        // Carte libre, héros immobile : cadence d'ambiance (~15 à 30 i/s selon le niveau d'effets, explorationViewConsts.js)
         const free = await measure(2000);
         expect(free).toBeGreaterThan(0);
 
         // Carte du monde ouverte (voile à 70 %) : redessin à ~4 images/s au lieu de toutes les images
         await page.evaluate(() => document.getElementById('worldmap-modal').classList.add('active'));
         const underModal = await measure(2000);
-        expect(underModal).toBeLessThan(free * 0.4);
+        // borne absolue (une image toutes les 250 ms, COVERED_DRAW_MS) : sur le profil bas de gamme, la carte libre est déjà
+        // limitée par le processeur (~6 i/s), un rapport avec `free` ne voudrait rien dire
+        expect(underModal).toBeLessThanOrEqual(2000 / 250 + 2);
         await page.evaluate(() => document.getElementById('worldmap-modal').classList.remove('active'));
 
         // Cinématique opaque par-dessus : plus aucun dessin de la carte
@@ -224,7 +229,7 @@ test.describe('match3-quest · performances mobile', () => {
         expect(underCine).toBeLessThan(free * 0.1);
         await page.evaluate(() => document.getElementById('perf-fake-cine').remove());
 
-        // Retour à la normale : la carte se redessine à pleine cadence
+        // Retour à la normale : la carte reprend sa cadence d'ambiance
         const after = await measure(2000);
         expect(after).toBeGreaterThan(free * 0.5);
     });
