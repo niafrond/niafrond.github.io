@@ -1,3 +1,10 @@
+## [2.237.0](https://github.com/niafrond/niafrond.github.io/compare/v2.236.0...v2.237.0) (2026-11-12)
+
+### Features
+
+* **match3-quest:** afficher en vert ce que change chaque attribut à la montée de niveau ([c1a67b9](https://github.com/niafrond/niafrond.github.io/commit/c1a67b9ce09cd35b981e2f3276b17af8273ca29f))
+* **match3-quest:** masquer les effets sans gain dans le choix d'attribut ([c5c41a9](https://github.com/niafrond/niafrond.github.io/commit/c5c41a9fd87301a9ade916eec210256bd1e8397c))
+
 ## [2.236.0](https://github.com/niafrond/niafrond.github.io/compare/v2.235.1...v2.236.0) (2026-11-12)
 
 ### Features
