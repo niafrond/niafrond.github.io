@@ -512,3 +512,147 @@ describe('lecteur de musique', () => {
         expect(isMusicPlaying()).toBe(false);
     });
 });
+
+// ── Lecture en flux : un élément <audio> par piste, branché sur le contexte audio (aucune piste décodée en mémoire) ──────────
+function makeStreamCtx() {
+    const ctx = makeCtx();
+    ctx.createMediaElementSource = (el) => { const n = { kind: 'media', el, disconnected: false, connect() {}, disconnect() { n.disconnected = true; } }; ctx.nodes.push(n); return n; };
+    return ctx;
+}
+// Faux <audio> : `missing` = pistes introuvables (play() rejeté, NotSupportedError) ; `blocked` = lecture automatique interdite (NotAllowedError).
+function makeAudioFactory({ missing = new Set(), blocked = false } = {}) {
+    const made = [];
+    const create = () => {
+        const el = {
+            src: '', loop: false, preload: '', paused: true, plays: 0, released: false,
+            load() {}, addEventListener() {},
+            removeAttribute(name) { if (name === 'src') { el.src = ''; el.released = true; } },
+            pause() { el.paused = true; },
+            play() {
+                el.plays++;
+                const key = (/music\/(.+)\.mp3/.exec(el.src) || [])[1];
+                if (blocked) return Promise.reject(Object.assign(new Error('refusé'), { name: 'NotAllowedError' }));
+                if (missing.has(key)) return Promise.reject(Object.assign(new Error('introuvable'), { name: 'NotSupportedError' }));
+                el.paused = false;
+                return Promise.resolve();
+            }
+        };
+        made.push(el);
+        return el;
+    };
+    create.made = made;
+    return create;
+}
+const keyOf = (el) => (/music\/(.+)\.mp3/.exec(el.src) || [])[1];
+
+describe('lecteur de musique : lecture en flux', () => {
+    afterEach(() => { __internals.reset(); setMusicEnvironment({ createAudio: null }); });
+
+    test('la piste est lue par un élément <audio> en boucle : rien n\'est téléchargé ni décodé en entier', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ missing: new Set(['title-b']) });
+        const { fetchFn } = setup(ctx, undefined, { createAudio });
+        setMusicScene('title'); await flush();
+        expect(fetchFn.calls).toEqual([]);
+        expect(ctx.decoded).toBe(0);
+        expect(ctx.nodes.filter((n) => n.kind === 'source')).toHaveLength(0);
+        // variante traditionnelle absente → repli sur la piste de base ; l'élément refusé est libéré
+        expect(createAudio.made.map((el) => el.released)).toEqual([true, false]);
+        const el = createAudio.made[1];
+        expect(el.src).toBe(`http://x/match3-quest/audio/music/title.mp3?v=${getMatch3Version()}`);
+        expect(el.loop).toBe(true);
+        expect(el.paused).toBe(false);
+        expect(isMusicPlaying()).toBe(true);
+        expect(__internals.state.current.gain.gain.ramps.at(-1)[0]).toBe(1);   // fondu d'entrée
+        setMusicScene('title'); await flush();                                  // même scène : no-op
+        expect(createAudio.made).toHaveLength(2);
+    });
+
+    test('fondu enchaîné : l\'ancien élément est libéré à la fin du fondu, un seul reste en lecture', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ missing: new Set(['title-b', 'menu-b']) });
+        setup(ctx, undefined, { createAudio });
+        setMusicScene('title'); await flush();
+        const first = __internals.state.current;
+        setMusicScene('combat', { variant: 'Gobelin' }); await flush();   // combat : l'ancienne piste s'efface en 0,4 s
+        expect(keyOf(__internals.state.current.el)).toBe('combat-1');
+        expect(first.el.released).toBe(false);                             // encore audible pendant le fondu
+        await new Promise((r) => setTimeout(r, 550));
+        expect(first.el.released).toBe(true);
+        expect(first.el.paused).toBe(true);
+        expect(first.node.disconnected).toBe(true);
+        expect(createAudio.made.filter((el) => !el.paused)).toHaveLength(1);
+    });
+
+    test('préchargement : l\'élément du combat est préparé d\'avance et réutilisé au début du combat', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory();
+        const { fetchFn } = setup(ctx, undefined, { createAudio });
+        expect(preloadMusic('combat')).toBe(true);
+        expect(preloadMusic('combat')).toBe(true);                          // déjà préparé : pas de second élément
+        expect(createAudio.made).toHaveLength(1);
+        expect(createAudio.made[0].plays).toBe(0);                          // rien n'est joué
+        expect(createAudio.made[0].preload).toBe('auto');
+        setMusicScene('combat', { variant: 'Gobelin' }); await flush();
+        expect(createAudio.made).toHaveLength(1);
+        expect(__internals.state.current.el).toBe(createAudio.made[0]);
+        expect(fetchFn.calls).toEqual([]);
+    });
+
+    test('lecture refusée par le navigateur : repli sur la piste décodée, pour toute la session', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ blocked: true });
+        const { fetchFn } = setup(ctx, undefined, { createAudio });
+        setMusicScene('title'); await flush();
+        expect(createAudio.made).toHaveLength(1);
+        expect(createAudio.made[0].released).toBe(true);
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['title-b', 'title']);
+        expect(ctx.nodes.find((n) => n.kind === 'source').started).toBe(true);
+        expect(isMusicPlaying()).toBe(true);
+        setMusicScene('menu'); await flush();
+        expect(createAudio.made).toHaveLength(1);                           // plus aucun essai en flux
+    });
+
+    test('piste introuvable : silence sans exception, nouvel essai plus tard', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ missing: new Set(['house-b', 'house']) });
+        setup(ctx, undefined, { createAudio });
+        expect(() => setMusicScene('house')).not.toThrow(); await flush();
+        expect(isMusicPlaying()).toBe(false);
+        expect(__internals.state.desired.state).toBe('failed');
+        expect(createAudio.made.every((el) => el.released)).toBe(true);
+    });
+
+    test('changement de scène pendant le lancement : seule la dernière scène est jouée', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ missing: new Set(['title-b', 'menu-b']) });
+        setup(ctx, undefined, { createAudio });
+        setMusicScene('title'); setMusicScene('menu'); await flush();
+        expect(keyOf(__internals.state.current.el)).toBe('menu');
+        expect(createAudio.made.filter((el) => !el.paused)).toHaveLength(1);
+    });
+
+    test('musique coupée : l\'élément est mis en pause après le fondu, et reprend au retour du son', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ missing: new Set(['title-b']) });
+        const { state } = setup(ctx, undefined, { createAudio });
+        setMusicScene('title'); await flush(); __internals.tick();
+        const el = __internals.state.current.el;
+        state.muted = true; __internals.tick();
+        expect(el.paused).toBe(false);                                      // le temps du fondu de sortie
+        await new Promise((r) => setTimeout(r, 450));
+        __internals.tick();
+        expect(el.paused).toBe(true);
+        state.muted = false; __internals.tick();
+        expect(el.paused).toBe(false);
+        // contexte audio suspendu (onglet masqué, tout le son coupé) : la pause se fait quand même
+        state.muted = true; ctx.state = 'suspended'; __internals.tick();
+        await new Promise((r) => setTimeout(r, 450));
+        __internals.tick();
+        expect(el.paused).toBe(true);
+    });
+
+    test('arrêt : l\'élément est libéré', async () => {
+        const ctx = makeStreamCtx(); const createAudio = makeAudioFactory({ missing: new Set(['title-b']) });
+        setup(ctx, undefined, { createAudio });
+        setMusicScene('title'); await flush();
+        const el = __internals.state.current.el;
+        stopMusic({ fadeMs: 0 });
+        expect(isMusicPlaying()).toBe(false);
+        await new Promise((r) => setTimeout(r, 120));
+        expect(el.released).toBe(true);
+    });
+});
