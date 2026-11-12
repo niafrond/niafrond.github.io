@@ -58,15 +58,15 @@ function renderLevelUpHud(){
         : `Niveau ${player.level} · ${player.xp} / ${player.xpToNextLevel} XP · ${getXPProgress(player)} % vers le niveau ${player.level + 1} (${remaining} XP restants)`;
 }
 
-function buildAttributeCards(){
+function buildAttributeCards(){   // seules les lignes qui changent avec ce point sont listées (en vert) ; « pas de gain », « inchangée »… sont masquées
     const grid = document.getElementById('levelup-attributes');
     if(!grid) return;
     grid.innerHTML = ATTRIBUTE_ORDER.map(attr => {
         const d = describeAttributeChoice(player, attr);
         return `<div class="attribute-card attr-${d.color}" data-attr="${attr}" role="button" tabindex="0">
             <div class="attr-icon">${svgIcon(d.icon)}</div>
-            <div class="attr-name">${d.name} <span class="attr-points">(${d.points} → ${d.nextPoints})</span></div>
-            <div class="attr-description"><ul>${d.lines.map((l, i) => `<li>${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>`).join('')}</ul></div>
+            <div class="attr-name">${d.name} <span class="attr-points attr-change">(${d.points} → ${d.nextPoints})</span></div>
+            <div class="attr-description"><ul>${d.lines.map((l, i) => d.changes[i] ? `<li class="attr-change">${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>` : '').join('')}</ul></div>
         </div>`;
     }).join('');
 }

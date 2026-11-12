@@ -120,13 +120,15 @@ export function describeAttributeChoice(entity, attr) {
     const next = pts + 1;
     const color = MANA_COLOR_LABELS[rule.color];
     const stat = STAT_TEXT[attr](eff.amount);
-    const rageLines = [];
+    const rageLines = [], rageChanges = [];
     if (ATTRIBUTE_RAGE_RULES[attr]?.initial) {
         const gain = rageInitialFor(attr, next) - rageInitialFor(attr, pts);
+        rageChanges.push(gain > 0);
         rageLines.push(`Rage : ${gain > 0 ? `+${gain} de jauge` : 'pas de jauge en plus'} dès le début du combat (${rageInitialFor(attr, next)} au total, ${ATTRIBUTE_RAGE_RULES[attr].initial.cap} au plus).`);
     }
     if (ATTRIBUTE_RAGE_RULES[attr]?.gainPct) {
         const gain = rageGainPctFor(attr, next) - rageGainPctFor(attr, pts);
+        rageChanges.push(gain > 0);
         rageLines.push(`Rage : ${gain > 0 ? `+${gain} %` : 'pas de bonus'} de rage gagnée en perdant des PV (${rageGainPctFor(attr, next)} % au total, ${ATTRIBUTE_RAGE_RULES[attr].gainPct.cap} % au plus).`);
     }
     const lines = [
@@ -150,7 +152,16 @@ export function describeAttributeChoice(entity, attr) {
         points: pts,
         nextPoints: next,
         statTitle: stat.title,
-        lines
+        lines,
+        // Parallèle à `lines` : true quand la ligne décrit un effet réellement apporté par ce point (affiché en vert à la montée de niveau).
+        changes: [
+            true,   // la statistique (Atk, Déf, PV…) augmente toujours
+            manaBonusFor(attr, next, "gain") > manaBonusFor(attr, pts, "gain"),
+            manaPerMatch(attr, next, 4) > manaPerMatch(attr, pts, 4) || manaPerMatch(attr, next, 5) > manaPerMatch(attr, pts, 5),
+            manaBonusFor(attr, next, "initial") > manaBonusFor(attr, pts, "initial"),
+            manaBonusFor(attr, next, "max") > manaBonusFor(attr, pts, "max"),
+            ...rageChanges
+        ]
     };
 }
 

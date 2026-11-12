@@ -141,3 +141,23 @@ describe('plafond de qì par niveau', () => {
         expect(summarizeColorBonuses(hero({ strength: 39 })).find(c => c.attr === 'strength').cap).toBe(63);
     });
 });
+
+describe('describeAttributeChoice : lignes qui changent (affichées en vert à la montée de niveau)', () => {
+    test('`changes` est parallèle à `lines` ; la statistique change toujours', () => {
+        for (const attr of ['strength', 'agility', 'intelligence', 'stamina', 'morale']) {
+            const d = describeAttributeChoice(hero(), attr);
+            expect(d.changes).toHaveLength(d.lines.length);
+            expect(d.changes[0]).toBe(true);
+        }
+    });
+    test('une ligne n\'est verte que si le point apporte vraiment quelque chose', () => {
+        const d = describeAttributeChoice(hero({ intelligence: 1 }), 'intelligence');   // le point n° 2 ne donne rien de plus au match de 3
+        d.lines.forEach((line, i) => {
+            if (/pas de gain de match|Pas de qì .* de départ en plus|inchangée/.test(line)) expect(d.changes[i]).toBe(false);
+        });
+        const up = describeAttributeChoice(hero({ intelligence: 2 }), 'intelligence');   // donne 4 qì au lieu de 3
+        expect(up.changes[1]).toBe(true);
+        const start = describeAttributeChoice(hero({ intelligence: 4 }), 'intelligence');
+        expect(start.changes[3]).toBe(true);
+    });
+});
