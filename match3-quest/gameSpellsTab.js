@@ -1,7 +1,7 @@
 // Onglet Sorts : liste des sorts disponibles, tri, sélecteur d'ultime, équiper / retirer un sort ou un ultime.
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from "./constants.js";
-import { compareButtonHtml } from "./compareView.js";
+import { compareAttrs } from "./compareView.js";
 import { icon as svgIcon } from "./icons.js";
 import { getSelectableUltimates, getEquippedUltimate, getQuestUltimates, isUltimateUnlocked, withUltimateCost } from "./ultimates.js";
 import { bindTooltip, showSpellTooltip, hideSpellTooltip } from "./gameTooltips.js";
@@ -24,6 +24,8 @@ function spellCard(sp, actionHtml, extraClass){
     const div = document.createElement('div');
     div.className = `spell-item gear-card ${extraClass}`;
     markMultiManaSpell(div, sp);
+    div.dataset.cmpKind = 'spell';
+    div.dataset.cmpId = sp.id;
     const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
     const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
     const effectText = sp.effect ? ` • ${sp.description}` : '';
@@ -32,7 +34,7 @@ function spellCard(sp, actionHtml, extraClass){
             <div class="spell-name">${sp.name} ${spellEffectIcon(sp)}</div>
             <div class="spell-cost">${spellCostHtml(sp)}${damageText}${healText}${effectText}</div>
         </div>
-        ${cardActionsHtml(compareButtonHtml('spell', sp.id), actionHtml)}`;
+        ${cardActionsHtml('', actionHtml)}`;
     bindSpellRowTooltip(div, sp);
     return div;
 }
@@ -130,6 +132,8 @@ export function updateUltimatePicker(){
         const div = document.createElement('div');
         div.className = 'spell-item gear-card ultimate-spell' + (chosen ? ' active-spell' : '');
         markMultiManaSpell(div, sp);
+    div.dataset.cmpKind = 'spell';
+    div.dataset.cmpId = sp.id;
         div.innerHTML = `
             <div class="spell-content">
                 <div class="spell-name">${sp.name}</div>

@@ -1,4 +1,4 @@
-// Comparaison de deux sorts, armes ou stuffs : bouton « Comparer » sur chaque ligne (1er clic = référence, 2e clic = tableau comparatif).
+// Comparaison de deux sorts, armes ou stuffs : clic sur une carte (1er clic = référence, 2e clic sur une autre = tableau comparatif).
 // Module d'affichage pur : les objets sont retrouvés par les résolveurs passés à initCompare (aucune dépendance à game.js).
 
 import { MANA_HEX } from './icons.js';
@@ -134,12 +134,9 @@ let equipActions = {};   // kind -> id => équipe l'objet (ou ouvre le choix du 
 let equipState = {};     // kind -> id => { label, disabled }
 
 function refreshButtons() {
-    document.querySelectorAll('.compare-btn').forEach(btn => {
-        const on = !!selection && btn.dataset.compareKind === selection.kind && btn.dataset.compareId === selection.id;
-        const label = on ? 'Choisi' : 'Comparer';
-        btn.classList.toggle('compare-selected', on);
-        if (btn.getAttribute('aria-pressed') !== String(on)) btn.setAttribute('aria-pressed', String(on));
-        if (btn.textContent !== label) btn.textContent = label;   // garde : l'observateur de mutations rappelle cette fonction
+    document.querySelectorAll('[data-cmp-kind]').forEach(el => {
+        const on = !!selection && el.dataset.cmpKind === selection.kind && el.dataset.cmpId === selection.id;
+        if (el.classList.contains('compare-picked') !== on) el.classList.toggle('compare-picked', on);   // garde : l'observateur de mutations rappelle cette fonction
     });
 }
 
@@ -198,19 +195,17 @@ export function onCompareClick(kind, id) {
     return 'shown';
 }
 
-// Bouton « Comparer » à ajouter dans une ligne.
-export const compareButtonHtml = (kind, id) =>
-    `<button type="button" class="compare-btn" data-compare-kind="${esc(kind)}" data-compare-id="${esc(id)}" aria-pressed="false" title="Comparer avec ${ANOTHER[kind]} (cliquez sur « Comparer » d'un second)">Comparer</button>`;
+// Attributs à poser sur une carte : un clic dessus la choisit (1er clic = référence, 2e clic sur une autre = comparatif).
+export const compareAttrs = (kind, id) => ` data-cmp-kind="${esc(kind)}" data-cmp-id="${esc(id)}"`;
 
 export function initCompare(r, equip = {}) {
     resolvers = r;
     equipActions = equip.actions || {};
     equipState = equip.state || {};
     document.addEventListener('click', e => {
-        const btn = e.target.closest?.('.compare-btn');
-        if (!btn) return;
-        e.stopPropagation();
-        onCompareClick(btn.dataset.compareKind, btn.dataset.compareId);
+        const card = e.target.closest?.('[data-cmp-kind]');
+        if (!card || e.target.closest('button, a, input, select, label, .rc-more, .card-actions')) return;
+        onCompareClick(card.dataset.cmpKind, card.dataset.cmpId);
     });
     // Les listes sont reconstruites à chaque mise à jour : on remet en évidence la référence choisie.
     new MutationObserver(refreshButtons).observe(document.body, { childList: true, subtree: true });

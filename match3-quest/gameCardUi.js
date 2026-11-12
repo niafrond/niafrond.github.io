@@ -44,9 +44,9 @@ export const moreButtonHtml = open => `<button type="button" class="rc-btn rc-ic
 
 // key : identifiant stable de la carte ; border : couleur de rareté ; badges : pastilles à côté du nom ; sub : écarts et chiffres clés ;
 // primary : bouton principal ; more : boutons du menu « ⋯ » ; tip : contenu de l'infobulle (appui long / survol).
-export function rowCardHtml({ key, cls = '', border = '', name, badges = '', sub = '', primary = '', more = '', tip = '' }) {
+export function rowCardHtml({ key, cls = '', border = '', name, badges = '', sub = '', primary = '', more = '', tip = '', attrs = '' }) {
     const open = !!more && openCards.has(key);
-    return `<div class="rc${cls ? ' ' + cls : ''}${open ? ' open' : ''}" data-rc="${escapeHtml(key)}" tabindex="0"${border ? ` style="border-left-color:${escapeHtml(border)}"` : ''}>`
+    return `<div class="rc${cls ? ' ' + cls : ''}${open ? ' open' : ''}" data-rc="${escapeHtml(key)}" tabindex="0"${attrs}${border ? ` style="border-left-color:${escapeHtml(border)}"` : ''}>`
         + `<div class="rc-main"><div class="rc-title"><span class="rc-name">${name}</span>${badges}</div>${sub ? `<div class="rc-sub">${sub}</div>` : ''}</div>`
         + `<div class="rc-actions">${primary}${more ? moreButtonHtml(open) : ''}</div>`
         + (more ? `<div class="rc-more">${more}</div>` : '')

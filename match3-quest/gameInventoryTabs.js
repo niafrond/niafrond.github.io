@@ -2,7 +2,7 @@
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
-import { compareButtonHtml, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
+import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { getItemIcon, getRarityColor, useItem, describeRecharge, shiftActiveItemIndexes } from "./items.js";
 import { afflictionsOf } from "./alterations.js";
 import { playSfx } from "./sound.js";
@@ -179,7 +179,6 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
     let primary, more = '';
     if(hand){
         primary = `<button type="button" class="rc-btn rc-btn-alt" onclick="window.unequipWeapon('${hand}')">Retirer</button>`;
-        more = compareButtonHtml('weapon', weapon.id);
     } else {
         if(locked){
             primary = `<button type="button" class="rc-btn" disabled>Niv. ${weapon.minLevel}</button>`;
@@ -190,7 +189,7 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
             const leftBlocked = right?.twoHanded;
             more += `<button type="button" class="weapon-action" ${leftBlocked ? `disabled title="${escapeHtml(right.name)} occupe les deux mains"` : ''} onclick="window.equipWeapon('${weapon.id}', 'left')">Main gauche</button>`;
         }
-        more += compareButtonHtml('weapon', weapon.id) + weaponSellTagButton(weapon);
+        more += weaponSellTagButton(weapon);
     }
     const badges = (hand ? badgeHtml(hand === 'left' ? 'Gauche' : 'Droite', 'rc-badge-on') : '') + (weapon.twoHanded ? badgeHtml('2 mains') : '') + (count > 1 ? badgeHtml(`×${count}`) : '');
     return rowCardHtml({
@@ -200,7 +199,7 @@ function weaponCardHtml(weapon, { hand, count = 1 } = {}){
         name: `${getWeaponIcon(weapon.type)} ${escapeHtml(weapon.name)}`,
         badges,
         sub: deltas || stats,   // écarts d'abord ; les chiffres bruts sont dans l'infobulle
-        primary, more, tip
+        primary, more, tip, attrs: compareAttrs('weapon', weapon.id)
     });
 }
 
@@ -282,8 +281,8 @@ function renderGearList(container, kind){
             badges: (current ? badgeHtml('Gauche', 'rc-badge-on') : '') + (count > 1 ? badgeHtml(`×${count}`) : ''),
             sub: d || `<span class="rc-stats">${it.defense ? `Déf +${it.defense}` : ''}${it.atkBonus ? ` Atk +${it.atkBonus}` : ''}${it.absorbDamage ? ` Abs. ${it.absorbDamage}` : ''}</span>`,
             primary,
-            more: compareButtonHtml('item', it.id) + (sellTag ? sellTagButton(it, count) : ''),
-            tip
+            more: sellTag ? sellTagButton(it, count) : '',
+            tip, attrs: compareAttrs('item', it.id)
         });
     };
     let html = '';
