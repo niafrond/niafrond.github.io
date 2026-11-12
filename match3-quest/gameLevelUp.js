@@ -65,8 +65,8 @@ function buildAttributeCards(){
         const d = describeAttributeChoice(player, attr);
         return `<div class="attribute-card attr-${d.color}" data-attr="${attr}" role="button" tabindex="0">
             <div class="attr-icon">${svgIcon(d.icon)}</div>
-            <div class="attr-name">${d.name} <span class="attr-points">(${d.points} → ${d.nextPoints})</span></div>
-            <div class="attr-description"><ul>${d.lines.map((l, i) => `<li>${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>`).join('')}</ul></div>
+            <div class="attr-name">${d.name} <span class="attr-points attr-change">(${d.points} → ${d.nextPoints})</span></div>
+            <div class="attr-description"><ul>${d.lines.map((l, i) => `<li${d.changes[i] ? ' class="attr-change"' : ''}>${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>`).join('')}</ul></div>
         </div>`;
     }).join('');
 }
