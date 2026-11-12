@@ -1,3 +1,9 @@
+## [2.235.1](https://github.com/niafrond/niafrond.github.io/compare/v2.235.0...v2.235.1) (2026-11-12)
+
+### Bug Fixes
+
+* **match3-quest:** corriger le Thé de Clarté d'Esprit et la Paume de Givre, et donner aux ennemis tous les sorts du héros ([2c559e3](https://github.com/niafrond/niafrond.github.io/commit/2c559e3af3d07a59e062c4e4faf26a335f48f3e3))
+
 ## [2.235.0](https://github.com/niafrond/niafrond.github.io/compare/v2.234.0...v2.235.0) (2026-11-12)
 
 ### Features
