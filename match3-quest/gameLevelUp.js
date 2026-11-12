@@ -36,6 +36,10 @@ export function updateLevelHud(){
     if(!hud) return;
     const max = player.level >= MAX_LEVEL;
     const pct = getXPProgress(player);
+    // Appelée toutes les 500 ms : rien n'a changé, on ne touche pas au DOM (réécrire le texte relance mise en page et peinture : batterie).
+    const sig = `${player.level}|${player.xp}|${player.xpToNextLevel}|${pct}|${player.unspentLevelPoints || 0}`;
+    if(hud.dataset.sig === sig) return;
+    hud.dataset.sig = sig;
     hud.querySelector('.level-hud-level').textContent = `Niv. ${player.level}`;
     hud.querySelector('.level-hud-xp').textContent = max ? `${player.xp} XP (max)` : `${player.xp} / ${player.xpToNextLevel} XP`;
     hud.querySelector('.level-hud-bar i').style.width = `${pct}%`;

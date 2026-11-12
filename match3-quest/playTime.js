@@ -3,7 +3,8 @@
 // Le temps de jeu « réel » (`real`) ne compte en plus que si le joueur a agi (clic, touche, toucher) dans les dernières IDLE_LIMIT_MS.
 
 export const PLAYTIME_STORAGE_KEY = 'match3quest.playtime';
-const IDLE_LIMIT_MS = 60000;   // sans action au-delà, le jeu est allumé mais pas vraiment utilisé
+const IDLE_LIMIT_MS = 60000;
+const FLUSH_S = 15;   // temps de jeu accumulé avant enregistrement (s)   // sans action au-delà, le jeu est allumé mais pas vraiment utilisé
 const KEEP_DAYS = 14;   // le détail par jour est élagué ; le total, lui, est conservé
 
 const dayKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -87,6 +88,13 @@ export function startPlayTimeTracking(onTick) {
             if (now - lastInput <= IDLE_LIMIT_MS) pendingReal += dt;
         }
         last = now;
+        flush(now, false);
+        onTick?.();
+    };
+    // Batterie : l'enregistrement (lecture + écriture localStorage) se fait toutes les FLUSH_S secondes au lieu de chaque seconde,
+    // et tout de suite quand la page passe en arrière-plan ou se ferme (rien n'est perdu).
+    const flush = (now, force) => {
+        if (!force && pending < FLUSH_S) return;
         const whole = Math.floor(pending);
         if (whole > 0) {
             const real = Math.min(whole, Math.floor(pendingReal));
@@ -94,7 +102,11 @@ export function startPlayTimeTracking(onTick) {
             pending -= whole;
             pendingReal -= real;
         }
-        onTick?.();
     };
+    if (typeof document !== 'undefined') {
+        const flushNow = () => { tick(); flush(Date.now(), true); };
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
+        if (typeof window !== 'undefined') window.addEventListener('pagehide', flushNow);
+    }
     return setInterval(tick, 1000);
 }

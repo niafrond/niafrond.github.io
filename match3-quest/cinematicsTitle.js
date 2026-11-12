@@ -70,7 +70,12 @@ export function playTitleScreen() {
         window.addEventListener('resize', ensureArt);
 
         let raf = 0;
+        let nextTimer = 0;
         const t0 = performance.now();
+        // Batterie : l'écran-titre peut rester affiché longtemps ; ~24 i/s suffisent (boucle Pixel Lab à quelques i/s, pollen lent),
+        // la boucle dort entre deux images au lieu de redessiner à chaque rafraîchissement de l'écran (60 à 120 Hz).
+        const TITLE_FRAME_MS = 42;
+        const next = () => { nextTimer = setTimeout(() => { if (!ended) raf = requestAnimationFrame(frame); }, TITLE_FRAME_MS); };
 
         // Image Pixel Lab en « cover » sur le canvas, lue en aller-retour (boucle sans saut), sans lissage.
         const drawArt = (a, t) => {
@@ -100,13 +105,13 @@ export function playTitleScreen() {
                     px(ctx, TP.ink, 0, H - 14 + i, W, 1);
                 }
                 ctx.globalAlpha = 1;
-                if (!ended) raf = requestAnimationFrame(frame);
+                if (!ended) next();
                 return;
             }
             // pas de boucle chargée : fond uni teal (jamais de scène dessinée en code)
             ctx.fillStyle = TP.tealDeep;
             ctx.fillRect(0, 0, W, H);
-            if (!ended) raf = requestAnimationFrame(frame);
+            if (!ended) next();
         };
         raf = requestAnimationFrame(frame);
 
@@ -114,6 +119,7 @@ export function playTitleScreen() {
             if (ended) return;
             ended = true;
             cancelAnimationFrame(raf);
+            clearTimeout(nextTimer);
             window.removeEventListener('resize', resize);
             window.removeEventListener('resize', ensureArt);
             document.removeEventListener('keydown', onKey, true);

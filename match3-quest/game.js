@@ -1059,9 +1059,14 @@ function playCombatEndLoop(fade, isVictory, reduced){
         if(!ctx) return;
         ctx.imageSmoothingEnabled = false;
         const start = performance.now();
+        let shown = -1;
         const draw = () => {
-            const [sx, sy, sw, sh] = sequenceRect(seq, reduced ? 0 : ((performance.now() - start) / 1000 * seq.fps) % seq.frames);
-            ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            const fi = reduced ? 0 : Math.floor((performance.now() - start) / 1000 * seq.fps) % seq.frames;
+            if(fi !== shown){   // ne redessine qu'au changement d'image de la planche (batterie)
+                shown = fi;
+                const [sx, sy, sw, sh] = sequenceRect(seq, fi);
+                ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            }
             if(!reduced && fade.isConnected) requestAnimationFrame(draw);
         };
         draw();
