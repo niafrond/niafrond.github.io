@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import { describe, test, expect, beforeEach } from '@jest/globals';
-import { getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
+import { detectSoftwareRendering, isSoftwareRendering, resetSoftwareRenderingCache, getOption, animationsEnabled, setOption, effectsLevel, animationFactor, maxManaParticles, applyOptions, vibrate, canVibrate, armVibration, isVibrationBlocked, OPTION_DEFAULTS } from '../../gameOptions.js';
 import { readFileSync } from 'node:fs';
 import { flyManaToCounter } from '../../manaFlight.js';
 
@@ -43,6 +43,64 @@ describe('options d\'affichage', () => {
         window.matchMedia = () => ({ matches: true });
         expect(effectsLevel()).toBe('low');
         applyOptions();
+    });
+});
+
+describe('rendu logiciel (GPU absent ou émulé)', () => {
+    // Faux navigateur : `strict` = un contexte WebGL « sans réserve de performance » est accordé ; `renderer` = nom du moteur de rendu.
+    const fakeEnv = ({ webgl = true, strict = true, renderer = 'ANGLE (Qualcomm, Adreno (TM) 640, OpenGL ES 3.2)', agent = 'UA-1' } = {}) => {
+        const store = new Map();
+        const env = {
+            created: 0, lost: 0,
+            navigator: { userAgent: agent },
+            localStorage: { getItem: k => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, v) },
+            document: { createElement: () => ({ getContext: (type, attrs) => {
+                if (!webgl || (attrs?.failIfMajorPerformanceCaveat && !strict)) return null;
+                env.created++;
+                return {
+                    RENDERER: 1,
+                    getExtension: name => (name === 'WEBGL_debug_renderer_info' ? { UNMASKED_RENDERER_WEBGL: 2 } : name === 'WEBGL_lose_context' ? { loseContext: () => { env.lost++; } } : null),
+                    getParameter: id => (id === 2 ? renderer : 'WebKit WebGL')
+                };
+            } }) }
+        };
+        if (webgl) env.WebGLRenderingContext = function () {};
+        return env;
+    };
+    beforeEach(() => resetSoftwareRenderingCache());
+    afterAll(() => resetSoftwareRenderingCache());
+
+    test('vrai GPU : pas de rendu logiciel, le contexte de test est rendu aussitôt', () => {
+        const env = fakeEnv();
+        expect(detectSoftwareRendering(env)).toBe(false);
+        expect(env.lost).toBe(1);
+    });
+
+    test('contexte « sans réserve de performance » refusé : rendu logiciel', () => {
+        expect(detectSoftwareRendering(fakeEnv({ strict: false }))).toBe(true);
+    });
+
+    test.each(['ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)', 'llvmpipe (LLVM 15.0.7, 256 bits)', 'Microsoft Basic Render Driver'])
+    ('moteur de rendu « %s » : rendu logiciel', (renderer) => {
+        expect(detectSoftwareRendering(fakeEnv({ renderer }))).toBe(true);
+    });
+
+    test('pas de WebGL du tout, ou environnement sans page : on ne conclut rien', () => {
+        expect(detectSoftwareRendering(fakeEnv({ webgl: false }))).toBe(false);
+        expect(detectSoftwareRendering({})).toBe(false);
+    });
+
+    test('résultat mémorisé par navigateur : un seul contexte WebGL créé, refait si le navigateur change', () => {
+        const env = fakeEnv({ strict: false });
+        expect(isSoftwareRendering(env)).toBe(true);
+        const created = env.created;
+        resetSoftwareRenderingCache();
+        expect(isSoftwareRendering(env)).toBe(true);
+        expect(env.created).toBe(created);            // relu dans la mémoire du navigateur
+        resetSoftwareRenderingCache();
+        env.navigator.userAgent = 'UA-2';
+        isSoftwareRendering(env);
+        expect(env.created).toBeGreaterThan(created);  // mise à jour du navigateur : test refait
     });
 });
 
