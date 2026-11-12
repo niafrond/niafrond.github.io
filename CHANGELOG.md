@@ -1,3 +1,9 @@
+## [2.235.0](https://github.com/niafrond/niafrond.github.io/compare/v2.234.0...v2.235.0) (2026-11-12)
+
+### Features
+
+* **match3-quest:** comparer au clic sur les cartes et retirer le bouton Comparer ([627aa72](https://github.com/niafrond/niafrond.github.io/commit/627aa72353d0825fe23980ec21366c489bf1720d))
+
 ## [2.234.0](https://github.com/niafrond/niafrond.github.io/compare/v2.233.0...v2.234.0) (2026-11-12)
 
 ### Features
