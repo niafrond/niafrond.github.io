@@ -1,3 +1,9 @@
+## [2.234.0](https://github.com/niafrond/niafrond.github.io/compare/v2.233.0...v2.234.0) (2026-11-12)
+
+### Features
+
+* **match3-quest:** vendre les doublons en boutique, comparer au clic dans Stuff et corriger le Thé de Clarté d'Esprit ([a0abd47](https://github.com/niafrond/niafrond.github.io/commit/a0abd47a3591b2734c5ec60aa4a2044b739d2bc1))
+
 ## [2.233.0](https://github.com/niafrond/niafrond.github.io/compare/v2.232.0...v2.233.0) (2026-11-12)
 
 ### Features
