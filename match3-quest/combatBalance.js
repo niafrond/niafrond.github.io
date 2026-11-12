@@ -186,7 +186,7 @@ export const DIFFICULTY_TARGET_WIN_RATE = {
     normal: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.72, boss: 0.7 },
     auto: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 },
     hard: { weak: 0.9, normal: 0.72, aggressive: 0.68, elite: 0.62, miniBoss: 0.56, boss: 0.5 },
-    expert: { weak: 0.85, normal: 0.6, aggressive: 0.55, elite: 0.48, miniBoss: 0.42, boss: 0.35 }
+    expert: { weak: 0.68, normal: 0.58, aggressive: 0.48, elite: 0.32, miniBoss: 0.26, boss: 0.3 }   // recalé après les leviers Expert (qì, plafond, rattrapage) : mesuré 66 / 59 / 46 / 31 / 24 / 29 %
 };
 // Référence « ultra difficile » des dégâts (simulation, mode Expert) : rapport de victoire ×0,5, corrigé par catégorie.
 export const EXPERT_WIN_RATIO_FACTOR = 0.5;
@@ -207,12 +207,35 @@ export const MIN_DAMAGE_MULT_BOSS = 0.5;
 // Coup fatal : le multiplicateur ne peut jamais porter un coup ordinaire de l'ennemi (arme, match de crânes, sort, poison) au-delà de
 // HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 60 %), sauf si ses chiffres bruts dépassaient déjà ce seuil.
 export const HIT_SHARE_CAP = 0.4;
-export function cappedEnemyHit(base, mult, heroMaxHp) {
+export function cappedEnemyHit(base, mult, heroMaxHp, share = HIT_SHARE_CAP) {
     const b = Math.max(0, Number(base) || 0);
     if (b <= 0) return 0;
-    const cap = Math.max(b, HIT_SHARE_CAP * Math.max(1, Number(heroMaxHp) || 1));
+    const cap = Math.max(b, (Number(share) > 0 ? Number(share) : HIT_SHARE_CAP) * Math.max(1, Number(heroMaxHp) || 1));
     return Math.max(1, Math.round(Math.min(b * Math.max(0.1, Number(mult) || 1), cap)));
 }
+// Mode Expert (préférence « Expert » uniquement : Auto et les autres modes sont inchangés) : l'ennemi cumule quatre leviers de plus.
+//  1. dégâts × EXPERT_DAMAGE_BONUS (un cran au-dessus du réglage de base) ;
+//  2. plafond d'un coup relevé à EXPERT_HIT_SHARE_CAP des PV max du héros (×1,5 avec un critique : 75 %, un coup plein ne tue toujours pas) ;
+//  3. sorts moins chers en qì (EXPERT_SPELL_COST_FACTOR, arrondi au-dessus, au moins 1) : l'ennemi gagne son qì lentement, il peut enfin lancer ses sorts ;
+//  4. rattrapage d'Att/Déf face à un héros bien plus fort (expertCatchUpPoints).
+export const EXPERT_DAMAGE_BONUS = 1.1;
+export const EXPERT_HIT_SHARE_CAP = 0.5;
+export const EXPERT_SPELL_COST_FACTOR = 0.7;
+export const EXPERT_CATCHUP_THRESHOLD = 20;   // écart (points d'Att ou de Déf) toléré avant le rattrapage
+export const EXPERT_CATCHUP_SHARE = 0.5;      // part de l'écart au-delà du seuil rattrapée
+export const EXPERT_CATCHUP_CAP = 20;         // points d'Att / de Déf ajoutés au plus
+export const isExpertMode = difficulty => difficulty === 'expert';
+/** Points d'Att ou de Déf ajoutés à l'ennemi Expert quand le héros le dépasse de plus de EXPERT_CATCHUP_THRESHOLD points. */
+export function expertCatchUpPoints(heroValue, enemyValue) {
+    const gap = Math.floor(Number(heroValue) || 0) - Math.floor(Number(enemyValue) || 0) - EXPERT_CATCHUP_THRESHOLD;
+    return gap > 0 ? Math.min(EXPERT_CATCHUP_CAP, Math.floor(gap * EXPERT_CATCHUP_SHARE)) : 0;
+}
+/** Coût réel d'une couleur de qì pour un sort d'ennemi (`factor` : EXPERT_SPELL_COST_FACTOR, 1 ou absent = coût du grimoire). */
+export function enemySpellCost(amount, factor = 1) {
+    const a = Math.max(0, Number(amount) || 0);
+    return factor > 0 && factor < 1 ? Math.max(1, Math.ceil(a * factor - 1e-9)) : a;
+}
+
 // Réglage propre à chaque boss de la carte (id → { attack, hp }), trouvé par simulation (tools/balance-search.mjs boss-adjust) : le calibrage
 // par catégorie est une moyenne, or chaque boss a son kit fixe (arme ou non, sorts plus ou moins forts). `attack` divise son attaque en plus du
 // mode (> 1 : moins fort), `hp` multiplie ses PV (durée ramenée vers le milieu de la fenêtre des boss).
@@ -343,9 +366,11 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     // Mode : diviseur de l'attaque (réglage Expert × neutralisation des PV du héros au-delà du plafond) et des bonus du stuff ; PV inchangés.
     const divisor = Math.max(0.25, (modeDivisor ?? MODE_DIVISOR[difficulty]?.[category] ?? 1) * (adjust?.attack ?? 1));
     const expertMult = Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale);
-    const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, Math.max(category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT, expertMult / divisor)) * 100) / 100;
+    const expert = isExpertMode(difficulty);
+    const baseMult = Math.max(category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT, expertMult / divisor);
+    const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
-    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
+    return { hp: finalHp, hpBase: hp, modeDivisor: divisor, hitShareCap: expert ? EXPERT_HIT_SHARE_CAP : HIT_SHARE_CAP, spellCostFactor: expert ? EXPERT_SPELL_COST_FACTOR : 1, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
 }
 
 /** Part de chaque source dans les dégâts infligés (0 à 1) ; sert à repérer un levier qui fait toute la durée (arme, sort ou crânes). */

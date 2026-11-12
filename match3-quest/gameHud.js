@@ -318,7 +318,7 @@ export function enemySpellAsShown(sp){
     let desc = typeof sp.description === 'string' ? sp.description : null;
     for(const key of ['dmg', 'dmgPerTile', 'poisonDmg']) {
         if(!sp[key]) continue;
-        shown[key] = key === 'dmgPerTile' ? Math.max(1, Math.round(sp[key] * m)) : cappedEnemyHit(sp[key], m, player.maxHp);   // comme en combat (plafond des coups)
+        shown[key] = key === 'dmgPerTile' ? Math.max(1, Math.round(sp[key] * m)) : cappedEnemyHit(sp[key], m, player.maxHp, enemy.hitShareCap);   // comme en combat (plafond des coups)
         if(desc) desc = desc.replace(new RegExp(`\\b${sp[key]}\\b`), String(shown[key]));
     }
     if(desc) shown.description = desc;

@@ -3,7 +3,7 @@ import { describe, test, expect, jest, beforeAll, beforeEach } from '@jest/globa
 
 const player = { hp: 100, maxHp: 100, mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 }, combatPoints: 0, resistances: {} };
 const enemy = { level: 5, hp: 100, maxHp: 100, mana: { red: 9, blue: 0, green: 0, yellow: 0, purple: 0 }, combatPoints: 5, spells: [], weapon: null, attack: 10, defense: 5, personality: undefined };
-jest.unstable_mockModule('../../game.js', () => ({ player, enemy, canEntityCastSpell: (e, spell) => (spell.cost || 0) <= e.mana.red }));
+jest.unstable_mockModule('../../game.js', () => ({ player, enemy, canEntityCastSpell: (e, spell) => (spell.cost || 0) <= e.mana.red, spellCostFor: (e, amount) => amount }));
 
 let ai;
 beforeAll(async () => { ai = await import('../../enemyAI.js'); });

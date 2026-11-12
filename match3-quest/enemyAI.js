@@ -2,7 +2,7 @@
 // Gère les décisions stratégiques et le comportement des ennemis en combat
 // Paliers, difficulté choisie et personnalités : enemyAIProfiles.js (module pur). Tirage de l'action : enemyAIChoice.js.
 
-import { player, enemy, canEntityCastSpell } from "./game.js";
+import { player, enemy, canEntityCastSpell, spellCostFor } from "./game.js";
 import { alterationOfSpell } from "./alterations.js";
 import { pickWeightedOption, findLethalOption, applyScoreSharpness } from "./enemyAIChoice.js";
 import { critChance, blockChance, CRIT_MULTIPLIER } from "./combatStats.js";
@@ -60,7 +60,7 @@ export function enemyManaNeeds(spells = enemy.spells, mana = enemy.mana) {
     for (const spell of spells || []) {
         const cost = typeof spell.cost === 'number' ? { [spell.color]: spell.cost } : (spell.cost || {});
         for (const [color, amount] of Object.entries(cost)) {
-            const missing = amount - ((mana && mana[color]) || 0);
+            const missing = spellCostFor(enemy, amount) - ((mana && mana[color]) || 0);   // coût réel (Expert : sorts moins chers)
             if (missing > 0) deficit[color] = (deficit[color] || 0) + missing;
         }
     }
@@ -291,6 +291,12 @@ export function evaluateBoardMove() {
     if (!context.hasUsableSpells && context.enemyCombatPoints < 5) {
         score += 50;
         reason = "besoin urgent de ressources";
+    }
+
+    // Mode Expert (sorts moins chers) : un grimoire que le qì ne permet pas de lancer pousse à remplir le plateau plutôt qu'à frapper sans but.
+    if (currentDifficulty.refillMana && enemy.spellCostFactor < 1 && !context.hasUsableSpells && (enemy.spells || []).length > 0) {
+        score += 30;
+        reason = "remplir son qì";
     }
 
     // Ajustement selon la difficulté

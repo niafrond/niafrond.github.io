@@ -196,3 +196,44 @@ describe('combatBalance : réglage propre à chaque boss', () => {
         expect(Object.keys(BOSS_ADJUST).length).toBeGreaterThan(30);
     });
 });
+
+import { EXPERT_DAMAGE_BONUS, EXPERT_HIT_SHARE_CAP, EXPERT_SPELL_COST_FACTOR, EXPERT_CATCHUP_CAP, EXPERT_CATCHUP_THRESHOLD, expertCatchUpPoints, enemySpellCost, isExpertMode } from '../../combatBalance.js';
+describe('combatBalance : leviers propres au mode Expert', () => {
+    const base = { category: 'normal', heroMaxHp: 400, heroLevel: 30, enemyLevel: 30 };
+    test('Expert : dégâts × EXPERT_DAMAGE_BONUS, plafond de coup relevé, sorts moins chers ; PV inchangés', () => {
+        const hard = calibrateEnemy({ ...base, modeDivisor: 1, difficulty: 'hard' }), exp = calibrateEnemy({ ...base, modeDivisor: 1, difficulty: 'expert' });
+        expect(exp.hp).toBe(hard.hp);
+        expect(exp.damageMult).toBeCloseTo(Math.min(7, hard.damageMult * EXPERT_DAMAGE_BONUS), 1);
+        expect(exp.hitShareCap).toBe(EXPERT_HIT_SHARE_CAP);
+        expect(exp.spellCostFactor).toBe(EXPERT_SPELL_COST_FACTOR);
+    });
+    test('les autres modes ne changent pas (plafond 40 %, coûts du grimoire)', () => {
+        for (const d of ['easy', 'normal', 'auto', 'hard']) {
+            const r = calibrateEnemy({ ...base, difficulty: d });
+            expect(r.hitShareCap).toBe(HIT_SHARE_CAP);
+            expect(r.spellCostFactor).toBe(1);
+        }
+        expect(isExpertMode('expert')).toBe(true);
+        expect(isExpertMode('auto')).toBe(false);
+    });
+    test('plafond relevé : un coup plein, même critique, ne tue toujours pas', () => {
+        expect(EXPERT_HIT_SHARE_CAP).toBeGreaterThan(HIT_SHARE_CAP);
+        expect(EXPERT_HIT_SHARE_CAP * 1.5).toBeLessThan(1);
+        expect(cappedEnemyHit(100, 7, 400, EXPERT_HIT_SHARE_CAP)).toBe(Math.round(400 * EXPERT_HIT_SHARE_CAP));
+        expect(cappedEnemyHit(100, 7, 400)).toBe(Math.round(400 * HIT_SHARE_CAP));
+    });
+    test('coût des sorts d\'ennemi : arrondi au-dessus, au moins 1, inchangé sans facteur', () => {
+        expect(enemySpellCost(9, EXPERT_SPELL_COST_FACTOR)).toBe(7);
+        expect(enemySpellCost(5, EXPERT_SPELL_COST_FACTOR)).toBe(4);
+        expect(enemySpellCost(1, EXPERT_SPELL_COST_FACTOR)).toBe(1);
+        expect(enemySpellCost(9)).toBe(9);
+        expect(enemySpellCost(9, 1)).toBe(9);
+    });
+    test('rattrapage d\'Att/Déf : rien sous le seuil, la moitié de l\'excédent au-delà, plafonné', () => {
+        expect(expertCatchUpPoints(60, 32)).toBe(Math.floor((60 - 32 - EXPERT_CATCHUP_THRESHOLD) * 0.5));
+        expect(expertCatchUpPoints(105, 32)).toBe(EXPERT_CATCHUP_CAP);
+        expect(expertCatchUpPoints(40, 30)).toBe(0);
+        expect(expertCatchUpPoints(30, 100)).toBe(0);
+        expect(expertCatchUpPoints(500, 10)).toBe(EXPERT_CATCHUP_CAP);
+    });
+});

@@ -2,7 +2,7 @@
 
 import { createBossScript, noteChargeDamage } from './bossScript.js';
 import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
-import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
+import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, enemySpellCost, expertCatchUpPoints, isExpertMode, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
 import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
@@ -41,7 +41,7 @@ import { gearManaBonus } from "./manaGear.js";
 
 
 import { cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
-import { setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
+import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
 import { flyManaSpend, flyHeal } from "./manaFlight.js";
@@ -172,7 +172,7 @@ export function setCheatMaxRage(on){ Object.defineProperty(player, 'cheatMaxRage
 export function isCheatMaxRage(){ return player.cheatMaxRage === true; }
 
 // Coût réel d'une couleur de qì pour `entity` : le style de jeu du héros le modifie (playStyles.js), jamais celui d'un ennemi.
-export const spellCostFor = (entity, amount) => (entity === player ? styleSpellCost(entity, amount) : amount);
+export const spellCostFor = (entity, amount) => (entity === player ? styleSpellCost(entity, amount) : enemySpellCost(amount, entity?.spellCostFactor));   // ennemi Expert : sorts moins chers (combatBalance.js)
 
 export function canEntityCastSpell(entity, spell){
     if(!entity || !entity.mana || !spell) return false;
@@ -364,7 +364,7 @@ export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
     // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
-    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp);   // plafond : pas de coup fatal par le multiplicateur
+    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp, enemy.hitShareCap);   // plafond : pas de coup fatal par le multiplicateur
 
     // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
     lastSpellStrike = null;
@@ -642,7 +642,7 @@ export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster)
 
     if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
         const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
-        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp);   // talisman de l'ennemi (plafonné)
+        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp, caster?.hitShareCap);   // talisman de l'ennemi (plafonné)
         const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: poisonDmg });
         log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
     }
@@ -1820,6 +1820,13 @@ function calibrateEnemyForCombat(target){
     target.hp = result.hp;
     target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque
     target.modeDivisor = result.modeDivisor;
+    target.hitShareCap = result.hitShareCap;           // Expert : plafond d'un coup relevé
+    target.spellCostFactor = result.spellCostFactor;   // Expert : sorts moins chers en qì
+    if(isExpertMode(getOption('aiDifficulty'))){
+        // Rattrapage : face à un héros nettement plus fort en Att / Déf (critique / blocage), l'ennemi gagne des points (base de l'ennemi, avant levelEdge).
+        target.attack = (target.attack || 0) + expertCatchUpPoints(rawAttack(player), rawAttack(target));
+        target.defense = (target.defense || 0) + expertCatchUpPoints(rawDefense(player), rawDefense(target));
+    }
     bakeEnemyDamage(target, result.damageMult);
     target.balanceCategory = category;
     target.behavior = createBehavior(target, template);   // comportement distinctif (Dragon de feu, Reine de glace, Chevalier noir)
@@ -1837,7 +1844,7 @@ function bakeEnemyDamage(target, mult){
     target.bakedDamageMult = m;
     target.damageScale = 1;   // plus de multiplicateur caché
     if(target.weapon) {
-        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp) };   // jamais un coup fatal par le seul multiplicateur
+        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp, target.hitShareCap) };   // jamais un coup fatal par le seul multiplicateur
         target.weaponPower = 0;
     }
     // Sorts : leurs chiffres restent ceux du grimoire ; l'ennemi porte un objet magique (non récupérable) qui amplifie en continu
