@@ -361,9 +361,8 @@ body.dark-mode .modal {
     background: rgba(0, 0, 0, 0.78);
 }
 
-/* Montée de niveau : ce que le point change réellement est en vert, le reste reste grisé. */
+/* Montée de niveau : ce que le point change réellement est en vert, les lignes sans effet ne sont pas affichées. */
 .attr-description li.attr-change, .attr-points.attr-change { color: #2e7d32; font-weight: bold; opacity: 1; }
 body.dark-mode .attr-description li.attr-change, body.dark-mode .attr-points.attr-change { color: #7bdc86; }
 body.rt .attr-description li.attr-change, body.rt .attr-points.attr-change { color: #1f7a2e; }
 body.rt.dark-mode .attr-description li.attr-change, body.rt.dark-mode .attr-points.attr-change { color: #7bdc86; }
-.attr-description li:not(.attr-change) { opacity: .7; }
