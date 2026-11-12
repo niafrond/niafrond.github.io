@@ -1,3 +1,9 @@
+## [2.237.1](https://github.com/niafrond/niafrond.github.io/compare/v2.237.0...v2.237.1) (2026-11-12)
+
+### Performance Improvements
+
+* **match3-quest:** réduire la consommation de batterie (boucle de la carte, audio, animations) ([b491bea](https://github.com/niafrond/niafrond.github.io/commit/b491beaef7042ed8038daf7999966d95ace39a3e))
+
 ## [2.237.0](https://github.com/niafrond/niafrond.github.io/compare/v2.236.0...v2.237.0) (2026-11-12)
 
 ### Features
