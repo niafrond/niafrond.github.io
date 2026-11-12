@@ -10,7 +10,7 @@ import { describeManaMax } from './manaGear.js';
 import { describeEffects } from './gearEffects.js';
 import { BIOME_LABELS } from './weapons.js';
 import { previewEquip, equippedCounterpart, isComparable } from './equipPreview.js';
-import { compareButtonHtml, equipDeltaGroupsHtml } from './compareView.js';
+import { compareAttrs, equipDeltaGroupsHtml } from './compareView.js';
 import { rowCardHtml, badgeHtml, cardTipHtml, escapeHtml as esc } from './gameCardUi.js';
 import { bindCardTips } from './gameTooltips.js';
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
@@ -75,7 +75,7 @@ function shopCard(key, obj, kindOfOffer, rarity, { primary, extraMore = '', icon
         name: `${iconHtml} ${escapeHtml(obj.name)}`,
         badges: (rarity === 'rare' || rarity === 'legendary' ? badgeHtml(RARITY_LABEL[rarity]) : '') + (tooLow ? badgeHtml(`Niv. ${obj.minLevel}`, 'rc-badge-warn') : ''),
         sub: `<div class="rc-attrs">${attrs.join('')}</div>${effect}${deltas ? `<div class="rc-deltas-row">${deltas}</div>` : ''}`,
-        primary, more: (special ? '' : compareButtonHtml(kind, obj.id)) + extraMore,
+        primary, more: extraMore, attrs: special ? '' : compareAttrs(kind, obj.id),
         tip: cardTipHtml(escapeHtml(obj.name), [`${RARITY_LABEL[rarity] || ''} • ${price} pièces d'or`], escapeHtml(obj.description || ''))
     });
 }

@@ -3,7 +3,7 @@
 import { player, gameState, log, saveUpdate, updateStats } from './game.js';
 import { getRarityColor, relicSlots, wornRelics, equipRelic, unequipRelic } from './items.js';
 import { MAX_LEVEL } from './experience.js';
-import { compareButtonHtml, gearDeltasHtml, onCompareClick, getCompareSelection } from './compareView.js';
+import { gearDeltasHtml, compareAttrs } from './compareView.js';
 import { rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, escapeHtml as esc, shortText } from './gameCardUi.js';
 import { bindCardTips } from './gameTooltips.js';
 import {
@@ -22,7 +22,7 @@ const stuffTip = stuff => cardTipHtml(escapeHtml(stuff.name), [
     stuff.biomeProtect ? `Au combat dans ce biome, ${escapeHtml(BIOME_PROTECTION_TEXT[stuff.biomeProtect])}.` : ''
 ], escapeHtml(stuff.description || ''));
 
-// Pièce portée (liste « Porté », une ligne par emplacement) : nom et bonus, « Retirer » ; Comparer dans le menu « ⋯ ».
+// Pièce portée (liste « Porté », une ligne par emplacement) : nom et bonus, « Retirer » .
 function wornRow(slot) {
     const stuff = getStuffById(player.stuff[slot]);
     if (!stuff) return emptyRowHtml(escapeHtml(STUFF_SLOT_LABELS[slot]), 'vide');
@@ -32,11 +32,11 @@ function wornRow(slot) {
         name: escapeHtml(stuff.name),
         sub: `<span class="rc-chip">${escapeHtml(STUFF_SLOT_LABELS[slot])}</span><span class="rc-stats">${escapeHtml(describeStuff(stuff))}</span>`,
         primary: `<button type="button" class="rc-btn rc-btn-alt" data-unequip="${slot}" ${lockedInCombat ? 'disabled' : ''}>Retirer</button>`,
-        more: compareButtonHtml('stuff', stuff.id), tip: stuffTip(stuff)
+        tip: stuffTip(stuff), attrs: compareAttrs('stuff', stuff.id)
     });
 }
 
-// Ligne de la collection : nom, écarts avec la pièce portée au même emplacement (sinon ses bonus), « Équiper » ; Comparer dans « ⋯ ».
+// Ligne de la collection : nom, écarts avec la pièce portée au même emplacement (sinon ses bonus), « Équiper » .
 function pieceRow(stuff) {
     const locked = player.level < stuff.minLevel;
     const lockedInCombat = gameState.combatState === 'active';
@@ -47,7 +47,7 @@ function pieceRow(stuff) {
         name: escapeHtml(stuff.name),
         sub: deltas ? `<span class="card-deltas" title="Par rapport à la pièce portée (ou à un emplacement vide)">${deltas}</span>` : `<span class="rc-stats">${escapeHtml(describeStuff(stuff))}</span>`,
         primary: `<button type="button" class="rc-btn" data-equip="${stuff.id}" ${locked || lockedInCombat ? 'disabled' : ''}>${locked ? `Niv. ${stuff.minLevel}` : worn ? 'Remplacer' : 'Équiper'}</button>`,
-        more: compareButtonHtml('stuff', stuff.id), tip: stuffTip(stuff)
+        tip: stuffTip(stuff), attrs: compareAttrs('stuff', stuff.id)
     });
 }
 
@@ -121,19 +121,7 @@ function afterChange(message) {
     renderStuffTab();
 }
 
-// Clic sur une carte (hors boutons) : 1er clic = référence, 2e clic sur une autre pièce = tableau comparatif.
-function markCompareSelection(root) {
-    const sel = getCompareSelection();
-    root.querySelectorAll('.rc[data-rc^="st:"]').forEach(c => c.classList.toggle('compare-picked', !!sel && sel.kind === 'stuff' && c.dataset.rc.split(':')[1] === sel.id));
-}
-
 function onClick(ev) {
-    const card = ev.target.closest('.rc[data-rc^="st:"]');
-    if (card && !ev.target.closest('button, a, input, .rc-more')) {
-        onCompareClick('stuff', card.dataset.rc.split(':')[1]);
-        markCompareSelection(ev.currentTarget);
-        return;
-    }
     const equip = ev.target.closest('[data-equip]');
     if (equip) { if (gameState.combatState !== 'active') afterChange(equipStuff(player, equip.dataset.equip).message); return; }
     const relic = ev.target.closest('[data-relic]');
