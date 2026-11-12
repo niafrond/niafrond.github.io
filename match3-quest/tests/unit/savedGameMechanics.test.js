@@ -800,7 +800,7 @@ describe('sorts avancés (3 à 5 couleurs) et effets de classe', () => {
                 const enemy = createMapEnemy({ templateId, level, enemyId: 'x' });
                 (enemy.spells || []).filter(s => !s.class).forEach(s => {
                     expect(['skullsFromColors', 'cageEnemy']).not.toContain(s.effect);   // exclus (enemies.js) ; les sorts de plateau restent, lancés au hasard
-                    if(s.effect) expect(s.boardSpell).toBe(true);
+                    if(s.effect && s.effect !== 'alterEnemy') expect(s.boardSpell).toBe(true);   // alterEnemy : Prison du Tonnerre Glacé (étourdit le héros)
                 });
                 if (enemy.weapon) expect(enemy.weapon.playerOnly).toBeFalsy();
             }
