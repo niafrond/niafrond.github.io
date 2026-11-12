@@ -1,6 +1,6 @@
 // Options d'affichage et de performance (menu Options), mémorisées par appareil dans localStorage.
 //  - manaFlight : particules de qì qui rejoignent la banque (manaFlight.js) ;
-//  - effects    : 'auto' | 'low' | 'normal' | 'high' — niveau d'effets visuels ('auto' se règle sur l'appareil) ;
+//  - effects    : 'auto' | 'low' | 'normal' | 'high' — niveau d'effets visuels ('auto' se règle sur l'appareil : cœurs, mémoire, rendu logiciel) ;
 //  - speed      : 'slow' | 'normal' | 'fast' — durée des animations de combat et pauses entre les tours ;
 //  - vibration  : vibrations du téléphone (dégâts subis, onde de la perception du qì), désactivables.
 // Accessibilité :
@@ -50,12 +50,48 @@ export function setOption(key, value) {
     return true;
 }
 
+// Rendu logiciel : pas de GPU utilisable (désactivé, sur liste noire) ou GPU émulé par le processeur (SwiftShader, llvmpipe…). Chaque effet
+// visuel y est payé par le processeur, donc par la batterie : le niveau d'effets automatique passe à « réduit », même sur un appareil qui
+// a beaucoup de cœurs et de mémoire. Deux indices sûrs seulement (dans le doute, on ne conclut rien) :
+//  - le navigateur refuse un contexte WebGL « sans réserve de performance » alors qu'il en accorde un sans cette exigence ;
+//  - le nom du moteur de rendu est celui d'un rendu logiciel (le premier indice ne se déclenche pas pour SwiftShader choisi d'office).
+// Le matériel ne change pas : le résultat est mémorisé par navigateur (clé = user agent), le test ne coûte un contexte WebGL qu'une fois.
+export const SOFTWARE_RENDERER_RE = /swiftshader|llvmpipe|softpipe|software|basic render/i;
+const SOFT_GPU_STORAGE_KEY = 'match3quest.softgpu';
+let softwareRendering = null;
+export function detectSoftwareRendering(env = globalThis) {
+    try {
+        if (typeof env.WebGLRenderingContext === 'undefined' || !env.document) return false;   // pas de WebGL du tout : on ne sait rien
+        const strict = env.document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
+        const gl = strict || env.document.createElement('canvas').getContext('webgl');
+        if (!gl) return false;
+        const info = gl.getExtension('WEBGL_debug_renderer_info');
+        const name = String((info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+        gl.getExtension('WEBGL_lose_context')?.loseContext();   // contexte de test rendu tout de suite
+        return !strict || SOFTWARE_RENDERER_RE.test(name);
+    } catch (e) { return false; }
+}
+export function isSoftwareRendering(env = globalThis) {
+    if (softwareRendering !== null) return softwareRendering;
+    const agent = String(env.navigator?.userAgent || '');
+    try {
+        const saved = JSON.parse(env.localStorage?.getItem(SOFT_GPU_STORAGE_KEY) || 'null');
+        if (saved && saved.agent === agent && typeof saved.soft === 'boolean') return (softwareRendering = saved.soft);
+    } catch (e) { /* mémoire illisible : on refait le test */ }
+    softwareRendering = detectSoftwareRendering(env);
+    try { env.localStorage?.setItem(SOFT_GPU_STORAGE_KEY, JSON.stringify({ agent, soft: softwareRendering })); } catch (e) { /* ignoré */ }
+    return softwareRendering;
+}
+/** Tests : oublie le résultat mémorisé pendant la session. */
+export function resetSoftwareRenderingCache() { softwareRendering = null; }
+
 // Niveau d'effets réellement appliqué : 'low' | 'normal' | 'high'.
 export function effectsLevel() {
     if (current.reduceFx) return 'low';
     if (current.effects !== 'auto') return current.effects;
     try {
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'low';
+        if (isSoftwareRendering()) return 'low';
         const cores = navigator.hardwareConcurrency || 4;
         const memory = navigator.deviceMemory; // Go (indéfini sur certains navigateurs)
         if (cores <= 4 || (memory && memory <= 2)) return 'low';
