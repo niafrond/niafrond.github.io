@@ -5,7 +5,7 @@
 import { getItemIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
-import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus } from './merchants.js';
+import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus, duplicateEntries, sellDuplicates } from './merchants.js';
 import { describeManaMax } from './manaGear.js';
 import { describeEffects } from './gearEffects.js';
 import { BIOME_LABELS } from './weapons.js';
@@ -142,6 +142,7 @@ export function renderMerchant(npc, card, hooks = {}) {
     let pending = gameState.combatState === 'active' ? [] : surplusEntries(player).map(e => e.id);
     const drawSell = (note = '') => {
         const entries = sellableEntries(player);
+        const dupes = gameState.combatState === 'active' ? [] : duplicateEntries(player);
         card.innerHTML = `
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             <div class="carnet-tabs"><button type="button" class="carnet-tab" data-mode="buy">Acheter</button><button type="button" class="carnet-tab on" data-mode="sell">Vendre</button></div>
@@ -149,6 +150,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${surplusPopup(pending)}
+            ${dupes.length ? `<button type="button" class="weapon-action sell-dupes" data-sell-dupes title="Garde un exemplaire de chaque objet">Vendre les doublons (+${dupes.reduce((n, e) => n + e.price * e.qty, 0)} ${svgIcon('coin')})</button>` : ''}
             ${entries.length ? entries.map(sellRow).join('') : '<p class="shop-empty">Vous n\'avez rien à vendre.</p>'}
             <button type="button" class="primary merchant-close">Fermer</button>`;
         bindCardTips(card);
@@ -206,6 +208,13 @@ export function renderMerchant(npc, card, hooks = {}) {
             const results = [...pending].map(settle).filter(r => r.ok);
             refresh();
             draw(results.length ? `${results.reduce((n, r) => n + r.gain, 0)} pièces d'or gagnées.` : '');
+            return;
+        }
+        if (ev.target.closest('[data-sell-dupes]')) {
+            if (gameState.combatState === 'active') { draw('La boutique est inaccessible pendant le combat !'); return; }
+            const res = sellDuplicates(player);
+            if (res.ok) { pending = []; refresh(); log(res.message); }
+            draw(res.message);
             return;
         }
         const modeBtn = ev.target.closest('[data-mode]');

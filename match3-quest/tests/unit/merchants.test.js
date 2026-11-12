@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
     MERCHANTS, MERCHANT_IDS, REGION_LEVEL, PRICE_MULT, merchantStock, merchantNpc, availableOffers, buyOffer, offerObject,
-    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf, toggleSellTag, allShieldsTagged, surplusEntries, sellSurplus
+    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf, toggleSellTag, allShieldsTagged, surplusEntries, sellSurplus, duplicateEntries, sellDuplicates
 } from '../../merchants.js';
 import { REGION_LEVEL as WORLD_LEVEL, REGION_ORDER } from '../../world/index.js';
 import { SCREENS } from '../../story.js';
@@ -301,5 +301,25 @@ describe('économie : prix des armes alignés sur ceux des objets, étals fourni
             expect(stock.filter(o => o.section === 'exceptional').length).toBeGreaterThanOrEqual(2);
             expect(stock.filter(o => o.section === 'stuff').length).toBeGreaterThanOrEqual(4);
         });
+    });
+});
+
+
+describe('vendre tous les doublons', () => {
+    const mkItem = (id, type = 'consumable') => ({ id, name: id, type, rarity: 'common', minLevel: 1 });
+    test('garde un exemplaire de chaque objet, sans tag', () => {
+        const h = { gold: 0, weapons: [], inventory: [mkItem('a'), mkItem('a'), mkItem('a'), mkItem('b'), mkItem('c'), mkItem('c')], activeInventoryIndex: null };
+        expect(duplicateEntries(h).map(e => e.qty)).toEqual([2, 1]);
+        const res = sellDuplicates(h);
+        expect(res.ok).toBe(true);
+        expect(res.count).toBe(3);
+        expect(h.inventory.map(i => i.id).sort()).toEqual(['a', 'b', 'c']);
+        expect(h.gold).toBe(res.gain);
+        expect(sellDuplicates(h).ok).toBe(false);
+    });
+    test('les boucliers en double sont aussi réduits à un exemplaire', () => {
+        const h = { gold: 0, weapons: [], inventory: [mkItem('s', 'shield'), mkItem('s', 'shield')], activeInventoryIndex: null };
+        expect(sellDuplicates(h).count).toBe(1);
+        expect(h.inventory).toHaveLength(1);
     });
 });

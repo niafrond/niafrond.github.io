@@ -342,7 +342,10 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         message += `Vous gagnez ${extraTurns} tour${extraTurns > 1 ? 's' : ''} supplémentaire${extraTurns > 1 ? 's' : ''} ! `;
     }
     if(item.effect.randomMana !== undefined) {
-        const manaColors = Object.keys(player.mana);
+        // Tire parmi les couleurs qui ont encore de la place : une couleur pleine ne donnerait rien (repli : toutes si tout est plein).
+        const allColors = Object.keys(player.mana);
+        const roomy = allColors.filter(c => player.mana[c] < (player.manaCaps?.[c] ?? player.maxMana));
+        const manaColors = roomy.length ? roomy : allColors;
         const chosenColor = manaColors[Math.floor(Math.random() * manaColors.length)];
         flyManaGain(true, { [chosenColor]: item.effect.randomMana }, { fromId: 'item-button' });
         const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;

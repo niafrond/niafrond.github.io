@@ -3,7 +3,7 @@
 import { player, gameState, log, saveUpdate, updateStats } from './game.js';
 import { getRarityColor, relicSlots, wornRelics, equipRelic, unequipRelic } from './items.js';
 import { MAX_LEVEL } from './experience.js';
-import { compareButtonHtml, gearDeltasHtml } from './compareView.js';
+import { compareButtonHtml, gearDeltasHtml, onCompareClick, getCompareSelection } from './compareView.js';
 import { rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, escapeHtml as esc, shortText } from './gameCardUi.js';
 import { bindCardTips } from './gameTooltips.js';
 import {
@@ -121,7 +121,19 @@ function afterChange(message) {
     renderStuffTab();
 }
 
+// Clic sur une carte (hors boutons) : 1er clic = référence, 2e clic sur une autre pièce = tableau comparatif.
+function markCompareSelection(root) {
+    const sel = getCompareSelection();
+    root.querySelectorAll('.rc[data-rc^="st:"]').forEach(c => c.classList.toggle('compare-picked', !!sel && sel.kind === 'stuff' && c.dataset.rc.split(':')[1] === sel.id));
+}
+
 function onClick(ev) {
+    const card = ev.target.closest('.rc[data-rc^="st:"]');
+    if (card && !ev.target.closest('button, a, input, .rc-more')) {
+        onCompareClick('stuff', card.dataset.rc.split(':')[1]);
+        markCompareSelection(ev.currentTarget);
+        return;
+    }
     const equip = ev.target.closest('[data-equip]');
     if (equip) { if (gameState.combatState !== 'active') afterChange(equipStuff(player, equip.dataset.equip).message); return; }
     const relic = ev.target.closest('[data-relic]');

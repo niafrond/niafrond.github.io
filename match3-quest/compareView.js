@@ -155,7 +155,7 @@ function refreshHint() {
         bar.addEventListener('click', e => { if (e.target.closest('[data-compare-cancel]')) setSelection(null); });
         document.body.appendChild(bar);
     }
-    bar.innerHTML = `<span>Comparer <strong>${esc(ref.name)}</strong> avec : touchez « Comparer » sur ${ANOTHER[selection.kind]}.</span><button type="button" data-compare-cancel>Annuler</button>`;
+    bar.innerHTML = `<span>Comparer <strong>${esc(ref.name)}</strong> avec : touchez ${ANOTHER[selection.kind]}.</span><button type="button" data-compare-cancel>Annuler</button>`;
 }
 
 function setSelection(sel) {
@@ -185,6 +185,8 @@ function showOverlay(kind, a, b) {
     });
     document.body.appendChild(el);
 }
+
+export const getCompareSelection = () => selection;
 
 export function onCompareClick(kind, id) {
     if (!selection || selection.kind !== kind) { setSelection({ kind, id }); return 'selected'; }
