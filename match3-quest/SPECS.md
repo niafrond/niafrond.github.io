@@ -919,10 +919,4 @@ Spécifications et journal de session de `match3-quest/`.
 
 - 2026-11-13 (infobulle des altérations en combat) : à la demande de l'utilisateur, l'infobulle d'une altération n'explique plus comment la retirer : Ralenti ne mentionne plus le sort de Feu sur la reine de glace, Endormi ne dit plus « tant qu'il ne subit pas de dégâts » (`statusBadges.js`).
 - 2026-11-13 (correctif CI du bestiaire) : le job `test` de la PR #720 échouait sur 5 tests. `nameAudio.js` ajouté à l'import map d'`index.html` (anti-cache) ; plus d'emoji dans le bouton « Écouter » de la soluce (test « aucun emoji ») ; test des sous-titres adapté (épithète seule, sans les caractères) ; « Maîtresse Tong » est rétablie, car son nom fait la clé des pistes de musique de boss (`boss-maitresse-tong-la-lame-de-bronze`) : la renommer demande de renommer aussi les mp3, le catalogue ACE-Step et le manifeste audio. La soluce est régénérée.
-<<<<<<< Updated upstream
-=======
-
-- 2026-11-13 (traduction de 蛟龙) : à la demande de l'utilisateur (« 蛟龙 c'est pas dragon jiao »). La traduction littérale devient « Dragon de rivière » (et « Poisson-dragon de rivière » pour 蛟龙鱼) ; 蛟 seul reste « Jiao ».
-
 - 2026-11-13 (embuscade sur l'eau et la lave) : à la demande de l'utilisateur (« quand on a le Pas de Yu et marche sur l'eau ou la lave, il ne faut pas dire "une créature surgit des hautes herbes" »). Une rencontre déclenchée alors que le héros est sur un liquide (`screen.liquids`) annonce « Une créature vous entraîne sous l'eau » (ou « … dans la lave » dans un écran de volcan) avec le bandeau « Entraîné sous l'eau ! » / « Entraîné dans la lave ! » ; le malus reste celui de l'embuscade (la créature joue en premier avec +2 PA). Les hautes herbes et les roseaux gardent la phrase d'origine. `terrain.js` : `buildPrep` accepte `ambushGround` (`water` | `lava`) ; `exploration.js` mémorise le sol au tirage (`liquidGroundAt`).
->>>>>>> Stashed changes
