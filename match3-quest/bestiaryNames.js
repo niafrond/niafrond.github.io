@@ -19,7 +19,7 @@ export const BESTIARY_NAMES = {
     zhuque: ['Zhū Què', '朱雀'], zhulong_serpent: ['Zhú Lóng', '烛龙'], dijiang: ['Dì Jiāng', '帝江'], yazi: ['Yá Zì', '睚眦'],
     mei: ['Mèi', '魅'], wangliang: ['Wǎng Liǎng', '魍魉'], wangxiang: ['Wǎng Xiàng', '罔象'], shi_jing: ['Shí Líng', '石灵'],
     houtu: ['Hòu Tǔ', '后土'], feima: ['Fēi Mǎ', '飞马'], bashe: ['Bā Shé', '巴蛇'], tiangou_noir: ['Tiān Gǒu', '天狗'],
-    fucanglong: ['Fú Zàng Lóng', '伏藏龙'], dilong: ['Dì Lóng', '地龙'], jing_jing: ['Gǔ Qì Zhī Líng', '古器之灵'], meng_shou: ['Mèng Yǎn Yì Shòu', '梦魇异兽'],
+    fucanglong: ['Fú Cáng Lóng', '伏藏龙'], dilong: ['Dì Lóng', '地龙'], jing_jing: ['Gǔ Qì Zhī Líng', '古器之灵'], meng_shou: ['Mèng Yǎn Yì Shòu', '梦魇异兽'],
     wu_shou: ['Mí Wù Yì Shòu', '迷雾异兽'], he_bo: ['Hé Bó', '河伯'], shui_shen: ['Shuǐ Shén', '水神'], jiao: ['Jiāo', '蛟'],
     bai_she: ['Bái Shé', '白蛇'], heishui_xuan_she: ['Hēi Shuǐ Xuán Shé', '黑水玄蛇'], heilong: ['Hēi Lóng', '黑龙'], bailong: ['Bái Lóng', '白龙'],
     ao: ['Áo', '鳌'], gui_tortue: ['Guī', '龟'], linggui: ['Líng Guī', '灵龟'], xuan_gui: ['Xuán Guī', '玄龟'], bixi: ['Bì Xì', '赑屃'],
