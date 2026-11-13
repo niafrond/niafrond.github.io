@@ -1,4 +1,4 @@
-import { ENVIRONMENT_STATUSES, environmentDamage, cureStatuses, clearEnvironmentStatuses, CURABLE_STATUSES, afflictionsOf } from '../../alterations.js';
+import { healEntity, ENVIRONMENT_STATUSES, environmentDamage, cureStatuses, clearEnvironmentStatuses, CURABLE_STATUSES, afflictionsOf } from '../../alterations.js';
 import { activeStatuses, statusTooltipHtml } from '../../statusBadges.js';
 
 describe('Noyade et Enflammé (malus du milieu)', () => {
@@ -29,5 +29,10 @@ describe('Noyade et Enflammé (malus du milieu)', () => {
         const html = statusTooltipHtml(drowning);
         expect(html).toContain('tout le combat');
         expect(html).not.toMatch(/soign|gu[ée]ri|collier|remède/i);
+    });
+    test('ne bloquent pas les soins : les PV se récupèrent normalement', () => {
+        const hero = { hp: 40, maxHp: 100, statusEffects: { drowning: 4, ablaze: 4 } };
+        expect(healEntity(hero, 25)).toMatchObject({ healed: 25, harmed: 0 });
+        expect(hero.hp).toBe(65);
     });
 });
