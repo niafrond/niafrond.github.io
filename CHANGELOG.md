@@ -1,3 +1,26 @@
+## [2.238.0](https://github.com/niafrond/niafrond.github.io/compare/v2.237.1...v2.238.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** afficher la traduction littérale des noms dans l'infobulle, le carnet et la soluce ([abf3219](https://github.com/niafrond/niafrond.github.io/commit/abf3219c99cfca69990d301c44cc71b5f720ceb4))
+* **match3-quest:** ajouter la prononciation des noms chinois dans le bestiaire et la soluce ([c33a697](https://github.com/niafrond/niafrond.github.io/commit/c33a6973aa2731b6008356a61237075aff6bcd62))
+* **match3-quest:** fusionner les fiches de même nom chinois dans le carnet et la soluce ([0f515e4](https://github.com/niafrond/niafrond.github.io/commit/0f515e4e9b6ba6ccc5ed193cbf9755af0dcaa89f))
+* **match3-quest:** réduire les effets automatiquement en rendu logiciel ([ba8f0ff](https://github.com/niafrond/niafrond.github.io/commit/ba8f0ffc9af1eff80c76d5d5fb57caaac7ae054e))
+
+### Bug Fixes
+
+* **match3-quest:** afficher la traduction littérale comme titre de l'infobulle de l'ennemi ([d91171b](https://github.com/niafrond/niafrond.github.io/commit/d91171b4bb98255d34f31ade535f6ccfdcf37361))
+* **match3-quest:** corriger le pinyin de Fucanglong (cáng) et ajouter le rapport de vérification des noms ([34f0812](https://github.com/niafrond/niafrond.github.io/commit/34f081261c830df65037e3af371d9466de660f26))
+* **match3-quest:** corriger les noms du bestiaire d'après la vérification des 207 ennemis ([bb240de](https://github.com/niafrond/niafrond.github.io/commit/bb240de932f725b9341032cd8c9439b269c634b4))
+* **match3-quest:** préciser les traductions littérales de 执笔术士 et 负屃 ([3e06e66](https://github.com/niafrond/niafrond.github.io/commit/3e06e663a976991d8217b2b795366d71341b78ed))
+* **match3-quest:** régénérer l'audio vide de 大风 et ignorer les fichiers audio vides ([65183c4](https://github.com/niafrond/niafrond.github.io/commit/65183c44dc641205d5f70077e22e0fe4744621e1))
+
+### Performance Improvements
+
+* **match3-quest:** lire la musique en flux au lieu de décoder chaque piste en mémoire ([edf4cbd](https://github.com/niafrond/niafrond.github.io/commit/edf4cbd95df84808829d83580874252a02acb1fa))
+* **match3-quest:** ranger les pistes de musique lues en flux pour ne pas les retélécharger ([6f6dd95](https://github.com/niafrond/niafrond.github.io/commit/6f6dd9577ba56fba2469356148d2dc19606c5b96))
+* **match3-quest:** réduire la surface peinte de la carte et brider le téléchargement de fond sur mobile ([ac95dc6](https://github.com/niafrond/niafrond.github.io/commit/ac95dc63476c310d246e3835e0bb4b11e1edd812))
+
 ## [2.237.1](https://github.com/niafrond/niafrond.github.io/compare/v2.237.0...v2.237.1) (2026-11-12)
 
 ### Performance Improvements
