@@ -209,13 +209,38 @@ function prefetchMedia(request) {
     }).catch(function () { return new Response(null, { status: 502 }); });
 }
 
+// Lecture partielle (Range) d'un média pas encore en cache : c'est ce que fait un élément <audio> (musique en flux). Sans rien ranger, chaque
+// changement de scène retélécharge la piste en réseau mobile. Pour une piste de musique on télécharge donc le fichier complet une seule fois
+// (même téléchargement que celui qui alimentait la lecture : pas d'octets en double), on le range, puis on répond à la plage demandée depuis
+// la copie. Le démarrage attend la fin du téléchargement (2 à 5 Mo) ; en cas d'échec on retombe sur la plage du réseau, sans rien ranger.
+var MUSIC_RE = new RegExp('^' + SCOPE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 'audio/music/');
+var fullFetches = {};   // clé -> téléchargement complet en cours (plusieurs plages demandées en même temps n'en lancent qu'un)
+function partialMiss(request, cache, key) {
+    if (!MUSIC_RE.test(new URL(request.url).pathname)) return fetch(request);
+    if (!fullFetches[key]) {
+        var path = new URL(request.url).pathname.slice(SCOPE_PATH.length);
+        fullFetches[key] = fetch(request.url).then(function (res) {
+            if (!(res.ok && res.status === 200)) throw new Error('HTTP ' + res.status);
+            return clean(res);
+        }).then(function (body) { return cache.put(key, body); }).then(function () {
+            return loadManifest().then(function (manifest) {
+                var entry = manifest.media.filter(function (m) { return m.p === path; })[0];
+                return entry ? rememberHash(path, entry.h) : null;
+            });
+        }).then(function () { delete fullFetches[key]; }, function (err) { delete fullFetches[key]; throw err; });
+    }
+    return fullFetches[key].then(function () {
+        return cache.match(key).then(function (hit) { return hit ? rangeResponse(hit, request.headers.get('Range')) : fetch(request); });
+    }).catch(function () { return fetch(request); });
+}
+
 function mediaResponse(request) {
     if (request.headers.get('X-Prefetch')) return prefetchMedia(request);
     var key = mediaKey(request.url);
     return caches.open(MEDIA_CACHE).then(function (cache) {
         return cache.match(key).then(function (hit) {
             if (hit) return request.headers.get('Range') ? rangeResponse(hit, request.headers.get('Range')) : hit;
-            if (request.headers.get('Range')) return fetch(request);   // lecture partielle d'un fichier absent : on ne met rien en cache
+            if (request.headers.get('Range')) return partialMiss(request, cache, key);
             return fetch(request).then(function (res) {
                 if (res.ok && res.status === 200) {
                     putIfOk(MEDIA_CACHE, key, res.clone());
