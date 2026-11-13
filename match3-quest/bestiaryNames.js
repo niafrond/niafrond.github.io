@@ -71,7 +71,7 @@ export function beastLabel(template) {
     const n = BESTIARY_NAMES[template.id];
     const title = (n && n[2]) || template.title || '';
     if (!n) return { pinyin: '', hanzi: '', heading: template.name, subtitle: title };
-    return { pinyin: n[0], hanzi: n[1], heading: `${n[0]} (${n[1]})`, subtitle: [n[1], title].filter(Boolean).join(' · ') };
+    return { pinyin: n[0], hanzi: n[1], heading: `${n[0]} (${n[1]})`, subtitle: title };
 }
 
 // Nom de l'ennemi dans la barre de stats du combat : caractères (asHanzi) ou pinyin ; sans entrée, le nom du gabarit.

@@ -245,7 +245,7 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity, { showAll = false } = {}
     const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
     const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
     const literal = literalTranslation(enemyEntity?.templateId);
-    if(literal) lines.push(`<div class="enemy-tooltip-row enemy-tooltip-literal">Traduction littérale : ${literal}</div>`);
+    if(literal) lines.push(`<div class="enemy-tooltip-row enemy-tooltip-literal">${literal}</div>`);
 
     if(strongest) {
         const strongMeta = MANA_COLOR_META[strongest.color];

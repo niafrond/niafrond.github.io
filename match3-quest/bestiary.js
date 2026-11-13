@@ -312,6 +312,9 @@ export function matchesBestiary(c, f) {
         && (!f.boss || Boolean(c.boss));
 }
 
+// Compare deux noms sans tons, espaces ni apostrophes (la traduction d'un nom propre n'est pas répétée à côté du pinyin).
+const fold = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s'’-]/g, '').toLowerCase();
+
 // Fiche d'un gabarit : nom, titre, race, force, faiblesse, traits et notice.
 export function bestiaryEntry(template) {
     const strong = strongColorOf(template);
@@ -321,7 +324,7 @@ export function bestiaryEntry(template) {
         name: template.name,
         title: template.title || '',
         ...(({ pinyin, hanzi, heading, subtitle }) => ({ pinyin, hanzi, heading, subtitle }))(beastLabel(template)),
-        literal: literalTranslation(template.id),
+        literal: (l => (l && fold(l) === fold(beastLabel(template).pinyin) ? '' : l))(literalTranslation(template.id)),
         resistances: Object.entries(template.resistanceProfile || {}).sort((a, b) => b[1] - a[1]).map(([color, v]) => ({ color, percent: Math.round(v * 100) })),
         race: template.race || '',
         family: familyOf(template.race),
