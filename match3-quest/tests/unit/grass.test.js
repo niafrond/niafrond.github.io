@@ -458,6 +458,20 @@ describe('eau et lave : agissent comme des buissons', () => {
         const res = walk(s, 3, { random: always });
         expect(res.some(r => r.type === 'combat' && r.wild)).toBe(true);
     });
+    test("sur l'eau ou la lave, la créature n'« surgit » pas des herbes : elle entraîne le héros", () => {
+        const onLiquid = extra => {
+            const s = sessionOf({ liquids: [[1, 2, 10, 1]], aquatic: true, ...extra }, { cells: [[0, 4, 1, 1]], safeSteps: 0 });
+            const res = tryMove(s, 1, 0, { random: seq(0, 0) });
+            return encounterFor(s, res.enemyId, 1).prep;
+        };
+        const water = onLiquid({});
+        expect(water.tags).toEqual(['waterAmbush']);
+        expect(water.lines[0]).toBe("Une créature vous entraîne sous l'eau : elle vous prend par surprise (+2 PA et elle joue en premier).");
+        expect(water).toMatchObject({ enemyFirst: true, enemyBonusPA: 2 });
+        const lava = onLiquid({ biome: 'volcano' });
+        expect(lava.tags).toEqual(['lavaAmbush']);
+        expect(lava.lines[0]).toContain('vous entraîne dans la lave');
+    });
     test('sans herbe sur la carte, la table de la carte sauvage de la région sert de repli', () => {
         const sc = { id: 'x', region: 'volcan', liquids: [[0, 0, 1, 1]], obstacles: [] };
         expect(encounterOf(sc).table.length).toBeGreaterThan(0);
