@@ -24,6 +24,8 @@ async def main():
     a = ap.parse_args()
     import edge_tts
     OUT.mkdir(parents=True, exist_ok=True)
+    for f in OUT.glob('*.mp3'):
+        if f.stat().st_size < 1000: f.unlink()   # fichier vide laissé par un échec réseau : à régénérer
     todo = [h for h in hanzi_list() if a.force or not (OUT / f'{file_id(h)}.mp3').exists()]
     print(f'{len(todo)} noms à générer')
     for i, h in enumerate(todo, 1):
