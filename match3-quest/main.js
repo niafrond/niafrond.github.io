@@ -169,7 +169,7 @@ function init() {
         onAncientArmor: id => { const name = grantStuffPiece(id, 'Armure antique'); saveUpdate(); return name; },
         onQuestReward: ev => {
             if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête');
-            if(ev.reward?.relic) grantQuestRelic(ev.reward.relic);   // relique de quête (Voile d'ombre de Fusang)
+            if(ev.reward?.relic) grantQuestRelic(ev.reward.relic);   // relique de quête (Cháng d'ombre de Fusang)
             if(ev.reward?.ultimate) grantUltimate(ev.reward.ultimate);   // ultime de légende : toutes classes (ultimates.js)
         },
         // Révélation de l'ultime gagné : sa cinématique plein écran, jouée une fois les dialogues de fin de quête terminés

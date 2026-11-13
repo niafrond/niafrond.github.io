@@ -174,7 +174,7 @@ export const allItems = [
     {id:"heaven_seal", name:"Sceau du Ciel", type:"artifact", minLevel:65, rarity:"legendary",
      description:"Augmente HP max de 300, le qì max de 5 et les chances de critique de 1% (permanent)", effect:{permMaxHp:300, permMaxMana:5, permCritChance:1}},
     // Relique de quête (Fusang) : jamais en butin ni en vente. Portée dans un emplacement de relique, elle rend le héros indétectable.
-    {id:SHADOW_RELIC_ID, name:"Voile d'Ombre de Fusang", type:"artifact", minLevel:37, rarity:"legendary", quest:true,
+    {id:SHADOW_RELIC_ID, name:"Cháng d'ombre de Fusang", type:"artifact", minLevel:37, rarity:"legendary", quest:true,
      description:"Les ennemis ne vous remarquent plus, sauf les boss ; les hautes herbes, l'eau et la lave n'attirent plus de combat. Augmente HP max de 30 (permanent)", effect:{permMaxHp:30, stealth:true}},
 ];
 
@@ -534,7 +534,7 @@ export function rechargeReusableItems(player) {
     return recharged;
 }
 
-// Ancienne sauvegarde : le collier du voile d'ombre est devenu la relique « Voile d'ombre de Fusang ». Le collier (et ses PV max s'il était porté) est retiré, la relique rendue.
+// Ancienne sauvegarde : le collier du voile d'ombre est devenu la relique « Cháng d'ombre de Fusang ». Le collier (et ses PV max s'il était porté) est retiré, la relique rendue.
 const OLD_SHADOW_COLLAR = 'collier_voile_d_ombre';
 export function migrateShadowCollar(hero){
     if(!hero?.stuffOwned?.includes?.(OLD_SHADOW_COLLAR)) return false;

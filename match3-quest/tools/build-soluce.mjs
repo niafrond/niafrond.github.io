@@ -513,7 +513,7 @@ function buildStuff() {
 <h3>Les ${collars.length} colliers de quête (introuvables ailleurs)</h3>
 <p>Chaque biome hostile du combat a son collier. Le gagner demande d’aller chercher une relique cachée dans la zone sauvage de la région <em>puis</em> de vaincre le mini-boss qui la garde.</p>
 <div class="grid">${collarCards}</div>
-<p>À Fusang, la quête de Mu la Tisseuse d’ombre ne donne pas un collier mais une <b>relique permanente</b>, le <b>Voile d’Ombre de Fusang</b> : portée dans un emplacement de relique, elle rend le héros indétectable pour les ennemis ordinaires (pas pour les boss), et les hautes herbes, l’eau et la lave n’attirent plus de combat.</p>
+<p>À Fusang, la quête de Mu la Tisseuse d’ombre ne donne pas un collier mais une <b>relique permanente</b>, le <b>Cháng d’ombre de Fusang</b> : portée dans un emplacement de relique, elle rend le héros indétectable pour les ennemis ordinaires (pas pour les boss), et les hautes herbes, l’eau et la lave n’attirent plus de combat.</p>
 <div class="box tip"><b class="t">Conseil</b>Un collier de biome ne se porte pas en même temps qu’un autre collier (un seul emplacement). Équipez celui du biome où vous combattez : volcan, bambous, neige ou mer.</div>
 <h3>Catalogue complet</h3>${bySlot}
 <div class="box info"><b class="t">Butin</b>Les pièces hors quête s’achètent aux marchands, tombent des coffres (palier 1 à 4) ou en butin de victoire. Contre un ennemi de niveau supérieur au vôtre, un stuff rare ou légendaire est garanti.</div>`
@@ -627,7 +627,7 @@ function buildBases() {
         return `<tr><td>${dot(c)}</td><td>${dot(weakTo)}</td></tr>`;
     }).join('');
     const pw = COMPANIONS.map(c => `<tr><td><a href="compagnon-${c.id}.html">${esc(c.name)}</a></td><td>${esc(COMPANION_POWERS[c.id]?.name)}</td><td>${esc(COMPANION_POWERS[c.id]?.text)}</td></tr>`).join('');
-    const bio = allStuff.filter(s => s.biomeProtect).map(s => `<tr><td><a href="stuff-${s.id}.html">${esc(s.name)}</a></td><td>${esc(s.biomeProtect ? BIOME_PROTECTION_LABEL[s.biomeProtect] : 'Fusang')}</td><td>${esc(BIOME_PROTECTION_TEXT[s.biomeProtect])}</td></tr>`).join('') + `<tr><td><b>Voile d’Ombre de Fusang</b> (relique)</td><td>Fusang</td><td>Les ennemis ne vous détectent plus</td></tr>`;
+    const bio = allStuff.filter(s => s.biomeProtect).map(s => `<tr><td><a href="stuff-${s.id}.html">${esc(s.name)}</a></td><td>${esc(s.biomeProtect ? BIOME_PROTECTION_LABEL[s.biomeProtect] : 'Fusang')}</td><td>${esc(BIOME_PROTECTION_TEXT[s.biomeProtect])}</td></tr>`).join('') + `<tr><td><b>Cháng d’ombre de Fusang</b> (relique)</td><td>Fusang</td><td>Les ennemis ne vous détectent plus</td></tr>`;
     write('bases.html', page({
         file: 'bases.html', title: 'Bases du combat', active: 'bases.html',
         desc: 'Faiblesses élémentaires, pouvoirs des compagnons et protections de biome.',

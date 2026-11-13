@@ -191,7 +191,7 @@ export function stuffTotals(hero) {
 }
 
 // Voile d'ombre (relique) : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
-// Indétectable : relique « Voile d'ombre de Fusang » portée (items.js SHADOW_RELIC_ID, avant-dernier biome) ; l'ancien collier est converti à la lecture de la sauvegarde.
+// Indétectable : relique « Cháng d'ombre de Fusang » portée (items.js SHADOW_RELIC_ID, avant-dernier biome) ; l'ancien collier est converti à la lecture de la sauvegarde.
 export const hasStealth = hero => stuffTotals(hero).stealth || (hero?.inventory || []).some(i => i.type === 'artifact' && i.applied && i.effect?.stealth);
 
 export const protectsFromBiome = (hero, biomeRuleKey) => stuffTotals(hero).biomes.has(biomeRuleKey);
