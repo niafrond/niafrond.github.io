@@ -331,6 +331,8 @@
 .carnet-beast-sub { font-size: 0.9em; opacity: 0.85; }
 .carnet-beast-race { font-size: 0.85em; opacity: 0.7; }
 .carnet-beast-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 4px 0; }
+.carnet-speak { border: 1px solid #d9c9a3; background: #fff; border-radius: 6px; padding: 0 6px; cursor: pointer; vertical-align: middle; }
+.carnet-speak[hidden] { display: none; }
 .carnet-beast-more { display: flex; flex-direction: column; gap: 3px; margin: 4px 0; }
 .carnet-beast-lore { margin: 4px 0 0; font-style: italic; line-height: 1.35; }
 .carnet-beast-source { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 6px; font-size: 0.8em; border: 1px solid #5a3e1b; background: #eadfc0; }

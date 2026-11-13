@@ -10,6 +10,7 @@ import { enemyCatalogList } from './enemies.js';
 import { bestiaryEntries, SOURCE_LABELS, creaturePlaces, matchesBestiary } from './bestiary.js';
 import { SCREENS } from './story.js';
 import { MANA_COLORS, elementName } from './elements.js';
+import { playNameAudio, canPlayNameAudio } from './nameAudio.js';
 
 export function createCarnet(env) {
     const { cfg } = env;
@@ -130,7 +131,7 @@ export function createCarnet(env) {
             <div class="carnet-beast" ${data}>
                 <div class="carnet-beast-head">
                     ${img ? `<img class="carnet-beast-sprite" alt="" loading="lazy" src="${img}">` : `<span class="carnet-beast-sprite">${icon('ghost')}</span>`}
-                    <div><b>${env.escapeHtml(e.heading)}</b>${pl?.boss ? ' <span class="carnet-beast-boss">Boss</span>' : ''}${e.subtitle ? `<div class="carnet-beast-sub">${env.escapeHtml(e.subtitle)}</div>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
+                    <div><b>${env.escapeHtml(e.heading)}</b>${e.hanzi ? ` <button type="button" class="carnet-speak" data-speak="${esc(e.hanzi)}" aria-label="Écouter la prononciation de ${esc(e.hanzi)}" title="Écouter la prononciation"${canPlayNameAudio() ? '' : ' hidden'}>${icon('soundOn')}</button>` : ''}${pl?.boss ? ' <span class="carnet-beast-boss">Boss</span>' : ''}${e.subtitle ? `<div class="carnet-beast-sub">${env.escapeHtml(e.subtitle)}</div>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
                 </div>
                 <div class="carnet-beast-stats">
                     <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${env.escapeHtml(e.traits.join(', '))}` : ''}</span>
@@ -178,6 +179,12 @@ export function createCarnet(env) {
             pane.querySelectorAll('input[data-bf]').forEach(el => { if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
             apply();
         });
+        // Prononciation : le bouton n'existe qu'en ligne (le mp3 est téléchargé au clic).
+        pane.addEventListener('click', ev => { const b = ev.target.closest?.('[data-speak]'); if (b) playNameAudio(b.dataset.speak); });
+        const syncSpeak = () => pane.querySelectorAll('[data-speak]').forEach(b => { b.hidden = !canPlayNameAudio(); });
+        window.addEventListener('online', syncSpeak); window.addEventListener('offline', syncSpeak);
+        const prevOff = offBeastScroll;
+        offBeastScroll = () => { window.removeEventListener('online', syncSpeak); window.removeEventListener('offline', syncSpeak); if (prevOff) prevOff(); };
         const top = pane.querySelector('.carnet-totop');
         if (top) {
             const sync = () => { top.hidden = (window.scrollY || document.documentElement.scrollTop || 0) < 300; };
