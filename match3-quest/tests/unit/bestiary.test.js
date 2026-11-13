@@ -154,7 +154,7 @@ describe('noms du bestiaire (pinyin + caractères)', () => {
             const l = beastLabel(t);
             expect({ id: t.id, ok: /^[A-Za-zÀ-ɏ ]+$/.test(l.pinyin) && /^[一-鿿]+$/.test(l.hanzi) }).toEqual({ id: t.id, ok: true });
             expect(l.heading).toBe(`${l.pinyin} (${l.hanzi})`);
-            expect(l.subtitle).toBe(t.title || '');
+            expect(l.subtitle.includes(l.hanzi)).toBe(false);   // les caractères sont déjà dans le titre : le sous-titre n'est que l'épithète
         });
     });
 
