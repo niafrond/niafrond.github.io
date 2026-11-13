@@ -919,3 +919,5 @@ Spécifications et journal de session de `match3-quest/`.
 
 - 2026-11-13 (infobulle des altérations en combat) : à la demande de l'utilisateur, l'infobulle d'une altération n'explique plus comment la retirer : Ralenti ne mentionne plus le sort de Feu sur la reine de glace, Endormi ne dit plus « tant qu'il ne subit pas de dégâts » (`statusBadges.js`).
 - 2026-11-13 (correctif CI du bestiaire) : le job `test` de la PR #720 échouait sur 5 tests. `nameAudio.js` ajouté à l'import map d'`index.html` (anti-cache) ; plus d'emoji dans le bouton « Écouter » de la soluce (test « aucun emoji ») ; test des sous-titres adapté (épithète seule, sans les caractères) ; « Maîtresse Tong » est rétablie, car son nom fait la clé des pistes de musique de boss (`boss-maitresse-tong-la-lame-de-bronze`) : la renommer demande de renommer aussi les mp3, le catalogue ACE-Step et le manifeste audio. La soluce est régénérée.
+
+- 2026-11-13 (traduction de 蛟龙) : à la demande de l'utilisateur (« 蛟龙 c'est pas dragon jiao »). La traduction littérale devient « Dragon aquatique » (et « Poisson-dragon aquatique » pour 蛟龙鱼) ; 蛟 seul reste « Jiao ».
