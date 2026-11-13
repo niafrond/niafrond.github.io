@@ -297,11 +297,41 @@ describe('sw.js — requêtes', () => {
         expect(await (await part('bytes=-3')).text()).toBe('789');
         expect((await part('bytes=20-30')).status).toBe(416);
 
+        // hors musique (dessins) : la plage va au réseau et rien n'est rangé
         const other = await installed();
-        const res = await other.fetchEvent(other.request('audio/music/a.mp3', { headers: { Range: 'bytes=0-3' } }));
+        const res = await other.fetchEvent(other.request('sprites/ultimates/x.png', { headers: { Range: 'bytes=0-1' } }));
         expect(res.status).toBe(200);   // le faux réseau ignore Range : on vérifie surtout l'absence de mise en cache
         await other.flush();
-        expect((await other.caches.open('match3-media-v1')).map.has(`${SCOPE}audio/music/a.mp3`)).toBe(false);
+        expect((await other.caches.open('match3-media-v1')).map.has(`${SCOPE}sprites/ultimates/x.png`)).toBe(false);
+    });
+
+    test('musique lue en flux (Range) et absente du cache : téléchargée en entier une seule fois, rangée, plage servie depuis la copie', async () => {
+        const sw = await installed();
+        const part = range => sw.fetchEvent(sw.request('audio/music/a.mp3', { headers: { Range: range } }));
+        const [a, b] = await Promise.all([part('bytes=0-'), part('bytes=2-5')]);   // deux plages en même temps : un seul téléchargement
+        expect(a.status).toBe(206);
+        expect(await a.text()).toBe('0123456789');
+        expect(await b.text()).toBe('2345');
+        expect(sw.server.calls.filter(c => c.url.endsWith('audio/music/a.mp3'))).toHaveLength(1);
+        expect(sw.server.calls.find(c => c.url.endsWith('audio/music/a.mp3')).init.headers).toBeUndefined();   // le fichier complet, pas la plage
+        await sw.flush(); await sw.flush();
+        const cache = await sw.caches.open('match3-media-v1');
+        expect(cache.map.has(`${SCOPE}audio/music/a.mp3`)).toBe(true);
+        expect(JSON.parse(cache.text(`${SCOPE}__hashes.json`))['audio/music/a.mp3']).toBe('h1');
+        // la scène revient (ou le jeu est relancé hors ligne) : plus aucun réseau
+        sw.server.online = false;
+        const again = await part('bytes=7-');
+        expect(await again.text()).toBe('789');
+        expect(sw.server.calls.filter(c => c.url.endsWith('audio/music/a.mp3'))).toHaveLength(1);
+    });
+
+    test('musique lue en flux : téléchargement complet en échec → plage demandée au réseau, rien n\'est rangé', async () => {
+        const sw = await installed();
+        sw.server.files[`${SCOPE}audio/music/gone.mp3`] = undefined;
+        const res = await sw.fetchEvent(sw.request('audio/music/gone.mp3', { headers: { Range: 'bytes=0-3' } }));
+        expect(res.status).toBe(404);
+        await sw.flush();
+        expect((await sw.caches.open('match3-media-v1')).map.has(`${SCOPE}audio/music/gone.mp3`)).toBe(false);
     });
 });
 
