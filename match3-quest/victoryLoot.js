@@ -1,7 +1,7 @@
 // Butin d'un ennemi de niveau supérieur : le vaincre rapporte à coup sûr de l'équipement rare, du niveau du joueur (jamais
 // au-dessus : il doit pouvoir s'en servir) et d'autant plus rare que l'écart est grand. Module pur (sans DOM).
 
-import { allItems } from './items.js';
+import { lootableItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 
 // Les armes et objets se revendent désormais cher (barème des armes aligné sur celui des objets, voir merchants.js) : un butin à chaque
@@ -69,7 +69,7 @@ export function rollOverleveledLoot(gap, owner = {}, rng = Math.random) {
                 continue;
             }
         }
-        const item = pick(allItems.filter(i => i.minLevel <= level && !(i.type === 'artifact' && ownedArtifacts.has(i.id))), i => i.rarity, rarity, level, rng);
+        const item = pick(lootableItems.filter(i => i.minLevel <= level && !(i.type === 'artifact' && ownedArtifacts.has(i.id))), i => i.rarity, rarity, level, rng);
         if (item) {
             if (item.type === 'artifact') ownedArtifacts.add(item.id);
             loot.push({ kind: 'item', rarity: item.rarity, item });

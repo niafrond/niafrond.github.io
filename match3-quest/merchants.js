@@ -10,7 +10,7 @@
  * Les prix sont ceux du barème de base multipliés par `PRICE_MULT` (très cher). Les armes, boucliers et reliques sont
  * uniques (une fois achetés, plus en rayon) ; les objets rechargeables restent en vente.
  */
-import { allItems, shiftActiveItemIndexes } from './items.js';
+import { allItems, lootableItems, shiftActiveItemIndexes } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 import { lootableStuff, getStuffById, baseStuffPrice, grantStuff } from './stuff.js';
 
@@ -121,7 +121,7 @@ const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
  * la plus haute de niveau ≤ L + 1 ; si le type n'en a pas encore à ce niveau, la plus accessible.
  */
 export function standardItemFor(type, L) {
-    const ofType = allItems.filter(i => i.type === type);
+    const ofType = lootableItems.filter(i => i.type === type);
     if (!ofType.length) return null;
     const lowest = Math.min(...ofType.map(i => RARITY_RANK[i.rarity] ?? 0));
     const pool = ofType.filter(i => (RARITY_RANK[i.rarity] ?? 0) <= Math.min(2, lowest + 1));
@@ -143,7 +143,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
     // Une pièce standard de chaque type d'objet, en rayon en permanence : elle ne sert pas aux tirages rares ci-dessous.
     const standards = STANDARD_TYPES.map(t => standardItemFor(t, L)).filter(Boolean);
     const standardIds = new Set(standards.map(i => i.id));
-    const items = allItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
+    const items = lootableItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
     const weapons = allWeapons.map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
     const all = [...items, ...weapons];
     const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;

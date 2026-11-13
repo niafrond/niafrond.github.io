@@ -14,6 +14,7 @@
 
 import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
+import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
 import { vibrate, armVibration } from './gameOptions.js';
@@ -472,7 +473,7 @@ export function createExplorationView(cfg) {
                 if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; cfg.onQuestReward?.(ev); }
                 if (!ev.paid && ev.reward?.ultimate) afterDialogs(() => cfg.onUltimateLearned?.(ev.reward.ultimate));   // révélation de l'ultime après les dialogues
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
-                const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : '';
+                const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : ev.reward?.relic ? ` · ${(allItems.find(i => i.id === ev.reward.relic)?.name) || 'Relique'}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
                 toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestSealed') {

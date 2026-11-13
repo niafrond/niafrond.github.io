@@ -5,7 +5,6 @@
 //  - des PV max permanents (`maxHp`) tant qu'il est porté : le retirer les retire, les PV actuels suivent à la hausse seulement ;
 //  - une résistance au poison (`poisonResist`, % de dégâts de poison évités, 100 = immunité) ;
 //  - une protection de biome (`biomeProtect` : clé de règle de terrain.js), réservée aux colliers de quête, un par biome hostile :
-//  - l'indétectabilité (`stealth`, collier du voile d'ombre de Fusang, avant-dernier biome) : les ennemis ne détectent plus le héros (voir exploration.js) ;
 //    la lave ne brûle plus (Volcan), les bambous n'envahissent plus (Bambous), la glace ne gèle plus (Neige), la mer ne dérive plus (Mer).
 //
 // Le héros garde `stuffOwned` (ids possédés) et `stuff` ({ head, neck, wrist, ring } : id porté ou null).
@@ -107,7 +106,6 @@ export const allStuff = [
     piece('collier_obsidienne', 'neck', 'Collier d\'obsidienne froide', 4, 'rare', 'Une obsidienne qui ne chauffe jamais : la lave vous est indifférente.', { biomeProtect: 'volcano', maxHp: 10, quest: true }),
     piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
     piece('collier_braise_d_orage', 'neck', 'Collier de braise d\'orage', 22, 'rare', 'Une braise captive dans le cristal : le givre n\'y accroche pas.', { biomeProtect: 'snow', maxHp: 20, quest: true }),
-    piece('collier_voile_d_ombre', 'neck', 'Collier du voile d\'ombre', 37, 'legendary', 'Un fil d\'ombre tressé aux racines de Fusang : les regards glissent sur vous.', { stealth: true, maxHp: 30, quest: true }),
     // Armures antiques : trois armures de quatre pièces (ANTIQUE_ARMORS), gagnées en résolvant les énigmes à plateau (puzzle/levels.js).
     // Chaque pièce est un stuff ordinaire ; portées toutes les quatre, elles déclenchent le pouvoir de l'armure (voir stuffTotals).
     ...Object.entries(ANTIQUE_ARMORS).flatMap(([armor, a]) => a.pieces.map(p => piece(p.id, p.slot, p.name, 15, 'legendary', p.description, { ...p.bonus, quest: true, armor })))
@@ -192,8 +190,9 @@ export function stuffTotals(hero) {
     return totals;
 }
 
-// Collier d'ombre : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
-export const hasStealth = hero => stuffTotals(hero).stealth;
+// Voile d'ombre (relique) : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
+// Indétectable : relique « Cháng d'ombre de Fusang » portée (items.js SHADOW_RELIC_ID, avant-dernier biome) ; l'ancien collier est converti à la lecture de la sauvegarde.
+export const hasStealth = hero => stuffTotals(hero).stealth || (hero?.inventory || []).some(i => i.type === 'artifact' && i.applied && i.effect?.stealth);
 
 export const protectsFromBiome = (hero, biomeRuleKey) => stuffTotals(hero).biomes.has(biomeRuleKey);
 

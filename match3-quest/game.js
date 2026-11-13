@@ -25,7 +25,7 @@ import { recordBossLoss, pickBossTip } from "./bossTips.js";
 
 import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
 
-import { getRarityIcon, applyArtifactEffects, normalizeRelics } from "./items.js";
+import { getRarityIcon, applyArtifactEffects, normalizeRelics, migrateShadowCollar, allItems } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 
 
@@ -849,6 +849,22 @@ export function grantStuffPiece(id, origin = 'Trouvé'){
     return s.name;
 }
 
+// Récompense de quête : une relique permanente (items.js, `quest: true`), rangée dans le sac et portée si un emplacement est libre.
+export function grantQuestRelic(id, origin = 'Récompense de quête'){
+    const item = allItems.find(i => i.id === id && i.type === 'artifact');
+    if(!item) return null;
+    if(!Array.isArray(player.inventory)) player.inventory = [];
+    if(player.inventory.some(i => i.id === id)) return null;
+    player.inventory.push({ ...item, applied: false });
+    log(`${getRarityIcon(item.rarity)} ${origin} : ${item.name} (relique permanente, onglet Stuff) !`);
+    applyArtifactEffects(player);
+    log(item.description);
+    normalizeActiveInventoryIndex();
+    updateInventoryTab();
+    document.dispatchEvent(new Event('stuff-changed'));
+    return item.name;
+}
+
 // Récompense de quête : un ultime de légende, pour toutes les classes. Retourne le sort s'il vient d'être débloqué, sinon null (déjà acquis ou inconnu).
 export function grantUltimate(id, origin = 'Récompense de quête'){
     if(!unlockUltimate(player, id)) return null;
@@ -1430,6 +1446,7 @@ export function loadGameData() {
             player.equipment.rightHand = player.equippedWeapon;
             player.stuffOwned = loaded.stuffOwned ?? [];
             player.stuff = loaded.stuff ?? player.stuff;
+            migrateShadowCollar(player);   // avant normalizeStuff, qui oublie les ids inconnus
             normalizeStuff(player);
             if(player.equipment.leftHand && player.equipment.leftHand.type !== 'shield') player.equipment.leftHand = catalogWeapon(player.equipment.leftHand);
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
