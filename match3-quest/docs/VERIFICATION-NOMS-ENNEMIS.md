@@ -22,7 +22,7 @@ Source : rapport de vérification des entrées 1 à 207. Les identifiants intern
 | `ruiniao` | Rui Niao | Xiangrui Zhi Niao | 祥瑞之鸟 |
 | `xue_niao` | Xue Niao | Xueyu Niao | 雪羽鸟 |
 | `hai_ruo` | Hai Ruo | Bei Hai Ruo | 北海若 |
-| `maitresse_tong` | Maîtresse Tong | Maîtresse du Bronze | 铜刃师 |
+| `maitresse_tong` | Maîtresse Tong | Maîtresse Tong | 铜刃师 |
 
 ## Notices corrigées
 

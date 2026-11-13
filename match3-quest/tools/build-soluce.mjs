@@ -960,7 +960,7 @@ function buildBestiary() {
         return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${group.map(g => `${g.name} ${g.title || ''}`).join(' ')} ${be.pinyin} ${be.hanzi} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor}" data-weak="${be.weakColor}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
   ${group.map(g => (gbaSprite(g.id, 'front') ? `<img class="be-sprite" alt="" loading="lazy" width="64" height="64" src="${gbaSprite(g.id, 'front')}">` : '')).join('')}
   ${group.slice(1).map(g => `<span id="be-${esc(g.id)}"></span>`).join('')}
-  <h3>${esc(be.heading)} ${be.hanzi ? `<button type="button" class="speak" data-speak="${esc([...be.hanzi].map(c => c.codePointAt(0).toString(16)).join('-'))}" aria-label="Écouter la prononciation" title="Écouter la prononciation">🔊 Écouter</button>` : ''} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([be.subtitle, be.race].filter(Boolean).join(' · '))}</small></h3>
+  <h3>${esc(be.heading)} ${be.hanzi ? `<button type="button" class="speak" data-speak="${esc([...be.hanzi].map(c => c.codePointAt(0).toString(16)).join('-'))}" aria-label="Écouter la prononciation" title="Écouter la prononciation">Écouter</button>` : ''} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([be.subtitle, be.race].filter(Boolean).join(' · '))}</small></h3>
   <dl>
     ${be.literal ? `<dt>Traduction littérale</dt><dd>${esc(be.literal)}</dd>` : ''}
     <dt>Force</dt><dd>${be.strongs.map(x => dot(x.color)).join(' · ')}</dd>
