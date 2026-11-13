@@ -1,3 +1,13 @@
+## [2.240.0](https://github.com/niafrond/niafrond.github.io/compare/v2.239.1...v2.240.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** annoncer la protection du collier contre noyade et enflammé ([8dd032b](https://github.com/niafrond/niafrond.github.io/commit/8dd032ba76f795d434b308eedd7bed8db0e0774d))
+
+### Bug Fixes
+
+* **match3-quest:** étendre le fond liquide du combat à tout le cadre du jeu ([5aae032](https://github.com/niafrond/niafrond.github.io/commit/5aae03299691e0e0b9dfee477e877cffd2da7cfb))
+
 ## [2.239.1](https://github.com/niafrond/niafrond.github.io/compare/v2.239.0...v2.239.1) (2026-11-13)
 
 ### Bug Fixes
