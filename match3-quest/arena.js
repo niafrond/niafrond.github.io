@@ -37,7 +37,7 @@ export const ARENA_TIERS = [
     { id: 1, name: 'Cercle de Bronze', waves: 4, baseLevel: 3, statMult: 1.0, rewardMult: 1.0,
       clearGold: 150, clearXp: 1500, guard: 'Disciple de bronze',
       desc: 'Des disciples encore verts, pour se faire la main.',
-      master: { name: 'Maîtresse du Bronze', title: 'la Lame de Bronze', templateId: 'maitresse_tong',
+      master: { name: 'Maîtresse Tong', title: 'la Lame de Bronze', templateId: 'maitresse_tong',
           intro: ["Un archer dans mon cercle ? Montre-moi si ton arc vaut mieux que le bronze.", 'Il vaut ce que vaut ma main. Voyons.'],
           defeat: ["Le bronze sonne juste quand on le frappe bien. Tu l'as bien frappé.", 'La porte du Cercle de Cuivre est à toi.'] } },
     { id: 2, name: 'Cercle de Cuivre', waves: 4, baseLevel: 8, statMult: 1.05, rewardMult: 1.3,
