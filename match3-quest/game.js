@@ -1875,6 +1875,15 @@ export function setCombatBackdrop(biome){
     combatBiomeId = biome || null;
     if(biome && BIOME_LABELS[biome]) document.body.dataset.combatBiome = biome;
     else delete document.body.dataset.combatBiome;
+    delete document.body.dataset.combatGround;   // eau / lave d'une embuscade : reposé par applyTerrainPrep
+}
+
+// Embuscade sous l'eau ou dans la lave : le fond du combat prend la couleur du milieu (CSS `body[data-combat-ground]` de retro.css).
+function setCombatGround(prep){
+    if(typeof document === 'undefined' || !document.body) return;
+    const ground = prep?.playerStatus === 'drowning' ? 'water' : prep?.playerStatus === 'ablaze' ? 'lava' : null;
+    if(ground) document.body.dataset.combatGround = ground;
+    else delete document.body.dataset.combatGround;
 }
 
 const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth.js), abandonné au profit du calibrage de durée
@@ -1988,6 +1997,7 @@ function applyTerrainPrep(){
         Object.assign(enemy.statusEffects, prep.enemyStatus);
         if(prep.enemyStatus.poisoned) enemy.statusEffects.poisonDamage = Math.max(2, Math.ceil(enemy.maxHp / 20));
     }
+    setCombatGround(prep);
     if(prep.playerStatus){   // noyade / enflammé : tout le combat, sans remède ; le collier du biome en préserve en silence
         const info = ENVIRONMENT_STATUSES[prep.playerStatus];
         if(info && !protectsFromBiome(player, info.collar)){
