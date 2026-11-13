@@ -17,6 +17,7 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `boardLayout.js` — Dimensionnement du plateau : taille des cases selon la fenêtre (paysage / portrait), observateur de redimensionnement.
 - `boardSuggestions.js` — Suggestion de coup au joueur (minuteur d'inactivité, surbrillance) et gestion du plateau sans coup possible.
 - `bossTips.js` — (sans description)
+- `focusPause.js` — Pause globale (minuteries, animations, audio) quand la fenêtre perd le focus ou que l'onglet est masqué.
 - `breakReminder.js` — Rappel de pause : une popup bienveillante après 30 min de jeu continu, puis toutes les 15 min.
 - `cheatMode.js` — (sans description)
 - `chestLoot.js` — Butin des coffres d'exploration : en plus de l'or, un coffre peut contenir des potions (consommables),

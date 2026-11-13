@@ -79,6 +79,7 @@
   "explorationViewMap.js",
   "explorationViewOverlays.js",
   "explorationViewPainters.js",
+  "focusPause.js",
   "game.js",
   "gameCardUi.js",
   "gameHud.js",

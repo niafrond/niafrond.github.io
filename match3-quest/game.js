@@ -1298,7 +1298,9 @@ export function handlePlayerDeath(){
     }, PLAYER_DEATH_DELAY_MS);
 }
 
-document.addEventListener('visibilitychange', () => { if(document.hidden) pauseCombatRecord(); else resumeCombatRecord(); });   // page masquée : le chrono du combat s'arrête
+const syncCombatRecordPause = () => { if(document.hidden || document.documentElement.classList.contains('focus-paused')) pauseCombatRecord(); else resumeCombatRecord(); };
+document.addEventListener('visibilitychange', syncCombatRecordPause);
+document.addEventListener('focuspausechange', syncCombatRecordPause);   // page masquée : le chrono du combat s'arrête
 
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){

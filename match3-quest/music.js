@@ -80,7 +80,7 @@ const safe = (fn, fallback) => { try { return fn(); } catch (_) { return fallbac
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const now = () => Date.now();
 
-const isForeground = () => (typeof document === 'undefined' ? true : !document.hidden);
+const isForeground = () => (typeof document === 'undefined' ? true : !document.hidden && !document.documentElement?.classList?.contains('focus-paused'));
 
 function resolveUrl(path) {
     const base = S.env.baseUrl || (typeof import.meta !== 'undefined' ? import.meta.url : undefined);
@@ -367,6 +367,7 @@ export function duckMusic(factor = 0.6, ms = 500) {
     safe(() => { const id = setTimeout(tick, Math.max(0, Number(ms) || 0) + 40); if (id && typeof id.unref === 'function') id.unref(); });   // remontée sans attendre le tick suivant
 }
 
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('focuspausechange', () => tick());   // fenêtre sans focus : coupe/relance le flux (focusPause.js)
 export function pauseMusic() { S.paused = true; tick(); }
 export function resumeMusic() { S.paused = false; tick(); }
 
