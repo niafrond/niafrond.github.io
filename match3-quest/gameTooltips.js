@@ -243,9 +243,8 @@ function getEnemyResistanceInsights(enemyEntity) {
 // (avantage « Faiblesse repérée » du terrain, prep.weaknessRevealed).
 function getEnemyNameTooltipHtml(fullName, enemyEntity, { showAll = false } = {}) {
     const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
-    const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
-    const literal = literalTranslation(enemyEntity?.templateId);
-    if(literal) lines.push(`<div class="enemy-tooltip-row enemy-tooltip-literal">${literal}</div>`);
+    // Titre : la traduction littérale du nom chinois (le nom lui-même est déjà dans la barre de stats) ; sans traduction, le nom reçu.
+    const lines = [`<div class="enemy-tooltip-title">${literalTranslation(enemyEntity?.templateId) || fullName}</div>`];
 
     if(strongest) {
         const strongMeta = MANA_COLOR_META[strongest.color];
