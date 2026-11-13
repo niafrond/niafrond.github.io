@@ -1,3 +1,9 @@
+## [2.238.1](https://github.com/niafrond/niafrond.github.io/compare/v2.238.0...v2.238.1) (2026-11-13)
+
+### Bug Fixes
+
+* **match3-quest:** corriger les tests du bestiaire (import map, emoji, sous-titre, nom de Maîtresse Tong) ([fbf1471](https://github.com/niafrond/niafrond.github.io/commit/fbf1471745155cf6e423b96e38579a25721a3bad))
+
 ## [2.238.0](https://github.com/niafrond/niafrond.github.io/compare/v2.237.1...v2.238.0) (2026-11-13)
 
 ### Features
