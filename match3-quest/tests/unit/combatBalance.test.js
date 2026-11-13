@@ -241,19 +241,19 @@ describe('combatBalance : leviers propres au mode Expert', () => {
 describe('plafond du multiplicateur de dégâts selon le mode', () => {
     const hero = { heroMaxHp: 596, heroLevel: 33, enemyLevel: 31 };
     const cats = ['weak', 'normal', 'aggressive', 'elite', 'miniBoss', 'boss'];
-    test('Facile ×3 et Normal ×4 ; Auto, Difficile et Expert gardent ×7', () => {
-        expect(maxDamageMultFor('easy')).toBe(3);
-        expect(maxDamageMultFor('normal')).toBe(4);
+    test('Facile ×2 et Normal ×5 ; Auto, Difficile et Expert gardent ×7', () => {
+        expect(maxDamageMultFor('easy')).toBe(2);
+        expect(maxDamageMultFor('normal')).toBe(5);
         ['auto', 'hard', 'expert', undefined].forEach(d => expect(maxDamageMultFor(d)).toBe(MAX_DAMAGE_MULT));
         expect(MODE_MAX_DAMAGE_MULT.normal).toBeLessThan(MAX_DAMAGE_MULT);
     });
-    test('en Normal, aucun ennemi (boss compris, même réglé très offensif) ne dépasse ×4', () => {
-        cats.forEach(category => expect(calibrateEnemy({ ...hero, category, difficulty: 'normal' }).damageMult).toBeLessThanOrEqual(4));
-        expect(calibrateEnemy({ ...hero, category: 'boss', difficulty: 'normal', adjust: { attack: 0.15, hp: 1 } }).damageMult).toBe(4);
-        cats.forEach(category => expect(calibrateEnemy({ ...hero, category, difficulty: 'easy' }).damageMult).toBeLessThanOrEqual(3));
+    test('en Normal, aucun ennemi (boss compris, même réglé très offensif) ne dépasse ×5', () => {
+        cats.forEach(category => expect(calibrateEnemy({ ...hero, category, difficulty: 'normal' }).damageMult).toBeLessThanOrEqual(5));
+        expect(calibrateEnemy({ ...hero, category: 'boss', difficulty: 'normal', adjust: { attack: 0.15, hp: 1 } }).damageMult).toBe(5);
+        cats.forEach(category => expect(calibrateEnemy({ ...hero, category, difficulty: 'easy' }).damageMult).toBeLessThanOrEqual(2));
     });
     test("les autres modes ne sont pas touchés (ennemi normal, Expert : ×7)", () => {
         expect(calibrateEnemy({ ...hero, category: 'normal', difficulty: 'expert' }).damageMult).toBe(7);
-        expect(calibrateEnemy({ ...hero, category: 'normal', difficulty: 'auto' }).damageMult).toBeGreaterThan(4);
+        expect(calibrateEnemy({ ...hero, category: 'normal', difficulty: 'auto' }).damageMult).toBeGreaterThan(5);
     });
 });

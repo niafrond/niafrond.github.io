@@ -194,7 +194,7 @@ export const EXPERT_CATEGORY_FACTOR = { weak: 1.44, normal: 1, aggressive: 0.73,
 export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-delà, un coup d'arme suffirait à emporter le héros)
 // Plafond du multiplicateur final (tous ennemis, boss compris) selon le mode : ×7 était trop fort en Facile et en Normal, où le diviseur du mode
 // (< 1 pour les ennemis ordinaires) et le réglage propre à chaque boss le laissaient filer jusqu'au plafond général. Auto, Difficile et Expert : inchangés.
-export const MODE_MAX_DAMAGE_MULT = { easy: 3, normal: 4 };
+export const MODE_MAX_DAMAGE_MULT = { easy: 2, normal: 5 };
 export const maxDamageMultFor = difficulty => MODE_MAX_DAMAGE_MULT[difficulty] ?? MAX_DAMAGE_MULT;
 // Diviseur de l'attaque et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors).
 export const MODE_DIVISOR = {
