@@ -125,6 +125,7 @@
   "spells.json",
   "statBudget.js",
   "statusBadges.js",
+  "statusFlash.js",
   "story.js",
   "storyMirror.js",
   "storyQuests.js",
