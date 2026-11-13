@@ -7,6 +7,7 @@ import { MAX_LEVEL } from './experience.js';
 // Système d'objets et inventaire
 
 // Bibliothèque de tous les objets disponibles
+export const SHADOW_RELIC_ID = 'voile_ombre_fusang';   // relique de quête de Fusang (indétectable)
 export const allItems = [
     // === BOUCLIERS ===
     {id:"jade_shield", name:"Bouclier de Jade", type:"shield", minLevel:5, rarity:"uncommon",
@@ -172,7 +173,13 @@ export const allItems = [
      description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
     {id:"heaven_seal", name:"Sceau du Ciel", type:"artifact", minLevel:65, rarity:"legendary",
      description:"Augmente HP max de 300, le qì max de 5 et les chances de critique de 1% (permanent)", effect:{permMaxHp:300, permMaxMana:5, permCritChance:1}},
+    // Relique de quête (Fusang) : jamais en butin ni en vente. Portée dans un emplacement de relique, elle rend le héros indétectable.
+    {id:SHADOW_RELIC_ID, name:"Voile d'Ombre de Fusang", type:"artifact", minLevel:37, rarity:"legendary", quest:true,
+     description:"Les ennemis ne vous remarquent plus, sauf les boss ; les hautes herbes, l'eau et la lave n'attirent plus de combat. Augmente HP max de 30 (permanent)", effect:{permMaxHp:30, stealth:true}},
 ];
+
+// Objets qui peuvent tomber en butin, se vendre ou se tirer au hasard : sans les reliques de quête.
+export const lootableItems = allItems.filter(item => !item.quest);
 
 // Chances de drop selon la rareté
 const rarityWeights = {
@@ -185,13 +192,13 @@ const rarityWeights = {
 // Obtenir un objet aléatoire selon le niveau du joueur
 export function getRandomItem(playerLevel) {
     // Filtrer les objets disponibles (niveau du joueur + 2 maximum)
-    const availableItems = allItems.filter(item => 
+    const availableItems = lootableItems.filter(item => 
         item.minLevel <= playerLevel + 2 && item.minLevel >= Math.max(1, playerLevel - 3)
     );
     
     if(availableItems.length === 0) {
         // Rien dans la fenêtre de niveau : les meilleurs objets que le joueur peut utiliser (sinon un élixir de niveau 1)
-        const usable = allItems.filter(item => item.minLevel <= playerLevel + 2);
+        const usable = lootableItems.filter(item => item.minLevel <= playerLevel + 2);
         const top = Math.max(0, ...usable.map(item => item.minLevel));
         const best = usable.filter(item => item.minLevel === top);
         return best.length ? best[Math.floor(Math.random() * best.length)] : allItems.find(item => item.id === "healthPotion");
@@ -396,6 +403,8 @@ export function relicSlots(level) {
     return RELIC_SLOTS_MIN + Math.floor((lvl - 1) * (RELIC_SLOTS_MAX - RELIC_SLOTS_MIN) / (MAX_LEVEL - 1));
 }
 export const wornRelics = player => (player?.inventory || []).filter(i => i.type === "artifact" && i.applied);
+/** Le héros porte-t-il le Voile d'ombre : indétectable par les ennemis (hors boss). */
+export const hasShadowRelic = player => wornRelics(player).some(i => i.effect?.stealth);
 
 function shiftRelicEffect(player, item, sign) {
     const e = item.effect || {};
@@ -524,3 +533,22 @@ export function rechargeReusableItems(player) {
 
     return recharged;
 }
+
+// Ancienne sauvegarde : le collier du voile d'ombre est devenu la relique « Voile d'ombre de Fusang ». Le collier (et ses PV max s'il était porté) est retiré, la relique rendue.
+const OLD_SHADOW_COLLAR = 'collier_voile_d_ombre';
+export function migrateShadowCollar(hero){
+    if(!hero?.stuffOwned?.includes?.(OLD_SHADOW_COLLAR)) return false;
+    hero.stuffOwned = hero.stuffOwned.filter(id => id !== OLD_SHADOW_COLLAR);
+    if(hero.stuff?.neck === OLD_SHADOW_COLLAR){
+        hero.stuff.neck = null;
+        hero.maxHp = Math.max(1, (hero.maxHp || 1) - 30);
+        hero.hp = Math.min(hero.hp || hero.maxHp, hero.maxHp);
+    }
+    const item = allItems.find(i => i.id === SHADOW_RELIC_ID);
+    if(item && !(hero.inventory || []).some(i => i.id === SHADOW_RELIC_ID)){
+        if(!Array.isArray(hero.inventory)) hero.inventory = [];
+        hero.inventory.push({ ...item, applied: false });
+    }
+    return true;
+}
+

@@ -40,17 +40,17 @@ const COLLARS = [
           'Un chevalier figé par la tempête la garde en croyant protéger son maître. Rapportez-moi la braise, puis mettez fin à sa veille : je la sertirai dans un collier.'],
       hint: ['La braise d\'orage est au sud-est des Crêtes Foudroyées. Le chevalier figé garde le secteur.'],
       complete: ['La braise est vivante… et le chevalier peut enfin se reposer. Voici votre collier.', 'Tant qu\'il pendra sur votre poitrine, le givre d\'orage ne gèlera plus une seule case. Allez, que la tempête vous reconnaisse.'] },
-    { region: 'fusang', collar: 'collier_voile_d_ombre', questId: 'sq_collar_fusang', level: 37, thanks: 'Prenez soin de l\'arbre, et il prendra soin de vous.',
+    { region: 'fusang', relic: 'voile_ombre_fusang', questId: 'sq_collar_fusang', level: 37, thanks: 'Prenez soin de l\'arbre, et il prendra soin de vous.',
       giver: { id: 'shadow_weaver_mu', name: 'Mu la Tisseuse d\'ombre', title: 'Fileuse des racines dorées',
           idle: ['À Fusang, l\'arbre est si haut que son ombre tombe ailleurs. Je la file. Personne ne remarque jamais la fileuse : c\'est le métier.'] },
       chest: { id: 'collar_fusang_relic', label: 'Fil d\'ombre', openText: 'Entre deux racines dorées, une pelote de fil noir qui ne reflète rien. Votre ombre, elle, hésite un instant avant de vous suivre.' },
       enemy: { id: 'collar_fusang_boss', templateId: 'lei_gong', name: 'Veilleur de l\'ombre dorée', offset: 3 },
-      title: 'Le fil d\'ombre', fragment: 'Collier du voile d\'ombre',
+      title: 'Le fil d\'ombre', fragment: 'Voile d\'ombre de Fusang',
       offer: [
           'Seigneur archer, vous qui marchez devant tous les regards : saviez-vous qu\'on peut passer sans être vu ? Il suffit d\'un fil d\'ombre, filé à l\'ombre de l\'arbre de Fusang. J\'en ai caché une pelote dans les racines, au sud-est.',
-          'Un veilleur de l\'ombre dorée la garde, par habitude plus que par méchanceté. Rapportez-moi le fil, puis délivrez le veilleur : je tresserai un collier que les yeux ne verront pas.'],
+          'Un veilleur de l\'ombre dorée la garde, par habitude plus que par méchanceté. Rapportez-moi le fil, puis délivrez le veilleur : je tisserai un voile que les yeux ne verront pas.'],
       hint: ['Le fil d\'ombre est au sud-est de la zone sauvage de Fusang. Le veilleur rôde non loin du fil.'],
-      complete: ['Le fil est intact… et le veilleur peut enfin fermer les yeux. Voici votre collier du voile d\'ombre.', 'Tant que vous le porterez, aucun ennemi ne vous remarquera. Sauf ceux qui ne regardent jamais ailleurs : les maîtres des soleils.'] },
+      complete: ['Le fil est intact… et le veilleur peut enfin fermer les yeux. Voici le voile d\'ombre de Fusang.', 'Tant que vous le porterez comme relique, aucun ennemi ne vous remarquera. Sauf ceux qui ne regardent jamais ailleurs : les maîtres des soleils.'] },
     { region: 'mer', collar: 'collier_perle_des_marees', questId: 'sq_collar_mer', level: 32, thanks: 'Prenez soin de la mer, et elle prendra soin de vous.',
       giver: { id: 'pearl_diver_meihua', name: 'Mei-Hua', title: 'Plongeuse de perles',
           idle: ['Les courants changent de sens sans prévenir, ici. Mon grand-père disait que seule une perle noire les calme.'] },
@@ -74,16 +74,16 @@ export function applyCollarQuests(screens, quests) {
         const wild = screens[`${c.region}_wild`];
         if (!village || !wild) return;
         const npcPos = placeInLand(village, occupancy(village, screens), c.giver.id);
-        if (!npcPos) throw new Error(`collier ${c.collar} : pas de place pour ${c.giver.id}`);
+        if (!npcPos) throw new Error(`collier ${(c.collar || c.relic)} : pas de place pour ${c.giver.id}`);
         village.npcs.push({
             id: c.giver.id, name: c.giver.name, title: c.giver.title, idle: c.giver.idle, x: npcPos.x, y: npcPos.y,
-            talk: [{ whenDone: c.questId, lines: [`« Ce collier vous va à ravir. ${c.thanks} »`] }]
+            talk: [{ whenDone: c.questId, lines: [`« ${c.relic ? 'Ce voile vous va à ravir.' : 'Ce collier vous va à ravir.'} ${c.thanks} »`] }]
         });
         const chestPos = placeInLand(wild, occupancy(wild, screens), c.chest.id);
-        if (!chestPos) throw new Error(`collier ${c.collar} : pas de place pour la relique`);
+        if (!chestPos) throw new Error(`collier ${(c.collar || c.relic)} : pas de place pour la relique`);
         wild.chests.push({ id: c.chest.id, label: c.chest.label, openText: c.chest.openText, gold: 20 * c.level, x: chestPos.x, y: chestPos.y });
         const enemyPos = placeInLand(wild, occupancy(wild, screens), c.enemy.id);
-        if (!enemyPos) throw new Error(`collier ${c.collar} : pas de place pour le mini-boss`);
+        if (!enemyPos) throw new Error(`collier ${(c.collar || c.relic)} : pas de place pour le mini-boss`);
         wild.enemies.push({
             id: c.enemy.id, templateId: c.enemy.templateId, name: c.enemy.name, kind: 'sentinel', offset: c.enemy.offset,
             permanent: true, aggro: 2, x: enemyPos.x, y: enemyPos.y
@@ -96,7 +96,7 @@ export function applyCollarQuests(screens, quests) {
                 { type: 'kill', target: c.enemy.id, text: `Abattre le mini-boss : ${c.enemy.name} (${wild.name})` }
             ],
             offer: c.offer, hint: c.hint, complete: c.complete,
-            reward: { gold: Math.min(200, 40 + 4 * c.level), fragment: c.fragment, stuff: c.collar, xp: 60 }
+            reward: { gold: Math.min(200, 40 + 4 * c.level), fragment: c.fragment, ...(c.relic ? { relic: c.relic } : { stuff: c.collar }), xp: 60 }
         });
     });
     return screens;

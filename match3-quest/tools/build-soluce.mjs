@@ -21,6 +21,7 @@ import { solvePath, getMode } from '../puzzle/engine.js';
 import '../puzzle/modes.js';
 import { spriteDefs } from '../puzzle/art.js';
 import { ANTIQUE_ARMORS } from '../stuff.js';
+import { allItems } from '../items.js';
 import { LEGENDS } from '../world/legends.js';
 import { playerClasses } from '../classes.js';
 import { RAGE_MAX, ULTIMATE_COST_FACTOR, ultimateCostEntries } from '../ultimates.js';
@@ -393,6 +394,7 @@ function questHtml(q) {
     if (r.gold) rewards.push(`${r.gold} pièces d’or`);
     if (r.xp) rewards.push(`${r.xp} points d’expérience`);
     if (r.stuff) rewards.push(`<a href="stuff-${r.stuff}.html"><strong>${esc(allStuff.find(s => s.id === r.stuff)?.name || r.stuff)}</strong></a> (stuff d’exception)`);
+    if (r.relic) rewards.push(`<strong>${esc(allItems.find(i => i.id === r.relic)?.name || r.relic)}</strong> (relique permanente : ennemis indétectables, hors boss)`);
     if (r.ultimate) rewards.push(`<strong>${esc(String(r.fragment).replace(/^Ultime : /, ''))}</strong> (sort ultime)`);
     else if (r.fragment) rewards.push(`composant de flèche : ${esc(r.fragment)}`);
     const comp = COMPANIONS.find(c => c.joinWhen === q.id);
@@ -500,7 +502,7 @@ function buildStuff() {
     const bySlot = STUFF_SLOTS.map(slot => `<h3>${esc(STUFF_SLOT_LABELS[slot])}s</h3><div class="scroll"><table><tr><th>Nom</th><th>Pièce</th><th>Rareté</th><th>Niv.</th><th>Effets</th></tr>${allStuff.filter(s => s.slot === slot).map(rowOf).join('')}</table></div>`).join('');
     const collarCards = collars.map(c => {
         const q = QUESTS.find(x => x.reward?.stuff === c.id);
-        return `<a class="card" href="stuff-${c.id}.html"><b>${esc(c.name)}</b><span>${esc(q ? regionName(q._region) : '')} · niveau ${c.minLevel}<br>${esc(c.stealth ? 'Indétectable' : BIOME_PROTECTION_TEXT[c.biomeProtect] || '')}</span></a>`;
+        return `<a class="card" href="stuff-${c.id}.html"><b>${esc(c.name)}</b><span>${esc(q ? regionName(q._region) : '')} · niveau ${c.minLevel}<br>${esc(BIOME_PROTECTION_TEXT[c.biomeProtect] || '')}</span></a>`;
     }).join('');
     write('stuff.html', page({
         file: 'stuff.html', title: 'Stuff d’exception', active: 'stuff.html',
@@ -511,6 +513,7 @@ function buildStuff() {
 <h3>Les ${collars.length} colliers de quête (introuvables ailleurs)</h3>
 <p>Chaque biome hostile du combat a son collier. Le gagner demande d’aller chercher une relique cachée dans la zone sauvage de la région <em>puis</em> de vaincre le mini-boss qui la garde.</p>
 <div class="grid">${collarCards}</div>
+<p>À Fusang, la quête de Mu la Tisseuse d’ombre ne donne pas un collier mais une <b>relique permanente</b>, le <b>Voile d’Ombre de Fusang</b> : portée dans un emplacement de relique, elle rend le héros indétectable pour les ennemis ordinaires (pas pour les boss), et les hautes herbes, l’eau et la lave n’attirent plus de combat.</p>
 <div class="box tip"><b class="t">Conseil</b>Un collier de biome ne se porte pas en même temps qu’un autre collier (un seul emplacement). Équipez celui du biome où vous combattez : volcan, bambous, neige ou mer.</div>
 <h3>Catalogue complet</h3>${bySlot}
 <div class="box info"><b class="t">Butin</b>Les pièces hors quête s’achètent aux marchands, tombent des coffres (palier 1 à 4) ou en butin de victoire. Contre un ennemi de niveau supérieur au vôtre, un stuff rare ou légendaire est garanti.</div>`
@@ -624,7 +627,7 @@ function buildBases() {
         return `<tr><td>${dot(c)}</td><td>${dot(weakTo)}</td></tr>`;
     }).join('');
     const pw = COMPANIONS.map(c => `<tr><td><a href="compagnon-${c.id}.html">${esc(c.name)}</a></td><td>${esc(COMPANION_POWERS[c.id]?.name)}</td><td>${esc(COMPANION_POWERS[c.id]?.text)}</td></tr>`).join('');
-    const bio = allStuff.filter(s => s.biomeProtect || s.stealth).map(s => `<tr><td><a href="stuff-${s.id}.html">${esc(s.name)}</a></td><td>${esc(s.biomeProtect ? BIOME_PROTECTION_LABEL[s.biomeProtect] : 'Fusang')}</td><td>${esc(s.stealth ? 'Les ennemis ne vous détectent plus' : BIOME_PROTECTION_TEXT[s.biomeProtect])}</td></tr>`).join('');
+    const bio = allStuff.filter(s => s.biomeProtect).map(s => `<tr><td><a href="stuff-${s.id}.html">${esc(s.name)}</a></td><td>${esc(s.biomeProtect ? BIOME_PROTECTION_LABEL[s.biomeProtect] : 'Fusang')}</td><td>${esc(BIOME_PROTECTION_TEXT[s.biomeProtect])}</td></tr>`).join('') + `<tr><td><b>Voile d’Ombre de Fusang</b> (relique)</td><td>Fusang</td><td>Les ennemis ne vous détectent plus</td></tr>`;
     write('bases.html', page({
         file: 'bases.html', title: 'Bases du combat', active: 'bases.html',
         desc: 'Faiblesses élémentaires, pouvoirs des compagnons et protections de biome.',

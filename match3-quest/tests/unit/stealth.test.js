@@ -1,6 +1,7 @@
 import { buildLegacyWorld } from '../../story.js';
 import { createSession, tryMove, setStealth, aliveEnemies, isTerrainBlocked } from '../../exploration.js';
-import { allStuff, hasStealth, equipStuff, grantStuff, describeStuff, lootableStuff } from '../../stuff.js';
+import { allStuff, hasStealth } from '../../stuff.js';
+import { allItems, lootableItems, SHADOW_RELIC_ID, equipRelic, unequipRelic, migrateShadowCollar } from '../../items.js';
 import { REGION_ORDER } from '../../world/index.js';
 import { QUESTS } from '../../story.js';
 
@@ -41,19 +42,35 @@ describe("collier d'ombre : indétectable, évite les combats (sauf boss)", () =
     test("avec le collier, l'ennemi ne détecte pas le héros", () => {
         expect(walk(true)).toEqual({ type: 'moved' });
     });
-    test("le collier se gagne à l'avant-dernier biome (Fusang), n'est ni en vente ni en butin, et s'équipe", () => {
-        const collar = allStuff.find(s => s.stealth);
-        expect(collar.slot).toBe('neck');
-        expect(collar.quest).toBe(true);
-        expect(lootableStuff()).not.toContain(collar);
+    test("le voile d'ombre est une relique de quête (Fusang), ni en vente ni en butin, qui rend indétectable une fois portée", () => {
+        const relic = allItems.find(i => i.id === SHADOW_RELIC_ID);
+        expect(relic).toMatchObject({ type: 'artifact', quest: true });
+        expect(lootableItems).not.toContain(relic);
+        expect(allStuff.some(s => s.stealth)).toBe(false);   // plus de collier
         expect(REGION_ORDER[REGION_ORDER.length - 3]).toBe('fusang');   // les Hautes-Eaux s'intercalent avant la Lune
         const quest = QUESTS.sq_collar_fusang || (Array.isArray(QUESTS) ? QUESTS.find(q => q.id === 'sq_collar_fusang') : null);
-        expect(quest.reward.stuff).toBe(collar.id);
-        const hero = { stuff: null, stuffOwned: [], maxHp: 50, hp: 50, level: 40 };
-        expect(hasStealth(hero)).toBe(false);
-        grantStuff(hero, collar.id);
-        expect(equipStuff(hero, collar.id).ok).toBe(true);
+        expect(quest.reward.relic).toBe(relic.id);
+        expect(quest.reward.stuff).toBeUndefined();
+        const hero = { level: 40, maxHp: 100, hp: 100, attack: 5, defense: 0, maxMana: 10, inventory: [{ ...relic, applied: false }] };
+        expect(hasStealth(hero)).toBe(false);          // dans le sac, pas portée
+        expect(equipRelic(hero, hero.inventory[0]).ok).toBe(true);
         expect(hasStealth(hero)).toBe(true);
-        expect(describeStuff(collar)).toContain('Indétectable');
+        expect(hero.maxHp).toBe(130);
+        unequipRelic(hero, hero.inventory[0]);
+        expect(hasStealth(hero)).toBe(false);
+        expect(hero.maxHp).toBe(100);
+    });
+});
+
+describe("sauvegarde ancienne : le collier du voile d'ombre devient la relique", () => {
+    test('collier porté : retiré avec ses PV max, relique rendue ; sans collier : rien', () => {
+        const hero = { maxHp: 130, hp: 130, stuffOwned: ['collier_voile_d_ombre', 'collier_obsidienne'], stuff: { neck: 'collier_voile_d_ombre' }, inventory: [] };
+        expect(migrateShadowCollar(hero)).toBe(true);
+        expect(hero.stuffOwned).toEqual(['collier_obsidienne']);
+        expect(hero.stuff.neck).toBeNull();
+        expect(hero.maxHp).toBe(100);
+        expect(hero.inventory.map(i => i.id)).toEqual([SHADOW_RELIC_ID]);
+        expect(migrateShadowCollar(hero)).toBe(false);   // une seule fois
+        expect(migrateShadowCollar({ stuffOwned: [], inventory: [] })).toBe(false);
     });
 });

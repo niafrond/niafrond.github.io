@@ -1,6 +1,7 @@
 // Carnet de voyage de la vue d'exploration : onglets quêtes, voyage rapide, progression, bestiaire.
 // Extrait de explorationView.js : fabrique appelée une fois par createExplorationView, `env` donne accès à l'état partagé de la vue.
 import { getStuffById } from './stuff.js';
+import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
@@ -37,7 +38,7 @@ export function createCarnet(env) {
             .filter(e => carnet.region === 'all' || e.region === carnet.region)
             .sort((a, b) => Number(b.tracked) - Number(a.tracked) || STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
         const chip = (key, label) => `<button type="button" class="carnet-chip${carnet.filter === key ? ' on' : ''}" data-filter="${key}">${label}</button>`;
-        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${env.escapeHtml(r.fragment)}` : '', r.stuff ? `${icon('shield')} ${env.escapeHtml(getStuffById(r.stuff)?.name || 'Stuff')}` : ''].filter(Boolean).join(' · ');
+        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${env.escapeHtml(r.fragment)}` : '', r.stuff ? `${icon('shield')} ${env.escapeHtml(getStuffById(r.stuff)?.name || 'Stuff')}` : '', r.relic ? `${icon('ring')} ${env.escapeHtml(allItems.find(i => i.id === r.relic)?.name || 'Relique')}` : ''].filter(Boolean).join(' · ');
         return `
             <div class="carnet-filters">
                 ${chip('all', 'En cours')}${chip('main', `Principale (${counts.main})`)}${chip('side', `Annexes (${counts.side})`)}${chip('done', `Terminées (${counts.done})`)}
