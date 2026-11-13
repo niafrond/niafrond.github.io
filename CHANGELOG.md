@@ -1,3 +1,9 @@
+## [2.238.2](https://github.com/niafrond/niafrond.github.io/compare/v2.238.1...v2.238.2) (2026-11-13)
+
+### Bug Fixes
+
+* **match3-quest:** ne plus expliquer comment retirer une altération dans l'infobulle de combat ([b296137](https://github.com/niafrond/niafrond.github.io/commit/b2961372ea90b863c392b5ba1f5aad50541621dd))
+
 ## [2.238.1](https://github.com/niafrond/niafrond.github.io/compare/v2.238.0...v2.238.1) (2026-11-13)
 
 ### Bug Fixes
