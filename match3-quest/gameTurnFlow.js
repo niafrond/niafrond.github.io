@@ -11,6 +11,7 @@ import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } fro
 import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
+import { flashStatusDamage } from './statusFlash.js';
 import { ENVIRONMENT_STATUSES, healEntity, tickAlterations, isAsleep, confusedSelfHit, inflictAlteration } from './alterations.js';
 import { stepBossScript, signatureDamage } from './bossScript.js';
 import { stepBehavior, burnOf, BEHAVIOR_INFO, ICE_QUEEN } from './enemyBehaviors.js';
@@ -250,7 +251,7 @@ export function enemyTurn(){
     if((enemy.statusEffects?.poisoned || 0) > 0) {
         // le stuff de l'ennemi peut le protéger du poison (comme celui du héros)
         const poisonDmg = Math.max(0, Math.round(Math.max(1, Math.floor(enemy.statusEffects.poisonDamage || 1)) * (1 - stuffTotals(enemy).poisonResist / 100)));
-        if(poisonDmg > 0) applyDamage(enemy, poisonDmg);
+        if(poisonDmg > 0){ applyDamage(enemy, poisonDmg); flashStatusDamage(false, 'poisoned'); }
         enemy.statusEffects.poisoned--;
         log(poisonDmg > 0 ? `Poison: ${enemy.name} subit ${poisonDmg} dégâts.` : `Poison: ${enemy.name} y résiste grâce à son stuff.`);
         if(enemy.statusEffects.poisoned <= 0) {
@@ -537,6 +538,7 @@ export function finishEnemyTurn(){
             applyDamage(player, poisonDmg);
             player.statusEffects.poisoned--;
             log(`Poison : vous subissez ${poisonDmg} dégâts.`);
+            flashStatusDamage(true, 'poisoned');
             if(player.statusEffects.poisoned <= 0){
                 delete player.statusEffects.poisoned;
                 delete player.statusEffects.poisonDamage;
@@ -550,6 +552,7 @@ export function finishEnemyTurn(){
             applyDamage(player, burnDmg);
             playSfx('burn');
             log(`Brûlure : vous subissez ${burnDmg} dégâts.`);
+            flashStatusDamage(true, 'burning');
             updateStats();
             if(player.hp <= 0){ handlePlayerDeath(); return; }
         }
@@ -559,6 +562,7 @@ export function finishEnemyTurn(){
             applyDamage(player, dmg);
             if(key === 'ablaze') playSfx('burn');
             log(info.log(dmg));
+            flashStatusDamage(true, key);
             updateStats();
             if(player.hp <= 0){ handlePlayerDeath(); return; }
         }
