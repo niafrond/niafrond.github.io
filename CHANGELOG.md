@@ -1,3 +1,14 @@
+## [2.239.0](https://github.com/niafrond/niafrond.github.io/compare/v2.238.2...v2.239.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** ajouter les malus de noyade et d'enflammement aux embuscades liquides ([e1bcafe](https://github.com/niafrond/niafrond.github.io/commit/e1bcafe8bffc395c7d1535c19ba69b6e43e399eb))
+* **match3-quest:** colorer le fond de combat sous l'eau et dans la lave ([8aa8a65](https://github.com/niafrond/niafrond.github.io/commit/8aa8a658ffb2fa1d2284406f48527fe3492e1315))
+
+### Bug Fixes
+
+* **match3-quest:** annoncer une embuscade propre à l'eau et à la lave ([5cfd240](https://github.com/niafrond/niafrond.github.io/commit/5cfd240b2afc7393c1382c1a8e75162c485305b7))
+
 ## [2.238.2](https://github.com/niafrond/niafrond.github.io/compare/v2.238.1...v2.238.2) (2026-11-13)
 
 ### Bug Fixes

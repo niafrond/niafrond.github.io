@@ -154,3 +154,14 @@ export function tickAlterations(entity, rng = Math.random) {
     }
     return msgs;
 }
+
+// Noyade et Enflammé : malus du milieu (sous l'eau, dans la lave) posés par une embuscade (terrain.js). Ils durent tout le combat et ne se
+// soignent pas (ils ne figurent pas dans CURABLE_STATUSES) ; seul le collier du biome (stuff.js : `protectsFromBiome`) en préserve le héros.
+// La valeur du statut est le nombre de PV perdus à chaque tour.
+export const ENVIRONMENT_STATUSES = {
+    drowning: { icon: 'swirl', name: 'Noyade', text: n => `Perd ${n} PV à chaque tour.`, log: n => `Noyade : vous subissez ${n} dégâts.`, collar: 'sea' },
+    ablaze: { icon: 'fire', name: 'Enflammé', text: n => `Perd ${n} PV à chaque tour.`, log: n => `Enflammé : vous subissez ${n} dégâts.`, collar: 'volcano' }
+};
+export const ENVIRONMENT_STATUS_PCT = 0.04;   // % des PV max perdus par tour (au moins 2)
+export const environmentDamage = maxHp => Math.max(2, Math.ceil((maxHp || 0) * ENVIRONMENT_STATUS_PCT));
+export const clearEnvironmentStatuses = entity => { Object.keys(ENVIRONMENT_STATUSES).forEach(k => { if (entity?.statusEffects) delete entity.statusEffects[k]; }); };

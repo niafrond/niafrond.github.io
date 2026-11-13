@@ -1,5 +1,6 @@
 import { icon } from './icons.js';
 import { behaviorBadges } from './enemyBehaviors.js';
+import { ENVIRONMENT_STATUSES } from './alterations.js';
 
 // Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
 
@@ -44,6 +45,9 @@ export function activeStatuses(entity) {
     if (n(se.corrupted) > 0) add('corrupted', 'blood', 'Corrompu', 'debuff', 'Ses soins deviennent des dégâts.', n(se.corrupted));
     if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
     if (n(se.chilled) > 0) add('chilled', 'snow', 'Ralenti', 'debuff', 'Gagne 1 point de combat de moins par match de flèches.', n(se.chilled));
+    for (const [key, info] of Object.entries(ENVIRONMENT_STATUSES)) {
+        if (n(se[key]) > 0) out.push({ id: key, icon: info.icon, label: info.name, kind: 'debuff', text: info.text(n(se[key])), lasting: true });
+    }
     if (n(se.burning) > 0) add('burning', 'fire', 'Brûlé', 'debuff', `Subit ${n(se.burnDamage)} dégâts de feu à chaque tour.`, n(se.burning));
     behaviorBadges(entity?.behavior).forEach(b => add(b.id, b.icon, b.label, b.kind, b.text, b.turns));   // comportement de boss (enemyBehaviors.js)
     // Boss semi-scripté (bossScript.js) : échauffement en cours, attaque dévastatrice dans `charge` tour(s).
@@ -67,7 +71,7 @@ export function statusBadgesHtml(entity) {
 export function statusTooltipHtml(status) {
     return `<div class="spell-tooltip-title">${icon(status.icon)} ${esc(status.label)}</div>`
         + `<div class="spell-tooltip-line">${esc(status.text)}</div>`
-        + `<div class="spell-tooltip-line"><strong>${status.kind === 'buff' ? 'Bonus' : 'Malus'}</strong>${status.turns ? ` · ${turns(status.turns)} restant${status.turns > 1 ? 's' : ''}` : ' · jusqu\'à utilisation'}</div>`;
+        + `<div class="spell-tooltip-line"><strong>${status.kind === 'buff' ? 'Bonus' : 'Malus'}</strong>${status.turns ? ` · ${turns(status.turns)} restant${status.turns > 1 ? 's' : ''}` : status.lasting ? ' · tout le combat' : ' · jusqu\'à utilisation'}</div>`;
 }
 
 /** Lignes de l'infobulle d'un combattant : un bonus/malus par ligne (vide si aucun effet). */

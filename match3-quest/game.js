@@ -41,7 +41,7 @@ import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
 import { gearManaBonus } from "./manaGear.js";
 
 
-import { cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
+import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
 import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
 import { animationFactor, getOption, vibrate } from "./gameOptions.js";
 import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
@@ -1235,7 +1235,7 @@ export function restartCombat({ keepHp = false } = {}){
     player.tempCritChance = 0;
     clearStatBuffs(player);
     clearStatBuffs(enemy);
-    if(player.statusEffects){ delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; delete player.statusEffects.controlResist; }   // le poison et la résistance aux contrôles ne survivent pas au combat
+    if(player.statusEffects){ clearEnvironmentStatuses(player); delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; delete player.statusEffects.controlResist; }   // le poison et la résistance aux contrôles ne survivent pas au combat
     // Réinitialiser le statut du jeu
     setGameStarted(false);
     // Appliquer les aptitudes de début de combat
@@ -1875,6 +1875,15 @@ export function setCombatBackdrop(biome){
     combatBiomeId = biome || null;
     if(biome && BIOME_LABELS[biome]) document.body.dataset.combatBiome = biome;
     else delete document.body.dataset.combatBiome;
+    delete document.body.dataset.combatGround;   // eau / lave d'une embuscade : reposé par applyTerrainPrep
+}
+
+// Embuscade sous l'eau ou dans la lave : le fond du combat prend la couleur du milieu (CSS `body[data-combat-ground]` de retro.css).
+function setCombatGround(prep){
+    if(typeof document === 'undefined' || !document.body) return;
+    const ground = prep?.playerStatus === 'drowning' ? 'water' : prep?.playerStatus === 'ablaze' ? 'lava' : null;
+    if(ground) document.body.dataset.combatGround = ground;
+    else delete document.body.dataset.combatGround;
 }
 
 const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth.js), abandonné au profit du calibrage de durée
@@ -1987,6 +1996,14 @@ function applyTerrainPrep(){
         if(!enemy.statusEffects) enemy.statusEffects = {};
         Object.assign(enemy.statusEffects, prep.enemyStatus);
         if(prep.enemyStatus.poisoned) enemy.statusEffects.poisonDamage = Math.max(2, Math.ceil(enemy.maxHp / 20));
+    }
+    setCombatGround(prep);
+    if(prep.playerStatus){   // noyade / enflammé : tout le combat, sans remède ; le collier du biome en préserve en silence
+        const info = ENVIRONMENT_STATUSES[prep.playerStatus];
+        if(info && !protectsFromBiome(player, info.collar)){
+            if(!player.statusEffects) player.statusEffects = {};
+            player.statusEffects[prep.playerStatus] = environmentDamage(player.maxHp);
+        }
     }
     prep.lines.forEach(line => log(line));
     if(prep.boardBoost) pendingBoardBoost = { color: enemy.weakColor, count: prep.boardBoost.count };

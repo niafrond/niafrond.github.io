@@ -833,6 +833,12 @@ export function tryMove(session, dx, dy, ctx = {}) {
     return out;
 }
 
+// Sol du héros pour la phrase d'embuscade : 'water' ou 'lava' (volcan) s'il est sur un liquide, null sinon (herbes, roseaux).
+function liquidGroundAt(screen, x, y) {
+    if (!inRect(screen.liquids || [], x, y)) return null;
+    return screen.biome === 'volcano' ? 'lava' : 'water';
+}
+
 // Tirage de rencontre après un pas sur l'herbe : null (rien) ou { type: 'combat', enemyId: 'wild:<écran>:<n>', wild: true }.
 // Pas de rencontre pendant la grâce ni dans les `safeSteps` premiers pas ; ensuite probabilité `rate` par pas. Tirage pondéré
 // dans la table. Deux appels à `ctx.random` (RNG injectable, défaut Math.random) : succès du pas, puis choix dans la table.
@@ -854,7 +860,8 @@ function rollWildEncounter(session, ctx = {}) {
     // uniquement, jamais dans la sauvegarde ni dans l'index des ennemis de carte.
     rt.wildDefs[id] = {
         screenId: screen.id,
-        def: { id, templateId: entry.templateId, name: entry.name, kind: 'wild', offset: entry.offset, wild: true }
+        def: { id, templateId: entry.templateId, name: entry.name, kind: 'wild', offset: entry.offset, wild: true },
+        ground: liquidGroundAt(screen, session.data.x, session.data.y)
     };
     Object.keys(rt.wildDefs).slice(0, -WILD_KEEP).forEach(k => { delete rt.wildDefs[k]; });
     resetGrassSteps(session);
@@ -1062,11 +1069,11 @@ export function prepFor(session, def) {
 // Rencontre d'herbe : mêmes champs qu'un ennemi normal. Niveau = niveau de la région de la carte + décalage de la table
 // (plancher 1) + Nouvelle Partie + (comme enemyLevel) ; jamais de boss ni de duel ; préparation du terrain neutre.
 // Le dessin est celui du gabarit (spriteKey = templateId, résolu dans sprites/ comme pour tout ennemi de carte).
-function wildEncounter(session, { def, screenId }) {
+function wildEncounter(session, { def, screenId, ground }) {
     const screen = session.screens[screenId];
     const level = levelFor(session, def);
     return {
-        prep: buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic }),   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
+        prep: buildPrep({ mimic: Boolean(def.mimic), grassAmbush: !def.mimic, ambushGround: ground }),   // mimique démasquée ou créature des hautes herbes : attaque par surprise (terrain.js)
         biome: screen?.biome || null,
         enemyId: def.id,
         spriteKey: def.spriteKey || def.templateId,

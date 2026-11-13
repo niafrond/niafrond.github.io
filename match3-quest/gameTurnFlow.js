@@ -11,7 +11,7 @@ import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } fro
 import { arenaRewardBonus, arenaTier } from './arena.js';
 import { makeDecision, logDecision } from './enemyAI.js';
 import { rollOverleveledLoot, effectiveDropChance } from './victoryLoot.js';
-import { healEntity, tickAlterations, isAsleep, confusedSelfHit, inflictAlteration } from './alterations.js';
+import { ENVIRONMENT_STATUSES, healEntity, tickAlterations, isAsleep, confusedSelfHit, inflictAlteration } from './alterations.js';
 import { stepBossScript, signatureDamage } from './bossScript.js';
 import { stepBehavior, burnOf, BEHAVIOR_INFO, ICE_QUEEN } from './enemyBehaviors.js';
 import { tickSpellCooldowns } from './spellCooldown.js';
@@ -550,6 +550,15 @@ export function finishEnemyTurn(){
             applyDamage(player, burnDmg);
             playSfx('burn');
             log(`Brûlure : vous subissez ${burnDmg} dégâts.`);
+            updateStats();
+            if(player.hp <= 0){ handlePlayerDeath(); return; }
+        }
+        for(const [key, info] of Object.entries(ENVIRONMENT_STATUSES)){   // Noyade / Enflammé : dégâts réguliers, sans fin avant la fin du combat
+            const dmg = Math.floor(player.statusEffects?.[key] || 0);
+            if(dmg <= 0) continue;
+            applyDamage(player, dmg);
+            if(key === 'ablaze') playSfx('burn');
+            log(info.log(dmg));
             updateStats();
             if(player.hp <= 0){ handlePlayerDeath(); return; }
         }
