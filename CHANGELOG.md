@@ -1,3 +1,9 @@
+## [2.242.0](https://github.com/niafrond/niafrond.github.io/compare/v2.241.1...v2.242.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** faire clignoter les altérations qui infligent des dégâts ([3a58fe6](https://github.com/niafrond/niafrond.github.io/commit/3a58fe62d0756ffc32f1ad2159d1108d4418f251))
+
 ## [2.241.1](https://github.com/niafrond/niafrond.github.io/compare/v2.241.0...v2.241.1) (2026-11-13)
 
 ### Bug Fixes
