@@ -306,8 +306,8 @@ export function matchesBestiary(c, f) {
     const q = String(f.q || '').trim().toLowerCase();
     return (!q || String(c.name || '').toLowerCase().includes(q))
         && (!f.family || c.family === f.family)
-        && (!f.resist || c.resist === f.resist)
-        && (!f.weak || c.weak === f.weak)
+        && (!f.resist || String(c.resist || '').split(' ').includes(f.resist))
+        && (!f.weak || String(c.weak || '').split(' ').includes(f.weak))
         && (!f.zone || (c.zones || []).includes(f.zone))
         && (!f.boss || Boolean(c.boss));
 }
@@ -345,4 +345,52 @@ export function bestiaryEntries(catalog, knownIds) {
     const entries = list.filter(t => known.has(t.id)).map(bestiaryEntry)
         .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     return { entries, known: entries.length, total: list.length };
+}
+
+// Gabarits de même nom chinois (Bai Ze commun et élite, Pixiu…) : une seule fiche dans le carnet et la soluce. Renvoie des groupes de gabarits.
+export function groupByName(templates) {
+    const groups = [];
+    const byHanzi = new Map();
+    for (const t of templates) {
+        const hanzi = beastLabel(t).hanzi;
+        const g = hanzi && byHanzi.get(hanzi);
+        if (g) { g.push(t); continue; }
+        const created = [t];
+        groups.push(created);
+        if (hanzi) byHanzi.set(hanzi, created);
+    }
+    return groups;
+}
+
+const uniq = list => [...new Set(list.filter(Boolean))];
+
+// Fusionne les fiches (bestiaryEntry) d'un même groupe : titres, forces, faiblesses, traits et notices réunis ; le reste vient de la première.
+export function mergeEntries(entries) {
+    const groups = new Map();
+    const out = [];
+    for (const e of entries) {
+        const g = e.hanzi && groups.get(e.hanzi);
+        if (!g) {
+            const m = { ...e, ids: [e.id], subtitles: [e.subtitle], lores: [e.lore], strongs: [{ color: e.strongColor, element: e.strongElement }], weaks: [{ color: e.weakColor, element: e.weakElement }] };
+            out.push(m);
+            if (e.hanzi) groups.set(e.hanzi, m);
+            continue;
+        }
+        g.ids.push(e.id);
+        g.subtitles.push(e.subtitle);
+        g.lores.push(e.lore);
+        g.strongs.push({ color: e.strongColor, element: e.strongElement });
+        g.weaks.push({ color: e.weakColor, element: e.weakElement });
+        g.traits = uniq([...g.traits, ...e.traits]);
+    }
+    for (const m of out) {
+        m.subtitle = uniq(m.subtitles).join(' / ');
+        m.lores = uniq(m.lores);
+        const distinct = list => list.filter((x, i) => x.color && list.findIndex(y => y.color === x.color) === i);
+        m.strongs = distinct(m.strongs);
+        m.weaks = distinct(m.weaks);
+        m.strongColor = m.strongs.map(x => x.color).join(' ');
+        m.weakColor = m.weaks.map(x => x.color).join(' ');
+    }
+    return out;
 }

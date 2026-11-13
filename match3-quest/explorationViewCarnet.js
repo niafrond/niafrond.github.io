@@ -7,7 +7,7 @@ import { worldZones } from './worldMap.js';
 import { gbaSprite } from './sprites/index.js';
 import { icon, manaIcon } from './icons.js';
 import { enemyCatalogList } from './enemies.js';
-import { bestiaryEntries, SOURCE_LABELS, creaturePlaces, matchesBestiary } from './bestiary.js';
+import { bestiaryEntries, SOURCE_LABELS, creaturePlaces, matchesBestiary, mergeEntries } from './bestiary.js';
 import { SCREENS } from './story.js';
 import { MANA_COLORS, elementName } from './elements.js';
 import { playNameAudio, canPlayNameAudio } from './nameAudio.js';
@@ -123,10 +123,10 @@ export function createCarnet(env) {
             <button type="button" class="carnet-chip" data-bf-reset>Réinitialiser</button>
         </div>
         <p class="carnet-hint carnet-bcount" role="status" aria-live="polite"></p>`;
-        return `${head}${filters}<div class="carnet-bestiary">${entries.map(e => {
+        return `${head}${filters}<div class="carnet-bestiary">${mergeEntries(entries).map(e => {
             const img = gbaSprite(e.id, 'front');
-            const pl = places.get(e.id);
-            const data = `data-name="${esc(`${e.name} ${e.pinyin} ${e.hanzi} ${e.title} ${e.race}`.toLowerCase())}" data-family="${esc(e.family)}" data-resist="${e.strongColor || ''}" data-weak="${e.weakColor || ''}" data-zones="${esc([...(pl?.zones || [])].join(' '))}" data-boss="${pl?.boss ? 1 : ''}"`;
+            const pl = { zones: new Set(e.ids.flatMap(id => [...(places.get(id)?.zones || [])])), boss: e.ids.some(id => places.get(id)?.boss) };
+            const data = `data-name="${esc(`${e.name} ${e.pinyin} ${e.hanzi} ${e.title} ${e.race}`.toLowerCase())}" data-family="${esc(e.family)}" data-resist="${e.strongColor}" data-weak="${e.weakColor}" data-zones="${esc([...(pl?.zones || [])].join(' '))}" data-boss="${pl?.boss ? 1 : ''}"`;
             return `
             <div class="carnet-beast" ${data}>
                 <div class="carnet-beast-head">
@@ -134,15 +134,15 @@ export function createCarnet(env) {
                     <div><b>${env.escapeHtml(e.heading)}</b>${e.hanzi ? ` <button type="button" class="carnet-speak" data-speak="${esc(e.hanzi)}" aria-label="Écouter la prononciation de ${esc(e.hanzi)}" title="Écouter la prononciation"${canPlayNameAudio() ? '' : ' hidden'}>${icon('soundOn')}</button>` : ''}${pl?.boss ? ' <span class="carnet-beast-boss">Boss</span>' : ''}${e.subtitle ? `<div class="carnet-beast-sub">${env.escapeHtml(e.subtitle)}</div>` : ''}<div class="carnet-beast-race">${env.escapeHtml(e.race)}</div></div>
                 </div>
                 <div class="carnet-beast-stats">
-                    <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${env.escapeHtml(e.traits.join(', '))}` : ''}</span>
-                    <span>${icon('target')} Faiblesse : ${element(e.weakColor, e.weakElement)}</span>
+                    <span>${icon('shield')} Force : ${e.strongs.map(x => element(x.color, x.element)).join(' · ') || '?'}${e.traits.length ? ` · ${env.escapeHtml(e.traits.join(', '))}` : ''}</span>
+                    <span>${icon('target')} Faiblesse : ${e.weaks.map(x => element(x.color, x.element)).join(' · ') || '?'}</span>
                 </div>
                 <div class="carnet-beast-more">
                     ${e.literal ? `<span>${icon('book')} Traduction littérale : ${env.escapeHtml(e.literal)}</span>` : ''}
                     ${e.resistances.length ? `<span>${icon('shield')} Résistances : ${e.resistances.map(r => `${manaIcon(r.color)} ${r.percent} %`).join(' · ')}</span>` : ''}
                     ${pl?.zones?.size ? `<span>${icon('map')} Où : ${env.escapeHtml([...pl.zones].map(id => SCREENS[id]?.name).filter(Boolean).join(', '))}</span>` : ''}
                 </div>
-                <p class="carnet-beast-lore">${icon('scroll')} ${env.escapeHtml(e.lore)}</p>
+                ${e.lores.map(l => `<p class="carnet-beast-lore">${icon('scroll')} ${env.escapeHtml(l)}</p>`).join('')}
                 <div class="carnet-beast-source ${e.source}">${icon('book')} ${env.escapeHtml(SOURCE_LABELS[e.source] || e.source)}</div>
             </div>`;
         }).join('')}</div>
