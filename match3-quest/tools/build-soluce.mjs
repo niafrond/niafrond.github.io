@@ -957,6 +957,8 @@ function buildBestiary() {
   ${gbaSprite(t.id, 'front') ? `<img class="be-sprite" alt="" loading="lazy" width="64" height="64" src="${gbaSprite(t.id, 'front')}">` : ''}
   <h3>${esc(be.heading)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([be.subtitle, be.race].filter(Boolean).join(' · '))}</small></h3>
   <dl>
+    <dt>Nom en combat</dt><dd>${esc([be.name, be.title].filter(Boolean).join(' — '))}</dd>
+    ${be.literal ? `<dt>Traduction littérale</dt><dd>${esc(be.literal)}</dd>` : ''}
     <dt>Force</dt><dd>${dot(be.strongColor)}</dd>
     <dt>Faiblesse</dt><dd><b>${dot(be.weakColor)}</b></dd>
     ${be.traits.length ? `<dt>Traits</dt><dd>${esc(be.traits.join(', '))}</dd>` : ''}

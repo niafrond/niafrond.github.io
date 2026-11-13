@@ -1,3 +1,4 @@
+import { LITERAL_BY_HANZI } from './bestiaryLiteral.js';
 // Noms du bestiaire : pinyin avec tons, caractères chinois et épithète française de chaque gabarit d'ennemi (enemies.catalog.json).
 // Affichage « Bái Zé (白泽) » puis « 白泽 · Bête de la connaissance » : uniquement dans le bestiaire (carnet et soluce) ;
 // les noms de combat (`template.name`) ne changent pas. Entrée : id → [pinyin, hanzi] ou [pinyin, hanzi, épithète] (sinon `template.title`).
@@ -75,3 +76,6 @@ export function beastLabel(template) {
 
 // Nom de l'ennemi dans la barre de stats du combat : caractères (asHanzi) ou pinyin ; sans entrée, le nom du gabarit.
 export const enemyNameLabel = (e, asHanzi = true) => BESTIARY_NAMES[e?.templateId]?.[asHanzi ? 1 : 0] || e?.name || '';
+
+// Traduction littérale du nom chinois (bestiaryLiteral.js) pour un gabarit ; '' si le gabarit n'a pas de nom chinois connu.
+export const literalTranslation = templateId => LITERAL_BY_HANZI[BESTIARY_NAMES[templateId]?.[1]] || '';

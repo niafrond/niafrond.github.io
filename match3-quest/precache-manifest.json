@@ -8,6 +8,7 @@
   "arena.js",
   "attributes.js",
   "bestiary.js",
+  "bestiaryLiteral.js",
   "bestiaryNames.js",
   "board.js",
   "boardEnemyMoves.js",

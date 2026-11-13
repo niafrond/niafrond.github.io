@@ -136,6 +136,12 @@ export function createCarnet(env) {
                     <span>${icon('shield')} Force : ${element(e.strongColor, e.strongElement)}${e.traits.length ? ` · ${env.escapeHtml(e.traits.join(', '))}` : ''}</span>
                     <span>${icon('target')} Faiblesse : ${element(e.weakColor, e.weakElement)}</span>
                 </div>
+                <div class="carnet-beast-more">
+                    ${e.name && e.name !== e.pinyin ? `<span>${icon('ghost')} Nom en combat : ${env.escapeHtml(e.name)}${e.title ? ` — ${env.escapeHtml(e.title)}` : ''}</span>` : ''}
+                    ${e.literal ? `<span>${icon('book')} Traduction littérale : ${env.escapeHtml(e.literal)}</span>` : ''}
+                    ${e.resistances.length ? `<span>${icon('shield')} Résistances : ${e.resistances.map(r => `${manaIcon(r.color)} ${r.percent} %`).join(' · ')}</span>` : ''}
+                    ${pl?.zones?.size ? `<span>${icon('map')} Où : ${env.escapeHtml([...pl.zones].map(id => SCREENS[id]?.name).filter(Boolean).join(', '))}</span>` : ''}
+                </div>
                 <p class="carnet-beast-lore">${icon('scroll')} ${env.escapeHtml(e.lore)}</p>
                 <div class="carnet-beast-source ${e.source}">${icon('book')} ${env.escapeHtml(SOURCE_LABELS[e.source] || e.source)}</div>
             </div>`;

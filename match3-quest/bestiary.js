@@ -7,7 +7,7 @@
 // Créatures connues : celles croisées en combat ou observées sur la carte (`session.data.bestiary`, exploration.js).
 
 import { MANA_COLORS, weaknessOf, elementName } from './elements.js';
-import { beastLabel } from './bestiaryNames.js';
+import { beastLabel, literalTranslation } from './bestiaryNames.js';
 
 // Notices mythologiques (Shanhaijing, Huainanzi, Zhuangzi, Liezi, contes populaires…), une par gabarit. Chaque notice distingue
 // ce qui est attesté (« selon le Shanhaijing… »), ce qui relève du folklore tardif et ce qui est une invention de cette légende
@@ -321,6 +321,8 @@ export function bestiaryEntry(template) {
         name: template.name,
         title: template.title || '',
         ...(({ pinyin, hanzi, heading, subtitle }) => ({ pinyin, hanzi, heading, subtitle }))(beastLabel(template)),
+        literal: literalTranslation(template.id),
+        resistances: Object.entries(template.resistanceProfile || {}).sort((a, b) => b[1] - a[1]).map(([color, v]) => ({ color, percent: Math.round(v * 100) })),
         race: template.race || '',
         family: familyOf(template.race),
         strongColor: strong,
