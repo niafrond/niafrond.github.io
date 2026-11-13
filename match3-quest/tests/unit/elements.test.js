@@ -71,6 +71,9 @@ describe('éléments de qì', () => {
         expect(lava).toMatchObject({ enemyFirst: true, enemyBonusPA: 2, tags: ['lavaAmbush'] });
         expect(lava.lines[0]).toContain('entraîne dans la lave');
         expect(water.lines[0]).not.toContain('hautes herbes');
+        expect(water.playerStatus).toBe('drowning');
+        expect(lava.playerStatus).toBe('ablaze');
+        expect(buildPrep({ grassAmbush: true }).playerStatus).toBeNull();
     });
 });
 

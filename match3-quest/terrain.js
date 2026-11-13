@@ -74,6 +74,7 @@ export function buildPrep(ctx = {}) {
         playerBonusPA: 0, enemyBonusPA: 0,
         playerFirst: false, enemyFirst: false,
         enemyStatus: null,        // { poisoned|confused: tours }
+        playerStatus: null,       // 'drowning' | 'ablaze' : malus du milieu qui frappe le héros tout le combat
         weaknessRevealed: false,
         boardBoost: null          // { count } : tuiles à convertir à la couleur faible de l'ennemi
     };
@@ -92,6 +93,7 @@ export function buildPrep(ctx = {}) {
         prep.enemyFirst = true;
         prep.enemyBonusPA += MIMIC_BONUS_PA;
         const ground = ctx.ambushGround;   // 'water' | 'lava' : le héros marche sur l'eau ou la lave (Pas de Yu), pas dans l'herbe
+        if (ground === 'water' || ground === 'lava') prep.playerStatus = ground === 'water' ? 'drowning' : 'ablaze';   // malus du milieu pour tout le combat (alterations.js)
         if (ground === 'water') add('waterAmbush', `Une créature vous entraîne sous l'eau : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
         else if (ground === 'lava') add('lavaAmbush', `Une créature vous entraîne dans la lave : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
         else add('grassAmbush', `Une créature surgit des hautes herbes : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
