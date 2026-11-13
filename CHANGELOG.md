@@ -1,3 +1,10 @@
+## [2.241.0](https://github.com/niafrond/niafrond.github.io/compare/v2.240.0...v2.241.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** renommer la relique d'ombre en Cháng d'ombre de Fusang ([3b9549a](https://github.com/niafrond/niafrond.github.io/commit/3b9549a2f189e30c2b907c48a04b88b5279c7b3c))
+* **match3-quest:** transformer le collier du voile d'ombre en relique ([ff23600](https://github.com/niafrond/niafrond.github.io/commit/ff23600cc25354dfee096b72bd349e839b589679))
+
 ## [2.240.0](https://github.com/niafrond/niafrond.github.io/compare/v2.239.1...v2.240.0) (2026-11-13)
 
 ### Features
