@@ -919,7 +919,7 @@
   },
   {
     "id": "shi_jing",
-    "name": "Shi Jing",
+    "name": "Shi Ling",
     "race": "Esprit de pierre",
 
     "title": "Esprit de Pierre",
@@ -1045,7 +1045,7 @@
   },
   {
     "id": "jing_jing",
-    "name": "Jing Jing",
+    "name": "Guqi Zhiling",
     "race": "Esprit",
 
     "title": "Esprit d'Objet Ancien",
@@ -1063,7 +1063,7 @@
   },
   {
     "id": "meng_shou",
-    "name": "Meng Shou",
+    "name": "Mengyan Yishou",
     "race": "Bête",
 
     "title": "Bête des Rêves",
@@ -1081,7 +1081,7 @@
   },
   {
     "id": "wu_shou",
-    "name": "Wu Shou",
+    "name": "Miwu Yishou",
     "race": "Bête",
 
     "title": "Bête de Brume",
@@ -1423,7 +1423,7 @@
   },
   {
     "id": "lu_jing",
-    "name": "Lu Jing",
+    "name": "Ling Lu",
     "race": "Esprit-animal",
 
     "title": "Cerf Lumineux",
@@ -1441,7 +1441,7 @@
   },
   {
     "id": "hu_jing",
-    "name": "Hu Jing",
+    "name": "Ling Hu",
     "race": "Esprit-animal",
 
     "title": "Tigre Esprit",
@@ -1459,7 +1459,7 @@
   },
   {
     "id": "xiong_jing",
-    "name": "Xiong Jing",
+    "name": "Ling Xiong",
     "race": "Esprit-animal",
 
     "title": "Ours Esprit",
@@ -1477,7 +1477,7 @@
   },
   {
     "id": "he_jing",
-    "name": "He Jing",
+    "name": "Ling He",
     "race": "Esprit-animal",
 
     "title": "Grue Esprit",
@@ -1495,7 +1495,7 @@
   },
   {
     "id": "lang_jing",
-    "name": "Lang Jing",
+    "name": "Ling Lang",
     "race": "Esprit-animal",
 
     "title": "Loup Esprit",
@@ -1513,7 +1513,7 @@
   },
   {
     "id": "she_jing",
-    "name": "She Jing",
+    "name": "Ling She",
     "race": "Esprit-animal",
 
     "title": "Serpent Esprit",
@@ -1549,7 +1549,7 @@
   },
   {
     "id": "jing_shou",
-    "name": "Jing Shou",
+    "name": "Lingmu Yishou",
     "race": "Esprit-animal",
 
     "title": "Bête aux Yeux Lumineux",
@@ -1729,7 +1729,7 @@
   },
   {
     "id": "xue_niao",
-    "name": "Xue Niao",
+    "name": "Xueyu Niao",
     "race": "Oiseau",
 
     "title": "Oiseau des Neiges",
@@ -2035,7 +2035,7 @@
   },
   {
     "id": "bian",
-    "name": "Bian",
+    "name": "Bi'an",
     "race": "Bête",
 
     "title": "Fauve des Prisons",
@@ -2233,7 +2233,7 @@
   },
   {
     "id": "hai_ruo",
-    "name": "Hai Ruo",
+    "name": "Bei Hai Ruo",
     "race": "Divinité",
 
     "title": "Esprit de la Mer",
@@ -2503,7 +2503,7 @@
   },
   {
     "id": "ruiniao",
-    "name": "Rui Niao",
+    "name": "Xiangrui Zhi Niao",
     "race": "Oiseau",
 
     "title": "Oiseau de Bon Augure",
@@ -2539,7 +2539,7 @@
   },
   {
     "id": "ming_niao",
-    "name": "Ming Niao",
+    "name": "Youming Zhi Niao",
     "race": "Oiseau",
 
     "title": "Oiseau des Ténèbres",
@@ -3356,7 +3356,7 @@
   },
   {
     "id": "maitresse_tong",
-    "name": "Maîtresse Tong",
+    "name": "Maîtresse du Bronze",
     "race": "Humain",
     "title": "la Lame de Bronze",
     "copyOf": "soldat_terre_cuite",

@@ -1,5 +1,6 @@
 // Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 // Extrait de game.js pour alléger ce fichier ; game.js ré-exporte ce qui était public.
+import { literalTranslation } from './bestiaryNames.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { BIOME_LABELS } from "./weapons.js";
 import { STUFF_SLOT_LABELS, getStuffById, normalizeStuff } from "./stuff.js";
@@ -242,7 +243,8 @@ function getEnemyResistanceInsights(enemyEntity) {
 // (avantage « Faiblesse repérée » du terrain, prep.weaknessRevealed).
 function getEnemyNameTooltipHtml(fullName, enemyEntity, { showAll = false } = {}) {
     const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
-    const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
+    // Titre : la traduction littérale du nom chinois (le nom lui-même est déjà dans la barre de stats) ; sans traduction, le nom reçu.
+    const lines = [`<div class="enemy-tooltip-title">${literalTranslation(enemyEntity?.templateId) || fullName}</div>`];
 
     if(strongest) {
         const strongMeta = MANA_COLOR_META[strongest.color];

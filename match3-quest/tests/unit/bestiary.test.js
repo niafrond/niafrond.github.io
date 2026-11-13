@@ -154,15 +154,15 @@ describe('noms du bestiaire (pinyin + caractères)', () => {
             const l = beastLabel(t);
             expect({ id: t.id, ok: /^[A-Za-zÀ-ɏ ]+$/.test(l.pinyin) && /^[一-鿿]+$/.test(l.hanzi) }).toEqual({ id: t.id, ok: true });
             expect(l.heading).toBe(`${l.pinyin} (${l.hanzi})`);
-            expect(l.subtitle.startsWith(`${l.hanzi} · `)).toBe(true);
+            expect(l.subtitle).toBe(t.title || '');
         });
     });
 
     test('exemples : Bái Zé, Zhú Lóng, Cháng Xī', () => {
         const get = id => beastLabel(catalog.find(t => t.id === id));
-        expect(get('bai_ze_savant')).toMatchObject({ heading: 'Bái Zé (白泽)', subtitle: '白泽 · Bête de la connaissance' });
-        expect(get('zhulong_torche')).toMatchObject({ heading: 'Zhú Lóng (烛龙)', subtitle: '烛龙 · Dragon-Torche' });
-        expect(get('changxi')).toMatchObject({ heading: 'Cháng Xī (常羲)', subtitle: '常羲 · Mère des douze lunes' });
+        expect(get('bai_ze_savant')).toMatchObject({ heading: 'Bái Zé (白泽)', subtitle: 'Bête de la connaissance' });
+        expect(get('zhulong_torche')).toMatchObject({ heading: 'Zhú Lóng (烛龙)', subtitle: 'Dragon-Torche' });
+        expect(get('changxi')).toMatchObject({ heading: 'Cháng Xī (常羲)', subtitle: 'Mère des douze lunes' });
     });
 });
 

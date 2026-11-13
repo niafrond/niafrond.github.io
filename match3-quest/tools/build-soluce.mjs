@@ -12,7 +12,7 @@ import { QUESTS, SCREENS, REGION_UNLOCK_LEVEL } from '../story.js';
 import { COMPANIONS } from '../companions.js';
 import { COMPANION_POWERS } from '../companionPowers.js';
 import { allStuff, STUFF_SLOT_LABELS, STUFF_SLOTS, BIOME_PROTECTION_TEXT, BIOME_PROTECTION_LABEL, describeStuff, baseStuffPrice, CHEST_STUFF_DROP } from '../stuff.js';
-import { bestiaryEntry, SOURCE_LABELS, familyOf } from '../bestiary.js';
+import { bestiaryEntry, SOURCE_LABELS, familyOf, groupByName, mergeEntries } from '../bestiary.js';
 import { loadGbaSprites, gbaSprite } from '../sprites/index.js';
 import { entOf, questTargets, zoneScreens, interiorScreens } from './soluce-targets.mjs';
 import { overlapOf } from '../mapConnections.js';
@@ -929,7 +929,8 @@ ${playerScript(Object.fromEntries(WINTER_PUZZLES.map(p => [p.id, PUZZLES[p.id]])
 // ───────────────────────── Bestiaire ─────────────────────────
 // Toutes les créatures du jeu : espèce, force et faiblesse, traits, notice et lieux où on les rencontre (ennemis de carte, hautes herbes, boss).
 const BESTIARY_LIST = CATALOG.filter(t => t.id !== 'fallback_enemy').sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-const BESTIARY_COUNT = BESTIARY_LIST.length;
+const BESTIARY_GROUPS = groupByName(BESTIARY_LIST);   // une fiche par nom chinois (Bai Ze commun et élite réunis…)
+const BESTIARY_COUNT = BESTIARY_GROUPS.length;
 function buildBestiary() {
     // lieux par espèce : carte -> { sentinelle|patrouille|boss, herbes }
     const seen = new Map();
@@ -944,30 +945,35 @@ function buildBestiary() {
         (sc.grass?.table || []).forEach(t => mark(t.templateId, sc, 'herbes'));
     });
     const WHAT_FR = { boss: 'boss', patrouille: 'patrouille', sentinelle: 'sentinelle', herbes: 'hautes herbes' };
-    const cards = BESTIARY_LIST.map(t => {
-        const be = bestiaryEntry(t);
-        const places = [...(seen.get(t.id)?.values() || [])].sort((a, b) => REGION_ORDER.indexOf(a.sc.region) - REGION_ORDER.indexOf(b.sc.region) || a.sc.name.localeCompare(b.sc.name, 'fr'));
+    const cards = BESTIARY_GROUPS.map(group => {
+        const t = group[0];
+        const be = mergeEntries(group.map(bestiaryEntry))[0];
+        const merged = new Map();
+        group.forEach(g => (seen.get(g.id) || new Map()).forEach((v, k) => { const m = merged.get(k) || merged.set(k, { sc: v.sc, what: new Set() }).get(k); v.what.forEach(w => m.what.add(w)); }));
+        const places = [...merged.values()].sort((a, b) => REGION_ORDER.indexOf(a.sc.region) - REGION_ORDER.indexOf(b.sc.region) || a.sc.name.localeCompare(b.sc.name, 'fr'));
         const kinds = new Set(places.flatMap(p => [...p.what]));
         const placeHtml = places.length
             ? `<ul class="enemy">${places.map(p => `<li>${esc(p.sc.name)} <small>(${esc(regionName(p.sc.region))} — ${[...p.what].map(w => WHAT_FR[w]).join(', ')})</small></li>`).join('')}</ul>`
             : '<p class="dim">Aucune rencontre sur les cartes : créature réservée à un combat scénarisé.</p>';
         const res = t.resistanceProfile ? Object.entries(t.resistanceProfile).sort((a, b) => b[1] - a[1]).map(([c, v]) => `${dot(c)} ${Math.round(v * 100)} %`).join(' · ') : '';
         const zoneIds = places.map(p => p.sc.id).join(' ');
-        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${t.name} ${be.pinyin} ${be.hanzi} ${t.title || ''} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor || ''}" data-weak="${be.weakColor || ''}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
-  ${gbaSprite(t.id, 'front') ? `<img class="be-sprite" alt="" loading="lazy" width="64" height="64" src="${gbaSprite(t.id, 'front')}">` : ''}
-  <h3>${esc(be.heading)} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([be.subtitle, be.race].filter(Boolean).join(' · '))}</small></h3>
+        return `<article class="quest be" id="be-${esc(t.id)}" data-name="${esc(`${group.map(g => `${g.name} ${g.title || ''}`).join(' ')} ${be.pinyin} ${be.hanzi} ${t.race || ''}`.toLowerCase())}" data-family="${esc(familyOf(t.race))}" data-resist="${be.strongColor}" data-weak="${be.weakColor}" data-zones="${esc(zoneIds)}" data-boss="${kinds.has('boss') ? 1 : ''}">
+  ${group.map(g => (gbaSprite(g.id, 'front') ? `<img class="be-sprite" alt="" loading="lazy" width="64" height="64" src="${gbaSprite(g.id, 'front')}">` : '')).join('')}
+  ${group.slice(1).map(g => `<span id="be-${esc(g.id)}"></span>`).join('')}
+  <h3>${esc(be.heading)} ${be.hanzi ? `<button type="button" class="speak" data-speak="${esc([...be.hanzi].map(c => c.codePointAt(0).toString(16)).join('-'))}" aria-label="Écouter la prononciation" title="Écouter la prononciation">🔊 Écouter</button>` : ''} ${kinds.has('boss') ? '<span class="badge main">Boss</span>' : ''}<small>${esc([be.subtitle, be.race].filter(Boolean).join(' · '))}</small></h3>
   <dl>
-    <dt>Force</dt><dd>${dot(be.strongColor)}</dd>
-    <dt>Faiblesse</dt><dd><b>${dot(be.weakColor)}</b></dd>
+    ${be.literal ? `<dt>Traduction littérale</dt><dd>${esc(be.literal)}</dd>` : ''}
+    <dt>Force</dt><dd>${be.strongs.map(x => dot(x.color)).join(' · ')}</dd>
+    <dt>Faiblesse</dt><dd><b>${be.weaks.map(x => dot(x.color)).join(' · ')}</b></dd>
     ${be.traits.length ? `<dt>Traits</dt><dd>${esc(be.traits.join(', '))}</dd>` : ''}
     ${res ? `<dt>Résistances</dt><dd>${res}</dd>` : ''}
     <dt>Origine</dt><dd>${esc(SOURCE_LABELS[be.source] || be.source)}</dd>
-    <dt>Notice</dt><dd>${esc(be.lore)}</dd>
+    <dt>Notice</dt><dd>${be.lores.map(esc).join('<br><br>')}</dd>
     <dt>Où</dt><dd>${placeHtml}</dd>
   </dl>
 </article>`;
     }).join('\n');
-    const families = [...new Set(BESTIARY_LIST.map(t => familyOf(t.race)))].sort((a, b) => a.localeCompare(b, 'fr'));
+    const families = [...new Set(BESTIARY_GROUPS.map(g => familyOf(g[0].race)))].sort((a, b) => a.localeCompare(b, 'fr'));
     const colorOpts = Object.entries(COLOR_FR).map(([c, l]) => `<option value="${c}">${esc(l)}</option>`).join('');
     const zonesByRegion = new Map();
     seen.forEach(byScreen => byScreen.forEach(({ sc }) => { const r = sc.region; (zonesByRegion.get(r) || zonesByRegion.set(r, new Map()).get(r)).set(sc.id, sc.name); }));
@@ -993,10 +999,11 @@ function buildBestiary() {
 ${cards}
 </div>
 <button type="button" id="totop" hidden aria-label="Retour en haut de la page">↑ Haut</button>
-<style>.be{position:relative}.be-sprite{float:right;width:64px;height:64px;margin:0 0 8px 12px;object-fit:contain;image-rendering:pixelated;background:rgba(127,127,127,.12);border-radius:8px}.be dl{clear:none}.bfilters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 0}.bfilters .search{flex:1 1 100%}.bfilters label{display:flex;flex-direction:column;gap:2px;font:.82rem system-ui,sans-serif;color:var(--dim)}.bfilters select{padding:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.95rem system-ui,sans-serif;max-width:100%}.bfilters .bcheck{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.bfilters button,#totop{padding:7px 12px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.9rem system-ui,sans-serif;cursor:pointer}#bcount{font:600 .9rem system-ui,sans-serif;color:var(--dim);margin:4px 0 10px}#totop{position:fixed;right:16px;bottom:16px;z-index:30;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.35)}#totop[hidden],.be[hidden]{display:none}</style>
+<style>.speak{font:inherit;font-size:.7em;padding:1px 8px;border:1px solid var(--line,#8886);border-radius:6px;background:transparent;color:inherit;cursor:pointer}.speak[hidden]{display:none}.be{position:relative}.be-sprite{float:right;width:64px;height:64px;margin:0 0 8px 12px;object-fit:contain;image-rendering:pixelated;background:rgba(127,127,127,.12);border-radius:8px}.be dl{clear:none}.bfilters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 0}.bfilters .search{flex:1 1 100%}.bfilters label{display:flex;flex-direction:column;gap:2px;font:.82rem system-ui,sans-serif;color:var(--dim)}.bfilters select{padding:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.95rem system-ui,sans-serif;max-width:100%}.bfilters .bcheck{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.bfilters button,#totop{padding:7px 12px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:.9rem system-ui,sans-serif;cursor:pointer}#bcount{font:600 .9rem system-ui,sans-serif;color:var(--dim);margin:4px 0 10px}#totop{position:fixed;right:16px;bottom:16px;z-index:30;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.35)}#totop[hidden],.be[hidden]{display:none}</style>
+<script>(function(){var s=[].slice.call(document.querySelectorAll('.speak')),au=null;function sync(){s.forEach(function(b){b.hidden=navigator.onLine===false})}sync();addEventListener('online',sync);addEventListener('offline',sync);document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.speak');if(!b)return;if(au)au.pause();au=new Audio('../audio/noms/'+b.dataset.speak+'.mp3');au.play().catch(function(){})})})();</script>
 <script>(function(){var $=function(i){return document.getElementById(i)},l=[].slice.call(document.querySelectorAll('#bestiary .be')),c=$('bcount'),t=$('totop');
 function run(){var q=$('bq').value.trim().toLowerCase(),f=$('bf-family').value,r=$('bf-resist').value,w=$('bf-weak').value,z=$('bf-zone').value,b=$('bf-boss').checked,n=0;
-l.forEach(function(a){var d=a.dataset,ok=(!q||d.name.indexOf(q)>=0)&&(!f||d.family===f)&&(!r||d.resist===r)&&(!w||d.weak===w)&&(!z||(' '+d.zones+' ').indexOf(' '+z+' ')>=0)&&(!b||d.boss);a.hidden=!ok;if(ok)n++;});
+l.forEach(function(a){var d=a.dataset,ok=(!q||d.name.indexOf(q)>=0)&&(!f||d.family===f)&&(!r||(' '+d.resist+' ').indexOf(' '+r+' ')>=0)&&(!w||(' '+d.weak+' ').indexOf(' '+w+' ')>=0)&&(!z||(' '+d.zones+' ').indexOf(' '+z+' ')>=0)&&(!b||d.boss);a.hidden=!ok;if(ok)n++;});
 c.textContent=n?n+(n>1?' créatures affichées':' créature affichée')+' sur '+l.length+'.':'Aucune créature ne correspond à ces filtres.';}
 ['bq','bf-family','bf-resist','bf-weak','bf-zone','bf-boss'].forEach(function(i){$(i).addEventListener(i==='bq'?'input':'change',run);});
 $('bf-reset').addEventListener('click',function(){$('bq').value='';['bf-family','bf-resist','bf-weak','bf-zone'].forEach(function(i){$(i).value='';});$('bf-boss').checked=false;run();});

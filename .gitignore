@@ -160,3 +160,4 @@ match3-quest/sprites/ultimates-comfy/
 match3-quest/sprites/ultimates-sdxl/
 match3-quest/sprites/ultimates-seq/
 match3-quest/tools/perf-bench/.cache/
+match3-quest/tools/.verify-names-cache.json

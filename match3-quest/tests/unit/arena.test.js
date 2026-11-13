@@ -195,7 +195,7 @@ describe('Arène des Mille Flèches : salles à explorer', () => {
             expect(tryMove(s, 0, -1, { playerLevel: 20 })).toMatchObject({ type: 'shielded' });
             expect(markEnemyDefeated(s, arenaGuardId(1, r)).filter(e => e.type === 'arenaCleared')).toEqual([]);
         }
-        expect(currentObjectiveText(s)).toMatch(/Maîtresse Tong/);
+        expect(currentObjectiveText(s)).toMatch(/Maîtresse du Bronze/);
         s.data.x = 7; s.data.y = 2;
         expect(tryMove(s, 0, -1, { playerLevel: 20 })).toMatchObject({ type: 'combat', enemyId: arenaMasterId(1) });
         const master = encounterFor(s, arenaMasterId(1), 20);

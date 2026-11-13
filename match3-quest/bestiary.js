@@ -7,7 +7,7 @@
 // Créatures connues : celles croisées en combat ou observées sur la carte (`session.data.bestiary`, exploration.js).
 
 import { MANA_COLORS, weaknessOf, elementName } from './elements.js';
-import { beastLabel } from './bestiaryNames.js';
+import { beastLabel, literalTranslation } from './bestiaryNames.js';
 
 // Notices mythologiques (Shanhaijing, Huainanzi, Zhuangzi, Liezi, contes populaires…), une par gabarit. Chaque notice distingue
 // ce qui est attesté (« selon le Shanhaijing… »), ce qui relève du folklore tardif et ce qui est une invention de cette légende
@@ -87,7 +87,7 @@ export const BESTIARY_LORE = {
     xuan_gui: "La grande Tortue noire évoque Xuanwu, gardien du Nord et de l'hiver, souvent représenté comme une tortue entrelacée d'un serpent. Celle-ci n'a pas encore trouvé son serpent.",
     bixi: "Bixi, figure à carapace de tortue rangée dans les listes populaires des fils du Dragon, porte les stèles de pierre des temples et des tombeaux. On raconte ici qu'il soulevait des montagnes avant qu'on lui confie ce fardeau.",
     feiyu: "Les carpes qui remontent la cascade de la Porte du Dragon se changent en dragons. Celles qui échouent recommencent, encore et encore.",
-    jiaoyu: "Le poisson-dragon a le corps d'un poisson et la tête d'un dragon. On le place au faîte des toits pour protéger les maisons du feu.",
+    jiaoyu: "Le poisson-dragon a le corps d'un poisson et la tête d'un dragon. Sur les faîtages, c'est surtout Chiwen (螭吻), l'un des fils du Dragon, qui protège les maisons du feu ; ici, une créature voisine.",
     yingyu: "Le Shanhaijing (Classique des montagnes de l'Ouest) décrit dans la rivière Meng un poisson à ailes d'oiseau, le 蠃魚, au cri de canard mandarin. Quand il apparaît, sa contrée est submergée par de grandes eaux.",
     mu_mei: "Le folklore prête des esprits aux arbres et aux forêts profondes. Ceux de ce monde prennent l'aspect de jeunes femmes et égarent les bûcherons qui coupent sans demander.",
     mu_gui: "Dans ce monde, quand un arbre meurt sans être abattu, son esprit reste prisonnier de l'écorce. Il gémit les nuits de vent et ses branches attrapent les passants.",
@@ -134,15 +134,15 @@ export const BESTIARY_LORE = {
     taotie_bete: "Selon le Lüshi chunqiu, le Taotie n'est qu'une tête sans corps, dont la gloutonnerie finit par se retourner contre lui. Le Zuozhuan nomme aussi un Taotie parmi les Quatre Fléaux.",
     jiuweihu: "Le renard à neuf queues du mont Qingqiu dévore les hommes. Mais celui qui mange sa chair devient immunisé contre les sortilèges.",
     zaochi: "Selon le Huainanzi (chapitre Benjing), l'empereur Yao chargea Hou Yi de tuer Zaochi (鑿齒), « Dents de ciseau », dans les friches de Chouhua. Le monstre a une dent longue de cinq ou six pieds, qui traverse sa mâchoire comme un burin ; les commentaires tardifs en font un homme-bête armé d'un bouclier. Ici, il garde les hautes terres.",
-    jiuying: "Selon le Huainanzi, Hou Yi tua Jiuying (九嬰), « Neuf nourrissons », sur les rives du fleuve Xiong. Les commentaires disent que ce monstre crache l'eau par certaines de ses têtes et le feu par d'autres, d'où sa place entre l'eau et la flamme.",
-    dafeng: "Selon le Huainanzi, Hou Yi abattit Dafeng (大風), le Grand Vent, au bord du marais de Qingqiu, d'une flèche à fil attachée. Les commentateurs en font un oiseau géant dont les ailes lèvent la tempête. Il ne faut pas le confondre avec Feng Bo, le dieu du vent, même si des traditions rapprochent les deux figures.",
-    fengxi: "Selon le Huainanzi, Hou Yi captura Fengxi (封豨), le « grand sanglier », dans la forêt de mûriers de Sanglin. Les commentaires parlent d'un porc sauvage aux soies de fer, dévastateur des cultures ; ce n'est pas le Sanglier de Flammes, qui relève du folklore du zodiaque.",
+    jiuying: "Selon le Huainanzi, Hou Yi tua Jiuying (九嬰), « Neuf nourrissons », sur les rives du fleuve Xiong. Selon les commentaires (et non le texte principal), ce monstre crache l'eau par certaines de ses têtes et le feu par d'autres, d'où sa place entre l'eau et la flamme.",
+    dafeng: "Selon le Huainanzi, Hou Yi captura Dafeng (大風), le Grand Vent, au bord du marais de Qingqiu, au moyen d'une flèche attachée à un fil. Les commentateurs en font un oiseau géant dont les ailes lèvent la tempête. Il ne faut pas le confondre avec Feng Bo, le dieu du vent, même si des traditions rapprochent les deux figures.",
+    fengxi: "Selon le Huainanzi, Hou Yi captura Fengxi (封豨), le « grand sanglier », dans la forêt de mûriers de Sanglin. Selon les commentaires (et non le texte principal), c'est un porc sauvage aux soies de fer, dévastateur des cultures ; ce n'est pas le Sanglier de Flammes, qui relève du folklore du zodiaque.",
     xiushe: "Selon le Huainanzi, Hou Yi tua Xiushé (修蛇), le « long serpent », dans le lac Dongting. Le Shanhaijing ne le nomme pas : on ne doit pas le confondre avec le Bashé, qui avale les éléphants, même si des commentaires tardifs rapprochent les deux serpents.",
     xiangliu: "Selon le Shanhaijing, Xiangliu, ministre de Gonggong, a neuf têtes humaines sur un corps de serpent ; son sang rend la terre stérile. Yu le tua, mais le sol, comblé à trois reprises, s'effondra et devint un étang.",
     nian: "Selon une légende populaire répandue surtout à l'époque moderne, le Nian sortait à la veille du Nouvel An pour dévorer bétail et enfants. Il craignait le rouge, le feu et le bruit : d'où les lanternes et les pétards.",
     kuafu_geant: "Le géant Kuafu poursuivit le soleil ; assoiffé, il but le Fleuve Jaune et la rivière Wei sans se désaltérer. Il mourut, et son bâton devint une forêt de pêchers. Cet épisode du Shanhaijing est étranger à l'exploit de Hou Yi contre les dix soleils : Kuafu court après un seul astre, sans le combattre.",
     xingtian: "Selon le Shanhaijing, Xingtian disputa le trône divin à l'Empereur (que la tradition tardive identifie à l'Empereur Jaune), qui lui trancha la tête. Sans tête, il continua le combat, des seins pour yeux et un nombril pour bouche, brandissant bouclier et hache.",
-    hai_ruo: "Hai Ruo, dieu de la mer du Nord, montra au Comte du Fleuve, selon Zhuangzi, que ses eaux n'étaient rien face à l'océan.",
+    hai_ruo: "Bei Hai Ruo (北海若), le Ruo de la mer du Nord, montra au Comte du Fleuve, selon Zhuangzi, que ses eaux n'étaient rien face à l'océan.",
     hai_shen: "Selon le Shanhaijing, Yuqiang, dieu de la mer du Nord, a un visage humain et un corps d'oiseau ; il porte deux serpents verts aux oreilles et foule deux serpents rouges. Dans ce monde, les dieux de la mer commandent les vents marins.",
     hai_gui: "Les tortues des récifs gardent les entrées des palais sous-marins. Les pêcheurs qui en voient une nager vers eux font demi-tour.",
     hai_she: "Le serpent des tourbillons tourne sur lui-même au fond des mers et crée les vortex qui avalent les jonques.",
@@ -153,7 +153,7 @@ export const BESTIARY_LORE = {
     panlong: "Selon les anciens lexiques, le panlong est le dragon lové qui n'est pas encore monté au ciel. On le sculpte enroulé autour des colonnes ; dans ce monde, il dort au fond des eaux.",
     shenlong: "Le Shenlong, dragon divin, commande au vent et à la pluie. Les paysans lui adressent leurs prières lors des sécheresses.",
     long: "Selon une liste attribuée à Wang Fu (Han), le dragon réunit neuf ressemblances : tête de chameau, cornes de cerf, yeux de démon (ou de lièvre selon les versions), cou de serpent, ventre de mollusque, écailles de carpe, griffes d'aigle, pattes de tigre et oreilles de bœuf.",
-    jinwu: "Selon le Shanhaijing, les dix soleils se reposent dans le mûrier Fusang et se relaient chaque jour, chacun porté par un corbeau d'or. Un jour, ils sortirent tous ensemble, et la terre se mit à brûler.",
+    jinwu: "Selon le Shanhaijing, les dix soleils se reposent dans le mûrier Fusang et se relaient chaque jour, chacun porté par un corbeau (la tradition ultérieure en fait un corbeau d'or). Un jour, ils sortirent tous ensemble, et la terre se mit à brûler.",
     sanzu_wu: "Le corbeau à trois pattes vit dans le soleil. Dans certaines traditions, chaque soleil est associé à un corbeau à trois pattes. Lorsque les dix soleils apparurent ensemble, Hou Yi en abattit neuf, laissant un seul soleil éclairer le monde ; on retrouva les plumes des corbeaux au sol.",
     fenghuang: "Le Fenghuang n'apparaît qu'en temps de paix, dit la tradition classique. Le Zhuangzi prête au yuanchu, oiseau voisin du phénix, de ne se poser que sur le sterculier, de ne manger que des fruits du bambou et de ne boire qu'à la source douce.",
     qingniao: "Selon le Shanhaijing, trois oiseaux bleus servent la Reine Mère de l'Ouest et lui cherchent sa nourriture. La tradition postérieure en fait ses messagers, annonçant sa venue ; ici, ils portent aussi ses lettres aux souverains.",
@@ -162,7 +162,7 @@ export const BESTIARY_LORE = {
     ming_niao: "Dans ce monde, les oiseaux des ténèbres volent la nuit et guident les âmes perdues ; leur cri annonce un deuil dans la maison. C'est une création de cette légende, nourrie des nombreux oiseaux de présage de la tradition chinoise.",
     guai_niao: "Le Shanhaijing décrit nombre d'oiseaux à visage humain, dont chacun annonce un fléau propre : sécheresse, exil, guerre. Le guai niao est ici une figure composite de cette légende, dont le cri d'enfant glace les villages.",
     kuafu: "Kua Fu courut après le soleil pour le capturer. Il mourut de soif ; son bâton devint une forêt de pêchers. Il appartient à un autre épisode que celui de Hou Yi, mais convient à un monde consacré au soleil.",
-    shennong: "Shennong, le Divin Laboureur, enseigna l'agriculture et goûta cent herbes en un jour pour connaître leurs vertus, s'empoisonnant soixante-dix fois.",
+    shennong: "Shennong, le Divin Laboureur, enseigna l'agriculture et goûta cent herbes en un jour pour connaître leurs vertus, et, selon le Huainanzi, rencontra soixante-dix substances toxiques en une seule journée.",
     huangdi: "Huangdi, l'Empereur Jaune, vainquit Chiyou selon la tradition et passe pour l'ancêtre mythique des Chinois. Le Shiji raconte qu'il monta au ciel sur un dragon venu le chercher.",
     zhulong_torche: "Selon le Shanhaijing, Zhulong, le Dragon-torche, éclaire le monde : le jour quand il ouvre les yeux, la nuit quand il les ferme. Quand il souffle, c'est l'hiver ; quand il expire doucement, c'est l'été.",
     yingzhao_cheval: "Yingzhao garde le jardin suspendu de l'Empereur céleste. Il a un corps de cheval, un visage humain, des rayures de tigre et des ailes.",
@@ -189,10 +189,10 @@ export const BESTIARY_LORE = {
     sun_8: "Dans ce monde, ce soleil s'est couché sur la Mer Orientale et fait bouillir les marées. Les gardes du Roi-Dragon le couvrent par obéissance, en attendant un archer digne de leur confiance.",
     sun_9: "Selon le Shanhaijing, les dix soleils se reposent dans le mûrier Fusang, au bord de l'Orient. Dans ce monde, le neuvième s'y cache derrière le dixième, et compte sur la main de l'archer pour trembler.",
     fengmeng_1: "Étape 1 de sa chute. Selon Mencius, Feng Meng (逢蒙) apprit le tir à l'arc auprès de Yi, puis, se croyant surpassé par son seul maître, le tua. Dans ce monde, il n'est encore qu'un disciple impatient, qui provoque son maître en duel d'entraînement.",
-    fengmeng_2: "Étape 2 de sa chute : la jalousie. Le Huainanzi précise que Feng Meng frappa Yi avec un gourdin de pêcher. Dans ce monde, il tend encore son arc : il guette son maître sur la route du volcan pour abattre un soleil avant lui.",
+    fengmeng_2: "Étape 2 de sa chute : la jalousie. Un commentaire ancien de Xu Shen sur le Huainanzi précise que Feng Meng frappa Yi avec un gourdin de bois de pêcher. Dans ce monde, il tend encore son arc : il guette son maître sur la route du volcan pour abattre un soleil avant lui.",
     fengmeng_3a: "Étape 3 de sa chute : la convoitise. Dans les versions tardives du mythe, Feng Meng convoite l'élixir que la Reine Mère de l'Occident a offert à Yi. Dans ce monde, il attend son maître au Pic de la Lune et lui renvoie chacun de ses tirs, comme un reflet.",
     fengmeng_3b: "Étape finale de sa chute : le désespoir. Selon la tradition populaire, Chang'e boit l'élixir pour qu'il ne tombe pas aux mains de Feng Meng et s'élève jusqu'à la Lune. Dans ce monde, le même disciple, qui a tout perdu, se bat alors sans plus viser, dans une pluie de flèches.",
-    maitresse_tong: "Le bronze fit la gloire des Shang et des Zhou, qui y coulaient vases rituels et armes. Dans ce monde, Maîtresse Tong garde le premier cercle de l'Arène des Mille Flèches, sa lame de bronze aussi droite que sa règle.",
+    maitresse_tong: "Le bronze fit la gloire des Shang et des Zhou, qui y coulaient vases rituels et armes. Dans ce monde, Maîtresse du Bronze garde le premier cercle de l'Arène des Mille Flèches, sa lame de bronze aussi droite que sa règle.",
     maitre_hong_gang: "Le gong rythmait jadis les batailles et les fêtes. Dans ce monde, Maître Hong Gang règne sur le deuxième cercle de l'Arène et frappe le cuivre avant chaque assaut, pour que son adversaire l'entende venir.",
     maitre_tie_bi: "Le fer remplaça peu à peu le bronze sous les Royaumes combattants. Dans ce monde, Maître Tie Bi, gardien du troisième cercle de l'Arène, se vante d'avoir un bras forgé que la foudre même ne fait pas plier.",
     dame_yin_yue: "La lune et l'argent vont de pair dans la poésie chinoise, de Li Bai aux chansons de la mi-automne. Dans ce monde, Dame Yin Yue, maîtresse du quatrième cercle de l'Arène, danse comme un reflet de lune sur l'eau.",
@@ -306,11 +306,14 @@ export function matchesBestiary(c, f) {
     const q = String(f.q || '').trim().toLowerCase();
     return (!q || String(c.name || '').toLowerCase().includes(q))
         && (!f.family || c.family === f.family)
-        && (!f.resist || c.resist === f.resist)
-        && (!f.weak || c.weak === f.weak)
+        && (!f.resist || String(c.resist || '').split(' ').includes(f.resist))
+        && (!f.weak || String(c.weak || '').split(' ').includes(f.weak))
         && (!f.zone || (c.zones || []).includes(f.zone))
         && (!f.boss || Boolean(c.boss));
 }
+
+// Compare deux noms sans tons, espaces ni apostrophes (la traduction d'un nom propre n'est pas répétée à côté du pinyin).
+const fold = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s'’-]/g, '').toLowerCase();
 
 // Fiche d'un gabarit : nom, titre, race, force, faiblesse, traits et notice.
 export function bestiaryEntry(template) {
@@ -321,6 +324,8 @@ export function bestiaryEntry(template) {
         name: template.name,
         title: template.title || '',
         ...(({ pinyin, hanzi, heading, subtitle }) => ({ pinyin, hanzi, heading, subtitle }))(beastLabel(template)),
+        literal: (l => (l && fold(l) === fold(beastLabel(template).pinyin) ? '' : l))(literalTranslation(template.id)),
+        resistances: Object.entries(template.resistanceProfile || {}).sort((a, b) => b[1] - a[1]).map(([color, v]) => ({ color, percent: Math.round(v * 100) })),
         race: template.race || '',
         family: familyOf(template.race),
         strongColor: strong,
@@ -340,4 +345,52 @@ export function bestiaryEntries(catalog, knownIds) {
     const entries = list.filter(t => known.has(t.id)).map(bestiaryEntry)
         .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     return { entries, known: entries.length, total: list.length };
+}
+
+// Gabarits de même nom chinois (Bai Ze commun et élite, Pixiu…) : une seule fiche dans le carnet et la soluce. Renvoie des groupes de gabarits.
+export function groupByName(templates) {
+    const groups = [];
+    const byHanzi = new Map();
+    for (const t of templates) {
+        const hanzi = beastLabel(t).hanzi;
+        const g = hanzi && byHanzi.get(hanzi);
+        if (g) { g.push(t); continue; }
+        const created = [t];
+        groups.push(created);
+        if (hanzi) byHanzi.set(hanzi, created);
+    }
+    return groups;
+}
+
+const uniq = list => [...new Set(list.filter(Boolean))];
+
+// Fusionne les fiches (bestiaryEntry) d'un même groupe : titres, forces, faiblesses, traits et notices réunis ; le reste vient de la première.
+export function mergeEntries(entries) {
+    const groups = new Map();
+    const out = [];
+    for (const e of entries) {
+        const g = e.hanzi && groups.get(e.hanzi);
+        if (!g) {
+            const m = { ...e, ids: [e.id], subtitles: [e.subtitle], lores: [e.lore], strongs: [{ color: e.strongColor, element: e.strongElement }], weaks: [{ color: e.weakColor, element: e.weakElement }] };
+            out.push(m);
+            if (e.hanzi) groups.set(e.hanzi, m);
+            continue;
+        }
+        g.ids.push(e.id);
+        g.subtitles.push(e.subtitle);
+        g.lores.push(e.lore);
+        g.strongs.push({ color: e.strongColor, element: e.strongElement });
+        g.weaks.push({ color: e.weakColor, element: e.weakElement });
+        g.traits = uniq([...g.traits, ...e.traits]);
+    }
+    for (const m of out) {
+        m.subtitle = uniq(m.subtitles).join(' / ');
+        m.lores = uniq(m.lores);
+        const distinct = list => list.filter((x, i) => x.color && list.findIndex(y => y.color === x.color) === i);
+        m.strongs = distinct(m.strongs);
+        m.weaks = distinct(m.weaks);
+        m.strongColor = m.strongs.map(x => x.color).join(' ');
+        m.weakColor = m.weaks.map(x => x.color).join(' ');
+    }
+    return out;
 }
