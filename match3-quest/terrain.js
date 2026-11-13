@@ -91,7 +91,10 @@ export function buildPrep(ctx = {}) {
     } else if (ctx.grassAmbush) {
         prep.enemyFirst = true;
         prep.enemyBonusPA += MIMIC_BONUS_PA;
-        add('grassAmbush', `Une créature surgit des hautes herbes : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
+        const ground = ctx.ambushGround;   // 'water' | 'lava' : le héros marche sur l'eau ou la lave (Pas de Yu), pas dans l'herbe
+        if (ground === 'water') add('waterAmbush', `Une créature vous entraîne sous l'eau : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
+        else if (ground === 'lava') add('lavaAmbush', `Une créature vous entraîne dans la lave : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
+        else add('grassAmbush', `Une créature surgit des hautes herbes : elle vous prend par surprise (+${MIMIC_BONUS_PA} PA et elle joue en premier).`);
     }
     if (ctx.observed) {
         prep.weaknessRevealed = true;
@@ -118,6 +121,8 @@ const BANNERS = {
     ambush: { icon: 'bolt', title: 'Attaque surprise !' },
     mimic: { icon: 'bolt', title: 'Mimique !' },
     grassAmbush: { icon: 'leaf', title: 'Embuscade dans les herbes !' },
+    waterAmbush: { icon: 'bolt', title: 'Entraîné sous l\'eau !' },
+    lavaAmbush: { icon: 'bolt', title: 'Entraîné dans la lave !' },
     trap: { icon: 'poison', title: 'Piège !' },
     grass: { icon: 'leaf', title: 'Hautes herbes !' },
     outlook: { icon: 'flag', title: 'Position dominante !' },

@@ -63,6 +63,14 @@ describe('éléments de qì', () => {
         expect(prepBanner(mimic, 'Mimique').title).toBe('Mimique vous attend !');
         expect(buildPrep({ grassAmbush: true })).toMatchObject({ enemyFirst: true, enemyBonusPA: 2, tags: ['grassAmbush'] });
         expect(buildPrep({ mimic: true, grassAmbush: true }).tags).toEqual(['mimic']);
+        // sur l'eau ou la lave (Pas de Yu), la créature n'« surgit » pas des herbes : elle entraîne le héros
+        const water = buildPrep({ grassAmbush: true, ambushGround: 'water' });
+        expect(water).toMatchObject({ enemyFirst: true, enemyBonusPA: 2, tags: ['waterAmbush'] });
+        expect(water.lines[0]).toContain("entraîne sous l'eau");
+        const lava = buildPrep({ grassAmbush: true, ambushGround: 'lava' });
+        expect(lava).toMatchObject({ enemyFirst: true, enemyBonusPA: 2, tags: ['lavaAmbush'] });
+        expect(lava.lines[0]).toContain('entraîne dans la lave');
+        expect(water.lines[0]).not.toContain('hautes herbes');
     });
 });
 
