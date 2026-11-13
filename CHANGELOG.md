@@ -1,3 +1,10 @@
+## [2.239.1](https://github.com/niafrond/niafrond.github.io/compare/v2.239.0...v2.239.1) (2026-11-13)
+
+### Bug Fixes
+
+* **match3-quest:** traduire 蛟龙 par « Dragon aquatique » ([258418d](https://github.com/niafrond/niafrond.github.io/commit/258418db761cc351f84295b2d0e0ad059dd3bb6c))
+* **match3-quest:** traduire 蛟龙 par « Dragon de rivière » ([980a506](https://github.com/niafrond/niafrond.github.io/commit/980a5068fb6fdfc5748eb2b0eaa0c38a846ffd27))
+
 ## [2.239.0](https://github.com/niafrond/niafrond.github.io/compare/v2.238.2...v2.239.0) (2026-11-13)
 
 ### Features
