@@ -105,6 +105,7 @@
   "merchants.js",
   "music.js",
   "musicTracks.js",
+  "nameAudio.js",
   "offlineCache.js",
   "playStyles.js",
   "playTime.js",
