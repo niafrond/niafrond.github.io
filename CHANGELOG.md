@@ -1,3 +1,9 @@
+## [2.241.1](https://github.com/niafrond/niafrond.github.io/compare/v2.241.0...v2.241.1) (2026-11-13)
+
+### Bug Fixes
+
+* **match3-quest:** donner le dessin du crabe aux crabes de la mer ([9f93fe9](https://github.com/niafrond/niafrond.github.io/commit/9f93fe9462f9ca65893c03fe6a0b130cec4e1104))
+
 ## [2.241.0](https://github.com/niafrond/niafrond.github.io/compare/v2.240.0...v2.241.0) (2026-11-13)
 
 ### Features
