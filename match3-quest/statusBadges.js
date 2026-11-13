@@ -39,11 +39,11 @@ export function activeStatuses(entity) {
     if (n(se.muted) > 0) add('muted', 'mask', 'Muet', 'debuff', 'Ne peut plus lancer de sorts.', n(se.muted));
     if (n(se.cursed) > 0) add('cursed', 'ghost', 'Maudit', 'debuff', `Subit ${n(se.cursePct) || 30} % de dégâts en plus.`, n(se.cursed));
     if (n(se.petrified) > 0) add('petrified', 'rock', 'Pétrifié', 'debuff', 'Ne peut plus bloquer ni parer.', n(se.petrified));
-    if (n(se.asleep) > 0) add('asleep', 'moon', 'Endormi', 'debuff', 'Ne peut pas agir tant qu\'il ne subit pas de dégâts.', n(se.asleep));
+    if (n(se.asleep) > 0) add('asleep', 'moon', 'Endormi', 'debuff', 'Ne peut pas agir.', n(se.asleep));
     if (n(se.exhausted) > 0) add('exhausted', 'hourglass', 'Épuisé', 'debuff', `Perd ${n(se.exhaustDrain) || 3} qì d'une couleur au hasard à chaque tour.`, n(se.exhausted));
     if (n(se.corrupted) > 0) add('corrupted', 'blood', 'Corrompu', 'debuff', 'Ses soins deviennent des dégâts.', n(se.corrupted));
     if (n(se.sealed) > 0) add('sealed', 'lock', 'Scellé', 'debuff', 'Ne peut utiliser ni arme ni objet.', n(se.sealed));
-    if (n(se.chilled) > 0) add('chilled', 'snow', 'Ralenti', 'debuff', 'Gagne 1 point de combat de moins par match de flèches. Un sort de Feu sur la reine de glace le dissipe.', n(se.chilled));
+    if (n(se.chilled) > 0) add('chilled', 'snow', 'Ralenti', 'debuff', 'Gagne 1 point de combat de moins par match de flèches.', n(se.chilled));
     if (n(se.burning) > 0) add('burning', 'fire', 'Brûlé', 'debuff', `Subit ${n(se.burnDamage)} dégâts de feu à chaque tour.`, n(se.burning));
     behaviorBadges(entity?.behavior).forEach(b => add(b.id, b.icon, b.label, b.kind, b.text, b.turns));   // comportement de boss (enemyBehaviors.js)
     // Boss semi-scripté (bossScript.js) : échauffement en cours, attaque dévastatrice dans `charge` tour(s).
