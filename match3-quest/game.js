@@ -14,7 +14,7 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 
-import { protectsFromBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
+import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -2003,6 +2003,8 @@ function applyTerrainPrep(){
         if(info && !protectsFromBiome(player, info.collar)){
             if(!player.statusEffects) player.statusEffects = {};
             player.statusEffects[prep.playerStatus] = environmentDamage(player.maxHp);
+        } else if(info){   // le collier du biome protège : annoncé dans le bandeau et le journal
+            prep.lines.push(`Votre ${collarForBiome(info.collar)?.name?.toLowerCase() || 'collier'} vous protège ${info.protect}.`);
         }
     }
     prep.lines.forEach(line => log(line));
