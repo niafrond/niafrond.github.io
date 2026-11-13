@@ -192,6 +192,10 @@ export const DIFFICULTY_TARGET_WIN_RATE = {
 export const EXPERT_WIN_RATIO_FACTOR = 0.5;
 export const EXPERT_CATEGORY_FACTOR = { weak: 1.44, normal: 1, aggressive: 0.73, elite: 1.03, miniBoss: 1.22, boss: 1.22 };
 export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-delà, un coup d'arme suffirait à emporter le héros)
+// Plafond du multiplicateur final (tous ennemis, boss compris) selon le mode : ×7 était trop fort en Facile et en Normal, où le diviseur du mode
+// (< 1 pour les ennemis ordinaires) et le réglage propre à chaque boss le laissaient filer jusqu'au plafond général. Auto, Difficile et Expert : inchangés.
+export const MODE_MAX_DAMAGE_MULT = { easy: 2, normal: 5 };
+export const maxDamageMultFor = difficulty => MODE_MAX_DAMAGE_MULT[difficulty] ?? MAX_DAMAGE_MULT;
 // Diviseur de l'attaque et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors).
 export const MODE_DIVISOR = {
     easy: { weak: 0.57, normal: 1.38, aggressive: 1.32, elite: 1.52, miniBoss: 2.11, boss: 2.13 },
@@ -368,7 +372,7 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const expertMult = Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale);
     const expert = isExpertMode(difficulty);
     const baseMult = Math.max(category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT, expertMult / divisor);
-    const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
+    const damageMult = Math.round(Math.min(maxDamageMultFor(difficulty), baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
     return { hp: finalHp, hpBase: hp, modeDivisor: divisor, hitShareCap: expert ? EXPERT_HIT_SHARE_CAP : HIT_SHARE_CAP, spellCostFactor: expert ? EXPERT_SPELL_COST_FACTOR : 1, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };
 }
