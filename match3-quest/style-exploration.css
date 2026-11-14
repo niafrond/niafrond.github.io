@@ -465,3 +465,5 @@
 .modal-actions button.secondary:hover {
     background: #7f8c8d;
 }
+.carnet-travel-advice { color: #b45309; font-weight: 700; }
+.carnet-travel-btn .carnet-travel-advice { color: inherit; }

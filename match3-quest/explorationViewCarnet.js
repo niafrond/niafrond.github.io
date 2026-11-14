@@ -71,14 +71,16 @@ export function createCarnet(env) {
         const byRegion = new Map();
         stones.forEach(w => { if (!byRegion.has(w.region)) byRegion.set(w.region, []); byRegion.get(w.region).push(w); });
         const kindIcon = { village: icon('village'), wild: icon('leafWild'), sanctuary: icon('sun') };
+        const advice = X.travelAdvice(env.session);
         const chosen = byRegion.has(carnet.travelRegion) ? carnet.travelRegion : null;
         const biomes = `<div class="carnet-travel-biomes">${[...byRegion.entries()].map(([region, list]) =>
-            `<button type="button" class="carnet-chip carnet-travel-biome${region === chosen ? ' active' : ''}" data-travel-region="${region}">${env.escapeHtml(REGION_LABEL[region] || region)} <small>(${list.length})</small></button>`).join('')}</div>`;
+            `<button type="button" class="carnet-chip carnet-travel-biome${region === chosen ? ' active' : ''}" data-travel-region="${region}">${advice?.region === region ? '★ ' : ''}${env.escapeHtml(REGION_LABEL[region] || region)} <small>(${list.length})</small></button>`).join('')}</div>`;
         const list = chosen ? `<div class="carnet-travel-region"><h4>${env.escapeHtml(REGION_LABEL[chosen] || chosen)}</h4>
             ${byRegion.get(chosen).map(w => `<button type="button" class="carnet-travel-btn" data-travel="${w.screenId}"${w.current ? ' disabled' : ''}>
-                ${kindIcon[w.kind] || icon('stone')} ${env.escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}</div>`
+                ${kindIcon[w.kind] || icon('stone')} ${env.escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}${advice?.screenId === w.screenId ? ' <small class="carnet-travel-advice">★ conseillé</small>' : ''}</button>`).join('')}</div>`
             : '<p class="carnet-hint">Choisissez un biome pour voir ses pierres de voyage.</p>';
-        return `<p class="carnet-hint">Borne de voyage ${icon('stone')} : choisissez une destination.</p>${biomes}<div class="carnet-travel">${list}</div>`;
+        const adviceHint = advice ? `<p class="carnet-hint carnet-travel-advice">★ Pour « ${env.escapeHtml(advice.quest)} » : choisissez ${env.escapeHtml(advice.screenName)} (${env.escapeHtml(REGION_LABEL[advice.region] || advice.region)}).</p>` : '';
+        return `<p class="carnet-hint">Borne de voyage ${icon('stone')} : choisissez une destination.</p>${adviceHint}${biomes}<div class="carnet-travel">${list}</div>`;
     }
 
     function progressPanel() {

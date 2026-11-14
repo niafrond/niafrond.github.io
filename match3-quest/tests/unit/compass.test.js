@@ -38,3 +38,29 @@ describe('Boussole des destins', () => {
         expect(dirs.length).toBeLessThanOrEqual(4);
     });
 });
+
+describe('Pierre de voyage conseillée', () => {
+    test('la pierre activée la plus proche de la cible de la quête suivie est recommandée', async () => {
+        const { activateWaypoint, travelAdvice, talkToNpc, setTrackedQuest: track, START_SCREEN } = await import('../../exploration.js');
+        const { routeLength } = await import('../../explorationGuide.js');
+        const s = createSession({});
+        s.data.quests.q_sun_1 = 'active';
+        track(s, 'q_sun_1');
+        expect(travelAdvice(s)).toBeNull();   // aucune pierre activée
+        const stones = Object.values(s.screens).filter(sc => sc.waypoint);
+        stones.forEach(sc => activateWaypoint(s, sc.id));
+        const target0 = Object.values(s.screens).find(sc => sc.enemies.some(e => e.id === 'sun_1'));
+        const far = stones.map(sc => ({ sc, d: routeLength(s, sc.id, target0.id) })).filter(x => x.d !== null).sort((a, b) => b.d - a.d)[0].sc;
+        s.data.screenId = far.id;
+        expect(travelAdvice(s)).not.toBeNull();
+        s.data.screenId = START_SCREEN;
+        const advice = travelAdvice(s);
+        if (advice) {
+            expect(s.data.waypoints).toContain(advice.screenId);
+            const target = Object.values(s.screens).find(sc => sc.enemies.some(e => e.id === 'sun_1'));
+            expect(routeLength(s, advice.screenId, target.id)).toBe(advice.distance);
+            expect(advice.distance).toBeLessThan(routeLength(s, START_SCREEN, target.id));
+            stones.forEach(sc => { const d = routeLength(s, sc.id, target.id); if (d !== null) expect(d).toBeGreaterThanOrEqual(advice.distance); });
+        }
+    });
+});
