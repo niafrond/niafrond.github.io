@@ -1,3 +1,9 @@
+## [2.243.0](https://github.com/niafrond/niafrond.github.io/compare/v2.242.1...v2.243.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** afficher « en colère » derrière le nom d'un ennemi agressif ([fbce4f5](https://github.com/niafrond/niafrond.github.io/commit/fbce4f593e2172ac5720c35fbe8a03be508e9790))
+
 ## [2.242.1](https://github.com/niafrond/niafrond.github.io/compare/v2.242.0...v2.242.1) (2026-11-14)
 
 ### Bug Fixes
