@@ -990,3 +990,6 @@ body.rt .enemy-combat-name.name-hanzi { font-size: 20px; }
 /* Carte choisie comme référence de comparaison */
 .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid #d4a017; background: #fff3cd; }
 body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid var(--rt-gold); }
+
+/* Ennemi de tempérament agressif : « en colère » derrière son nom (gameHud.js). */
+.enemy-mood { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #b71c1c; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; vertical-align: middle; }
