@@ -12,7 +12,7 @@
  */
 import { allItems, lootableItems, shiftActiveItemIndexes } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
-import { lootableStuff, getStuffById, baseStuffPrice, grantStuff } from './stuff.js';
+import { lootableStuff, getStuffById, baseStuffPrice, grantStuff, STUFF_SLOTS } from './stuff.js';
 
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
 
@@ -115,6 +115,10 @@ const offerOf = (kind, obj, section, rarity) => {
 };
 
 // Nombre de pièces tirées par section (en plus des fournitures permanentes).
+// Stuff en vente : meilleures pièces par emplacement, niveaux d'avance permis, majoration de prix (le butin ne donne plus que du stuff ordinaire).
+export const STUFF_PER_SLOT = 2;
+export const STUFF_LEVEL_AHEAD = 3;
+export const STUFF_PRICE_MULT = 1.5;
 export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, rare: 6, exceptional: 2, stuff: 5 };
 
 // Types d'objets que chaque marchand vend en permanence (une pièce « standard » de chacun, toujours rachetable).
@@ -140,7 +144,7 @@ export function standardItemFor(type, L) {
  * Stock d'un marchand : liste d'offres { key, kind: 'item'|'weapon', id, section: 'stall'|'standard'|'rare'|'exceptional',
  * rarity, unique, price }. Déterministe (même marchand, même Nouvelle Partie + → même stock).
  */
-export function merchantStock(merchantId, ngPlus = 0) {
+export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     const m = getMerchant(merchantId);
     if (!m) return [];
     const L = REGION_LEVEL[m.region] || 1;
@@ -175,9 +179,15 @@ export function merchantStock(merchantId, ngPlus = 0) {
     const rareMax = Math.max(0, ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity).price));
 
     // « Parures » : des pièces de stuff (casque, collier, bracelet ou bague) du niveau de la région.
-    const stuffOffers = sample(lootableStuff().filter(s => s.minLevel <= L + 4 && s.minLevel >= L - 14), STOCK_SIZE.stuff, rng)
+    // Le bon stuff s'achète, il ne se trouve plus : chaque marchand garde en rayon les deux meilleures pièces de chaque emplacement que le héros
+    // peut porter (niveau du héros + 3, ou celui de la région s'il est plus haut), à prix fort (STUFF_PRICE_MULT). À chaque montée de
+    // niveau, de meilleures pièces apparaissent : il faut repasser chez les marchands.
+    const stuffLevel = Math.max(L, Math.floor(heroLevel || 0));
+    const RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+    const stuffOffers = STUFF_SLOTS.flatMap(slot => lootableStuff().filter(s => s.slot === slot && s.minLevel <= stuffLevel + STUFF_LEVEL_AHEAD)
+        .sort((a, b) => b.minLevel - a.minLevel || RANK[b.rarity] - RANK[a.rarity]).slice(0, STUFF_PER_SLOT))
         .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
-            price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2)) }));
+            price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2) * STUFF_PRICE_MULT) }));
 
     const mount = MOUNT_OFFERS[merchantId];
     return [
@@ -207,7 +217,7 @@ export function offerObject(offer) {
 // Offres encore en rayon : une pièce unique déjà achetée (ou déjà possédée, pour une arme) disparaît.
 export function availableOffers(merchantId, hero, ngPlus = 0) {
     const sold = hero.merchantSold?.[merchantId] || [];
-    return merchantStock(merchantId, ngPlus).filter(o => {
+    return merchantStock(merchantId, ngPlus, hero.level).filter(o => {
         if (o.unique && sold.includes(o.key)) return false;
         if (o.kind === 'weapon' && (hero.weapons || []).some(w => w.id === o.id)) return false;
         if (o.kind === 'stuff' && (hero.stuffOwned || []).includes(o.id)) return false;

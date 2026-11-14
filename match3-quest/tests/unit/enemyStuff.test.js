@@ -40,9 +40,10 @@ describe('stuff des ennemis', () => {
     });
     test('butin : chaque pièce portée non possédée a sa chance, la meilleure est garantie contre un ennemi plus fort', () => {
         const e = { stuff: { head: 'casque_de_cuir', neck: null, wrist: null, ring: 'bague_de_l_immortel' } };
-        expect(rollEnemyStuffDrops(e, { stuffOwned: [] }, { rng: () => 0 }).map(s => s.id)).toEqual(['casque_de_cuir', 'bague_de_l_immortel']);
+        // la bague de l'immortel est légendaire : elle ne se récupère plus (boutique seulement)
+        expect(rollEnemyStuffDrops(e, { stuffOwned: [] }, { rng: () => 0 }).map(s => s.id)).toEqual(['casque_de_cuir']);
         expect(rollEnemyStuffDrops(e, { stuffOwned: [] }, { rng: () => 0.99 })).toEqual([]);
-        expect(rollEnemyStuffDrops(e, { stuffOwned: [] }, { gap: 2, rng: () => 0.99 }).map(s => s.id)).toEqual(['bague_de_l_immortel']);
+        expect(rollEnemyStuffDrops(e, { stuffOwned: [] }, { gap: 2, rng: () => 0.99 }).map(s => s.id)).toEqual(['casque_de_cuir']);
         expect(rollEnemyStuffDrops(e, { stuffOwned: ['casque_de_cuir', 'bague_de_l_immortel'] }, { gap: 2, rng: () => 0 })).toEqual([]);
         expect(rollEnemyStuffDrops({}, { stuffOwned: [] }, { rng: () => 0 })).toEqual([]);
     });

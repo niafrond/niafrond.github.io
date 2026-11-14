@@ -293,12 +293,14 @@ export function rollStuffDrop(owner, { chance, rarity, levelBonus = 0 }, rng = M
 }
 
 // Paliers de coffre (chestLoot.js) → butin de stuff.
+// Le bon stuff (rare, légendaire) s'achète chez les marchands (merchants.js) : le butin ne laisse que des pièces ordinaires, et un peu de rare
+// dans les coffres les mieux cachés.
 export const CHEST_STUFF_DROP = {
-    1: { chance: 0.08, rarity: { common: 80, uncommon: 20 } },
-    2: { chance: 0.15, rarity: { common: 40, uncommon: 45, rare: 15 } },
-    3: { chance: 0.25, rarity: { uncommon: 40, rare: 50, legendary: 10 } },
-    4: { chance: 0.4, rarity: { rare: 60, legendary: 40 }, levelBonus: 4 }
+    1: { chance: 0.04, rarity: { common: 80, uncommon: 20 } },
+    2: { chance: 0.07, rarity: { common: 55, uncommon: 45 } },
+    3: { chance: 0.12, rarity: { uncommon: 75, rare: 25 } },
+    4: { chance: 0.2, rarity: { uncommon: 45, rare: 55 }, levelBonus: 2 }
 };
 // Victoire ordinaire : 6 % de chance d'un stuff commun ou peu commun ; contre un ennemi de niveau supérieur, un stuff rare garanti.
-export const VICTORY_STUFF_DROP = { chance: 0.06, rarity: { common: 70, uncommon: 30 } };
-export const OVERLEVELED_STUFF_DROP = { chance: 1, rarity: { rare: 70, legendary: 30 } };
+export const VICTORY_STUFF_DROP = { chance: 0.03, rarity: { common: 70, uncommon: 30 } };
+export const OVERLEVELED_STUFF_DROP = { chance: 1, rarity: { uncommon: 55, rare: 45 } };
