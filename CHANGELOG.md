@@ -1,3 +1,11 @@
+## [2.245.0](https://github.com/niafrond/niafrond.github.io/compare/v2.244.0...v2.245.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** parures forgées de niveau 36 à 70, vendues en boutique ([a993189](https://github.com/niafrond/niafrond.github.io/commit/a9931892f681953ceb4e4f0118a793b575f5f2c3))
+* **match3-quest:** recommander la pierre de voyage la plus proche de la quête suivie ([92f7e92](https://github.com/niafrond/niafrond.github.io/commit/92f7e92018fa7361bed409b289b37b370bf58352))
+* **match3-quest:** vendre le bon stuff en boutique et réduire le butin de stuff ([9c02545](https://github.com/niafrond/niafrond.github.io/commit/9c0254598b6b838d0abfa4c4e62887913d188ed4))
+
 ## [2.244.0](https://github.com/niafrond/niafrond.github.io/compare/v2.243.1...v2.244.0) (2026-11-14)
 
 ### Features
