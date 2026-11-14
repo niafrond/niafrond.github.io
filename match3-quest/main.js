@@ -358,11 +358,12 @@ function init() {
             const stones = exploration.getTravelList().filter(w => w.region === zone.id);
             panel.innerHTML = `<h4>${icon('stone')} Voyage rapide · ${zoneName[zone.id] || zone.id}</h4>`;
             if(!stones.length) panel.insertAdjacentHTML('beforeend', '<p>Aucune pierre de voyage activée dans ce biome.</p>');
+            const advice = exploration.getTravelAdvice?.();
             stones.forEach(w => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'worldmap-travel-btn';
-                btn.textContent = w.screenName;
+                btn.textContent = advice?.screenId === w.screenId ? `★ ${w.screenName} (conseillé : ${advice.quest})` : w.screenName;
                 btn.disabled = w.current;
                 btn.addEventListener('click', () => {
                     modal.classList.remove('active');
@@ -372,7 +373,7 @@ function init() {
             });
         };
         panel.innerHTML = canTravel
-            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.</p>`
+            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.${(() => { const a = exploration.getTravelAdvice?.(); return a ? ` ★ Pour « ${a.quest} » : ${a.screenName} (${zoneName[a.region] || a.region}).` : ''; })()}</p>`
             : `<h4>${icon('stone')} Voyage rapide</h4><p>Le voyage rapide n'est possible que depuis une borne de voyage.</p>`;
         mountWorldMap(container, worldZones, {
             level: player.level,

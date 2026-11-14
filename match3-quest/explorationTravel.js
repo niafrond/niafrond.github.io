@@ -3,7 +3,7 @@
 import { STORY_INTRO } from './story.js';
 import { REGION_ORDER } from './world/index.js';
 import { questById } from './explorationQuests.js';
-import { REGION_NUMBER, questRegion } from './explorationGuide.js';
+import { REGION_NUMBER, questRegion, guidedQuest, questTargets, routeLength } from './explorationGuide.js';
 import { currentScreen, enterScreen } from './exploration.js';
 
 // ── Pierres de voyage (voyage rapide) ─────────────────────────────────────
@@ -36,6 +36,23 @@ export function waypointList(session) {
         }))
         .sort((a, b) => REGION_NUMBER(a.region) - REGION_NUMBER(b.region)
             || (kindRank[a.kind] ?? 2) - (kindRank[b.kind] ?? 2));
+}
+
+/**
+ * Pierre à choisir pour la quête guidée (suivie, sinon principale) : parmi les pierres activées, celle d'où il y a le moins d'écrans à traverser
+ * jusqu'à la cible. { screenId, region, quest, distance } ou null (pas de quête, pas de cible, aucune pierre, ou on est déjà au plus près).
+ */
+export function travelAdvice(session) {
+    const quest = guidedQuest(session);
+    const target = quest && questTargets(session, quest)[0];
+    if (!target) return null;
+    const here = routeLength(session, session.data.screenId, target.screenId);
+    const best = waypointList(session)
+        .map(w => ({ ...w, distance: routeLength(session, w.screenId, target.screenId) }))
+        .filter(w => w.distance !== null)
+        .sort((a, b) => a.distance - b.distance)[0];
+    if (!best || best.current || (here !== null && best.distance >= here)) return null;
+    return { screenId: best.screenId, region: best.region, screenName: best.screenName, quest: quest.title, distance: best.distance };
 }
 
 // Le héros se tient à côté d'une borne de voyage (la pierre de l'écran courant) : seul endroit d'où l'on peut voyager.

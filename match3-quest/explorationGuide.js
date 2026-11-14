@@ -236,7 +236,7 @@ function targetPosition(session, target) {
 }
 
 // Premier écran à rejoindre (sortie à prendre depuis `fromId`) pour atteindre `toId`, en évitant les sorties verrouillées.
-function nextExitToward(session, fromId, toId) {
+function routeToward(session, fromId, toId) {
     const toEvent = session.screens[toId]?.event || null;
     const attempt = (allowLocked, allowSea = canWalkOnWater(session)) => {
         const seen = new Map([[fromId, null]]);
@@ -258,20 +258,27 @@ function nextExitToward(session, fromId, toId) {
             }
         }
         if (!seen.has(toId)) return null;
-        let step = seen.get(toId);
-        while (step && step.from !== fromId) step = seen.get(step.from);
-        return step ? step.exit : null;
+        let step = seen.get(toId), length = 1;
+        while (step && step.from !== fromId) { step = seen.get(step.from); length++; }
+        return step ? { exit: step.exit, length } : null;
     };
-    return attempt(false) || attempt(true) || attempt(true, true);
+    return fromId === toId ? { exit: null, length: 0 } : attempt(false) || attempt(true) || attempt(true, true);
 }
+
+/** Nombre d'écrans à traverser de `fromId` à `toId` (0 si c'est le même), ou null si aucun chemin. */
+export const routeLength = (session, fromId, toId) => routeToward(session, fromId, toId)?.length ?? null;
 
 // Indicateur de direction de la quête suivie : { x, y, label, kind: 'target' | 'exit' } (tuile de l'écran courant), ou null.
 // À défaut de quête épinglée, l'indicateur guide vers la quête principale en cours (ou à rendre).
-export function questDirections(session) {
-    const quest = trackedQuest(session)
+export function guidedQuest(session) {
+    return trackedQuest(session)
         || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)))
         // Boussole des destins : à défaut, n'importe quelle quête en cours (secondaires et armures antiques comprises)
         || (session.rt.compass ? session.quests.find(q => ['active', 'ready'].includes(questStatus(session, q)) && questTargets(session, q).length) : null);
+}
+
+export function questDirections(session) {
+    const quest = guidedQuest(session);
     if (!quest) return [];
     const here = session.data.screenId;
     const seen = new Set();
@@ -280,7 +287,7 @@ export function questDirections(session) {
             const pos = targetPosition(session, target);
             return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
         }
-        const exit = nextExitToward(session, here, target.screenId);
+        const exit = routeToward(session, here, target.screenId)?.exit;
         return exit ? { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' } : null;
     }).filter(d => d && !seen.has(`${d.kind}${d.x},${d.y}`) && seen.add(`${d.kind}${d.x},${d.y}`));
 }
