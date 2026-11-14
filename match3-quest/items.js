@@ -423,7 +423,7 @@ function shiftRelicEffect(player, item, sign) {
  *  a dérivé (relique retirée sans avoir été ajoutée, import sans plafond…) retombait à quelques points, plus aucun sort n'était lançable. */
 export function repairMaxMana(player, base = 50) {
     if(!player) return 0;
-    player.maxMana = base + wornRelics(player).reduce((sum, i) => sum + Math.floor(i.effect?.permMaxMana || 0), 0);
+    player.maxMana = base + wornRelics(player).reduce((sum, i) => sum + Math.floor((allItems.find(c => c.id === i.id)?.effect ?? i.effect)?.permMaxMana || 0), 0);   // valeur du catalogue : une sauvegarde garde les anciennes
     return player.maxMana;
 }
 
