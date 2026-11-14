@@ -1,3 +1,10 @@
+## [2.243.1](https://github.com/niafrond/niafrond.github.io/compare/v2.243.0...v2.243.1) (2026-11-14)
+
+### Bug Fixes
+
+* **match3-quest:** lire le qì max des reliques dans le catalogue pour la réserve de base ([5daa8cc](https://github.com/niafrond/niafrond.github.io/commit/5daa8cc0e23eb26a9f8453e434a115f9b3421f1b))
+* **match3-quest:** recalculer la réserve de qì de base au chargement ([db02db6](https://github.com/niafrond/niafrond.github.io/commit/db02db69bceb16799c593e07cd0f97f32663681a))
+
 ## [2.243.0](https://github.com/niafrond/niafrond.github.io/compare/v2.242.1...v2.243.0) (2026-11-14)
 
 ### Features
