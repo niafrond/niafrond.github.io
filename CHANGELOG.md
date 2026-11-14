@@ -1,3 +1,9 @@
+## [2.247.0](https://github.com/niafrond/niafrond.github.io/compare/v2.246.0...v2.247.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** marche fluide à vitesse constante avec cycle de marche et rebond ([61e14d6](https://github.com/niafrond/niafrond.github.io/commit/61e14d6f5c2976c301efccd770424c3d899c5be9))
+
 ## [2.246.0](https://github.com/niafrond/niafrond.github.io/compare/v2.245.0...v2.246.0) (2026-11-14)
 
 ### Features
