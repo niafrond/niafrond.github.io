@@ -1,3 +1,10 @@
+## [2.242.1](https://github.com/niafrond/niafrond.github.io/compare/v2.242.0...v2.242.1) (2026-11-14)
+
+### Bug Fixes
+
+* **match3-quest:** plafonner les dégâts des ennemis à x4 en Normal et x3 en Facile ([53c572f](https://github.com/niafrond/niafrond.github.io/commit/53c572f6a9e64fde679e1d95666c871b521cf68e))
+* **match3-quest:** plafonner les dégâts ennemis à x2 en Facile et x5 en Normal ([fe8541c](https://github.com/niafrond/niafrond.github.io/commit/fe8541cdab46f30d2de958fd6aef7a401cd53c2e))
+
 ## [2.242.0](https://github.com/niafrond/niafrond.github.io/compare/v2.241.1...v2.242.0) (2026-11-13)
 
 ### Features
