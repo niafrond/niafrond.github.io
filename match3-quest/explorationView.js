@@ -1163,6 +1163,7 @@ export function createExplorationView(cfg) {
             return bestiaryPanel();
         },
         bindBestiary,
+        getQuestRegions() { ensureSession(); return X.questRegions(session); },
         getTravelAdvice() { ensureSession(); return X.travelAdvice(session); },
         getTravelList() { ensureSession(); return X.waypointList(session); },
         canFastTravel() { ensureSession(); return X.nearWaypoint(session); },

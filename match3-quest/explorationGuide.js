@@ -259,10 +259,26 @@ function routeToward(session, fromId, toId) {
         }
         if (!seen.has(toId)) return null;
         let step = seen.get(toId), length = 1;
-        while (step && step.from !== fromId) { step = seen.get(step.from); length++; }
-        return step ? { exit: step.exit, length } : null;
+        const path = [toId];
+        while (step && step.from !== fromId) { path.unshift(step.from); step = seen.get(step.from); length++; }
+        path.unshift(fromId);
+        return step ? { exit: step.exit, length, path } : null;
     };
-    return fromId === toId ? { exit: null, length: 0 } : attempt(false) || attempt(true) || attempt(true, true);
+    return fromId === toId ? { exit: null, length: 0, path: [fromId] } : attempt(false) || attempt(true) || attempt(true, true);
+}
+
+/** Régions (biomes) à traverser, dans l'ordre, pour la quête guidée : du lieu actuel jusqu'à chaque cible (sert à marquer la carte du monde). */
+export function questRegions(session) {
+    const quest = guidedQuest(session);
+    if (!quest) return [];
+    const regions = [];
+    questTargets(session, quest).forEach(t => {
+        (routeToward(session, session.data.screenId, t.screenId)?.path || [t.screenId]).forEach(id => {
+            const r = session.screens[id]?.region;
+            if (r && !regions.includes(r)) regions.push(r);
+        });
+    });
+    return regions;
 }
 
 /** Nombre d'écrans à traverser de `fromId` à `toId` (0 si c'est le même), ou null si aucun chemin. */

@@ -380,7 +380,8 @@ function init() {
             visitedIds: player.worldMap?.visitedZoneIds || [],
             currentId: exploration.getCurrentRegion(),
             heroUri: spriteUri(heroSprite(player.class)),
-            requireVisit: true
+            requireVisit: true,
+            starIds: exploration.getQuestRegions?.() || []
         }, zone => { if(canTravel) showStones(zone); });
         container.appendChild(panel);
         modal.classList.add('active');
