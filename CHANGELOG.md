@@ -1,3 +1,10 @@
+## [2.246.0](https://github.com/niafrond/niafrond.github.io/compare/v2.245.0...v2.246.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** étoiles de quête sur les biomes et pierres de l'onglet Voyage ([c64c8c7](https://github.com/niafrond/niafrond.github.io/commit/c64c8c7c0920e4a4a6dc8a36a1d889154abc16ef))
+* **match3-quest:** poser l'étoile de quête sur les régions de la carte du monde ([60342d8](https://github.com/niafrond/niafrond.github.io/commit/60342d8f5a8a43a7879beed55cad19cfe99f2b10))
+
 ## [2.245.0](https://github.com/niafrond/niafrond.github.io/compare/v2.244.0...v2.245.0) (2026-11-14)
 
 ### Features
