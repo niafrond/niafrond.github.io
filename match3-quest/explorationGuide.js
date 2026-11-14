@@ -43,13 +43,15 @@ function objectiveTarget(session, obj) {
     }
     if (obj.type === 'puzzleSet' && session.rt.compass) {
         // Boussole : la prochaine énigme à résoudre de la série (son coffre), faute de quoi l'armure n'a aucun repère.
-        const ids = puzzlesOfSet(obj.target).filter(id => !session.data.solvedPuzzles.includes(id));
-        for (const scr of screens) {
-            const chest = scr.chests.find(c => ids.includes(c.puzzle));
-            if (chest) return { screenId: scr.id, kind: 'chest', id: chest.id };
-        }
+        return puzzleChestTargets(session, obj)[0] || null;
     }
     return null;
+}
+
+// Boussole : un coffre d'énigme par pièce encore manquante d'une série (armure antique), partout dans le monde.
+function puzzleChestTargets(session, obj) {
+    const ids = puzzlesOfSet(obj.target).filter(id => !session.data.solvedPuzzles.includes(id));
+    return Object.values(session.screens).flatMap(scr => scr.chests.filter(c => ids.includes(c.puzzle)).map(c => ({ screenId: scr.id, kind: 'chest', id: c.id })));
 }
 
 // Lieux à rejoindre pour une quête : PNJ à qui la rendre, ou cibles des objectifs restants.
@@ -65,6 +67,7 @@ export function questTargets(session, quest) {
     }
     if (status === 'active') {
         const obj = quest.objectives.find(o => !objectiveDone(session, o));
+        if (obj?.type === 'puzzleSet' && session.rt.compass) return puzzleChestTargets(session, obj);   // une cible par pièce manquante
         const t = obj && objectiveTarget(session, obj);
         return t ? [t] : [];
     }
@@ -264,20 +267,22 @@ function nextExitToward(session, fromId, toId) {
 
 // Indicateur de direction de la quête suivie : { x, y, label, kind: 'target' | 'exit' } (tuile de l'écran courant), ou null.
 // À défaut de quête épinglée, l'indicateur guide vers la quête principale en cours (ou à rendre).
-export function questDirection(session) {
+export function questDirections(session) {
     const quest = trackedQuest(session)
         || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)))
         // Boussole des destins : à défaut, n'importe quelle quête en cours (secondaires et armures antiques comprises)
         || (session.rt.compass ? session.quests.find(q => ['active', 'ready'].includes(questStatus(session, q)) && questTargets(session, q).length) : null);
-    if (!quest) return null;
-    const target = questTargets(session, quest)[0];
-    if (!target) return null;
+    if (!quest) return [];
     const here = session.data.screenId;
-    if (target.screenId === here) {
-        const pos = targetPosition(session, target);
-        return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
-    }
-    const exit = nextExitToward(session, here, target.screenId);
-    if (!exit) return null;
-    return { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' };
+    const seen = new Set();
+    return questTargets(session, quest).map(target => {
+        if (target.screenId === here) {
+            const pos = targetPosition(session, target);
+            return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
+        }
+        const exit = nextExitToward(session, here, target.screenId);
+        return exit ? { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' } : null;
+    }).filter(d => d && !seen.has(`${d.kind}${d.x},${d.y}`) && seen.add(`${d.kind}${d.x},${d.y}`));
 }
+
+export const questDirection = session => questDirections(session)[0] || null;

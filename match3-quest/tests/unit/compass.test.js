@@ -1,4 +1,4 @@
-import { createSession, checkAutoQuests, questDirection, setCompass, questStatus, solvePuzzle, enterScreen } from '../../exploration.js';
+import { createSession, checkAutoQuests, questDirection, questDirections, setTrackedQuest, setCompass, questStatus, solvePuzzle, enterScreen } from '../../exploration.js';
 import { questTargets } from '../../explorationGuide.js';
 import { PUZZLE_SETS, puzzlesOfSet } from '../../puzzle/levels.js';
 import { COMPASS_PRICE, MERCHANT_IDS, merchantStock, availableOffers, buyOffer } from '../../merchants.js';
@@ -25,10 +25,16 @@ describe('Boussole des destins', () => {
         setCompass(s, false);
         expect(questTargets(s, quest)).toEqual([]);
         setCompass(s, true);
-        const target = questTargets(s, quest)[0];
+        const targets = questTargets(s, quest);
+        expect(targets).toHaveLength(puzzlesOfSet(set).length - 1);   // une cible par pièce manquante
+        const target = targets[0];
         expect(target).toMatchObject({ kind: 'chest' });
         expect(s.screens[target.screenId].chests.find(c => c.id === target.id).puzzle).not.toBe(first);
         enterScreen(s, target.screenId, s.screens[target.screenId].spawn);
+        setTrackedQuest(s, quest.id);
         expect(questDirection(s)).toMatchObject({ kind: 'target' });
+        const dirs = questDirections(s);
+        expect(dirs.length).toBeGreaterThanOrEqual(1);
+        expect(dirs.length).toBeLessThanOrEqual(4);
     });
 });
