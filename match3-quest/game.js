@@ -25,7 +25,7 @@ import { recordBossLoss, pickBossTip } from "./bossTips.js";
 
 import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
 
-import { getRarityIcon, applyArtifactEffects, normalizeRelics, migrateShadowCollar, allItems } from "./items.js";
+import { getRarityIcon, repairMaxMana, applyArtifactEffects, normalizeRelics, migrateShadowCollar, allItems } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 
 
@@ -1549,6 +1549,7 @@ loadGameData();
 // Appliquer les effets des artefacts
 normalizeRelics(player);   // sauvegarde ancienne : doublons et reliques au-delà des emplacements du niveau retirés
 applyArtifactEffects(player);
+repairMaxMana(player, BASE_MANA_CAP);   // la réserve de base se déduit des reliques portées, jamais d'une valeur sauvegardée dérivée
 normalizeActiveInventoryIndex();
 clampManaToCaps(player);
 
