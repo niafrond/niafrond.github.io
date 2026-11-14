@@ -1,3 +1,10 @@
+## [2.244.0](https://github.com/niafrond/niafrond.github.io/compare/v2.243.1...v2.244.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** une flèche par pièce manquante d'armure antique avec la boussole ([088b66b](https://github.com/niafrond/niafrond.github.io/commit/088b66b645e905a699c0c2a6d9836aeaa14f94ac))
+* **match3-quest:** vendre la Boussole des destins qui guide vers toutes les quêtes ([ed1e6ff](https://github.com/niafrond/niafrond.github.io/commit/ed1e6ffa33c6c86e5130bb4766c597dbef2d714e))
+
 ## [2.243.1](https://github.com/niafrond/niafrond.github.io/compare/v2.243.0...v2.243.1) (2026-11-14)
 
 ### Bug Fixes
