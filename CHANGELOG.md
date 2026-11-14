@@ -1,3 +1,9 @@
+## [2.248.0](https://github.com/niafrond/niafrond.github.io/compare/v2.247.0...v2.248.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** faire glisser la rangée qui dérive en mer ([db991ac](https://github.com/niafrond/niafrond.github.io/commit/db991aca2835bcd000d6b1a6650ede03933837e2))
+
 ## [2.247.0](https://github.com/niafrond/niafrond.github.io/compare/v2.246.0...v2.247.0) (2026-11-14)
 
 ### Features
