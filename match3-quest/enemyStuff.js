@@ -52,7 +52,7 @@ export const enemyStuffMaxHp = enemy => wornStuff(enemy).reduce((sum, s) => sum 
 export const enemyStuffPieces = enemy => (enemy?.stuff ? wornStuff(enemy) : []);
 
 // Chance de récupérer chaque pièce portée, selon sa rareté (un boss : ×1,5).
-export const ENEMY_STUFF_DROP_CHANCE = { common: 0.3, uncommon: 0.22, rare: 0.15, legendary: 0.1 };
+export const ENEMY_STUFF_DROP_CHANCE = { common: 0.15, uncommon: 0.1, rare: 0.05, legendary: 0 };   // le légendaire ne se trouve plus qu'en boutique
 const RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
 
 /**
@@ -63,8 +63,9 @@ export function rollEnemyStuffDrops(enemy, owner, { gap = 0, rng = Math.random }
     const owned = new Set(owner?.stuffOwned || []);
     const pieces = enemyStuffPieces(enemy).filter(s => !owned.has(s.id));
     const mult = enemy?.isBoss ? 1.5 : 1;
-    const drops = pieces.filter(s => rng() < (ENEMY_STUFF_DROP_CHANCE[s.rarity] || 0.2) * mult);
-    if (gap > 0 && !drops.length && pieces.length) drops.push([...pieces].sort((a, b) => RANK[b.rarity] - RANK[a.rarity])[0]);
+    const drops = pieces.filter(s => rng() < (ENEMY_STUFF_DROP_CHANCE[s.rarity] ?? 0.2) * mult);
+    const guaranteed = pieces.filter(s => s.rarity !== 'legendary');
+    if (gap > 0 && !drops.length && guaranteed.length) drops.push([...guaranteed].sort((a, b) => RANK[b.rarity] - RANK[a.rarity])[0]);
     return drops;
 }
 

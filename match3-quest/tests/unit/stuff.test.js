@@ -103,7 +103,7 @@ describe('boutique et butin', () => {
     });
     test('acheter range le stuff dans la collection, et il quitte le rayon', () => {
         const h = hero();
-        const offer = merchantStock('merchant_volcan').find(o => o.kind === 'stuff');
+        const offer = merchantStock('merchant_volcan', 0, h.level).find(o => o.kind === 'stuff');
         const res = buyOffer('merchant_volcan', offer.key, h);
         expect(res.ok).toBe(true);
         expect(h.stuffOwned).toContain(offer.id);
