@@ -363,7 +363,7 @@ function init() {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'worldmap-travel-btn';
-                btn.textContent = advice?.screenId === w.screenId ? `★ ${w.screenName} (conseillé : ${advice.quest})` : w.screenName;
+                btn.textContent = advice?.screenId === w.screenId ? `★ ${w.screenName}` : w.screenName;
                 btn.disabled = w.current;
                 btn.addEventListener('click', () => {
                     modal.classList.remove('active');
@@ -380,7 +380,8 @@ function init() {
             visitedIds: player.worldMap?.visitedZoneIds || [],
             currentId: exploration.getCurrentRegion(),
             heroUri: spriteUri(heroSprite(player.class)),
-            requireVisit: true
+            requireVisit: true,
+            starIds: exploration.getQuestRegions?.() || []
         }, zone => { if(canTravel) showStones(zone); });
         container.appendChild(panel);
         modal.classList.add('active');

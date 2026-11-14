@@ -467,3 +467,6 @@
 }
 .carnet-travel-advice { color: #b45309; font-weight: 700; }
 .carnet-travel-btn .carnet-travel-advice { color: inherit; }
+.wm-quest-star { font-size: 30px; fill: #ffd23f; stroke: #2b1b17; stroke-width: 2.2; paint-order: stroke; pointer-events: none; animation: wm-star-pulse 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes wm-star-pulse { 50% { transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) { .wm-quest-star { animation: none; } }

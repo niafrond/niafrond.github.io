@@ -64,3 +64,21 @@ describe('Pierre de voyage conseillée', () => {
         }
     });
 });
+
+describe('carte du monde : étoiles sur les régions de la quête', () => {
+    test('régions à traverser pour la quête suivie, et ★ posée sur ces zones', async () => {
+        const { questRegions } = await import('../../explorationGuide.js');
+        const { buildWorldMapSvg } = await import('../../worldMapView.js');
+        const { worldZones } = await import('../../worldMap.js');
+        const { START_SCREEN } = await import('../../exploration.js');
+        const s = createSession({});
+        s.data.quests.q_sun_1 = 'active';
+        setTrackedQuest(s, 'q_sun_1');
+        s.data.screenId = START_SCREEN;
+        const regions = questRegions(s);
+        expect(regions.length).toBeGreaterThanOrEqual(1);
+        const svg = buildWorldMapSvg(worldZones, { level: 70, starIds: regions });
+        expect((svg.match(/wm-quest-star/g) || []).length).toBe(regions.length);
+        expect((buildWorldMapSvg(worldZones, { level: 70 }).match(/wm-quest-star/g) || []).length).toBe(0);
+    });
+});

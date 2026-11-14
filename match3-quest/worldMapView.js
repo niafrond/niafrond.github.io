@@ -110,6 +110,7 @@ export function buildWorldMapSvg(zones, state) {
     const visitedIds = state?.visitedIds || [];
     const currentId = state?.currentId || null;
     const heroUri = state?.heroUri || '';
+    const starIds = state?.starIds || [];   // régions à traverser pour la quête suivie : ★ posée directement dessus
     // requireVisit : en exploration, une région ne se rejoint que si on l'a déjà découverte à pied.
     const isUnlocked = z => level >= z.unlockLevel && (!state.requireVisit || visitedIds.includes(z.id));
     const points = zones.map(z => z.map);
@@ -147,6 +148,7 @@ export function buildWorldMapSvg(zones, state) {
         const bannerLabel = zone.shortName || zone.name;
         const name = escapeHtml(bannerLabel);
         const bannerW = Math.round(bannerLabel.length * 7.6 + 22);
+        const starred = starIds.includes(zone.id);
         const state = !unlocked ? 'locked' : visited ? 'visited' : 'new';
         const label = unlocked
             ? `${zone.name}${visited ? ', déjà explorée' : ''}`
@@ -160,6 +162,7 @@ export function buildWorldMapSvg(zones, state) {
                 <circle class="wm-node-shine" cx="-8" cy="-9" r="6"/>
                 <image class="wm-node-icon" href="${svgUri(unlocked ? decorSprite(zone.decor) : iconSvg('lock'))}" x="-17" y="-17" width="34" height="34"/>
                 ${state === 'visited' ? `<image class="wm-node-badge" href="${svgUri(iconSvg('star'))}" x="10" y="-24" width="18" height="18"/>` : ''}
+                ${starred ? '<text class="wm-quest-star" x="-27" y="-14" text-anchor="middle">★</text>' : ''}
                 <rect class="wm-banner" x="${-bannerW / 2}" y="32" width="${bannerW}" height="22" rx="8"/>
                 <text class="wm-banner-text" y="47" text-anchor="middle">${name}</text>
                 ${unlocked ? '' : `<rect class="wm-lvl" x="-34" y="58" width="68" height="18" rx="9"/><text class="wm-lvl-text" y="71" text-anchor="middle">${level >= zone.unlockLevel ? '???' : `Niv. ${zone.unlockLevel}`}</text>`}
