@@ -153,7 +153,7 @@ function init() {
         canvas: document.getElementById('explore-canvas'),
         getSaved: () => player.exploration,
         setSaved: data => { player.exploration = data; },
-        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch) }),
+        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch), compass: Boolean(player.compass) }),
         getPlayerLevel: () => player.level,
         hasStealth: () => hasStealth(player),
         getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },

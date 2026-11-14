@@ -67,6 +67,11 @@ export const TORCH = { id: 'torch', name: 'Torche', type: 'torch',
 export const TORCH_PRICE = 400;
 // Vendue tardivement : le joueur traverse d'abord les souterrains à tâtons, puis revient avec la torche après avoir avancé dans l'intrigue.
 export const TORCH_MERCHANTS = ['merchant_fauves', 'merchant_mer', 'merchant_fusang', 'merchant_marees', 'merchant_lune'];
+// Boussole des destins : vendue par tous les marchands, très cher. Elle débloque la direction de TOUTES les quêtes (sans elle, seule la quête suivie
+// ou la quête principale est guidée) : les secondaires aussi, et les armures antiques, dont les pièces n'ont autrement aucun repère.
+export const COMPASS = { id: 'compass', name: 'Boussole des destins', type: 'compass',
+    description: 'Une boussole de jade qui ne ment jamais : la flèche dorée guide vers toutes vos quêtes, même les plus secrètes, jusqu\'aux pièces des armures antiques.' };
+export const COMPASS_PRICE = 150000;
 export const MOUNT_OFFERS = { merchant_bambous: { id: 'horse', price: 480 } };
 
 export const MERCHANT_IDS = MERCHANTS.map(m => m.id);
@@ -177,6 +182,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
     const mount = MOUNT_OFFERS[merchantId];
     return [
         ...(TORCH_MERCHANTS.includes(merchantId) ? [{ key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE }] : []),
+        { key: 'compass:compass', kind: 'compass', id: 'compass', section: 'gear', rarity: 'legendary', unique: true, price: COMPASS_PRICE },
         ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
         ...standards.map(i => ({ ...offerOf('item', i, 'standard', i.rarity), unique: false })),
@@ -193,6 +199,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
 export function offerObject(offer) {
     if (offer.kind === 'mount') return MOUNTS[offer.id] || null;
     if (offer.kind === 'torch') return TORCH;
+    if (offer.kind === 'compass') return COMPASS;
     if (offer.kind === 'stuff') return getStuffById(offer.id);
     return offer.kind === 'weapon' ? allWeapons.find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
 }
@@ -206,6 +213,7 @@ export function availableOffers(merchantId, hero, ngPlus = 0) {
         if (o.kind === 'stuff' && (hero.stuffOwned || []).includes(o.id)) return false;
         if (o.kind === 'mount' && hero.mount) return false;   // une seule monture
         if (o.kind === 'torch' && hero.torch) return false;   // une seule torche
+        if (o.kind === 'compass' && hero.compass) return false;   // une seule boussole
         return true;
     });
 }
@@ -224,6 +232,8 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
     hero.gold -= offer.price;
     if (offer.kind === 'torch') {
         hero.torch = true;
+    } else if (offer.kind === 'compass') {
+        hero.compass = true;
     } else if (offer.kind === 'mount') {
         hero.mount = obj.id;
     } else if (offer.kind === 'stuff') {

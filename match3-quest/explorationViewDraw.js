@@ -303,6 +303,7 @@ export function createDraw(env) {
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
         const houseMk = X.inChangeMode(env.session) ? [] : X.houseMarkers(env.session);   // mode Chang'e : pas de « ! » de quête
+        X.setCompass(env.session, cfg.getHero().compass);
         // anneaux dorés sur les cibles de la quête suivie
         X.trackedMarkers(env.session).forEach(t => {
             let pos = null;

@@ -217,9 +217,12 @@ export function createOverlays(env) {
 
     // Indicateur de direction de la quête suivie : flèche dorée autour du héros, trait pointillé vers la cible
     // (ou vers la sortie / la porte à prendre quand la cible est dans un autre écran), nom de la destination.
+    // Plusieurs flèches possibles (boussole des destins : une par pièce manquante d'une armure antique).
     function drawQuestCompass(P, vis, tile, pulse, now, labelSize) {
-        const dir = X.questDirection(env.session);
-        if (!dir) return;
+        X.questDirections(env.session).forEach(dir => drawDirection(dir, P, vis, tile, pulse, labelSize));
+    }
+
+    function drawDirection(dir, P, vis, tile, pulse, labelSize) {
         const hero = P(vis.px + 0.5, vis.py + 0.5);
         const dest = P(dir.x + 0.5, dir.y + 0.5);
         const dx = dest.x - hero.x;

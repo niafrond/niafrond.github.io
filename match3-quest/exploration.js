@@ -690,6 +690,8 @@ function contactEvent(session, def) {
 // Zone de vigilance : un boss protégé n'en a pas ; un vrai combat l'emporte sur un mirage.
 // Collier d'ombre (stuff.js : hasStealth), posé par la vue avant chaque pas : aucun ennemi ne détecte le héros (sauf dans l'arène).
 export function setStealth(session, on) { session.rt.stealth = Boolean(on); }
+/** Boussole des destins (marchands) : la direction guide vers toutes les quêtes (voir explorationGuide.js `questTargets`). */
+export function setCompass(session, on) { session.rt.compass = Boolean(on); }
 const isStealthy = session => Boolean(session.rt.stealth) && !inArena(session);
 
 function checkAura(session) {
