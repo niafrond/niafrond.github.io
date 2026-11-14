@@ -60,6 +60,34 @@ export const ANTIQUE_ARMORS = {
 
 const piece = (id, slot, name, minLevel, rarity, description, bonus = {}) => ({ id, type: 'stuff', slot, name, minLevel, rarity, description, ...bonus });
 
+// Parures forgées : sept paliers (niveaux 36 à 70) de quatre pièces, vendues par les marchands uniquement (`shop: true`, jamais en butin :
+// le bon stuff s'achète, voir merchants.js). Elles respectent le budget de statBudget.js (Atk, Déf et qì au plus égaux à la meilleure pièce
+// de l'emplacement) : leur force vient des PV max (12 par niveau) et de résistances aux crânes, aux armes, aux sorts, plus bonus de sorts et
+// réduction des attaques signature (effets de gearEffects.js).
+export const FORGED_TIERS = [
+    { level: 36, rarity: 'rare', theme: 'du Tonnerre', tale: 'forgée un jour d\'orage' },
+    { level: 42, rarity: 'rare', theme: 'de la Lune Argentée', tale: 'baignée de lune' },
+    { level: 48, rarity: 'rare', theme: 'du Fusang', tale: 'taillée dans le bois de l\'Arbre-Soleil' },
+    { level: 54, rarity: 'legendary', theme: 'de Jade Impérial', tale: 'polie pour la cour du Ciel' },
+    { level: 60, rarity: 'legendary', theme: 'du Dragon Doré', tale: 'couverte d\'écailles d\'or' },
+    { level: 66, rarity: 'legendary', theme: 'de l\'Aube Céleste', tale: 'trempée dans la première lumière' },
+    { level: 70, rarity: 'legendary', theme: 'du Dixième Soleil', tale: 'qui garde la chaleur du soleil abattu' }
+];
+const SPELL_COLORS = ['red', 'blue', 'yellow', 'green', 'purple', 'red', 'blue'];
+function forgedStuff() {
+    return FORGED_TIERS.flatMap((t, i) => {
+        const hp = 12 * t.level, res = 8 + 3 * i, late = i >= 3;
+        const id = slot => `forge_${slot}_${t.level}`;
+        const text = what => `${what} ${t.tale}.`;
+        return [
+            piece(id('head'), 'head', `Heaume ${t.theme}`, t.level, t.rarity, text('Un heaume de maître'), { defBonus: 2, maxHp: hp, effects: { resist: { skull: res } }, shop: true }),
+            piece(id('neck'), 'neck', `Collier ${t.theme}`, t.level, t.rarity, text('Un collier de maître'), { maxHp: hp, ...(late ? { manaMax: allColors(1) } : {}), effects: { resist: { spell: res } }, shop: true }),
+            piece(id('wrist'), 'wrist', `Bracelet ${t.theme}`, t.level, t.rarity, text('Un bracelet de maître'), { atkBonus: 1, defBonus: 1, maxHp: hp, effects: { resist: { weapon: res }, signatureReduce: 5 + 3 * i }, shop: true }),
+            piece(id('ring'), 'ring', `Bague ${t.theme}`, t.level, t.rarity, text('Une bague de maître'), { atkBonus: 1, defBonus: 1, maxHp: hp, ...(late ? { manaMax: allColors(2) } : {}), effects: { spellBoost: { [SPELL_COLORS[i]]: 10 + 2 * i } }, shop: true })
+        ];
+    });
+}
+
 export const allStuff = [
     // Casques
     piece('casque_de_cuir', 'head', 'Casque de cuir bouilli', 1, 'common', 'Un bonnet de cuir durci à la cire : mieux que rien.', { defBonus: 1 }),
@@ -110,7 +138,8 @@ export const allStuff = [
     // Chaque pièce est un stuff ordinaire ; portées toutes les quatre, elles déclenchent le pouvoir de l'armure (voir stuffTotals).
     ...Object.entries(ANTIQUE_ARMORS).flatMap(([armor, a]) => a.pieces.map(p => piece(p.id, p.slot, p.name, 15, 'legendary', p.description, { ...p.bonus, quest: true, armor })))
 ,
-    piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true })
+    piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true }),
+    ...forgedStuff()
 ];
 
 export const getStuffById = id => allStuff.find(s => s.id === id) || null;
@@ -120,7 +149,9 @@ export const isStuff = obj => obj?.type === 'stuff';
 export const relicsOf = hero => (Array.isArray(hero?.inventory) ? hero.inventory : []).filter(it => it?.type === 'artifact');
 
 // Stuff en vente ou en butin : tout sauf les colliers de quête.
-export const lootableStuff = () => allStuff.filter(s => !s.quest);
+export const lootableStuff = () => allStuff.filter(s => !s.quest && !s.shop);
+// Stuff vendu par les marchands : butin ordinaire et parures forgées (boutique seulement).
+export const shopStuff = () => allStuff.filter(s => !s.quest);
 
 // Collier de quête qui protège d'un biome donné.
 export const collarForBiome = biome => allStuff.find(s => s.biomeProtect === biome) || null;

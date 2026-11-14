@@ -12,7 +12,7 @@
  */
 import { allItems, lootableItems, shiftActiveItemIndexes } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
-import { lootableStuff, getStuffById, baseStuffPrice, grantStuff, STUFF_SLOTS } from './stuff.js';
+import { shopStuff, getStuffById, baseStuffPrice, grantStuff, STUFF_SLOTS } from './stuff.js';
 
 export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
 
@@ -184,7 +184,7 @@ export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     // niveau, de meilleures pièces apparaissent : il faut repasser chez les marchands.
     const stuffLevel = Math.max(L, Math.floor(heroLevel || 0));
     const RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
-    const stuffOffers = STUFF_SLOTS.flatMap(slot => lootableStuff().filter(s => s.slot === slot && s.minLevel <= stuffLevel + STUFF_LEVEL_AHEAD)
+    const stuffOffers = STUFF_SLOTS.flatMap(slot => shopStuff().filter(s => s.slot === slot && s.minLevel <= stuffLevel + STUFF_LEVEL_AHEAD)
         .sort((a, b) => b.minLevel - a.minLevel || RANK[b.rarity] - RANK[a.rarity]).slice(0, STUFF_PER_SLOT))
         .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
             price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2) * STUFF_PRICE_MULT) }));

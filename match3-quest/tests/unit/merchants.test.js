@@ -340,3 +340,15 @@ describe('stuff : le bon stuff s\'achète', () => {
         high.forEach(o => expect(o.price).toBeGreaterThanOrEqual(Math.floor(baseStuffPrice(getStuffById(o.id)) * PRICE_MULT[o.rarity] * STUFF_PRICE_MULT)));
     });
 });
+
+describe('parures forgées (niveaux 36 à 70)', () => {
+    test('vendues seulement en boutique, jamais en butin, et les plus hautes au niveau 70', async () => {
+        const { allStuff, lootableStuff, FORGED_TIERS, STUFF_SLOTS } = await import('../../stuff.js');
+        const forged = allStuff.filter(s => s.shop);
+        expect(forged).toHaveLength(FORGED_TIERS.length * STUFF_SLOTS.length);
+        forged.forEach(s => expect(lootableStuff()).not.toContain(s));
+        const offers = merchantStock('merchant_lune', 0, 70).filter(o => o.kind === 'stuff');
+        STUFF_SLOTS.forEach(slot => expect(offers.some(o => o.id === `forge_${slot}_70`)).toBe(true));
+        expect(merchantStock('merchant_rizieres', 0, 20).some(o => o.id.startsWith('forge_'))).toBe(false);
+    });
+});
