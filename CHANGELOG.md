@@ -1,3 +1,9 @@
+## [2.249.0](https://github.com/niafrond/niafrond.github.io/compare/v2.248.0...v2.249.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** animer l'apparition et la disparition des cases de biome ([17e5a69](https://github.com/niafrond/niafrond.github.io/commit/17e5a698f99650a82c00d1589611d0a6b7851761))
+
 ## [2.248.0](https://github.com/niafrond/niafrond.github.io/compare/v2.247.0...v2.248.0) (2026-11-14)
 
 ### Features
