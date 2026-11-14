@@ -419,6 +419,14 @@ function shiftRelicEffect(player, item, sign) {
     if(e.permStartActionPoints) player.startActionPoints = Math.max(0, (player.startActionPoints || 0) + sign * e.permStartActionPoints);
 }
 
+/** Réserve de base de qì par couleur : 50 + qì max des reliques portées. Recalculée au chargement : une sauvegarde dont `maxMana`
+ *  a dérivé (relique retirée sans avoir été ajoutée, import sans plafond…) retombait à quelques points, plus aucun sort n'était lançable. */
+export function repairMaxMana(player, base = 50) {
+    if(!player) return 0;
+    player.maxMana = base + wornRelics(player).reduce((sum, i) => sum + Math.floor(i.effect?.permMaxMana || 0), 0);
+    return player.maxMana;
+}
+
 /** Porte une relique du sac. Renvoie { ok, message }. */
 export function equipRelic(player, item) {
     if(!item || item.type !== "artifact" || item.applied) return { ok: false, message: "" };
