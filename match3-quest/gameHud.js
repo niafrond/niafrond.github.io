@@ -262,7 +262,7 @@ export function updateStats(){
         `<span class="level-pill" title="Niveau ${enemy.level}">${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${bonusTurnBadge(enemy)}</div>
+        <div class="stat row-name"><span class="enemy-combat-name${enemyNameIsHanzi(enemy, enemyNameAsHanzi) ? ' name-hanzi' : ''}" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${escapeHtml(enemyNameLabel(enemy, enemyNameAsHanzi))}</span>${enemy.personality === 'aggressive' ? '<span class="enemy-mood">en colère</span>' : ''}${bonusTurnBadge(enemy)}</div>
         ${statusBadgesHtml(enemy) || STATUS_ROW_PLACEHOLDER}
         <div class="stat row-hp">
             <div class="hp-bar-container">
