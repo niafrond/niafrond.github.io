@@ -50,6 +50,7 @@ export function setBiomeRule(key, protectedByStuff = false){
     biomeRule = BIOME_RULES[key] || null;
     biomeProtected = Boolean(biomeRule && protectedByStuff);
     biomeState = createBiomeState();
+    cellFxSeen.clear(); cellFxGone.clear();
     if(biomeProtected) log(`${biomeRule.label} : votre collier vous protège (${BIOME_PROTECTION_TEXT[key] || 'effet annulé'}).`);
 }
 export const getBiomeRule = () => biomeRule;
@@ -682,6 +683,37 @@ const SPELL_HOLES_REVEAL_MS = 350;
 const SPELL_HOLES_MAX_WAIT_MS = 20000;   // filet de sécurité si une annonce n'est jamais fermée
 let renderBoardToken = 0;
 
+// Cases de biome animées (style-hud.css `.cell-fx`) : éclat plein à l'apparition (1,5 s), anneau léger ensuite (la couleur de la gemme reste
+// visible), éclat de sortie à la disparition (0,6 s). Chaque rendu vide la tuile (paintTileGlyph) : l'état est donc suivi ici, et l'animation en
+// cours reprend à la bonne image grâce à un délai négatif (`--fx-delay`).
+export const CELL_FX_IN_MS = 1500;
+export const CELL_FX_OUT_MS = 600;
+const cellFxSeen = new Map();   // indice → { kind, since } : case présente
+const cellFxGone = new Map();   // indice → { kind, since } : case qui vient de disparaître
+function paintCellFx(tile, i, cell){
+    const now = performance.now();
+    let fxClass = null, since = now;
+    if(cell){
+        let seen = cellFxSeen.get(i);
+        if(!seen || seen.kind !== cell.kind){ seen = { kind: cell.kind, since: now }; cellFxSeen.set(i, seen); }
+        cellFxGone.delete(i);
+        since = seen.since;
+        fxClass = `n-${cell.kind} ${now - since < CELL_FX_IN_MS ? 'in' : 'idle'}`;
+    } else {
+        const seen = cellFxSeen.get(i);
+        if(seen){ cellFxSeen.delete(i); cellFxGone.set(i, { kind: seen.kind, since: now }); }
+        const gone = cellFxGone.get(i);
+        if(gone && now - gone.since < CELL_FX_OUT_MS){ fxClass = `n-${gone.kind} out`; since = gone.since; }
+        else cellFxGone.delete(i);
+    }
+    if(!fxClass) return;
+    const fx = document.createElement('span');
+    fx.className = `cell-fx ${fxClass}`;
+    fx.setAttribute('aria-hidden', 'true');
+    fx.style.setProperty('--fx-delay', `${-Math.max(0, Math.round(now - since))}ms`);
+    tile.appendChild(fx);
+}
+
 function paintBoard(tiles, skipCleanup){
     for(let i=0;i<board.length;i++){
         let t=board[i];
@@ -700,6 +732,7 @@ function paintBoard(tiles, skipCleanup){
         tiles[i].classList.toggle('trapped', trappedCells.has(i));
         const cell = biomeState.cells[i];
         if(cell) tiles[i].dataset.cell = cell.kind; else delete tiles[i].dataset.cell;
+        paintCellFx(tiles[i], i, cell);
     }
     refreshTargetingHighlights();
 }
