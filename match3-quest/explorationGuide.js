@@ -41,6 +41,14 @@ function objectiveTarget(session, obj) {
         const member = Object.values(session.rt.enemyIndex).find(e => e.def.group === obj.target && !session.data.defeated.includes(e.def.id));
         return member ? { screenId: member.screenId, kind: 'enemy', id: member.def.id } : null;
     }
+    if (obj.type === 'puzzleSet' && session.rt.compass) {
+        // Boussole : la prochaine énigme à résoudre de la série (son coffre), faute de quoi l'armure n'a aucun repère.
+        const ids = puzzlesOfSet(obj.target).filter(id => !session.data.solvedPuzzles.includes(id));
+        for (const scr of screens) {
+            const chest = scr.chests.find(c => ids.includes(c.puzzle));
+            if (chest) return { screenId: scr.id, kind: 'chest', id: chest.id };
+        }
+    }
     return null;
 }
 
@@ -258,7 +266,9 @@ function nextExitToward(session, fromId, toId) {
 // À défaut de quête épinglée, l'indicateur guide vers la quête principale en cours (ou à rendre).
 export function questDirection(session) {
     const quest = trackedQuest(session)
-        || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)));
+        || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)))
+        // Boussole des destins : à défaut, n'importe quelle quête en cours (secondaires et armures antiques comprises)
+        || (session.rt.compass ? session.quests.find(q => ['active', 'ready'].includes(questStatus(session, q)) && questTargets(session, q).length) : null);
     if (!quest) return null;
     const target = questTargets(session, quest)[0];
     if (!target) return null;

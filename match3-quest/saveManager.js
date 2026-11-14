@@ -266,6 +266,7 @@ function sanitizePlayer(player) {
         gold: player.gold,
         mount: player.mount,
         torch: player.torch,
+        compass: player.compass,
         abilities: player.abilities,
         activeSpells: ids(player.activeSpells),
         archivedSpells: player.archivedSpells,
@@ -442,7 +443,7 @@ function sanitizeImportedPlayer(player) {
         for (const key of Object.keys(player.attributes)) assign(player.attributes, key, cleanNumber(player.attributes[key], 0, 1000, true));
     } else delete player.attributes;
 
-    for (const key of ['mount', 'torch']) {
+    for (const key of ['mount', 'torch', 'compass']) {
         if (typeof player[key] !== 'boolean' && typeof player[key] !== 'string') delete player[key];
         else if (typeof player[key] === 'string') player[key] = cleanText(player[key], MAX_ID_LENGTH);
     }

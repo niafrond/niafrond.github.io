@@ -766,7 +766,7 @@ export function createExplorationView(cfg) {
         slide = { dir: res.dir, snap, t0: null };
     }
 
-    const syncStealth = () => X.setStealth(session, cfg.hasStealth?.());
+    const syncStealth = () => { X.setStealth(session, cfg.hasStealth?.()); X.setCompass(session, cfg.getHero().compass); };
 
     function doMove(dirName) {
         if (isBlocked()) return;

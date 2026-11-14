@@ -1462,6 +1462,7 @@ export function loadGameData() {
             applyGrowth(player);   // rattrapage unique de la croissance innée (niveaux > 18)
             player.mount = loaded.mount === 'horse' ? 'horse' : null;
             player.torch = loaded.torch === true;
+            player.compass = loaded.compass === true;
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
             player.sellTags = Array.isArray(loaded.sellTags) ? loaded.sellTags.filter(t => typeof t === 'string') : [];
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
