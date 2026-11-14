@@ -71,10 +71,39 @@ export function advanceBiomeTurn(){
         else log('Mer : une rangée dérive.');
     }
     renderBoard(true);
+    if(res.drifted !== null) animateRowDrift(res.drifted);
     // Les nouvelles cases annoncent leur effet (la lave le fait juste avant ses dégâts, voir announceBurningCells).
     if(!biomeRule.burnDamage) res.spawned.forEach(i => floatCellText(i, cellBanner(biomeRule)));
     if(res.drifted !== null) floatCellText(res.drifted * boardSize, cellBanner(biomeRule));
     return biomeProtected ? 0 : burnDamage(biomeState, biomeRule);
+}
+
+// Dérive de la mer : la rangée glisse d'une case vers la droite au lieu de sauter. Chaque case part de la position de sa voisine de gauche ;
+// la case qui sort à droite continue hors du plateau en s'effaçant (fantôme) pendant que la même case entre par la gauche.
+export const DRIFT_MS = 640;
+export function animateRowDrift(row){
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv || !Element.prototype.animate || document.body.classList.contains('fx-reduced')) return;
+    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const tiles = Array.from(boardDiv.children);
+    const first = tiles[row * boardSize], last = tiles[row * boardSize + boardSize - 1], second = tiles[row * boardSize + 1];
+    if(!first || !last || !second) return;
+    const step = second.offsetLeft - first.offsetLeft;
+    const opts = { duration: DRIFT_MS, easing: 'cubic-bezier(0.45, 0.05, 0.25, 1)' };
+    beginComboAnimation();
+    for(let c = 1; c < boardSize; c++){
+        tiles[row * boardSize + c].animate([{ transform: `translateX(${-step}px)` }, { transform: 'translateX(0)' }], opts);
+    }
+    // entrée par la gauche
+    first.animate([{ transform: `translateX(${-step}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], opts);
+    // sortie par la droite : copie de la case qui boucle, posée sur la dernière colonne
+    const ghost = first.cloneNode(true);
+    ghost.classList.remove('selected', 'suggested', 'targetable');
+    Object.assign(ghost.style, { position: 'absolute', left: `${last.offsetLeft}px`, top: `${last.offsetTop}px`, margin: '0', pointerEvents: 'none', zIndex: '2' });
+    boardDiv.appendChild(ghost);
+    const out = ghost.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${step}px)`, opacity: 0 }], opts);
+    const done = () => { ghost.remove(); endComboAnimation(); };
+    out.onfinish = done; out.oncancel = done;
 }
 
 // Texte flottant au-dessus d'une case (« Case brûlante - 3 dégâts ») : posé sur la page, il survit au repaint du plateau.
