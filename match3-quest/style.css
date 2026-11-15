@@ -1566,3 +1566,11 @@ progress.enemy-bar::-webkit-progress-value {
 @keyframes block-vibrate { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-4px, 2px) rotate(-2deg); } 50% { transform: translate(4px, -2px) rotate(2deg); } 75% { transform: translate(-3px, -2px) rotate(-1deg); } }
 @keyframes block-shield-pop { 0% { transform: scale(2.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .block-shield, .attack-animation:has(.block-shield) .attack-damage { animation: none; } }
+
+/* Options : onglets par catégorie (Affichage, Son et confort, Jeu, Partie) */
+.options-tabs { display: flex; gap: 4px; margin: 8px 0 4px; flex-wrap: wrap; }
+.options-tab { flex: 1 1 auto; cursor: pointer; border: 2px solid #5a3e1b; background: #f3e3b8; color: #3b2a20; border-radius: 8px 8px 0 0; padding: 6px 8px; font: inherit; font-size: 0.85em; }
+.options-tab.on { background: #d68910; color: #fff; }
+.options-panel { border-top: 2px solid #5a3e1b; padding-top: 4px; min-height: 12rem; }
+.options-panel[hidden] { display: none; }
+body.rt .options-tab.on, body.rt .options-tab.on:hover, body.rt .options-tab.on:focus-visible { background: #d68910; color: #fff; }
