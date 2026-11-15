@@ -711,6 +711,7 @@ body.rt .wm-shallows path { stroke-width: 136px; }
 
 /* Carnet de voyage */
 body.rt .carnet-tab,
+body.rt .options-tab,
 body.rt .carnet-chip,
 body.rt .carnet-track,
 body.rt .carnet-travel-btn,
@@ -724,6 +725,8 @@ body.rt .carnet-region {
     box-shadow: 0 2px 0 var(--rt-ink);
 }
 body.rt .carnet-tab.on,
+body.rt .options-tab.on,
+body.rt .options-tab.on:hover:not(:disabled),
 body.rt .carnet-chip.on { background: var(--rt-gold); color: var(--rt-ink); }
 body.rt .explore-quest.tracked { border-color: var(--rt-gold); box-shadow: 0 3px 0 var(--rt-ink), 0 0 0 2px var(--rt-gold); }
 

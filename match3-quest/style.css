@@ -1573,4 +1573,4 @@ progress.enemy-bar::-webkit-progress-value {
 .options-tab.on { background: #d68910; color: #fff; }
 .options-panel { border-top: 2px solid #5a3e1b; padding-top: 4px; min-height: 12rem; }
 .options-panel[hidden] { display: none; }
-body.rt .options-tab.on, body.rt .options-tab.on:hover, body.rt .options-tab.on:focus-visible { background: #d68910; color: #fff; }
+.options-row.options-coffee { justify-content: center; }
