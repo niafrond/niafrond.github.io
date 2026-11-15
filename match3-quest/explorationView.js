@@ -52,6 +52,7 @@ import { COVERED_DRAW_MS, IDLE_DRAW_MS, IDLE_DRAW_LOW_MS, MOVING_DRAW_MS, DEEP_I
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
  *  getHero()                  { classId, name, mount? } du personnage (mount : 'horse' = déplacements deux fois plus rapides)
  *  getPlayerLevel()           niveau courant
+ *  horseAvoidsWater()         vrai si, à cheval, le trajet contourne l'eau et la lave (option « Le cheval évite l'eau et la lave »)
  *  hasStealth()               vrai si le héros porte le collier d'ombre (indétectable par les ennemis, hors boss)
  *  onEncounter(encounter)     lance le combat (encounter.prep : préparation du terrain, voir terrain.js)
  *  getWeakness(templateId)    nom de la faiblesse d'un ennemi (observation), facultatif
@@ -766,6 +767,7 @@ export function createExplorationView(cfg) {
         slide = { dir: res.dir, snap, t0: null };
     }
 
+    const avoidsLiquid = () => riding() && cfg.horseAvoidsWater?.() !== false;   // à cheval, l'eau et la lave (`screen.liquids`) sont contournées si l'option est active
     const syncStealth = () => { X.setStealth(session, cfg.hasStealth?.()); X.setCompass(session, cfg.getHero().compass); };
 
     function doMove(dirName) {
@@ -829,7 +831,7 @@ export function createExplorationView(cfg) {
     function walkTo(ev) {
         const { x, y } = tileFromEvent(ev);
         syncStealth();
-        const path = X.findPath(session, x, y);
+        const path = X.findPath(session, x, y, { avoidLiquid: avoidsLiquid() });
         if (path === null) {
             walk = null;
             toast('Impossible d\'aller là.', 1600);
@@ -867,7 +869,7 @@ export function createExplorationView(cfg) {
     // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
     function walkStep() {
         syncStealth();
-        const path = X.findPath(session, walk.tx, walk.ty);
+        const path = X.findPath(session, walk.tx, walk.ty, { avoidLiquid: avoidsLiquid() });
         if (!path || path.length === 0) { walk = null; return; }
         walk.path = path;
         const next = path[0];
