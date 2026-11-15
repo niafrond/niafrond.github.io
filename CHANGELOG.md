@@ -1,3 +1,9 @@
+## [2.251.1](https://github.com/niafrond/niafrond.github.io/compare/v2.251.0...v2.251.1) (2026-11-15)
+
+### Bug Fixes
+
+* **match3-quest:** corriger les traductions des mots de chinois ([5b1d122](https://github.com/niafrond/niafrond.github.io/commit/5b1d1222413fcb0a6d937246bdfc0e819454fa2d))
+
 ## [2.251.0](https://github.com/niafrond/niafrond.github.io/compare/v2.250.0...v2.251.0) (2026-11-15)
 
 ### Features
