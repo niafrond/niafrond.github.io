@@ -1,3 +1,11 @@
+## [2.250.0](https://github.com/niafrond/niafrond.github.io/compare/v2.249.0...v2.250.0) (2026-11-15)
+
+### Features
+
+* **match3-quest:** café du développeur visible sur chaque onglet des options ([49c23a1](https://github.com/niafrond/niafrond.github.io/commit/49c23a17d501f3f1ebacbc9d0d43a98ad4efdb29))
+* **match3-quest:** option pour que le cheval évite l'eau et la lave ([51a9558](https://github.com/niafrond/niafrond.github.io/commit/51a95589f77a0bdb777a7175b3ee3791865eba6f))
+* **match3-quest:** ranger les options en onglets ([ec7e704](https://github.com/niafrond/niafrond.github.io/commit/ec7e704e8556de0a365c03f22499c81a3a239f64))
+
 ## [2.249.0](https://github.com/niafrond/niafrond.github.io/compare/v2.248.0...v2.249.0) (2026-11-14)
 
 ### Features
