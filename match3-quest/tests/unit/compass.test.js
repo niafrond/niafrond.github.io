@@ -82,3 +82,36 @@ describe('carte du monde : étoiles sur les régions de la quête', () => {
         expect((buildWorldMapSvg(worldZones, { level: 70 }).match(/wm-quest-star/g) || []).length).toBe(0);
     });
 });
+
+describe('option « le cheval évite l\'eau et la lave »', () => {
+    test('à cheval le trajet contourne un liquide quand il existe un autre chemin, et le traverse sinon', async () => {
+        const { findPath, canWalkOnWater, YUBU_QUEST } = await import('../../exploration.js');
+        const { OPTION_DEFAULTS } = await import('../../gameOptions.js');
+        expect(OPTION_DEFAULTS.horseAvoid).toBe(true);
+        const s = createSession({});
+        s.data.quests[YUBU_QUEST] = 'done';   // les liquides ne bloquent plus le héros : seule la préférence du cheval les évite
+        expect(canWalkOnWater(s)).toBe(true);
+        const sc = s.screens[s.data.screenId];
+        const { isTerrainBlocked } = await import('../../exploration.js');
+        let spot = null;
+        for (let y = 2; y < sc.h - 2 && !spot; y++) for (let x = 2; x < sc.w - 7 && !spot; x++) {
+            const free = [];
+            for (let dy = -1; dy <= 1; dy++) for (let dx = 0; dx <= 5; dx++) free.push(!isTerrainBlocked(sc, x + dx, y + dy, true));
+            if (free.every(Boolean)) spot = { x, y };
+        }
+        expect(spot).not.toBeNull();
+        sc.liquids = [[spot.x + 2, spot.y, 1, 1]];
+        sc.obstacles = sc.obstacles || [];
+        s.data.x = spot.x; s.data.y = spot.y;
+        const through = findPath(s, spot.x + 4, spot.y);
+        const around = findPath(s, spot.x + 4, spot.y, { avoidLiquid: true });
+        expect(through.some(p => p.x === spot.x + 2 && p.y === spot.y)).toBe(true);
+        expect(around.some(p => p.x === spot.x + 2 && p.y === spot.y)).toBe(false);
+        expect(around.length).toBeGreaterThanOrEqual(through.length);
+        // aucun autre chemin : un mur de liquide sur toute la hauteur, le cheval le traverse quand même (mise à pied à terre)
+        sc.liquids = [[spot.x + 2, 0, 1, sc.h]];
+        const forced = findPath(s, spot.x + 4, spot.y, { avoidLiquid: true });
+        expect(forced).not.toBeNull();
+        expect(forced.some(p => p.x === spot.x + 2)).toBe(true);
+    });
+});
