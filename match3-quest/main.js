@@ -405,6 +405,25 @@ function init() {
         playSfx('uiClick');
         optionsModal?.classList.add('active');
     }));
+    // Onglets des options (Affichage, Son et confort, Jeu, Partie) : clic, flèches gauche/droite, Début/Fin.
+    const optionTabs = [...document.querySelectorAll('.options-tab')];
+    const showOptionsTab = tab => {
+        optionTabs.forEach(t => {
+            const on = t === tab;
+            t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+            const panel = document.getElementById(t.getAttribute('aria-controls'));
+            if(panel) panel.hidden = !on;
+        });
+    };
+    optionTabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => { playSfx('uiClick'); showOptionsTab(tab); });
+        tab.addEventListener('keydown', e => {
+            const next = e.key === 'ArrowRight' ? optionTabs[(i + 1) % optionTabs.length] : e.key === 'ArrowLeft' ? optionTabs[(i + optionTabs.length - 1) % optionTabs.length]
+                : e.key === 'Home' ? optionTabs[0] : e.key === 'End' ? optionTabs[optionTabs.length - 1] : null;
+            if(!next) return;
+            e.preventDefault(); showOptionsTab(next); next.focus();
+        });
+    });
     document.getElementById('options-close-btn')?.addEventListener('click', () => optionsModal?.classList.remove('active'));
     optionsModal?.addEventListener('click', e => { if(e.target === optionsModal) optionsModal.classList.remove('active'); });
 
