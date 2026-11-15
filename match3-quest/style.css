@@ -805,7 +805,6 @@ progress.enemy-bar::-webkit-progress-value {
 .battle-result-hanzi { font-size: clamp(2.2em, 11vw, 3.4em); line-height: 1.1; font-weight: 700; color: #7b1f14; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif; }
 .battle-result-pinyin { font-size: 1.15em; font-weight: 700; color: #a8321f; }
 .battle-result-fr { font-size: 1.05em; text-align: center; color: #3b2a20; }
-.battle-result-hint { font-size: 0.82em; text-align: center; color: #6b5a50; font-style: italic; }
 .battle-result-listen { margin-top: 2px; padding: 6px 16px; cursor: pointer; font: inherit; border: 2px solid #7b1f14; border-radius: 8px; background: #ffd6cc; color: #7b1f14; }
 .battle-result-listen:disabled { opacity: .55; cursor: default; }
 

@@ -16,7 +16,6 @@ export function lessonBodyHtml(lesson) {
         <div class="battle-result-hanzi" lang="zh-Hans">${escapeHtml(lesson.hanzi)}</div>
         <div class="battle-result-pinyin">${escapeHtml(lesson.pinyin)}</div>
         <div class="battle-result-fr">${escapeHtml(lesson.fr)}</div>
-        ${lesson.hint ? `<div class="battle-result-hint">${escapeHtml(lesson.hint)}</div>` : ''}
         ${listenButton(lesson.hanzi, 'battle-result-listen')}
         <label class="battle-result-known"><input type="checkbox" data-known="${escapeHtml(lesson.hanzi)}"${known ? ' checked' : ''}> Je connais ce mot</label>`;
 }

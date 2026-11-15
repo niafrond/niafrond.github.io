@@ -1,92 +1,186 @@
 // « Un mot de chinois » : à la fin de chaque combat, un mot en chinois simplifié (pinyin, traduction, prononciation) tiré du monde du jeu :
 // le héros, les dieux, les éléments, les créatures et les lieux. Les mots sont rangés en LOTS de cinq (thème commun) pour être mémorisés
 // ensemble : un lot repasse `LOT_PASSES` fois, dans le même ordre, puis le lot suivant arrive ; un mot coché « je connais » n'est plus montré.
-// Après les lots thématiques viennent les noms des créatures du bestiaire dont la traduction apprend un vrai mot (bestiaryNames.js).
+// Après les lots de la légende viennent des mots usuels du chinois de tous les jours, puis les noms des créatures du bestiaire dont la traduction apprend un vrai mot (bestiaryNames.js).
 // Module pur : le stockage est injecté. La prononciation est un mp3 par mot (audio/noms/, tools/gen-name-audio.py), chargé au clic (nameAudio.js).
 import { BESTIARY_NAMES } from './bestiaryNames.js';
 import { LITERAL_BY_HANZI } from './bestiaryLiteral.js';
 
 export const LOT_SIZE = 5;
 export const LOT_PASSES = 3;
-export const LOT_TITLES = ["La légende", "Le héros", "Créatures", "Esprits et dieux", "Mythes et lieux", "Les cinq éléments", "Énergie et paysages", "Nature des régions", "Villages et PNJ", "Mots du quotidien"];
+export const LOT_TITLES = ["La légende", "Le héros", "Créatures", "Esprits et dieux", "Mythes et lieux", "Les cinq éléments", "Énergie et paysages", "Nature des régions", "Villages et PNJ", "Victoire et merci", "Les nombres (1)", "Les nombres (2)", "La famille", "Les pronoms", "Verbes courants (1)", "Verbes courants (2)", "Adjectifs", "Le temps", "Lieux usuels", "Manger et boire", "Les couleurs", "Poser une question", "Politesse"];
+// Mots usuels du chinois de tous les jours (sans rapport avec la légende), avant les noms de créatures.
+const USUAL_LOTS = [
+    [
+        { hanzi: "一", pinyin: "yī", fr: "un" },
+        { hanzi: "二", pinyin: "èr", fr: "deux" },
+        { hanzi: "三", pinyin: "sān", fr: "trois" },
+        { hanzi: "四", pinyin: "sì", fr: "quatre" },
+        { hanzi: "五", pinyin: "wǔ", fr: "cinq" }
+    ],
+    [
+        { hanzi: "六", pinyin: "liù", fr: "six" },
+        { hanzi: "七", pinyin: "qī", fr: "sept" },
+        { hanzi: "八", pinyin: "bā", fr: "huit" },
+        { hanzi: "九", pinyin: "jiǔ", fr: "neuf" },
+        { hanzi: "十", pinyin: "shí", fr: "dix" }
+    ],
+    [
+        { hanzi: "爸爸", pinyin: "bà ba", fr: "papa" },
+        { hanzi: "妈妈", pinyin: "mā ma", fr: "maman" },
+        { hanzi: "哥哥", pinyin: "gē ge", fr: "grand frère" },
+        { hanzi: "姐姐", pinyin: "jiě jie", fr: "grande sœur" },
+        { hanzi: "孩子", pinyin: "hái zi", fr: "enfant" }
+    ],
+    [
+        { hanzi: "我", pinyin: "wǒ", fr: "je, moi" },
+        { hanzi: "你", pinyin: "nǐ", fr: "tu, toi" },
+        { hanzi: "他", pinyin: "tā", fr: "il, lui" },
+        { hanzi: "她", pinyin: "tā", fr: "elle" },
+        { hanzi: "我们", pinyin: "wǒ men", fr: "nous" }
+    ],
+    [
+        { hanzi: "吃", pinyin: "chī", fr: "manger" },
+        { hanzi: "喝", pinyin: "hē", fr: "boire" },
+        { hanzi: "去", pinyin: "qù", fr: "aller" },
+        { hanzi: "来", pinyin: "lái", fr: "venir" },
+        { hanzi: "看", pinyin: "kàn", fr: "regarder" }
+    ],
+    [
+        { hanzi: "说", pinyin: "shuō", fr: "parler" },
+        { hanzi: "听", pinyin: "tīng", fr: "écouter" },
+        { hanzi: "想", pinyin: "xiǎng", fr: "penser, vouloir" },
+        { hanzi: "要", pinyin: "yào", fr: "vouloir, avoir besoin de" },
+        { hanzi: "有", pinyin: "yǒu", fr: "avoir" }
+    ],
+    [
+        { hanzi: "大", pinyin: "dà", fr: "grand" },
+        { hanzi: "小", pinyin: "xiǎo", fr: "petit" },
+        { hanzi: "好", pinyin: "hǎo", fr: "bon, bien" },
+        { hanzi: "多", pinyin: "duō", fr: "beaucoup" },
+        { hanzi: "少", pinyin: "shǎo", fr: "peu" }
+    ],
+    [
+        { hanzi: "今天", pinyin: "jīn tiān", fr: "aujourd'hui" },
+        { hanzi: "明天", pinyin: "míng tiān", fr: "demain" },
+        { hanzi: "昨天", pinyin: "zuó tiān", fr: "hier" },
+        { hanzi: "现在", pinyin: "xiàn zài", fr: "maintenant" },
+        { hanzi: "时间", pinyin: "shí jiān", fr: "temps" }
+    ],
+    [
+        { hanzi: "家", pinyin: "jiā", fr: "maison, famille" },
+        { hanzi: "学校", pinyin: "xué xiào", fr: "école" },
+        { hanzi: "城市", pinyin: "chéng shì", fr: "ville" },
+        { hanzi: "路", pinyin: "lù", fr: "route, chemin" },
+        { hanzi: "中国", pinyin: "Zhōng guó", fr: "Chine" }
+    ],
+    [
+        { hanzi: "米饭", pinyin: "mǐ fàn", fr: "riz cuit" },
+        { hanzi: "水果", pinyin: "shuǐ guǒ", fr: "fruit" },
+        { hanzi: "茶", pinyin: "chá", fr: "thé" },
+        { hanzi: "面条", pinyin: "miàn tiáo", fr: "nouilles" },
+        { hanzi: "肉", pinyin: "ròu", fr: "viande" }
+    ],
+    [
+        { hanzi: "红", pinyin: "hóng", fr: "rouge" },
+        { hanzi: "蓝", pinyin: "lán", fr: "bleu" },
+        { hanzi: "绿", pinyin: "lǜ", fr: "vert" },
+        { hanzi: "黄", pinyin: "huáng", fr: "jaune" },
+        { hanzi: "白", pinyin: "bái", fr: "blanc" }
+    ],
+    [
+        { hanzi: "什么", pinyin: "shén me", fr: "quoi, quel" },
+        { hanzi: "谁", pinyin: "shéi", fr: "qui" },
+        { hanzi: "哪里", pinyin: "nǎ li", fr: "où" },
+        { hanzi: "为什么", pinyin: "wèi shén me", fr: "pourquoi" },
+        { hanzi: "怎么", pinyin: "zěn me", fr: "comment" }
+    ],
+    [
+        { hanzi: "请", pinyin: "qǐng", fr: "s'il vous plaît" },
+        { hanzi: "对不起", pinyin: "duì bu qǐ", fr: "pardon, désolé" },
+        { hanzi: "再见", pinyin: "zài jiàn", fr: "au revoir" },
+        { hanzi: "没关系", pinyin: "méi guān xi", fr: "ce n'est pas grave" },
+        { hanzi: "不客气", pinyin: "bú kè qi", fr: "de rien" }
+    ]
+];
 const CURATED_LOTS = [
     // Lot 1 : La légende
     [
-        { hanzi: '后羿', pinyin: 'Hòu Yì', fr: 'Houyi, l\'archer (le héros)', hint: 'Il abat neuf des dix soleils.' },
-        { hanzi: '嫦娥', pinyin: 'Cháng\'é', fr: 'Chang\'e, déesse de la lune', hint: 'Épouse de Houyi, elle boit l\'élixir d\'immortalité.' },
-        { hanzi: '太阳', pinyin: 'tài yáng', fr: 'soleil', hint: 'Il y en avait dix dans le ciel.' },
-        { hanzi: '十日', pinyin: 'shí rì', fr: 'les dix soleils', hint: 'Les fils de Di Jun, qui brûlaient la terre.' },
-        { hanzi: '月亮', pinyin: 'yuè liang', fr: 'lune', hint: 'Là où vit Chang\'e, avec le lièvre de jade.' }
+        { hanzi: '后羿', pinyin: 'Hòu Yì', fr: 'Houyi, l\'archer (le héros)' },
+        { hanzi: '嫦娥', pinyin: 'Cháng\'é', fr: 'Chang\'e, déesse de la lune' },
+        { hanzi: '太阳', pinyin: 'tài yáng', fr: 'soleil' },
+        { hanzi: '十日', pinyin: 'shí rì', fr: 'les dix soleils' },
+        { hanzi: '月亮', pinyin: 'yuè liang', fr: 'lune' }
     ],
     // Lot 2 : Le héros
     [
-        { hanzi: '弓', pinyin: 'gōng', fr: 'arc', hint: 'L\'arme de Houyi.' },
-        { hanzi: '箭', pinyin: 'jiàn', fr: 'flèche', hint: 'Une flèche, un soleil.' },
-        { hanzi: '射', pinyin: 'shè', fr: 'tirer (à l\'arc)', hint: 'Le geste du héros.' },
-        { hanzi: '英雄', pinyin: 'yīng xióng', fr: 'héros', hint: 'C\'est vous.' },
-        { hanzi: '勇敢', pinyin: 'yǒng gǎn', fr: 'courageux', hint: 'Ce qu\'il faut pour affronter un dragon.' }
+        { hanzi: '弓', pinyin: 'gōng', fr: 'arc' },
+        { hanzi: '箭', pinyin: 'jiàn', fr: 'flèche' },
+        { hanzi: '射', pinyin: 'shè', fr: 'tirer (à l\'arc)' },
+        { hanzi: '英雄', pinyin: 'yīng xióng', fr: 'héros' },
+        { hanzi: '勇敢', pinyin: 'yǒng gǎn', fr: 'courageux' }
     ],
     // Lot 3 : Créatures
     [
-        { hanzi: '龙', pinyin: 'lóng', fr: 'dragon', hint: 'Dragons de rivière, de feu, de jade… partout dans la légende.' },
-        { hanzi: '凤凰', pinyin: 'fèng huáng', fr: 'phénix', hint: 'L\'oiseau qui renaît de ses cendres.' },
-        { hanzi: '老虎', pinyin: 'lǎo hǔ', fr: 'tigre', hint: 'Les tigres des plaines gardent leurs crocs.' },
-        { hanzi: '狐狸', pinyin: 'hú li', fr: 'renard', hint: 'Les renards-esprits changent de visage.' },
-        { hanzi: '蛇', pinyin: 'shé', fr: 'serpent', hint: 'Les serpents des marais sont venimeux.' }
+        { hanzi: '龙', pinyin: 'lóng', fr: 'dragon' },
+        { hanzi: '凤凰', pinyin: 'fèng huáng', fr: 'phénix' },
+        { hanzi: '老虎', pinyin: 'lǎo hǔ', fr: 'tigre' },
+        { hanzi: '狐狸', pinyin: 'hú li', fr: 'renard' },
+        { hanzi: '蛇', pinyin: 'shé', fr: 'serpent' }
     ],
     // Lot 4 : Esprits et dieux
     [
-        { hanzi: '鸟', pinyin: 'niǎo', fr: 'oiseau', hint: 'Les oiseaux rouges annoncent le feu.' },
-        { hanzi: '鬼', pinyin: 'guǐ', fr: 'fantôme, esprit des morts', hint: 'Ils errent dans le royaume des âmes.' },
-        { hanzi: '神', pinyin: 'shén', fr: 'dieu, divinité', hint: 'Le dieu du feu, du tonnerre, des épidémies…' },
-        { hanzi: '仙', pinyin: 'xiān', fr: 'immortel', hint: 'Les immortels vivent au-dessus des nuages.' },
-        { hanzi: '皇帝', pinyin: 'huáng dì', fr: 'empereur', hint: 'Celui qui vous a demandé d\'abattre les soleils.' }
+        { hanzi: '鸟', pinyin: 'niǎo', fr: 'oiseau' },
+        { hanzi: '鬼', pinyin: 'guǐ', fr: 'fantôme, esprit des morts' },
+        { hanzi: '神', pinyin: 'shén', fr: 'dieu, divinité' },
+        { hanzi: '仙', pinyin: 'xiān', fr: 'immortel' },
+        { hanzi: '皇帝', pinyin: 'huáng dì', fr: 'empereur' }
     ],
     // Lot 5 : Mythes et lieux
     [
-        { hanzi: '帝俊', pinyin: 'Dì Jùn', fr: 'Di Jun, père des dix soleils', hint: 'Un dieu qui ne vous pardonnera pas.' },
-        { hanzi: '西王母', pinyin: 'Xī Wáng Mǔ', fr: 'la Reine Mère de l\'Ouest', hint: 'Elle garde l\'élixir de longue vie.' },
-        { hanzi: '桃', pinyin: 'táo', fr: 'pêche', hint: 'Les pêches d\'immortalité mûrissent tous les trois mille ans.' },
-        { hanzi: '扶桑', pinyin: 'Fú Sāng', fr: 'Fusang, l\'arbre où se posent les soleils', hint: 'Une région de la légende.' },
-        { hanzi: '药', pinyin: 'yào', fr: 'remède, élixir', hint: 'L\'élixir d\'immortalité en est un.' }
+        { hanzi: '帝俊', pinyin: 'Dì Jùn', fr: 'Di Jun, père des dix soleils' },
+        { hanzi: '西王母', pinyin: 'Xī Wáng Mǔ', fr: 'la Reine Mère de l\'Ouest' },
+        { hanzi: '桃', pinyin: 'táo', fr: 'pêche' },
+        { hanzi: '扶桑', pinyin: 'Fú Sāng', fr: 'Fusang, l\'arbre où se posent les soleils' },
+        { hanzi: '药', pinyin: 'yào', fr: 'remède, élixir' }
     ],
     // Lot 6 : Les cinq éléments
     [
-        { hanzi: '火', pinyin: 'huǒ', fr: 'feu', hint: 'L\'élément rouge, celui du volcan.' },
-        { hanzi: '水', pinyin: 'shuǐ', fr: 'eau', hint: 'L\'élément bleu, celui du fleuve et de la mer.' },
-        { hanzi: '木', pinyin: 'mù', fr: 'bois, arbre', hint: 'L\'élément vert, celui des bambous.' },
-        { hanzi: '金', pinyin: 'jīn', fr: 'or, métal', hint: 'L\'élément jaune, celui des pièces.' },
-        { hanzi: '土', pinyin: 'tǔ', fr: 'terre', hint: 'Le sol des rizières et du désert.' }
+        { hanzi: '火', pinyin: 'huǒ', fr: 'feu' },
+        { hanzi: '水', pinyin: 'shuǐ', fr: 'eau' },
+        { hanzi: '木', pinyin: 'mù', fr: 'bois, arbre' },
+        { hanzi: '金', pinyin: 'jīn', fr: 'or, métal' },
+        { hanzi: '土', pinyin: 'tǔ', fr: 'terre' }
     ],
     // Lot 7 : Énergie et paysages
     [
-        { hanzi: '五行', pinyin: 'wǔ xíng', fr: 'les cinq éléments', hint: 'Feu, eau, bois, métal, terre : les cinq couleurs de qì.' },
-        { hanzi: '气', pinyin: 'qì', fr: 'souffle vital, énergie', hint: 'Ce que vous gagnez en alignant les gemmes.' },
-        { hanzi: '力量', pinyin: 'lì liang', fr: 'force, puissance', hint: 'Ce que vos points d\'attribut vous donnent.' },
-        { hanzi: '山', pinyin: 'shān', fr: 'montagne', hint: 'Le tonnerre gronde au sommet.' },
-        { hanzi: '河', pinyin: 'hé', fr: 'fleuve', hint: 'Le Fleuve Jaune.' }
+        { hanzi: '五行', pinyin: 'wǔ xíng', fr: 'les cinq éléments' },
+        { hanzi: '气', pinyin: 'qì', fr: 'souffle vital, énergie' },
+        { hanzi: '力量', pinyin: 'lì liang', fr: 'force, puissance' },
+        { hanzi: '山', pinyin: 'shān', fr: 'montagne' },
+        { hanzi: '河', pinyin: 'hé', fr: 'fleuve' }
     ],
     // Lot 8 : Nature des régions
     [
-        { hanzi: '海', pinyin: 'hǎi', fr: 'mer', hint: 'La Mer d\'Orient, où dérivent les rangées.' },
-        { hanzi: '雷', pinyin: 'léi', fr: 'tonnerre', hint: 'Le duc du Tonnerre en est le maître.' },
-        { hanzi: '雪', pinyin: 'xuě', fr: 'neige', hint: 'Elle gèle les cases du plateau.' },
-        { hanzi: '竹', pinyin: 'zhú', fr: 'bambou', hint: 'Il pousse sur les cases du plateau.' },
-        { hanzi: '稻', pinyin: 'dào', fr: 'riz (plante)', hint: 'Les rizières, là où tout commence.' }
+        { hanzi: '海', pinyin: 'hǎi', fr: 'mer' },
+        { hanzi: '雷', pinyin: 'léi', fr: 'tonnerre' },
+        { hanzi: '雪', pinyin: 'xuě', fr: 'neige' },
+        { hanzi: '竹', pinyin: 'zhú', fr: 'bambou' },
+        { hanzi: '稻', pinyin: 'dào', fr: 'riz (plante)' }
     ],
     // Lot 9 : Villages et PNJ
     [
-        { hanzi: '村庄', pinyin: 'cūn zhuāng', fr: 'village', hint: 'Où l\'on trouve marchands et anciens.' },
-        { hanzi: '商人', pinyin: 'shāng rén', fr: 'marchand', hint: 'Ils vendent le meilleur stuff, très cher.' },
-        { hanzi: '长老', pinyin: 'zhǎng lǎo', fr: 'ancien, doyen', hint: 'Doyen Wen confie la première quête.' },
-        { hanzi: '朋友', pinyin: 'péng you', fr: 'ami', hint: 'Les compagnons qui vous suivent.' },
-        { hanzi: '你好', pinyin: 'nǐ hǎo', fr: 'bonjour', hint: 'Pour saluer les villageois.' }
+        { hanzi: '村庄', pinyin: 'cūn zhuāng', fr: 'village' },
+        { hanzi: '商人', pinyin: 'shāng rén', fr: 'marchand' },
+        { hanzi: '长老', pinyin: 'zhǎng lǎo', fr: 'ancien, doyen' },
+        { hanzi: '朋友', pinyin: 'péng you', fr: 'ami' },
+        { hanzi: '你好', pinyin: 'nǐ hǎo', fr: 'bonjour' }
     ],
     // Lot 10 : Mots du quotidien
     [
-        { hanzi: '谢谢', pinyin: 'xiè xie', fr: 'merci', hint: 'À dire après chaque quête rendue.' },
-        { hanzi: '胜利', pinyin: 'shèng lì', fr: 'victoire', hint: 'Comme à l\'instant.' },
-        { hanzi: '失败', pinyin: 'shī bài', fr: 'défaite, échec', hint: 'On apprend plus de ses défaites.' }
+        { hanzi: '谢谢', pinyin: 'xiè xie', fr: 'merci' },
+        { hanzi: '胜利', pinyin: 'shèng lì', fr: 'victoire' },
+        { hanzi: '失败', pinyin: 'shī bài', fr: 'défaite, échec' }
     ]
 ];
 
@@ -100,15 +194,15 @@ export function creatureWords(exclude = new Set()) {
         const literal = LITERAL_BY_HANZI[hanzi];
         if (!literal || seen.has(hanzi) || stripTones(literal) === stripTones(pinyin)) return;
         seen.add(hanzi);
-        out.push({ hanzi, pinyin, fr: lowerFirst(literal), hint: 'Le nom d\'une créature de la légende.' });
+        out.push({ hanzi, pinyin, fr: lowerFirst(literal) });
     });
     return out;
 }
 
 const chunk = (list, n) => Array.from({ length: Math.ceil(list.length / n) }, (_, i) => list.slice(i * n, i * n + n));
 const curatedHanzi = new Set(CURATED_LOTS.flat().map(w => w.hanzi));
-/** Tous les lots, dans l'ordre : lots thématiques puis lots de créatures. */
-export const LESSON_LOTS = [...CURATED_LOTS, ...chunk(creatureWords(curatedHanzi), LOT_SIZE)];
+/** Tous les lots, dans l'ordre : lots de la légende, mots usuels, puis noms de créatures. */
+export const LESSON_LOTS = [...CURATED_LOTS, ...USUAL_LOTS, ...chunk(creatureWords(new Set([...curatedHanzi, ...USUAL_LOTS.flat().map(w => w.hanzi)])), LOT_SIZE)];
 export const LESSON_WORDS = LESSON_LOTS.flat();
 export const lotTitle = i => LOT_TITLES[i] || 'Créatures';
 
