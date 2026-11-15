@@ -28,8 +28,8 @@ const USUAL_LOTS = [
     [
         { hanzi: "爸爸", pinyin: "bà ba", fr: "papa" },
         { hanzi: "妈妈", pinyin: "mā ma", fr: "maman" },
-        { hanzi: "哥哥", pinyin: "gē ge", fr: "grand frère" },
-        { hanzi: "姐姐", pinyin: "jiě jie", fr: "grande sœur" },
+        { hanzi: "哥哥", pinyin: "gē ge", fr: "frère aîné" },
+        { hanzi: "姐姐", pinyin: "jiě jie", fr: "sœur aînée" },
         { hanzi: "孩子", pinyin: "hái zi", fr: "enfant" }
     ],
     [
@@ -65,7 +65,7 @@ const USUAL_LOTS = [
         { hanzi: "明天", pinyin: "míng tiān", fr: "demain" },
         { hanzi: "昨天", pinyin: "zuó tiān", fr: "hier" },
         { hanzi: "现在", pinyin: "xiàn zài", fr: "maintenant" },
-        { hanzi: "时间", pinyin: "shí jiān", fr: "temps" }
+        { hanzi: "时间", pinyin: "shí jiān", fr: "temps, durée" }
     ],
     [
         { hanzi: "家", pinyin: "jiā", fr: "maison, famille" },
@@ -105,7 +105,7 @@ const USUAL_LOTS = [
     [
         { hanzi: "头", pinyin: "tóu", fr: "tête" },
         { hanzi: "手", pinyin: "shǒu", fr: "main" },
-        { hanzi: "眼睛", pinyin: "yǎn jing", fr: "yeux" },
+        { hanzi: "眼睛", pinyin: "yǎn jing", fr: "œil, yeux" },
         { hanzi: "嘴", pinyin: "zuǐ", fr: "bouche" },
         { hanzi: "心", pinyin: "xīn", fr: "cœur" }
     ],
@@ -117,7 +117,7 @@ const USUAL_LOTS = [
         { hanzi: "牛", pinyin: "niú", fr: "vache, bœuf" }
     ],
     [
-        { hanzi: "天", pinyin: "tiān", fr: "ciel, jour" },
+        { hanzi: "天", pinyin: "tiān", fr: "ciel, journée" },
         { hanzi: "地", pinyin: "dì", fr: "terre, sol" },
         { hanzi: "风", pinyin: "fēng", fr: "vent" },
         { hanzi: "雨", pinyin: "yǔ", fr: "pluie" },
@@ -160,7 +160,7 @@ const USUAL_LOTS = [
     ],
     [
         { hanzi: "新", pinyin: "xīn", fr: "nouveau" },
-        { hanzi: "老", pinyin: "lǎo", fr: "vieux" },
+        { hanzi: "老", pinyin: "lǎo", fr: "vieux, âgé" },
         { hanzi: "高", pinyin: "gāo", fr: "grand, haut" },
         { hanzi: "快", pinyin: "kuài", fr: "rapide" },
         { hanzi: "慢", pinyin: "màn", fr: "lent" }
@@ -173,7 +173,7 @@ const USUAL_LOTS = [
         { hanzi: "漂亮", pinyin: "piào liang", fr: "joli" }
     ],
     [
-        { hanzi: "上", pinyin: "shàng", fr: "haut, sur" },
+        { hanzi: "上", pinyin: "shàng", fr: "haut, dessus" },
         { hanzi: "下", pinyin: "xià", fr: "bas, sous" },
         { hanzi: "左", pinyin: "zuǒ", fr: "gauche" },
         { hanzi: "右", pinyin: "yòu", fr: "droite" },
@@ -181,28 +181,28 @@ const USUAL_LOTS = [
     ],
     [
         { hanzi: "是", pinyin: "shì", fr: "être" },
-        { hanzi: "不", pinyin: "bù", fr: "ne… pas" },
+        { hanzi: "不", pinyin: "bù", fr: "ne... pas" },
         { hanzi: "没有", pinyin: "méi yǒu", fr: "ne pas avoir" },
         { hanzi: "的", pinyin: "de", fr: "de (particule d'appartenance)" },
         { hanzi: "吗", pinyin: "ma", fr: "(particule de question)" }
     ],
     [
         { hanzi: "你好吗？", pinyin: "nǐ hǎo ma?", fr: "Comment vas-tu ?" },
-        { hanzi: "我很好", pinyin: "wǒ hěn hǎo", fr: "Je vais bien" },
+        { hanzi: "我很好", pinyin: "wǒ hěn hǎo", fr: "Je vais très bien" },
         { hanzi: "早上好", pinyin: "zǎo shang hǎo", fr: "Bonjour (le matin)" },
         { hanzi: "晚安", pinyin: "wǎn ān", fr: "Bonne nuit" },
-        { hanzi: "好久不见", pinyin: "hǎo jiǔ bú jiàn", fr: "Ça fait longtemps !" }
+        { hanzi: "好久不见", pinyin: "hǎo jiǔ bú jiàn", fr: "Cela fait longtemps !" }
     ],
     [
         { hanzi: "我叫后羿", pinyin: "wǒ jiào Hòu Yì", fr: "Je m'appelle Houyi" },
         { hanzi: "你叫什么名字？", pinyin: "nǐ jiào shén me míng zi?", fr: "Comment t'appelles-tu ?" },
         { hanzi: "我是法国人", pinyin: "wǒ shì Fǎ guó rén", fr: "Je suis français(e)" },
-        { hanzi: "我会说一点中文", pinyin: "wǒ huì shuō yì diǎn Zhōng wén", fr: "Je parle un peu chinois" },
-        { hanzi: "很高兴认识你", pinyin: "hěn gāo xìng rèn shi nǐ", fr: "Enchanté de te rencontrer" }
+        { hanzi: "我会说一点中文", pinyin: "wǒ huì shuō yì diǎn Zhōng wén", fr: "Je sais parler un peu chinois" },
+        { hanzi: "很高兴认识你", pinyin: "hěn gāo xìng rèn shi nǐ", fr: "Ravi(e) de faire ta connaissance" }
     ],
     [
         { hanzi: "我不懂", pinyin: "wǒ bù dǒng", fr: "Je ne comprends pas" },
-        { hanzi: "请再说一遍", pinyin: "qǐng zài shuō yí biàn", fr: "Répétez, s'il vous plaît" },
+        { hanzi: "请再说一遍", pinyin: "qǐng zài shuō yí biàn", fr: "Répétez encore une fois, s'il vous plaît" },
         { hanzi: "请说慢一点", pinyin: "qǐng shuō màn yì diǎn", fr: "Parlez plus lentement, s'il vous plaît" },
         { hanzi: "这是什么？", pinyin: "zhè shì shén me?", fr: "Qu'est-ce que c'est ?" },
         { hanzi: "中文怎么说？", pinyin: "Zhōng wén zěn me shuō?", fr: "Comment dit-on cela en chinois ?" }
@@ -210,22 +210,22 @@ const USUAL_LOTS = [
     [
         { hanzi: "多少钱？", pinyin: "duō shao qián?", fr: "Combien ça coûte ?" },
         { hanzi: "太贵了", pinyin: "tài guì le", fr: "C'est trop cher" },
-        { hanzi: "便宜一点", pinyin: "pián yi yì diǎn", fr: "Un peu moins cher" },
+        { hanzi: "便宜一点", pinyin: "pián yi yì diǎn", fr: "Un peu moins cher, s'il vous plaît" },
         { hanzi: "我要这个", pinyin: "wǒ yào zhè ge", fr: "Je prends celui-ci" },
         { hanzi: "我想买茶", pinyin: "wǒ xiǎng mǎi chá", fr: "Je voudrais acheter du thé" }
     ],
     [
         { hanzi: "请问，怎么走？", pinyin: "qǐng wèn, zěn me zǒu?", fr: "Excusez-moi, comment y aller ?" },
         { hanzi: "厕所在哪里？", pinyin: "cè suǒ zài nǎ li?", fr: "Où sont les toilettes ?" },
-        { hanzi: "往左走", pinyin: "wǎng zuǒ zǒu", fr: "Allez à gauche" },
-        { hanzi: "往右走", pinyin: "wǎng yòu zǒu", fr: "Allez à droite" },
-        { hanzi: "我迷路了", pinyin: "wǒ mí lù le", fr: "Je suis perdu" }
+        { hanzi: "往左走", pinyin: "wǎng zuǒ zǒu", fr: "Allez vers la gauche" },
+        { hanzi: "往右走", pinyin: "wǎng yòu zǒu", fr: "Allez vers la droite" },
+        { hanzi: "我迷路了", pinyin: "wǒ mí lù le", fr: "Je suis perdu(e)" }
     ],
     [
         { hanzi: "我饿了", pinyin: "wǒ è le", fr: "J'ai faim" },
         { hanzi: "我渴了", pinyin: "wǒ kě le", fr: "J'ai soif" },
         { hanzi: "很好吃", pinyin: "hěn hǎo chī", fr: "C'est délicieux" },
-        { hanzi: "来一杯茶", pinyin: "lái yì bēi chá", fr: "Un thé, s'il vous plaît" },
+        { hanzi: "来一杯茶", pinyin: "lái yì bēi chá", fr: "Une tasse de thé, s'il vous plaît" },
         { hanzi: "买单", pinyin: "mǎi dān", fr: "L'addition, s'il vous plaît" }
     ],
     [
@@ -239,88 +239,88 @@ const USUAL_LOTS = [
         { hanzi: "明天见", pinyin: "míng tiān jiàn", fr: "À demain" },
         { hanzi: "我爱你", pinyin: "wǒ ài nǐ", fr: "Je t'aime" },
         { hanzi: "没问题", pinyin: "méi wèn tí", fr: "Pas de problème" },
-        { hanzi: "慢走", pinyin: "màn zǒu", fr: "Bon retour ! (à celui qui part)" },
+        { hanzi: "慢走", pinyin: "màn zǒu", fr: "Bonne route ! (formule adressée à celui qui part)" },
         { hanzi: "欢迎", pinyin: "huān yíng", fr: "Bienvenue" }
     ]
 ];
 const CURATED_LOTS = [
     // Lot 1 : La légende
     [
-        { hanzi: '后羿', pinyin: 'Hòu Yì', fr: 'Houyi, l\'archer (le héros)' },
-        { hanzi: '嫦娥', pinyin: 'Cháng\'é', fr: 'Chang\'e, déesse de la lune' },
-        { hanzi: '太阳', pinyin: 'tài yáng', fr: 'soleil' },
-        { hanzi: '十日', pinyin: 'shí rì', fr: 'les dix soleils' },
-        { hanzi: '月亮', pinyin: 'yuè liang', fr: 'lune' }
+        { hanzi: '后羿', pinyin: 'Hòu Yì', fr: "Hou Yi, l'archer (héros légendaire)" },
+        { hanzi: '嫦娥', pinyin: 'Cháng\'é', fr: "Chang'e, déesse de la lune" },
+        { hanzi: '太阳', pinyin: 'tài yáng', fr: "soleil" },
+        { hanzi: '十日', pinyin: 'shí rì', fr: "les dix soleils" },
+        { hanzi: '月亮', pinyin: 'yuè liang', fr: "lune" }
     ],
     // Lot 2 : Le héros
     [
-        { hanzi: '弓', pinyin: 'gōng', fr: 'arc' },
-        { hanzi: '箭', pinyin: 'jiàn', fr: 'flèche' },
-        { hanzi: '射', pinyin: 'shè', fr: 'tirer (à l\'arc)' },
-        { hanzi: '英雄', pinyin: 'yīng xióng', fr: 'héros' },
-        { hanzi: '勇敢', pinyin: 'yǒng gǎn', fr: 'courageux' }
+        { hanzi: '弓', pinyin: 'gōng', fr: "arc" },
+        { hanzi: '箭', pinyin: 'jiàn', fr: "flèche" },
+        { hanzi: '射', pinyin: 'shè', fr: "tirer (à l'arc)" },
+        { hanzi: '英雄', pinyin: 'yīng xióng', fr: "héros" },
+        { hanzi: '勇敢', pinyin: 'yǒng gǎn', fr: "courageux" }
     ],
     // Lot 3 : Créatures
     [
-        { hanzi: '龙', pinyin: 'lóng', fr: 'dragon' },
-        { hanzi: '凤凰', pinyin: 'fèng huáng', fr: 'phénix' },
-        { hanzi: '老虎', pinyin: 'lǎo hǔ', fr: 'tigre' },
-        { hanzi: '狐狸', pinyin: 'hú li', fr: 'renard' },
-        { hanzi: '蛇', pinyin: 'shé', fr: 'serpent' }
+        { hanzi: '龙', pinyin: 'lóng', fr: "dragon" },
+        { hanzi: '凤凰', pinyin: 'fèng huáng', fr: "phénix" },
+        { hanzi: '老虎', pinyin: 'lǎo hǔ', fr: "tigre" },
+        { hanzi: '狐狸', pinyin: 'hú li', fr: "renard" },
+        { hanzi: '蛇', pinyin: 'shé', fr: "serpent" }
     ],
     // Lot 4 : Esprits et dieux
     [
-        { hanzi: '鸟', pinyin: 'niǎo', fr: 'oiseau' },
-        { hanzi: '鬼', pinyin: 'guǐ', fr: 'fantôme, esprit des morts' },
-        { hanzi: '神', pinyin: 'shén', fr: 'dieu, divinité' },
-        { hanzi: '仙', pinyin: 'xiān', fr: 'immortel' },
-        { hanzi: '皇帝', pinyin: 'huáng dì', fr: 'empereur' }
+        { hanzi: '鸟', pinyin: 'niǎo', fr: "oiseau" },
+        { hanzi: '鬼', pinyin: 'guǐ', fr: "fantôme, esprit d'un défunt" },
+        { hanzi: '神', pinyin: 'shén', fr: "dieu, divinité" },
+        { hanzi: '仙', pinyin: 'xiān', fr: "immortel" },
+        { hanzi: '皇帝', pinyin: 'huáng dì', fr: "empereur" }
     ],
     // Lot 5 : Mythes et lieux
     [
-        { hanzi: '帝俊', pinyin: 'Dì Jùn', fr: 'Di Jun, père des dix soleils' },
-        { hanzi: '西王母', pinyin: 'Xī Wáng Mǔ', fr: 'la Reine Mère de l\'Ouest' },
-        { hanzi: '桃', pinyin: 'táo', fr: 'pêche' },
-        { hanzi: '扶桑', pinyin: 'Fú Sāng', fr: 'Fusang, l\'arbre où se posent les soleils' },
-        { hanzi: '药', pinyin: 'yào', fr: 'remède, élixir' }
+        { hanzi: '帝俊', pinyin: 'Dì Jùn', fr: "Di Jun, père des dix soleils" },
+        { hanzi: '西王母', pinyin: 'Xī Wáng Mǔ', fr: "la Reine Mère de l'Ouest" },
+        { hanzi: '桃', pinyin: 'táo', fr: "pêche" },
+        { hanzi: '扶桑', pinyin: 'Fú Sāng', fr: "Fusang, l'arbre où se posent les soleils" },
+        { hanzi: '药', pinyin: 'yào', fr: "médicament, remède" }
     ],
     // Lot 6 : Les cinq éléments
     [
-        { hanzi: '火', pinyin: 'huǒ', fr: 'feu' },
-        { hanzi: '水', pinyin: 'shuǐ', fr: 'eau' },
-        { hanzi: '木', pinyin: 'mù', fr: 'bois, arbre' },
-        { hanzi: '金', pinyin: 'jīn', fr: 'or, métal' },
-        { hanzi: '土', pinyin: 'tǔ', fr: 'terre' }
+        { hanzi: '火', pinyin: 'huǒ', fr: "feu" },
+        { hanzi: '水', pinyin: 'shuǐ', fr: "eau" },
+        { hanzi: '木', pinyin: 'mù', fr: "bois, arbre" },
+        { hanzi: '金', pinyin: 'jīn', fr: "or, métal" },
+        { hanzi: '土', pinyin: 'tǔ', fr: "terre" }
     ],
     // Lot 7 : Énergie et paysages
     [
-        { hanzi: '五行', pinyin: 'wǔ xíng', fr: 'les cinq éléments' },
-        { hanzi: '气', pinyin: 'qì', fr: 'souffle vital, énergie' },
-        { hanzi: '力量', pinyin: 'lì liang', fr: 'force, puissance' },
-        { hanzi: '山', pinyin: 'shān', fr: 'montagne' },
-        { hanzi: '河', pinyin: 'hé', fr: 'fleuve' }
+        { hanzi: '五行', pinyin: 'wǔ xíng', fr: "les cinq éléments" },
+        { hanzi: '气', pinyin: 'qì', fr: "souffle vital, énergie" },
+        { hanzi: '力量', pinyin: 'lì liang', fr: "force, puissance" },
+        { hanzi: '山', pinyin: 'shān', fr: "montagne" },
+        { hanzi: '河', pinyin: 'hé', fr: "rivière" }
     ],
     // Lot 8 : Nature des régions
     [
-        { hanzi: '海', pinyin: 'hǎi', fr: 'mer' },
-        { hanzi: '雷', pinyin: 'léi', fr: 'tonnerre' },
-        { hanzi: '雪', pinyin: 'xuě', fr: 'neige' },
-        { hanzi: '竹', pinyin: 'zhú', fr: 'bambou' },
-        { hanzi: '稻', pinyin: 'dào', fr: 'riz (plante)' }
+        { hanzi: '海', pinyin: 'hǎi', fr: "mer" },
+        { hanzi: '雷', pinyin: 'léi', fr: "tonnerre" },
+        { hanzi: '雪', pinyin: 'xuě', fr: "neige" },
+        { hanzi: '竹', pinyin: 'zhú', fr: "bambou" },
+        { hanzi: '稻', pinyin: 'dào', fr: "riz (plante)" }
     ],
     // Lot 9 : Villages et PNJ
     [
-        { hanzi: '村庄', pinyin: 'cūn zhuāng', fr: 'village' },
-        { hanzi: '商人', pinyin: 'shāng rén', fr: 'marchand' },
-        { hanzi: '长老', pinyin: 'zhǎng lǎo', fr: 'ancien, doyen' },
-        { hanzi: '朋友', pinyin: 'péng you', fr: 'ami' },
-        { hanzi: '你好', pinyin: 'nǐ hǎo', fr: 'bonjour' }
+        { hanzi: '村庄', pinyin: 'cūn zhuāng', fr: "village" },
+        { hanzi: '商人', pinyin: 'shāng rén', fr: "marchand" },
+        { hanzi: '长老', pinyin: 'zhǎng lǎo', fr: "ancien, doyen" },
+        { hanzi: '朋友', pinyin: 'péng you', fr: "ami" },
+        { hanzi: '你好', pinyin: 'nǐ hǎo', fr: "bonjour" }
     ],
     // Lot 10 : Mots du quotidien
     [
-        { hanzi: '谢谢', pinyin: 'xiè xie', fr: 'merci' },
-        { hanzi: '胜利', pinyin: 'shèng lì', fr: 'victoire' },
-        { hanzi: '失败', pinyin: 'shī bài', fr: 'défaite, échec' }
+        { hanzi: '谢谢', pinyin: 'xiè xie', fr: "merci" },
+        { hanzi: '胜利', pinyin: 'shèng lì', fr: "victoire" },
+        { hanzi: '失败', pinyin: 'shī bài', fr: "défaite, échec" }
     ]
 ];
 
@@ -331,13 +331,15 @@ const lowerFirst = t => t.replace(/\s*\/\s*/g, ', ').replace(/^./, c => c.toLowe
 export const CREATURE_LOTS = 4;
 // Les créatures les plus marquantes (ordre de passage) : seulement quatre lots de cinq.
 const CREATURE_PICKS = ['苍龙', '蛟龙', '炽焰虎', '僵尸', '狐狸精', '混沌', '雷公', '瘟神', '蒙面刺客', '月之巫女', '陶俑战士', '雪中仙姬', '玉石仙灵', '古松树精', '烈焰野猪', '余烬之狼', '草木精灵', '执笔术士', '泥沼蟾蜍', '烈日卫士'];
+// Libellés propres aux leçons quand ils diffèrent de la traduction du bestiaire.
+const CREATURE_FR = { '执笔术士': 'sorcier maniant le pinceau' };
 export function creatureWords(exclude = new Set()) {
     const seen = new Set(exclude), out = [];
     Object.values(BESTIARY_NAMES).forEach(([pinyin, hanzi]) => {
         const literal = LITERAL_BY_HANZI[hanzi];
         if (!literal || seen.has(hanzi) || stripTones(literal) === stripTones(pinyin)) return;
         seen.add(hanzi);
-        out.push({ hanzi, pinyin, fr: lowerFirst(literal) });
+        out.push({ hanzi, pinyin, fr: CREATURE_FR[hanzi] || lowerFirst(literal) });
     });
     return out;
 }
