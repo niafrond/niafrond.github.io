@@ -798,7 +798,15 @@ progress.enemy-bar::-webkit-progress-value {
 }
 .battle-result-section.battle-result-sec-xp { --result-accent: #4fa34a; --result-bg: #f0faf1; }
 .battle-result-section.battle-result-sec-gold { --result-accent: #c9963a; --result-bg: #fff8e6; }
-.battle-result-section.battle-result-sec-items { --result-accent: #3a7ad8; --result-bg: #eef4fd; flex: 2 1 0; }
+.battle-result-section.battle-result-sec-xp, .battle-result-section.battle-result-sec-gold { flex-grow: 0.8; }
+.battle-result-section.battle-result-sec-items { --result-accent: #3a7ad8; --result-bg: #eef4fd; flex-grow: 1.3; }   /* zone du butin : plus de la moitié moins haute qu'avant (flex 2 sur 4 → 1,3 sur 5,9) */
+.battle-result-section.battle-result-sec-zh { --result-accent: #c0392b; --result-bg: #fff3ef; flex: 3 1 0; }
+.battle-result-sec-zh .battle-result-section-body { gap: 3px; padding: 6px 10px; justify-content: flex-start; }
+.battle-result-hanzi { font-size: clamp(2.2em, 11vw, 3.4em); line-height: 1.1; font-weight: 700; color: #7b1f14; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif; }
+.battle-result-pinyin { font-size: 1.15em; font-weight: 700; color: #a8321f; }
+.battle-result-fr { font-size: 1.05em; text-align: center; color: #3b2a20; }
+.battle-result-listen { margin-top: 2px; padding: 6px 16px; cursor: pointer; font: inherit; border: 2px solid #7b1f14; border-radius: 8px; background: #ffd6cc; color: #7b1f14; }
+.battle-result-listen:disabled { opacity: .55; cursor: default; }
 
 .battle-result-section-title {
     flex: 0 0 auto;
@@ -1574,3 +1582,17 @@ progress.enemy-bar::-webkit-progress-value {
 .options-panel { border-top: 2px solid #5a3e1b; padding-top: 4px; min-height: 12rem; }
 .options-panel[hidden] { display: none; }
 .options-row.options-coffee { justify-content: center; }
+
+/* Mots de chinois : carte de fin de combat (lot, « je connais ») et liste complète de l'onglet Chinois des options */
+.battle-result-lot { font-size: 0.75em; letter-spacing: 0.5px; color: #8a4a3e; text-transform: uppercase; text-align: center; }
+.battle-result-known { display: flex; align-items: center; gap: 6px; font-size: 0.85em; color: #5a3e1b; cursor: pointer; }
+.battle-result-known input, .zh-known input { width: 1.1em; height: 1.1em; accent-color: #4fa34a; }
+.options-panel-scroll { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; }
+.zh-summary { margin: 4px 0 8px; font-size: 0.85em; opacity: 0.85; }
+.zh-lot { margin: 10px 0 4px; font-size: 0.85em; color: #a8321f; text-transform: uppercase; letter-spacing: 0.5px; }
+.zh-row { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto auto; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px dashed rgba(90, 62, 27, 0.35); font-size: 0.85em; }
+.zh-han { font-size: 1.5em; font-weight: 700; color: #7b1f14; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif; text-align: center; }
+.zh-txt { min-width: 0; overflow-wrap: anywhere; }
+.zh-listen { cursor: pointer; font: inherit; font-size: 0.85em; padding: 3px 8px; border: 2px solid #7b1f14; border-radius: 6px; background: #ffd6cc; color: #7b1f14; }
+.zh-listen:disabled { opacity: .55; cursor: default; }
+.zh-known { display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }

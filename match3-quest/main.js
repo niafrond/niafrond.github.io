@@ -1,3 +1,4 @@
+import { lessonsPanelHtml, bindLessons } from "./chineseLessonsView.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
@@ -414,7 +415,12 @@ function init() {
             const panel = document.getElementById(t.getAttribute('aria-controls'));
             if(panel) panel.hidden = !on;
         });
+        if(tab.dataset.optionsTab === 'zh') renderChineseOptions();
     };
+    // Onglet « Chinois » : tous les mots avec écoute et case « je connais », construit à l'ouverture (près de 200 lignes).
+    const zhPanel = document.getElementById('options-panel-zh');
+    if(zhPanel) bindLessons(zhPanel);
+    const renderChineseOptions = () => { if(zhPanel) zhPanel.innerHTML = lessonsPanelHtml(); };
     optionTabs.forEach((tab, i) => {
         tab.addEventListener('click', () => { playSfx('uiClick'); showOptionsTab(tab); });
         tab.addEventListener('keydown', e => {

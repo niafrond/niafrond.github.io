@@ -19,6 +19,8 @@
   "breakReminder.js",
   "cheatMode.js",
   "chestLoot.js",
+  "chineseLessonsView.js",
+  "chineseWords.js",
   "cinematics.js",
   "cinematicsBoss.js",
   "cinematicsCore.js",

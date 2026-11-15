@@ -25,6 +25,8 @@ import { recordBossLoss, pickBossTip } from "./bossTips.js";
 
 import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
 
+import { nextLesson } from './chineseWords.js';
+import { lessonBodyHtml, bindLessons } from './chineseLessonsView.js';
 import { getRarityIcon, repairMaxMana, applyArtifactEffects, normalizeRelics, migrateShadowCollar, allItems } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 
@@ -1047,12 +1049,15 @@ function showCombatResultScreen(isVictory){
             <h3 class="battle-result-section-title">${svgIcon(icon)} <span>${label}</span></h3>
             <div class="battle-result-section-body">${body}</div>
         </section>`;
+    const lesson = nextLesson();
     summary.innerHTML = `
         ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
         ${section('xp', 'star', 'Expérience', `<div class="battle-result-xp">+${combatRewards.xpGained} XP</div>${levelLine}`)}
         ${section('gold', 'coin', 'Pièces', `<div class="battle-result-gold">${gold > 0 ? `+${gold} pièce${gold > 1 ? 's' : ''}` : 'Aucune pièce'}</div>`)}
         ${section('items', 'bag', 'Objets', `<ul class="battle-result-loot">${lootLines}</ul>`)}
+        ${lesson ? section('zh', 'scroll', 'Un mot de chinois', lessonBodyHtml(lesson)) : ''}
     `;
+    if(lesson) bindLessons(summary.querySelector('.battle-result-sec-zh'));
 
     screen.classList.add('active');
 }
