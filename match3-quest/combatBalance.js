@@ -182,6 +182,7 @@ export const enemyRawDamagePerCycleModel = (enemyLevel, category = 'normal') => 
 // (`MODE_DIVISOR`), tout restant affiché. Les PV de l'ennemi ne dépendent pas du mode : ils fixent la durée du combat (3 à 8 min selon la
 // catégorie, dans tous les modes). En plus, l'IA joue selon le palier du mode (enemyAIProfiles.js). Taux de victoire visés du héros complet.
 export const DIFFICULTY_TARGET_WIN_RATE = {
+    story: { weak: 1, normal: 1, aggressive: 1, elite: 1, miniBoss: 1, boss: 1 },   // ultra facile : on suit l'histoire, la défaite ne devrait presque jamais arriver
     easy: { weak: 0.98, normal: 0.95, aggressive: 0.92, elite: 0.9, miniBoss: 0.88, boss: 0.85 },
     normal: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.72, boss: 0.7 },
     auto: { weak: 0.95, normal: 0.85, aggressive: 0.8, elite: 0.75, miniBoss: 0.7, boss: 0.6 },
@@ -194,6 +195,7 @@ export const EXPERT_CATEGORY_FACTOR = { weak: 1.44, normal: 1, aggressive: 0.73,
 export const MAX_DAMAGE_MULT = 7;   // dégâts de l'ennemi au plus ×7 (au-delà, un coup d'arme suffirait à emporter le héros)
 // Diviseur de l'attaque et du stuff de l'ennemi par mode et catégorie (simulation : tools/balance-search.mjs search-divisors).
 export const MODE_DIVISOR = {
+    story: { weak: 40, normal: 40, aggressive: 40, elite: 40, miniBoss: 40, boss: 40 },   // attaque et talisman de résonance de l'ennemi quasi nuls (plancher STORY_DAMAGE_MULT)
     easy: { weak: 0.57, normal: 1.38, aggressive: 1.32, elite: 1.52, miniBoss: 2.11, boss: 2.13 },
     normal: { weak: 0.43, normal: 0.49, aggressive: 0.87, elite: 0.91, miniBoss: 1.2, boss: 1.92 },
     auto: { weak: 0.83, normal: 1.32, aggressive: 1.59, elite: 1.52, miniBoss: 1.45, boss: 2.13 },
@@ -225,6 +227,9 @@ export const EXPERT_CATCHUP_THRESHOLD = 20;   // écart (points d'Att ou de Déf
 export const EXPERT_CATCHUP_SHARE = 0.5;      // part de l'écart au-delà du seuil rattrapée
 export const EXPERT_CATCHUP_CAP = 20;         // points d'Att / de Déf ajoutés au plus
 export const isExpertMode = difficulty => difficulty === 'expert';
+/** Mode Histoire (ultra facile) : l'ennemi frappe à peine, son Talisman de Résonance est quasi nul. */
+export const isStoryMode = difficulty => difficulty === 'story';
+export const STORY_DAMAGE_MULT = 0.1;   // plancher du multiplicateur de dégâts en mode Histoire (le minimum que le jeu accepte)
 /** Points d'Att ou de Déf ajoutés à l'ennemi Expert quand le héros le dépasse de plus de EXPERT_CATCHUP_THRESHOLD points. */
 export function expertCatchUpPoints(heroValue, enemyValue) {
     const gap = Math.floor(Number(heroValue) || 0) - Math.floor(Number(enemyValue) || 0) - EXPERT_CATCHUP_THRESHOLD;
@@ -367,7 +372,8 @@ export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 
     const divisor = Math.max(0.25, (modeDivisor ?? MODE_DIVISOR[difficulty]?.[category] ?? 1) * (adjust?.attack ?? 1));
     const expertMult = Math.min(MAX_DAMAGE_MULT, damageScale * heroDamageScale);
     const expert = isExpertMode(difficulty);
-    const baseMult = Math.max(category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT, expertMult / divisor);
+    const floorMult = isStoryMode(difficulty) ? STORY_DAMAGE_MULT : (category === 'boss' ? MIN_DAMAGE_MULT_BOSS : MIN_DAMAGE_MULT);
+    const baseMult = Math.max(floorMult, expertMult / divisor);
     const damageMult = Math.round(Math.min(MAX_DAMAGE_MULT, baseMult * (expert ? EXPERT_DAMAGE_BONUS : 1)) * 100) / 100;
     const finalHp = Math.max(1, Math.round(hp * (adjust?.hp ?? 1)));
     return { hp: finalHp, hpBase: hp, modeDivisor: divisor, hitShareCap: expert ? EXPERT_HIT_SHARE_CAP : HIT_SHARE_CAP, spellCostFactor: expert ? EXPERT_SPELL_COST_FACTOR : 1, gearScale: Math.round(Math.min(1.5, 1 / divisor) * 100) / 100, damageMult, damageScale, heroDamageScale, heroEffectiveHp: heroMaxHp, cycles: Math.round(cycles * 10) / 10, cycleSeconds: Math.round(cycleSeconds * 10) / 10, damagePerCycle: Math.round(damagePerCycle * 10) / 10, measured: corr.weight > 0, measuredWeight: corr.weight, measuredSample: corr.n };

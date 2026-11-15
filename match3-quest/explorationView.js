@@ -16,7 +16,8 @@ import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
-import { vibrate, armVibration } from './gameOptions.js';
+import { vibrate, armVibration, getOption } from './gameOptions.js';
+const encounterFactor = () => (getOption('aiDifficulty') === 'story' ? X.STORY_ENCOUNTER_FACTOR : 1);   // mode Histoire : rencontres au hasard très rares
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
@@ -772,7 +773,7 @@ export function createExplorationView(cfg) {
         syncStealth();
         const d = DIRECTIONS[dirName];
         if (!d) return;
-        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel(), riding: riding() }));
+        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel(), riding: riding(), rateFactor: encounterFactor() }));
         lastMoveAt = performance.now();
     }
 
@@ -871,7 +872,7 @@ export function createExplorationView(cfg) {
         const dx = next.x - session.data.x;
         const dy = next.y - session.data.y;
         syncStealth();
-        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel(), riding: riding() });
+        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel(), riding: riding(), rateFactor: encounterFactor() });
         lastMoveAt = performance.now();
         if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
