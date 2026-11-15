@@ -1,3 +1,11 @@
+## [2.251.0](https://github.com/niafrond/niafrond.github.io/compare/v2.250.0...v2.251.0) (2026-11-15)
+
+### Features
+
+* **match3-quest:** apprendre un mot de chinois par lot en fin de combat et réduire la zone de butin ([42553d0](https://github.com/niafrond/niafrond.github.io/commit/42553d09219a0a315b5a6c29f2d874f1af5a439c))
+* **match3-quest:** mots usuels avant les créatures et retrait du sous-titre ([30de7c0](https://github.com/niafrond/niafrond.github.io/commit/30de7c09b47d35c66629071ee0833bdd2a84feae))
+* **match3-quest:** quatre lots de créatures, plus de mots usuels et des phrases en fin de série ([d753cdb](https://github.com/niafrond/niafrond.github.io/commit/d753cdba6d305e3186e328c3deaf7f92b180e4aa))
+
 ## [2.250.0](https://github.com/niafrond/niafrond.github.io/compare/v2.249.0...v2.250.0) (2026-11-15)
 
 ### Features
