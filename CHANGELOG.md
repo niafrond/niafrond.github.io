@@ -1,3 +1,14 @@
+## [2.253.0](https://github.com/niafrond/niafrond.github.io/compare/v2.252.0...v2.253.0) (2026-11-16)
+
+### Features
+
+* **match3-quest:** ajouter le mode Casual (équipement automatique, combats plus longs) ([6f67ece](https://github.com/niafrond/niafrond.github.io/commit/6f67eced825892b239278060164e01cfb1b9f236))
+* **match3-quest:** gérer aussi les sorts dans le mode Casual ([47ce718](https://github.com/niafrond/niafrond.github.io/commit/47ce7189154aa6dd3763a638681c1e1a82d8d39f))
+
+### Bug Fixes
+
+* **match3-quest:** ne plus allonger les combats du mode Casual ([2ac115a](https://github.com/niafrond/niafrond.github.io/commit/2ac115add5af1781f17b8e4e4b18b53a487fc07e))
+
 ## [2.252.0](https://github.com/niafrond/niafrond.github.io/compare/v2.251.1...v2.252.0) (2026-11-16)
 
 ### Features
