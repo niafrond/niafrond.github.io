@@ -366,3 +366,7 @@ body.dark-mode .modal {
 body.dark-mode .attr-description li.attr-change, body.dark-mode .attr-points.attr-change { color: #7bdc86; }
 body.rt .attr-description li.attr-change, body.rt .attr-points.attr-change { color: #1f7a2e; }
 body.rt.dark-mode .attr-description li.attr-change, body.rt.dark-mode .attr-points.attr-change { color: #7bdc86; }
+
+/* Mode Casual : armes et stuff sont gérés par le jeu, leurs onglets disparaissent */
+body.casual-mode .tab-btn[onclick*="'weapons'"],
+body.casual-mode .tab-btn[onclick*="'stuff'"] { display: none; }

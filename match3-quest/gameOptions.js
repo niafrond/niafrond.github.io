@@ -13,6 +13,7 @@
 //    son choix explicite, dans un sens ou dans l'autre, prime ensuite.
 // Confort :
 //  - breakReminder : rappel de pause bienveillant (breakReminder.js), désactivable.
+//  - casual : mode Casual (casual.js, casualPilot.js) : le jeu choisit stuff, armes et points d'attribut, et passe à un équipement défensif après des défaites.
 //  - horseAvoid : à cheval, le trajet au toucher évite les zones que le cheval ne franchit pas (eau et lave, où il faudrait mettre pied à terre) ;
 //    s'il n'y a pas d'autre chemin, il les traverse quand même.
 // Difficulté des ennemis :
@@ -22,7 +23,7 @@
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'match3quest.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, reduceFx: false, breakReminder: true, horseAvoid: true, aiDifficulty: 'auto' };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto' };
 const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'story', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
@@ -179,6 +180,7 @@ export function applyOptions() {
     b.toggle('a11y-colorblind', current.colorblind);
     b.toggle('no-anim', !animationsEnabled());
     b.toggle('fx-reduced', current.reduceFx);
+    b.toggle('casual-mode', current.casual === true);   // mode Casual : le côté RPG (armes, stuff, répartition des points) est géré par le jeu
 }
 
 load();

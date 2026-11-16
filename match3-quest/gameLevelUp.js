@@ -6,6 +6,7 @@ import { ATTRIBUTE_ORDER, describeAttributeChoice, respecAttributes, manaPerMatc
 import { MAX_LEVEL, getXPProgress, getXPToNextLevel } from './experience.js';
 import { log, saveUpdate, updateStats } from './gameHud.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
+import { isCasual, runCasualAutopilot } from './casualPilot.js';
 import { clampManaToCaps, gameState, player, queueCombatXP } from './game.js';
 
 export function grantComboMasteryRewards(xpAmount = 25){
@@ -77,6 +78,7 @@ function buildAttributeCards(){   // seules les lignes qui changent avec ce poin
 
 export function showAttributeMenu(){
     if((player.unspentLevelPoints || 0) <= 0) return;
+    if(isCasual()){ runCasualAutopilot(); return; }   // mode Casual : le jeu répartit les points sans fenêtre
 
     // Afficher la modale de montée de niveau
     const modal = document.getElementById('levelup-modal');

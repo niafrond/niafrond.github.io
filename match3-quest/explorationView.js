@@ -17,8 +17,9 @@ import { getStuffById } from './stuff.js';
 import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
+import { CASUAL_ENCOUNTER_FACTOR } from './casual.js';
 import { vibrate, armVibration, getOption } from './gameOptions.js';
-const encounterFactor = () => (getOption('aiDifficulty') === 'story' ? X.STORY_ENCOUNTER_FACTOR : 1);   // mode Histoire : rencontres au hasard très rares
+const encounterFactor = () => (getOption('aiDifficulty') === 'story' ? X.STORY_ENCOUNTER_FACTOR : 1) * (getOption('casual') ? CASUAL_ENCOUNTER_FACTOR : 1);   // mode Histoire : rencontres au hasard très rares
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { openPuzzle } from './puzzle/view.js';
