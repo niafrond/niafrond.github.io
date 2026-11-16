@@ -1,3 +1,16 @@
+## [2.252.0](https://github.com/niafrond/niafrond.github.io/compare/v2.251.1...v2.252.0) (2026-11-16)
+
+### Features
+
+* **match3-quest:** afficher les dégâts de l'attaque préparée des boss ([dc426b7](https://github.com/niafrond/niafrond.github.io/commit/dc426b7c242ff64fc406d1248d9ab1921f951048))
+* **match3-quest:** ajouter le mode de difficulté Histoire (ultra facile) ([87ec67e](https://github.com/niafrond/niafrond.github.io/commit/87ec67e0d4db78448c95d568e6f36f3d8e57107a))
+* **match3-quest:** durcir le mode Expert (qì de l'ennemi, dégâts, rattrapage d'Att/Déf) ([1366f39](https://github.com/niafrond/niafrond.github.io/commit/1366f3908a21b9fd9cb6b37948a860d4b31997ea))
+* **match3-quest:** mettre le jeu en pause quand la fenêtre perd le focus ([60da989](https://github.com/niafrond/niafrond.github.io/commit/60da989f6094111b56c41aaadbd73b6faee154d9))
+
+### Bug Fixes
+
+* **match3-quest:** réduire les rencontres au hasard du mode Histoire à 7 % ([d565400](https://github.com/niafrond/niafrond.github.io/commit/d5654000d8c2402a612e24c3d983fc5051856f5d))
+
 ## [2.251.1](https://github.com/niafrond/niafrond.github.io/compare/v2.251.0...v2.251.1) (2026-11-15)
 
 ### Bug Fixes
