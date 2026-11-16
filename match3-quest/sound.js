@@ -200,7 +200,7 @@ function resumeAudioContext(options = {}) {
 // Batterie : un contexte audio actif fait tourner le fil audio (et garde l'appareil éveillé) même quand il ne joue que du
 // silence. On le suspend onglet masqué / application en arrière-plan et quand tout le son est coupé ; il repart au retour.
 function audioShouldRun() {
-    if (typeof document !== 'undefined' && document.hidden) return false;
+    if (typeof document !== 'undefined' && (document.hidden || document.documentElement?.classList?.contains('focus-paused'))) return false;
     return getMuteMode() !== 'all';
 }
 function syncAudioActivity() {
@@ -213,6 +213,7 @@ function syncAudioActivity() {
 export const isAudioAllowed = audioShouldRun;
 if (typeof document !== 'undefined' && document.addEventListener) {
     document.addEventListener('visibilitychange', syncAudioActivity);
+    document.addEventListener('focuspausechange', syncAudioActivity);   // fenêtre sans focus (focusPause.js)
     if (typeof window !== 'undefined') window.addEventListener?.('pagehide', () => { if (audioContext?.state === 'running') audioContext.suspend().catch(() => {}); });
 }
 

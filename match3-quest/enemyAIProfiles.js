@@ -97,6 +97,7 @@ export function baseTierForLevel(enemyLevel) {
  *    faire passer au-dessus de « Difficile » (seul un ennemi de niveau 13+ est Expert), puis profils scénarisés.
  */
 export function resolveDifficulty({ preference = 'auto', enemyLevel = 1, playerLevel = 1, enemyProfile = null } = {}) {
+    if (preference === 'story') return { tier: 'easy', special: null, adapted: false };   // mode Histoire : IA du palier le plus faible
     if (TIER_ORDER.includes(preference)) return { tier: preference, special: null, adapted: false };
     if (enemyProfile?.isEasyChoice) return { tier: 'easy', special: 'weakened', adapted: false };
     if (enemyProfile?.isOverleveledChoice) return { tier: 'expert', special: 'overleveled', adapted: false };

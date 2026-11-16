@@ -14,7 +14,7 @@ import { FIRE_DRAGON } from './enemyBehaviors.js';
 
 export const CHARGE_TURNS = 2;                       // tours entre l'annonce et l'attaque
 export const HP_TRIGGERS = [0.66, 0.33];             // phases : seuils de PV du boss qui déclenchent un échauffement
-export const SIGNATURE_SHARE = { easy: 0.3, normal: 0.35, auto: 0.35, hard: 0.4, expert: 0.45 };
+export const SIGNATURE_SHARE = { story: 0.04, easy: 0.3, normal: 0.35, auto: 0.35, hard: 0.4, expert: 0.45 };
 export const MAX_REDUCTION = 0.75;
 export const PERIOD = { min: 7, spread: 3, first: 4 };   // rythme : tous les 7 à 9 tours, premier au tour 4 ou 5 (≈ 2 attaques par combat avec les phases)                   // la préparation peut retirer au plus 75 % de l'attaque (le Bastion l'annule)
 export const SIGNATURE_NAMES = { red: 'Brasier dévastateur', blue: 'Raz-de-marée', green: 'Ronces de jade', yellow: 'Foudre céleste', purple: 'Ombre dévorante' };

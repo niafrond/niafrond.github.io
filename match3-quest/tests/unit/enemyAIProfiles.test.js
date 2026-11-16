@@ -208,3 +208,7 @@ describe('palier Expert : remplissage du qì', () => {
         for (const t of ['easy', 'normal', 'hard']) expect(AI_TIERS[t].refillMana).toBeFalsy();
     });
 });
+
+test("la préférence « story » donne l'IA du palier le plus faible", () => {
+    expect(resolveDifficulty({ preference: 'story', enemyLevel: 30, playerLevel: 1 }).tier).toBe('easy');
+});

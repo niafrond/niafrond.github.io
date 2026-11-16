@@ -257,3 +257,14 @@ describe('plafond du multiplicateur de dégâts selon le mode', () => {
         expect(calibrateEnemy({ ...hero, category: 'normal', difficulty: 'auto' }).damageMult).toBeGreaterThan(5);
     });
 });
+
+describe('mode Histoire (ultra facile)', () => {
+    test("l'ennemi a un Talisman de Résonance quasi nul, boss compris", () => {
+        for (const category of ['weak', 'normal', 'elite', 'boss']) {
+            const r = calibrateEnemy({ category, heroMaxHp: 300, heroLevel: 20, enemyLevel: 20, records: [], difficulty: 'story' });
+            expect(r.damageMult).toBeLessThanOrEqual(0.2);
+            const easy = calibrateEnemy({ category, heroMaxHp: 300, heroLevel: 20, enemyLevel: 20, records: [], difficulty: 'easy' });
+            expect(r.damageMult).toBeLessThan(easy.damageMult);
+        }
+    });
+});
