@@ -17,6 +17,8 @@
   "bossScript.js",
   "bossTips.js",
   "breakReminder.js",
+  "casual.js",
+  "casualPilot.js",
   "cheatMode.js",
   "chestLoot.js",
   "chineseLessonsView.js",

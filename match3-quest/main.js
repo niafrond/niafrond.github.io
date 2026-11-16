@@ -20,6 +20,7 @@ import { rechargeReusableItems, allItems } from "./items.js";
 import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
 import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
 import { initDialogs } from "./a11y.js";
+import { runCasualAutopilot } from "./casualPilot.js";
 import { createBreakWatcher } from "./breakReminder.js";
 import { initCompare } from "./compareView.js";
 import { getWeaponById } from "./weapons.js";
@@ -520,13 +521,13 @@ function init() {
     // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
     const textSizeSelect = document.getElementById('opt-text-size');
     if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
-    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder'], ['opt-horse-avoid', 'horseAvoid']].forEach(([id, key]) => {
+    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder'], ['opt-horse-avoid', 'horseAvoid'], ['opt-casual', 'casual']].forEach(([id, key]) => {
         const btn = document.getElementById(id);
         if(!btn) return;
         const value = () => key === 'animations' ? animationsEnabled() : getOption(key);
         const sync = () => { const on = value(); btn.textContent = on ? 'Oui' : 'Non'; btn.setAttribute('aria-pressed', String(on)); };
         sync();
-        btn.addEventListener('click', () => { setOption(key, !value()); sync(); });
+        btn.addEventListener('click', () => { setOption(key, !value()); sync(); if(key === 'casual') runCasualAutopilot(); });
     });
 
     vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate([120, 60, 120]); });

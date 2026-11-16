@@ -3,6 +3,7 @@
 import { sellPriceOf } from './merchants.js';
 import { createBossScript, noteChargeDamage } from './bossScript.js';
 import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
+import { runCasualAutopilot, noteCasualOutcome } from "./casualPilot.js";
 import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, enemySpellCost, expertCatchUpPoints, isExpertMode, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
@@ -1195,6 +1196,7 @@ function whenLoserHpBarEmpty(isVictory, callback){
 }
 
 export function showEndCombatAnimation(isVictory){
+    noteCasualOutcome(isVictory);   // mode Casual : série de défaites, équipement plus défensif si le héros perd trop
     whenLoserHpBarEmpty(isVictory, () => {
         if(gameState.combatState !== 'finished') return;   // un nouveau combat a démarré entre-temps
         // Victoire comme défaite : le mot plein écran, puis l'écran de résultat, sans second écran « Cliquez pour continuer ».
@@ -1325,6 +1327,7 @@ document.addEventListener('focuspausechange', syncCombatRecordPause);   // page 
 
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
+    runCasualAutopilot();   // mode Casual : équipement choisi par le jeu avant le combat
     playSfx('uiClick');
     document.body.classList.remove('combat-ended');
     delete document.body.dataset.combatEnd;
