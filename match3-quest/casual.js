@@ -53,6 +53,42 @@ export function planStuff(hero, bias, getStuffById, slots = ['head', 'neck', 'wr
     return plan;
 }
 
+const SPELL_WEIGHTS = {
+    balanced: { dmg: 1, heal: 0.8, effect: 4, cost: 0.6 },
+    defensive: { dmg: 0.7, heal: 1.6, effect: 6, cost: 0.6 },
+    tank: { dmg: 0.4, heal: 2.4, effect: 8, cost: 0.6 }
+};
+const spellCost = sp => (typeof sp?.cost === 'number' ? sp.cost : Object.values(sp?.cost || {}).reduce((a, b) => a + (Number(b) || 0), 0));
+const spellColor = sp => (sp && typeof sp.cost === 'object' && sp.cost ? Object.entries(sp.cost).sort((a, b) => b[1] - a[1])[0]?.[0] : sp?.color) || 'none';
+
+/** Valeur d'un sort : dégâts, soin et effet, moins son coût en qì. */
+export function spellScore(sp, bias = 'balanced') {
+    if (!sp) return 0;
+    const w = SPELL_WEIGHTS[bias] || SPELL_WEIGHTS.balanced;
+    return (sp.dmg || 0) * w.dmg + (sp.heal || 0) * w.heal + (sp.effect ? w.effect : 0) - spellCost(sp) * w.cost;
+}
+
+/**
+ * Sorts à équiper (ids, au plus `max`) parmi les sorts débloqués : les mieux notés, en variant les couleurs de qì
+ * (−25 % par sort déjà retenu de la même couleur). À égalité, les sorts déjà équipés sont gardés.
+ */
+export function planSpells(hero, bias, max = 4) {
+    const pool = (hero?.availableSpells || []).filter(sp => sp?.id && (sp.minLevel || 1) <= (hero?.level || 1));
+    const current = new Set((hero?.activeSpells || []).map(sp => sp.id));
+    const picked = [];
+    while (picked.length < max && picked.length < pool.length) {
+        let best = null, bestValue = -Infinity;
+        for (const sp of pool) {
+            if (picked.includes(sp)) continue;
+            const same = picked.filter(p => spellColor(p) === spellColor(sp)).length;
+            const value = spellScore(sp, bias) * Math.pow(0.75, same) + (current.has(sp.id) ? 0.01 : 0);
+            if (value > bestValue) { best = sp; bestValue = value; }
+        }
+        picked.push(best);
+    }
+    return picked.map(sp => sp.id);
+}
+
 /** Valeur d'une arme : dégâts par point d'action (l'exposant dépend du profil), plus ses bonus d'Att/Déf. */
 export function weaponScore(w, bias = 'balanced', bonuses = {}) {
     if (!w) return 0;

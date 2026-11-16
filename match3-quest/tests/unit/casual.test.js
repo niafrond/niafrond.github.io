@@ -1,6 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { calibrateEnemy } from '../../combatBalance.js';
-import { casualDurationFactor, biasFor, stuffScore, planStuff, weaponScore, planWeapons, planAttributes, LOSS_STREAK_DEFENSIVE, LOSS_STREAK_TANK } from '../../casual.js';
+import { planSpells, spellScore, casualDurationFactor, biasFor, stuffScore, planStuff, weaponScore, planWeapons, planAttributes, LOSS_STREAK_DEFENSIVE, LOSS_STREAK_TANK } from '../../casual.js';
 
 const CATALOG = {
     casque_off: { id: 'casque_off', slot: 'head', minLevel: 1, atkBonus: 3 },
@@ -62,5 +62,20 @@ describe('mode Casual', () => {
             expect(casual.hp).toBeGreaterThan(std.hp * 1.5);
             expect(casual.damageMult).toBeLessThanOrEqual(std.damageMult);
         }
+    });
+    test('sorts : les 4 mieux notés, couleurs variées, plus de soin en profil défensif', () => {
+        const hero = { level: 10, activeSpells: [], availableSpells: [
+            { id: 'r1', cost: { red: 3 }, dmg: 30 }, { id: 'r2', cost: { red: 3 }, dmg: 28 }, { id: 'r3', cost: { red: 3 }, dmg: 27 },
+            { id: 'b1', cost: { blue: 3 }, dmg: 20 }, { id: 'g1', cost: { green: 4 }, heal: 30 }, { id: 'faible', cost: { yellow: 5 }, dmg: 2 },
+            { id: 'trop_haut', cost: { red: 1 }, dmg: 999, minLevel: 50 }
+        ] };
+        const balanced = planSpells(hero, 'balanced');
+        expect(balanced).toHaveLength(4);
+        expect(balanced).toContain('b1');
+        expect(balanced).not.toContain('trop_haut');
+        expect(balanced).not.toContain('faible');
+        expect(planSpells(hero, 'tank')).toContain('g1');
+        expect(spellScore({ cost: 2, heal: 10 }, 'tank')).toBeGreaterThan(spellScore({ cost: 2, heal: 10 }, 'balanced'));
+        expect(planSpells({ level: 1, availableSpells: [] }, 'balanced')).toEqual([]);
     });
 });

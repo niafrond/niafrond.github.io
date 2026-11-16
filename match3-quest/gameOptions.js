@@ -13,7 +13,7 @@
 //    son choix explicite, dans un sens ou dans l'autre, prime ensuite.
 // Confort :
 //  - breakReminder : rappel de pause bienveillant (breakReminder.js), désactivable.
-//  - casual : mode Casual (casual.js, casualPilot.js) : le jeu choisit stuff, armes et points d'attribut, et passe à un équipement défensif après des défaites.
+//  - casual : mode Casual (casual.js, casualPilot.js) : le jeu choisit stuff, armes, sorts et points d'attribut, et passe à un équipement défensif après des défaites.
 //  - horseAvoid : à cheval, le trajet au toucher évite les zones que le cheval ne franchit pas (eau et lave, où il faudrait mettre pied à terre) ;
 //    s'il n'y a pas d'autre chemin, il les traverse quand même.
 // Difficulté des ennemis :

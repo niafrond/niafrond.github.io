@@ -1,10 +1,12 @@
 // Mode Casual : applique au héros les choix de casual.js (stuff, armes, points d'attribut), sans message ni fenêtre.
 // Appelé avant chaque combat, après chaque combat et à la montée de niveau.
 import { getOption } from './gameOptions.js';
-import { biasFor, planStuff, planWeapons, planAttributes } from './casual.js';
+import { biasFor, planStuff, planWeapons, planAttributes, planSpells } from './casual.js';
 import { getStuffById, equipStuff, unequipStuff, STUFF_SLOTS } from './stuff.js';
 import { WEAPON_STAT_BONUSES } from './weapons.js';
 import { gameState, player, saveUpdate } from './game.js';
+import { MAX_ACTIVE_SPELLS } from './constants.js';
+import { createSpellButtons } from './gameSpellList.js';
 import { createWeaponButton } from './gameInventoryTabs.js';
 import { applyAttributeBonus, updateLevelHud } from './gameLevelUp.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
@@ -52,6 +54,15 @@ export function runCasualAutopilot() {
         player.equippedWeapon = right;
         player.equipment.rightHand = right;
         if (!keepsShield) player.equipment.leftHand = left;
+        changed = true;
+    }
+    // Sorts : les mieux notés parmi ceux débloqués (profil plus défensif et plus de soins après des défaites).
+    const spellIds = planSpells(player, bias, MAX_ACTIVE_SPELLS);
+    const activeIds = (player.activeSpells || []).map(sp => sp.id);
+    if (spellIds.length && (spellIds.length !== activeIds.length || spellIds.some((id, i) => id !== activeIds[i]))) {
+        player.activeSpells = spellIds.map(id => player.availableSpells.find(sp => sp.id === id));
+        player.spells = player.activeSpells;
+        createSpellButtons();
         changed = true;
     }
     if (changed) { createWeaponButton(); saveUpdate(); }
