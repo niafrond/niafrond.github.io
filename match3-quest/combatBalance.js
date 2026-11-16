@@ -353,13 +353,13 @@ export function measuredCorrections(records = [], heroLevel = 1) {
  *  - damageScale : multiplicateur des dégâts que l'ennemi inflige, pour qu'il vainque un héros de `heroMaxHp` PV en ENEMY_WIN_RATIO × la durée cible.
  * `records` : combats mesurés (récents) ; on n'en retient que ceux joués à ±3 niveaux du héros.
  */
-export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', modeDivisor, adjust = null, durationFactor = 1 }) {
+export function calibrateEnemy({ category, heroMaxHp: rawHeroMaxHp, heroLevel = 1, enemyLevel = heroLevel, records = [], winRatio, levelAnchors, difficulty = 'auto', modeDivisor, adjust = null }) {
     const heroMaxHp = heroEffectiveHp(rawHeroMaxHp, heroLevel);   // PV qui comptent vraiment (plafond de progression)
     const heroDamageScale = rawHeroMaxHp > heroMaxHp ? Math.round((rawHeroMaxHp / heroMaxHp) * 100) / 100 : 1;
     const corr = measuredCorrections(records, heroLevel);
     const cycleSeconds = DEFAULT_CYCLE_SECONDS * corr.cycle;
     const damagePerCycle = heroDamagePerCycleModel(heroLevel) * corr.hero;
-    const targetSeconds = mid(TARGET_DURATION_SECONDS[category] || TARGET_DURATION_SECONDS.normal) * Math.max(0.5, Number(durationFactor) || 1);   // mode Casual : combats plus longs (casual.js)
+    const targetSeconds = mid(TARGET_DURATION_SECONDS[category] || TARGET_DURATION_SECONDS.normal);
     const cycles = targetCycles(targetSeconds, cycleSeconds);
     // Coefficient de profil : non pas une robustesse en plus (la durée cible de la catégorie la traduit déjà ; l'appliquer allongeait les
     // combats d'autant), mais une correction mesurée par simulation pour que la durée moyenne des victoires tombe sur la cible.

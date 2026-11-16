@@ -3,8 +3,7 @@
 import { sellPriceOf } from './merchants.js';
 import { createBossScript, noteChargeDamage } from './bossScript.js';
 import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
-import { runCasualAutopilot, noteCasualOutcome, isCasual } from "./casualPilot.js";
-import { casualDurationFactor } from "./casual.js";
+import { runCasualAutopilot, noteCasualOutcome } from "./casualPilot.js";
 import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, enemySpellCost, expertCatchUpPoints, isExpertMode, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
@@ -1921,7 +1920,7 @@ const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth
 function calibrateEnemyForCombat(target){
     const template = enemyCatalogList().find(t => t.id === target.templateId);
     const category = enemyCategory({ boss: Boolean(target.isBoss), easy: Boolean(target.isEasyChoice), hpMult: template?.statsModifiers?.hpMult ?? 1 });
-    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto', adjust: target.isBoss ? BOSS_ADJUST[target.mapEnemyId] || null : null, durationFactor: isCasual() ? casualDurationFactor(category) : 1 });
+    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto', adjust: target.isBoss ? BOSS_ADJUST[target.mapEnemyId] || null : null });
     target.maxHp = result.hp;
     target.hp = result.hp;
     target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque

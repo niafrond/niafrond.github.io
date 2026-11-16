@@ -1,6 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { calibrateEnemy } from '../../combatBalance.js';
-import { planSpells, spellScore, casualDurationFactor, biasFor, stuffScore, planStuff, weaponScore, planWeapons, planAttributes, LOSS_STREAK_DEFENSIVE, LOSS_STREAK_TANK } from '../../casual.js';
+import { planSpells, spellScore, biasFor, stuffScore, planStuff, weaponScore, planWeapons, planAttributes, LOSS_STREAK_DEFENSIVE, LOSS_STREAK_TANK } from '../../casual.js';
 
 const CATALOG = {
     casque_off: { id: 'casque_off', slot: 'head', minLevel: 1, atkBonus: 3 },
@@ -53,15 +52,6 @@ describe('mode Casual', () => {
         const count = (list, a) => list.filter(x => x === a).length;
         expect(count(tank, 'stamina') + count(tank, 'agility')).toBeGreaterThan(count(balanced, 'stamina') + count(balanced, 'agility'));
         expect(planAttributes(attrs, 0)).toEqual([]);
-    });
-    test('les combats Casual durent plus longtemps sans être plus dangereux par tour', () => {
-        const base = { heroMaxHp: 300, heroLevel: 20, enemyLevel: 20, records: [] };
-        for (const category of ['normal', 'boss']) {
-            const std = calibrateEnemy({ ...base, category });
-            const casual = calibrateEnemy({ ...base, category, durationFactor: casualDurationFactor(category) });
-            expect(casual.hp).toBeGreaterThan(std.hp * 1.5);
-            expect(casual.damageMult).toBeLessThanOrEqual(std.damageMult);
-        }
     });
     test('sorts : les 4 mieux notés, couleurs variées, plus de soin en profil défensif', () => {
         const hero = { level: 10, activeSpells: [], availableSpells: [

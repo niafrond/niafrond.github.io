@@ -5,12 +5,9 @@
 export const LOSS_STREAK_DEFENSIVE = 2;   // défaites d'affilée avant de passer à un équipement défensif
 export const LOSS_STREAK_TANK = 4;        // ... puis à un équipement purement protecteur
 
-// Une session Casual : 1 ou 2 combats pour 15 à 30 minutes en tout, puis le joueur pose son téléphone. Les combats durent donc plus longtemps
-// (plus de PV à l'ennemi, ses dégâts par tour baissent d'autant : le danger reste le même) et les rencontres au hasard sont plus rares.
-export const CASUAL_DURATION_FACTOR = 2.5;        // combat ordinaire : 3 à 4 min -> environ 9 min
-export const CASUAL_BOSS_DURATION_FACTOR = 1.6;   // boss : 7 à 8 min -> environ 12 min
+// Une session Casual : 1 ou 2 combats pour 15 à 30 minutes en tout, puis le joueur pose son téléphone. Les combats gardent leur durée normale
+// (pas de PV gonflés) : la session se remplit avec l'exploration, et les rencontres au hasard sont plus rares.
 export const CASUAL_ENCOUNTER_FACTOR = 0.5;       // moitié moins de rencontres au hasard
-export const casualDurationFactor = category => (category === 'boss' ? CASUAL_BOSS_DURATION_FACTOR : CASUAL_DURATION_FACTOR);
 
 /** Profil d'équipement selon la série de défaites : 'balanced' | 'defensive' | 'tank'. */
 export const biasFor = lossStreak => (lossStreak >= LOSS_STREAK_TANK ? 'tank' : lossStreak >= LOSS_STREAK_DEFENSIVE ? 'defensive' : 'balanced');
