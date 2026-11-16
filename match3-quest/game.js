@@ -14,7 +14,7 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 
-import { protectsFromBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
+import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -25,7 +25,9 @@ import { recordBossLoss, pickBossTip } from "./bossTips.js";
 
 import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
 
-import { getRarityIcon, applyArtifactEffects, normalizeRelics } from "./items.js";
+import { nextLesson } from './chineseWords.js';
+import { lessonBodyHtml, bindLessons } from './chineseLessonsView.js';
+import { getRarityIcon, repairMaxMana, applyArtifactEffects, normalizeRelics, migrateShadowCollar, allItems } from "./items.js";
 import { icon as svgIcon } from "./icons.js";
 
 
@@ -849,6 +851,22 @@ export function grantStuffPiece(id, origin = 'Trouvé'){
     return s.name;
 }
 
+// Récompense de quête : une relique permanente (items.js, `quest: true`), rangée dans le sac et portée si un emplacement est libre.
+export function grantQuestRelic(id, origin = 'Récompense de quête'){
+    const item = allItems.find(i => i.id === id && i.type === 'artifact');
+    if(!item) return null;
+    if(!Array.isArray(player.inventory)) player.inventory = [];
+    if(player.inventory.some(i => i.id === id)) return null;
+    player.inventory.push({ ...item, applied: false });
+    log(`${getRarityIcon(item.rarity)} ${origin} : ${item.name} (relique permanente, onglet Stuff) !`);
+    applyArtifactEffects(player);
+    log(item.description);
+    normalizeActiveInventoryIndex();
+    updateInventoryTab();
+    document.dispatchEvent(new Event('stuff-changed'));
+    return item.name;
+}
+
 // Récompense de quête : un ultime de légende, pour toutes les classes. Retourne le sort s'il vient d'être débloqué, sinon null (déjà acquis ou inconnu).
 export function grantUltimate(id, origin = 'Récompense de quête'){
     if(!unlockUltimate(player, id)) return null;
@@ -1031,12 +1049,15 @@ function showCombatResultScreen(isVictory){
             <h3 class="battle-result-section-title">${svgIcon(icon)} <span>${label}</span></h3>
             <div class="battle-result-section-body">${body}</div>
         </section>`;
+    const lesson = nextLesson();
     summary.innerHTML = `
         ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
         ${section('xp', 'star', 'Expérience', `<div class="battle-result-xp">+${combatRewards.xpGained} XP</div>${levelLine}`)}
         ${section('gold', 'coin', 'Pièces', `<div class="battle-result-gold">${gold > 0 ? `+${gold} pièce${gold > 1 ? 's' : ''}` : 'Aucune pièce'}</div>`)}
         ${section('items', 'bag', 'Objets', `<ul class="battle-result-loot">${lootLines}</ul>`)}
+        ${lesson ? section('zh', 'scroll', 'Un mot de chinois', lessonBodyHtml(lesson)) : ''}
     `;
+    if(lesson) bindLessons(summary.querySelector('.battle-result-sec-zh'));
 
     screen.classList.add('active');
 }
@@ -1432,6 +1453,7 @@ export function loadGameData() {
             player.equipment.rightHand = player.equippedWeapon;
             player.stuffOwned = loaded.stuffOwned ?? [];
             player.stuff = loaded.stuff ?? player.stuff;
+            migrateShadowCollar(player);   // avant normalizeStuff, qui oublie les ids inconnus
             normalizeStuff(player);
             if(player.equipment.leftHand && player.equipment.leftHand.type !== 'shield') player.equipment.leftHand = catalogWeapon(player.equipment.leftHand);
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
@@ -1447,6 +1469,7 @@ export function loadGameData() {
             applyGrowth(player);   // rattrapage unique de la croissance innée (niveaux > 18)
             player.mount = loaded.mount === 'horse' ? 'horse' : null;
             player.torch = loaded.torch === true;
+            player.compass = loaded.compass === true;
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
             player.sellTags = Array.isArray(loaded.sellTags) ? loaded.sellTags.filter(t => typeof t === 'string') : [];
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
@@ -1534,6 +1557,7 @@ loadGameData();
 // Appliquer les effets des artefacts
 normalizeRelics(player);   // sauvegarde ancienne : doublons et reliques au-delà des emplacements du niveau retirés
 applyArtifactEffects(player);
+repairMaxMana(player, BASE_MANA_CAP);   // la réserve de base se déduit des reliques portées, jamais d'une valeur sauvegardée dérivée
 normalizeActiveInventoryIndex();
 clampManaToCaps(player);
 
@@ -2005,6 +2029,8 @@ function applyTerrainPrep(){
         if(info && !protectsFromBiome(player, info.collar)){
             if(!player.statusEffects) player.statusEffects = {};
             player.statusEffects[prep.playerStatus] = environmentDamage(player.maxHp);
+        } else if(info){   // le collier du biome protège : annoncé dans le bandeau et le journal
+            prep.lines.push(`Votre ${collarForBiome(info.collar)?.name?.toLowerCase() || 'collier'} vous protège ${info.protect}.`);
         }
     }
     prep.lines.forEach(line => log(line));

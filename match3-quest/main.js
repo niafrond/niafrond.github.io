@@ -1,7 +1,8 @@
+import { lessonsPanelHtml, bindLessons } from "./chineseLessonsView.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
+import { grantStuffPiece, grantQuestRelic, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -153,9 +154,10 @@ function init() {
         canvas: document.getElementById('explore-canvas'),
         getSaved: () => player.exploration,
         setSaved: data => { player.exploration = data; },
-        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch) }),
+        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch), compass: Boolean(player.compass) }),
         getPlayerLevel: () => player.level,
         hasStealth: () => hasStealth(player),
+        horseAvoidsWater: () => getOption('horseAvoid'),
         getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
@@ -169,6 +171,7 @@ function init() {
         onAncientArmor: id => { const name = grantStuffPiece(id, 'Armure antique'); saveUpdate(); return name; },
         onQuestReward: ev => {
             if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête');
+            if(ev.reward?.relic) grantQuestRelic(ev.reward.relic);   // relique de quête (Cháng d'ombre de Fusang)
             if(ev.reward?.ultimate) grantUltimate(ev.reward.ultimate);   // ultime de légende : toutes classes (ultimates.js)
         },
         // Révélation de l'ultime gagné : sa cinématique plein écran, jouée une fois les dialogues de fin de quête terminés
@@ -357,11 +360,12 @@ function init() {
             const stones = exploration.getTravelList().filter(w => w.region === zone.id);
             panel.innerHTML = `<h4>${icon('stone')} Voyage rapide · ${zoneName[zone.id] || zone.id}</h4>`;
             if(!stones.length) panel.insertAdjacentHTML('beforeend', '<p>Aucune pierre de voyage activée dans ce biome.</p>');
+            const advice = exploration.getTravelAdvice?.();
             stones.forEach(w => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'worldmap-travel-btn';
-                btn.textContent = w.screenName;
+                btn.textContent = advice?.screenId === w.screenId ? `★ ${w.screenName}` : w.screenName;
                 btn.disabled = w.current;
                 btn.addEventListener('click', () => {
                     modal.classList.remove('active');
@@ -371,14 +375,15 @@ function init() {
             });
         };
         panel.innerHTML = canTravel
-            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.</p>`
+            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.${(() => { const a = exploration.getTravelAdvice?.(); return a ? ` ★ Pour « ${a.quest} » : ${a.screenName} (${zoneName[a.region] || a.region}).` : ''; })()}</p>`
             : `<h4>${icon('stone')} Voyage rapide</h4><p>Le voyage rapide n'est possible que depuis une borne de voyage.</p>`;
         mountWorldMap(container, worldZones, {
             level: player.level,
             visitedIds: player.worldMap?.visitedZoneIds || [],
             currentId: exploration.getCurrentRegion(),
             heroUri: spriteUri(heroSprite(player.class)),
-            requireVisit: true
+            requireVisit: true,
+            starIds: exploration.getQuestRegions?.() || []
         }, zone => { if(canTravel) showStones(zone); });
         container.appendChild(panel);
         modal.classList.add('active');
@@ -401,6 +406,30 @@ function init() {
         playSfx('uiClick');
         optionsModal?.classList.add('active');
     }));
+    // Onglets des options (Affichage, Son et confort, Jeu, Partie) : clic, flèches gauche/droite, Début/Fin.
+    const optionTabs = [...document.querySelectorAll('.options-tab')];
+    const showOptionsTab = tab => {
+        optionTabs.forEach(t => {
+            const on = t === tab;
+            t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+            const panel = document.getElementById(t.getAttribute('aria-controls'));
+            if(panel) panel.hidden = !on;
+        });
+        if(tab.dataset.optionsTab === 'zh') renderChineseOptions();
+    };
+    // Onglet « Chinois » : tous les mots avec écoute et case « je connais », construit à l'ouverture (près de 200 lignes).
+    const zhPanel = document.getElementById('options-panel-zh');
+    if(zhPanel) bindLessons(zhPanel);
+    const renderChineseOptions = () => { if(zhPanel) zhPanel.innerHTML = lessonsPanelHtml(); };
+    optionTabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => { playSfx('uiClick'); showOptionsTab(tab); });
+        tab.addEventListener('keydown', e => {
+            const next = e.key === 'ArrowRight' ? optionTabs[(i + 1) % optionTabs.length] : e.key === 'ArrowLeft' ? optionTabs[(i + optionTabs.length - 1) % optionTabs.length]
+                : e.key === 'Home' ? optionTabs[0] : e.key === 'End' ? optionTabs[optionTabs.length - 1] : null;
+            if(!next) return;
+            e.preventDefault(); showOptionsTab(next); next.focus();
+        });
+    });
     document.getElementById('options-close-btn')?.addEventListener('click', () => optionsModal?.classList.remove('active'));
     optionsModal?.addEventListener('click', e => { if(e.target === optionsModal) optionsModal.classList.remove('active'); });
 
@@ -491,7 +520,7 @@ function init() {
     // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
     const textSizeSelect = document.getElementById('opt-text-size');
     if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
-    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder']].forEach(([id, key]) => {
+    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder'], ['opt-horse-avoid', 'horseAvoid']].forEach(([id, key]) => {
         const btn = document.getElementById(id);
         if(!btn) return;
         const value = () => key === 'animations' ? animationsEnabled() : getOption(key);

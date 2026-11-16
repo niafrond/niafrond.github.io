@@ -37,7 +37,7 @@ describe('PNJ marchands', () => {
             expect(sections.has('rare')).toBe(true);
             expect(sections.has('exceptional')).toBe(true);
             expect(new Set(stock.map(o => o.key)).size).toBe(stock.length);
-            stock.filter(o => o.kind !== 'mount' && o.kind !== 'torch').forEach(o => {
+            stock.filter(o => o.kind !== 'mount' && o.kind !== 'torch' && o.kind !== 'compass').forEach(o => {
                 const obj = offerObject(o);
                 expect(obj).toBeTruthy();
                 const base = o.kind === 'weapon' ? baseWeaponPrice(obj) : baseItemPrice(obj);
@@ -136,7 +136,7 @@ describe('revente aux marchands', () => {
     test('rachat à 40 % du barème de base (jamais plus que le prix d\'achat)', () => {
         const w = { ...axe };
         expect(sellPriceOf('weapon', w)).toBe(Math.floor(baseWeaponPrice(w) * SELL_RATIO));
-        merchantStock('merchant_gobi').filter(o => o.kind !== 'torch').forEach(o => expect(sellPriceOf(o.kind, offerObject(o))).toBeLessThan(o.price));
+        merchantStock('merchant_gobi').filter(o => o.kind !== 'torch' && o.kind !== 'compass').forEach(o => expect(sellPriceOf(o.kind, offerObject(o))).toBeLessThan(o.price));
     });
 
     test('le stuff activé est verrouillé : arme en main, objet actif, relique portée', () => {
@@ -321,5 +321,34 @@ describe('vendre tous les doublons', () => {
         const h = { gold: 0, weapons: [], inventory: [mkItem('s', 'shield'), mkItem('s', 'shield')], activeInventoryIndex: null };
         expect(sellDuplicates(h).count).toBe(1);
         expect(h.inventory).toHaveLength(1);
+    });
+});
+
+describe('stuff : le bon stuff s\'achète', () => {
+    test('les deux meilleures pièces de chaque emplacement portable, qui s\'améliorent avec le niveau du héros, à prix majoré', async () => {
+        const { STUFF_PER_SLOT, STUFF_LEVEL_AHEAD, STUFF_PRICE_MULT } = await import('../../merchants.js');
+        const { STUFF_SLOTS, getStuffById, baseStuffPrice } = await import('../../stuff.js');
+        const best = lvl => merchantStock('merchant_rizieres', 0, lvl).filter(o => o.kind === 'stuff');
+        const low = best(5), high = best(60);
+        STUFF_SLOTS.forEach(slot => {
+            const inSlot = high.filter(o => getStuffById(o.id).slot === slot);
+            expect(inSlot.length).toBeLessThanOrEqual(STUFF_PER_SLOT);
+            inSlot.forEach(o => expect(getStuffById(o.id).minLevel).toBeLessThanOrEqual(60 + STUFF_LEVEL_AHEAD));
+        });
+        const topLevel = list => Math.max(...list.map(o => getStuffById(o.id).minLevel));
+        expect(topLevel(high)).toBeGreaterThan(topLevel(low));
+        high.forEach(o => expect(o.price).toBeGreaterThanOrEqual(Math.floor(baseStuffPrice(getStuffById(o.id)) * PRICE_MULT[o.rarity] * STUFF_PRICE_MULT)));
+    });
+});
+
+describe('parures forgées (niveaux 36 à 70)', () => {
+    test('vendues seulement en boutique, jamais en butin, et les plus hautes au niveau 70', async () => {
+        const { allStuff, lootableStuff, FORGED_TIERS, STUFF_SLOTS } = await import('../../stuff.js');
+        const forged = allStuff.filter(s => s.shop);
+        expect(forged).toHaveLength(FORGED_TIERS.length * STUFF_SLOTS.length);
+        forged.forEach(s => expect(lootableStuff()).not.toContain(s));
+        const offers = merchantStock('merchant_lune', 0, 70).filter(o => o.kind === 'stuff');
+        STUFF_SLOTS.forEach(slot => expect(offers.some(o => o.id === `forge_${slot}_70`)).toBe(true));
+        expect(merchantStock('merchant_rizieres', 0, 20).some(o => o.id.startsWith('forge_'))).toBe(false);
     });
 });

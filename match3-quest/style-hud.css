@@ -128,13 +128,70 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 .attribute-points-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .attribute-points-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Cases de biome du plateau (terrain.js) : bambou/glace bloquent, lave brûle, boue ralentit, sacré récompense. */
+/* Cases de biome du plateau (terrain.js) : bambou/glace bloquent, lave brûle, marais ×10, sacré récompense, mer dérive.
+   Le cœur de la case reste transparent : la couleur de la gemme doit toujours se lire. board.js (`paintCellFx`) pose un `<span class="cell-fx n-<biome> in|idle|out">`. */
 .tile[data-cell] { position: relative; }
-.tile[data-cell="bamboo"] { outline: 3px solid #4f8a3a; outline-offset: -3px; box-shadow: inset 0 0 0 100px rgba(79, 138, 58, 0.45); }
-.tile[data-cell="frost"] { outline: 3px solid #bfe6ff; outline-offset: -3px; box-shadow: inset 0 0 0 100px rgba(191, 230, 255, 0.55); }
-.tile[data-cell="lava"] { outline: 3px solid #ff2a1f; outline-offset: -3px; background-image: linear-gradient(rgba(214, 24, 24, 0.82), rgba(214, 24, 24, 0.82)); box-shadow: inset 0 0 14px rgba(255, 90, 31, 0.9); }
-.tile[data-cell="jackpot"] { background-image: linear-gradient(rgba(255, 210, 63, 0.45), rgba(255, 210, 63, 0.45)); outline: 3px solid #ffd23f; outline-offset: -3px; box-shadow: 0 0 12px 3px rgba(255, 210, 63, 0.9), inset 0 0 14px rgba(255, 210, 63, 0.9); }
-.tile[data-cell="sacred"] { background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)); outline: 3px solid #ffd23f; outline-offset: -3px; box-shadow: inset 0 0 14px rgba(255, 210, 63, 0.9); }
+.cell-fx { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+/* Deux couches par case : ::before = rendu durable (v2 : anneau et bords, le cœur reste transparent) ; ::after = éclat d'apparition et de disparition (v1 : plein).
+   Apparition : l'éclat v1 joue, s'efface et laisse le rendu v2. Disparition : l'éclat v1 revient et joue sa sortie. */
+.cell-fx::before,.cell-fx::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0}
+.cell-fx.in::before{animation:v2-in .5s ease-out 1s forwards}
+.cell-fx.idle::before{opacity:1}
+.cell-fx.out::before{opacity:1;animation:v2-out .2s ease-in forwards}
+.cell-fx.out::after{opacity:1}
+@keyframes v2-in{to{opacity:1}}
+@keyframes v2-out{to{opacity:0}}
+/* L'animation en cours reprend à la bonne image après un rendu du plateau (délai négatif posé par board.js). */
+.tile>.cell-fx.cell-fx::before,.tile>.cell-fx.cell-fx::after{animation-delay:var(--fx-delay,0s)}
+.tile>.cell-fx.cell-fx.in::before{animation-delay:calc(1s + var(--fx-delay,0s))}
+/* BAMBOU */
+.n-bamboo::before{border:3px solid #4f8a3a;box-sizing:border-box;background:linear-gradient(#3c7d33,#3c7d33) left/5px 100% no-repeat,linear-gradient(#5fae4a,#5fae4a) right/5px 100% no-repeat;transform-origin:50% 100%}
+.n-bamboo.idle::before{animation:bam-sway 2.4s ease-in-out infinite}
+.n-bamboo::after{background:repeating-linear-gradient(90deg,#2f6b2c 0 5px,#5fae4a 5px 8px,#2f6b2c 8px 11px,transparent 11px 14px);background-color:rgba(79,138,58,.5);border:3px solid #4f8a3a;box-sizing:border-box;transform-origin:50% 100%}
+.n-bamboo.in::after{animation:bam-in 1.5s cubic-bezier(.2,.8,.3,1.15) forwards}
+.n-bamboo.out::after{animation:bam-fall .5s ease-in forwards}
+@keyframes bam-in{0%{opacity:1;clip-path:inset(100% 0 0 0)}45%{opacity:1;clip-path:inset(0)}70%{opacity:1;clip-path:inset(0)}100%{opacity:0;clip-path:inset(0)}}
+@keyframes bam-sway{50%{transform:rotate(2deg) skewX(2deg)}}
+@keyframes bam-fall{to{transform:rotate(18deg) translateY(10px);opacity:0}}
+/* NEIGE */
+.n-frost::before{background:radial-gradient(circle,transparent 0 55%,rgba(210,238,255,.65) 78%,rgba(255,255,255,.9) 100%);border:3px solid #bfe6ff;box-sizing:border-box}
+.n-frost.idle::before{animation:fr-twinkle 1.8s ease-in-out infinite}
+.n-frost::after{background:radial-gradient(circle,rgba(255,255,255,.9) 0 18%,rgba(191,230,255,.75) 40%,rgba(150,205,245,.7) 100%);border:3px solid #bfe6ff;box-sizing:border-box}
+.n-frost.in::after{animation:fr-in 1.5s cubic-bezier(.2,.9,.3,1) forwards}
+.n-frost.out::after{animation:fr-out .45s ease-in forwards}
+@keyframes fr-in{0%{transform:scale(0);opacity:0}30%{transform:scale(1.15);opacity:1;filter:brightness(1.6)}45%{transform:scale(1);opacity:1;filter:none}70%{opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes fr-twinkle{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+@keyframes fr-out{to{transform:scale(1.5);opacity:0;filter:blur(2px)}}
+/* VOLCAN */
+.n-lava::before{background:radial-gradient(circle,transparent 0 50%,rgba(255,110,30,.55) 72%,rgba(255,190,60,.9) 100%);border:3px solid #ff2a1f;box-sizing:border-box}
+.n-lava.idle::before{animation:lv-glow 1.3s ease-in-out infinite}
+.n-lava::after{background:radial-gradient(circle at 50% 70%,#ffd24a 0 15%,#ff7a1f 45%,#c4160f 100%);border:3px solid #ff2a1f;box-sizing:border-box}
+.n-lava.in::after{animation:lv-in 1.4s ease-out forwards}
+.n-lava.out::after{animation:lv-ash .6s ease-in forwards}
+@keyframes lv-in{0%{opacity:0;transform:scale(.3);box-shadow:0 0 0 0 rgba(255,140,40,.95)}30%{opacity:1;transform:scale(1.18);box-shadow:0 0 0 14px rgba(255,140,40,0)}45%{opacity:1;transform:scale(1);box-shadow:0 0 0 18px rgba(255,140,40,0)}70%{opacity:1}100%{opacity:0;transform:scale(1)}}
+@keyframes lv-glow{0%,100%{box-shadow:0 0 6px 1px rgba(255,90,31,.7)}50%{box-shadow:0 0 14px 5px rgba(255,140,40,.95)}}
+@keyframes lv-ash{0%{filter:none}100%{filter:grayscale(1) brightness(.35);opacity:0}}
+/* MARAIS */
+.n-jackpot::before{background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.75) 50%,transparent 65%) 150% 0/250% 100% no-repeat,radial-gradient(circle,transparent 0 58%,rgba(255,215,80,.7) 80%,rgba(255,225,110,.95) 100%);border:3px solid #ffd23f;box-sizing:border-box;box-shadow:0 0 10px 2px rgba(255,210,63,.8)}
+.n-jackpot.idle::before{animation:jp-sweep 2s ease-in-out infinite}
+.n-jackpot::after{background:radial-gradient(circle,rgba(255,225,110,.85),rgba(255,190,40,.6));border:3px solid #ffd23f;box-sizing:border-box}
+.n-jackpot.in::after{animation:jp-in 1.4s cubic-bezier(.3,1.3,.5,1) forwards}
+.n-jackpot.out::after{animation:jp-out .5s ease-in forwards}
+@keyframes jp-in{0%{opacity:0;transform:rotateY(90deg) scale(.6)}35%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0}}
+@keyframes jp-sweep{0%{background-position:150% 0,0 0}60%,100%{background-position:-50% 0,0 0}}
+@keyframes jp-out{to{opacity:0;transform:translateY(-14px) scale(.7)}}
+/* SANCTUAIRE */
+.n-sacred::before{background:radial-gradient(circle,transparent 0 60%,rgba(255,240,170,.6) 100%);border:3px solid #ffd23f;box-sizing:border-box}
+.n-sacred.idle::before{animation:sc-breath 2.2s ease-in-out infinite}
+.n-sacred::after{background:radial-gradient(circle,rgba(255,255,255,.75),rgba(255,236,160,.4));border:3px solid #ffd23f;box-sizing:border-box}
+.n-sacred.in::after{animation:sc-in 1.4s ease-out forwards}
+.n-sacred.out::after{animation:sc-out .6s ease-in forwards}
+@keyframes sc-in{0%{opacity:0;transform:scale(1.5);box-shadow:0 0 0 0 rgba(255,230,140,.9)}35%{opacity:1;transform:scale(1);box-shadow:0 0 0 14px rgba(255,230,140,0)}70%{opacity:1}100%{opacity:0}}
+@keyframes sc-breath{0%,100%{box-shadow:0 0 6px 1px rgba(255,210,63,.6)}50%{box-shadow:0 0 16px 5px rgba(255,210,63,.95)}}
+@keyframes sc-out{to{opacity:0;transform:translateY(-12px) scale(1.2)}}
+body.fx-reduced .cell-fx::after { display: none; }
+body.fx-reduced .cell-fx::before { opacity: 1 !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .cell-fx::after { display: none; } .cell-fx::before { opacity: 1 !important; animation: none !important; } }
 
 /* Texte flottant d'une case de biome (« Case brûlante - 3 dégâts »), posé sur la page par board.js. */
 .biome-float {
@@ -990,3 +1047,6 @@ body.rt .enemy-combat-name.name-hanzi { font-size: 20px; }
 /* Carte choisie comme référence de comparaison */
 .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid #d4a017; background: #fff3cd; }
 body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid var(--rt-gold); }
+
+/* Ennemi de tempérament agressif : « en colère » derrière son nom (gameHud.js). */
+.enemy-mood { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #b71c1c; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; vertical-align: middle; }

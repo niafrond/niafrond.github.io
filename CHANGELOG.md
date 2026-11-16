@@ -1,3 +1,121 @@
+## [2.251.1](https://github.com/niafrond/niafrond.github.io/compare/v2.251.0...v2.251.1) (2026-11-15)
+
+### Bug Fixes
+
+* **match3-quest:** corriger les traductions des mots de chinois ([5b1d122](https://github.com/niafrond/niafrond.github.io/commit/5b1d1222413fcb0a6d937246bdfc0e819454fa2d))
+
+## [2.251.0](https://github.com/niafrond/niafrond.github.io/compare/v2.250.0...v2.251.0) (2026-11-15)
+
+### Features
+
+* **match3-quest:** apprendre un mot de chinois par lot en fin de combat et réduire la zone de butin ([42553d0](https://github.com/niafrond/niafrond.github.io/commit/42553d09219a0a315b5a6c29f2d874f1af5a439c))
+* **match3-quest:** mots usuels avant les créatures et retrait du sous-titre ([30de7c0](https://github.com/niafrond/niafrond.github.io/commit/30de7c09b47d35c66629071ee0833bdd2a84feae))
+* **match3-quest:** quatre lots de créatures, plus de mots usuels et des phrases en fin de série ([d753cdb](https://github.com/niafrond/niafrond.github.io/commit/d753cdba6d305e3186e328c3deaf7f92b180e4aa))
+
+## [2.250.0](https://github.com/niafrond/niafrond.github.io/compare/v2.249.0...v2.250.0) (2026-11-15)
+
+### Features
+
+* **match3-quest:** café du développeur visible sur chaque onglet des options ([49c23a1](https://github.com/niafrond/niafrond.github.io/commit/49c23a17d501f3f1ebacbc9d0d43a98ad4efdb29))
+* **match3-quest:** option pour que le cheval évite l'eau et la lave ([51a9558](https://github.com/niafrond/niafrond.github.io/commit/51a95589f77a0bdb777a7175b3ee3791865eba6f))
+* **match3-quest:** ranger les options en onglets ([ec7e704](https://github.com/niafrond/niafrond.github.io/commit/ec7e704e8556de0a365c03f22499c81a3a239f64))
+
+## [2.249.0](https://github.com/niafrond/niafrond.github.io/compare/v2.248.0...v2.249.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** animer l'apparition et la disparition des cases de biome ([17e5a69](https://github.com/niafrond/niafrond.github.io/commit/17e5a698f99650a82c00d1589611d0a6b7851761))
+
+## [2.248.0](https://github.com/niafrond/niafrond.github.io/compare/v2.247.0...v2.248.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** faire glisser la rangée qui dérive en mer ([db991ac](https://github.com/niafrond/niafrond.github.io/commit/db991aca2835bcd000d6b1a6650ede03933837e2))
+
+## [2.247.0](https://github.com/niafrond/niafrond.github.io/compare/v2.246.0...v2.247.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** marche fluide à vitesse constante avec cycle de marche et rebond ([61e14d6](https://github.com/niafrond/niafrond.github.io/commit/61e14d6f5c2976c301efccd770424c3d899c5be9))
+
+## [2.246.0](https://github.com/niafrond/niafrond.github.io/compare/v2.245.0...v2.246.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** étoiles de quête sur les biomes et pierres de l'onglet Voyage ([c64c8c7](https://github.com/niafrond/niafrond.github.io/commit/c64c8c7c0920e4a4a6dc8a36a1d889154abc16ef))
+* **match3-quest:** poser l'étoile de quête sur les régions de la carte du monde ([60342d8](https://github.com/niafrond/niafrond.github.io/commit/60342d8f5a8a43a7879beed55cad19cfe99f2b10))
+
+## [2.245.0](https://github.com/niafrond/niafrond.github.io/compare/v2.244.0...v2.245.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** parures forgées de niveau 36 à 70, vendues en boutique ([a993189](https://github.com/niafrond/niafrond.github.io/commit/a9931892f681953ceb4e4f0118a793b575f5f2c3))
+* **match3-quest:** recommander la pierre de voyage la plus proche de la quête suivie ([92f7e92](https://github.com/niafrond/niafrond.github.io/commit/92f7e92018fa7361bed409b289b37b370bf58352))
+* **match3-quest:** vendre le bon stuff en boutique et réduire le butin de stuff ([9c02545](https://github.com/niafrond/niafrond.github.io/commit/9c0254598b6b838d0abfa4c4e62887913d188ed4))
+
+## [2.244.0](https://github.com/niafrond/niafrond.github.io/compare/v2.243.1...v2.244.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** une flèche par pièce manquante d'armure antique avec la boussole ([088b66b](https://github.com/niafrond/niafrond.github.io/commit/088b66b645e905a699c0c2a6d9836aeaa14f94ac))
+* **match3-quest:** vendre la Boussole des destins qui guide vers toutes les quêtes ([ed1e6ff](https://github.com/niafrond/niafrond.github.io/commit/ed1e6ffa33c6c86e5130bb4766c597dbef2d714e))
+
+## [2.243.1](https://github.com/niafrond/niafrond.github.io/compare/v2.243.0...v2.243.1) (2026-11-14)
+
+### Bug Fixes
+
+* **match3-quest:** lire le qì max des reliques dans le catalogue pour la réserve de base ([5daa8cc](https://github.com/niafrond/niafrond.github.io/commit/5daa8cc0e23eb26a9f8453e434a115f9b3421f1b))
+* **match3-quest:** recalculer la réserve de qì de base au chargement ([db02db6](https://github.com/niafrond/niafrond.github.io/commit/db02db69bceb16799c593e07cd0f97f32663681a))
+
+## [2.243.0](https://github.com/niafrond/niafrond.github.io/compare/v2.242.1...v2.243.0) (2026-11-14)
+
+### Features
+
+* **match3-quest:** afficher « en colère » derrière le nom d'un ennemi agressif ([fbce4f5](https://github.com/niafrond/niafrond.github.io/commit/fbce4f593e2172ac5720c35fbe8a03be508e9790))
+
+## [2.242.1](https://github.com/niafrond/niafrond.github.io/compare/v2.242.0...v2.242.1) (2026-11-14)
+
+### Bug Fixes
+
+* **match3-quest:** plafonner les dégâts des ennemis à x4 en Normal et x3 en Facile ([53c572f](https://github.com/niafrond/niafrond.github.io/commit/53c572f6a9e64fde679e1d95666c871b521cf68e))
+* **match3-quest:** plafonner les dégâts ennemis à x2 en Facile et x5 en Normal ([fe8541c](https://github.com/niafrond/niafrond.github.io/commit/fe8541cdab46f30d2de958fd6aef7a401cd53c2e))
+
+## [2.242.0](https://github.com/niafrond/niafrond.github.io/compare/v2.241.1...v2.242.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** faire clignoter les altérations qui infligent des dégâts ([3a58fe6](https://github.com/niafrond/niafrond.github.io/commit/3a58fe62d0756ffc32f1ad2159d1108d4418f251))
+
+## [2.241.1](https://github.com/niafrond/niafrond.github.io/compare/v2.241.0...v2.241.1) (2026-11-13)
+
+### Bug Fixes
+
+* **match3-quest:** donner le dessin du crabe aux crabes de la mer ([9f93fe9](https://github.com/niafrond/niafrond.github.io/commit/9f93fe9462f9ca65893c03fe6a0b130cec4e1104))
+
+## [2.241.0](https://github.com/niafrond/niafrond.github.io/compare/v2.240.0...v2.241.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** renommer la relique d'ombre en Cháng d'ombre de Fusang ([3b9549a](https://github.com/niafrond/niafrond.github.io/commit/3b9549a2f189e30c2b907c48a04b88b5279c7b3c))
+* **match3-quest:** transformer le collier du voile d'ombre en relique ([ff23600](https://github.com/niafrond/niafrond.github.io/commit/ff23600cc25354dfee096b72bd349e839b589679))
+
+## [2.240.0](https://github.com/niafrond/niafrond.github.io/compare/v2.239.1...v2.240.0) (2026-11-13)
+
+### Features
+
+* **match3-quest:** annoncer la protection du collier contre noyade et enflammé ([8dd032b](https://github.com/niafrond/niafrond.github.io/commit/8dd032ba76f795d434b308eedd7bed8db0e0774d))
+
+### Bug Fixes
+
+* **match3-quest:** étendre le fond liquide du combat à tout le cadre du jeu ([5aae032](https://github.com/niafrond/niafrond.github.io/commit/5aae03299691e0e0b9dfee477e877cffd2da7cfb))
+
+## [2.239.1](https://github.com/niafrond/niafrond.github.io/compare/v2.239.0...v2.239.1) (2026-11-13)
+
+### Bug Fixes
+
+* **match3-quest:** traduire 蛟龙 par « Dragon aquatique » ([258418d](https://github.com/niafrond/niafrond.github.io/commit/258418db761cc351f84295b2d0e0ad059dd3bb6c))
+* **match3-quest:** traduire 蛟龙 par « Dragon de rivière » ([980a506](https://github.com/niafrond/niafrond.github.io/commit/980a5068fb6fdfc5748eb2b0eaa0c38a846ffd27))
+
 ## [2.239.0](https://github.com/niafrond/niafrond.github.io/compare/v2.238.2...v2.239.0) (2026-11-13)
 
 ### Features

@@ -11,7 +11,7 @@ import { pickDecor, hash, houseDecor, decorCell, decorScale, npcScale } from './
 import { creatureSize } from './creatureScale.js';
 import { gridsOf } from './explorationGrids.js';
 import { wallDecoOf, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, darkHex, drawGrassFront } from './tilePainter.js';
-import { HUD_TOP, HUD_BOTTOM, MOUNTED_SPRITE_TILES, DIRECTIONS, BIOMES } from './explorationViewConsts.js';
+import { HUD_TOP, HUD_BOTTOM, MOUNTED_SPRITE_TILES, MOVING_GRACE_MS, DIRECTIONS, BIOMES } from './explorationViewConsts.js';
 
 export function createDraw(env) {
     const { cfg } = env;
@@ -303,6 +303,7 @@ export function createDraw(env) {
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
         const houseMk = X.inChangeMode(env.session) ? [] : X.houseMarkers(env.session);   // mode Chang'e : pas de « ! » de quête
+        X.setCompass(env.session, cfg.getHero().compass);
         // anneaux dorés sur les cibles de la quête suivie
         X.trackedMarkers(env.session).forEach(t => {
             let pos = null;
@@ -552,11 +553,13 @@ export function createDraw(env) {
                 }
                 case 'player': {
                     if (env.NO_MINIMAP) break;   // `?shot=1` : captures de la soluce et de la carte plein écran, sans le héros
-                    const moving = now - (vis.lastMoveAt || -1e9) < 130 || Math.hypot(env.session.data.x - vis.px, env.session.data.y - vis.py) > 0.05;
+                    const moving = now - (vis.lastMoveAt || -1e9) < MOVING_GRACE_MS || Math.hypot(env.session.data.x - vis.px, env.session.data.y - vis.py) > 0.05;
                     const walkPhase = vis.walkPhase || 0;
-                    const hop = moving ? -tile * 0.07 * Math.abs(Math.sin(walkPhase * Math.PI)) : Math.sin(now / 500) * tile * 0.01;
+                    // un rebond par case (walkPhase compte les demi-cases) ; l'ombre rétrécit quand le héros s'élève
+                    const hop = moving ? -tile * 0.09 * Math.abs(Math.sin(walkPhase * Math.PI / 2)) : Math.sin(now / 500) * tile * 0.01;
                     const feet = c.y + tile * 0.4;
-                    env.drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
+                    const shadowK = moving ? 1 + hop / (tile * 0.2) : 1;
+                    env.drawShadow(c.x, feet, tile * 0.28 * shadowK, tile * 0.1 * shadowK);
                     ctx.beginPath();
                     ctx.ellipse(c.x, feet - tile * 0.02, tile * 0.36, tile * 0.13, 0, 0, Math.PI * 2);
                     ctx.strokeStyle = '#facc15';
@@ -580,25 +583,19 @@ export function createDraw(env) {
                     const heroView = (moving && gbaWalkSprite(heroKey, heroDir, Math.floor(walkPhase)))
                         || gbaSprite(heroKey, heroDir)
                         || viewSprite(heroBase, heroDir, HERO_VIEW_OPTS);
-                    // fondu entre l'image de marche courante et la suivante (progression fractionnaire de la phase)
-                    const nextView = moving ? gbaWalkSprite(heroKey, heroDir, Math.floor(walkPhase) + 1) : null;
-                    const blend = walkPhase - Math.floor(walkPhase);
+                    // images de marche nettes : pas de fondu entre deux images (le pixel art reste net)
 
                     const mountKey = `${hero.classId}_horse`;
                     const mountView = env.riding() && ((moving && gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase))) || gbaSprite(mountKey, heroDir));
                     if (mountView) {
                         // à cheval : sprite du cavalier de la classe (tools/gen-mounted-heroes.py), 48 px au même grain que le héros à pied (32 px)
-                        const mountNext = moving ? gbaWalkSprite(mountKey, heroDir, Math.floor(walkPhase) + 1) : null;
                         env.drawSprite(mountView, c.x, feet + hop * 0.5 + tile * 0.055, tile * MOUNTED_SPRITE_TILES);
-                        if (mountNext && mountNext !== mountView) { ctx.save(); ctx.globalAlpha = blend; env.drawSprite(mountNext, c.x, feet + hop * 0.5 + tile * 0.055, tile * MOUNTED_SPRITE_TILES); ctx.restore(); }
                     } else if (env.riding()) {
                         // repli (sprite du cavalier pas encore chargé) : la monture au sol, le héros en selle
                         env.drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
                         env.drawSprite(heroView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase);
-                        if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; env.drawSprite(nextView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase); ctx.restore(); }
                     } else {
                         env.drawSprite(heroView, c.x, feet + hop, tile * 1.06, heroBase);
-                        if (nextView && nextView !== heroView) { ctx.save(); ctx.globalAlpha = blend; env.drawSprite(nextView, c.x, feet + hop, tile * 1.06, heroBase); ctx.restore(); }
                     }
                     // hautes herbes : des brins devant ses pieds, qui frémissent (davantage en marchant)
                     if (X.isGrassCell(screen, Math.round(vis.px), Math.round(vis.py)) || X.isLowObstacle(screen, Math.round(vis.px), Math.round(vis.py))) {

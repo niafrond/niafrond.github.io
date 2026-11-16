@@ -1,6 +1,7 @@
 // Carnet de voyage de la vue d'exploration : onglets quêtes, voyage rapide, progression, bestiaire.
 // Extrait de explorationView.js : fabrique appelée une fois par createExplorationView, `env` donne accès à l'état partagé de la vue.
 import { getStuffById } from './stuff.js';
+import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
@@ -37,7 +38,7 @@ export function createCarnet(env) {
             .filter(e => carnet.region === 'all' || e.region === carnet.region)
             .sort((a, b) => Number(b.tracked) - Number(a.tracked) || STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
         const chip = (key, label) => `<button type="button" class="carnet-chip${carnet.filter === key ? ' on' : ''}" data-filter="${key}">${label}</button>`;
-        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${env.escapeHtml(r.fragment)}` : '', r.stuff ? `${icon('shield')} ${env.escapeHtml(getStuffById(r.stuff)?.name || 'Stuff')}` : ''].filter(Boolean).join(' · ');
+        const reward = r => [r.gold ? `${icon('coin')} ${r.gold}` : '', r.xp ? `${icon('star')} ${r.xp} XP` : '', r.fragment ? `${icon('puzzle')} ${env.escapeHtml(r.fragment)}` : '', r.stuff ? `${icon('shield')} ${env.escapeHtml(getStuffById(r.stuff)?.name || 'Stuff')}` : '', r.relic ? `${icon('ring')} ${env.escapeHtml(allItems.find(i => i.id === r.relic)?.name || 'Relique')}` : ''].filter(Boolean).join(' · ');
         return `
             <div class="carnet-filters">
                 ${chip('all', 'En cours')}${chip('main', `Principale (${counts.main})`)}${chip('side', `Annexes (${counts.side})`)}${chip('done', `Terminées (${counts.done})`)}
@@ -70,14 +71,17 @@ export function createCarnet(env) {
         const byRegion = new Map();
         stones.forEach(w => { if (!byRegion.has(w.region)) byRegion.set(w.region, []); byRegion.get(w.region).push(w); });
         const kindIcon = { village: icon('village'), wild: icon('leafWild'), sanctuary: icon('sun') };
+        const advice = X.travelAdvice(env.session);
+        const starRegions = X.questRegions(env.session);   // ★ directement sur les biomes que la quête traverse
         const chosen = byRegion.has(carnet.travelRegion) ? carnet.travelRegion : null;
         const biomes = `<div class="carnet-travel-biomes">${[...byRegion.entries()].map(([region, list]) =>
-            `<button type="button" class="carnet-chip carnet-travel-biome${region === chosen ? ' active' : ''}" data-travel-region="${region}">${env.escapeHtml(REGION_LABEL[region] || region)} <small>(${list.length})</small></button>`).join('')}</div>`;
+            `<button type="button" class="carnet-chip carnet-travel-biome${region === chosen ? ' active' : ''}" data-travel-region="${region}">${starRegions.includes(region) || advice?.region === region ? '★ ' : ''}${env.escapeHtml(REGION_LABEL[region] || region)} <small>(${list.length})</small></button>`).join('')}</div>`;
         const list = chosen ? `<div class="carnet-travel-region"><h4>${env.escapeHtml(REGION_LABEL[chosen] || chosen)}</h4>
             ${byRegion.get(chosen).map(w => `<button type="button" class="carnet-travel-btn" data-travel="${w.screenId}"${w.current ? ' disabled' : ''}>
-                ${kindIcon[w.kind] || icon('stone')} ${env.escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}</div>`
+                ${advice?.screenId === w.screenId ? '<b class="carnet-travel-advice">★</b> ' : ''}${kindIcon[w.kind] || icon('stone')} ${env.escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}</div>`
             : '<p class="carnet-hint">Choisissez un biome pour voir ses pierres de voyage.</p>';
-        return `<p class="carnet-hint">Borne de voyage ${icon('stone')} : choisissez une destination.</p>${biomes}<div class="carnet-travel">${list}</div>`;
+        const adviceHint = advice ? `<p class="carnet-hint carnet-travel-advice">★ Pour « ${env.escapeHtml(advice.quest)} » : choisissez ${env.escapeHtml(advice.screenName)} (${env.escapeHtml(REGION_LABEL[advice.region] || advice.region)}).</p>` : '';
+        return `<p class="carnet-hint">Borne de voyage ${icon('stone')} : choisissez une destination.</p>${adviceHint}${biomes}<div class="carnet-travel">${list}</div>`;
     }
 
     function progressPanel() {

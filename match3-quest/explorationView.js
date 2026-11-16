@@ -14,6 +14,7 @@
 
 import { escapeHtml } from "./escapeHtml.js";
 import { getStuffById } from './stuff.js';
+import { allItems } from './items.js';
 import { STORY_TITLE } from './story.js';
 import * as X from './exploration.js';
 import { vibrate, armVibration, getOption } from './gameOptions.js';
@@ -52,6 +53,7 @@ import { COVERED_DRAW_MS, IDLE_DRAW_MS, IDLE_DRAW_LOW_MS, MOVING_DRAW_MS, DEEP_I
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
  *  getHero()                  { classId, name, mount? } du personnage (mount : 'horse' = déplacements deux fois plus rapides)
  *  getPlayerLevel()           niveau courant
+ *  horseAvoidsWater()         vrai si, à cheval, le trajet contourne l'eau et la lave (option « Le cheval évite l'eau et la lave »)
  *  hasStealth()               vrai si le héros porte le collier d'ombre (indétectable par les ennemis, hors boss)
  *  onEncounter(encounter)     lance le combat (encounter.prep : préparation du terrain, voir terrain.js)
  *  getWeakness(templateId)    nom de la faiblesse d'un ennemi (observation), facultatif
@@ -473,7 +475,7 @@ export function createExplorationView(cfg) {
                 if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; cfg.onQuestReward?.(ev); }
                 if (!ev.paid && ev.reward?.ultimate) afterDialogs(() => cfg.onUltimateLearned?.(ev.reward.ultimate));   // révélation de l'ultime après les dialogues
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
-                const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : '';
+                const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : ev.reward?.relic ? ` · ${(allItems.find(i => i.id === ev.reward.relic)?.name) || 'Relique'}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
                 toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestSealed') {
@@ -766,15 +768,18 @@ export function createExplorationView(cfg) {
         slide = { dir: res.dir, snap, t0: null };
     }
 
-    const syncStealth = () => X.setStealth(session, cfg.hasStealth?.());
+    const avoidsLiquid = () => riding() && cfg.horseAvoidsWater?.() !== false;   // à cheval, l'eau et la lave (`screen.liquids`) sont contournées si l'option est active
+    const syncStealth = () => { X.setStealth(session, cfg.hasStealth?.()); X.setCompass(session, cfg.getHero().compass); };
 
     function doMove(dirName) {
         if (isBlocked()) return;
         syncStealth();
         const d = DIRECTIONS[dirName];
         if (!d) return;
-        handleResult(X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel(), riding: riding(), rateFactor: encounterFactor() }));
+        const res = X.tryMove(session, d.dx, d.dy, { playerLevel: cfg.getPlayerLevel(), riding: riding(), rateFactor: encounterFactor() });
+        handleResult(res);
         lastMoveAt = performance.now();
+        if (res?.type === 'moved') vis.lastMoveAt = lastMoveAt;   // le cycle de marche ne retombe pas à l'arrêt entre deux pas
     }
 
     // ── Déplacement au clic ────────────────────────────────────────────────
@@ -827,7 +832,7 @@ export function createExplorationView(cfg) {
     function walkTo(ev) {
         const { x, y } = tileFromEvent(ev);
         syncStealth();
-        const path = X.findPath(session, x, y);
+        const path = X.findPath(session, x, y, { avoidLiquid: avoidsLiquid() });
         if (path === null) {
             walk = null;
             toast('Impossible d\'aller là.', 1600);
@@ -865,7 +870,7 @@ export function createExplorationView(cfg) {
     // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
     function walkStep() {
         syncStealth();
-        const path = X.findPath(session, walk.tx, walk.ty);
+        const path = X.findPath(session, walk.tx, walk.ty, { avoidLiquid: avoidsLiquid() });
         if (!path || path.length === 0) { walk = null; return; }
         walk.path = path;
         const next = path[0];
@@ -874,6 +879,7 @@ export function createExplorationView(cfg) {
         syncStealth();
         const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel(), riding: riding(), rateFactor: encounterFactor() });
         lastMoveAt = performance.now();
+        if (res.type === 'moved') vis.lastMoveAt = lastMoveAt;
         if (res.markerReached) toast('Repère atteint.', 1800);
         if (res.type !== 'moved') {
             walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
@@ -969,14 +975,14 @@ export function createExplorationView(cfg) {
         if (X.autoDismount(session, hasMount())) { toast('Le cheval ne suit pas sur l\'eau : vous mettez pied à terre.', 3000); cfg.onSave(); }
         refreshMountButton();
         const k = Math.min(1, dt / (riding() ? 55 : 95));
-        // Héros : vitesse constante vers la case cible (une case par délai de pas), sans décélération entre deux pas :
-        // en marche continue le mouvement est fluide au lieu de repartir de zéro à chaque case.
-        const stepLen = dt / moveDelay() * 1.2;
+        // Héros : vitesse constante, exactement une case par délai de pas (plus de rattrapage à 1,2× suivi d'un arrêt à chaque case : la marche
+        // est continue). Le cycle de marche et le rebond suivent la distance parcourue : `walkPhase` compte les demi-cases.
+        const stepLen = dt / moveDelay();
         const dx = session.data.x - vis.px, dy = session.data.y - vis.py;
         const dist = Math.hypot(dx, dy);
         if (dist > 3) { vis.px = session.data.x; vis.py = session.data.y; }
-        else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; }
-        else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; }
+        else if (dist <= stepLen) { vis.px = session.data.x; vis.py = session.data.y; vis.walkPhase = (vis.walkPhase || 0) + dist * 2; }
+        else { vis.px += dx / dist * stepLen; vis.py += dy / dist * stepLen; vis.walkPhase = (vis.walkPhase || 0) + stepLen * 2; }
         // Mode Chang'e : les habitants de passage se baladent (en pause pendant un dialogue ou un puzzle)
         if (X.inChangeMode(session) && !isDialogOpen() && !healView) X.stepChangeAmbient(session, dt);
         // Villages et hameaux : les habitants se baladent (en pause pendant un dialogue, un puzzle, un PNJ qui accourt)
@@ -1163,6 +1169,8 @@ export function createExplorationView(cfg) {
             return bestiaryPanel();
         },
         bindBestiary,
+        getQuestRegions() { ensureSession(); return X.questRegions(session); },
+        getTravelAdvice() { ensureSession(); return X.travelAdvice(session); },
         getTravelList() { ensureSession(); return X.waypointList(session); },
         canFastTravel() { ensureSession(); return X.nearWaypoint(session); },
 

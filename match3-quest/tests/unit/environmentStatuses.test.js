@@ -1,3 +1,4 @@
+import { collarForBiome } from '../../stuff.js';
 import { healEntity, ENVIRONMENT_STATUSES, environmentDamage, cureStatuses, clearEnvironmentStatuses, CURABLE_STATUSES, afflictionsOf } from '../../alterations.js';
 import { activeStatuses, statusTooltipHtml } from '../../statusBadges.js';
 
@@ -10,6 +11,12 @@ describe('Noyade et Enflammé (malus du milieu)', () => {
     test('le collier qui en préserve : mer pour la noyade, volcan pour les flammes', () => {
         expect(ENVIRONMENT_STATUSES.drowning.collar).toBe('sea');
         expect(ENVIRONMENT_STATUSES.ablaze.collar).toBe('volcano');
+    });
+    test('le collier protecteur est annoncé au joueur', () => {
+        expect(ENVIRONMENT_STATUSES.drowning.protect).toBe('de la noyade');
+        expect(ENVIRONMENT_STATUSES.ablaze.protect).toBe('des flammes');
+        expect(collarForBiome('sea').name).toBe('Collier de perle des marées');
+        expect(collarForBiome('volcano').name).toBe("Collier d'obsidienne froide");
     });
     test('aucun remède ne les guérit', () => {
         const hero = { statusEffects: { drowning: 4, ablaze: 4, poisoned: 2 } };

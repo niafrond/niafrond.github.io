@@ -41,7 +41,17 @@ function objectiveTarget(session, obj) {
         const member = Object.values(session.rt.enemyIndex).find(e => e.def.group === obj.target && !session.data.defeated.includes(e.def.id));
         return member ? { screenId: member.screenId, kind: 'enemy', id: member.def.id } : null;
     }
+    if (obj.type === 'puzzleSet' && session.rt.compass) {
+        // Boussole : la prochaine énigme à résoudre de la série (son coffre), faute de quoi l'armure n'a aucun repère.
+        return puzzleChestTargets(session, obj)[0] || null;
+    }
     return null;
+}
+
+// Boussole : un coffre d'énigme par pièce encore manquante d'une série (armure antique), partout dans le monde.
+function puzzleChestTargets(session, obj) {
+    const ids = puzzlesOfSet(obj.target).filter(id => !session.data.solvedPuzzles.includes(id));
+    return Object.values(session.screens).flatMap(scr => scr.chests.filter(c => ids.includes(c.puzzle)).map(c => ({ screenId: scr.id, kind: 'chest', id: c.id })));
 }
 
 // Lieux à rejoindre pour une quête : PNJ à qui la rendre, ou cibles des objectifs restants.
@@ -57,6 +67,7 @@ export function questTargets(session, quest) {
     }
     if (status === 'active') {
         const obj = quest.objectives.find(o => !objectiveDone(session, o));
+        if (obj?.type === 'puzzleSet' && session.rt.compass) return puzzleChestTargets(session, obj);   // une cible par pièce manquante
         const t = obj && objectiveTarget(session, obj);
         return t ? [t] : [];
     }
@@ -225,7 +236,7 @@ function targetPosition(session, target) {
 }
 
 // Premier écran à rejoindre (sortie à prendre depuis `fromId`) pour atteindre `toId`, en évitant les sorties verrouillées.
-function nextExitToward(session, fromId, toId) {
+function routeToward(session, fromId, toId) {
     const toEvent = session.screens[toId]?.event || null;
     const attempt = (allowLocked, allowSea = canWalkOnWater(session)) => {
         const seen = new Map([[fromId, null]]);
@@ -247,27 +258,54 @@ function nextExitToward(session, fromId, toId) {
             }
         }
         if (!seen.has(toId)) return null;
-        let step = seen.get(toId);
-        while (step && step.from !== fromId) step = seen.get(step.from);
-        return step ? step.exit : null;
+        let step = seen.get(toId), length = 1;
+        const path = [toId];
+        while (step && step.from !== fromId) { path.unshift(step.from); step = seen.get(step.from); length++; }
+        path.unshift(fromId);
+        return step ? { exit: step.exit, length, path } : null;
     };
-    return attempt(false) || attempt(true) || attempt(true, true);
+    return fromId === toId ? { exit: null, length: 0, path: [fromId] } : attempt(false) || attempt(true) || attempt(true, true);
 }
+
+/** Régions (biomes) à traverser, dans l'ordre, pour la quête guidée : du lieu actuel jusqu'à chaque cible (sert à marquer la carte du monde). */
+export function questRegions(session) {
+    const quest = guidedQuest(session);
+    if (!quest) return [];
+    const regions = [];
+    questTargets(session, quest).forEach(t => {
+        (routeToward(session, session.data.screenId, t.screenId)?.path || [t.screenId]).forEach(id => {
+            const r = session.screens[id]?.region;
+            if (r && !regions.includes(r)) regions.push(r);
+        });
+    });
+    return regions;
+}
+
+/** Nombre d'écrans à traverser de `fromId` à `toId` (0 si c'est le même), ou null si aucun chemin. */
+export const routeLength = (session, fromId, toId) => routeToward(session, fromId, toId)?.length ?? null;
 
 // Indicateur de direction de la quête suivie : { x, y, label, kind: 'target' | 'exit' } (tuile de l'écran courant), ou null.
 // À défaut de quête épinglée, l'indicateur guide vers la quête principale en cours (ou à rendre).
-export function questDirection(session) {
-    const quest = trackedQuest(session)
-        || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)));
-    if (!quest) return null;
-    const target = questTargets(session, quest)[0];
-    if (!target) return null;
-    const here = session.data.screenId;
-    if (target.screenId === here) {
-        const pos = targetPosition(session, target);
-        return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
-    }
-    const exit = nextExitToward(session, here, target.screenId);
-    if (!exit) return null;
-    return { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' };
+export function guidedQuest(session) {
+    return trackedQuest(session)
+        || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)))
+        // Boussole des destins : à défaut, n'importe quelle quête en cours (secondaires et armures antiques comprises)
+        || (session.rt.compass ? session.quests.find(q => ['active', 'ready'].includes(questStatus(session, q)) && questTargets(session, q).length) : null);
 }
+
+export function questDirections(session) {
+    const quest = guidedQuest(session);
+    if (!quest) return [];
+    const here = session.data.screenId;
+    const seen = new Set();
+    return questTargets(session, quest).map(target => {
+        if (target.screenId === here) {
+            const pos = targetPosition(session, target);
+            return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
+        }
+        const exit = routeToward(session, here, target.screenId)?.exit;
+        return exit ? { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' } : null;
+    }).filter(d => d && !seen.has(`${d.kind}${d.x},${d.y}`) && seen.add(`${d.kind}${d.x},${d.y}`));
+}
+
+export const questDirection = session => questDirections(session)[0] || null;

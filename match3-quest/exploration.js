@@ -691,6 +691,8 @@ function contactEvent(session, def) {
 // Zone de vigilance : un boss protégé n'en a pas ; un vrai combat l'emporte sur un mirage.
 // Collier d'ombre (stuff.js : hasStealth), posé par la vue avant chaque pas : aucun ennemi ne détecte le héros (sauf dans l'arène).
 export function setStealth(session, on) { session.rt.stealth = Boolean(on); }
+/** Boussole des destins (marchands) : la direction guide vers toutes les quêtes (voir explorationGuide.js `questTargets`). */
+export function setCompass(session, on) { session.rt.compass = Boolean(on); }
 const isStealthy = session => Boolean(session.rt.stealth) && !inArena(session);
 
 function checkAura(session) {
@@ -932,7 +934,7 @@ function stepPatrols(session) {
 //  - les sorties ne se traversent pas en route : elles ne sont franchies que si elles sont la destination.
 // Le trajet évite les zones de vigilance des ennemis (coût élevé par case) sauf celles qui contiennent la destination :
 // on n'entre dans une zone de combat que si on la vise explicitement (ou s'il n'existe aucun autre chemin).
-export function findPath(session, tx, ty) {
+export function findPath(session, tx, ty, { avoidLiquid = false } = {}) {
     const screen = currentScreen(session);
     const start = { x: session.data.x, y: session.data.y };
     if (!Number.isInteger(tx) || !Number.isInteger(ty)) return null;
@@ -977,6 +979,7 @@ export function findPath(session, tx, ty) {
         }
     });
     const AVOID_COST = 1000;
+    const liquids = avoidLiquid ? screen.liquids || [] : [];   // à cheval : l'eau et la lave ne sont franchies qu'en dernier recours (mise à pied à terre)
 
     // Dijkstra sur une petite grille : file triée par coût (les écrans font au plus ~20×13 cases).
     const prev = new Map([[startKey, null]]);
@@ -997,7 +1000,7 @@ export function findPath(session, tx, ty) {
             if (done.has(nKey)) continue;
             // une case occupée ou une sortie n'est jamais un point de passage (seulement une destination)
             if (nKey !== target && (occupied.has(nKey) || exits.has(nKey))) continue;
-            const nd = cur.d + 1 + (avoid.has(nKey) ? AVOID_COST : 0);
+            const nd = cur.d + 1 + (avoid.has(nKey) ? AVOID_COST : 0) + (liquids.length && inRect(liquids, nx, ny) ? AVOID_COST : 0);
             if (nd < (dist.get(nKey) ?? Infinity)) {
                 dist.set(nKey, nd);
                 prev.set(nKey, cKey);

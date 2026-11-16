@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prononciation des noms chinois du bestiaire : un mp3 par nom (voix neuronale zh-CN gratuite d'edge-tts), rangé dans audio/noms/.
+"""Prononciation des noms chinois du bestiaire et des mots de « Un mot de chinois » (chineseWords.js) : un mp3 par nom (voix neuronale zh-CN gratuite d'edge-tts), rangé dans audio/noms/.
 Le nom du fichier est le code Unicode des caractères en hexadécimal séparés par « - » (même règle que nameAudio.js).
 Ces fichiers ne sont ni dans le manifeste de précache ni dans le cache du service worker : ils ne se téléchargent qu'au clic sur « Écouter ».
 Usage (depuis la racine du dépôt) : python3 match3-quest/tools/gen-name-audio.py [--voice zh-CN-XiaoxiaoNeural] [--force]
@@ -11,7 +11,7 @@ GAME = Path(__file__).resolve().parent.parent
 OUT = GAME / 'audio' / 'noms'
 
 def hanzi_list():
-    js = "import('./bestiaryNames.js').then(m=>console.log(JSON.stringify([...new Set(Object.values(m.BESTIARY_NAMES).map(v=>v[1]))])))"
+    js = "Promise.all([import('./bestiaryNames.js'),import('./chineseWords.js')]).then(([m,c])=>console.log(JSON.stringify([...new Set([...Object.values(m.BESTIARY_NAMES).map(v=>v[1]),...c.LESSON_WORDS.map(w=>w.hanzi)])])))"
     return json.loads(subprocess.run(['node', '-e', js], cwd=GAME, capture_output=True, text=True, check=True).stdout)
 
 def file_id(hanzi):

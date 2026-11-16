@@ -11,7 +11,7 @@
 //
 // Module pur (sans DOM) : `rollChestLoot` tire le butin, game.js (`grantChestLoot`) le met dans le sac.
 
-import { allItems } from './items.js';
+import { lootableItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 import { REGION_ORDER, REGION_LEVEL } from './world/index.js';
 
@@ -98,7 +98,7 @@ export function rollChestLoot(chest, screen = {}, owner = {}, rng = Math.random)
             }
         }
         // Potions et reliques ; une relique déjà portée n'est pas redonnée (ses effets se cumuleraient).
-        const items = allItems.filter(i => i.minLevel <= maxLevel && !(i.type === 'artifact' && ownedArtifacts.has(i.id)));
+        const items = lootableItems.filter(i => i.minLevel <= maxLevel && !(i.type === 'artifact' && ownedArtifacts.has(i.id)));
         const item = pickByRarity(items, i => i.rarity, rarity, rng);
         if (item) {
             if (item.type === 'artifact') ownedArtifacts.add(item.id);

@@ -50,6 +50,7 @@ export function setBiomeRule(key, protectedByStuff = false){
     biomeRule = BIOME_RULES[key] || null;
     biomeProtected = Boolean(biomeRule && protectedByStuff);
     biomeState = createBiomeState();
+    cellFxSeen.clear(); cellFxGone.clear();
     if(biomeProtected) log(`${biomeRule.label} : votre collier vous protège (${BIOME_PROTECTION_TEXT[key] || 'effet annulé'}).`);
 }
 export const getBiomeRule = () => biomeRule;
@@ -71,10 +72,39 @@ export function advanceBiomeTurn(){
         else log('Mer : une rangée dérive.');
     }
     renderBoard(true);
+    if(res.drifted !== null) animateRowDrift(res.drifted);
     // Les nouvelles cases annoncent leur effet (la lave le fait juste avant ses dégâts, voir announceBurningCells).
     if(!biomeRule.burnDamage) res.spawned.forEach(i => floatCellText(i, cellBanner(biomeRule)));
     if(res.drifted !== null) floatCellText(res.drifted * boardSize, cellBanner(biomeRule));
     return biomeProtected ? 0 : burnDamage(biomeState, biomeRule);
+}
+
+// Dérive de la mer : la rangée glisse d'une case vers la droite au lieu de sauter. Chaque case part de la position de sa voisine de gauche ;
+// la case qui sort à droite continue hors du plateau en s'effaçant (fantôme) pendant que la même case entre par la gauche.
+export const DRIFT_MS = 640;
+export function animateRowDrift(row){
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv || !Element.prototype.animate || document.body.classList.contains('fx-reduced')) return;
+    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const tiles = Array.from(boardDiv.children);
+    const first = tiles[row * boardSize], last = tiles[row * boardSize + boardSize - 1], second = tiles[row * boardSize + 1];
+    if(!first || !last || !second) return;
+    const step = second.offsetLeft - first.offsetLeft;
+    const opts = { duration: DRIFT_MS, easing: 'cubic-bezier(0.45, 0.05, 0.25, 1)' };
+    beginComboAnimation();
+    for(let c = 1; c < boardSize; c++){
+        tiles[row * boardSize + c].animate([{ transform: `translateX(${-step}px)` }, { transform: 'translateX(0)' }], opts);
+    }
+    // entrée par la gauche
+    first.animate([{ transform: `translateX(${-step}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], opts);
+    // sortie par la droite : copie de la case qui boucle, posée sur la dernière colonne
+    const ghost = first.cloneNode(true);
+    ghost.classList.remove('selected', 'suggested', 'targetable');
+    Object.assign(ghost.style, { position: 'absolute', left: `${last.offsetLeft}px`, top: `${last.offsetTop}px`, margin: '0', pointerEvents: 'none', zIndex: '2' });
+    boardDiv.appendChild(ghost);
+    const out = ghost.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${step}px)`, opacity: 0 }], opts);
+    const done = () => { ghost.remove(); endComboAnimation(); };
+    out.onfinish = done; out.oncancel = done;
 }
 
 // Texte flottant au-dessus d'une case (« Case brûlante - 3 dégâts ») : posé sur la page, il survit au repaint du plateau.
@@ -653,6 +683,37 @@ const SPELL_HOLES_REVEAL_MS = 350;
 const SPELL_HOLES_MAX_WAIT_MS = 20000;   // filet de sécurité si une annonce n'est jamais fermée
 let renderBoardToken = 0;
 
+// Cases de biome animées (style-hud.css `.cell-fx`) : éclat plein à l'apparition (1,5 s), anneau léger ensuite (la couleur de la gemme reste
+// visible), éclat de sortie à la disparition (0,6 s). Chaque rendu vide la tuile (paintTileGlyph) : l'état est donc suivi ici, et l'animation en
+// cours reprend à la bonne image grâce à un délai négatif (`--fx-delay`).
+export const CELL_FX_IN_MS = 1500;
+export const CELL_FX_OUT_MS = 600;
+const cellFxSeen = new Map();   // indice → { kind, since } : case présente
+const cellFxGone = new Map();   // indice → { kind, since } : case qui vient de disparaître
+function paintCellFx(tile, i, cell){
+    const now = performance.now();
+    let fxClass = null, since = now;
+    if(cell){
+        let seen = cellFxSeen.get(i);
+        if(!seen || seen.kind !== cell.kind){ seen = { kind: cell.kind, since: now }; cellFxSeen.set(i, seen); }
+        cellFxGone.delete(i);
+        since = seen.since;
+        fxClass = `n-${cell.kind} ${now - since < CELL_FX_IN_MS ? 'in' : 'idle'}`;
+    } else {
+        const seen = cellFxSeen.get(i);
+        if(seen){ cellFxSeen.delete(i); cellFxGone.set(i, { kind: seen.kind, since: now }); }
+        const gone = cellFxGone.get(i);
+        if(gone && now - gone.since < CELL_FX_OUT_MS){ fxClass = `n-${gone.kind} out`; since = gone.since; }
+        else cellFxGone.delete(i);
+    }
+    if(!fxClass) return;
+    const fx = document.createElement('span');
+    fx.className = `cell-fx ${fxClass}`;
+    fx.setAttribute('aria-hidden', 'true');
+    fx.style.setProperty('--fx-delay', `${-Math.max(0, Math.round(now - since))}ms`);
+    tile.appendChild(fx);
+}
+
 function paintBoard(tiles, skipCleanup){
     for(let i=0;i<board.length;i++){
         let t=board[i];
@@ -671,6 +732,7 @@ function paintBoard(tiles, skipCleanup){
         tiles[i].classList.toggle('trapped', trappedCells.has(i));
         const cell = biomeState.cells[i];
         if(cell) tiles[i].dataset.cell = cell.kind; else delete tiles[i].dataset.cell;
+        paintCellFx(tiles[i], i, cell);
     }
     refreshTargetingHighlights();
 }

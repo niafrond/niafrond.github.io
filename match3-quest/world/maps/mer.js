@@ -130,7 +130,7 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.1, safeSteps: 3, table: [
-            { templateId: 'soldat_terre_cuite', name: 'Crabe des sables', weight: 5, offset: -1 },
+            { templateId: 'crabe_soldat', name: 'Crabe des sables', weight: 5, offset: -1 },
             { templateId: 'assassin_masque', name: 'Rôdeur des dunes', weight: 4, offset: 0 },
             { templateId: 'jiaolong', name: 'Anguille de la grève', weight: 3, offset: 0 },
             { templateId: 'dame_des_neiges', name: 'Dame d\'écume', weight: 1, offset: 1 },
@@ -194,7 +194,7 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.09, safeSteps: 3, table: [
-            { templateId: 'soldat_terre_cuite', name: 'Petit crabe des galets', weight: 5, offset: -1 },
+            { templateId: 'crabe_soldat', name: 'Petit crabe des galets', weight: 5, offset: -1 },
             { templateId: 'jiaolong', name: 'Anguille de rivage', weight: 3, offset: -1 },
             { templateId: 'wen_shen', name: 'Spectre d\'écume', weight: 1, offset: 1 },
                 { templateId: 'hai_shen', name: "Hai Shen", weight: 1, offset: 1 },
@@ -372,7 +372,7 @@ export default {
             '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ],
         grass: { rate: 0.09, safeSteps: 4, table: [
-            { templateId: 'soldat_terre_cuite', name: 'Crabe-soldat égaré', weight: 5, offset: 0 },
+            { templateId: 'crabe_soldat', name: 'Crabe-soldat égaré', weight: 5, offset: 0 },
             { templateId: 'jiaolong', name: 'Anguille des marées', weight: 3, offset: 0 },
             { templateId: 'dame_des_neiges', name: 'Dame d\'embruns', weight: 1, offset: 1 },
                 { templateId: 'hai_gui', name: "Hai Gui", weight: 3, offset: 0 },

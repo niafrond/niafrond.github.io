@@ -33,6 +33,7 @@ const level = n => `<span class="rc-attr">Niv. <b>${n}</b></span>`;
 const attr = (label, value) => `<span class="rc-attr"><b>${value}</b> ${label}</span>`;
 function attributesOf(kind, obj) {
     const out = [];
+    if (kind === 'compass') return [`<span class="rc-attr">Direction de toutes les quêtes</span>`];
     if (kind === 'torch') return [`<span class="rc-attr">Vue élargie sous terre</span>`];
     if (kind === 'mount') return [attr('de vitesse', `×${obj.speed}`)];
     if (kind === 'weapon') {
@@ -63,7 +64,7 @@ function attributesOf(kind, obj) {
 // Offre d'un marchand : carte aérée, car on achète sur les chiffres. Nom en entier, toutes les caractéristiques, l'effet des objets, puis
 // les écarts avec ce que vous portez ; le prix est dans le bouton d'achat, « Comparer » dans le menu « ⋯ », le texte d'ambiance à l'appui long.
 function shopCard(key, obj, kindOfOffer, rarity, { primary, extraMore = '', iconHtml, price }) {
-    const special = kindOfOffer === 'mount' || kindOfOffer === 'torch';
+    const special = kindOfOffer === 'mount' || kindOfOffer === 'torch' || kindOfOffer === 'compass';
     const kind = kindOfOffer === 'weapon' ? 'weapon' : kindOfOffer === 'stuff' ? 'stuff' : 'item';
     const deltas = special ? '' : equipDeltaGroupsHtml(player, kind, obj);
     const tooLow = !special && (obj.minLevel || 1) > player.level;
