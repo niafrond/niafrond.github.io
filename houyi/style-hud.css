@@ -1056,7 +1056,7 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 .rage-bar-container.in-transe .rage-bar { box-shadow: 0 0 8px 1px rgba(150, 110, 255, 0.75); }
 .class-picker { display: flex; gap: 2px; margin: 0 0 4px; width: 100%; box-sizing: border-box; }   /* fine ligne cliquable au-dessus des actions */
 .class-picker[hidden] { display: none; }
-.class-pick { flex: 1 1 0; min-width: 0; height: 22px; padding: 0 6px; font-size: 0.7rem; line-height: 20px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.35); color: inherit; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.class-pick { flex: 1 1 0; min-width: 0; height: 22px; padding: 0 6px; font-size: 0.7rem; line-height: 20px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.25); background: linear-gradient(90deg, rgba(127, 227, 242, 0.45) var(--charge, 100%), rgba(0, 0, 0, 0.35) var(--charge, 100%)); color: inherit; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .class-pick.on { background: #7a4ad8; border-color: #b58cff; color: #fff; font-weight: 700; }
 .class-pick:disabled { opacity: 0.5; cursor: default; }
 

@@ -12,6 +12,7 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
+import { readyClasses, classProgress, classChargeInfo } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
@@ -112,11 +113,18 @@ function updateActiveSpells() {
 const combatBiome = () => (gameState.combatState === 'active' ? enemy?.biome || null : null);
 /** Classe du tour : celle choisie si elle est utilisable (classe de combat, biome non bridé, entraînement), sinon la classe du héros, sinon la première utilisable. */
 export function getTurnClass(){
-    const usable = usableClasses(player, combatBiome(), gameState.forcedClass);
-    if(gameState.turnClass && usable.includes(gameState.turnClass)) return gameState.turnClass;
-    if(usable.includes(player.class)) return player.class;
-    return usable[0] || player.class || null;
+    const usable = usableNow();
+    const ready = chargeEnabled() ? readyClasses(gameState.charge, usable) : usable;
+    const pool = ready.length ? ready : usable;   // classes chargées d'abord ; aucune n'est prête hors de leur tour : on garde la liste complète
+    if(gameState.turnClass && pool.includes(gameState.turnClass)) return gameState.turnClass;
+    if(pool.includes(player.class)) return player.class;
+    return pool[0] || player.class || null;
 }
+
+/** Classes de combat utilisables maintenant (biome, entraînement). */
+export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass);
+/** Le temps de chargement (classCharge.js) joue en combat, sauf dans le duel-tutoriel (déroulé scripté). */
+export const chargeEnabled = () => gameState.combatState === 'active' && !enemy?.isTutorialEnemy;
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
 export function combatSpellList(){
@@ -152,8 +160,12 @@ function renderClassPicker(container){
     const forced = gameState.forcedClass;
     picker.innerHTML = loadout.map(id => {
         const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
-        const off = !mine || (forced && id !== forced) || restricted[id];
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} title="${reason}">${CLASS_SHORT[id] || id}</button>`;
+        const ready = !chargeEnabled() || readyClasses(gameState.charge, [id]).length > 0;
+        const prog = chargeEnabled() ? Math.round(classProgress(gameState.charge, player, id) * 100) : 100;
+        const info = classChargeInfo(player, id);
+        const chargeText = ready ? `Prête (chargement ${info.time})` : `Chargement ${prog} % (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
+        const off = !mine || (forced && id !== forced) || restricted[id] || !ready;
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%" title="${reason} · ${chargeText}">${CLASS_SHORT[id] || id}</button>`;
     }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }

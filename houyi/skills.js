@@ -16,8 +16,8 @@ export const SKILLS = [
     // ── Soutien (passif) ──
     { id: 'garde_de_jade', kind: SUPPORT, name: 'Garde de jade', ap: 40, cost: 2, bonus: { defense: 4 }, description: 'Défense +4 en combat.' },
     { id: 'garde_de_bronze', kind: SUPPORT, name: 'Garde de bronze', ap: 90, cost: 3, bonus: { defense: 8 }, description: 'Défense +8 en combat.' },
-    { id: 'oeil_de_faucon', kind: SUPPORT, name: 'Œil de faucon', ap: 40, cost: 2, bonus: { attack: 4 }, description: 'Attaque +4 en combat.' },
-    { id: 'oeil_du_dragon', kind: SUPPORT, name: 'Œil du dragon', ap: 90, cost: 3, bonus: { attack: 8 }, description: 'Attaque +8 en combat.' },
+    { id: 'oeil_de_faucon', kind: SUPPORT, name: 'Œil de faucon', ap: 40, cost: 2, bonus: { attack: 4, chargePct: 5 }, description: 'Attaque +4 en combat ; les classes se rechargent 5 % plus vite.' },
+    { id: 'oeil_du_dragon', kind: SUPPORT, name: 'Œil du dragon', ap: 90, cost: 3, bonus: { attack: 8, chargePct: 10 }, description: 'Attaque +8 en combat ; les classes se rechargent 10 % plus vite.' },
     { id: 'peau_de_serpent', kind: SUPPORT, name: 'Peau de serpent', ap: 50, cost: 2, bonus: { poisonResist: 50 }, description: 'Réduit de moitié les dégâts de poison.' },
     { id: 'souffle_regenerant', kind: SUPPORT, name: 'Souffle régénérant', ap: 70, cost: 3, bonus: { regenPct: 3 }, description: 'Rend 3 % des PV max à chaque tour.' },
     { id: 'coeur_de_transe', kind: SUPPORT, name: 'Cœur de Xiūxiān', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān se remplit 30 % plus vite.' },

@@ -33,8 +33,10 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
+import { updateAvailableSpells, getTurnClass, usableNow, chargeEnabled } from './gameSpellList.js';
+import { playerActed, enemyActed, nextActor } from './classCharge.js';
+import { CLASS_SHORT } from './classRoster.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -169,6 +171,22 @@ export function finishPlayerTurn(){
         return; // le plateau rappelle finishPlayerTurn() après résolution
     }
 
+    // Temps de chargement (classCharge.js) : la classe qui vient d'agir se recharge ; si une autre classe est prête avant l'ennemi, le joueur rejoue.
+    if(chargeEnabled()){
+        playerActed(gameState.charge, player, getTurnClass());
+        if(nextActor(gameState.charge, usableNow()) === 'player'){
+            gameState.turnClass = null;   // la classe du tour passe à une classe chargée
+            const next = getTurnClass();
+            log(`${enemy.name} se recharge encore : vous rejouez avec ${CLASS_SHORT[next] || next}.`);
+            syncGauge();
+            applyTranseClassEffect();
+            updateStats();
+            saveUpdate();
+            restartSuggestionTimer();
+            tutorialCallbacks.onPlayerTurn?.('bonus');
+            return;
+        }
+    }
     // Laisse finir l'animation de l'action du joueur (attaque, sort, soin, objet) avant la réplique de l'adversaire.
     setCurrentTurn('enemy'); // bloque le plateau pendant l'animation
     updateStats();
@@ -694,6 +712,18 @@ export function finishEnemyTurn(){
         if(playerStunned) player.statusEffects.stunned--;
         const playerSleeps = isAsleep(player) || playerStunned;   // Endormi : le héros perd ce tour (sauf s'il a été réveillé par des dégâts)
         tickAlterations(player).forEach(m => log(m));
+        // Temps de chargement : si l'ennemi est de nouveau prêt avant toute classe du héros, il rejoue.
+        if(chargeEnabled()){
+            enemyActed(gameState.charge, enemy);
+            if(nextActor(gameState.charge, usableNow()) === 'enemy'){
+                log(`${enemy.name} est déjà rechargé et rejoue !`);
+                updateStats();
+                saveUpdate();
+                setTimeout(() => { if(gameState.combatState === 'active') enemyTurn(); }, 1000);
+                return;
+            }
+            gameState.turnClass = null;   // les classes chargées passent d'abord
+        }
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         turnFlags.foxActed = false;
         turnFlags.companionsActed = false;

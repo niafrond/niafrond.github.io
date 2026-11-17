@@ -20,6 +20,7 @@ import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimat
 import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
+import { newCharge, isClassReady } from "./classCharge.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -912,7 +913,8 @@ export const gameState = {
     combatState: 'ready', // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
     turnClass: null,      // classe choisie pour le tour en combat (null = classe du héros) ; jamais sauvegardée
     forcedClass: null,    // classe imposée par un entraînement (enemy.training), sinon null
-    transeApplied: null   // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
+    transeApplied: null,  // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
+    charge: newCharge()   // temps de chargement des classes et de l'ennemi (classCharge.js)
 };
 
 // ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
@@ -926,6 +928,7 @@ export function syncGauge(){
 export function setTurnClass(classId){
     if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
     if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
+    if(!enemy?.isTutorialEnemy && !isClassReady(gameState.charge, classId)) return false;   // classe encore en chargement
     gameState.turnClass = classId;
     syncGauge();
     applyTranseClassEffect();
@@ -1364,6 +1367,7 @@ export function restartCombat({ keepHp = true } = {}){
     // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
+    gameState.charge = newCharge();   // tout le monde est prêt au début du combat
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
     gameState.transeApplied = null;
