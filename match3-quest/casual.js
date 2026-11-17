@@ -51,10 +51,14 @@ export function planStuff(hero, bias, getStuffById, slots = ['head', 'neck', 'wr
 }
 
 const SPELL_WEIGHTS = {
-    balanced: { dmg: 1, heal: 0.8, effect: 4, cost: 0.6 },
-    defensive: { dmg: 0.7, heal: 1.6, effect: 6, cost: 0.6 },
-    tank: { dmg: 0.4, heal: 2.4, effect: 8, cost: 0.6 }
+    balanced: { dmg: 1, heal: 0.8, effect: 4, cost: 1.5 },
+    defensive: { dmg: 0.7, heal: 1.6, effect: 6, cost: 1.5 },
+    tank: { dmg: 0.4, heal: 2.4, effect: 8, cost: 1.5 }
 };
+// Le joueur Casual doit pouvoir lancer quelques sorts par partie : on évite les sorts trop chers à charger (en qì cumulé)
+// tant que l'on dispose d'assez de sorts abordables.
+export const CASUAL_MAX_SPELL_COST = 6;
+const CASUAL_MIN_AFFORDABLE = 2;
 const spellCost = sp => (typeof sp?.cost === 'number' ? sp.cost : Object.values(sp?.cost || {}).reduce((a, b) => a + (Number(b) || 0), 0));
 const spellColor = sp => (sp && typeof sp.cost === 'object' && sp.cost ? Object.entries(sp.cost).sort((a, b) => b[1] - a[1])[0]?.[0] : sp?.color) || 'none';
 
@@ -66,11 +70,13 @@ export function spellScore(sp, bias = 'balanced') {
 }
 
 /**
- * Sorts à équiper (ids, au plus `max`) parmi les sorts débloqués : les mieux notés, en variant les couleurs de qì
+ * Sorts à équiper (ids, au plus `max`) parmi les sorts débloqués abordables (coût ≤ CASUAL_MAX_SPELL_COST s'il y en a au moins 2) : les mieux notés, en variant les couleurs de qì
  * (−25 % par sort déjà retenu de la même couleur). À égalité, les sorts déjà équipés sont gardés.
  */
 export function planSpells(hero, bias, max = 4) {
-    const pool = (hero?.availableSpells || []).filter(sp => sp?.id && (sp.minLevel || 1) <= (hero?.level || 1));
+    const unlocked = (hero?.availableSpells || []).filter(sp => sp?.id && (sp.minLevel || 1) <= (hero?.level || 1));
+    const cheap = unlocked.filter(sp => spellCost(sp) <= CASUAL_MAX_SPELL_COST);
+    const pool = cheap.length >= CASUAL_MIN_AFFORDABLE ? cheap : unlocked;
     const current = new Set((hero?.activeSpells || []).map(sp => sp.id));
     const picked = [];
     while (picked.length < max && picked.length < pool.length) {
