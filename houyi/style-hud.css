@@ -1050,3 +1050,17 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 
 /* Ennemi de tempérament agressif : « en colère » derrière son nom (gameHud.js). */
 .enemy-mood { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #b71c1c; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; vertical-align: middle; }
+
+/* ── Transe (jauge) et classe du tour ───────────────────────────────────────── */
+.rage-bar-container.in-transe .rage-fill { background: linear-gradient(180deg, #b58cff, #7a4ad8 60%, #43228f); }
+.rage-bar-container.in-transe .rage-bar { box-shadow: 0 0 8px 1px rgba(150, 110, 255, 0.75); }
+.class-picker { display: flex; gap: 4px; margin: 0 0 6px; flex-wrap: wrap; }
+.class-picker[hidden] { display: none; }
+.class-pick { flex: 1 1 0; min-width: 0; padding: 4px 6px; font-size: 0.78rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.35); color: inherit; cursor: pointer; }
+.class-pick.on { background: #7a4ad8; border-color: #b58cff; color: #fff; font-weight: 700; }
+.class-pick:disabled { opacity: 0.5; cursor: default; }
+
+/* Les attaques que l'ennemi peut lancer ne sont plus montrées : la place revient aux choix du joueur (classe du tour, sorts). */
+#enemy-spell-list, #enemy-spells h4 { display: none !important; }
+#spells-container #enemy-spells:not(:has(#enemy-weapon-button > *)) { display: none !important; }
+#spells-container #player-spells { flex: 1 1 100%; width: 100%; box-sizing: border-box; }

@@ -1,5 +1,6 @@
 // Attributs du joueur : source unique des effets (appliqués par game.js) et de leur description affichée.
 // Module pur (aucun accès au DOM) pour rester testable.
+import { skillBonus } from './skills.js';
 
 // Règles paramétrables : un attribut influence la couleur de qì associée, mais PAS à chaque point (pas de virgules : tout est entier).
 // Chaque bonus est un rythme [période, reste] : le point n° n (1, 2, 3…) donne +1 si n % période === reste. Ainsi un point peut donner
@@ -102,7 +103,7 @@ export const startingRage = entity => rageInitialFor("strength", getAttributePoi
 export function boostedRageGain(entity, base) {
     const gain = Math.max(0, Math.floor(base || 0));
     if (gain <= 0) return 0;
-    return Math.round(gain * (1 + rageGainPctFor("morale", getAttributePoints(entity, "morale")) / 100));
+    return Math.round(gain * (1 + (rageGainPctFor("morale", getAttributePoints(entity, "morale")) + skillBonus(entity, 'transePct')) / 100));
 }
 
 // Qì obtenu pour un match de `len` tuiles de la couleur de l'attribut, avec `points` points.

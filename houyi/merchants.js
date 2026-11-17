@@ -33,7 +33,7 @@ export const baseItemPrice = item => Math.floor(item.minLevel * (ITEM_RARITY_PRI
 export const MERCHANTS = [
     { id: 'merchant_rizieres', region: 'rizieres', name: 'Fu le Colporteur', title: 'Marchand ambulant',
       idle: ['Du riz sec, des nattes, et sous la natte… autre chose. Regarde mais ne marchande pas trop fort : mes prix sont gravés.', 'Les rizières sont vides, mais mon étal, lui, ne l\'est jamais.'] },
-    { id: 'merchant_volcan', region: 'volcan', name: 'Lie le Braisier', title: 'Marchand de braises',
+    { id: 'merchant_volcan', region: 'volcan', name: 'Lie le Braisier', title: 'Marchand de braises', forge: true,
       idle: ['Mes reliques sortent à peine de la forge. Elles sont chaudes, et mes prix aussi.', 'Pas de crédit : la lave ne fait pas crédit, moi non plus.'] },
     { id: 'merchant_gobi', region: 'gobi', name: 'Ma le Caravanier', title: 'Marchand du désert',
       idle: ['J\'ai traversé trois mirages pour ces marchandises. Chaque pièce a une histoire, et chaque histoire un tarif.', 'L\'eau est rare dans le Gobi, les belles lames aussi. Devinez ce qui coûte le plus cher.'] },
@@ -41,7 +41,7 @@ export const MERCHANTS = [
       idle: ['Tout ce que le fleuve a rendu, je l\'ai nettoyé, fait briller et revendu. Avec un petit supplément pour la peine.', 'Le courant apporte, le courant reprend. Moi, je garde le meilleur.'] },
     { id: 'merchant_bambous', region: 'bambous', name: 'Maître Cheng', title: 'Marchand de la forêt',
       idle: ['Des élixirs distillés dans le creux des bambous. Les moines en font un secret, moi un commerce.', 'La qualité a un prix, voyageur. Et le prix a un parfum de thé.'] },
-    { id: 'merchant_tonnerre', region: 'tonnerre', name: 'Jin le Fondeur', title: 'Marchand de métaux',
+    { id: 'merchant_tonnerre', region: 'tonnerre', name: 'Jin le Fondeur', title: 'Marchand de métaux', forge: true,
       idle: ['Fer d\'orage, bronze de foudre. Ça ne se marchande pas, ça se mérite.', 'Une lame forgée un jour de tonnerre vaut dix lames forgées par beau temps.'] },
     { id: 'merchant_fauves', region: 'fauves', name: 'Wu l\'Éleveur', title: 'Marchand de la plaine',
       idle: ['Croc de tigre, plume de rapace, et quelques merveilles que les chasseurs ne vendent qu\'à moi.', 'Les bêtes sont folles, mais mon commerce est sage : tout a un prix.'] },
@@ -51,7 +51,7 @@ export const MERCHANTS = [
       idle: ['Des reliques tombées de l\'Arbre Fusang. Elles brillent encore. Leur prix aussi, à vrai dire.', 'Les immortels paient comptant. Pourquoi pas vous ?'] },
     { id: 'merchant_marees', region: 'marees', name: 'Maître Tang', title: 'Saunier des radeaux',
       idle: ["Mon sel vient de la mer et y retourne. Entre-temps, il fait vivre trois familles : c'est le plus honnête des cycles.", "Le sel garde le poisson, le poisson garde le village. Moi, j'ai gardé les radeaux. Et mes tarifs."] },
-    { id: 'merchant_lune', region: 'lune', name: 'Baitu le Lièvre', title: 'Marchand lunaire',
+    { id: 'merchant_lune', region: 'lune', name: 'Baitu le Lièvre', title: 'Marchand lunaire', forge: true,
       idle: ['Pilons de jade, éclats de lune et trésors qu\'aucun mortel ne devrait posséder. Prix en conséquence.', 'Ici, on paie en or. Même la lune a des factures.'] }
 ];
 
@@ -82,7 +82,7 @@ export function merchantNpc(id) {
     const m = getMerchant(id);
     if (!m) return null;
     return {
-        id: m.id, name: m.name, title: m.title, merchant: true, region: m.region,
+        id: m.id, name: m.name, title: m.title, merchant: true, region: m.region, forge: !!m.forge,
         idle: m.idle,
         greeting: [`${m.name} : « ${m.idle[0]} »`]
     };
@@ -153,7 +153,7 @@ export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
     const standards = STANDARD_TYPES.map(t => standardItemFor(t, L)).filter(Boolean);
     const standardIds = new Set(standards.map(i => i.id));
     const items = lootableItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
-    const weapons = allWeapons.map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
+    const weapons = allWeapons.filter(w => !w.fusionOnly).map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
     const all = [...items, ...weapons];
     const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;
 

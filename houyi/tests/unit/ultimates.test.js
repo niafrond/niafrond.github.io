@@ -111,7 +111,7 @@ describe('ultimes de légende (gagnés par quête, toutes classes)', () => {
         const withIt = { ...hero('barbarian', 99, ['ultimateBlackTortoise']), equippedUltimate: 'ultimateBlackTortoise' };
         expect(getEquippedUltimate(withIt).id).toBe('ultimateBlackTortoise');
         const without = { ...hero('barbarian', 99), equippedUltimate: 'ultimateBlackTortoise' };
-        expect(getEquippedUltimate(without).id).toBe('ultimateThousandRiders');
+        expect(getEquippedUltimate(without).id).toBe('ultimateFiveElements');   // l'ultime est réservé au sorcier : tous les héros reçoivent ses ultimes
     });
 
     test("unlockUltimate : une seule fois, refuse l'inconnu et les ultimes de classe", () => {

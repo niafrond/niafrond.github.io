@@ -111,6 +111,9 @@ Objectif : localiser un module sans lire de gros fichiers. Consulter cette carte
 - `shop.js` — =====================================
 - `sound.js` — (sans description)
 - `spellFx.js` — (sans description)
+- `skills.js` / `skillsView.js` — Compétences enseignées par l'équipement, PA, magikolithes ; onglet Compétences.
+- `transe.js` — Transe (jauge pleine = déclenchement automatique, effet par classe du tour, ultime réservé au sorcier).
+- `fusion.js` — Fusion d'armes chez les forgerons (recettes, frais).
 - `spells.js` — Catalogue des sorts charge depuis spells.json
 - `statusBadges.js` — Bonus / malus actifs d'un combattant, affichés en pastilles sur sa carte (survol ou appui long = explication).
 - `story.js` — Histoire et cartes d'exploration de Houyi : « La Légende de Hou Yi ».

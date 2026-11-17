@@ -477,6 +477,94 @@ export const allWeapons = [
         rarity: WeaponRarity.LEGENDARY,
         manaMax: { red: 1, blue: 1, green: 1, yellow: 1, purple: 1 },
         description: "Cinq vents soufflent dans ses branches, un par élément"
+    },
+    {
+        id: "arc_du_chasseur_errant",
+        name: "Arc du Chasseur Errant",
+        type: WeaponType.BOW,
+        damage: 20,
+        actionPoints: 4,
+        minLevel: 3,
+        rarity: WeaponRarity.UNCOMMON,
+        fusionOnly: true,
+        description: "Forgé de deux arcs de chasse : léger comme l'un, tendu comme l'autre"
+    },
+    {
+        id: "arc_des_vents_de_bambou",
+        name: "Arc des Vents de Bambou",
+        type: WeaponType.BOW,
+        damage: 29,
+        actionPoints: 4,
+        minLevel: 7,
+        rarity: WeaponRarity.UNCOMMON,
+        fusionOnly: true,
+        description: "Le bambou et le vent n'ont plus fait qu'un dans cette forge"
+    },
+    {
+        id: "arc_du_serpent_d_argent",
+        name: "Arc du Serpent d'Argent",
+        type: WeaponType.BOW,
+        damage: 58,
+        actionPoints: 6,
+        minLevel: 12,
+        rarity: WeaponRarity.RARE, atkBonus: 2,
+        fusionOnly: true,
+        description: "Précis comme l'un, venimeux comme l'autre : la lame du serpent d'argent"
+    },
+    {
+        id: "arc_du_rempart_de_pointes",
+        name: "Arc du Rempart de Pointes",
+        type: WeaponType.BOW,
+        damage: 54,
+        actionPoints: 6,
+        minLevel: 11,
+        rarity: WeaponRarity.RARE, defBonus: 3,
+        fusionOnly: true,
+        description: "Un arc-bouclier hérissé de pointes, qui parent autant qu'ils frappent"
+    },
+    {
+        id: "arc_de_la_lune_de_jade",
+        name: "Arc de la Lune de Jade",
+        type: WeaponType.BOW,
+        damage: 74,
+        actionPoints: 6,
+        minLevel: 14,
+        rarity: WeaponRarity.RARE, atkBonus: 1, defBonus: 2,
+        fusionOnly: true,
+        description: "Le jade et l'argent lunaire, fondus en un seul arc"
+    },
+    {
+        id: "arc_du_brasier_royal",
+        name: "Arc du Brasier Royal",
+        type: WeaponType.BOW,
+        damage: 98,
+        actionPoints: 7,
+        minLevel: 18,
+        rarity: WeaponRarity.LEGENDARY, atkBonus: 2,
+        fusionOnly: true,
+        description: "Deux forges de feu ont chauffé ce métal : il ne refroidit jamais"
+    },
+    {
+        id: "arc_des_deux_cieux",
+        name: "Arc des Deux Cieux",
+        type: WeaponType.BOW,
+        damage: 128,
+        actionPoints: 8,
+        minLevel: 20,
+        rarity: WeaponRarity.LEGENDARY, atkBonus: 2, defBonus: 1,
+        fusionOnly: true,
+        description: "Le juge et le ciel rouge, réunis sur une seule corde"
+    },
+    {
+        id: "arc_des_onze_soleils",
+        name: "Arc des Onze Soleils",
+        type: WeaponType.BOW,
+        damage: 165,
+        actionPoints: 9,
+        minLevel: 24,
+        rarity: WeaponRarity.LEGENDARY, atkBonus: 3,
+        fusionOnly: true,
+        description: "Un onzième soleil brûle dans cet arc, né de la foudre et des dix autres"
     }
 ];
 

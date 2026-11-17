@@ -15,7 +15,9 @@ import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 
-import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison } from "./stuff.js";
+import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
+import { isInTranse, endTranse, transeEffectFor, classAllowsUltimate, describeTranse } from "./transe.js";
+import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -63,7 +65,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -245,6 +247,15 @@ export function ultimateManaBarHtml(entity, spell){
         return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}${color === 'yellow' ? ' light' : ''}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}</span></span>`;
     });
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
+}
+
+// Fiche de la jauge de Transe : remplissage, effet de la classe du tour, rappel de la règle de l'ultime.
+export function transeTooltipHtml(entity, ultimate){
+    const filled = Math.floor(entity?.rage || 0);
+    return `<div class="spell-tooltip-title">TRANSE · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
+        + `<div class="spell-tooltip-line">Se remplit quand vous subissez des dégâts ; pleine, elle se déclenche toute seule pour 3 tours.</div>`
+        + `<div class="spell-tooltip-line">${describeTranse(getTurnClass())}</div>`
+        + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Transe, avec la classe Mage antique choisie pour le tour.</div>` : '');
 }
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
@@ -474,6 +485,7 @@ export function applyDamage(target, damage, options = {}){
     // Jauge de rage : se charge quand le joueur perd des PV en combat.
     if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {
         addRage(player, boostedRageGain(player, rageFromDamage(currentHp - nextHp, player.maxHp)));
+        syncTranse();
     }
 
     if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
@@ -747,6 +759,7 @@ export let player = {
     activeSpells: [],  // sorts équipés (max 4)
     archivedSpells: [], // ids des sorts rangés dans les archives (masqués de la liste des sorts disponibles)
     equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
+    skills: { progress: {}, learned: [], active: [] },   // compétences : PA par compétence, apprises, soutien activé (skills.js)
     unlockedUltimates: [],   // ultimes de légende (Quatre Gardiens Célestes) gagnés par quête, toutes classes (ultimates.js)
     availableSpells: [], // sorts débloqués
     weapons: [],  // armes possédées
@@ -892,13 +905,57 @@ export const isFoxPlaying = () => turnFlags.foxPlaying;
 
 // état du combat (objet pour pouvoir modifier la propriété)
 export const gameState = { 
-    combatState: 'ready' // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
+    combatState: 'ready', // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
+    turnClass: null,      // classe choisie pour le tour en combat (null = classe du héros) ; jamais sauvegardée
+    transeApplied: null   // classes dont l'effet de Transe a déjà été appliqué ce tour
 };
+
+// ── Classe du tour et Transe ───────────────────────────────────────────────
+// Le joueur choisit une classe par tour (gratuit, avant d'agir) : elle décide des sorts de classe proposés, de l'effet de la Transe
+// et de la possibilité de lancer l'ultime (sorcier uniquement). Voir transe.js.
+export function setTurnClass(classId){
+    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(!['sorcerer', 'assassin', 'templar', 'barbarian'].includes(classId)) return false;
+    gameState.turnClass = classId;
+    applyTranseClassEffect();
+    return true;
+}
+
+// Effet de Transe de la classe du tour, appliqué une seule fois par tour et par classe.
+export function applyTranseClassEffect(){
+    if(!isInTranse(player) || gameState.combatState !== 'active') return;
+    const cls = getTurnClass();
+    const effect = transeEffectFor(cls);
+    gameState.transeApplied = gameState.transeApplied || [];
+    if(!cls || gameState.transeApplied.includes(cls) || (!effect.actionPoints && !effect.attack && !effect.defense)) return;
+    gameState.transeApplied.push(cls);
+    if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
+    if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
+    log(`Transe : ${effect.text}.`);
+}
+
+// Annonce le déclenchement de la Transe (jauge pleine) et applique l'effet de la classe du tour.
+export function syncTranse(){
+    if(player.transeStarted){
+        player.transeStarted = false;
+        if(gameState.combatState === 'active'){
+            log(`✦ TRANSE ! ${describeTranse(getTurnClass())}`);
+            gameState.transeApplied = [];
+            applyTranseClassEffect();
+        }
+    }
+}
+
+// Fin d'un tour du joueur : la liste des classes déjà appliquées repart à zéro.
+export function resetTranseTurn(){
+    gameState.transeApplied = [];
+}
 
 export const combatRewards = {
     xpGained: 0,
     xpApplied: false,
     items: [],
+    skills: [],           // compétences apprises pendant ce combat (écran de résultat)
     weapons: [],
     gold: 0,
     levelsGained: 0,      // niveaux gagnés en fin de combat (écran de résultat)
@@ -914,6 +971,7 @@ function resetCombatRewards(){
     combatRewards.xpGained = 0;
     combatRewards.xpApplied = false;
     combatRewards.items = [];
+    combatRewards.skills = [];
     combatRewards.weapons = [];
     combatRewards.gold = 0;
     combatRewards.levelsGained = 0;
@@ -1230,6 +1288,9 @@ export function restartCombat({ keepHp = false } = {}){
     player.bonusTurn = 0;
     resetRage(player);
     addRage(player, startingRage(player));
+    gameState.turnClass = null;   // la classe du tour revient à celle du héros
+    gameState.transeApplied = null;
+    syncTranse();
     resetUltimateMana(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
@@ -1436,6 +1497,8 @@ export function loadGameData() {
             player.archivedSpells = Array.isArray(loaded.archivedSpells) ? loaded.archivedSpells.filter(id => typeof id === 'string') : [];
             player.equippedUltimate = loaded.equippedUltimate ?? player.equippedUltimate;
             player.unlockedUltimates = normalizeUnlockedUltimates(loaded.unlockedUltimates);
+            player.skills = loaded.skills;
+            normalizeSkills(player);
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
@@ -1674,7 +1737,7 @@ export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
-    const spell=player.activeSpells.find(s=>s.id===spellId);
+    const spell=combatSpellList().find(s=>s.id===spellId);   // sorts de la classe choisie pour ce tour + commandes des compétences apprises
     if(!spell){ log("Sort indisponible !"); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
@@ -1732,7 +1795,8 @@ export async function castUltimate(spellId){
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
-    if(!isRageFull(player)){ log("La jauge de rage n'est pas pleine !"); return; }
+    if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant la classe Mage antique (sorcier) pour ce tour."); return; }
+    if(!isInTranse(player)){ log("La Transe n'est pas déclenchée : la jauge doit d'abord se remplir !"); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
@@ -1837,7 +1901,7 @@ export function applyStartingAbilities(){
 
     // Bonus de départ liés aux aptitudes (une couleur par aptitude).
     Object.keys(player.mana).forEach(color => {
-        const initialBonus = getAttributeManaBonus(player, color, "initial");
+        const initialBonus = getAttributeManaBonus(player, color, "initial") + skillBonus(player, 'startMana');   // + compétence « Qì de réserve »
         if(initialBonus > 0) {
             addManaForColor(player, color, initialBonus, { applyGainBonus: false });
         }

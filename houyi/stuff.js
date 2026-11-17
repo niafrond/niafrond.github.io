@@ -10,6 +10,7 @@
 // Le héros garde `stuffOwned` (ids possédés) et `stuff` ({ head, neck, wrist, ring } : id porté ou null).
 
 import { describeManaMax } from './manaGear.js';
+import { skillBonus } from './skills.js';
 import { describeEffects } from './gearEffects.js';   // cycle assumé (gearEffects importe stuff.js) : utilisé seulement à l'exécution   // cycle assumé : utilisé seulement à l'exécution
 
 const allColors = n => ({ red: n, blue: n, green: n, yellow: n, purple: n });
@@ -280,7 +281,7 @@ export const isVenomous = templateId => VENOMOUS_TEMPLATES.includes(templateId);
 
 // Dégâts de poison par tour après résistance (0 si le stuff immunise).
 export function poisonDamagePerTurn(hero, base) {
-    const resist = stuffTotals(hero).poisonResist;
+    const resist = Math.min(100, stuffTotals(hero).poisonResist + skillBonus(hero, 'poisonResist'));
     return Math.max(0, Math.round(base * (1 - resist / 100)));
 }
 

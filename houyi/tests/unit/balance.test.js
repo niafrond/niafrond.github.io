@@ -163,7 +163,7 @@ describe('arcs à deux mains lourds', () => {
     });
     test('beaucoup plus puissants que les arcs à une main du même niveau', () => {
         heavy.forEach(w => {
-            const oneHand = allWeapons.filter(o => !o.twoHanded && o.minLevel <= w.minLevel).map(o => o.damage);
+            const oneHand = allWeapons.filter(o => !o.twoHanded && !o.fusionOnly && o.minLevel <= w.minLevel).map(o => o.damage);
             expect(w.damage).toBeGreaterThanOrEqual(Math.max(...oneHand) * 1.25);
             expect((w.damage + 15) / w.actionPoints).toBeGreaterThanOrEqual(10.5 + 0.30 * w.minLevel);
         });

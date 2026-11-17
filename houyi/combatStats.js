@@ -7,6 +7,7 @@
 
 import { getAttributePoints } from "./attributes.js";
 import { stuffTotals } from "./stuff.js";
+import { skillBonus } from "./skills.js";
 
 export const STAT_CHANCE_CAP = 98;
 // La chance de BLOQUER est plafonnée plus bas que celle de critique : avec 98 %, un héros à Déf. 95 bloquait 95 % des coups (dont 40 % en blocage total,
@@ -137,11 +138,11 @@ export function describeStatBuff({ attack = 0, defense = 0, turns = 1 } = {}) {
 
 // Valeurs affichées (non plafonnées).
 export function rawAttack(entity) {
-    return Math.max(0, Math.max(0, Math.floor(entity?.attack || 0)) + gearBonus(entity, 'attack') + statBuffAmount(entity, 'attack')
+    return Math.max(0, Math.max(0, Math.floor(entity?.attack || 0)) + gearBonus(entity, 'attack') + statBuffAmount(entity, 'attack') + skillBonus(entity, 'attack')
         + Math.max(0, Math.floor(entity?.critChance || 0)) + Math.max(0, Math.floor(entity?.tempCritChance || 0)));
 }
 export function rawDefense(entity) {
-    return Math.max(0, Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense'));
+    return Math.max(0, Math.max(0, Math.floor(entity?.defense || 0)) + gearBonus(entity, 'defense') + statBuffAmount(entity, 'defense') + skillBonus(entity, 'defense'));
 }
 
 // Attaque affichée : attaque brute moins le malus d'affaiblissement en cours (Sceau d'Affaiblissement).

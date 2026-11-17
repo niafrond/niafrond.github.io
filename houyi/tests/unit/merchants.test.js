@@ -179,7 +179,7 @@ describe('revente aux marchands', () => {
     test('la fenêtre propose Acheter / Vendre', () => {
         const src = readFileSync(new URL('../../shop.js', import.meta.url), 'utf8');
         expect(src).toContain('data-sell');
-        expect(src).toContain('data-mode="sell"');
+        expect(src).toContain("'sell', 'Vendre'");
     });
 
     test('les objets spéciaux de quête (exploration.questItems) ne sont jamais proposés à la vente', () => {

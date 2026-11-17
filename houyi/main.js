@@ -6,6 +6,7 @@ import { grantStuffPiece, grantQuestRelic, grantUltimate, updateStats, createSpe
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
+import "./skillsView.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
 import { weaknessLabel } from "./terrain.js";

@@ -89,7 +89,7 @@ export function rollChestLoot(chest, screen = {}, owner = {}, rng = Math.random)
         if (rng() >= chance) return;
         const rarity = pickWeighted(cfg.rarity, rng);
         if (rng() < cfg.weaponChance) {
-            const weapons = allWeapons.filter(w => w.minLevel <= maxLevel && !ownedWeapons.has(w.id));
+            const weapons = allWeapons.filter(w => !w.fusionOnly && w.minLevel <= maxLevel && !ownedWeapons.has(w.id));
             const weapon = pickByRarity(weapons, weaponRarity, rarity, rng);
             if (weapon) {
                 ownedWeapons.add(weapon.id);

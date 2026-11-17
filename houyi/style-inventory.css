@@ -371,3 +371,21 @@ body.rt.dark-mode .attr-description li.attr-change, body.rt.dark-mode .attr-poin
 body.casual-mode .tab-btn[onclick*="'weapons'"],
 body.casual-mode .tab-btn[onclick*="'stuff'"],
 body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
+
+/* ── Onglet Compétences ── */
+.skills-intro, .skills-cap { margin: 0 0 8px; }
+.skill-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 8px; margin: 4px 0; border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
+.skill-row.learned { background: rgba(60, 120, 80, 0.3); }
+.skill-row.active { outline: 1px solid #b58cff; }
+.skill-main { flex: 1 1 auto; min-width: 0; }
+.skill-main progress { width: 100%; height: 6px; }
+.skill-desc { font-size: 0.85em; opacity: 0.85; }
+.skill-teacher h4 { margin: 10px 0 2px; }
+.transe-list { margin: 4px 0 8px 18px; padding: 0; }
+
+/* ── Forge : fusion d'armes ── */
+.fuse-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 8px; margin: 4px 0; border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
+.fuse-row.ready { outline: 1px solid #d6a03a; }
+.fuse-main { flex: 1 1 auto; min-width: 0; }
+.fuse-recipe { font-size: 0.85em; opacity: 0.85; }
+.fuse-reason { font-size: 0.8em; color: #e0a0a0; }

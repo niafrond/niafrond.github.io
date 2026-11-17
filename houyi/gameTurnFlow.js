@@ -4,7 +4,7 @@ import { boardSize } from './constants.js';
 import { tutorialCallbacks } from './tutorial.js';
 import { getAvailableWeapons } from './weapons.js';
 import { enemyMakeMove, enemyMakeRandomMove, foxMakeRandomMove, restartSuggestionTimer, getTrappedCells, setTrappedCells, advanceBiomeTurn, announceBurningCells, convertRandomColorToArrows, checkMatches, scrambleTiles, board } from './board.js';
-import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE } from './stuff.js';
+import { stuffTotals, inflictPoison, isVenomous, POISON_CHANCE, wornStuff } from './stuff.js';
 import { rollEnemyStuffDrops } from './enemyStuff.js';
 import { recordVictory } from './bossTips.js';
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from './duel.js';
@@ -21,7 +21,9 @@ import { rollCompanionPowers } from './companionPowers.js';
 import { MANA_COLOR_LABELS } from './attributes.js';
 import { calculateXPGain } from './experience.js';
 import { playSfx } from './sound.js';
-import { RAGE_MAX, addRage } from './ultimates.js';
+import { RAGE_MAX, addRage, resetRage } from './ultimates.js';
+import { tickTranse } from './transe.js';
+import { awardAp, apForVictory, teachers, skillBonus } from './skills.js';
 import { resolveStrike, blockLabel, tickStatBuffs, ancientArrowGain } from './combatStats.js';
 import { animationFactor } from './gameOptions.js';
 import { flyHeal } from './manaFlight.js';
@@ -32,7 +34,7 @@ import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimatio
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn } from './game.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, syncTranse, resetTranseTurn, applyTranseClassEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -61,6 +63,7 @@ function applyCompanionPowers(){
             announce(`${enemy.name} perd son tour`);
         } else if(power.kind === 'rage'){
             const gained = addRage(player, Math.floor(RAGE_MAX * amount));
+            syncTranse();
             log(`${power.name} : +${gained} rage.`);
             announce(`+${gained} rage`);
         } else if(power.kind === 'arrows'){
@@ -90,12 +93,23 @@ function playCompanionAnnouncements(list, done){
     next(0);
 }
 
+// Fin d'un tour du joueur : la Transe décompte (la jauge retombe à 0 quand elle se termine) et la liste des classes déjà appliquées se vide.
+function endOfPlayerTurnTranse(){
+    resetTranseTurn();
+    if(tickTranse(player)){
+        resetRage(player);
+        log('La Transe s\'achève.');
+        updateStats();
+    }
+}
+
 export function finishPlayerTurn(){
     turnFlags.foxPlaying = false;
     if(gameState.combatState !== 'active'){
         return;
     }
     recordPlayerTurn();
+    endOfPlayerTurnTranse();
 
     // Vérifier si le joueur est mort
     if(player.hp<=0){
@@ -567,6 +581,13 @@ export function finishEnemyTurn(){
             if(player.hp <= 0){ handlePlayerDeath(); return; }
         }
         applyAncientTurnPowers();
+        const skillRegen = skillBonus(player, 'regenPct');   // compétence de soutien « Souffle régénérant »
+        if(skillRegen > 0 && player.hp > 0){
+            const regen = Math.max(1, Math.round(player.maxHp * skillRegen / 100));
+            healEntity(player, regen);
+            flyHeal(true, regen);
+            log(`Souffle régénérant : +${regen} PV.`);
+        }
         tickStatBuffs(player).forEach(stat => log(`Le bonus temporaire ${stat === 'attack' ? 'd\'attaque' : 'de défense'} se dissipe.`));
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             healEntity(player, player.regenEffect.hp);
@@ -679,6 +700,7 @@ export function finishEnemyTurn(){
         turnFlags.foxActed = false;
         turnFlags.companionsActed = false;
         setCurrentTurn('player');
+        applyTranseClassEffect();   // Transe en cours : l'effet de la classe du tour s'applique dès le début du tour
         updateStats();
         saveUpdate();
         updateStats(); // Pour mettre à jour le liseré
@@ -705,6 +727,12 @@ export function handleEnemyDefeated(){
     const xpGain = calculateXPGain(enemy, player.level);
     queueCombatXP(xpGain);
     log(`Vous gagnez ${xpGain} XP !`);
+
+    // PA : l'équipement porté enseigne des compétences (skills.js) ; chaque victoire les fait progresser.
+    const apGain = apForVictory(enemy.level);
+    const apResult = awardAp(player, teachers(player, wornStuff(player)), apGain);
+    if(apResult.gained.length) log(`Vous gagnez ${apGain} PA : ${apResult.gained.map(g => g.skill.name).join(', ')}.`);
+    apResult.learned.forEach(skill => { log(`✦ Compétence apprise : ${skill.name} !`); combatRewards.skills.push(skill.name); });
 
     // Pièces d'or : base liée au niveau de l'ennemi + part aléatoire + multiplicateur du profil de l'ennemi
     const enemyLvl = enemy.level || player.level || 1;

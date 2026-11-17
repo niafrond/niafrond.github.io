@@ -62,7 +62,7 @@ export function rollOverleveledLoot(gap, owner = {}, rng = Math.random) {
     for (let n = 0; n < tier.rolls; n++) {
         const rarity = pickWeighted(tier.rarity, rng);
         if (rng() < 0.5) {
-            const weapon = pick(allWeapons.filter(w => w.minLevel <= level && !ownedWeapons.has(w.id)), weaponRarity, rarity, level, rng);
+            const weapon = pick(allWeapons.filter(w => !w.fusionOnly && w.minLevel <= level && !ownedWeapons.has(w.id)), weaponRarity, rarity, level, rng);
             if (weapon) {
                 ownedWeapons.add(weapon.id);
                 loot.push({ kind: 'weapon', rarity: weaponRarity(weapon), weapon });

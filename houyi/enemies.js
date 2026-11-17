@@ -347,7 +347,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     // Les armes de l'ennemi : tirées parmi la moitié la plus puissante de celles de son niveau (un boss : les deux plus puissantes).
     let enemyWeapon = null;
     if(template.hasWeapon !== false){
-        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel && !w.playerOnly)
+        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel && !w.playerOnly && !w.fusionOnly)
             .sort((a, b) => b.damage - a.damage);
         if(availableWeapons.length > 0){
             const poolSize = boss ? Math.min(2, availableWeapons.length) : Math.max(1, Math.ceil(availableWeapons.length / 2));

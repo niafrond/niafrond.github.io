@@ -1,6 +1,9 @@
-// Sorts ultimes (« rage ») : une jauge se charge quand le joueur subit des dégâts ; pleine, elle permet de lancer un
-// ultime (2 par classe, hors limite des 4 sorts équipés). Les ultimes coûtent beaucoup de qì.
+// Sorts ultimes : la jauge de Transe (anciennement « rage ») se charge quand le joueur subit des dégâts ; pleine, elle déclenche la Transe
+// (transe.js), pendant laquelle un ultime peut être lancé SI la classe choisie pour le tour est le sorcier. Les ultimes (ceux du sorcier,
+// hors limite des 4 sorts équipés) coûtent beaucoup de qì.
+export const ULTIMATE_CLASS = 'sorcerer';
 import { ultimateSpells } from './spells.js';
+import { startTranse, endTranse } from './transe.js';
 
 export const RAGE_MAX = 100;
 // Perdre cette part des PV max remplit la jauge (150 % : la moitié des PV max suffit à la remplir ×0,75).
@@ -30,7 +33,7 @@ export function normalizeUnlockedUltimates(ids){
 
 export const isUltimateUnlocked = (entity, spell) => isQuestUltimate(spell)
     ? normalizeUnlockedUltimates(entity?.unlockedUltimates).includes(spell.id)
-    : spell?.class === entity?.class;
+    : spell?.class === ULTIMATE_CLASS;
 
 /** Débloque un ultime de légende pour `entity` ; retourne false s'il est inconnu, n'est pas de légende ou était déjà débloqué. */
 export function unlockUltimate(entity, id){
@@ -50,7 +53,7 @@ export function getSelectableUltimates(entity){
     if(entity?.cheatAllUltimates === true) return [...ultimateSpells];   // menu secret : tous les ultimes, toutes classes et niveaux
     const level = entity?.level || 1;
     const legends = getQuestUltimates().filter(spell => isUltimateUnlocked(entity, spell));
-    return [...getUltimatesForClass(entity?.class), ...legends].filter(spell => level >= (spell.minLevel || 1));
+    return [...getUltimatesForClass(ULTIMATE_CLASS), ...legends].filter(spell => level >= (spell.minLevel || 1));
 }
 
 // Le seul ultime accessible en combat : celui choisi dans l'onglet Sorts, à défaut le premier débloqué.
@@ -71,11 +74,12 @@ export function addRage(entity, amount){
     if(!entity) return 0;
     const before = Math.max(0, Math.min(RAGE_MAX, Math.floor(entity.rage || 0)));
     entity.rage = Math.min(RAGE_MAX, before + Math.max(0, Math.floor(amount || 0)));
+    if(entity.rage >= RAGE_MAX && before < RAGE_MAX && startTranse(entity)) entity.transeStarted = true;   // jauge pleine : la Transe se déclenche (annoncée par game.js)
     return entity.rage - before;
 }
 
 export function resetRage(entity){
-    if(entity) entity.rage = 0;
+    if(entity){ entity.rage = 0; endTranse(entity); }
 }
 
 export function isRageFull(entity){

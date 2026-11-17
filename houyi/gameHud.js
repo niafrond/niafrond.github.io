@@ -18,8 +18,9 @@ import { bindStatusBadges, bindTooltip, ensureSpellTooltip, placeTooltip, showSp
 import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
-import { createSpellButtons } from './gameSpellList.js';
-import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+import { createSpellButtons, getTurnClass } from './gameSpellList.js';
+import { isInTranse, classAllowsUltimate } from './transe.js';
+import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
@@ -185,10 +186,12 @@ export function updateStats(){
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
     const equippedUltimate = getEquippedUltimate(player);
-    const ultimateReady = !!equippedUltimate && isRageFull(player) && gameState.combatState === 'active';
+    // Transe : la jauge est toujours visible ; l'ultime se lance pendant la Transe, si la classe choisie pour le tour est le sorcier.
+    const inTranse = isInTranse(player);
+    const ultimateReady = !!equippedUltimate && inTranse && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
-    document.querySelector('.stats-container')?.classList.toggle('has-rage', !!equippedUltimate);
+    document.querySelector('.stats-container')?.classList.toggle('has-rage', true);
     // Affichage de la classe si définie
     Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
@@ -200,13 +203,13 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}${playerShield.text}</span>
                 </div>
             </div>
-            ${equippedUltimate ? `
+            ${true ? `
             <div class="stat rage-stat row-rage">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
+                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : `RAGE ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : Math.floor(player.rage || 0)}</span>
+                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : inTranse ? 'TRANSE' : `TRANSE ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
                 </div>
-                ${ultimateManaBarHtml(player, equippedUltimate)}
+                ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
             </div>
             ` : ''}
             <div class="stat stat-row row-stats"><span class="level-pill" title="Niveau ${player.level}">${player.level}</span><span class="stat-chip" title="Attaque"><strong>Att.</strong> ${statValueHtml(player, 'attack')}</span><span class="stat-chip" title="Défense"><strong>Déf.</strong> ${statValueHtml(player, 'defense')}</span></div>
@@ -221,7 +224,7 @@ export function updateStats(){
                 </div>
             </div>`;
         
-        if(equippedUltimate){
+        {
             const rageBar = playerDiv.querySelector('.rage-bar-container');
             if(ultimateReady){
                 rageBar.onclick = () => castUltimate(equippedUltimate.id);
@@ -233,7 +236,7 @@ export function updateStats(){
                 };
             }
             // Fiche (nom, qì requis, effet) : survol, ou appui long au doigt (qui ne lance pas l'ultime).
-            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = getUltimateTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
+            bindTooltip(rageBar, () => { const t = ensureSpellTooltip(); t.innerHTML = ultimateReady ? getUltimateTooltipHtml(player, equippedUltimate) : transeTooltipHtml(player, equippedUltimate); t.classList.add('visible'); placeTooltip(t, rageBar, 260); }, () => hideSpellTooltip());
         }
 
         // Animer les compteurs si les valeurs ont changé

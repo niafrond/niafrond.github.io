@@ -6,6 +6,7 @@ import { getItemIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
 import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus, duplicateEntries, sellDuplicates } from './merchants.js';
+import { fusionOffers, fuseWeapons } from './fusion.js';
 import { describeManaMax } from './manaGear.js';
 import { describeEffects } from './gearEffects.js';
 import { BIOME_LABELS } from './weapons.js';
@@ -140,13 +141,33 @@ function surplusPopup(pending) {
 export function renderMerchant(npc, card, hooks = {}) {
     let mode = 'buy';
     let previewKey = null;
+    // Onglets : les forgerons (npc.forge) proposent en plus la fusion d'armes (fusion.js).
+    const tabs = active => `<div class="carnet-tabs">${[['buy', 'Acheter'], ['sell', 'Vendre'], ...(npc.forge ? [['fuse', 'Fusionner']] : [])]
+        .map(([m, label]) => `<button type="button" class="carnet-tab${m === active ? ' on' : ''}" data-mode="${m}">${label}</button>`).join('')}</div>`;
+    const fuseRow = o => `<div class="fuse-row${o.ready ? ' ready' : ''}">
+            <div class="fuse-main"><strong>${escapeHtml(o.result.name)}</strong> <span class="rc-chip">${o.result.damage} dégâts · ${o.result.actionPoints} flèches</span>
+            <div class="fuse-recipe">${escapeHtml(o.a.name)} + ${escapeHtml(o.b.name)}</div>
+            ${o.reason ? `<div class="fuse-reason">${escapeHtml(o.reason)}</div>` : ''}</div>
+            <button type="button" class="rc-btn" data-fuse="${o.fusion.id}"${o.ready ? '' : ' disabled'}>${svgIcon('coin')} ${o.fee}</button>
+        </div>`;
+    const drawFuse = (note = '') => {
+        const offers = fusionOffers(player);
+        card.innerHTML = `
+            <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
+            ${tabs('fuse')}
+            <p class="shop-subtitle">Deux armes fondues en une seule, plus puissante. Les armes en main ne peuvent pas être fondues.</p>
+            <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
+            ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
+            ${offers.map(fuseRow).join('')}
+            <button type="button" class="primary merchant-close">Fermer</button>`;
+    };
     let pending = gameState.combatState === 'active' ? [] : surplusEntries(player).map(e => e.id);
     const drawSell = (note = '') => {
         const entries = sellableEntries(player);
         const dupes = gameState.combatState === 'active' ? [] : duplicateEntries(player);
         card.innerHTML = `
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
-            <div class="carnet-tabs"><button type="button" class="carnet-tab" data-mode="buy">Acheter</button><button type="button" class="carnet-tab on" data-mode="sell">Vendre</button></div>
+            ${tabs('sell')}
             <p class="shop-subtitle">Le matériel activé reste dans votre sac.</p>
             <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
@@ -158,6 +179,7 @@ export function renderMerchant(npc, card, hooks = {}) {
     };
     const draw = (note = '') => {
         if (mode === 'sell') { drawSell(note); return; }
+        if (mode === 'fuse' && npc.forge) { drawFuse(note); return; }
         const offers = availableOffers(npc.id, player, hooks.ngPlus || 0);
         const sections = Object.keys(SECTION_TITLES).map(section => {
             const rows = offers.filter(o => o.section === section);
@@ -166,7 +188,7 @@ export function renderMerchant(npc, card, hooks = {}) {
         }).join('');
         card.innerHTML = `
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
-            <div class="carnet-tabs"><button type="button" class="carnet-tab on" data-mode="buy">Acheter</button><button type="button" class="carnet-tab" data-mode="sell">Vendre</button></div>
+            ${tabs('buy')}
             <p class="shop-subtitle">${escapeHtml(npc.title || 'Marchand')}</p>
             <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
@@ -215,6 +237,14 @@ export function renderMerchant(npc, card, hooks = {}) {
             if (gameState.combatState === 'active') { draw('La boutique est inaccessible pendant le combat !'); return; }
             const res = sellDuplicates(player);
             if (res.ok) { pending = []; refresh(); log(res.message); }
+            draw(res.message);
+            return;
+        }
+        const fuseBtn = ev.target.closest('[data-fuse]');
+        if (fuseBtn) {
+            if (gameState.combatState === 'active') { draw('La boutique est inaccessible pendant le combat !'); return; }
+            const res = fuseWeapons(player, fuseBtn.dataset.fuse);
+            if (res.ok) { updateAvailableWeapons(); createWeaponButton?.(); saveUpdate(); log(res.message); }
             draw(res.message);
             return;
         }
