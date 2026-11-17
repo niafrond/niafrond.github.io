@@ -2,7 +2,7 @@
 import { healEntity, inflictTurnLoss } from './alterations.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain, flyHeal } from './manaFlight.js';
-import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
+import { player, enemy, currentTurn, gameState, log, saveUpdate, showCombatAnimation, applyDamage, lastSpellDamage, addBonusTurn } from './game.js';
 import { board, renderBoard, setBoardTargetingMode, checkMatches, flashTiles } from './board.js';
 import { colors, boardSize } from './constants.js';
 import { stackStatusEffect, addStatBuff, resolveStrike } from './combatStats.js';
@@ -80,7 +80,7 @@ function randomPicks(kind, count) {
 function pickLines(spell, plan) {
     const rowsWanted = plan.filter(k => k === 'row').length;
     const colsWanted = plan.filter(k => k === 'col').length;
-    if(currentTurn === 'enemy' || !document.getElementById('board')) {
+    if((gameState.casterOverride ? gameState.casterOverride === 'enemy' : currentTurn === 'enemy') || !document.getElementById('board')) {
         return Promise.resolve([...randomPicks('row', rowsWanted), ...randomPicks('col', colsWanted)]);
     }
     return new Promise(resolve => {
@@ -118,7 +118,7 @@ function pickLines(spell, plan) {
 const picksToIndices = picks => picks.flatMap(p => (p.kind === 'row' ? rowIndices(p.n) : colIndices(p.n)));
 
 export async function applySweepLines(spell, shape) {
-    if(currentTurn === 'enemy' || !document.getElementById('board')) {   // l'ennemi ne vise pas : ligne, colonne ou centre de croix tirés au hasard
+    if((gameState.casterOverride ? gameState.casterOverride === 'enemy' : currentTurn === 'enemy') || !document.getElementById('board')) {   // l'ennemi ne vise pas : ligne, colonne ou centre de croix tirés au hasard
         const index = Math.floor(Math.random() * board.length);
         const row = Math.floor(index / boardSize);
         const col = index % boardSize;

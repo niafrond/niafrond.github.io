@@ -12,14 +12,14 @@ const TOKEN = { red: 'A', blue: 'B', green: 'C', yellow: 'D', purple: 'E' };
 const PLAN = [   // numéro d'étape du scénario (tutorial.js) et alignement attendu
     { id: 1, want: { type: 'color', len: 3, color: 'red' } },
     { id: 2, want: { type: 'color', len: 3, color: 'blue' } },
-    { id: 3, want: { type: 'skull', len: 3 } },
-    { id: 4, want: { type: 'skull', len: 3 } },
-    { id: 5, want: { type: 'color', len: 4, color: 'red' } },
-    { id: 8, want: { type: 'combat', len: 4 } },
-    { id: 10, want: { type: 'color', len: 3, color: 'green' } },
-    { id: 11, want: { type: 'skull', len: 5 } },
-    { id: 12, want: { type: 'color', len: 3, color: 'red', joker: true } },
-    { id: 13, want: { type: 'color', len: 3, color: 'blue' } },
+    { id: 3, want: { type: 'color', len: 4, color: 'red' } },
+    { id: 4, want: { type: 'color', len: 5, color: 'red' } },
+    { id: 5, want: { type: 'color', len: 3, color: 'red', joker: true } },
+    { id: 6, want: { type: 'color', len: 3, color: 'blue' } },
+    { id: 9, want: { type: 'skull', len: 3 } },
+    { id: 10, want: { type: 'skull', len: 3 } },
+    { id: 11, want: { type: 'combat', len: 4 } },
+    { id: 13, want: { type: 'color', len: 3, color: 'green' } },
     { id: 14, want: { type: 'skull', len: 3 } },
 ];
 
@@ -29,15 +29,15 @@ function rng(seed) {
     return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-// Zone réservée (rangées 5 à 7, colonnes 0 à 4) : le coup des 5 crânes et celui du joker y sont inscrits dès le départ ; les étapes
-// précédentes n'y touchent pas (aucun échange ni alignement dans la zone), donc rien ne bouge là-dedans avant l'étape 11.
+// Zone réservée (rangées 5 à 7, colonnes 0 à 4) : le coup des 5 gâteaux rouges et celui du joker y sont inscrits dès le départ ; les étapes
+// précédentes n'y touchent pas (aucun échange ni alignement dans la zone), donc rien ne bouge là-dedans avant l'étape 4.
 const ZONE = new Set();
 for (let r = 5; r < SIZE; r++) for (let c = 0; c < 5; c++) ZONE.add(r * SIZE + c);
 const at = (r, c) => r * SIZE + c;
-function reserve(board) {   // 5 crânes sur la rangée 6, joker en (6,2) ensuite aligné avec deux gâteaux rouges
+function reserve(board) {   // 5 gâteaux rouges sur la rangée 6, joker en (6,2) ensuite aligné avec deux gâteaux rouges
     const b = [...board];
-    ['skull', 'skull', 'yellow', 'skull', 'skull'].forEach((t, c) => { b[at(6, c)] = t; });
-    b[at(7, 2)] = 'skull';           // voisine qui complète les 5 crânes
+    ['red', 'red', 'yellow', 'red', 'red'].forEach((t, c) => { b[at(6, c)] = t; });
+    b[at(7, 2)] = 'red';             // voisine qui complète les 5 gâteaux rouges
     b[at(5, 3)] = 'red';             // deviendra la case (6,3) à droite du joker
     b[at(5, 4)] = 'purple';          // deviendra la case vide (6,4)
     b[at(7, 4)] = 'red';             // voisine rouge qui complète l'alignement du joker
@@ -166,7 +166,7 @@ function build(seed) {
     let start = null;
     for (let n = 0; n < 20000 && !start; n++) {
         const b = reserve(Array.from({ length: SIZE * SIZE }, () => randomTile(rand, 'red')));
-        if (collectMatches(b).length === 0 && movesFor(b, PLAN[0].want, true).length && movesFor(b, { type: 'skull', len: 5 }).length) start = b;
+        if (collectMatches(b).length === 0 && movesFor(b, PLAN[0].want, true).length && movesFor(b, { type: 'color', len: 5, color: 'red' }).length) start = b;
     }
     if (!start) return null;
     let nodes = 0, maxDepth = -1;
@@ -177,11 +177,11 @@ function build(seed) {
         if (k > maxDepth) { maxDepth = k; if (process.env.DEBUG) console.error('seed', seed, 'profondeur', k, 'noeuds', nodes, Date.now() - t0, 'ms'); }
         const { id, want } = PLAN[k];
         const next = PLAN[k + 1]?.want;
-        for (const move of movesFor(board, want, k < 7)) {
+        for (const move of movesFor(board, want, k < 3)) {
             const { out, slots } = resolve(board, move);
             for (let attempt = 0; attempt < 6; attempt++) {
-                const drops = fillHoles(out, slots, next, rand, k + 1 < 7);
-                if (process.env.DEBUG && k === 7) console.error('  S11 coup', move.from, move.to, 'trous', slots.length, 'joker', out.indexOf('joker'), drops ? 'OK' : 'ECHEC');
+                const drops = fillHoles(out, slots, next, rand, k + 1 < 3);
+                if (process.env.DEBUG && k === 3) console.error('  S4 coup', move.from, move.to, 'trous', slots.length, 'joker', out.indexOf('joker'), drops ? 'OK' : 'ECHEC');
                 if (!drops) break;
                 const settled = [...out];
                 slots.forEach((idx, i) => { settled[idx] = drops[i]; });

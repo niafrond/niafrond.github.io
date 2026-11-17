@@ -1,6 +1,8 @@
 // Sorts disponibles selon le niveau (plafond, liste débloquée), boutons de sorts, déblocage par le menu secret.
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
+import { actionGuard } from './actionGuard.js';
+import { isBoardResolving } from './board.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
 import { spellCooldownLeft } from './spellCooldown.js';
@@ -12,10 +14,10 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
-import { readyClasses, classProgress, classChargeInfo } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
-import { isInTranse, describeTranse } from './transe.js';
-import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
+import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
+import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -114,17 +116,156 @@ const combatBiome = () => (gameState.combatState === 'active' ? enemy?.biome || 
 /** Classe du tour : celle choisie si elle est utilisable (classe de combat, biome non bridé, entraînement), sinon la classe du héros, sinon la première utilisable. */
 export function getTurnClass(){
     const usable = usableNow();
-    const ready = chargeEnabled() ? readyClasses(gameState.charge, usable) : usable;
-    const pool = ready.length ? ready : usable;   // classes chargées d'abord ; aucune n'est prête hors de leur tour : on garde la liste complète
-    if(gameState.turnClass && pool.includes(gameState.turnClass)) return gameState.turnClass;
-    if(pool.includes(player.class)) return player.class;
-    return pool[0] || player.class || null;
+    if(gameState.turnClass && usable.includes(gameState.turnClass)) return gameState.turnClass;
+    if(usable.includes(player.class)) return player.class;
+    return usable[0] || player.class || null;
 }
 
 /** Classes de combat utilisables maintenant (biome, entraînement). */
 export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass);
-/** Le temps de chargement (classCharge.js) joue en combat, sauf dans le duel-tutoriel (déroulé scripté). */
-export const chargeEnabled = () => gameState.combatState === 'active' && !enemy?.isTutorialEnemy;
+
+// ── Temps de chargement des actions ─────────────────────────────────────────
+// Les actions (sort, compétence de classe, objet, arme) sont INDÉPENDANTES du plateau : elles ne prennent pas le tour, partent dès que leur classe
+// est chargée (file commune joueur / ennemi, ordre jamais détaillé), même en plein tour de plateau adverse ; seule la pause d'inactivité du plateau
+// (5 s sans combo) les retient. Exceptions liées au plateau : les sorts qui modifient la grille et les ultimes attendent leur tour de plateau.
+const TUTORIAL_CHARGE_FACTOR = 0.2;   // tutoriel : chargement 5 fois plus court (la notion est montrée sans bloquer le déroulé)
+const ACTION_GAP_MS = 900;            // durée pendant laquelle une action « est en cours » : la suivante de la file attend la fin de l'animation
+export const chargeFactor = () => (enemy?.isTutorialEnemy ? TUTORIAL_CHARGE_FACTOR : 1);
+export const chargeEnabled = () => gameState.combatState === 'active';
+/** Actions indépendantes du plateau ? Tout combat, sauf le duel-tutoriel (déroulé scripté) et les duels (tours imposés). */
+export const decoupled = () => chargeEnabled() && !enemy?.isTutorialEnemy && !enemy?.duel;
+
+const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (typeof document !== 'undefined' && !!document.querySelector('.attack-overlay'));
+const markActionBusy = () => { gameState.actionBusyUntil = Date.now() + ACTION_GAP_MS; };
+// Une action choisie est déjà payée et sa classe déjà consommée : elle ne dépend plus que du passage dans la file (une à la fois) et de la pause d'inactivité.
+// Les sorts qui modifient la grille et les ultimes (`turnBound`) attendent la fin du tour de plateau en cours, plateau au repos, juste avant le suivant.
+const canRunNow = it => !it.turnBound;   // les sorts qui modifient la grille ne partent pas ici : ils attendent la fin du tour de plateau (runBoundaryAction)
+const readyAhead = () => gameState.actionQueue.some(canRunNow);
+
+/** La classe du tour est-elle chargée (barre pleine) ? Condition pour CHOISIR une action ; toujours vrai hors combat indépendant du plateau. */
+export function classCanAct(){
+    if(!decoupled()) return true;
+    const id = getTurnClass();
+    return !id || isClassReady(gameState.charge, id);
+}
+
+/**
+ * Appelée par chaque action du joueur (arme, sort, compétence, objet, potion) une fois qu'elle est validée ET payée : la classe est consommée tout de suite
+ * (sa barre repart de zéro), puis `effect` part immédiatement si aucune action ne passe devant ou n'est en cours, sinon il entre dans la file commune
+ * (plusieurs actions de la même classe peuvent y attendre). Renvoie true si l'action est prise en charge ici, false si l'appelant doit la jouer lui-même
+ * (tutoriel, duel : déroulé d'avant). `turnBound` : action qui modifie le plateau (attend le tour de plateau du joueur).
+ */
+export function chooseAction(effect, opts = {}){
+    if(!decoupled()){ spendActionCharge(); return false; }
+    const id = getTurnClass();
+    if(id) spendClass(gameState.charge, player, id, chargeFactor());
+    createSpellButtons();
+    dispatchAction('player', effect, !!opts.turnBound);
+    return true;
+}
+/** L'ennemi a choisi, payé et consommé sa barre : son effet part ou entre dans la même file. */
+export function chooseEnemyAction(effect, turnBound = false){
+    if(!decoupled()) return false;
+    spendEnemy(gameState.charge, enemy, 1);
+    dispatchAction('enemy', effect, turnBound);
+    return true;
+}
+function dispatchAction(owner, effect, turnBound){
+    const item = { owner, run: effect, turnBound, dueAt: gameState.charge.now };
+    if(!turnBound && !actionBusy() && !readyAhead()){ markActionBusy(); effect(); return; }
+    enqueueAction(gameState.actionQueue, item);
+    renderActionBeads();
+}
+
+/**
+ * Fin d'un tour de plateau, plateau au repos, juste avant le suivant : si un sort qui modifie la grille (ou un ultime) attend, il part maintenant, du camp qui
+ * l'a choisi ; son propre déroulé (résolution des combos) rappellera la fin de tour. Renvoie true si une action est partie (l'appelant s'arrête là).
+ * `resume` relance la fin de tour si l'action ne modifie finalement rien (garde-fou de 4 s).
+ */
+export function runBoundaryAction(resume){
+    gameState.boundaryResume = null;
+    if(!decoupled()) return false;
+    const item = takeNextDue(gameState.actionQueue, it => it.turnBound);
+    if(!item) return false;
+    markActionBusy();
+    gameState.boundaryResume = resume;
+    const token = (gameState.boundaryToken = (gameState.boundaryToken || 0) + 1);
+    renderActionBeads();
+    item.run();
+    setTimeout(() => {   // l'action n'a rien relancé (aucun changement) : on poursuit la fin de tour
+        if(gameState.boundaryToken === token && gameState.boundaryResume && gameState.combatState === 'active' && !isBoardResolving()) resumeAfterBoundary();
+    }, 4000);
+    return true;
+}
+/** Une action de plateau ne relance pas la fin de tour d'elle-même (échec, aucun changement) : on la poursuit. */
+export function resumeAfterBoundary(){
+    const resume = gameState.boundaryResume;
+    gameState.boundaryResume = null;
+    if(resume) resume();
+}
+/** Fait partir la prochaine action de la file, si l'une peut partir (appelé en continu par le ticker de chargement). */
+export function pumpActions(){
+    if(!decoupled() || actionBusy()) return;
+    const item = takeNextDue(gameState.actionQueue, canRunNow);
+    if(!item) return;
+    markActionBusy();
+    item.run();
+    renderActionBeads();
+}
+/** Une action vient d'être faite avec la classe du tour : elle se recharge. */
+export function spendActionCharge(){
+    if(!chargeEnabled()) return;
+    const id = getTurnClass();
+    if(id) spendClass(gameState.charge, player, id, chargeFactor());
+    createSpellButtons();
+}
+/** L'ennemi est-il chargé ? (toujours oui dans le tutoriel, dont les coups sont imposés) */
+export const enemyActionReady = () => !chargeEnabled() || enemy?.isTutorialEnemy || isEnemyReady(gameState.charge);
+export function spendEnemyAction(){
+    if(chargeEnabled() && !enemy?.isTutorialEnemy) spendEnemy(gameState.charge, enemy, 1);
+}
+
+/** Ligne de perles en haut du combat : une perle verte par action du joueur à venir, une rouge par action ennemie, dans l'ordre de départ. */
+export function renderActionBeads(){
+    const box = typeof document !== 'undefined' ? document.getElementById('action-beads') : null;
+    if(!box) return;
+    const on = chargeEnabled() && !enemy?.isTutorialEnemy;
+    box.hidden = !on;
+    if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
+    const beads = upcomingBeads(gameState.charge, gameState.actionQueue, !!gameState.enemyPending).slice(0, 12);
+    const key = beads.join('');
+    if(key === _beadKey) return;   // rien n'a changé : pas de redessin
+    _beadKey = key;
+    box.innerHTML = beads.map(side => `<i class="bead bead-${side}"></i>`).join('');
+    box.setAttribute('aria-label', beads.length ? `${beads.length} action${beads.length > 1 ? 's' : ''} à venir` : 'Aucune action à venir');
+}
+let _beadKey = '';
+
+// Le temps de combat avance en temps réel, fenêtre visible ; quand une classe (ou l'ennemi) devient prête, boutons et barres se rafraîchissent.
+let _chargeLast = 0, _chargeKey = '';
+function chargeTicker(){
+    renderActionBeads();
+    const now = Date.now();
+    const dt = _chargeLast ? Math.min(1000, now - _chargeLast) : 0;
+    _chargeLast = now;
+    if(!chargeEnabled()){ if(typeof document !== 'undefined') document.body?.classList.remove('charge-paused'); return; }
+    if(typeof document !== 'undefined' && document.hidden) return;
+    // Tempo : plateau inactif depuis 5 s = chargements en pause (barres figées) ; ils reprennent au prochain combo du plateau.
+    const running = chargeRunning(now, actionGuard.lastComboAt());
+    if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
+    if(!running) return;
+    const heroSpeed = chargeSpeed(player), foeSpeed = chargeSpeed(enemy);
+    chargeTick(gameState.charge, dt, heroSpeed, foeSpeed);
+    pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
+    const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '') + `|${heroSpeed}`;   // la vitesse (altérations) redessine les barres
+    if(key !== _chargeKey){
+        _chargeKey = key;
+        createSpellButtons();
+        document.dispatchEvent(new Event('potions-changed'));   // « Objet » se réactive
+        document.dispatchEvent(new Event('charge-changed'));    // armes et objets : voir gameInventoryTabs.js
+    }
+}
+if(typeof setInterval === 'function' && typeof document !== 'undefined') setInterval(chargeTicker, 250);
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
 export function combatSpellList(){
@@ -140,6 +281,25 @@ export function combatSpellList(){
 }
 
 
+/** Bandeau de la Xiūxiān en cours : nom, effet exact et tours restants (au-dessus de la ligne de classes). */
+function renderXiuBanner(zone){
+    let banner = document.getElementById('xiu-banner');
+    if(!banner){
+        banner = document.createElement('div');
+        banner.id = 'xiu-banner';
+        banner.className = 'xiu-banner';
+        banner.setAttribute('role', 'status');
+        zone.parentElement.insertBefore(banner, zone);
+    }
+    const on = gameState.combatState === 'active' && isInTranse(player) && !!player.transeClass;
+    banner.hidden = !on;
+    if(!on){ banner.innerHTML = ''; return; }
+    const cls = player.transeClass, effect = transeEffectFor(cls);
+    const left = player.cheatMaxRage === true ? null : Math.max(1, Math.min(TRANSE_TURNS, Math.floor(player.transe || 0)));
+    banner.innerHTML = `<strong>Xiūxiān · ${CLASS_SHORT[cls] || cls}${effect.name ? ` : ${effect.name}` : ''}</strong>`
+        + `<span>${effect.text ? `Effet : ${effect.text}.` : ''}${left ? ` ${left} tour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}.` : ''}</span>`;
+}
+
 function renderClassPicker(container){
     let picker = document.getElementById('class-picker');
     if(!picker){
@@ -150,6 +310,7 @@ function renderClassPicker(container){
         const zone = document.getElementById('spells-container') || container.parentElement;
         zone.parentElement.insertBefore(picker, zone);
     }
+    renderXiuBanner(picker);
     const active = gameState.combatState === 'active';
     const mine = active && currentTurn === 'player';
     const current = getTurnClass();
@@ -160,12 +321,15 @@ function renderClassPicker(container){
     const forced = gameState.forcedClass;
     picker.innerHTML = loadout.map(id => {
         const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
-        const ready = !chargeEnabled() || readyClasses(gameState.charge, [id]).length > 0;   // dans le tutoriel, le chargement est montré mais n'impose rien
-        const prog = Math.round(classProgress(gameState.charge, player, id) * 100);
+        // Barre de chargement : se remplit en temps réel jusqu'à ce que la classe soit prête (animation CSS pour le temps restant).
+        const prog = Math.round(classProgress(gameState.charge, player, id, chargeFactor()) * 100);
+        const remaining = classRemainingMs(gameState.charge, id);
+        const speed = chargeSpeed(player);   // altérations : le chargement ralentit ou s'arrête
+        const animStyle = remaining > 0 ? `--from:${prog}%;--to:100%;--dur:${Math.round(remaining / Math.max(0.05, speed))}ms;${speed <= 0 ? '--play:paused;' : ''}` : '';
         const info = classChargeInfo(player, id);
-        const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Chargement ${prog} % (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
-        const off = !mine || (forced && id !== forced) || restricted[id] || !ready;
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ready ? '' : ' charging'}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
+        const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
+        const off = !mine || (forced && id !== forced) || restricted[id];   // choisir une classe reste libre : seules ses ACTIONS attendent son chargement
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${prog >= 100 ? ' ready-pulse' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
     }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }
@@ -196,7 +360,7 @@ export function createSpellButtons(){
         `;
         const coolLeft = spellCooldownLeft(sp.id);
         if(coolLeft > 0) btn.querySelector('.spell-cost').insertAdjacentHTML('beforeend', ` <span class="spell-cooldown">Recharge : ${coolLeft} tour${coolLeft > 1 ? 's' : ''}</span>`);
-        if(player.level<sp.minLevel || !hasEnoughMana || coolLeft > 0 || muted) {
+        if(player.level<sp.minLevel || !hasEnoughMana || coolLeft > 0 || muted || !classCanAct()) {   // classe du tour en chargement : on ne peut pas choisir l'action
             btn.classList.add('disabled');
             // Sort multi-qì : la tuile reste grisée tant qu'il manque du qì, mais la pastille d'une couleur déjà atteinte garde sa couleur.
             if(player.level >= sp.minLevel && btn.querySelector('.cost-part.met') && btn.querySelector('.cost-part.unmet')) btn.classList.add('spell-partial');
@@ -222,4 +386,10 @@ export function createSpellButtons(){
     const ultimate = getEquippedUltimate(player);
     if(ultimate) preloadUltimateCinematic([ultimate]);
     updateSpellsTab();
+}
+
+/** Joue `fn` (éventuellement asynchrone) en tant que lanceur `who` ('player' | 'enemy'), quel que soit le camp du tour de plateau en cours. */
+export async function withCaster(who, fn){
+    gameState.casterOverride = who;
+    try { return await fn(); } finally { gameState.casterOverride = null; }
 }

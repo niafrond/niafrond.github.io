@@ -17,8 +17,13 @@ export const ALTERATION_LABELS = {
     exhausted: { icon: 'hourglass', name: 'Épuisé', text: 'perd du qì chaque tour' },
     corrupted: { icon: 'blood', name: 'Corrompu', text: 'ses soins deviennent des dégâts' },
     chilled: { icon: 'snow', name: 'Ralenti', text: 'gagne moins de points de combat' },
-    burning: { icon: 'fire', name: 'Brûlé', text: 'subit des dégâts de feu chaque tour' }
+    burning: { icon: 'fire', name: 'Brûlé', text: 'subit des dégâts de feu chaque tour' },
+    // Altérations POSITIVES : elles accélèrent le chargement des actions (classCharge.js, CHARGE_MOD). Posées sur soi (objets, Xiūxiān…), jamais bloquées par l'immunité.
+    haste: { icon: 'bolt', name: 'Hâte', text: 'chargement des actions 50 % plus rapide', positive: true },
+    focused: { icon: 'brain', name: 'Concentré', text: 'chargement des actions 25 % plus rapide', positive: true },
+    surge: { icon: 'spark', name: 'Élan', text: 'chargement des actions deux fois plus rapide', positive: true }
 };
+export const POSITIVE_KEYS = ['haste', 'focused', 'surge'];
 
 // Altération qu'un sort inflige (`alterEnemy`), avec ses champs annexes ; null si le sort n'en pose pas.
 export function alterationOfSpell(spell) {
@@ -29,7 +34,7 @@ export function alterationOfSpell(spell) {
     return { key: spell.alteration, turns: Math.max(1, Math.floor(spell.duration || 1)), extra, label: ALTERATION_LABELS[spell.alteration] };
 }
 
-export const ALTERATION_KEYS = ['muted', 'cursed', 'petrified', 'asleep', 'exhausted', 'corrupted', 'chilled', 'burning'];
+export const ALTERATION_KEYS = ['muted', 'cursed', 'petrified', 'asleep', 'exhausted', 'corrupted', 'chilled', 'burning', 'haste', 'focused', 'surge'];
 
 let hooks = { damage: (t, d) => { t.hp = Math.max(0, (t.hp || 0) - d); }, log: () => {} };
 export const setAlterationHooks = h => { hooks = { ...hooks, ...h }; };
@@ -69,6 +74,14 @@ export function inflictAlteration(entity, key, turns, extra = {}) {
     if (resistsControl(entity, key)) return false;   // équipement du héros
     entity.statusEffects[key] = Math.max(entity.statusEffects[key] || 0, Math.max(1, Math.floor(turns || 1)));
     Object.entries(extra).forEach(([k, v]) => { entity.statusEffects[k] = Math.max(entity.statusEffects[k] || 0, v); });
+    return true;
+}
+
+// Pose une altération positive sur soi (Hâte, Concentré, Élan). L'immunité aux effets négatifs ne la bloque pas ; elle se renouvelle sans se cumuler.
+export function inflictBuff(entity, key, turns) {
+    if (!entity || !POSITIVE_KEYS.includes(key)) return false;
+    if (!entity.statusEffects) entity.statusEffects = {};
+    entity.statusEffects[key] = Math.max(entity.statusEffects[key] || 0, Math.max(1, Math.floor(turns || 1)));
     return true;
 }
 
@@ -141,7 +154,7 @@ export function tickAlterations(entity, rng = Math.random) {
         entity.statusEffects.controlResist--;
         if (entity.statusEffects.controlResist <= 0) delete entity.statusEffects.controlResist;
     }
-    const ends = { muted: 'retrouve la voix', cursed: 'n\'est plus maudit', petrified: 'retrouve sa souplesse', asleep: 'se réveille', exhausted: 'reprend son souffle', corrupted: 'n\'est plus corrompu', chilled: 'retrouve son rythme', burning: 'cesse de brûler' };
+    const ends = { muted: 'retrouve la voix', cursed: 'n\'est plus maudit', petrified: 'retrouve sa souplesse', asleep: 'se réveille', exhausted: 'reprend son souffle', corrupted: 'n\'est plus corrompu', chilled: 'retrouve son rythme', burning: 'cesse de brûler', haste: 'perd sa Hâte', focused: 'n\'est plus concentré', surge: 'perd son Élan' };
     for (const key of ALTERATION_KEYS) {
         if (!hasStatus(entity, key)) continue;
         entity.statusEffects[key]--;

@@ -38,7 +38,7 @@ test('effets de Xiūxiān par classe', () => {
     expect(transeEffectFor('templar').defense).toBeGreaterThan(0);
     expect(transeEffectFor('barbarian').physMult).toBe(2);
     expect(transeEffectFor('sorcerer').doubleCast).toBe(true);
-    expect(transeEffectFor('monk').freePotions).toBe(true);
+    expect(transeEffectFor('monk').freePotions).toBeUndefined();   // les potions ne coûtent plus de PA : plus d'effet « potions gratuites »
     expect(transeEffectFor('shaman').paMult).toBe(2);
     expect(transeEffectFor('x')).toEqual({});
 });

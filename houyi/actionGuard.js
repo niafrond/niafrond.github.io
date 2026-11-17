@@ -17,6 +17,7 @@ export function createActionGuard(now = () => Date.now()) {
     let lastBoardActionAt = -Infinity;
     let lastPlayerActionAt = -Infinity;
     let turnLocked = false;
+    let lastComboAt = now();   // dernier combo résolu sur le plateau (par l'un ou l'autre camp) : le temps de chargement des actions en dépend
 
     const isBoardBusy = () => {
         if (boardBusySince === null) return false;
@@ -32,6 +33,12 @@ export function createActionGuard(now = () => Date.now()) {
         /** Le joueur vient d'utiliser une arme, un objet ou un sort. */
         markPlayerAction() { lastPlayerActionAt = now(); },
         isBoardBusy,
+        /** Une action du joueur date de moins de ACTION_COOLDOWN_MS (anti-martelage) : seul garde-fou gardé quand les actions sont indépendantes du plateau. */
+        cooldownActive() { return now() - lastPlayerActionAt < ACTION_COOLDOWN_MS; },
+        /** Un combo vient d'être résolu sur le plateau (joueur ou ennemi). */
+        markCombo() { lastComboAt = now(); },
+        /** Heure du dernier combo (le chargement se met en pause si le plateau reste inactif : voir classCharge.js). */
+        lastComboAt() { return lastComboAt; },
         /** Le joueur ne joue plus (tour adverse, annonce de début de combat) : tous ses boutons sont refusés. */
         setTurnLocked(locked) { turnLocked = Boolean(locked); },
         isTurnLocked() { return turnLocked; },
@@ -43,7 +50,7 @@ export function createActionGuard(now = () => Date.now()) {
             if (now() - lastPlayerActionAt < ACTION_COOLDOWN_MS) return 'cooldown';
             return null;
         },
-        reset() { turnLocked = false; boardBusySince = null; lastBoardActionAt = -Infinity; lastPlayerActionAt = -Infinity; }
+        reset() { lastComboAt = now(); turnLocked = false; boardBusySince = null; lastBoardActionAt = -Infinity; lastPlayerActionAt = -Infinity; }
     };
 }
 

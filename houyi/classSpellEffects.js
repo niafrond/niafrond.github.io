@@ -2,7 +2,7 @@
 
 import { escapeHtml } from "./escapeHtml.js";
 import { flyManaGain } from "./manaFlight.js";
-import { player, enemy, currentTurn, log, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
+import { player, enemy, currentTurn, gameState, log, showCombatAnimation, finishPlayerTurn, finishEnemyTurn, applyDamage, addBonusTurn, addManaForColor, skullDamage, playFighterAttack, grantBigMatchXP } from "./game.js";
 import { board, checkMatches, claimMatchBonusTurn } from "./board.js";
 import { colors } from "./constants.js";
 import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
@@ -21,8 +21,25 @@ export function getManaCap(color) {
 }
 
 export function getCurrentCaster() {
+    if(gameState.casterOverride) return gameState.casterOverride === 'enemy' ? enemy : player;   // action de la file lancée par l'autre camp
     return currentTurn === 'enemy' ? enemy : player;
 }
+
+/** Joue `fn` en tant que lanceur `who` ('player' | 'enemy'), quel que soit le tour de plateau en cours. */
+export function runAs(who, fn) {
+    gameState.casterOverride = who;
+    try { return fn(); } finally { gameState.casterOverride = null; }
+}
+
+// Sorts qui ne touchent PAS la grille (soutiens, affaiblissements, dégâts directs…) : ils partent dès que possible, sans lien avec le plateau.
+// Tous les autres sorts à effet (grille détruite, transformée, gemmes créées, ultimes…) attendent le tour de plateau en cours, plateau au repos, juste avant le suivant.
+export const NON_BOARD_EFFECTS = new Set(['scaleWithBlue', 'preventItems', 'damageToMana', 'enchantWeapon', 'reduceEnemyAtk', 'alterEnemy', 'freezeEnemy', 'statBuff',
+    'increaseDefense', 'increasePhysical', 'reflectDamage', 'drainMana', 'reduceManaGain', 'damageToManaPurple', 'applyPoison', 'dualWeaponAttack', 'defenseAttack',
+    'stealCP', 'stunEnemy', 'counterOnBlock', 'massiveDefense', 'defenseToMana', 'immunityEffects', 'blockAll', 'damageBoost', 'yellowDamage', 'skullBonus',
+    'giveRedMana', 'drainOnHit', 'doubleBattle', 'rageGain', 'rageToMana', 'rageToDamage', 'cageEnemy', 'secondWind', 'harmony']);
+export const isBoardSpell = spell => !!spell?.effect && !NON_BOARD_EFFECTS.has(spell.effect);
+// Sorts où le joueur désigne UNE tuile : la position est mémorisée au choix, le sort est lancé plus tard sur cette position.
+export const TARGETED_EFFECTS = new Set(['createActionGem', 'createJoker', 'destroyColor', 'createSkull', 'destroyArea', 'fireballArea', 'sweepRow', 'sweepCol', 'sweepCross']);
 
 // Qì des gemmes détruites, plus effets des flèches et crânes détruits (comme s'ils avaient été combinés).
 export function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
@@ -103,6 +120,7 @@ export function snapshotBoard() {
 export function endPlayerSpellTurn(before) {
     const changed = Array.isArray(before) && board.some((tile, i) => tile !== before[i]);
     if(changed) checkMatches(true);
+    else if(currentTurn === 'enemy') finishEnemyTurn();   // lancé en fin du tour de plateau adverse : on poursuit CE tour
     else finishPlayerTurn();
 }
 

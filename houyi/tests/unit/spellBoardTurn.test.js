@@ -12,15 +12,15 @@ describe('fin de tour après un sort qui modifie le plateau', () => {
     const effects = read('classSpellEffects.js');
 
     test('les sorts de classe passent par endPlayerSpellTurn au lieu de finishPlayerTurn direct', () => {
-        expect((game.match(/module\.endPlayerSpellTurn\(boardBefore\)/g) || []).length).toBe(3);   // lancer normal + ultime + cheat
-        expect((game.match(/module\.snapshotBoard\(\)/g) || []).length).toBe(3);
+        expect((game.match(/module\.endPlayerSpellTurn\((?:boardBefore|before)\)/g) || []).length).toBe(5);   // lancer normal + ultime + cheat, et leurs versions indépendantes du plateau (sort de plateau, ultime)
+        expect((game.match(/module\.snapshotBoard\(\)/g) || []).length).toBe(5);   // idem
         expect(game).not.toMatch(/applyClassSpellEffect\(spell\)\) \{\s*saveUpdate\(\);\s*tutorialCallbacks\.onSpellCast\?\.\(\);\s*finishPlayerTurn\(\);/);
     });
 
     test('plateau modifié : checkMatches(true) sous le tour du lanceur ; sinon fin de tour classique', () => {
         const fn = effects.slice(effects.indexOf('export function endPlayerSpellTurn'));
         const body = fn.slice(0, fn.indexOf('\n}\n'));
-        expect(body).toMatch(/if\(changed\) checkMatches\(true\);\s*else finishPlayerTurn\(\);/);
+        expect(body).toMatch(/if\(changed\) checkMatches\(true\);\s*else if\(currentTurn === 'enemy'\) finishEnemyTurn\(\);[^\n]*\n\s*else finishPlayerTurn\(\);/);
     });
 });
 

@@ -1,5 +1,5 @@
 import { flyManaGain, flyHeal } from './manaFlight.js';
-import { healEntity, cureStatuses, afflictionsOf, CURE_NAMES } from './alterations.js';
+import { healEntity, cureStatuses, afflictionsOf, CURE_NAMES, inflictBuff, ALTERATION_LABELS } from './alterations.js';
 import { manaIcon, itemIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 import { MAX_LEVEL } from './experience.js';
@@ -109,10 +109,10 @@ export const allItems = [
 {id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"reusable", minLevel:7, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
  description:"Réduit les dégâts subis de 25% pour ce combat, sans cumul (rechargé en 4 tours)", effect:{damageReduction:0.25}},
  {id:"focusPotion", name:"Infusion de Concentration", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
- description:"Augmente les chances de critique de 15% pour ce combat, sans cumul (rechargé en 3 tours)", effect:{critChance:15}},
+ description:"Augmente les chances de critique de 15% pour ce combat, sans cumul, et vous rend Concentré 4 tours : chargement des actions 25 % plus rapide (rechargé en 3 tours)", effect:{critChance:15, buff:{key:"focused", turns:4}}},
 
 {id:"swiftPotion", name:"Pilule de Célérité", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:4,
- description:"Accorde 2 points d'action supplémentaires ce tour (rechargé en 4 tours)", effect:{gainActionPoints:2}},
+ description:"Accorde 2 points d'action supplémentaires ce tour et vous met en Hâte 3 tours : chargement des actions 50 % plus rapide (rechargé en 4 tours)", effect:{gainActionPoints:2, buff:{key:"haste", turns:3}}},
 
 {id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"reusable", minLevel:3, rarity:"common", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
  description:"Restaure 8 HP par tour pendant 3 tours (rechargé en 6 tours)", effect:{regen:8, duration:3}},
@@ -139,7 +139,7 @@ export const allItems = [
     {id:"diamond_skin_pill", name:"Pilule de Peau de Diamant", type:"reusable", minLevel:35, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
      description:"Réduit les dégâts subis de 35% pour ce combat, sans cumul (rechargé en 5 tours)", effect:{damageReduction:0.35}},
     {id:"celestial_swiftness_pill", name:"Pilule de Célérité Céleste", type:"reusable", minLevel:38, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:5,
-     description:"Accorde 3 points d'action supplémentaires ce tour (rechargé en 5 tours)", effect:{gainActionPoints:3}},
+     description:"Accorde 3 points d'action supplémentaires ce tour et vous donne de l'Élan 3 tours : chargement des actions deux fois plus rapide (rechargé en 5 tours)", effect:{gainActionPoints:3, buff:{key:"surge", turns:3}}},
     {id:"imperial_cinnabar_elixir", name:"Élixir de Cinabre Impérial", type:"reusable", minLevel:40, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
      description:"Restaure 140 HP (rechargé en 8 tours)", effect:{heal:140}},
     {id:"imperial_crimson_wine", name:"Vin Écarlate Impérial", type:"reusable", minLevel:42, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
@@ -325,6 +325,10 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     if(item.effect.cure) {   // remède : guérit des altérations (une liste de clés, ou 'all')
         const cured = cureStatuses(player, item.effect.cure);
         message += cured.length ? `Vous guérissez ${cured.map(k => CURE_NAMES[k]).join(', ')}. ` : `Aucune altération à guérir. `;
+    }
+    if(item.effect.buff) {   // altération positive sur soi (Hâte, Concentré, Élan) : le chargement des actions s'accélère
+        const { key, turns } = item.effect.buff;
+        if(inflictBuff(player, key, turns)) message += `${ALTERATION_LABELS[key].name} pendant ${turns} tours (${ALTERATION_LABELS[key].text}). `;
     }
     if(item.effect.mana) {
         flyManaGain(true, Object.fromEntries(Object.keys(player.mana).map(color => [color, item.effect.mana])), { fromId: 'item-button' });
