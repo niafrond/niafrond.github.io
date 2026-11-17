@@ -1,3 +1,38 @@
+## [3.0.0](https://github.com/niafrond/niafrond.github.io/compare/v2.254.0...v3.0.0) (2026-11-17)
+
+### ⚠ BREAKING CHANGES
+
+* **houyi:** la classe se choisit désormais à chaque tour de combat ; les anciennes sauvegardes perdent leur style de jeu
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0145pwWhCZizYkE9cit8uyMP
+
+### Features
+
+* **houyi:** ajouter la Transe, les compétences, les magikolithes, la classe par tour et la fusion d'armes ([18e42a8](https://github.com/niafrond/niafrond.github.io/commit/18e42a830397f674f80f08e0d27e4ea33c54165e))
+* **houyi:** baisser la musique pendant l'écoute d'un mot de chinois ([aa846b4](https://github.com/niafrond/niafrond.github.io/commit/aa846b4b1f83f1914dc48352050e0a1030ca4337))
+* **houyi:** barre de chargement visible sur chaque classe et expliquée dans le tutoriel ([0855219](https://github.com/niafrond/niafrond.github.io/commit/0855219e5ad7bee3e208a8344dd55097f6131d05))
+* **houyi:** compétences de classe enseignées par l'équipement et activées avec des Fulu ([9fe9252](https://github.com/niafrond/niafrond.github.io/commit/9fe925235b7b7f82ac3ab9724faf79256a5a46c2))
+* **houyi:** déclencher la Xiūxiān volontairement, conserver PV et jauge, potions à usage unique ([4d8adf7](https://github.com/niafrond/niafrond.github.io/commit/4d8adf7e8620d4b120bf243146191b6587defd18))
+* **houyi:** différencier les sept Xiūxiān avec des noms et des effets propres ([2942de4](https://github.com/niafrond/niafrond.github.io/commit/2942de495faf358e42f3f42ebb3fa28b784b2459))
+* **houyi:** dupliquer le jeu match3-quest dans un dossier houyi ([2f12926](https://github.com/niafrond/niafrond.github.io/commit/2f12926a8e5dff358fa46df583b54653ed21f764))
+* **houyi:** obtenir de nouvelles classes via des maîtres, 4 classes de combat, biomes qui en brident ([d45f6e4](https://github.com/niafrond/niafrond.github.io/commit/d45f6e4685761831f25b6ddc4c80c123ddde5afb))
+* **houyi:** refaire l'interface des Fulu en grille de gemmes avec fiche d'information ([fe35929](https://github.com/niafrond/niafrond.github.io/commit/fe359291ffeab51740dc922f51f276639a6a1fd9))
+* **houyi:** réserver l'onglet Compétences au hors-combat ([605e3b2](https://github.com/niafrond/niafrond.github.io/commit/605e3b2f171da459bd622783e2180e8ba8bae3b3))
+* **houyi:** retirer le choix de classe au départ et le choix du style de jeu ([a56a550](https://github.com/niafrond/niafrond.github.io/commit/a56a550219c329c9a7600412cfa2bd5f362395ac))
+* **houyi:** sélecteur de classe en fine ligne au-dessus des actions, masqué avec une seule classe ([cbadf3e](https://github.com/niafrond/niafrond.github.io/commit/cbadf3e0ae89aec041abd184b7a145db98f0f234))
+* **houyi:** temps de chargement des classes et de l'ennemi, les classes rapides jouent plus souvent ([3131f44](https://github.com/niafrond/niafrond.github.io/commit/3131f444ee7de261cd7c603060b117b6b520b422))
+* **houyi:** un seul bouton Objet qui déplie le choix des potions ([995e8a3](https://github.com/niafrond/niafrond.github.io/commit/995e8a3830a8c920c843753e3d56fe99fbf93651))
+* **houyi:** une jauge et une Xiūxiān par classe ([d1f1433](https://github.com/niafrond/niafrond.github.io/commit/d1f14338805738048a8653b9bd423d759d324cbe))
+* **houyi:** usage unique ou relique réutilisable pour chaque objet, Objet couvre tout le sac, Rôdeur devient Chasseur ([94d075f](https://github.com/niafrond/niafrond.github.io/commit/94d075fc244c353a817a77d1a45c83dbf924da1e))
+
+### Bug Fixes
+
+* **houyi:** corriger le démarrage et masquer les classes non rencontrées ([2f6aee0](https://github.com/niafrond/niafrond.github.io/commit/2f6aee067438851fe4ddb4cd08624ee499ec6238))
+* **houyi:** déclarer classCharge.js dans l'import map et le manifeste de précache ([0a8dc99](https://github.com/niafrond/niafrond.github.io/commit/0a8dc99b4e49ef21de34f27dd6c6faf9ed4435a7))
+* **houyi:** renommer la compétence Cœur de transe ([df58054](https://github.com/niafrond/niafrond.github.io/commit/df58054af1085598a259129ea6a4c53590a35028))
+* **houyi:** sortir le sélecteur de classe de la zone de choix d'action ([e6e80a3](https://github.com/niafrond/niafrond.github.io/commit/e6e80a303d5de4e0ce46d23b5e8df2b4acb105a7))
+
 ## [2.254.0](https://github.com/niafrond/niafrond.github.io/compare/v2.253.0...v2.254.0) (2026-11-17)
 
 ### Features
