@@ -64,12 +64,17 @@ const BIOME_NAMES = { volcano: 'Volcan', gobi: 'Gobi', riverbed: 'Fleuve', bambo
 /** Classes de combat : celles que Hou Yi connaît, dont 4 au plus sont utilisables en combat ; classes à rencontrer ; biomes qui en brident. */
 export function classesHtml(hero, canToggle = true) {
     const roster = normalizeRoster(hero);
-    const rows = CLASS_IDS.map(id => {
-        const owned = roster.owned.includes(id), on = roster.loadout.includes(id);
-        const action = owned ? `<button type="button" class="cl-toggle" data-toggle-class="${id}"${canToggle ? '' : ' disabled'}>${on ? 'Retirer' : 'Utiliser'}</button>` : '<span class="cl-lock">À rencontrer</span>';
-        return `<div class="cl-row${on ? ' on' : ''}${owned ? '' : ' locked'}"><span class="cl-name">${esc(CLASS_SHORT[id])}</span>${action}</div>`;
+    // Aucun spoil : une classe pas encore rencontrée n'apparaît nulle part (ni case, ni biome, ni Xiūxiān).
+    const rows = CLASS_IDS.filter(id => roster.owned.includes(id)).map(id => {
+        const on = roster.loadout.includes(id);
+        // Une seule classe connue : rien à échanger (le retrait est de toute façon refusé), donc pas de bouton.
+        const action = roster.owned.length <= 1 ? '' : `<button type="button" class="cl-toggle" data-toggle-class="${id}"${canToggle ? '' : ' disabled'}>${on ? 'Retirer' : 'Utiliser'}</button>`;
+        return `<div class="cl-row${on ? ' on' : ''}"><span class="cl-name">${esc(CLASS_SHORT[id])}</span>${action}</div>`;
     }).join('');
-    const limits = Object.entries(BIOME_CLASS_LIMITS).map(([biome, l]) => `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${l.classes.map(c => esc(CLASS_SHORT[c])).join(', ')} bridé${l.classes.length > 1 ? 's' : ''} (${esc(l.reason)})</li>`).join('');
+    const limits = Object.entries(BIOME_CLASS_LIMITS).map(([biome, l]) => {
+        const known = l.classes.filter(c => roster.owned.includes(c));
+        return known.length ? `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${known.map(c => esc(CLASS_SHORT[c])).join(', ')} bridé${known.length > 1 ? 's' : ''} (${esc(l.reason)})</li>` : '';
+    }).join('');
     return `<div class="cl-panel"><div class="cl-head"><strong>Classes de combat</strong><span>${roster.loadout.length} / ${MAX_USABLE_CLASSES}</span></div>
         <div class="cl-grid">${rows}</div>
         <details class="cl-limits"><summary>Biomes qui brident des classes</summary><ul>${limits}</ul>
@@ -88,7 +93,8 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     const list = [...SKILLS].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
     const selected = getSkill(selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
-    const transe = Object.entries(TRANSE_EFFECTS).map(([cls, e]) => `<li><strong>${esc(e.name)}</strong> (${esc(CLASS_SHORT[cls])}) : ${esc(e.text)}</li>`).join('');
+    const ownedClasses = normalizeRoster(hero).owned;
+    const transe = Object.entries(TRANSE_EFFECTS).filter(([cls]) => ownedClasses.includes(cls)).map(([cls, e]) => `<li><strong>${esc(e.name)}</strong> (${esc(CLASS_SHORT[cls])}) : ${esc(e.text)}</li>`).join('');
     return `<div class="ab-screen">
         <div class="ab-header">
             <div class="ab-hero"><strong>${esc(hero.name || 'Hou Yi')}</strong> <span class="ab-lv">Niv. ${hero.level || 1}</span>
@@ -104,6 +110,6 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} / ${SKILLS.length} apprises</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
             <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
-            <ul>${transe}</ul><p>L'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p></details>
+            <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p>' : ''}</details>
     </div>`;
 }
