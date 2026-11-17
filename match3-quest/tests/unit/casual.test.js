@@ -53,6 +53,13 @@ describe('mode Casual', () => {
         expect(count(tank, 'stamina') + count(tank, 'agility')).toBeGreaterThan(count(balanced, 'stamina') + count(balanced, 'agility'));
         expect(planAttributes(attrs, 0)).toEqual([]);
     });
+    test('sorts : jamais de sort trop coûteux tant qu\'il y a assez de sorts abordables', () => {
+        const hero = { level: 10, activeSpells: [], availableSpells: [
+            { id: 'ultime', cost: { red: 12 }, dmg: 500 }, { id: 'a', cost: { red: 3 }, dmg: 20 }, { id: 'b', cost: { blue: 4 }, dmg: 18 }
+        ] };
+        expect(planSpells(hero, 'balanced')).toEqual(['a', 'b']);
+        expect(planSpells({ level: 10, availableSpells: [{ id: 'ultime', cost: { red: 12 }, dmg: 500 }, { id: 'a', cost: { red: 3 }, dmg: 20 }] }, 'balanced')).toContain('ultime');
+    });
     test('sorts : les 4 mieux notés, couleurs variées, plus de soin en profil défensif', () => {
         const hero = { level: 10, activeSpells: [], availableSpells: [
             { id: 'r1', cost: { red: 3 }, dmg: 30 }, { id: 'r2', cost: { red: 3 }, dmg: 28 }, { id: 'r3', cost: { red: 3 }, dmg: 27 },
