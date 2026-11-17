@@ -34,7 +34,7 @@ import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimatio
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, syncTranse, resetTranseTurn, applyTranseClassEffect } from './game.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, endXiuxianAtCombatEnd } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -63,7 +63,6 @@ function applyCompanionPowers(){
             announce(`${enemy.name} perd son tour`);
         } else if(power.kind === 'rage'){
             const gained = addRage(player, Math.floor(RAGE_MAX * amount));
-            syncTranse();
             log(`${power.name} : +${gained} rage.`);
             announce(`+${gained} rage`);
         } else if(power.kind === 'arrows'){
@@ -719,6 +718,7 @@ export function finishEnemyTurn(){
 export function handleEnemyDefeated(){
     const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
+    endXiuxianAtCombatEnd();   // la jauge de Xiūxiān est conservée, une Xiūxiān en cours s'éteint
     player.bossLossStreak = recordVictory();
     saveCombatRecord(finishCombatRecord('victory'));   // mesure d'équilibrage : durée, cycles et dégâts du combat
     playSfx('victory');

@@ -1066,3 +1066,6 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 #spells-container #player-spells { flex: 1 1 100%; width: 100%; box-sizing: border-box; }
 
 .class-pick.limited { text-decoration: line-through; }
+
+.rage-bar-container.xiu-ready { cursor: pointer; animation: rage-pulse 0.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .rage-bar-container.xiu-ready { animation: none; } }

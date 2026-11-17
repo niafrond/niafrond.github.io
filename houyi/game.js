@@ -16,7 +16,8 @@ import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from 
 import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
-import { isInTranse, endTranse, transeEffectFor, classAllowsUltimate, describeTranse } from "./transe.js";
+import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimate, describeTranse } from "./transe.js";
+import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
@@ -254,7 +255,7 @@ export function ultimateManaBarHtml(entity, spell){
 export function transeTooltipHtml(entity, ultimate){
     const filled = Math.floor(entity?.rage || 0);
     return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
-        + `<div class="spell-tooltip-line">Se remplit quand vous subissez des dégâts ; pleine, elle se déclenche toute seule pour 3 tours.</div>`
+        + `<div class="spell-tooltip-line">Se remplit quand vous subissez des dégâts et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān (3 tours).</div>`
         + `<div class="spell-tooltip-line">${describeTranse(getTurnClass())}</div>`
         + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Xiūxiān, avec la classe Mage antique choisie pour le tour.</div>` : '');
 }
@@ -486,7 +487,6 @@ export function applyDamage(target, damage, options = {}){
     // Jauge de rage : se charge quand le joueur perd des PV en combat.
     if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {
         addRage(player, boostedRageGain(player, rageFromDamage(currentHp - nextHp, player.maxHp)));
-        syncTranse();
     }
 
     if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
@@ -760,6 +760,7 @@ export let player = {
     activeSpells: [],  // sorts équipés (max 4)
     archivedSpells: [], // ids des sorts rangés dans les archives (masqués de la liste des sorts disponibles)
     equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
+    potions: { small: 0, medium: 0, large: 0 },   // potions de soin à usage unique (potions.js)
     skills: { progress: {}, learned: [], active: [] },   // compétences : PA par compétence, apprises, soutien activé (skills.js)
     unlockedUltimates: [],   // ultimes de légende (Quatre Gardiens Célestes) gagnés par quête, toutes classes (ultimates.js)
     availableSpells: [], // sorts débloqués
@@ -945,16 +946,52 @@ export function applyTranseClassEffect(){
     log(`Xiūxiān : ${effect.text}.`);
 }
 
-// Annonce le déclenchement de la Xiūxiān (jauge pleine) et applique l'effet de la classe du tour.
-export function syncTranse(){
-    if(player.transeStarted){
-        player.transeStarted = false;
-        if(gameState.combatState === 'active'){
-            log(`✦ XIŪXIĀN ! ${describeTranse(getTurnClass())}`);
-            gameState.transeApplied = [];
-            applyTranseClassEffect();
-        }
+// Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, au tour du joueur (toucher la jauge). Gratuit : ne prend pas le tour.
+export function activateXiuxian(){
+    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(isInTranse(player)){ log('La Xiūxiān est déjà en cours.'); return false; }
+    if(!isRageFull(player)){ log("La jauge de Xiūxiān n'est pas pleine !"); return false; }
+    if(!startTranse(player)) return false;
+    log(`✦ XIŪXIĀN ! ${describeTranse(getTurnClass())}`);
+    gameState.transeApplied = [];
+    applyTranseClassEffect();
+    updateStats();
+    saveUpdate();
+    return true;
+}
+
+// Fin de combat : une Xiūxiān encore en cours s'éteint (la jauge est consommée) ; sinon la jauge est conservée telle quelle pour le prochain combat.
+export function endXiuxianAtCombatEnd(){
+    if(Math.floor(player.transe || 0) > 0){ endTranse(player); player.rage = 0; }
+    gameState.transeApplied = null;
+}
+
+// ── Potions (potions.js) : à usage unique, 1 / 2 / 3 PA en combat selon la taille ──
+export function drinkPotionAction(size){
+    const inCombat = gameState.combatState === 'active';
+    if(inCombat){
+        if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
+        if(rejectRushedAction()) return false;
+        if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
     }
+    const heal = potionHeal(player, size);
+    const res = drinkPotion(player, size, { inCombat });
+    if(!res.ok){ log(res.message); return false; }
+    if(inCombat) actionGuard.markPlayerAction();
+    flyHeal(true, res.healed || heal);
+    log(res.message);
+    if(inCombat){
+        logActiveAction(`boit une ${POTIONS[size].name.toLowerCase()} (coût ${POTIONS[size].actionPoints} PA)`);
+        showCombatAnimation({ icon: 'potion', title: POTIONS[size].name, heal: `+${res.healed} PV`, target: '→ Vous' }, true);
+        updateStats();
+        saveUpdate();
+        finishPlayerTurn();
+    } else {
+        updateStats();
+        saveUpdate();
+        document.dispatchEvent(new Event('potions-changed'));
+    }
+    return true;
 }
 
 // Fin d'un tour du joueur : la liste des classes déjà appliquées repart à zéro.
@@ -974,6 +1011,7 @@ export const combatRewards = {
 };
 
 const PLAYER_DEATH_DELAY_MS = 900;
+const DEFEAT_REVIVE_PCT = 0.5;   // part des PV max rendue au héros qui reprend après une défaite
 const LEVEL_UP_MAX_HP_GAIN = 5;
 const LEVEL_UP_HEAL_GAIN = 20;
 let pendingPlayerDeathTimeout = null;
@@ -1281,7 +1319,7 @@ export const skullDamage = 1;           // dégâts infligés par crâne lors d'
 export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat ; `keepHp` : phase enchaînée d'un duel, les PV restent ceux du combat précédent
-export function restartCombat({ keepHp = false } = {}){
+export function restartCombat({ keepHp = true } = {}){
     actionGuard.reset();
     introToken++;
     turnFlags.foxActed = false;
@@ -1294,16 +1332,18 @@ export function restartCombat({ keepHp = false } = {}){
         pendingPlayerDeathTimeout = null;
     }
 
-    player.hp = keepHp ? Math.max(1, Math.min(player.hp, player.maxHp)) : player.maxHp;
+    // Les PV ne reviennent plus tout seuls : le héros entre dans le combat avec les PV qu'il avait en sortant du précédent (potions : potions.js).
+    // Un héros tombé au combat précédent est relevé à la moitié de ses PV max. `keepHp: false` : réinitialisation complète (tests, outils).
+    player.hp = !keepHp ? player.maxHp : (player.hp <= 0 ? Math.max(1, Math.ceil(player.maxHp * DEFEAT_REVIVE_PCT)) : Math.max(1, Math.min(player.hp, player.maxHp)));
     player.combatPoints = 0;
     player.bonusTurn = 0;
-    resetRage(player);
-    addRage(player, startingRage(player));
+    // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
+    endTranse(player);
+    player.rage = Math.max(Math.floor(player.rage || 0), startingRage(player));
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
     gameState.transeApplied = null;
-    syncTranse();
     resetUltimateMana(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
@@ -1361,6 +1401,7 @@ export function handlePlayerDeath(){
         return;
     }
     saveCombatRecord(finishCombatRecord('defeat'));   // mesure d'équilibrage : les défaites comptent autant que les victoires
+    endXiuxianAtCombatEnd();
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.xpApplied > 0) {
@@ -1429,8 +1470,8 @@ export function startNewCombat(selectedEnemy = null){
     if(tabs) {
         tabs.style.display = 'none';
     }
-    // Restaurer les PV (sauf phase enchaînée d'un duel) et préparer le combat
-    restartCombat({ keepHp: Boolean(selectedEnemy?.carryHp) });
+    // Préparer le combat (les PV sont conservés)
+    restartCombat({ keepHp: true });   // PV conservés d'un combat à l'autre
     newEnemy(selectedEnemy);
 }
 
@@ -1514,6 +1555,9 @@ export function loadGameData() {
             normalizeSkills(player);
             player.classes = loaded.classes;
             normalizeRoster(player);
+            player.potions = loaded.potions;
+            normalizePotions(player);
+            player.rage = Math.max(0, Math.min(100, Math.floor(loaded.rage || 0)));   // la jauge de Xiūxiān est conservée
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;

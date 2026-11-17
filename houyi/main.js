@@ -7,6 +7,8 @@ import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
 import "./skillsView.js";
+import "./potionsView.js";
+import { addPotions } from "./potions.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
 import { weaknessLabel } from "./terrain.js";
@@ -90,6 +92,7 @@ function showClassSelection() {
     });
     // Le joueur ne doit jamais commencer un combat sans arme équipée
     grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
+    addPotions(player, 'small', 2);   // les PV ne reviennent plus tout seuls : deux petites potions pour démarrer
     updateAvailableSpells();
     saveUpdate();
     // Nouvelle partie : pas de question, le tutoriel est le duel contre Fengmeng.

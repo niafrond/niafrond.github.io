@@ -5,8 +5,9 @@
 import { getItemIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
 import { describeStuff, STUFF_SLOT_LABELS } from './stuff.js';
-import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus, duplicateEntries, sellDuplicates } from './merchants.js';
+import { REGION_LEVEL, offerObject, availableOffers, buyOffer, sellableEntries, sellEntry, surplusEntries, sellSurplus, duplicateEntries, sellDuplicates } from './merchants.js';
 import { fusionOffers, fuseWeapons } from './fusion.js';
+import { POTION_SIZES, POTIONS, potionPrice, potionCount, potionHeal, buyPotion } from './potions.js';
 import { describeManaMax } from './manaGear.js';
 import { describeEffects } from './gearEffects.js';
 import { BIOME_LABELS } from './weapons.js';
@@ -150,6 +151,12 @@ export function renderMerchant(npc, card, hooks = {}) {
             ${o.reason ? `<div class="fuse-reason">${escapeHtml(o.reason)}</div>` : ''}</div>
             <button type="button" class="rc-btn" data-fuse="${o.fusion.id}"${o.ready ? '' : ' disabled'}>${svgIcon('coin')} ${o.fee}</button>
         </div>`;
+    // Potions de soin à usage unique : toujours en rayon, le prix monte avec la région du marchand (potions.js).
+    const potionsSection = () => `<h3 class="shop-section-title">Potions</h3>${POTION_SIZES.map(size => {
+        const p = POTIONS[size], price = potionPrice(size, REGION_LEVEL[npc.region] || 1);
+        return `<div class="potion-row"><span><strong>${escapeHtml(p.name)}</strong> <em>+${potionHeal(player, size)} PV (${p.healPct} %) · ${p.actionPoints} PA au combat · vous en avez ${potionCount(player, size)}</em></span>
+            <button type="button" class="rc-btn" data-buy-potion="${size}"${(player.gold || 0) < price ? ' disabled' : ''}>${svgIcon('coin')} ${price}</button></div>`;
+    }).join('')}`;
     const drawFuse = (note = '') => {
         const offers = fusionOffers(player);
         card.innerHTML = `
@@ -194,6 +201,7 @@ export function renderMerchant(npc, card, hooks = {}) {
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${surplusPopup(pending)}
             ${previewPanel(offers.find(o => o.key === previewKey))}
+            ${potionsSection()}
             ${sections || '<p class="shop-empty">Le marchand a tout vendu.</p>'}
             <button type="button" class="primary merchant-close">Fermer</button>`;
         bindCardTips(card);
@@ -237,6 +245,14 @@ export function renderMerchant(npc, card, hooks = {}) {
             if (gameState.combatState === 'active') { draw('La boutique est inaccessible pendant le combat !'); return; }
             const res = sellDuplicates(player);
             if (res.ok) { pending = []; refresh(); log(res.message); }
+            draw(res.message);
+            return;
+        }
+        const potionBtn = ev.target.closest('[data-buy-potion]');
+        if (potionBtn) {
+            if (gameState.combatState === 'active') { draw('La boutique est inaccessible pendant le combat !'); return; }
+            const res = buyPotion(player, potionBtn.dataset.buyPotion, REGION_LEVEL[npc.region] || 1);
+            if (res.ok) { saveUpdate(); log(res.message); document.dispatchEvent(new Event('potions-changed')); }
             draw(res.message);
             return;
         }

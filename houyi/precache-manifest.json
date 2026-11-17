@@ -117,6 +117,8 @@
   "playStyles.js",
   "playTime.js",
   "playerNames.js",
+  "potions.js",
+  "potionsView.js",
   "progression.js",
   "retro.css",
   "saveManager.js",

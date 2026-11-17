@@ -20,7 +20,7 @@ import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass } from './gameSpellList.js';
 import { isInTranse, classAllowsUltimate } from './transe.js';
-import { bonusTurnBadge, canEntityCastSpell, castUltimate, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
@@ -188,6 +188,7 @@ export function updateStats(){
     const equippedUltimate = getEquippedUltimate(player);
     // Xiūxiān : la jauge est toujours visible ; l'ultime se lance pendant la Xiūxiān, si la classe choisie pour le tour est le sorcier.
     const inTranse = isInTranse(player);
+    const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
     const ultimateReady = !!equippedUltimate && inTranse && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
@@ -205,9 +206,9 @@ export function updateStats(){
             </div>
             ${true ? `
             <div class="stat rage-stat row-rage">
-                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
+                <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
                     <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : inTranse ? 'TRANSE' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
+                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
                 </div>
                 ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
             </div>
@@ -226,12 +227,13 @@ export function updateStats(){
         
         {
             const rageBar = playerDiv.querySelector('.rage-bar-container');
-            if(ultimateReady){
-                rageBar.onclick = () => castUltimate(equippedUltimate.id);
+            if(ultimateReady || canActivate){
+                const fire = () => { if(ultimateReady) castUltimate(equippedUltimate.id); else activateXiuxian(); };
+                rageBar.onclick = fire;
                 rageBar.onkeydown = (event) => {
                     if(event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        castUltimate(equippedUltimate.id);
+                        fire();
                     }
                 };
             }

@@ -1,5 +1,6 @@
-// Xiūxiān : la jauge (ex-« rage ») se remplit quand le héros subit des dégâts. Pleine, la Xiūxiān se DÉCLENCHE AUTOMATIQUEMENT et dure
-// TRANSE_TURNS tours du joueur ; la jauge retombe à 0 à la fin. Son effet dépend de la classe choisie pour le tour (une classe par tour) :
+// Xiūxiān (ex-« rage ») : la jauge se remplit quand le héros subit des dégâts et se CONSERVE d'un combat à l'autre. Pleine, le joueur la
+// DÉCLENCHE VOLONTAIREMENT (toucher la jauge, au début de son tour, sans perdre le tour) : elle dure TRANSE_TURNS tours du joueur, puis la jauge retombe à 0.
+// Son effet dépend de la classe choisie pour le tour (une classe par tour) :
 //  - sorcier (Mage antique) : l'ultime peut être lancé (seule classe qui le permette) ;
 //  - rôdeur : points d'action en plus ; commandant : Défense ; guerrier : Attaque.
 // Module pur (sans DOM).

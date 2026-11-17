@@ -12,16 +12,15 @@ test('la Xiūxiān dure TRANSE_TURNS tours puis se termine', () => {
     expect(isInTranse(e)).toBe(false);
 });
 
-test('la jauge pleine déclenche la Xiūxiān toute seule ; la vider la termine', () => {
+test('la jauge pleine ne déclenche rien toute seule : la Xiūxiān est volontaire ; la vider la termine', () => {
     const e = { rage: 0 };
-    addRage(e, RAGE_MAX - 1);
+    addRage(e, RAGE_MAX + 50);
+    expect(e.rage).toBe(RAGE_MAX);
     expect(isInTranse(e)).toBe(false);
-    addRage(e, 5);
+    expect(startTranse(e)).toBe(true);
     expect(isInTranse(e)).toBe(true);
-    expect(e.transeStarted).toBe(true);
     resetRage(e);
     expect(isInTranse(e)).toBe(false);
-    endTranse(e);
 });
 
 test('seul le sorcier peut lancer l\'ultime, quelle que soit la classe du héros', () => {

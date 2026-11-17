@@ -36,7 +36,7 @@ export const allItems = [
      description:"Augmente l'attaque de 25 pour ce combat, sans cumul (rechargé en 6 tours)", effect:{tempAttack:25}},
 
     // Élixirs, pilules et tisanes (niveau 1+)
-    {id:"healthPotion", name:"Élixir de Vie", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+    {id:"healthPotion", noLoot:true, name:"Élixir de Vie", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
      description:"Restaure 35 HP (rechargé en 6 tours)", effect:{heal:35}},
     {id:"manaPotion", name:"Pilule de Qi", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
      description:"Restaure 6 qì de chaque couleur (rechargé en 6 tours)", effect:{mana:6}},
@@ -44,7 +44,7 @@ export const allItems = [
      description:"Augmente l'attaque de 15 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempAttack:15}},
     
     // Préparations avancées (niveau 5+)
-    {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+    {id:"greaterHealthPotion", noLoot:true, name:"Grand Élixir de Vie", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
      description:"Restaure 60 HP (rechargé en 8 tours)", effect:{heal:60}},
     {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:7,
      description:"Restaure 10 qì de chaque couleur (rechargé en 7 tours)", effect:{mana:10}},
@@ -179,7 +179,7 @@ export const allItems = [
 ];
 
 // Objets qui peuvent tomber en butin, se vendre ou se tirer au hasard : sans les reliques de quête.
-export const lootableItems = allItems.filter(item => !item.quest);
+export const lootableItems = allItems.filter(item => !item.quest && !item.noLoot);   // `noLoot` : plus ni en butin ni en boutique (les potions de soin sont à usage unique : potions.js)
 
 // Chances de drop selon la rareté
 const rarityWeights = {
@@ -201,7 +201,7 @@ export function getRandomItem(playerLevel) {
         const usable = lootableItems.filter(item => item.minLevel <= playerLevel + 2);
         const top = Math.max(0, ...usable.map(item => item.minLevel));
         const best = usable.filter(item => item.minLevel === top);
-        return best.length ? best[Math.floor(Math.random() * best.length)] : allItems.find(item => item.id === "healthPotion");
+        return best.length ? best[Math.floor(Math.random() * best.length)] : lootableItems[0];
     }
     
     // Calculer le poids total selon la rareté

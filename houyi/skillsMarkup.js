@@ -103,7 +103,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         </div>
         <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} / ${SKILLS.length} apprises</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
-            <p>La jauge se remplit quand vous subissez des dégâts. Pleine, la Xiūxiān se déclenche toute seule pour ${TRANSE_TURNS} tours ; en combat, une classe par tour : son effet s'applique.</p>
+            <p>La jauge se remplit quand vous subissez des dégâts. Elle se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān (${TRANSE_TURNS} tours) ; en combat, une classe par tour : son effet s'applique.</p>
             <ul>${transe}</ul><p>L'ultime ne se lance que pendant la Xiūxiān, avec le Mage choisi pour le tour.</p></details>
     </div>`;
 }

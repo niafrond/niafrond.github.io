@@ -12,6 +12,7 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
+import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
 
@@ -201,6 +202,7 @@ export function createSpellButtons(){
 
         container.appendChild(btn);
     });
+    renderPotionButtons();   // potions de soin (potions.js)
     // Planches de cinématique de l'ultime choisi gardées en mémoire : son lancement n'attend aucun téléchargement.
     const ultimate = getEquippedUltimate(player);
     if(ultimate) preloadUltimateCinematic([ultimate]);
