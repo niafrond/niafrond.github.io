@@ -1036,6 +1036,7 @@ export function checkMatches(forceFullBoard = false){
             finishPlayerTurn();
         }
     } else {
+        actionGuard.markCombo();   // plateau actif : le chargement des actions (re)prend
         if(pendingSwap){
             pendingSwap.resolvedAtLeastOneMatch = true;
         }

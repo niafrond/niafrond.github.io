@@ -4,8 +4,10 @@
 // pas prête ; l'ennemi a la même contrainte. Avec plusieurs classes, on change de classe pour agir : l'une charge pendant que l'autre joue.
 import { ATTRIBUTE_MANA_RULES, getAttributePoints, agilityScore } from './attributes.js';
 import { skillBonus } from './skills.js';
+import { wornRelics } from './items.js';
 
 export const CHARGE_MS_PER_UNIT = 200;   // durée réelle d'une unité de chargement : 100 unités = 20 s ; un héros de milieu de partie (≈ 75 unités) met environ 15 s
+export const BOARD_IDLE_PAUSE_MS = 5000;   // plateau inactif depuis ce délai : les chargements se mettent en pause, jusqu'au prochain combo
 export const CHARGE_BASE = 100;          // temps de chargement sans aucun bonus
 export const CHARGE_MIN = 40;            // plancher : jamais plus de 60 % de réduction
 const AGILITY_PCT = 0.5;                 // % de réduction par point d'Agilité + Moral (toutes les classes)
@@ -83,3 +85,22 @@ export function takeDueAction(queue, owner, isReady) {
     return i === -1 ? null : queue.splice(i, 1)[0];
 }
 export const hasQueuedAction = (queue, owner) => queue.some(item => item.owner === owner);
+
+/** Le temps de chargement avance-t-il ? Oui tant qu'un combo a eu lieu sur le plateau depuis moins de BOARD_IDLE_PAUSE_MS. */
+export const chargeRunning = (nowMs, lastComboMs) => nowMs - lastComboMs < BOARD_IDLE_PAUSE_MS;
+
+/**
+ * Début de combat : toutes les classes et l'ennemi partent avec une barre VIDE (il faut attendre leur chargement), sauf bonus :
+ * `startChargePct` (compétences de soutien actives, effet des reliques portées) remplit d'avance la barre des classes ; `enemy.startChargePct` celle de l'ennemi.
+ */
+export function startChargePctOf(hero) {
+    const relics = (typeof wornRelics === 'function' ? wornRelics(hero) : []).reduce((n, r) => n + (Number(r?.effect?.startChargePct) || 0), 0);
+    return Math.max(0, Math.min(100, skillBonus(hero, 'startChargePct') + relics));
+}
+export function initCharge(charge, hero, classIds, enemy, factor = 1) {
+    const heroPct = startChargePctOf(hero) / 100;
+    classIds.forEach(id => { charge.ready[id] = charge.now + Math.round(classChargeMs(hero, id, factor) * (1 - heroPct)); });
+    const foePct = Math.max(0, Math.min(100, Number(enemy?.startChargePct) || 0)) / 100;
+    charge.enemyReady = charge.now + Math.round(enemyChargeMs(enemy, factor) * (1 - foePct));
+    return charge;
+}

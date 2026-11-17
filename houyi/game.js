@@ -20,7 +20,7 @@ import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimat
 import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
-import { newCharge, newActionQueue } from "./classCharge.js";
+import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -68,7 +68,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass, deferAction, spendActionCharge } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, deferAction, spendActionCharge, chargeFactor } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -1371,7 +1371,7 @@ export function restartCombat({ keepHp = true } = {}){
     // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
-    gameState.charge = newCharge();   // tout le monde est prêt au début du combat
+    gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
     gameState.actionQueue = newActionQueue(); gameState.enemyPending = null; gameState.bypassCharge = false;
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
@@ -1387,6 +1387,7 @@ export function restartCombat({ keepHp = true } = {}){
     // Réinitialiser le qì à 0
     player.mana = { ...EMPTY_MANA_POOL };
     enemy.mana = { ...EMPTY_MANA_POOL };
+    initCharge(gameState.charge, player, normalizeRoster(player).loadout, enemy, chargeFactor());   // barres vides au départ (sauf bonus de chargement initial)
     // Réinitialiser les bonus temporaires
     if(player.tempAttack) {
         player.attack -= player.tempAttack;

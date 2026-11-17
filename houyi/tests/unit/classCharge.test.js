@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, newActionQueue, enqueueAction, takeDueAction, hasQueuedAction } from '../../classCharge.js';
+import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeDueAction, hasQueuedAction } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
@@ -74,5 +74,30 @@ describe('classCharge : temps de chargement des classes', () => {
         expect(takeDueAction(q, 'player', ready).label).toBe('a');
         expect(takeDueAction(q, 'enemy', ready).label).toBe('e');
         expect(q).toHaveLength(0);
+    });
+
+    test('tempo : plateau inactif depuis 5 s, les chargements se mettent en pause ; un combo les relance', () => {
+        expect(BOARD_IDLE_PAUSE_MS).toBe(5000);
+        expect(chargeRunning(1000, 0)).toBe(true);
+        expect(chargeRunning(4999, 0)).toBe(true);
+        expect(chargeRunning(5000, 0)).toBe(false);
+        expect(chargeRunning(9000, 0)).toBe(false);
+        expect(chargeRunning(9000, 8500)).toBe(true);   // un combo vient d'avoir lieu
+    });
+
+    test('début de combat : toutes les barres (classes et ennemi) sont vides', () => {
+        const c = newCharge(), h = hero(), e = { level: 5 };
+        initCharge(c, h, ['assassin', 'barbarian'], e);
+        expect(isClassReady(c, 'assassin')).toBe(false);
+        expect(classProgress(c, h, 'assassin')).toBe(0);
+        expect(isEnemyReady(c)).toBe(false);
+    });
+    test('un bonus de chargement initial (compétence) remplit d\'avance la barre des classes ; celui de l\'ennemi aussi', () => {
+        const h = hero({ skills: { learned: ['reflexes_aiguises'], active: ['reflexes_aiguises'], progress: {} } });
+        expect(startChargePctOf(h)).toBe(30);
+        const c = newCharge();
+        initCharge(c, h, ['assassin'], { level: 5, startChargePct: 100 });
+        expect(classProgress(c, h, 'assassin')).toBeCloseTo(0.3, 1);
+        expect(isEnemyReady(c)).toBe(true);
     });
 });

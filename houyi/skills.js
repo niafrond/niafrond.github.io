@@ -56,6 +56,8 @@ export const SKILLS = [
     { id: 'regard_acere', kind: SUPPORT, name: 'Regard acéré', ap: 55, cost: 2, bonus: { attack: 3, chargePct: 3 }, description: 'Attaque +3 ; les classes se rechargent 3 % plus vite.' },
     { id: 'esprit_clair', kind: SUPPORT, name: 'Esprit clair', ap: 55, cost: 2, bonus: { startMana: 1, transePct: 10 }, description: 'Commence avec 1 qì de chaque couleur ; la jauge de Xiūxiān se remplit 10 % plus vite.' },
     { id: 'peau_de_pierre', kind: SUPPORT, name: 'Peau de pierre', ap: 80, cost: 3, bonus: { defense: 5, poisonResist: 25 }, description: 'Défense +5 et 25 % de poison en moins.' },
+    { id: 'reflexes_aiguises', kind: SUPPORT, name: 'Réflexes aiguisés', ap: 60, cost: 2, bonus: { startChargePct: 30 }, description: 'Les classes commencent le combat avec 30 % de chargement.' },
+    { id: 'instinct_de_combat', kind: SUPPORT, name: 'Instinct de combat', ap: 110, cost: 4, bonus: { startChargePct: 70 }, description: 'Les classes commencent le combat avec 70 % de chargement.' },
     // ── Action : une commande de combat par couleur de qì, en dégâts ou en soin ──
     { id: 'fleche_de_feu', kind: ACTION, name: 'Flèche de feu', ap: 40, description: 'Une flèche enflammée : dégâts directs.', spell: { cost: { red: 15 }, dmg: 50, scales: 1.5 } },
     { id: 'fleche_de_givre', kind: ACTION, name: 'Flèche de givre', ap: 40, description: 'Une flèche glacée : dégâts directs.', spell: { cost: { blue: 15 }, dmg: 48, scales: 1.5 } },
@@ -245,7 +247,7 @@ export function toggleSupport(hero, id) {
 
 // ── Effets ──────────────────────────────────────────────────────────────────
 
-/** Somme d'un bonus (`attack`, `defense`, `poisonResist`, `regenPct`, `transePct`, `startMana`) des compétences de soutien actives. */
+/** Somme d'un bonus (`attack`, `defense`, `poisonResist`, `regenPct`, `transePct`, `startMana`, `chargePct`, `startChargePct`) des compétences de soutien actives. */
 export function skillBonus(hero, key) {
     if (!hero?.skills?.active?.length) return 0;
     // Une compétence de classe ne joue que quand cette classe est la classe du tour (`hero.turnClassId`, posé par game.js).

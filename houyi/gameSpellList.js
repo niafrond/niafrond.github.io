@@ -1,6 +1,7 @@
 // Sorts disponibles selon le niveau (plafond, liste débloquée), boutons de sorts, déblocage par le menu secret.
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
+import { actionGuard } from './actionGuard.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
 import { spellCooldownLeft } from './spellCooldown.js';
@@ -12,7 +13,7 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, enqueueAction, takeDueAction, hasQueuedAction } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, takeDueAction, hasQueuedAction } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
@@ -170,7 +171,12 @@ function chargeTicker(){
     const now = Date.now();
     const dt = _chargeLast ? Math.min(1000, now - _chargeLast) : 0;
     _chargeLast = now;
-    if(!chargeEnabled() || (typeof document !== 'undefined' && document.hidden)) return;
+    if(!chargeEnabled()){ if(typeof document !== 'undefined') document.body?.classList.remove('charge-paused'); return; }
+    if(typeof document !== 'undefined' && document.hidden) return;
+    // Tempo : plateau inactif depuis 5 s = chargements en pause (barres figées) ; ils reprennent au prochain combo du plateau.
+    const running = chargeRunning(now, actionGuard.lastComboAt());
+    if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
+    if(!running) return;
     chargeTick(gameState.charge, dt);
     const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '');
     if(key !== _chargeKey){
