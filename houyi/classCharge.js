@@ -5,7 +5,7 @@
 import { ATTRIBUTE_MANA_RULES, getAttributePoints, agilityScore } from './attributes.js';
 import { skillBonus } from './skills.js';
 
-export const CHARGE_MS_PER_UNIT = 30;   // durée réelle d'une unité de chargement : 100 unités = 3 s (× vitesse des animations)
+export const CHARGE_MS_PER_UNIT = 150;   // durée réelle d'une unité de chargement : 100 unités = 15 s (× vitesse des animations)
 export const CHARGE_BASE = 100;          // temps de chargement sans aucun bonus
 export const CHARGE_MIN = 40;            // plancher : jamais plus de 60 % de réduction
 const AGILITY_PCT = 0.5;                 // % de réduction par point d'Agilité + Moral (toutes les classes)

@@ -748,6 +748,7 @@ export function finishEnemyTurn(){
         if(enemy?.isTutorialEnemy && gameState.combatState === 'active'){   // tutoriel : la barre de la classe finit de se remplir
             const rd = Object.values(gameState.charge.ready);
             if(rd.length) gameState.charge.clock = Math.max(gameState.charge.clock, ...rd);
+            gameState.chargeAnim = null;   // la barre est pleine : plus d'animation en cours
         }
         if(chargeEnabled()){
             enemyActed(gameState.charge, enemy);
