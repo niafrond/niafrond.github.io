@@ -1083,3 +1083,9 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 .xiu-banner { display: flex; flex-direction: column; gap: 1px; margin: 0 0 4px; padding: 4px 8px; border-radius: 6px; border: 1px solid #b58cff; background: linear-gradient(90deg, rgba(122, 74, 216, 0.85), rgba(67, 34, 143, 0.85)); color: #fff; font-size: 0.72rem; line-height: 1.3; text-shadow: 0 1px 1px #000; }
 .xiu-banner[hidden] { display: none; }
 .xiu-banner strong { font-size: 0.78rem; }
+
+/* Barre de classe pleine : léger clignotement lent (≈ 0,5 Hz, faible amplitude). Désactivable (option « Clignotements », photosensibilité), coupé aussi par « Réduire les effets » et « prefers-reduced-motion ». */
+.class-pick.ready-pulse::before { animation: class-ready-pulse 1.9s ease-in-out infinite; }
+@keyframes class-ready-pulse { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; } }
+body.no-blink .class-pick.ready-pulse::before, body.no-anim .class-pick.ready-pulse::before { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .class-pick.ready-pulse::before { animation: none; opacity: 1; } }

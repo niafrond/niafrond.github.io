@@ -8,6 +8,7 @@
 //  - shapes     : tuiles et pastilles de qì remplacées par des formes pleines, une par couleur (+ camps distingués par la bordure) pour ne pas dépendre de la seule couleur ;
 //  - colorblind : mode daltonien — palette des tuiles et du qì séparée par la teinte ET la luminosité (rouge/vert, bleu/violet), les gâteaux de lune sont conservés, sauf si « Symboles » est aussi activé (formes à la palette daltonienne) ;
 //  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
+//  - blink      : léger clignotement des barres de classe pleines ; à désactiver en cas de photosensibilité (épilepsie).
 //  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
 //    Tant que le joueur n'a pas choisi lui-même « Animations », le réglage « réduire les animations » du système (prefers-reduced-motion) s'applique ;
 //    son choix explicite, dans un sens ou dans l'autre, prime ensuite.
@@ -23,7 +24,7 @@
 // Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
 
 export const OPTIONS_STORAGE_KEY = 'houyi.options';
-export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto' };
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, blink: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto' };
 const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'story', 'easy', 'normal', 'hard', 'expert'] };
 const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
 
@@ -180,6 +181,7 @@ export function applyOptions() {
     b.toggle('a11y-colorblind', current.colorblind);
     b.toggle('no-anim', !animationsEnabled());
     b.toggle('fx-reduced', current.reduceFx);
+    b.toggle('no-blink', !current.blink || current.reduceFx);   // aucun clignotement si l'option est coupée ou si les effets sont réduits
     b.toggle('casual-mode', current.casual === true);   // mode Casual : le côté RPG (armes, stuff, répartition des points) est géré par le jeu
 }
 
