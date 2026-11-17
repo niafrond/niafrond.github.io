@@ -1,0 +1,1258 @@
+import { cappedEnemyHit } from './combatBalance.js';
+import { isFoxPlaying, player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, playFighterAttack, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, applyDamage, addBonusTurn } from "./game.js";
+import { colors, boardSize } from "./constants.js";
+import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, cellBanner, driftRow, applyBoardBoost } from "./terrain.js";
+import { BIOME_PROTECTION_TEXT } from "./stuff.js";
+import { flyManaToCounter } from "./manaFlight.js";
+
+import { tutorialCallbacks } from "./tutorial.js";
+import { hasMatches as hasMatchesOnBoard, checkForMatchesOnly as checkForMatchesOnlyOnBoard, checkMatchAtPosition, findPossibleMatches, collectMatches, pickJokerSpawns, getColorMatchManaBaseGain, getEffectiveMatchLength, getJokerMatchMultiplier } from "./matchMechanics.js";
+
+
+import { playSfx } from "./sound.js";
+import { JOKER_TILE, isJokerTile, shouldCreateJokerFromMatchLength, pickRandomNonJokerIndex, rollTileWithJoker, rollBalancedTile, baseTile, maybeSkull5 } from "./joker.js";
+import { actionGuard } from "./actionGuard.js";
+import { resolveStrike, skullStrengthBonus } from "./combatStats.js";
+import { showStrikeAnimation } from "./gameStatsTab.js";
+import { confusedSelfHit } from "./alterations.js";
+import { chilledGain } from "./enemyBehaviors.js";
+import { ensureBoardResizeListeners, syncBoardTileSize } from './boardLayout.js';
+export * from './boardLayout.js';
+import { clearSuggestion, clearSuggestionTimer, getSortedPossibleMoves, handleNoPossibleMoveForCurrentTurn, startSuggestionTimer } from './boardSuggestions.js';
+export * from './boardSuggestions.js';
+import { enemyMakeMove } from './boardEnemyMoves.js';
+export * from './boardEnemyMoves.js';
+
+// grille et sélection
+export let board = [];
+export let selected = null;
+export function clearSelectedTile(){ selected = null; }   // pour les modules extraits (une liaison importée ne s'assigne pas)
+
+// Pièges de zone (duel contre Fengmeng, voir duel.js) : cases piégées, positions fixes de la grille.
+let trappedCells = new Set();
+
+export function getTrappedCells(){
+    return [...trappedCells];
+}
+
+export function setTrappedCells(indices = []){
+    trappedCells = new Set(indices);
+    renderBoard(true);
+}
+
+// Règle de biome du combat (terrain.js) : cases spéciales (bambou, lave, boue, sacré, glace) et dérive (mer).
+let biomeRule = null;
+let biomeState = createBiomeState();
+
+// `protectedByStuff` : le héros porte le collier du biome (stuff.js) — la lave ne brûle plus, les bambous, la glace et la dérive de la mer n'agissent plus.
+let biomeProtected = false;
+export function setBiomeRule(key, protectedByStuff = false){
+    biomeRule = BIOME_RULES[key] || null;
+    biomeProtected = Boolean(biomeRule && protectedByStuff);
+    biomeState = createBiomeState();
+    cellFxSeen.clear(); cellFxGone.clear();
+    if(biomeProtected) log(`${biomeRule.label} : votre collier vous protège (${BIOME_PROTECTION_TEXT[key] || 'effet annulé'}).`);
+}
+export const getBiomeRule = () => biomeRule;
+export const getBiomeCells = () => ({ ...biomeState.cells });
+export const isBlocked = index => isBlockedCell(biomeState, index, biomeRule);
+
+// Fin du tour du joueur : les cases évoluent. Retourne les dégâts de brûlure à infliger au héros.
+export function advanceBiomeTurn(){
+    if(!biomeRule) return 0;
+    // Protégé par un collier : les cases nuisibles n'apparaissent plus (la lave, elle, apparaît encore pour être utilisée, mais ne brûle plus).
+    const rule = biomeProtected && !biomeRule.burnDamage ? { ...biomeRule, spawn: 0, drift: false } : biomeRule;
+    const res = advanceBiome(biomeState, rule, boardSize);
+    if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'jackpot' ? 'dorée(s) (qì ×10)' : 'sacrée(s)'}.`);
+    if(res.expired.length) log(`${biomeRule.label} : ${res.expired.length} case(s) se libèrent.`);
+    if(res.drifted !== null){
+        const before = [...board];
+        driftRow(board, res.drifted, boardSize);
+        if(hasMatchesOnBoard(board)) board.splice(0, board.length, ...before);   // la dérive ne crée jamais de combinaison
+        else log('Mer : une rangée dérive.');
+    }
+    renderBoard(true);
+    if(res.drifted !== null) animateRowDrift(res.drifted);
+    // Les nouvelles cases annoncent leur effet (la lave le fait juste avant ses dégâts, voir announceBurningCells).
+    if(!biomeRule.burnDamage) res.spawned.forEach(i => floatCellText(i, cellBanner(biomeRule)));
+    if(res.drifted !== null) floatCellText(res.drifted * boardSize, cellBanner(biomeRule));
+    return biomeProtected ? 0 : burnDamage(biomeState, biomeRule);
+}
+
+// Dérive de la mer : la rangée glisse d'une case vers la droite au lieu de sauter. Chaque case part de la position de sa voisine de gauche ;
+// la case qui sort à droite continue hors du plateau en s'effaçant (fantôme) pendant que la même case entre par la gauche.
+export const DRIFT_MS = 640;
+export function animateRowDrift(row){
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv || !Element.prototype.animate || document.body.classList.contains('fx-reduced')) return;
+    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const tiles = Array.from(boardDiv.children);
+    const first = tiles[row * boardSize], last = tiles[row * boardSize + boardSize - 1], second = tiles[row * boardSize + 1];
+    if(!first || !last || !second) return;
+    const step = second.offsetLeft - first.offsetLeft;
+    const opts = { duration: DRIFT_MS, easing: 'cubic-bezier(0.45, 0.05, 0.25, 1)' };
+    beginComboAnimation();
+    for(let c = 1; c < boardSize; c++){
+        tiles[row * boardSize + c].animate([{ transform: `translateX(${-step}px)` }, { transform: 'translateX(0)' }], opts);
+    }
+    // entrée par la gauche
+    first.animate([{ transform: `translateX(${-step}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], opts);
+    // sortie par la droite : copie de la case qui boucle, posée sur la dernière colonne
+    const ghost = first.cloneNode(true);
+    ghost.classList.remove('selected', 'suggested', 'targetable');
+    Object.assign(ghost.style, { position: 'absolute', left: `${last.offsetLeft}px`, top: `${last.offsetTop}px`, margin: '0', pointerEvents: 'none', zIndex: '2' });
+    boardDiv.appendChild(ghost);
+    const out = ghost.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${step}px)`, opacity: 0 }], opts);
+    const done = () => { ghost.remove(); endComboAnimation(); };
+    out.onfinish = done; out.oncancel = done;
+}
+
+// Texte flottant au-dessus d'une case (« Case brûlante - 3 dégâts ») : posé sur la page, il survit au repaint du plateau.
+export const BIOME_BANNER_MS = 1100;
+function floatCellText(index, text){
+    const tile = document.getElementById('board')?.children[index];
+    if(!tile || !text) return;
+    const r = tile.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'biome-float';
+    el.textContent = text;
+    el.style.left = `${r.left + r.width / 2}px`;
+    el.style.top = `${r.top + r.height / 2}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), BIOME_BANNER_MS);
+}
+
+// Clic sur une case de biome : affiche brièvement son effet (« Case brûlante - -6 PV pour l'ennemi », « Case gelée - indisponible 2 tours »…).
+function announceClickedBiomeCell(index){
+    const cell = biomeState.cells[index];
+    if(!biomeRule || !cell || cell.kind !== biomeRule.kind) return;
+    floatCellText(index, cellBanner(biomeRule, biomeRule.blocks ? biomeRule.cellEffect : (biomeRule.matchEffect || biomeRule.cellEffect)));
+}
+
+// Annonce « Case brûlante - 3 dégâts » sur chaque case brûlante avant que les dégâts ne tombent. Retourne le délai à attendre (ms).
+export function announceBurningCells(){
+    if(!biomeRule?.burnDamage) return 0;
+    const text = cellBanner(biomeRule, biomeProtected ? 'protégé par votre collier' : `-${biomeRule.burnDamage} dégâts`);
+    const burning = Object.keys(biomeState.cells).filter(i => biomeState.cells[i].kind === biomeRule.kind);
+    burning.forEach(i => floatCellText(Number(i), text));
+    return burning.length ? BIOME_BANNER_MS : 0;
+}
+
+// Départ de combat depuis un belvédère (terrain.js) : `count` tuiles passent à la couleur faible de l'ennemi.
+export function boostBoardColor(color, count){
+    if(!color) return;
+    applyBoardBoost(board, color, count);
+    if(hasMatchesOnBoard(board)) generateNewBoard();
+    renderBoard();
+}
+
+// Pouvoir de Jian : toutes les tuiles d'une couleur tirée au hasard (parmi celles du plateau) deviennent des flèches.
+// Renvoie la couleur transformée, ou null s'il n'y a rien à transformer ; le plateau n'est pas résolu ici (voir checkMatches).
+export function convertRandomColorToArrows(rng = Math.random){
+    const present = colors.filter(c => board.includes(c));
+    if(!present.length) return null;
+    const color = present[Math.min(present.length - 1, Math.floor(rng() * present.length))];
+    board.forEach((tile, i) => { if(tile === color) board[i] = 'combat'; });
+    renderBoard();
+    return color;
+}
+
+// Brouille des cases du plateau (tempête de la Reine de glace) : mélange la couleur de `count` cases ordinaires, sans jamais créer de combinaison
+// (jusqu'à 12 essais). Renvoie true si le plateau a changé.
+export function scrambleTiles(count = 5, rng = Math.random){
+    const cells = board.map((tile, i) => (colors.includes(tile) ? i : -1)).filter(i => i >= 0);
+    if(cells.length < 2) return false;
+    const picked = [];
+    while(picked.length < Math.min(count, cells.length)) picked.push(cells.splice(Math.floor(rng() * cells.length), 1)[0]);
+    const before = board.slice();
+    for(let attempt = 0; attempt < 12; attempt++){
+        const tiles = picked.map(i => before[i]);
+        for(let k = tiles.length - 1; k > 0; k--){ const j = Math.floor(rng() * (k + 1)); [tiles[k], tiles[j]] = [tiles[j], tiles[k]]; }
+        picked.forEach((cell, k) => { board[cell] = tiles[k]; });
+        if(!hasMatchesOnBoard(board) && board.some((t, i) => t !== before[i])){ renderBoard(); return true; }
+    }
+    board.splice(0, board.length, ...before);
+    return false;
+}
+
+// Effet d'une case de biome traversée par un match (terrain.js) : le héros ou l'ennemi en profite de la même façon (qì, points de combat,
+// dégâts des crânes) et la lave blesse l'adversaire de celui qui joue. Un héros protégé par son collier ne subit pas la lave de l'ennemi.
+function applyMatchExtras(indices, info, side = 'player'){
+    if(biomeRule){
+        const rule = biomeRule;
+        const isPlayer = side === 'player';
+        const who = isPlayer ? player : enemy;
+        const opponent = isPlayer ? enemy : player;
+        const res = resolveBiomeMatch(biomeState, biomeRule, indices);
+        const matchEffect = !isPlayer && res.damage > 0 && !biomeProtected ? `-${res.damage} PV pour le héros` : (!isPlayer && res.damage > 0 ? 'protégé par votre collier' : rule.matchEffect);
+        res.cleared.forEach(i => floatCellText(i, cellBanner(rule, matchEffect)));
+        if(res.damage > 0 && !(opponent === player && biomeProtected)){
+            applyDamage(opponent, res.damage);
+            log(`${rule.label} : -${res.damage} PV pour ${isPlayer ? "l'ennemi" : 'le héros'}.`);
+        }
+        const whoLabel = isPlayer ? '' : " (ennemi)";
+        if(info.type === 'color' && info.color){
+            if(res.manaDelta > 0) addManaForColor(who, info.color, res.manaDelta);
+            if(res.manaDelta < 0) who.mana[info.color] = Math.max(0, (who.mana[info.color] || 0) + res.manaDelta);
+            if(res.manaMultiplier > 1){
+                addManaForColor(who, info.color, getColorMatchManaBaseGain(info) * (res.manaMultiplier - 1), { applyGainBonus: false });
+                log(`${biomeRule.label} : tuile dorée, qì ×${res.manaMultiplier} !${whoLabel}`);
+            }
+            if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} qì${whoLabel}.`);
+        } else if(info.type === 'combat' || info.type === 'skull'){
+            // Crânes et flèches : le bonus de la case s'applique à leur gain (dégâts ou points de combat) au lieu du qì.
+            const isSkull = info.type === 'skull';
+            const base = getEffectiveMatchLength(info) * (isSkull ? skullDamage + skullStrengthBonus(who) : 1);
+            const bonus = Math.round(res.manaDelta + base * (res.manaMultiplier - 1));
+            if(bonus){
+                if(isSkull){ if(bonus > 0) applyDamage(opponent, bonus, { damageSource: 'skull' }); }
+                else who.combatPoints = Math.max(0, who.combatPoints + bonus);
+                if(bonus > 0 || !isSkull) log(`${biomeRule.label} : ${bonus > 0 ? '+' : ''}${bonus} ${isSkull ? 'dégâts' : 'points de combat'}${res.manaMultiplier > 1 ? ` (×${res.manaMultiplier})` : ''}${whoLabel}.`);
+            }
+        }
+    }
+}
+
+// Minuteur pour suggestion de match
+
+// Track si le jeu a vraiment commencé (un joueur a joué)
+let gameStarted = false;
+let turnDistinctMatches = 0;
+let comboMasteryTriggered = false;
+let pendingSwap = null;
+let tileClickInterceptor = null;
+let tileHighlightPredicate = null;
+let boardDropProbabilities = null;
+let pendingComboAnimations = 0;
+let boardSettledCallbacks = [];
+
+// Les tuiles sont des dessins (gâteaux de lune, crâne, flèche : voir retro.css et sprites/tiles/) :
+// plus de glyphe emoji dans la case, seulement une infobulle qui rappelle le rôle de la tuile.
+const TILE_LABELS = {
+    red: 'Gâteau de lune au haricot rouge',
+    blue: 'Gâteau de lune peau de neige',
+    green: 'Gâteau de lune au thé matcha',
+    yellow: 'Gâteau de lune au jaune d\'œuf salé',
+    purple: 'Gâteau de lune au taro',
+    skull: 'Crâne : dégâts',
+    skull5: 'Crâne +5 : vaut 5 crânes',
+    combat: 'Flèche : points de combat',
+    joker: 'Pleine lune : joker'
+};
+
+function paintTileGlyph(el, tile){
+    el.textContent = '';
+    const label = TILE_LABELS[isJokerTile(tile) ? 'joker' : tile] || '';
+    el.title = label;
+    // Nom accessible : la tuile et sa position (ligne, colonne), pour jouer sans voir les couleurs ni la souris.
+    const cols = boardColumns(el.parentElement);
+    const i = Number(el.dataset.index);
+    if(label && Number.isFinite(i)) el.setAttribute('aria-label', `${label}, ligne ${Math.floor(i / cols) + 1}, colonne ${(i % cols) + 1}`);
+}
+
+// Nombre de colonnes affichées (8, ou 10 contre un boss) : lu sur le plateau lui-même.
+function boardColumns(boardDiv){
+    const n = parseInt(boardDiv?.style.getPropertyValue('--board-cols'), 10);
+    return n > 0 ? n : boardSize;
+}
+
+
+const MIN_INITIAL_POSSIBLE_MOVES = 8;
+const MAX_BOARD_GENERATION_ATTEMPTS = 120;
+
+// Répartition FIXE des tuiles, identique pour le plateau initial et pour chaque
+// nouvelle ligne qui tombe après un match : ~63 % gâteaux de lune, 17 % flèches, 19 % crânes.
+// Le reste (~1 %) est absorbé par les gemmes (dont le joker, très rare).
+const BOARD_DROP_PROBABILITIES = Object.freeze({
+    skullProb: 0.19,
+    combatProb: 0.17,
+    jokerProb: 0.0035
+});
+
+/** Vrai tant que le plateau résout un échange/une chaîne ou joue des animations (armes/objets bloqués). */
+export function isBoardResolving(){
+    return pendingComboAnimations > 0 || actionGuard.isBoardBusy();
+}
+
+function onBoardSettled(callback){
+    if(typeof callback !== 'function') return;
+    if(pendingComboAnimations <= 0){
+        callback();
+        return;
+    }
+    boardSettledCallbacks.push(callback);
+}
+
+function beginComboAnimation(){
+    pendingComboAnimations++;
+}
+
+function endComboAnimation(){
+    pendingComboAnimations = Math.max(0, pendingComboAnimations - 1);
+    if(pendingComboAnimations > 0) return;
+
+    const callbacks = boardSettledCallbacks;
+    boardSettledCallbacks = [];
+    callbacks.forEach(cb => cb());
+}
+
+export function setGameStarted(started){
+    gameStarted = started;
+}
+
+export function setBoardTargetingMode(config = null){
+    if(!config){
+        tileClickInterceptor = null;
+        tileHighlightPredicate = null;
+        refreshTargetingHighlights();
+        return;
+    }
+
+    tileClickInterceptor = typeof config.onTileClick === 'function' ? config.onTileClick : null;
+    tileHighlightPredicate = typeof config.highlightPredicate === 'function' ? config.highlightPredicate : null;
+    refreshTargetingHighlights();
+}
+
+function refreshTargetingHighlights(){
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv) return;
+    const tiles = boardDiv.children;
+
+    for(let i = 0; i < tiles.length; i++){
+        tiles[i].classList.remove('targetable');
+        if(tileHighlightPredicate && tileHighlightPredicate(i, board[i])){
+            tiles[i].classList.add('targetable');
+        }
+    }
+}
+
+function computeSpecialTileProbabilities(){
+    // Tutoriel : répartition dédiée (plus de crânes, pas de flèches ni de joker) pour que les étapes aillent vite.
+    return { ...(tutorialCallbacks.dropProbabilities || BOARD_DROP_PROBABILITIES) };
+}
+
+function refreshBoardDropProbabilities(){
+    boardDropProbabilities = computeSpecialTileProbabilities();
+}
+
+function createsImmediateMatchAt(index, tile){
+    const row = Math.floor(index / boardSize);
+    const col = index % boardSize;
+
+    if(col >= 2){
+        const left1 = index - 1;
+        const left2 = index - 2;
+        if(baseTile(board[left1]) === tile && baseTile(board[left2]) === tile){
+            return true;
+        }
+    }
+
+    if(row >= 2){
+        const up1 = index - boardSize;
+        const up2 = index - boardSize * 2;
+        if(baseTile(board[up1]) === tile && baseTile(board[up2]) === tile){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function pickWeightedTileForInitialBoard(index){
+    const probabilities = boardDropProbabilities || computeSpecialTileProbabilities();
+    const skullProb = Math.max(0, probabilities.skullProb || 0);
+    const combatProb = Math.max(0, probabilities.combatProb || 0);
+    const colorPoolProb = Math.max(0, 1 - skullProb - combatProb);
+    const colorProb = colorPoolProb / colors.length;
+
+    const candidates = [];
+    if(!createsImmediateMatchAt(index, 'skull') && skullProb > 0){
+        candidates.push({ tile: 'skull', weight: skullProb });
+    }
+    if(!createsImmediateMatchAt(index, 'combat') && combatProb > 0){
+        candidates.push({ tile: 'combat', weight: combatProb });
+    }
+
+    for(const color of colors){
+        if(createsImmediateMatchAt(index, color)) continue;
+        if(colorProb > 0){
+            candidates.push({ tile: color, weight: colorProb });
+        }
+    }
+
+    const totalWeight = candidates.reduce((sum, candidate) => sum + candidate.weight, 0);
+    if(totalWeight <= 0){
+        return colors.find(color => !createsImmediateMatchAt(index, color)) || colors[0];
+    }
+
+    let roll = Math.random() * totalWeight;
+    for(const candidate of candidates){
+        roll -= candidate.weight;
+        if(roll <= 0){
+            return candidate.tile;
+        }
+    }
+
+    return candidates[candidates.length - 1].tile;
+}
+
+function generateInitialBoardWithoutMatches(){
+    board = [];
+    for(let i = 0; i < boardSize * boardSize; i++){
+        board[i] = maybeSkull5(pickWeightedTileForInitialBoard(i));
+    }
+}
+
+function generateNewBoard(){
+    // On fige les probabilites de drop pour tout le plateau courant.
+    refreshBoardDropProbabilities();
+
+    // Génère un plateau sans match initial, avec un nombre suffisant de coups possibles.
+    let attempts = 0;
+    while(attempts < MAX_BOARD_GENERATION_ATTEMPTS){
+        generateInitialBoardWithoutMatches();
+
+        attempts++;
+        if(hasMatchesOnBoard(board)) continue;
+
+        const possibleMoves = findPossibleMatches(board).length;
+        if(possibleMoves >= MIN_INITIAL_POSSIBLE_MOVES) {
+            return;
+        }
+    }
+
+    // Fallback de sécurité pour éviter une boucle infinie sur des configs extrêmes.
+    do{
+        generateInitialBoardWithoutMatches();
+    }while(hasMatchesOnBoard(board));
+}
+
+export function generateRandomTile(options = {}){
+    refreshBoardDropProbabilities();   // relu à chaque tirage : la répartition change pendant le tutoriel
+
+    return rollTileWithJoker(boardDropProbabilities, colors, options);
+}
+
+// Tuile qui tombe pour combler un trou : tirée pour que la répartition cible tienne sur tout le plateau après la chute.
+function generateBalancedDropTile(index){
+    const scripted = tutorialCallbacks.dropTile?.(index, board, currentTurn);   // tutoriel : tuile pré-générée / neutre
+    if(scripted) return scripted;
+    refreshBoardDropProbabilities();
+    return rollBalancedTile(board, boardDropProbabilities, colors);
+}
+
+// Compacte la colonne vers le bas et comble les trous par de nouvelles tuiles ; renvoie les tuiles qui glissent
+// (indice d'arrivée → nombre de rangées parcourues) et le nombre de nouvelles tuiles en haut.
+function fillColumnByGravity(col){
+    const kept = [];
+    for(let row = boardSize - 1; row >= 0; row--){
+        const idx = row * boardSize + col;
+        const tile = board[idx];
+        if(tile !== null && tile !== undefined){
+            kept.push({ tile, row });
+        }
+    }
+
+    const moved = new Map();
+    let writeRow = boardSize - 1;
+    for(const { tile, row } of kept){
+        const writeIdx = writeRow * boardSize + col;
+        board[writeIdx] = tile;
+        if(writeRow !== row) moved.set(writeIdx, writeRow - row);
+        writeRow--;
+    }
+
+    const newCount = writeRow + 1;
+    while(writeRow >= 0){
+        const writeIdx = writeRow * boardSize + col;
+        board[writeIdx] = generateBalancedDropTile(writeIdx);
+        writeRow--;
+    }
+    return { moved, newCount };
+}
+
+// Applique la gravité sur tout le plateau et renvoie de quoi animer la chute (vide si aucun trou).
+function normalizeBoardHoles(){
+    if(trappedCells.size && currentTurn === 'player'){
+        for(const idx of [...trappedCells]){
+            if(board[idx] === null || board[idx] === undefined) trappedCells.delete(idx);
+        }
+    }
+    const movedTileOffsets = new Map();
+    const newTilesPerCol = new Map();
+    for(let col = 0; col < boardSize; col++){
+        const { moved, newCount } = fillColumnByGravity(col);
+        moved.forEach((delta, idx) => movedTileOffsets.set(idx, delta));
+        if(newCount > 0) newTilesPerCol.set(col, newCount);
+    }
+    return { movedTileOffsets, newTilesPerCol };
+}
+
+export function generateBoard(){
+    trappedCells = new Set();
+    biomeState = createBiomeState();
+    generateNewBoard();
+    const boardDiv=document.getElementById('board');
+    if(!boardDiv){
+        console.error('Board element not found!');
+        return;
+    }
+    boardDiv.innerHTML="";
+    boardDiv.style.setProperty('--board-cols', boardSize);   // 8 colonnes, 10 contre un boss
+    for(let i=0;i<boardSize*boardSize;i++){
+        const tile=document.createElement('div');
+        tile.className=`tile ${board[i]}`;
+        tile.dataset.index=i;
+        tile.onclick=()=>selectTile(i);
+        tile.setAttribute('role', 'button');   // lecteurs d'écran tactiles (TalkBack, VoiceOver) : nom donné par aria-label
+        boardDiv.appendChild(tile);
+    }
+    ensureBoardResizeListeners();
+    syncBoardTileSize();
+    renderBoard();
+}
+
+// Régénère le plateau avec animation quand aucune combinaison n'est possible
+export function regenerateBoard(){
+    log("Plateau régénéré (aucune combinaison possible) !");
+    const boardDiv = document.getElementById('board');
+    const tiles = boardDiv.children;
+
+    // Animation via showCombatAnimation (overlay sur le plateau)
+    showCombatAnimation({ icon: 'cross', title: 'Aucun coup possible !', target: 'Le plateau est régénéré...' }, true);
+
+    // Disparition des tuiles après que l'overlay soit visible (~900ms)
+    setTimeout(() => {
+        for(let i = 0; i < tiles.length; i++){
+            tiles[i].style.opacity = '0';
+            tiles[i].style.transform = 'scale(0.5)';
+        }
+
+        // Régénérer le plateau après animation
+        setTimeout(() => {
+            generateNewBoard();
+            for(let i = 0; i < tiles.length; i++){
+                tiles[i].style.opacity = '1';
+                tiles[i].style.transform = 'scale(1)';
+                tiles[i].className = `tile ${board[i]}`;
+                paintTileGlyph(tiles[i], board[i]);
+            }
+            renderBoard();
+        }, 400);
+    }, 900);
+}
+
+export function selectTile(index){
+    if(tileClickInterceptor){
+        const consumed = tileClickInterceptor(index, board[index]);
+        if(consumed !== false){
+            return;
+        }
+    }
+
+    // Empêcher le joueur de jouer si ce n'est pas son tour (ou pendant le coup de Xiao Gui)
+    if(currentTurn !== 'player' || isFoxPlaying()){
+        log('Ce n\'est pas votre tour !');
+        return;
+    }
+
+    // Plateau en cours de résolution : on n'accepte pas de nouvel échange (évite d'enchaîner des coups).
+    if(pendingSwap || actionGuard.isBoardBusy()){
+        return;
+    }
+
+    announceClickedBiomeCell(index);
+
+    // Regle commune joueur/ennemi: plateau bloque => regeneration puis meme acteur rejoue.
+    if(getSortedPossibleMoves().length === 0){
+        handleNoPossibleMoveForCurrentTurn();
+        return;
+    }
+    
+    // Arrêter le minuteur de suggestion
+    clearSuggestionTimer();
+    clearSuggestion();
+    
+    const boardDiv=document.getElementById('board');
+    const tiles=boardDiv.children;
+    
+    if(isBlocked(index) || (selected !== null && isBlocked(selected))){
+        log('Cette case est bloquée.');
+        playSfx('invalid');
+        if(selected !== null){ tiles[selected].classList.remove('selected'); selected = null; }
+        return;
+    }
+    if(selected===null){ 
+        selected=index;
+        tiles[index].classList.add('selected');
+        // Arrêter le minuteur temporairement
+        clearSuggestionTimer();
+        clearSuggestion();
+        return; 
+    }
+    // n'accepte que les tuiles adjacentes (haut/bas/gauche/droite)
+    const selectedRow = Math.floor(selected / boardSize);
+    const selectedCol = selected % boardSize;
+    const indexRow = Math.floor(index / boardSize);
+    const indexCol = index % boardSize;
+    const isAdjacent = Math.abs(selectedRow - indexRow) + Math.abs(selectedCol - indexCol) === 1;
+    if(!isAdjacent){
+        log("Échange non valide (doit être adjacent)");
+        playSfx('invalid');
+        tiles[selected].classList.remove('selected');
+        selected=null;
+        return;
+    }
+    // Tutoriel : seul l'échange demandé est accepté (le module peut remettre le plateau d'entraînement en place).
+    if(tutorialCallbacks.allowSwap && !tutorialCallbacks.allowSwap(selected, index, board)){
+        playSfx('invalid');
+        tiles[selected].classList.remove('selected');
+        selected=null;
+        renderBoard();
+        return;
+    }
+    tiles[selected].classList.remove('selected');
+    swapTiles(selected,index);
+    selected=null;
+    
+    // Redémarrer le minuteur après un mouvement
+    startSuggestionTimer();
+}
+
+export function swapTiles(i,j){
+    // Le jeu est commencé dès le premier échange, joueur OU ennemi (sinon les matchs d'un ennemi qui ouvre le combat étaient ignorés).
+    gameStarted = true;
+
+    turnDistinctMatches = 0;
+    comboMasteryTriggered = false;
+
+    logActiveAction(`echange les tuiles ${i} <-> ${j}`);
+    actionGuard.endBoardAction(); // une action plateau vient d'avoir lieu (armes/objets bloqués un court instant)
+    
+    // Effectuer le swap
+    [board[i],board[j]]=[board[j],board[i]];
+    playSfx('swap');
+    
+    // Vérifier si le swap crée un match autour des deux tuiles échangées.
+    // Fallback global utile pour certains cas joker où le match existe
+    // mais n'est pas directement détecté autour de i/j.
+    const hasMatch = Boolean(
+        checkMatchAtPosition(board, i) ||
+        checkMatchAtPosition(board, j) ||
+        collectMatches(board).length > 0
+    );
+    
+    if(!hasMatch) {
+        pendingSwap = null;
+        playSfx('invalid');
+        // Aucun match créé : annuler le swap (mais garder le tour)
+        [board[i],board[j]]=[board[j],board[i]];
+        renderBoard();
+        if(currentTurn === 'player'){
+            log("Aucun match créé ! Mouvement annulé, à vous de rejouer.");
+            // Redémarrer le minuteur après un mauvais mouvement
+            startSuggestionTimer();
+        } else {
+            log("L'ennemi n'a créé aucun match. Mouvement annulé, il rejoue.");
+            setTimeout(() => {
+                if(currentTurn === 'enemy') enemyMakeMove();
+            }, 700);
+        }
+        return;
+    }
+
+    pendingSwap = {
+        i,
+        j,
+        turn: currentTurn,
+        resolvedAtLeastOneMatch: false
+    };
+    actionGuard.beginBoardAction();
+
+    // Notifier le tutoriel qu'un échange valide du joueur a eu lieu (les échanges de l'ennemi ne comptent pas)
+    if(currentTurn === 'player') tutorialCallbacks.onTileSwap?.(i, j, true);
+
+    // Il y a un match : continuer normalement
+    renderBoard();
+    checkMatches();
+}
+
+// Les cases détruites par un sort restent vides tant que l'annonce du sort (« SORT — x dégâts ») masque le plateau,
+// puis encore un court instant une fois révélées, avant que la chute ne les comble.
+const SPELL_HOLES_REVEAL_MS = 350;
+const SPELL_HOLES_MAX_WAIT_MS = 20000;   // filet de sécurité si une annonce n'est jamais fermée
+let renderBoardToken = 0;
+
+// Cases de biome animées (style-hud.css `.cell-fx`) : éclat plein à l'apparition (1,5 s), anneau léger ensuite (la couleur de la gemme reste
+// visible), éclat de sortie à la disparition (0,6 s). Chaque rendu vide la tuile (paintTileGlyph) : l'état est donc suivi ici, et l'animation en
+// cours reprend à la bonne image grâce à un délai négatif (`--fx-delay`).
+export const CELL_FX_IN_MS = 1500;
+export const CELL_FX_OUT_MS = 600;
+const cellFxSeen = new Map();   // indice → { kind, since } : case présente
+const cellFxGone = new Map();   // indice → { kind, since } : case qui vient de disparaître
+function paintCellFx(tile, i, cell){
+    const now = performance.now();
+    let fxClass = null, since = now;
+    if(cell){
+        let seen = cellFxSeen.get(i);
+        if(!seen || seen.kind !== cell.kind){ seen = { kind: cell.kind, since: now }; cellFxSeen.set(i, seen); }
+        cellFxGone.delete(i);
+        since = seen.since;
+        fxClass = `n-${cell.kind} ${now - since < CELL_FX_IN_MS ? 'in' : 'idle'}`;
+    } else {
+        const seen = cellFxSeen.get(i);
+        if(seen){ cellFxSeen.delete(i); cellFxGone.set(i, { kind: seen.kind, since: now }); }
+        const gone = cellFxGone.get(i);
+        if(gone && now - gone.since < CELL_FX_OUT_MS){ fxClass = `n-${gone.kind} out`; since = gone.since; }
+        else cellFxGone.delete(i);
+    }
+    if(!fxClass) return;
+    const fx = document.createElement('span');
+    fx.className = `cell-fx ${fxClass}`;
+    fx.setAttribute('aria-hidden', 'true');
+    fx.style.setProperty('--fx-delay', `${-Math.max(0, Math.round(now - since))}ms`);
+    tile.appendChild(fx);
+}
+
+function paintBoard(tiles, skipCleanup){
+    for(let i=0;i<board.length;i++){
+        let t=board[i];
+        if(!t) continue;
+        if(!skipCleanup){
+            tiles[i].className=`tile ${t}`;
+        } else {
+            // Préserver les classes d'animation existantes
+            const existingClasses = Array.from(tiles[i].classList).filter(c => 
+                c === 'match' || c === 'blink' || c === 'disappear' || c === 'fall'
+            );
+            tiles[i].className = `tile ${t}`;
+            existingClasses.forEach(c => tiles[i].classList.add(c));
+        }
+        paintTileGlyph(tiles[i], t);
+        tiles[i].classList.toggle('trapped', trappedCells.has(i));
+        const cell = biomeState.cells[i];
+        if(cell) tiles[i].dataset.cell = cell.kind; else delete tiles[i].dataset.cell;
+        paintCellFx(tiles[i], i, cell);
+    }
+    refreshTargetingHighlights();
+}
+
+// Met en évidence quelques cases un court instant (ex. crânes créés par un sort) : anneau pulsé `.tile-created`.
+export function flashTiles(indices, durationMs = 1800){
+    const tiles = document.getElementById('board')?.children;
+    if(!tiles) return;
+    const marked = indices.map(i => tiles[i]).filter(Boolean);
+    marked.forEach(el => el.classList.add('tile-created'));
+    setTimeout(() => marked.forEach(el => el.classList.remove('tile-created')), durationMs);
+}
+
+export function renderBoard(skipCleanup = false){
+    startSuggestionTimer();
+    const boardDiv=document.getElementById('board');
+    if(!boardDiv){
+        console.error('Board element not found in renderBoard!');
+        return;
+    }
+    syncBoardTileSize();
+    const holes = [];
+    board.forEach((t, i) => { if(t === null || t === undefined) holes.push(i); });
+    const gravity = normalizeBoardHoles();
+    const tiles=boardDiv.children;
+    const token = ++renderBoardToken;
+    if(holes.length === 0 || (gravity.movedTileOffsets.size === 0 && gravity.newTilesPerCol.size === 0)){
+        paintBoard(tiles, skipCleanup);
+        return;
+    }
+    // Des tuiles ont été retirées hors combo (sort de ligne, de colonne, de couleur…). Le tableau est déjà à jour (la logique
+    // du jeu ne voit jamais de trous), mais à l'écran on montre d'abord les cases vides, puis la chute qui les comble.
+    holes.forEach(i => {
+        tiles[i].className = 'tile';
+        tiles[i].textContent = '';
+    });
+    beginComboAnimation();
+    const startedAt = Date.now();
+    const fall = () => {
+        // Un autre rendu est passé entre-temps : il a déjà peint l'état final, inutile d'animer une seconde fois.
+        if(token === renderBoardToken){
+            paintBoard(tiles, skipCleanup);
+            animateSpellGravity(tiles, gravity);
+        }
+        endComboAnimation();
+    };
+    // L'annonce du sort est affichée juste après ce rendu : on attend sa disparition (clic éventuel compris).
+    const waitAnnouncement = () => {
+        if(token !== renderBoardToken || Date.now() - startedAt > SPELL_HOLES_MAX_WAIT_MS){ fall(); return; }
+        if(boardDiv.querySelector('.attack-overlay')) setTimeout(waitAnnouncement, 100);
+        else setTimeout(fall, SPELL_HOLES_REVEAL_MS);
+    };
+    setTimeout(waitAnnouncement, 50);
+}
+
+// Les tuiles restantes glissent et les nouvelles tombent du haut, comme après un alignement.
+// Le plateau reste « en animation » jusqu'à la fin de la chute.
+function animateSpellGravity(tiles, { movedTileOffsets, newTilesPerCol }){
+    beginComboAnimation();
+    animateGravityGlide(tiles, movedTileOffsets);
+    const fallen = [];
+    newTilesPerCol.forEach((count, col) => {
+        for(let row = 0; row < count; row++){
+            const tile = tiles[row * boardSize + col];
+            if(!tile) continue;
+            fallen.push(tile);
+            setTimeout(() => tile.classList.add('fall'), row * 50);
+        }
+    });
+    setTimeout(() => {
+        fallen.forEach(tile => tile.classList.remove('fall'));
+        endComboAnimation();
+    }, 700 + (boardSize * 50));
+}
+
+// Vérifie uniquement si des matchs existent (sans les traiter)
+export function checkForMatchesOnly(){
+    return checkForMatchesOnlyOnBoard(board);
+}
+
+// Un seul tour bonus par tour pour les matchs de 4+ et les crânes détruits par un sort, cascades comprises :
+// sinon un sort qui remplit le plateau de crânes enchaîne les tours jusqu'à la mort de l'ennemi.
+// Seul un combo magistral peut offrir un second tour bonus : 2 au maximum par tour.
+// Le plafond retombe dès que la cascade est terminée (le tour suivant peut en gagner de nouveaux).
+export const MAX_MATCH_BONUS_TURNS = 2;
+let matchBonusTurnsClaimed = 0;
+export function claimMatchBonusTurn(limit = 1){
+    if(matchBonusTurnsClaimed >= Math.min(limit, MAX_MATCH_BONUS_TURNS)) return false;
+    matchBonusTurnsClaimed++;
+    return true;
+}
+
+let announceWaitSince = 0;
+export function checkMatches(forceFullBoard = false){
+    // Une mini-annonce de sort / dégâts est affichée : on attend qu'elle parte (délai auto ou clic) avant de résoudre le plateau.
+    if(document.querySelector('#board .attack-overlay')){
+        if(!announceWaitSince) announceWaitSince = Date.now();
+        if(Date.now() - announceWaitSince < SPELL_HOLES_MAX_WAIT_MS){
+            setTimeout(() => checkMatches(forceFullBoard), 100);
+            return;
+        }
+    }
+    announceWaitSince = 0;
+    if(pendingComboAnimations > 0){
+        onBoardSettled(() => {
+            setTimeout(() => checkMatches(forceFullBoard), 0);
+        });
+        return;
+    }
+
+    // Ne traiter les matchs que si le jeu a vraiment commencé
+    if(!gameStarted && !forceFullBoard){
+        // Un plateau de départ ne doit jamais contenir d'alignement non résolu : on le retire silencieusement.
+        if(hasMatchesOnBoard(board)) generateNewBoard();
+        renderBoard(); // Seulement redessiner sans traiter les matchs
+        return;
+    }
+    
+    let combos=false;
+    
+    function handleRun(indices, info){
+        // info: {type,color?,len,makeJoker?}
+        combos=true;
+        turnDistinctMatches++;
+        // Determine which player gets the rewards
+        const currentPlayer = currentTurn === 'player' ? player : enemy;
+        // apply effects
+        if(info.type==='color'){
+            // Gain de qì : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
+            const enemyIsConfused = currentPlayer === enemy && (enemy.statusEffects?.confused || 0) > 0;
+            const manaBaseGain = enemyIsConfused ? 1 : getColorMatchManaBaseGain(info);
+            const manaResult = addManaForColor(currentPlayer, info.color, manaBaseGain);
+
+            flyManaToCounter(indices, info.color, { isPlayer: currentPlayer === player });
+            if(currentPlayer === player){
+                const generatedMana = manaResult.gained;
+                if(generatedMana > 0){
+                    grantManaGeneratedXP(generatedMana);
+                    log(`+${generatedMana} XP (qì généré)`);
+                }
+                // Notifier le tutoriel d'un match de couleur du joueur
+                tutorialCallbacks.onMatch?.('color', info.color, info.len);
+            }
+            if(info.len>=4 && claimMatchBonusTurn()){
+                addBonusTurn(currentPlayer);
+                playSfx('turnBonus');
+                log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                // Afficher une animation de tour bonus
+                const isPlayer = currentTurn === 'player';
+                showCombatAnimation(
+                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    isPlayer
+                );
+            }
+            if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
+        } else if(info.type==='combat'){
+            const actionGain = chilledGain(getEffectiveMatchLength(info), currentPlayer);   // Ralenti (Reine de glace) : −1 flèche par match
+            currentPlayer.combatPoints += actionGain;
+            flyManaToCounter(indices, null, { isPlayer: currentPlayer === player, type: 'combat' });
+            log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+            // Bonus de tour pour 4+ épées
+            if(info.len>=4 && claimMatchBonusTurn()){
+                addBonusTurn(currentPlayer);
+                playSfx('turnBonus');
+                log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                const isPlayer = currentTurn === 'player';
+                showCombatAnimation(
+                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    isPlayer
+                );
+            }
+            if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
+        } else if(info.type==='skull'){
+            // Notifier le tutoriel d'un match de crânes du joueur
+            if(currentTurn === 'player') tutorialCallbacks.onMatch?.('skull', null, info.len);
+            const attacker = currentTurn === 'player' ? player : enemy;
+            // Les crânes sont des dégâts, pas un gain : la pastille vole vers l'adversaire, pas vers celui qui attaque.
+            flyManaToCounter(indices, null, { isPlayer: attacker !== player, type: 'skull' });
+            const selfHit = confusedSelfHit(attacker);   // Confus : les crânes se retournent contre leur auteur
+            const opponent = selfHit ? attacker : (currentTurn === 'player' ? enemy : player);
+            if(selfHit) log(`${attacker.name} est confus : ses crânes se retournent contre lui !`);
+            // Force : dégâts de base par crâne (plafonnés à haut niveau) ; attaque = critique, défense = blocage.
+            const attackBonus = skullStrengthBonus(attacker);
+            // `skullMult` : dégâts par crâne de l'ennemi réglés par le calibrage de durée (affichés sur sa fiche)
+            const baseSkullDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
+            const rawDmg = (attacker.skullMult || 1) !== 1 ? cappedEnemyHit(baseSkullDmg, attacker.skullMult, opponent.maxHp, attacker.hitShareCap) : baseSkullDmg;   // plafond : pas de coup fatal par le multiplicateur
+            const weakened = attacker === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
+            const strike = resolveStrike(rawDmg, attacker, opponent, { weakened });
+            let dmg = strike.damage;
+            if(dmg > 0 && opponent === player && player.damageReduction > 0) {
+                dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
+            }
+            playFighterAttack(attacker === player);
+            applyDamage(opponent, dmg, { damageSource: 'skull' });
+            // Blocage ou parade : annoncés par une animation (sinon le coup semble « ne rien faire »).
+            if(strike.block !== 'none') {
+                showStrikeAnimation({ icon: 'skull', title: `${info.len} crânes`, source: attacker.name, target: `→ ${opponent === player ? 'Vous' : opponent.name}` }, strike, attacker === player, dmg);
+            }
+            log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}${strike.crit ? ' (critique !)' : ''}${strike.block === 'total' ? ' (bloqué)' : strike.block === 'partial' ? ' (paré)' : ''}`);
+            // Bonus de tour pour 4+ crânes
+            if(info.len>=4 && claimMatchBonusTurn()){
+                addBonusTurn(currentPlayer);
+                playSfx('turnBonus');
+                log(`Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                const isPlayer = currentTurn === 'player';
+                showCombatAnimation(
+                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    isPlayer
+                );
+            }
+            if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
+        }
+
+        applyMatchExtras(indices, info, currentTurn === 'player' ? 'player' : 'enemy');
+
+        // Sons : crânes = coup porté ; couleur = qì récolté (scintillement magique) ; épées = son de match classique.
+        const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
+        if(info.type === 'skull') playSfx('skullHit', sfxPayload);
+        else if(info.type === 'color') playSfx('manaGain', sfxPayload);
+        else playSfx('match', sfxPayload);
+
+        // XP bonus des belles combinaisons (4, 5 tuiles ou plus), discret : une seule ligne de journal.
+        if(currentTurn === 'player' && info.len >= 4){
+            const bonusXp = grantBigMatchXP(info.len);
+            if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
+        }
+
+        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
+            comboMasteryTriggered = true;
+            const comboBonusTurn = claimMatchBonusTurn(MAX_MATCH_BONUS_TURNS);
+            if(comboBonusTurn){
+                addBonusTurn(currentPlayer);
+                playSfx('turnBonus');
+            }
+            const comboXp = grantComboMasteryRewards();
+
+            const randomIndex = pickRandomNonJokerIndex(board);
+            if(randomIndex !== null){
+                board[randomIndex] = JOKER_TILE;
+            }
+
+            showCombatAnimation(
+                { icon: 'star', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé${comboBonusTurn ? ', vous rejouez !' : ''}` },
+                true
+            );
+            log(`Combo magistral : +${comboXp} XP, création d'un Joker${comboBonusTurn ? ' et tour bonus' : ''} !`);
+        }
+
+        highlightCombo(indices, info);
+    }
+
+    const matches = collectMatches(board);
+    for(const match of matches){
+        handleRun(match.indices, match.info);
+    }
+    // Joker au centre de l'alignement (le plus long en cas de L/T/croix), un par groupe d'alignements liés.
+    const jokerSpawns = pickJokerSpawns(matches);
+    const jokerCells = new Set(jokerSpawns.map(sp => sp.index));
+    for(const { index, match } of jokerSpawns){
+        match.info.jokerIndex = index;
+        board[index] = JOKER_TILE;
+    }
+    for(const match of matches){ match.info.jokerCells = jokerCells; }
+
+    if(!combos){
+        if(pendingSwap && !pendingSwap.resolvedAtLeastOneMatch){
+            const { i, j, turn } = pendingSwap;
+            pendingSwap = null;
+            actionGuard.endBoardAction();
+
+            // Sécurité: si aucun combo réel n'a été résolu, on annule le swap et le même acteur rejoue.
+            [board[i],board[j]]=[board[j],board[i]];
+            turnDistinctMatches = 0;
+            comboMasteryTriggered = false;
+            renderBoard();
+
+            if(turn === 'enemy' && currentTurn === 'enemy'){
+                log("Aucun match validé pour l'ennemi. Mouvement annulé, il rejoue.");
+                setTimeout(() => {
+                    if(currentTurn === 'enemy') enemyMakeMove();
+                }, 700);
+            } else if(turn === 'player' && currentTurn === 'player'){
+                log("Aucun match validé ! Mouvement annulé, à vous de rejouer.");
+                startSuggestionTimer();
+            }
+            return;
+        }
+
+        pendingSwap = null;
+        actionGuard.endBoardAction();
+        turnDistinctMatches = 0;
+        comboMasteryTriggered = false;
+        matchBonusTurnsClaimed = 0;
+        renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
+        // Si c'est le tour de l'ennemi et qu'il n'y a pas de combos, terminer son tour
+        if(currentTurn === 'enemy'){
+            finishEnemyTurn();
+        }
+        // Si c'est le tour du joueur et qu'il n'y a pas de combos, terminer son tour
+        else if(currentTurn === 'player'){
+            finishPlayerTurn();
+        }
+    } else {
+        if(pendingSwap){
+            pendingSwap.resolvedAtLeastOneMatch = true;
+        }
+        saveUpdate();
+        // Attendre la fin reelle des animations de chute avant de relancer la detection.
+        onBoardSettled(() => {
+            setTimeout(() => checkMatches(forceFullBoard), 0);
+        });
+    }
+}
+
+// Fonction pour faire descendre les tuiles et créer des nouvelles en haut
+function dropTiles(removedIndices = []){
+    const removed = new Set(removedIndices);
+    // Une tuile détruite par le héros sur une case piégée désamorce la case.
+    if(trappedCells.size && currentTurn === 'player'){
+        for(const idx of [...trappedCells]){
+            if(removed.has(idx) || board[idx] === null || board[idx] === undefined) trappedCells.delete(idx);
+        }
+    }
+    const affectedCols = new Set();
+    const movedTileOffsets = new Map();
+    const newTilesPerCol = new Map();
+
+    // Identifier toutes les colonnes contenant des zones vides pour appliquer
+    // la gravité avant tout remplissage aléatoire.
+    for(let col = 0; col < boardSize; col++){
+        let hasHole = false;
+        for(let row = 0; row < boardSize; row++){
+            const idx = row * boardSize + col;
+            if(removed.has(idx) || board[idx] === null || board[idx] === undefined){
+                hasHole = true;
+                break;
+            }
+        }
+        if(hasHole){
+            affectedCols.add(col);
+        }
+    }
+    
+    // Pour chaque colonne affectée, faire descendre les tuiles
+    for(let col of affectedCols){
+        let writeRow = boardSize - 1;
+
+        // Compacte vers le bas et garde la trace des tuiles qui glissent.
+        for(let row = boardSize - 1; row >= 0; row--){
+            const sourceIdx = row * boardSize + col;
+            if(removed.has(sourceIdx)){
+                continue;
+            }
+
+            const tile = board[sourceIdx];
+            if(tile === undefined || tile === null){
+                continue;
+            }
+
+            const destIdx = writeRow * boardSize + col;
+            board[destIdx] = tile;
+
+            if(writeRow !== row){
+                movedTileOffsets.set(destIdx, writeRow - row);
+            }
+
+            writeRow--;
+        }
+
+        const numNewTiles = writeRow + 1;
+        newTilesPerCol.set(col, numNewTiles);
+
+        // Ajouter des nouvelles tuiles en haut.
+        while(writeRow >= 0){
+            const idx = writeRow * boardSize + col;
+            board[idx] = generateBalancedDropTile(idx);
+            writeRow--;
+        }
+    }
+    
+    return {
+        affectedCols,
+        movedTileOffsets,
+        newTilesPerCol
+    };
+}
+
+function animateGravityGlide(tiles, movedTileOffsets){
+    if(!movedTileOffsets || movedTileOffsets.size === 0){
+        return;
+    }
+
+    const rowStep = (() => {
+        const first = tiles[0];
+        const secondRow = tiles[boardSize];
+        if(first && secondRow){
+            const a = first.getBoundingClientRect();
+            const b = secondRow.getBoundingClientRect();
+            const step = b.top - a.top;
+            if(step > 0) return step;
+        }
+        return 58;
+    })();
+
+    movedTileOffsets.forEach((deltaRows, destIdx) => {
+        const tile = tiles[destIdx];
+        if(!tile) return;
+
+        const offsetY = deltaRows * rowStep;
+        tile.style.transition = 'none';
+        tile.style.transform = `translateY(-${offsetY}px)`;
+    });
+
+    requestAnimationFrame(() => {
+        movedTileOffsets.forEach((_, destIdx) => {
+            const tile = tiles[destIdx];
+            if(!tile) return;
+            tile.style.transition = 'transform 0.26s ease-out';
+            tile.style.transform = 'translateY(0)';
+        });
+    });
+
+    setTimeout(() => {
+        movedTileOffsets.forEach((_, destIdx) => {
+            const tile = tiles[destIdx];
+            if(!tile) return;
+            tile.style.transition = '';
+            tile.style.transform = '';
+        });
+    }, 300);
+}
+
+export function highlightCombo(indices, info){
+    beginComboAnimation();
+    const tiles=document.getElementById('board').children;
+    indices.forEach(i=>tiles[i].classList.add('match'));
+    // message personnalisé
+    if(info){
+        if(info.type==='color'){
+            log(`Combo ${info.color} x${info.len}` + (info.len>=4?" (bonus)":""));
+        } else if(info.type==='combat'){
+            log(`Combo points de combat x${info.len}`);
+        } else if(info.type==='skull'){
+            log(`Combo crânes x${info.len}`);
+        }
+    } else {
+        log(`Combo ${board[indices[0]]}!`);
+    }
+    setTimeout(()=>{
+        // Clignotement subtil
+        indices.forEach(i=>{
+            tiles[i].classList.remove('match');
+            tiles[i].classList.add('blink');
+        });
+        
+        setTimeout(()=>{
+            // Effet de disparition
+            indices.forEach(i=>{
+                tiles[i].classList.remove('blink');
+                tiles[i].classList.add('disappear');
+            });
+            
+            // Traiter les jokers spéciaux avant suppression
+            indices.forEach(i=>{
+                if(info && info.jokerCells && info.jokerCells.has(i)){
+                    board[i] = JOKER_TILE; // joker créé au centre de l'alignement (protégé des alignements croisés)
+                } else {
+                    board[i]=null; // Marquer comme supprimé
+                }
+            });
+            
+            setTimeout(()=>{
+            // Faire descendre les tuiles et ajouter de nouvelles en haut
+            const gravityResult = dropTiles();
+            const affectedCols = gravityResult.affectedCols;
+            const newTilesPerCol = gravityResult.newTilesPerCol;
+            renderBoard(true); // Préserver les classes d'animation
+            animateGravityGlide(tiles, gravityResult.movedTileOffsets);
+            
+            // Nettoyer la classe disappear des tuiles qui ont été déplacées
+            for(let col of affectedCols){
+                for(let row=0; row<boardSize; row++){
+                    const idx = row * boardSize + col;
+                    tiles[idx].classList.remove('disappear', 'blink', 'match');
+                }
+            }
+            
+            // Ajouter l'animation uniquement aux nouvelles tuiles en haut de chaque colonne
+            for(let col of affectedCols){
+                const numNewTiles = newTilesPerCol.get(col) || 0;
+                for(let row=0; row<numNewTiles; row++){
+                    const idx = row * boardSize + col;
+                    const tile = tiles[idx];
+                    // délai progressif : 50ms par rangée
+                    const delay = row * 50;
+                    setTimeout(()=>{
+                        tile.classList.add('fall');
+                    }, delay);
+                }
+            }
+            
+            // Enlever la classe fall après les animations
+            setTimeout(()=>{
+                for(let col of affectedCols){
+                    const numNewTiles = newTilesPerCol.get(col) || 0;
+                    for(let row=0; row<numNewTiles; row++){
+                        const idx = row * boardSize + col;
+                        tiles[idx].classList.remove('fall');
+                    }
+                }
+                endComboAnimation();
+            }, 700 + (boardSize * 50));
+        }, 150);
+        }, 800); // Durée du clignotement (2 cycles de 0.4s)
+    }, 300);
+}
+
+
+export function applyBoard(arr) {
+    board.splice(0, board.length, ...arr);
+    renderBoard();
+}
+

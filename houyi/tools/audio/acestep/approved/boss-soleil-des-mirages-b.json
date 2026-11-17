@@ -1,0 +1,29 @@
+{
+  "key": "boss-soleil-des-mirages-b",
+  "version": "v001",
+  "date": "2026-10-30T14:36:48.940Z",
+  "seed": "1357079776",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, boss battle against the Sun of Mirages, ten suns celestial motif fragmenting, illusions, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 132,
+    "key_scale": "A minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 132,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "A minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, boss battle against the Sun of Mirages, ten suns celestial motif fragmenting, illusions, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

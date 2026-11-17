@@ -1,0 +1,29 @@
+{
+  "key": "boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b",
+  "version": "v001",
+  "date": "2026-10-30T14:47:03.601Z",
+  "seed": "612232433",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, grand master Qian Jian the thousand-arrow archer, the Hou Yi motif answered in canon, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 128,
+    "key_scale": "D minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 128,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, grand master Qian Jian the thousand-arrow archer, the Hou Yi motif answered in canon, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

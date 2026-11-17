@@ -1,0 +1,29 @@
+{
+  "key": "victory-b",
+  "version": "v002",
+  "date": "2026-10-30T14:24:06.579Z",
+  "seed": "2710459804",
+  "request": {
+    "prompt": "very festive traditional Chinese celebration music inspired by the piece \"Jin She Kuang Wu\" (Golden Snake Dance), exuberant Chinese New Year lion dance and dragon dance energy, fast joyful tempo, bright crashing Chinese cymbals, resonant gongs and driving festival drums, suona and dizi playing a catchy accelerating melody with rapid ornaments, pipa and yangqin sparkling runs, call and response, accelerando building to an ecstatic triumphant finish, jubilant and triumphant, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 2,
+    "thinking": false,
+    "bpm": 132,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 132,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "very festive traditional Chinese celebration music inspired by the piece \"Jin She Kuang Wu\" (Golden Snake Dance), exuberant Chinese New Year lion dance and dragon dance energy, fast joyful tempo, bright crashing Chinese cymbals, resonant gongs and driving festival drums, suona and dizi playing a catchy accelerating melody with rapid ornaments, pipa and yangqin sparkling runs, call and response, accelerando building to an ecstatic triumphant finish, jubilant and triumphant, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

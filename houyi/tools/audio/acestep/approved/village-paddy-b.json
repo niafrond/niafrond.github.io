@@ -1,0 +1,29 @@
+{
+  "key": "village-paddy-b",
+  "version": "v001",
+  "date": "2026-10-30T13:23:56.365Z",
+  "seed": "489134029",
+  "request": {
+    "prompt": "traditional Chinese folk instrumental inspired by \"Fengyang Huagu\" (Fengyang Flower Drum), lively 2/4 folk dance pulse, flower drums with syncopated accents, hand percussion, dizi bamboo flute carrying a repetitive pentatonic folk melody with call-and-response, plucked pipa and yangqin dulcimer, G pentatonic Gong mode, playful variations and a festive final section, joyful communal rural celebration, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 115,
+    "key_scale": "G major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 115,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese folk instrumental inspired by \"Fengyang Huagu\" (Fengyang Flower Drum), lively 2/4 folk dance pulse, flower drums with syncopated accents, hand percussion, dizi bamboo flute carrying a repetitive pentatonic folk melody with call-and-response, plucked pipa and yangqin dulcimer, G pentatonic Gong mode, playful variations and a festive final section, joyful communal rural celebration, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

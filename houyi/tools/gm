@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# gm — raccourci vers game-maker, la pile IA locale (pixel art, vidéo, musique, vision) qui tourne dans WSL.
+# Usage (depuis WSL) :  tools/gm up pixel   |   tools/gm sequence tools/sequences/ultimateSkyWolf.json --root . --out sprites/ultimates-seq/ultimateSkyWolf
+# Documentation : $GAME_MAKER_DIR/README.md (défaut : /mnt/c/Users/Niafrond/dev/game-maker)
+GM="${GAME_MAKER_DIR:-/mnt/c/Users/Niafrond/dev/game-maker}"
+[ -x "$GM/gm" ] || { echo "gm : game-maker introuvable dans $GM (définir GAME_MAKER_DIR)" >&2; exit 1; }
+exec "$GM/gm" "$@"

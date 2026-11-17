@@ -1,0 +1,332 @@
+/* Tutoriel, adaptations portrait / paysage du combat, tours bonus. Extrait de style.css (chargé à la suite, dans cet ordre : la cascade est inchangée). */
+
+/* ═══════════════════════════════════════════════════
+   TUTORIAL – overlay, carte, bandeaux, surbrillances
+   ═══════════════════════════════════════════════════ */
+
+/* Overlay flottant compact (coin bas-droit, au-dessus de la colonne de l'ennemi), repliable : ne masque ni les PV de l'adversaire ni les boutons du joueur */
+.tutorial-overlay {
+    position: fixed;
+    bottom: 8px;
+    right: 8px;
+    z-index: 500;
+    pointer-events: none;
+    max-width: 210px;
+    width: calc(100vw - 16px);
+}
+
+.tutorial-overlay.hidden {
+    display: none;
+}
+
+/* Carte du tutoriel */
+.tutorial-card {
+    background: rgba(18, 18, 36, 0.92);
+    color: #f0f0f0;
+    border-radius: 10px;
+    padding: 6px 10px 6px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 0 2px #f1c40f;
+    pointer-events: none;
+    position: relative;
+}
+
+.tutorial-step-badge {
+    font-size: 10px;
+    color: #f1c40f;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 1px;
+    padding-right: 26px;
+}
+
+.tutorial-icon-display {
+    display: none;
+}
+
+.tutorial-card h3 {
+    margin: 0 0 3px;
+    font-size: 0.82rem;
+    color: #fff;
+}
+
+.tutorial-card p {
+    font-size: 0.72rem;
+    line-height: 1.3;
+    margin: 0 0 5px;
+    opacity: 0.92;
+    color: #ddd;
+}
+
+.tutorial-card p strong {
+    color: #f1c40f;
+}
+
+.tutorial-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.tutorial-actions button {
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #c0392b;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s;
+    pointer-events: all;
+}
+
+.tutorial-actions button:hover {
+    background: #a93226;
+}
+
+/* Bouton replier / déplier */
+.tutorial-toggle {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    width: 22px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 5px;
+    background: #f1c40f;
+    color: #222;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+/* Replié : seul le badge d'étape reste visible */
+.tutorial-overlay.collapsed .tutorial-card h3,
+.tutorial-overlay.collapsed .tutorial-card p,
+.tutorial-overlay.collapsed .tutorial-actions {
+    display: none;
+}
+.tutorial-overlay.collapsed { max-width: 110px; }
+.tutorial-overlay.collapsed .tutorial-step-badge { margin-bottom: 0; }
+
+/* Animation d'apparition lors du changement d'étape */
+@keyframes stepPop {
+    0%   { opacity: 0.5; transform: scale(0.94) translateY(6px); }
+    60%  { transform: scale(1.02) translateY(0); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.tutorial-overlay.step-pop .tutorial-card {
+    animation: stepPop 0.32s ease-out both;
+}
+
+/* Bandeau de retour d'information */
+.tutorial-feedback {
+    position: fixed;
+    bottom: 400px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: #27ae60;
+    color: #fff;
+    padding: 11px 28px;
+    border-radius: 40px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 600;
+    pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    white-space: nowrap;
+    max-width: 90vw;
+    text-align: center;
+}
+
+.tutorial-feedback.hidden {
+    display: none;
+}
+
+.tutorial-feedback.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.tutorial-feedback.success {
+    background: #e67e22;
+    font-size: 1.05rem;
+}
+
+/* Surbrillance tutoriel pour tuiles et boutons */
+@keyframes tutorialPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.9), 0 2px 4px rgba(0,0,0,0.2);
+    }
+    50% {
+        box-shadow: 0 0 14px 6px rgba(241, 196, 15, 0.6), 0 2px 4px rgba(0,0,0,0.2);
+    }
+}
+
+.tutorial-highlight {
+    animation: tutorialPulse 0.9s ease-in-out infinite !important;
+    outline: 3px solid #f1c40f !important;
+    outline-offset: -3px;
+    z-index: 15;
+    position: relative;
+}
+
+.tutorial-highlight-container {
+    box-shadow: 0 0 0 3px #f1c40f, 0 0 18px rgba(241, 196, 15, 0.45) !important;
+    border-radius: 8px;
+}
+
+/* Bouton lancer le tutoriel */
+#tutorial-start-btn {
+    background-color: #8e44ad;
+    color: #fff;
+}
+
+#tutorial-start-btn:hover {
+    background-color: #6c3483;
+}
+
+/* Modal de proposition du tutoriel */
+#tutorial-proposal-modal .modal-content {
+    max-width: 420px;
+}
+
+/* Adaptations dark-mode */
+body.dark-mode .tutorial-card {
+    background: rgba(8, 8, 22, 0.98);
+    box-shadow: 0 6px 32px rgba(0,0,0,0.75), 0 0 0 2px #f1c40f;
+}
+/* Portrait (mobile) : tout le combat (stats, plateau, sorts, boutons) tient dans l'écran sans défilement.
+   La taille des tuiles est calculée par board.js à partir de la hauteur restante. */
+@media (orientation: portrait) and (max-width: 820px) {
+    body { padding: 0; min-height: 100dvh; }
+    .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; }
+    .tabs { border-radius: 0; padding: 2px 0 2px 2px; align-self: start; }
+    /* Écran étroit : le rail ne montre que les icônes (le nom reste en infobulle / lecteur d'écran) */
+    .tab-btn { padding: 8px 6px; font-size: 0; }
+    .tab-btn .ic { font-size: 22px; }
+    .stats-container { margin: 2px 0; gap: 4px; }
+    #player-stats, #enemy-stats { padding: 4px 6px; font-size: 0.95em; flex: 1 1 0; min-width: 0; box-sizing: border-box; }
+    /* qì + points d'action sur une même ligne, resserrés pour tenir dans la carte */
+    #player-stats .mana-dots, #enemy-stats .mana-dots { flex-wrap: wrap; font-size: 0.95em; row-gap: 2px; }
+    #player-stats .mana-dot, #enemy-stats .mana-dot { width: 0.7em; height: 0.7em; margin-right: 2px; }
+    #player-stats .mana-dots > span:not(.mana-dot):not(.pa-stat), #enemy-stats .mana-dots > span:not(.mana-dot):not(.pa-stat) { margin-right: 2px; }
+    .pa-stat { margin-left: 1px; }
+    .stat { margin: 2px 0; }
+    /* Répartit l'espace restant (stats / plateau / sorts) selon la hauteur de l'écran */
+    #tab-combat.active { display: flex; flex-direction: column; justify-content: space-between; min-height: calc(100dvh - 92px); }
+    #tab-combat #stats-content:empty { display: none; }
+    #board { margin: auto; padding: 4px; grid-gap: 2px; }
+    /* Armes, objets et sorts en grille de 3 colonnes (au lieu d'une ligne chacun) : le plateau gagne ~150 px de hauteur,
+       donc des tuiles plus grandes. L'ennemi passe dessous, en puces plus petites. */
+    #spells-container { margin: 4px 0; gap: 6px; flex-direction: column; }
+    #player-spells, #enemy-spells { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; align-items: stretch; }
+    #weapon-button, #item-button, #spell-buttons, #enemy-weapon-button, #enemy-spell-list { display: contents; }
+    #enemy-spells h4 { grid-column: 1 / -1; }
+    #player-spells > *::before, #player-spells > *::after, #weapon-button::after, #item-button::after { display: none; }
+    #spell-buttons .spell-btn, .weapon-btn, #weapon-button .enemy-spell-item, #item-button .enemy-spell-item,
+    #spell-buttons .enemy-spell-item { width: auto; min-width: 0; margin: 0; padding: 5px 4px; font-size: clamp(0.72em, 2.6vw, 0.95em); line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+    #enemy-spells .enemy-spell-item { margin: 0; padding: 4px 3px; font-size: clamp(0.68em, 2.4vw, 0.9em); line-height: 1.25; overflow-wrap: anywhere; }
+    /* Noms tronqués (…) sur une seule ligne dans la grille compacte ; le nom complet s'affiche à l'appui long */
+    #player-spells .spell-name, #enemy-spells .spell-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .spells-column { padding: 3px; }
+    .spells-column h4 { margin: 0 0 2px; font-size: 0.75em; }
+    @media (max-height: 760px) {
+        #enemy-spells h4 { display: none; }
+        #player-spells, #enemy-spells { gap: 2px; }
+        #spell-buttons .spell-btn, .weapon-btn, #weapon-button .enemy-spell-item, #item-button .enemy-spell-item,
+        #spell-buttons .enemy-spell-item { padding: 3px 3px; font-size: 0.7em; }
+        #enemy-spells .enemy-spell-item { padding: 2px 2px; font-size: 0.66em; }
+        #combat-controls button { padding: 3px 10px; font-size: 12px; }
+    }
+    /* Assez de place : armes, objets et sorts du joueur en liste verticale (une ligne chacun).
+       board.js ajoute .spells-compact (grille 3 colonnes ci-dessus) quand la liste ne tient pas dans l'écran. */
+    #spells-container:not(.spells-compact) #player-spells { display: flex; flex-direction: column; gap: 4px; }
+    #spells-container:not(.spells-compact) #weapon-button,
+    #spells-container:not(.spells-compact) #item-button,
+    #spells-container:not(.spells-compact) #spell-buttons { display: flex; flex-direction: column; gap: 4px; }
+    #spells-container:not(.spells-compact) #weapon-button:empty,
+    #spells-container:not(.spells-compact) #item-button:empty { display: none; }
+    #combat-controls { margin: 2px 0 !important; padding-bottom: env(safe-area-inset-bottom); }
+    #combat-controls button { padding: 8px 14px; font-size: clamp(13px, 3.8vw, 17px); margin: 0 3px !important; }
+}
+
+/* Paysage : 3 blocs de gauche à droite — joueur (stats + attaques/sorts/objets), grille, ennemi (stats + attaques/sorts).
+   Les conteneurs .stats-container et #spells-container sont « aplatis » (display: contents) pour que leurs enfants
+   se placent directement dans la grille de #tab-combat. board.js calcule la taille des tuiles à partir de la hauteur. */
+@media (orientation: landscape) {
+    #tab-combat.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas: "pstats board estats" "pspells board espells";
+        column-gap: 8px;
+        row-gap: 6px;
+        align-items: start;
+    }
+    #tab-combat .stats-container, #tab-combat #spells-container { display: contents !important; }
+    #tab-combat .stats-container[style*="none"], #tab-combat #spells-container[style*="none"] { display: none !important; }
+    #tab-combat > #explore-container { grid-area: auto; }
+    #player-stats { grid-area: pstats; }
+    #enemy-stats { grid-area: estats; }
+    #board { grid-area: board; margin: 0; align-self: center; }
+    #player-spells { grid-area: pspells; }
+    #enemy-spells { grid-area: espells; width: auto; }
+    #player-spells, #enemy-spells { box-sizing: border-box; max-height: 100%; overflow-y: auto; min-width: 0; }
+    #player-stats, #enemy-stats { flex: none; min-width: 0; box-sizing: border-box; }
+    #tab-combat > #battle-result-screen { grid-column: 1 / -1; }
+    #combat-controls { margin: 4px 0 !important; }
+    #combat-controls button { padding: 4px 12px; font-size: 13px; }
+}
+
+/* Paysage sur écran bas (téléphone) : aucune marge autour du jeu, tout le combat tient dans la hauteur sans défilement */
+@media (orientation: landscape) and (max-height: 520px) {
+    body { padding: 0; min-height: 100dvh; }
+    .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; }
+    #board { padding: 4px; grid-gap: 2px; }
+    /* Colonnes joueur / ennemi étroites et empilées verticalement : fiche compacte (portrait miniature, ligne par donnée),
+       sorts / armes / objets en liste serrée défilante. La largeur (--landscape-side) est relue par board.js. */
+    :root { --landscape-side: 142px; }
+    #tab-combat.active { grid-template-columns: var(--landscape-side) minmax(0, 1fr) var(--landscape-side); column-gap: 4px; row-gap: 3px; }
+    #board { justify-self: center; }
+    #player-stats, #enemy-stats { padding: 3px 4px; font-size: 0.72em; border-width: 2px; line-height: 1.15; }
+    #player-stats .stat, #enemy-stats .stat { margin: 2px 0; }
+    #player-stats .stat strong, #enemy-stats .stat strong { width: auto; margin-right: 2px; }
+    #player-stats .stat:nth-child(3), #enemy-stats .stat:nth-child(3) { flex-wrap: wrap; gap: 0 4px; }
+    body #player-stats::after, body #enemy-stats::after { width: 36px; height: 36px; right: 2px; top: 2px; }
+    body #player-stats[style*="--portrait"] .stat:nth-child(-n+2), body #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 38px; }
+    #player-stats .mana-dots, #enemy-stats .mana-dots { display: flex; flex-wrap: wrap; gap: 2px; font-size: 0.8em; }
+    #player-stats .mana-dots .cost-badge, #enemy-stats .mana-dots .cost-badge { margin-right: 0; min-width: 1.6em; }
+    #player-spells, #enemy-spells { padding: 3px; font-size: 0.68em; scrollbar-width: none; }
+    #player-spells::-webkit-scrollbar, #enemy-spells::-webkit-scrollbar { display: none; }
+    #enemy-spells h4 { margin: 0 0 2px; font-size: 1em; }
+    #player-spells .enemy-spell-item, #enemy-spells .enemy-spell-item, #player-spells .weapon-btn, #player-spells .spell-btn {
+        margin: 0 0 2px; padding: 2px 4px; font-size: 1em; line-height: 1.15; text-align: left; border-width: 1px; }
+    #player-spells .enemy-spell-item .cost-badge, #enemy-spells .enemy-spell-item .cost-badge, #player-spells .cost-badge { font-size: 1.3em; margin-right: 2px; }
+    #player-spells hr { margin: 2px 0; }
+    /* colonnes de sorts : hauteur dictée par la grille (pas par leur contenu), défilement interne si trop longues */
+    #player-spells, #enemy-spells { contain: size; align-self: stretch; }
+    #enemy-spells { margin-bottom: 26px; }
+    #player-spells { margin-bottom: 32px; }
+    body .level-hud { left: auto; right: 4px; bottom: 2px; transform: none; }
+    #combat-controls { position: fixed; left: 4px; bottom: 2px; z-index: 20; margin: 0 !important; padding: 0; display: flex; gap: 4px; }
+    #combat-controls button { padding: 3px 8px; font-size: 11px; margin: 0 !important; }
+}
+
+/* Tours bonus accumulés (à côté du nom du combattant) */
+.bonus-turn-badge {
+    margin-left: auto;
+    flex: 0 0 auto;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ffb300;
+    color: #3b2a00;
+    font-size: 0.75em;
+    font-weight: bold;
+    line-height: 1.5;
+    white-space: nowrap;
+}

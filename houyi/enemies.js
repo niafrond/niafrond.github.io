@@ -1,0 +1,573 @@
+// Système d'ennemis piloté par un catalogue JSON
+
+import { growEnemy } from './enemyGrowth.js';
+import { rollEnemyStuff, enemyStuffMaxHp } from './enemyStuff.js';
+import { allWeapons } from "./weapons.js";
+import { MAX_ACTIVE_SPELLS, BASE_BOARD_SIZE } from "./constants.js";
+import { getSpellsByClass, getAllSpells } from "./spells.js";
+import { getRandomItem } from "./items.js";
+import { applyArenaScaling } from "./arena.js";
+import { enemyDefenseForLevel } from "./progression.js";
+import { weaknessOf, applyWeaknessToResistances } from "./elements.js";
+
+let enemyCatalog = [];
+
+function loadEnemyCatalogSync(){
+    if(enemyCatalog.length > 0) return enemyCatalog;
+
+    try {
+        const req = new XMLHttpRequest();
+        req.open('GET', './enemies.catalog.json' + (typeof window !== 'undefined' && window.__match3Build ? '?v=' + window.__match3Build : ''), false);   // ?v= : anti-cache (voir index.html)
+        req.send(null);
+        if(req.status >= 200 && req.status < 300){
+            const parsed = JSON.parse(req.responseText);
+            if(Array.isArray(parsed)){
+                enemyCatalog = parsed;
+            }
+        }
+    } catch (error) {
+        console.error('Impossible de charger enemies.catalog.json', error);
+    }
+
+    if(enemyCatalog.length === 0){
+        enemyCatalog = [
+            {
+                id: 'fallback_enemy',
+                name: 'Cultiste',
+                race: 'Humain',
+                title: 'Arcaniste',
+                playerClass: 'sorcerer',
+                hasWeapon: false,
+                statsModifiers: { hpMult: 1.0, atkMult: 1.0, defMult: 1.0 },
+                levelBias: 0,
+                spellProfile: { preferredColors: ['blue'], preferClassSpells: true, targetSpellCount: 3 },
+                resistanceProfile: { red: 0.1, blue: 0.2, green: 0.1, yellow: 0.1, purple: 0.1 }
+            }
+        ];
+    }
+
+    return enemyCatalog;
+}
+
+
+// Graine déterministe : les boss (et leur équipement, sorts, objet) sont pré-générés une fois pour toutes à partir d'une clé stable,
+// ils ne changent donc pas quand on revient les voir. Math.random est remplacé le temps de la construction (synchrone).
+function hashSeed(key){
+    let h = 2166136261;
+    const text = String(key);
+    for(let i = 0; i < text.length; i++){
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+}
+
+function mulberry32(seed){
+    let a = seed >>> 0;
+    return function(){
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+export function withSeededRandom(key, build){
+    const original = Math.random;
+    Math.random = mulberry32(hashSeed(key));
+    try {
+        return build();
+    } finally {
+        Math.random = original;
+    }
+}
+
+function clamp(num, min, max){
+    return Math.max(min, Math.min(max, num));
+}
+
+function pickRandom(arr){
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function toNumberOrDefault(value, defaultValue){
+    const n = Number(value);
+    return Number.isFinite(n) ? n : defaultValue;
+}
+
+function uniqueById(spells){
+    const map = new Map();
+    spells.forEach(sp => map.set(sp.id, sp));
+    return Array.from(map.values());
+}
+
+function resolvePreferredColor(template){
+    const profileColors = template?.spellProfile?.preferredColors;
+    if(Array.isArray(profileColors) && profileColors.length > 0) {
+        return String(profileColors[0]).toLowerCase();
+    }
+    return 'red';
+}
+
+// Catalogue complet des gabarits d'ennemis (onglet Bestiaire du carnet, bestiary.js).
+export const enemyCatalogList = () => loadEnemyCatalogSync();
+
+// Faiblesse d'un gabarit d'ennemi (révélée par l'observation sur la carte, voir terrain.js).
+export function weakColorOfTemplate(templateId){
+    const template = loadEnemyCatalogSync().find(t => t.id === templateId);
+    return template ? resolveWeakColor(resolvePreferredColor(template)) : null;
+}
+
+function resolveWeakColor(preferredColor){
+    return weaknessOf(preferredColor);   // table des éléments : voir elements.js
+}
+
+function buildResistances(template, level){
+    const defaults = { red: 0.08, blue: 0.08, green: 0.08, yellow: 0.08, purple: 0.08 };
+    const profile = template.resistanceProfile || {};
+    const resistances = {
+        red: clamp(profile.red ?? defaults.red + (level * 0.002), 0, 0.5),
+        blue: clamp(profile.blue ?? defaults.blue + (level * 0.002), 0, 0.5),
+        green: clamp(profile.green ?? defaults.green + (level * 0.002), 0, 0.5),
+        yellow: clamp(profile.yellow ?? defaults.yellow + (level * 0.002), 0, 0.5),
+        purple: clamp(profile.purple ?? defaults.purple + (level * 0.002), 0, 0.5)
+    };
+    // La couleur faible (élément qui contre l'ennemi) a toujours la résistance la plus basse du profil.
+    return applyWeaknessToResistances(resistances, resolveWeakColor(resolvePreferredColor(template)));
+}
+
+// Emplacements de sorts d'un ennemi : 2 dès le niveau 1, 3 au niveau 3, 4 (plafond du joueur) dès le niveau 6.
+export function enemySpellSlots(level){
+    return Math.min(MAX_ACTIVE_SPELLS, 2 + Math.floor(Math.max(1, level) / 3));
+}
+
+// Version ennemie d'un sort générique. Un sort de plateau (lignes, colonnes, couleur détruites) reste un vrai sort de plateau : l'ennemi le lance
+// sur le plateau, lignes et colonnes tirées au hasard (voir classSpellsAdvanced.js). Son `dmg` n'est qu'une estimation pour l'IA
+// (dégâts par case × nombre de cases attendu de la couleur du sort sur un plateau de BASE_BOARD_SIZE). Renvoie null si le sort n'a pas d'équivalent.
+const BOARD_SPELL_TILES = {
+    sweepRow: () => BASE_BOARD_SIZE,
+    sweepCol: () => BASE_BOARD_SIZE,
+    sweepCross: () => 2 * BASE_BOARD_SIZE - 1,
+    clearColor: () => BASE_BOARD_SIZE * BASE_BOARD_SIZE,
+    destroyColumns: sp => (sp.columns || 1) * BASE_BOARD_SIZE,
+    starRain: sp => (sp.rows || 1) * BASE_BOARD_SIZE + (sp.columns || 1) * BASE_BOARD_SIZE - (sp.rows || 1) * (sp.columns || 1)
+};
+export function enemyVersionOfSpell(sp){
+    if(!sp.effect) return sp;
+    const tiles = BOARD_SPELL_TILES[sp.effect];
+    if(tiles){
+        const colorShare = Math.max(1, (sp.colors || [sp.color]).filter(Boolean).length) / 5;
+        const dmg = Math.max(1, Math.round((sp.dmgPerTile || 0) * tiles(sp) * colorShare));
+        return { ...sp, type: 'damage', dmg, boardSpell: true };
+    }
+    if(sp.effect === 'harmony'){   // dégâts + soin ; le qì retiré au joueur n'est pas rejoué
+        const { effect, manaDrain, ...rest } = sp;
+        return { ...rest, type: 'damage' };
+    }
+    if(sp.effect === 'secondWind'){   // soin seul : ni tour bonus ni purge pour l'ennemi
+        const { effect, cooldown, ...rest } = sp;
+        return { ...rest, type: 'heal' };
+    }
+    if(sp.effect === 'cageEnemy'){   // Prison du Tonnerre Glacé : l'ennemi étourdit le héros (un casque peut l'en protéger)
+        const { effect, manaDrain, ...rest } = sp;
+        return { ...rest, effect: 'alterEnemy', alteration: 'stunned' };
+    }
+    if(sp.effect === 'freezeEnemy'){   // Paume de Givre : l'ennemi étourdit ET ralentit le héros
+        const { effect, manaDrain, ...rest } = sp;
+        return { ...rest, effect: 'alterEnemy', alteration: 'stunned', alsoChill: true };
+    }
+    if(sp.effect === 'stunEnemy'){   // Charge de Cavalerie : l'ennemi étourdit le héros
+        const { effect, manaDrain, cooldown, ...rest } = sp;
+        return { ...rest, effect: 'alterEnemy', alteration: 'stunned', duration: 2 };
+    }
+    return null;   // Brasier des Sceaux (crânes qui profiteraient au joueur), Prison du Tonnerre Glacé (étourdissement du héros non géré)
+}
+
+// Effets que l'ennemi sait lancer tels quels contre le héros (voir applyStandardSpellEffects, game.js).
+const ENEMY_NATIVE_EFFECTS = new Set(['statBuff', 'alterEnemy', 'preventItems', 'bonusTurn']);
+
+const costTotal = sp => typeof sp.cost === 'number' ? sp.cost : Object.values(sp.cost || {}).reduce((a, b) => a + b, 0);
+const costDamage = sp => Math.max(5, Math.round(costTotal(sp) * 2.2));   // ~2,2 dégâts par qì, comme les sorts de dégâts génériques (balance.test.js)
+
+// Équivalent ennemi des effets pensés pour le héros (rage, gemmes d'action, plateau du héros, bouclier de qì…) : { dmg?, heal?, ops: [...], debuff? }.
+// `ops` : { op: 'buff', attack, defense, turns } | { op: 'alter', key, turns, extra } | { op: 'status', key, turns } | { op: 'gainMana', color?, amount }
+//       | { op: 'drainMana', amount } | { op: 'gainCP', amount } | { op: 'stealCP', amount } | { op: 'poison', dmg, turns }   (exécutées par game.js : runEnemyOps)
+const ENEMY_EQUIVALENTS = {
+    createJoker: () => ({ ops: [{ op: 'gainMana', amount: 6 }] }),
+    destroyColor: () => ({ ops: [{ op: 'drainMana', amount: 6 }], debuff: true }),
+    yellowBolts: () => ({ dmg: 15 }),
+    damageToMana: sp => ({ ops: [{ op: 'buff', defense: 12, turns: sp.duration || 3 }] }),
+    damageToManaPurple: sp => ({ ops: [{ op: 'buff', defense: 12, turns: sp.duration || 3 }] }),
+    enchantWeapon: () => ({ ops: [{ op: 'buff', attack: 10, turns: 2 }] }),
+    reduceEnemyAtk: sp => ({ ops: [{ op: 'alter', key: 'weakened', turns: sp.duration || 3, extra: { weakenedAmount: sp.reduction || 5 } }], debuff: true }),
+    createSkull: sp => ({ dmg: costDamage(sp) }),
+    destroyArea: sp => ({ dmg: costDamage(sp) }),
+    increaseDefense: sp => ({ ops: [{ op: 'buff', defense: sp.defenseBonus || 10, turns: sp.duration || 3 }] }),
+    massiveDefense: sp => ({ ops: [{ op: 'buff', defense: sp.defenseBonus || 20, turns: sp.duration || 3 }] }),
+    purpleToDefense: () => ({ ops: [{ op: 'buff', defense: 15, turns: 3 }] }),
+    reflectDamage: sp => ({ ops: [{ op: 'buff', defense: 10, turns: sp.duration || 3 }] }),
+    counterOnBlock: sp => ({ ops: [{ op: 'buff', defense: 8, turns: sp.duration || 3 }] }),
+    blockAll: sp => ({ ops: [{ op: 'buff', defense: 30, turns: sp.duration || 3 }] }),
+    immunityEffects: sp => ({ ops: [{ op: 'status', key: 'immunityEffects', turns: sp.duration || 3 }] }),
+    increasePhysical: sp => ({ ops: [{ op: 'buff', attack: sp.atkBonus || 8, turns: sp.duration || 3 }] }),
+    damageBoost: sp => ({ ops: [{ op: 'buff', attack: sp.atkBonus || 8, turns: sp.duration || 3 }] }),
+    drainMana: sp => ({ ops: [{ op: 'drainMana', amount: sp.manaSteal || 8 }], debuff: true }),
+    drainOnHit: sp => ({ ops: [{ op: 'drainMana', amount: sp.manaDrain || 5 }], debuff: true }),
+    rageGain: sp => ({ ops: [{ op: 'buff', attack: (sp.rageGain || 40) >= 100 ? 12 : 6, turns: 3 }] }),   // pas de jauge de rage chez l'ennemi : la rage devient un bonus d'attaque
+    rageToMana: sp => ({ ops: [{ op: 'gainMana', amount: Math.max(2, Math.round((sp.manaPerRage || 0.1) * 50)) }] }),
+    rageToDamage: sp => ({ dmg: costDamage(sp) }),
+    yellowToPurple: sp => ({ dmg: costDamage(sp) }),
+    destroyPurple: sp => ({ dmg: costDamage(sp) }),
+    yellowDamage: sp => ({ dmg: costDamage(sp) }),
+    dualWeaponAttack: sp => ({ dmg: costDamage(sp) }),
+    explodeActionGems: sp => ({ dmg: costDamage(sp) }),
+    redToSkulls: sp => ({ dmg: costDamage(sp) }),
+    redToSkullsHalf: sp => ({ dmg: costDamage(sp) }),
+    actionGemsToSkulls: sp => ({ dmg: costDamage(sp) }),
+    reduceManaGain: sp => ({ ops: [{ op: 'alter', key: 'chilled', turns: sp.duration || 3 }], debuff: true }),
+    applyPoison: sp => ({ ops: [{ op: 'poison', dmg: sp.poisonDmg || 3, turns: sp.duration || 4 }], debuff: true }),
+    actionGemsToColor: () => ({ ops: [{ op: 'gainCP', amount: 3 }] }),
+    createActionGem: () => ({ ops: [{ op: 'gainCP', amount: 1 }] }),
+    colorsToActionGems: sp => ({ ops: [{ op: 'gainCP', amount: sp.gemCount || 3 }] }),
+    doubleBattle: () => ({ ops: [{ op: 'gainCP', amount: 6 }] }),
+    stealCP: sp => ({ ops: [{ op: 'stealCP', amount: sp.cpSteal || 3 }], debuff: true }),
+    destroyActionGemHeal: sp => ({ heal: (sp.healPerGem || 10) * 2 }),
+    actionGemsToMana: sp => ({ ops: [{ op: 'gainMana', color: sp.manaColor, amount: (sp.manaPerGem || 2) * 3 }] }),
+    defenseToMana: () => ({ ops: [{ op: 'gainMana', color: 'yellow', amount: 8 }] }),
+    giveRedMana: sp => ({ ops: [{ op: 'gainMana', color: 'red', amount: sp.manaGain || 15 }] })
+};
+
+/**
+ * Version ennemie d'un sort de classe : tous les sorts du héros sont accessibles aux ennemis de la classe (le tirage du grimoire respecte déjà la
+ * classe et les couleurs préférées du gabarit). Sort sans effet : tel quel. Sort de plateau, harmonie, souffle, étourdissement, gel : version dédiée
+ * (`enemyVersionOfSpell`). Effets que l'ennemi sait lancer : tels quels. Sorts de dégâts à effet propre au héros (Sphère de Flammes, Frappe du Maître
+ * Taoïste, Coup de Bouclier, Lancer de Hache) : dégâts seuls. Les autres effets (rage, gemmes d'action, bouclier de qì, plateau du héros…) deviennent leur
+ * équivalent chez l'ennemi (`ENEMY_EQUIVALENTS`). Renvoie null si aucun équivalent n'existe (le sort est alors écarté du grimoire).
+ */
+export function enemyClassSpell(sp){
+    if(!sp.effect) return sp;
+    const converted = enemyVersionOfSpell(sp);
+    if(converted) return converted;
+    if(ENEMY_NATIVE_EFFECTS.has(sp.effect)) return sp;
+    const { effect, manaDrain, cooldown, baseDmg, ...rest } = sp;
+    const dmg = sp.dmg || baseDmg;
+    if(dmg) return { ...rest, type: 'damage', dmg };
+    const equivalent = ENEMY_EQUIVALENTS[sp.effect]?.(sp);
+    if(!equivalent) return null;
+    const { ops, debuff, ...out } = equivalent;
+    const type = out.dmg ? 'damage' : out.heal ? 'heal' : debuff ? 'debuff' : 'buff';
+    return { ...rest, type, ...out, ...(ops ? { enemyOps: ops } : {}), ...(debuff ? { debuff: true } : {}), ...(!debuff && type === 'buff' ? { buff: true } : {}) };
+}
+
+function buildSpellLoadout(template, enemyLevel, { fullLoadout = false } = {}){
+    const classSpells = getSpellsByClass(template.playerClass, enemyLevel).map(enemyClassSpell).filter(Boolean);   // sans version ennemie, un sort de classe ne ferait rien
+    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel).map(enemyVersionOfSpell).filter(Boolean);
+
+    const preferredColors = template.spellProfile?.preferredColors || [];
+    const slots = enemySpellSlots(enemyLevel);
+    const maxSpells = Math.min(slots, Math.max(2, Math.floor(toNumberOrDefault(template.spellProfile?.targetSpellCount, slots))));   // le gabarit plafonne son grimoire
+    const targetSpellCount = fullLoadout ? slots : maxSpells;   // un boss a toujours son grimoire complet
+    const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
+
+    const preferredGeneric = genericSpells.filter(sp => (sp.colors || [sp.color]).some(c => preferredColors.includes(c)));
+    const otherGeneric = genericSpells.filter(sp => !(sp.colors || [sp.color]).some(c => preferredColors.includes(c)));
+
+    const selected = [];
+
+    const takeFrom = (source, maxToTake) => {
+        const pool = [...source];
+        while(pool.length > 0 && selected.length < maxToTake){
+            const spell = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+            selected.push(spell);
+        }
+    };
+
+    if(preferClassSpells){
+        takeFrom(classSpells, targetSpellCount - 1);
+    }
+    takeFrom(preferredGeneric, targetSpellCount);
+    if(!preferClassSpells){
+        takeFrom(classSpells, targetSpellCount);
+    }
+    takeFrom(otherGeneric, targetSpellCount);
+
+    const unique = uniqueById(selected).slice(0, targetSpellCount);
+    // Au moins un sort de dégâts direct : sinon l'ennemi n'aurait que des sorts de soutien.
+    if(!unique.some(sp => sp.type === 'damage' || sp.dmg || sp.baseDmg)){
+        const attack = [...preferredGeneric, ...otherGeneric, ...classSpells].find(sp => sp.type === 'damage' && !unique.includes(sp));
+        if(attack){
+            if(unique.length >= targetSpellCount) unique.pop();
+            unique.push(attack);
+        }
+    }
+    return unique;
+}
+
+function scoreTemplateForBoss(template){
+    const stats = template?.statsModifiers || {};
+    const hpMult = toNumberOrDefault(stats.hpMult, 1);
+    const atkMult = toNumberOrDefault(stats.atkMult, 1);
+    const defMult = toNumberOrDefault(stats.defMult, 1);
+    const levelBias = toNumberOrDefault(template?.levelBias, 0);
+    return (hpMult * 1.8) + (atkMult * 1.4) + (defMult * 1.2) + levelBias;
+}
+
+function pickBossTemplate(preferredTemplateId = null){
+    const catalog = loadEnemyCatalogSync();
+    if(catalog.length === 0) return null;
+
+    if(preferredTemplateId) {
+        const forced = catalog.find(t => t.id === preferredTemplateId);
+        if(forced) return forced;
+    }
+
+    const scored = [...catalog].sort((a, b) => scoreTemplateForBoss(b) - scoreTemplateForBoss(a));
+    const topSliceSize = Math.max(1, Math.ceil(scored.length * 0.35));
+    const topPool = scored.slice(0, topSliceSize);
+    return pickRandom(topPool);
+}
+
+function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons, { boss = false } = {}){
+    const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
+    const baseHp = 55 + enemyLevel * 12;
+    const baseDef = enemyDefenseForLevel(enemyLevel);
+
+    // Comme si le monstre avait fait (niveau − 1) montées de niveau (+ quelques-unes de plus) avec les choix d'attributs de sa nature (enemyGrowth.js).
+    const preferredColor = resolvePreferredColor(template);
+    const growth = growEnemy(enemyLevel, { playerClass: template.playerClass, preferredColor, boss });
+    const attributes = growth.attributes;
+    const hp = Math.floor(baseHp * (stats.hpMult || 1)) + growth.hpBonus;
+    // Attaque = chance de critique, défense = chance de blocage (en %, plafonnées à 98 % à l'usage : voir combatStats.js).
+    const atk = Math.max(0, Math.round((5 + enemyLevel * 0.5) * (stats.atkMult || 1)) + growth.attack);
+    const def = Math.max(0, Math.floor(baseDef * 0.4 * (stats.defMult || 1)) + growth.defense);
+    // Puissance brute (ancienne « attaque ») : sert aux pièges de zone et aux calculs d'XP.
+    const power = Math.min(Math.floor((6 + enemyLevel * 5) * (stats.atkMult || 1)), Math.max(1, Math.floor(hp / 4)));
+
+    // Les armes de l'ennemi : tirées parmi la moitié la plus puissante de celles de son niveau (un boss : les deux plus puissantes).
+    let enemyWeapon = null;
+    if(template.hasWeapon !== false){
+        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel && !w.playerOnly)
+            .sort((a, b) => b.damage - a.damage);
+        if(availableWeapons.length > 0){
+            const poolSize = boss ? Math.min(2, availableWeapons.length) : Math.max(1, Math.ceil(availableWeapons.length / 2));
+            enemyWeapon = pickRandom(availableWeapons.slice(0, poolSize));
+        }
+    }
+    // Dégâts ajoutés à chaque coup d'arme (la force de l'ennemi, en quelque sorte) : 45 % de la puissance brute.
+    const weaponPower = enemyWeapon ? Math.floor(power * 0.45) : 0;
+
+    const enemyAbilities = [];
+    if(Math.random() < 0.15) enemyAbilities.push('fireAffinity');
+    if(Math.random() < 0.15) enemyAbilities.push('iceAffinity');
+    if(Math.random() < 0.15) enemyAbilities.push('natureAffinity');
+    if(Math.random() < 0.15) enemyAbilities.push('stormAffinity');
+
+    // 25% de chance d'avoir un objet dans l'inventaire
+    let enemyInventoryItem = null;
+    if(Math.random() < 0.25) {
+        try {
+            const item = getRandomItem(enemyLevel);
+            if(item) enemyInventoryItem = {...item, applied: false};
+        } catch(e) {}
+    }
+
+    // Stuff porté (casque, collier, bracelet, bague) : cohérent avec le niveau et la puissance ; ses PV max s'ajoutent à ceux de l'ennemi.
+    const enemyStuff = rollEnemyStuff(enemyLevel, { boss });
+    const stuffHp = enemyStuffMaxHp({ stuff: enemyStuff });
+
+    const weakColor = resolveWeakColor(preferredColor);
+
+    return {
+        templateId: template.id,
+        race: template.race,
+        class: template.title,
+        playerClass: template.playerClass,
+        name: `${template.name} ${template.title}`,
+        hp: hp + stuffHp,
+        maxHp: hp + stuffHp,
+        stuff: enemyStuff,
+        attack: atk,
+        defense: def,
+        power,
+        weaponPower,
+        attributes,
+        levelUps: growth.levelUps,
+        resistances: buildResistances(template, enemyLevel),
+        combatPoints: 0,
+        mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
+        spells: buildSpellLoadout(template, enemyLevel, { fullLoadout: boss }),
+        weapon: enemyWeapon,
+        level: enemyLevel,
+        abilities: enemyAbilities,
+        preferredColor,
+        weakColor,
+        isOverleveledChoice: false,
+        inventoryItem: enemyInventoryItem,
+        dropProfile: template.dropProfile ? { ...template.dropProfile } : null,
+        isBoss: false,
+        bossTier: null,
+    };
+}
+
+// Renforce un ennemi pour en faire un boss (PV, attaque, défense, butin).
+function applyBossScaling(boss, template){
+    boss.isBoss = true;
+    boss.maxHp = Math.max(1, Math.floor(boss.maxHp * 1.75));
+    boss.hp = boss.maxHp;
+    boss.attack = Math.max(1, Math.floor(boss.attack * 1.35));
+    boss.defense = Math.max(0, Math.floor(boss.defense * 1.25));
+    boss.weaponPower = Math.floor((boss.weaponPower || 0) * 1.35);
+    if(boss.attributes){
+        boss.attributes.strength = Math.ceil(boss.attributes.strength * 1.3);
+        boss.attributes.agility = Math.ceil(boss.attributes.agility * 1.2);
+    }
+    boss.isOverleveledChoice = true;
+
+    boss.dropProfile = {
+        ...(boss.dropProfile || {}),
+        goldMult: Math.max(2.2, toNumberOrDefault(template?.dropProfile?.goldMult, 1) * 1.5),
+        dropChance: Math.max(0.8, toNumberOrDefault(template?.dropProfile?.dropChance, 0.6)),
+        weaponChance: Math.max(0.35, toNumberOrDefault(template?.dropProfile?.weaponChance, 0.3))
+    };
+    return boss;
+}
+
+export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, preferredTemplateId = null){
+    const safeTier = Math.max(5, Math.floor(tierLevel || 5));
+    return withSeededRandom(`boss|${safeTier}|${preferredTemplateId || ''}`, () => {
+        const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
+        const bossLevel = safeTier + 2;
+        const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg, { boss: true });
+
+        applyBossScaling(boss, template);
+        boss.bossTier = safeTier;
+        boss.name = `Boss ${boss.name}`;
+
+        return boss;
+    });
+}
+
+// Remplace l'équipement d'un ennemi par celui d'un « kit » fixe (même gabarit) ; les PV du stuff suivent.
+function transplantKit(target, kit){
+    target.maxHp = Math.max(1, target.maxHp - enemyStuffMaxHp(target) + enemyStuffMaxHp(kit));
+    target.hp = target.maxHp;
+    target.stuff = kit.stuff;
+    target.spells = kit.spells;
+    target.weapon = kit.weapon;
+    target.weaponPower = kit.weapon ? Math.floor((target.power || 0) * 0.45) : 0;
+    target.inventoryItem = kit.inventoryItem;
+    target.abilities = kit.abilities;
+    return target;
+}
+
+// Ennemi rencontré sur la carte d'exploration (voir exploration.js > encounterFor) :
+// { templateId, level, boss?: { name, level } } → ennemi prêt pour startNewCombat.
+export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
+    const catalog = loadEnemyCatalogSync();
+    const template = catalog.find(t => t.id === encounter?.templateId) || pickRandom(catalog);
+    const level = Math.max(1, Math.floor(encounter?.level || 1));
+    // Équipement FIXE (« kit » : arme, stuff, sorts, objet, aptitudes) : tiré une fois pour toutes d'après l'identité de l'ennemi
+    // (son id sur la carte + son gabarit, une copie `copyOf` partageant le kit de l'original) et un niveau de kit stable
+    // (`encounter.kitLevel` : niveau sans Nouvelle Partie + ni affaiblissement du boss, voir exploration.js). Ainsi un boss ou un
+    // ennemi garde le même stuff et les mêmes sorts à chaque nouvelle rencontre, même affaibli ou en NG+ ; seules ses
+    // statistiques suivent son niveau du moment (graine propre à ce niveau, donc stables elles aussi).
+    const boss = Boolean(encounter?.boss);
+    const identity = `${encounter?.enemyId || ''}|${template.copyOf || template.id}`;
+    const kitLevel = Math.max(1, Math.min(level, Math.floor(Number(encounter?.kitLevel) || level)));
+    const enemyEntity = withSeededRandom(`map|${identity}|${level}`, () => buildEnemyFromTemplate(template, level, allWeaponsArg, { boss }));
+    const kit = withSeededRandom(`map-kit|${identity}|${kitLevel}`, () => buildEnemyFromTemplate(template, kitLevel, allWeaponsArg, { boss }));
+    transplantKit(enemyEntity, kit);
+
+    if(encounter?.boss){
+        applyBossScaling(enemyEntity, template);
+        enemyEntity.bossTier = level;
+        enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
+    }
+    if(!encounter?.boss && encounter?.name) enemyEntity.name = encounter.name;   // ennemi de la carte (sentinelle ou hautes herbes) : le nom que le joueur a vu sur la carte
+    enemyEntity.mapEnemyId = encounter?.enemyId || null;
+    enemyEntity.spriteKey = encounter?.spriteKey || encounter?.enemyId || template.id;   // dessin affiché sur l'écran de combat
+    // Préparation du terrain (terrain.js) : embuscade, faiblesse repérée, piège, alerte… appliquée par game.js.
+    if(encounter?.biome) enemyEntity.biome = encounter.biome;
+    if(encounter?.prep?.tags?.length) enemyEntity.prep = { ...encounter.prep };
+    // Règles de duel (Fengmeng : miroir, tirs rapides, pièges de zone) appliquées par game.js, voir duel.js.
+    if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
+    // Phase d'un duel enchaîné : le héros garde les PV de la phase précédente (game.js : restartCombat).
+    if(encounter?.carryHp) enemyEntity.carryHp = true;
+    // Vague de l'Arène des Mille Flèches (arena.js) : prime versée par game.js à la victoire.
+    if(encounter?.arena) {
+        enemyEntity.arena = { ...encounter.arena };
+        applyArenaScaling(enemyEntity, encounter.arena.statMult);
+    }
+    return enemyEntity;
+}
+
+export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = allWeapons){
+    const catalog = loadEnemyCatalogSync();
+    const template = pickRandom(catalog);
+
+    const rand = Math.random();
+    let delta = 0;
+    if(rand < 0.10) delta = 3;
+    else if(rand < 0.25) delta = 2;
+    else if(rand < 0.55) delta = 1;
+
+    const enemyLevel = Math.max(1, playerLevel + (template.levelBias || 0) + delta);
+    return buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg);
+}
+
+export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons, playerMaxHp = null, allowedTemplateIds = null){
+    const fullCatalog = loadEnemyCatalogSync();
+    const zoneCatalog = Array.isArray(allowedTemplateIds) && allowedTemplateIds.length > 0
+        ? fullCatalog.filter(template => allowedTemplateIds.includes(template.id))
+        : fullCatalog;
+    // Garde-fou : si la zone ne correspond à aucun gabarit connu, on retombe sur le catalogue complet.
+    const sourceCatalog = zoneCatalog.length > 0 ? zoneCatalog : fullCatalog;
+
+    const catalog = [...sourceCatalog];
+    const choices = [];
+    const normalMaxLevel = playerLevel + 1;
+
+    while(catalog.length > 0 && choices.length < count){
+        const template = catalog.splice(Math.floor(Math.random() * catalog.length), 1)[0];
+        const randomDelta = [-1, 0, 1][Math.floor(Math.random() * 3)];
+        const rawLevel = playerLevel + (template.levelBias || 0) + randomDelta;
+        const level = clamp(Math.max(1, rawLevel), 1, normalMaxLevel);
+        choices.push(buildEnemyFromTemplate(template, level, allWeaponsArg));
+    }
+
+    // Cas rare: un adversaire dangereux peut dépasser largement le niveau du joueur
+    if(choices.length > 0 && Math.random() < 0.08){
+        const idx = Math.floor(Math.random() * choices.length);
+        const boostedLevel = playerLevel + 6;
+        const template = fullCatalog.find(t => t.id === choices[idx].templateId);
+        const boosted = buildEnemyFromTemplate(template, boostedLevel, allWeaponsArg);
+        boosted.isOverleveledChoice = true;
+        choices[idx] = boosted;
+    }
+
+    // Ennemi facile garanti : niveau réduit de 2 (minimum 1)
+    const easyTemplate = pickRandom(sourceCatalog);
+    const easyLevel = Math.max(1, playerLevel - 2);
+    const easyEnemy = buildEnemyFromTemplate(easyTemplate, easyLevel, allWeaponsArg);
+
+    // Un ennemi "affaibli" doit avoir moins de vie que le joueur.
+    const safePlayerMaxHp = Math.max(1, Math.floor(playerMaxHp || 0));
+    if(safePlayerMaxHp > 1) {
+        const maxAllowedHp = safePlayerMaxHp - 1;
+        if(easyEnemy.maxHp >= safePlayerMaxHp) {
+            easyEnemy.maxHp = Math.max(1, maxAllowedHp);
+            easyEnemy.hp = easyEnemy.maxHp;
+            easyEnemy.attack = Math.min(easyEnemy.attack, Math.max(1, Math.floor(easyEnemy.maxHp / 4)));
+        }
+    }
+
+    easyEnemy.isEasyChoice = true;
+    choices.push(easyEnemy);
+
+    return choices;
+}
+
+export function getEnemyDescription(enemy) {
+    return enemy.name;
+}

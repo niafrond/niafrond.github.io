@@ -1,0 +1,29 @@
+{
+  "key": "boss-soleil-des-marees-b",
+  "version": "v001",
+  "date": "2026-10-30T14:38:25.097Z",
+  "seed": "4266928762",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, boss battle against the Sun of Tides, ten suns celestial motif nearly gone, surging guzheng waves, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 120,
+    "key_scale": "F major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 120,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "F major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Jiang Jun Ling\" (The General's Command), suona fanfares, pipa tremolo and thundering taiko-like Chinese drums, boss battle against the Sun of Tides, ten suns celestial motif nearly gone, surging guzheng waves, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

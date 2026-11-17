@@ -1,0 +1,29 @@
+{
+  "key": "boss-dame-bi-yu-la-main-de-jade-b",
+  "version": "v001",
+  "date": "2026-10-30T14:46:05.867Z",
+  "seed": "1166929954",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, lady Bi Yu the jade hand, polished guzheng runs, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 112,
+    "key_scale": "F major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 112,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "F major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, lady Bi Yu the jade hand, polished guzheng runs, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

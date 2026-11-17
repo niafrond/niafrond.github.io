@@ -1,0 +1,29 @@
+{
+  "key": "boss-soleil-de-magma-b",
+  "version": "v001",
+  "date": "2026-10-30T14:37:26.654Z",
+  "seed": "2890971193",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle against the Sun of Magma, ten suns celestial motif losing dominance, heavy low pipa and drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 128,
+    "key_scale": "C minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 128,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "C minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle against the Sun of Magma, ten suns celestial motif losing dominance, heavy low pipa and drums, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

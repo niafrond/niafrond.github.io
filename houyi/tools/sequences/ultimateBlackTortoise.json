@@ -1,0 +1,17 @@
+{
+  "id": "ultimateBlackTortoise",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon creature, dramatic lighting, rich saturated colors, no text",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "elements": {
+    "entity": {
+      "prompt": "a colossal black tortoise of the North, Xuanwu, a huge dark blue-black armored shell with glowing cyan rune patterns, a long serpent coiled around the shell, water streaming off it, ancient Chinese mythology, side three-quarter view, full body, four legs",
+      "w": 1024,
+      "h": 768,
+      "seed": 200,
+      "bg": "magenta",
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, human, rider, person, pond, sea, waves",
+      "tries": 6,
+      "pick": 3
+    }
+  }
+}

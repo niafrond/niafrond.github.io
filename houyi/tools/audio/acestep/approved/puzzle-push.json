@@ -1,0 +1,29 @@
+{
+  "key": "puzzle-push",
+  "version": "v001",
+  "date": "2026-10-27T11:08:21.368Z",
+  "seed": "1181875581",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, soft soft xiao (solitude, destiny, twilight) answering, muted felt drum on the beat, curious and patient mood, gentle repeating phrase, no tension, no climax",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 76,
+    "key_scale": "G major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 76,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G major",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, puzzle theme for pushing heavy clay jars, thoughtful and steady, plucked guzheng ostinato, soft soft xiao (solitude, destiny, twilight) answering, muted felt drum on the beat, curious and patient mood, gentle repeating phrase, no tension, no climax",
+    "lyrics": "[Instrumental]"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "key": "boss-jiangshi-du-cassia-lunaire-b",
+  "version": "v001",
+  "date": "2026-10-30T14:48:39.318Z",
+  "seed": "2065740198",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, hopping jiangshi of the lunar cassia tree, axe chopping rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 108,
+    "key_scale": "A minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 108,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "A minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, hopping jiangshi of the lunar cassia tree, axe chopping rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

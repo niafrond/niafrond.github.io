@@ -1,0 +1,29 @@
+{
+  "key": "event-winter-lantern",
+  "version": "v002",
+  "date": "2026-10-31T21:44:08.474Z",
+  "seed": "3911927855",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, gentle Chinese winter solstice festival, snowy mountain village with glowing red and gold paper lanterns, flowing guzheng (rivers, passing time) plucked pentatonic melody, soft agile breathy dizi (living world, wind, hope) flute, warm expressive erhu lead (Hou Yi, courage and loneliness), light bells and wind chimes, cozy and magical, peaceful, slow and spacious",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 2,
+    "thinking": false,
+    "bpm": 70,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 70,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, gentle Chinese winter solstice festival, snowy mountain village with glowing red and gold paper lanterns, flowing guzheng (rivers, passing time) plucked pentatonic melody, soft agile breathy dizi (living world, wind, hope) flute, warm expressive erhu lead (Hou Yi, courage and loneliness), light bells and wind chimes, cozy and magical, peaceful, slow and spacious",
+    "lyrics": "[Instrumental]"
+  }
+}

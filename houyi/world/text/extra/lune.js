@@ -1,0 +1,302 @@
+// Textes additionnels — Pic de la Lune (hameau, PNJ, coffres et quêtes supplémentaires).
+export default {
+  screens: {},
+  npcs: {
+    changxi_moon: {
+      name: "Changxi",
+      title: "Mère des douze lunes",
+      span: 6,
+      idle: ["..."],
+      warp: {
+        to: "marees",
+        label: "Redescendre sur Terre",
+        stay: "Rester sur la Lune",
+        lines: ["...", "(Changxi est assise au bord du sentier, immense, comme si elle n'avait jamais bougé. Les douze lunes dorment sur ses genoux. Elle ne dit rien : elle montre d'un geste la mer, tout en bas, et propose de vous y redéposer, quand vous le voudrez.)"]
+      }
+    },
+    moon_cook_gui: {
+      name: "Gui",
+      title: "Cuisinier de gâteaux de lune",
+      idle: [
+        "Je fais des gâteaux de lune pour les habitants du hameau. Ils se plaignent, puis en redemandent.",
+        "La pâte de lotus est un art. La pâte de haricot, un artisanat."
+      ],
+      talk: [
+        {
+          whenDone: "fengmeng_3a",
+          lines: [
+            "Chang'e m'a envoyé une recette. Elle y a ajouté un mot : « Pour Hou Yi, s'il passe »."
+          ]
+        }
+      ]
+    },
+    moon_rabbit_yutu: {
+      name: "Yutu",
+      title: "Lapin de jade",
+      idle: [
+        "Je pile, je pile, je pile. L'élixir de la Reine Mère dort dans une fiole, là-haut, mais l'habitude de piler reste.",
+        "Un lapin n'a pas d'avis sur l'immortalité. Il a un avis sur les carottes."
+      ],
+      talk: [
+        {
+          whenDone: "fengmeng_3a",
+          lines: [
+            "Un archer est venu à la Lune ! Je dois le dire à tous les lapins de jade. Ils vont faire des gâteaux."
+          ]
+        }
+      ]
+    },
+    moon_ferryman_yin: {
+      name: "Vieux Shen",
+      title: "Passeur d'argent",
+      idle: [
+        "Je fais passer les âmes sur la rivière de lune. Aujourd'hui, seulement deux. Beau temps.",
+        "Chang'e m'a demandé si l'on pouvait ne jamais redescendre d'ici. J'ai dit que la Lune ne retient que ceux qui s'y laissent porter. Elle a souri quand même."
+      ],
+      talk: [
+        {
+          whenDone: "fengmeng_3a",
+          lines: [
+            "Quand vous la reverrez, dites-lui que la rivière est calme. Elle comprendra."
+          ]
+        }
+      ]
+    },
+    moon_child_lan: {
+      name: "Lan",
+      title: "Petite veilleuse",
+      idle: [
+        "Je garde les lanternes avec la veilleuse. Je ne dors jamais. Je compte les étoiles.",
+        "Je suis née ici. Je n'ai jamais vu de rizière. À quoi ça ressemble ?"
+      ],
+      talk: [
+        {
+          whenDone: "fengmeng_3a",
+          lines: [
+            "Il paraît que vous venez d'en bas. Moi, je ne connais que le haut. On pourrait échanger."
+          ]
+        }
+      ]
+    },
+    moon_crow_wu: {
+      name: "Corbeau d'ombre",
+      title: "Messager d'ombre",
+      idle: [
+        "Croa. Je porte les messages entre la Terre et la Lune. Ils sont rarement joyeux.",
+        "Un jeune archer a demandé à passer. Je l'ai envoyé promener. Il a insisté."
+      ],
+      talk: [
+        {
+          whenDone: "fengmeng_3a",
+          lines: [
+            "Croa. L'archer en colère s'approche. Soyez prêt."
+          ]
+        },
+        {
+          whenDone: "fengmeng_3b",
+          lines: [
+            "Croa. L'archer en colère redescend, l'arc baissé. Je porterai ses messages, désormais : ils seront plus doux."
+          ]
+        }
+      ]
+    }
+  },
+  chests: {
+    moon_cake_tin: {
+      label: "Boîte à gâteaux de lune",
+      openText: "Une boîte de fer-blanc remplie de gâteaux de lune et de quelques pièces d'argent.",
+    },
+    jade_mortar_box: {
+      label: "Mortier de jade",
+      openText: "Dans le mortier de jade, un petit trésor scintille : poudre d'argent et pièces de lune.",
+    },
+    silver_river_cache: {
+      label: "Cache de la rivière d'argent",
+      openText: "Une cache déposée par un passeur, au bord de la rivière d'argent.",
+    },
+    journal_page_lune: {
+      label: "Dernière page du carnet",
+      openText: "La dernière page du carnet : « Je ne veux pas lui faire de mal. Je veux juste qu'il me regarde. Je n'ai que mes flèches. »",
+    }
+  },
+  quests: [
+    {
+      id: "sq_lune_gateaux",
+      title: "Les gâteaux de Gui",
+      chapter: "✦ Quête secondaire — Pic de la Lune",
+      giver: "moon_cook_gui",
+      turnIn: "moon_cook_gui",
+      requires: [],
+      side: true,
+      objectives: [
+        {
+          type: "chest",
+          target: "moon_cake_tin",
+          text: "Retrouver la boîte à gâteaux (Hameau sous la Lune)"
+        },
+        {
+          type: "talk",
+          target: "keeper_lunar",
+          text: "Porter un gâteau à la veilleuse Yin (maison de la veilleuse)",
+          lines: [
+            "Un gâteau de lune ? Mes yeux sont fatigués, mais mon cœur a de la place. Merci, archer."
+          ]
+        }
+      ],
+      offer: [
+        "Ma boîte de gâteaux de lune a disparu ! Elle contient tout mon travail de la semaine. Retrouvez-la, puis portez une part à la veilleuse."
+      ],
+      hint: [
+        "La boîte est quelque part sur la place du hameau. La veilleuse est dans sa maison."
+      ],
+      complete: [
+        "Les gâteaux sont partis, la boîte est revenue, et le hameau est content. Je vous offre ce fragment de pâte de lotus."
+      ],
+      reward: {
+        gold: 200,
+        fragment: "Pâte de lotus",
+        xp: 400
+      }
+    },
+    {
+      id: "sq_lune_passeur",
+      title: "La rivière d'argent",
+      chapter: "✦ Quête secondaire — Pic de la Lune",
+      giver: "moon_ferryman_yin",
+      turnIn: "moon_ferryman_yin",
+      requires: [],
+      side: true,
+      objectives: [
+        {
+          type: "talk",
+          target: "moon_crow_wu",
+          text: "Écouter le Corbeau d'ombre (sentier d'argent)",
+          lines: [
+            "La rivière ? Le long du sentier, là où l'argent brille. Une cache y dort. Prenez-la avant que les ombres ne la trouvent."
+          ]
+        },
+        {
+          type: "chest",
+          target: "silver_river_cache",
+          text: "Récupérer la cache de la rivière d'argent (sentier d'argent)"
+        }
+      ],
+      offer: [
+        "J'ai déposé quelques souvenirs au bord de la rivière d'argent. Je suis trop vieux pour y retourner. Pouvez-vous les chercher, archer ?"
+      ],
+      hint: [
+        "La cache est au bord de la rivière d'argent, sur le sentier. Le Corbeau d'ombre rôde par là."
+      ],
+      complete: [
+        "Mes souvenirs ! Un peigne, une lettre, un caillou. Je vous offre le caillou : il est plus précieux qu'il n'en a l'air."
+      ],
+      reward: {
+        gold: 200,
+        fragment: "Caillou d'argent",
+        xp: 400
+      }
+    },
+    {
+      id: "sq_lune_ombres",
+      title: "Les ombres du miroir",
+      chapter: "✦ Quête secondaire — Pic de la Lune",
+      giver: "moon_child_lan",
+      turnIn: "moon_child_lan",
+      requires: [
+        "q_sun_9"
+      ],
+      side: true,
+      objectives: [
+        {
+          type: "killGroup",
+          target: "mirror_shades",
+          text: "Chasser les ombres du miroir (sentier d'argent)"
+        }
+      ],
+      offer: [
+        "Il y a deux ombres qui me suivent, sur le sentier, avec mon visage. Elles sont drôles, mais elles me font peur. Chassez-les, archer."
+      ],
+      hint: [
+        "Les deux ombres rôdent sur le sentier d'argent, entre les cairns de givre."
+      ],
+      complete: [
+        "Mes ombres sont reparties dans le miroir. Je n'ai plus peur. Tenez, un éclat de miroir lunaire."
+      ],
+      reward: {
+        gold: 200,
+        fragment: "Éclat de miroir",
+        xp: 400
+      }
+    },
+    {
+      id: "sq_journal_10",
+      title: "La dernière page",
+      chapter: "✦ Quête secondaire — Pic de la Lune",
+      giver: "moon_rabbit_yutu",
+      turnIn: "moon_rabbit_yutu",
+      requires: [
+        "sq_journal_9"
+      ],
+      side: true,
+      objectives: [
+        {
+          type: "chest",
+          target: "journal_page_lune",
+          text: "Retrouver la dernière page du carnet (sentier d'argent)"
+        }
+      ],
+      offer: [
+        "Un papier est tombé de la manche d'un jeune archer, il y a peu. Il le cherche partout. Allez le chercher avant lui, sur le sentier."
+      ],
+      hint: [
+        "La page est sur le sentier d'argent, à demi cachée dans le givre."
+      ],
+      complete: [
+        "« Je ne veux pas lui faire de mal. Je veux juste qu'il me regarde. Je n'ai que mes flèches. » Yutu se tait. Il pile doucement, à contretemps."
+      ],
+      reward: {
+        gold: 200,
+        fragment: "Carnet complet",
+        xp: 400
+      }
+    },
+    {
+          "id": "sq_hua_6",
+          "title": "La lanterne de Xihe",
+          "chapter": "✦ Quête secondaire — Pic de la Lune",
+          "giver": "hua_lune",
+          "turnIn": "hua_lune",
+          "requires": [
+                "sq_hua_5",
+                "q_fengmeng"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "keeper_lunar",
+                      "text": "Demander à la veilleuse Yin d'allumer la dernière lanterne pour Xihe (Hameau sous la Lune)",
+                      "lines": [
+                            "Pour Xihe ? Elle me l'avait demandée il y a bien longtemps, en secret : une lanterne qui brille quand le dernier soleil s'éteint. Je l'ai gardée pour ce soir.",
+                            "Posez-la sur le muret : elle éclairera la route de ses enfants vers la lune, et la sienne."
+                      ]
+                }
+          ],
+          "offer": [
+                "Vous savez qui je suis, maintenant. Ne vous excusez pas : j'ai eu dix fils, vous en avez rendu neuf à la nuit, et la nuit les a bercés.",
+                "Il me reste une prière : demandez à Yin d'allumer ma dernière lanterne. Je la lui ai confiée il y a longtemps, pour ce soir précisément."
+          ],
+          "hint": [
+                "La veilleuse Yin est dans sa maison, au cœur du Hameau sous la Lune."
+          ],
+          "complete": [
+                "Une petite lumière monte, sur le muret, vers la lune. « Mes enfants… », souffle Xihe. Puis, plus bas : « Merci, archer. Le monde peut dormir. » Elle vous presse dans la main un dernier caillou tiède, qui ne refroidira jamais."
+          ],
+          "reward": {
+                "gold": 200,
+                "fragment": "Caillou d'aurore",
+                "xp": 400
+          }
+    }
+  ]
+};

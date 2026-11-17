@@ -1,0 +1,29 @@
+{
+  "key": "wild-gobi-b",
+  "version": "v001",
+  "date": "2026-10-30T14:06:22.922Z",
+  "seed": "1199450693",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Hujia Shiba Pai (Eighteen Songs of a Nomad Flute)\", lonely hujia-like bamboo flute and sparse guqin, wide empty desert steppe, wind, sorrowful long lines, distant frame drum, melancholy and endurance, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 60,
+    "key_scale": "E minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 60,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "E minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Hujia Shiba Pai (Eighteen Songs of a Nomad Flute)\", lonely hujia-like bamboo flute and sparse guqin, wide empty desert steppe, wind, sorrowful long lines, distant frame drum, melancholy and endurance, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

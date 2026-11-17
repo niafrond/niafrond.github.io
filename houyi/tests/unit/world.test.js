@@ -1,0 +1,533 @@
+import { PUZZLE_SETS } from '../../puzzle/levels.js';
+// Grand Monde : villages, zones sauvages, maisons, pierres de voyage, quêtes annexes (world/ + exploration.js).
+import { readFileSync } from 'fs';
+import { SCREENS, QUESTS, REGION_ENTRY_SCREEN } from '../../story.js';
+import { REGION_ORDER } from '../../world/index.js';
+import { MAPS } from '../../world/maps/index.js';
+import { TEXTS } from '../../world/text/index.js';
+import { MANIFEST } from '../../world/manifest.js';
+import { parseGrid, cellsToRects } from '../../world/mapKit.js';
+import { npcSprite } from '../../sprites/index.js';
+import { villagerSprite } from '../../sprites/villagers.js';
+import { creatureKind, drawCreature, CREATURE_KINDS } from '../../sprites/creatures.js';
+import {
+    createSession, tryMove, enterScreen, isTerrainBlocked, findPath, talkToNpc, openChest, markEnemyDefeated,
+    questStatus, checkAutoQuests, activateWaypoint, warpNpc, teleportToScreen, waypointList, fastTravel, setTrackedQuest, trackedQuest,
+    trackedMarkers, currentObjectiveText, journalEntries, regionProgress, npcMarker, progressReached, aliveEnemies
+} from '../../exploration.js';
+import { exitsOf } from './fixtures/gates.js';
+import { ENLARGED_LIMITS } from '../../world/enlarge.js';
+
+const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
+const templateIds = new Set(catalog.map(t => t.id));
+const screens = Object.values(SCREENS).filter(s => !s.arena);   // hors Arène (arena.test.js)
+const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// Régions marines (world/PLAN-MAREES.md) : toute l'eau est franchissable avec le Pas de Yu ; pas de hameau ni de patrouilleurs, leurs rencontres sont aquatiques et aléatoires.
+const WATER_REGIONS = new Set(['marees']);
+const onWater = screen => WATER_REGIONS.has(screen.region);
+
+function reach(screen, from, blocked = () => false) {
+    const seen = new Set([`${from.x},${from.y}`]);
+    const queue = [from];
+    while (queue.length) {
+        const { x, y } = queue.shift();
+        for (const [dx, dy] of DIRS) {
+            const nx = x + dx, ny = y + dy, key = `${nx},${ny}`;
+            if (seen.has(key) || isTerrainBlocked(screen, nx, ny, onWater(screen)) || blocked(nx, ny)) continue;
+            seen.add(key);
+            queue.push({ x: nx, y: ny });
+        }
+    }
+    return seen;
+}
+const entitiesOf = s => [
+    ...s.npcs.map(e => ({ kind: 'npc', id: e.id, x: e.x, y: e.y })),
+    ...s.chests.map(e => ({ kind: 'chest', id: e.id, x: e.x, y: e.y })),
+    ...s.enemies.map(e => ({ kind: 'enemy', id: e.id, x: e.x, y: e.y, guardsDoor: e.guardsDoor })),
+    ...(s.waypoint ? [{ kind: 'waypoint', id: s.id, x: s.waypoint.x, y: s.waypoint.y }] : [])
+];
+// Une entité (PNJ, coffre, ennemi, pierre) bloque le passage : on l'atteint depuis une tuile voisine libre.
+const adjacentReached = (seen, e) => DIRS.some(([dx, dy]) => seen.has(`${e.x + dx},${e.y + dy}`));
+const exitPos = s => new Set(exitsOf(s, SCREENS).map(e => `${e.x},${e.y}`));
+
+describe('mapKit', () => {
+    test('parseGrid : obstacles, liquides, chemins, ancres, bâtiments', () => {
+        const g = parseGrid([
+            '#####',
+            '#S.1#',
+            '#AAA#',
+            '#AaA#',
+            '#~=.#'
+        ]);
+        expect(g.w).toBe(5);
+        expect(g.h).toBe(5);
+        expect(g.spawn).toEqual({ x: 1, y: 1 });
+        expect(g.anchors['1']).toEqual({ x: 3, y: 1 });
+        expect(g.buildings).toEqual([{ id: 'A', x: 1, y: 2, w: 3, h: 2, door: { x: 2, y: 3 } }]);
+        const blocked = (x, y) => g.obstacles.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+        expect(blocked(2, 3)).toBe(false);  // la porte est franchissable
+        expect(blocked(1, 3)).toBe(true);
+        expect(g.liquids).toEqual([[1, 4, 1, 1]]);
+        expect(g.paths).toEqual([[2, 4, 1, 1]]);
+    });
+
+    test('parseGrid rejette les grilles invalides', () => {
+        expect(() => parseGrid(['##', '#'])).toThrow(/longueur/);
+        expect(() => parseGrid(['#?'])).toThrow(/inconnu/);
+        expect(() => parseGrid(['AA', 'AA'])).toThrow(/porte/);
+        expect(() => parseGrid(['A.', 'Aa'])).toThrow(/rectangle/);
+    });
+
+    test('cellsToRects fusionne les cases en rectangles', () => {
+        expect(cellsToRects([[0, 0], [1, 0], [0, 1], [1, 1], [3, 0]])).toEqual([[0, 0, 2, 2], [3, 0, 1, 1]]);
+    });
+});
+
+describe('villageois générés', () => {
+    test('déterministes, bien formés et distincts', () => {
+        const a = villagerSprite('ping');
+        expect(villagerSprite('ping')).toBe(a);
+        expect(a.startsWith('<svg')).toBe(true);
+        expect(a.endsWith('</svg>')).toBe(true);
+        expect(a).not.toMatch(/<text|<image|<script|href=/);
+        expect(a.length).toBeLessThan(9000);
+        const set = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(id => villagerSprite(id)));
+        expect(set.size).toBeGreaterThan(5);
+        expect(villagerSprite('grandma_x')).toContain('#ece8e0');   // ancien : cheveux blancs
+        expect(villagerSprite('ping')).not.toContain('#ece8e0');
+        expect(villagerSprite('kid_x')).toMatch(/scale\(0\.82\)/);
+    });
+    test('les PNJ non humains ont un sprite de créature, les métiers animaliers restent humains', () => {
+        expect(creatureKind('buffalo_dahei')).toBe('buffalo');
+        expect(creatureKind('scarecrow_cao')).toBe('scarecrow');
+        expect(creatureKind('gull_pip')).toBe('gull');
+        expect(creatureKind('pigeon_zhao')).toBeNull();
+        expect(creatureKind('falconer_arslan')).toBeNull();
+        expect(creatureKind('stoker_ge')).toBeNull();
+        expect(villagerSprite('buffalo_dahei')).toBe(drawCreature('buffalo'));
+        CREATURE_KINDS.forEach(kind => {
+            const svg = drawCreature(kind);
+            expect(svg.startsWith('<svg')).toBe(true);
+            expect(svg).not.toMatch(/<text|<image|<script|href=|undefined|NaN/);
+            expect(svg.length).toBeLessThan(9000);
+        });
+    });
+    test('npcSprite retombe sur un villageois pour un PNJ inconnu', () => {
+        expect(npcSprite('inconnu_pnj')).toBeTruthy();
+    });
+});
+
+describe('Grand Monde : cartes', () => {
+    test('chaque région a un village, une zone sauvage et des maisons ; un hameau sauf lune', () => {
+        REGION_ORDER.forEach(region => {
+            expect(Boolean(SCREENS[`${region}_hamlet`])).toBe(region !== 'lune' && !WATER_REGIONS.has(region));
+            expect(SCREENS[`${region}_village`]).toBeTruthy();
+            expect(SCREENS[`${region}_wild`]).toBeTruthy();
+            expect(screens.filter(s => s.region === region && s.interior).length).toBeGreaterThanOrEqual(region === 'lune' || WATER_REGIONS.has(region) ? 3 : 6);
+            expect(REGION_ENTRY_SCREEN[region]).toBe(`${region}_village`);
+        });
+    });
+
+    test('villages portrait plein écran 9:16 (20x24, lune 16x22), hameaux 16x11, wild 18x12, intérieurs petits ; cartes natives ≤ 64x64 et 1500 cases', () => {
+        screens.forEach(s => {
+            // cartes natives (`native: true`, format v2) : jamais étirées, bornées par le calque de sol (DESIGN-V2 §3)
+            if (s.native) {
+                expect({ id: s.id, ok: s.w <= 64 && s.h <= 64 && s.w * s.h <= ENLARGED_LIMITS.maxCells }).toEqual({ id: s.id, ok: true });
+                expect(s.interior).toBeFalsy();
+            }
+            // villages : taille d'origine ; hameaux et zones sauvages : agrandis (world/expand.js)
+            if (s.kind === 'village' && !s.native) expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [26, 20] : s.region === 'lune' ? [16, 22] : [20, 24]);
+            // zones sauvages et routes d'accès non natives : minimum agrandi ; le monde aquatique a ses propres cartes de mer
+            if (s.kind === 'wild' && !s.aquatic && !s.underground && !s.native) expect([s.w, s.h]).toEqual([28, 22]);
+            if (s.id.endsWith('_hamlet')) expect(exitsOf(s, SCREENS).some(e => e.to === `${s.region}_wild`)).toBe(true);
+            if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }
+        });
+    });
+
+    test('entités sur des tuiles libres et distinctes', () => {
+        screens.forEach(s => {
+            const seen = new Set();
+            [...entitiesOf(s), ...exitsOf(s, SCREENS).map(e => ({ kind: 'exit', id: e.to, x: e.x, y: e.y }))].forEach(e => {
+                const key = `${e.x},${e.y}`;
+                expect(`${s.id} ${e.kind}:${e.id} ${isTerrainBlocked(s, e.x, e.y)}`).toBe(`${s.id} ${e.kind}:${e.id} false`);
+                expect(`${s.id} ${key} ${seen.has(key)}`).toBe(`${s.id} ${key} false`);
+                seen.add(key);
+            });
+        });
+    });
+
+    test('tout est atteignable depuis l\'apparition (entités, sorties, pierre de voyage)', () => {
+        screens.filter(s => s.kind).forEach(s => {
+            // un gardien de porte tombe avant que la porte ne s'ouvre : il ne compte pas comme obstacle d'accès
+            const solid = new Set(entitiesOf(s).filter(e => !e.guardsDoor).map(e => `${e.x},${e.y}`));
+            const seen = reach(s, s.spawn, (x, y) => solid.has(`${x},${y}`) || exitPos(s).has(`${x},${y}`));
+            entitiesOf(s).forEach(e => expect(`${s.id} ${e.kind}:${e.id} ${adjacentReached(seen, e)}`).toBe(`${s.id} ${e.kind}:${e.id} true`));
+            exitsOf(s, SCREENS).forEach(e => expect(`${s.id} exit:${e.to} ${adjacentReached(seen, e)}`).toBe(`${s.id} exit:${e.to} true`));
+        });
+    });
+
+    test('sorties appariées et tuiles d\'arrivée libres', () => {
+        // (entrées à retour mémorisé de l'événement : symétriques par la sortie returnToSaved du royaume, voir events.test.js)
+        screens.forEach(s => exitsOf(s, SCREENS).filter(e => !e.rememberReturn).forEach(e => {
+            const target = SCREENS[e.to];
+            expect(target).toBeTruthy();
+            expect(exitsOf(target, SCREENS).some(back => back.to === s.id)).toBe(true);
+            expect(e.arrive).toBeTruthy();
+            expect(isTerrainBlocked(target, e.arrive.x, e.arrive.y)).toBe(false);
+            expect(entitiesOf(target).some(ent => ent.x === e.arrive.x && ent.y === e.arrive.y)).toBe(false);
+            expect(target.exits.some(ex => ex.x === e.arrive.x && ex.y === e.arrive.y)).toBe(false);
+        }));
+    });
+
+    test('chaîne du monde : sanctuaire précédent → [route d\'accès →] village → wild → sanctuaire', () => {
+        REGION_ORDER.forEach((region, i) => {
+            const village = SCREENS[`${region}_village`], wild = SCREENS[`${region}_wild`], sanct = SCREENS[region];
+            const road = SCREENS[`${region}_road`];   // format v2 : route d'accès intercalée (absente de rizieres)
+            expect(exitsOf(village, SCREENS).some(e => e.to === wild.id)).toBe(true);
+            expect(exitsOf(wild, SCREENS).some(e => e.to === village.id)).toBe(true);
+            expect(exitsOf(wild, SCREENS).some(e => e.to === region)).toBe(true);
+            expect(exitsOf(sanct, SCREENS).some(e => e.to === wild.id)).toBe(true);
+            if (i > 0) {
+                const prev = REGION_ORDER[i - 1];
+                const entry = road || village;   // première carte de la région en venant de l'ouest
+                expect(exitsOf(entry, SCREENS).some(e => e.to === prev)).toBe(true);
+                expect(exitsOf(SCREENS[prev], SCREENS).some(e => e.to === entry.id)).toBe(true);
+                if (road) {
+                    expect(exitsOf(road, SCREENS).some(e => e.to === village.id)).toBe(true);
+                    expect(exitsOf(village, SCREENS).some(e => e.to === road.id)).toBe(true);
+                    expect(exitsOf(village, SCREENS).some(e => e.to === prev)).toBe(false);
+                    expect(exitsOf(SCREENS[prev], SCREENS).some(e => e.to === village.id)).toBe(false);
+                }
+            }
+            // pas d'ennemi dans les villages et maisons
+            screens.filter(s => s.region === region && (s.kind === 'village' || s.interior)).forEach(s => expect(s.enemies).toHaveLength(0));
+        });
+    });
+
+    // Équilibrage (DESIGN-V2 §3) : l'ancien format garde 5 à 10 ennemis dont ≥ 2 patrouilleurs ; une wild native en a 8 à 14 dont
+    // ≥ 3 patrouilleurs ; une route d'accès (`_road`) 3 à 6 dont ≥ 1 patrouilleur. Le compte est celui de la carte assemblée.
+    const noEnemyNearEntry = zone => zone.enemies.forEach(e => {
+        expect(templateIds.has(e.templateId)).toBe(true);
+        if (e.guardsDoor) return;   // le gardien de la porte se tient devant elle
+        const near = exitsOf(zone, SCREENS).filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(zone.spawn.x - e.x), Math.abs(zone.spawn.y - e.y)) < 3;
+        expect(`${e.id} ${near}`).toBe(`${e.id} false`);
+    });
+
+    test('wild : 5 à 9 ennemis (≥ 2 patrouilleurs ; natif : 8 à 14, ≥ 3), gabarits connus, pas près de l\'entrée', () => {
+        REGION_ORDER.forEach(region => {
+            const wild = SCREENS[`${region}_wild`];
+            const [min, max, patrols] = WATER_REGIONS.has(region) ? [2, 6, 0] : wild.native ? [8, 14, 3] : [5, 10, 2];
+            expect({ id: wild.id, n: wild.enemies.length >= min && wild.enemies.length <= max }).toEqual({ id: wild.id, n: true });
+            expect({ id: wild.id, patrols: wild.enemies.filter(e => e.kind === 'patrol').length >= patrols }).toEqual({ id: wild.id, patrols: true });
+            noEnemyNearEntry(wild);
+        });
+    });
+
+    test('route d\'accès (road) : 3 à 6 ennemis (≥ 1 patrouilleur), gabarits connus, pas près de l\'entrée', () => {
+        const roads = REGION_ORDER.map(region => SCREENS[`${region}_road`]).filter(Boolean);
+        roads.forEach(road => {
+            expect(road.kind).toBe('wild');
+            expect(road.id).toBe(`${road.region}_road`);
+            expect({ id: road.id, n: road.enemies.length >= 3 && road.enemies.length <= 6 }).toEqual({ id: road.id, n: true });
+            if (!WATER_REGIONS.has(road.region)) expect({ id: road.id, patrols: road.enemies.filter(e => e.kind === 'patrol').length >= 1 }).toEqual({ id: road.id, patrols: true });
+            noEnemyNearEntry(road);
+        });
+    });
+
+    test('hautes herbes : table valide (gabarits connus, poids > 0) ; wild et road natives : au moins une nappe ≥ 12 cases', () => {
+        screens.filter(s => s.grass).forEach(s => {
+            expect(s.interior || s.kind === 'village').toBeFalsy();
+            expect(s.grass.table.length).toBeGreaterThan(0);
+            s.grass.table.forEach(e => { expect(templateIds.has(e.templateId)).toBe(true); expect(e.weight).toBeGreaterThan(0); });
+            expect(s.grass.rate).toBeGreaterThan(0);
+            expect(s.grass.rate).toBeLessThanOrEqual(1);
+            expect(Number.isInteger(s.grass.safeSteps)).toBe(true);
+            s.grass.cells.forEach(([x, y, w, h]) => {
+                for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) expect(`${s.id} ${x + i},${y + j} ${isTerrainBlocked(s, x + i, y + j)}`).toBe(`${s.id} ${x + i},${y + j} false`);
+            });
+        });
+        screens.filter(s => s.native && /_(wild|road)$/.test(s.id)).forEach(s => {
+            expect({ id: s.id, grass: Boolean(s.grass) }).toEqual({ id: s.id, grass: true });
+            if (onWater(s)) {   // l'eau fait office de hautes herbes : table propre à la carte + grande étendue d'eau
+                expect({ id: s.id, water: s.grass.water === true }).toEqual({ id: s.id, water: true });
+                expect({ id: s.id, water: s.liquids.reduce((n, [, , w, h]) => n + w * h, 0) >= 300 }).toEqual({ id: s.id, water: true });
+                return;
+            }
+            const cells = new Set();
+            s.grass.cells.forEach(([x, y, w, h]) => { for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) cells.add(`${x + i},${y + j}`); });
+            const seen = reach(s, s.spawn);
+            // plus grande nappe d'herbe connexe, atteignable à pied depuis l'apparition
+            let best = 0;
+            const done = new Set();
+            cells.forEach(k => {
+                if (done.has(k)) return;
+                const stack = [k]; done.add(k);
+                let size = 0, reached = false;
+                while (stack.length) {
+                    const cur = stack.pop();
+                    size++;
+                    if (seen.has(cur)) reached = true;
+                    const [cx, cy] = cur.split(',').map(Number);
+                    DIRS.forEach(([dx, dy]) => { const nk = `${cx + dx},${cy + dy}`; if (cells.has(nk) && !done.has(nk)) { done.add(nk); stack.push(nk); } });
+                }
+                if (reached) best = Math.max(best, size);
+            });
+            expect({ id: s.id, nappe: best >= 12 }).toEqual({ id: s.id, nappe: true });
+        });
+    });
+
+    test('le gate de la wild est franchissable avant le sanctuaire', () => {
+        REGION_ORDER.forEach(region => {
+            const wild = SCREENS[`${region}_wild`];
+            const exit = exitsOf(wild, SCREENS).find(e => e.to === region);
+            expect(exit.requires).toBeTruthy();
+            const id = exit.requires;
+            const isEnemy = screens.some(s => s.enemies.some(e => e.id === id));
+            const isChest = screens.some(s => s.chests.some(c => c.id === id));
+            const quest = QUESTS.find(q => q.id === id);
+            expect(isEnemy || isChest || quest).toBeTruthy();
+            const where = isEnemy ? screens.find(s => s.enemies.some(e => e.id === id)) : isChest ? screens.find(s => s.chests.some(c => c.id === id)) : null;
+            if (where) expect(where.region === region && where.id !== region).toBe(true);
+        });
+    });
+});
+
+describe('Grand Monde : régions marines (Hautes-Eaux)', () => {
+    const road = SCREENS.marees_road;
+    test("sans le Pas de Yu, seules la digue et le premier ponton sont atteignables ; avec, toute la zone l'est", () => {
+        const dry = reach({ ...road, region: 'terre' }, road.spawn);
+        const wet = reach(road, road.spawn);
+        const exitToVillage = exitsOf(road, SCREENS).find(e => e.to === 'marees_village');
+        expect(DIRS.some(([dx, dy]) => dry.has(`${exitToVillage.x + dx},${exitToVillage.y + dy}`))).toBe(false);
+        expect(DIRS.some(([dx, dy]) => wet.has(`${exitToVillage.x + dx},${exitToVillage.y + dy}`))).toBe(true);
+        expect(dry.size).toBeLessThan(wet.size / 5);
+        // le PNJ d'indice est atteignable sans le sort (il est sur la digue)
+        const xu = road.npcs.find(n => n.id === 'marees_road_xu');
+        expect(DIRS.some(([dx, dy]) => dry.has(`${xu.x + dx},${xu.y + dy}`))).toBe(true);
+    });
+    test("toute l'eau des zones de combat déclenche des rencontres aquatiques, les pontons et le village aucune", () => {
+        ['marees_road', 'marees_wild'].forEach(id => {
+            const s = SCREENS[id];
+            expect(s.grass.water).toBe(true);
+            s.grass.table.forEach(e => expect(templateIds.has(e.templateId)).toBe(true));
+        });
+        expect(SCREENS.marees_village.grass).toBeUndefined();
+        expect(SCREENS.marees_road.aquatic).toBeFalsy();   // jamais aquatic : le verrou serait levé
+        expect(SCREENS.marees_wild.aquatic).toBeFalsy();
+    });
+});
+
+describe('Grand Monde : Changxi, passage entre la Terre et la Lune', () => {
+    const forge = () => { const s = createSession({}); s.data.quests.sq_pas_de_yu = 'done'; return s; };
+    test('Changxi est immense (6 cases) et ne parle pas : « ... »', () => {
+        const boss = SCREENS.marees.enemies.find(e => e.id === 'changxi');
+        const calm = SCREENS.marees.npcs.find(n => n.id === 'changxi_calm');
+        const moon = SCREENS.lune_road.npcs.find(n => n.id === 'changxi_moon');
+        [boss, calm, moon].forEach(e => expect(e.span).toBeGreaterThanOrEqual(6));
+        expect(calm.idle).toEqual(['...']);
+        expect(calm.warp.lines[0]).toBe('...');
+        expect(moon.warp.lines[0]).toBe('...');
+    });
+    test("elle n'apparaît comme PNJ qu'après l'épreuve, puis emporte sur la Lune ; sur la Lune, elle ramène sur Terre", () => {
+        const s = forge();
+        teleportToScreen(s, 'marees');
+        expect(talkToNpc(s, 'changxi_calm')).toBeNull();   // invisible tant que le boss est debout
+        markEnemyDefeated(s, 'changxi');
+        const talk = talkToNpc(s, 'changxi_calm');
+        expect(talk.warp.to).toBe('lune_road');
+        const up = warpNpc(s, 'changxi_calm');
+        expect(up).toMatchObject({ type: 'transition', to: 'lune_road', warp: true });
+        expect(s.data.screenId).toBe('lune_road');
+        expect(talkToNpc(s, 'changxi_moon').warp.to).toBe('marees');
+        const down = warpNpc(s, 'changxi_moon');
+        expect(down).toMatchObject({ type: 'transition', to: 'marees', warp: true });
+        expect(s.data.screenId).toBe('marees');
+    });
+    test("sur la Lune, elle se tient tout au début du niveau, près de l'arrivée", () => {
+        const road = SCREENS.lune_road, moon = road.npcs.find(n => n.id === 'changxi_moon');
+        const west = exitsOf(road, SCREENS).find(e => e.to === 'marees');
+        expect(Math.abs(moon.x - west.x)).toBeLessThanOrEqual(4);
+    });
+});
+
+describe('Grand Monde : textes et quêtes', () => {
+    const questIds = new Set(QUESTS.map(q => q.id));
+    const npcIds = new Set(screens.flatMap(s => s.npcs.map(n => n.id)));
+    const chestIds = new Set(screens.flatMap(s => s.chests.map(c => c.id)));
+    const enemyIds = new Set(screens.flatMap(s => s.enemies.map(e => e.id)));
+    const groups = new Set(screens.flatMap(s => s.enemies.map(e => e.group).filter(Boolean)));
+
+    test('les PNJ ont un nom et des répliques (pas d\'emoji) ; les coffres un libellé', () => {
+        screens.forEach(s => {
+            s.npcs.forEach(n => {
+                expect(`${n.id} ${Boolean(n.name)}`).toBe(`${n.id} true`);
+                expect(n.emoji).toBeUndefined();
+                expect(n.idle?.length).toBeGreaterThan(0);
+            });
+            s.chests.forEach(c => expect(typeof c.gold === 'number' || c.gold === undefined).toBe(true));
+            expect(s.name).not.toBe(s.id);
+        });
+    });
+
+    test('ids uniques dans tout le jeu', () => {
+        const all = screens.flatMap(s => [...s.npcs.map(n => n.id), ...s.chests.map(c => c.id), ...s.enemies.map(e => e.id)]);
+        expect(new Set(all).size).toBe(all.length);
+        expect(questIds.size).toBe(QUESTS.length);
+    });
+
+    test('toutes les quêtes sont complètes et leurs cibles existent', () => {
+        QUESTS.forEach(q => {
+            expect(q.title).toBeTruthy();
+            expect(q.offer?.length).toBeGreaterThan(0);
+            expect(q.complete?.length).toBeGreaterThan(0);
+            if (q.giver || !q.autoStart) expect(npcIds.has(q.giver)).toBe(true);   // sans donneur : quête automatique (armures antiques)
+            if (q.turnIn) expect(npcIds.has(q.turnIn)).toBe(true);
+            (q.requires || []).forEach(r => expect(questIds.has(r)).toBe(true));
+            expect(q.objectives.length).toBeGreaterThan(0);
+            q.objectives.forEach(o => {
+                expect(o.text).toBeTruthy();
+                if (o.type === 'kill') expect(enemyIds.has(o.target)).toBe(true);
+                else if (o.type === 'killGroup') expect(groups.has(o.target)).toBe(true);
+                else if (o.type === 'chest') expect(chestIds.has(o.target)).toBe(true);
+                else if (o.type === 'item') expect(Object.values(SCREENS).flatMap(sc => sc.chests).some(c => c.questItem?.id === o.target)).toBe(true);
+                else if (o.type === 'talk') { expect(npcIds.has(o.target)).toBe(true); expect(o.lines?.length).toBeGreaterThan(0); }
+                else if (o.type === 'visit') expect(SCREENS[o.target]).toBeTruthy();
+                else if (o.type === 'puzzleSet') expect(PUZZLE_SETS[o.target]).toBeTruthy();
+                else throw new Error(`type d'objectif inconnu : ${o.type}`);
+            });
+        });
+    });
+
+    test('le manifeste est entièrement réalisé (PNJ, coffres, maisons, quêtes)', () => {
+        Object.entries(MANIFEST).forEach(([region, m]) => {
+            expect(SCREENS[m.village.id]).toBeTruthy();
+            expect(SCREENS[m.wild.id]).toBeTruthy();
+            m.houses.forEach(h => expect(`${h.id} ${Boolean(SCREENS[h.id])}`).toBe(`${h.id} true`));
+            m.npcs.forEach(n => expect(`${n.id} ${npcIds.has(n.id)}`).toBe(`${n.id} true`));
+            m.chests.forEach(c => expect(`${c.id} ${chestIds.has(c.id)}`).toBe(`${c.id} true`));
+            m.enemies.forEach(e => expect(`${e.id} ${enemyIds.has(e.id)}`).toBe(`${e.id} true`));
+            m.quests.forEach(q => expect(`${q.id} ${questIds.has(q.id)}`).toBe(`${q.id} true`));
+        });
+    });
+
+    test('chaque quête rapporte de l\'XP (principale > annexe à région égale)', () => {
+        QUESTS.forEach(q => expect(`${q.id} ${q.reward?.xp > 0}`).toBe(`${q.id} true`));
+        const main = QUESTS.find(q => q.id === 'q_sun_1').reward.xp;
+        const side = QUESTS.find(q => q.id === 'sq_rice_thief').reward.xp;
+        expect(main).toBeGreaterThan(side);
+    });
+
+    test('nombre de quêtes annexes : au moins 125 (3 fois plus qu\'avant)', () => {
+        expect(QUESTS.filter(q => q.side).length).toBeGreaterThanOrEqual(125);
+        expect(screens.flatMap(s => s.chests).length).toBeGreaterThan(80);
+    });
+
+    test('aucune quête principale n\'exige une quête annexe', () => {
+        QUESTS.filter(q => !q.side).forEach(q => (q.requires || []).forEach(r => expect(QUESTS.find(x => x.id === r).side).toBeFalsy()));
+    });
+});
+
+describe('Grand Monde : jeu', () => {
+    const fresh = () => createSession(null);
+
+    test('la partie démarre dans le village de Hou Yi, pierre de voyage découverte', () => {
+        const session = fresh();
+        expect(session.data.screenId).toBe('rizieres_village');
+        expect(session.data.waypoints).toContain('rizieres_village');
+        expect(aliveEnemies(session)).toHaveLength(0);
+    });
+
+    test('anciennes sauvegardes : écran de sanctuaire toujours valide', () => {
+        const session = createSession({ screenId: 'rizieres', x: SCREENS.rizieres.spawn.x, y: SCREENS.rizieres.spawn.y, quests: { q_sun_1: 'active' } });
+        expect(session.data.screenId).toBe('rizieres');
+        expect(session.data.waypoints).toEqual([]);
+    });
+
+    test('pierres de voyage : activation, liste, voyage rapide', () => {
+        const session = fresh();
+        expect(fastTravel(session, 'fleuve_village')).toBe(false);
+        const stone = SCREENS.rizieres_wild.waypoint;
+        expect(stone).toBeTruthy();
+        expect(activateWaypoint(session, 'rizieres_wild')).toMatchObject({ isNew: true });
+        expect(activateWaypoint(session, 'rizieres_wild')).toMatchObject({ isNew: false });
+        expect(waypointList(session).map(w => w.screenId)).toEqual(['rizieres_village', 'rizieres_wild']);
+        expect(fastTravel(session, 'rizieres_wild')).toBe(false);   // pas à une borne de voyage
+        const home = SCREENS.rizieres_village.waypoint;
+        session.data.x = home.x; session.data.y = home.y + 1;
+        expect(fastTravel(session, 'rizieres_wild')).toBe(true);
+        expect(session.data.screenId).toBe('rizieres_wild');
+        expect(isTerrainBlocked(SCREENS.rizieres_wild, session.data.x, session.data.y)).toBe(false);
+        expect(fastTravel(session, 'rizieres_village')).toBe(true);
+    });
+
+    test('toucher la pierre l\'active et ne la traverse pas', () => {
+        const session = fresh();
+        enterScreen(session, 'rizieres_wild', SCREENS.rizieres_wild.spawn);
+        const stone = SCREENS.rizieres_wild.waypoint;
+        const path = findPath(session, stone.x, stone.y);
+        expect(path?.length).toBeGreaterThan(0);
+        let res;
+        session.rt.grace = 99;
+        for (const step of path) res = tryMove(session, step.x - session.data.x, step.y - session.data.y);
+        expect(res.type).toBe('waypoint');
+        expect(session.data.waypoints).toContain('rizieres_wild');
+    });
+
+    test('entrer dans une maison par sa porte et en ressortir', () => {
+        const session = fresh();
+        const village = SCREENS.rizieres_village;
+        const door = exitsOf(village, SCREENS).find(e => e.door);
+        expect(door).toBeTruthy();
+        const house = SCREENS[door.to];
+        expect(house.interior).toBe(true);
+        enterScreen(session, village.id, door.arrive);
+        const path = findPath(session, door.x, door.y);
+        expect(path).not.toBeNull();
+        let res;
+        for (const step of path) res = tryMove(session, step.x - session.data.x, step.y - session.data.y);
+        expect(res.type).toBe('transition');
+        expect(res.door).toBe(true);
+        expect(session.data.screenId).toBe(house.id);
+        const out = exitsOf(house, SCREENS)[0];
+        const back = findPath(session, out.x, out.y);
+        for (const step of back) res = tryMove(session, step.x - session.data.x, step.y - session.data.y);
+        expect(session.data.screenId).toBe(village.id);
+        expect(session.data.y).toBe(door.y + 1);
+    });
+
+    test('quête de type « parler » : la réplique de la cible valide l\'objectif', () => {
+        const quest = QUESTS.find(q => q.side && q.objectives.some(o => o.type === 'talk') && (q.requires || []).length === 0);
+        expect(quest).toBeTruthy();
+        const session = fresh();
+        session.data.quests[quest.id] = 'active';
+        const target = quest.objectives.find(o => o.type === 'talk').target;
+        const scr = screens.find(s => s.npcs.some(n => n.id === target));
+        enterScreen(session, scr.id, scr.spawn);
+        expect(npcMarker(session, target)).toBe('?');
+        const res = talkToNpc(session, target);
+        expect(res.lines).toEqual(expect.arrayContaining(quest.objectives.find(o => o.type === 'talk').lines));
+        expect(session.data.talked).toContain(target);
+        expect(res.events.some(e => e.type === 'objective')).toBe(true);
+    });
+
+    test('quête suivie : objectif du HUD, anneaux sur la carte, journal', () => {
+        const session = fresh();
+        const quest = QUESTS.find(q => q.side && (q.requires || []).length === 0 && q.objectives[0].type === 'kill' || q.objectives[0].type === 'chest');
+        session.data.quests[quest.id] = 'active';
+        expect(setTrackedQuest(session, quest.id)).toBe(quest.id);
+        expect(trackedQuest(session).id).toBe(quest.id);
+        expect(currentObjectiveText(session)).toContain(quest.title);
+        const entry = journalEntries(session).find(e => e.quest.id === quest.id);
+        expect(entry.tracked).toBe(true);
+        expect(entry.where).toBeTruthy();
+        expect(setTrackedQuest(session, 'n_importe_quoi')).toBeNull();
+    });
+
+    test('progression par région', () => {
+        const session = fresh();
+        const rows = regionProgress(session);
+        expect(rows).toHaveLength(11);
+        expect(rows[0]).toMatchObject({ region: 'rizieres', visited: true, stonesFound: 1 });
+        expect(rows[0].chestsTotal).toBeGreaterThan(3);
+    });
+});

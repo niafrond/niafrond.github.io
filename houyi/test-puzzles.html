@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Test des énigmes</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { display: block; margin: 0; padding: 16px; background: #1b130c; color: #f4ecd8; font-family: system-ui, sans-serif; overflow: auto; height: auto; }
+        h1 { font-size: 1.3rem; margin: 0 0 4px; }
+        p.lead { margin: 0 0 14px; color: #c9b891; font-size: .9rem; }
+        h2 { font-size: 1rem; margin: 16px 0 6px; color: #f2c14e; }
+        .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+        .list button { text-align: left; padding: 10px 12px; border: 2px solid #5a3e1b; border-radius: 10px; background: #fff8e1; color: #3b2a20; font: inherit; cursor: pointer; }
+        .list button b { display: block; }
+        .list button small { color: #6a5a40; }
+        .list button.done { background: #d7f0dc; }
+        .list button.done b::after { content: " (résolue)"; font-weight: normal; }
+        #host { position: fixed; inset: 0; display: none; }
+        #host.open { display: block; }
+    </style>
+</head>
+<body>
+    <h1>Test des énigmes</h1>
+    <p class="lead">Chaque énigme à plateau du jeu, jouable directement (sans passer par les étages ni les coffres). Les résolues sont marquées en vert (seulement sur cette page).</p>
+    <div id="app"></div>
+    <div id="host"></div>
+    <script type="module">
+        import { PUZZLES, PUZZLE_SETS, puzzlesOfSet } from './puzzle/levels.js';
+        import { openPuzzle } from './puzzle/view.js';
+        import { solve } from './puzzle/engine.js';
+        import { gbaSprite, loadGbaSprites } from './sprites/index.js';
+
+        // Héros de la page de test : l'archer, comme dans le jeu (sprite de face).
+        loadGbaSprites(['archer']).catch(() => {});
+
+        const FAMILIES = { jarres: 'Jarres (pousser)', lumiere: 'Lumière (miroirs)', charrette: 'Charrette (Rush Hour)' };
+        const solved = new Set();
+        const host = document.getElementById('host');
+        const app = document.getElementById('app');
+
+        function render() {
+            app.innerHTML = Object.keys(PUZZLE_SETS).map(set => `<h2>${FAMILIES[set]}</h2><div class="list">${puzzlesOfSet(set).map((id, i) => {
+                const p = PUZZLES[id], min = solve({ id, ...p }, { maxStates: 400000 });
+                return `<button type="button" data-id="${id}" class="${solved.has(id) ? 'done' : ''}"><b>${i + 1}. ${p.title}</b><small>${['facile', 'moyen', 'difficile', 'très difficile'][i]} · minimum : ${min} ${p.mode === 'push' ? 'pas' : 'coups'}</small></button>`;
+            }).join('')}</div>`).join('');
+        }
+        app.addEventListener('click', e => {
+            const b = e.target.closest('button[data-id]');
+            if (!b) return;
+            host.classList.add('open');
+            const view = openPuzzle(host, b.dataset.id, {
+                solution: true,
+                hero: gbaSprite('archer', 'front') || undefined,
+                onClose: () => host.classList.remove('open'),
+                onSolved: () => { solved.add(b.dataset.id); render(); }
+            });
+            if (!view) host.classList.remove('open');
+        });
+        render();
+    </script>
+</body>
+</html>

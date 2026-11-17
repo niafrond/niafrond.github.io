@@ -1,0 +1,34 @@
+[
+  {
+    "hex": "#c7844c",
+    "role": "skin"
+  },
+  {
+    "hex": "#e4c1a1",
+    "role": "skin"
+  },
+  {
+    "hex": "#523729",
+    "role": "skin:outline"
+  },
+  {
+    "hex": "#661c19",
+    "role": "hair"
+  },
+  {
+    "hex": "#2d1015",
+    "role": "hair:outline"
+  },
+  {
+    "hex": "#671d19",
+    "role": "cloth"
+  },
+  {
+    "hex": "#994213",
+    "role": "cloth"
+  },
+  {
+    "hex": "#cd6402",
+    "role": "cloth"
+  }
+]

@@ -1,0 +1,2254 @@
+{
+  "allSpells": [
+    {
+      "id": "fireball",
+      "name": "Souffle du Dragon de Feu",
+      "color": "red",
+      "type": "damage",
+      "cost": 10,
+      "dmg": 25,
+      "minLevel": 1,
+      "description": "Le dragon de feu souffle sur l'ennemi et inflige 25 dégâts"
+    },
+    {
+      "id": "flameStrike",
+      "name": "Frappe du Phénix",
+      "color": "red",
+      "type": "damage",
+      "cost": 20,
+      "dmg": 50,
+      "minLevel": 5,
+      "description": "Un coup de flammes de phénix qui inflige 50 dégâts"
+    },
+    {
+      "id": "inferno",
+      "name": "Brasier du Fourneau Céleste",
+      "color": "red",
+      "type": "damage",
+      "cost": 35,
+      "dmg": 80,
+      "minLevel": 10,
+      "description": "Un brasier digne du fourneau des immortels qui inflige 80 dégâts"
+    },
+    {
+      "id": "meteor",
+      "name": "Étoile Filante",
+      "color": "red",
+      "type": "damage",
+      "cost": 50,
+      "dmg": 120,
+      "minLevel": 15,
+      "description": "Invoque une étoile filante dévastatrice qui inflige 120 dégâts"
+    },
+    {
+      "id": "ice",
+      "name": "Éclats de Givre",
+      "color": "blue",
+      "type": "damage",
+      "cost": 12,
+      "dmg": 30,
+      "minLevel": 1,
+      "description": "Projette des éclats de givre qui infligent 30 dégâts"
+    },
+    {
+      "id": "frostNova",
+      "name": "Vague du Roi-Dragon",
+      "color": "blue",
+      "type": "damage",
+      "cost": 22,
+      "dmg": 55,
+      "minLevel": 5,
+      "description": "Une vague glaciale du Roi-Dragon de la Mer Orientale qui inflige 55 dégâts"
+    },
+    {
+      "id": "blizzard",
+      "name": "Tempête de Neige du Nord",
+      "color": "blue",
+      "type": "damage",
+      "cost": 38,
+      "dmg": 85,
+      "minLevel": 10,
+      "description": "Déchaîne une tempête de neige qui inflige 85 dégâts"
+    },
+    {
+      "id": "iceAge",
+      "name": "Grand Gel du Kunlun",
+      "color": "blue",
+      "type": "damage",
+      "cost": 50,
+      "dmg": 120,
+      "minLevel": 15,
+      "description": "Gèle tout sur son passage pour 120 dégâts"
+    },
+    {
+      "id": "heal",
+      "name": "Talisman de Jade",
+      "color": "green",
+      "type": "heal",
+      "cost": 8,
+      "heal": 16,
+      "minLevel": 1,
+      "description": "Un talisman de jade qui restaure 16 points de vie"
+    },
+    {
+      "id": "greatHeal",
+      "name": "Rosée Céleste",
+      "color": "green",
+      "type": "heal",
+      "cost": 18,
+      "heal": 36,
+      "minLevel": 5,
+      "description": "Une rosée tombée du ciel qui restaure 36 points de vie"
+    },
+    {
+      "id": "revitalize",
+      "name": "Circulation du Qi",
+      "color": "green",
+      "type": "heal",
+      "cost": 30,
+      "heal": 60,
+      "minLevel": 10,
+      "description": "Fait circuler le qi, revitalise le corps et restaure 60 points de vie"
+    },
+    {
+      "id": "miracle",
+      "name": "Bénédiction de la Lune",
+      "color": "green",
+      "type": "heal",
+      "cost": 45,
+      "heal": 90,
+      "minLevel": 15,
+      "description": "Une bénédiction de Chang'e qui restaure 90 points de vie"
+    },
+    {
+      "id": "bolt",
+      "name": "Éclair de Lei Gong",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 15,
+      "dmg": 35,
+      "minLevel": 1,
+      "description": "Le Seigneur du Tonnerre lance un éclair qui inflige 35 dégâts"
+    },
+    {
+      "id": "thunderBolt",
+      "name": "Foudre des Monts du Tonnerre",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 25,
+      "dmg": 60,
+      "minLevel": 5,
+      "description": "Un coup de foudre puissant qui inflige 60 dégâts"
+    },
+    {
+      "id": "lightningStorm",
+      "name": "Orage des Cent Éclairs",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 40,
+      "dmg": 90,
+      "minLevel": 10,
+      "description": "Un orage électrique qui inflige 90 dégâts"
+    },
+    {
+      "id": "stormOfGods",
+      "name": "Tribulation Céleste",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 50,
+      "dmg": 125,
+      "minLevel": 15,
+      "description": "La colère du Ciel qui frappe pour 125 dégâts"
+    },
+    {
+      "id": "vaporBurst",
+      "name": "Vapeur du Chaudron Céleste",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue"
+      ],
+      "type": "damage",
+      "cost": {
+        "red": 8,
+        "blue": 8
+      },
+      "dmg": 38,
+      "minLevel": 3,
+      "description": "Un nuage de vapeur brûlante, né du feu et de l'eau, qui inflige 38 dégâts"
+    },
+    {
+      "id": "goldenDew",
+      "name": "Rosée Dorée",
+      "color": "green",
+      "colors": [
+        "green",
+        "yellow"
+      ],
+      "type": "heal",
+      "cost": {
+        "green": 9,
+        "yellow": 6
+      },
+      "heal": 30,
+      "minLevel": 4,
+      "description": "Une rosée dorée qui restaure 30 points de vie"
+    },
+    {
+      "id": "lotusPoison",
+      "name": "Poison du Lotus Noir",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "green"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 10,
+        "green": 10
+      },
+      "dmg": 48,
+      "minLevel": 6,
+      "description": "Inflige 48 dégâts et empoisonne l'adversaire : 5 dégâts par tour pendant 3 tours",
+      "poisonDmg": 5,
+      "poisonTurns": 3
+    },
+    {
+      "id": "emberStorm",
+      "name": "Foudre Ardente de Zhurong",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow"
+      ],
+      "type": "damage",
+      "cost": {
+        "red": 14,
+        "yellow": 14
+      },
+      "dmg": 70,
+      "minLevel": 7,
+      "description": "La foudre et la flamme du dieu du feu infligent 70 dégâts"
+    },
+    {
+      "id": "shadowFlame",
+      "name": "Flamme des Ombres",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "red"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 12,
+        "red": 12
+      },
+      "dmg": 58,
+      "minLevel": 8,
+      "description": "Une flamme noire qui dévore l'ennemi et inflige 58 dégâts"
+    },
+    {
+      "id": "springRain",
+      "name": "Pluie du Printemps",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue"
+      ],
+      "type": "heal",
+      "cost": {
+        "green": 14,
+        "blue": 10
+      },
+      "heal": 48,
+      "minLevel": 9,
+      "description": "Une pluie douce et vivifiante qui restaure 48 points de vie"
+    },
+    {
+      "id": "frostLightning",
+      "name": "Orage Glacé des Hauts Monts",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow"
+      ],
+      "type": "damage",
+      "cost": {
+        "blue": 20,
+        "yellow": 20
+      },
+      "dmg": 96,
+      "minLevel": 11,
+      "description": "Un orage de glace et de foudre qui inflige 96 dégâts"
+    },
+    {
+      "id": "voidChill",
+      "name": "Souffle du Vide Glacé",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "blue"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 22,
+        "blue": 22
+      },
+      "dmg": 108,
+      "minLevel": 13,
+      "description": "Le froid du vide absolu infligeant 108 dégâts"
+    },
+    {
+      "id": "bladeWinds",
+      "name": "Lame des Quatre Vents",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "blue"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 6,
+        "yellow": 6,
+        "blue": 6
+      },
+      "effect": "sweepRow",
+      "minLevel": 8,
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, vous récupérez son qì et l'ennemi subit 4 dégâts par case des couleurs du sort"
+    },
+    {
+      "id": "brasierSeals",
+      "name": "Brasier des Sceaux",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 8,
+        "yellow": 8,
+        "purple": 6
+      },
+      "effect": "skullsFromColors",
+      "minLevel": 9,
+      "convert": [
+        "red",
+        "yellow"
+      ],
+      "cooldown": 2,
+      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes. Recharge : 2 tours (inutilisable au tour suivant)"
+    },
+    {
+      "id": "threeDragons",
+      "name": "Tempête des Trois Dragons",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow",
+        "green"
+      ],
+      "type": "advanced",
+      "cost": {
+        "blue": 7,
+        "yellow": 7,
+        "green": 7
+      },
+      "effect": "destroyColumns",
+      "minLevel": 10,
+      "columns": 3,
+      "dmgPerTile": 3,
+      "description": "Choisissez 3 colonnes à détruire (aperçu avant destruction), récupère leur qì et inflige 3 dégâts par case bleue, jaune ou verte détruite"
+    },
+    {
+      "id": "dragonCross",
+      "name": "Croix du Dragon",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "blue",
+        "green"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 8,
+        "yellow": 8,
+        "blue": 8,
+        "green": 8
+      },
+      "effect": "sweepCross",
+      "minLevel": 11,
+      "dmgPerTile": 4,
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (qì récupéré, 4 dégâts par case des couleurs du sort)"
+    },
+    {
+      "id": "thunderPrison",
+      "name": "Prison du Tonnerre Glacé",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "blue": 7,
+        "yellow": 7,
+        "purple": 7
+      },
+      "effect": "cageEnemy",
+      "minLevel": 11,
+      "duration": 1,
+      "manaDrain": 6,
+      "description": "Étourdit l'ennemi 1 tour et lui retire 6 qì de chaque couleur. Recharge : 4 tours",
+      "cooldown": 4
+    },
+    {
+      "id": "jadeBreath",
+      "name": "Souffle de Jade Céleste",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "green": 12,
+        "blue": 8,
+        "yellow": 8,
+        "purple": 8
+      },
+      "effect": "secondWind",
+      "minLevel": 13,
+      "heal": 50,
+      "cooldown": 2,
+      "description": "Soigne 50 PV, retire les statuts négatifs et vous laisse rejouer. Recharge : 2 tours"
+    },
+    {
+      "id": "starRain",
+      "name": "Pluie des Mille Étoiles",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 9,
+        "blue": 9,
+        "green": 9,
+        "yellow": 9,
+        "purple": 9
+      },
+      "effect": "starRain",
+      "minLevel": 15,
+      "rows": 2,
+      "columns": 2,
+      "dmgPerTile": 3,
+      "description": "Choisissez 2 lignes puis 2 colonnes à détruire : qì récupéré et 3 dégâts par case des couleurs du sort"
+    },
+    {
+      "id": "fiveHarmony",
+      "name": "Harmonie des Cinq Éléments",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 10,
+        "blue": 10,
+        "green": 10,
+        "yellow": 10,
+        "purple": 10
+      },
+      "effect": "harmony",
+      "minLevel": 17,
+      "dmg": 100,
+      "heal": 40,
+      "manaDrain": 5,
+      "description": "Inflige 100 dégâts, vous soigne de 40 PV et retire 5 qì de chaque couleur à l'ennemi"
+    },
+    {
+      "id": "twinDragonsStrike",
+      "name": "Frappe des Deux Dragons",
+      "type": "damage",
+      "cost": {
+        "red": 30,
+        "blue": 30
+      },
+      "dmg": 168,
+      "minLevel": 16,
+      "playerOnly": true,
+      "description": "Deux dragons, l'un de feu et l'autre de glace, frappent ensemble : 168 dégâts"
+    },
+    {
+      "id": "vermilionBirdDive",
+      "name": "Plongeon de l'Oiseau Vermillon",
+      "type": "damage",
+      "cost": {
+        "red": 35,
+        "yellow": 35
+      },
+      "dmg": 205,
+      "minLevel": 20,
+      "playerOnly": true,
+      "description": "L'Oiseau Vermillon fond du ciel dans les flammes et la foudre : 205 dégâts"
+    },
+    {
+      "id": "azureDragonRoar",
+      "name": "Rugissement du Dragon Azur",
+      "type": "damage",
+      "cost": {
+        "blue": 30,
+        "green": 30,
+        "purple": 30
+      },
+      "dmg": 270,
+      "minLevel": 24,
+      "playerOnly": true,
+      "description": "Le Dragon Azur rugit et ébranle l'ennemi : 270 dégâts"
+    },
+    {
+      "id": "whiteTigerClaw",
+      "name": "Griffe du Tigre Blanc",
+      "type": "damage",
+      "cost": {
+        "red": 40,
+        "yellow": 40,
+        "green": 30
+      },
+      "dmg": 340,
+      "minLevel": 28,
+      "playerOnly": true,
+      "description": "La griffe du Tigre Blanc de l'Ouest déchire l'ennemi : 340 dégâts"
+    },
+    {
+      "id": "thunderDukeWrath",
+      "name": "Colère du Duc du Tonnerre",
+      "type": "damage",
+      "cost": {
+        "yellow": 55,
+        "blue": 55
+      },
+      "dmg": 353,
+      "minLevel": 33,
+      "playerOnly": true,
+      "description": "Le Duc du Tonnerre déchaîne orage et pluie : 353 dégâts"
+    },
+    {
+      "id": "fiveElementsSeal",
+      "name": "Sceau des Cinq Phases",
+      "type": "damage",
+      "cost": {
+        "red": 25,
+        "blue": 25,
+        "green": 25,
+        "yellow": 25,
+        "purple": 25
+      },
+      "dmg": 410,
+      "minLevel": 38,
+      "playerOnly": true,
+      "description": "Les cinq phases scellent l'ennemi sous leur poids : 410 dégâts"
+    },
+    {
+      "id": "heavenlyRiverFlood",
+      "name": "Crue du Fleuve Céleste",
+      "type": "damage",
+      "cost": {
+        "blue": 58,
+        "green": 55
+      },
+      "dmg": 420,
+      "minLevel": 43,
+      "playerOnly": true,
+      "description": "La Voie lactée déborde et emporte tout : 420 dégâts"
+    },
+    {
+      "id": "nineSunsFall",
+      "name": "Chute des Neuf Soleils",
+      "type": "damage",
+      "cost": {
+        "red": 57,
+        "yellow": 57
+      },
+      "dmg": 440,
+      "minLevel": 48,
+      "playerOnly": true,
+      "description": "Les neuf soleils retombent sur la terre : 440 dégâts"
+    },
+    {
+      "id": "kunlunMountainFall",
+      "name": "Chute du Mont Kunlun",
+      "type": "damage",
+      "cost": {
+        "green": 56,
+        "purple": 55,
+        "red": 55
+      },
+      "dmg": 613,
+      "minLevel": 54,
+      "playerOnly": true,
+      "description": "Le mont Kunlun s'abat sur l'ennemi : 613 dégâts"
+    },
+    {
+      "id": "pangusAxe",
+      "name": "Hache de Pangu",
+      "type": "damage",
+      "cost": {
+        "red": 56,
+        "yellow": 56,
+        "blue": 56
+      },
+      "dmg": 656,
+      "minLevel": 60,
+      "playerOnly": true,
+      "description": "La hache qui sépara le ciel et la terre : 656 dégâts"
+    },
+    {
+      "id": "jadeEmperorDecree",
+      "name": "Décret de l'Empereur de Jade",
+      "type": "damage",
+      "cost": {
+        "red": 50,
+        "blue": 50,
+        "green": 50,
+        "yellow": 50,
+        "purple": 50
+      },
+      "dmg": 1000,
+      "minLevel": 66,
+      "playerOnly": true,
+      "description": "Un décret impérial que nul ne peut refuser : 1000 dégâts"
+    },
+    {
+      "id": "heavenTribulationEnd",
+      "name": "Fin de la Tribulation",
+      "type": "damage",
+      "cost": {
+        "red": 56,
+        "blue": 56,
+        "yellow": 55,
+        "green": 53
+      },
+      "dmg": 1027,
+      "minLevel": 70,
+      "playerOnly": true,
+      "description": "La dernière foudre du Ciel : 1027 dégâts"
+    },
+    {
+      "id": "jadeSpringBlessing",
+      "name": "Bénédiction de la Source de Jade",
+      "type": "heal",
+      "cost": {
+        "green": 30,
+        "blue": 20
+      },
+      "heal": 100,
+      "minLevel": 20,
+      "playerOnly": true,
+      "description": "Restaure 100 points de vie"
+    },
+    {
+      "id": "immortalPeach",
+      "name": "Pêche d'Immortalité",
+      "type": "heal",
+      "cost": {
+        "green": 50,
+        "purple": 30
+      },
+      "heal": 168,
+      "minLevel": 40,
+      "playerOnly": true,
+      "description": "Restaure 168 points de vie"
+    },
+    {
+      "id": "queenMotherElixir",
+      "name": "Élixir de la Reine Mère d'Occident",
+      "type": "heal",
+      "cost": {
+        "green": 55,
+        "blue": 40,
+        "purple": 40
+      },
+      "heal": 283,
+      "minLevel": 60,
+      "playerOnly": true,
+      "description": "Restaure 283 points de vie"
+    },
+    {
+      "id": "emberScythe",
+      "name": "Faux de Braise",
+      "color": "red",
+      "colors": [
+        "red"
+      ],
+      "type": "board",
+      "cost": 4,
+      "effect": "sweepRow",
+      "minLevel": 2,
+      "dmgPerTile": 3,
+      "description": "Choisissez une ligne : elle est détruite, qì récupéré, 3 dégâts par case rouge"
+    },
+    {
+      "id": "frostCleave",
+      "name": "Fente de Givre",
+      "color": "blue",
+      "colors": [
+        "blue"
+      ],
+      "type": "board",
+      "cost": 4,
+      "effect": "sweepCol",
+      "minLevel": 2,
+      "dmgPerTile": 3,
+      "description": "Choisissez une colonne : elle est détruite, qì récupéré, 3 dégâts par case bleue"
+    },
+    {
+      "id": "galeSlash",
+      "name": "Entaille du Vent",
+      "color": "yellow",
+      "colors": [
+        "yellow"
+      ],
+      "type": "board",
+      "cost": 6,
+      "effect": "sweepCol",
+      "minLevel": 4,
+      "dmgPerTile": 4,
+      "description": "Choisissez une colonne : elle est détruite, qì récupéré, 4 dégâts par case jaune"
+    },
+    {
+      "id": "voidRift",
+      "name": "Faille du Néant",
+      "color": "purple",
+      "colors": [
+        "purple"
+      ],
+      "type": "board",
+      "cost": 7,
+      "effect": "sweepRow",
+      "minLevel": 6,
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, qì récupéré, 4 dégâts par case violette"
+    },
+    {
+      "id": "crimsonPurge",
+      "name": "Purge Écarlate",
+      "color": "red",
+      "colors": [
+        "red"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 5,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes rouges du plateau : qì récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "tidalPurge",
+      "name": "Purge des Marées",
+      "color": "blue",
+      "colors": [
+        "blue"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 5,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes bleues du plateau : qì récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "jadePurge",
+      "name": "Purge de Jade",
+      "color": "green",
+      "colors": [
+        "green"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 5,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes vertes du plateau : qì récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "stormPurge",
+      "name": "Purge d'Orage",
+      "color": "yellow",
+      "colors": [
+        "yellow"
+      ],
+      "type": "board",
+      "cost": 14,
+      "effect": "clearColor",
+      "minLevel": 6,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes jaunes du plateau : qì récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "shadowPurge",
+      "name": "Purge d'Ombre",
+      "color": "purple",
+      "colors": [
+        "purple"
+      ],
+      "type": "board",
+      "cost": 16,
+      "effect": "clearColor",
+      "minLevel": 7,
+      "dmgPerTile": 2,
+      "description": "Détruit toutes les gemmes violettes du plateau : qì récupéré, 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "emberGoldCross",
+      "name": "Croix de Braise Dorée",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow"
+      ],
+      "type": "board",
+      "cost": {
+        "red": 9,
+        "yellow": 9
+      },
+      "effect": "sweepCross",
+      "minLevel": 9,
+      "dmgPerTile": 3,
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites, qì récupéré, 3 dégâts par case rouge ou jaune"
+    },
+    {
+      "id": "jadeCurtain",
+      "name": "Rideau de Jade et d'Eau",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue"
+      ],
+      "type": "board",
+      "cost": {
+        "green": 8,
+        "blue": 8
+      },
+      "effect": "sweepCol",
+      "minLevel": 8,
+      "dmgPerTile": 4,
+      "description": "Choisissez une colonne : elle est détruite, qì récupéré, 4 dégâts par case verte ou bleue"
+    },
+    {
+      "id": "purpleRazor",
+      "name": "Rasoir d'Orage Pourpre",
+      "color": "yellow",
+      "colors": [
+        "yellow",
+        "purple"
+      ],
+      "type": "board",
+      "cost": {
+        "yellow": 9,
+        "purple": 9
+      },
+      "effect": "sweepRow",
+      "minLevel": 10,
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, qì récupéré, 4 dégâts par case jaune ou violette"
+    },
+    {
+      "id": "burningTide",
+      "name": "Marée Ardente",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue"
+      ],
+      "type": "board",
+      "cost": {
+        "red": 12,
+        "blue": 12
+      },
+      "effect": "clearColor",
+      "minLevel": 12,
+      "dmgPerTile": 3,
+      "description": "Détruit toutes les gemmes rouges et bleues du plateau : qì récupéré, 3 dégâts par gemme détruite"
+    },
+    {
+      "id": "seasonsPurge",
+      "name": "Purge des Quatre Saisons",
+      "color": "green",
+      "colors": [
+        "green",
+        "yellow"
+      ],
+      "type": "board",
+      "cost": {
+        "green": 14,
+        "yellow": 14
+      },
+      "effect": "clearColor",
+      "minLevel": 14,
+      "dmgPerTile": 3,
+      "description": "Détruit toutes les gemmes vertes et jaunes du plateau : qì récupéré, 3 dégâts par gemme détruite"
+    }
+  ],
+  "sorcererSpells": [
+    {
+      "id": "mageStrike",
+      "name": "Frappe du Maître Taoïste",
+      "class": "sorcerer",
+      "cost": {
+        "red": 3,
+        "blue": 5
+      },
+      "minLevel": 1,
+      "effect": "scaleWithBlue",
+      "baseDmg": 10,
+      "description": "Inflige 10 dégâts +1 pour chaque 3 qì bleu possédés"
+    },
+    {
+      "id": "wildMana",
+      "name": "Qi Sauvage",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 5,
+        "green": 5
+      },
+      "minLevel": 3,
+      "effect": "createJoker",
+      "description": "Transforme un gâteau de lune en pleine lune (joker x2) ou augmente le multiplicateur d'un joker (+2, max x7)"
+    },
+    {
+      "id": "shadowCurse",
+      "name": "Talisman de Scellement",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 4
+      },
+      "minLevel": 4,
+      "effect": "preventItems",
+      "duration": 3,
+      "weakenAmount": 4,
+      "description": "Scelle l'ennemi pendant 3 tours : il ne peut plus utiliser d'arme ni d'objet et perd 4 d'attaque"
+    },
+    {
+      "id": "darkChannels",
+      "name": "Méridiens Obscurs",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 5,
+      "effect": "destroyColor",
+      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur qì"
+    },
+    {
+      "id": "flameBolts",
+      "name": "Talismans Enflammés",
+      "class": "sorcerer",
+      "cost": {
+        "red": 5
+      },
+      "minLevel": 5,
+      "effect": "yellowBolts",
+      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 qì jaune, puis vide le qì jaune"
+    },
+    {
+      "id": "iceShield",
+      "name": "Barrière de Givre",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 8
+      },
+      "minLevel": 6,
+      "effect": "damageToMana",
+      "description": "Les dégâts sont appliqués au qì bleu au lieu des PV"
+    },
+    {
+      "id": "flameblade",
+      "name": "Lame de Feu Pourpre",
+      "class": "sorcerer",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 6,
+      "effect": "enchantWeapon",
+      "description": "Ajoute tout le qì rouge au prochain coup d'arme, puis vide le qì rouge"
+    },
+    {
+      "id": "weakness",
+      "name": "Sceau d'Affaiblissement",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 5
+      },
+      "minLevel": 5,
+      "effect": "reduceEnemyAtk",
+      "reduction": 5,
+      "duration": 4,
+      "description": "Réduit la puissance offensive de l'ennemi de 5 pendant 4 tours"
+    },
+    {
+      "id": "handOfIce",
+      "name": "Paume de Givre",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 7
+      },
+      "minLevel": 6,
+      "effect": "freezeEnemy",
+      "duration": 2,
+      "description": "Gel ou ralentissement de l'ennemi pendant 2 tours"
+    },
+    {
+      "id": "fingerOfDeath",
+      "name": "Doigt de la Mort",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 8
+      },
+      "minLevel": 7,
+      "effect": "createSkull",
+      "description": "Transforme un gâteau de lune en crâne +5 (attaque forte)"
+    },
+    {
+      "id": "chasm",
+      "name": "Fissure du Fleuve Jaune",
+      "class": "sorcerer",
+      "cost": {
+        "red": 10,
+        "blue": 10
+      },
+      "minLevel": 8,
+      "effect": "destroyArea",
+      "description": "Détruit une zone du plateau et donne le qì correspondant"
+    },
+    {
+      "id": "stoneskin",
+      "name": "Peau de Jade",
+      "class": "sorcerer",
+      "cost": {
+        "green": 8
+      },
+      "minLevel": 7,
+      "effect": "increaseDefense",
+      "defenseBonus": 15,
+      "duration": 4,
+      "description": "Augmente la défense de 15 pendant 4 tours"
+    },
+    {
+      "id": "strength",
+      "name": "Force du Tigre",
+      "class": "sorcerer",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 5,
+      "effect": "increasePhysical",
+      "atkBonus": 8,
+      "duration": 4,
+      "description": "Augmente temporairement les dégâts physiques de 8 pendant 4 tours"
+    },
+    {
+      "id": "flameSphere",
+      "name": "Sphère de Flammes",
+      "class": "sorcerer",
+      "cost": {
+        "red": 8
+      },
+      "minLevel": 8,
+      "effect": "fireballArea",
+      "dmg": 20,
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 20 dégâts"
+    },
+    {
+      "id": "mirrorShield",
+      "name": "Miroir de Bronze",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 10
+      },
+      "minLevel": 9,
+      "effect": "reflectDamage",
+      "reflectPercent": 30,
+      "duration": 5,
+      "description": "Renvoie 30% des dégâts subis pendant 5 tours"
+    },
+    {
+      "id": "manaSiphon",
+      "name": "Aspiration du Qi",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 7
+      },
+      "minLevel": 8,
+      "effect": "drainMana",
+      "manaSteal": 10,
+      "description": "Absorbe 10 qì ennemi (toutes couleurs)"
+    },
+    {
+      "id": "manaBlast",
+      "name": "Explosion des Cinq Éléments",
+      "class": "sorcerer",
+      "cost": {
+        "red": 15,
+        "blue": 15,
+        "green": 15,
+        "yellow": 15
+      },
+      "minLevel": 15,
+      "dmg": 150,
+      "description": "Grande attaque des cinq éléments consommant beaucoup de qì"
+    },
+    {
+      "id": "tigerEye",
+      "name": "Œil du Tigre",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 9,
+      "effect": "statBuff",
+      "atkBuff": 30,
+      "duration": 3,
+      "description": "Augmente l'attaque (chance de critique) de 30 % pendant 3 tours"
+    },
+    {
+      "id": "awakenQi",
+      "name": "Éveil du Qi",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 40,
+      "description": "Gagne +40 de rage"
+    },
+    {
+      "id": "stormTide",
+      "name": "Marée d'Orage",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 100,
+      "description": "Gagne +100 de rage"
+    },
+    {
+      "id": "cinnabarTransmute",
+      "name": "Conversion du Cinabre",
+      "class": "sorcerer",
+      "cost": {
+        "green": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.12,
+      "description": "Transforme toute la rage en qì : 12 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "innerCrucible",
+      "name": "Creuset Intérieur",
+      "class": "sorcerer",
+      "cost": {
+        "green": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.3,
+      "description": "Transforme toute la rage en qì : 30 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furyBolt",
+      "name": "Éclair de Fureur",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 6,
+        "purple": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage en magie pure : 3 dégâts par point de rage"
+    },
+    {
+      "id": "innerThunder",
+      "name": "Tonnerre Intérieur",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 14,
+        "purple": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 5,
+      "description": "Libère toute la rage en magie pure : 5 dégâts par point de rage"
+    },
+    {
+      "id": "skyJudgement",
+      "name": "Jugement du Ciel",
+      "class": "sorcerer",
+      "cost": {
+        "blue": 26,
+        "purple": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 7,
+      "description": "Libère toute la rage en magie pure : 7 dégâts par point de rage"
+    },
+    {
+      "id": "silenceSeal",
+      "name": "Sceau du Silence",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 5
+      },
+      "minLevel": 7,
+      "effect": "alterEnemy",
+      "alteration": "muted",
+      "duration": 3,
+      "description": "Rend l'ennemi muet 3 tours : il ne peut plus lancer de sorts"
+    },
+    {
+      "id": "cursedMark",
+      "name": "Marque Maudite",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 9,
+      "effect": "alterEnemy",
+      "alteration": "cursed",
+      "duration": 3,
+      "cursePct": 30,
+      "description": "Maudit l'ennemi 3 tours : il subit 30 % de dégâts en plus"
+    },
+    {
+      "id": "impureBreath",
+      "name": "Souffle Impur",
+      "class": "sorcerer",
+      "cost": {
+        "purple": 8
+      },
+      "minLevel": 11,
+      "effect": "alterEnemy",
+      "alteration": "corrupted",
+      "duration": 3,
+      "description": "Corrompt l'ennemi 3 tours : ses soins deviennent des dégâts"
+    }
+  ],
+  "assassinSpells": [
+    {
+      "id": "sneakAttack",
+      "name": "Tir Furtif",
+      "class": "assassin",
+      "cost": {
+        "blue": 5
+      },
+      "minLevel": 1,
+      "dmg": 6,
+      "effect": "bonusTurn",
+      "cooldown": 2,
+      "description": "6 dégâts et vous donne un tour bonus. Recharge : 2 tours"
+    },
+    {
+      "id": "swiftStrike",
+      "name": "Tir Rapide",
+      "class": "assassin",
+      "cost": {
+        "yellow": 8,
+        "red": 4
+      },
+      "minLevel": 3,
+      "effect": "yellowToPurple",
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 2 dégâts par gâteau converti"
+    },
+    {
+      "id": "confuse",
+      "name": "Flèche de Brume",
+      "class": "assassin",
+      "cost": {
+        "blue": 5,
+        "green": 6
+      },
+      "minLevel": 5,
+      "effect": "reduceManaGain",
+      "duration": 4,
+      "description": "Confond l'ennemi 4 tours : il ne gagne que 1 qì par combinaison et ses attaques peuvent se retourner contre lui"
+    },
+    {
+      "id": "stealth",
+      "name": "Voile de Brume",
+      "class": "assassin",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 6,
+      "effect": "damageToManaPurple",
+      "description": "Pendant 3 tours, les dégâts subis sont appliqués au qì violet au lieu des PV",
+      "duration": 3
+    },
+    {
+      "id": "poisonBlade",
+      "name": "Flèche Empoisonnée",
+      "class": "assassin",
+      "cost": {
+        "green": 6
+      },
+      "minLevel": 7,
+      "effect": "applyPoison",
+      "poisonDmg": 3,
+      "duration": 5,
+      "description": "Applique un poison infligeant 3 dégâts par tour pendant 5 tours"
+    },
+    {
+      "id": "shadowStrike",
+      "name": "Flèche d'Ombre",
+      "class": "assassin",
+      "cost": {
+        "red": 4,
+        "purple": 8
+      },
+      "minLevel": 10,
+      "effect": "destroyPurple",
+      "description": "Détruit tous les gâteaux de lune violets et inflige 2 dégâts par gâteau détruit"
+    },
+    {
+      "id": "steelMoult",
+      "name": "Mue d'Acier",
+      "class": "assassin",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 13,
+      "effect": "actionGemsToColor",
+      "gemColor": "purple",
+      "description": "Transforme toutes les flèches d'action en gâteaux de lune violets et donne 1 point d'action par flèche"
+    },
+    {
+      "id": "dualShot",
+      "name": "Flèches Jumelles",
+      "class": "assassin",
+      "cost": {
+        "red": 16,
+        "blue": 16,
+        "green": 16,
+        "yellow": 16
+      },
+      "minLevel": 15,
+      "effect": "dualWeaponAttack",
+      "description": "Inflige des dégâts égaux à l'attaque combinée des deux armes"
+    },
+    {
+      "id": "shadowStep",
+      "name": "Pas de l'Ombre",
+      "class": "assassin",
+      "cost": {
+        "yellow": 5
+      },
+      "minLevel": 4,
+      "effect": "statBuff",
+      "defBuff": 25,
+      "duration": 3,
+      "description": "Augmente la défense (chance de blocage) de 25 % pendant 3 tours"
+    },
+    {
+      "id": "sharpenedBlade",
+      "name": "Flèche Affûtée",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6,
+        "red": 4
+      },
+      "minLevel": 8,
+      "effect": "statBuff",
+      "atkBuff": 35,
+      "duration": 3,
+      "description": "Augmente l'attaque (chance de critique) de 35 % pendant 3 tours"
+    },
+    {
+      "id": "bloodThirst",
+      "name": "Soif de Sang",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 40,
+      "description": "Gagne +40 de rage"
+    },
+    {
+      "id": "hunterThrill",
+      "name": "Frisson du Chasseur",
+      "class": "assassin",
+      "cost": {
+        "yellow": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 100,
+      "description": "Gagne +100 de rage"
+    },
+    {
+      "id": "furyTheft",
+      "name": "Vol de Fureur",
+      "class": "assassin",
+      "cost": {
+        "purple": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.08,
+      "description": "Transforme toute la rage en qì : 8 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "innerPlunder",
+      "name": "Pillage Intérieur",
+      "class": "assassin",
+      "cost": {
+        "purple": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.2,
+      "description": "Transforme toute la rage en qì : 20 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "spiteStrike",
+      "name": "Frappe de Rancœur",
+      "class": "assassin",
+      "cost": {
+        "yellow": 6,
+        "red": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 2,
+      "description": "Libère toute la rage en 2 tirs, chacun pouvant être critique ou bloqué : 2 dégâts par point de rage au total",
+      "shots": 2
+    },
+    {
+      "id": "furiousLunge",
+      "name": "Estocade Furieuse",
+      "class": "assassin",
+      "cost": {
+        "yellow": 14,
+        "red": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage en 3 tirs, chacun pouvant être critique ou bloqué : 3 dégâts par point de rage au total",
+      "shots": 3
+    },
+    {
+      "id": "absoluteShadowBlow",
+      "name": "Coup de l'Ombre Absolue",
+      "class": "assassin",
+      "cost": {
+        "yellow": 26,
+        "red": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage en 4 tirs, chacun pouvant être critique ou bloqué : 4 dégâts par point de rage au total",
+      "shots": 4
+    },
+    {
+      "id": "sleepDust",
+      "name": "Poudre de Sommeil",
+      "class": "assassin",
+      "cost": {
+        "blue": 6
+      },
+      "minLevel": 9,
+      "effect": "alterEnemy",
+      "alteration": "asleep",
+      "duration": 2,
+      "description": "Endort l'ennemi jusqu'à 2 tours : il n'agit pas tant qu'il ne subit pas de dégâts. Recharge : 4 tours",
+      "cooldown": 4
+    },
+    {
+      "id": "exhaustArrow",
+      "name": "Flèche d'Épuisement",
+      "class": "assassin",
+      "cost": {
+        "green": 6
+      },
+      "minLevel": 11,
+      "effect": "alterEnemy",
+      "alteration": "exhausted",
+      "duration": 4,
+      "exhaustDrain": 3,
+      "description": "Épuise l'ennemi 4 tours : il perd 3 qì d'une couleur au hasard à chaque tour"
+    }
+  ],
+  "templarSpells": [
+    {
+      "id": "defensiveWall",
+      "name": "Muraille Impériale",
+      "class": "templar",
+      "cost": {
+        "green": 3,
+        "purple": 4
+      },
+      "minLevel": 1,
+      "effect": "purpleToDefense",
+      "description": "Détruit tous les gâteaux de lune violets → +5 défense par gâteau"
+    },
+    {
+      "id": "shieldBash",
+      "name": "Coup de Bouclier Rond",
+      "class": "templar",
+      "cost": {
+        "red": 7
+      },
+      "minLevel": 3,
+      "effect": "defenseAttack",
+      "baseDmg": 5,
+      "description": "5 dégâts +1 par 3 points de défense. Retire les statuts négatifs"
+    },
+    {
+      "id": "focus",
+      "name": "Concentration du Qi",
+      "class": "templar",
+      "cost": {
+        "blue": 3,
+        "yellow": 3
+      },
+      "minLevel": 4,
+      "effect": "createActionGem",
+      "description": "Transforme un gâteau de lune en flèche (point d'action)"
+    },
+    {
+      "id": "legionForge",
+      "name": "Forge des Légions",
+      "class": "templar",
+      "cost": {
+        "blue": 5,
+        "yellow": 5
+      },
+      "minLevel": 11,
+      "effect": "colorsToActionGems",
+      "gemCount": 4,
+      "description": "Transforme 4 gâteaux de lune au hasard en flèches d'action"
+    },
+    {
+      "id": "intimidate",
+      "name": "Regard Impérial",
+      "class": "templar",
+      "cost": {
+        "purple": 3
+      },
+      "minLevel": 5,
+      "effect": "stealCP",
+      "cpSteal": 5,
+      "description": "Vole 5 points d'action à l'ennemi"
+    },
+    {
+      "id": "rush",
+      "name": "Charge de Cavalerie",
+      "class": "templar",
+      "cost": {
+        "yellow": 7,
+        "green": 3
+      },
+      "minLevel": 7,
+      "effect": "stunEnemy",
+      "description": "L'ennemi perd 2 tours. Recharge : 4 tours",
+      "cooldown": 4
+    },
+    {
+      "id": "counterAttack",
+      "name": "Riposte du Garde",
+      "class": "templar",
+      "cost": {
+        "red": 8
+      },
+      "minLevel": 8,
+      "effect": "counterOnBlock",
+      "counterDmg": 10,
+      "duration": 4,
+      "description": "Inflige 10 dégâts lorsque tu bloques pendant 4 tours"
+    },
+    {
+      "id": "reinforce",
+      "name": "Renfort des Troupes",
+      "class": "templar",
+      "cost": {
+        "green": 7
+      },
+      "minLevel": 9,
+      "effect": "destroyActionGemHeal",
+      "healPerGem": 10,
+      "description": "Détruit les flèches d'action et soigne de 10 PV par flèche"
+    },
+    {
+      "id": "steelHarvest",
+      "name": "Moisson d'Acier",
+      "class": "templar",
+      "cost": {
+        "green": 5
+      },
+      "minLevel": 13,
+      "effect": "actionGemsToMana",
+      "manaColor": "blue",
+      "manaPerGem": 2,
+      "description": "Détruit toutes les flèches d'action et donne 2 qì bleu par flèche"
+    },
+    {
+      "id": "barrier",
+      "name": "Rempart de Jade",
+      "class": "templar",
+      "cost": {
+        "green": 10
+      },
+      "minLevel": 10,
+      "effect": "massiveDefense",
+      "defenseBonus": 25,
+      "duration": 3,
+      "description": "Augmente fortement la défense de 25 pendant 3 tours"
+    },
+    {
+      "id": "divinePower",
+      "name": "Mandat du Ciel",
+      "class": "templar",
+      "cost": {
+        "yellow": 6
+      },
+      "minLevel": 10,
+      "effect": "defenseToMana",
+      "description": "Génère du qì selon la défense (1 qì jaune par 5 défense)"
+    },
+    {
+      "id": "holdTheLine",
+      "name": "Formation de la Tortue",
+      "class": "templar",
+      "cost": {
+        "green": 12
+      },
+      "minLevel": 12,
+      "effect": "immunityEffects",
+      "duration": 3,
+      "description": "Immunité à plusieurs effets négatifs pendant 3 tours"
+    },
+    {
+      "id": "heavensWrath",
+      "name": "Courroux du Ciel",
+      "class": "templar",
+      "cost": {
+        "yellow": 15
+      },
+      "minLevel": 14,
+      "effect": "explodeActionGems",
+      "dmgPerGem": 8,
+      "description": "Explosion de toutes les flèches d'action infligeant 8 dégâts par flèche"
+    },
+    {
+      "id": "commandAura",
+      "name": "Aura de Commandement",
+      "class": "templar",
+      "cost": {
+        "purple": 6,
+        "green": 4
+      },
+      "minLevel": 6,
+      "effect": "statBuff",
+      "atkBuff": 20,
+      "defBuff": 20,
+      "duration": 3,
+      "description": "Augmente l'attaque et la défense de 20 % pendant 3 tours"
+    },
+    {
+      "id": "battleOath",
+      "name": "Serment de Combat",
+      "class": "templar",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 40,
+      "description": "Gagne +40 de rage"
+    },
+    {
+      "id": "guardFervor",
+      "name": "Ferveur du Garde",
+      "class": "templar",
+      "cost": {
+        "purple": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 100,
+      "description": "Gagne +100 de rage"
+    },
+    {
+      "id": "wrathOffering",
+      "name": "Offrande de Colère",
+      "class": "templar",
+      "cost": {
+        "green": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.08,
+      "description": "Transforme toute la rage en qì : 8 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furyAltar",
+      "name": "Autel de Fureur",
+      "class": "templar",
+      "cost": {
+        "green": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.2,
+      "description": "Transforme toute la rage en qì : 20 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "righteousStrike",
+      "name": "Frappe du Juste",
+      "class": "templar",
+      "cost": {
+        "purple": 6,
+        "red": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 2,
+      "description": "Libère toute la rage : 2 dégâts par point de rage, et 10 de défense pour 100 de rage pendant 3 tours",
+      "defPerRage": 0.1
+    },
+    {
+      "id": "guardSentence",
+      "name": "Sentence du Garde",
+      "class": "templar",
+      "cost": {
+        "purple": 14,
+        "red": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 3,
+      "description": "Libère toute la rage : 3 dégâts par point de rage, et 15 de défense pour 100 de rage pendant 3 tours",
+      "defPerRage": 0.15
+    },
+    {
+      "id": "mandateJudgement",
+      "name": "Jugement du Mandat",
+      "class": "templar",
+      "cost": {
+        "purple": 26,
+        "red": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage : 4 dégâts par point de rage, et 20 de défense pour 100 de rage pendant 3 tours",
+      "defPerRage": 0.2
+    },
+    {
+      "id": "stoneGaze",
+      "name": "Regard Pétrifiant",
+      "class": "templar",
+      "cost": {
+        "yellow": 7
+      },
+      "minLevel": 10,
+      "effect": "alterEnemy",
+      "alteration": "petrified",
+      "duration": 3,
+      "description": "Pétrifie l'ennemi 3 tours : il ne peut plus bloquer ni parer"
+    },
+    {
+      "id": "unbreakableGuard",
+      "name": "Bastion Infranchissable",
+      "class": "templar",
+      "cost": {
+        "green": 14,
+        "purple": 6
+      },
+      "minLevel": 25,
+      "effect": "blockAll",
+      "duration": 5,
+      "cooldown": 7,
+      "description": "Bloque totalement toutes les attaques pendant 5 tours, même les coups très puissants. Recharge : 7 tours"
+    }
+  ],
+  "barbarianSpells": [
+    {
+      "id": "enrage",
+      "name": "Fureur des Steppes",
+      "class": "barbarian",
+      "cost": {
+        "green": 2,
+        "red": 6
+      },
+      "minLevel": 1,
+      "effect": "damageBoost",
+      "atkBonus": 10,
+      "duration": 3,
+      "cooldown": 2,
+      "description": "Ajoute 10 dégâts inblocables à chaque attaque que vous infligez (crânes, armes, sorts) pendant 3 tours et ne termine pas le tour. Recharge : 2 tours"
+    },
+    {
+      "id": "cleave",
+      "name": "Entaille de la Horde",
+      "class": "barbarian",
+      "cost": {
+        "red": 9,
+        "yellow": 6
+      },
+      "minLevel": 3,
+      "effect": "yellowDamage",
+      "description": "Inflige 2 dégâts par gâteau de lune jaune, puis détruit les jaunes"
+    },
+    {
+      "id": "throwAxe",
+      "name": "Lancer de Hache",
+      "class": "barbarian",
+      "cost": {
+        "green": 6,
+        "red": 8
+      },
+      "minLevel": 5,
+      "effect": "skullBonus",
+      "baseDmg": 12,
+      "description": "12 dégâts +2 par crâne présent sur le plateau"
+    },
+    {
+      "id": "bloodlust",
+      "name": "Soif de Bataille",
+      "class": "barbarian",
+      "cost": {
+        "green": 5,
+        "yellow": 5,
+        "blue": 5
+      },
+      "minLevel": 5,
+      "effect": "giveRedMana",
+      "manaGain": 20,
+      "description": "Donne +20 qì rouge"
+    },
+    {
+      "id": "summonTempest",
+      "name": "Appel du Vent Céleste",
+      "class": "barbarian",
+      "cost": {
+        "red": 8,
+        "yellow": 5,
+        "blue": 5
+      },
+      "minLevel": 8,
+      "effect": "destroyColumns",
+      "columns": 2,
+      "description": "Choisissez 2 colonnes : elles sont détruites"
+    },
+    {
+      "id": "berserkerRage",
+      "name": "Fureur du Loup des Steppes",
+      "class": "barbarian",
+      "cost": {
+        "green": 5,
+        "red": 8
+      },
+      "minLevel": 10,
+      "effect": "redToSkulls",
+      "cooldown": 2,
+      "description": "Transforme les gâteaux de lune rouges en crânes. Recharge : 2 tours"
+    },
+    {
+      "id": "brokenBlades",
+      "name": "Lames Brisées",
+      "class": "barbarian",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 12,
+      "effect": "actionGemsToSkulls",
+      "cooldown": 2,
+      "description": "Transforme toutes les flèches d'action en crânes. Recharge : 2 tours"
+    },
+    {
+      "id": "singingBlades",
+      "name": "Flèches Sifflantes",
+      "class": "barbarian",
+      "cost": {
+        "red": 8,
+        "yellow": 6
+      },
+      "minLevel": 11,
+      "effect": "drainOnHit",
+      "manaDrain": 5,
+      "duration": 5,
+      "description": "Réduit le qì ennemi de 5 quand tu infliges des dégâts pendant 5 tours"
+    },
+    {
+      "id": "deathbringer",
+      "name": "Porte-Crânes",
+      "class": "barbarian",
+      "cost": {
+        "green": 8,
+        "red": 16,
+        "yellow": 8,
+        "blue": 8
+      },
+      "minLevel": 14,
+      "effect": "redToSkullsHalf",
+      "cooldown": 2,
+      "description": "Crée des crânes = ½ du qì rouge possédé. Recharge : 2 tours"
+    },
+    {
+      "id": "revenant",
+      "name": "Esprit des Ancêtres",
+      "class": "barbarian",
+      "cost": {
+        "green": 10,
+        "red": 25,
+        "yellow": 20
+      },
+      "minLevel": 15,
+      "effect": "doubleBattle",
+      "description": "Double les points d'action (flèches) pour le combat"
+    },
+    {
+      "id": "warCry",
+      "name": "Cri de Guerre",
+      "class": "barbarian",
+      "cost": {
+        "red": 5
+      },
+      "minLevel": 4,
+      "effect": "statBuff",
+      "atkBuff": 20,
+      "defBuff": 10,
+      "duration": 3,
+      "description": "Augmente l'attaque de 20 % et la défense de 10 % pendant 3 tours"
+    },
+    {
+      "id": "bloodBoil",
+      "name": "Sang en Ébullition",
+      "class": "barbarian",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 8,
+      "effect": "rageGain",
+      "rageGain": 40,
+      "description": "Gagne +40 de rage"
+    },
+    {
+      "id": "furyToQi",
+      "name": "Souffle de la Colère",
+      "class": "barbarian",
+      "cost": {
+        "green": 4
+      },
+      "minLevel": 9,
+      "effect": "rageToMana",
+      "manaPerRage": 0.08,
+      "description": "Transforme toute la rage en qì : 8 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "furyBlow",
+      "name": "Coup de la Fureur Brisée",
+      "class": "barbarian",
+      "cost": {
+        "red": 6,
+        "yellow": 4
+      },
+      "minLevel": 12,
+      "effect": "rageToDamage",
+      "dmgPerRage": 4,
+      "description": "Libère toute la rage en un coup massif : 4 dégâts par point de rage"
+    },
+    {
+      "id": "dragonBlood",
+      "name": "Sang du Dragon",
+      "class": "barbarian",
+      "cost": {
+        "red": 21
+      },
+      "minLevel": 40,
+      "effect": "rageGain",
+      "rageGain": 100,
+      "description": "Gagne +100 de rage"
+    },
+    {
+      "id": "angerCirculation",
+      "name": "Circulation de la Colère",
+      "class": "barbarian",
+      "cost": {
+        "green": 16
+      },
+      "minLevel": 40,
+      "effect": "rageToMana",
+      "manaPerRage": 0.2,
+      "description": "Transforme toute la rage en qì : 20 qì de chaque couleur par 100 de rage"
+    },
+    {
+      "id": "tigerBreaker",
+      "name": "Brise-Tigre",
+      "class": "barbarian",
+      "cost": {
+        "red": 14,
+        "yellow": 10
+      },
+      "minLevel": 30,
+      "effect": "rageToDamage",
+      "dmgPerRage": 6,
+      "description": "Libère toute la rage en un coup massif : 6 dégâts par point de rage"
+    },
+    {
+      "id": "skySplitter",
+      "name": "Fendeur de Ciel",
+      "class": "barbarian",
+      "cost": {
+        "red": 26,
+        "yellow": 19
+      },
+      "minLevel": 60,
+      "effect": "rageToDamage",
+      "dmgPerRage": 8,
+      "description": "Libère toute la rage en un coup massif : 8 dégâts par point de rage"
+    }
+  ],
+  "ultimateSpells": [
+    {
+      "id": "ultimateFiveElements",
+      "name": "Courroux des Cinq Éléments",
+      "class": "sorcerer",
+      "ultimate": true,
+      "cost": {
+        "red": 25,
+        "blue": 25,
+        "green": 25
+      },
+      "minLevel": 30,
+      "effect": "ultimate",
+      "dmg": 1100,
+      "cinematic": "ultimate-sorcerer-1",
+      "description": "1100 dégâts"
+    },
+    {
+      "id": "ultimateHeavenlyThunder",
+      "name": "Tribulation de la Foudre Céleste",
+      "class": "sorcerer",
+      "ultimate": true,
+      "cost": {
+        "yellow": 35,
+        "purple": 30
+      },
+      "minLevel": 45,
+      "effect": "ultimate",
+      "dmg": 700,
+      "stunTurns": 2,
+      "cinematic": "ultimate-sorcerer-2",
+      "description": "700 dégâts et étourdissement 2 tours"
+    },
+    {
+      "id": "ultimateThousandArrows",
+      "name": "Pluie des Mille Flèches",
+      "class": "assassin",
+      "ultimate": true,
+      "cost": {
+        "red": 30,
+        "yellow": 30
+      },
+      "minLevel": 30,
+      "effect": "ultimate",
+      "dmg": 1000,
+      "cinematic": "ultimate-assassin-1",
+      "description": "1000 dégâts"
+    },
+    {
+      "id": "ultimateSunPiercer",
+      "name": "Flèche qui Abat le Soleil",
+      "class": "assassin",
+      "ultimate": true,
+      "cost": {
+        "yellow": 40,
+        "purple": 30
+      },
+      "minLevel": 45,
+      "effect": "ultimate",
+      "dmg": 1150,
+      "cinematic": "ultimate-assassin-2",
+      "description": "1150 dégâts"
+    },
+    {
+      "id": "ultimateImperialDragon",
+      "name": "Colère du Dragon Impérial",
+      "class": "templar",
+      "ultimate": true,
+      "cost": {
+        "green": 30,
+        "yellow": 30
+      },
+      "minLevel": 30,
+      "effect": "ultimate",
+      "dmg": 1000,
+      "healPercent": 20,
+      "cinematic": "ultimate-templar-1",
+      "description": "1000 dégâts, soigne 20 % des PV max"
+    },
+    {
+      "id": "ultimateEternalBastion",
+      "name": "Rempart Éternel",
+      "class": "templar",
+      "ultimate": true,
+      "cost": {
+        "blue": 35,
+        "green": 35
+      },
+      "minLevel": 45,
+      "effect": "ultimate",
+      "dmg": 700,
+      "healPercent": 40,
+      "defBuff": 25,
+      "duration": 3,
+      "cinematic": "ultimate-templar-2",
+      "description": "700 dégâts, soigne 40 % des PV max, gagne +25 de défense pendant 3 tours"
+    },
+    {
+      "id": "ultimateThousandRiders",
+      "name": "Charge des Mille Cavaliers",
+      "class": "barbarian",
+      "ultimate": true,
+      "cost": {
+        "red": 35,
+        "yellow": 25
+      },
+      "minLevel": 30,
+      "effect": "ultimate",
+      "dmg": 1100,
+      "cinematic": "ultimate-barbarian-1",
+      "description": "1100 dégâts"
+    },
+    {
+      "id": "ultimateSkyWolf",
+      "name": "Hurlement du Loup Céleste",
+      "class": "barbarian",
+      "ultimate": true,
+      "cost": {
+        "red": 30,
+        "purple": 30
+      },
+      "minLevel": 45,
+      "effect": "ultimate",
+      "dmg": 900,
+      "weakenAmount": 10,
+      "duration": 3,
+      "cinematic": "ultimate-barbarian-2",
+      "description": "900 dégâts, attaque ennemie réduite de 10 pendant 3 tours"
+    },
+    {
+      "id": "ultimateVermilionBird",
+      "name": "Renaissance de l'Oiseau Vermillon",
+      "ultimate": true,
+      "legend": "zhuque",
+      "unlock": {
+        "quest": "sq_legend_zhuque",
+        "hint": "Quête « Le feu du Sud » : Rong, au Hameau des Braises Sages (Volcan)"
+      },
+      "cost": {
+        "red": 35,
+        "purple": 25
+      },
+      "minLevel": 10,
+      "effect": "ultimate",
+      "dmg": 600,
+      "healPercent": 30,
+      "cinematic": "ultimate-legend-1",
+      "description": "600 dégâts, soigne 30 % des PV max"
+    },
+    {
+      "id": "ultimateBlackTortoise",
+      "name": "Carapace de la Tortue Noire",
+      "ultimate": true,
+      "legend": "xuanwu",
+      "unlock": {
+        "quest": "sq_legend_xuanwu",
+        "hint": "Quête « La carapace du Nord » : Bian, au Port-à-Sec de Hekou (Fleuve)"
+      },
+      "cost": {
+        "blue": 40,
+        "green": 25
+      },
+      "minLevel": 16,
+      "effect": "ultimate",
+      "dmg": 700,
+      "healPercent": 25,
+      "defBuff": 30,
+      "duration": 4,
+      "cinematic": "ultimate-legend-2",
+      "description": "700 dégâts, soigne 25 % des PV max, gagne +30 de défense pendant 4 tours"
+    },
+    {
+      "id": "ultimateWhiteTiger",
+      "name": "Chasse du Tigre Blanc",
+      "ultimate": true,
+      "legend": "baihu",
+      "unlock": {
+        "quest": "sq_legend_baihu",
+        "hint": "Quête « La chasse de l'Ouest » : Hu Mu, à l'Enclos de Caoyuan (Fauves)"
+      },
+      "cost": {
+        "red": 30,
+        "blue": 30
+      },
+      "minLevel": 28,
+      "effect": "ultimate",
+      "dmg": 900,
+      "weakenAmount": 12,
+      "duration": 3,
+      "cinematic": "ultimate-legend-3",
+      "description": "900 dégâts, attaque ennemie réduite de 12 pendant 3 tours"
+    },
+    {
+      "id": "ultimateAzureDragon",
+      "name": "Tempête du Dragon d'Azur",
+      "ultimate": true,
+      "legend": "qinglong",
+      "unlock": {
+        "quest": "sq_legend_qinglong",
+        "hint": "Quête « La tempête de l'Est » : Qing Yun, aux Terrasses de Fusang-le-Bas (Fusang)"
+      },
+      "cost": {
+        "green": 35,
+        "blue": 30
+      },
+      "minLevel": 38,
+      "effect": "ultimate",
+      "dmg": 1000,
+      "healPercent": 20,
+      "defBuff": 15,
+      "duration": 3,
+      "cinematic": "ultimate-legend-4",
+      "description": "1000 dégâts, soigne 20 % des PV max, gagne +15 de défense pendant 3 tours"
+    }
+  ]
+}

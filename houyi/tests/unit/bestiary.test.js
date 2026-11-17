@@ -1,0 +1,176 @@
+import { readFileSync } from 'fs';
+import { BESTIARY_LORE, BESTIARY_SOURCE, SOURCE_LABELS, bestiaryEntries, bestiaryEntry, familyOf, creaturePlaces, matchesBestiary, weakColorOf, strongColorOf } from '../../bestiary.js';
+import { beastLabel, enemyNameLabel } from '../../bestiaryNames.js';
+import { weaknessOf } from '../../elements.js';
+import { createSession, recordBestiary, startNewGamePlus } from '../../exploration.js';
+import { readExplorationViewSource } from './fixtures/explorationViewSource.js';
+
+const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
+
+describe('Bestiaire du carnet', () => {
+    test('chaque gabarit du catalogue a sa notice mythologique, sans notice orpheline', () => {
+        const ids = catalog.map(t => t.id);
+        expect(ids.filter(id => !BESTIARY_LORE[id])).toEqual([]);
+        expect(Object.keys(BESTIARY_LORE).filter(id => !ids.includes(id))).toEqual([]);
+        Object.values(BESTIARY_LORE).forEach(text => expect(text.length).toBeGreaterThan(40));
+        // provenance : texte classique, folklore ou adaptation du jeu, pour chaque créature
+        expect(ids.filter(id => !SOURCE_LABELS[BESTIARY_SOURCE[id]])).toEqual([]);
+        expect(Object.keys(BESTIARY_SOURCE).filter(id => !ids.includes(id))).toEqual([]);
+    });
+
+    test('la faiblesse affichée est celle du combat, la force est la résistance la plus haute', () => {
+        catalog.forEach(t => {
+            expect(weakColorOf(t)).toBe(weaknessOf(t.spellProfile.preferredColors[0]));   // même règle que enemies.js weakColorOfTemplate
+            const res = t.resistanceProfile;
+            expect(res[strongColorOf(t)]).toBe(Math.max(...Object.values(res)));
+        });
+        const e = bestiaryEntry(catalog.find(t => t.id === 'chilong'));
+        expect(e).toMatchObject({ strongColor: 'red', strongElement: 'Feu', weakColor: 'blue', weakElement: 'Eau' });
+        expect(e.lore).toMatch(/Chilong/);
+    });
+
+    test('seules les créatures croisées apparaissent, triées, avec le compteur', () => {
+        const { entries, known, total } = bestiaryEntries(catalog, ['qilin', 'bashe', 'inconnu']);
+        expect(entries.map(e => e.id)).toEqual(['bashe', 'qilin']);
+        expect(known).toBe(2);
+        expect(total).toBe(catalog.length);
+    });
+
+    test('combattre ou observer inscrit la créature, une seule fois ; le bestiaire survit à la NG+', () => {
+        const s = createSession({});
+        expect(s.data.bestiary).toEqual([]);
+        expect(recordBestiary(s, 'nian')).toBe(true);
+        expect(recordBestiary(s, 'nian')).toBe(false);
+        s.data.ended = true;
+        startNewGamePlus(s);
+        expect(s.data.bestiary).toEqual(['nian']);
+        expect(createSession({ bestiary: ['nian', 'nian', 3] }).data.bestiary).toEqual(['nian']);
+    });
+
+    test("le bestiaire a son propre onglet (ni le carnet, ni l'Inventaire) et le combat inscrit la créature", () => {
+        const view = readExplorationViewSource();
+        expect(view).not.toMatch(/tab\('bestiary'/);   // plus d'onglet dans le carnet
+        expect(view).toMatch(/async bestiaryHtml\(\)/);
+        const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+        expect(html).not.toMatch(/data-inv-sub/);
+        expect(html).toMatch(/switchTab\('bestiary'\)/);
+        expect(html).toMatch(/id="tab-bestiary"[\s\S]*id="bestiary-content"/);
+        expect(readFileSync(new URL('../../main.js', import.meta.url), 'utf8')).toMatch(/exploration\.bestiaryHtml\(\)/);
+        expect(view).toMatch(/X\.recordBestiary\(session, enc\.templateId\)/);
+        const save = readFileSync(new URL('../../saveManager.js', import.meta.url), 'utf8');
+        expect(save).toMatch(/bestiary: ex\.bestiary/);
+    });
+});
+
+describe('Ennemis nommés : gabarit et fiche propres (copies)', () => {
+    const copies = catalog.filter(t => t.copyOf);
+
+    test('une copie reprend exactement les statistiques de son gabarit d\'origine', () => {
+        expect(copies.length).toBeGreaterThanOrEqual(37);
+        const strip = ({ id, name, race, title, copyOf, ...rest }) => rest;
+        copies.forEach(t => {
+            const from = catalog.find(o => o.id === t.copyOf);
+            expect(from && !from.copyOf).toBe(true);
+            expect(strip(t)).toEqual(strip(from));
+            expect(BESTIARY_SOURCE[t.id]).toBe('adaptation');
+        });
+    });
+
+    test('le venin du gabarit d\'origine est conservé', async () => {
+        const { isVenomous } = await import('../../stuff.js');
+        copies.forEach(t => expect(isVenomous(t.id)).toBe(isVenomous(t.copyOf)));
+    });
+
+    test('soleils, Fengmeng, maîtres d\'arène et ennemis de quête ouvrent leur propre fiche', async () => {
+        const { SCREENS } = await import('../../story.js');
+        const tpl = Object.fromEntries(Object.values(SCREENS).flatMap(sc => sc.enemies || []).map(e => [e.id, e.templateId]));
+        ['sun_1', 'sun_2', 'sun_3', 'sun_4', 'sun_5', 'sun_6', 'sun_7', 'sun_8', 'sun_9', 'fengmeng_1', 'fengmeng_2', 'fengmeng_3a', 'fengmeng_3b']
+            .forEach(id => expect(tpl[id]).toBe(id));
+        expect(tpl.mirage_1).toBe('sun_4');
+        expect(tpl.crow_a).toBe('corbeau_demon');
+        expect(tpl.golden_carp).toBe('carpe_doree');
+        expect(tpl.arena_c8_master).toBe('grand_maitre_qian_jian');
+        expect(tpl.sun9_wardens_a).toBe(tpl.sun9_wardens_b);
+    });
+});
+
+describe('Bestiaire aquatique : fiches lisibles', () => {
+    const AQUATIC_RACES = /Poisson|Tortue|Méduse|Serpent|Dragon|Long|aquatique|Hybride/;
+
+    test('deux fiches ne portent pas le même nom, hors variantes d\'une même figure (Pixiu, Zhulong, Bai Ze, Tianlu, Fuxi, Yingzhao)', () => {
+        const byName = {};
+        catalog.forEach(t => (byName[t.name] ||= []).push(t.id));
+        const dups = Object.entries(byName).filter(([, ids]) => ids.length > 1).map(([name]) => name).sort();
+        expect(dups).toEqual(['Bai Ze', 'Fuxi', 'Pixiu', 'Tianlu', 'Yingzhao', 'Zhulong']);   // « Gui » (esprit) et « Gui » (tortue) se confondaient
+        expect(catalog.find(t => t.id === 'gui_tortue').name).toBe('Tortue Gui');
+        expect(catalog.find(t => t.id === 'gui_esprit').name).toBe('Gui');
+    });
+
+    test('les créatures de la mer ont une fiche complète : notice, provenance, force et faiblesse différentes', () => {
+        const sea = catalog.filter(t => AQUATIC_RACES.test(t.race) && BESTIARY_LORE[t.id]);
+        expect(sea.length).toBeGreaterThan(20);
+        sea.forEach(t => {
+            const e = bestiaryEntry(t);
+            expect({ id: t.id, lore: e.lore.length > 40, source: Boolean(SOURCE_LABELS[e.source]) }).toEqual({ id: t.id, lore: true, source: true });
+            expect({ id: t.id, same: e.strongColor === e.weakColor }).toEqual({ id: t.id, same: false });
+        });
+    });
+});
+
+describe('filtres du bestiaire', () => {
+    test('familyOf regroupe les races rares', () => {
+        expect(familyOf('Esprit-animal')).toBe('Esprit');
+        expect(familyOf('Gui')).toBe('Esprit');
+        expect(familyOf('Divinité guerrière')).toBe('Divinité');
+        expect(familyOf('Long')).toBe('Dragon');
+        expect(familyOf('Méduse')).toBe('Autre');
+        expect(familyOf('Bête')).toBe('Bête');
+        expect(familyOf('')).toBe('Autre');
+    });
+
+    test('creaturePlaces relève zones et boss (hautes herbes comprises)', () => {
+        const p = creaturePlaces({
+            a: { id: 'a', enemies: [{ templateId: 'x', boss: true }, { templateId: 'y' }], grass: { table: [{ templateId: 'y' }] } },
+            b: { id: 'b', enemies: [{ templateId: 'x' }] }
+        });
+        expect([...p.get('x').zones].sort()).toEqual(['a', 'b']);
+        expect(p.get('x').boss).toBe(true);
+        expect(p.get('y').boss).toBe(false);
+    });
+
+    test('matchesBestiary combine les critères', () => {
+        const c = { name: 'Chilong Ardent', family: 'Dragon', resist: 'red', weak: 'blue', zones: ['a'], boss: true };
+        expect(matchesBestiary(c, {})).toBe(true);
+        expect(matchesBestiary(c, { q: ' chilong ', family: 'Dragon', resist: 'red', weak: 'blue', zone: 'a', boss: true })).toBe(true);
+        expect(matchesBestiary(c, { family: 'Bête' })).toBe(false);
+        expect(matchesBestiary(c, { zone: 'z' })).toBe(false);
+        expect(matchesBestiary({ ...c, boss: false }, { boss: true })).toBe(false);
+    });
+});
+
+describe('noms du bestiaire (pinyin + caractères)', () => {
+    test('chaque gabarit a un pinyin avec tons, des caractères chinois et un affichage « Pinyin (汉字) »', () => {
+        catalog.filter(t => t.id !== 'fallback_enemy').forEach(t => {
+            const l = beastLabel(t);
+            expect({ id: t.id, ok: /^[A-Za-zÀ-ɏ ]+$/.test(l.pinyin) && /^[一-鿿]+$/.test(l.hanzi) }).toEqual({ id: t.id, ok: true });
+            expect(l.heading).toBe(`${l.pinyin} (${l.hanzi})`);
+            expect(l.subtitle.includes(l.hanzi)).toBe(false);   // les caractères sont déjà dans le titre : le sous-titre n'est que l'épithète
+        });
+    });
+
+    test('exemples : Bái Zé, Zhú Lóng, Cháng Xī', () => {
+        const get = id => beastLabel(catalog.find(t => t.id === id));
+        expect(get('bai_ze_savant')).toMatchObject({ heading: 'Bái Zé (白泽)', subtitle: 'Bête de la connaissance' });
+        expect(get('zhulong_torche')).toMatchObject({ heading: 'Zhú Lóng (烛龙)', subtitle: 'Dragon-Torche' });
+        expect(get('changxi')).toMatchObject({ heading: 'Cháng Xī (常羲)', subtitle: 'Mère des douze lunes' });
+    });
+});
+
+describe('nom de l\'ennemi en combat', () => {
+    test('caractères chinois par défaut, pinyin si demandé, nom du gabarit en repli', async () => {
+                const e = { templateId: 'bai_ze', name: 'Bai Ze' };
+        expect(enemyNameLabel(e, true)).toBe('白泽');
+        expect(enemyNameLabel(e, false)).toBe('Bái Zé');
+        expect(enemyNameLabel({ templateId: 'inconnu', name: 'Machin' }, true)).toBe('Machin');
+    });
+});

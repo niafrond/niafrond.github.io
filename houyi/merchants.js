@@ -1,0 +1,392 @@
+/**
+ * merchants.js — PNJ marchands (un par village) : stock déterministe, prix élevés, pièces rares et ultra rares.
+ *
+ * Module pur (sans DOM) : `world/index.js` y prend leurs fiches de PNJ, `shop.js` l'affichage et les achats.
+ *
+ * Stock d'un marchand (selon le niveau de sa région, `REGION_LEVEL`) :
+ *  - « Étal » : quelques objets rechargeables et armes communs ou peu communs ;
+ *  - « Pièces rares » : objets, boucliers, reliques et armes rares ;
+ *  - « Pièce d'exception » : une pièce légendaire (ou, à défaut, la plus précieuse pièce rare), à prix d'or.
+ * Les prix sont ceux du barème de base multipliés par `PRICE_MULT` (très cher). Les armes, boucliers et reliques sont
+ * uniques (une fois achetés, plus en rayon) ; les objets rechargeables restent en vente.
+ */
+import { allItems, lootableItems, shiftActiveItemIndexes } from './items.js';
+import { allWeapons, weaponRarity } from './weapons.js';
+import { shopStuff, getStuffById, baseStuffPrice, grantStuff, STUFF_SLOTS } from './stuff.js';
+
+export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
+
+// Bonus d'enchères : plus c'est rare, plus c'est cher.
+export const PRICE_MULT = { common: 2, uncommon: 2.5, rare: 4, legendary: 8 };
+const ITEM_RARITY_PRICE = { common: 5, uncommon: 12, rare: 30, legendary: 80 };
+
+// Barème des armes aligné sur celui des objets (niveau × prix de rareté, comme `baseItemPrice`) plus les dégâts : une arme légendaire
+// coûte autant qu'une relique ou un bouclier légendaire du même niveau, au lieu d'une fraction. L'ancien barème (15 par niveau + 2 par
+// point de dégâts) sert de plancher : les armes de départ ne deviennent pas moins chères.
+const WEAPON_DAMAGE_PRICE = 3;
+export const baseWeaponPrice = weapon => Math.floor(Math.max(
+    weapon.minLevel * 15 + weapon.damage * 2,
+    weapon.minLevel * (ITEM_RARITY_PRICE[weaponRarity(weapon)] || 5) + weapon.damage * WEAPON_DAMAGE_PRICE
+));
+export const baseItemPrice = item => Math.floor(item.minLevel * (ITEM_RARITY_PRICE[item.rarity] || 5));
+
+export const MERCHANTS = [
+    { id: 'merchant_rizieres', region: 'rizieres', name: 'Fu le Colporteur', title: 'Marchand ambulant',
+      idle: ['Du riz sec, des nattes, et sous la natte… autre chose. Regarde mais ne marchande pas trop fort : mes prix sont gravés.', 'Les rizières sont vides, mais mon étal, lui, ne l\'est jamais.'] },
+    { id: 'merchant_volcan', region: 'volcan', name: 'Lie le Braisier', title: 'Marchand de braises',
+      idle: ['Mes reliques sortent à peine de la forge. Elles sont chaudes, et mes prix aussi.', 'Pas de crédit : la lave ne fait pas crédit, moi non plus.'] },
+    { id: 'merchant_gobi', region: 'gobi', name: 'Ma le Caravanier', title: 'Marchand du désert',
+      idle: ['J\'ai traversé trois mirages pour ces marchandises. Chaque pièce a une histoire, et chaque histoire un tarif.', 'L\'eau est rare dans le Gobi, les belles lames aussi. Devinez ce qui coûte le plus cher.'] },
+    { id: 'merchant_fleuve', region: 'fleuve', name: 'Dame Shuang', title: 'Marchande de la berge',
+      idle: ['Tout ce que le fleuve a rendu, je l\'ai nettoyé, fait briller et revendu. Avec un petit supplément pour la peine.', 'Le courant apporte, le courant reprend. Moi, je garde le meilleur.'] },
+    { id: 'merchant_bambous', region: 'bambous', name: 'Maître Cheng', title: 'Marchand de la forêt',
+      idle: ['Des élixirs distillés dans le creux des bambous. Les moines en font un secret, moi un commerce.', 'La qualité a un prix, voyageur. Et le prix a un parfum de thé.'] },
+    { id: 'merchant_tonnerre', region: 'tonnerre', name: 'Jin le Fondeur', title: 'Marchand de métaux',
+      idle: ['Fer d\'orage, bronze de foudre. Ça ne se marchande pas, ça se mérite.', 'Une lame forgée un jour de tonnerre vaut dix lames forgées par beau temps.'] },
+    { id: 'merchant_fauves', region: 'fauves', name: 'Wu l\'Éleveur', title: 'Marchand de la plaine',
+      idle: ['Croc de tigre, plume de rapace, et quelques merveilles que les chasseurs ne vendent qu\'à moi.', 'Les bêtes sont folles, mais mon commerce est sage : tout a un prix.'] },
+    { id: 'merchant_mer', region: 'mer', name: 'Zhenzhu la Perlière', title: 'Marchande de perles',
+      idle: ['Des perles, des coquillages, des armes repêchées là où personne ne retourne. Le prix inclut le courage.', 'La marée monte, mes tarifs aussi. Question de principe.'] },
+    { id: 'merchant_fusang', region: 'fusang', name: 'Maître Tao', title: 'Marchand céleste',
+      idle: ['Des reliques tombées de l\'Arbre Fusang. Elles brillent encore. Leur prix aussi, à vrai dire.', 'Les immortels paient comptant. Pourquoi pas vous ?'] },
+    { id: 'merchant_marees', region: 'marees', name: 'Maître Tang', title: 'Saunier des radeaux',
+      idle: ["Mon sel vient de la mer et y retourne. Entre-temps, il fait vivre trois familles : c'est le plus honnête des cycles.", "Le sel garde le poisson, le poisson garde le village. Moi, j'ai gardé les radeaux. Et mes tarifs."] },
+    { id: 'merchant_lune', region: 'lune', name: 'Baitu le Lièvre', title: 'Marchand lunaire',
+      idle: ['Pilons de jade, éclats de lune et trésors qu\'aucun mortel ne devrait posséder. Prix en conséquence.', 'Ici, on paie en or. Même la lune a des factures.'] }
+];
+
+// Montures : achetables chez certains marchands, elles accélèrent les déplacements sur les cartes (explorationView.js).
+export const MOUNTS = {
+    horse: { id: 'horse', name: 'Cheval de plaine', type: 'mount', speed: 2,
+        description: 'Une monture robuste et docile : vous parcourez les cartes deux fois plus vite.' }
+};
+// Un marchand par monture : Maître Cheng, aux Bambous (5e région), vend le cheval, très cher.
+// Torche : vendue par les marchands des dernières régions, elle éclaire les cavernes et cryptes plongées dans le noir (world/underground.js).
+export const TORCH = { id: 'torch', name: 'Torche', type: 'torch',
+    description: 'Une torche de résine qui ne s\'éteint pas : elle éclaire largement les cavernes et les cryptes, où l\'on ne voit guère à plus d\'un pas.' };
+export const TORCH_PRICE = 400;
+// Vendue tardivement : le joueur traverse d'abord les souterrains à tâtons, puis revient avec la torche après avoir avancé dans l'intrigue.
+export const TORCH_MERCHANTS = ['merchant_fauves', 'merchant_mer', 'merchant_fusang', 'merchant_marees', 'merchant_lune'];
+// Boussole des destins : vendue par tous les marchands, très cher. Elle débloque la direction de TOUTES les quêtes (sans elle, seule la quête suivie
+// ou la quête principale est guidée) : les secondaires aussi, et les armures antiques, dont les pièces n'ont autrement aucun repère.
+export const COMPASS = { id: 'compass', name: 'Boussole des destins', type: 'compass',
+    description: 'Une boussole de jade qui ne ment jamais : la flèche dorée guide vers toutes vos quêtes, même les plus secrètes, jusqu\'aux pièces des armures antiques.' };
+export const COMPASS_PRICE = 150000;
+export const MOUNT_OFFERS = { merchant_bambous: { id: 'horse', price: 480 } };
+
+export const MERCHANT_IDS = MERCHANTS.map(m => m.id);
+export const getMerchant = id => MERCHANTS.find(m => m.id === id) || null;
+
+// Fiche de PNJ (format de world/text) : le marchand n'a pas de quête, juste une boutique.
+export function merchantNpc(id) {
+    const m = getMerchant(id);
+    if (!m) return null;
+    return {
+        id: m.id, name: m.name, title: m.title, merchant: true, region: m.region,
+        idle: m.idle,
+        greeting: [`${m.name} : « ${m.idle[0]} »`]
+    };
+}
+
+// PRNG déterministe (mulberry32) à partir d'une chaîne.
+function rngFor(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    let a = (h >>> 0) || 1;
+    return () => {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function sample(pool, count, rng) {
+    const left = pool.slice();
+    const out = [];
+    while (out.length < count && left.length) out.push(left.splice(Math.floor(rng() * left.length), 1)[0]);
+    return out;
+}
+
+const offerOf = (kind, obj, section, rarity) => {
+    const base = kind === 'weapon' ? baseWeaponPrice(obj) : baseItemPrice(obj);
+    const unique = kind === 'weapon' || obj.type !== 'reusable';
+    return { key: `${kind}:${obj.id}`, kind, id: obj.id, section, rarity, unique, price: Math.floor(base * (PRICE_MULT[rarity] || 2)) };
+};
+
+// Nombre de pièces tirées par section (en plus des fournitures permanentes).
+// Stuff en vente : meilleures pièces par emplacement, niveaux d'avance permis, majoration de prix (le butin ne donne plus que du stuff ordinaire).
+export const STUFF_PER_SLOT = 2;
+export const STUFF_LEVEL_AHEAD = 3;
+export const STUFF_PRICE_MULT = 1.5;
+export const STOCK_SIZE = { stallItems: 5, stallWeapons: 5, rare: 6, exceptional: 2, stuff: 5 };
+
+// Types d'objets que chaque marchand vend en permanence (une pièce « standard » de chacun, toujours rachetable).
+const STANDARD_TYPES = ['reusable', 'shield', 'artifact'];
+const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+
+/**
+ * Pièce standard d'un type pour une région de niveau L : parmi les deux plus basses raretés du type (jamais au-delà de « rare »),
+ * la plus haute de niveau ≤ L + 1 ; si le type n'en a pas encore à ce niveau, la plus accessible.
+ */
+export function standardItemFor(type, L) {
+    const ofType = lootableItems.filter(i => i.type === type);
+    if (!ofType.length) return null;
+    const lowest = Math.min(...ofType.map(i => RARITY_RANK[i.rarity] ?? 0));
+    const pool = ofType.filter(i => (RARITY_RANK[i.rarity] ?? 0) <= Math.min(2, lowest + 1));
+    const reachable = pool.filter(i => i.minLevel <= L + 1);
+    return reachable.length
+        ? reachable.reduce((best, i) => (i.minLevel > best.minLevel ? i : best))
+        : pool.reduce((best, i) => (i.minLevel < best.minLevel ? i : best));
+}
+
+/**
+ * Stock d'un marchand : liste d'offres { key, kind: 'item'|'weapon', id, section: 'stall'|'standard'|'rare'|'exceptional',
+ * rarity, unique, price }. Déterministe (même marchand, même Nouvelle Partie + → même stock).
+ */
+export function merchantStock(merchantId, ngPlus = 0, heroLevel = 0) {
+    const m = getMerchant(merchantId);
+    if (!m) return [];
+    const L = REGION_LEVEL[m.region] || 1;
+    const rng = rngFor(`${merchantId}|${ngPlus}`);
+    // Une pièce standard de chaque type d'objet, en rayon en permanence : elle ne sert pas aux tirages rares ci-dessous.
+    const standards = STANDARD_TYPES.map(t => standardItemFor(t, L)).filter(Boolean);
+    const standardIds = new Set(standards.map(i => i.id));
+    const items = lootableItems.filter(i => !standardIds.has(i.id)).map(i => ({ kind: 'item', obj: i, rarity: i.rarity }));
+    const weapons = allWeapons.map(w => ({ kind: 'weapon', obj: w, rarity: weaponRarity(w) }));
+    const all = [...items, ...weapons];
+    const fits = (e, rarities, up, down = 99) => rarities.includes(e.rarity) && e.obj.minLevel <= L + up && e.obj.minLevel >= L - down;
+
+    // Étal et pièces rares : nettement plus fournis qu'avant (les prix suivent le barème, il faut choisir ce qu'on achète).
+    const rareEntries = sample(all.filter(e => fits(e, ['rare'], 6, 14)), STOCK_SIZE.rare, rng);
+    // Armes de l'étal : communes ou peu communes ; dans les dernières régions, où il n'y en a plus, des armes rares plus anciennes
+    // (jamais déjà en « Pièces rares »).
+    const cheapWeapons = weapons.filter(e => fits(e, ['common', 'uncommon'], 2, 12));
+    const oldRareWeapons = weapons.filter(e => fits(e, ['rare'], 2, 25) && !rareEntries.includes(e));
+    const stallWeapons = sample(cheapWeapons, STOCK_SIZE.stallWeapons, rng);
+    if (stallWeapons.length < STOCK_SIZE.stallWeapons) stallWeapons.push(...sample(oldRareWeapons, STOCK_SIZE.stallWeapons - stallWeapons.length, rng));
+    const stall = [
+        ...sample(items.filter(e => e.obj.type === 'reusable' && fits(e, ['common', 'uncommon'], 1)), STOCK_SIZE.stallItems, rng),
+        ...stallWeapons
+    ];
+    const legendary = all.filter(e => fits(e, ['legendary'], 9, 12));
+    const exceptional = legendary.length
+        ? sample(legendary, STOCK_SIZE.exceptional, rng)
+        : all.filter(e => fits(e, ['rare'], 9, 12) && !rareEntries.includes(e))
+            .sort((a, b) => (b.kind === 'weapon' ? baseWeaponPrice(b.obj) : baseItemPrice(b.obj)) - (a.kind === 'weapon' ? baseWeaponPrice(a.obj) : baseItemPrice(a.obj))).slice(0, STOCK_SIZE.exceptional);
+
+    // « prix d'or » : la pièce d'exception ne coûte jamais moins que la pièce rare la plus chère de l'étal.
+    const rareMax = Math.max(0, ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity).price));
+
+    // « Parures » : des pièces de stuff (casque, collier, bracelet ou bague) du niveau de la région.
+    // Le bon stuff s'achète, il ne se trouve plus : chaque marchand garde en rayon les deux meilleures pièces de chaque emplacement que le héros
+    // peut porter (niveau du héros + 3, ou celui de la région s'il est plus haut), à prix fort (STUFF_PRICE_MULT). À chaque montée de
+    // niveau, de meilleures pièces apparaissent : il faut repasser chez les marchands.
+    const stuffLevel = Math.max(L, Math.floor(heroLevel || 0));
+    const RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+    const stuffOffers = STUFF_SLOTS.flatMap(slot => shopStuff().filter(s => s.slot === slot && s.minLevel <= stuffLevel + STUFF_LEVEL_AHEAD)
+        .sort((a, b) => b.minLevel - a.minLevel || RANK[b.rarity] - RANK[a.rarity]).slice(0, STUFF_PER_SLOT))
+        .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', id: s.id, section: 'stuff', rarity: s.rarity, unique: true,
+            price: Math.floor(baseStuffPrice(s) * (PRICE_MULT[s.rarity] || 2) * STUFF_PRICE_MULT) }));
+
+    const mount = MOUNT_OFFERS[merchantId];
+    return [
+        ...(TORCH_MERCHANTS.includes(merchantId) ? [{ key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE }] : []),
+        { key: 'compass:compass', kind: 'compass', id: 'compass', section: 'gear', rarity: 'legendary', unique: true, price: COMPASS_PRICE },
+        ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
+        ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
+        ...standards.map(i => ({ ...offerOf('item', i, 'standard', i.rarity), unique: false })),
+        ...stuffOffers,
+        ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),
+        ...exceptional.map(e => {
+            const o = offerOf(e.kind, e.obj, 'exceptional', e.rarity);
+            // « prix d'or » : la pièce d'exception vaut au moins 1,5 fois une pièce rare comparable.
+            return { ...o, price: Math.max(rareMax, Math.floor(o.price * (e.rarity === 'legendary' ? 1 : 1.5))) };
+        })
+    ];
+}
+
+export function offerObject(offer) {
+    if (offer.kind === 'mount') return MOUNTS[offer.id] || null;
+    if (offer.kind === 'torch') return TORCH;
+    if (offer.kind === 'compass') return COMPASS;
+    if (offer.kind === 'stuff') return getStuffById(offer.id);
+    return offer.kind === 'weapon' ? allWeapons.find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
+}
+
+// Offres encore en rayon : une pièce unique déjà achetée (ou déjà possédée, pour une arme) disparaît.
+export function availableOffers(merchantId, hero, ngPlus = 0) {
+    const sold = hero.merchantSold?.[merchantId] || [];
+    return merchantStock(merchantId, ngPlus, hero.level).filter(o => {
+        if (o.unique && sold.includes(o.key)) return false;
+        if (o.kind === 'weapon' && (hero.weapons || []).some(w => w.id === o.id)) return false;
+        if (o.kind === 'stuff' && (hero.stuffOwned || []).includes(o.id)) return false;
+        if (o.kind === 'mount' && hero.mount) return false;   // une seule monture
+        if (o.kind === 'torch' && hero.torch) return false;   // une seule torche
+        if (o.kind === 'compass' && hero.compass) return false;   // une seule boussole
+        return true;
+    });
+}
+
+// Achat d'une offre : retire l'or, ajoute l'arme / l'objet au sac. Renvoie { ok, message }.
+export function buyOffer(merchantId, key, hero, ngPlus = 0) {
+    const offer = availableOffers(merchantId, hero, ngPlus).find(o => o.key === key);
+    if (!offer) return { ok: false, message: 'Cette pièce n\'est plus en vente.' };
+    const obj = offerObject(offer);
+    if (!obj) return { ok: false, message: 'Marchandise introuvable.' };
+    // Une relique est un bonus permanent : la pièce standard reste en rayon, mais on n'en cumule pas deux exemplaires.
+    if (obj.type === 'artifact' && (hero.inventory || []).some(i => i.id === obj.id)) return { ok: false, message: `Vous possédez déjà ${obj.name}.` };
+    if ((hero.gold || 0) < offer.price) {
+        return { ok: false, message: `Pas assez d'or ! Coût : ${offer.price}, vous avez ${hero.gold || 0}.` };
+    }
+    hero.gold -= offer.price;
+    if (offer.kind === 'torch') {
+        hero.torch = true;
+    } else if (offer.kind === 'compass') {
+        hero.compass = true;
+    } else if (offer.kind === 'mount') {
+        hero.mount = obj.id;
+    } else if (offer.kind === 'stuff') {
+        grantStuff(hero, obj.id);
+    } else if (offer.kind === 'weapon') {
+        if (!hero.weapons) hero.weapons = [];
+        hero.weapons.push(obj);
+    } else {
+        if (!hero.inventory) hero.inventory = [];
+        hero.inventory.push({ ...obj });
+    }
+    if (offer.unique) {
+        if (!hero.merchantSold) hero.merchantSold = {};
+        (hero.merchantSold[merchantId] = hero.merchantSold[merchantId] || []).push(offer.key);
+    }
+    return { ok: true, message: `${obj.name} acheté pour ${offer.price} pièces d'or !`, offer, obj };
+}
+
+
+// ── Revente au marchand ─────────────────────────────────────────────────────
+// Le marchand rachète à SELL_RATIO du barème de base (sans la majoration de vente). Jamais le matériel activé :
+// armes en main, objet actif du combat, reliques portées (bonus permanent déjà appliqué). Un bouclier porté n'est pas dans le sac.
+export const SELL_RATIO = 0.4;
+
+export const sellPriceOf = (kind, obj) => Math.max(1, Math.floor((kind === 'weapon' ? baseWeaponPrice(obj) : kind === 'stuff' ? baseStuffPrice(obj) : baseItemPrice(obj)) * SELL_RATIO));
+
+const equippedWeaponIds = hero => new Set([hero.equippedWeapon?.id, hero.equipment?.rightHand?.id, hero.equipment?.leftHand?.id].filter(Boolean));
+
+/** Pourquoi cette pièce ne peut pas être vendue (null si elle le peut). */
+export function sellLockReason(hero, kind, obj, inventoryIndex = null) {
+    if (kind === 'stuff') return Object.values(hero.stuff || {}).includes(obj.id) ? 'Porté' : null;
+    if (kind === 'weapon') return equippedWeaponIds(hero).has(obj.id) ? 'Équipée' : null;
+    if (inventoryIndex !== null && (inventoryIndex === hero.activeInventoryIndex || inventoryIndex === hero.activeInventoryIndex2) && obj.type !== 'shield') return 'Objet actif';
+    if (obj.type === 'artifact' && obj.applied) return 'Relique portée';
+    return null;
+}
+
+/** Tout ce que le héros possède et peut montrer au marchand : [{ key, kind, obj, price, locked }]. */
+export function sellableEntries(hero) {
+    const weapons = (hero.weapons || []).map(w => ({ key: `weapon:${w.id}`, kind: 'weapon', obj: w, rarity: weaponRarity(w), price: sellPriceOf('weapon', w), locked: sellLockReason(hero, 'weapon', w) }));
+    const items = (hero.inventory || []).map((it, index) => ({ key: `inv:${index}`, kind: 'item', obj: it, rarity: it.rarity || 'common', price: sellPriceOf('item', it), locked: sellLockReason(hero, 'item', it, index), index }));
+    const stuff = (hero.stuffOwned || []).map(getStuffById).filter(s => s && !s.quest)
+        .map(s => ({ key: `stuff:${s.id}`, kind: 'stuff', obj: s, rarity: s.rarity, price: sellPriceOf('stuff', s), locked: sellLockReason(hero, 'stuff', s) }));
+    return [...weapons, ...items, ...stuff];
+}
+
+/** Vend une pièce (clé de `sellableEntries`) : retire l'objet, crédite l'or, recale l'index de l'objet actif. */
+export function sellEntry(hero, key) {
+    const entry = sellableEntries(hero).find(e => e.key === key);
+    if (!entry) return { ok: false, message: 'Vous ne possédez plus cette pièce.' };
+    if (entry.locked) return { ok: false, message: `${entry.obj.name} ne peut pas être vendu : ${entry.locked.toLowerCase()}.` };
+    if (entry.kind === 'stuff') {
+        hero.stuffOwned = (hero.stuffOwned || []).filter(id => id !== entry.obj.id);
+    } else if (entry.kind === 'weapon') {
+        hero.weapons = hero.weapons.filter(w => w.id !== entry.obj.id);
+    } else {
+        hero.inventory.splice(entry.index, 1);
+        shiftActiveItemIndexes(hero, entry.index);
+        if (hero.inventory.length === 0) { hero.activeInventoryIndex = null; hero.activeInventoryIndex2 = null; }
+    }
+    hero.gold = (hero.gold || 0) + entry.price;
+    return { ok: true, message: `${entry.obj.name} vendu pour ${entry.price} pièces d'or.`, entry };
+}
+
+
+// ── Excédent à vendre ───────────────────────────────────────────────────────
+// Le joueur tague (bouton pièce de l'onglet Objets) un objet possédé en plusieurs exemplaires : à la prochaine
+// boutique, tous les exemplaires en trop (un est toujours gardé) sont proposés à la vente. Tags dans `hero.sellTags` (ids).
+export const itemGroupKey = it => it.id || it.name;
+
+/** Bascule le tag « à vendre » d'un objet ; renvoie vrai si l'objet est désormais tagué. */
+export function toggleSellTag(hero, id) {
+    const tags = hero.sellTags = Array.isArray(hero.sellTags) ? hero.sellTags : [];
+    const at = tags.indexOf(id);
+    if (at >= 0) { tags.splice(at, 1); return false; }
+    tags.push(id);
+    return true;
+}
+
+/** Vrai si le héros ne porte aucun bouclier et que tous ceux de son sac sont tagués à vendre (il n'en aurait plus aucun). */
+export function allShieldsTagged(hero) {
+    if (hero.equipment?.leftHand?.type === 'shield') return false;
+    const shields = (hero.inventory || []).filter(it => it.type === 'shield');
+    const tags = hero.sellTags || [];
+    return shields.length > 0 && shields.every(it => tags.includes(itemGroupKey(it)));
+}
+
+/**
+ * Pièces tagguées vendables : [{ id, kind, obj, qty, price, indices }].
+ * Objet ordinaire : l'excédent (un exemplaire gardé, jamais un objet verrouillé). Arme (tag `weapon:<id>`) et bouclier : la pièce entière,
+ * même sans doublon (sauf si elle est équipée, donc verrouillée).
+ */
+export function surplusEntries(hero) {
+    const inv = hero.inventory || [];
+    return (hero.sellTags || []).map(id => {
+        if (id.startsWith('weapon:')) {
+            const w = (hero.weapons || []).find(x => `weapon:${x.id}` === id);
+            if (!w || sellLockReason(hero, 'weapon', w)) return null;
+            return { id, kind: 'weapon', obj: w, qty: 1, price: sellPriceOf('weapon', w), rarity: weaponRarity(w), indices: [] };
+        }
+        return itemSurplus(hero, id, false);
+    }).filter(Boolean);
+}
+
+/** Excédent d'un groupe d'objets du sac. `strictDuplicates` : un bouclier compte comme les autres (un exemplaire gardé), au lieu d'être vendu en entier. */
+function itemSurplus(hero, id, strictDuplicates) {
+    const all = (hero.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => itemGroupKey(it) === id);
+    if (!all.length) return null;
+    const shield = !strictDuplicates && all[0].it.type === 'shield';
+    if (!shield && all.length < 2) return null;
+    const free = all.filter(({ it, index }) => !sellLockReason(hero, 'item', it, index));
+    const keep = shield || all.length - free.length >= 1 ? null : free[0];   // un exemplaire verrouillé suffit à « garder » l'objet
+    const indices = free.filter(e => e !== keep).map(e => e.index);
+    if (!indices.length) return null;
+    const obj = all[0].it;
+    return { id, kind: 'item', obj, qty: indices.length, price: sellPriceOf('item', obj), rarity: obj.rarity || 'common', indices };
+}
+
+/** Tous les doublons du sac (un exemplaire gardé par objet) : [{ id, obj, qty, price, indices }], sans tenir compte des tags. */
+export function duplicateEntries(hero) {
+    const ids = [...new Set((hero.inventory || []).map(itemGroupKey))];
+    return ids.map(id => itemSurplus(hero, id, true)).filter(Boolean);
+}
+
+/** Vend tous les doublons du sac. Renvoie { ok, gain, count, message }. */
+export function sellDuplicates(hero) {
+    const entries = duplicateEntries(hero);
+    if (!entries.length) return { ok: false, gain: 0, count: 0, message: 'Vous n\'avez aucun doublon à vendre.' };
+    const idx = entries.flatMap(e => e.indices).sort((a, b) => b - a);
+    idx.forEach(i => sellEntry(hero, `inv:${i}`));
+    const gain = entries.reduce((n, e) => n + e.price * e.qty, 0);
+    const ids = entries.map(e => e.id);
+    hero.sellTags = (hero.sellTags || []).filter(t => !ids.includes(t));
+    return { ok: true, gain, count: idx.length, message: `${idx.length} doublon${idx.length > 1 ? 's' : ''} vendu${idx.length > 1 ? 's' : ''} pour ${gain} pièces d'or.` };
+}
+
+/** Vend l'excédent tagué d'un objet (du dernier index au premier) et retire le tag. */
+export function sellSurplus(hero, id) {
+    const entry = surplusEntries(hero).find(e => e.id === id);
+    if (!entry) return { ok: false, message: 'Plus rien à vendre.' };
+    if (entry.kind === 'weapon') sellEntry(hero, entry.id);
+    else [...entry.indices].sort((a, b) => b - a).forEach(i => sellEntry(hero, `inv:${i}`));
+    hero.sellTags = (hero.sellTags || []).filter(t => t !== id);
+    const gain = entry.price * entry.qty;
+    return { ok: true, message: `${entry.obj.name} x ${entry.qty} vendu pour ${gain} pièces d'or.`, entry, gain };
+}

@@ -1,0 +1,324 @@
+// Assemblage du « Grand Monde » : les 10 sanctuaires de story.js (un Soleil-Boss chacun) sont précédés d'un village
+// plein écran (avec maisons explorables) et d'une zone sauvage à traverser. Voir world/FORMAT.md (§9 : format v2).
+//
+// assembleWorld(baseScreens, baseQuests) retourne { screens, quests, regionOrder }. Les régions dont le fichier
+// `world/maps/<R>.js` est absent restent inchangées, ce qui permet de livrer le monde région par région.
+//
+// Chaîne d'une région : sanctuaire précédent ──► [<R>_road ──►] <R>_village ──► <R>_wild ──► <R> (sanctuaire).
+// Format v2 (world/DESIGN-V2.md) :
+//  - `native: true` sur village, wild, hamlet, road, sanctuary : carte jamais étirée (au plus 64×64 et 1500 cases) ;
+//  - `road: { id: '<R>_road', biome, native, grid, npcs, chests, enemies, grass }` : route d'accès (kind `wild`, ancres `<` et `>`),
+//    intercalée entre le sanctuaire précédent et le village ;
+//  - `sanctuary: { waypoint, grid, native, places, grass }` : sanctuaire en grille ASCII, entités de story.js repositionnées par
+//    `places` (ancres ou [x, y]) ;
+//  - entités en `x`/`y` explicites, patrouilles en [x, y], `"` = hautes herbes (`screen.grass`, avec `grass: { rate, safeSteps, table }`).
+// options.connections : liste de connexions de bordure (défaut : world/connections.js ; les tests de fixtures passent []).
+
+import { applyEtages } from './etages.js';
+import { merchantNpc } from '../merchants.js';
+import { getXPCostForLevel } from '../experience.js';
+import { thickenGrass } from './wildGrass.js';
+import { enlargeScreen } from './enlarge.js';
+import { designLevel } from './levelDesign.js';
+import { buildZone, arrivalFor, freeNeighbor, applyNativeSanctuary } from './mapKit.js';
+import { EXPANDED_SIZES, fitScreen, widenGates, linkGates, openPerimeter, addWaterBorder, addTreeBorder, pruneGrass } from './expand.js';
+import { applyJunctions, applyLevelGuards } from './junctions.js';
+import { addPrepSpots } from './spots.js';
+import { buildAquaticWorld, applyYubu } from './aquatic.js';
+import { applyCollarQuests } from './collars.js';
+import { applyArmorQuests } from './armorQuests.js';
+import { applyLegendQuests } from './legends.js';
+import { applyUnderground } from './underground.js';
+import { applyEvents } from '../events/engine.js';
+import { EVENTS } from '../events/config.js';
+import { EVENT_MODULES } from '../events/registry.js';
+import { applyConnections, migrateEdgeExits, DIRS } from '../mapConnections.js';
+import { CONNECTIONS } from './connections.js';
+import { addBorderBarriers } from './barriers.js';
+import { addStructures } from './structures.js';
+import { MAPS } from './maps/index.js';
+import { TEXTS } from './text/index.js';
+
+// Ordre de progression : du plus chaud et chaotique (les dix soleils sont allumés) au plus verdoyant (les soleils sont tombés).
+export const REGION_ORDER = ['rizieres', 'volcan', 'gobi', 'fleuve', 'bambous', 'tonnerre', 'fauves', 'mer', 'fusang', 'marees', 'lune'];
+// Chaîne d'origine des écrans de story.js (chaque sanctuaire y mène à la région suivante de CET ordre) : sert à rebrancher les sorties.
+const BASE_CHAIN = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+
+// Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
+export const REGION_LEVEL = { rizieres: 1, volcan: 4, gobi: 6, fleuve: 11, bambous: 17, tonnerre: 22, fauves: 27, mer: 32, fusang: 37, marees: 38, lune: 40 };
+const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };
+// Régions bordées d'arbres plutôt que de mer (world/expand.js addTreeBorder).
+export const TREE_BORDER_REGIONS = new Set(['rizieres']);
+// Variété du parcours (world/enlarge.js `moves`) : côté par lequel la route sort vers le village (`road`) et côté de la zone sauvage par lequel
+// on y entre (`wild`) ; absent = classique (ouest → est). Seuls les villages à quatre ancres (`<` `>` `^` `v`) en profitent.
+export const TURNS = {
+    rizieres: { wild: 'north' }, volcan: { road: 'north' }, gobi: { wild: 'north' }, fleuve: { road: 'north' }, bambous: { road: 'south' },
+    fauves: { road: 'north' }, mer: { wild: 'north' }, fusang: { road: 'south' }
+};   // part du coût d'un niveau (experience.js : getXPCostForLevel)
+
+// Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
+export function questXp(quest, region) {
+    const level = REGION_LEVEL[region] || 1;
+    const levelCost = getXPCostForLevel(Math.max(2, level));
+    const share = quest.side ? QUEST_XP_SHARE.side : QUEST_XP_SHARE.main;
+    return Math.max(quest.reward?.xp || 0, Math.round(levelCost * share / 10) * 10);
+}
+
+const clone = value => JSON.parse(JSON.stringify(value));
+
+// options.legacy : monde « à l'ancienne » (cartes à leur taille d'origine, sans agrandissement, jonctions ni monde aquatique), réservé aux
+// tests de mécanique qui s'appuient sur les coordonnées historiques des sanctuaires.
+export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXTS, options = {}) {
+    const screens = clone(baseScreens);
+    const legacyNpcs = {};
+    Object.values(baseScreens).forEach(s => s.npcs.forEach(n => { legacyNpcs[n.id] = clone(n); }));
+    const quests = [...baseQuests];
+    const newQuests = [];
+    const relocated = new Set();
+    const sanctuaryOf = new Set();
+    const nativeSanctuaries = [];   // sanctuaires dessinés en grille ASCII (`sanctuary.grid`)
+
+    // Les sanctuaires de story.js suivent la chaîne d'origine : on rebranche leurs sorties sur les voisins de REGION_ORDER.
+    BASE_CHAIN.forEach((region, index) => {
+        const sanct = screens[region];
+        if (!sanct) return;
+        const oldPrev = BASE_CHAIN[index - 1], oldNext = BASE_CHAIN[index + 1];
+        const newIndex = REGION_ORDER.indexOf(region);
+        const newPrev = REGION_ORDER[newIndex - 1], newNext = REGION_ORDER[newIndex + 1];
+        sanct.exits.forEach(exit => {
+            const target = exit.to === oldNext ? newNext : exit.to === oldPrev ? newPrev : null;
+            if (!target || !screens[target]) return;
+            if (exit.to === target) return;
+            exit.to = target;
+            exit.label = screens[target].name;
+        });
+    });
+
+    REGION_ORDER.forEach((region, index) => {
+        const map = maps[region];
+        if (!map) return;
+        const text = texts[region] || {};
+        const interiors = applyEtages(region, map.interiors || []);
+        const helpers = {
+            npcDef: id => {
+                const merchant = merchantNpc(id);
+                if (merchant) return merchant;
+                const t = text.npcs?.[id];
+                const base = legacyNpcs[id];
+                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, idle: ['…'] }; }
+                return { id, ...(base || {}), ...(t || {}) };
+            },
+            chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),
+            screenText: id => text.screens?.[id] || interiors.find(i => i.id === id) || {}
+        };
+        const prev = REGION_ORDER.slice(0, index).reverse().find(id => maps[id]);   // région précédente qui a une carte
+        const regionRank = id => REGION_ORDER.indexOf(id);
+        const sanctuary = screens[region];
+        sanctuaryOf.add(region);
+
+        // Maisons : chaque intérieur est rattaché au village (par défaut) ou au hameau (`in: 'hamlet'`) via sa lettre.
+        const housesOf = zone => {
+            const houses = {};
+            interiors.filter(i => !i.floorOf && (i.in || 'village') === zone)
+                .forEach(i => { houses[i.house] = { to: i.id, name: text.screens?.[i.id]?.name }; });
+            return houses;
+        };
+        const houses = housesOf('village');
+
+        const village = buildZone({
+            ...map.village, region, kind: 'village', houses,
+            exits: [...(map.village.exits || [])]
+        }, helpers);
+        const wild = buildZone({ ...map.wild, region, kind: 'wild' }, helpers);
+
+        // Route d'accès (format v2) : sanctuaire précédent ──E──► road ──E──► village. Ancres `<` (si région précédente) et `>` obligatoires.
+        let road = null;
+        if (map.road) {
+            if (map.road.id !== `${region}_road`) throw new Error(`${map.road.id} : l'identifiant d'une route d'accès doit être « ${region}_road »`);
+            if (!anchorOf(map.road.grid, '>')) throw new Error(`${map.road.id} : ancre « > » (vers le village) introuvable dans la grille`);
+            if (prev && !anchorOf(map.road.grid, '<')) throw new Error(`${map.road.id} : ancre « < » (vers ${prev}) introuvable dans la grille`);
+            road = buildZone({ ...map.road, region, kind: 'wild' }, helpers);
+        }
+
+        // Sorties automatiques de la chaîne : [road ⇄] village ⇄ zone sauvage ⇄ sanctuaire, village (ou route) ⇄ sanctuaire précédent.
+        // Une sortie déjà déclarée par la carte (même ancre `at`, ou même destination) n'est pas recréée.
+        const addExit = (zone, spec, ch, exit) => {
+            if ((spec.exits || []).some(e => e.at === ch || e.to === exit.to)) return;
+            const a = anchorOf(spec.grid, ch);
+            if (a) zone.exits.push({ ...exit, x: a.x, y: a.y });
+        };
+        if (road) {
+            if (prev) addExit(road, map.road, '<', { to: prev, label: screens[prev].name });
+            addExit(road, map.road, '>', { to: village.id, label: village.name });
+        }
+        addExit(wild, map.wild, '<', { to: village.id, label: village.name });
+        const gate = map.wild.gate || {};
+        addExit(wild, map.wild, '>', {
+            to: region, label: sanctuary.name,
+            ...(gate.requires ? { requires: gate.requires, lockedMessage: gate.lockedMessage || text.screens?.[wild.id]?.gateMessage || 'Une force invisible barre la route du sanctuaire.' } : {})
+        });
+
+        // Hameau (2e village de la région) : relié à la zone sauvage par ses ancres `v` (wild, bord bas) et `^` (hameau, bord haut).
+        let hamlet = null;
+        if (map.hamlet) {
+            hamlet = buildZone({ ...map.hamlet, region, kind: 'village', houses: housesOf('hamlet'), exits: [...(map.hamlet.exits || [])] }, helpers);
+            addExit(hamlet, map.hamlet, '^', { to: wild.id, label: wild.name });
+            addExit(wild, map.wild, 'v', { to: hamlet.id, label: hamlet.name });
+            screens[hamlet.id] = hamlet;
+        }
+        // Routes agrandies et moins rectangulaires (world/enlarge.js), avec un parcours varié : selon la région, on sort de la route par le bas ou le
+        // haut (on entre alors dans le village par le haut ou le bas) et on entre dans la zone sauvage par le haut (on sort du village par le bas).
+        // Le déplacement n'est retenu que si l'agrandissement réussit : sinon le parcours reste classique (ouest → est).
+        const turned = { road: 'east', wild: 'west' };
+        if (!options.legacy) {
+            const want = TURNS[region] || {};
+            const treeBorder = TREE_BORDER_REGIONS.has(region);
+            const turn = (zone, edge) => {
+                if (!zone) return false;
+                if (edge) {
+                    enlargeScreen(zone, { treeBorder, moves: [{ to: village.id, edge }] });
+                    if (zone.enlarged?.moved?.includes(village.id)) return true;
+                }
+                enlargeScreen(zone, { treeBorder });   // déplacement impossible : agrandie, mais parcours classique
+                return false;
+            };
+            if (turn(road, want.road)) turned.road = want.road;
+            if (turn(wild, want.wild)) turned.wild = want.wild;
+        }
+        // Le village s'ouvre par l'ancre opposée à la sortie de la route (`<` ouest, `^` nord, `v` sud) et sort vers la zone sauvage par `>` ou `v`.
+        const entryAnchor = { east: '<', south: '^', north: 'v' }[turned.road];
+        if (prev) addExit(village, map.village, entryAnchor, { to: road ? road.id : prev, label: road ? road.name : screens[prev].name });
+        addExit(village, map.village, turned.wild === 'north' ? 'v' : '>', { to: wild.id, label: wild.name });
+        screens[village.id] = village;
+        screens[wild.id] = wild;
+        if (road) screens[road.id] = road;
+        interiors.forEach(i => {
+            const where = i.in || 'village';
+            // un étage (`floorOf`) se rattache à sa maison, dont l'escalier est une sortie déclarée dans ses `exits`
+            const parent = i.floorOf ? screens[i.floorOf] : where === 'hamlet' && hamlet ? hamlet : where === 'sanctuary' ? sanctuary : village;
+            const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [...(i.exits || [])] }, helpers);
+            const a = anchorOf(i.grid, 'v');
+            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: i.floorOf ? 'Escalier' : 'Sortie', ...(i.floorOf ? { stairs: 'down' } : {}) });
+            screens[i.id] = interior;
+        });
+
+        // Sanctuaire existant : plus de PNJ de village (relogés), ses sorties passent par la zone sauvage / le village suivant.
+        const placedNpcs = [village, wild, ...(road ? [road] : []), ...(hamlet ? [hamlet] : []), ...interiors.map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
+        placedNpcs.forEach(id => relocated.add(id));
+        sanctuary.exits.forEach(exit => {
+            if (prev && regionRank(exit.to) >= 0 && regionRank(exit.to) < index) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }
+        });
+        // première région : le sanctuaire n'avait pas de sortie ouest, on en crée une vers la zone sauvage
+        if (!prev && !sanctuary.exits.some(e => e.to === wild.id)) {
+            sanctuary.exits.push({ x: 0, y: sanctuary.spawn.y, to: wild.id, label: wild.name });
+        }
+        // la sortie est du sanctuaire précédent mène désormais à la route d'accès de cette région (sinon à son village)
+        if (prev) {
+            const entry = road || village;
+            screens[prev].exits.forEach(exit => {
+                if (regionRank(exit.to) > regionRank(prev)) { exit.to = entry.id; exit.label = entry.name; delete exit.arrive; }
+            });
+        }
+        if (map.sanctuary?.waypoint) {
+            sanctuary.waypoint = { ...map.sanctuary.waypoint, name: text.waypointName || `Pierre de voyage — ${sanctuary.name}` };
+        }
+        // Sanctuaire en grille ASCII : appliqué après la boucle (les PNJ relogés et les sorties des voisins sont alors connus).
+        if (map.sanctuary?.grid) nativeSanctuaries.push({ region, text, spec: { ...map.sanctuary, houses: housesOf('sanctuary') } });
+        if (text.arrivalSanctuary?.length) sanctuary.arrival = text.arrivalSanctuary;
+        // l'ancien texte d'arrivée de la région passe au village (première visite)
+        if (sanctuary.arrival && !village.arrival) { village.arrival = sanctuary.arrival; delete sanctuary.arrival; }
+        if (text.quests?.length) newQuests.push(...text.quests);
+    });
+
+    // Sanctuaires en grille ASCII (`sanctuary.grid`) : géométrie de la grille, entités de story.js repositionnées par `places`.
+    // Le monde « à l'ancienne » garde la géométrie d'origine.
+    if (!options.legacy) {
+        nativeSanctuaries.forEach(({ region, text, spec }) => {
+            const s = screens[region];
+            applyNativeSanctuary(s, spec, { skip: relocated });
+            if (s.waypoint && !s.waypoint.name) s.waypoint.name = text.waypointName || `Pierre de voyage — ${s.name}`;
+        });
+    }
+
+    // Grandes cartes reliées par leurs bords : zones sauvages, routes, sanctuaires et hameaux sont agrandis (sauf les cartes
+    // natives, jamais étirées), les villages gardent leur taille ; tous les passages de bord (3 cases) ressortent en face,
+    // alignés (voir world/expand.js).
+    if (!options.legacy) {
+        buildAquaticWorld(screens);   // Mer des Mille Îlots : reliée à l'Anse des Coquillages, accessible avec le Pas de Yu
+        REGION_ORDER.forEach(region => {
+            if (!maps[region]) return;
+            fitScreen(screens[region], EXPANDED_SIZES.sanctuary);
+            fitScreen(screens[`${region}_wild`], EXPANDED_SIZES.wild);
+            if (screens[`${region}_road`]) fitScreen(screens[`${region}_road`], EXPANDED_SIZES.wild);
+            if (screens[`${region}_hamlet`]) fitScreen(screens[`${region}_hamlet`], EXPANDED_SIZES.hamlet);
+            widenGates(screens[`${region}_village`]);
+        });
+        linkGates(screens);
+        Object.values(screens).forEach(openPerimeter);   // plus de bordure factice : les terrains sont reliés, la limite de la carte suffit
+        Object.values(screens).forEach(addWaterBorder);  // ... mais de l'eau tout autour des terrains (franchissable avec le Pas de Yu)
+        // ... sauf autour des Rizières : une couronne d'arbres, sans mer (aucune bordure de mer n'y mène, world/connections.js)
+        Object.values(screens).filter(s => TREE_BORDER_REGIONS.has(s.region) && !s.interior && s.kind !== 'house' && !s.arena)
+            .forEach(s => { s.treeBorder = true; addTreeBorder(s); });
+        // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
+        applyJunctions(screens, quests, REGION_LEVEL);
+        applyLevelGuards(screens, REGION_LEVEL);   // sentinelle qui annonce le niveau conseillé devant chaque passage vers une région plus difficile
+        applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
+        applyArmorQuests(quests);   // armures antiques : quête muette qui compte les pièces (aucun indice de lieu)
+        applyCollarQuests(screens, quests);   // colliers de biome : relique + mini-boss + quête (stuff.js)
+        applyLegendQuests(screens, quests);   // Gardiens Célestes : relique + boss unique + quête qui rapporte un ultime de légende (ultimates.js)
+        Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
+        applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)
+        // Événements temporaires activés par events/config.js (commit Git) : contenu facultatif ajouté au monde permanent.
+        applyEvents(screens, quests, { modules: options.eventModules || EVENT_MODULES, events: options.events || EVENTS });
+
+    }
+
+    // Connexions de bordure (données : world/connections.js) ; les cartes sans connexion gardent des bords infranchissables.
+    // Les passages de bord (rangées de sorties de world/expand.js) deviennent des connexions de bordure.
+    // Une bordure de mer (world/connections.js) cède la place au passage de parcours qui occupe le même bord (TURNS), de l'un ou l'autre côté.
+    const gateConnections = options.legacy ? [] : migrateEdgeExits(screens);
+    const usedSides = new Set(gateConnections.map(c => `${c.from}/${c.dir}`));
+    const sea = (options.connections || CONNECTIONS).filter(c => options.connections || !(usedSides.has(`${c.from}/${c.dir}`) || usedSides.has(`${c.to}/${DIRS[c.dir].opposite}`)));
+    applyConnections(screens, options.legacy ? [] : [...gateConnections, ...sea]);
+    // Bordures qui ne se traversent pas : barrière du biome (eau, rochers, arbres…), world/barriers.js.
+    if (!options.legacy) addBorderBarriers(screens);
+    // Bâtiments, tours, sanctuaires, ponts et escaliers du biome posés à leur échelle dans les zones sauvages (world/structures.js).
+    if (!options.legacy) addStructures(screens);
+    // Les hautes herbes ne couvrent que des cases franchissables (décor de bordure, eau, bâtiments les ont pu recouvrir).
+    Object.values(screens).forEach(pruneGrass);
+    // Zones sauvages : moins d'amas d'obstacles décoratifs, plus de hautes herbes (world/wildGrass.js).
+    if (!options.legacy) Object.values(screens).forEach(thickenGrass);
+    // Level design à la Pokémon : corniches à sens unique, défilés d'herbes, motifs d'obstacles (world/levelDesign.js).
+    if (!options.legacy) Object.values(screens).forEach(s => designLevel(s, { rank: REGION_ORDER.indexOf(s.region) + 1 }));
+
+    // Retire des sanctuaires les PNJ qui ont déménagé.
+    sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });
+
+    // Tuiles d'arrivée symétriques + point d'apparition devant les pierres de voyage.
+    Object.values(screens).forEach(s => {
+        s.exits.forEach(e => {
+            const target = screens[e.to];
+            if (!target) return;
+            const arrive = arrivalFor(s.id, target);
+            if (arrive && !e.arrive) e.arrive = arrive;
+        });
+        if (s.waypoint) s.waypoint.spot = freeNeighbor(s, s.waypoint.x, s.waypoint.y) || { ...s.spawn };
+    });
+
+    // Quêtes : histoire principale, quêtes secondaires existantes, puis les nouvelles (toutes `side`).
+    quests.push(...newQuests.map(q => ({ side: true, ...q })));
+    const npcRegion = {};
+    Object.values(screens).forEach(sc => sc.npcs.forEach(n => { npcRegion[n.id] = sc.region; }));
+    quests.forEach((q, i) => {
+        quests[i] = { ...q, reward: { ...(q.reward || {}), xp: questXp(q, npcRegion[q.giver] || 'rizieres') } };
+    });
+    return { screens, quests, regionOrder: REGION_ORDER };
+}
+
+function anchorOf(grid, ch) {
+    for (let y = 0; y < grid.length; y++) {
+        const x = grid[y].indexOf(ch);
+        if (x >= 0) return { x, y };
+    }
+    return null;
+}

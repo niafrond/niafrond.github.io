@@ -1,0 +1,42 @@
+[
+  {
+    "hex": "#633e2a",
+    "role": "skin"
+  },
+  {
+    "hex": "#c47942",
+    "role": "skin"
+  },
+  {
+    "hex": "#79645d",
+    "role": "skin"
+  },
+  {
+    "hex": "#ecc3a2",
+    "role": "skin"
+  },
+  {
+    "hex": "#503325",
+    "role": "skin:outline"
+  },
+  {
+    "hex": "#321111",
+    "role": "cloth"
+  },
+  {
+    "hex": "#641e1a",
+    "role": "cloth"
+  },
+  {
+    "hex": "#703910",
+    "role": "cloth"
+  },
+  {
+    "hex": "#e1700d",
+    "role": "cloth"
+  },
+  {
+    "hex": "#2c1115",
+    "role": "cloth:outline"
+  }
+]

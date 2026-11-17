@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Lecteur musical de la bande-son de La Légende de Hou Yi : aléatoire, boucle, précédent, suivant.">
+<title>Lecteur musical — Hou Yi et les Dix Soleils</title>
+<style>
+:root{--bg:#14110f;--panel:#1f1a16;--panel2:#2a231d;--ink:#f1e6d2;--dim:#b9a98f;--gold:#e8b84a;--red:#d9553f;--jade:#59b88a;--blue:#5aa6e6;--line:#4a3d30}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f4ead6;--panel:#fffaf0;--panel2:#f0e2c4;--ink:#2a1f14;--dim:#6f5d45;--gold:#9a6a05;--red:#b23a25;--jade:#237a52;--blue:#1d5f9e;--line:#cdb88e}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,'Times New Roman',serif}
+a{color:var(--blue)}a:hover{color:var(--gold)}
+header.top{background:linear-gradient(180deg,var(--red),#7d2417);color:#fff4dc;border-bottom:4px solid var(--gold);padding:14px 16px}
+header.top .in{max-width:860px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+header.top h1{margin:0;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase}
+header.top h1 small{display:block;font-size:.7rem;font-weight:400;opacity:.85;letter-spacing:.12em}
+header.top a{color:#fff4dc;font:600 .85rem system-ui,sans-serif;margin-left:auto}
+main{max-width:860px;margin:0 auto;padding:16px 16px 48px}
+.player{position:sticky;top:0;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 16px #0006}
+.now{font-size:1.2rem;font-weight:700;color:var(--gold);min-height:1.5em}
+.now-sub{color:var(--dim);font:.85rem system-ui,sans-serif;margin-top:-6px;min-height:1.2em}
+.seek{display:flex;align-items:center;gap:10px;font:.8rem system-ui,sans-serif;color:var(--dim);font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;accent-color:var(--red);min-width:0}
+.row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:600 .9rem system-ui,sans-serif;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;min-height:40px}
+button:hover{border-color:var(--gold)}
+button:focus-visible,li:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button.play{background:var(--red);border-color:var(--gold);color:#fff;min-width:104px}
+button[aria-pressed=true]{border-color:var(--jade);color:var(--jade);background:color-mix(in srgb,var(--jade) 14%,var(--panel2))}
+.vol{display:flex;align-items:center;gap:8px;font:.8rem system-ui,sans-serif;color:var(--dim)}
+.vol input{width:96px;flex:none}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.tools input,.tools select{font:.9rem system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
+.tools input{flex:1;min-width:180px}
+.count{color:var(--dim);font:.8rem system-ui,sans-serif;margin:0 0 6px}
+h2{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:18px 0 6px;font-family:system-ui,sans-serif}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+li{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid transparent;border-radius:8px;cursor:pointer}
+li:hover{background:var(--panel)}
+li[aria-current=true]{background:var(--panel);border-color:var(--red)}
+.n{color:var(--dim);text-align:right;font:.8rem system-ui,sans-serif;font-variant-numeric:tabular-nums}
+li[aria-current=true] .n{color:var(--red)}
+.t{display:block}.s{display:block;color:var(--dim);font:.78rem system-ui,sans-serif}
+.d{color:var(--dim);font:.8rem system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid var(--jade);border-radius:99px;color:var(--jade);font:.68rem system-ui,sans-serif}
+.err{color:var(--red);padding:16px 0}
+@media (max-width:520px){.vol input{width:72px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><h1>Lecteur musical<small>La Légende de Hou Yi — Match3 Quest</small></h1><a href="soluce.html">Soluce</a></div></header>
+<main>
+<section class="player" aria-label="Lecteur">
+  <div class="now" id="now">Choisis une piste</div>
+  <div class="now-sub" id="nowSub"></div>
+  <div class="now-sub" id="queue"></div>
+  <div class="seek"><span id="cur">0:00</span><input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position"><span id="dur">0:00</span></div>
+  <div class="row">
+    <div class="btns">
+      <button id="shuf" aria-pressed="false" title="Lecture aléatoire (S)">Aléatoire</button>
+      <button id="prev" title="Précédent (P)">⏮ Précédent</button>
+      <button id="play" class="play" title="Lecture / pause (espace)">▶ Lecture</button>
+      <button id="next" title="Suivant (N)">Suivant ⏭</button>
+      <button id="rep" aria-pressed="false" title="Boucle : aucune, toute la liste, une piste (R)">Boucle : non</button>
+    </div>
+    <label class="vol">Volume <input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
+  </div>
+</section>
+
+<div class="tools">
+  <input type="search" id="q" placeholder="Filtrer : boss, village, Gobi, combat…" aria-label="Filtrer les pistes" autocomplete="off">
+  <select id="grp" aria-label="Catégorie"><option value="">Toutes les catégories</option></select>
+  <select id="ver" aria-label="Version"><option value="">Toutes les versions</option><option value="o">Bande-son du jeu</option><option value="b">Variantes traditionnelles</option></select>
+</div>
+<p class="count" id="count" aria-live="polite"></p>
+<div id="lists"></div>
+<audio id="a" preload="metadata"></audio>
+</main>
+<script>
+const BASE = 'audio/music/';
+const BIOME = {paddy:'Rizières',riverbed:'Lit du fleuve',bamboo:'Bambous',gobi:'Gobi',storm:'Tonnerre',volcano:'Volcan',savanna:'Savane',coast:'Côte',tides:'Hautes-Eaux',fusang:'Fusang',moon:'Lune'};
+const SCENE = {title:'Écran titre',menu:'Menu',house:'Maison',sanctuary:'Sanctuaire',moon:'Pic de la Lune',ending:'Fin',victory:'Victoire',defeat:'Défaite','puzzle-push':'Énigme des jarres','puzzle-mirror':'Énigme des miroirs','puzzle-slide':'Énigme des chariots','event-wandering-souls':'Royaume des âmes','event-winter-lantern':'Fête des lanternes','change-village':'Chang’e : village','change-puzzle':'Chang’e : soins','change-farewell':'Chang’e : adieux'};
+const ORDER = ['Scènes','Villages','Zones sauvages','Combats','Boss'];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function describe(key) {
+  const alt = /-b$/.test(key), base = key.replace(/-b$/, '');
+  let group, title, sub = '';
+  if (/^village-/.test(base)) { group = 'Villages'; title = 'Village — ' + (BIOME[base.slice(8)] || base.slice(8)); }
+  else if (/^wild-/.test(base)) { group = 'Zones sauvages'; title = 'Exploration — ' + (BIOME[base.slice(5)] || base.slice(5)); }
+  else if (base === 'combat-tides') { group = 'Combats'; title = 'Combat — Hautes-Eaux'; }
+  else if (/^combat-\d$/.test(base)) { group = 'Combats'; title = 'Combat — style ' + (Number(base.slice(7)) + 1); }
+  else if (/^boss-a\d$/.test(base)) { group = 'Boss'; title = 'Boss — thème ' + (Number(base.slice(6)) + 1); }
+  else if (/^boss-/.test(base)) { group = 'Boss'; title = cap(base.slice(5).replace(/-/g, ' ')); sub = 'Thème de boss'; }
+  else { group = 'Scènes'; title = SCENE[base] || cap(base.replace(/-/g, ' ')); }
+  return { key, group, title, alt, sub };
+}
+const el = id => document.getElementById(id), a = el('a');
+const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
+const store = { get(k, d) { try { return localStorage.getItem('lecteur.' + k) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('lecteur.' + k, v); } catch (e) {} } };
+let T = [], visible = [], cur = -1, shuffle = store.get('shuf', '0') === '1', repeat = Number(store.get('rep', '0')) || 0;
+const history = [];
+let queue = [], played = new Set();
+function buildQueue() {
+  const c = T[cur];
+  queue = pool().filter(t => t !== c && !played.has(t));
+  for (let i = queue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [queue[i], queue[j]] = [queue[j], queue[i]]; }
+  paintQueue();
+}
+function paintQueue() {
+  el('queue').textContent = shuffle ? 'Aléatoire : ' + queue.length + ' piste' + (queue.length > 1 ? 's' : '') + ' restante' + (queue.length > 1 ? 's' : '') + (queue[0] ? ' · suivante : ' + queue[0].title : '') : '';
+}
+const REP = ['Boucle : non', 'Boucle : liste', 'Boucle : piste'];
+
+function paintModes() {
+  el('shuf').setAttribute('aria-pressed', shuffle);
+  el('rep').setAttribute('aria-pressed', repeat > 0);
+  el('rep').textContent = REP[repeat];
+  a.loop = repeat === 2;
+  paintQueue();
+}
+function render() {
+  const g = el('grp').value, v = el('ver').value, q = el('q').value.trim().toLowerCase();
+  const was = visible.length;
+  visible = T.filter(t => (!g || t.group === g) && (!v || (v === 'b') === t.alt) && (!q || (t.title + ' ' + t.group + ' ' + t.key + ' ' + t.sub).toLowerCase().includes(q)));
+  const box = el('lists'); box.textContent = '';
+  let last = null, ol = null;
+  visible.forEach((t, k) => {
+    if (t.group !== last) { last = t.group; const h = document.createElement('h2'); h.textContent = last; box.appendChild(h); ol = document.createElement('ol'); box.appendChild(ol); }
+    const li = document.createElement('li');
+    li.tabIndex = 0; t.li = li;
+    li.innerHTML = '<span class="n"></span><span><span class="t"></span><span class="s"></span></span><span class="d"></span>';
+    li.children[0].textContent = k + 1;
+    li.querySelector('.t').textContent = t.title;
+    if (t.alt) { const b = document.createElement('span'); b.className = 'tag'; b.textContent = 'trad.'; li.querySelector('.t').appendChild(b); }
+    li.querySelector('.s').textContent = t.sub;
+    li.querySelector('.d').textContent = fmt(t.seconds);
+    if (T[cur] === t) li.setAttribute('aria-current', 'true');
+    li.onclick = () => load(t, true);
+    li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); load(t, true); } };
+    ol.appendChild(li);
+  });
+  if (shuffle) buildQueue();
+  el('count').textContent = visible.length + ' piste' + (visible.length > 1 ? 's' : '') + ' sur ' + T.length;
+}
+function load(t, play) {
+  const prev = T[cur]; if (prev && prev.li) prev.li.removeAttribute('aria-current');
+  cur = T.indexOf(t);
+  a.src = BASE + t.key + '.mp3';
+  el('now').textContent = t.title;
+  el('nowSub').textContent = [t.group, t.alt ? 'variante traditionnelle' : 'bande-son du jeu'].join(' · ');
+  el('seek').value = 0; el('cur').textContent = '0:00'; el('dur').textContent = fmt(t.seconds);
+  if (t.li) { t.li.setAttribute('aria-current', 'true'); t.li.scrollIntoView({ block: 'nearest' }); }
+  document.title = t.title + ' — Lecteur musical';
+  if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: 'La Légende de Hou Yi', album: t.group });
+  if (play) a.play().catch(() => {});
+}
+function pool() { return visible.length ? visible : T; }
+function next(auto) {
+  const p = pool(); if (!p.length) return;
+  const at = p.indexOf(T[cur]);
+  let t;
+  if (shuffle) {
+    if (T[cur]) played.add(T[cur]);
+    queue = queue.filter(x => p.includes(x));
+    if (!queue.length) {
+      if (auto && repeat === 0 && T[cur]) { a.pause(); return; }
+      played.clear(); buildQueue();
+      if (!queue.length) queue = p.slice();
+    }
+    t = queue.shift(); played.add(t); paintQueue();
+  } else if (at < 0) t = p[0];
+  else if (at === p.length - 1) { if (auto && repeat === 0) { a.pause(); return; } t = p[0]; }
+  else t = p[at + 1];
+  if (T[cur]) history.push(T[cur]);
+  if (history.length > 200) history.shift();
+  load(t, true);
+}
+function prev() {
+  if (a.currentTime > 3) { a.currentTime = 0; return; }
+  if (history.length) { load(history.pop(), true); return; }
+  const p = pool(), at = p.indexOf(T[cur]);
+  load(p[(at - 1 + p.length) % p.length] || p[0], true);
+}
+el('play').onclick = () => { if (cur < 0) { next(false); return; } a.paused ? a.play().catch(() => {}) : a.pause(); };
+el('next').onclick = () => next(false);
+el('prev').onclick = prev;
+el('shuf').onclick = () => { shuffle = !shuffle; store.set('shuf', shuffle ? '1' : '0'); played.clear(); if (shuffle) buildQueue(); paintModes(); };
+el('rep').onclick = () => { repeat = (repeat + 1) % 3; store.set('rep', repeat); paintModes(); };
+el('vol').oninput = e => { a.volume = e.target.value / 100; store.set('vol', e.target.value); };
+el('seek').oninput = e => { if (a.duration) a.currentTime = e.target.value / 1000 * a.duration; };
+['q', 'grp', 'ver'].forEach(id => el(id).addEventListener('input', render));
+a.onplay = () => { el('play').textContent = '⏸ Pause'; };
+a.onpause = () => { el('play').textContent = '▶ Lecture'; };
+a.onloadedmetadata = () => { el('dur').textContent = fmt(a.duration); };
+a.ontimeupdate = () => { el('cur').textContent = fmt(a.currentTime); if (a.duration) el('seek').value = a.currentTime / a.duration * 1000; };
+a.onended = () => next(true);
+a.onerror = () => { if (cur >= 0) el('nowSub').textContent = 'Piste introuvable, passage à la suivante…'; setTimeout(() => next(true), 800); };
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input[type=search],select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ' && !e.target.matches('button,li')) { e.preventDefault(); el('play').click(); }
+  else if (k === 'n') next(false); else if (k === 'p') prev();
+  else if (k === 's') el('shuf').click(); else if (k === 'r') el('rep').click();
+});
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('nexttrack', () => next(false));
+  navigator.mediaSession.setActionHandler('previoustrack', prev);
+}
+a.volume = Number(store.get('vol', '80')) / 100; el('vol').value = store.get('vol', '80');
+paintModes();
+fetch('audio/manifest.json').then(r => r.json()).then(m => {
+  T = Object.entries(m.music).map(([k, v]) => Object.assign(describe(k), { seconds: v.seconds }));
+  T.sort((x, y) => ORDER.indexOf(x.group) - ORDER.indexOf(y.group) || x.alt - y.alt);
+  ORDER.forEach(g => { const o = document.createElement('option'); o.value = o.textContent = g; el('grp').appendChild(o); });
+  render();
+}).catch(() => { el('lists').innerHTML = '<p class="err">Impossible de charger la liste des musiques.</p>'; });
+</script>
+</body>
+</html>

@@ -1,0 +1,4692 @@
+{
+ "version": 1,
+ "core": [
+  "index.html",
+  "a11y.js",
+  "actionGuard.js",
+  "alterations.js",
+  "arena.js",
+  "attributes.js",
+  "bestiary.js",
+  "bestiaryLiteral.js",
+  "bestiaryNames.js",
+  "board.js",
+  "boardEnemyMoves.js",
+  "boardLayout.js",
+  "boardSuggestions.js",
+  "bossScript.js",
+  "bossTips.js",
+  "breakReminder.js",
+  "casual.js",
+  "casualPilot.js",
+  "cheatMode.js",
+  "chestLoot.js",
+  "chineseLessonsView.js",
+  "chineseWords.js",
+  "cinematics.js",
+  "cinematicsBoss.js",
+  "cinematicsCore.js",
+  "cinematicsDuel.js",
+  "cinematicsEnding.js",
+  "cinematicsPrologue.js",
+  "cinematicsRegion.js",
+  "cinematicsSun.js",
+  "cinematicsTitle.js",
+  "classSpellEffects.js",
+  "classSpellsActionGems.js",
+  "classSpellsAdvanced.js",
+  "classSpellsAlterations.js",
+  "classSpellsMage.js",
+  "classSpellsWarrior.js",
+  "classes.js",
+  "combatBalance.js",
+  "combatFlow.js",
+  "combatStats.js",
+  "companionMoves.js",
+  "companionPowers.js",
+  "companionTrail.js",
+  "companions.js",
+  "compareView.js",
+  "constants.js",
+  "creatureScale.js",
+  "damageCorridor.js",
+  "decor.js",
+  "dialogState.js",
+  "duel.js",
+  "elements.js",
+  "enemies.catalog.json",
+  "enemies.js",
+  "enemyAI.js",
+  "enemyAIChoice.js",
+  "enemyAIProfiles.js",
+  "enemyBehaviors.js",
+  "enemyGrowth.js",
+  "enemyStuff.js",
+  "equipPreview.js",
+  "equipment.js",
+  "escapeHtml.js",
+  "experience.js",
+  "exploration.js",
+  "explorationChange.js",
+  "explorationDialogue.js",
+  "explorationGrids.js",
+  "explorationGuide.js",
+  "explorationQuests.js",
+  "explorationSenses.js",
+  "explorationTravel.js",
+  "explorationView.js",
+  "explorationViewCarnet.js",
+  "explorationViewChange.js",
+  "explorationViewConsts.js",
+  "explorationViewDraw.js",
+  "explorationViewGround.js",
+  "explorationViewMap.js",
+  "explorationViewOverlays.js",
+  "explorationViewPainters.js",
+  "focusPause.js",
+  "game.js",
+  "gameCardUi.js",
+  "gameHud.js",
+  "gameInventoryTabs.js",
+  "gameLevelUp.js",
+  "gameOptions.js",
+  "gameSpellList.js",
+  "gameSpellsTab.js",
+  "gameStatsTab.js",
+  "gameTooltips.js",
+  "gameTurnFlow.js",
+  "gearEffects.js",
+  "icon.svg",
+  "icons.js",
+  "items.js",
+  "joker.js",
+  "loader.js",
+  "main.js",
+  "manaFlight.js",
+  "manaGear.js",
+  "manifest.json",
+  "mapConnections.js",
+  "matchMechanics.js",
+  "merchants.js",
+  "music.js",
+  "musicTracks.js",
+  "nameAudio.js",
+  "offlineCache.js",
+  "playStyles.js",
+  "playTime.js",
+  "playerNames.js",
+  "progression.js",
+  "retro.css",
+  "saveManager.js",
+  "secretLogic.js",
+  "secretMenu.js",
+  "sfxCatalog.js",
+  "shop.js",
+  "sound.js",
+  "spellCooldown.js",
+  "spellFx.js",
+  "spellTileFx.js",
+  "spells.js",
+  "spells.json",
+  "statBudget.js",
+  "statusBadges.js",
+  "statusFlash.js",
+  "story.js",
+  "storyMirror.js",
+  "storyQuests.js",
+  "storyScreens.js",
+  "storyText.js",
+  "stuff.js",
+  "stuffView.js",
+  "style-cinematics.css",
+  "style-exploration.css",
+  "style-hud.css",
+  "style-inventory.css",
+  "style-tutorial.css",
+  "style.css",
+  "terrain.js",
+  "tileBitmaps.js",
+  "tilePainter.js",
+  "tilePainterBuildings.js",
+  "tilePainterDecor.js",
+  "tilePainterTerrain.js",
+  "tutorial.js",
+  "tutorialScript.js",
+  "ultimateCinematics.js",
+  "ultimates.js",
+  "version.js",
+  "victoryLoot.js",
+  "villageLife.js",
+  "weapons.js",
+  "welcomeBack.js",
+  "worldMap.js",
+  "worldMapView.js",
+  "puzzle/art.js",
+  "puzzle/engine.js",
+  "puzzle/levels.js",
+  "puzzle/modes.js",
+  "puzzle/sprites.js",
+  "puzzle/view.js",
+  "change/art.js",
+  "change/data.js",
+  "change/engine.js",
+  "change/state.js",
+  "change/view.js",
+  "world/aquatic.js",
+  "world/armorQuests.js",
+  "world/barriers.js",
+  "world/collars.js",
+  "world/connections.js",
+  "world/enlarge.js",
+  "world/etages.js",
+  "world/expand.js",
+  "world/index.js",
+  "world/junctions.js",
+  "world/legends.js",
+  "world/levelDesign.js",
+  "world/manifest.js",
+  "world/manifest2.js",
+  "world/mapKit.js",
+  "world/maps/bambous.js",
+  "world/maps/fauves.js",
+  "world/maps/fleuve.js",
+  "world/maps/fusang.js",
+  "world/maps/gobi.js",
+  "world/maps/index.js",
+  "world/maps/lune.js",
+  "world/maps/marees.js",
+  "world/maps/mer.js",
+  "world/maps/rizieres.js",
+  "world/maps/tonnerre.js",
+  "world/maps/volcan.js",
+  "world/snapshot.js",
+  "world/spots.js",
+  "world/structures.js",
+  "world/text/bambous.js",
+  "world/text/extra/bambous.js",
+  "world/text/extra/fauves.js",
+  "world/text/extra/fleuve.js",
+  "world/text/extra/fusang.js",
+  "world/text/extra/gobi.js",
+  "world/text/extra/lune.js",
+  "world/text/extra/mer.js",
+  "world/text/extra/rizieres.js",
+  "world/text/extra/tonnerre.js",
+  "world/text/extra/volcan.js",
+  "world/text/fauves.js",
+  "world/text/fleuve.js",
+  "world/text/fusang.js",
+  "world/text/gobi.js",
+  "world/text/index.js",
+  "world/text/lune.js",
+  "world/text/marees.js",
+  "world/text/mer.js",
+  "world/text/merge.js",
+  "world/text/rizieres.js",
+  "world/text/tonnerre.js",
+  "world/text/volcan.js",
+  "world/underground.js",
+  "world/wildGrass.js",
+  "events/config.js",
+  "events/engine.js",
+  "events/registry.js",
+  "events/wanderingSouls/data.js",
+  "events/wanderingSouls/index.js",
+  "events/wanderingSouls/terrains.js",
+  "events/winterLanternFestival/data.js",
+  "events/winterLanternFestival/index.js",
+  "events/winterLanternFestival/terrains.js",
+  "sprites/archi.js",
+  "sprites/biomeArchi.js",
+  "sprites/biomeSvg.js",
+  "sprites/biomeTint.js",
+  "sprites/creatures.js",
+  "sprites/deadtrees.js",
+  "sprites/decor.js",
+  "sprites/gbaIndex.js",
+  "sprites/house.js",
+  "sprites/index.js",
+  "sprites/packContents.js",
+  "sprites/packs.js",
+  "sprites/side.js",
+  "sprites/souls-decor.js",
+  "sprites/soulsFloor.js",
+  "sprites/villagers.js",
+  "sprites/winter-decor.js",
+  "sprites/winterFloor.js",
+  "sprites/cn/actors-a.js",
+  "sprites/cn/actors-b.js",
+  "sprites/cn/enemies-1.js",
+  "sprites/cn/enemies-2.js",
+  "sprites/cn/legends.js",
+  "sprites/cn/marees.js",
+  "sprites/cn/souls.js",
+  "sprites/cn/suns.js",
+  "sprites/tiles/tile-blue.svg",
+  "sprites/tiles/tile-combat.svg",
+  "sprites/tiles/tile-green.svg",
+  "sprites/tiles/tile-joker.svg",
+  "sprites/tiles/tile-purple.svg",
+  "sprites/tiles/tile-red.svg",
+  "sprites/tiles/tile-skull.svg",
+  "sprites/tiles/tile-skull5.svg",
+  "sprites/tiles/tile-yellow.svg",
+  "fonts/pixelify-sans-400.woff2",
+  "fonts/pixelify-sans-700.woff2",
+  "fonts/press-start-2p.woff2",
+  "audio/manifest.json",
+  "audio/sfx-models.json",
+  "audio/sfx/armorMelt.mp3",
+  "audio/sfx/battleStart.mp3",
+  "audio/sfx/bossStart.mp3",
+  "audio/sfx/burn.mp3",
+  "audio/sfx/change-breath.mp3",
+  "audio/sfx/change-cake.mp3",
+  "audio/sfx/change-cut.mp3",
+  "audio/sfx/change-heal.mp3",
+  "audio/sfx/change-match.mp3",
+  "audio/sfx/change-mirror.mp3",
+  "audio/sfx/change-swap.mp3",
+  "audio/sfx/combatStart.mp3",
+  "audio/sfx/cure.mp3",
+  "audio/sfx/default.mp3",
+  "audio/sfx/defeat.mp3",
+  "audio/sfx/dragonBreath.mp3",
+  "audio/sfx/endingJingle.mp3",
+  "audio/sfx/heal.mp3",
+  "audio/sfx/iceStorm.mp3",
+  "audio/sfx/introJingle.mp3",
+  "audio/sfx/invalid.mp3",
+  "audio/sfx/knightCounter.mp3",
+  "audio/sfx/manaGain-3.mp3",
+  "audio/sfx/manaGain-4.mp3",
+  "audio/sfx/manaGain-5.mp3",
+  "audio/sfx/match-color-3.mp3",
+  "audio/sfx/match-color-4.mp3",
+  "audio/sfx/match-color-5.mp3",
+  "audio/sfx/match-combat-3.mp3",
+  "audio/sfx/match-combat-4.mp3",
+  "audio/sfx/match-combat-5.mp3",
+  "audio/sfx/match-skull-3.mp3",
+  "audio/sfx/match-skull-4.mp3",
+  "audio/sfx/match-skull-5.mp3",
+  "audio/sfx/parryQi.mp3",
+  "audio/sfx/skullHit-e-3.mp3",
+  "audio/sfx/skullHit-e-4.mp3",
+  "audio/sfx/skullHit-e-5.mp3",
+  "audio/sfx/skullHit-p-3.mp3",
+  "audio/sfx/skullHit-p-4.mp3",
+  "audio/sfx/skullHit-p-5.mp3",
+  "audio/sfx/spell-absoluteShadowBlow.mp3",
+  "audio/sfx/spell-angerCirculation.mp3",
+  "audio/sfx/spell-awakenQi.mp3",
+  "audio/sfx/spell-azureDragonRoar.mp3",
+  "audio/sfx/spell-barrier.mp3",
+  "audio/sfx/spell-battleOath.mp3",
+  "audio/sfx/spell-berserkerRage.mp3",
+  "audio/sfx/spell-bladeWinds.mp3",
+  "audio/sfx/spell-blizzard.mp3",
+  "audio/sfx/spell-bloodBoil.mp3",
+  "audio/sfx/spell-bloodThirst.mp3",
+  "audio/sfx/spell-bloodlust.mp3",
+  "audio/sfx/spell-bolt.mp3",
+  "audio/sfx/spell-brasierSeals.mp3",
+  "audio/sfx/spell-brokenBlades.mp3",
+  "audio/sfx/spell-burningTide.mp3",
+  "audio/sfx/spell-chasm.mp3",
+  "audio/sfx/spell-cinnabarTransmute.mp3",
+  "audio/sfx/spell-cleave.mp3",
+  "audio/sfx/spell-commandAura.mp3",
+  "audio/sfx/spell-confuse.mp3",
+  "audio/sfx/spell-counterAttack.mp3",
+  "audio/sfx/spell-crimsonPurge.mp3",
+  "audio/sfx/spell-cursedMark.mp3",
+  "audio/sfx/spell-darkChannels.mp3",
+  "audio/sfx/spell-deathbringer.mp3",
+  "audio/sfx/spell-defensiveWall.mp3",
+  "audio/sfx/spell-divinePower.mp3",
+  "audio/sfx/spell-dragonBlood.mp3",
+  "audio/sfx/spell-dragonCross.mp3",
+  "audio/sfx/spell-dualShot.mp3",
+  "audio/sfx/spell-emberGoldCross.mp3",
+  "audio/sfx/spell-emberScythe.mp3",
+  "audio/sfx/spell-emberStorm.mp3",
+  "audio/sfx/spell-enrage.mp3",
+  "audio/sfx/spell-exhaustArrow.mp3",
+  "audio/sfx/spell-fingerOfDeath.mp3",
+  "audio/sfx/spell-fireball.mp3",
+  "audio/sfx/spell-fiveElementsSeal.mp3",
+  "audio/sfx/spell-fiveHarmony.mp3",
+  "audio/sfx/spell-flameBolts.mp3",
+  "audio/sfx/spell-flameSphere.mp3",
+  "audio/sfx/spell-flameStrike.mp3",
+  "audio/sfx/spell-flameblade.mp3",
+  "audio/sfx/spell-focus.mp3",
+  "audio/sfx/spell-frostCleave.mp3",
+  "audio/sfx/spell-frostLightning.mp3",
+  "audio/sfx/spell-frostNova.mp3",
+  "audio/sfx/spell-furiousLunge.mp3",
+  "audio/sfx/spell-furyAltar.mp3",
+  "audio/sfx/spell-furyBlow.mp3",
+  "audio/sfx/spell-furyBolt.mp3",
+  "audio/sfx/spell-furyTheft.mp3",
+  "audio/sfx/spell-furyToQi.mp3",
+  "audio/sfx/spell-galeSlash.mp3",
+  "audio/sfx/spell-goldenDew.mp3",
+  "audio/sfx/spell-greatHeal.mp3",
+  "audio/sfx/spell-guardFervor.mp3",
+  "audio/sfx/spell-guardSentence.mp3",
+  "audio/sfx/spell-handOfIce.mp3",
+  "audio/sfx/spell-heal.mp3",
+  "audio/sfx/spell-heavenTribulationEnd.mp3",
+  "audio/sfx/spell-heavenlyRiverFlood.mp3",
+  "audio/sfx/spell-heavensWrath.mp3",
+  "audio/sfx/spell-holdTheLine.mp3",
+  "audio/sfx/spell-hunterThrill.mp3",
+  "audio/sfx/spell-ice.mp3",
+  "audio/sfx/spell-iceAge.mp3",
+  "audio/sfx/spell-iceShield.mp3",
+  "audio/sfx/spell-immortalPeach.mp3",
+  "audio/sfx/spell-impureBreath.mp3",
+  "audio/sfx/spell-inferno.mp3",
+  "audio/sfx/spell-innerCrucible.mp3",
+  "audio/sfx/spell-innerPlunder.mp3",
+  "audio/sfx/spell-innerThunder.mp3",
+  "audio/sfx/spell-intimidate.mp3",
+  "audio/sfx/spell-jadeBreath.mp3",
+  "audio/sfx/spell-jadeCurtain.mp3",
+  "audio/sfx/spell-jadeEmperorDecree.mp3",
+  "audio/sfx/spell-jadePurge.mp3",
+  "audio/sfx/spell-jadeSpringBlessing.mp3",
+  "audio/sfx/spell-kunlunMountainFall.mp3",
+  "audio/sfx/spell-legionForge.mp3",
+  "audio/sfx/spell-lightningStorm.mp3",
+  "audio/sfx/spell-lotusPoison.mp3",
+  "audio/sfx/spell-mageStrike.mp3",
+  "audio/sfx/spell-manaBlast.mp3",
+  "audio/sfx/spell-manaSiphon.mp3",
+  "audio/sfx/spell-mandateJudgement.mp3",
+  "audio/sfx/spell-meteor.mp3",
+  "audio/sfx/spell-miracle.mp3",
+  "audio/sfx/spell-mirrorShield.mp3",
+  "audio/sfx/spell-nineSunsFall.mp3",
+  "audio/sfx/spell-pangusAxe.mp3",
+  "audio/sfx/spell-poisonBlade.mp3",
+  "audio/sfx/spell-purpleRazor.mp3",
+  "audio/sfx/spell-queenMotherElixir.mp3",
+  "audio/sfx/spell-reinforce.mp3",
+  "audio/sfx/spell-revenant.mp3",
+  "audio/sfx/spell-revitalize.mp3",
+  "audio/sfx/spell-righteousStrike.mp3",
+  "audio/sfx/spell-rush.mp3",
+  "audio/sfx/spell-seasonsPurge.mp3",
+  "audio/sfx/spell-shadowCurse.mp3",
+  "audio/sfx/spell-shadowFlame.mp3",
+  "audio/sfx/spell-shadowPurge.mp3",
+  "audio/sfx/spell-shadowStep.mp3",
+  "audio/sfx/spell-shadowStrike.mp3",
+  "audio/sfx/spell-sharpenedBlade.mp3",
+  "audio/sfx/spell-shieldBash.mp3",
+  "audio/sfx/spell-silenceSeal.mp3",
+  "audio/sfx/spell-singingBlades.mp3",
+  "audio/sfx/spell-skyJudgement.mp3",
+  "audio/sfx/spell-skySplitter.mp3",
+  "audio/sfx/spell-sleepDust.mp3",
+  "audio/sfx/spell-sneakAttack.mp3",
+  "audio/sfx/spell-spiteStrike.mp3",
+  "audio/sfx/spell-springRain.mp3",
+  "audio/sfx/spell-starRain.mp3",
+  "audio/sfx/spell-stealth.mp3",
+  "audio/sfx/spell-steelHarvest.mp3",
+  "audio/sfx/spell-steelMoult.mp3",
+  "audio/sfx/spell-stoneGaze.mp3",
+  "audio/sfx/spell-stoneskin.mp3",
+  "audio/sfx/spell-stormOfGods.mp3",
+  "audio/sfx/spell-stormPurge.mp3",
+  "audio/sfx/spell-stormTide.mp3",
+  "audio/sfx/spell-strength.mp3",
+  "audio/sfx/spell-summonTempest.mp3",
+  "audio/sfx/spell-swiftStrike.mp3",
+  "audio/sfx/spell-threeDragons.mp3",
+  "audio/sfx/spell-throwAxe.mp3",
+  "audio/sfx/spell-thunderBolt.mp3",
+  "audio/sfx/spell-thunderDukeWrath.mp3",
+  "audio/sfx/spell-thunderPrison.mp3",
+  "audio/sfx/spell-tidalPurge.mp3",
+  "audio/sfx/spell-tigerBreaker.mp3",
+  "audio/sfx/spell-tigerEye.mp3",
+  "audio/sfx/spell-twinDragonsStrike.mp3",
+  "audio/sfx/spell-ultimateAzureDragon.mp3",
+  "audio/sfx/spell-ultimateBlackTortoise.mp3",
+  "audio/sfx/spell-ultimateEternalBastion.mp3",
+  "audio/sfx/spell-ultimateFiveElements.mp3",
+  "audio/sfx/spell-ultimateHeavenlyThunder.mp3",
+  "audio/sfx/spell-ultimateImperialDragon.mp3",
+  "audio/sfx/spell-ultimateSkyWolf.mp3",
+  "audio/sfx/spell-ultimateSunPiercer.mp3",
+  "audio/sfx/spell-ultimateThousandArrows.mp3",
+  "audio/sfx/spell-ultimateThousandRiders.mp3",
+  "audio/sfx/spell-ultimateVermilionBird.mp3",
+  "audio/sfx/spell-ultimateWhiteTiger.mp3",
+  "audio/sfx/spell-unbreakableGuard.mp3",
+  "audio/sfx/spell-vaporBurst.mp3",
+  "audio/sfx/spell-vermilionBirdDive.mp3",
+  "audio/sfx/spell-voidChill.mp3",
+  "audio/sfx/spell-voidRift.mp3",
+  "audio/sfx/spell-warCry.mp3",
+  "audio/sfx/spell-weakness.mp3",
+  "audio/sfx/spell-whiteTigerClaw.mp3",
+  "audio/sfx/spell-wildMana.mp3",
+  "audio/sfx/spell-wrathOffering.mp3",
+  "audio/sfx/spellCast.mp3",
+  "audio/sfx/spellHit-e.mp3",
+  "audio/sfx/spellHit-p.mp3",
+  "audio/sfx/swap.mp3",
+  "audio/sfx/toggleOn.mp3",
+  "audio/sfx/turnBonus.mp3",
+  "audio/sfx/uiClick.mp3",
+  "audio/sfx/victory.mp3",
+  "audio/sfx/weaponHit-common-e.mp3",
+  "audio/sfx/weaponHit-common-p.mp3",
+  "audio/sfx/weaponHit-e.mp3",
+  "audio/sfx/weaponHit-legendary-e.mp3",
+  "audio/sfx/weaponHit-legendary-p.mp3",
+  "audio/sfx/weaponHit-p.mp3",
+  "audio/sfx/weaponHit-rare-e.mp3",
+  "audio/sfx/weaponHit-rare-p.mp3",
+  "audio/sfx/weaponHit-uncommon-e.mp3",
+  "audio/sfx/weaponHit-uncommon-p.mp3"
+ ],
+ "media": [
+  {
+   "p": "sprites/gba/acolyte_ri.b6143f90.js",
+   "s": 1780,
+   "h": "b6143f90ca"
+  },
+  {
+   "p": "sprites/gba/alchemist_dan.7686e9f1.js",
+   "s": 1548,
+   "h": "7686e9f12a"
+  },
+  {
+   "p": "sprites/gba/ao.fea61db0.js",
+   "s": 4957,
+   "h": "fea61db02c"
+  },
+  {
+   "p": "sprites/gba/apprentice_zhu.02d72f66.js",
+   "s": 1556,
+   "h": "02d72f663a"
+  },
+  {
+   "p": "sprites/gba/archer.225395ce.js",
+   "s": 47558,
+   "h": "225395ce6c"
+  },
+  {
+   "p": "sprites/gba/archer_horse.d762fd4b.js",
+   "s": 30037,
+   "h": "d762fd4b81"
+  },
+  {
+   "p": "sprites/gba/archer_huo.ea608456.js",
+   "s": 1172,
+   "h": "ea608456d2"
+  },
+  {
+   "p": "sprites/gba/assassin.68b70256.js",
+   "s": 48426,
+   "h": "68b7025676"
+  },
+  {
+   "p": "sprites/gba/assassin_horse.3aa56aa9.js",
+   "s": 30037,
+   "h": "3aa56aa9d5"
+  },
+  {
+   "p": "sprites/gba/assassin_masque.27d84f40.js",
+   "s": 89649,
+   "h": "27d84f405d"
+  },
+  {
+   "p": "sprites/gba/astronomer_xing.79b53d47.js",
+   "s": 1292,
+   "h": "79b53d4766"
+  },
+  {
+   "p": "sprites/gba/aunt_liu.47bcebc1.js",
+   "s": 1164,
+   "h": "47bcebc16a"
+  },
+  {
+   "p": "sprites/gba/bai_she.440dc493.js",
+   "s": 4409,
+   "h": "440dc49329"
+  },
+  {
+   "p": "sprites/gba/bai_ze.0f702e3b.js",
+   "s": 31653,
+   "h": "0f702e3b18"
+  },
+  {
+   "p": "sprites/gba/bai_ze_savant.a622880f.js",
+   "s": 10005,
+   "h": "a622880f2b"
+  },
+  {
+   "p": "sprites/gba/baihu.849bd8a6.js",
+   "s": 41589,
+   "h": "849bd8a66b"
+  },
+  {
+   "p": "sprites/gba/bailong.32987686.js",
+   "s": 30897,
+   "h": "3298768601"
+  },
+  {
+   "p": "sprites/gba/bambous_hamlet_old_lamplighter.587e8d4a.js",
+   "s": 1536,
+   "h": "587e8d4a1e"
+  },
+  {
+   "p": "sprites/gba/bambous_road_old_pilgrim.423147f0.js",
+   "s": 1372,
+   "h": "423147f071"
+  },
+  {
+   "p": "sprites/gba/bambous_village_fan_seller.4b7df2f0.js",
+   "s": 1616,
+   "h": "4b7df2f064"
+  },
+  {
+   "p": "sprites/gba/bambous_village_kid_runner.1c38625d.js",
+   "s": 1620,
+   "h": "1c38625d27"
+  },
+  {
+   "p": "sprites/gba/bambous_village_old_gardener.685ac902.js",
+   "s": 1660,
+   "h": "685ac90228"
+  },
+  {
+   "p": "sprites/gba/bambous_village_scribe_wei.4523b9e5.js",
+   "s": 1548,
+   "h": "4523b9e53e"
+  },
+  {
+   "p": "sprites/gba/bambous_village_tea_porter.6866bb65.js",
+   "s": 1624,
+   "h": "6866bb6577"
+  },
+  {
+   "p": "sprites/gba/bambous_wild_old_woodcutter.b31bf178.js",
+   "s": 1796,
+   "h": "b31bf1788a"
+  },
+  {
+   "p": "sprites/gba/bandit_gerel.e9e3717c.js",
+   "s": 1648,
+   "h": "e9e3717ce2"
+  },
+  {
+   "p": "sprites/gba/baoyu_jian.05153215.js",
+   "s": 17697,
+   "h": "0515321571"
+  },
+  {
+   "p": "sprites/gba/barbarian.04cd30cc.js",
+   "s": 47802,
+   "h": "04cd30cc17"
+  },
+  {
+   "p": "sprites/gba/barbarian_horse.a9d242c8.js",
+   "s": 29885,
+   "h": "a9d242c898"
+  },
+  {
+   "p": "sprites/gba/bard_xiang.34c3ea9d.js",
+   "s": 1204,
+   "h": "34c3ea9de5"
+  },
+  {
+   "p": "sprites/gba/bashe.aaefc31a.js",
+   "s": 4977,
+   "h": "aaefc31a83"
+  },
+  {
+   "p": "sprites/gba/bath_mu.25c2abd1.js",
+   "s": 1472,
+   "h": "25c2abd1dc"
+  },
+  {
+   "p": "sprites/gba/bath_old_wang.410cbda6.js",
+   "s": 1368,
+   "h": "410cbda6b0"
+  },
+  {
+   "p": "sprites/gba/bather_fei.dd8af329.js",
+   "s": 1268,
+   "h": "dd8af329dd"
+  },
+  {
+   "p": "sprites/gba/beekeeper_ju.5c612fe7.js",
+   "s": 1836,
+   "h": "5c612fe7aa"
+  },
+  {
+   "p": "sprites/gba/bi_fang.9b532140.js",
+   "s": 4377,
+   "h": "9b53214012"
+  },
+  {
+   "p": "sprites/gba/bian.ae308af8.js",
+   "s": 9257,
+   "h": "ae308af8f1"
+  },
+  {
+   "p": "sprites/gba/bixi.4ae21861.js",
+   "s": 6085,
+   "h": "4ae2186144"
+  },
+  {
+   "p": "sprites/gba/bixie.b5dfff38.js",
+   "s": 44061,
+   "h": "b5dfff381c"
+  },
+  {
+   "p": "sprites/gba/boatman_shan.aabeb71b.js",
+   "s": 1484,
+   "h": "aabeb71b10"
+  },
+  {
+   "p": "sprites/gba/boy_tarik.35854fa1.js",
+   "s": 1496,
+   "h": "35854fa187"
+  },
+  {
+   "p": "sprites/gba/brigand_sables.d748caaf.js",
+   "s": 21753,
+   "h": "d748caaf79"
+  },
+  {
+   "p": "sprites/gba/buffalo_dahei.cf6609cf.js",
+   "s": 1236,
+   "h": "cf6609cfc9"
+  },
+  {
+   "p": "sprites/gba/cairn_spirit.59a32f81.js",
+   "s": 1272,
+   "h": "59a32f81e1"
+  },
+  {
+   "p": "sprites/gba/camel_baba.304ebbe9.js",
+   "s": 1412,
+   "h": "304ebbe9c1"
+  },
+  {
+   "p": "sprites/gba/camel_foreman_tang.d7a2bedf.js",
+   "s": 1428,
+   "h": "d7a2bedfab"
+  },
+  {
+   "p": "sprites/gba/canglong.f898e87e.js",
+   "s": 5385,
+   "h": "f898e87e92"
+  },
+  {
+   "p": "sprites/gba/cao_jing.571ddee0.js",
+   "s": 5753,
+   "h": "571ddee0d3"
+  },
+  {
+   "p": "sprites/gba/captain_lo.32175d9a.js",
+   "s": 1380,
+   "h": "32175d9a13"
+  },
+  {
+   "p": "sprites/gba/captain_yaer.df950642.js",
+   "s": 1812,
+   "h": "df95064212"
+  },
+  {
+   "p": "sprites/gba/caravan_cook_lu.8586b8d3.js",
+   "s": 1760,
+   "h": "8586b8d304"
+  },
+  {
+   "p": "sprites/gba/carp_jin.37e0f879.js",
+   "s": 1832,
+   "h": "37e0f879ba"
+  },
+  {
+   "p": "sprites/gba/carpe_doree.4ee3a0f5.js",
+   "s": 27937,
+   "h": "4ee3a0f502"
+  },
+  {
+   "p": "sprites/gba/carver_ling.747d08a1.js",
+   "s": 1416,
+   "h": "747d08a113"
+  },
+  {
+   "p": "sprites/gba/change.fd52fd3d.js",
+   "s": 4965,
+   "h": "fd52fd3d05"
+  },
+  {
+   "p": "sprites/gba/change_jouable.2ebd3b34.js",
+   "s": 40167,
+   "h": "2ebd3b3458"
+  },
+  {
+   "p": "sprites/gba/change_moon.d131916f.js",
+   "s": 1324,
+   "h": "d131916fdc"
+  },
+  {
+   "p": "sprites/gba/changxi.75549f24.js",
+   "s": 41521,
+   "h": "75549f247e"
+  },
+  {
+   "p": "sprites/gba/chaofeng.c54f9fa2.js",
+   "s": 10289,
+   "h": "c54f9fa2ae"
+  },
+  {
+   "p": "sprites/gba/cheese_sa.d6e8c5e6.js",
+   "s": 1356,
+   "h": "d6e8c5e6f3"
+  },
+  {
+   "p": "sprites/gba/chef_de_dune.50bb8760.js",
+   "s": 26497,
+   "h": "50bb87606a"
+  },
+  {
+   "p": "sprites/gba/chi_niao.27e36441.js",
+   "s": 6293,
+   "h": "27e36441a8"
+  },
+  {
+   "p": "sprites/gba/child_yuer.1a3f4e71.js",
+   "s": 1228,
+   "h": "1a3f4e71da"
+  },
+  {
+   "p": "sprites/gba/chilong.2e6ca632.js",
+   "s": 5729,
+   "h": "2e6ca632f4"
+  },
+  {
+   "p": "sprites/gba/chiwen.140a3eb5.js",
+   "s": 10185,
+   "h": "140a3eb54f"
+  },
+  {
+   "p": "sprites/gba/chiyou.8cd2d50b.js",
+   "s": 6337,
+   "h": "8cd2d50b7d"
+  },
+  {
+   "p": "sprites/gba/climber_dai.fc982acc.js",
+   "s": 1284,
+   "h": "fc982accba"
+  },
+  {
+   "p": "sprites/gba/cloud_sweeper_yun.0fe4bd30.js",
+   "s": 1376,
+   "h": "0fe4bd3091"
+  },
+  {
+   "p": "sprites/gba/companion_braise.9898150f.js",
+   "s": 38511,
+   "h": "9898150fcb"
+  },
+  {
+   "p": "sprites/gba/companion_dawa.c4c6c2cd.js",
+   "s": 32003,
+   "h": "c4c6c2cd0e"
+  },
+  {
+   "p": "sprites/gba/companion_etincelle.a6f630f6.js",
+   "s": 36475,
+   "h": "a6f630f67a"
+  },
+  {
+   "p": "sprites/gba/companion_jian.ff31f9d1.js",
+   "s": 35695,
+   "h": "ff31f9d185"
+  },
+  {
+   "p": "sprites/gba/companion_tou.eeca84c2.js",
+   "s": 39759,
+   "h": "eeca84c22f"
+  },
+  {
+   "p": "sprites/gba/companion_xiao_gui.207f2fcf.js",
+   "s": 36631,
+   "h": "207f2fcf3d"
+  },
+  {
+   "p": "sprites/gba/companion_yu.fbe658a3.js",
+   "s": 38799,
+   "h": "fbe658a32f"
+  },
+  {
+   "p": "sprites/gba/companion_zhi.f9488510.js",
+   "s": 29815,
+   "h": "f948851096"
+  },
+  {
+   "p": "sprites/gba/cook_dada.e1852e6d.js",
+   "s": 1452,
+   "h": "e1852e6d46"
+  },
+  {
+   "p": "sprites/gba/corbeau_demon.6b35cf4c.js",
+   "s": 24057,
+   "h": "6b35cf4c78"
+  },
+  {
+   "p": "sprites/gba/courier_tong.9db04615.js",
+   "s": 1252,
+   "h": "9db04615cf"
+  },
+  {
+   "p": "sprites/gba/crab_old_gong.648cb739.js",
+   "s": 1328,
+   "h": "648cb739f9"
+  },
+  {
+   "p": "sprites/gba/crabe_soldat.4037a947.js",
+   "s": 23377,
+   "h": "4037a94775"
+  },
+  {
+   "p": "sprites/gba/crane_apprentice_ling.59979a5f.js",
+   "s": 1484,
+   "h": "59979a5fb7"
+  },
+  {
+   "p": "sprites/gba/crane_elder_hegu.5108b825.js",
+   "s": 1280,
+   "h": "5108b82541"
+  },
+  {
+   "p": "sprites/gba/crane_envoy.eb4934a7.js",
+   "s": 5161,
+   "h": "eb4934a786"
+  },
+  {
+   "p": "sprites/gba/cricket_boy_hao.6e2faf96.js",
+   "s": 1432,
+   "h": "6e2faf96e6"
+  },
+  {
+   "p": "sprites/gba/crow_wing.6bbc31a5.js",
+   "s": 1048,
+   "h": "6bbc31a51f"
+  },
+  {
+   "p": "sprites/gba/dafeng.84f2789a.js",
+   "s": 8681,
+   "h": "84f2789a17"
+  },
+  {
+   "p": "sprites/gba/dame_bi_yu.69302fab.js",
+   "s": 20441,
+   "h": "69302fab8f"
+  },
+  {
+   "p": "sprites/gba/dame_des_neiges.ca6edc63.js",
+   "s": 18465,
+   "h": "ca6edc6352"
+  },
+  {
+   "p": "sprites/gba/dame_yin_yue.3ffdb6a7.js",
+   "s": 29609,
+   "h": "3ffdb6a7ca"
+  },
+  {
+   "p": "sprites/gba/date_farmer_ismail.079a93d1.js",
+   "s": 1644,
+   "h": "079a93d199"
+  },
+  {
+   "p": "sprites/gba/dian_mu.f5c05aea.js",
+   "s": 6717,
+   "h": "f5c05aeacc"
+  },
+  {
+   "p": "sprites/gba/diaosi_gui.420735d4.js",
+   "s": 42989,
+   "h": "420735d4bb"
+  },
+  {
+   "p": "sprites/gba/dijiang.7bd8fc24.js",
+   "s": 4529,
+   "h": "7bd8fc2414"
+  },
+  {
+   "p": "sprites/gba/dilong.9fd3626f.js",
+   "s": 5809,
+   "h": "9fd3626fec"
+  },
+  {
+   "p": "sprites/gba/dragonet_xiaohong.b943672f.js",
+   "s": 1772,
+   "h": "b943672f6a"
+  },
+  {
+   "p": "sprites/gba/drover_boldo.38cc5f1c.js",
+   "s": 1568,
+   "h": "38cc5f1c6b"
+  },
+  {
+   "p": "sprites/gba/du_she.5109a27d.js",
+   "s": 4705,
+   "h": "5109a27dd6"
+  },
+  {
+   "p": "sprites/gba/duck_fu.dfea8a56.js",
+   "s": 1184,
+   "h": "dfea8a56e5"
+  },
+  {
+   "p": "sprites/gba/eagle_boy_temur.aa5b564f.js",
+   "s": 1640,
+   "h": "aa5b564f99"
+  },
+  {
+   "p": "sprites/gba/elder_wen.9fd83292.js",
+   "s": 5093,
+   "h": "9fd8329203"
+  },
+  {
+   "p": "sprites/gba/envoy_longwang.9d344011.js",
+   "s": 1752,
+   "h": "9d344011f4"
+  },
+  {
+   "p": "sprites/gba/esprit_cloche.fb561d81.js",
+   "s": 28413,
+   "h": "fb561d8153"
+  },
+  {
+   "p": "sprites/gba/fairy_yun.95ee78f9.js",
+   "s": 1440,
+   "h": "95ee78f950"
+  },
+  {
+   "p": "sprites/gba/falconer_arslan.9fa3e99c.js",
+   "s": 1348,
+   "h": "9fa3e99c62"
+  },
+  {
+   "p": "sprites/gba/farmer_lin.27286c30.js",
+   "s": 5853,
+   "h": "27286c3068"
+  },
+  {
+   "p": "sprites/gba/farrier_batu.5e1e5c8c.js",
+   "s": 1996,
+   "h": "5e1e5c8c16"
+  },
+  {
+   "p": "sprites/gba/fauves_hamlet_ganbat.9c058df9.js",
+   "s": 1616,
+   "h": "9c058df977"
+  },
+  {
+   "p": "sprites/gba/fauves_hamlet_sarnai.1d272827.js",
+   "s": 1408,
+   "h": "1d27282751"
+  },
+  {
+   "p": "sprites/gba/fauves_road_herder_oyun.46a1f035.js",
+   "s": 1680,
+   "h": "46a1f0357f"
+  },
+  {
+   "p": "sprites/gba/fauves_village_erdene.0d759213.js",
+   "s": 1688,
+   "h": "0d75921317"
+  },
+  {
+   "p": "sprites/gba/fauves_village_khulan.cec33260.js",
+   "s": 1460,
+   "h": "cec3326049"
+  },
+  {
+   "p": "sprites/gba/fauves_village_naran.63fc5027.js",
+   "s": 1564,
+   "h": "63fc5027db"
+  },
+  {
+   "p": "sprites/gba/fauves_village_tsetseg.a273582d.js",
+   "s": 1468,
+   "h": "a273582d9b"
+  },
+  {
+   "p": "sprites/gba/feilong.4006b921.js",
+   "s": 11209,
+   "h": "4006b921ca"
+  },
+  {
+   "p": "sprites/gba/feima.090a1670.js",
+   "s": 4677,
+   "h": "090a1670e9"
+  },
+  {
+   "p": "sprites/gba/feiyi.70c59f66.js",
+   "s": 48769,
+   "h": "70c59f6637"
+  },
+  {
+   "p": "sprites/gba/feiyu.10c6f3f1.js",
+   "s": 3197,
+   "h": "10c6f3f1e8"
+  },
+  {
+   "p": "sprites/gba/felt_maker_uyun.a64b2ead.js",
+   "s": 1496,
+   "h": "a64b2ead47"
+  },
+  {
+   "p": "sprites/gba/feng_bo.e5004a55.js",
+   "s": 36681,
+   "h": "e5004a557f"
+  },
+  {
+   "p": "sprites/gba/feng_shou.0ed58678.js",
+   "s": 8785,
+   "h": "0ed58678a5"
+  },
+  {
+   "p": "sprites/gba/fenghuang.fcc68541.js",
+   "s": 32077,
+   "h": "fcc6854116"
+  },
+  {
+   "p": "sprites/gba/fengmeng_1.f62b19ce.js",
+   "s": 16101,
+   "h": "f62b19cefa"
+  },
+  {
+   "p": "sprites/gba/fengmeng_2.1b620d71.js",
+   "s": 18917,
+   "h": "1b620d7142"
+  },
+  {
+   "p": "sprites/gba/fengmeng_3a.f74050ba.js",
+   "s": 18773,
+   "h": "f74050ba6a"
+  },
+  {
+   "p": "sprites/gba/fengmeng_3b.4d49930a.js",
+   "s": 20009,
+   "h": "4d49930a1f"
+  },
+  {
+   "p": "sprites/gba/fengxi.ddf9bb52.js",
+   "s": 10277,
+   "h": "ddf9bb525d"
+  },
+  {
+   "p": "sprites/gba/fennec_lili.36b9ee7f.js",
+   "s": 1528,
+   "h": "36b9ee7f08"
+  },
+  {
+   "p": "sprites/gba/ferry_pei.81641297.js",
+   "s": 1540,
+   "h": "816412971b"
+  },
+  {
+   "p": "sprites/gba/ferryman_gu.8d6dc1d5.js",
+   "s": 4121,
+   "h": "8d6dc1d5e4"
+  },
+  {
+   "p": "sprites/gba/fisher_hai.93b277d4.js",
+   "s": 5877,
+   "h": "93b277d4d8"
+  },
+  {
+   "p": "sprites/gba/fleuve_hamlet_kid_dun.e1ce224a.js",
+   "s": 1776,
+   "h": "e1ce224ad7"
+  },
+  {
+   "p": "sprites/gba/fleuve_road_toll_keeper.814c02b7.js",
+   "s": 1588,
+   "h": "814c02b78d"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_dock_clerk.d1a509d6.js",
+   "s": 1112,
+   "h": "d1a509d690"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_kid_ming.ccc50e1b.js",
+   "s": 1492,
+   "h": "ccc50e1bd1"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_old_caulker.9c2909c7.js",
+   "s": 1776,
+   "h": "9c2909c77c"
+  },
+  {
+   "p": "sprites/gba/fleuve_village_rope_maker.b14eb937.js",
+   "s": 1408,
+   "h": "b14eb93753"
+  },
+  {
+   "p": "sprites/gba/fleuve_wild_old_surveyor.dc01bc24.js",
+   "s": 1696,
+   "h": "dc01bc2420"
+  },
+  {
+   "p": "sprites/gba/flutist_chuan.b86eb857.js",
+   "s": 1760,
+   "h": "b86eb8574d"
+  },
+  {
+   "p": "sprites/gba/foreman_han.2ed2f322.js",
+   "s": 1472,
+   "h": "2ed2f32294"
+  },
+  {
+   "p": "sprites/gba/forge_spirit.e016a708.js",
+   "s": 1204,
+   "h": "e016a708fb"
+  },
+  {
+   "p": "sprites/gba/forgeron_lave.38795c98.js",
+   "s": 9773,
+   "h": "38795c9881"
+  },
+  {
+   "p": "sprites/gba/forgeron_magma.869af0b3.js",
+   "s": 19889,
+   "h": "869af0b3dc"
+  },
+  {
+   "p": "sprites/gba/fortune_sha.9256905c.js",
+   "s": 1500,
+   "h": "9256905caa"
+  },
+  {
+   "p": "sprites/gba/foudre_garde.7aff127e.js",
+   "s": 28521,
+   "h": "7aff127ec7"
+  },
+  {
+   "p": "sprites/gba/fucanglong.d4665cfd.js",
+   "s": 5605,
+   "h": "d4665cfdca"
+  },
+  {
+   "p": "sprites/gba/fuxi.8aa5fe26.js",
+   "s": 37869,
+   "h": "8aa5fe266e"
+  },
+  {
+   "p": "sprites/gba/fuxi_dragon.9731cd07.js",
+   "s": 9189,
+   "h": "9731cd07c4"
+  },
+  {
+   "p": "sprites/gba/garde_maree.b7da2576.js",
+   "s": 25809,
+   "h": "b7da2576b8"
+  },
+  {
+   "p": "sprites/gba/garde_solaire.72f1d0f0.js",
+   "s": 20097,
+   "h": "72f1d0f0b6"
+  },
+  {
+   "p": "sprites/gba/gatekeeper_men.2ccff75c.js",
+   "s": 1984,
+   "h": "2ccff75c92"
+  },
+  {
+   "p": "sprites/gba/geologist_zhou.070a1277.js",
+   "s": 1692,
+   "h": "070a1277bc"
+  },
+  {
+   "p": "sprites/gba/ghost_miner_shu.734daa75.js",
+   "s": 1656,
+   "h": "734daa757a"
+  },
+  {
+   "p": "sprites/gba/ghost_rider_tolui.a70fb268.js",
+   "s": 1272,
+   "h": "a70fb26816"
+  },
+  {
+   "p": "sprites/gba/girl_lian.467cf1b0.js",
+   "s": 1136,
+   "h": "467cf1b043"
+  },
+  {
+   "p": "sprites/gba/girl_net_mi.ab21a1d9.js",
+   "s": 1600,
+   "h": "ab21a1d95c"
+  },
+  {
+   "p": "sprites/gba/girl_noor.e0036312.js",
+   "s": 1420,
+   "h": "e00363121e"
+  },
+  {
+   "p": "sprites/gba/glassblower_ouyang.457fee6f.js",
+   "s": 1560,
+   "h": "457fee6f6e"
+  },
+  {
+   "p": "sprites/gba/goat_yang.77e29055.js",
+   "s": 1056,
+   "h": "77e290559e"
+  },
+  {
+   "p": "sprites/gba/gobi_hamlet_old_dyer.b8d6f7d5.js",
+   "s": 1324,
+   "h": "b8d6f7d526"
+  },
+  {
+   "p": "sprites/gba/gobi_road_old_drover.c0be6e87.js",
+   "s": 1708,
+   "h": "c0be6e8724"
+  },
+  {
+   "p": "sprites/gba/gobi_village_kid_guide.da324037.js",
+   "s": 1588,
+   "h": "da324037d8"
+  },
+  {
+   "p": "sprites/gba/gobi_village_old_weaver.80c47116.js",
+   "s": 1164,
+   "h": "80c4711605"
+  },
+  {
+   "p": "sprites/gba/gobi_village_water_seller.4c075fc4.js",
+   "s": 1352,
+   "h": "4c075fc431"
+  },
+  {
+   "p": "sprites/gba/gobi_wild_old_caravaneer.c8f94c68.js",
+   "s": 1536,
+   "h": "c8f94c6850"
+  },
+  {
+   "p": "sprites/gba/goose_dagong.278c9537.js",
+   "s": 936,
+   "h": "278c953710"
+  },
+  {
+   "p": "sprites/gba/grand_maitre_qian_jian.11cb2c6c.js",
+   "s": 26081,
+   "h": "11cb2c6cd9"
+  },
+  {
+   "p": "sprites/gba/grandma_altan.6f3a475c.js",
+   "s": 1648,
+   "h": "6f3a475c88"
+  },
+  {
+   "p": "sprites/gba/grandma_tao.55515ab8.js",
+   "s": 1460,
+   "h": "55515ab842"
+  },
+  {
+   "p": "sprites/gba/grue_lige.5f4d5313.js",
+   "s": 23349,
+   "h": "5f4d5313b3"
+  },
+  {
+   "p": "sprites/gba/guai_niao.92aaa708.js",
+   "s": 9697,
+   "h": "92aaa70882"
+  },
+  {
+   "p": "sprites/gba/gui_esprit.1dc6855b.js",
+   "s": 25189,
+   "h": "1dc6855b96"
+  },
+  {
+   "p": "sprites/gba/gui_guerrier.92a8bd76.js",
+   "s": 4469,
+   "h": "92a8bd76b4"
+  },
+  {
+   "p": "sprites/gba/gui_po.30eb00f1.js",
+   "s": 6485,
+   "h": "30eb00f109"
+  },
+  {
+   "p": "sprites/gba/gui_tortue.8b25399a.js",
+   "s": 5389,
+   "h": "8b25399a2b"
+  },
+  {
+   "p": "sprites/gba/gui_turtle.6f12fcb7.js",
+   "s": 1536,
+   "h": "6f12fcb737"
+  },
+  {
+   "p": "sprites/gba/guide_dawa.a417eeb1.js",
+   "s": 5149,
+   "h": "a417eeb190"
+  },
+  {
+   "p": "sprites/gba/gull_pip.89cd59b3.js",
+   "s": 1008,
+   "h": "89cd59b313"
+  },
+  {
+   "p": "sprites/gba/hai_gui.f165e1ff.js",
+   "s": 6977,
+   "h": "f165e1ff80"
+  },
+  {
+   "p": "sprites/gba/hai_ma_xing.39ab13d9.js",
+   "s": 28209,
+   "h": "39ab13d9a6"
+  },
+  {
+   "p": "sprites/gba/hai_ruo.3d7d3c44.js",
+   "s": 25841,
+   "h": "3d7d3c448b"
+  },
+  {
+   "p": "sprites/gba/hai_she.87b86e1d.js",
+   "s": 28921,
+   "h": "87b86e1dca"
+  },
+  {
+   "p": "sprites/gba/hai_shen.433ab72b.js",
+   "s": 8641,
+   "h": "433ab72b13"
+  },
+  {
+   "p": "sprites/gba/hanba.0c54f398.js",
+   "s": 7813,
+   "h": "0c54f398be"
+  },
+  {
+   "p": "sprites/gba/harbor_master_lu.e864c8c8.js",
+   "s": 1412,
+   "h": "e864c8c88c"
+  },
+  {
+   "p": "sprites/gba/hare_tuzi.e6fcdded.js",
+   "s": 1088,
+   "h": "e6fcdded7d"
+  },
+  {
+   "p": "sprites/gba/he_bo.5540d066.js",
+   "s": 3913,
+   "h": "5540d0664c"
+  },
+  {
+   "p": "sprites/gba/he_jing.8edcbba8.js",
+   "s": 3745,
+   "h": "8edcbba8b0"
+  },
+  {
+   "p": "sprites/gba/heibai_wuchang.d56bb82a.js",
+   "s": 8525,
+   "h": "d56bb82aa8"
+  },
+  {
+   "p": "sprites/gba/heilong.b81bbc15.js",
+   "s": 29121,
+   "h": "b81bbc156f"
+  },
+  {
+   "p": "sprites/gba/heishui_xuan_she.bebb1156.js",
+   "s": 6449,
+   "h": "bebb1156bd"
+  },
+  {
+   "p": "sprites/gba/herbalist_xu.63431b5b.js",
+   "s": 5229,
+   "h": "63431b5bdd"
+  },
+  {
+   "p": "sprites/gba/hermit_lei.db64375d.js",
+   "s": 1068,
+   "h": "db64375dc6"
+  },
+  {
+   "p": "sprites/gba/hermit_nu.81c283d3.js",
+   "s": 1296,
+   "h": "81c283d3a5"
+  },
+  {
+   "p": "sprites/gba/honey_keeper_mi.16f85532.js",
+   "s": 1944,
+   "h": "16f85532dc"
+  },
+  {
+   "p": "sprites/gba/horse_tian.36f4e751.js",
+   "s": 1492,
+   "h": "36f4e75125"
+  },
+  {
+   "p": "sprites/gba/houtu.d6196c37.js",
+   "s": 5781,
+   "h": "d6196c3772"
+  },
+  {
+   "p": "sprites/gba/houyi_mirror.af276110.js",
+   "s": 768,
+   "h": "af2761107f"
+  },
+  {
+   "p": "sprites/gba/hu_jing.4949fe90.js",
+   "s": 5109,
+   "h": "4949fe90b3"
+  },
+  {
+   "p": "sprites/gba/hua.11da26fe.js",
+   "s": 1732,
+   "h": "11da26fe6d"
+  },
+  {
+   "p": "sprites/gba/hua_jing.8e3365cd.js",
+   "s": 5009,
+   "h": "8e3365cdae"
+  },
+  {
+   "p": "sprites/gba/huang_xian.e5f986b5.js",
+   "s": 1244,
+   "h": "e5f986b5c4"
+  },
+  {
+   "p": "sprites/gba/huangdi.ddc6f282.js",
+   "s": 8005,
+   "h": "ddc6f282da"
+  },
+  {
+   "p": "sprites/gba/huli_commun.b1e4791b.js",
+   "s": 4477,
+   "h": "b1e4791bc5"
+  },
+  {
+   "p": "sprites/gba/huli_jing.03aec772.js",
+   "s": 4241,
+   "h": "03aec772d6"
+  },
+  {
+   "p": "sprites/gba/huli_xia.9c1dc80a.js",
+   "s": 1580,
+   "h": "9c1dc80adc"
+  },
+  {
+   "p": "sprites/gba/hundun.158e5381.js",
+   "s": 31857,
+   "h": "158e5381e1"
+  },
+  {
+   "p": "sprites/gba/hunter_wu.1fdfafd7.js",
+   "s": 5337,
+   "h": "1fdfafd7cd"
+  },
+  {
+   "p": "sprites/gba/huo_shen.2202805d.js",
+   "s": 6161,
+   "h": "2202805d24"
+  },
+  {
+   "p": "sprites/gba/huo_shou.6442b0d5.js",
+   "s": 5849,
+   "h": "6442b0d568"
+  },
+  {
+   "p": "sprites/gba/immortel_jade.6a643570.js",
+   "s": 16517,
+   "h": "6a64357067"
+  },
+  {
+   "p": "sprites/gba/immortel_yun_zhong.7de8de8c.js",
+   "s": 29189,
+   "h": "7de8de8c22"
+  },
+  {
+   "p": "sprites/gba/incense_lanxiang.057031b6.js",
+   "s": 1212,
+   "h": "057031b69a"
+  },
+  {
+   "p": "sprites/gba/innkeeper_pao.16ee63ee.js",
+   "s": 1644,
+   "h": "16ee63ee71"
+  },
+  {
+   "p": "sprites/gba/jade_hare.f1fec3ee.js",
+   "s": 856,
+   "h": "f1fec3ee50"
+  },
+  {
+   "p": "sprites/gba/jade_step_keeper_lin.4f492c2d.js",
+   "s": 1488,
+   "h": "4f492c2d62"
+  },
+  {
+   "p": "sprites/gba/jelly_shui.4f555884.js",
+   "s": 936,
+   "h": "4f55588465"
+  },
+  {
+   "p": "sprites/gba/jiangshi.45f0b297.js",
+   "s": 11553,
+   "h": "45f0b29726"
+  },
+  {
+   "p": "sprites/gba/jiao.442e69e9.js",
+   "s": 4985,
+   "h": "442e69e94a"
+  },
+  {
+   "p": "sprites/gba/jiaolong.328211f7.js",
+   "s": 4705,
+   "h": "328211f715"
+  },
+  {
+   "p": "sprites/gba/jiaoyu.adbe8d4b.js",
+   "s": 5345,
+   "h": "adbe8d4b40"
+  },
+  {
+   "p": "sprites/gba/jing_jing.2b924f4f.js",
+   "s": 5145,
+   "h": "2b924f4f68"
+  },
+  {
+   "p": "sprites/gba/jing_shou.c1d6c679.js",
+   "s": 5305,
+   "h": "c1d6c67925"
+  },
+  {
+   "p": "sprites/gba/jingwei.21fadf9a.js",
+   "s": 4413,
+   "h": "21fadf9afd"
+  },
+  {
+   "p": "sprites/gba/jinwu.c96c919b.js",
+   "s": 10097,
+   "h": "c96c919b8f"
+  },
+  {
+   "p": "sprites/gba/jiuweihu.e3a27312.js",
+   "s": 10869,
+   "h": "e3a27312d4"
+  },
+  {
+   "p": "sprites/gba/jiuying.c9794c46.js",
+   "s": 11473,
+   "h": "c9794c46fe"
+  },
+  {
+   "p": "sprites/gba/ke_paper.e6c20fcb.js",
+   "s": 1516,
+   "h": "e6c20fcb8a"
+  },
+  {
+   "p": "sprites/gba/keeper_ao.5f097ad0.js",
+   "s": 1144,
+   "h": "5f097ad0de"
+  },
+  {
+   "p": "sprites/gba/keeper_lunar.30dec522.js",
+   "s": 1740,
+   "h": "30dec5223d"
+  },
+  {
+   "p": "sprites/gba/keeper_nur.116da050.js",
+   "s": 1624,
+   "h": "116da05044"
+  },
+  {
+   "p": "sprites/gba/kid_ahu.4048c2e2.js",
+   "s": 1452,
+   "h": "4048c2e262"
+  },
+  {
+   "p": "sprites/gba/kid_dandan.18d8bedc.js",
+   "s": 1752,
+   "h": "18d8bedc8b"
+  },
+  {
+   "p": "sprites/gba/kids_leimei.bd1fb018.js",
+   "s": 1700,
+   "h": "bd1fb0189a"
+  },
+  {
+   "p": "sprites/gba/kite_boy_feng.86dc5446.js",
+   "s": 1500,
+   "h": "86dc5446e2"
+  },
+  {
+   "p": "sprites/gba/kuafu.0baad7cf.js",
+   "s": 9053,
+   "h": "0baad7cfed"
+  },
+  {
+   "p": "sprites/gba/kuafu_geant.3fcd8666.js",
+   "s": 10433,
+   "h": "3fcd866663"
+  },
+  {
+   "p": "sprites/gba/kun.27bf28d4.js",
+   "s": 7189,
+   "h": "27bf28d473"
+  },
+  {
+   "p": "sprites/gba/lady_lan.4b2f6e3e.js",
+   "s": 1816,
+   "h": "4b2f6e3ee9"
+  },
+  {
+   "p": "sprites/gba/lang_jing.64218cb8.js",
+   "s": 4337,
+   "h": "64218cb897"
+  },
+  {
+   "p": "sprites/gba/lantern_old.40289dbc.js",
+   "s": 1752,
+   "h": "40289dbc61"
+  },
+  {
+   "p": "sprites/gba/lanternier_fa.85e0499b.js",
+   "s": 1168,
+   "h": "85e0499b81"
+  },
+  {
+   "p": "sprites/gba/lao_shuo_riz.581a8fdd.js",
+   "s": 1340,
+   "h": "581a8fdddf"
+  },
+  {
+   "p": "sprites/gba/lava_fish_bi.86fca14c.js",
+   "s": 1612,
+   "h": "86fca14cab"
+  },
+  {
+   "p": "sprites/gba/lei_gong.00248497.js",
+   "s": 6445,
+   "h": "0024849728"
+  },
+  {
+   "p": "sprites/gba/lei_shou.d1f34a65.js",
+   "s": 9297,
+   "h": "d1f34a65a1"
+  },
+  {
+   "p": "sprites/gba/lettre_sorcier.7fd94072.js",
+   "s": 17545,
+   "h": "7fd94072ed"
+  },
+  {
+   "p": "sprites/gba/level_guard.8605745a.js",
+   "s": 1848,
+   "h": "8605745a40"
+  },
+  {
+   "p": "sprites/gba/lighthouse_ming.460afe97.js",
+   "s": 1548,
+   "h": "460afe972e"
+  },
+  {
+   "p": "sprites/gba/linggui.d11d5837.js",
+   "s": 5993,
+   "h": "d11d583782"
+  },
+  {
+   "p": "sprites/gba/lingzhi_maudit.3c40fad1.js",
+   "s": 20589,
+   "h": "3c40fad1f6"
+  },
+  {
+   "p": "sprites/gba/lizard_zao.bd65165a.js",
+   "s": 1636,
+   "h": "bd65165a65"
+  },
+  {
+   "p": "sprites/gba/long.a198e7e8.js",
+   "s": 9645,
+   "h": "a198e7e886"
+  },
+  {
+   "p": "sprites/gba/longma.1934d1f6.js",
+   "s": 29737,
+   "h": "1934d1f654"
+  },
+  {
+   "p": "sprites/gba/longwang.2902b908.js",
+   "s": 9785,
+   "h": "2902b908fe"
+  },
+  {
+   "p": "sprites/gba/lost_pilgrim_ren.4a534b01.js",
+   "s": 1132,
+   "h": "4a534b01ea"
+  },
+  {
+   "p": "sprites/gba/loup_braise.e9a014b9.js",
+   "s": 19589,
+   "h": "e9a014b9e7"
+  },
+  {
+   "p": "sprites/gba/lu_ci_gui.e5b729e7.js",
+   "s": 19933,
+   "h": "e5b729e77c"
+  },
+  {
+   "p": "sprites/gba/lu_jing.1c197e81.js",
+   "s": 4657,
+   "h": "1c197e81a7"
+  },
+  {
+   "p": "sprites/gba/maitre_hong_gang.3b0bf45f.js",
+   "s": 29749,
+   "h": "3b0bf45f77"
+  },
+  {
+   "p": "sprites/gba/maitre_tie_bi.7b29f897.js",
+   "s": 24761,
+   "h": "7b29f8977c"
+  },
+  {
+   "p": "sprites/gba/maitresse_tong.a0fb259c.js",
+   "s": 28369,
+   "h": "a0fb259c98"
+  },
+  {
+   "p": "sprites/gba/mapmaker_ali.67b878a4.js",
+   "s": 1152,
+   "h": "67b878a441"
+  },
+  {
+   "p": "sprites/gba/mare_chagan.890b67e9.js",
+   "s": 1552,
+   "h": "890b67e9a3"
+  },
+  {
+   "p": "sprites/gba/matchmaker_hong.835c9a07.js",
+   "s": 1512,
+   "h": "835c9a0788"
+  },
+  {
+   "p": "sprites/gba/mei.d698e4ae.js",
+   "s": 3981,
+   "h": "d698e4aefb"
+  },
+  {
+   "p": "sprites/gba/meng_shou.1ee3ac37.js",
+   "s": 4337,
+   "h": "1ee3ac374f"
+  },
+  {
+   "p": "sprites/gba/mer_hamlet_dao.ba240b64.js",
+   "s": 1140,
+   "h": "ba240b64a9"
+  },
+  {
+   "p": "sprites/gba/mer_hamlet_lanfang.a08e4544.js",
+   "s": 1472,
+   "h": "a08e4544af"
+  },
+  {
+   "p": "sprites/gba/mer_road_ferryman_zhong.61463fa8.js",
+   "s": 1556,
+   "h": "61463fa8ae"
+  },
+  {
+   "p": "sprites/gba/mer_village_awen.a146debf.js",
+   "s": 1084,
+   "h": "a146debf74"
+  },
+  {
+   "p": "sprites/gba/mer_village_meiling.5b665fc8.js",
+   "s": 1248,
+   "h": "5b665fc89e"
+  },
+  {
+   "p": "sprites/gba/mer_village_rong.cff04329.js",
+   "s": 1800,
+   "h": "cff043298e"
+  },
+  {
+   "p": "sprites/gba/mer_village_yue.69e99af0.js",
+   "s": 1484,
+   "h": "69e99af081"
+  },
+  {
+   "p": "sprites/gba/merchant_bambous.0fe7630d.js",
+   "s": 1584,
+   "h": "0fe7630d57"
+  },
+  {
+   "p": "sprites/gba/merchant_fauves.758d32b5.js",
+   "s": 1452,
+   "h": "758d32b5f0"
+  },
+  {
+   "p": "sprites/gba/merchant_fleuve.74a6266c.js",
+   "s": 1080,
+   "h": "74a6266c75"
+  },
+  {
+   "p": "sprites/gba/merchant_fusang.668e5385.js",
+   "s": 1552,
+   "h": "668e538569"
+  },
+  {
+   "p": "sprites/gba/merchant_gobi.27a46af3.js",
+   "s": 1880,
+   "h": "27a46af3e9"
+  },
+  {
+   "p": "sprites/gba/merchant_lune.2ff6b6a9.js",
+   "s": 1292,
+   "h": "2ff6b6a9ac"
+  },
+  {
+   "p": "sprites/gba/merchant_ma.21575ef2.js",
+   "s": 6253,
+   "h": "21575ef269"
+  },
+  {
+   "p": "sprites/gba/merchant_mer.37bda8e2.js",
+   "s": 1304,
+   "h": "37bda8e268"
+  },
+  {
+   "p": "sprites/gba/merchant_rizieres.600a3c44.js",
+   "s": 1764,
+   "h": "600a3c44a2"
+  },
+  {
+   "p": "sprites/gba/merchant_tonnerre.e0b355c2.js",
+   "s": 1300,
+   "h": "e0b355c2f7"
+  },
+  {
+   "p": "sprites/gba/merchant_volcan.ec8df5fd.js",
+   "s": 1124,
+   "h": "ec8df5fd27"
+  },
+  {
+   "p": "sprites/gba/mermaid_jiaoren.cb506a58.js",
+   "s": 1316,
+   "h": "cb506a58bb"
+  },
+  {
+   "p": "sprites/gba/miller_gao.4676d4d8.js",
+   "s": 1716,
+   "h": "4676d4d824"
+  },
+  {
+   "p": "sprites/gba/mimique.fd09dda5.js",
+   "s": 68632,
+   "h": "fd09dda52c"
+  },
+  {
+   "p": "sprites/gba/miner_shan.afcf4c4a.js",
+   "s": 6225,
+   "h": "afcf4c4ae4"
+  },
+  {
+   "p": "sprites/gba/ming_niao.cb5b4a13.js",
+   "s": 8841,
+   "h": "cb5b4a1328"
+  },
+  {
+   "p": "sprites/gba/mirage_djinn.dfc2fdcb.js",
+   "s": 1928,
+   "h": "dfc2fdcbd0"
+  },
+  {
+   "p": "sprites/gba/monk_kong.5c40fe0c.js",
+   "s": 1252,
+   "h": "5c40fe0c11"
+  },
+  {
+   "p": "sprites/gba/monk_zhen.154952c3.js",
+   "s": 4377,
+   "h": "154952c3e7"
+  },
+  {
+   "p": "sprites/gba/monkey_ji.f50bcf4a.js",
+   "s": 1272,
+   "h": "f50bcf4a97"
+  },
+  {
+   "p": "sprites/gba/monkey_sun.1ae13bd4.js",
+   "s": 904,
+   "h": "1ae13bd425"
+  },
+  {
+   "p": "sprites/gba/moon_child.73e904be.js",
+   "s": 1240,
+   "h": "73e904be01"
+  },
+  {
+   "p": "sprites/gba/moon_child_lan.fe9e1060.js",
+   "s": 1280,
+   "h": "fe9e1060c4"
+  },
+  {
+   "p": "sprites/gba/moon_cook_gui.962e6cf7.js",
+   "s": 1720,
+   "h": "962e6cf726"
+  },
+  {
+   "p": "sprites/gba/moon_crow_wu.d25b018b.js",
+   "s": 808,
+   "h": "d25b018ba6"
+  },
+  {
+   "p": "sprites/gba/moon_dew_gatherer_lu.32f9554f.js",
+   "s": 1528,
+   "h": "32f9554f6d"
+  },
+  {
+   "p": "sprites/gba/moon_ferryman_yin.65d2e63d.js",
+   "s": 1840,
+   "h": "65d2e63da7"
+  },
+  {
+   "p": "sprites/gba/moon_fisher_tong.82e7e869.js",
+   "s": 1816,
+   "h": "82e7e8693f"
+  },
+  {
+   "p": "sprites/gba/moon_lamplighter_qiu.a915c849.js",
+   "s": 1624,
+   "h": "a915c84940"
+  },
+  {
+   "p": "sprites/gba/moon_rabbit_yutu.e77ddd94.js",
+   "s": 1324,
+   "h": "e77ddd9498"
+  },
+  {
+   "p": "sprites/gba/moon_stargazer_ming.f44070e7.js",
+   "s": 1048,
+   "h": "f44070e707"
+  },
+  {
+   "p": "sprites/gba/moon_taster_bao.1ae16e32.js",
+   "s": 2260,
+   "h": "1ae16e327a"
+  },
+  {
+   "p": "sprites/gba/mu_gui.537d9f22.js",
+   "s": 5561,
+   "h": "537d9f2206"
+  },
+  {
+   "p": "sprites/gba/mu_mei.0d728ef3.js",
+   "s": 4389,
+   "h": "0d728ef3ab"
+  },
+  {
+   "p": "sprites/gba/mud_imp_pit.7c7685bf.js",
+   "s": 1712,
+   "h": "7c7685bff1"
+  },
+  {
+   "p": "sprites/gba/net_mender_wei.095731e3.js",
+   "s": 1712,
+   "h": "095731e328"
+  },
+  {
+   "p": "sprites/gba/nian.fcc02adb.js",
+   "s": 10009,
+   "h": "fcc02adb49"
+  },
+  {
+   "p": "sprites/gba/noye_garde.2ed66de0.js",
+   "s": 26249,
+   "h": "2ed66de00c"
+  },
+  {
+   "p": "sprites/gba/nu_gui.6fe5a748.js",
+   "s": 6553,
+   "h": "6fe5a74810"
+  },
+  {
+   "p": "sprites/gba/nuba.1d2bc60d.js",
+   "s": 4429,
+   "h": "1d2bc60d25"
+  },
+  {
+   "p": "sprites/gba/nun_ying.db7af9fd.js",
+   "s": 1144,
+   "h": "db7af9fded"
+  },
+  {
+   "p": "sprites/gba/nuwa.9f730667.js",
+   "s": 7681,
+   "h": "9f730667ef"
+  },
+  {
+   "p": "sprites/gba/octo_ba.fb337de2.js",
+   "s": 1572,
+   "h": "fb337de272"
+  },
+  {
+   "p": "sprites/gba/old_nomad_bayan.e0d8aa22.js",
+   "s": 1556,
+   "h": "e0d8aa22aa"
+  },
+  {
+   "p": "sprites/gba/oracle_ahmad.c1b46605.js",
+   "s": 1196,
+   "h": "c1b46605f5"
+  },
+  {
+   "p": "sprites/gba/orphan_xiaoyu.6b341144.js",
+   "s": 1324,
+   "h": "6b34114485"
+  },
+  {
+   "p": "sprites/gba/osmanthus_woodcutter.cacff0ce.js",
+   "s": 1628,
+   "h": "cacff0ce04"
+  },
+  {
+   "p": "sprites/gba/oxherd_niulang.cf13415c.js",
+   "s": 1960,
+   "h": "cf13415c50"
+  },
+  {
+   "p": "sprites/gba/oyster_coque.e4fd3fa5.js",
+   "s": 1480,
+   "h": "e4fd3fa5c5"
+  },
+  {
+   "p": "sprites/gba/panda_baobao.96f9c2ac.js",
+   "s": 1388,
+   "h": "96f9c2acd1"
+  },
+  {
+   "p": "sprites/gba/panda_mimi.ed85480a.js",
+   "s": 1344,
+   "h": "ed85480abc"
+  },
+  {
+   "p": "sprites/gba/panlong.fbc129d6.js",
+   "s": 9181,
+   "h": "fbc129d6ac"
+  },
+  {
+   "p": "sprites/gba/paper_dragon_long.1b89475a.js",
+   "s": 1776,
+   "h": "1b89475ade"
+  },
+  {
+   "p": "sprites/gba/parley_sun2.b3f1e467.js",
+   "s": 1492,
+   "h": "b3f1e467c6"
+  },
+  {
+   "p": "sprites/gba/parley_sun3.0cf5c515.js",
+   "s": 1424,
+   "h": "0cf5c51551"
+  },
+  {
+   "p": "sprites/gba/parley_sun5.c709b2db.js",
+   "s": 1404,
+   "h": "c709b2dbf2"
+  },
+  {
+   "p": "sprites/gba/parley_sun6.c58f5daf.js",
+   "s": 1568,
+   "h": "c58f5daf56"
+  },
+  {
+   "p": "sprites/gba/parley_sun8.6e9e1c56.js",
+   "s": 1668,
+   "h": "6e9e1c56ba"
+  },
+  {
+   "p": "sprites/gba/parley_sun9.6b484982.js",
+   "s": 1548,
+   "h": "6b484982fb"
+  },
+  {
+   "p": "sprites/gba/pass_guard_kuang.fb342ee1.js",
+   "s": 1840,
+   "h": "fb342ee12f"
+  },
+  {
+   "p": "sprites/gba/pearl_diver_xi.7d10b67f.js",
+   "s": 1212,
+   "h": "7d10b67f0d"
+  },
+  {
+   "p": "sprites/gba/peng.80cfe4cf.js",
+   "s": 31453,
+   "h": "80cfe4cfcc"
+  },
+  {
+   "p": "sprites/gba/petit_gui.20132e14.js",
+   "s": 30789,
+   "h": "20132e147d"
+  },
+  {
+   "p": "sprites/gba/phoenix_chick.f8c996e7.js",
+   "s": 952,
+   "h": "f8c996e7c0"
+  },
+  {
+   "p": "sprites/gba/picker_tao.98d9df91.js",
+   "s": 1692,
+   "h": "98d9df9178"
+  },
+  {
+   "p": "sprites/gba/pigeon_zhao.7030f9f9.js",
+   "s": 1424,
+   "h": "7030f9f992"
+  },
+  {
+   "p": "sprites/gba/pilgrim_wuya.c4b48959.js",
+   "s": 1732,
+   "h": "c4b48959d0"
+  },
+  {
+   "p": "sprites/gba/ping.6684d808.js",
+   "s": 1392,
+   "h": "6684d808b4"
+  },
+  {
+   "p": "sprites/gba/pixiu.831690df.js",
+   "s": 5517,
+   "h": "831690df0e"
+  },
+  {
+   "p": "sprites/gba/pixiu_tresor.1f175465.js",
+   "s": 11017,
+   "h": "1f17546521"
+  },
+  {
+   "p": "sprites/gba/poet_bo.d0c86a26.js",
+   "s": 1296,
+   "h": "d0c86a2683"
+  },
+  {
+   "p": "sprites/gba/porter_san.69152e18.js",
+   "s": 1688,
+   "h": "69152e1889"
+  },
+  {
+   "p": "sprites/gba/potter_rui.9c447882.js",
+   "s": 1404,
+   "h": "9c44788244"
+  },
+  {
+   "p": "sprites/gba/pretresse_lunaire.41e5afa7.js",
+   "s": 19065,
+   "h": "41e5afa71e"
+  },
+  {
+   "p": "sprites/gba/priestess_mazu.68809e91.js",
+   "s": 1344,
+   "h": "68809e9149"
+  },
+  {
+   "p": "sprites/gba/priestess_yan.0f717999.js",
+   "s": 5993,
+   "h": "0f717999f2"
+  },
+  {
+   "p": "sprites/gba/pulao.c4f15810.js",
+   "s": 33961,
+   "h": "c4f1581097"
+  },
+  {
+   "p": "sprites/gba/pup_tuan.5842cfa9.js",
+   "s": 1356,
+   "h": "5842cfa932"
+  },
+  {
+   "p": "sprites/gba/qilin.4a3e8a0e.js",
+   "s": 10093,
+   "h": "4a3e8a0ebc"
+  },
+  {
+   "p": "sprites/gba/qing_she.b0a67edf.js",
+   "s": 4709,
+   "h": "b0a67edf43"
+  },
+  {
+   "p": "sprites/gba/qinglong.0f655532.js",
+   "s": 32797,
+   "h": "0f6555324b"
+  },
+  {
+   "p": "sprites/gba/qingniao.48680b70.js",
+   "s": 8709,
+   "h": "48680b700d"
+  },
+  {
+   "p": "sprites/gba/qiongqi.740933d0.js",
+   "s": 8553,
+   "h": "740933d040"
+  },
+  {
+   "p": "sprites/gba/rain_pu.0c79ca99.js",
+   "s": 1432,
+   "h": "0c79ca99c8"
+  },
+  {
+   "p": "sprites/gba/ren_yu.564ca698.js",
+   "s": 7869,
+   "h": "564ca6989e"
+  },
+  {
+   "p": "sprites/gba/rizieres_hamlet_weaver_zhu.3b7bc5e0.js",
+   "s": 1236,
+   "h": "3b7bc5e08c"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_kid_lan.6593120b.js",
+   "s": 1476,
+   "h": "6593120bd8"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_old_watch.a5dc01c1.js",
+   "s": 1484,
+   "h": "a5dc01c10a"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_porter.91a38a06.js",
+   "s": 1252,
+   "h": "91a38a06fc"
+  },
+  {
+   "p": "sprites/gba/rizieres_village_potter.07dd6202.js",
+   "s": 1448,
+   "h": "07dd62028a"
+  },
+  {
+   "p": "sprites/gba/rizieres_w_toad.190b6c2e.js",
+   "s": 21185,
+   "h": "190b6c2e41"
+  },
+  {
+   "p": "sprites/gba/rizieres_wild_old_dikekeeper.58bae65c.js",
+   "s": 1800,
+   "h": "58bae65cfb"
+  },
+  {
+   "p": "sprites/gba/rodman_gang.8c169218.js",
+   "s": 1772,
+   "h": "8c1692180d"
+  },
+  {
+   "p": "sprites/gba/root_elder.9ee9ba9d.js",
+   "s": 1464,
+   "h": "9ee9ba9d80"
+  },
+  {
+   "p": "sprites/gba/root_surveyor_gen.b2c0e26a.js",
+   "s": 1380,
+   "h": "b2c0e26abc"
+  },
+  {
+   "p": "sprites/gba/rug_seller_zeynep.ff48b927.js",
+   "s": 1292,
+   "h": "ff48b9278e"
+  },
+  {
+   "p": "sprites/gba/ruiniao.889e1e78.js",
+   "s": 8229,
+   "h": "889e1e781e"
+  },
+  {
+   "p": "sprites/gba/sailor_bao.40eba3c0.js",
+   "s": 1436,
+   "h": "40eba3c003"
+  },
+  {
+   "p": "sprites/gba/sailor_tai.d895287b.js",
+   "s": 1740,
+   "h": "d895287b88"
+  },
+  {
+   "p": "sprites/gba/salt_hu.33749be7.js",
+   "s": 1256,
+   "h": "33749be702"
+  },
+  {
+   "p": "sprites/gba/salt_jun.9f2bf5e6.js",
+   "s": 2088,
+   "h": "9f2bf5e699"
+  },
+  {
+   "p": "sprites/gba/sanglier_flammes.957c23ba.js",
+   "s": 14757,
+   "h": "957c23ba39"
+  },
+  {
+   "p": "sprites/gba/sanzu_wu.de66ca27.js",
+   "s": 9529,
+   "h": "de66ca2751"
+  },
+  {
+   "p": "sprites/gba/scarecrow_cao.820d446f.js",
+   "s": 1684,
+   "h": "820d446f53"
+  },
+  {
+   "p": "sprites/gba/scholar_dong.073258d7.js",
+   "s": 1364,
+   "h": "073258d7ed"
+  },
+  {
+   "p": "sprites/gba/scribe_ou.87543631.js",
+   "s": 1544,
+   "h": "8754363130"
+  },
+  {
+   "p": "sprites/gba/seigneur_jin_long.e66821f3.js",
+   "s": 29281,
+   "h": "e66821f3f5"
+  },
+  {
+   "p": "sprites/gba/sergeant_mo.6f68b748.js",
+   "s": 1876,
+   "h": "6f68b74860"
+  },
+  {
+   "p": "sprites/gba/shaman_ula.597589dd.js",
+   "s": 1260,
+   "h": "597589dd75"
+  },
+  {
+   "p": "sprites/gba/shan_gui.e20ca6f1.js",
+   "s": 4701,
+   "h": "e20ca6f14d"
+  },
+  {
+   "p": "sprites/gba/shan_shen.e5909791.js",
+   "s": 9357,
+   "h": "e590979182"
+  },
+  {
+   "p": "sprites/gba/shanxiao.29aa0fb0.js",
+   "s": 4157,
+   "h": "29aa0fb05f"
+  },
+  {
+   "p": "sprites/gba/she_jing.7173bc81.js",
+   "s": 5557,
+   "h": "7173bc81ef"
+  },
+  {
+   "p": "sprites/gba/she_shen.000d58b2.js",
+   "s": 5765,
+   "h": "000d58b217"
+  },
+  {
+   "p": "sprites/gba/shenlong.2c2b689b.js",
+   "s": 10549,
+   "h": "2c2b689b5e"
+  },
+  {
+   "p": "sprites/gba/shennong.e18e82ac.js",
+   "s": 10833,
+   "h": "e18e82acb7"
+  },
+  {
+   "p": "sprites/gba/shepherd_zi.5b4bc09e.js",
+   "s": 4713,
+   "h": "5b4bc09e63"
+  },
+  {
+   "p": "sprites/gba/shi_jing.526d2916.js",
+   "s": 6953,
+   "h": "526d29160f"
+  },
+  {
+   "p": "sprites/gba/shipwright_bing.09ee5214.js",
+   "s": 1660,
+   "h": "09ee5214a7"
+  },
+  {
+   "p": "sprites/gba/shouling.d0912aad.js",
+   "s": 3901,
+   "h": "d0912aad29"
+  },
+  {
+   "p": "sprites/gba/shu_jing.c71e2170.js",
+   "s": 5473,
+   "h": "c71e21703a"
+  },
+  {
+   "p": "sprites/gba/shui_gui.4c3190a0.js",
+   "s": 4497,
+   "h": "4c3190a025"
+  },
+  {
+   "p": "sprites/gba/shui_shen.87fa0277.js",
+   "s": 4357,
+   "h": "87fa02774a"
+  },
+  {
+   "p": "sprites/gba/shuihou.92c94793.js",
+   "s": 6929,
+   "h": "92c94793e3"
+  },
+  {
+   "p": "sprites/gba/shuimu_denglong.606cca08.js",
+   "s": 13917,
+   "h": "606cca0895"
+  },
+  {
+   "p": "sprites/gba/singe_demon.3b4ae802.js",
+   "s": 29741,
+   "h": "3b4ae80273"
+  },
+  {
+   "p": "sprites/gba/singer_hailing.ab7d3663.js",
+   "s": 1356,
+   "h": "ab7d36636d"
+  },
+  {
+   "p": "sprites/gba/sluicekeeper_rong.d3cdbc81.js",
+   "s": 2156,
+   "h": "d3cdbc8130"
+  },
+  {
+   "p": "sprites/gba/smith_tie.e663686b.js",
+   "s": 5025,
+   "h": "e663686b37"
+  },
+  {
+   "p": "sprites/gba/snake_qing.9bc623a0.js",
+   "s": 1356,
+   "h": "9bc623a0ba"
+  },
+  {
+   "p": "sprites/gba/soldat_terre_cuite.f30f1c08.js",
+   "s": 17021,
+   "h": "f30f1c08b5"
+  },
+  {
+   "p": "sprites/gba/sorcerer.a4e11c04.js",
+   "s": 48778,
+   "h": "a4e11c04ea"
+  },
+  {
+   "p": "sprites/gba/sorcerer_horse.19806017.js",
+   "s": 30209,
+   "h": "1980601745"
+  },
+  {
+   "p": "sprites/gba/spinner_yue.8710263f.js",
+   "s": 1592,
+   "h": "8710263fe3"
+  },
+  {
+   "p": "sprites/gba/stair_mason_shi.907d9827.js",
+   "s": 1572,
+   "h": "907d982739"
+  },
+  {
+   "p": "sprites/gba/star_child_xing.292695a2.js",
+   "s": 1468,
+   "h": "292695a2ac"
+  },
+  {
+   "p": "sprites/gba/stem_sprite.417caed0.js",
+   "s": 1172,
+   "h": "417caed0ca"
+  },
+  {
+   "p": "sprites/gba/stoker_ge.85356ac5.js",
+   "s": 2196,
+   "h": "85356ac50e"
+  },
+  {
+   "p": "sprites/gba/storyteller_yun.4ecb94e2.js",
+   "s": 1492,
+   "h": "4ecb94e234"
+  },
+  {
+   "p": "sprites/gba/suanni.d64d1903.js",
+   "s": 6421,
+   "h": "d64d1903b0"
+  },
+  {
+   "p": "sprites/gba/sun_1.351edf78.js",
+   "s": 15881,
+   "h": "351edf7865"
+  },
+  {
+   "p": "sprites/gba/sun_2.d24c6d20.js",
+   "s": 16013,
+   "h": "d24c6d20cb"
+  },
+  {
+   "p": "sprites/gba/sun_3.4899eeb8.js",
+   "s": 17209,
+   "h": "4899eeb8ea"
+  },
+  {
+   "p": "sprites/gba/sun_4.a21336dd.js",
+   "s": 23577,
+   "h": "a21336dd75"
+  },
+  {
+   "p": "sprites/gba/sun_5.6d0409f9.js",
+   "s": 18253,
+   "h": "6d0409f9fa"
+  },
+  {
+   "p": "sprites/gba/sun_6.533e39f6.js",
+   "s": 19037,
+   "h": "533e39f634"
+  },
+  {
+   "p": "sprites/gba/sun_7.ce0092fc.js",
+   "s": 20017,
+   "h": "ce0092fc06"
+  },
+  {
+   "p": "sprites/gba/sun_8.df9cb925.js",
+   "s": 19481,
+   "h": "df9cb92520"
+  },
+  {
+   "p": "sprites/gba/sun_9.19bef18a.js",
+   "s": 16597,
+   "h": "19bef18ad5"
+  },
+  {
+   "p": "sprites/gba/sun_ten.b46e50aa.js",
+   "s": 1364,
+   "h": "b46e50aac5"
+  },
+  {
+   "p": "sprites/gba/taotie_bete.a41e1f75.js",
+   "s": 33861,
+   "h": "a41e1f7509"
+  },
+  {
+   "p": "sprites/gba/taotie_bronze.63c9e4ae.js",
+   "s": 11205,
+   "h": "63c9e4ae20"
+  },
+  {
+   "p": "sprites/gba/taureau_braise.d0500c41.js",
+   "s": 26789,
+   "h": "d0500c4170"
+  },
+  {
+   "p": "sprites/gba/tea_zhuang.66d085c8.js",
+   "s": 1064,
+   "h": "66d085c8e5"
+  },
+  {
+   "p": "sprites/gba/teamaster_you.72c16973.js",
+   "s": 888,
+   "h": "72c1697386"
+  },
+  {
+   "p": "sprites/gba/templar.05dd17c9.js",
+   "s": 48282,
+   "h": "05dd17c950"
+  },
+  {
+   "p": "sprites/gba/templar_horse.65949180.js",
+   "s": 29889,
+   "h": "659491806c"
+  },
+  {
+   "p": "sprites/gba/tengshe.e26ce939.js",
+   "s": 9261,
+   "h": "e26ce93907"
+  },
+  {
+   "p": "sprites/gba/tiangou_lune.5aa6b317.js",
+   "s": 10697,
+   "h": "5aa6b31727"
+  },
+  {
+   "p": "sprites/gba/tiangou_noir.f79d035e.js",
+   "s": 4773,
+   "h": "f79d035e4b"
+  },
+  {
+   "p": "sprites/gba/tianlu.622c0716.js",
+   "s": 9413,
+   "h": "622c07163d"
+  },
+  {
+   "p": "sprites/gba/tianlu_gardien.dc282e27.js",
+   "s": 9925,
+   "h": "dc282e276b"
+  },
+  {
+   "p": "sprites/gba/tianma.18d75a12.js",
+   "s": 28557,
+   "h": "18d75a12db"
+  },
+  {
+   "p": "sprites/gba/tigre_embrase.dc7bef55.js",
+   "s": 21789,
+   "h": "dc7bef55ca"
+  },
+  {
+   "p": "sprites/gba/toad_chan.90eb629a.js",
+   "s": 1844,
+   "h": "90eb629a8d"
+  },
+  {
+   "p": "sprites/gba/tonnerre_hamlet_lichen_gatherer.b382bce2.js",
+   "s": 1132,
+   "h": "b382bce21c"
+  },
+  {
+   "p": "sprites/gba/tonnerre_road_pilgrim.fba90ba6.js",
+   "s": 1820,
+   "h": "fba90ba637"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_apprentice.95e300cd.js",
+   "s": 1896,
+   "h": "95e300cde0"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_baker.73d0c402.js",
+   "s": 1300,
+   "h": "73d0c40225"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_counter.a50c760b.js",
+   "s": 1348,
+   "h": "a50c760b2e"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_roper.7b295d8d.js",
+   "s": 1704,
+   "h": "7b295d8d33"
+  },
+  {
+   "p": "sprites/gba/tonnerre_village_watchman.26a9a332.js",
+   "s": 1632,
+   "h": "26a9a33255"
+  },
+  {
+   "p": "sprites/gba/tonnerre_wild_rope_keeper.fc55077d.js",
+   "s": 1280,
+   "h": "fc55077d46"
+  },
+  {
+   "p": "sprites/gba/tortue_dragon.6dfb9a2e.js",
+   "s": 28593,
+   "h": "6dfb9a2ec8"
+  },
+  {
+   "p": "sprites/gba/traveler_hui.a79be53c.js",
+   "s": 1480,
+   "h": "a79be53c9e"
+  },
+  {
+   "p": "sprites/gba/twins_mu.e227e0d4.js",
+   "s": 1944,
+   "h": "e227e0d4f9"
+  },
+  {
+   "p": "sprites/gba/volcan_hamlet_steam_keeper.760f1c8a.js",
+   "s": 1824,
+   "h": "760f1c8af6"
+  },
+  {
+   "p": "sprites/gba/volcan_road_prospector.bf3192a8.js",
+   "s": 2096,
+   "h": "bf3192a890"
+  },
+  {
+   "p": "sprites/gba/volcan_village_bellows_man.6e39a11a.js",
+   "s": 1684,
+   "h": "6e39a11aaf"
+  },
+  {
+   "p": "sprites/gba/volcan_village_ember_boy.21cf2e53.js",
+   "s": 1308,
+   "h": "21cf2e53cb"
+  },
+  {
+   "p": "sprites/gba/volcan_village_lantern_maker.5f51474a.js",
+   "s": 1928,
+   "h": "5f51474a2a"
+  },
+  {
+   "p": "sprites/gba/volcan_village_surveyor.4693c726.js",
+   "s": 1684,
+   "h": "4693c72664"
+  },
+  {
+   "p": "sprites/gba/volcan_village_washer.0cf74b77.js",
+   "s": 1848,
+   "h": "0cf74b7791"
+  },
+  {
+   "p": "sprites/gba/volcan_wild_ash_sweeper.77475950.js",
+   "s": 1276,
+   "h": "77475950e9"
+  },
+  {
+   "p": "sprites/gba/wangliang.b88a8336.js",
+   "s": 4869,
+   "h": "b88a8336b2"
+  },
+  {
+   "p": "sprites/gba/wangxiang.8a2afa41.js",
+   "s": 3133,
+   "h": "8a2afa41ec"
+  },
+  {
+   "p": "sprites/gba/warrior.05dd17c9.js",
+   "s": 48282,
+   "h": "05dd17c950"
+  },
+  {
+   "p": "sprites/gba/weaver_mei.e17f1a6a.js",
+   "s": 5417,
+   "h": "e17f1a6ace"
+  },
+  {
+   "p": "sprites/gba/weaver_zhinu.f91e80f8.js",
+   "s": 1648,
+   "h": "f91e80f8fc"
+  },
+  {
+   "p": "sprites/gba/well_digger_omar.bf2ad997.js",
+   "s": 1432,
+   "h": "bf2ad99718"
+  },
+  {
+   "p": "sprites/gba/wen_shen.64d58355.js",
+   "s": 5573,
+   "h": "64d583557c"
+  },
+  {
+   "p": "sprites/gba/whale_kun.72bcc7bd.js",
+   "s": 892,
+   "h": "72bcc7bd8f"
+  },
+  {
+   "p": "sprites/gba/widow_cai.7bd6b669.js",
+   "s": 1556,
+   "h": "7bd6b6696b"
+  },
+  {
+   "p": "sprites/gba/wind_piper_fei.7f309c97.js",
+   "s": 1480,
+   "h": "7f309c9762"
+  },
+  {
+   "p": "sprites/gba/wlm_ancien.ea493451.js",
+   "s": 28721,
+   "h": "ea49345152"
+  },
+  {
+   "p": "sprites/gba/wlm_artisan.74b5083a.js",
+   "s": 17537,
+   "h": "74b5083af8"
+  },
+  {
+   "p": "sprites/gba/wlm_cuisinier.6cfe3e14.js",
+   "s": 17121,
+   "h": "6cfe3e1448"
+  },
+  {
+   "p": "sprites/gba/wlm_enfants.489a5436.js",
+   "s": 22901,
+   "h": "489a543607"
+  },
+  {
+   "p": "sprites/gba/wlm_esprit_givre.82713a81.js",
+   "s": 26253,
+   "h": "82713a814d"
+  },
+  {
+   "p": "sprites/gba/wlm_esprit_village.09023950.js",
+   "s": 24341,
+   "h": "0902395007"
+  },
+  {
+   "p": "sprites/gba/wlm_famille.2ea48bce.js",
+   "s": 39853,
+   "h": "2ea48bce8b"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_flamme.e7e74f12.js",
+   "s": 24785,
+   "h": "e7e74f121c"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_glace.f5e2aba7.js",
+   "s": 23857,
+   "h": "f5e2aba7c1"
+  },
+  {
+   "p": "sprites/gba/wlm_gardien_sanctuaire.e98cf8d7.js",
+   "s": 20481,
+   "h": "e98cf8d7d6"
+  },
+  {
+   "p": "sprites/gba/wlm_oiseau_givre.ede8bec7.js",
+   "s": 37321,
+   "h": "ede8bec7be"
+  },
+  {
+   "p": "sprites/gba/wlm_pelerin.aa23ce8f.js",
+   "s": 21585,
+   "h": "aa23ce8fd7"
+  },
+  {
+   "p": "sprites/gba/wlm_renard_neiges.c500944e.js",
+   "s": 24933,
+   "h": "c500944eed"
+  },
+  {
+   "p": "sprites/gba/wolf_pup_baatar.f6482063.js",
+   "s": 1528,
+   "h": "f64820631c"
+  },
+  {
+   "p": "sprites/gba/wu_shou.426e084c.js",
+   "s": 4821,
+   "h": "426e084cba"
+  },
+  {
+   "p": "sprites/gba/xiangliu.a455f3c3.js",
+   "s": 9205,
+   "h": "a455f3c39b"
+  },
+  {
+   "p": "sprites/gba/xiaobao.5bf01207.js",
+   "s": 1688,
+   "h": "5bf01207d0"
+  },
+  {
+   "p": "sprites/gba/xiezhi.79f7a4b0.js",
+   "s": 10977,
+   "h": "79f7a4b077"
+  },
+  {
+   "p": "sprites/gba/xingtian.9be34e69.js",
+   "s": 11001,
+   "h": "9be34e6907"
+  },
+  {
+   "p": "sprites/gba/xiong_jing.03794f2b.js",
+   "s": 5625,
+   "h": "03794f2bea"
+  },
+  {
+   "p": "sprites/gba/xiushe.d5190810.js",
+   "s": 11533,
+   "h": "d5190810e2"
+  },
+  {
+   "p": "sprites/gba/xuan_gui.3395f965.js",
+   "s": 4013,
+   "h": "3395f96562"
+  },
+  {
+   "p": "sprites/gba/xuan_she.a3fadd69.js",
+   "s": 6269,
+   "h": "a3fadd69f4"
+  },
+  {
+   "p": "sprites/gba/xuanwu.7f282aaa.js",
+   "s": 8581,
+   "h": "7f282aaa2a"
+  },
+  {
+   "p": "sprites/gba/xue_niao.eaa3d937.js",
+   "s": 9521,
+   "h": "eaa3d9375b"
+  },
+  {
+   "p": "sprites/gba/yayu.7ffdecff.js",
+   "s": 9625,
+   "h": "7ffdecff88"
+  },
+  {
+   "p": "sprites/gba/yazi.0b61ec3c.js",
+   "s": 6829,
+   "h": "0b61ec3ca8"
+  },
+  {
+   "p": "sprites/gba/yinglong.182e4097.js",
+   "s": 5529,
+   "h": "182e4097a6"
+  },
+  {
+   "p": "sprites/gba/yingyu.556637b6.js",
+   "s": 3325,
+   "h": "556637b66c"
+  },
+  {
+   "p": "sprites/gba/yingzhao_ailee.c5ed53e0.js",
+   "s": 40881,
+   "h": "c5ed53e000"
+  },
+  {
+   "p": "sprites/gba/yingzhao_cheval.4fa02bda.js",
+   "s": 10457,
+   "h": "4fa02bda7c"
+  },
+  {
+   "p": "sprites/gba/young_miner_bo.c3429ee0.js",
+   "s": 1840,
+   "h": "c3429ee042"
+  },
+  {
+   "p": "sprites/gba/young_monk_zhi.0d25a01e.js",
+   "s": 960,
+   "h": "0d25a01e31"
+  },
+  {
+   "p": "sprites/gba/yu_shi.292394f7.js",
+   "s": 8225,
+   "h": "292394f764"
+  },
+  {
+   "p": "sprites/gba/yu_spirit.b7c65f73.js",
+   "s": 1568,
+   "h": "b7c65f735e"
+  },
+  {
+   "p": "sprites/gba/yuan_gui.4d4246b5.js",
+   "s": 7901,
+   "h": "4d4246b577"
+  },
+  {
+   "p": "sprites/gba/yun_shou.e8081eff.js",
+   "s": 11157,
+   "h": "e8081effe9"
+  },
+  {
+   "p": "sprites/gba/yutu.55d02cb7.js",
+   "s": 23709,
+   "h": "55d02cb7b9"
+  },
+  {
+   "p": "sprites/gba/zaochi.2f9e9fcc.js",
+   "s": 9757,
+   "h": "2f9e9fcce0"
+  },
+  {
+   "p": "sprites/gba/zhulong_serpent.d651871a.js",
+   "s": 4537,
+   "h": "d651871a0b"
+  },
+  {
+   "p": "sprites/gba/zhulong_torche.d65454c6.js",
+   "s": 7977,
+   "h": "d65454c6b9"
+  },
+  {
+   "p": "sprites/gba/zhuque.b380811f.js",
+   "s": 9629,
+   "h": "b380811ff3"
+  },
+  {
+   "p": "sprites/gba/zouyu.7d000db0.js",
+   "s": 39289,
+   "h": "7d000db050"
+  },
+  {
+   "p": "sprites/gba/zu_xian.95a7c938.js",
+   "s": 4681,
+   "h": "95a7c938f3"
+  },
+  {
+   "p": "sprites/ultimates/biome_bambous-seq.png",
+   "s": 196659,
+   "h": "15c3b4688c"
+  },
+  {
+   "p": "sprites/ultimates/biome_fauves-seq.png",
+   "s": 188041,
+   "h": "46b6579d6b"
+  },
+  {
+   "p": "sprites/ultimates/biome_fleuve-seq.png",
+   "s": 176004,
+   "h": "728155d4ff"
+  },
+  {
+   "p": "sprites/ultimates/biome_fusang-seq.png",
+   "s": 187674,
+   "h": "a74f74e387"
+  },
+  {
+   "p": "sprites/ultimates/biome_gobi-seq.png",
+   "s": 172295,
+   "h": "c9cc15c071"
+  },
+  {
+   "p": "sprites/ultimates/biome_lune-seq.png",
+   "s": 182072,
+   "h": "7bdf6015a0"
+  },
+  {
+   "p": "sprites/ultimates/biome_mer-seq.png",
+   "s": 188709,
+   "h": "a36d22e86d"
+  },
+  {
+   "p": "sprites/ultimates/biome_rizieres-seq.png",
+   "s": 181297,
+   "h": "bf1eb25cd2"
+  },
+  {
+   "p": "sprites/ultimates/biome_tonnerre-seq.png",
+   "s": 187274,
+   "h": "bafef8d290"
+  },
+  {
+   "p": "sprites/ultimates/biome_volcan-seq.png",
+   "s": 205692,
+   "h": "5cb614902a"
+  },
+  {
+   "p": "sprites/ultimates/biome_wandering_souls-seq.png",
+   "s": 199645,
+   "h": "603140cca8"
+  },
+  {
+   "p": "sprites/ultimates/biome_winter_lantern_mountain-seq.png",
+   "s": 178126,
+   "h": "34aa8d12af"
+  },
+  {
+   "p": "sprites/ultimates/combatend_defeat-seq.png",
+   "s": 298472,
+   "h": "2624a2f623"
+  },
+  {
+   "p": "sprites/ultimates/combatend_victory-seq.png",
+   "s": 237087,
+   "h": "f1efdc0946"
+  },
+  {
+   "p": "sprites/ultimates/index.json",
+   "s": 6965,
+   "h": "b0d4153193"
+  },
+  {
+   "p": "sprites/ultimates/ultimateAzureDragon-seq.png",
+   "s": 1732742,
+   "h": "adc54b66d3"
+  },
+  {
+   "p": "sprites/ultimates/ultimateBlackTortoise-seq.png",
+   "s": 1481357,
+   "h": "0eb91ac7a1"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-1.png",
+   "s": 552413,
+   "h": "1783c49d0a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-2.png",
+   "s": 277936,
+   "h": "d650e70012"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-3.png",
+   "s": 481689,
+   "h": "8bcc0ecca9"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-4.png",
+   "s": 510481,
+   "h": "13579e6fec"
+  },
+  {
+   "p": "sprites/ultimates/ultimateEternalBastion-seq.png",
+   "s": 1396088,
+   "h": "7302cf27d8"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-1.png",
+   "s": 476767,
+   "h": "b38883ad49"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-2.png",
+   "s": 550764,
+   "h": "dbb755bd26"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-3.png",
+   "s": 336822,
+   "h": "cc70691e79"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-4.png",
+   "s": 602745,
+   "h": "8824b6427a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateFiveElements-seq.png",
+   "s": 1636035,
+   "h": "976655b050"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-1.png",
+   "s": 634089,
+   "h": "700a0fecad"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-2.png",
+   "s": 663599,
+   "h": "ba1c0af80d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-3.png",
+   "s": 407874,
+   "h": "0fcbe24459"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-4.png",
+   "s": 479343,
+   "h": "c7738f9709"
+  },
+  {
+   "p": "sprites/ultimates/ultimateHeavenlyThunder-seq.png",
+   "s": 1531952,
+   "h": "045ea6be56"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-1.png",
+   "s": 556277,
+   "h": "363d8c7281"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-2.png",
+   "s": 630035,
+   "h": "95cc9a3be5"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-3.png",
+   "s": 554630,
+   "h": "31400fbd79"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-4.png",
+   "s": 646334,
+   "h": "896c4c105f"
+  },
+  {
+   "p": "sprites/ultimates/ultimateImperialDragon-seq.png",
+   "s": 1688682,
+   "h": "b020cfe1ed"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-1.png",
+   "s": 717218,
+   "h": "21e53dda0f"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-2.png",
+   "s": 649396,
+   "h": "360900d83d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-3.png",
+   "s": 606352,
+   "h": "da60b2d4f5"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-4.png",
+   "s": 393087,
+   "h": "0823e4d953"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSkyWolf-seq.png",
+   "s": 1390074,
+   "h": "830e512e32"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-1.png",
+   "s": 341137,
+   "h": "60434aa6f6"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-2.png",
+   "s": 494585,
+   "h": "86395ba8da"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-3.png",
+   "s": 408132,
+   "h": "3fc9171280"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-4.png",
+   "s": 474071,
+   "h": "d6c19c1b8d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateSunPiercer-seq.png",
+   "s": 1688702,
+   "h": "8e64fb4974"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-1.png",
+   "s": 506240,
+   "h": "7b83c97e3b"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-2.png",
+   "s": 535964,
+   "h": "8088864e3d"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-3.png",
+   "s": 518281,
+   "h": "60f08fc9c3"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-4.png",
+   "s": 456988,
+   "h": "b89ef789b9"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandArrows-seq.png",
+   "s": 1941704,
+   "h": "af339889e3"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-1.png",
+   "s": 451646,
+   "h": "f1a601cd34"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-2.png",
+   "s": 588599,
+   "h": "ab05d1b69a"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-3.png",
+   "s": 559989,
+   "h": "b2e38d0156"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-4.png",
+   "s": 434463,
+   "h": "4c905bf173"
+  },
+  {
+   "p": "sprites/ultimates/ultimateThousandRiders-seq.png",
+   "s": 1692632,
+   "h": "7ba00cabaa"
+  },
+  {
+   "p": "sprites/ultimates/ultimateVermilionBird-seq.png",
+   "s": 1562947,
+   "h": "4bf5e5366b"
+  },
+  {
+   "p": "sprites/ultimates/ultimateWhiteTiger-seq.png",
+   "s": 1444145,
+   "h": "3f51ef06d8"
+  },
+  {
+   "p": "sprites/spellfx/azureDragonRoar.png",
+   "s": 98163,
+   "h": "a3cc97e625"
+  },
+  {
+   "p": "sprites/spellfx/barrier.png",
+   "s": 3443,
+   "h": "a02a34bbe7"
+  },
+  {
+   "p": "sprites/spellfx/berserkerRage.png",
+   "s": 8252,
+   "h": "e32cfaa30a"
+  },
+  {
+   "p": "sprites/spellfx/bladeWinds.png",
+   "s": 22356,
+   "h": "acf2dbe7cd"
+  },
+  {
+   "p": "sprites/spellfx/blizzard.png",
+   "s": 25442,
+   "h": "c11e510af3"
+  },
+  {
+   "p": "sprites/spellfx/bloodlust.png",
+   "s": 13600,
+   "h": "86a4e116fc"
+  },
+  {
+   "p": "sprites/spellfx/bolt.png",
+   "s": 6482,
+   "h": "56d7e9f971"
+  },
+  {
+   "p": "sprites/spellfx/brasierSeals.png",
+   "s": 14467,
+   "h": "9515cc26e2"
+  },
+  {
+   "p": "sprites/spellfx/brokenBlades.png",
+   "s": 7607,
+   "h": "19b1473cac"
+  },
+  {
+   "p": "sprites/spellfx/burningTide.png",
+   "s": 17164,
+   "h": "5a6939f1b9"
+  },
+  {
+   "p": "sprites/spellfx/chasm.png",
+   "s": 9759,
+   "h": "caf01ffa14"
+  },
+  {
+   "p": "sprites/spellfx/cleave.png",
+   "s": 14889,
+   "h": "3bb6dd7ff9"
+  },
+  {
+   "p": "sprites/spellfx/commandAura.png",
+   "s": 4944,
+   "h": "611eb515c9"
+  },
+  {
+   "p": "sprites/spellfx/confuse.png",
+   "s": 10438,
+   "h": "a7965de0ce"
+  },
+  {
+   "p": "sprites/spellfx/counterAttack.png",
+   "s": 4700,
+   "h": "bd570c4266"
+  },
+  {
+   "p": "sprites/spellfx/crimsonPurge.png",
+   "s": 9550,
+   "h": "f6e21f5cba"
+  },
+  {
+   "p": "sprites/spellfx/darkChannels.png",
+   "s": 5140,
+   "h": "4cbb9b1a63"
+  },
+  {
+   "p": "sprites/spellfx/deathbringer.png",
+   "s": 15452,
+   "h": "c869c2493d"
+  },
+  {
+   "p": "sprites/spellfx/defensiveWall.png",
+   "s": 7451,
+   "h": "2babd33c4d"
+  },
+  {
+   "p": "sprites/spellfx/divinePower.png",
+   "s": 3435,
+   "h": "2b81ab3aed"
+  },
+  {
+   "p": "sprites/spellfx/dragonBreath.png",
+   "s": 17024,
+   "h": "879d3ff40b"
+  },
+  {
+   "p": "sprites/spellfx/dragonCross.png",
+   "s": 78598,
+   "h": "a618c0daee"
+  },
+  {
+   "p": "sprites/spellfx/dualShot.png",
+   "s": 84184,
+   "h": "3f4d8a6956"
+  },
+  {
+   "p": "sprites/spellfx/emberGoldCross.png",
+   "s": 7391,
+   "h": "a0e69f893f"
+  },
+  {
+   "p": "sprites/spellfx/emberScythe.png",
+   "s": 4155,
+   "h": "8f23d4100b"
+  },
+  {
+   "p": "sprites/spellfx/emberStorm.png",
+   "s": 31890,
+   "h": "3cd7d96a57"
+  },
+  {
+   "p": "sprites/spellfx/enrage.png",
+   "s": 4665,
+   "h": "c8a57128a1"
+  },
+  {
+   "p": "sprites/spellfx/fingerOfDeath.png",
+   "s": 4356,
+   "h": "e652ad702b"
+  },
+  {
+   "p": "sprites/spellfx/fireball.png",
+   "s": 4861,
+   "h": "8ea8441144"
+  },
+  {
+   "p": "sprites/spellfx/fiveElementsSeal.png",
+   "s": 309762,
+   "h": "d973566dac"
+  },
+  {
+   "p": "sprites/spellfx/fiveHarmony.png",
+   "s": 53530,
+   "h": "e1ab575ab2"
+  },
+  {
+   "p": "sprites/spellfx/flameBolts.png",
+   "s": 3849,
+   "h": "8b75b4d5e8"
+  },
+  {
+   "p": "sprites/spellfx/flameSphere.png",
+   "s": 3178,
+   "h": "cfe52c5bdd"
+  },
+  {
+   "p": "sprites/spellfx/flameStrike.png",
+   "s": 18584,
+   "h": "ee132ea390"
+  },
+  {
+   "p": "sprites/spellfx/flameblade.png",
+   "s": 2253,
+   "h": "8e7dda043f"
+  },
+  {
+   "p": "sprites/spellfx/focus.png",
+   "s": 3171,
+   "h": "e6a5d3845c"
+  },
+  {
+   "p": "sprites/spellfx/frostCleave.png",
+   "s": 3832,
+   "h": "23a0aa351f"
+  },
+  {
+   "p": "sprites/spellfx/frostLightning.png",
+   "s": 35333,
+   "h": "968876368d"
+  },
+  {
+   "p": "sprites/spellfx/frostNova.png",
+   "s": 19760,
+   "h": "cf58996fbe"
+  },
+  {
+   "p": "sprites/spellfx/galeSlash.png",
+   "s": 2489,
+   "h": "f95c6a9eb3"
+  },
+  {
+   "p": "sprites/spellfx/goldenDew.png",
+   "s": 7246,
+   "h": "3ae908fc2b"
+  },
+  {
+   "p": "sprites/spellfx/greatHeal.png",
+   "s": 12129,
+   "h": "4712903fdf"
+  },
+  {
+   "p": "sprites/spellfx/handOfIce.png",
+   "s": 4970,
+   "h": "a4671fa604"
+  },
+  {
+   "p": "sprites/spellfx/heal.png",
+   "s": 4271,
+   "h": "00c63259a2"
+  },
+  {
+   "p": "sprites/spellfx/heavenTribulationEnd.png",
+   "s": 182966,
+   "h": "ccbef8dfb6"
+  },
+  {
+   "p": "sprites/spellfx/heavenlyRiverFlood.png",
+   "s": 181242,
+   "h": "4c2de1720d"
+  },
+  {
+   "p": "sprites/spellfx/heavensWrath.png",
+   "s": 11062,
+   "h": "917e384299"
+  },
+  {
+   "p": "sprites/spellfx/holdTheLine.png",
+   "s": 11049,
+   "h": "38d3691469"
+  },
+  {
+   "p": "sprites/spellfx/ice.png",
+   "s": 6676,
+   "h": "620b3c31e4"
+  },
+  {
+   "p": "sprites/spellfx/iceAge.png",
+   "s": 140162,
+   "h": "cb78cc277a"
+  },
+  {
+   "p": "sprites/spellfx/iceShield.png",
+   "s": 4908,
+   "h": "0f6558ea30"
+  },
+  {
+   "p": "sprites/spellfx/iceStorm.png",
+   "s": 22295,
+   "h": "e3d738d5f9"
+  },
+  {
+   "p": "sprites/spellfx/immortalPeach.png",
+   "s": 66495,
+   "h": "8fb3e4400a"
+  },
+  {
+   "p": "sprites/spellfx/index.json",
+   "s": 14125,
+   "h": "22c5a9430b"
+  },
+  {
+   "p": "sprites/spellfx/inferno.png",
+   "s": 39059,
+   "h": "898a358b6f"
+  },
+  {
+   "p": "sprites/spellfx/intimidate.png",
+   "s": 6050,
+   "h": "38e36d0a7f"
+  },
+  {
+   "p": "sprites/spellfx/jadeBreath.png",
+   "s": 19226,
+   "h": "263b27a57f"
+  },
+  {
+   "p": "sprites/spellfx/jadeCurtain.png",
+   "s": 13311,
+   "h": "0e11a9caa3"
+  },
+  {
+   "p": "sprites/spellfx/jadeEmperorDecree.png",
+   "s": 148524,
+   "h": "5ec43669f3"
+  },
+  {
+   "p": "sprites/spellfx/jadePurge.png",
+   "s": 15826,
+   "h": "ff6f886db7"
+  },
+  {
+   "p": "sprites/spellfx/jadeSpringBlessing.png",
+   "s": 65227,
+   "h": "ed33b8a327"
+  },
+  {
+   "p": "sprites/spellfx/knightCounter.png",
+   "s": 8230,
+   "h": "3797a2a649"
+  },
+  {
+   "p": "sprites/spellfx/kunlunMountainFall.png",
+   "s": 143904,
+   "h": "7a242e9f92"
+  },
+  {
+   "p": "sprites/spellfx/legionForge.png",
+   "s": 18565,
+   "h": "9ab7adfe4c"
+  },
+  {
+   "p": "sprites/spellfx/lightningStorm.png",
+   "s": 37283,
+   "h": "f252056a93"
+  },
+  {
+   "p": "sprites/spellfx/lotusPoison.png",
+   "s": 15333,
+   "h": "c99b151492"
+  },
+  {
+   "p": "sprites/spellfx/mageStrike.png",
+   "s": 3520,
+   "h": "76b939d59e"
+  },
+  {
+   "p": "sprites/spellfx/manaBlast.png",
+   "s": 27150,
+   "h": "471771b1b3"
+  },
+  {
+   "p": "sprites/spellfx/manaSiphon.png",
+   "s": 4223,
+   "h": "c2b8a50b85"
+  },
+  {
+   "p": "sprites/spellfx/meteor.png",
+   "s": 42388,
+   "h": "e959a3a663"
+  },
+  {
+   "p": "sprites/spellfx/miracle.png",
+   "s": 24037,
+   "h": "dff70e4d5a"
+  },
+  {
+   "p": "sprites/spellfx/mirrorShield.png",
+   "s": 5447,
+   "h": "7300c97404"
+  },
+  {
+   "p": "sprites/spellfx/nineSunsFall.png",
+   "s": 93930,
+   "h": "efec0297fe"
+  },
+  {
+   "p": "sprites/spellfx/pangusAxe.png",
+   "s": 88796,
+   "h": "9f4151cb5b"
+  },
+  {
+   "p": "sprites/spellfx/poisonBlade.png",
+   "s": 1770,
+   "h": "54030a6826"
+  },
+  {
+   "p": "sprites/spellfx/purpleRazor.png",
+   "s": 16678,
+   "h": "f78e885eea"
+  },
+  {
+   "p": "sprites/spellfx/queenMotherElixir.png",
+   "s": 98109,
+   "h": "90e68f96ab"
+  },
+  {
+   "p": "sprites/spellfx/reinforce.png",
+   "s": 2444,
+   "h": "58c5d5cfe3"
+  },
+  {
+   "p": "sprites/spellfx/revenant.png",
+   "s": 57313,
+   "h": "5091c4e1da"
+  },
+  {
+   "p": "sprites/spellfx/revitalize.png",
+   "s": 19620,
+   "h": "73adb119fe"
+  },
+  {
+   "p": "sprites/spellfx/rush.png",
+   "s": 2257,
+   "h": "4c96c8f88e"
+  },
+  {
+   "p": "sprites/spellfx/seasonsPurge.png",
+   "s": 26174,
+   "h": "65b83dc3c9"
+  },
+  {
+   "p": "sprites/spellfx/shadowCurse.png",
+   "s": 3411,
+   "h": "97e08feb84"
+  },
+  {
+   "p": "sprites/spellfx/shadowFlame.png",
+   "s": 6892,
+   "h": "7cca0a7b36"
+  },
+  {
+   "p": "sprites/spellfx/shadowPurge.png",
+   "s": 14655,
+   "h": "712c447673"
+  },
+  {
+   "p": "sprites/spellfx/shadowStep.png",
+   "s": 2082,
+   "h": "7ff71688e5"
+  },
+  {
+   "p": "sprites/spellfx/shadowStrike.png",
+   "s": 5459,
+   "h": "629621a610"
+  },
+  {
+   "p": "sprites/spellfx/sharpenedBlade.png",
+   "s": 2998,
+   "h": "df974cd968"
+  },
+  {
+   "p": "sprites/spellfx/shieldBash.png",
+   "s": 3729,
+   "h": "f18ec25e34"
+  },
+  {
+   "p": "sprites/spellfx/singingBlades.png",
+   "s": 7422,
+   "h": "675b947d55"
+  },
+  {
+   "p": "sprites/spellfx/sneakAttack.png",
+   "s": 2087,
+   "h": "be9b764298"
+  },
+  {
+   "p": "sprites/spellfx/springRain.png",
+   "s": 17129,
+   "h": "0df2b98e5b"
+  },
+  {
+   "p": "sprites/spellfx/starRain.png",
+   "s": 36657,
+   "h": "4e4d6a715d"
+  },
+  {
+   "p": "sprites/spellfx/stealth.png",
+   "s": 6627,
+   "h": "7963d9b9ed"
+  },
+  {
+   "p": "sprites/spellfx/steelHarvest.png",
+   "s": 15236,
+   "h": "9a378557b1"
+  },
+  {
+   "p": "sprites/spellfx/steelMoult.png",
+   "s": 21609,
+   "h": "98c9034247"
+  },
+  {
+   "p": "sprites/spellfx/stoneskin.png",
+   "s": 4862,
+   "h": "06449f6c80"
+  },
+  {
+   "p": "sprites/spellfx/stormOfGods.png",
+   "s": 110035,
+   "h": "2143741e95"
+  },
+  {
+   "p": "sprites/spellfx/stormPurge.png",
+   "s": 11452,
+   "h": "245411db63"
+  },
+  {
+   "p": "sprites/spellfx/strength.png",
+   "s": 6188,
+   "h": "6ce8444608"
+  },
+  {
+   "p": "sprites/spellfx/summonTempest.png",
+   "s": 18098,
+   "h": "00fe97a9b7"
+  },
+  {
+   "p": "sprites/spellfx/swiftStrike.png",
+   "s": 9273,
+   "h": "2d74130f23"
+  },
+  {
+   "p": "sprites/spellfx/threeDragons.png",
+   "s": 76481,
+   "h": "2321946e7b"
+  },
+  {
+   "p": "sprites/spellfx/throwAxe.png",
+   "s": 15448,
+   "h": "80de7e635c"
+  },
+  {
+   "p": "sprites/spellfx/thunderBolt.png",
+   "s": 16829,
+   "h": "40932a69ea"
+  },
+  {
+   "p": "sprites/spellfx/thunderDukeWrath.png",
+   "s": 196137,
+   "h": "f72acf38a0"
+  },
+  {
+   "p": "sprites/spellfx/thunderPrison.png",
+   "s": 25248,
+   "h": "e555249ddc"
+  },
+  {
+   "p": "sprites/spellfx/tidalPurge.png",
+   "s": 23117,
+   "h": "79dedb9938"
+  },
+  {
+   "p": "sprites/spellfx/tigerEye.png",
+   "s": 3440,
+   "h": "38874f9991"
+  },
+  {
+   "p": "sprites/spellfx/twinDragonsStrike.png",
+   "s": 166997,
+   "h": "fae964ae7e"
+  },
+  {
+   "p": "sprites/spellfx/vaporBurst.png",
+   "s": 16523,
+   "h": "aa19f6a8f4"
+  },
+  {
+   "p": "sprites/spellfx/vermilionBirdDive.png",
+   "s": 76870,
+   "h": "e6a998369f"
+  },
+  {
+   "p": "sprites/spellfx/voidChill.png",
+   "s": 18935,
+   "h": "5ec85997d8"
+  },
+  {
+   "p": "sprites/spellfx/voidRift.png",
+   "s": 12786,
+   "h": "eb531d9d2f"
+  },
+  {
+   "p": "sprites/spellfx/warCry.png",
+   "s": 4883,
+   "h": "a7f0253a30"
+  },
+  {
+   "p": "sprites/spellfx/weakness.png",
+   "s": 2656,
+   "h": "00d9ed90a4"
+  },
+  {
+   "p": "sprites/spellfx/whiteTigerClaw.png",
+   "s": 61727,
+   "h": "7e103214ec"
+  },
+  {
+   "p": "sprites/spellfx/wildMana.png",
+   "s": 5050,
+   "h": "8252b08b62"
+  },
+  {
+   "p": "sprites/prologue/1-land.png",
+   "s": 491382,
+   "h": "cfc2519131"
+  },
+  {
+   "p": "sprites/prologue/1-port.png",
+   "s": 595452,
+   "h": "5f481001d6"
+  },
+  {
+   "p": "sprites/prologue/2-land.png",
+   "s": 628528,
+   "h": "af4a43b98e"
+  },
+  {
+   "p": "sprites/prologue/2-port.png",
+   "s": 661605,
+   "h": "ff56f2a7e0"
+  },
+  {
+   "p": "sprites/prologue/3-land.png",
+   "s": 434137,
+   "h": "d94d4c0f34"
+  },
+  {
+   "p": "sprites/prologue/3-port.png",
+   "s": 539681,
+   "h": "f9bf76f63e"
+  },
+  {
+   "p": "sprites/prologue/4-land.png",
+   "s": 521419,
+   "h": "8fba1a5755"
+  },
+  {
+   "p": "sprites/prologue/4-port.png",
+   "s": 686885,
+   "h": "57809c4344"
+  },
+  {
+   "p": "sprites/prologue/5-land.png",
+   "s": 528776,
+   "h": "dd34cac8a1"
+  },
+  {
+   "p": "sprites/prologue/5-port.png",
+   "s": 674756,
+   "h": "118db7a0fd"
+  },
+  {
+   "p": "sprites/prologue/index.json",
+   "s": 923,
+   "h": "47024e6907"
+  },
+  {
+   "p": "sprites/sunfall/1-land.png",
+   "s": 559765,
+   "h": "f3af2b2139"
+  },
+  {
+   "p": "sprites/sunfall/1-port.png",
+   "s": 463359,
+   "h": "f524b5046d"
+  },
+  {
+   "p": "sprites/sunfall/2-land.png",
+   "s": 444138,
+   "h": "06090f9e18"
+  },
+  {
+   "p": "sprites/sunfall/2-port.png",
+   "s": 431248,
+   "h": "81b9d480f0"
+  },
+  {
+   "p": "sprites/sunfall/3-land.png",
+   "s": 361222,
+   "h": "f1181411ff"
+  },
+  {
+   "p": "sprites/sunfall/3-port.png",
+   "s": 328678,
+   "h": "bc8b731195"
+  },
+  {
+   "p": "sprites/sunfall/4-land.png",
+   "s": 310070,
+   "h": "42655abb2e"
+  },
+  {
+   "p": "sprites/sunfall/4-port.png",
+   "s": 423897,
+   "h": "fbc0e3ba9b"
+  },
+  {
+   "p": "sprites/sunfall/5-land.png",
+   "s": 438217,
+   "h": "5004279ba8"
+  },
+  {
+   "p": "sprites/sunfall/5-port.png",
+   "s": 520646,
+   "h": "3d4f1f8f4c"
+  },
+  {
+   "p": "sprites/sunfall/6-land.png",
+   "s": 443319,
+   "h": "7ce4c8f73a"
+  },
+  {
+   "p": "sprites/sunfall/6-port.png",
+   "s": 538392,
+   "h": "3a1248fed8"
+  },
+  {
+   "p": "sprites/sunfall/7-land.png",
+   "s": 405983,
+   "h": "dfaec087c0"
+  },
+  {
+   "p": "sprites/sunfall/7-port.png",
+   "s": 378655,
+   "h": "613e9a5d09"
+  },
+  {
+   "p": "sprites/sunfall/8-land.png",
+   "s": 437849,
+   "h": "3457b61dc4"
+  },
+  {
+   "p": "sprites/sunfall/8-port.png",
+   "s": 442398,
+   "h": "eccf0e7edd"
+  },
+  {
+   "p": "sprites/sunfall/9-land.png",
+   "s": 690545,
+   "h": "9529065363"
+  },
+  {
+   "p": "sprites/sunfall/9-port.png",
+   "s": 341545,
+   "h": "6994998431"
+  },
+  {
+   "p": "sprites/sunfall/index.json",
+   "s": 1659,
+   "h": "7606e5d802"
+  },
+  {
+   "p": "sprites/ending/1-land.png",
+   "s": 398235,
+   "h": "7878895612"
+  },
+  {
+   "p": "sprites/ending/1-port.png",
+   "s": 344336,
+   "h": "abb9f4db07"
+  },
+  {
+   "p": "sprites/ending/2-land.png",
+   "s": 555156,
+   "h": "7e83b1b722"
+  },
+  {
+   "p": "sprites/ending/2-port.png",
+   "s": 472384,
+   "h": "d6c8ae7895"
+  },
+  {
+   "p": "sprites/ending/3-land.png",
+   "s": 401333,
+   "h": "9d29f8ef06"
+  },
+  {
+   "p": "sprites/ending/3-port.png",
+   "s": 482488,
+   "h": "a1b193e3ff"
+  },
+  {
+   "p": "sprites/ending/4-land.png",
+   "s": 765862,
+   "h": "998dd761fb"
+  },
+  {
+   "p": "sprites/ending/4-port.png",
+   "s": 562692,
+   "h": "aedebb277c"
+  },
+  {
+   "p": "sprites/ending/index.json",
+   "s": 739,
+   "h": "fb96f62d88"
+  },
+  {
+   "p": "sprites/fengmeng/1-land.png",
+   "s": 586384,
+   "h": "056a1ff8e7"
+  },
+  {
+   "p": "sprites/fengmeng/1-port.png",
+   "s": 645741,
+   "h": "96fe7594f7"
+  },
+  {
+   "p": "sprites/fengmeng/2-land.png",
+   "s": 561744,
+   "h": "2f529f9fce"
+  },
+  {
+   "p": "sprites/fengmeng/2-port.png",
+   "s": 450107,
+   "h": "766eaa2acc"
+  },
+  {
+   "p": "sprites/fengmeng/3-land.png",
+   "s": 617640,
+   "h": "eb7d591271"
+  },
+  {
+   "p": "sprites/fengmeng/3-port.png",
+   "s": 599456,
+   "h": "2c7b371a27"
+  },
+  {
+   "p": "sprites/fengmeng/4-land.png",
+   "s": 630139,
+   "h": "c5125a7724"
+  },
+  {
+   "p": "sprites/fengmeng/4-port.png",
+   "s": 481116,
+   "h": "8634563132"
+  },
+  {
+   "p": "sprites/fengmeng/index.json",
+   "s": 739,
+   "h": "9bca18fed5"
+  },
+  {
+   "p": "sprites/launcher/1-land.png",
+   "s": 535871,
+   "h": "381ace63b0"
+  },
+  {
+   "p": "sprites/launcher/1-port.png",
+   "s": 473293,
+   "h": "01652d6c04"
+  },
+  {
+   "p": "sprites/launcher/index.json",
+   "s": 187,
+   "h": "35f3ace6bf"
+  },
+  {
+   "p": "sprites/change/mirror-in.gif",
+   "s": 2449736,
+   "h": "fa53466756"
+  },
+  {
+   "p": "sprites/change/mirror-out.gif",
+   "s": 2449689,
+   "h": "220414decc"
+  },
+  {
+   "p": "audio/music/boss-a0-b.mp3",
+   "s": 1875218,
+   "h": "a9d6f3d50d"
+  },
+  {
+   "p": "audio/music/boss-a1-b.mp3",
+   "s": 1862053,
+   "h": "5504c2df16"
+  },
+  {
+   "p": "audio/music/boss-a2-b.mp3",
+   "s": 2020041,
+   "h": "fdb185ff17"
+  },
+  {
+   "p": "audio/music/boss-a3-b.mp3",
+   "s": 2027251,
+   "h": "d11fc379d2"
+  },
+  {
+   "p": "audio/music/boss-a4-b.mp3",
+   "s": 2068316,
+   "h": "f66101fdc5"
+  },
+  {
+   "p": "audio/music/boss-a5-b.mp3",
+   "s": 1897475,
+   "h": "ab5a5912ae"
+  },
+  {
+   "p": "audio/music/boss-a6-b.mp3",
+   "s": 1921925,
+   "h": "68591be367"
+  },
+  {
+   "p": "audio/music/boss-a7-b.mp3",
+   "s": 1759862,
+   "h": "6a25a62b8c"
+  },
+  {
+   "p": "audio/music/boss-baihu-le-tigre-blanc-b.mp3",
+   "s": 1887757,
+   "h": "aead806d3e"
+  },
+  {
+   "p": "audio/music/boss-capitaine-noye-des-limons-b.mp3",
+   "s": 1949197,
+   "h": "af125db8e2"
+  },
+  {
+   "p": "audio/music/boss-changxi-mere-des-douze-lunes-b.mp3",
+   "s": 1872397,
+   "h": "6bb0ff9c3b"
+  },
+  {
+   "p": "audio/music/boss-chef-de-dune-bras-de-sable-b.mp3",
+   "s": 1844812,
+   "h": "e15f8c8d09"
+  },
+  {
+   "p": "audio/music/boss-colosse-des-caravanes-ensevelies-b.mp3",
+   "s": 1817227,
+   "h": "997ea845bf"
+  },
+  {
+   "p": "audio/music/boss-combat.mp3",
+   "s": 1843200,
+   "h": "52d07f0036"
+  },
+  {
+   "p": "audio/music/boss-dafeng-le-grand-vent.mp3",
+   "s": 1770520,
+   "h": "fec5663dab"
+  },
+  {
+   "p": "audio/music/boss-dame-bi-yu-la-main-de-jade-b.mp3",
+   "s": 2047000,
+   "h": "2e77efffe2"
+  },
+  {
+   "p": "audio/music/boss-dame-yin-yue-la-lune-d-argent-b.mp3",
+   "s": 2014399,
+   "h": "ec6d0141d7"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-l-archer-miroir-b.mp3",
+   "s": 1850141,
+   "h": "9879252ab1"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-l-archer-presse-b.mp3",
+   "s": 2041357,
+   "h": "b779a0c243"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-le-disciple-b.mp3",
+   "s": 2033834,
+   "h": "475aa3cd82"
+  },
+  {
+   "p": "audio/music/boss-fengmeng-rage-et-desespoir-b.mp3",
+   "s": 1820048,
+   "h": "a362c38c30"
+  },
+  {
+   "p": "audio/music/boss-fengxi-le-grand-sanglier.mp3",
+   "s": 1748890,
+   "h": "f128a2df54"
+  },
+  {
+   "p": "audio/music/boss-forgeron-de-lave-b.mp3",
+   "s": 1914089,
+   "h": "1df08d0377"
+  },
+  {
+   "p": "audio/music/boss-garde-solaire-des-racines-b.mp3",
+   "s": 1825377,
+   "h": "be150ba3ef"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-digue-b.mp3",
+   "s": 2055150,
+   "h": "31c8afa75b"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-flamme-hivernale.mp3",
+   "s": 1791522,
+   "h": "879e3d289b"
+  },
+  {
+   "p": "audio/music/boss-gardien-de-la-forge-noire-b.mp3",
+   "s": 1987127,
+   "h": "1deb8aab33"
+  },
+  {
+   "p": "audio/music/boss-gardien-du-jugement.mp3",
+   "s": 1869576,
+   "h": "629bb1e28f"
+  },
+  {
+   "p": "audio/music/boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches-b.mp3",
+   "s": 1797791,
+   "h": "367dc779c6"
+  },
+  {
+   "p": "audio/music/boss-immortel-dechu-des-branches-b.mp3",
+   "s": 1852335,
+   "h": "8483902c38"
+  },
+  {
+   "p": "audio/music/boss-immortel-yun-zhong-celui-des-nuees-b.mp3",
+   "s": 1864874,
+   "h": "25347b108d"
+  },
+  {
+   "p": "audio/music/boss-jiangshi-du-cassia-lunaire-b.mp3",
+   "s": 1881488,
+   "h": "c4497b79f6"
+  },
+  {
+   "p": "audio/music/boss-jiuying-neuf-gueules.mp3",
+   "s": 1901550,
+   "h": "67a340ff7d"
+  },
+  {
+   "p": "audio/music/boss-lion-cendre-gardien-du-sutra-b.mp3",
+   "s": 2058598,
+   "h": "f1ea1f40ea"
+  },
+  {
+   "p": "audio/music/boss-long-du-tonnerre-sourd-b.mp3",
+   "s": 2057971,
+   "h": "72689f7829"
+  },
+  {
+   "p": "audio/music/boss-maitre-hong-gang-le-gong-de-cuivre-b.mp3",
+   "s": 2057344,
+   "h": "8449c7c643"
+  },
+  {
+   "p": "audio/music/boss-maitre-tie-bi-le-bras-de-fer-b.mp3",
+   "s": 1833527,
+   "h": "77845e9b8e"
+  },
+  {
+   "p": "audio/music/boss-maitresse-tong-la-lame-de-bronze-b.mp3",
+   "s": 1893713,
+   "h": "8b4a9e70cd"
+  },
+  {
+   "p": "audio/music/boss-pretresse-de-givre-b.mp3",
+   "s": 1820048,
+   "h": "30dfa5f537"
+  },
+  {
+   "p": "audio/music/boss-qinglong-le-dragon-d-azur-b.mp3",
+   "s": 2057031,
+   "h": "0ca4c52aa9"
+  },
+  {
+   "p": "audio/music/boss-seigneur-jin-long-le-dragon-d-or-b.mp3",
+   "s": 1983679,
+   "h": "8b1ce0d7cf"
+  },
+  {
+   "p": "audio/music/boss-serpent-des-marees-noires-b.mp3",
+   "s": 1817854,
+   "h": "6a719c7350"
+  },
+  {
+   "p": "audio/music/boss-soleil-ardent-b.mp3",
+   "s": 1938226,
+   "h": "db95a80629"
+  },
+  {
+   "p": "audio/music/boss-soleil-de-cendres-b.mp3",
+   "s": 2080541,
+   "h": "233fdaa2e3"
+  },
+  {
+   "p": "audio/music/boss-soleil-de-magma-b.mp3",
+   "s": 1828198,
+   "h": "b90864cf5b"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-betes-folles-b.mp3",
+   "s": 2039163,
+   "h": "5477d0c06d"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-eaux-taries-b.mp3",
+   "s": 1928822,
+   "h": "2f2c2c2ae1"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-marees-b.mp3",
+   "s": 1924120,
+   "h": "ab4123fd8c"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-mirages-b.mp3",
+   "s": 1919104,
+   "h": "707ed5616b"
+  },
+  {
+   "p": "audio/music/boss-soleil-des-orages-b.mp3",
+   "s": 1825377,
+   "h": "427858358f"
+  },
+  {
+   "p": "audio/music/boss-soleil-lache-b.mp3",
+   "s": 1885876,
+   "h": "775cc54f28"
+  },
+  {
+   "p": "audio/music/boss-tigre-blanc-des-ancetres-b.mp3",
+   "s": 1933524,
+   "h": "5e55548ca4"
+  },
+  {
+   "p": "audio/music/boss-vieux-saule-des-boues-gardien-du-terrier-b.mp3",
+   "s": 1828198,
+   "h": "1a4dc059bb"
+  },
+  {
+   "p": "audio/music/boss-xiushe-le-long-serpent.mp3",
+   "s": 2000293,
+   "h": "62be52c113"
+  },
+  {
+   "p": "audio/music/boss-xuanwu-la-tortue-noire-b.mp3",
+   "s": 1822869,
+   "h": "7817875b6a"
+  },
+  {
+   "p": "audio/music/boss-zaochi-dents-de-ciseau.mp3",
+   "s": 1792463,
+   "h": "ba7efa0ed2"
+  },
+  {
+   "p": "audio/music/boss-zhuque-l-oiseau-vermillon-b.mp3",
+   "s": 1939793,
+   "h": "1eafdb4009"
+  },
+  {
+   "p": "audio/music/change-farewell.mp3",
+   "s": 2057344,
+   "h": "bb66d504c6"
+  },
+  {
+   "p": "audio/music/change-puzzle.mp3",
+   "s": 2024116,
+   "h": "dd12c3998f"
+  },
+  {
+   "p": "audio/music/change-village.mp3",
+   "s": 2073645,
+   "h": "9d090e3e17"
+  },
+  {
+   "p": "audio/music/combat-1.mp3",
+   "s": 4672557,
+   "h": "b0bcbb5c23"
+  },
+  {
+   "p": "audio/music/defeat-b.mp3",
+   "s": 2002174,
+   "h": "7abc0aa536"
+  },
+  {
+   "p": "audio/music/ending-b.mp3",
+   "s": 2098409,
+   "h": "d960257390"
+  },
+  {
+   "p": "audio/music/event-wandering-souls.mp3",
+   "s": 2018787,
+   "h": "ef37e23078"
+  },
+  {
+   "p": "audio/music/event-winter-lantern.mp3",
+   "s": 1993710,
+   "h": "ec53f47e2d"
+  },
+  {
+   "p": "audio/music/house-b.mp3",
+   "s": 2087437,
+   "h": "015a93efbd"
+  },
+  {
+   "p": "audio/music/menu-b.mp3",
+   "s": 2026938,
+   "h": "cab9634281"
+  },
+  {
+   "p": "audio/music/moon-b.mp3",
+   "s": 2062673,
+   "h": "1f275d46a2"
+  },
+  {
+   "p": "audio/music/puzzle-mirror-b.mp3",
+   "s": 2071137,
+   "h": "b122f9792d"
+  },
+  {
+   "p": "audio/music/puzzle-push-b.mp3",
+   "s": 2068316,
+   "h": "22be9cc77f"
+  },
+  {
+   "p": "audio/music/puzzle-slide-b.mp3",
+   "s": 2062673,
+   "h": "179d25515e"
+  },
+  {
+   "p": "audio/music/sanctuary-b.mp3",
+   "s": 2015966,
+   "h": "2c60361750"
+  },
+  {
+   "p": "audio/music/title-b.mp3",
+   "s": 2062673,
+   "h": "f84b249536"
+  },
+  {
+   "p": "audio/music/victory-b.mp3",
+   "s": 2054523,
+   "h": "ed43bb7ff8"
+  },
+  {
+   "p": "audio/music/village-bamboo-b.mp3",
+   "s": 2082108,
+   "h": "24c93ef32f"
+  },
+  {
+   "p": "audio/music/village-coast-b.mp3",
+   "s": 2018787,
+   "h": "daef46b5d1"
+  },
+  {
+   "p": "audio/music/village-fusang-b.mp3",
+   "s": 2090258,
+   "h": "79fd5f06be"
+  },
+  {
+   "p": "audio/music/village-gobi-b.mp3",
+   "s": 2026938,
+   "h": "69475455fb"
+  },
+  {
+   "p": "audio/music/village-moon-b.mp3",
+   "s": 2098409,
+   "h": "aa3a922146"
+  },
+  {
+   "p": "audio/music/village-paddy-b.mp3",
+   "s": 2084616,
+   "h": "cb2682e823"
+  },
+  {
+   "p": "audio/music/village-riverbed-b.mp3",
+   "s": 2068316,
+   "h": "9ada3ce361"
+  },
+  {
+   "p": "audio/music/village-savanna-b.mp3",
+   "s": 2093080,
+   "h": "2cd81ab813"
+  },
+  {
+   "p": "audio/music/village-storm-b.mp3",
+   "s": 2048880,
+   "h": "065fefd285"
+  },
+  {
+   "p": "audio/music/village-tides-b.mp3",
+   "s": 2071137,
+   "h": "f111463cdf"
+  },
+  {
+   "p": "audio/music/village-volcano-b.mp3",
+   "s": 2068316,
+   "h": "bde7b17d1e"
+  },
+  {
+   "p": "audio/music/wild-bamboo-b.mp3",
+   "s": 2018787,
+   "h": "b310a6665c"
+  },
+  {
+   "p": "audio/music/wild-coast-b.mp3",
+   "s": 2046059,
+   "h": "c8d7739436"
+  },
+  {
+   "p": "audio/music/wild-fusang-b.mp3",
+   "s": 2059852,
+   "h": "0e70e91db2"
+  },
+  {
+   "p": "audio/music/wild-gobi-b.mp3",
+   "s": 2087437,
+   "h": "60495964cb"
+  },
+  {
+   "p": "audio/music/wild-moon-b.mp3",
+   "s": 2029759,
+   "h": "438d55ee1f"
+  },
+  {
+   "p": "audio/music/wild-paddy-b.mp3",
+   "s": 2037909,
+   "h": "15ec1ee755"
+  },
+  {
+   "p": "audio/music/wild-riverbed-b.mp3",
+   "s": 2123486,
+   "h": "dd032ef123"
+  },
+  {
+   "p": "audio/music/wild-savanna-b.mp3",
+   "s": 2032267,
+   "h": "c98374d0a9"
+  },
+  {
+   "p": "audio/music/wild-storm-b.mp3",
+   "s": 2048880,
+   "h": "b45217a993"
+  },
+  {
+   "p": "audio/music/wild-tides-b.mp3",
+   "s": 2051702,
+   "h": "4301059d21"
+  },
+  {
+   "p": "audio/music/wild-volcano-b.mp3",
+   "s": 2087437,
+   "h": "6cbee887f8"
+  }
+ ]
+}
