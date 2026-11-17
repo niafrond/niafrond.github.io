@@ -13,7 +13,7 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, takeDueAction, hasQueuedAction } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, takeDueAction, hasQueuedAction, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
@@ -139,6 +139,7 @@ export function deferAction(retry){
     const id = getTurnClass();
     if(!id || (isClassReady(gameState.charge, id) && !hasQueuedAction(gameState.actionQueue, 'player'))) return false;
     enqueueAction(gameState.actionQueue, { owner: 'player', classId: id, retry });
+    renderActionBeads();
     updateStats();
     return true;
 }
@@ -165,9 +166,26 @@ export function spendEnemyAction(){
     if(chargeEnabled() && !enemy?.isTutorialEnemy) spendEnemy(gameState.charge, enemy, 1);
 }
 
+/** Ligne de perles en haut du combat : une perle verte par action du joueur à venir, une rouge par action ennemie, dans l'ordre de départ. */
+export function renderActionBeads(){
+    const box = typeof document !== 'undefined' ? document.getElementById('action-beads') : null;
+    if(!box) return;
+    const on = chargeEnabled() && !enemy?.isTutorialEnemy;
+    box.hidden = !on;
+    if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
+    const beads = upcomingBeads(gameState.charge, gameState.actionQueue, gameState.enemyPending).slice(0, 12);
+    const key = beads.join('');
+    if(key === _beadKey) return;   // rien n'a changé : pas de redessin
+    _beadKey = key;
+    box.innerHTML = beads.map(side => `<i class="bead bead-${side}"></i>`).join('');
+    box.setAttribute('aria-label', beads.length ? `${beads.length} action${beads.length > 1 ? 's' : ''} à venir` : 'Aucune action à venir');
+}
+let _beadKey = '';
+
 // Le temps de combat avance en temps réel, fenêtre visible ; quand une classe (ou l'ennemi) devient prête, boutons et barres se rafraîchissent.
 let _chargeLast = 0, _chargeKey = '';
 function chargeTicker(){
+    renderActionBeads();
     const now = Date.now();
     const dt = _chargeLast ? Math.min(1000, now - _chargeLast) : 0;
     _chargeLast = now;

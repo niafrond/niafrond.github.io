@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeDueAction, hasQueuedAction } from '../../classCharge.js';
+import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeDueAction, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
@@ -99,5 +99,20 @@ describe('classCharge : temps de chargement des classes', () => {
         initCharge(c, h, ['assassin'], { level: 5, startChargePct: 100 });
         expect(classProgress(c, h, 'assassin')).toBeCloseTo(0.3, 1);
         expect(isEnemyReady(c)).toBe(true);
+    });
+
+    test("perles des actions à venir : une par action, verte (joueur) ou rouge (ennemi), dans l'ordre de départ", () => {
+        const c = newCharge(), h = hero(), q = newActionQueue();
+        expect(upcomingBeads(c, q, null)).toEqual([]);
+        spendClass(c, h, 'assassin');
+        spendClass(c, h, 'barbarian');
+        chargeTick(c, 1000);
+        enqueueAction(q, { owner: 'player', classId: 'barbarian' });   // se recharge plus longtemps que le Chasseur
+        enqueueAction(q, { owner: 'player', classId: 'assassin' });
+        spendEnemy(c, { level: 5 });
+        const beads = upcomingBeads(c, q, { action: 'spell' });
+        expect(beads).toHaveLength(3);
+        expect(beads.filter(b => b === 'foe')).toHaveLength(1);
+        expect(beads.filter(b => b === 'hero')).toHaveLength(2);
     });
 });

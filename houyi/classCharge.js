@@ -104,3 +104,13 @@ export function initCharge(charge, hero, classIds, enemy, factor = 1) {
     charge.enemyReady = charge.now + Math.round(enemyChargeMs(enemy, factor) * (1 - foePct));
     return charge;
 }
+
+/**
+ * Perles des actions à venir (ligne discrète en haut du combat) : une perle par action en attente, dans l'ordre où elles partiront
+ * (temps de chargement restant de leur classe, puis ordre d'arrivée). 'hero' = action du joueur (verte), 'foe' = action ennemie (rouge).
+ */
+export function upcomingBeads(charge, queue, enemyPending) {
+    const items = queue.map(it => ({ side: 'hero', wait: classRemainingMs(charge, it.classId), seq: it.seq }));
+    if (enemyPending) items.push({ side: 'foe', wait: enemyRemainingMs(charge), seq: Infinity });
+    return items.sort((a, b) => a.wait - b.wait || a.seq - b.seq).map(it => it.side);
+}

@@ -1092,3 +1092,13 @@ body.no-blink .class-pick.ready-pulse::before, body.no-anim .class-pick.ready-pu
 
 /* Tempo : plateau inactif depuis 5 s, les chargements sont en pause (barres figées, sans aucun message ni changement d'aspect) jusqu'au prochain combo. */
 body.charge-paused .class-pick::before { animation-play-state: paused; }
+
+/* Ligne de perles des actions à venir : fine, discrète ; rond vert = action du joueur, rond rouge = action de l'ennemi. */
+.action-beads { position: relative; display: flex; justify-content: center; align-items: center; gap: 6px; height: 10px; margin: 0 0 3px; }
+.action-beads[hidden] { display: none; }
+.action-beads::before { content: ""; position: absolute; left: 8%; right: 8%; top: 50%; height: 1px; background: rgba(120, 100, 90, 0.35); }
+.action-beads .bead { position: relative; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+.action-beads .bead-hero { background: #3fae6a; }
+.action-beads .bead-foe { background: #d4473f; }
+body.a11y-colorblind .action-beads .bead-hero { background: #2f7bbd; }
+body.a11y-colorblind .action-beads .bead-foe { background: #e08a1e; }
