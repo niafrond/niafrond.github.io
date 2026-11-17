@@ -816,7 +816,7 @@ export let player = {
     hasRevive: false,  // possède un effet de résurrection
     revivePercent: 0,  // pourcentage de HP à la résurrection
     unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
-    gold: 0,  // pièces d'or accumulées
+    gold: 0,  // zhu accumulés
     torch: false,  // torche achetée : éclaire les souterrains (world/underground.js)
     mount: null,  // monture achetée ('horse') : déplacements plus rapides sur les cartes
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
@@ -846,7 +846,7 @@ export function grantStartingWeapon(weaponId){
     return weapon;
 }
 
-// Un butin déjà possédé (même id dans le sac) est converti en or au prix de revente, sans message. Retourne vrai si converti.
+// Un butin déjà possédé (même id dans le sac) est converti en zhu au prix de revente, sans message. Retourne vrai si converti.
 export function sellDuplicateItem(item){
     if(!item || !Array.isArray(player.inventory) || !player.inventory.some(i => i?.id === item.id)) return false;
     player.gold = (player.gold || 0) + sellPriceOf('item', item);
@@ -870,7 +870,7 @@ export function grantChestLoot({ loot = [] } = {}){
             labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
             log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
         } else if(entry.kind === 'item' && entry.item) {
-            if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en or, sans le dire
+            if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en zhu, sans le dire
             player.inventory.push({ ...entry.item, applied: false });
             // Une relique n'a pas d'emplacement : on dit où elle va (bonus permanent, listée dans l'onglet Stuff).
             labels.push(entry.item.type === 'artifact' ? `${entry.item.name} (relique permanente, ${rarityText}, onglet Stuff)` : `${entry.item.name} (${rarityText})`);
@@ -1303,7 +1303,7 @@ function showCombatResultScreen(isVictory){
     summary.innerHTML = `
         ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
         ${section('xp', 'star', 'Expérience', `<div class="battle-result-xp">+${combatRewards.xpGained} XP</div>${levelLine}`)}
-        ${section('gold', 'coin', 'Pièces', `<div class="battle-result-gold">${gold > 0 ? `+${gold} pièce${gold > 1 ? 's' : ''}` : 'Aucune pièce'}</div>`)}
+        ${section('gold', 'coin', 'Zhu', `<div class="battle-result-gold">${gold > 0 ? `+${gold} zhu` : 'Aucun zhu'}</div>`)}
         ${section('items', 'bag', 'Objets', `<ul class="battle-result-loot">${lootLines}</ul>`)}
         ${lesson ? section('zh', 'scroll', 'Un mot de chinois', lessonBodyHtml(lesson)) : ''}
     `;

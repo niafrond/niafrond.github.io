@@ -52,7 +52,7 @@ export const MERCHANTS = [
     { id: 'merchant_marees', region: 'marees', name: 'Maître Tang', title: 'Saunier des radeaux',
       idle: ["Mon sel vient de la mer et y retourne. Entre-temps, il fait vivre trois familles : c'est le plus honnête des cycles.", "Le sel garde le poisson, le poisson garde le village. Moi, j'ai gardé les radeaux. Et mes tarifs."] },
     { id: 'merchant_lune', region: 'lune', name: 'Baitu le Lièvre', title: 'Marchand lunaire', forge: true,
-      idle: ['Pilons de jade, éclats de lune et trésors qu\'aucun mortel ne devrait posséder. Prix en conséquence.', 'Ici, on paie en or. Même la lune a des factures.'] }
+      idle: ['Pilons de jade, éclats de lune et trésors qu\'aucun mortel ne devrait posséder. Prix en conséquence.', 'Ici, on paie en zhu. Même la lune a des factures.'] }
 ];
 
 // Montures : achetables chez certains marchands, elles accélèrent les déplacements sur les cartes (explorationView.js).
@@ -239,7 +239,7 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
     // Une relique est un bonus permanent : la pièce standard reste en rayon, mais on n'en cumule pas deux exemplaires.
     if (obj.type === 'artifact' && (hero.inventory || []).some(i => i.id === obj.id)) return { ok: false, message: `Vous possédez déjà ${obj.name}.` };
     if ((hero.gold || 0) < offer.price) {
-        return { ok: false, message: `Pas assez d'or ! Coût : ${offer.price}, vous avez ${hero.gold || 0}.` };
+        return { ok: false, message: `Pas assez de zhu ! Coût : ${offer.price}, vous avez ${hero.gold || 0}.` };
     }
     hero.gold -= offer.price;
     if (offer.kind === 'torch') {
@@ -261,7 +261,7 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
         if (!hero.merchantSold) hero.merchantSold = {};
         (hero.merchantSold[merchantId] = hero.merchantSold[merchantId] || []).push(offer.key);
     }
-    return { ok: true, message: `${obj.name} acheté pour ${offer.price} pièces d'or !`, offer, obj };
+    return { ok: true, message: `${obj.name} acheté pour ${offer.price} zhu !`, offer, obj };
 }
 
 
@@ -307,7 +307,7 @@ export function sellEntry(hero, key) {
         if (hero.inventory.length === 0) { hero.activeInventoryIndex = null; hero.activeInventoryIndex2 = null; }
     }
     hero.gold = (hero.gold || 0) + entry.price;
-    return { ok: true, message: `${entry.obj.name} vendu pour ${entry.price} pièces d'or.`, entry };
+    return { ok: true, message: `${entry.obj.name} vendu pour ${entry.price} zhu.`, entry };
 }
 
 
@@ -379,7 +379,7 @@ export function sellDuplicates(hero) {
     const gain = entries.reduce((n, e) => n + e.price * e.qty, 0);
     const ids = entries.map(e => e.id);
     hero.sellTags = (hero.sellTags || []).filter(t => !ids.includes(t));
-    return { ok: true, gain, count: idx.length, message: `${idx.length} doublon${idx.length > 1 ? 's' : ''} vendu${idx.length > 1 ? 's' : ''} pour ${gain} pièces d'or.` };
+    return { ok: true, gain, count: idx.length, message: `${idx.length} doublon${idx.length > 1 ? 's' : ''} vendu${idx.length > 1 ? 's' : ''} pour ${gain} zhu.` };
 }
 
 /** Vend l'excédent tagué d'un objet (du dernier index au premier) et retire le tag. */
@@ -390,5 +390,5 @@ export function sellSurplus(hero, id) {
     else [...entry.indices].sort((a, b) => b - a).forEach(i => sellEntry(hero, `inv:${i}`));
     hero.sellTags = (hero.sellTags || []).filter(t => t !== id);
     const gain = entry.price * entry.qty;
-    return { ok: true, message: `${entry.obj.name} x ${entry.qty} vendu pour ${gain} pièces d'or.`, entry, gain };
+    return { ok: true, message: `${entry.obj.name} x ${entry.qty} vendu pour ${gain} zhu.`, entry, gain };
 }
