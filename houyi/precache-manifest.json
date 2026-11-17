@@ -32,6 +32,7 @@
   "cinematicsRegion.js",
   "cinematicsSun.js",
   "cinematicsTitle.js",
+  "classCharge.js",
   "classRoster.js",
   "classSpellEffects.js",
   "classSpellsActionGems.js",
