@@ -78,7 +78,7 @@ export function addRage(entity, amount){
 }
 
 export function resetRage(entity){
-    if(entity){ entity.rage = 0; endTranse(entity); }
+    if(entity){ entity.rage = 0; if(entity.transe && (!entity.transeClass || entity.transeClass === entity.gaugeClass)) endTranse(entity); }
 }
 
 export function isRageFull(entity){

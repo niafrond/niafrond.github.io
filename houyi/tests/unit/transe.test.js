@@ -1,6 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
-import { TRANSE_TURNS, startTranse, tickTranse, endTranse, isInTranse, classAllowsUltimate, transeEffectFor } from '../../transe.js';
+import { TRANSE_TURNS, startTranse, tickTranse, endTranse, isInTranse, classAllowsUltimate, transeEffectFor, switchGauge, storeGauge } from '../../transe.js';
 import { addRage, resetRage, RAGE_MAX, getSelectableUltimates, getEquippedUltimate } from '../../ultimates.js';
 
 test('la Xiūxiān dure TRANSE_TURNS tours puis se termine', () => {
@@ -38,4 +38,38 @@ test('effets de Xiūxiān par classe', () => {
     expect(transeEffectFor('templar').defense).toBeGreaterThan(0);
     expect(transeEffectFor('barbarian').attack).toBeGreaterThan(0);
     expect(transeEffectFor('x')).toEqual({});
+});
+
+describe('une Xiūxiān par classe', () => {
+    test('chaque classe a sa jauge, rangée quand on change de classe', () => {
+        const e = { rage: 0 };
+        switchGauge(e, 'assassin');
+        e.rage = 40;
+        switchGauge(e, 'sorcerer');
+        expect(e.rage).toBe(0);
+        e.rage = 90;
+        switchGauge(e, 'assassin');
+        expect(e.rage).toBe(40);
+        storeGauge(e);
+        expect(e.rages).toEqual({ assassin: 40, sorcerer: 90 });
+    });
+    test('la Xiūxiān appartient à la classe dont la jauge était pleine ; la finir ne vide que cette jauge', () => {
+        const e = { rage: 0 };
+        switchGauge(e, 'templar'); e.rage = 100;
+        switchGauge(e, 'barbarian'); e.rage = 100;
+        switchGauge(e, 'templar');
+        startTranse(e);
+        expect(e.transeClass).toBe('templar');
+        switchGauge(e, 'barbarian');   // on change de classe : la Xiūxiān du commandant continue
+        expect(isInTranse(e)).toBe(true);
+        for (let i = 0; i < TRANSE_TURNS; i++) tickTranse(e);
+        expect(isInTranse(e)).toBe(false);
+        expect(e.rages.templar).toBe(0);
+        expect(e.rage).toBe(100);   // la jauge du guerrier, affichée, est intacte
+        switchGauge(e, 'templar');
+        expect(e.rage).toBe(0);
+    });
+    test('toutes les classes ont un effet', () => {
+        ['assassin', 'barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].forEach(c => expect(Object.keys(transeEffectFor(c)).length).toBeGreaterThan(1));
+    });
 });

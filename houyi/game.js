@@ -16,7 +16,7 @@ import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from 
 import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
-import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimate, describeTranse } from "./transe.js";
+import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
 import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
@@ -255,8 +255,8 @@ export function ultimateManaBarHtml(entity, spell){
 export function transeTooltipHtml(entity, ultimate){
     const filled = Math.floor(entity?.rage || 0);
     return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
-        + `<div class="spell-tooltip-line">Se remplit quand vous subissez des dégâts et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān (3 tours).</div>`
-        + `<div class="spell-tooltip-line">${describeTranse(getTurnClass())}</div>`
+        + `<div class="spell-tooltip-line">Jauge du ${CLASS_SHORT[getTurnClass()] || 'héros'} : chaque classe a la sienne. Elle se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher sa Xiūxiān (3 tours).</div>`
+        + `<div class="spell-tooltip-line">${describeTranse(isInTranse(entity) ? entity.transeClass : getTurnClass())}</div>`
         + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Xiūxiān, avec la classe Mage antique choisie pour le tour.</div>` : '');
 }
 
@@ -916,10 +916,16 @@ export const gameState = {
 // ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
 // Le joueur choisit une classe par tour (gratuit, avant d'agir) : elle décide des sorts de classe proposés, de l'effet de la Xiūxiān
 // et de la possibilité de lancer l'ultime (sorcier uniquement). Voir transe.js.
+/** Une jauge de Xiūxiān par classe : la jauge affichée est celle de la classe du tour. */
+export function syncGauge(){
+    switchGauge(player, getTurnClass());
+}
+
 export function setTurnClass(classId){
     if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
     if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
     gameState.turnClass = classId;
+    syncGauge();
     applyTranseClassEffect();
     return true;
 }
@@ -936,13 +942,15 @@ export function grantClassReward(classId, origin = 'Récompense de quête'){
 // Effet de Xiūxiān de la classe du tour, appliqué une seule fois par tour et par classe.
 export function applyTranseClassEffect(){
     if(!isInTranse(player) || gameState.combatState !== 'active') return;
-    const cls = getTurnClass();
+    const cls = player.transeClass || getTurnClass();   // l'effet est celui de la classe dont c'est la Xiūxiān, quelle que soit la classe choisie ensuite
     const effect = transeEffectFor(cls);
     gameState.transeApplied = gameState.transeApplied || [];
-    if(!cls || gameState.transeApplied.includes(cls) || (!effect.actionPoints && !effect.attack && !effect.defense)) return;
+    if(!cls || gameState.transeApplied.includes(cls) || (!effect.actionPoints && !effect.attack && !effect.defense && !effect.healPct && !effect.mana)) return;
     gameState.transeApplied.push(cls);
     if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
     if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
+    if(effect.healPct){ const heal = Math.max(1, Math.round(player.maxHp * effect.healPct / 100)); healEntity(player, heal); flyHeal(true, heal); }
+    if(effect.mana){ Object.keys(player.mana).forEach(color => addManaForColor(player, color, effect.mana, { applyGainBonus: false })); }
     log(`Xiūxiān : ${effect.text}.`);
 }
 
@@ -952,7 +960,7 @@ export function activateXiuxian(){
     if(isInTranse(player)){ log('La Xiūxiān est déjà en cours.'); return false; }
     if(!isRageFull(player)){ log("La jauge de Xiūxiān n'est pas pleine !"); return false; }
     if(!startTranse(player)) return false;
-    log(`✦ XIŪXIĀN ! ${describeTranse(getTurnClass())}`);
+    log(`✦ XIŪXIĀN du ${CLASS_SHORT[player.transeClass] || 'héros'} ! ${describeTranse(player.transeClass)}`);
     gameState.transeApplied = [];
     applyTranseClassEffect();
     updateStats();
@@ -962,7 +970,7 @@ export function activateXiuxian(){
 
 // Fin de combat : une Xiūxiān encore en cours s'éteint (la jauge est consommée) ; sinon la jauge est conservée telle quelle pour le prochain combat.
 export function endXiuxianAtCombatEnd(){
-    if(Math.floor(player.transe || 0) > 0){ endTranse(player); player.rage = 0; }
+    if(Math.floor(player.transe || 0) > 0) endTranse(player);   // consomme la jauge de la classe de la Xiūxiān
     gameState.transeApplied = null;
 }
 
@@ -1338,12 +1346,13 @@ export function restartCombat({ keepHp = true } = {}){
     player.combatPoints = 0;
     player.bonusTurn = 0;
     // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
-    endTranse(player);
-    player.rage = Math.max(Math.floor(player.rage || 0), startingRage(player));
+    player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
     gameState.transeApplied = null;
+    syncGauge();   // une jauge par classe : on affiche celle de la classe du tour
+    player.rage = Math.max(Math.floor(player.rage || 0), startingRage(player));
     resetUltimateMana(player);
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
@@ -1557,7 +1566,10 @@ export function loadGameData() {
             normalizeRoster(player);
             player.potions = loaded.potions;
             normalizePotions(player);
-            player.rage = Math.max(0, Math.min(100, Math.floor(loaded.rage || 0)));   // la jauge de Xiūxiān est conservée
+            // Une jauge de Xiūxiān par classe, conservée d'un combat à l'autre (transe.js). Ancienne sauvegarde : l'unique jauge revient à la classe du héros.
+            player.rages = (loaded.rages && typeof loaded.rages === 'object') ? loaded.rages : (loaded.rage ? { [loaded.class || 'assassin']: loaded.rage } : {});
+            player.gaugeClass = null;
+            switchGauge(player, loaded.class || 'assassin');
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
@@ -1856,6 +1868,7 @@ export async function castUltimate(spellId){
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
     if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant la classe Mage antique (sorcier) pour ce tour."); return; }
     if(!isInTranse(player)){ log("La Xiūxiān n'est pas déclenchée : la jauge doit d'abord se remplir !"); return; }
+    if(player.cheatMaxRage !== true && player.transeClass !== 'sorcerer'){ log("L'ultime demande la Xiūxiān du Mage : remplissez la jauge du Mage, puis déclenchez-la."); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");

@@ -88,7 +88,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     const list = [...SKILLS].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
     const selected = getSkill(selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
-    const transe = Object.entries(TRANSE_EFFECTS).map(([cls, e]) => `<li>${esc(({ sorcerer: 'Mage', assassin: 'Rôdeur', templar: 'Commandant', barbarian: 'Guerrier' })[cls])} : ${esc(e.text)}</li>`).join('');
+    const transe = Object.entries(TRANSE_EFFECTS).map(([cls, e]) => `<li>${esc(CLASS_SHORT[cls])} : ${esc(e.text)}</li>`).join('');
     return `<div class="ab-screen">
         <div class="ab-header">
             <div class="ab-hero"><strong>${esc(hero.name || 'Hou Yi')}</strong> <span class="ab-lv">Niv. ${hero.level || 1}</span>
@@ -103,7 +103,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
         </div>
         <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} / ${SKILLS.length} apprises</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
-            <p>La jauge se remplit quand vous subissez des dégâts. Elle se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān (${TRANSE_TURNS} tours) ; en combat, une classe par tour : son effet s'applique.</p>
-            <ul>${transe}</ul><p>L'ultime ne se lance que pendant la Xiūxiān, avec le Mage choisi pour le tour.</p></details>
+            <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
+            <ul>${transe}</ul><p>L'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p></details>
     </div>`;
 }

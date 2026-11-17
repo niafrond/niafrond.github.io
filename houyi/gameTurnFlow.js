@@ -95,8 +95,7 @@ function playCompanionAnnouncements(list, done){
 // Fin d'un tour du joueur : la Xiūxiān décompte (la jauge retombe à 0 quand elle se termine) et la liste des classes déjà appliquées se vide.
 function endOfPlayerTurnTranse(){
     resetTranseTurn();
-    if(tickTranse(player)){
-        resetRage(player);
+    if(tickTranse(player)){   // la jauge de la classe de la Xiūxiān est consommée
         log('La Xiūxiān s\'achève.');
         updateStats();
     }

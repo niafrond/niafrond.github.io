@@ -19,8 +19,8 @@ import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass } from './gameSpellList.js';
-import { isInTranse, classAllowsUltimate } from './transe.js';
-import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
+import { isInTranse, classAllowsUltimate, storeGauge } from './transe.js';
+import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
 // Le choix est gardé pour toute la session de jeu ; sans entrée pour le gabarit, le nom du gabarit reste affiché.
@@ -185,11 +185,12 @@ export function updateStats(){
     }
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
+    syncGauge();   // une jauge de Xiūxiān par classe : celle de la classe du tour
     const equippedUltimate = getEquippedUltimate(player);
     // Xiūxiān : la jauge est toujours visible ; l'ultime se lance pendant la Xiūxiān, si la classe choisie pour le tour est le sorcier.
     const inTranse = isInTranse(player);
     const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
-    const ultimateReady = !!equippedUltimate && inTranse && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
+    const ultimateReady = !!equippedUltimate && inTranse && (player.cheatMaxRage === true || player.transeClass === 'sorcerer') && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
     // Héros avec jauge de rage : sa fiche est déjà bien remplie, la fiche ennemie reçoit plus de largeur (style.css `.has-rage`).
     document.querySelector('.stats-container')?.classList.toggle('has-rage', true);
@@ -449,6 +450,7 @@ export function getCurrentAIDifficulty() {
 let lastSaveErrorNotice = 0;
 export function saveUpdate(){
     clampManaToCaps(player);
+    storeGauge(player);   // une jauge de Xiūxiān par classe : la jauge affichée est rangée avant l'écriture
     try {
         localStorage.setItem('player', JSON.stringify(player));
         console.log('Données du joueur sauvegardées');
