@@ -14,7 +14,7 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, hasQueuedAction, takeNextDue, upcomingBeads } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
@@ -137,38 +137,44 @@ export const decoupled = () => chargeEnabled() && !enemy?.isTutorialEnemy && !en
 
 const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (typeof document !== 'undefined' && !!document.querySelector('.attack-overlay'));
 const markActionBusy = () => { gameState.actionBusyUntil = Date.now() + ACTION_GAP_MS; };
-const canRunNow = it => (it.owner === 'player' ? isClassReady(gameState.charge, it.classId) : isEnemyReady(gameState.charge))
-    && (!it.turnBound || (currentTurn === it.owner && !isBoardResolving()));   // sorts de plateau : seulement à leur tour, plateau au repos
+// Une action choisie est déjà payée et sa classe déjà consommée : elle ne dépend plus que du passage dans la file (une à la fois), de la pause d'inactivité,
+// et, pour les sorts qui modifient la grille, du tour de plateau de son camp.
+const canRunNow = it => !it.turnBound || (currentTurn === it.owner && !isBoardResolving());
 const readyAhead = () => gameState.actionQueue.some(canRunNow);
 
-/**
- * Une action du joueur est choisie : si sa classe est chargée et qu'aucune action prête n'attend ni n'est en cours, elle part tout de suite
- * (renvoie false : l'appelant la joue) ; sinon elle entre dans la file (renvoie true) et `retry` la rejouera dès qu'elle pourra partir.
- * Un doublon pour la même classe est ignoré. `turnBound` : action qui modifie le plateau (attend le tour du joueur).
- */
-export function deferAction(retry, opts = {}){
-    if(!decoupled() || gameState.bypassCharge) return false;
+/** La classe du tour est-elle chargée (barre pleine) ? Condition pour CHOISIR une action ; toujours vrai hors combat indépendant du plateau. */
+export function classCanAct(){
+    if(!decoupled()) return true;
     const id = getTurnClass();
-    if(!id) return false;
-    const q = gameState.actionQueue;
-    if(isClassReady(gameState.charge, id) && !actionBusy() && !readyAhead() && (!opts.turnBound || (currentTurn === 'player' && !isBoardResolving()))){
-        markActionBusy();
-        return false;
-    }
-    if(!q.some(it => it.owner === 'player' && it.classId === id)) enqueueAction(q, { owner: 'player', classId: id, retry, turnBound: !!opts.turnBound, dueAt: gameState.charge.ready[id] ?? 0 });
-    renderActionBeads();
+    return !id || isClassReady(gameState.charge, id);
+}
+
+/**
+ * Appelée par chaque action du joueur (arme, sort, compétence, objet, potion) une fois qu'elle est validée ET payée : la classe est consommée tout de suite
+ * (sa barre repart de zéro), puis `effect` part immédiatement si aucune action ne passe devant ou n'est en cours, sinon il entre dans la file commune
+ * (plusieurs actions de la même classe peuvent y attendre). Renvoie true si l'action est prise en charge ici, false si l'appelant doit la jouer lui-même
+ * (tutoriel, duel : déroulé d'avant). `turnBound` : action qui modifie le plateau (attend le tour de plateau du joueur).
+ */
+export function chooseAction(effect, opts = {}){
+    if(!decoupled()){ spendActionCharge(); return false; }
+    const id = getTurnClass();
+    if(id) spendClass(gameState.charge, player, id, chargeFactor());
+    createSpellButtons();
+    dispatchAction('player', effect, !!opts.turnBound);
     return true;
 }
-/** L'ennemi choisit un sort ou une arme (hors sort de plateau) : même file que le joueur. Renvoie true si l'action est partie ou en file. */
-export function submitEnemyAction(run){
+/** L'ennemi a choisi, payé et consommé sa barre : son effet part ou entre dans la même file. */
+export function chooseEnemyAction(effect){
     if(!decoupled()) return false;
-    const q = gameState.actionQueue;
-    if(q.some(it => it.owner === 'enemy')) return true;   // une action ennemie attend déjà
-    const item = { owner: 'enemy', run, dueAt: gameState.charge.enemyReady };
-    if(isEnemyReady(gameState.charge) && !actionBusy() && !readyAhead()){ markActionBusy(); run(); return true; }
-    enqueueAction(q, item);
-    renderActionBeads();
+    spendEnemy(gameState.charge, enemy, 1);
+    dispatchAction('enemy', effect, false);
     return true;
+}
+function dispatchAction(owner, effect, turnBound){
+    const item = { owner, run: effect, turnBound, dueAt: gameState.charge.now };
+    if(!actionBusy() && !readyAhead() && canRunNow(item)){ markActionBusy(); effect(); return; }
+    enqueueAction(gameState.actionQueue, item);
+    renderActionBeads();
 }
 /** Fait partir la prochaine action de la file, si l'une peut partir (appelé en continu par le ticker de chargement). */
 export function pumpActions(){
@@ -176,12 +182,7 @@ export function pumpActions(){
     const item = takeNextDue(gameState.actionQueue, canRunNow);
     if(!item) return;
     markActionBusy();
-    if(item.owner === 'enemy'){ item.run(); }
-    else {
-        gameState.turnClass = item.classId;   // la classe qui avait été choisie
-        gameState.bypassCharge = true;
-        try { item.retry(); } finally { gameState.bypassCharge = false; }
-    }
+    item.run();
     renderActionBeads();
 }
 /** Une action vient d'être faite avec la classe du tour : elle se recharge. */
@@ -232,6 +233,8 @@ function chargeTicker(){
     if(key !== _chargeKey){
         _chargeKey = key;
         createSpellButtons();
+        document.dispatchEvent(new Event('potions-changed'));   // « Objet » se réactive
+        document.dispatchEvent(new Event('charge-changed'));    // armes et objets : voir gameInventoryTabs.js
     }
 }
 if(typeof setInterval === 'function' && typeof document !== 'undefined') setInterval(chargeTicker, 250);
@@ -328,7 +331,7 @@ export function createSpellButtons(){
         `;
         const coolLeft = spellCooldownLeft(sp.id);
         if(coolLeft > 0) btn.querySelector('.spell-cost').insertAdjacentHTML('beforeend', ` <span class="spell-cooldown">Recharge : ${coolLeft} tour${coolLeft > 1 ? 's' : ''}</span>`);
-        if(player.level<sp.minLevel || !hasEnoughMana || coolLeft > 0 || muted) {
+        if(player.level<sp.minLevel || !hasEnoughMana || coolLeft > 0 || muted || !classCanAct()) {   // classe du tour en chargement : on ne peut pas choisir l'action
             btn.classList.add('disabled');
             // Sort multi-qì : la tuile reste grisée tant qu'il manque du qì, mais la pastille d'une couleur déjà atteinte garde sa couleur.
             if(player.level >= sp.minLevel && btn.querySelector('.cost-part.met') && btn.querySelector('.cost-part.unmet')) btn.classList.add('spell-partial');

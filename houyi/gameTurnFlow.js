@@ -33,7 +33,7 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, submitEnemyAction } from './gameSpellList.js';
+import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
 import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
@@ -259,65 +259,70 @@ export function applyDuelRulesAtCombatStart(){
  * d'actions. Renvoie true si l'action est terminée, false si la suite dépend du plateau (sort de plateau).
  */
 function performEnemyAction(decision){
+    if(!payEnemyAction(decision)) return true;
+    spendEnemyAction();   // il se recharge
+    return applyEnemyAction(decision);
+}
+
+/** Choix d'une action de l'ennemi : validation et paiement (qì d'un sort, PA d'une arme). Renvoie false s'il ne peut pas la payer. */
+function payEnemyAction(decision){
     if(decision.action === 'spell'){
         const spell = decision.data.spell;
         logActiveAction(`lance le sort ${spell.name}`);
-
         if(!canEntityCastSpell(enemy, spell)) {
             log(`${enemy.name} n'a plus assez de qì pour ${spell.name}.`);
-            return true;
+            return false;
         }
-
         consumeSpellMana(enemy, spell);
-        spendEnemyAction();   // il se recharge
+        return true;
+    }
+    logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
+    enemy.combatPoints -= enemy.weapon.actionPoints;
+    return true;
+}
+
+/** Effet d'une action de l'ennemi déjà choisie et payée. Renvoie true si terminée, false si la suite dépend du plateau (sort de plateau). */
+function applyEnemyAction(decision){
+    if(decision.action === 'spell'){
+        const spell = decision.data.spell;
         playSfx('spellCast', { isPlayer: false, spellId: spell.id });
         if(spell.boardSpell) {   // sort de plateau : lignes et colonnes tirées au hasard ; checkMatches rend la main une fois le plateau stabilisé
             castEnemyBoardSpell(spell);
-            return false;   // sort de plateau : la suite est gérée par le plateau
+            return false;   // la suite est gérée par le plateau
         }
         applyStandardSpellEffects(enemy, player, spell, false);
-        
-        // Vérifier l'état après l'action
-        return true;
-        
-    } else if(decision.action === 'weapon'){
-        logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
-        spendEnemyAction();   // il se recharge
-        enemy.combatPoints -= enemy.weapon.actionPoints;
-        const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
-        // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
-        if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
-            const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
-            applyDamage(enemy, selfStrike.damage);
-            playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-            log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
-            return true;
-        }
-        const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
-        let dmg = strike.damage;
-        if(dmg > 0 && player.damageReduction > 0) {
-            dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
-        }
-        applyDamage(player, dmg);
-        if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
-            const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
-            log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
-        }
-        playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-        const icon = getWeaponIcon(enemy.weapon.type);
-        showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
-        log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
-        
-        // Vérifier l'état après l'action
         return true;
     }
+    const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
+    // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
+    if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
+        const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
+        applyDamage(enemy, selfStrike.damage);
+        playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+        log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
+        return true;
+    }
+    const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
+    let dmg = strike.damage;
+    if(dmg > 0 && player.damageReduction > 0) {
+        dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
+    }
+    applyDamage(player, dmg);
+    if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
+        const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
+        log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
+    }
+    playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+    const icon = getWeaponIcon(enemy.weapon.type);
+    showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
+    log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
     return true;
 }
 
 /** Action de l'ennemi partie de la file, en dehors de son tour de plateau : effet, puis vérification de l'état du combat. */
 function runEnemyActionOutOfTurn(decision){
     if(gameState.combatState !== 'active') return;
-    performEnemyAction(decision);
+    applyEnemyAction(decision);
     updateStats();
     saveUpdate();
     if(gameState.combatState !== 'active') return;
@@ -466,9 +471,10 @@ export function enemyTurn(){
                 decision = { ...decision, action: 'board', reason: `${decision.reason} ; il se recharge : il joue sur le plateau`, data: {} };
             }
         } else if(decision.action === 'spell' || decision.action === 'weapon'){
+            // Il ne peut choisir son action que chargé (barre pleine) et s'il peut la payer ; elle part alors tout de suite ou depuis la file, et il joue sur le plateau.
             const chosen = decision;
-            submitEnemyAction(() => runEnemyActionOutOfTurn(chosen));
-            decision = { ...decision, action: 'board', reason: `${decision.reason} ; l'action part dès qu'il est chargé, il joue sur le plateau`, data: {} };
+            if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => runEnemyActionOutOfTurn(chosen));
+            decision = { ...decision, action: 'board', reason: `${decision.reason} ; son action part sans lien avec le plateau, il joue sur la grille`, data: {} };
         } else if(gameState.enemyPending && enemyActionReady()){
             decision = gameState.enemyPending;   // sort de plateau en attente : il part à ce tour
             gameState.enemyPending = null;

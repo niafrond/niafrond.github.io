@@ -17,7 +17,7 @@ import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
 import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
-import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
+import { POTIONS, normalizePotions, potionHeal, drinkPotion, drinkBlockReason } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { newCharge, newActionQueue, initCharge } from "./classCharge.js";
@@ -68,7 +68,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass, deferAction, spendActionCharge, chargeFactor, decoupled } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -916,8 +916,7 @@ export const gameState = {
     transeApplied: null,  // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
     charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
-    enemyPending: null,   // action de l'ennemi en attente de son chargement
-    bypassCharge: false   // vrai pendant qu'une action de la file est rejouée
+    enemyPending: null    // sort de plateau de l'ennemi qui attend son tour de plateau
 };
 
 // ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
@@ -1003,7 +1002,30 @@ export function drinkPotionAction(size){
         if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
         if(rejectRushedAction()) return false;
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
-        if(deferAction(() => drinkPotionAction(size))) return false;   // classe en chargement : file d'attente
+        if(!classCanAct()) return false;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
+    }
+    if(inCombat && decoupled()){
+        // Actions indépendantes du plateau : la potion est validée et payée au choix, puis son effet part (tout de suite ou depuis la file).
+        const free = !!xiuEffect().freePotions;
+        const reason = drinkBlockReason(player, size, true, free);
+        if(reason){ log(reason); return false; }
+        const potion = POTIONS[size];
+        player.potions[size] -= 1;
+        if(!free) player.combatPoints -= potion.actionPoints;
+        actionGuard.markPlayerAction();
+        const effect = () => {
+            const before = player.hp;
+            player.hp = Math.min(player.maxHp, player.hp + potionHeal(player, size));
+            const healed = player.hp - before;
+            flyHeal(true, healed);
+            log(`${potion.name} : +${healed} PV.`);
+            logActiveAction(`boit une ${potion.name.toLowerCase()} (coût ${potion.actionPoints} PA)`);
+            showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: '→ Vous' }, true);
+            document.dispatchEvent(new Event('potions-changed'));
+            endAction();
+        };
+        chooseAction(effect);
+        return true;
     }
     const heal = potionHeal(player, size);
     const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions });
@@ -1372,7 +1394,7 @@ export function restartCombat({ keepHp = true } = {}){
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.charge = newCharge();   // les barres sont initialisées plus bas (initCharge), une fois l'ennemi en place
-    gameState.actionQueue = newActionQueue(); gameState.enemyPending = null; gameState.bypassCharge = false;
+    gameState.actionQueue = newActionQueue(); gameState.enemyPending = null;
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
@@ -1734,7 +1756,6 @@ clampManaToCaps(player);
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
-    if(gameState.bypassCharge) return false;   // action de la file : déjà autorisée
     // Actions indépendantes du plateau : disponibles à tout moment (même pendant le tour adverse ou la résolution du plateau), seul le délai anti-martelage compte.
     if(decoupled()) return turnFlags.foxPlaying || actionGuard.cooldownActive();
     return currentTurn !== 'player' || turnFlags.foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
@@ -1781,7 +1802,7 @@ export function useWeapon(hand = 'right'){
     if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
-    if(deferAction(() => useWeapon(hand))) return;   // classe en chargement : l'action entre dans la file d'attente
+    if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
@@ -1796,12 +1817,15 @@ export function useWeapon(hand = 'right'){
     }
     
     actionGuard.markPlayerAction();
-    spendActionCharge();
-    player.combatPoints -= weapon.actionPoints;
+    player.combatPoints -= weapon.actionPoints;   // payé au choix
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
-    strikeWithWeapon(weapon);
-    tutorialCallbacks.onWeaponUsed?.();
-    endAction();
+    const effect = () => {
+        strikeWithWeapon(weapon);
+        tutorialCallbacks.onWeaponUsed?.();
+        endAction();
+    };
+    if(chooseAction(effect)) return;   // classe consommée ; l'effet part tout de suite ou entre dans la file commune
+    effect();
 }
 
 // Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
@@ -1855,7 +1879,7 @@ export function castSpell(spellId){
     if(!spell){ log("Sort indisponible !"); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
-    if(deferAction(() => castSpell(spellId), { turnBound: !!spell.effect })) return;   // file d'attente commune ; un sort qui modifie le plateau attend son tour de plateau
+    if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
     
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un sort."); return; }
     if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
@@ -1865,45 +1889,44 @@ export function castSpell(spellId){
         return;
     }
     actionGuard.markPlayerAction();
-    consumeSpellMana(player, spell);
-    if(!(xiuEffect().doubleCast && gameState.doubleCastUsed)) spendActionCharge();   // le second sort du Double Talisman ne recharge pas une seconde fois
-    if(xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour
+    consumeSpellMana(player, spell);   // coût payé au choix
+    if(!decoupled() && xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour (tutoriel et duels ; sans objet quand les actions ne prennent pas le tour)
         gameState.doubleCastUsed = true;
         addBonusTurn(player, 1);
         log('Double Talisman : vous pourrez lancer un second sort ce tour.');
     }
     startSpellCooldown(spell);
-    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
-    
-    // Gérer les sorts avec effet spécial
-    if(spell.effect) {
-        logActiveAction(`lance le sort ${spell.name} (effet special)`);
-        // Import dynamique pour éviter les dépendances circulaires
-        import('./classSpellEffects.js').then(async module => {
-            const boardBefore = module.snapshotBoard();
-            if(await module.applyClassSpellEffect(spell)) {
-                saveUpdate();
-                tutorialCallbacks.onSpellCast?.();
-                // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
-                module.endPlayerSpellTurn(boardBefore);
-            } else {
-                saveUpdate();
-            }
-        });
-        return;
-    }
-    
-    // Sorts standards (dégâts ou soins)
-    logActiveAction(`lance le sort ${spell.name}`);
-    applyStandardSpellEffects(player, enemy, spell, true);
-    
-    updateStats();
-    saveUpdate();
-
-    // Notifier le tutoriel qu'un sort a été lancé
-    tutorialCallbacks.onSpellCast?.();
-
-    endAction();
+    // Effet du sort : joué tout de suite ou en sortant de la file (la classe est consommée dès le choix).
+    const effect = () => {
+        playSfx('spellCast', { isPlayer: true, spellId: spell.id });
+        // Sorts qui modifient le plateau
+        if(spell.effect) {
+            logActiveAction(`lance le sort ${spell.name} (effet special)`);
+            // Import dynamique pour éviter les dépendances circulaires
+            import('./classSpellEffects.js').then(async module => {
+                const boardBefore = module.snapshotBoard();
+                if(await module.applyClassSpellEffect(spell)) {
+                    saveUpdate();
+                    tutorialCallbacks.onSpellCast?.();
+                    // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
+                    module.endPlayerSpellTurn(boardBefore);
+                } else {
+                    saveUpdate();
+                }
+            });
+            return;
+        }
+        // Sorts standards (dégâts ou soins)
+        logActiveAction(`lance le sort ${spell.name}`);
+        applyStandardSpellEffects(player, enemy, spell, true);
+        updateStats();
+        saveUpdate();
+        // Notifier le tutoriel qu'un sort a été lancé
+        tutorialCallbacks.onSpellCast?.();
+        endAction();
+    };
+    if(chooseAction(effect, { turnBound: !!spell.effect })) return;   // classe consommée ; un sort qui modifie le plateau attend son tour de plateau
+    effect();
 }
 
 // Lance un ultime : jauge de rage pleine + qì requis ; la jauge retombe à 0. La cinématique plein écran éventuelle

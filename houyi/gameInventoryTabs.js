@@ -1,7 +1,7 @@
 // Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
-import { deferAction, spendActionCharge, decoupled } from "./gameSpellList.js";
+import { chooseAction, classCanAct, decoupled } from "./gameSpellList.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
@@ -104,6 +104,8 @@ export function unequipWeapon(hand = 'right'){
     createWeaponButton();
 }
 
+if(typeof document !== 'undefined') document.addEventListener('charge-changed', () => { try { createWeaponButton(); updateItemButton(); } catch { /* pas de combat affiché */ } });
+
 export function getLeftHandWeapon(){
     const left = player.equipment?.leftHand;
     return left && left.type !== 'shield' && left.damage !== undefined ? left : null;
@@ -122,7 +124,7 @@ function appendWeaponButton(container, weapon, hand){
     const showDetails = () => showWeaponTooltip(btn, weapon);
     const hideDetails = () => hideSpellTooltip();
     bindTooltip(btn, showDetails, hideDetails);
-    if(sealed || player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
+    if(sealed || player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints || !classCanAct()) {   // classe en chargement : on ne peut pas choisir l'arme
         btn.classList.add('disabled');
         btn.tabIndex = -1;
         btn.onclick = null;
@@ -473,7 +475,7 @@ function buildItemButton(item, index){
     const exhausted = item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
     const healUseless = isUselessHeal(item);
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
-    const canUse = gameState.combatState === 'active' && (currentTurn === 'player' || decoupled()) && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
+    const canUse = gameState.combatState === 'active' && (currentTurn === 'player' || decoupled()) && classCanAct() && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
 
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
@@ -559,6 +561,7 @@ export function itemUsability(item){
     if(player.level < (item.minLevel || 1)) return { ok: false, reason: `Niveau ${item.minLevel} requis` };
     if((player.statusEffects?.sealed || 0) > 0) return { ok: false, reason: 'Scellé' };
     if(item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0) return { ok: false, reason: describeRecharge(item) };
+    if(!classCanAct()) return { ok: false, reason: 'En chargement' };
     if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
     if(player.combatPoints < pa) return { ok: false, reason: `${pa} PA requis` };
     return { ok: true, reason: '' };
@@ -569,7 +572,7 @@ export function useInventoryItem(itemId, index){
     if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return; }
-    if(deferAction(() => useInventoryItem(itemId, index))) return;   // classe en chargement : file d'attente
+    if(!classCanAct()) return;   // la classe du tour doit être chargée (barre pleine) pour choisir une action
 
     normalizeActiveInventoryIndex();
     const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
@@ -593,24 +596,29 @@ export function useInventoryItem(itemId, index){
     }
 
     actionGuard.markPlayerAction();
-    player.combatPoints -= pa;
-    const result = useItem(itemId, player, enemy, resolvedIndex);
-    if(result.success){
-        spendActionCharge();   // la classe du tour se recharge
-        if(item.effect?.cure) playSfx('cure');
-        logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
-        log(result.message);
-        // Animation d'utilisation (comme un sort ou une arme) : nom de l'objet et ses effets, au-dessus du plateau.
-        showCombatAnimation({ icon: getItemIcon(item), title: item.name, heal: String(result.message || '').trim() || null, target: '→ Vous' }, true);
-        normalizeActiveInventoryIndex();
-        updateInventoryTab();
-        updateItemButton();
-        saveUpdate();
-        endAction();
-    } else {
-        player.combatPoints += pa;
-        log(`${result.message}`);
-    }
+    player.combatPoints -= pa;   // payé au choix
+    // Effet : tout de suite ou en sortant de la file (la classe est consommée dès le choix) ; si l'objet n'est plus utilisable à ce moment, les PA sont rendus.
+    const effect = () => {
+        const at = player.inventory[resolvedIndex]?.id === itemId ? resolvedIndex : player.inventory.findIndex(i => i.id === itemId);
+        const result = at === -1 ? { success: false, message: 'Objet introuvable' } : useItem(itemId, player, enemy, at);
+        if(result.success){
+            if(item.effect?.cure) playSfx('cure');
+            logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
+            log(result.message);
+            // Animation d'utilisation (comme un sort ou une arme) : nom de l'objet et ses effets, au-dessus du plateau.
+            showCombatAnimation({ icon: getItemIcon(item), title: item.name, heal: String(result.message || '').trim() || null, target: '→ Vous' }, true);
+            normalizeActiveInventoryIndex();
+            updateInventoryTab();
+            updateItemButton();
+            saveUpdate();
+            endAction();
+        } else {
+            player.combatPoints += pa;
+            log(`${result.message}`);
+        }
+    };
+    if(chooseAction(effect)) return;
+    effect();
 }
 
 export function discardInventoryItem(index){

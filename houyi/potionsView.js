@@ -3,6 +3,7 @@ import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './
 import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
 import { itemUsability, useInventoryItem } from './gameInventoryTabs.js';
+import { classCanAct } from './gameSpellList.js';
 import { isSingleUse } from './itemReuse.js';
 
 const label = size => `${POTIONS[size].name} (+${potionHeal(player, size)} PV)`;
@@ -38,7 +39,7 @@ export function renderPotionButtons() {
     const free = !!xiuEffect().freePotions;   // Souffle du Lotus d'Or : potions sans point d'action
     const potionTiles = POTION_SIZES.map(size => {
         const p = POTIONS[size];
-        const blocked = drinkBlockReason(player, size, true, free);
+        const blocked = drinkBlockReason(player, size, true, free) || !classCanAct();
         return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' disabled' : ''} title="${escapeHtml(label(size))}">
             <div class="spell-name">${escapeHtml(p.name)} ×${potionCount(player, size)}</div>
             <div class="spell-cost">${free ? '0 PA' : `${p.actionPoints} PA`} · ${p.healPct} % des PV</div></button>`;
