@@ -138,7 +138,9 @@ function renderClassPicker(container){
         picker = document.createElement('div');
         picker.id = 'class-picker';
         picker.className = 'class-picker';
-        container.parentElement.insertBefore(picker, container);
+        // Hors de la zone de choix d'action : juste au-dessus de #spells-container.
+        const zone = document.getElementById('spells-container') || container.parentElement;
+        zone.parentElement.insertBefore(picker, zone);
     }
     const active = gameState.combatState === 'active';
     const mine = active && currentTurn === 'player';
