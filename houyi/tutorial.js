@@ -37,6 +37,7 @@ const TUTORIAL_COMPLETED_KEY = 'houyi_tutorial_done';
 const ENEMY_FINISH_HP = 10;      // PV laissés à l'adversaire après le sort : le dernier coup (3 crânes) l'achève
 const COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
 const COLOR_FR = { red: 'rouges', blue: 'bleus', green: 'verts', yellow: 'jaunes', purple: 'violets' };
+const ENEMY_KEEP_HP = 20;         // PV gardés à Fengmeng avant les coups de crânes et de flèches qui suivent le sort
 const ENEMY_MIN_HP_EARLY = 30;   // PV minimaux avant le sort, pour que les premiers coups ne l'achèvent pas
 
 // Répartition des tuiles neuves pendant le tutoriel (le reste = gâteaux de lune) : beaucoup de crânes et de qì,
@@ -124,27 +125,33 @@ const STEPS = [
     },
     {   // J2 : 3 gâteaux de sa couleur
         who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
-        title: () => "L'ennemi joue",
+        title: () => "L'ennemi joue : votre barre de classe se recharge",
         desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.<br><strong>Chargement :</strong> après chaque action, votre classe se recharge. Regardez la <strong>barre sous le plateau</strong> se remplir pendant que Fengmeng joue ; une fois pleine, votre classe peut agir de nouveau. Plus l'Agilité, le Moral, le qì et les compétences sont élevés, plus elle se recharge vite : une classe rapide, ou plusieurs classes à tour de rôle, jouent plus souvent que l'ennemi (qui a aussi son temps de chargement).`,
         done: 'Fengmeng a gagné du qì.',
-    },
-    {   // J1 : 3 crânes
-        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull', hp: 'min',
-        title: () => 'Combinez trois crânes',
-        desc: () => `Alignez <strong>3 crânes ${icon('skull')}</strong> pour blesser Fengmeng. Faites <strong>l'échange en surbrillance</strong>.`,
-        done: 'Fengmeng a encaissé vos crânes !',
-    },
-    {   // J2 : 3 crânes (le joueur subit des dégâts)
-        who: 'enemy', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
-        title: () => "L'ennemi joue",
-        desc: () => `Fengmeng aligne <strong>3 crânes ${icon('skull')}</strong> : vous <strong>subissez des dégâts</strong>. Surveillez vos PV !`,
-        done: 'Aïe ! Vous avez perdu des PV.',
     },
     {   // J1 : 4 gâteaux (tour bonus)
         who: 'player', kind: 'swap', match: { type: 'color', len: 4, side: 'me' }, icon: 'gift',
         title: () => `Combinez quatre gâteaux ${COLOR_FR[_myColor]}`,
         desc: () => `Un alignement de <strong>4 tuiles ou plus</strong> offre un <strong>tour bonus</strong> : vous rejouez tout de suite, sans que l'adversaire ne joue. Faites <strong>l'échange en surbrillance</strong>.`,
         done: 'Tour bonus ! Vous rejouez tout de suite.',
+    },
+    {   // J1 : 5 gâteaux de sa couleur : un joker apparaît, et le tour bonus permet de l'utiliser tout de suite
+        who: 'player', kind: 'swap', match: { type: 'color', len: 5, side: 'me' }, icon: 'star',
+        title: () => `Combinez cinq gâteaux ${COLOR_FR[_myColor]} pour créer un joker`,
+        desc: () => `Un alignement de <strong>5 tuiles</strong> fait apparaître un <strong>joker</strong>, qui remplace n'importe quelle tuile, et offre un tour bonus. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Un joker est apparu ! Utilisez-le tout de suite.',
+    },
+    {   // J1 : utilise le joker pour avoir des tuiles rouges
+        who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me' }, icon: 'star',
+        title: () => `Utilisez le joker : trois gâteaux ${COLOR_FR[_myColor]}`,
+        desc: () => `Le joker remplace n'importe quelle tuile : alignez-le avec <strong>2 gâteaux ${COLOR_FR[_myColor]}</strong> pour obtenir du qì ${icon('mana_' + _myColor)}, doublé grâce au joker. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Le joker a doublé votre qì !',
+    },
+    {   // J2 : coup tranquille
+        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
+        title: () => "L'ennemi joue",
+        desc: () => `Fengmeng joue un coup tranquille sur le plateau.`,
+        done: '',
     },
     {   // J1 : lance un sort
         who: 'player', kind: 'spell', icon: 'bow', hp: 'min',
@@ -158,8 +165,20 @@ const STEPS = [
         desc: () => `Fengmeng lance un sort, mais votre défense vous permet de <strong>bloquer</strong> le coup : un blocage total annule les dégâts, une parade les réduit.`,
         done: 'Blocage réussi : aucun dégât !',
     },
+    {   // J1 : 3 crânes
+        who: 'player', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull', hp: 'keep',
+        title: () => 'Combinez trois crânes',
+        desc: () => `Alignez <strong>3 crânes ${icon('skull')}</strong> pour blesser Fengmeng. Faites <strong>l'échange en surbrillance</strong>.`,
+        done: 'Fengmeng a encaissé vos crânes !',
+    },
+    {   // J2 : 3 crânes (le joueur subit des dégâts)
+        who: 'enemy', kind: 'swap', match: { type: 'skull', len: 3 }, icon: 'skull',
+        title: () => "L'ennemi joue",
+        desc: () => `Fengmeng aligne <strong>3 crânes ${icon('skull')}</strong> : vous <strong>subissez des dégâts</strong>. Surveillez vos PV !`,
+        done: 'Aïe ! Vous avez perdu des PV.',
+    },
     {   // J1 : 4 flèches (tuiles d'action) : tour bonus, il utilise son arme tout de suite
-        who: 'player', kind: 'swap', match: { type: 'combat', len: 4 }, icon: 'arrow',
+        who: 'player', kind: 'swap', match: { type: 'combat', len: 4 }, icon: 'arrow', hp: 'keep',
         title: () => 'Combinez quatre flèches',
         desc: () => `Votre arme se déclenche avec des <strong>flèches ${icon('arrow')}</strong> : alignez <strong>4 tuiles d'action</strong> pour en gagner, et gagner un tour bonus pour frapper tout de suite. Faites <strong>l'échange en surbrillance</strong>.`,
         done: 'Tour bonus ! Frappez tout de suite avec votre arme.',
@@ -174,24 +193,6 @@ const STEPS = [
         who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'other' }, icon: 'refresh',
         title: () => "L'ennemi joue",
         desc: () => `Fengmeng joue un dernier coup tranquille sur le plateau.`,
-        done: '',
-    },
-    {   // J1 : 5 crânes : un joker apparaît, et le tour bonus permet de l'utiliser tout de suite
-        who: 'player', kind: 'swap', match: { type: 'skull', len: 5 }, icon: 'skull',
-        title: () => 'Combinez cinq crânes pour créer un joker',
-        desc: () => `Un alignement de <strong>5 tuiles</strong> fait apparaître un <strong>joker</strong>, qui remplace n'importe quelle tuile, et offre un tour bonus. Faites <strong>l'échange en surbrillance</strong>.`,
-        done: 'Un joker est apparu ! Utilisez-le tout de suite.',
-    },
-    {   // J1 : utilise le joker pour avoir des tuiles rouges
-        who: 'player', kind: 'swap', match: { type: 'color', len: 3, side: 'me' }, icon: 'star',
-        title: () => `Utilisez le joker : trois gâteaux ${COLOR_FR[_myColor]}`,
-        desc: () => `Le joker remplace n'importe quelle tuile : alignez-le avec <strong>2 gâteaux ${COLOR_FR[_myColor]}</strong> pour obtenir du qì ${icon('mana_' + _myColor)}, doublé grâce au joker. Faites <strong>l'échange en surbrillance</strong>.`,
-        done: 'Le joker a doublé votre qì !',
-    },
-    {   // J2 : coup tranquille
-        who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
-        title: () => "L'ennemi joue",
-        desc: () => `Fengmeng joue un coup tranquille sur le plateau.`,
         done: '',
     },
     {   // J1 : 3 crânes, Fengmeng perd
@@ -579,6 +580,9 @@ function _adjustEnemyHp() {
     const hp = _cur()?.hp;
     if (hp === 'min') {
         foe.hp = Math.max(foe.hp, ENEMY_MIN_HP_EARLY);
+        foe.maxHp = Math.max(foe.maxHp, foe.hp);
+    } else if (hp === 'keep') {   // ni plancher à 1 PV ni mort : on lui garde de quoi encaisser les coups suivants
+        foe.hp = Math.max(foe.hp, ENEMY_KEEP_HP);
         foe.maxHp = Math.max(foe.maxHp, foe.hp);
     } else if (hp === 'finish') {
         foe.hp = Math.max(1, Math.min(foe.hp, ENEMY_FINISH_HP));

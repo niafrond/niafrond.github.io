@@ -1,7 +1,7 @@
 // Onglet « Compétences » : balisage (module pur, sans DOM ni accès au jeu : testable et prévisualisable hors du jeu).
 // Présentation inspirée des menus de capacités des jeux de rôle japonais : en-tête du héros avec son compteur de Fulu, grille à deux colonnes
 // (gemme pleine = activée, gemme creuse = apprise mais éteinte, gemme grise = pas encore apprise), coût en Fulu à droite, fiche d'information.
-import { skillsFor, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
+import { visibleSkills, markSeen, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
 import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 
@@ -92,7 +92,8 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     const used = usedMagikoliths(hero), cap = magikolithCapacity(hero);
     const taught = taughtMap(gear, hero);
     const order = { active: 0, learned: 1, training: 2, locked: 3 };
-    const list = [...skillsFor(hero)].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
+    markSeen(hero, [...taught.keys()]);   // ce que l'équipement porté enseigne devient visible (et le reste du catalogue reste caché)
+    const list = [...visibleSkills(hero, [...taught.keys()])].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
     const selected = getSkill(selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
     const ownedClasses = normalizeRoster(hero).owned;
@@ -109,7 +110,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
             <div class="ab-grid" role="list">${list.map(s => row(hero, s, taught, selected.id)).join('')}</div>
             ${infoPanel(hero, selected, taught, canToggle)}
         </div>
-        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} / ${list.length} apprises</p>
+        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} apprise${learnedCount > 1 ? 's' : ''}</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
             <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
             <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p>' : ''}</details>

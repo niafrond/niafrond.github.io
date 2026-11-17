@@ -5,6 +5,7 @@
 import { ATTRIBUTE_MANA_RULES, getAttributePoints, agilityScore } from './attributes.js';
 import { skillBonus } from './skills.js';
 
+export const CHARGE_MS_PER_UNIT = 30;   // durée réelle d'une unité de chargement : 100 unités = 3 s (× vitesse des animations)
 export const CHARGE_BASE = 100;          // temps de chargement sans aucun bonus
 export const CHARGE_MIN = 40;            // plancher : jamais plus de 60 % de réduction
 const AGILITY_PCT = 0.5;                 // % de réduction par point d'Agilité + Moral (toutes les classes)
@@ -79,4 +80,16 @@ export function nextActor(charge, usable) {
     else side = charge.last === 'player' ? 'enemy' : 'player';
     charge.clock = Math.max(charge.clock, side === 'player' ? playerAt : charge.enemyReady);
     return side;
+}
+
+/** Part de chargement (0..1) d'une classe à l'instant `clock` de la chronologie (pour animer la barre jusqu'à la date où elle sera prête). */
+export function classProgressAt(charge, hero, id, clock) {
+    const left = readyAt(charge, id) - clock;
+    return left <= 0 ? 1 : Math.max(0, 1 - left / classChargeTime(hero, id));
+}
+
+/** Date (chronologie) où le héros pourra de nouveau agir : la première classe prête. */
+export function playerReadyClock(charge, usable) {
+    const pool = usable.length ? usable : Object.keys(charge.ready);
+    return pool.length ? Math.min(...pool.map(id => readyAt(charge, id))) : charge.clock;
 }

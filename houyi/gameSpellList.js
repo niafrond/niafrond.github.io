@@ -14,7 +14,7 @@ import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from '
 import { actionSpells } from './skills.js';
 import { readyClasses, classProgress, classChargeInfo } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
-import { isInTranse, describeTranse } from './transe.js';
+import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
 
 // sorts
@@ -140,6 +140,25 @@ export function combatSpellList(){
 }
 
 
+/** Bandeau de la Xiūxiān en cours : nom, effet exact et tours restants (au-dessus de la ligne de classes). */
+function renderXiuBanner(zone){
+    let banner = document.getElementById('xiu-banner');
+    if(!banner){
+        banner = document.createElement('div');
+        banner.id = 'xiu-banner';
+        banner.className = 'xiu-banner';
+        banner.setAttribute('role', 'status');
+        zone.parentElement.insertBefore(banner, zone);
+    }
+    const on = gameState.combatState === 'active' && isInTranse(player) && !!player.transeClass;
+    banner.hidden = !on;
+    if(!on){ banner.innerHTML = ''; return; }
+    const cls = player.transeClass, effect = transeEffectFor(cls);
+    const left = player.cheatMaxRage === true ? null : Math.max(1, Math.min(TRANSE_TURNS, Math.floor(player.transe || 0)));
+    banner.innerHTML = `<strong>Xiūxiān · ${CLASS_SHORT[cls] || cls}${effect.name ? ` : ${effect.name}` : ''}</strong>`
+        + `<span>${effect.text ? `Effet : ${effect.text}.` : ''}${left ? ` ${left} tour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}.` : ''}</span>`;
+}
+
 function renderClassPicker(container){
     let picker = document.getElementById('class-picker');
     if(!picker){
@@ -150,6 +169,7 @@ function renderClassPicker(container){
         const zone = document.getElementById('spells-container') || container.parentElement;
         zone.parentElement.insertBefore(picker, zone);
     }
+    renderXiuBanner(picker);
     const active = gameState.combatState === 'active';
     const mine = active && currentTurn === 'player';
     const current = getTurnClass();
@@ -161,11 +181,19 @@ function renderClassPicker(container){
     picker.innerHTML = loadout.map(id => {
         const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
         const ready = !chargeEnabled() || readyClasses(gameState.charge, [id]).length > 0;   // dans le tutoriel, le chargement est montré mais n'impose rien
-        const prog = Math.round(classProgress(gameState.charge, player, id) * 100);
+        let prog = Math.round(classProgress(gameState.charge, player, id) * 100);
+        // Barre animée en temps réel pendant que la classe se recharge (gameTurnFlow.js, `gameState.chargeAnim`) : on reprend là où elle en est.
+        const anim = gameState.chargeAnim, elapsed = anim ? Date.now() - anim.t0 : 0;
+        let animStyle = '';
+        if(anim && anim.ms > 0 && elapsed < anim.ms && anim.to[id] != null && anim.to[id] > anim.from[id]){
+            const now = anim.from[id] + (anim.to[id] - anim.from[id]) * elapsed / anim.ms;
+            animStyle = `--from:${now.toFixed(1)}%;--to:${anim.to[id]}%;--dur:${Math.round(anim.ms - elapsed)}ms;`;
+            prog = Math.round(now);
+        }
         const info = classChargeInfo(player, id);
         const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Chargement ${prog} % (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
         const off = !mine || (forced && id !== forced) || restricted[id] || !ready;
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ready ? '' : ' charging'}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${prog >= 100 ? '' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
     }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }

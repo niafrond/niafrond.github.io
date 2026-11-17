@@ -83,8 +83,8 @@ describe('tutoriel sans hasard : script pré-généré', () => {
         }
     });
 
-    test('le joker de la 11e étape est bien celui utilisé à la 12e', () => {
-        const e11 = TUTORIAL_SCRIPT.find(e => e.step === 11), e12 = TUTORIAL_SCRIPT.find(e => e.step === 12);
+    test('le joker de la 4e étape est bien celui utilisé à la 5e', () => {
+        const e11 = TUTORIAL_SCRIPT.find(e => e.step === 4), e12 = TUTORIAL_SCRIPT.find(e => e.step === 5);
         expect(e12.board.filter(t => t === 'joker')).toHaveLength(1);
         const r = play(e12.board.map(real), e12.swap, e12.drops.map(real));
         expect(r.matches[0].indices).toContain(e12.board.indexOf('joker'));

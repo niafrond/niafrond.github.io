@@ -33,10 +33,10 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells, getTurnClass, usableNow, chargeEnabled } from './gameSpellList.js';
-import { playerActed, enemyActed, nextActor } from './classCharge.js';
+import { updateAvailableSpells, createSpellButtons, getTurnClass, usableNow, chargeEnabled } from './gameSpellList.js';
+import { playerActed, enemyActed, nextActor, classProgressAt, playerReadyClock, CHARGE_MS_PER_UNIT } from './classCharge.js';
 import { CLASS_SHORT } from './classRoster.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
+import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -101,6 +101,27 @@ function endOfPlayerTurnTranse(){
         log('La Xiūxiān s\'achève.');
         updateStats();
     }
+}
+
+// ── Temps de chargement visible ─────────────────────────────────────────────
+// Quand le héros vient d'agir, sa barre se remplit en temps réel jusqu'à ce qu'une classe soit prête (`gameState.chargeAnim`, dessinée par
+// gameSpellList.js). Tant qu'aucune classe n'est prête, le tour est « charging » : ni plateau, ni action, ni sort, ni objet.
+function startChargeAnim(){
+    const ch = gameState.charge, usable = usableNow();
+    const readyClock = playerReadyClock(ch, usable);
+    const progress = clock => Object.fromEntries(usable.map(id => [id, Math.round(classProgressAt(ch, player, id, clock) * 100)]));
+    gameState.chargeAnim = { from: progress(ch.clock), to: progress(readyClock), ms: Math.max(0, readyClock - ch.clock) * CHARGE_MS_PER_UNIT * animationFactor(), t0: Date.now() };
+}
+const chargeRemainingMs = () => { const a = gameState.chargeAnim; return a ? Math.max(0, a.t0 + a.ms - Date.now()) : 0; };
+
+/** Le héros attend sa recharge (plateau et actions bloqués) puis `resume` lance son tour. Sans attente : tout de suite. */
+function waitForCharge(resume){
+    const wait = chargeRemainingMs();
+    if(wait <= 0){ resume(); return; }
+    setCurrentTurn('charging');
+    updateStats();
+    createSpellButtons();   // redessine la ligne de classes : la barre se remplit en temps réel
+    setTimeout(() => { if(gameState.combatState === 'active' && currentTurn === 'charging') resume(); }, wait);
 }
 
 export function finishPlayerTurn(){
@@ -175,25 +196,31 @@ export function finishPlayerTurn(){
     // Temps de chargement (classCharge.js) : la classe qui vient d'agir se recharge ; si une autre classe est prête avant l'ennemi, le joueur rejoue.
     if(gameState.combatState === 'active' && enemy?.isTutorialEnemy){   // tutoriel : le déroulé reste scripté, mais la barre de la classe se vide puis se remplit pendant que Fengmeng joue
         playerActed(gameState.charge, player, getTurnClass());
+        startChargeAnim();
     }
     if(chargeEnabled()){
         playerActed(gameState.charge, player, getTurnClass());
+        startChargeAnim();
         if(nextActor(gameState.charge, usableNow()) === 'player'){
-            gameState.turnClass = null;   // la classe du tour passe à une classe chargée
-            const next = getTurnClass();
-            log(`${enemy.name} se recharge encore : vous rejouez avec ${CLASS_SHORT[next] || next}.`);
-            syncGauge();
-            applyTranseClassEffect();
-            updateStats();
-            saveUpdate();
-            restartSuggestionTimer();
-            tutorialCallbacks.onPlayerTurn?.('bonus');
+            waitForCharge(() => {
+                gameState.turnClass = null;   // la classe du tour passe à une classe chargée
+                const next = getTurnClass();
+                log(`${enemy.name} se recharge encore : vous rejouez avec ${CLASS_SHORT[next] || next}.`);
+                syncGauge();
+                setCurrentTurn('player');
+                applyTranseClassEffect();
+                updateStats();
+                saveUpdate();
+                restartSuggestionTimer();
+                tutorialCallbacks.onPlayerTurn?.('bonus');
+            });
             return;
         }
     }
     // Laisse finir l'animation de l'action du joueur (attaque, sort, soin, objet) avant la réplique de l'adversaire.
     setCurrentTurn('enemy'); // bloque le plateau pendant l'animation
     updateStats();
+    if(gameState.chargeAnim) createSpellButtons();   // la barre de chargement se remplit pendant la réplique
     afterPlayerAnimations(() => {
         if(gameState.combatState !== 'active') return;
         if(player.hp <= 0){ handlePlayerDeath(); return; }
@@ -716,7 +743,8 @@ export function finishEnemyTurn(){
         if(playerStunned) player.statusEffects.stunned--;
         const playerSleeps = isAsleep(player) || playerStunned;   // Endormi : le héros perd ce tour (sauf s'il a été réveillé par des dégâts)
         tickAlterations(player).forEach(m => log(m));
-        // Temps de chargement : si l'ennemi est de nouveau prêt avant toute classe du héros, il rejoue.
+        // Temps de chargement : si l'ennemi est de nouveau prêt avant toute classe du héros, il rejoue ; sinon le héros attend que sa barre soit pleine.
+        let startPlayer = fn => fn();
         if(enemy?.isTutorialEnemy && gameState.combatState === 'active'){   // tutoriel : la barre de la classe finit de se remplir
             const rd = Object.values(gameState.charge.ready);
             if(rd.length) gameState.charge.clock = Math.max(gameState.charge.clock, ...rd);
@@ -731,23 +759,26 @@ export function finishEnemyTurn(){
                 return;
             }
             gameState.turnClass = null;   // les classes chargées passent d'abord
+            startPlayer = waitForCharge;
         }
-        // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
-        turnFlags.foxActed = false;
-        turnFlags.companionsActed = false;
-        setCurrentTurn('player');
-        gameState.doubleCastUsed = false;
-        applyTranseClassEffect();   // Xiūxiān en cours : l'effet de la classe du tour s'applique dès le début du tour
-        updateStats();
-        saveUpdate();
-        updateStats(); // Pour mettre à jour le liseré
-        restartSuggestionTimer();
-        if(playerSleeps){
-            log(playerStunned ? 'Vous êtes étourdi et perdez ce tour.' : 'Vous dormez et ne pouvez pas agir ce tour-ci.');
-            setTimeout(() => { if(gameState.combatState === 'active' && player.hp > 0) enemyTurn(); }, 900);
-            return;
-        }
-        tutorialCallbacks.onPlayerTurn?.('turn');   // tutoriel scripté : début du tour du joueur
+        startPlayer(() => {
+            // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
+            turnFlags.foxActed = false;
+            turnFlags.companionsActed = false;
+            setCurrentTurn('player');
+            gameState.doubleCastUsed = false;
+            applyTranseClassEffect();   // Xiūxiān en cours : l'effet de la classe du tour s'applique dès le début du tour
+            updateStats();
+            saveUpdate();
+            updateStats(); // Pour mettre à jour le liseré
+            restartSuggestionTimer();
+            if(playerSleeps){
+                log(playerStunned ? 'Vous êtes étourdi et perdez ce tour.' : 'Vous dormez et ne pouvez pas agir ce tour-ci.');
+                setTimeout(() => { if(gameState.combatState === 'active' && player.hp > 0) enemyTurn(); }, 900);
+                return;
+            }
+            tutorialCallbacks.onPlayerTurn?.('turn');   // tutoriel scripté : début du tour du joueur
+        });
     }
 }
 

@@ -1,14 +1,15 @@
 import { describe, test, expect } from '@jest/globals';
 import './fixtures/xhrFromDisk.js';
-import { SKILLS, skillsTaughtBy, awardAp, toggleSupport, magikolithCapacity, usedMagikoliths, skillBonus, actionSpells, normalizeSkills, teachers, apForVictory } from '../../skills.js';
+import { allWeapons } from '../../weapons.js';
+import { SKILLS, visibleSkills, markSeen, skillsTaughtBy, awardAp, toggleSupport, magikolithCapacity, usedMagikoliths, skillBonus, actionSpells, normalizeSkills, teachers, apForVictory } from '../../skills.js';
 
 const hero = (extra = {}) => ({ level: 10, equippedWeapon: { id: 'arc_de_feu', rarity: 'legendary' }, skills: {}, ...extra });
 
 describe('compétences enseignées par l\'équipement', () => {
-    test('stables, 1 pour un objet commun, 2 pour un objet rare', () => {
-        expect(skillsTaughtBy({ id: 'x', rarity: 'common' })).toHaveLength(1);
+    test('stables, 2 pour un objet commun, 3 pour un objet rare', () => {
+        expect(skillsTaughtBy({ id: 'x', rarity: 'common' })).toHaveLength(2);
         const rare = skillsTaughtBy({ id: 'arc_de_feu', rarity: 'legendary' });
-        expect(rare).toHaveLength(2);
+        expect(rare).toHaveLength(3);
         expect(skillsTaughtBy({ id: 'arc_de_feu', rarity: 'legendary' })).toEqual(rare);
         expect(skillsTaughtBy(null)).toEqual([]);
     });
@@ -63,4 +64,22 @@ test('les compétences d\'action apprises donnent des commandes de combat', () =
     expect(spells.map(s => s.id)).toEqual(['skill_tir_perforant', 'skill_lotus_de_soin']);
     expect(spells[0].dmg).toBeGreaterThan(0);
     expect(spells[1].heal).toBeGreaterThan(0);
+});
+
+describe('variété et visibilité des compétences', () => {
+    test('le catalogue est varié et les armes enseignent des compétences différentes', () => {
+        expect(SKILLS.length).toBeGreaterThanOrEqual(30);
+        const sets = new Set(allWeapons.map(w => skillsTaughtBy(w).join('|')));
+        expect(sets.size).toBeGreaterThan(allWeapons.length * 0.8);
+        const covered = new Set(allWeapons.flatMap(w => skillsTaughtBy(w)));
+        expect(covered.size).toBeGreaterThan(SKILLS.length * 0.55);
+    });
+    test('une compétence jamais vue reste cachée ; celle que l\'arme enseigne devient visible, puis le reste visible', () => {
+        const h = hero({ equippedWeapon: null });
+        expect(visibleSkills(h)).toEqual([]);
+        const taught = skillsTaughtBy({ id: 'arc_de_bronze', rarity: 'common' });
+        expect(visibleSkills(h, taught).map(s => s.id).sort()).toEqual([...taught].sort());
+        markSeen(h, taught);
+        expect(visibleSkills(h).map(s => s.id).sort()).toEqual([...taught].sort());
+    });
 });
