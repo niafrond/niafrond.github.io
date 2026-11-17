@@ -494,6 +494,7 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
     // Phase d'un duel enchaîné : le héros garde les PV de la phase précédente (game.js : restartCombat).
     if(encounter?.carryHp) enemyEntity.carryHp = true;
+    if(encounter?.training) enemyEntity.training = encounter.training;   // classe imposée au héros pour ce combat (game.js : gameState.forcedClass)
     // Vague de l'Arène des Mille Flèches (arena.js) : prime versée par game.js à la victoire.
     if(encounter?.arena) {
         enemyEntity.arena = { ...encounter.arena };

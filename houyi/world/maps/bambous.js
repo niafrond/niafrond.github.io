@@ -36,6 +36,7 @@ export default {
             '~~~~~~~~~~~~~~~v~~~~~~~~~~~~~~~~'
         ],
         npcs: [
+            { id: 'trainer_monk', x: 6, y: 10 },
             { id: 'merchant_bambous', at: 'p' },
             { id: 'huli_xia', at: '1' },
             { id: 'young_monk_zhi', at: '0' },
@@ -154,12 +155,12 @@ export default {
             { id: 'bambous_wild_incense_chest', x: 44, y: 12, gold: 90 }
         ],
         enemies: [
+            { id: 'train_monk', x: 11, y: 12, templateId: 'shu_jing', name: "Vieux bambou d'épreuve", kind: 'sentinel', offset: -1, permanent: true, training: 'monk' },
             { id: 'bambous_seal_keeper', x: 43, y: 5, templateId: 'fengxi', spriteKey: 'fengxi', name: 'Fengxi, le Grand Sanglier', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Fengxi, le Grand Sanglier', level: 17 } },
             { id: 'bambous_ember_wisp', x: 12, y: 9, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_ember_wisp_b', x: 27, y: 6, templateId: 'lingzhi_maudit', name: 'Lingzhi des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
             { id: 'bambous_w_shade', x: 14, y: 7, templateId: 'assassin_masque', name: 'Ombre de cendre', kind: 'patrol', patrol: [[14, 7], [20, 7]], offset: 0 },
             { id: 'bambous_w_spirit', x: 13, y: 17, templateId: 'shu_jing', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: [[13, 17], [21, 17]], offset: -1 },
-            { id: 'bambous_w_pilgrim', x: 37, y: 12, templateId: 'gui_guerrier', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
             { id: 'bambous_ash_shadow_a', x: 22, y: 12, templateId: 'assassin_masque', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
             { id: 'bambous_ash_shadow_b', x: 26, y: 10, templateId: 'assassin_masque', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
             { id: 'bambous_lantern_thief', x: 31, y: 5, templateId: 'huli_jing', name: 'Démon voleur de lampions', kind: 'sentinel', offset: 0, permanent: true },

@@ -107,12 +107,59 @@ export const ultimateSpells = Array.isArray(spellCatalog.ultimateSpells)
     ? spellCatalog.ultimateSpells.map(normalizeSpellColorAttributes)
     : [];
 
+// Classes obtenues en cours de route (Moine, Alchimiste, Chamane) : leurs sorts reprennent l'effet d'un sort existant (donneur), avec
+// leur propre nom, coût, niveau et description. Ainsi chaque effet est déjà géré par le moteur et par la version ennemie des sorts.
+const donorSpells = [...sorcererSpells, ...assassinSpells, ...templarSpells, ...barbarianSpells];
+function deriveSpells(className, recipes) {
+    return recipes.map(({ from, id, name, cost, minLevel, description }) => {
+        const donor = donorSpells.find(sp => sp.id === from);
+        if (!donor) {   // catalogue absent (module chargé sans spells.json) : aucune dérivation
+            if (donorSpells.length) throw new Error(`Sort donneur introuvable : ${from}`);
+            return null;
+        }
+        const spell = { ...donor, id, name, class: className, minLevel: minLevel ?? donor.minLevel, description: description || donor.description };
+        if (cost) spell.cost = { ...cost };
+        return normalizeSpellColorAttributes(spell);
+    }).filter(Boolean);
+}
+
+export const monkSpells = deriveSpells('monk', [
+    { from: 'stoneskin', id: 'monkIronRobe', name: 'Robe de Fer', cost: { green: 6 }, minLevel: 1, description: 'Une robe de moine tissée de qì : défense en hausse quelques tours' },
+    { from: 'defensiveWall', id: 'monkSutraWall', name: 'Murmure du Sutra', minLevel: 2 },
+    { from: 'reinforce', id: 'monkLotusBreath', name: 'Souffle du Lotus', minLevel: 6 },
+    { from: 'counterAttack', id: 'monkReturningPalm', name: 'Paume de Retour', minLevel: 8 },
+    { from: 'iceShield', id: 'monkLakeCalm', name: 'Calme du Lac', minLevel: 7 },
+    { from: 'barrier', id: 'monkSacredBarrier', name: 'Barrière Sacrée', minLevel: 10 },
+    { from: 'holdTheLine', id: 'monkStillMind', name: 'Esprit Impassible', minLevel: 12 }
+]);
+export const alchemistSpells = deriveSpells('alchemist', [
+    { from: 'flameBolts', id: 'alchemySparkPowder', name: 'Poudre d\'Étincelles', cost: { red: 4 }, minLevel: 1 },
+    { from: 'weakness', id: 'alchemyBitterPowder', name: 'Poudre Amère', minLevel: 3 },
+    { from: 'poisonBlade', id: 'alchemyVenomElixir', name: 'Élixir Venimeux', minLevel: 5 },
+    { from: 'tigerEye', id: 'alchemyVigorPill', name: 'Pilule de Vigueur', minLevel: 6 },
+    { from: 'manaSiphon', id: 'alchemyDistillation', name: 'Distillation de Qì', minLevel: 8 },
+    { from: 'impureBreath', id: 'alchemyFoulFumes', name: 'Vapeurs Impures', minLevel: 11 },
+    { from: 'flameSphere', id: 'alchemyPortableFurnace', name: 'Fournaise Portative', minLevel: 8 }
+]);
+export const shamanSpells = deriveSpells('shaman', [
+    { from: 'shadowCurse', id: 'shamanSpiritSeal', name: 'Sceau des Esprits', minLevel: 1 },
+    { from: 'handOfIce', id: 'shamanColdBreath', name: 'Souffle Glacial', minLevel: 4 },
+    { from: 'cursedMark', id: 'shamanAncestorMark', name: 'Marque des Ancêtres', minLevel: 6 },
+    { from: 'sleepDust', id: 'shamanDreamDust', name: 'Poussière de Rêve', minLevel: 7 },
+    { from: 'rush', id: 'shamanThunderDance', name: 'Danse du Tonnerre', minLevel: 8 },
+    { from: 'fingerOfDeath', id: 'shamanDeadFinger', name: 'Doigt des Morts', minLevel: 9 },
+    { from: 'stealth', id: 'shamanSpiritVeil', name: 'Voile d\'Esprit', minLevel: 6 }
+]);
+
 // Toujours dérivée des listes par classe : une copie figée dans spells.json masquerait tout sort ajouté ensuite.
 export const allClassSpells = [
     ...sorcererSpells,
     ...assassinSpells,
     ...templarSpells,
-    ...barbarianSpells
+    ...barbarianSpells,
+    ...monkSpells,
+    ...alchemistSpells,
+    ...shamanSpells
 ];
 
 export function getSpellsByColor(color) {

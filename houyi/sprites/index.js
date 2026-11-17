@@ -181,7 +181,9 @@ export function packsForKeys({ npcs = [], enemies = [] } = {}) {
 export const TILE_FILES = ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'combat', 'joker']
     .map(name => `sprites/tiles/tile-${name}.svg`);
 
-export const heroSprite = classId => HERO_SPRITES[classId] || null;
+// Classes obtenues en cours de route (classRoster.js) : pas encore de dessin propre, elles empruntent celui d'une classe voisine.
+const HERO_SPRITE_ALIAS = { monk: 'templar', alchemist: 'sorcerer', shaman: 'sorcerer' };
+export const heroSprite = classId => HERO_SPRITES[classId] || HERO_SPRITES[HERO_SPRITE_ALIAS[classId]] || null;
 // PNJ dessinés à la main, sinon villageois (ou créature) généré à partir de l'identifiant.
 // Un PNJ dessiné dont le paquet n'est pas encore chargé vaut null (et son paquet est demandé).
 const villagerCache = new Map();

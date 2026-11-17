@@ -16,6 +16,9 @@ export default {
     volcan_h_cantine: { name: 'Cantine des mineurs', arrival: ['Une longue table, des bols fumants et des plaisanteries sur le dos des cailloux.'] }
   },
   npcs: {
+    trainer_barbarian: { name: "Tu le Briseur", title: "Maître des poings de roche",
+      idle: ["Le Guerrier ne fuit pas la douleur : il la met en colère, et la colère frappe plus fort que la peur.", "Ceux qui disent qu'un arc suffit n'ont jamais eu une lame sous le menton."],
+      talk: [{ whenDone: 'q_class_barbarian', lines: ["Ta voie de Guerrier est la tienne maintenant. Sers-t'en, et mêle-la aux autres : aucune classe ne suffit partout."] }] },
     volcan_road_prospector: { name: 'Lü le Prospecteur', title: 'Chercheur de veines',
       idle: ['Je cherche une veine de jade dans le basalte. J\'ai trouvé du basalte. Je continue : le basalte, ça a du jade dedans, forcément.', 'Écoutez les colonnes : quand elles tintent, la lave dort. Quand elles se taisent, courez, ou priez, selon votre tempérament.'],
       talk: [{ whenDone: 'sun_6', lines: ['Les colonnes ne tintent plus du tout. Je ne sais pas si la lave dort ou si elle est partie. Je creuse quand même.'] }] },

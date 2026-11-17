@@ -16,6 +16,9 @@ export default {
     fleuve_h_tortue: { name: 'Mare de la Tortue Gui', arrival: ['Une dernière mare, entourée de pierres. L\'eau est si calme qu\'elle semble réfléchir.'] }
   },
   npcs: {
+    trainer_sorcerer: { name: "Maître Xuan", title: "Taoïste du gué",
+      idle: ["L'eau écoute celui qui se tait. Les talismans, eux, écoutent celui qui sait où poser le pinceau.", "Le qì n'est pas une force : c'est une conversation."],
+      talk: [{ whenDone: 'q_class_sorcerer', lines: ["Ta voie de Mage est la tienne maintenant. Sers-t'en, et mêle-la aux autres : aucune classe ne suffit partout."] }] },
     salt_hu: { name: 'Hu', title: 'Marchand de sel', 
       idle: ['Sans eau, le sel ne manque pas ! C\'est la seule chose qui prospère ici. On appelle ça une consolation salée.', 'Goûtez ce sel gris : il vient du fond du fleuve, il a goût de regrets et de vieux poisson.'],
       talk: [{ whenDone: 'sun_2', lines: ['Le quatrième soleil est tombé, et j\'ai senti un peu d\'humidité dans mes tonneaux. Du jamais vu depuis trois lunes. Je vous offre une pincée de bonheur en poudre.'] }] },

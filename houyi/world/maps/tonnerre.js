@@ -36,6 +36,7 @@ export default {
             '~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~'
         ],
         npcs: [
+            { id: 'trainer_alchemist', x: 20, y: 11 },
             { id: 'merchant_tonnerre', x: 17, y: 11 },
             { id: 'kids_leimei', x: 13, y: 16 },
             { id: 'hua_tonnerre', x: 22, y: 12 },
@@ -193,11 +194,11 @@ export default {
             { id: 'tonnerre_wild_rope_box', x: 42, y: 13, gold: 75 }
         ],
         enemies: [
+            { id: 'train_alchemist', x: 13, y: 13, templateId: 'wen_shen', name: "Docteur-démon d'essai", kind: 'sentinel', offset: -1, permanent: true, training: 'alchemist' },
             { id: 'tonnerre_stone_lion', x: 38, y: 10, templateId: 'dafeng', spriteKey: 'dafeng', name: 'Dafeng, le Grand Vent', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Dafeng, le Grand Vent', level: 22 } },
             { id: 'tonnerre_crest_general', x: 21, y: 5, templateId: 'lei_gong', name: 'Général de la crête', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'tonnerre_w_wyrm', x: 14, y: 19, templateId: 'yinglong', name: 'Serpent d\'éclairs', kind: 'patrol', patrol: [[14, 19], [21, 19]], offset: 0 },
             { id: 'tonnerre_w_statue', x: 23, y: 11, templateId: 'soldat_terre_cuite', name: 'Statue de foudre', kind: 'patrol', patrol: [[23, 11], [30, 11]], offset: -1 },
-            { id: 'tonnerre_w_ogre', x: 29, y: 19, templateId: 'shanxiao', name: 'Ogre des cimes', kind: 'sentinel', offset: 0 },
             { id: 'tonnerre_wyrm_calf', x: 7, y: 11, templateId: 'yinglong', name: 'Serpenteau d\'orage', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'tonnerre_rider_a', x: 34, y: 6, templateId: 'lei_gong', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' },
             { id: 'tonnerre_rider_b', x: 36, y: 5, templateId: 'lei_gong', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' },

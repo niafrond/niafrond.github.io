@@ -4,6 +4,9 @@ import {
     assassinSpells, 
     templarSpells, 
     barbarianSpells,
+    monkSpells,
+    alchemistSpells,
+    shamanSpells,
     allClassSpells 
 } from './spells.js';
 
@@ -40,6 +43,31 @@ export const playerClasses = {
         description: 'Hou Yi en fourrures, guerrier du Nord à la force dévastatrice',
         startingStats: { strength: 3 },
         startingWeaponId: 'arc_de_chasseur'
+    },
+    // Classes obtenues en cours de route, auprès d'un maître qui impose un entraînement (voir classRoster.js, storyQuests.js).
+    monk: {
+        id: 'monk',
+        name: 'Moine · Sēngrén',   // 僧人
+        icon: 'leaf',
+        description: 'Hou Yi en robe safran : respiration, sutras et gardes impassibles',
+        startingStats: { stamina: 2, morale: 1 },
+        startingWeaponId: 'arc_d_ecorce'
+    },
+    alchemist: {
+        id: 'alchemist',
+        name: 'Alchimiste · Liándān shī',   // 炼丹师
+        icon: 'potion',
+        description: 'Hou Yi au fourneau : poudres, poisons et élixirs de vigueur',
+        startingStats: { intelligence: 2, agility: 1 },
+        startingWeaponId: 'arc_de_bambou'
+    },
+    shaman: {
+        id: 'shaman',
+        name: 'Chamane · Wū',   // 巫
+        icon: 'mask',
+        description: 'Hou Yi parlant aux esprits : sceaux, glace et marques des ancêtres',
+        startingStats: { intelligence: 1, morale: 2 },
+        startingWeaponId: 'arc_de_fortune'
     }
 };
 
@@ -52,6 +80,9 @@ export {
     assassinSpells, 
     templarSpells, 
     barbarianSpells,
+    monkSpells,
+    alchemistSpells,
+    shamanSpells,
     allClassSpells 
 };
 

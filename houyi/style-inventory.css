@@ -428,3 +428,15 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .fuse-main { flex: 1 1 auto; min-width: 0; }
 .fuse-recipe { font-size: 0.85em; opacity: 0.85; }
 .fuse-reason { font-size: 0.8em; color: #e0a0a0; }
+
+/* ── Classes de combat (4 au plus) ── */
+.cl-panel { margin: 0 0 10px; padding: 8px; background: var(--ab-bg, #3a3d42); border: 2px solid var(--ab-edge, #8b9097); border-radius: 8px; }
+.cl-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px; }
+.cl-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: #2c2f33; border: 1px solid #5a5f66; }
+.cl-row.on { border-color: #7fe3f2; box-shadow: 0 0 4px #7fe3f2; }
+.cl-row.locked { opacity: 0.55; }
+.cl-toggle { font: inherit; font-size: 0.85em; padding: 2px 8px; border-radius: 5px; border: 1px solid #8b9097; background: #4b4f55; color: inherit; cursor: pointer; }
+.cl-toggle:disabled { opacity: 0.5; cursor: default; }
+.cl-lock { font-size: 0.8em; }
+.cl-limits { margin-top: 6px; font-size: 0.85em; }

@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { JUNCTIONS } from '../../world/junctions.js';
+import { CLASS_TRIAL_GATES } from '../../world/classTrials.js';
 import { TURNS } from '../../world/index.js';
 import { buildLegacyWorld, SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING, STORY_INTRO, STORY_TITLE } from '../../story.js';
 import {
@@ -684,7 +685,7 @@ describe('quêtes (story.js)', () => {
     });
 
     test('l\'histoire principale : 9 soleils, Fengmeng, épilogue ; la dernière quête est la seule finale', () => {
-        const main = QUESTS.filter(q => !q.side);
+        const main = QUESTS.filter(q => !q.side && !q.id.startsWith('q_class_'));   // les maîtres de classe (world/classTrials.js) précèdent le soleil de leur région
         expect(main.map(q => q.id)).toEqual([...SUN_ID.map(id => `q_${id}`), 'q_fengmeng', 'q_epilogue']);   // q_changxi : l'épreuve des Hautes-Eaux, sans soleil
         SUN_ID.forEach((sun, i) => {
             expect(quest(`q_${sun}`).objectives).toEqual([expect.objectContaining({ type: 'kill', target: sun })]);
@@ -1148,6 +1149,10 @@ describe('histoire complète', () => {
             if (n === 2) {
                 const scene = markEnemyDefeated(s, 'fengmeng_2');
                 expect(scene.map(e => e.type)).toEqual(['scene']);
+            }
+            if (CLASS_TRIAL_GATES[ORDER[n - 1]]) {   // maître de classe : le soleil n'apparaît qu'une fois l'entraînement rendu
+                expect(currentObjectiveText(s)).toContain('parlez à');
+                playQuest(s, CLASS_TRIAL_GATES[ORDER[n - 1]][1]);
             }
             expect(s.data.quests[`q_${SUN_ID[n - 1]}`]).toBe('active');
             expect(currentObjectiveText(s)).toContain(quest(`q_${SUN_ID[n - 1]}`).title);

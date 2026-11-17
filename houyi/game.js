@@ -18,6 +18,7 @@ import { actionGuard } from "./actionGuard.js";
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
 import { isInTranse, endTranse, transeEffectFor, classAllowsUltimate, describeTranse } from "./transe.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
+import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -907,6 +908,7 @@ export const isFoxPlaying = () => turnFlags.foxPlaying;
 export const gameState = { 
     combatState: 'ready', // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
     turnClass: null,      // classe choisie pour le tour en combat (null = classe du héros) ; jamais sauvegardée
+    forcedClass: null,    // classe imposée par un entraînement (enemy.training), sinon null
     transeApplied: null   // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
 };
 
@@ -915,10 +917,19 @@ export const gameState = {
 // et de la possibilité de lancer l'ultime (sorcier uniquement). Voir transe.js.
 export function setTurnClass(classId){
     if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
-    if(!['sorcerer', 'assassin', 'templar', 'barbarian'].includes(classId)) return false;
+    if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
     gameState.turnClass = classId;
     applyTranseClassEffect();
     return true;
+}
+
+// Récompense de quête : une nouvelle classe (classRoster.js). Elle rejoint les classes de combat s'il reste de la place (4 au plus).
+export function grantClassReward(classId, origin = 'Récompense de quête'){
+    const res = grantClass(player, classId);
+    if(!res.added) return null;
+    log(`✦ ${origin} : nouvelle classe « ${CLASS_SHORT[classId]} »${res.inLoadout ? ' (ajoutée à vos classes de combat)' : ' (vos 4 classes de combat sont pleines : échangez-les dans l\'onglet Compétences)'} !`);
+    saveUpdate();
+    return classId;
 }
 
 // Effet de Xiūxiān de la classe du tour, appliqué une seule fois par tour et par classe.
@@ -1289,6 +1300,8 @@ export function restartCombat({ keepHp = false } = {}){
     resetRage(player);
     addRage(player, startingRage(player));
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
+    gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
+    if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
     gameState.transeApplied = null;
     syncTranse();
     resetUltimateMana(player);
@@ -1499,6 +1512,8 @@ export function loadGameData() {
             player.unlockedUltimates = normalizeUnlockedUltimates(loaded.unlockedUltimates);
             player.skills = loaded.skills;
             normalizeSkills(player);
+            player.classes = loaded.classes;
+            normalizeRoster(player);
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;

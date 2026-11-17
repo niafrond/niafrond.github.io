@@ -1064,3 +1064,5 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 #enemy-spell-list, #enemy-spells h4 { display: none !important; }
 #spells-container #enemy-spells:not(:has(#enemy-weapon-button > *)) { display: none !important; }
 #spells-container #player-spells { flex: 1 1 100%; width: 100%; box-sizing: border-box; }
+
+.class-pick.limited { text-decoration: line-through; }

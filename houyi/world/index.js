@@ -28,6 +28,7 @@ import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { applyCollarQuests } from './collars.js';
 import { applyArmorQuests } from './armorQuests.js';
 import { applyLegendQuests } from './legends.js';
+import { applyClassTrials } from './classTrials.js';
 import { applyUnderground } from './underground.js';
 import { applyEvents } from '../events/engine.js';
 import { EVENTS } from '../events/config.js';
@@ -266,6 +267,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         applyArmorQuests(quests);   // armures antiques : quête muette qui compte les pièces (aucun indice de lieu)
         applyCollarQuests(screens, quests);   // colliers de biome : relique + mini-boss + quête (stuff.js)
         applyLegendQuests(screens, quests);   // Gardiens Célestes : relique + boss unique + quête qui rapporte un ultime de légende (ultimates.js)
+        applyClassTrials(screens, quests);   // maîtres de classe : nouvelles classes de combat, entraînement imposé, soleil masqué tant que la quête n'est pas rendue (classRoster.js)
         Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
         applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)
         // Événements temporaires activés par events/config.js (commit Git) : contenu facultatif ajouté au monde permanent.

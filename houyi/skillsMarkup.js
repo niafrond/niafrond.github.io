@@ -3,6 +3,7 @@
 // (gemme pleine = activée, gemme creuse = apprise mais éteinte, gemme grise = pas encore apprise), coût en Fulu à droite, fiche d'information.
 import { SKILLS, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
+import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -58,6 +59,23 @@ function infoPanel(hero, skill, taught, canToggle) {
     </div>`;
 }
 
+const BIOME_NAMES = { volcano: 'Volcan', gobi: 'Gobi', riverbed: 'Fleuve', bamboo: 'Bambous', storm: 'Tonnerre', savanna: 'Fauves', coast: 'Côte', tides: 'Hautes-Eaux', fusang: 'Fusang', moon: 'Lune', paddy: 'Rizières' };
+
+/** Classes de combat : celles que Hou Yi connaît, dont 4 au plus sont utilisables en combat ; classes à rencontrer ; biomes qui en brident. */
+export function classesHtml(hero, canToggle = true) {
+    const roster = normalizeRoster(hero);
+    const rows = CLASS_IDS.map(id => {
+        const owned = roster.owned.includes(id), on = roster.loadout.includes(id);
+        const action = owned ? `<button type="button" class="cl-toggle" data-toggle-class="${id}"${canToggle ? '' : ' disabled'}>${on ? 'Retirer' : 'Utiliser'}</button>` : '<span class="cl-lock">À rencontrer</span>';
+        return `<div class="cl-row${on ? ' on' : ''}${owned ? '' : ' locked'}"><span class="cl-name">${esc(CLASS_SHORT[id])}</span>${action}</div>`;
+    }).join('');
+    const limits = Object.entries(BIOME_CLASS_LIMITS).map(([biome, l]) => `<li><strong>${esc(BIOME_NAMES[biome] || biome)}</strong> : ${l.classes.map(c => esc(CLASS_SHORT[c])).join(', ')} bridé${l.classes.length > 1 ? 's' : ''} (${esc(l.reason)})</li>`).join('');
+    return `<div class="cl-panel"><div class="cl-head"><strong>Classes de combat</strong><span>${roster.loadout.length} / ${MAX_USABLE_CLASSES}</span></div>
+        <div class="cl-grid">${rows}</div>
+        <details class="cl-limits"><summary>Biomes qui brident des classes</summary><ul>${limits}</ul>
+        <p>Il reste toujours une classe utilisable : mêlez-les pour tirer parti de chaque région.</p></details></div>`;
+}
+
 /**
  * Balisage complet de l'onglet. hero : { name, level, hp, maxHp, skills } ; gear : objets portés qui enseignent (arme, stuff) ;
  * selectedId : compétence affichée dans la fiche ; canToggle : faux en combat.
@@ -78,6 +96,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
             <div class="ab-fulu" role="status" aria-label="Fulu utilisés"><span class="ab-fulu-ic">${GEM}</span><span class="ab-fulu-num"><b>${used}</b> / ${cap}</span><span class="ab-fulu-label">Fulu</span></div>
         </div>
         <div class="fulu-meter" aria-hidden="true">${gems(used, cap)}</div>
+        ${classesHtml(hero, canToggle)}
         <div class="ab-body">
             <div class="ab-grid" role="list">${list.map(s => row(hero, s, taught, selected.id)).join('')}</div>
             ${infoPanel(hero, selected, taught, canToggle)}

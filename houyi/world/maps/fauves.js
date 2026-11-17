@@ -37,6 +37,7 @@ export default {
             '~~~~~~~~~~~~~~.v.~~~~~~~~~~~~~~~'
         ],
         npcs: [
+            { id: 'trainer_shaman', x: 9, y: 10 },
             { id: 'merchant_fauves', at: 'p' },
             { id: 'twins_mu', x: 13, y: 10 },
             { id: 'hua_fauves', at: '0' },
@@ -156,12 +157,12 @@ export default {
             { id: 'fauves_wild_hollow_chest', at: '9', gold: 315 }
         ],
         enemies: [
+            { id: 'train_shaman', x: 12, y: 10, templateId: 'huli_jing', name: "Esprit-renard d'épreuve", kind: 'sentinel', offset: -1, permanent: true, training: 'shaman' },
             { id: 'fauves_alpha_tiger', x: 45, y: 17, templateId: 'zaochi', spriteKey: 'zaochi', name: 'Zaochi, Dents de Ciseau', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Zaochi, Dents de Ciseau', level: 27 } },
             { id: 'fauves_lamb_wolf', x: 6, y: 20, templateId: 'loup_braise', name: 'Loup chapardeur de braise', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fauves_boar_chief', x: 24, y: 20, templateId: 'sanglier_flammes', name: 'Hure, sanglier de flammes', kind: 'sentinel', offset: 1, permanent: true },
             { id: 'fauves_w_pack_a', at: 'i', templateId: 'loup_braise', name: 'Loup de la meute', kind: 'patrol', offset: 0, patrol: ['i', [23, 5]] },
             { id: 'fauves_w_pack_b', at: 'j', templateId: 'tigre_embrase', name: 'Tigresse des herbes', kind: 'patrol', offset: -1, patrol: ['j', 'k'] },
-            { id: 'fauves_w_ogre', at: 'l', templateId: 'shanxiao', name: 'Ogre de la plaine', kind: 'sentinel', offset: 0 },
             { id: 'fauves_hyena_a', at: 'm', templateId: 'loup_braise', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
             { id: 'fauves_hyena_b', at: 'n', templateId: 'loup_braise', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
             { id: 'fauves_ember_bull', at: 'o', templateId: 'taureau_braise', name: 'Taureau de braise', kind: 'sentinel', offset: 0, permanent: true },

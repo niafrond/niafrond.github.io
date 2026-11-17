@@ -3,6 +3,7 @@ import { player, gameState, log, saveUpdate } from './game.js';
 import { wornStuff } from './stuff.js';
 import { teachers, toggleSupport } from './skills.js';
 import { skillsTabHtml } from './skillsMarkup.js';
+import { toggleLoadout } from './classRoster.js';
 
 let selectedId = null;
 
@@ -13,6 +14,15 @@ export function renderSkillsTab() {
 }
 
 function onClick(ev) {
+    const cl = ev.target.closest('[data-toggle-class]');
+    if (cl) {
+        if (gameState.combatState === 'active') return;
+        const res = toggleLoadout(player, cl.dataset.toggleClass);
+        log(res.message);
+        if (res.ok) saveUpdate();
+        renderSkillsTab();
+        return;
+    }
     const toggle = ev.target.closest('[data-toggle-skill]');
     if (toggle) {
         if (gameState.combatState === 'active') return;

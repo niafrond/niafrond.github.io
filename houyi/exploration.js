@@ -1088,6 +1088,7 @@ function wildEncounter(session, { def, screenId, ground }) {
         boss: null,
         duel: null,
         carryHp: false,
+        training: null,
         wild: true
     };
 }
@@ -1121,7 +1122,8 @@ export function encounterFor(session, enemyId, playerLevel) {
         kitLevel: kitLevelFor(session, def),
         boss: def.boss ? { ...def.boss, level } : null,
         duel: def.duel ? { ...def.duel } : null,
-        carryHp: Boolean(def.carryHp)
+        carryHp: Boolean(def.carryHp),
+        training: def.training || null   // entraînement : classe imposée pour ce combat (classRoster.js)
     };
 }
 

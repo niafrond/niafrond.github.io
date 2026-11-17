@@ -88,6 +88,7 @@ afterEach(() => { randomSpy.mockRestore(); });
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // 1. La forge elle-même : des joueurs cohérents avec les règles du jeu
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+const CLASS_TRIALS_DONE = Object.fromEntries(['barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].map(c => [`q_class_${c}`, 'done']));   // les maîtres de classe ont été suivis : les soleils sont visibles
 describe('forge de joueurs : cohérence des jalons', () => {
     test.each(MILESTONES.map(m => [m.label, m]))('%s : le niveau, l\'XP et les points d\'attribut suivent les règles du jeu', (_, m) => {
         CLASS_IDS.forEach(c => {
@@ -1650,7 +1651,7 @@ describe('boss : soleil protégé par sa meute', () => {
         s.data.x = boss.x; s.data.y = boss.y + (fromAbove ? -1 : 1); s.rt.grace = 0;
         return fromAbove ? [0, 1] : [0, -1];
     };
-    const sessionAt = (patch = {}) => createSession({ screenId: fauves().id, x: fauves().spawn.x, y: fauves().spawn.y, ...patch });
+    const sessionAt = (patch = {}) => createSession({ screenId: fauves().id, x: fauves().spawn.x, y: fauves().spawn.y, quests: { ...CLASS_TRIALS_DONE }, ...patch });
 
     test('la meute compte quatre bêtes ; le soleil est intouchable tant qu\'une seule vit', () => {
         expect(pack()).toHaveLength(4);
@@ -1724,7 +1725,7 @@ describe('boss : mirages (illusions) du désert de Gobi', () => {
     const gobi = () => Object.values(SCREENS).find(s => s.enemies.some(e => e.illusion));
     const mirage = () => gobi().enemies.find(e => e.illusion);
     const next = (s, def) => { s.data.x = def.x; s.data.y = def.y + 1; s.rt.grace = 0; };
-    const sessionAt = (patch = {}) => createSession({ screenId: gobi().id, x: gobi().spawn.x, y: gobi().spawn.y, ...patch });
+    const sessionAt = (patch = {}) => createSession({ screenId: gobi().id, x: gobi().spawn.x, y: gobi().spawn.y, quests: { ...CLASS_TRIALS_DONE }, ...patch });
 
     test('un mirage se dissipe au contact : aucun combat, le héros ne bouge pas, texte du Narrateur', () => {
         const s = sessionAt();

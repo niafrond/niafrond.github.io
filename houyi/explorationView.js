@@ -477,8 +477,9 @@ export function createExplorationView(cfg) {
                 if (!ev.paid && ev.reward?.ultimate) afterDialogs(() => cfg.onUltimateLearned?.(ev.reward.ultimate));   // révélation de l'ultime après les dialogues
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
                 const stuffText = ev.reward?.stuff ? ` · ${getStuffById(ev.reward.stuff)?.name || 'Stuff'}` : ev.reward?.relic ? ` · ${(allItems.find(i => i.id === ev.reward.relic)?.name) || 'Relique'}` : '';
+                const classText = ev.reward?.class ? ' · Nouvelle classe' : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
-                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${plus}`, ev.ended ? 8000 : 5000);
+                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${stuffText}${classText}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestSealed') {
                 toast(`${ev.chest.label || 'Coffre'} : vous n'avez aucune raison de fouiller ici pour l'instant.`, 3500);
             } else if (ev.type === 'chestOpened') {

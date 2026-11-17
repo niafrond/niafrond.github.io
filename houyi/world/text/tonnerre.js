@@ -16,6 +16,9 @@ export default {
     tonnerre_h_montagne: { name: 'Chapelle du Dieu des monts', arrival: ['Une petite chapelle fraîche, où l\'on dépose de la monnaie contre une bonne météo. Le dieu a parfois d\'autres projets.'] }
   },
   npcs: {
+    trainer_alchemist: { name: "Dame Dan", title: "Alchimiste des orages",
+      idle: ["Une goutte de trop, et c'est un remède ; une de moins, et c'est un poison. Je n'ai jamais su laquelle est laquelle.", "L'orage donne la foudre, je donne le flacon."],
+      talk: [{ whenDone: 'q_class_alchemist', lines: ["Ta voie de Alchimiste est la tienne maintenant. Sers-t'en, et mêle-la aux autres : aucune classe ne suffit partout."] }] },
     tonnerre_road_pilgrim: { name: 'Maître Sheng', title: 'Pèlerin des cent marches',
       idle: ['Cent marches, cent soupirs. À la quatre-vingt-dix-neuvième, je m\'assois : la centième est pour les vaniteux.', 'On dit que le tonnerre aime ceux qui montent lentement. Il ne foudroie que les pressés, et les distraits, et parfois les deux.'],
       talk: [{ whenDone: 'sun_5', lines: ['Le ciel est calmé, là-haut. Je ferai la centième marche demain, par politesse.'] }] },

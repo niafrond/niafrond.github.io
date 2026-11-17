@@ -2,7 +2,7 @@ import { lessonsPanelHtml, bindLessons } from "./chineseLessonsView.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./escapeHtml.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { grantStuffPiece, grantQuestRelic, grantUltimate, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
+import { grantStuffPiece, grantQuestRelic, grantUltimate, grantClassReward, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
 import "./stuffView.js";
@@ -127,6 +127,7 @@ function init() {
         onQuestReward: ev => {
             if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête');
             if(ev.reward?.relic) grantQuestRelic(ev.reward.relic);   // relique de quête (Cháng d'ombre de Fusang)
+            if(ev.reward?.class) grantClassReward(ev.reward.class);   // nouvelle classe de combat (classRoster.js)
             if(ev.reward?.ultimate) grantUltimate(ev.reward.ultimate);   // ultime de légende : toutes classes (ultimates.js)
         },
         // Révélation de l'ultime gagné : sa cinématique plein écran, jouée une fois les dialogues de fin de quête terminés

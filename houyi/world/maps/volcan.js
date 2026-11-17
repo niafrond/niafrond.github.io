@@ -36,6 +36,7 @@ export default {
             '~~~~~~~~~.v.~~~~~~~~~~~~~~~~~~~~'
         ],
         npcs: [
+            { id: 'trainer_barbarian', x: 20, y: 9 },
             { id: 'merchant_volcan', x: 20, y: 11 },
             { id: 'lizard_zao', x: 8, y: 10 },
             { id: 'hua_volcan', x: 23, y: 14 },
@@ -193,17 +194,16 @@ export default {
             { id: 'volcan_wild_ash_urn', x: 45, y: 5, gold: 180 }
         ],
         enemies: [
+            { id: 'train_barbarian', x: 16, y: 11, templateId: 'sanglier_flammes', name: "Sanglier d'entraînement", kind: 'sentinel', offset: -1, permanent: true, training: 'barbarian' },
             { id: 'volcan_forge_giant', x: 41, y: 11, templateId: 'forgeron_lave', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 4 } },
             { id: 'volcan_ember_imp', x: 19, y: 8, templateId: 'huli_jing', name: 'Démon des fumées', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'volcan_w_salamander', x: 19, y: 10, templateId: 'chilong', name: 'Lézard-dragon de lave', kind: 'patrol', patrol: [[19, 10], [19, 16]], offset: -1 },
             { id: 'volcan_w_smith', x: 31, y: 12, templateId: 'gui_guerrier', name: 'Forgeron calciné', kind: 'patrol', patrol: [[31, 12], [36, 12]], offset: 0 },
-            { id: 'volcan_w_hound', x: 8, y: 13, templateId: 'loup_braise', name: 'Chien de braise', kind: 'sentinel', offset: 0 },
             { id: 'volcan_hound_a', x: 33, y: 8, templateId: 'loup_braise', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
             { id: 'volcan_hound_b', x: 35, y: 15, templateId: 'loup_braise', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
             { id: 'volcan_obsidian_guard', x: 23, y: 12, templateId: 'soldat_terre_cuite', name: 'Soldat d\'obsidienne', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'volcan_wild_ash_boar', x: 6, y: 8, templateId: 'sanglier_flammes', name: 'Sanglier de braise', kind: 'patrol', patrol: [[6, 8], [6, 14]], offset: 0 },
             { id: 'volcan_wild_tiger_patrol', x: 34, y: 18, templateId: 'tigre_embrase', name: 'Tigre de cendre', kind: 'patrol', patrol: [[34, 18], [36, 18]], offset: 0 },
-            { id: 'volcan_wild_cinder_imp', x: 25, y: 16, templateId: 'huli_jing', name: 'Jing des scories', kind: 'sentinel', offset: -1 },
             { id: 'volcan_wild_ash_scholar', x: 44, y: 15, templateId: 'lettre_sorcier', name: 'Lettré des cendres', kind: 'sentinel', offset: 0 }
         ],
         grass: {

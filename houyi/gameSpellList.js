@@ -10,9 +10,10 @@ import { bindTooltip, showSpellTooltip, hideSpellTooltip } from './gameTooltips.
 import { updateSpellsTab } from './gameSpellsTab.js';
 import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
+import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
 import { isInTranse, describeTranse } from './transe.js';
-import { canEntityCastSpell, castSpell, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
+import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -107,7 +108,14 @@ function updateActiveSpells() {
 
 // ── Classe du tour ─────────────────────────────────────────────────────────
 // En combat, le joueur choisit une classe par tour : ses sorts de classe sont proposés, la Xiūxiān prend son effet et seul le sorcier peut lancer l'ultime.
-export const getTurnClass = () => gameState.turnClass ?? player.class ?? null;
+const combatBiome = () => (gameState.combatState === 'active' ? enemy?.biome || null : null);
+/** Classe du tour : celle choisie si elle est utilisable (classe de combat, biome non bridé, entraînement), sinon la classe du héros, sinon la première utilisable. */
+export function getTurnClass(){
+    const usable = usableClasses(player, combatBiome(), gameState.forcedClass);
+    if(gameState.turnClass && usable.includes(gameState.turnClass)) return gameState.turnClass;
+    if(usable.includes(player.class)) return player.class;
+    return usable[0] || player.class || null;
+}
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
 export function combatSpellList(){
@@ -122,7 +130,6 @@ export function combatSpellList(){
     return [...list, ...actionSpells(player)];
 }
 
-const CLASS_SHORT = { sorcerer: 'Mage', assassin: 'Rôdeur', templar: 'Commandant', barbarian: 'Guerrier' };
 
 function renderClassPicker(container){
     let picker = document.getElementById('class-picker');
@@ -137,7 +144,13 @@ function renderClassPicker(container){
     const current = getTurnClass();
     picker.hidden = !active;
     picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Xiūxiān';
-    picker.innerHTML = Object.values(playerClasses).map(cl => `<button type="button" class="class-pick${cl.id === current ? ' on' : ''}" data-class="${cl.id}" aria-pressed="${cl.id === current}"${mine ? '' : ' disabled'} title="${cl.name}">${CLASS_SHORT[cl.id]}</button>`).join('');
+    const restricted = restrictedClasses(player, combatBiome());
+    const forced = gameState.forcedClass;
+    picker.innerHTML = normalizeRoster(player).loadout.map(id => {
+        const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
+        const off = !mine || (forced && id !== forced) || restricted[id];
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} title="${reason}">${CLASS_SHORT[id] || id}</button>`;
+    }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }
 

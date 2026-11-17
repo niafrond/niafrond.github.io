@@ -199,7 +199,7 @@ describe('piliers des boss de porte', () => {
         const guards = Object.values(SCREENS).flatMap(s => s.enemies.filter(e => e.guardsDoor && e.wall).map(e => ({ s, e })));
         expect(guards.length).toBeGreaterThan(0);
         guards.forEach(({ s, e }) => {
-            const session = createSession({ screenId: s.id }, SCREENS);
+            const session = createSession({ screenId: s.id, quests: Object.fromEntries(['barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].map(c => [`q_class_${c}`, 'done'])) }, SCREENS);   // maîtres de classe suivis : les soleils sont visibles
             expect(bossWallsOf(session).filter(w => w.def === e).length).toBe(e.wall.length);
             session.data.defeated.push(e.id);
             expect(bossWallsOf(session).filter(w => w.def === e)).toEqual([]);

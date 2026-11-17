@@ -181,7 +181,7 @@ describe('integration: full game playthrough', () => {
 
         // Play all main quests
         const mainQuests = QUESTS.filter(q => !q.side);
-        expect(mainQuests).toHaveLength(12);
+        expect(mainQuests).toHaveLength(18);   // 12 + les 6 maîtres de classe
         mainQuests.forEach(q => playQuest(s, q.id));
 
         // Game should be complete
