@@ -39,4 +39,12 @@ describe('potions de soin à usage unique', () => {
         expect(h.combatPoints).toBe(0);
         expect(h.hp).toBe(70);
     });
+    test('le Souffle du Lotus d\'Or rend les potions gratuites en combat', () => {
+        const h = hero({ combatPoints: 0 });
+        normalizePotions(h); h.potions.large = 1;
+        expect(drinkBlockReason(h, 'large', true)).not.toBeNull();
+        expect(drinkBlockReason(h, 'large', true, true)).toBeNull();
+        expect(drinkPotion(h, 'large', { inCombat: true, free: true }).ok).toBe(true);
+        expect(h.combatPoints).toBe(0);
+    });
 });

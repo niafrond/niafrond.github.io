@@ -19,7 +19,7 @@ import { createWeaponButton, statValueHtml } from './gameInventoryTabs.js';
 import { updatePlayerStatsTab } from './gameStatsTab.js';
 import { updateLevelHud } from './gameLevelUp.js';
 import { createSpellButtons, getTurnClass } from './gameSpellList.js';
-import { isInTranse, classAllowsUltimate, storeGauge } from './transe.js';
+import { isInTranse, classAllowsUltimate, storeGauge, TRANSE_TURNS } from './transe.js';
 import { bonusTurnBadge, canEntityCastSpell, castUltimate, activateXiuxian, syncGauge, clampManaToCaps, classIcon, currentTurn, enemy, gameState, getUltimateTooltipHtml, transeTooltipHtml, getWeaponIcon, markMultiManaSpell, player, spellCostHtml, spellEffectIcon, syncPlayerControlsLock, ultimateManaBarHtml } from './game.js';
 
 // Nom de l'ennemi dans la barre de stats : caractères chinois simplifiés par défaut (bestiaryNames.js), pinyin après un clic sur l'ennemi (et inversement).
@@ -189,6 +189,8 @@ export function updateStats(){
     const equippedUltimate = getEquippedUltimate(player);
     // Xiūxiān : la jauge est toujours visible ; l'ultime se lance pendant la Xiūxiān, si la classe choisie pour le tour est le sorcier.
     const inTranse = isInTranse(player);
+    // Pendant sa Xiūxiān, la jauge se vide d'un tiers à chaque tour : elle montre ce qu'il reste de la durée.
+    const gaugeLevel = inTranse && player.transeClass && player.transeClass === player.gaugeClass ? (Math.floor(player.transe || 0) / TRANSE_TURNS * 100) : (player.rage || 0) / RAGE_MAX * 100;
     const canActivate = !inTranse && isRageFull(player) && gameState.combatState === 'active' && currentTurn === 'player';   // jauge pleine : on déclenche la Xiūxiān en la touchant
     const ultimateReady = !!equippedUltimate && inTranse && (player.cheatMaxRage === true || player.transeClass === 'sorcerer') && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
@@ -208,7 +210,7 @@ export function updateStats(){
             ${true ? `
             <div class="stat rage-stat row-rage">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${canActivate ? ' xiu-ready' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady || canActivate ? ' role="button" tabindex="0"' : ''}>
-                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
+                    <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, gaugeLevel))}%"></div></div>
                     <span class="rage-text" title="${ultimateReady ? 'ULTIME' : canActivate ? 'DÉCLENCHER LA XIŪXIĀN' : inTranse ? 'XIŪXIĀN' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : canActivate ? '!' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
                 </div>
                 ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}

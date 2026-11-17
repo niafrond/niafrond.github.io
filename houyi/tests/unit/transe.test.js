@@ -34,9 +34,12 @@ test('seul le sorcier peut lancer l\'ultime, quelle que soit la classe du héros
 });
 
 test('effets de Xiūxiān par classe', () => {
-    expect(transeEffectFor('assassin').actionPoints).toBe(2);
+    expect(transeEffectFor('assassin').strikePct).toBeGreaterThan(0);
     expect(transeEffectFor('templar').defense).toBeGreaterThan(0);
-    expect(transeEffectFor('barbarian').attack).toBeGreaterThan(0);
+    expect(transeEffectFor('barbarian').physMult).toBe(2);
+    expect(transeEffectFor('sorcerer').doubleCast).toBe(true);
+    expect(transeEffectFor('monk').freePotions).toBe(true);
+    expect(transeEffectFor('shaman').paMult).toBe(2);
     expect(transeEffectFor('x')).toEqual({});
 });
 
@@ -68,6 +71,9 @@ describe('une Xiūxiān par classe', () => {
         expect(e.rage).toBe(100);   // la jauge du guerrier, affichée, est intacte
         switchGauge(e, 'templar');
         expect(e.rage).toBe(0);
+    });
+    test('chaque Xiūxiān a un nom et une description', () => {
+        ['assassin', 'barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].forEach(c => { expect(transeEffectFor(c).name.length).toBeGreaterThan(5); expect(transeEffectFor(c).text.length).toBeGreaterThan(10); });
     });
     test('toutes les classes ont un effet', () => {
         ['assassin', 'barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'].forEach(c => expect(Object.keys(transeEffectFor(c)).length).toBeGreaterThan(1));

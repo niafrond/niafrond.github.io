@@ -34,7 +34,7 @@ import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimatio
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
 import { updateAvailableSpells } from './gameSpellList.js';
-import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, endXiuxianAtCombatEnd } from './game.js';
+import { activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
 // Applique les pouvoirs de fin de tour des compagnons présents (soin, jet d'eau, qì, mirage). Renvoie { skipEnemy, enemyDown }.
 export const COMPANION_NAMES = { zhi: 'Zhi', dawa: 'Dawa', yu: 'Yu', etincelle: 'Leigong', braise: 'Braise', jian: 'Jian', tou: 'Tou' };
@@ -698,6 +698,7 @@ export function finishEnemyTurn(){
         turnFlags.foxActed = false;
         turnFlags.companionsActed = false;
         setCurrentTurn('player');
+        gameState.doubleCastUsed = false;
         applyTranseClassEffect();   // Xiūxiān en cours : l'effet de la classe du tour s'applique dès le début du tour
         updateStats();
         saveUpdate();
@@ -717,6 +718,7 @@ export function finishEnemyTurn(){
 export function handleEnemyDefeated(){
     const levelGap = (enemy.level || 0) - (player.level || 0);   // avant le gain de niveau de fin de combat
     log(`${enemy.name} est vaincu !`);
+    const xiuPaMult = xiuEffect().paMult || 1;   // Offrande aux Ancêtres (Xiūxiān du Chamane) : PA doublés
     endXiuxianAtCombatEnd();   // la jauge de Xiūxiān est conservée, une Xiūxiān en cours s'éteint
     player.bossLossStreak = recordVictory();
     saveCombatRecord(finishCombatRecord('victory'));   // mesure d'équilibrage : durée, cycles et dégâts du combat
@@ -728,7 +730,7 @@ export function handleEnemyDefeated(){
     log(`Vous gagnez ${xpGain} XP !`);
 
     // PA : l'équipement porté enseigne des compétences (skills.js) ; chaque victoire les fait progresser.
-    const apGain = apForVictory(enemy.level);
+    const apGain = apForVictory(enemy.level) * xiuPaMult;
     const apResult = awardAp(player, teachers(player, wornStuff(player)), apGain);
     if(apResult.gained.length) log(`Vous gagnez ${apGain} PA : ${apResult.gained.map(g => g.skill.name).join(', ')}.`);
     apResult.learned.forEach(skill => { log(`✦ Compétence apprise : ${skill.name} !`); combatRewards.skills.push(skill.name); });

@@ -47,22 +47,22 @@ export function buyPotion(hero, size, regionLevel = 1) {
 /**
  * Pourquoi on ne peut pas boire (null si on peut). `inCombat` : il faut aussi les points d'action (`hero.combatPoints`).
  */
-export function drinkBlockReason(hero, size, inCombat) {
+export function drinkBlockReason(hero, size, inCombat, free = false) {
     const potion = POTIONS[size];
     if (!potion) return 'Potion inconnue.';
     if (potionCount(hero, size) <= 0) return `Aucune ${potion.name.toLowerCase()}.`;
     if ((hero.hp || 0) >= (hero.maxHp || 0)) return 'Vos PV sont déjà au maximum.';
-    if (inCombat && (hero.combatPoints || 0) < potion.actionPoints) return `Il faut ${potion.actionPoints} point${potion.actionPoints > 1 ? 's' : ''} d'action.`;
+    if (inCombat && !free && (hero.combatPoints || 0) < potion.actionPoints) return `Il faut ${potion.actionPoints} point${potion.actionPoints > 1 ? 's' : ''} d'action.`;
     return null;
 }
 
 /** Boit une potion : retire la potion (et les PA en combat), rend les PV (plafonnés). Renvoie { ok, message, healed }. */
-export function drinkPotion(hero, size, { inCombat = false } = {}) {
-    const reason = drinkBlockReason(hero, size, inCombat);
+export function drinkPotion(hero, size, { inCombat = false, free = false } = {}) {
+    const reason = drinkBlockReason(hero, size, inCombat, free);
     if (reason) return { ok: false, message: reason, healed: 0 };
     const potion = POTIONS[size];
     hero.potions[size] -= 1;
-    if (inCombat) hero.combatPoints -= potion.actionPoints;
+    if (inCombat && !free) hero.combatPoints -= potion.actionPoints;
     const before = hero.hp;
     hero.hp = Math.min(hero.maxHp, hero.hp + potionHeal(hero, size));
     const healed = hero.hp - before;

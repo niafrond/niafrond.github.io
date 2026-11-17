@@ -378,6 +378,8 @@ export function lastSpellDamage(fallback){
 export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    // Fureur du Tigre Blanc (Xiūxiān du Guerrier) : les dégâts de l'arme et des crânes sont multipliés.
+    if(target === enemy && (options.damageSource === 'weapon' || options.damageSource === 'skull')) normalizedDamage *= xiuEffect().physMult || 1;
     // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
     if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp, enemy.hitShareCap);   // plafond : pas de coup fatal par le multiplicateur
 
@@ -491,12 +493,12 @@ export function applyDamage(target, damage, options = {}){
 
     if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
         // Gorgerin antique de la Charrette : une part des dégâts reçus retourne à l'ennemi.
-        const ancientReflect = stuffTotals(player).reflectPct;
+        const ancientReflect = Math.min(100, stuffTotals(player).reflectPct + (xiuEffect().reflectPct || 0));   // + Muraille de Jade (Xiūxiān du Commandant)
         if(ancientReflect > 0) {
             const reflected = Math.floor((normalizedDamage * ancientReflect) / 100);
             if(reflected > 0) {
                 enemy.hp = Math.max(0, enemy.hp - reflected);
-                log(`Gorgerin antique : ${reflected} dégâts renvoyés à ${enemy.name}.`);
+                log(`${xiuEffect().reflectPct ? 'Muraille de Jade' : 'Gorgerin antique'} : ${reflected} dégâts renvoyés à ${enemy.name}.`);
             }
         }
         const reflectTurns = Math.max(0, Math.floor(player.statusEffects?.reflectDamage || 0));
@@ -945,13 +947,27 @@ export function applyTranseClassEffect(){
     const cls = player.transeClass || getTurnClass();   // l'effet est celui de la classe dont c'est la Xiūxiān, quelle que soit la classe choisie ensuite
     const effect = transeEffectFor(cls);
     gameState.transeApplied = gameState.transeApplied || [];
-    if(!cls || gameState.transeApplied.includes(cls) || (!effect.actionPoints && !effect.attack && !effect.defense && !effect.healPct && !effect.mana)) return;
+    if(!cls || !effect.name || gameState.transeApplied.includes(cls)) return;
     gameState.transeApplied.push(cls);
+    log(`${effect.name} : ${effect.text}.`);
+    if(effect.strikePct && enemy.hp > 1){   // volée gratuite (jamais mortelle : le combat se finit par un vrai coup)
+        const volley = Math.min(enemy.hp - 1, Math.max(1, Math.round((player.equippedWeapon?.damage || player.attack || 10) * effect.strikePct / 100)));
+        applyDamage(enemy, volley, { damageSource: 'other' });
+        log(`Volée des Dix Soleils : ${volley} dégâts à ${enemy.name}.`);
+    }
+    if(effect.dotPct && enemy.hp > 1){   // vapeurs du fourneau
+        const vapor = Math.min(enemy.hp - 1, Math.max(1, Math.round(enemy.maxHp * effect.dotPct / 100)));
+        applyDamage(enemy, vapor, { damageSource: 'other' });
+    }
     if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
     if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
     if(effect.healPct){ const heal = Math.max(1, Math.round(player.maxHp * effect.healPct / 100)); healEntity(player, heal); flyHeal(true, heal); }
     if(effect.mana){ Object.keys(player.mana).forEach(color => addManaForColor(player, color, effect.mana, { applyGainBonus: false })); }
-    log(`Xiūxiān : ${effect.text}.`);
+}
+
+/** Effet de la Xiūxiān en cours (celui de la classe qui l'a déclenchée), objet vide si aucune. */
+export function xiuEffect(){
+    return Math.floor(player.transe || 0) > 0 ? transeEffectFor(player.transeClass) : {};
 }
 
 // Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, au tour du joueur (toucher la jauge). Gratuit : ne prend pas le tour.
@@ -983,7 +999,7 @@ export function drinkPotionAction(size){
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
     }
     const heal = potionHeal(player, size);
-    const res = drinkPotion(player, size, { inCombat });
+    const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions });
     if(!res.ok){ log(res.message); return false; }
     if(inCombat) actionGuard.markPlayerAction();
     flyHeal(true, res.healed || heal);
@@ -1351,6 +1367,7 @@ export function restartCombat({ keepHp = true } = {}){
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
     gameState.transeApplied = null;
+    gameState.doubleCastUsed = false;
     syncGauge();   // une jauge par classe : on affiche celle de la classe du tour
     player.rage = Math.max(Math.floor(player.rage || 0), startingRage(player));
     resetUltimateMana(player);
@@ -1822,6 +1839,11 @@ export function castSpell(spellId){
     }
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
+    if(xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour
+        gameState.doubleCastUsed = true;
+        addBonusTurn(player, 1);
+        log('Double Talisman : vous pourrez lancer un second sort ce tour.');
+    }
     startSpellCooldown(spell);
     playSfx('spellCast', { isPlayer: true, spellId: spell.id });
     

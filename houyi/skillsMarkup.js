@@ -88,7 +88,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     const list = [...SKILLS].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
     const selected = getSkill(selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
-    const transe = Object.entries(TRANSE_EFFECTS).map(([cls, e]) => `<li>${esc(CLASS_SHORT[cls])} : ${esc(e.text)}</li>`).join('');
+    const transe = Object.entries(TRANSE_EFFECTS).map(([cls, e]) => `<li><strong>${esc(e.name)}</strong> (${esc(CLASS_SHORT[cls])}) : ${esc(e.text)}</li>`).join('');
     return `<div class="ab-screen">
         <div class="ab-header">
             <div class="ab-hero"><strong>${esc(hero.name || 'Hou Yi')}</strong> <span class="ab-lv">Niv. ${hero.level || 1}</span>

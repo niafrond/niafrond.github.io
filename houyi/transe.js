@@ -9,13 +9,20 @@
 export const TRANSE_TURNS = 3;
 
 export const TRANSE_EFFECTS = {
-    sorcerer: { ultimate: true, text: 'l\'ultime peut être lancé' },
-    assassin: { actionPoints: 2, text: '+2 points d\'action par tour' },
-    templar: { defense: 25, text: 'Défense +25 pendant le tour' },
-    barbarian: { attack: 25, text: 'Attaque +25 pendant le tour' },
-    monk: { healPct: 10, text: 'soigne 10 % des PV max à chaque tour' },
-    alchemist: { mana: 2, text: '+2 qì de chaque couleur à chaque tour' },
-    shaman: { actionPoints: 1, defense: 10, text: '+1 point d\'action et Défense +10 par tour' }
+    // Rôdeur : l'archer divin lâche une volée gratuite à chaque tour (techniques spéciales offensives).
+    assassin: { name: 'Volée des Dix Soleils', strikePct: 50, actionPoints: 1, text: 'une volée gratuite (la moitié des dégâts de l\'arme) et +1 point d\'action à chaque tour' },
+    // Mage : deux sorts par tour (le second ne prend pas le tour) ; seule voie qui permet de lancer l'ultime.
+    sorcerer: { name: 'Double Talisman', doubleCast: true, ultimate: true, text: 'deux sorts par tour ; l\'ultime peut être lancé' },
+    // Alchimiste : le fourneau des huit trigrammes exhale des vapeurs qui rongent l'ennemi et rendent du qì.
+    alchemist: { name: 'Fourneau des Huit Trigrammes', dotPct: 6, mana: 2, text: 'des vapeurs rongent l\'ennemi (6 % de ses PV max) et rendent 2 qì de chaque couleur, à chaque tour' },
+    // Guerrier : la force physique doublée (armes et crânes).
+    barbarian: { name: 'Fureur du Tigre Blanc', physMult: 2, text: 'les dégâts de l\'arme et des crânes sont doublés' },
+    // Commandant : rempart qui renvoie une partie des coups (équilibre attaque / défense).
+    templar: { name: 'Muraille de Jade', defense: 25, reflectPct: 30, text: 'Défense +25 et 30 % des dégâts subis sont renvoyés' },
+    // Moine : soins renforcés (régénération, potions gratuites).
+    monk: { name: 'Souffle du Lotus d\'Or', healPct: 10, freePotions: true, text: 'soigne 10 % des PV max à chaque tour ; les potions ne coûtent aucun point d\'action' },
+    // Chamane : l'offrande aux ancêtres facilite l'apprentissage (PA doublés à la victoire) et protège.
+    shaman: { name: 'Offrande aux Ancêtres', actionPoints: 1, defense: 10, paMult: 2, text: '+1 point d\'action et Défense +10 par tour ; les PA gagnés à la victoire sont doublés' }
 };
 
 /** La classe du tour permet-elle de lancer l'ultime ? (sorcier uniquement) */
@@ -26,7 +33,7 @@ export const transeEffectFor = turnClass => TRANSE_EFFECTS[turnClass] || {};
 
 export const describeTranse = turnClass => {
     const effect = TRANSE_EFFECTS[turnClass];
-    return effect ? `Xiūxiān : ${effect.text}.` : 'Transe : choisissez une classe pour en profiter.';
+    return effect ? `${effect.name} : ${effect.text}.` : 'Xiūxiān : choisissez une classe pour en profiter.';
 };
 
 /** La Xiūxiān est-elle en cours ? (menu secret « rage toujours au max » : toujours) */

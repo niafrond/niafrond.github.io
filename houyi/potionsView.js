@@ -1,5 +1,5 @@
 // Potions de soin à usage unique (potions.js) : boutons de combat (coût en PA) et panneau de l'onglet Inventaire (on boit hors combat, gratuitement).
-import { player, gameState, currentTurn, drinkPotionAction } from './game.js';
+import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './game.js';
 import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
 
@@ -12,10 +12,11 @@ export function renderPotionButtons() {
     if (gameState.combatState !== 'active') { box.innerHTML = ''; return; }
     box.innerHTML = POTION_SIZES.map(size => {
         const p = POTIONS[size];
-        const blocked = currentTurn !== 'player' || drinkBlockReason(player, size, true);
+        const free = !!xiuEffect().freePotions;   // Souffle du Lotus d'Or : potions sans point d'action
+        const blocked = currentTurn !== 'player' || drinkBlockReason(player, size, true, free);
         return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' disabled' : ''} title="${escapeHtml(label(size))}">
             <div class="spell-name">${escapeHtml(p.name)} ×${potionCount(player, size)}</div>
-            <div class="spell-cost">${p.actionPoints} PA · ${p.healPct} % des PV</div></button>`;
+            <div class="spell-cost">${free ? '0 PA' : `${p.actionPoints} PA`} · ${p.healPct} % des PV</div></button>`;
     }).join('');
 }
 
