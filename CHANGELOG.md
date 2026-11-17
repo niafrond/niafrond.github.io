@@ -1,3 +1,23 @@
+## [3.1.0](https://github.com/niafrond/niafrond.github.io/compare/v3.0.0...v3.1.0) (2026-11-17)
+
+### Features
+
+* **houyi:** actions indépendantes du plateau, file commune joueur et ennemi vidée dès que possible ([612dc1c](https://github.com/niafrond/niafrond.github.io/commit/612dc1c0882d4d3202f5643df3eacd42ea517822))
+* **houyi:** altérations positives qui accélèrent le chargement, potions sans coût en combat ([c01e4c7](https://github.com/niafrond/niafrond.github.io/commit/c01e4c7863b78dbf22c2d093110a79571afa30c6))
+* **houyi:** choisir une action exige la barre pleine et le coût payé, la barre retombe à zéro au clic ([3af2c67](https://github.com/niafrond/niafrond.github.io/commit/3af2c67bba1b927e3ec197937afa91340168c865))
+* **houyi:** léger clignotement des barres de classe pleines, désactivable en options ([4e38690](https://github.com/niafrond/niafrond.github.io/commit/4e386902df167bb0e7ba14d0149f6ad3e02a4930))
+* **houyi:** ligne de perles des actions à venir (vert joueur, rouge ennemi) ([96386f1](https://github.com/niafrond/niafrond.github.io/commit/96386f14347bf892c830038037d9a7c695c0a6df))
+* **houyi:** pause des chargements quand le plateau est inactif 5 s, barres vides au départ sauf bonus ([2d028c9](https://github.com/niafrond/niafrond.github.io/commit/2d028c9802534342e3115cdad9f40dc487fa1a3a))
+* **houyi:** plateau au tour par tour, actions soumises au chargement avec file d'attente commune, chargement moyen de 15 s ([ec3e73c](https://github.com/niafrond/niafrond.github.io/commit/ec3e73c854dbbc21580a30efafe7d39a19f437e0))
+* **houyi:** sorts de plateau et ultimes en fin de tour de plateau, visée mémorisée, altérations qui ralentissent le chargement ([7bfa992](https://github.com/niafrond/niafrond.github.io/commit/7bfa9921963289bba85d4ce6ada47ae9b0548128))
+
+### Bug Fixes
+
+* **houyi:** allonger le chargement des classes à environ 15 s pour 100 unités ([23ab216](https://github.com/niafrond/niafrond.github.io/commit/23ab2163d1912b7e97b99b33a959cfe090716b25))
+* **houyi:** ne pas signaler la pause des chargements au joueur ([846a545](https://github.com/niafrond/niafrond.github.io/commit/846a5455f2ea44afec7ddc8dd40e90b9861c0e50))
+* **houyi:** ne plus afficher de message quand une action est mise en file d'attente ([905f7f0](https://github.com/niafrond/niafrond.github.io/commit/905f7f0b08262e76466e6439005365020a45ffb9))
+* **houyi:** réordonner le tutoriel, barre de chargement bloquante, afficher la Xiūxiān, compétences visibles et variées ([d42c4b9](https://github.com/niafrond/niafrond.github.io/commit/d42c4b951d821d3bfdd8479127d212142050f292))
+
 ## [3.0.0](https://github.com/niafrond/niafrond.github.io/compare/v2.254.0...v3.0.0) (2026-11-17)
 
 ### ⚠ BREAKING CHANGES
