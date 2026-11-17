@@ -124,6 +124,7 @@
   "sfxCatalog.js",
   "shop.js",
   "skills.js",
+  "skillsMarkup.js",
   "skillsView.js",
   "sound.js",
   "spellCooldown.js",
