@@ -4,11 +4,25 @@ export const nameAudioId = hanzi => [...hanzi].map(c => c.codePointAt(0).toStrin
 export const canPlayNameAudio = () => typeof navigator === 'undefined' || navigator.onLine !== false;
 
 let current = null;
+
+// La musique baisse pendant la prononciation (pour bien entendre le mot) puis remonte quand elle se termine ou s'interrompt.
+const DUCK_FACTOR = 0.2;
+const DUCK_MAX_MS = 30000;   // garde-fou : la musique remonte de toute façon après ce délai
+function duck(on) {
+    import('./music.js').then(m => (on ? m.duckMusic(DUCK_FACTOR, DUCK_MAX_MS) : m.duckMusic(1, 0))).catch(() => {});
+}
+
 export function playNameAudio(hanzi, base = 'audio/noms/') {
     if (!hanzi || !canPlayNameAudio()) return;
     try {
         if (current) current.pause();
-        current = new Audio(`${base}${nameAudioId(hanzi)}.mp3`);
-        current.play().catch(() => {});
+        const audio = new Audio(`${base}${nameAudioId(hanzi)}.mp3`);
+        current = audio;
+        const release = () => { if (current === audio) { current = null; duck(false); } };
+        audio.addEventListener('ended', release);
+        audio.addEventListener('pause', release);
+        audio.addEventListener('error', release);
+        duck(true);
+        audio.play().catch(release);
     } catch { /* lecture impossible : on ignore */ }
 }
