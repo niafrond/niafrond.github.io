@@ -29,7 +29,7 @@ describe('compétences enseignées par l\'équipement', () => {
     });
 });
 
-describe('magikolithes', () => {
+describe('Fulu', () => {
     const soutien = SKILLS.filter(s => s.kind === 'support');
     test('une compétence non apprise ne s\'active pas', () => {
         expect(toggleSupport(hero(), soutien[0].id).ok).toBe(false);

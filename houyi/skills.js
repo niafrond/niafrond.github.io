@@ -1,17 +1,17 @@
-// Compétences : l'équipement enseigne, les PA (points d'apprentissage) valident, les magikolithes limitent les compétences de soutien actives.
+// Compétences : l'équipement enseigne, les PA (points d'apprentissage) valident, les Fulu limitent les compétences de soutien actives.
 // Module pur (sans DOM).
 //
 // - Chaque arme en main et chaque pièce de stuff portée enseigne une ou deux compétences (tirées de façon stable depuis l'id de l'objet).
 // - Après chaque victoire, le héros gagne des PA ; ils progressent pour chaque compétence enseignée par ce qu'il porte.
 // - Une compétence apprise l'est pour toujours (même si l'objet est remplacé).
-// - Deux familles : « action » (commande de combat, comme un sort) et « soutien » (effet passif, à activer, qui coûte des magikolithes).
+// - Deux familles : « action » (commande de combat, comme un sort) et « soutien » (effet passif, à activer, qui coûte des Fulu).
 //
 // État du héros : `hero.skills = { progress: { id: PA }, learned: [id], active: [id de soutien] }`.
 
 const SUPPORT = 'support';
 const ACTION = 'action';
 
-/** Catalogue. `ap` : PA à cumuler pour apprendre ; `cost` : magikolithes (soutien) ; `bonus` : effet passif ; `spell` : fiche de commande de combat (action). */
+/** Catalogue. `ap` : PA à cumuler pour apprendre ; `cost` : Fulu (soutien) ; `bonus` : effet passif ; `spell` : fiche de commande de combat (action). */
 export const SKILLS = [
     // ── Soutien (passif) ──
     { id: 'garde_de_jade', kind: SUPPORT, name: 'Garde de jade', ap: 40, cost: 2, bonus: { defense: 4 }, description: 'Défense +4 en combat.' },
@@ -20,7 +20,7 @@ export const SKILLS = [
     { id: 'oeil_du_dragon', kind: SUPPORT, name: 'Œil du dragon', ap: 90, cost: 3, bonus: { attack: 8 }, description: 'Attaque +8 en combat.' },
     { id: 'peau_de_serpent', kind: SUPPORT, name: 'Peau de serpent', ap: 50, cost: 2, bonus: { poisonResist: 50 }, description: 'Réduit de moitié les dégâts de poison.' },
     { id: 'souffle_regenerant', kind: SUPPORT, name: 'Souffle régénérant', ap: 70, cost: 3, bonus: { regenPct: 3 }, description: 'Rend 3 % des PV max à chaque tour.' },
-    { id: 'coeur_de_transe', kind: SUPPORT, name: 'Cœur de transe', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Transe se remplit 30 % plus vite.' },
+    { id: 'coeur_de_transe', kind: SUPPORT, name: 'Cœur de transe', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān se remplit 30 % plus vite.' },
     { id: 'qi_de_reserve', kind: SUPPORT, name: 'Qì de réserve', ap: 50, cost: 2, bonus: { startMana: 2 }, description: 'Commence chaque combat avec 2 qì de chaque couleur.' },
     // ── Action (commande de combat) ──
     { id: 'tir_perforant', kind: ACTION, name: 'Tir perforant', ap: 30, description: 'Une flèche qui perce l\'armure : dégâts directs.',
@@ -112,9 +112,9 @@ export function awardAp(hero, items, amount) {
     return result;
 }
 
-// ── Magikolithes ────────────────────────────────────────────────────────────
+// ── Fulu ────────────────────────────────────────────────────────────
 
-/** Capacité en magikolithes : 4 au départ, +1 tous les 5 niveaux. */
+/** Capacité en Fulu : 4 au départ, +1 tous les 5 niveaux. */
 export const magikolithCapacity = hero => 4 + Math.floor(Math.max(1, hero?.level || 1) / 5);
 
 export const usedMagikoliths = hero => normalizeSkills(hero).active.reduce((n, id) => n + (getSkill(id)?.cost || 0), 0);
@@ -142,7 +142,7 @@ export function toggleSupport(hero, id) {
         return { ok: true, active: false, message: `${skill.name} désactivée.` };
     }
     const left = magikolithCapacity(hero) - usedMagikoliths(hero);
-    if (skill.cost > left) return { ok: false, message: `Pas assez de magikolithes : ${skill.name} en demande ${skill.cost}, il en reste ${left}.` };
+    if (skill.cost > left) return { ok: false, message: `Pas assez de Fulu : ${skill.name} en demande ${skill.cost}, il en reste ${left}.` };
     hero.skills.active.push(id);   // `hero.skills` (et non `state`) : la normalisation recrée l'objet à chaque lecture
     return { ok: true, active: true, message: `${skill.name} activée.` };
 }

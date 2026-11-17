@@ -1,4 +1,4 @@
-// Onglet « Compétences » : ce que l'équipement porté enseigne (progression en PA), les compétences apprises, les magikolithes et la Transe.
+// Onglet « Compétences » : ce que l'équipement porté enseigne (progression en PA), les compétences apprises, les Fulu et la Xiūxiān.
 // La logique est dans skills.js et transe.js.
 import { player, gameState, log, saveUpdate } from './game.js';
 import { wornStuff } from './stuff.js';
@@ -15,7 +15,7 @@ const CLASS_NAMES = { sorcerer: 'Mage', assassin: 'Rôdeur', templar: 'Commandan
 function skillLine(skill) {
     const learned = isLearned(player, skill.id);
     const state = normalizeSkills(player);
-    const kind = isSupport(skill) ? `Soutien · ${skill.cost} magikolithe${skill.cost > 1 ? 's' : ''}` : 'Action · commande de combat';
+    const kind = isSupport(skill) ? `Soutien · ${skill.cost} Fulu` : 'Action · commande de combat';
     const pct = learned ? 100 : Math.round(progressOf(player, skill.id) / skill.ap * 100);
     const status = learned
         ? (isSupport(skill)
@@ -47,16 +47,16 @@ export function renderSkillsTab() {
     const learned = state.learned.map(getSkill).filter(Boolean);
     root.innerHTML = `
         <p class="skills-intro">L'équipement porté enseigne des compétences : chaque victoire donne des <strong>PA</strong> qui les font progresser. Une fois apprise, une compétence est acquise pour toujours.</p>
-        <div class="skills-cap" role="status"><strong>Magikolithes</strong> : ${used} / ${cap} utilisées (compétences de soutien activées).</div>
+        <div class="skills-cap" role="status"><strong>Fulu</strong> : ${used} / ${cap} utilisées (compétences de soutien activées).</div>
         <h3>Enseigné par votre équipement</h3>
         ${weapon ? teacherBlock(weapon, 'Arme') : '<p class="shop-empty">Aucune arme en main.</p>'}
         ${stuffList.map(s => teacherBlock(s, 'Stuff')).join('')}
         <h3>Compétences apprises (${learned.length} / ${SKILLS.length})</h3>
         ${learned.length ? learned.map(skillLine).join('') : '<p class="shop-empty">Rien d\'appris pour l\'instant : combattez avec votre équipement.</p>'}
-        <h3>Transe</h3>
-        <p>La jauge se remplit quand vous subissez des dégâts. Pleine, la Transe se déclenche toute seule pour ${TRANSE_TURNS} tours. En combat, vous choisissez une classe par tour : son effet s'applique.</p>
+        <h3>Xiūxiān</h3>
+        <p>La jauge se remplit quand vous subissez des dégâts. Pleine, la Xiūxiān se déclenche toute seule pour ${TRANSE_TURNS} tours. En combat, vous choisissez une classe par tour : son effet s'applique.</p>
         <ul class="transe-list">${transeRows}</ul>
-        <p>L'ultime ne se lance que pendant la Transe, avec la classe Mage antique (sorcier) choisie pour le tour.</p>`;
+        <p>L'ultime ne se lance que pendant la Xiūxiān, avec la classe Mage antique (sorcier) choisie pour le tour.</p>`;
 }
 
 function onClick(ev) {

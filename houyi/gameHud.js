@@ -186,7 +186,7 @@ export function updateStats(){
     // Pas de jauge de rage sans ultime débloqué (classe sans ultime ou niveau minimum non atteint).
     // Jauge pleine : le texte devient « ULTIME » et la barre se lance l'ultime choisi (compte comme un tour).
     const equippedUltimate = getEquippedUltimate(player);
-    // Transe : la jauge est toujours visible ; l'ultime se lance pendant la Transe, si la classe choisie pour le tour est le sorcier.
+    // Xiūxiān : la jauge est toujours visible ; l'ultime se lance pendant la Xiūxiān, si la classe choisie pour le tour est le sorcier.
     const inTranse = isInTranse(player);
     const ultimateReady = !!equippedUltimate && inTranse && classAllowsUltimate(getTurnClass()) && gameState.combatState === 'active';
     const ultimateManaReached = !!equippedUltimate && (player.cheatFreeSpells === true || canCastUltimateMana(player, equippedUltimate));   // clignote seulement si le qì collecté suffit aussi
@@ -207,7 +207,7 @@ export function updateStats(){
             <div class="stat rage-stat row-rage">
                 <div class="rage-bar-container${isRageFull(player) ? ' full' : ''}${inTranse ? ' in-transe' : ''}${ultimateReady ? ' ultimate-ready' : ''}${ultimateReady && ultimateManaReached ? ' mana-reached' : ''}"${ultimateReady ? ' role="button" tabindex="0"' : ''}>
                     <div class="rage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${RAGE_MAX}" aria-valuenow="${Math.floor(player.rage || 0)}"><div class="rage-fill" style="height:${Math.min(100, Math.max(0, (player.rage || 0) / RAGE_MAX * 100))}%"></div></div>
-                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : inTranse ? 'TRANSE' : `TRANSE ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
+                    <span class="rage-text" title="${ultimateReady ? 'ULTIME' : inTranse ? 'TRANSE' : `XIŪXIĀN ${Math.floor(player.rage || 0)}`}">${ultimateReady ? '★' : inTranse ? `T${Math.max(1, Math.floor(player.transe || 1))}` : Math.floor(player.rage || 0)}</span>
                 </div>
                 ${equippedUltimate ? ultimateManaBarHtml(player, equippedUltimate) : ''}
             </div>

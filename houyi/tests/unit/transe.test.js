@@ -3,7 +3,7 @@ import './fixtures/xhrFromDisk.js';
 import { TRANSE_TURNS, startTranse, tickTranse, endTranse, isInTranse, classAllowsUltimate, transeEffectFor } from '../../transe.js';
 import { addRage, resetRage, RAGE_MAX, getSelectableUltimates, getEquippedUltimate } from '../../ultimates.js';
 
-test('la Transe dure TRANSE_TURNS tours puis se termine', () => {
+test('la Xiūxiān dure TRANSE_TURNS tours puis se termine', () => {
     const e = {};
     expect(startTranse(e)).toBe(true);
     expect(startTranse(e)).toBe(false);
@@ -12,7 +12,7 @@ test('la Transe dure TRANSE_TURNS tours puis se termine', () => {
     expect(isInTranse(e)).toBe(false);
 });
 
-test('la jauge pleine déclenche la Transe toute seule ; la vider la termine', () => {
+test('la jauge pleine déclenche la Xiūxiān toute seule ; la vider la termine', () => {
     const e = { rage: 0 };
     addRage(e, RAGE_MAX - 1);
     expect(isInTranse(e)).toBe(false);
@@ -34,7 +34,7 @@ test('seul le sorcier peut lancer l\'ultime, quelle que soit la classe du héros
     expect(getEquippedUltimate(guerrier)).not.toBeNull();
 });
 
-test('effets de Transe par classe', () => {
+test('effets de Xiūxiān par classe', () => {
     expect(transeEffectFor('assassin').actionPoints).toBe(2);
     expect(transeEffectFor('templar').defense).toBeGreaterThan(0);
     expect(transeEffectFor('barbarian').attack).toBeGreaterThan(0);

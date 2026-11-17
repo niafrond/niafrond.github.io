@@ -106,7 +106,7 @@ function updateActiveSpells() {
 }
 
 // ── Classe du tour ─────────────────────────────────────────────────────────
-// En combat, le joueur choisit une classe par tour : ses sorts de classe sont proposés, la Transe prend son effet et seul le sorcier peut lancer l'ultime.
+// En combat, le joueur choisit une classe par tour : ses sorts de classe sont proposés, la Xiūxiān prend son effet et seul le sorcier peut lancer l'ultime.
 export const getTurnClass = () => gameState.turnClass ?? player.class ?? null;
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
@@ -136,7 +136,7 @@ function renderClassPicker(container){
     const mine = active && currentTurn === 'player';
     const current = getTurnClass();
     picker.hidden = !active;
-    picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Transe';
+    picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Xiūxiān';
     picker.innerHTML = Object.values(playerClasses).map(cl => `<button type="button" class="class-pick${cl.id === current ? ' on' : ''}" data-class="${cl.id}" aria-pressed="${cl.id === current}"${mine ? '' : ' disabled'} title="${cl.name}">${CLASS_SHORT[cl.id]}</button>`).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }

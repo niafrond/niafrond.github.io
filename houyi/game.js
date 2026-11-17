@@ -249,13 +249,13 @@ export function ultimateManaBarHtml(entity, spell){
     return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
 }
 
-// Fiche de la jauge de Transe : remplissage, effet de la classe du tour, rappel de la règle de l'ultime.
+// Fiche de la jauge de Xiūxiān : remplissage, effet de la classe du tour, rappel de la règle de l'ultime.
 export function transeTooltipHtml(entity, ultimate){
     const filled = Math.floor(entity?.rage || 0);
-    return `<div class="spell-tooltip-title">TRANSE · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
+    return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
         + `<div class="spell-tooltip-line">Se remplit quand vous subissez des dégâts ; pleine, elle se déclenche toute seule pour 3 tours.</div>`
         + `<div class="spell-tooltip-line">${describeTranse(getTurnClass())}</div>`
-        + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Transe, avec la classe Mage antique choisie pour le tour.</div>` : '');
+        + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Xiūxiān, avec la classe Mage antique choisie pour le tour.</div>` : '');
 }
 
 // Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
@@ -907,11 +907,11 @@ export const isFoxPlaying = () => turnFlags.foxPlaying;
 export const gameState = { 
     combatState: 'ready', // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
     turnClass: null,      // classe choisie pour le tour en combat (null = classe du héros) ; jamais sauvegardée
-    transeApplied: null   // classes dont l'effet de Transe a déjà été appliqué ce tour
+    transeApplied: null   // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
 };
 
-// ── Classe du tour et Transe ───────────────────────────────────────────────
-// Le joueur choisit une classe par tour (gratuit, avant d'agir) : elle décide des sorts de classe proposés, de l'effet de la Transe
+// ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
+// Le joueur choisit une classe par tour (gratuit, avant d'agir) : elle décide des sorts de classe proposés, de l'effet de la Xiūxiān
 // et de la possibilité de lancer l'ultime (sorcier uniquement). Voir transe.js.
 export function setTurnClass(classId){
     if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
@@ -921,7 +921,7 @@ export function setTurnClass(classId){
     return true;
 }
 
-// Effet de Transe de la classe du tour, appliqué une seule fois par tour et par classe.
+// Effet de Xiūxiān de la classe du tour, appliqué une seule fois par tour et par classe.
 export function applyTranseClassEffect(){
     if(!isInTranse(player) || gameState.combatState !== 'active') return;
     const cls = getTurnClass();
@@ -931,15 +931,15 @@ export function applyTranseClassEffect(){
     gameState.transeApplied.push(cls);
     if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
     if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
-    log(`Transe : ${effect.text}.`);
+    log(`Xiūxiān : ${effect.text}.`);
 }
 
-// Annonce le déclenchement de la Transe (jauge pleine) et applique l'effet de la classe du tour.
+// Annonce le déclenchement de la Xiūxiān (jauge pleine) et applique l'effet de la classe du tour.
 export function syncTranse(){
     if(player.transeStarted){
         player.transeStarted = false;
         if(gameState.combatState === 'active'){
-            log(`✦ TRANSE ! ${describeTranse(getTurnClass())}`);
+            log(`✦ XIŪXIĀN ! ${describeTranse(getTurnClass())}`);
             gameState.transeApplied = [];
             applyTranseClassEffect();
         }
@@ -1796,7 +1796,7 @@ export async function castUltimate(spellId){
     if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
     if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant la classe Mage antique (sorcier) pour ce tour."); return; }
-    if(!isInTranse(player)){ log("La Transe n'est pas déclenchée : la jauge doit d'abord se remplir !"); return; }
+    if(!isInTranse(player)){ log("La Xiūxiān n'est pas déclenchée : la jauge doit d'abord se remplir !"); return; }
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");

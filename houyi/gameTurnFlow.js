@@ -93,12 +93,12 @@ function playCompanionAnnouncements(list, done){
     next(0);
 }
 
-// Fin d'un tour du joueur : la Transe décompte (la jauge retombe à 0 quand elle se termine) et la liste des classes déjà appliquées se vide.
+// Fin d'un tour du joueur : la Xiūxiān décompte (la jauge retombe à 0 quand elle se termine) et la liste des classes déjà appliquées se vide.
 function endOfPlayerTurnTranse(){
     resetTranseTurn();
     if(tickTranse(player)){
         resetRage(player);
-        log('La Transe s\'achève.');
+        log('La Xiūxiān s\'achève.');
         updateStats();
     }
 }
@@ -700,7 +700,7 @@ export function finishEnemyTurn(){
         turnFlags.foxActed = false;
         turnFlags.companionsActed = false;
         setCurrentTurn('player');
-        applyTranseClassEffect();   // Transe en cours : l'effet de la classe du tour s'applique dès le début du tour
+        applyTranseClassEffect();   // Xiūxiān en cours : l'effet de la classe du tour s'applique dès le début du tour
         updateStats();
         saveUpdate();
         updateStats(); // Pour mettre à jour le liseré

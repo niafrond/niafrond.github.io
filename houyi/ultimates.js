@@ -1,4 +1,4 @@
-// Sorts ultimes : la jauge de Transe (anciennement « rage ») se charge quand le joueur subit des dégâts ; pleine, elle déclenche la Transe
+// Sorts ultimes : la jauge de Xiūxiān (anciennement « rage ») se charge quand le joueur subit des dégâts ; pleine, elle déclenche la Xiūxiān
 // (transe.js), pendant laquelle un ultime peut être lancé SI la classe choisie pour le tour est le sorcier. Les ultimes (ceux du sorcier,
 // hors limite des 4 sorts équipés) coûtent beaucoup de qì.
 export const ULTIMATE_CLASS = 'sorcerer';
@@ -74,7 +74,7 @@ export function addRage(entity, amount){
     if(!entity) return 0;
     const before = Math.max(0, Math.min(RAGE_MAX, Math.floor(entity.rage || 0)));
     entity.rage = Math.min(RAGE_MAX, before + Math.max(0, Math.floor(amount || 0)));
-    if(entity.rage >= RAGE_MAX && before < RAGE_MAX && startTranse(entity)) entity.transeStarted = true;   // jauge pleine : la Transe se déclenche (annoncée par game.js)
+    if(entity.rage >= RAGE_MAX && before < RAGE_MAX && startTranse(entity)) entity.transeStarted = true;   // jauge pleine : la Xiūxiān se déclenche (annoncée par game.js)
     return entity.rage - before;
 }
 
