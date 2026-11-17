@@ -12,10 +12,10 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
-import { readyClasses, classProgress, classChargeInfo } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, enqueueAction, takeDueAction, hasQueuedAction } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
-import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon } from './game.js';
+import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
 
 // sorts
 const HIGH_SPELL_FROM_LEVEL = 15;
@@ -114,17 +114,72 @@ const combatBiome = () => (gameState.combatState === 'active' ? enemy?.biome || 
 /** Classe du tour : celle choisie si elle est utilisable (classe de combat, biome non bridé, entraînement), sinon la classe du héros, sinon la première utilisable. */
 export function getTurnClass(){
     const usable = usableNow();
-    const ready = chargeEnabled() ? readyClasses(gameState.charge, usable) : usable;
-    const pool = ready.length ? ready : usable;   // classes chargées d'abord ; aucune n'est prête hors de leur tour : on garde la liste complète
-    if(gameState.turnClass && pool.includes(gameState.turnClass)) return gameState.turnClass;
-    if(pool.includes(player.class)) return player.class;
-    return pool[0] || player.class || null;
+    if(gameState.turnClass && usable.includes(gameState.turnClass)) return gameState.turnClass;
+    if(usable.includes(player.class)) return player.class;
+    return usable[0] || player.class || null;
 }
 
 /** Classes de combat utilisables maintenant (biome, entraînement). */
 export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass);
-/** Le temps de chargement (classCharge.js) joue en combat, sauf dans le duel-tutoriel (déroulé scripté). */
-export const chargeEnabled = () => gameState.combatState === 'active' && !enemy?.isTutorialEnemy;
+
+// ── Temps de chargement des actions ─────────────────────────────────────────
+// Le plateau reste au tour par tour ; arme, sorts, compétences de classe, objets et potions exigent que la classe du tour soit chargée (classCharge.js).
+const TUTORIAL_CHARGE_FACTOR = 0.2;   // tutoriel : chargement 5 fois plus court (la notion est montrée sans bloquer le déroulé)
+export const chargeFactor = () => (enemy?.isTutorialEnemy ? TUTORIAL_CHARGE_FACTOR : 1);
+export const chargeEnabled = () => gameState.combatState === 'active';
+
+/**
+ * Une action est choisie (sort, compétence, objet, arme) : si la classe du tour est prête et qu'aucune action n'attend, elle part tout de suite
+ * (renvoie false) ; sinon elle entre dans la file d'attente (renvoie true) et `retry` la rejouera au début d'un tour du joueur, dès que sa classe est
+ * chargée. Le joueur n'en voit pas l'ordre. Le duel-tutoriel part toujours tout de suite (déroulé scripté).
+ */
+export function deferAction(retry, label){
+    if(!chargeEnabled() || gameState.bypassCharge || enemy?.isTutorialEnemy) return false;
+    const id = getTurnClass();
+    if(!id || (isClassReady(gameState.charge, id) && !hasQueuedAction(gameState.actionQueue, 'player'))) return false;
+    enqueueAction(gameState.actionQueue, { owner: 'player', classId: id, retry });
+    log(`${label || 'Action'} : ${CLASS_SHORT[id] || id} se recharge, l'action partira dès que possible. Jouez sur le plateau.`);
+    updateStats();
+    return true;
+}
+/** Début d'un tour du joueur : si une action en file a sa classe chargée, elle part maintenant (elle prend le tour). */
+export function runQueuedPlayerAction(){
+    if(!chargeEnabled()) return false;
+    const item = takeDueAction(gameState.actionQueue, 'player', it => isClassReady(gameState.charge, it.classId));
+    if(!item) return false;
+    gameState.turnClass = item.classId;
+    gameState.bypassCharge = true;
+    try { item.retry(); } finally { gameState.bypassCharge = false; }
+    return true;
+}
+/** Une action vient d'être faite avec la classe du tour : elle se recharge. */
+export function spendActionCharge(){
+    if(!chargeEnabled()) return;
+    const id = getTurnClass();
+    if(id) spendClass(gameState.charge, player, id, chargeFactor());
+    createSpellButtons();
+}
+/** L'ennemi est-il chargé ? (toujours oui dans le tutoriel, dont les coups sont imposés) */
+export const enemyActionReady = () => !chargeEnabled() || enemy?.isTutorialEnemy || isEnemyReady(gameState.charge);
+export function spendEnemyAction(){
+    if(chargeEnabled() && !enemy?.isTutorialEnemy) spendEnemy(gameState.charge, enemy, 1);
+}
+
+// Le temps de combat avance en temps réel, fenêtre visible ; quand une classe (ou l'ennemi) devient prête, boutons et barres se rafraîchissent.
+let _chargeLast = 0, _chargeKey = '';
+function chargeTicker(){
+    const now = Date.now();
+    const dt = _chargeLast ? Math.min(1000, now - _chargeLast) : 0;
+    _chargeLast = now;
+    if(!chargeEnabled() || (typeof document !== 'undefined' && document.hidden)) return;
+    chargeTick(gameState.charge, dt);
+    const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '');
+    if(key !== _chargeKey){
+        _chargeKey = key;
+        createSpellButtons();
+    }
+}
+if(typeof setInterval === 'function' && typeof document !== 'undefined') setInterval(chargeTicker, 250);
 
 /** Sorts proposés ce tour : sorts génériques équipés + sorts de la classe du tour (complétés jusqu'à MAX_ACTIVE_SPELLS) + commandes des compétences apprises. */
 export function combatSpellList(){
@@ -180,19 +235,13 @@ function renderClassPicker(container){
     const forced = gameState.forcedClass;
     picker.innerHTML = loadout.map(id => {
         const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
-        const ready = !chargeEnabled() || readyClasses(gameState.charge, [id]).length > 0;   // dans le tutoriel, le chargement est montré mais n'impose rien
-        let prog = Math.round(classProgress(gameState.charge, player, id) * 100);
-        // Barre animée en temps réel pendant que la classe se recharge (gameTurnFlow.js, `gameState.chargeAnim`) : on reprend là où elle en est.
-        const anim = gameState.chargeAnim, elapsed = anim ? Date.now() - anim.t0 : 0;
-        let animStyle = '';
-        if(anim && anim.ms > 0 && elapsed < anim.ms && anim.to[id] != null && anim.to[id] > anim.from[id]){
-            const now = anim.from[id] + (anim.to[id] - anim.from[id]) * elapsed / anim.ms;
-            animStyle = `--from:${now.toFixed(1)}%;--to:${anim.to[id]}%;--dur:${Math.round(anim.ms - elapsed)}ms;`;
-            prog = Math.round(now);
-        }
+        // Barre de chargement : se remplit en temps réel jusqu'à ce que la classe soit prête (animation CSS pour le temps restant).
+        const prog = Math.round(classProgress(gameState.charge, player, id, chargeFactor()) * 100);
+        const remaining = classRemainingMs(gameState.charge, id);
+        const animStyle = remaining > 0 ? `--from:${prog}%;--to:100%;--dur:${remaining}ms;` : '';
         const info = classChargeInfo(player, id);
-        const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Chargement ${prog} % (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
-        const off = !mine || (forced && id !== forced) || restricted[id] || !ready;
+        const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Se recharge : ${Math.ceil(remaining / 1000)} s (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
+        const off = !mine || (forced && id !== forced) || restricted[id];   // choisir une classe reste libre : seules ses ACTIONS attendent son chargement
         return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${prog >= 100 ? '' : ' charging'}${animStyle ? ' charging-anim' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%;${animStyle}" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
     }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });

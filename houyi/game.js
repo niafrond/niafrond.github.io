@@ -20,7 +20,7 @@ import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimat
 import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
 import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
 import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
-import { newCharge, isClassReady } from "./classCharge.js";
+import { newCharge, newActionQueue } from "./classCharge.js";
 import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
 
 
@@ -68,7 +68,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, deferAction, spendActionCharge } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -914,7 +914,10 @@ export const gameState = {
     turnClass: null,      // classe choisie pour le tour en combat (null = classe du héros) ; jamais sauvegardée
     forcedClass: null,    // classe imposée par un entraînement (enemy.training), sinon null
     transeApplied: null,  // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
-    charge: newCharge()   // temps de chargement des classes et de l'ennemi (classCharge.js)
+    charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
+    actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
+    enemyPending: null,   // action de l'ennemi en attente de son chargement
+    bypassCharge: false   // vrai pendant qu'une action de la file est rejouée
 };
 
 // ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
@@ -929,7 +932,6 @@ export function syncGauge(){
 export function setTurnClass(classId){
     if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
     if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
-    if(!enemy?.isTutorialEnemy && !isClassReady(gameState.charge, classId)) return false;   // classe encore en chargement
     gameState.turnClass = classId;
     syncGauge();
     applyTranseClassEffect();
@@ -1001,11 +1003,12 @@ export function drinkPotionAction(size){
         if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
         if(rejectRushedAction()) return false;
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
+        if(deferAction(() => drinkPotionAction(size), 'Potion')) return false;   // classe en chargement : file d'attente
     }
     const heal = potionHeal(player, size);
     const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions });
     if(!res.ok){ log(res.message); return false; }
-    if(inCombat) actionGuard.markPlayerAction();
+    if(inCombat){ actionGuard.markPlayerAction(); spendActionCharge(); }
     flyHeal(true, res.healed || heal);
     log(res.message);
     if(inCombat){
@@ -1369,6 +1372,7 @@ export function restartCombat({ keepHp = true } = {}){
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.charge = newCharge();   // tout le monde est prêt au début du combat
+    gameState.actionQueue = newActionQueue(); gameState.enemyPending = null; gameState.bypassCharge = false;
     gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
@@ -1763,6 +1767,7 @@ export function useWeapon(hand = 'right'){
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
+    if(deferAction(() => useWeapon(hand), 'Arme')) return;   // classe en chargement : l'action entre dans la file d'attente
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
@@ -1777,6 +1782,7 @@ export function useWeapon(hand = 'right'){
     }
     
     actionGuard.markPlayerAction();
+    spendActionCharge();
     player.combatPoints -= weapon.actionPoints;
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     strikeWithWeapon(weapon);
@@ -1835,6 +1841,7 @@ export function castSpell(spellId){
     if(!spell){ log("Sort indisponible !"); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    if(deferAction(() => castSpell(spellId), spell.name)) return;   // classe en chargement : l'action entre dans la file d'attente
     
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un sort."); return; }
     if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
@@ -1845,6 +1852,7 @@ export function castSpell(spellId){
     }
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
+    if(!(xiuEffect().doubleCast && gameState.doubleCastUsed)) spendActionCharge();   // le second sort du Double Talisman ne recharge pas une seconde fois
     if(xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour
         gameState.doubleCastUsed = true;
         addBonusTurn(player, 1);

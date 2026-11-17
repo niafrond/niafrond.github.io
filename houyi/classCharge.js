@@ -1,11 +1,11 @@
-// Temps de chargement des classes (et de l'ennemi) : une chronologie commune. Module pur (aucun accès au DOM).
-// Chaque classe du héros et l'ennemi ont une date de « prêt » ; après avoir agi, un acteur se recharge `chargeTime` unités.
-// Le prochain à jouer est le premier prêt : une classe rapide ou plusieurs classes alternées peuvent donc jouer plus souvent que l'ennemi.
-// Égalité : l'acteur qui n'a pas joué en dernier passe (le tour par tour d'avant est conservé quand tout est égal).
+// Temps de chargement des classes (et de l'ennemi). Module pur (aucun accès au DOM).
+// Le plateau reste au tour par tour ; ce sont les ACTIONS (arme, sort, compétence de classe, objet, potion) qui sont soumises au chargement :
+// une classe qui vient d'agir se recharge en temps réel (`chargeTime` unités × CHARGE_MS_PER_UNIT) et ne peut plus agir tant qu'elle n'est
+// pas prête ; l'ennemi a la même contrainte. Avec plusieurs classes, on change de classe pour agir : l'une charge pendant que l'autre joue.
 import { ATTRIBUTE_MANA_RULES, getAttributePoints, agilityScore } from './attributes.js';
 import { skillBonus } from './skills.js';
 
-export const CHARGE_MS_PER_UNIT = 150;   // durée réelle d'une unité de chargement : 100 unités = 15 s (× vitesse des animations)
+export const CHARGE_MS_PER_UNIT = 200;   // durée réelle d'une unité de chargement : 100 unités = 20 s ; un héros de milieu de partie (≈ 75 unités) met environ 15 s
 export const CHARGE_BASE = 100;          // temps de chargement sans aucun bonus
 export const CHARGE_MIN = 40;            // plancher : jamais plus de 60 % de réduction
 const AGILITY_PCT = 0.5;                 // % de réduction par point d'Agilité + Moral (toutes les classes)
@@ -42,54 +42,44 @@ export function enemyChargeTime(enemy) {
     return clampTime((enemy?.level || 0) * ENEMY_LEVEL_PCT + agilityScore(enemy) * AGILITY_PCT);
 }
 
-/** Nouvelle chronologie : tout le monde est prêt à l'instant 0. */
-export const newCharge = () => ({ clock: 0, ready: {}, enemyReady: 0, last: null });
+/** Nouveau combat : tout le monde est prêt. `now` est le temps de combat écoulé (ms) ; `ready` : date de « prêt » par classe. */
+export const newCharge = () => ({ now: 0, ready: {}, enemyReady: 0 });
+
+/** Fait avancer le temps de combat (le ticker de gameSpellList.js ne l'appelle qu'en combat, fenêtre visible). */
+export function chargeTick(charge, dtMs) { charge.now += Math.max(0, dtMs || 0); }
 
 const readyAt = (charge, id) => charge.ready[id] ?? 0;
+const factorOf = factor => (Number.isFinite(factor) && factor > 0 ? factor : 1);
 
-/** Classes du héros prêtes maintenant (parmi `usable`). */
-export const readyClasses = (charge, usable) => usable.filter(id => readyAt(charge, id) <= charge.clock);
+export const classChargeMs = (hero, id, factor = 1) => Math.round(classChargeTime(hero, id) * CHARGE_MS_PER_UNIT * factorOf(factor));
+export const enemyChargeMs = (enemy, factor = 1) => Math.round(enemyChargeTime(enemy) * CHARGE_MS_PER_UNIT * factorOf(factor));
 
-export const isClassReady = (charge, id) => readyAt(charge, id) <= charge.clock;
+export const isClassReady = (charge, id) => readyAt(charge, id) <= charge.now;
+export const classRemainingMs = (charge, id) => Math.max(0, readyAt(charge, id) - charge.now);
 
 /** Part de chargement d'une classe (0..1) : 1 = prête. */
-export function classProgress(charge, hero, id) {
-    const left = readyAt(charge, id) - charge.clock;
-    return left <= 0 ? 1 : Math.max(0, 1 - left / classChargeTime(hero, id));
+export function classProgress(charge, hero, id, factor = 1) {
+    const left = classRemainingMs(charge, id);
+    return left <= 0 ? 1 : Math.max(0, 1 - left / classChargeMs(hero, id, factor));
 }
 
-/** Le héros a joué avec `classId` : elle se recharge. */
-export function playerActed(charge, hero, classId) {
-    charge.ready[classId] = charge.clock + classChargeTime(hero, classId);
-    charge.last = 'player';
-}
+/** La classe vient d'agir (arme, sort, compétence, objet, potion) : elle se recharge. */
+export function spendClass(charge, hero, id, factor = 1) { charge.ready[id] = charge.now + classChargeMs(hero, id, factor); }
 
-/** L'ennemi a joué : il se recharge. */
-export function enemyActed(charge, enemy) {
-    charge.enemyReady = charge.clock + enemyChargeTime(enemy);
-    charge.last = 'enemy';
-}
+export const isEnemyReady = charge => charge.enemyReady <= charge.now;
+export const enemyRemainingMs = charge => Math.max(0, charge.enemyReady - charge.now);
+/** L'ennemi vient d'agir (sort, arme, capacité) : il se recharge. */
+export function spendEnemy(charge, enemy, factor = 1) { charge.enemyReady = charge.now + enemyChargeMs(enemy, factor); }
 
-/** Qui joue ensuite ? Fait avancer l'horloge jusqu'au premier prêt. Retourne 'player' ou 'enemy'. */
-export function nextActor(charge, usable) {
-    const pool = usable.length ? usable : Object.keys(charge.ready);
-    const playerAt = pool.length ? Math.min(...pool.map(id => readyAt(charge, id))) : charge.clock;
-    let side;
-    if (playerAt < charge.enemyReady) side = 'player';
-    else if (charge.enemyReady < playerAt) side = 'enemy';
-    else side = charge.last === 'player' ? 'enemy' : 'player';
-    charge.clock = Math.max(charge.clock, side === 'player' ? playerAt : charge.enemyReady);
-    return side;
+// ── File d'attente des actions ──────────────────────────────────────────────
+// Une action choisie (sort, compétence, objet, arme) est exécutée tout de suite si la classe est prête et qu'aucune action n'attend ; sinon elle
+// entre dans la file, dans l'ordre d'arrivée, et part dès que sa classe est chargée. L'ordre n'est jamais montré au joueur.
+export const newActionQueue = () => [];
+let _seq = 0;
+export function enqueueAction(queue, item) { const entry = { ...item, seq: ++_seq }; queue.push(entry); return entry; }
+/** Retire et renvoie la première action de `owner` dont la classe est prête (dans l'ordre d'arrivée), sinon null. */
+export function takeDueAction(queue, owner, isReady) {
+    const i = queue.findIndex(item => item.owner === owner && isReady(item));
+    return i === -1 ? null : queue.splice(i, 1)[0];
 }
-
-/** Part de chargement (0..1) d'une classe à l'instant `clock` de la chronologie (pour animer la barre jusqu'à la date où elle sera prête). */
-export function classProgressAt(charge, hero, id, clock) {
-    const left = readyAt(charge, id) - clock;
-    return left <= 0 ? 1 : Math.max(0, 1 - left / classChargeTime(hero, id));
-}
-
-/** Date (chronologie) où le héros pourra de nouveau agir : la première classe prête. */
-export function playerReadyClock(charge, usable) {
-    const pool = usable.length ? usable : Object.keys(charge.ready);
-    return pool.length ? Math.min(...pool.map(id => readyAt(charge, id))) : charge.clock;
-}
+export const hasQueuedAction = (queue, owner) => queue.some(item => item.owner === owner);

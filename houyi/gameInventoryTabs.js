@@ -1,6 +1,7 @@
 // Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
+import { deferAction, spendActionCharge } from "./gameSpellList.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
@@ -568,6 +569,7 @@ export function useInventoryItem(itemId, index){
     if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return; }
+    if(deferAction(() => useInventoryItem(itemId, index), 'Objet')) return;   // classe en chargement : file d'attente
 
     normalizeActiveInventoryIndex();
     const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
@@ -594,6 +596,7 @@ export function useInventoryItem(itemId, index){
     player.combatPoints -= pa;
     const result = useItem(itemId, player, enemy, resolvedIndex);
     if(result.success){
+        spendActionCharge();   // la classe du tour se recharge
         if(item.effect?.cure) playSfx('cure');
         logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
         log(result.message);
