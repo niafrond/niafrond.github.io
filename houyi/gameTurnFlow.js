@@ -172,6 +172,9 @@ export function finishPlayerTurn(){
     }
 
     // Temps de chargement (classCharge.js) : la classe qui vient d'agir se recharge ; si une autre classe est prête avant l'ennemi, le joueur rejoue.
+    if(gameState.combatState === 'active' && enemy?.isTutorialEnemy){   // tutoriel : le déroulé reste scripté, mais la barre de la classe se vide puis se remplit pendant que Fengmeng joue
+        playerActed(gameState.charge, player, getTurnClass());
+    }
     if(chargeEnabled()){
         playerActed(gameState.charge, player, getTurnClass());
         if(nextActor(gameState.charge, usableNow()) === 'player'){
@@ -713,6 +716,10 @@ export function finishEnemyTurn(){
         const playerSleeps = isAsleep(player) || playerStunned;   // Endormi : le héros perd ce tour (sauf s'il a été réveillé par des dégâts)
         tickAlterations(player).forEach(m => log(m));
         // Temps de chargement : si l'ennemi est de nouveau prêt avant toute classe du héros, il rejoue.
+        if(enemy?.isTutorialEnemy && gameState.combatState === 'active'){   // tutoriel : la barre de la classe finit de se remplir
+            const rd = Object.values(gameState.charge.ready);
+            if(rd.length) gameState.charge.clock = Math.max(gameState.charge.clock, ...rd);
+        }
         if(chargeEnabled()){
             enemyActed(gameState.charge, enemy);
             if(nextActor(gameState.charge, usableNow()) === 'enemy'){

@@ -154,18 +154,18 @@ function renderClassPicker(container){
     const mine = active && currentTurn === 'player';
     const current = getTurnClass();
     const loadout = normalizeRoster(player).loadout;
-    picker.hidden = !active || loadout.length <= 1;   // une seule classe : rien à choisir, pas de ligne
+    picker.hidden = !active;   // toujours là en combat, même avec une seule classe : elle porte la barre de chargement
     picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Xiūxiān';
     const restricted = restrictedClasses(player, combatBiome());
     const forced = gameState.forcedClass;
     picker.innerHTML = loadout.map(id => {
         const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
-        const ready = !chargeEnabled() || readyClasses(gameState.charge, [id]).length > 0;
-        const prog = chargeEnabled() ? Math.round(classProgress(gameState.charge, player, id) * 100) : 100;
+        const ready = !chargeEnabled() || readyClasses(gameState.charge, [id]).length > 0;   // dans le tutoriel, le chargement est montré mais n'impose rien
+        const prog = Math.round(classProgress(gameState.charge, player, id) * 100);
         const info = classChargeInfo(player, id);
-        const chargeText = ready ? `Prête (chargement ${info.time})` : `Chargement ${prog} % (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
+        const chargeText = prog >= 100 ? `Prête (chargement ${info.time})` : `Chargement ${prog} % (temps ${info.time} : Agilité/Moral -${Math.round(info.pct.agility)} %, attribut -${Math.round(info.pct.attribute)} %, qì -${Math.round(info.pct.qi)} %, compétences -${info.pct.skills} %)`;
         const off = !mine || (forced && id !== forced) || restricted[id] || !ready;
-        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%" title="${reason} · ${chargeText}">${CLASS_SHORT[id] || id}</button>`;
+        return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}${ready ? '' : ' charging'}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} style="--charge:${prog}%" title="${reason} · ${chargeText}"><span>${CLASS_SHORT[id] || id}</span></button>`;
     }).join('');
     picker.querySelectorAll('.class-pick').forEach(btn => { btn.onclick = () => { if(setTurnClass(btn.dataset.class)) createSpellButtons(); }; });
 }

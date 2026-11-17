@@ -1056,9 +1056,15 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 .rage-bar-container.in-transe .rage-bar { box-shadow: 0 0 8px 1px rgba(150, 110, 255, 0.75); }
 .class-picker { display: flex; gap: 2px; margin: 0 0 4px; width: 100%; box-sizing: border-box; }   /* fine ligne cliquable au-dessus des actions */
 .class-picker[hidden] { display: none; }
-.class-pick { flex: 1 1 0; min-width: 0; height: 22px; padding: 0 6px; font-size: 0.7rem; line-height: 20px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.25); background: linear-gradient(90deg, rgba(127, 227, 242, 0.45) var(--charge, 100%), rgba(0, 0, 0, 0.35) var(--charge, 100%)); color: inherit; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.class-pick.on { background: #7a4ad8; border-color: #b58cff; color: #fff; font-weight: 700; }
-.class-pick:disabled { opacity: 0.5; cursor: default; }
+.class-pick { position: relative; overflow: hidden; flex: 1 1 0; min-width: 0; height: 22px; padding: 0 6px; font-size: 0.7rem; line-height: 20px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.25); cursor: pointer; white-space: nowrap; text-overflow: ellipsis; }
+.class-picker .class-pick { background: #1d2530; color: #eaf6f8; text-shadow: 0 1px 1px #000; border-color: #5b6a78; }
+/* Barre de chargement de la classe : se remplit jusqu'à ce qu'elle soit prête (classCharge.js). */
+.class-pick::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--charge, 100%); background: linear-gradient(90deg, #1f7f93, #3fc1d8); opacity: 1; transition: width 0.6s ease-out; z-index: 0; }
+.class-pick > span { position: relative; z-index: 1; }
+.class-pick.charging { border-style: dashed; }
+.class-picker .class-pick.on { border-color: #fff; box-shadow: 0 0 0 1px #b58cff, 0 0 6px #b58cff; color: #fff; font-weight: 700; }
+.class-pick:disabled { opacity: 1; cursor: default; }
+.class-pick.limited:disabled { opacity: 0.5; }
 
 /* Les attaques que l'ennemi peut lancer ne sont plus montrées : la place revient aux choix du joueur (classe du tour, sorts). */
 #enemy-spell-list, #enemy-spells h4 { display: none !important; }

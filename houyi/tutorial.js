@@ -125,7 +125,7 @@ const STEPS = [
     {   // J2 : 3 gâteaux de sa couleur
         who: 'enemy', kind: 'swap', match: { type: 'color', len: 3, side: 'foe' }, icon: 'refresh',
         title: () => "L'ennemi joue",
-        desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.`,
+        desc: () => `Fengmeng joue à son tour sur le même plateau. Il aligne <strong>3 gâteaux de lune ${COLOR_FR[_foeColor]}</strong> et gagne du qì ${icon('mana_' + _foeColor)}, comme vous.<br><strong>Chargement :</strong> après chaque action, votre classe se recharge. Regardez la <strong>barre sous le plateau</strong> se remplir pendant que Fengmeng joue ; une fois pleine, votre classe peut agir de nouveau. Plus l'Agilité, le Moral, le qì et les compétences sont élevés, plus elle se recharge vite : une classe rapide, ou plusieurs classes à tour de rôle, jouent plus souvent que l'ennemi (qui a aussi son temps de chargement).`,
         done: 'Fengmeng a gagné du qì.',
     },
     {   // J1 : 3 crânes
