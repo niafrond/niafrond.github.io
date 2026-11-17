@@ -1,3 +1,9 @@
+## [2.254.0](https://github.com/niafrond/niafrond.github.io/compare/v2.253.0...v2.254.0) (2026-11-17)
+
+### Features
+
+* **match3-quest:** sorts Casual abordables et musique baissée pendant l'écoute d'un mot ([#746](https://github.com/niafrond/niafrond.github.io/issues/746)) ([adaac17](https://github.com/niafrond/niafrond.github.io/commit/adaac176bfe302f7c2b13f4f123f3ff8886e04ee))
+
 ## [2.253.0](https://github.com/niafrond/niafrond.github.io/compare/v2.252.0...v2.253.0) (2026-11-16)
 
 ### Features
