@@ -1090,5 +1090,5 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 body.no-blink .class-pick.ready-pulse::before, body.no-anim .class-pick.ready-pulse::before { animation: none; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .class-pick.ready-pulse::before { animation: none; opacity: 1; } }
 
-/* Tempo : plateau inactif depuis 5 s, les chargements sont en pause (barres figées et ternies) jusqu'au prochain combo. */
-body.charge-paused .class-pick::before { animation-play-state: paused; filter: saturate(0.35); }
+/* Tempo : plateau inactif depuis 5 s, les chargements sont en pause (barres figées, sans aucun message ni changement d'aspect) jusqu'au prochain combo. */
+body.charge-paused .class-pick::before { animation-play-state: paused; }
