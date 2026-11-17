@@ -2,34 +2,54 @@
 import { player, gameState, currentTurn, drinkPotionAction, xiuEffect } from './game.js';
 import { POTION_SIZES, POTIONS, potionCount, potionHeal, drinkBlockReason } from './potions.js';
 import { escapeHtml } from './escapeHtml.js';
+import { itemUsability, useInventoryItem } from './gameInventoryTabs.js';
+import { isSingleUse } from './itemReuse.js';
 
 const label = size => `${POTIONS[size].name} (+${potionHeal(player, size)} PV)`;
 
 let potionMenuOpen = false;   // le menu des potions est déplié (après un clic sur « Objet »)
 
-/** Potions du combat : un seul bouton « Objet » ; il déplie le choix de la potion (une tuile par taille : nombre restant, coût en points d'action). */
+/** Objets de l'inventaire utilisables en combat (tout objet « usage unique » ou « relique réutilisable » du sac, quel que soit son emplacement actif). */
+const usableItems = () => (player.inventory || []).map((item, index) => ({ item, index }))
+    .filter(({ item }) => item && (item.type === 'reusable' || item.type === 'consumable'));
+
+const itemTag = item => (item.type === 'reusable' && !isSingleUse(item))
+    ? `${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} charges`
+    : 'usage unique';
+
+/** « Objet » : un seul bouton en combat ; il déplie le choix parmi les potions et tous les objets du sac (usage unique ou reliques réutilisables). */
 export function renderPotionButtons() {
     const box = document.getElementById('potion-buttons');
     if (!box) return;
-    if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; return; }
+    if (gameState.combatState !== 'active') { potionMenuOpen = false; box.innerHTML = ''; box.classList.remove('potion-menu'); return; }
     const mine = currentTurn === 'player';
-    const total = POTION_SIZES.reduce((n, size) => n + potionCount(player, size), 0);
+    const potions = POTION_SIZES.reduce((n, size) => n + potionCount(player, size), 0);
+    const items = usableItems();
+    const total = potions + items.length;
     if (!mine || !total) potionMenuOpen = false;
+    box.classList.toggle('potion-menu', potionMenuOpen);   // menu déplié : sur toute la largeur
     if (!potionMenuOpen) {
         const off = !mine || !total;
-        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${total ? 'Choisir une potion' : 'Aucune potion : achetez-en chez les marchands'}">
+        box.innerHTML = `<button type="button" class="enemy-spell-item potion-btn${off ? ' disabled' : ''}" data-open-potions${off ? ' disabled' : ''} title="${total ? 'Choisir une potion ou un objet' : 'Aucun objet : achetez-en chez les marchands'}">
             <div class="spell-name">Objet</div>
-            <div class="spell-cost">Potions ×${total}</div></button>`;
+            <div class="spell-cost">${potions ? `Potions ×${potions}` : ''}${potions && items.length ? ' · ' : ''}${items.length ? `Objets ×${items.length}` : ''}${total ? '' : '—'}</div></button>`;
         return;
     }
     const free = !!xiuEffect().freePotions;   // Souffle du Lotus d'Or : potions sans point d'action
-    box.innerHTML = POTION_SIZES.map(size => {
+    const potionTiles = POTION_SIZES.map(size => {
         const p = POTIONS[size];
         const blocked = drinkBlockReason(player, size, true, free);
         return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' disabled' : ''} title="${escapeHtml(label(size))}">
             <div class="spell-name">${escapeHtml(p.name)} ×${potionCount(player, size)}</div>
             <div class="spell-cost">${free ? '0 PA' : `${p.actionPoints} PA`} · ${p.healPct} % des PV</div></button>`;
-    }).join('') + `<button type="button" class="enemy-spell-item potion-btn potion-back" data-close-potions><div class="spell-name">Retour</div></button>`;
+    }).join('');
+    const itemTiles = items.map(({ item, index }) => {
+        const use = itemUsability(item);
+        return `<button type="button" class="enemy-spell-item potion-btn${use.ok ? '' : ' disabled'}" data-use-item="${index}" data-item-id="${escapeHtml(item.id)}"${use.ok ? '' : ' disabled'} title="${escapeHtml(`${item.description || ''}${use.ok ? '' : ` (${use.reason})`}`)}">
+            <div class="spell-name">${escapeHtml(item.name)}</div>
+            <div class="spell-cost">${item.actionPoints || 2} PA · ${itemTag(item)}${use.ok ? '' : ` · ${escapeHtml(use.reason)}`}</div></button>`;
+    }).join('');
+    box.innerHTML = potionTiles + itemTiles + `<button type="button" class="enemy-spell-item potion-btn potion-back" data-close-potions><div class="spell-name">Retour</div></button>`;
 }
 
 /** Panneau de l'Inventaire : stock de potions et bouton « Boire » (hors combat). */
@@ -57,6 +77,8 @@ function init() {
         const open = ev.target.closest('[data-open-potions]');
         if (open && !open.disabled) { potionMenuOpen = true; renderPotionButtons(); return; }
         if (ev.target.closest('[data-close-potions]')) { potionMenuOpen = false; renderPotionButtons(); return; }
+        const itemBtn = ev.target.closest('[data-use-item]');
+        if (itemBtn && !itemBtn.disabled) { potionMenuOpen = false; useInventoryItem(itemBtn.dataset.itemId, Number(itemBtn.dataset.useItem)); renderPotionButtons(); return; }
         const btn = ev.target.closest('[data-potion]');
         if (btn && !btn.disabled) { potionMenuOpen = false; drinkPotionAction(btn.dataset.potion); renderPotionButtons(); }
     });

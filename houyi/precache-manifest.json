@@ -101,6 +101,7 @@
   "gearEffects.js",
   "icon.svg",
   "icons.js",
+  "itemReuse.js",
   "items.js",
   "joker.js",
   "loader.js",

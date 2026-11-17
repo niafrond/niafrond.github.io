@@ -69,12 +69,12 @@ describe('effets de combat : pas de cumul', () => {
         expect(useItem('phoenixFeather', player, null, 0).success).toBe(false);
     });
 
-    test('soins et qì restent utilisables à chaque recharge', () => {
-        const potion = { ...allItems.find(i => i.id === 'healthPotion'), chargesLeft: 1 };
+    test('soins et qì restent utilisables à chaque recharge (reliques réutilisables)', () => {
+        const potion = { ...allItems.find(i => i.id === 'honey_vial'), chargesLeft: 1 };
         const player = makePlayer([potion]);
-        expect(useItem('healthPotion', player, null, 0).success).toBe(true);
+        expect(useItem('honey_vial', player, null, 0).success).toBe(true);
         potion.chargesLeft = 1;
-        expect(useItem('healthPotion', player, null, 0).success).toBe(true);
+        expect(useItem('honey_vial', player, null, 0).success).toBe(true);
     });
 });
 

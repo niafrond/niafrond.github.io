@@ -22,7 +22,7 @@ export const playerClasses = {
     },
     assassin: {
         id: 'assassin',
-        name: 'Rôdeur errant · Yóuxiá',   // 游侠
+        name: 'Chasseur errant · Yóuxiá',   // 游侠
         icon: 'bow',
         description: 'Hou Yi, l\'archer divin : tirs rapides, flèches précises et coups furtifs',
         startingStats: { agility: 2, strength: 1 },

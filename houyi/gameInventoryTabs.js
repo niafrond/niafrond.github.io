@@ -3,6 +3,7 @@
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
+import { isSingleUse, reuseLabel } from "./itemReuse.js";
 import { getItemIcon, getRarityColor, useItem, describeRecharge, shiftActiveItemIndexes } from "./items.js";
 import { afflictionsOf } from "./alterations.js";
 import { playSfx } from "./sound.js";
@@ -400,10 +401,10 @@ export function updateInventoryTab(){
         const isActive = slot > 0;
         const usable = item.type === 'consumable' || item.type === 'reusable';
         const levelLocked = player.level < (item.minLevel || 1);
-        const charges = item.type === 'reusable' ? `${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : '';
+        const charges = item.type === 'reusable' && !isSingleUse(item) ? `${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : '';
         // Écarts avec l'objet actif (seulement entre objets d'usage qui ont un effet en commun), sinon la première phrase de l'effet.
         const deltas = !isActive && usable && sharesEffect(item, activeItem) ? deltaBadgesHtml(itemNumbers(item), itemNumbers(activeItem), ITEM_DELTA_FIELDS) : '';
-        const chips = (usable ? `<span class="rc-chip">${item.actionPoints || 2} ${svgIcon('arrow')}</span>` : '') + (charges ? `<span class="rc-chip" title="Charges">${charges}</span>` : '');
+        const chips = (usable ? `<span class="rc-chip">${item.actionPoints || 2} ${svgIcon('arrow')}</span>` : '') + (charges ? `<span class="rc-chip" title="Relique réutilisable : charges">${charges}</span>` : '') + (usable && isSingleUse(item) ? '<span class="rc-chip" title="Consommé à l\'usage">Usage unique</span>' : '');
         // Deux objets actifs : « Activer » prend la place libre (sinon remplace l'objet 2) ; le menu « ⋯ » permet de choisir l'emplacement.
         // Deux objets du même nom ne se partagent pas les deux emplacements.
         const sameAsOther = usable && !isActive && [player.activeInventoryIndex, player.activeInventoryIndex2].some(i => Number.isInteger(i) && player.inventory[i]?.id === item.id);
@@ -416,7 +417,7 @@ export function updateInventoryTab(){
             ? `<button type="button" class="item-discard-btn" onclick="window.setActiveInventoryItem(${index}, 1)">En objet 1</button>` : '';
         const more = slotChoice + sellTagButton(item, count) + `<button type="button" class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>`;
         const tip = cardTipHtml(escapeHtml(item.name), [
-            usable ? `${item.actionPoints || 2} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • Charges ${charges}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` (${escapeHtml(describeRecharge(item))})` : ''}` : ''}` : 'Relique permanente',
+            usable ? `${item.actionPoints || 2} ${svgIcon('arrow')}${charges ? ` • Charges ${charges}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` (${escapeHtml(describeRecharge(item))})` : ''}` : ''} • ${escapeHtml(reuseLabel(item))}` : 'Relique permanente',
             count > 1 ? `Exemplaires : ${count}` : ''
         ], escapeHtml(item.description || ''));
         return rowCardHtml({
@@ -442,6 +443,7 @@ export function updateItemButton(){
     if(!container) return;
     container.innerHTML = '';
     normalizeActiveInventoryIndex();
+    return;   // en combat, tous les objets du sac passent par le bouton « Objet » (potionsView.js) : plus de boutons d'objets actifs
 
     if(!player.inventory || player.inventory.length === 0) return;
 
@@ -467,7 +469,7 @@ function buildItemButton(item, index){
     }
 
     const pa = item.actionPoints || 2;
-    const exhausted = item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
+    const exhausted = item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
     const healUseless = isUselessHeal(item);
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
     const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
@@ -477,7 +479,7 @@ function buildItemButton(item, index){
     btn.tabIndex = 0;
     btn.innerHTML = `
         <div class="spell-name">${svgIcon(sealed ? 'lock' : 'bag')} ${item.name}</div>
-        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` • ${describeRecharge(item)}` : ''}` : ''}</div>
+        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' && isSingleUse(item) ? ' • Usage unique' : item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` • ${describeRecharge(item)}` : ''}` : ''}</div>
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
     const hideDetails = () => hideSpellTooltip();
@@ -547,6 +549,18 @@ function isUselessHeal(item){
     const keys = Object.keys(item?.effect || {});
     if(keys.length === 1 && keys[0] === 'cure') return afflictionsOf(player, item.effect.cure === 'all' ? undefined : item.effect.cure).length === 0;   // remède : rien à guérir
     return keys.length === 1 && keys[0] === 'heal' && player.hp >= player.maxHp;
+}
+
+/** Un objet de l'inventaire est-il utilisable maintenant en combat ? { ok, reason } (menu « Objet »). */
+export function itemUsability(item){
+    const pa = item.actionPoints || 2;
+    if(gameState.combatState !== 'active' || currentTurn !== 'player') return { ok: false, reason: "Ce n'est pas votre tour." };
+    if(player.level < (item.minLevel || 1)) return { ok: false, reason: `Niveau ${item.minLevel} requis` };
+    if((player.statusEffects?.sealed || 0) > 0) return { ok: false, reason: 'Scellé' };
+    if(item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0) return { ok: false, reason: describeRecharge(item) };
+    if(isUselessHeal(item)) return { ok: false, reason: 'Sans effet maintenant' };
+    if(player.combatPoints < pa) return { ok: false, reason: `${pa} PA requis` };
+    return { ok: true, reason: '' };
 }
 
 export function useInventoryItem(itemId, index){

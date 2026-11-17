@@ -260,9 +260,9 @@ export const forgeArenaUnlock = (classId = 'templar') => {
         classId, level: 15, gold: 2400, regions: REGION_ORDER.indexOf('gobi') + 1,
         weaponIds: [bestWeapon(15, w => !w.twoHanded && !w.playerOnly).id, heavy.id],
         equippedWeaponId: heavy.id, abilities: ['elementalist', 'fireMastery'],
-        inventoryIds: ['healthPotion', 'power_talisman', 'honey_vial'], unspent: 2
+        inventoryIds: ['honey_vial', 'power_talisman', 'energy_stone'], unspent: 2
     });
-    p.inventory[0].chargesLeft = 0; p.inventory[0].rechargeLeft = 3;   // une potion vide, en recharge
+    p.inventory[0].chargesLeft = 0; p.inventory[0].rechargeLeft = p.inventory[0].rechargeTurns;   // une relique réutilisable vide, en recharge
     return p;
 };
 

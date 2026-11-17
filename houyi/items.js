@@ -3,6 +3,7 @@ import { healEntity, cureStatuses, afflictionsOf, CURE_NAMES } from './alteratio
 import { manaIcon, itemIcon } from './icons.js';
 import { canEquip, equip, unequip } from './equipment.js';
 import { MAX_LEVEL } from './experience.js';
+import { reuseOf, REUSE, isSingleUse, singleUseDescription } from './itemReuse.js';
 
 // Système d'objets et inventaire
 
@@ -178,6 +179,16 @@ export const allItems = [
      description:"Les ennemis ne vous remarquent plus, sauf les boss ; les hautes herbes, l'eau et la lave n'attirent plus de combat. Augmente HP max de 30 (permanent)", effect:{permMaxHp:30, stealth:true}},
 ];
 
+// Réutilisabilité (itemReuse.js) : chaque objet utilisable est « single » (consommé à l'usage) ou « relic » (charges rechargeables).
+allItems.forEach(item => {
+    if(item.type !== 'reusable') return;
+    item.reuse = reuseOf(item);
+    if(item.reuse === REUSE.SINGLE){
+        item.chargesPerCycle = 1;
+        item.description = singleUseDescription(item.description);
+    }
+});
+
 // Objets qui peuvent tomber en butin, se vendre ou se tirer au hasard : sans les reliques de quête.
 export const lootableItems = allItems.filter(item => !item.quest && !item.noLoot);   // `noLoot` : plus ni en butin ni en boutique (les potions de soin sont à usage unique : potions.js)
 
@@ -283,8 +294,8 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     // Plus aucun objet à usage unique : un ancien consommable devient rechargeable avant usage.
     if(item.type === "consumable") toReusable(item);
 
-    // Les objets rechargeables doivent avoir des charges restantes
-    if(item.type === "reusable") {
+    // Les objets rechargeables doivent avoir des charges restantes (un objet à usage unique n'en a pas : il est consommé en fin d'usage)
+    if(item.type === "reusable" && !isSingleUse(item)) {
         if(!Number.isInteger(item.chargesLeft)) item.chargesLeft = item.chargesPerCycle;
         if(item.chargesLeft <= 0) {
             const left = Math.max(0, Math.floor(item.rechargeLeft || 0));
@@ -384,6 +395,11 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     }
 
     if(item.type === "reusable" && isCombatLongEffect(item.effect)) player.itemBuffs[item.id] = true;
+    if(item.type === "reusable" && isSingleUse(item)) {   // usage unique : l'objet est consommé
+        const at = player.inventory.indexOf(item);
+        if(at !== -1) { player.inventory.splice(at, 1); shiftActiveItemIndexes(player, at); }
+        message += `${item.name} est consommé. `;
+    }
     return {success: true, message: message};
 }
 

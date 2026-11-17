@@ -33,8 +33,8 @@ describe('objets rechargeables', () => {
 });
 
 describe('recharge en combat : « x tours pour se recharger »', () => {
-    test('chaque objet rechargeable annonce son délai (rechargeTurns) dans le catalogue et la description', () => {
-        allItems.filter(i => i.type === 'reusable').forEach(i => {
+    test('chaque relique réutilisable annonce son délai (rechargeTurns) dans le catalogue et la description', () => {
+        allItems.filter(i => i.type === 'reusable' && i.reuse === 'relic').forEach(i => {
             expect(i.rechargeTurns).toBeGreaterThanOrEqual(2);
             expect(i.description).toContain(`rechargé en ${i.rechargeTurns} tours`);
         });
@@ -81,38 +81,38 @@ describe('recharge en combat : « x tours pour se recharger »', () => {
 });
 
 describe('anciens consommables', () => {
-    test('un consommable inconnu n\'est jamais détruit : il devient rechargeable', () => {
+    test("un ancien consommable inconnu est à usage unique : consommé à l'usage", () => {
         const old = { id: 'mystere', name: 'Fiole', type: 'consumable', effect: { heal: 10 } };
         const player = makePlayer([old]);
         expect(useItem('mystere', player, null, 0).success).toBe(true);
-        expect(player.inventory).toHaveLength(1);
-        expect(old.type).toBe('reusable');
-        expect(old.chargesLeft).toBe(0);
-        expect(old.rechargeLeft).toBe(3);
-        for (let i = 0; i < 3; i++) tickReusableRecharge(player);
-        expect(old.chargesLeft).toBe(1);
-        expect(useItem('mystere', player, null, 0).success).toBe(true);
+        expect(player.inventory).toHaveLength(0);
     });
 });
 
-describe('tous les objets utilisables sont rechargeables', () => {
-    test('plus aucun consommable à usage unique dans le catalogue', () => {
+describe('usage unique et reliques réutilisables', () => {
+    test('le catalogue ne contient plus de type « consumable » ; chaque objet utilisable est à usage unique ou relique', () => {
         expect(allItems.filter(i => i.type === 'consumable')).toEqual([]);
         allItems.filter(i => i.type === 'reusable').forEach(i => {
+            expect(['single', 'relic']).toContain(i.reuse);
             expect(i.chargesPerCycle).toBeGreaterThanOrEqual(1);
-            expect(i.rechargeTurns).toBeGreaterThanOrEqual(2);
-            expect(i.description).toMatch(/recharg/);
+            if (i.reuse === 'relic') { expect(i.rechargeTurns).toBeGreaterThanOrEqual(2); expect(i.description).toMatch(/recharg/); }
         });
     });
-    test('une potion n\'est plus retirée de l\'inventaire : elle se recharge', () => {
+    test("une potion à usage unique est retirée de l'inventaire après usage", () => {
         const potion = fresh('healthPotion');
         const player = makePlayer([potion]);
         expect(useItem('healthPotion', player, null, 0).success).toBe(true);
+        expect(player.inventory).toHaveLength(0);
+    });
+    test('une relique réutilisable reste dans le sac et se recharge', () => {
+        const relic = fresh('honey_vial');
+        const player = makePlayer([relic]);
+        for (let i = 0; i < relic.chargesPerCycle; i++) expect(useItem('honey_vial', player, null, 0).success).toBe(true);
         expect(player.inventory).toHaveLength(1);
-        expect(potion.chargesLeft).toBe(0);
-        expect(useItem('healthPotion', player, null, 0).success).toBe(false);
-        for (let t = 0; t < potion.rechargeTurns; t++) tickReusableRecharge(player);
-        expect(potion.chargesLeft).toBe(1);
-        expect(useItem('healthPotion', player, null, 0).success).toBe(true);
+        expect(relic.chargesLeft).toBe(0);
+        expect(useItem('honey_vial', player, null, 0).success).toBe(false);
+        for (let t = 0; t < relic.rechargeTurns; t++) tickReusableRecharge(player);
+        expect(relic.chargesLeft).toBe(relic.chargesPerCycle);
+        expect(useItem('honey_vial', player, null, 0).success).toBe(true);
     });
 });

@@ -508,7 +508,7 @@ function validateAndRestorePlayer(player) {
             const ref = allItems.find(i => i.id === item.id);
             // Les valeurs (soin, qì, charges, délai) viennent toujours du catalogue : un rééquilibrage s'applique aux anciennes parties.
             if (ref) {
-                Object.assign(item, { effect: { ...ref.effect }, description: ref.description, chargesPerCycle: ref.chargesPerCycle, rechargeTurns: ref.rechargeTurns });
+                Object.assign(item, { effect: { ...ref.effect }, description: ref.description, chargesPerCycle: ref.chargesPerCycle, rechargeTurns: ref.rechargeTurns, reuse: ref.reuse });
                 if (ref.actionPoints) item.actionPoints = ref.actionPoints;
                 item.chargesLeft = Math.min(item.chargesLeft, ref.chargesPerCycle);
             }

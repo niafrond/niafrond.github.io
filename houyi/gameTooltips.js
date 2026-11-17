@@ -1,5 +1,6 @@
 // Infobulles du combat (sorts, armes, objets, équipement du joueur, ennemi) et pastilles de statut.
 // Extrait de game.js pour alléger ce fichier ; game.js ré-exporte ce qui était public.
+import { reuseLabel, isSingleUse } from './itemReuse.js';
 import { literalTranslation } from './bestiaryNames.js';
 import { escapeHtml } from "./escapeHtml.js";
 import { BIOME_LABELS } from "./weapons.js";
@@ -111,7 +112,7 @@ function getItemTooltipHtml(item, options = {}) {
     const ownerLabel = isEnemyItem ? 'ennemi' : 'allié';
     const typeLabel = item.type === 'artifact'
         ? 'Relique passive'
-        : (item.type === 'consumable' ? 'Consommable' : item.type === 'reusable' ? 'Objet rechargeable' : 'Objet');
+        : (item.type === 'consumable' ? 'Consommable' : item.type === 'reusable' ? (reuseLabel(item) || 'Objet rechargeable') : 'Objet');
     const actionPoints = (item.type === 'consumable' || item.type === 'reusable') ? (item.actionPoints || 2) : null;
 
     let html = `<div class="spell-tooltip-title">${item.name || 'Objet'}</div>`;
@@ -123,7 +124,7 @@ function getItemTooltipHtml(item, options = {}) {
     if(item.description) {
         html += `<div class="spell-tooltip-line">${item.description}</div>`;
     }
-    if(item.type === 'reusable') {
+    if(item.type === 'reusable' && !isSingleUse(item)) {
         html += `<div class="spell-tooltip-line">Charges: ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} • ${describeRecharge(item)}</div>`;
     }
     return html;

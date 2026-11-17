@@ -78,7 +78,7 @@ function initializeThemeUI(toggleButton){
     });
 }
 
-// Nouvelle partie : plus de choix de classe au départ. Hou Yi commence en Rôdeur errant (l'archer divin) ; en combat, le joueur choisit
+// Nouvelle partie : plus de choix de classe au départ. Hou Yi commence en Chasseur errant (l'archer divin) ; en combat, le joueur choisit
 // une classe par tour (gameSpellList.js), la classe du héros n'est que celle proposée par défaut.
 const DEFAULT_HERO_CLASS = 'assassin';
 function showClassSelection() {

@@ -139,7 +139,7 @@ chinois (yaoguai, jiangshi, dragons-longs sans ailes d'occidental…). Les **sol
 flammes en volutes et un visage (chacun avec un élément et une couleur dominante distincts).
 
 ### Héros : Hou Yi sous quatre styles (les 4 classes existantes, ids FIXES)
-`assassin` = **Hou Yi le Rôdeur errant, 游侠 Yóuxiá** (le look « par défaut » : tunique rouge et or, grand arc rouge, carquois, chignon, regard
+`assassin` = **Hou Yi le Chasseur errant, 游侠 Yóuxiá** (le look « par défaut » : tunique rouge et or, grand arc rouge, carquois, chignon, regard
 déterminé), `sorcerer` = **Hou Yi le Mage antique, 方士 Fāngshì** (robe bleu nuit à nuages dorés, bâton à talisman, orbe de qi),
 `templar` = **Hou Yi le Commandant, 武将 Wǔjiàng** (armure lamellaire laquée, grand bouclier rond, lance), `barbarian` = **Hou Yi le
 Guerrier, 武士 Wǔshì** (fourrures, torse nu tatoué, grande hache). Noms affichés en jeu : « Français · pinyin » (`classes.js`). Même visage reconnaissable (cheveux noirs, chignon,

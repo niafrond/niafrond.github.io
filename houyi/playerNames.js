@@ -5,7 +5,7 @@ const classNamePools = {
     sorcerer: [
         "Li Wei", "Zhang Yun", "Lan Xi", "Chen Daoxi", "Wen Qing", "Su Ming", "Yun Shu", "Bai Heng"
     ],
-    // Rôdeur errant (Yóuxiá, le Hou Yi par défaut)
+    // Chasseur errant (Yóuxiá, le Hou Yi par défaut)
     assassin: [
         "Hou Yi", "Feng Jian", "Mei Ling", "Yu Hao", "Lian Hua", "Tian Lang", "Xiao Yan", "Jin Rui"
     ],

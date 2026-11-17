@@ -9,7 +9,7 @@
 export const TRANSE_TURNS = 3;
 
 export const TRANSE_EFFECTS = {
-    // Rôdeur : l'archer divin lâche une volée gratuite à chaque tour (techniques spéciales offensives).
+    // Chasseur : l'archer divin lâche une volée gratuite à chaque tour (techniques spéciales offensives).
     assassin: { name: 'Volée des Dix Soleils', strikePct: 50, actionPoints: 1, text: 'une volée gratuite (la moitié des dégâts de l\'arme) et +1 point d\'action à chaque tour' },
     // Mage : deux sorts par tour (le second ne prend pas le tour) ; seule voie qui permet de lancer l'ultime.
     sorcerer: { name: 'Double Talisman', doubleCast: true, ultimate: true, text: 'deux sorts par tour ; l\'ultime peut être lancé' },

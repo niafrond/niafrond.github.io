@@ -42,8 +42,8 @@ export const SKILLS = [
 // deux de soutien (activées avec des Fulu, effet seulement quand la classe est la classe du tour) et une action (commande de combat de la classe).
 // Hors de SKILLS : la table `skillsTaughtBy` des compétences communes reste inchangée. Invisibles tant que la classe n'est pas obtenue.
 export const CLASS_SKILLS = [
-    { id: 'cl_assassin_brume', classId: 'assassin', kind: SUPPORT, name: 'Pas de brume', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Rôdeur se recharge 10 % plus vite.' },
-    { id: 'cl_assassin_oeil', classId: 'assassin', kind: SUPPORT, name: 'Œil du chasseur', ap: 60, cost: 2, bonus: { attack: 6 }, description: 'Attaque +6 quand le Rôdeur joue.' },
+    { id: 'cl_assassin_brume', classId: 'assassin', kind: SUPPORT, name: 'Pas de brume', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Chasseur se recharge 10 % plus vite.' },
+    { id: 'cl_assassin_oeil', classId: 'assassin', kind: SUPPORT, name: 'Œil du chasseur', ap: 60, cost: 2, bonus: { attack: 6 }, description: 'Attaque +6 quand le Chasseur joue.' },
     { id: 'cl_assassin_aube', classId: 'assassin', kind: ACTION, name: 'Flèche de l\'aube', ap: 80, description: 'Une flèche lancée à la première lueur : dégâts directs.', spell: { cost: { yellow: 20 }, dmg: 70, scales: 1.5 } },
     { id: 'cl_barbarian_loup', classId: 'barbarian', kind: SUPPORT, name: 'Peau de loup', ap: 50, cost: 2, bonus: { defense: 6 }, description: 'Défense +6 quand le Guerrier joue.' },
     { id: 'cl_barbarian_sang', classId: 'barbarian', kind: SUPPORT, name: 'Sang chaud', ap: 70, cost: 2, bonus: { regenPct: 2 }, description: 'Le Guerrier récupère 2 % de ses PV max à chaque tour.' },

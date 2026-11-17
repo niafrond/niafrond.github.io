@@ -232,10 +232,10 @@ describe('sauvegarde : aller-retour fichier à chaque jalon', () => {
     test('objets rechargeables : charges restantes et compte à rebours de recharge conservés', async () => {
         const p = forgeArenaUnlock();
         const potion = p.inventory[0];
-        expect([potion.chargesLeft, potion.rechargeLeft]).toEqual([0, 3]);
+        expect([potion.chargesLeft, potion.rechargeLeft]).toEqual([0, potion.rechargeTurns]);
         const { player: relu } = await roundTrip(p);
         expect(relu.inventory).toHaveLength(p.inventory.length);
-        expect([relu.inventory[0].chargesLeft, relu.inventory[0].rechargeLeft]).toEqual([0, 3]);
+        expect([relu.inventory[0].chargesLeft, relu.inventory[0].rechargeLeft]).toEqual([0, potion.rechargeTurns]);
         expect(relu.inventory[1].chargesLeft).toBe(p.inventory[1].chargesPerCycle);
     });
 
@@ -920,15 +920,14 @@ describe('armes et équipement des joueurs sauvegardés', () => {
 });
 
 describe('objets réutilisables des joueurs sauvegardés', () => {
-    test('potion vidée au niveau 15 : refusée avec son compte à rebours, rechargée après le bon nombre de tours', () => {
+    test('relique vidée au niveau 15 : refusée avec son compte à rebours, rechargée après le bon nombre de tours', () => {
         const p = forgeArenaUnlock();
         p.hp = p.maxHp - 5;
         const potion = p.inventory[0];
         const refus = useItem(potion.id, p, null, 0);
         expect(refus.success).toBe(false);
-        expect(refus.message).toContain('3 tours');
-        expect(tickReusableRecharge(p)).toEqual([]);
-        expect(tickReusableRecharge(p)).toEqual([]);
+        expect(refus.message).toContain(`${potion.rechargeTurns} tours`);
+        for (let t = 0; t < potion.rechargeTurns - 1; t++) expect(tickReusableRecharge(p)).toEqual([]);
         expect(tickReusableRecharge(p)).toEqual([potion]);
         expect(potion.chargesLeft).toBe(potion.chargesPerCycle);
         expect(useItem(potion.id, p, null, 0).success).toBe(true);
@@ -937,8 +936,7 @@ describe('objets réutilisables des joueurs sauvegardés', () => {
 
     test('même après relecture du fichier, la recharge reprend où elle en était', async () => {
         const { player: relu } = await roundTrip(forgeArenaUnlock());
-        tickReusableRecharge(relu);
-        tickReusableRecharge(relu);
+        for (let t = 0; t < relu.inventory[0].rechargeTurns - 1; t++) tickReusableRecharge(relu);
         expect(relu.inventory[0].chargesLeft).toBe(0);
         expect(tickReusableRecharge(relu)).toHaveLength(1);
         expect(relu.inventory[0].chargesLeft).toBe(relu.inventory[0].chargesPerCycle);
@@ -982,7 +980,7 @@ describe('objets réutilisables des joueurs sauvegardés', () => {
     test('recharger au retour en exploration remplit toutes les charges', () => {
         const p = forgeArenaUnlock();
         const recharged = rechargeReusableItems(p);
-        expect(recharged.map(i => i.id)).toEqual(['healthPotion']);
+        expect(recharged.map(i => i.id)).toEqual(['honey_vial']);
         p.inventory.forEach(i => expect(i.chargesLeft).toBe(i.chargesPerCycle));
     });
 

@@ -449,3 +449,8 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .potion-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .ab-class { font-size: 0.7em; opacity: 0.8; margin-left: 4px; }
+
+/* Menu « Objet » déplié : sur toute la largeur de la zone d'actions, deux colonnes. */
+#potion-buttons.potion-menu { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; width: 100%; }
+#potion-buttons.potion-menu .potion-btn { white-space: normal; height: auto; }
+#potion-buttons.potion-menu .potion-back { grid-column: 1 / -1; }

@@ -8,7 +8,7 @@ export const MAX_USABLE_CLASSES = 4;
 export const CLASS_IDS = ['assassin', 'barbarian', 'templar', 'sorcerer', 'monk', 'alchemist', 'shaman'];
 export const START_CLASS = 'assassin';
 
-export const CLASS_SHORT = { assassin: 'Rôdeur', barbarian: 'Guerrier', templar: 'Commandant', sorcerer: 'Mage', monk: 'Moine', alchemist: 'Alchimiste', shaman: 'Chamane' };
+export const CLASS_SHORT = { assassin: 'Chasseur', barbarian: 'Guerrier', templar: 'Commandant', sorcerer: 'Mage', monk: 'Moine', alchemist: 'Alchimiste', shaman: 'Chamane' };
 
 /** Classes bridées par biome (clé = champ `biome` des cartes) : leur raison est affichée au joueur. */
 export const BIOME_CLASS_LIMITS = {
@@ -17,7 +17,7 @@ export const BIOME_CLASS_LIMITS = {
     riverbed: { classes: ['alchemist'], reason: 'le fleuve délave les poudres et les élixirs' },
     bamboo: { classes: ['barbarian'], reason: 'les bambous serrés interdisent les grands gestes' },
     storm: { classes: ['monk', 'shaman'], reason: 'la foudre couvre les prières et les chants' },
-    savanna: { classes: ['assassin'], reason: 'la plaine ouverte trahit les rôdeurs' },
+    savanna: { classes: ['assassin'], reason: 'la plaine ouverte trahit les chasseurs' },
     coast: { classes: ['barbarian', 'alchemist'], reason: 'les embruns éteignent la rage et les fourneaux' },
     tides: { classes: ['templar', 'sorcerer'], reason: 'les hautes eaux emportent boucliers et parchemins' },
     fusang: { classes: ['shaman'], reason: 'l\'arbre céleste fait taire les esprits' },
