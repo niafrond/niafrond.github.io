@@ -1,0 +1,99 @@
+// Système de classes de personnages avec sorts spécialisés
+import { 
+    sorcererSpells, 
+    assassinSpells, 
+    templarSpells, 
+    barbarianSpells,
+    monkSpells,
+    alchemistSpells,
+    shamanSpells,
+    allClassSpells 
+} from './spells.js';
+
+// Classes disponibles
+export const playerClasses = {
+    sorcerer: {
+        id: 'sorcerer',
+        name: 'Mage antique · Fāngshì',   // 方士
+        icon: 'yinyang',
+        description: 'Hou Yi sur la voie du Tao : talismans, qi et éléments au service de son arc',
+        startingStats: { intelligence: 2, stamina: 0 },
+        startingWeaponId: 'arc_de_bambou'
+    },
+    assassin: {
+        id: 'assassin',
+        name: 'Chasseur errant · Yóuxiá',   // 游侠
+        icon: 'bow',
+        description: 'Hou Yi, l\'archer divin : tirs rapides, flèches précises et coups furtifs',
+        startingStats: { agility: 2, strength: 1 },
+        startingWeaponId: 'arc_de_bronze'
+    },
+    templar: {
+        id: 'templar',
+        name: 'Commandant · Wǔjiàng',   // 武将
+        icon: 'shield',
+        description: 'Hou Yi en armure laquée, rempart de l\'empire à la résilience sans faille',
+        startingStats: { stamina: 2, morale: 1 },
+        startingWeaponId: 'arc_de_fortune'
+    },
+    barbarian: {
+        id: 'barbarian',
+        name: 'Guerrier · Wǔshì',   // 武士
+        icon: 'axe',
+        description: 'Hou Yi en fourrures, guerrier du Nord à la force dévastatrice',
+        startingStats: { strength: 3 },
+        startingWeaponId: 'arc_de_chasseur'
+    },
+    // Classes obtenues en cours de route, auprès d'un maître qui impose un entraînement (voir classRoster.js, storyQuests.js).
+    monk: {
+        id: 'monk',
+        name: 'Moine · Sēngrén',   // 僧人
+        icon: 'leaf',
+        description: 'Hou Yi en robe safran : respiration, sutras et gardes impassibles',
+        startingStats: { stamina: 2, morale: 1 },
+        startingWeaponId: 'arc_d_ecorce'
+    },
+    alchemist: {
+        id: 'alchemist',
+        name: 'Alchimiste · Liándān shī',   // 炼丹师
+        icon: 'potion',
+        description: 'Hou Yi au fourneau : poudres, poisons et élixirs de vigueur',
+        startingStats: { intelligence: 2, agility: 1 },
+        startingWeaponId: 'arc_de_bambou'
+    },
+    shaman: {
+        id: 'shaman',
+        name: 'Chamane · Wū',   // 巫
+        icon: 'mask',
+        description: 'Hou Yi parlant aux esprits : sceaux, glace et marques des ancêtres',
+        startingStats: { intelligence: 1, morale: 2 },
+        startingWeaponId: 'arc_de_fortune'
+    }
+};
+
+// Arme de départ par défaut pour un joueur sans classe ("Sans classe")
+export const DEFAULT_STARTING_WEAPON_ID = 'arc_de_fortune';
+
+// Exports des sorts de classe (importés depuis spells.js)
+export { 
+    sorcererSpells, 
+    assassinSpells, 
+    templarSpells, 
+    barbarianSpells,
+    monkSpells,
+    alchemistSpells,
+    shamanSpells,
+    allClassSpells 
+};
+
+// Obtenir les sorts disponibles pour une classe donnée
+export function getClassSpells(className, playerLevel) {
+    return allClassSpells.filter(spell => 
+        spell.class === className && playerLevel >= spell.minLevel
+    );
+}
+
+// Obtenir toutes les classes disponibles
+export function getAllClasses() {
+    return Object.values(playerClasses);
+}

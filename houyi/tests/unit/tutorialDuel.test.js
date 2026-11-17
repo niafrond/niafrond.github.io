@@ -1,0 +1,40 @@
+// Le duel-tutoriel contre Fengmeng (boss) doit rester en plateau 8×8 : TUTORIAL_BOARD est figé à 64 tuiles,
+// et l'étape du sort ne doit jamais laisser le sort achever l'adversaire (l'étape 5 conclut le duel).
+import { describe, test, expect } from '@jest/globals';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { readGameSource } from './fixtures/gameSource.js';
+
+const read = file => readFileSync(fileURLToPath(new URL(`../../${file}`, import.meta.url)), 'utf8');
+
+describe('duel-tutoriel', () => {
+    test('le plateau reste en 8×8 même contre un boss tutoriel', () => {
+        expect(readGameSource()).toMatch(/selectedEnemy\?\.isBoss && !selectedEnemy\.isTutorialEnemy\) \? BOSS_BOARD_SIZE : BASE_BOARD_SIZE/);
+    });
+
+    test('les plateaux pré-générés du tutoriel comptent 8×8 tuiles', () => {
+        const src = read('tutorialScript.js');
+        const boards = [...src.matchAll(/board: \[([^\]]*)\]/g)];
+        expect(boards.length).toBeGreaterThan(0);
+        boards.forEach(b => expect([...b[1].matchAll(/'(\w+)'/g)]).toHaveLength(64));
+    });
+
+    test("l'adversaire a une grande réserve de PV à l'étape du sort, ramenée à ENEMY_FINISH_HP après le lancer", () => {
+        const src = read('tutorial.js');
+        expect(src).not.toMatch(/ENEMY_SPELL_HP_BUFFER/);   // plus de réserve de 500 PV affichée : un plancher de PV protège l'adversaire
+        expect(src).toMatch(/tutorialCallbacks\.enemyHpFloor = 1/);
+        expect(src).toMatch(/onSpellCast = \(\) => \{[^}]*\n\s*if \(_game\?\.enemy\) \{ _game\.enemy\.hp = ENEMY_FINISH_HP;/);
+    });
+
+    test("seuls les échanges du joueur font avancer le tutoriel (pas ceux de l'adversaire)", () => {
+        expect(read('board.js')).toMatch(/if\(currentTurn === 'player'\) tutorialCallbacks\.onTileSwap\?\.\(i, j, true\)/);
+    });
+
+    test('le tutoriel a sa propre répartition de tuiles neuves, retirée à la fin', () => {
+        const tuto = read('tutorial.js');
+        expect(tuto).toMatch(/tutorialCallbacks\.dropProbabilities = TUTORIAL_DROP_PROBABILITIES/);
+        expect(tuto.match(/tutorialCallbacks\.dropProbabilities = null/g)).toHaveLength(1);   // _resetCallbacks (quitter + terminer)
+        expect(tuto.match(/_resetCallbacks\(\);/g)).toHaveLength(2);
+        expect(read('board.js')).toMatch(/tutorialCallbacks\.dropProbabilities \|\| BOARD_DROP_PROBABILITIES/);
+    });
+});

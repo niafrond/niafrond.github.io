@@ -1,0 +1,29 @@
+{
+  "key": "wild-bamboo-b",
+  "version": "v001",
+  "date": "2026-10-30T13:23:36.712Z",
+  "seed": "3237535052",
+  "request": {
+    "prompt": "ancient Chinese guqin instrumental inspired by \"Yangguan Sandie\" (Three Variations on Yang Pass), solo guqin dominant with sliding notes, harmonics and natural string resonance, delicate dizi and occasional xiao, D pentatonic Shang mode, free rhythm with rubato and spacious pauses, one theme stated three times with growing ornamentation, peaceful ending, literati farewell, nostalgia, distant mountains and misty landscapes, intimate acoustic, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 56,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 56,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "ancient Chinese guqin instrumental inspired by \"Yangguan Sandie\" (Three Variations on Yang Pass), solo guqin dominant with sliding notes, harmonics and natural string resonance, delicate dizi and occasional xiao, D pentatonic Shang mode, free rhythm with rubato and spacious pauses, one theme stated three times with growing ornamentation, peaceful ending, literati farewell, nostalgia, distant mountains and misty landscapes, intimate acoustic, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

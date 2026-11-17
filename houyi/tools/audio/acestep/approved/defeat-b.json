@@ -1,0 +1,29 @@
+{
+  "key": "defeat-b",
+  "version": "v001",
+  "date": "2026-10-30T14:27:03.927Z",
+  "seed": "1747126178",
+  "request": {
+    "prompt": "traditional Chinese instrumental somber defeat theme, fragments of the Hou Yi motif on lonely soft xiao (solitude, destiny, sorrowful slow lament, quiet ending, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 54,
+    "key_scale": "D minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 54,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental somber defeat theme, fragments of the Hou Yi motif on lonely soft xiao (solitude, destiny, sorrowful slow lament, quiet ending, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

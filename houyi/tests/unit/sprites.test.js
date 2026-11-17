@@ -1,0 +1,250 @@
+import { gbaSprite, loadGbaSprites, loadAllGbaSprites, hasGbaSprite } from '../../sprites/index.js';
+import { readFileSync, readdirSync } from 'fs';
+import { SCREENS } from '../../story.js';
+import { playerClasses } from '../../classes.js';
+import {
+    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri, pixelate,
+    loadAllSprites, spriteSourceOf, TEMPLATE_SPRITE_COPIES
+} from '../../sprites/index.js';
+import { GBA_SPRITES } from '../../sprites/generated.js';
+import { GBA_FILES } from '../../sprites/gbaIndex.js';
+import { splitGba, GBA_DIR } from '../../sprites/build-gba.mjs';
+
+// Sprites GBA chargés à la demande : avant tout chargement, rien n'est disponible (le jeu retombe sur le dessin vectoriel).
+const gbaBeforeLoad = gbaSprite('farmer_lin');
+const gbaAfterOneKey = await loadGbaSprites(['farmer_lin']).then(() => [gbaSprite('farmer_lin'), gbaSprite('elder_wen')]);
+
+// Les paquets de sprites sont chargés à la demande : ici on les charge tous pour vérifier l'ensemble des dessins.
+await loadAllSprites();
+await loadAllGbaSprites();
+
+const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
+const screens = Object.values(SCREENS);
+
+const everySprite = [
+    ...Object.entries(HERO_SPRITES).map(([k, v]) => [`héros ${k}`, v]),
+    ...Object.entries(NPC_SPRITES).map(([k, v]) => [`PNJ ${k}`, v]),
+    ...Object.entries(CHEST_SPRITES).map(([k, v]) => [`coffre ${k}`, v]),
+    ...Object.entries(ENEMY_SPRITES).map(([k, v]) => [`ennemi ${k}`, v])
+];
+// Dessins vectoriels faits main (règles ci-dessous) ; les dessins pixellisés en PNG data URI (paquet `legends`, tools/gen-legend-sprites.py) ont leurs propres règles.
+const isBitmap = v => typeof v === 'string' && v.startsWith('data:image/png;base64,');
+const all = everySprite.filter(([, v]) => !isBitmap(v));
+const bitmaps = everySprite.filter(([, v]) => isBitmap(v));
+
+// Analyse minimale : balises équilibrées (les balises auto-fermantes sont ignorées).
+function checkWellFormed(svg) {
+    const stack = [];
+    const re = /<(\/?)([a-zA-Z][\w:-]*)([^>]*?)(\/?)>/g;
+    let m;
+    while ((m = re.exec(svg))) {
+        const [, closing, name, , selfClosing] = m;
+        if (selfClosing) continue;
+        if (closing) {
+            if (stack.pop() !== name) return `balise fermante inattendue </${name}>`;
+        } else {
+            stack.push(name);
+        }
+    }
+    return stack.length ? `balises non fermées : ${stack.join(',')}` : null;
+}
+
+describe('couverture des sprites', () => {
+    test('chaque classe de héros a son dessin', () => {
+        Object.keys(playerClasses).forEach(id => expect(heroSprite(id)).toBeTruthy());
+    });
+
+    test('chaque PNJ de l\'histoire a son dessin', () => {
+        screens.flatMap(s => s.npcs).forEach(n => expect(npcSprite(n.id)).toBeTruthy());
+    });
+
+    test('les deux états du coffre existent', () => {
+        expect(chestSprite(false)).toBeTruthy();
+        expect(chestSprite(true)).toBeTruthy();
+        expect(chestSprite(false)).not.toBe(chestSprite(true));
+    });
+
+    test('chaque ennemi de la carte a un dessin (propre, de son gabarit ou sprite GBA généré)', () => {
+        screens.flatMap(s => s.enemies).forEach(e => expect(enemySprite(e.spriteKey || e.id, e.templateId) || (e.spriteKey && hasGbaSprite(e.spriteKey))).toBeTruthy());
+    });
+
+    test('chaque gabarit du catalogue a un dessin', () => {
+        // dessin SVG (paquets cn/) ou sprite Pixel Lab de face (les créatures du bestiaire n'ont que celui-ci)
+        // une copie d'ennemi nommé (copyOf) sans dessin propre emprunte celui de son gabarit d'origine
+        catalog.forEach(t => expect(ENEMY_SPRITES[spriteSourceOf(t.id)] || GBA_SPRITES[spriteSourceOf(t.id)]?.front).toBeTruthy());
+        Object.entries(TEMPLATE_SPRITE_COPIES).forEach(([id, from]) => expect(catalog.find(t => t.id === id)?.copyOf).toBe(from));
+    });
+
+    test('les neuf soleils, les quatre Fengmeng et les trois bêtes ont chacun leur dessin', () => {
+        for (let n = 1; n <= 9; n++) expect(ENEMY_SPRITES[`sun_${n}`]).toBeTruthy();
+        ['fengmeng_1', 'fengmeng_2', 'fengmeng_3a', 'fengmeng_3b'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
+        ['tigre_embrase', 'sanglier_flammes', 'loup_braise'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
+    });
+
+    test('les boss ont un dessin propre, distinct de celui de leur gabarit', () => {
+        screens.flatMap(s => s.enemies).filter(e => e.boss && /^(sun_|fengmeng_|mirage)/.test(e.id)).forEach(e => {
+            const key = e.spriteKey || e.id;
+            expect(ENEMY_SPRITES[key]).toBeTruthy();
+            if (key !== e.templateId && ENEMY_SPRITES[e.templateId]) {
+                expect(ENEMY_SPRITES[key]).not.toBe(ENEMY_SPRITES[e.templateId]);
+            }
+        });
+    });
+
+    test('aucune clé de sprite inutile ou orpheline', () => {
+        const wanted = new Set([
+            ...catalog.map(t => t.id),
+            ...screens.flatMap(s => s.enemies).flatMap(e => [e.id, e.spriteKey].filter(Boolean))
+        ]);
+        Object.keys(ENEMY_SPRITES).forEach(k => expect(wanted.has(k)).toBe(true));
+    });
+
+    test('aucun sprite de PNJ orphelin', () => {
+        const ids = new Set(screens.flatMap(s => s.npcs).map(n => n.id));
+        Object.keys(NPC_SPRITES).forEach(k => expect(ids.has(k)).toBe(true));
+    });
+});
+
+describe('tuiles du plateau (gâteaux de lune)', () => {
+    test.each(TILE_FILES)('%s : SVG autonome, bien formé et léger', file => {
+        const svg = readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8').trim();
+        expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"')).toBe(true);
+        expect(svg.endsWith('</svg>')).toBe(true);
+        expect(svg.length).toBeLessThanOrEqual(5000);
+        expect(checkWellFormed(svg)).toBeNull();
+        expect(/[^\x20-\x7E\n\r\t]/.test(svg)).toBe(false);
+        expect(/<(text|image|script|foreignObject|style|animate|set)\b/i.test(svg)).toBe(false);
+        const ids = [...svg.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+        expect(new Set(ids).size).toBe(ids.length);
+        [...svg.matchAll(/url\(#([^)]+)\)/g)].forEach(m => expect(ids).toContain(m[1]));
+    });
+
+    test('les huit tuiles du jeu ont un dessin et sont toutes différentes', () => {
+        expect(TILE_FILES).toHaveLength(8);
+        const contents = TILE_FILES.map(f => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8'));
+        expect(new Set(contents).size).toBe(8);
+    });
+
+    test('retro.css associe chaque classe de tuile à son dessin', () => {
+        const css = readFileSync(new URL('../../retro.css', import.meta.url), 'utf8');
+        ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'combat', 'joker'].forEach(name => {
+            expect(css).toContain(`sprites/tiles/tile-${name}.svg`);
+        });
+    });
+});
+
+describe('dessins pixellisés (PNG data URI, paquets legends, marees et souls)', () => {
+    const LEGENDS = ['ennemi legend_zhuque_boss', 'ennemi legend_xuanwu_boss', 'ennemi legend_baihu_boss', 'ennemi legend_qinglong_boss'];
+    // Hautes-Eaux (sprites/cn/marees.js, tools/gen-marees-sprites.mjs) : dessins 32×32 des ennemis aquatiques, Changxi en 64×64
+    const MAREES = ['shuimu_denglong', 'baoyu_jian', 'lu_ci_gui', 'hai_ma_xing', 'changxi', 'hai_gui', 'hai_she', 'ren_yu'].map(id => `ennemi ${id}`);
+    // Royaume des âmes errantes (sprites/cn/souls.js, tools/gen-souls-sprites.mjs) : trois ennemis de l'événement, 64×64
+    const SOULS_BIG = ['ws_gardien_jugement', 'ws_jiangshi_patrouille', 'ws_huli_jing', 'diaosi_gui'].map(id => `ennemi ${id}`);   // 64×64
+    const SOULS = [...SOULS_BIG.slice(0, 3), 'heibai_wuchang', 'yuan_gui', 'nu_gui', 'diaosi_gui', 'shui_gui', 'mu_gui', 'wangliang'].map(id => id.startsWith('ennemi ') ? id : `ennemi ${id}`);   // + gabarits des terrains agrandis (32×32, Diao Si Gui en 64×64)
+    test('seuls les Gardiens Célestes, les ennemis des Hautes-Eaux et ceux du royaume des âmes errantes sont dessinés ainsi', () => {
+        expect(bitmaps.map(([k]) => k)).toEqual([...LEGENDS, ...MAREES, ...SOULS]);
+    });
+
+    test.each(bitmaps)('%s : vrai PNG carré, léger, avec un sujet et un contour', (name, uri) => {
+        const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
+        expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+        const side = LEGENDS.includes(name) || SOULS_BIG.includes(name) || name === 'ennemi changxi' ? 64 : 32;
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([side, side]);
+        expect(png.readUInt8(25)).toBe(6);                 // RGBA : fond transparent
+        expect(uri.length).toBeLessThanOrEqual(12000);
+        expect(uri.length).toBeGreaterThan(side === 64 ? 1500 : 800);   // pas un simple carré
+    });
+});
+
+describe('qualité technique des SVG', () => {
+    test.each(all)('%s : SVG autonome et bien formé', (_name, svg) => {
+        expect(typeof svg).toBe('string');
+        expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"')).toBe(true);
+        expect(svg.trim().endsWith('</svg>')).toBe(true);
+        expect(svg.length).toBeLessThanOrEqual(9000);
+        expect(svg.length).toBeGreaterThan(300); // pas un simple carré
+        expect(checkWellFormed(svg)).toBeNull();
+        // pas d'emoji ni de caractère non ASCII, pas de texte ni de ressource externe
+        expect(/[^\x20-\x7E\n\r\t]/.test(svg)).toBe(false);
+        expect(/<(text|image|script|foreignObject|style|animate|set)\b/i.test(svg)).toBe(false);
+        expect(/(href|src)\s*=\s*["'](?!#)/i.test(svg)).toBe(false);
+        expect(/https?:\/\//.test(svg.replace('http://www.w3.org/2000/svg', ''))).toBe(false);
+    });
+
+    test.each(all)('%s : identifiants définis, uniques et référencés existants', (_name, svg) => {
+        const ids = [...svg.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+        expect(new Set(ids).size).toBe(ids.length);
+        const refs = [...svg.matchAll(/url\(#([^)]+)\)/g)].map(m => m[1])
+            .concat([...svg.matchAll(/href="#([^"]+)"/g)].map(m => m[1]));
+        refs.forEach(r => expect(ids).toContain(r));
+    });
+
+    test('tous les dessins sont différents les uns des autres', () => {
+        // Alias volontaires : gabarits qui réutilisent le dessin d'un autre ennemi (voir UNIVERS.md, sprites/cn/enemies-1.js).
+        const ALIAS_IDS = new Set(['ennemi crapaud_boue']);
+        const svgs = all.filter(([name]) => !ALIAS_IDS.has(name)).map(([, svg]) => svg);
+        expect(new Set(svgs).size).toBe(svgs.length);
+    });
+
+    test('spriteUri produit une data URI SVG décodable', () => {
+        const svg = heroSprite('sorcerer');
+        const uri = spriteUri(svg);
+        expect(uri.startsWith('data:image/svg+xml;charset=utf-8,')).toBe(true);
+        expect(decodeURIComponent(uri.split(',').slice(1).join(','))).toBe(pixelate(svg));
+        expect(spriteUri(null)).toBe('');
+    });
+
+    test('spriteUri accepte une grille : la définition 64 a sa propre version de repli', () => {
+        const svg = heroSprite('sorcerer');
+        expect(spriteUri(svg, 64)).toBe(`${spriteUri(svg)}#g64`);
+        expect(spriteUri(svg, 32)).toBe(spriteUri(svg));
+        expect(spriteUri(svg, 999)).toBe(spriteUri(svg));
+    });
+
+    test('pixelate enveloppe le dessin vectoriel dans le filtre pixel art sans le modifier', () => {
+        const svg = heroSprite('sorcerer');
+        const px = pixelate(svg);
+        const inner = svg.slice(svg.indexOf('>', svg.indexOf('<svg')) + 1, svg.lastIndexOf('</svg>'));
+        expect(px).toContain('<filter id="m3px"');
+        expect(px).toContain(`<g filter="url(#m3px)">${inner}</g></svg>`);
+        expect(pixelate(px.replace('viewBox="0 0 64 64"', 'viewBox="0 0 10 10"'))).toContain('viewBox="0 0 10 10"');
+        expect(pixelate(null)).toBe(null);
+    });
+});
+
+describe('ennemis nommés (gabarits copyOf) : dessin dédié', () => {
+    const copies = Object.keys(TEMPLATE_SPRITE_COPIES);
+    test('chacun a ses 4 directions générées, et elles passent avant le dessin du gabarit d\'origine', () => {
+        copies.forEach(id => {
+            expect(['front', 'back', 'left', 'right'].map(d => Boolean(GBA_SPRITES[id]?.[d]))).toEqual([true, true, true, true]);
+            expect(gbaSprite(id, 'front')).toBe(GBA_SPRITES[id].front);
+        });
+    });
+});
+
+describe('sprites GBA découpés par clé (sprites/build-gba.mjs), chargés avec leur région', () => {
+    test('le découpage est à jour avec sprites/generated.js (sinon : node houyi/sprites/build-gba.mjs)', () => {
+        const { files, index } = splitGba();
+        expect(readFileSync(new URL('../../sprites/gbaIndex.js', import.meta.url), 'utf8')).toBe(index);
+        expect(readdirSync(GBA_DIR).sort()).toEqual(Object.keys(files).sort());
+        Object.entries(files).forEach(([name, body]) => expect({ name, same: readFileSync(new URL(name, GBA_DIR), 'utf8') === body }).toEqual({ name, same: true }));
+    });
+
+    test('une clé n\'est disponible qu\'une fois chargée, et seulement elle', () => {
+        expect(gbaBeforeLoad).toBeNull();
+        expect(hasGbaSprite('farmer_lin')).toBe(true);
+        expect(gbaAfterOneKey[0]).toBe(GBA_SPRITES.farmer_lin.front);
+        expect(gbaAfterOneKey[1]).toBeNull();
+    });
+
+    test('une fois chargés, chaque clé et chaque direction rendent la même image que sprites/generated.js', () => {
+        expect(Object.keys(GBA_FILES).sort()).toEqual(Object.keys(GBA_SPRITES).sort());
+        // change_moon : alias vers le dessin de Chang'e (sprites/index.js GBA_ALIASES), son propre sprite n'est pas utilisé
+        Object.entries(GBA_SPRITES).filter(([key]) => key !== 'change_moon').forEach(([key, s]) => ['front', 'back', 'left', 'right'].filter(d => s[d]).forEach(d => expect(gbaSprite(key, d)).toBe(s[d])));
+    });
+
+    test('le jeu ne télécharge plus sprites/generated.js : ni import, ni carte d\'imports', () => {
+        const root = new URL('../../', import.meta.url);
+        expect(readFileSync(new URL('sprites/index.js', root), 'utf8')).not.toMatch(/(from\s+|import\s*\(\s*)['"]\.\/generated\.js/);
+        expect(readFileSync(new URL('index.html', root), 'utf8')).not.toMatch(/sprites\/generated\.js/);
+    });
+});

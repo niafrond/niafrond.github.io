@@ -1,0 +1,17 @@
+{
+  "id": "ultimateAzureDragon",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon creature, dramatic lighting, rich saturated colors, no text",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "elements": {
+    "entity": {
+      "prompt": "a colossal azure Chinese dragon of the East, Qinglong, a long serpentine body coiled in an S shape, teal blue scales, flowing white whiskers and mane, antlers, four clawed legs, a glowing pearl in its claw, ancient Chinese mythology, full body",
+      "w": 768,
+      "h": 1024,
+      "seed": 400,
+      "bg": "magenta",
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, human, rider, person, clouds, sky, golden dragon, western dragon, wings",
+      "tries": 6,
+      "pick": 0
+    }
+  }
+}

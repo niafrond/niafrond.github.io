@@ -1,0 +1,29 @@
+{
+  "key": "boss-zhuque-l-oiseau-vermillon-b",
+  "version": "v001",
+  "date": "2026-10-30T14:50:54.157Z",
+  "seed": "953943823",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, legendary celestial guardian boss battle, Zhuque the Vermilion Bird of the South, blazing fire, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 138,
+    "key_scale": "E minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 138,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "E minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, legendary celestial guardian boss battle, Zhuque the Vermilion Bird of the South, blazing fire, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

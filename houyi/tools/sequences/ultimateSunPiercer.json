@@ -1,0 +1,233 @@
+{
+  "id": "ultimateSunPiercer",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: the same divine 30-year-old male archer Hou Yi with a red scarf, a golden bow in his hand and a quiver of arrows on his back; palette: blazing orange, red and gold on deep crimson; fiery dawn lighting",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "first": "sprites/ultimates-sdxl/ultimateSunPiercer-1.png",
+  "plate": "a cliff at dawn under a red-orange sky with a huge blazing sun at the top, a flat rocky ledge in the lower third",
+  "style_plate": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a divine 30-year-old male archer Hou Yi with a red scarf, a golden bow in his hand and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "entity": {
+      "prompt": "a colossal blazing sun with a screaming face and three-legged golden crow, scorching red-orange sky, heat distortion, filling the whole screen",
+      "w": 768,
+      "h": 768,
+      "seed": 100,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame",
+      "tries": 6
+    },
+    "hero": {
+      "prompt": "a divine 30-year-old male archer Hou Yi with a red scarf, a golden bow in his hand and a quiver of arrows on his back, full body, standing, three-quarter view, holding the bow",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "cyan"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "the divine 30-year-old male archer Hou Yi with a legendary golden bow on a cliff at dawn, aiming up at a giant blazing sun filling the top of the sky, red scarf blowing, magical energy gathering",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.45,
+          "r": 0.1,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 150
+        }
+      ]
+    },
+    {
+      "prompt": "a colossal blazing sun with a screaming face and three-legged golden crow, scorching red-orange sky, heat distortion, filling the whole screen",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.2,
+          "w": 0.5,
+          "alpha": 0.65
+        }
+      ]
+    },
+    {
+      "prompt": "a colossal blazing sun with a screaming face and three-legged golden crow, scorching red-orange sky, heat distortion, filling the whole screen",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.92
+        }
+      ]
+    },
+    {
+      "prompt": "a single enormous golden spiraling arrow of light shooting upward piercing through clouds toward the sun, shockwave rings, speed lines",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.92
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.25,
+          "r": [
+            0.2,
+            0.35,
+            0.5
+          ],
+          "squash": 1.0,
+          "alpha": 190,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        }
+      ]
+    },
+    {
+      "prompt": "a single enormous golden spiraling arrow of light shooting upward piercing through clouds toward the sun, shockwave rings, speed lines",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.6
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.5,
+          "r": [
+            0.15,
+            0.3,
+            0.45
+          ],
+          "squash": 0.6,
+          "alpha": 190,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        },
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.62,
+          "r": 0.3,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 140
+        }
+      ]
+    },
+    {
+      "prompt": "the giant sun cracking and exploding into golden shards and fire, a blinding white burst, falling feathers of light",
+      "denoise": 0.5,
+      "paste": [
+        {
+          "el": "entity",
+          "cx": 0.5,
+          "cy": 0.25,
+          "w": 0.95,
+          "alpha": 0.3
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.5,
+          "cy": 0.78,
+          "r": [
+            0.25,
+            0.45,
+            0.7
+          ],
+          "squash": 0.3,
+          "alpha": 210,
+          "width": 12,
+          "color": [
+            255,
+            235,
+            170
+          ]
+        },
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.78,
+          "r": 0.35,
+          "color": [
+            255,
+            235,
+            170
+          ],
+          "alpha": 170
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "the scarf and cloak blow, the sun pulses, the arrow tip glows gold"
+    },
+    {
+      "frames": 49,
+      "motion": "the sun flares and pulses, flames lick outward, the crow flaps its wings"
+    },
+    {
+      "frames": 49,
+      "motion": "the sun flares and pulses, flames lick outward, the crow flaps its wings, it grows colossal, the camera tilts up"
+    },
+    {
+      "frames": 49,
+      "motion": "the arrow spins and surges upward, shockwave rings expand, clouds part"
+    },
+    {
+      "frames": 49,
+      "motion": "the arrow spins and surges upward, shockwave rings expand, clouds part"
+    },
+    {
+      "frames": 49,
+      "motion": "the sun shatters, shards fly outward, light flashes, feathers drift"
+    },
+    {
+      "frames": 25,
+      "motion": "the sun shatters, shards fly outward, light flashes, feathers drift, the glow slowly fades"
+    }
+  ]
+}

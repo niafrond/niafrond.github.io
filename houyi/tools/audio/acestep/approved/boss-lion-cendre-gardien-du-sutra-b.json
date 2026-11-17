@@ -1,0 +1,29 @@
+{
+  "key": "boss-lion-cendre-gardien-du-sutra-b",
+  "version": "v001",
+  "date": "2026-10-30T14:48:01.452Z",
+  "seed": "1840289195",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, ash lion guardian of the sutra, ritual chant-like erhu, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 106,
+    "key_scale": "E minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 106,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "E minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Guangling San\" fierce section, guqin and pipa strokes with heavy ritual drums and erhu, dangerous boss battle, ash lion guardian of the sutra, ritual chant-like erhu, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

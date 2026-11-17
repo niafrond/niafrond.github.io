@@ -1,0 +1,637 @@
+import { lessonsPanelHtml, bindLessons } from "./chineseLessonsView.js";
+import { icon } from "./icons.js";
+import { escapeHtml } from "./escapeHtml.js";
+import { generateBoard, renderBoard } from "./board.js";
+import { grantStuffPiece, grantQuestRelic, grantUltimate, grantClassReward, updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, companionMenuHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu, setCombatBackdrop, setActiveCompanions, gameState } from "./game.js";
+import { rollChestLoot } from "./chestLoot.js";
+import { rollStuffDrop, CHEST_STUFF_DROP, getStuffById, equipStuff, hasStealth } from "./stuff.js";
+import "./stuffView.js";
+import "./skillsView.js";
+import "./potionsView.js";
+import { addPotions } from "./potions.js";
+import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
+import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
+import { weaknessLabel } from "./terrain.js";
+import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
+import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
+import { setMusicEnvironment, setMusicScene, stopMusic, preloadMusic } from "./music.js";
+import { getUltimateById, playUltimateCinematic } from "./ultimates.js";
+import { registerServiceWorkerWhenLoaded, createPrefetcher, startBackgroundPrefetch, bindOfflineOptions } from "./offlineCache.js";
+import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
+import { getHouyiBuildDate, getHouyiVersion } from "./version.js";
+import { rechargeReusableItems, allItems } from "./items.js";
+import { getOption, animationsEnabled, effectsLevel, setOption, applyOptions, vibrate, canVibrate, armVibration } from "./gameOptions.js";
+import { realPlayTimeStats, formatDuration, startPlayTimeTracking } from "./playTime.js";
+import { initDialogs } from "./a11y.js";
+import { runCasualAutopilot } from "./casualPilot.js";
+import { createBreakWatcher } from "./breakReminder.js";
+import { initCompare } from "./compareView.js";
+import { getWeaponById } from "./weapons.js";
+import { MAX_ACTIVE_SPELLS } from "./constants.js";
+import { bindSecretTrigger } from "./secretMenu.js";
+import { renderMerchant } from "./shop.js";
+import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
+import { worldZones } from "./worldMap.js";
+import { mountWorldMap } from "./worldMapView.js";
+import { createExplorationView } from "./explorationView.js";
+import { REGION_ENTRY_SCREEN } from "./story.js";
+import { ARENA_NAME, ARENA_REGION } from "./arena.js";
+import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
+import { hideLoadingScreen, showLoadingScreen, setLoadingScreenSuppressed, setLoadingProgress, trackProgress } from "./loader.js";
+import { readLastPlayed, touchLastPlayed, isLongAbsence, buildRecap, absenceDays, showWelcomeBack } from "./welcomeBack.js";
+
+// initialisation de la partie
+console.log('Main.js loaded');
+
+const THEME_STORAGE_KEY = 'houyiTheme';
+
+function setThemeMode(isDarkMode, toggleButton){
+    document.body.classList.toggle('dark-mode', isDarkMode);
+    if(toggleButton){
+        toggleButton.innerHTML = icon(isDarkMode ? 'sun' : 'moon');
+        toggleButton.setAttribute('aria-pressed', isDarkMode ? 'true' : 'false');
+        toggleButton.title = isDarkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre';
+    }
+
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, isDarkMode ? 'dark' : 'light');
+    } catch(_) {
+        // localStorage can be unavailable in some contexts
+    }
+
+    window.dispatchEvent(new Event('resize'));
+}
+
+function initializeThemeUI(toggleButton){
+    if(!toggleButton) return;
+
+    let isDarkMode = false;
+    try {
+        isDarkMode = localStorage.getItem(THEME_STORAGE_KEY) === 'dark';
+    } catch(_) {
+        isDarkMode = false;
+    }
+
+    setThemeMode(isDarkMode, toggleButton);
+    toggleButton.addEventListener('click', () => {
+        setThemeMode(!document.body.classList.contains('dark-mode'), toggleButton);
+    });
+}
+
+// Nouvelle partie : plus de choix de classe au départ. Hou Yi commence en Chasseur errant (l'archer divin) ; en combat, le joueur choisit
+// une classe par tour (gameSpellList.js), la classe du héros n'est que celle proposée par défaut.
+const DEFAULT_HERO_CLASS = 'assassin';
+function showClassSelection() {
+    if(player.class) return; // Partie déjà commencée
+    const classData = playerClasses[DEFAULT_HERO_CLASS];
+    player.class = DEFAULT_HERO_CLASS;
+    // Le joueur est toujours Hou Yi, l'archer divin.
+    player.name = 'Hou Yi';
+    Object.keys(classData.startingStats).forEach(attr => {
+        player.attributes[attr] += classData.startingStats[attr];
+    });
+    // Le joueur ne doit jamais commencer un combat sans arme équipée
+    grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
+    addPotions(player, 'small', 2);   // les PV ne reviennent plus tout seuls : deux petites potions pour démarrer
+    updateAvailableSpells();
+    saveUpdate();
+    // Nouvelle partie : pas de question, le tutoriel est le duel contre Fengmeng.
+    window.dispatchEvent(new Event('houyi:start-tutorial-duel'));
+}
+
+// Attendre que le DOM soit prêt
+function init() {
+    console.log('Initializing game...');
+    const boardElement = document.getElementById('board');
+    console.log('Board element:', boardElement);
+    
+    // ── Phases du jeu : exploration (carte isométrique) ⇄ combat (puzzle) ──────────
+    const exploreRoot = document.getElementById('explore-container');
+    const exploration = createExplorationView({
+        root: exploreRoot,
+        canvas: document.getElementById('explore-canvas'),
+        getSaved: () => player.exploration,
+        setSaved: data => { player.exploration = data; },
+        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch), compass: Boolean(player.compass) }),
+        getPlayerLevel: () => player.level,
+        hasStealth: () => hasStealth(player),
+        horseAvoidsWater: () => getOption('horseAvoid'),
+        getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? weaknessLabel(c) : null; },
+        onEncounter: encounter => startEncounterCombat(encounter),
+        onGold: amount => { player.gold = (player.gold || 0) + amount; },
+        onChestLoot: ev => {
+            const roll = rollChestLoot(ev.chest, ev.screen, player);
+            const labels = grantChestLoot(roll);
+            const drop = CHEST_STUFF_DROP[roll.tier] && rollStuffDrop(player, CHEST_STUFF_DROP[roll.tier]);
+            const stuff = drop && grantStuffPiece(drop.id, 'Trouvé dans un coffre');
+            return stuff ? [...labels, stuff] : labels;
+        },
+        onAncientArmor: id => { const name = grantStuffPiece(id, 'Armure antique'); saveUpdate(); return name; },
+        onQuestReward: ev => {
+            if(ev.reward?.stuff) grantStuffPiece(ev.reward.stuff, 'Récompense de quête');
+            if(ev.reward?.relic) grantQuestRelic(ev.reward.relic);   // relique de quête (Cháng d'ombre de Fusang)
+            if(ev.reward?.class) grantClassReward(ev.reward.class);   // nouvelle classe de combat (classRoster.js)
+            if(ev.reward?.ultimate) grantUltimate(ev.reward.ultimate);   // ultime de légende : toutes classes (ultimates.js)
+        },
+        // Révélation de l'ultime gagné : sa cinématique plein écran, jouée une fois les dialogues de fin de quête terminés
+        onUltimateLearned: id => { const spell = getUltimateById(id); if(spell) playUltimateCinematic(spell); },
+        onXp: amount => {
+            const res = grantExplorationXP(amount);
+            if(res.leveledUp) {
+                exploration.toast(`Niveau ${res.newLevel} !`, 4000);
+                showAttributeMenu();   // écran de choix de l'attribut à améliorer, comme après un combat
+            }
+        },
+        onSave: () => saveUpdate(),
+        onRegionVisited: regionId => {
+            if(regionId === ARENA_REGION) return;   // l'arène n'est pas une région de la carte du monde
+            if(!player.worldMap) player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
+            player.worldMap.currentZoneId = regionId;
+            if(!player.worldMap.visitedZoneIds.includes(regionId)) {
+                player.worldMap.visitedZoneIds.push(regionId);
+            }
+        },
+        // Nouvelle Partie + : la carte du monde se redécouvre avec l'histoire.
+        onNewGamePlus: () => { player.worldMap = { currentZoneId: null, visitedZoneIds: [] }; },
+        onOpenMap: () => showWorldMap(),
+        onOpenArena: () => openArena(),
+        onExportSave: () => {
+            const res = exportSaveToFile(player, getHouyiVersion());
+            if(!res.success) return false;
+            downloadSaveFile(res.blob, res.filename);
+            log(res.message);
+            return true;
+        },
+        onOpenMenu: () => window.switchTab('weapons'),
+        renderMerchant
+    });
+    exploration.init();
+
+    // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
+    setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
+    let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
+    let pendingFight = null;        // musique du combat annoncé par l'animation d'entrée (houyi:encounter-start), jouée dès son début
+    const desiredMusic = () => {
+        if(document.querySelector('.cine-ending, .cine-credits')) return ['ending'];   // l'animation de fin et le générique partagent la musique de fin
+        if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
+        const change = document.querySelector('.change-overlay');
+        if(change) return [change.dataset.scene || 'change-village'];   // puzzle de soin (change/view.js)
+        const changeScene = exploration.getChangeScene?.();
+        if(changeScene) return [changeScene];   // Chang'e explore son village : musique du village ou de l'adieu
+        const puzzle = document.querySelector('.puzzle-overlay');
+        if(puzzle) return puzzle.dataset.won ? ['victory'] : [`puzzle-${puzzle.dataset.mode}`];   // énigme à plateau : une piste par type (push, mirror, slide)
+        if(document.querySelector('.battle-transition')) return pendingFight;   // la musique de combat démarre avec l'animation d'entrée, sans silence
+        if(document.body.dataset.combatEnd) return [document.body.dataset.combatEnd];   // Victoire / Défaite : la musique de l'issue démarre avec le mot plein écran et boucle jusqu'au retour à l'exploration
+        // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
+        // En exploration (carte visible, pas de rencontre en cours), seule la musique d'exploration joue : un état de combat resté
+        // « actif » (combat quitté sans passer par l'écran de résultat) ne doit pas garder la musique de combat.
+        const info = exploration.getSceneInfo();
+        const fight = info ? null : getCombatMusicScene();
+        if(fight) return [fight, getCombatMusicOptions()];   // pas de jingle d'entrée : la musique de combat démarre directement
+        if(document.getElementById('battle-result-screen')?.classList.contains('active')) return [lastCombatVictory ? 'victory' : 'defeat'];
+        const tab = document.querySelector('.tab-panel.active')?.id;
+        if(tab && tab !== 'tab-combat') return ['menu'];
+        if(document.getElementById('worldmap-modal')?.classList.contains('active') || document.querySelector('.explore-journal')) return ['menu'];
+        if(!info) return null;
+        if(info.kind === 'house') return ['house'];
+        if(info.kind === 'village' || info.kind === 'wild') return [info.kind, { biome: info.biome }];
+        return [info.region === 'lune' ? 'moon' : 'sanctuary'];
+    };
+    let musicStopped = true;
+    const syncMusic = () => {
+        const want = desiredMusic();
+        if(!want) { if(!musicStopped) { stopMusic({ fadeMs: 700 }); musicStopped = true; } return; }
+        musicStopped = false;
+        setMusicScene(want[0], want[1]);
+        if(['village', 'wild', 'house', 'sanctuary', 'moon'].includes(want[0])) preloadCombatMusic();
+    };
+    setInterval(() => { if(!document.hidden) syncMusic(); }, 400);   // inutile onglet masqué (batterie)
+    // Interaction avec un ennemi sur la carte : la musique de combat se lance à l'instant, sans attendre le prochain passage du minuteur.
+    window.addEventListener('houyi:encounter-start', e => {
+        pendingFight = e.detail?.scene ? [e.detail.scene, e.detail.options || {}] : null;
+        if(pendingFight) syncMusic();
+    });
+    // Piste de combat téléchargée et décodée à l'avance pendant l'exploration : elle attaque sans attente au premier contact.
+    let combatPreloadAt = 0;
+    const preloadCombatMusic = () => {
+        if(combatPreloadAt || navigator.connection?.saveData) return;
+        combatPreloadAt = setTimeout(() => preloadMusic('combat'), 3000);
+    };
+    // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
+    // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
+    // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
+    const unlockAudio = () => { primeAudioFromGesture(); syncMusic(); };
+    ['pointerdown', 'touchstart', 'keydown'].forEach(type => document.addEventListener(type, unlockAudio, { capture: true, passive: true }));
+
+    const setCombatUiVisible = visible => {
+        document.querySelector('.stats-container').style.display = visible ? 'flex' : 'none';
+        document.getElementById('board').style.display = visible ? 'grid' : 'none';
+        document.getElementById('spells-container').style.display = visible ? 'flex' : 'none';
+    };
+
+    const activateCombatTab = () => {
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tab-combat').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    };
+
+    // Phase exploration : on affiche la carte, plus de plateau ni de bouton de combat.
+    const enterExploration = () => {
+        document.body.classList.remove('combat-ended');
+        delete document.body.dataset.combatEnd;
+        setCombatBackdrop(null);
+        document.getElementById('worldmap-modal')?.classList.remove('active');
+        document.getElementById('battle-result-screen')?.classList.remove('active');
+        setCombatUiVisible(false);
+        const newCombatBtn = document.getElementById('new-combat-btn');
+        if(newCombatBtn) newCombatBtn.style.display = 'none';
+        const abandonBtn = document.getElementById('abandon-combat-btn');
+        if(abandonBtn) abandonBtn.style.display = 'none';
+        const tabs = document.querySelector('.tabs');
+        if(tabs) tabs.style.display = 'flex';
+        activateCombatTab();
+        const recharged = rechargeReusableItems(player);
+        if(recharged.length) { log(`Rechargé : ${recharged.map(i => i.name).join(', ')}.`); saveUpdate(); }
+        exploration.show();
+    };
+
+    // Phase combat : lancée par une rencontre sur la carte (l'ennemi vient du décor de la zone).
+    const startEncounterCombat = encounter => {
+        playSfx('uiClick');
+        exploration.hide();
+        activateCombatTab();
+        setCombatUiVisible(true);
+        if(encounter.tutorial) {
+            // Duel d'entraînement contre Fengmeng : combat guidé pas à pas (voir tutorial.js)
+            startTutorial({ enemy: createMapEnemy(encounter) });
+            return;
+        }
+        setActiveCompanions(exploration.getActiveCompanionIds?.() || []);
+        startNewCombat(createMapEnemy(encounter));
+        generateBoard();
+        consumeBoardBoost();
+        renderBoard();
+        updateStats();
+    };
+
+    // ── Arène des Mille Flèches (arena.js) : un lieu à explorer (parvis, salles, maîtres d'arène) ──────────
+    // Le bouton « Arène » du HUD y entre (dès le niveau 15) ; dans l'arène, il devient « Sortir » et en fait sortir à tout moment.
+    const openArena = () => {
+        if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
+        if(!exploration.isArenaUnlocked()) {
+            exploration.toast(`L'${ARENA_NAME} ouvre ses portes dès que vous atteignez le 3e terrain (les Bambous), ou dès le début en Nouvelle Partie +.`, 4500);
+            return;
+        }
+        playSfx('uiClick');
+        exploration.enterArena();
+    };
+
+    companionMenuHooks.getChoices = () => exploration.getCompanionChoices();
+    companionMenuHooks.setActive = id => exploration.setActiveCompanion(id);
+    combatHooks.onVictory = () => exploration.onCombatVictory();
+    combatHooks.onEnd = isVictory => { lastCombatVictory = !!isVictory; exploration.onCombatEnd(isVictory); };
+    window.addEventListener('houyi:enter-exploration', enterExploration);
+    // Nouvelle partie, classe choisie : on enchaîne directement sur le duel-tutoriel contre Fengmeng.
+    window.addEventListener('houyi:start-tutorial-duel', () => {
+        enterExploration();
+        exploration.startTutorialDuel('fengmeng_1');
+    });
+    // Tout combat (y compris le tutoriel) masque la carte.
+    window.addEventListener('houyi:combat-start', () => {
+        syncMusic();   // combat lancé hors de la carte : pas d'attente du minuteur
+        exploration.hide();
+    });
+
+    // Carte du monde : vue d'ensemble des régions, téléportation vers celles déjà découvertes.
+    const showWorldMap = () => {
+        playSfx('uiClick');
+        const modal = document.getElementById('worldmap-modal');
+        const container = document.getElementById('worldmap-selection');
+        if(!modal || !container) return;
+        // Voyage rapide : seulement depuis une borne de voyage ; on choisit d'abord un biome, puis une de ses pierres.
+        const canTravel = exploration.canFastTravel();
+        const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
+        const panel = document.createElement('div');
+        panel.className = 'worldmap-travel';
+        const showStones = zone => {
+            const stones = exploration.getTravelList().filter(w => w.region === zone.id);
+            panel.innerHTML = `<h4>${icon('stone')} Voyage rapide · ${zoneName[zone.id] || zone.id}</h4>`;
+            if(!stones.length) panel.insertAdjacentHTML('beforeend', '<p>Aucune pierre de voyage activée dans ce biome.</p>');
+            const advice = exploration.getTravelAdvice?.();
+            stones.forEach(w => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'worldmap-travel-btn';
+                btn.textContent = advice?.screenId === w.screenId ? `★ ${w.screenName}` : w.screenName;
+                btn.disabled = w.current;
+                btn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                    exploration.travelTo(w.screenId);
+                });
+                panel.appendChild(btn);
+            });
+        };
+        panel.innerHTML = canTravel
+            ? `<h4>${icon('stone')} Voyage rapide</h4><p>Choisissez un biome sur la carte pour voir ses pierres de voyage.${(() => { const a = exploration.getTravelAdvice?.(); return a ? ` ★ Pour « ${a.quest} » : ${a.screenName} (${zoneName[a.region] || a.region}).` : ''; })()}</p>`
+            : `<h4>${icon('stone')} Voyage rapide</h4><p>Le voyage rapide n'est possible que depuis une borne de voyage.</p>`;
+        mountWorldMap(container, worldZones, {
+            level: player.level,
+            visitedIds: player.worldMap?.visitedZoneIds || [],
+            currentId: exploration.getCurrentRegion(),
+            heroUri: spriteUri(heroSprite(player.class)),
+            requireVisit: true,
+            starIds: exploration.getQuestRegions?.() || []
+        }, zone => { if(canTravel) showStones(zone); });
+        container.appendChild(panel);
+        modal.classList.add('active');
+    };
+    document.getElementById('worldmap-close-btn')?.addEventListener('click', () => {
+        document.getElementById('worldmap-modal')?.classList.remove('active');
+    });
+
+    // Après un combat : le bouton ramène sur la carte d'exploration.
+    document.getElementById('new-combat-btn').addEventListener('click',()=>{
+        primeAudioFromGesture();
+        enterExploration();
+    });
+
+    // Menu Options / Pause (son, volume, mode nuit)
+    const optionsModal = document.getElementById('options-modal');
+    // Le bouton du bas et l'onglet « Options » (à côté de Jeu, Inventaire, Sorts, Stats) ouvrent le même menu.
+    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', () => {
+        primeAudioFromGesture();
+        playSfx('uiClick');
+        optionsModal?.classList.add('active');
+    }));
+    // Onglets des options (Affichage, Son et confort, Jeu, Partie) : clic, flèches gauche/droite, Début/Fin.
+    const optionTabs = [...document.querySelectorAll('.options-tab')];
+    const showOptionsTab = tab => {
+        optionTabs.forEach(t => {
+            const on = t === tab;
+            t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+            const panel = document.getElementById(t.getAttribute('aria-controls'));
+            if(panel) panel.hidden = !on;
+        });
+        if(tab.dataset.optionsTab === 'zh') renderChineseOptions();
+    };
+    // Onglet « Chinois » : tous les mots avec écoute et case « je connais », construit à l'ouverture (près de 200 lignes).
+    const zhPanel = document.getElementById('options-panel-zh');
+    if(zhPanel) bindLessons(zhPanel);
+    const renderChineseOptions = () => { if(zhPanel) zhPanel.innerHTML = lessonsPanelHtml(); };
+    optionTabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => { playSfx('uiClick'); showOptionsTab(tab); });
+        tab.addEventListener('keydown', e => {
+            const next = e.key === 'ArrowRight' ? optionTabs[(i + 1) % optionTabs.length] : e.key === 'ArrowLeft' ? optionTabs[(i + optionTabs.length - 1) % optionTabs.length]
+                : e.key === 'Home' ? optionTabs[0] : e.key === 'End' ? optionTabs[optionTabs.length - 1] : null;
+            if(!next) return;
+            e.preventDefault(); showOptionsTab(next); next.focus();
+        });
+    });
+    document.getElementById('options-close-btn')?.addEventListener('click', () => optionsModal?.classList.remove('active'));
+    optionsModal?.addEventListener('click', e => { if(e.target === optionsModal) optionsModal.classList.remove('active'); });
+
+    const soundToggleButton = document.getElementById('sound-toggle-btn');
+    initializeAudioUI(soundToggleButton);
+
+    // Réinitialiser le jeu : efface la partie (après confirmation) et recharge sur le choix du personnage.
+    document.getElementById('game-reset-btn')?.addEventListener('click', () => clearSaveData());
+
+    // Sauvegarde dans un fichier : permet de reprendre la partie sur un autre appareil.
+    document.getElementById('save-export-btn')?.addEventListener('click', () => {
+        const res = exportSaveToFile(player, getHouyiVersion());
+        if(res.success) { downloadSaveFile(res.blob, res.filename); log(res.message); }
+        else alert(res.message);
+    });
+    const saveImportInput = document.getElementById('save-import-input');
+    document.getElementById('save-import-btn')?.addEventListener('click', () => saveImportInput?.click());
+    saveImportInput?.addEventListener('change', async () => {
+        const file = saveImportInput.files[0];
+        saveImportInput.value = '';
+        if(!file) return;
+        const res = await importSaveFromFile(file);
+        if(!res.success) { alert(res.message); return; }
+        if(!confirm(`${res.message}\nCette sauvegarde remplacera la partie en cours. Continuer ?`)) return;
+        localStorage.setItem('player', JSON.stringify(res.player));
+        location.reload();
+    });
+
+    // Temps de jeu : aujourd'hui, hier, cette semaine, total (playTime.js)
+    const playTimeEl = document.getElementById('playtime-stats');
+    const renderPlayTime = () => {
+        if(!playTimeEl || !optionsModal?.classList.contains('active')) return;
+        const r = realPlayTimeStats();
+        playTimeEl.innerHTML = [['Aujourd\'hui', r.today], ['Hier', r.yesterday], ['Cette semaine', r.week], ['Total', r.total]]
+            .map(([label, sec]) => `<span class="playtime-line"><span>${label}</span><b>${formatDuration(sec)}</b></span>`).join('');
+    };
+    // Rappel de pause : 30 min de jeu, puis toutes les 15 min, hors combat et fenêtres ouvertes (breakReminder.js)
+    const breakTick = createBreakWatcher({
+        isEnabled: () => getOption('breakReminder'),
+        // Calme : hors combat, dialogue et marchand (carte affichée ou non, p. ex. onglet Armes), ou combat terminé (écran Victoire / Défaite,
+        // dont l'arène enchaîne sans repasser par la carte), sans cinématique ni transition de combat (ce ne sont pas des .modal) ni fenêtre ouverte.
+        isCalm: () => (Boolean(exploration.isFree?.()) || Boolean(document.body.dataset.combatEnd))
+            && !document.querySelector('.modal.active, #levelup-modal[style*="flex"], .cine-overlay, .title-screen, .battle-transition, .bt-title'),
+    });
+    startPlayTimeTracking(() => { renderPlayTime(); breakTick(); });
+    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', renderPlayTime));
+
+    // Options d'affichage / performance (gameOptions.js)
+    applyOptions();
+    initDialogs();   // fenêtres : rôle dialog, focus à l'ouverture / fermeture (a11y.js)
+    const manaFlightBtn = document.getElementById('opt-mana-flight');
+    const effectsSelect = document.getElementById('opt-effects');
+    const speedSelect = document.getElementById('opt-speed');
+    const aiDifficultySelect = document.getElementById('opt-ai-difficulty');
+    const syncManaFlightBtn = () => {
+        const on = getOption('manaFlight');
+        if(manaFlightBtn) { manaFlightBtn.textContent = on ? 'Oui' : 'Non'; manaFlightBtn.setAttribute('aria-pressed', String(on)); }
+    };
+    syncManaFlightBtn();
+    if(effectsSelect) effectsSelect.value = getOption('effects');
+    if(speedSelect) speedSelect.value = getOption('speed');
+    if(aiDifficultySelect) aiDifficultySelect.value = getOption('aiDifficulty');
+    manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
+    const vibrationBtn = document.getElementById('opt-vibration');
+    const syncVibrationBtn = () => {
+        const on = getOption('vibration');
+        if(vibrationBtn) {
+            vibrationBtn.textContent = on ? (canVibrate() ? 'Oui' : 'Oui (secousse)') : 'Non';
+            vibrationBtn.setAttribute('aria-pressed', String(on));
+            if(!canVibrate()) vibrationBtn.title = "Cet appareil ne sait pas vibrer (iPhone, iPad, Firefox ordinateur) : l'écran tremble à la place.";
+        }
+    };
+    syncVibrationBtn();
+    // Le navigateur refuse les vibrations tant que l'utilisateur n'a pas fait de geste : on redemande, d'un toucher (gameOptions.js).
+    window.addEventListener('m3:vibration-blocked', () => {
+        if(document.getElementById('vibe-notice')) return;
+        const box = document.createElement('div');
+        box.id = 'vibe-notice';
+        box.className = 'vibe-notice';
+        box.setAttribute('role', 'alert');
+        box.innerHTML = '<span>Le navigateur bloque les vibrations.</span> <button type="button">Les réactiver</button> <button type="button" class="vibe-close" aria-label="Fermer">×</button>';
+        const [enable, close] = box.querySelectorAll('button');
+        enable.addEventListener('click', () => { if(armVibration()) { vibrate([60, 40, 60]); box.remove(); } else enable.textContent = 'Toujours bloqué : touchez l\'écran puis réessayez'; });
+        close.addEventListener('click', () => box.remove());
+        document.body.appendChild(box);
+        setTimeout(() => box.remove(), 12000);
+    });
+    // Accessibilité : taille du texte, symboles, animations, effets réduits (gameOptions.js)
+    const textSizeSelect = document.getElementById('opt-text-size');
+    if(textSizeSelect) { textSizeSelect.value = getOption('textSize'); textSizeSelect.addEventListener('change', () => setOption('textSize', textSizeSelect.value)); }
+    [['opt-shapes', 'shapes'], ['opt-colorblind', 'colorblind'], ['opt-animations', 'animations'], ['opt-reduce-fx', 'reduceFx'], ['opt-break-reminder', 'breakReminder'], ['opt-horse-avoid', 'horseAvoid'], ['opt-casual', 'casual']].forEach(([id, key]) => {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+        const value = () => key === 'animations' ? animationsEnabled() : getOption(key);
+        const sync = () => { const on = value(); btn.textContent = on ? 'Oui' : 'Non'; btn.setAttribute('aria-pressed', String(on)); };
+        sync();
+        btn.addEventListener('click', () => { setOption(key, !value()); sync(); if(key === 'casual') runCasualAutopilot(); });
+    });
+
+    vibrationBtn?.addEventListener('click', () => { setOption('vibration', !getOption('vibration')); syncVibrationBtn(); vibrate([120, 60, 120]); });
+    initCompare({
+        spell: id => player.availableSpells.find(s => s.id === id),
+        weapon: id => (player.weapons || []).find(w => w.id === id) || getWeaponById(id),
+        stuff: id => getStuffById(id),
+        item: id => (player.inventory || []).find(i => i.id === id) || (player.equipment?.leftHand?.id === id ? player.equipment.leftHand : null) || allItems.find(i => i.id === id)
+    }, {
+        // « Équiper » depuis le comparateur ; sorts : « Remplacer » (fenêtre de choix) quand les emplacements sont pleins
+        actions: {
+            spell: id => window.equipSpell(id),
+            weapon: id => window.equipWeapon(id, 'right'),
+            item: id => {
+                const index = (player.inventory || []).findIndex(i => i.id === id);
+                const it = player.inventory[index];
+                if(it?.type === 'shield') window.equipGear(index);
+                else if(it?.type === 'reusable') window.setActiveInventoryItem(index);
+            },
+            stuff: id => {
+                const res = equipStuff(player, id);
+                log(res.message);
+                saveUpdate();
+                updateStats();
+                document.dispatchEvent(new Event('stuff-changed'));
+            }
+        },
+        state: {
+            spell: id => player.activeSpells.some(s => s.id === id) ? { label: 'Équipé', disabled: true }
+                : { label: player.activeSpells.length >= MAX_ACTIVE_SPELLS ? 'Remplacer' : 'Équiper', disabled: false },
+            weapon: id => {
+                const w = (player.weapons || []).find(x => x.id === id);
+                if(!w) return { label: 'Non possédée', disabled: true };
+                return player.equippedWeapon?.id === id ? { label: 'Main droite', disabled: true }
+                    : { label: player.equippedWeapon ? 'Remplacer' : 'Équiper', disabled: player.level < w.minLevel };
+            },
+            item: id => {
+                const it = (player.inventory || []).find(i => i.id === id);
+                if(player.equipment?.leftHand?.id === id) return { label: 'Équipé', disabled: true };
+                if(!it) return { label: 'Non possédé', disabled: true };
+                if(it.type !== 'shield' && it.type !== 'reusable') return { label: 'Passif', disabled: true };
+                const index = player.inventory.indexOf(it);
+                if(it.type === 'reusable') return { label: (index === player.activeInventoryIndex || index === player.activeInventoryIndex2) ? 'Objet actif' : 'Choisir', disabled: index === player.activeInventoryIndex || index === player.activeInventoryIndex2 || player.level < (it.minLevel || 1) };
+                return { label: player.equipment?.leftHand?.type === 'shield' ? 'Remplacer' : 'Équiper', disabled: player.level < (it.minLevel || 1) };
+            },
+            stuff: id => {
+                const st = getStuffById(id);
+                return Object.values(player.stuff || {}).includes(id) ? { label: 'Porté', disabled: true }
+                    : { label: st && player.stuff?.[st.slot] ? 'Remplacer' : 'Équiper', disabled: !(player.stuffOwned || []).includes(id) || player.level < (st?.minLevel || 1) };
+            }
+        }
+    });
+    bindSecretTrigger(manaFlightBtn);   // 6 clics : menu secret (secretMenu.js)
+    effectsSelect?.addEventListener('change', () => setOption('effects', effectsSelect.value));
+    speedSelect?.addEventListener('change', () => setOption('speed', speedSelect.value));
+    aiDifficultySelect?.addEventListener('change', () => setOption('aiDifficulty', aiDifficultySelect.value));
+
+    const darkModeToggleButton = document.getElementById('dark-mode-toggle-btn');
+    initializeThemeUI(darkModeToggleButton);
+
+    // Initialiser l'UI du tutoriel
+    initTutorialUI();
+
+    // Rendre startTutorial accessible globalement (pour bouton HTML inline)
+    window.startTutorial = startTutorial;
+
+    // Garde-fou : une sauvegarde existante (créée avant cette règle) peut avoir
+    // une classe déjà choisie mais aucune arme équipée. On corrige silencieusement.
+    if(player.class) {
+        grantStartingWeapon(playerClasses[player.class]?.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
+    }
+
+    // Ne pas créer d'ennemi ni de board au démarrage
+    // Juste initialiser les sorts et armes disponibles
+    updateAvailableSpells();
+    updateAvailableWeapons();
+    createSpellButtons();
+    createWeaponButton();
+    updatePlayerStatsTab();
+    updateInventoryTab();
+    
+    // Au démarrage : plus de plateau, pas de bouton « Retour à l'exploration » ni « Abandonner »
+    // (la phase d'exploration est l'état par défaut du jeu).
+    setCombatUiVisible(false);
+    // Afficher la sélection de classe si nécessaire ; sinon on reprend l'exploration là où on l'avait laissée.
+    // Écran de démarrage (portrait animé) avant la sélection de classe / la reprise ; ignoré par les navigateurs
+    // pilotés par des tests automatisés (sauf ?title=1).
+    const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
+    // Écran de chargement initial (index.html) : on ne charge que les dessins communs (héros, coffres) et ceux de la
+    // région où reprend la partie ; les autres régions sont chargées en y entrant.
+    // Le launcher s'affiche tout de suite (écran de chargement masqué, pas d'animation de biome) pendant que le chargement
+    // se poursuit en arrière-plan ; l'écran de chargement ne revient que si le joueur touche avant la fin.
+    if(!skipTitle) { setLoadingScreenSuppressed(true); hideLoadingScreen(true); }
+    let booted = false;
+    const bootReady = trackProgress([loadSpritePack(CORE_PACK), exploration.ready()], setLoadingProgress)
+        .catch(err => console.warn('[boot] chargement initial incomplet', err))
+        .then(() => { booted = true; });
+    // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
+    (skipTitle ? Promise.resolve() : playTitleScreen())
+        .then(() => {
+            setLoadingScreenSuppressed(false);
+            if(!booted && !skipTitle) showLoadingScreen('Chargement…');
+            return bootReady;
+        })
+        .then(() => hideLoadingScreen())
+        .then(() => (!skipTitle && !player.class ? playPrologueAnimation() : undefined))
+        .then(() => {
+        showClassSelection();
+        if(player.class) {
+            enterExploration();
+            // « Ça fait longtemps » : rappel après au moins 2 jours d'absence.
+            const lastPlayed = readLastPlayed();
+            if(isLongAbsence(lastPlayed)) showWelcomeBack(buildRecap(player, exploration.getActiveQuestSummaries?.() || []), absenceDays(lastPlayed));
+        }
+        touchLastPlayed();
+        setInterval(() => { if(!document.hidden) touchLastPlayed(); }, 60000);
+        document.addEventListener('visibilitychange', touchLastPlayed);
+        window.addEventListener('pagehide', touchLastPlayed);
+    });
+    
+    // Onglet Bestiaire : créatures connues, force, faiblesse, notice mythologique (rafraîchi à chaque ouverture).
+    document.addEventListener('bestiary-tab-open', async () => {
+        const html = await exploration.bestiaryHtml();
+        const pane = document.getElementById('bestiary-content');
+        if(pane && document.getElementById('tab-bestiary')?.classList.contains('active')) { pane.innerHTML = html; exploration.bindBestiary(pane); }
+    });
+
+    // Rendre la fonction clearSaveData accessible globalement pour le bouton
+    window.clearPlayerSave = clearSaveData;
+}
+
+// Les modules script sont automatiquement en defer, donc le DOM est déjà chargé
+// Mais on vérifie quand même
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+
+// Jeu hors ligne : service worker (sw.js) enregistré une fois la page chargée, puis téléchargement de tout le jeu en arrière-plan (voir offlineCache.js)
+registerServiceWorkerWhenLoaded();
+// Appareil modeste : le téléchargement de tout le jeu (≈ 270 Mo) ralentit l'affichage de ≈ 25 % ; il n'avance donc que lorsque le joueur ne
+// touche plus l'écran depuis 4 s (ou que la page est masquée), et un fichier à la fois.
+let lastInputAt = 0;
+['pointerdown', 'pointermove', 'keydown', 'touchstart'].forEach(type => addEventListener(type, () => { lastInputAt = performance.now(); }, { passive: true, capture: true }));
+const offlinePrefetcher = effectsLevel() === 'low'
+    ? createPrefetcher(globalThis, { concurrency: 1, waitWhile: () => document.visibilityState === 'visible' && performance.now() - lastInputAt < 4000 })
+    : createPrefetcher();
+bindOfflineOptions(offlinePrefetcher, document.getElementById('offline-status'), document.getElementById('offline-btn'));
+startBackgroundPrefetch(offlinePrefetcher);

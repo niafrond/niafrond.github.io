@@ -1,0 +1,29 @@
+{
+  "key": "boss-tigre-alpha-griffe-de-feu-b",
+  "version": "v001",
+  "date": "2026-10-30T14:42:54.283Z",
+  "seed": "3554612957",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, alpha tiger with fiery claws, prowling rhythm then pounce, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 126,
+    "key_scale": "C minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 126,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "C minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ye Shen Chen\" (Deep in the Night), jinghu, gongs, cymbals and relentless drums, dangerous boss battle, alpha tiger with fiery claws, prowling rhythm then pounce, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "id": "ultimateSkyWolf",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text, recurring hero: the same 30-year-old male barbarian archer in a wolf pelt, a recurve bow in his hand, a bone staff slung over his shoulder and a quiver of arrows on his back; palette: deep blue, violet, ice white and starlight; cold moonlit lighting",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "first": "sprites/ultimates-sdxl/ultimateSkyWolf-1.png",
+  "plate": "a snowy mountain top at night under a huge full purple moon, purple aurora in the sky, a flat snowy summit in the lower third",
+  "style_plate": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon cutscene, vertical composition, dramatic lighting, rich saturated colors, no text",
+  "hero_text": "a 30-year-old male barbarian archer in a wolf pelt, a recurve bow in his hand, a bone staff slung over his shoulder and a quiver of arrows on his back",
+  "hero_layout": {
+    "w": 0.3,
+    "cx": 0.5,
+    "feet": 0.88,
+    "denoise": 0.3
+  },
+  "elements": {
+    "wolf_head": {
+      "prompt": "a giant ethereal spirit wolf made of glowing blue-white stars and aurora light, translucent, head portrait only, snout pointing up and to the left",
+      "w": 768,
+      "h": 768,
+      "seed": 100,
+      "negative": "staff, weapon, armor, clothing, necklace, jewelry, gem, humanoid, standing on two legs, holding, shadow, ground, text",
+      "tries": 6,
+      "pick": 3
+    },
+    "wolf_stand": {
+      "prompt": "a colossal ethereal spirit wolf made of glowing blue-white stars and aurora light, translucent, full body side view, four legs, standing",
+      "w": 1024,
+      "h": 768,
+      "seed": 200,
+      "negative": "staff, weapon, armor, clothing, necklace, jewelry, gem, humanoid, standing on two legs, holding, shadow, ground, text",
+      "tries": 6,
+      "pick": 1
+    },
+    "wolf_howl": {
+      "prompt": "a colossal ethereal spirit wolf made of glowing blue-white stars and aurora light, translucent, full body side view, four legs, head tilted straight up howling at the sky with open mouth",
+      "w": 768,
+      "h": 1024,
+      "seed": 300,
+      "negative": "staff, weapon, armor, clothing, necklace, jewelry, gem, humanoid, standing on two legs, holding, shadow, ground, text",
+      "tries": 6,
+      "pick": 3
+    },
+    "hero": {
+      "prompt": "a 30-year-old male barbarian archer in a wolf pelt, a recurve bow in his hand, a bone staff slung over his shoulder and a quiver of arrows on his back, full body, standing, three-quarter view, holding the bow",
+      "w": 768,
+      "h": 1024,
+      "seed": 500,
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, close-up, portrait, cropped",
+      "tries": 6,
+      "bg": "lime green"
+    }
+  },
+  "keys": [
+    {
+      "prompt": "the shaman raises his glowing bone staff, swirling aurora ribbons and glowing stars gathering around the huge purple moon",
+      "denoise": 0.4,
+      "fx": [
+        {
+          "type": "glow",
+          "cx": 0.5,
+          "cy": 0.4,
+          "r": 0.09,
+          "color": [
+            120,
+            230,
+            255
+          ],
+          "alpha": 150
+        },
+        {
+          "type": "glow",
+          "cx": 0.44,
+          "cy": 0.13,
+          "r": 0.3,
+          "color": [
+            170,
+            130,
+            255
+          ],
+          "alpha": 70
+        }
+      ]
+    },
+    {
+      "prompt": "a spirit wolf head made of stars emerging from the huge purple moon, the tiny shaman below looking up",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "wolf_head",
+          "cx": 0.44,
+          "cy": 0.15,
+          "w": 0.42,
+          "alpha": 0.7
+        }
+      ]
+    },
+    {
+      "prompt": "a colossal celestial wolf made of stars standing in the night sky above the tiny shaman on the peak",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "wolf_stand",
+          "cx": 0.52,
+          "cy": 0.22,
+          "w": 1.0,
+          "alpha": 0.92
+        }
+      ]
+    },
+    {
+      "prompt": "the colossal celestial star wolf throws its head back and howls at the moon above the tiny shaman",
+      "denoise": 0.35,
+      "paste": [
+        {
+          "el": "wolf_howl",
+          "cx": 0.55,
+          "cy": 0.19,
+          "w": 0.56,
+          "alpha": 0.95
+        }
+      ]
+    },
+    {
+      "prompt": "glowing purple sound wave rings spreading across the sky from the howling star wolf, stars shaking",
+      "denoise": 0.4,
+      "paste": [
+        {
+          "el": "wolf_howl",
+          "cx": 0.55,
+          "cy": 0.19,
+          "w": 0.56,
+          "alpha": 0.95
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.62,
+          "cy": 0.1,
+          "r": [
+            0.18,
+            0.3,
+            0.44,
+            0.6
+          ],
+          "squash": 0.8,
+          "alpha": 190,
+          "width": 12
+        }
+      ]
+    },
+    {
+      "prompt": "a huge violet shockwave of spirit energy crashing on the snowy peak, snow blown by the blast, the star wolf fading in the sky",
+      "denoise": 0.45,
+      "paste": [
+        {
+          "el": "wolf_howl",
+          "cx": 0.55,
+          "cy": 0.19,
+          "w": 0.56,
+          "alpha": 0.35
+        }
+      ],
+      "fx": [
+        {
+          "type": "rings",
+          "cx": 0.4,
+          "cy": 0.78,
+          "r": [
+            0.25,
+            0.45,
+            0.7
+          ],
+          "squash": 0.3,
+          "alpha": 210,
+          "width": 16
+        },
+        {
+          "type": "glow",
+          "cx": 0.4,
+          "cy": 0.78,
+          "r": 0.35,
+          "color": [
+            200,
+            150,
+            255
+          ],
+          "alpha": 170
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "frames": 49,
+      "motion": "the shaman raises his staff, aurora ribbons begin to swirl, stars twinkle and drift toward the moon"
+    },
+    {
+      "frames": 49,
+      "motion": "stars gather into the moon, a glowing spirit wolf head emerges from the moon, aurora swirls"
+    },
+    {
+      "frames": 49,
+      "motion": "the spirit wolf pushes out of the moon and grows into a colossal body made of stars, the camera tilts up"
+    },
+    {
+      "frames": 49,
+      "motion": "the star wolf raises its head and begins to howl, constellations shimmer in its fur"
+    },
+    {
+      "frames": 49,
+      "motion": "the wolf howls with its head thrown back, glowing sound rings expand across the sky, stars tremble"
+    },
+    {
+      "frames": 49,
+      "motion": "the sound rings crash downward as a violet shockwave sweeps over the snowy plain, snow blows"
+    },
+    {
+      "frames": 25,
+      "motion": "the shockwave rolls outward, snow and stars fall, the glow slowly fades"
+    }
+  ]
+}

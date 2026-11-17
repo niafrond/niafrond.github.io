@@ -1,0 +1,29 @@
+{
+  "key": "wild-fusang-b",
+  "version": "v001",
+  "date": "2026-10-30T14:33:02.977Z",
+  "seed": "351020831",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Liu Shui\" (Flowing Water), guqin and guzheng with rippling glissandi, golden summit of the mythical Fusang tree, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 58,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 58,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Liu Shui\" (Flowing Water), guqin and guzheng with rippling glissandi, golden summit of the mythical Fusang tree, exploration theme, scattered phrases, thoughtful gentle, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

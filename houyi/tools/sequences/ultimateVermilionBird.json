@@ -1,0 +1,17 @@
+{
+  "id": "ultimateVermilionBird",
+  "style": "pixel art, 16-bit pixel art illustration, ancient China mythology, epic Final Fantasy IX summon creature, dramatic lighting, rich saturated colors, no text",
+  "negative": "3d render, realistic, photo, blurry, noisy, smooth gradients, antialiased, jpeg artifacts, text, letters, watermark, lowres",
+  "elements": {
+    "entity": {
+      "prompt": "a colossal vermilion phoenix, the Vermilion Bird of the South, wings spread wide, long flowing tail feathers of living flame, crimson and gold plumage wreathed in fire, majestic fenghuang, three-quarter front view, full body",
+      "w": 768,
+      "h": 768,
+      "seed": 100,
+      "bg": "green",
+      "negative": "background, landscape, scenery, ground, shadow, text, border, frame, human, rider, person, perch, branch, nest",
+      "tries": 6,
+      "pick": 1
+    }
+  }
+}

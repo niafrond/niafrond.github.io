@@ -1,0 +1,191 @@
+// Options d'affichage et de performance (menu Options), mémorisées par appareil dans localStorage.
+//  - manaFlight : particules de qì qui rejoignent la banque (manaFlight.js) ;
+//  - effects    : 'auto' | 'low' | 'normal' | 'high' — niveau d'effets visuels ('auto' se règle sur l'appareil : cœurs, mémoire, rendu logiciel) ;
+//  - speed      : 'slow' | 'normal' | 'fast' — durée des animations de combat et pauses entre les tours ;
+//  - vibration  : vibrations du téléphone (dégâts subis, onde de la perception du qì), désactivables.
+// Accessibilité :
+//  - textSize   : 'normal' | 'large' | 'xlarge' — taille du texte des menus, de la fiche des combattants et du journal ;
+//  - shapes     : tuiles et pastilles de qì remplacées par des formes pleines, une par couleur (+ camps distingués par la bordure) pour ne pas dépendre de la seule couleur ;
+//  - colorblind : mode daltonien — palette des tuiles et du qì séparée par la teinte ET la luminosité (rouge/vert, bleu/violet), les gâteaux de lune sont conservés, sauf si « Symboles » est aussi activé (formes à la palette daltonienne) ;
+//  - animations : false coupe animations et transitions (les pauses de combat restent, raccourcies) ;
+//  - reduceFx   : réduit les effets visuels (équivaut au niveau d'effets « Économe », sans lueurs ni secousses).
+//    Tant que le joueur n'a pas choisi lui-même « Animations », le réglage « réduire les animations » du système (prefers-reduced-motion) s'applique ;
+//    son choix explicite, dans un sens ou dans l'autre, prime ensuite.
+// Confort :
+//  - breakReminder : rappel de pause bienveillant (breakReminder.js), désactivable.
+//  - casual : mode Casual (casual.js, casualPilot.js) : le jeu choisit stuff, armes, sorts et points d'attribut, et passe à un équipement défensif après des défaites.
+//  - horseAvoid : à cheval, le trajet au toucher évite les zones que le cheval ne franchit pas (eau et lave, où il faudrait mettre pied à terre) ;
+//    s'il n'y a pas d'autre chemin, il les traverse quand même.
+// Difficulté des ennemis :
+//  - aiDifficulty : 'auto' | 'story' (ultra facile : suivre l'histoire) | 'easy' | 'normal' | 'hard' | 'expert' (enemyAI.js). 'auto' (défaut) adapte la qualité des décisions au
+//    niveau de l'ennemi, de façon bornée ; un palier fixe est appliqué tel quel à chaque combat. Le mode règle aussi la vitesse à laquelle
+//    l'ennemi peut vaincre le héros (dégâts calibrés : combatBalance.js, DIFFICULTY_WIN_RATIO_FACTOR).
+// Les autres options sont purement visuelles : elles ne changent pas les règles du jeu.
+
+export const OPTIONS_STORAGE_KEY = 'houyi.options';
+export const OPTION_DEFAULTS = { manaFlight: true, effects: 'auto', speed: 'normal', vibration: true, textSize: 'normal', shapes: false, colorblind: false, animations: true, reduceFx: false, breakReminder: true, casual: false, horseAvoid: true, aiDifficulty: 'auto' };
+const CHOICES = { effects: ['auto', 'low', 'normal', 'high'], speed: ['slow', 'normal', 'fast'], textSize: ['normal', 'large', 'xlarge'], aiDifficulty: ['auto', 'story', 'easy', 'normal', 'hard', 'expert'] };
+const SPEED_FACTOR = { slow: 1.4, normal: 1, fast: 0.6 };
+
+let current = { ...OPTION_DEFAULTS };
+const explicit = new Set();   // options que le joueur a réellement choisies (stockées)
+
+function load() {
+    try {
+        const raw = JSON.parse(localStorage.getItem(OPTIONS_STORAGE_KEY) || '{}');
+        Object.keys(OPTION_DEFAULTS).forEach(k => { if (isValid(k, raw[k])) { current[k] = raw[k]; explicit.add(k); } });
+    } catch (e) { /* stockage indisponible : valeurs par défaut */ }
+}
+
+function isValid(key, value) {
+    if (typeof OPTION_DEFAULTS[key] === 'boolean') return typeof value === 'boolean';
+    return CHOICES[key]?.includes(value) === true;
+}
+
+export function getOption(key) { return current[key]; }
+
+export function setOption(key, value) {
+    if (!(key in OPTION_DEFAULTS) || !isValid(key, value)) return false;
+    current[key] = value;
+    explicit.add(key);
+    try { localStorage.setItem(OPTIONS_STORAGE_KEY, JSON.stringify(current)); } catch (e) { /* ignoré */ }
+    applyOptions();
+    return true;
+}
+
+// Rendu logiciel : pas de GPU utilisable (désactivé, sur liste noire) ou GPU émulé par le processeur (SwiftShader, llvmpipe…). Chaque effet
+// visuel y est payé par le processeur, donc par la batterie : le niveau d'effets automatique passe à « réduit », même sur un appareil qui
+// a beaucoup de cœurs et de mémoire. Deux indices sûrs seulement (dans le doute, on ne conclut rien) :
+//  - le navigateur refuse un contexte WebGL « sans réserve de performance » alors qu'il en accorde un sans cette exigence ;
+//  - le nom du moteur de rendu est celui d'un rendu logiciel (le premier indice ne se déclenche pas pour SwiftShader choisi d'office).
+// Le matériel ne change pas : le résultat est mémorisé par navigateur (clé = user agent), le test ne coûte un contexte WebGL qu'une fois.
+export const SOFTWARE_RENDERER_RE = /swiftshader|llvmpipe|softpipe|software|basic render/i;
+const SOFT_GPU_STORAGE_KEY = 'houyi.softgpu';
+let softwareRendering = null;
+export function detectSoftwareRendering(env = globalThis) {
+    try {
+        if (typeof env.WebGLRenderingContext === 'undefined' || !env.document) return false;   // pas de WebGL du tout : on ne sait rien
+        const strict = env.document.createElement('canvas').getContext('webgl', { failIfMajorPerformanceCaveat: true });
+        const gl = strict || env.document.createElement('canvas').getContext('webgl');
+        if (!gl) return false;
+        const info = gl.getExtension('WEBGL_debug_renderer_info');
+        const name = String((info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+        gl.getExtension('WEBGL_lose_context')?.loseContext();   // contexte de test rendu tout de suite
+        return !strict || SOFTWARE_RENDERER_RE.test(name);
+    } catch (e) { return false; }
+}
+export function isSoftwareRendering(env = globalThis) {
+    if (softwareRendering !== null) return softwareRendering;
+    const agent = String(env.navigator?.userAgent || '');
+    try {
+        const saved = JSON.parse(env.localStorage?.getItem(SOFT_GPU_STORAGE_KEY) || 'null');
+        if (saved && saved.agent === agent && typeof saved.soft === 'boolean') return (softwareRendering = saved.soft);
+    } catch (e) { /* mémoire illisible : on refait le test */ }
+    softwareRendering = detectSoftwareRendering(env);
+    try { env.localStorage?.setItem(SOFT_GPU_STORAGE_KEY, JSON.stringify({ agent, soft: softwareRendering })); } catch (e) { /* ignoré */ }
+    return softwareRendering;
+}
+/** Tests : oublie le résultat mémorisé pendant la session. */
+export function resetSoftwareRenderingCache() { softwareRendering = null; }
+
+// Niveau d'effets réellement appliqué : 'low' | 'normal' | 'high'.
+export function effectsLevel() {
+    if (current.reduceFx) return 'low';
+    if (current.effects !== 'auto') return current.effects;
+    try {
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return 'low';
+        if (isSoftwareRendering()) return 'low';
+        const cores = navigator.hardwareConcurrency || 4;
+        const memory = navigator.deviceMemory; // Go (indéfini sur certains navigateurs)
+        if (cores <= 4 || (memory && memory <= 2)) return 'low';
+        if (cores >= 8 && memory && memory >= 6) return 'high';
+    } catch (e) { /* détection impossible */ }
+    return 'normal';
+}
+
+function osReducesMotion() {
+    try { return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; }
+}
+
+// Animations réellement actives : choix explicite du joueur, sinon réglage du système (prefers-reduced-motion).
+export function animationsEnabled() {
+    return explicit.has('animations') ? current.animations : !osReducesMotion();
+}
+
+// Multiplicateur appliqué aux durées d'animation et aux pauses (1 = normal).
+export function animationFactor() { return (SPEED_FACTOR[current.speed] || 1) * (animationsEnabled() ? 1 : 0.3); }
+
+// Nombre maximal de particules de qì par match, selon le niveau d'effets.
+export function maxManaParticles() { return { low: 3, normal: 6, high: 10 }[effectsLevel()]; }
+
+// Fait vibrer l'appareil (durée en ms ou motif), sauf si l'option « Vibrations » est coupée ou si l'appareil ne sait pas vibrer.
+// `shakeIfUnsupported` : sur un appareil sans vibreur, secoue l'écran à la place (dégâts subis).
+// Retourne true si une vibration a été demandée.
+export function vibrate(pattern, shakeIfUnsupported = false) {
+    if (!current.vibration) return false;
+    try {
+        if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') { if (shakeIfUnsupported) shake(); return false; }
+        const ok = navigator.vibrate(pattern) !== false;
+        if (!ok) notifyBlocked(); else vibrationBlocked = false;
+        return ok;
+    } catch (e) { return false; }   // vibration refusée (pas de geste utilisateur, mode économie…)
+}
+
+// Depuis Chrome 60, navigator.vibrate() exige un geste de l'utilisateur (sinon il renvoie false) : tant qu'il n'a rien touché, les vibrations
+// déclenchées par le jeu (dégâts, ondes) sont ignorées. Le premier geste (toucher, clic, touche) les arme ; si le navigateur les refuse
+// quand même, l'événement `m3:vibration-blocked` invite à les réactiver d'un toucher (main.js).
+let vibrationBlocked = false, lastBlockedNotice = 0;
+export const isVibrationBlocked = () => vibrationBlocked;
+function notifyBlocked() {
+    vibrationBlocked = true;
+    const now = Date.now();
+    if (typeof window === 'undefined' || now - lastBlockedNotice < 60000) return;
+    lastBlockedNotice = now;
+    window.dispatchEvent(new Event('m3:vibration-blocked'));
+}
+
+// À appeler DANS un geste de l'utilisateur : une micro-vibration qui valide l'autorisation. Retourne true si elle est accordée.
+export function armVibration() {
+    if (!current.vibration || !canVibrate()) return false;
+    try {
+        const ok = navigator.vibrate(1) !== false;
+        if (ok) vibrationBlocked = false;
+        return ok;
+    } catch (e) { return false; }
+}
+
+// L'appareil sait-il vibrer ? (Absent sur iPhone / iPad et Firefox ordinateur : l'API Vibration n'y existe pas.)
+export function canVibrate() {
+    return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+}
+
+// À défaut de vibreur : une brève secousse de l'écran (classe `shake` du body, style.css) à la place.
+function shake() {
+    if (typeof document === 'undefined' || !document.body || effectsLevel() === 'low') return;
+    document.body.classList.remove('shake');
+    void document.body.offsetWidth;   // relance l'animation
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 320);
+}
+
+export function applyOptions() {
+    if (typeof document === 'undefined' || !document.body) return;
+    const level = effectsLevel();
+    document.body.classList.toggle('fx-low', level === 'low');
+    document.body.classList.toggle('fx-high', level === 'high' && !current.reduceFx);
+    const b = document.body.classList;
+    b.toggle('text-large', current.textSize === 'large');
+    b.toggle('text-xlarge', current.textSize === 'xlarge');
+    b.toggle('a11y-shapes', current.shapes);   // le mode daltonien seul garde les gâteaux de lune ; avec Symboles, formes à la palette daltonienne
+    b.toggle('a11y-colorblind', current.colorblind);
+    b.toggle('no-anim', !animationsEnabled());
+    b.toggle('fx-reduced', current.reduceFx);
+    b.toggle('casual-mode', current.casual === true);   // mode Casual : le côté RPG (armes, stuff, répartition des points) est géré par le jeu
+}
+
+load();
+// Chaque premier geste de la page arme les vibrations (écouteurs ôtés dès qu'ils ont réussi).
+if (typeof window !== 'undefined' && window.addEventListener) {
+    const arm = () => { if (armVibration()) ['pointerdown', 'touchend', 'keydown', 'click'].forEach(t => window.removeEventListener(t, arm, true)); };
+    ['pointerdown', 'touchend', 'keydown', 'click'].forEach(t => window.addEventListener(t, arm, true));
+}

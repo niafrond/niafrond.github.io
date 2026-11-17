@@ -1,0 +1,2372 @@
+// logique globale du joueur, ennemis, combat et interface
+
+import { sellPriceOf } from './merchants.js';
+import { createBossScript, noteChargeDamage } from './bossScript.js';
+import { createBehavior, adjustDamageTaken, damageKindOf } from './enemyBehaviors.js';
+import { runCasualAutopilot, noteCasualOutcome } from "./casualPilot.js";
+import { abandonCombatRecord, annotateCombatRecord, beginCombatRecord, BOSS_ADJUST, calibrateEnemy, cappedEnemyHit, enemySpellCost, expertCatchUpPoints, isExpertMode, finishCombatRecord, saveCombatRecord, enemyCategory, loadCombatRecords, pauseCombatRecord, recordDamageDealt, recordDamageTaken, resumeCombatRecord } from './combatBalance.js';
+import { escapeHtml } from "./escapeHtml.js";
+import { setBoardSize, BASE_BOARD_SIZE, BOSS_BOARD_SIZE, MAX_ACTIVE_SPELLS, MAX_WEAPONS } from "./constants.js";
+import { enemyCatalogList, generateRandomEnemy } from "./enemies.js";
+import { tutorialCallbacks } from "./tutorial.js";
+import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
+import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
+
+import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
+import { actionGuard } from "./actionGuard.js";
+
+import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
+import { isInTranse, endTranse, startTranse, transeEffectFor, classAllowsUltimate, describeTranse, switchGauge, storeGauge } from "./transe.js";
+import { POTIONS, normalizePotions, potionHeal, drinkPotion } from "./potions.js";
+import { normalizeSkills, skillBonus, actionSpells } from "./skills.js";
+import { normalizeRoster, usableClasses, grantClass, CLASS_SHORT } from "./classRoster.js";
+import { newCharge, isClassReady } from "./classCharge.js";
+import { boostedDamageDealt, resistedDamageTaken, parryQiGain } from "./gearEffects.js";
+
+
+import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, HP_BAR_EMPTY_PAUSE_MS } from "./combatFlow.js";
+
+import { recordBossLoss, pickBossTip } from "./bossTips.js";
+
+
+import { setAIDifficultyByLevel, enemyPersonalities, assignPersonality } from "./enemyAI.js";
+
+import { nextLesson } from './chineseWords.js';
+import { lessonBodyHtml, bindLessons } from './chineseLessonsView.js';
+import { getRarityIcon, repairMaxMana, applyArtifactEffects, normalizeRelics, migrateShadowCollar, allItems } from "./items.js";
+import { icon as svgIcon } from "./icons.js";
+
+
+
+import { startingRage, boostedRageGain, ATTRIBUTE_MANA_RULES, agilityScore, manaBonusFor } from "./attributes.js";
+import { initializeXP, addXP, normalizeXP } from "./experience.js";
+
+import { playSfx } from "./sound.js";
+import { loadSequence, sequenceRect } from "./ultimateCinematics.js"; // enregistre aussi les cinématiques plein écran des ultimes
+import { getEquippedUltimate, getUltimateById, unlockUltimate, normalizeUnlockedUltimates, rageFromDamage, addRage, resetRage, isRageFull, playUltimateCinematic, ultimateCostEntries, resetUltimateMana, addUltimateMana, collectedUltimateMana, canCastUltimateMana, spendUltimateMana } from "./ultimates.js";
+import { applyGrowth } from "./progression.js";
+import { raiseEnemyHpAboveHero } from "./enemyGrowth.js";
+import { gearManaBonus } from "./manaGear.js";
+
+
+import { ENVIRONMENT_STATUSES, environmentDamage, clearEnvironmentStatuses, cureStatuses, alterationOfSpell, inflictAlteration, setAlterationHooks, cursedDamage, wakeIfAsleep, healEntity, isMuted, confusedSelfHit } from "./alterations.js";
+import { rawAttack, rawDefense, setStrikeHooks, describeLevelEdge, resolveStrike, blockLabel, addStatBuff, describeStatBuff, clearStatBuffs } from "./combatStats.js";
+import { animationFactor, getOption, vibrate } from "./gameOptions.js";
+import { PLAY_STYLES, styleDamageDealt, styleDamageTaken, styleSpellCost, styleManaGain } from "./playStyles.js";
+import { flyManaSpend, flyHeal } from "./manaFlight.js";
+import { getSpellTooltipHtml, TOOLTIP_LONG_PRESS_MS } from "./gameTooltips.js";
+export { TOOLTIP_LONG_PRESS_MS };
+import { spellCooldownLeft, startSpellCooldown, resetSpellCooldowns } from "./spellCooldown.js";
+import { equipSpell, equipUltimate, unequipSpell, archiveSpell, unarchiveSpell, updateSpellsTab, updateUltimatePicker } from "./gameSpellsTab.js";
+export { equipSpell, equipUltimate, unequipSpell, updateSpellsTab };
+import { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, unsetSecondItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem } from "./gameInventoryTabs.js";
+export { createWeaponButton, discardInventoryItem, equipGear, equipWeapon, getLeftHandWeapon, setActiveInventoryItem, unsetSecondItem, shieldStats, toggleSellSurplus, unequipGear, unequipWeapon, updateAvailableWeapons, updateInventoryTab, updateItemButton, updateWeaponsTab, useInventoryItem };
+import { allSpells as spellsCatalog } from "./spells.js";
+import { _activeCounters, log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from './gameHud.js';
+export * from './gameHud.js';
+import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
+export * from './gameStatsTab.js';
+import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
+export * from './gameLevelUp.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass } from './gameSpellList.js';
+import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
+export * from './gameTurnFlow.js';
+export * from './gameSpellList.js';
+
+const BASE_MANA_CAP = 50;
+const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
+const WEAPON_ICONS = {
+    sword: 'sword',
+    axe: 'axe',
+    dagger: 'dagger',
+    mace: 'mace',
+    bow: 'bow',
+    staff: 'staff'
+};
+// Icône de la classe (sprites/icons) : affichée devant le nom des combattants et des sorts de classe.
+const CLASS_ICONS = { sorcerer: 'yinyang', assassin: 'bow', templar: 'shield', barbarian: 'axe' };
+// Pictogramme discret des sorts qui détruisent une ligne, une colonne, les deux ou toute une couleur.
+const SPELL_EFFECT_ICONS = {
+    sweepRow: 'sweepRow', sweepCol: 'sweepCol', destroyColumns: 'sweepCol',
+    sweepCross: 'sweepCross', starRain: 'sweepCross',
+    clearColor: 'sweepColor', destroyColor: 'sweepColor', destroyPurple: 'sweepColor'
+};
+export const spellEffectIcon = sp => (SPELL_EFFECT_ICONS[sp.effect] ? svgIcon(SPELL_EFFECT_ICONS[sp.effect], 'spell-fx-ic') : '');
+export const classIcon = classId => (CLASS_ICONS[classId] ? svgIcon(CLASS_ICONS[classId]) : '');
+export const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
+export const MANA_COLOR_META = {
+    red: { name: 'Rouge' },
+    blue: { name: 'Bleu' },
+    green: { name: 'Vert' },
+    yellow: { name: 'Jaune' },
+    purple: { name: 'Violet' }
+};
+
+export { ATTRIBUTE_MANA_RULES };
+
+export function getPrimaryAttributeEffect(entity, attribute){
+    return Math.max(0, Math.floor(entity?.attributes?.[attribute] || 0));
+}
+
+function getAssociatedAttributeByColor(color){
+    return Object.keys(ATTRIBUTE_MANA_RULES).find(attr => ATTRIBUTE_MANA_RULES[attr].color === color);
+}
+
+export function getAttributeManaBonus(entity, color, bonusType){
+    const attribute = getAssociatedAttributeByColor(color);
+    if(!attribute) return 0;
+    return manaBonusFor(attribute, getPrimaryAttributeEffect(entity, attribute), bonusType);
+}
+
+export function getManaCapForColor(entity, color){
+    const baseCap = Math.max(0, Math.floor(entity?.maxMana ?? BASE_MANA_CAP));
+    return baseCap + getAttributeManaBonus(entity, color, "max") + gearManaBonus(entity, color);
+}
+
+export function recalculateManaCaps(entity){
+    if(!entity || !entity.mana) return;
+    const manaCaps = {};
+    Object.keys(entity.mana).forEach(color => {
+        manaCaps[color] = getManaCapForColor(entity, color);
+    });
+    entity.manaCaps = manaCaps;
+}
+
+export function clampManaToCaps(entity){
+    if(!entity || !entity.mana) return;
+    recalculateManaCaps(entity);
+    Object.keys(entity.mana).forEach(color => {
+        entity.mana[color] = Math.min(entity.manaCaps[color], Math.max(0, Math.floor(entity.mana[color] || 0)));
+    });
+}
+
+export function addManaForColor(entity, color, baseGain, options = {}){
+    if(!entity || !entity.mana || !Object.prototype.hasOwnProperty.call(entity.mana, color)) {
+        return { before: 0, after: 0, totalGain: 0, gainBonus: 0, cap: 0, gained: 0 };
+    }
+
+    const before = Math.max(0, Math.floor(entity.mana[color] || 0));
+    const applyGainBonus = options.applyGainBonus !== false;
+    const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
+    const manaMultAmt = (entity === player && entity.manaMultiplier && entity.manaMultiplier.turnsLeft > 0 && applyGainBonus) ? entity.manaMultiplier.mult : 1;
+    let totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus) * manaMultAmt));
+    if(entity === player && applyGainBonus) totalGain = styleManaGain(entity, totalGain, baseGain || 0);   // style de jeu (playStyles.js)
+    const cap = getManaCapForColor(entity, color);
+    const after = Math.min(cap, before + totalGain);
+    entity.mana[color] = after;
+    if(entity === player) addUltimateMana(entity, color, totalGain);
+    recalculateManaCaps(entity);
+
+    return {
+        before,
+        after,
+        totalGain,
+        gainBonus,
+        cap,
+        gained: Math.max(0, after - before)
+    };
+}
+
+export function getWeaponIcon(weaponType){
+    return svgIcon(WEAPON_ICONS[weaponType] || 'sword');
+}
+
+// Menu secret : tant qu'actif, les sorts du joueur ne coûtent aucun qì.
+// Indicateur porté par le joueur, non énumérable (jamais sauvegardé) : canEntityCastSpell doit rester autonome.
+export function setCheatFreeSpells(on){ Object.defineProperty(player, 'cheatFreeSpells', { value: !!on, enumerable: false, writable: true, configurable: true }); }
+export function isCheatFreeSpells(){ return player.cheatFreeSpells === true; }
+export function setCheatMaxRage(on){ Object.defineProperty(player, 'cheatMaxRage', { value: !!on, enumerable: false, writable: true, configurable: true }); }
+export function isCheatMaxRage(){ return player.cheatMaxRage === true; }
+
+// Coût réel d'une couleur de qì pour `entity` : le style de jeu du héros le modifie (playStyles.js), jamais celui d'un ennemi.
+export const spellCostFor = (entity, amount) => (entity === player ? styleSpellCost(entity, amount) : enemySpellCost(amount, entity?.spellCostFactor));   // ennemi Expert : sorts moins chers (combatBalance.js)
+
+export function canEntityCastSpell(entity, spell){
+    if(!entity || !entity.mana || !spell) return false;
+    if(entity.cheatFreeSpells === true) return true;
+
+    if(typeof spell.cost === 'number') {
+        return (entity.mana[spell.color] || 0) >= spellCostFor(entity, spell.cost);
+    }
+
+    if(spell.cost && typeof spell.cost === 'object') {
+        return Object.entries(spell.cost).every(([color, amount]) =>
+            (entity.mana[color] || 0) >= spellCostFor(entity, amount)
+        );
+    }
+
+    return true;
+}
+
+export function normalizeBonusTurnValue(value){
+    if(value === true) return 1;
+    if(value === false || value === null || value === undefined) return 0;
+
+    const numericValue = Number(value);
+    if(!Number.isFinite(numericValue)) return 0;
+    return Math.max(0, Math.floor(numericValue));
+}
+
+// Pastille « cadeau ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
+export function bonusTurnBadge(entity){
+    const n = normalizeBonusTurnValue(entity?.bonusTurn);
+    if(n <= 0) return '';
+    return `<span class="bonus-turn-badge" title="${n} tour${n > 1 ? 's' : ''} bonus en réserve">${svgIcon('gift')}×${n}</span>`;
+}
+
+export function addBonusTurn(entity, amount = 1){
+    if(!entity) return 0;
+
+    const currentTurns = normalizeBonusTurnValue(entity.bonusTurn);
+    const turnsToAdd = Math.max(0, Math.floor(Number(amount) || 0));
+    entity.bonusTurn = currentTurns + turnsToAdd;
+    return entity.bonusTurn;
+}
+
+// Couleurs de qì d'un sort : une (coût simple) ou plusieurs (coût multi-qì).
+export function spellColorsOf(spell){
+    if(!spell) return [];
+    if(spell.cost && typeof spell.cost === 'object') return Object.keys(spell.cost);
+    if(Array.isArray(spell.colors) && spell.colors.length > 0) return spell.colors;
+    return spell.color ? [spell.color] : [];
+}
+
+// Coût en HTML : pastille + montant par couleur, « + » entre deux couleurs ; le sort multi-qì est marqué `spell-multi`.
+const MANA_HEX = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1c40f', purple: '#9b59b6' };
+// Coût d'un sort en { couleur: quantité } (forme unique pour `cost` nombre ou objet).
+function spellCostEntries(sp){
+    if(typeof sp?.cost === 'number') return [[sp.color, sp.cost]];
+    if(sp?.cost && typeof sp.cost === 'object') return Object.entries(sp.cost);
+    return [];
+}
+
+// Mini-barre collée à la jauge de rage : un tronçon par couleur de qì requise, rempli selon le qì possédé
+// (tronçon vide / pointillé = couleur manquante).
+export function ultimateManaBarHtml(entity, spell){
+    const parts = ultimateCostEntries(spell).map(([color, need]) => {
+        const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
+        const pct = need > 0 ? Math.min(100, Math.round(have / need * 100)) : 100;
+        const label = `${color} ${Math.min(have, need)}/${need}`;
+        return `<span class="ult-mana-seg${have >= need ? ' ok' : ' missing'}${color === 'yellow' ? ' light' : ''}" style="--seg-c:${MANA_HEX[color] || '#888'};--seg-fill:${pct}%;flex:${Math.max(1, need)}" title="${label}"><span class="ult-mana-num">${Math.min(have, need)}</span></span>`;
+    });
+    return parts.length ? `<div class="ult-mana-bar" aria-hidden="true">${parts.join('')}</div>` : '';
+}
+
+// Fiche de la jauge de Xiūxiān : remplissage, effet de la classe du tour, rappel de la règle de l'ultime.
+export function transeTooltipHtml(entity, ultimate){
+    const filled = Math.floor(entity?.rage || 0);
+    return `<div class="spell-tooltip-title">XIŪXIĀN · ${isInTranse(entity) ? `${Math.max(1, Math.floor(entity.transe || 1))} tour(s) restant(s)` : `${filled} / 100`}</div>`
+        + `<div class="spell-tooltip-line">Jauge du ${CLASS_SHORT[getTurnClass()] || 'héros'} : chaque classe a la sienne. Elle se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher sa Xiūxiān (3 tours).</div>`
+        + `<div class="spell-tooltip-line">${describeTranse(isInTranse(entity) ? entity.transeClass : getTurnClass())}</div>`
+        + (ultimate ? `<div class="spell-tooltip-line">Ultime « ${ultimate.name} » : seulement pendant la Xiūxiān, avec la classe Mage antique choisie pour le tour.</div>` : '');
+}
+
+// Fiche de l'ultime (appui long / survol de la jauge) : nom, coût en qì avec le qì possédé, effet.
+export function getUltimateTooltipHtml(entity, spell){
+    const cost = ultimateCostEntries(spell).map(([color, need]) => {
+        const have = entity?.cheatFreeSpells === true ? need : collectedUltimateMana(entity, color);
+        return `<span class="ult-cost${have >= need ? '' : ' missing'}">${costBadge(color, `${Math.min(have, need)}/${need}`)}</span>`;
+    }).join(' ');
+    return `<div class="spell-tooltip-title">ULTIME · ${spell.name}</div>`
+        + `<div class="spell-tooltip-line">Qì : ${cost}</div>`
+        + getSpellTooltipHtml(spell);
+}
+
+// Gomette de coût : disque de la couleur du qì avec la quantité écrite dedans.
+const costBadge = (color, text) => `<span class="cost-badge mana-${color}${color === 'yellow' ? ' cost-badge-light' : ''}" title="${color}">${text}</span>`;
+export function spellCostHtml(sp, entity = null){
+    // Avec un lanceur : chaque couleur du coût d'un sort multi-qì est marquée atteinte (`met`) ou manquante (`unmet`).
+    if(entity && sp.cost && typeof sp.cost === 'object'){
+        return Object.entries(sp.cost).map(([color, amount]) => { const real = spellCostFor(entity, amount); return `<span class="cost-part ${entity.cheatFreeSpells === true || (entity.mana?.[color] || 0) >= real ? 'met' : 'unmet'}">${costBadge(color, real)}</span>`; }).join('');
+    }
+    const shown = amount => spellCostFor(entity, amount);
+    if(typeof sp.cost === 'number') return costBadge(sp.color, shown(sp.cost));
+    if(sp.cost && typeof sp.cost === 'object'){
+        return Object.entries(sp.cost).map(([color, amount]) => costBadge(color, shown(amount))).join('');
+    }
+    return '';
+}
+// Marque visuelle d'un sort multi-qì : barre dégradée aux deux couleurs (CSS `.spell-multi`).
+export function markMultiManaSpell(el, sp){
+    const colors = spellColorsOf(sp);
+    if(colors.length < 2) return;
+    el.classList.add('spell-multi');
+    el.style.setProperty('--spell-c1', MANA_HEX[colors[0]] || '#888');
+    el.style.setProperty('--spell-c2', MANA_HEX[colors[colors.length - 1]] || '#888');
+}
+
+function getPrimarySpellColor(spell, target = null){
+    if(!spell || typeof spell !== 'object') return null;
+
+    // Sort multi-qì : on retient la couleur la plus pertinente contre la cible (sa faiblesse, sinon une couleur qu'elle ne maîtrise pas)
+    const multi = spellColorsOf(spell);
+    if(multi.length > 1 && target){
+        if(target.weakColor && multi.includes(target.weakColor)) return target.weakColor;
+        const other = multi.find(c => c !== target.preferredColor);
+        if(other) return other;
+    }
+    if(Array.isArray(spell.colors) && spell.colors.length > 0) {
+        return spell.colors[0];
+    }
+    if(Array.isArray(spell.couleurs) && spell.couleurs.length > 0) {
+        return spell.couleurs[0];
+    }
+    if(typeof spell.color === 'string' && spell.color.trim().length > 0) {
+        return spell.color;
+    }
+    if(spell.cost && typeof spell.cost === 'object') {
+        const keys = Object.keys(spell.cost);
+        return keys.length > 0 ? keys[0] : null;
+    }
+
+    return null;
+}
+
+function applyEnemyColorAffinityModifier(target, damage, sourceColor){
+    if(target !== enemy) {
+        return {
+            modifiedDamage: damage,
+            affinityType: null,
+            delta: 0
+        };
+    }
+
+    const color = typeof sourceColor === 'string' ? sourceColor.toLowerCase() : null;
+    const preferredColor = typeof target.preferredColor === 'string' ? target.preferredColor.toLowerCase() : null;
+    const weakColor = typeof target.weakColor === 'string' ? target.weakColor.toLowerCase() : null;
+    const levelDelta = Math.max(0, Math.floor(target.level || 0));
+
+    if(!color || levelDelta <= 0) {
+        return {
+            modifiedDamage: damage,
+            affinityType: null,
+            delta: 0
+        };
+    }
+
+    if(preferredColor && color === preferredColor) {
+        const reduced = Math.max(0, damage - levelDelta);
+        return {
+            modifiedDamage: reduced,
+            affinityType: 'force',
+            delta: damage - reduced
+        };
+    }
+
+    if(weakColor && color === weakColor) {
+        return {
+            modifiedDamage: damage + levelDelta,
+            affinityType: 'faiblesse',
+            delta: levelDelta
+        };
+    }
+
+    return {
+        modifiedDamage: damage,
+        affinityType: null,
+        delta: 0
+    };
+}
+
+// Résultat { damage, crit, block } du dernier sort de dégâts résolu par applyDamage (pour l'animation et le journal).
+let lastSpellStrike = null;
+
+// Dégâts réellement infligés par le dernier sort (bonus, critique et blocage inclus), `fallback` si aucun jet n'a eu lieu.
+export function lastSpellDamage(fallback){
+    return lastSpellStrike ? lastSpellStrike.damage : fallback;
+}
+
+export function applyDamage(target, damage, options = {}){
+    if(!target) return 0;
+    let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    // Fureur du Tigre Blanc (Xiūxiān du Guerrier) : les dégâts de l'arme et des crânes sont multipliés.
+    if(target === enemy && (options.damageSource === 'weapon' || options.damageSource === 'skull')) normalizedDamage *= xiuEffect().physMult || 1;
+    // Talisman de Résonance de l'ennemi : ses sorts frappent plus fort (dégâts directs et dégâts par case des sorts de plateau).
+    if(options.sourceSpell && options.caster === enemy && target === player && normalizedDamage > 0) normalizedDamage = cappedEnemyHit(normalizedDamage, spellAmplifierOf(enemy), player.maxHp, enemy.hitShareCap);   // plafond : pas de coup fatal par le multiplicateur
+
+    // Les sorts de dégâts peuvent aussi être critiques (attaque du lanceur) et bloqués (défense de la cible).
+    lastSpellStrike = null;
+    if(options.sourceSpell && normalizedDamage > 0 && (target === player || target === enemy)) {
+        const caster = target === player ? enemy : player;
+        const weakened = caster === enemy ? Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0)) : 0;
+        // Les ultimes sont inblocables et imparables : on les résout contre une cible sans défense (le critique reste possible).
+        const strike = resolveStrike(normalizedDamage, caster, options.sourceSpell.ultimate ? {} : target, { weakened });
+        normalizedDamage = strike.damage;
+        strike.damage = normalizedDamage;
+        lastSpellStrike = strike;
+        if(strike.crit) log(`${options.sourceSpell.name} : coup critique !`);
+        if(strike.block === 'total') log(`${escapeHtml(target.name)} bloque entièrement ${options.sourceSpell.name}.`);
+        else if(strike.block === 'partial') log(`${escapeHtml(target.name)} pare ${options.sourceSpell.name}.`);
+    }
+
+    // Style de jeu du héros (playStyles.js) : multiplicateurs de dégâts infligés et subis, sans toucher aux statistiques.
+    if(normalizedDamage > 0 && !options.sourceSpell?.ultimate) {
+        if(target === enemy) normalizedDamage = styleDamageDealt(player, normalizedDamage, Boolean(options.sourceSpell));
+        else if(target === player) normalizedDamage = styleDamageTaken(player, normalizedDamage);
+    }
+
+    // Effets d'équipement (gearEffects.js) : bonus du héros contre une altération ou une couleur de sort, résistances selon la source des dégâts.
+    // Ni poison, ni reflet, ni ultime : seulement les coups (crânes, armes, sorts).
+    if(normalizedDamage > 0 && !options.sourceSpell?.ultimate && (options.sourceSpell || options.damageSource === 'skull' || options.damageSource === 'weapon')){
+        if(target === enemy){
+            const boosted = boostedDamageDealt(player, enemy, normalizedDamage, { colors: options.sourceSpell ? spellColorsOf(options.sourceSpell) : [] });
+            if(boosted.damage > normalizedDamage){ log(`Équipement : +${boosted.damage - normalizedDamage} dégâts (${boosted.notes.join(', ')}).`); normalizedDamage = boosted.damage; }
+        } else if(target === player){
+            const source = options.sourceSpell ? 'spell' : options.damageSource;
+            const resisted = resistedDamageTaken(player, normalizedDamage, source);
+            if(resisted.damage < normalizedDamage){ log(`Équipement : −${normalizedDamage - resisted.damage} dégâts subis (résistance ${resisted.pct} %).`); normalizedDamage = resisted.damage; }
+        }
+    }
+
+    // Comportement du boss (enemyBehaviors.js) : armure de givre, garde du chevalier, rupture de l'échauffement du dragon.
+    if(target === enemy && normalizedDamage > 0 && !options.sourceSpell?.ultimate && enemy.behavior){
+        const kind = damageKindOf(options);
+        const adj = adjustDamageTaken(enemy.behavior, normalizedDamage, { kind, colors: options.sourceSpell ? spellColorsOf(options.sourceSpell) : [] });
+        if(adj.notes.length) log(`${escapeHtml(enemy.name)} : ${adj.notes.join(', ')}.`);
+        normalizedDamage = adj.damage;
+        if(adj.melted) playSfx('armorMelt');
+        if(adj.melted && cureStatuses(player, ['chilled']).length) log('La chaleur dissipe le ralentissement : vous retrouvez votre rythme !');
+        if(adj.counterReady) log(`${escapeHtml(enemy.name)} prépare une contre-attaque !`);
+    }
+    if(target === enemy && normalizedDamage > 0 && enemy.bossScript && noteChargeDamage(enemy.bossScript, enemy, normalizedDamage)){
+        log(`Brèche ! ${escapeHtml(enemy.name)} est déséquilibré : ${enemy.bossScript.name} sera interrompu.`);
+    }
+
+    normalizedDamage = cursedDamage(target, normalizedDamage);   // Maudit : dégâts majorés
+    // Calibrage de la durée (combatBalance.js) : multiplicateur des dégâts infligés au héros par l'ennemi (1 tant qu'il n'y a pas de mesures).
+    const enemyDamageScale = (target === player && enemy.damageScale > 0) ? enemy.damageScale : 1;
+    if(enemyDamageScale !== 1 && normalizedDamage > 0) normalizedDamage = Math.max(1, Math.round(normalizedDamage * enemyDamageScale));
+
+    const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
+    const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
+    normalizedDamage = affinityResult.modifiedDamage;
+    if(cheatOneShot && target === enemy && normalizedDamage > 0) normalizedDamage = Math.max(normalizedDamage, (enemy.hp || 0) + (enemy.shield || 0) + 1);
+
+    if(affinityResult.affinityType === 'force' && affinityResult.delta > 0) {
+        log(`${escapeHtml(target.name)} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
+    } else if(affinityResult.affinityType === 'faiblesse' && affinityResult.delta > 0) {
+        log(`${escapeHtml(target.name)} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
+    }
+
+    // Bouclier équipé : absorbe un total de dégâts par combat (`absorbDamage`).
+    if(target === player && normalizedDamage > 0 && player.shieldAbsorbLeft > 0) {
+        const absorbedByShield = Math.min(player.shieldAbsorbLeft, normalizedDamage);
+        player.shieldAbsorbLeft -= absorbedByShield;
+        normalizedDamage -= absorbedByShield;
+        log(`${player.equipment?.leftHand?.name || 'Votre bouclier'} absorbe ${absorbedByShield} dégâts.`);
+    }
+
+    // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de qì.
+    if(target === player && normalizedDamage > 0) {
+        const manaShield = player.statusEffects?.manaShield;
+        const shieldColor = manaShield?.color;
+        const shieldTurns = Math.max(0, Math.floor(manaShield?.turns || 0));
+        if(shieldColor && shieldTurns > 0) {
+            const availableMana = Math.max(0, Math.floor(player.mana?.[shieldColor] || 0));
+            const absorbed = Math.min(availableMana, normalizedDamage);
+            if(absorbed > 0) {
+                player.mana[shieldColor] = availableMana - absorbed;
+                normalizedDamage -= absorbed;
+                log(`Bouclier de qì (${shieldColor}) absorbe ${absorbed} dégâts.`);
+            }
+
+            if(player.mana[shieldColor] <= 0) {
+                delete player.statusEffects.manaShield;
+                log(`Le bouclier de qì se dissipe.`);
+            }
+        }
+    }
+
+    const currentHp = Math.max(0, Math.floor(target.hp || 0));
+    // Tutoriel : plancher de PV de l'adversaire (il ne meurt qu'à l'étape finale, sans gonfler ses PV).
+    const hpFloor = target === enemy ? Math.max(0, Math.min(currentHp, tutorialCallbacks.enemyHpFloor || 0)) : 0;
+    const nextHp = Math.max(hpFloor, currentHp - normalizedDamage);
+    target.hp = nextHp;
+    if(gameState.combatState === 'active') { if(target === enemy) recordDamageDealt(currentHp - nextHp, Date.now(), options.sourceSpell ? 'spell' : (options.damageSource || 'other')); else if(target === player) recordDamageTaken(currentHp - nextHp, (currentHp - nextHp) / (options.damageSource === 'boss' ? 1 : enemyDamageScale * (enemy.bakedDamageMult || 1))); }   // mesures d'équilibrage (combatBalance.js)
+    if(normalizedDamage > 0 && nextHp > 0 && wakeIfAsleep(target)) log(`${escapeHtml(target.name)} se réveille en subissant des dégâts !`);   // Endormi : un dégât réveille
+    // Le téléphone vibre quand le joueur subit des dégâts (plus long si le coup est lourd ; option « Vibrations »).
+    if(target === player && currentHp - nextHp > 0) vibrate(Math.min(260, 70 + Math.round(190 * (currentHp - nextHp) / Math.max(1, player.maxHp))), true);
+
+    // Jauge de rage : se charge quand le joueur perd des PV en combat.
+    if(target === player && currentHp - nextHp > 0 && gameState.combatState === 'active') {
+        addRage(player, boostedRageGain(player, rageFromDamage(currentHp - nextHp, player.maxHp)));
+    }
+
+    if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
+        // Gorgerin antique de la Charrette : une part des dégâts reçus retourne à l'ennemi.
+        const ancientReflect = Math.min(100, stuffTotals(player).reflectPct + (xiuEffect().reflectPct || 0));   // + Muraille de Jade (Xiūxiān du Commandant)
+        if(ancientReflect > 0) {
+            const reflected = Math.floor((normalizedDamage * ancientReflect) / 100);
+            if(reflected > 0) {
+                enemy.hp = Math.max(0, enemy.hp - reflected);
+                log(`${xiuEffect().reflectPct ? 'Muraille de Jade' : 'Gorgerin antique'} : ${reflected} dégâts renvoyés à ${enemy.name}.`);
+            }
+        }
+        const reflectTurns = Math.max(0, Math.floor(player.statusEffects?.reflectDamage || 0));
+        const reflectPercent = Math.max(0, Math.floor(player.statusEffects?.reflectDamagePercent || 0));
+        if(reflectTurns > 0 && reflectPercent > 0) {
+            const reflected = Math.max(0, Math.floor((normalizedDamage * reflectPercent) / 100));
+            if(reflected > 0) {
+                const enemyHpBefore = enemy.hp;
+                const enemyHpAfter = Math.max(0, enemyHpBefore - reflected);
+                enemy.hp = enemyHpAfter;
+                log(`Miroir de Bronze renvoie ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
+            }
+        }
+
+        const counterTurns = Math.max(0, Math.floor(player.statusEffects?.counterOnBlock || 0));
+        const counterDmg = Math.max(0, Math.floor(player.statusEffects?.counterOnBlockDmg || 0));
+        if(counterTurns > 0 && counterDmg > 0 && (player.defense || 0) > 0) {
+            const enemyHpBefore = enemy.hp;
+            const enemyHpAfter = Math.max(0, enemyHpBefore - counterDmg);
+            enemy.hp = enemyHpAfter;
+            log(`Contre-attaque inflige ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
+        }
+    }
+
+    if(target === enemy && normalizedDamage > 0) {
+        const drainTurns = Math.max(0, Math.floor(player.statusEffects?.drainOnHit || 0));
+        const drainAmount = Math.max(0, Math.floor(player.statusEffects?.drainOnHitAmount || 0));
+        if(drainTurns > 0 && drainAmount > 0) {
+            const manaColors = ['red', 'blue', 'green', 'yellow', 'purple'];
+            let remaining = drainAmount;
+            for(const color of manaColors) {
+                if(remaining <= 0) break;
+                const available = Math.max(0, Math.floor(enemy.mana[color] || 0));
+                if(available <= 0) continue;
+                const steal = Math.min(available, remaining);
+                enemy.mana[color] -= steal;
+                remaining -= steal;
+            }
+            const drained = drainAmount - remaining;
+            if(drained > 0) {
+                log(`Flèches Sifflantes drainent ${drained} qì ennemi.`);
+            }
+        }
+    }
+
+    if(gameState.combatState === 'active') {
+        if(player.hp <= 0) {
+            handlePlayerDeath();
+        } else if(enemy.hp <= 0) {
+            handleEnemyDefeated();
+        }
+    }
+
+    return currentHp - nextHp;
+}
+
+function getMissingManaColor(entity, spell){
+    if(!entity || !entity.mana || !spell) return null;
+
+    if(typeof spell.cost === 'number') {
+        return (entity.mana[spell.color] || 0) >= spellCostFor(entity, spell.cost) ? null : spell.color;
+    }
+
+    if(spell.cost && typeof spell.cost === 'object') {
+        for(const [color, amount] of Object.entries(spell.cost)) {
+            if((entity.mana[color] || 0) < spellCostFor(entity, amount)) return color;
+        }
+    }
+
+    return null;
+}
+
+export function consumeSpellMana(entity, spell){
+    if(!entity || !entity.mana || !spell) return;
+    if(entity.cheatFreeSpells === true) return;
+
+    const paid = {};
+    if(typeof spell.cost === 'number') {
+        paid[spell.color] = spellCostFor(entity, spell.cost);
+    } else if(spell.cost && typeof spell.cost === 'object') {
+        Object.entries(spell.cost).forEach(([color, amount]) => { paid[color] = spellCostFor(entity, amount); });
+    }
+    Object.entries(paid).forEach(([color, amount]) => {
+        entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
+    });
+    flyManaSpend(entity === player, paid, { toSpellId: entity === player ? spell.id : null });
+}
+
+function enemyInflictsAlteration(caster, target, spell){
+    const turns = Math.max(1, Math.floor(spell.duration || 1));
+    let label, landed;
+    if(spell.effect === 'preventItems'){
+        label = { icon: 'lock', name: 'Scellé', text: 'armes et objets bloqués' };
+        landed = inflictAlteration(target, 'sealed', turns);
+        if(landed && (spell.weakenAmount ?? 4) > 0) inflictAlteration(target, 'weakened', turns, { weakenedAmount: spell.weakenAmount ?? 4 });
+    } else {
+        const alt = alterationOfSpell(spell);
+        if(!alt) return;
+        label = alt.label;
+        landed = inflictAlteration(target, alt.key, alt.turns, alt.extra);
+        if(spell.alsoChill){   // Paume de Givre : étourdi et ralenti ; le ralentissement est posé même si l'étourdissement est refusé
+            const chilled = inflictAlteration(target, 'chilled', turns);
+            if(chilled && !landed){ label = { icon: 'snow', name: 'Ralenti', text: 'gagne moins de points de combat' }; landed = true; }
+            else if(chilled) label = { icon: 'snow', name: 'Étourdi et ralenti', text: 'perd son prochain tour et gagne moins de points de combat' };
+        }
+    }
+    showCombatAnimation({ icon: label.icon, title: spell.name, damage: landed ? `${label.name} ${turns} tours` : 'Résisté', source: caster.name, target: '→ Vous' }, false);
+    log(landed
+        ? `${escapeHtml(caster.name)} lance ${spell.name} : vous êtes ${label.name.toLowerCase()} pendant ${turns} tours (${label.text}).`
+        : `${escapeHtml(caster.name)} lance ${spell.name}, mais vous y résistez (immunité ou équipement).`);
+}
+
+// Équivalents ennemis des sorts du héros (`enemyOps`, voir enemies.js) : l'ennemi se renforce, vole du qì ou des points d'action, ou affaiblit le héros.
+// Renvoie les textes d'effet (animation) ; chaque effet est aussi écrit dans le journal.
+function runEnemyOps(caster, target, spell){
+    const out = [];
+    const name = escapeHtml(caster.name);
+    (spell.enemyOps || []).forEach(op => {
+        if(op.op === 'buff'){
+            addStatBuff(caster, { attack: op.attack || 0, defense: op.defense || 0, turns: op.turns });
+            out.push(describeStatBuff({ attack: op.attack || 0, defense: op.defense || 0, turns: op.turns }));
+        } else if(op.op === 'status'){
+            caster.statusEffects = caster.statusEffects || {};
+            caster.statusEffects[op.key] = Math.max(caster.statusEffects[op.key] || 0, op.turns);
+            out.push(`${op.key === 'immunityEffects' ? 'Immunisé' : op.key} ${op.turns} tours`);
+        } else if(op.op === 'alter'){
+            const landed = inflictAlteration(target, op.key, op.turns, op.extra || {});
+            out.push(landed ? `Vous : ${op.key === 'weakened' ? 'affaibli' : 'ralenti'} ${op.turns} tours` : 'Résisté');
+        } else if(op.op === 'poison'){
+            const dmg = inflictPoison(target, op.dmg, op.turns);
+            out.push(dmg > 0 ? `Empoisonné (${dmg}/tour)` : 'Résisté');
+        } else if(op.op === 'gainMana'){
+            const colorsToFill = op.color && caster.mana && op.color in caster.mana ? [op.color] : Object.keys(caster.mana || {});
+            colorsToFill.forEach(c => addManaForColor(caster, c, op.amount, { applyGainBonus: false }));
+            out.push(`+${op.amount} qì`);
+        } else if(op.op === 'drainMana'){
+            let total = 0;
+            Object.keys(target.mana || {}).forEach(c => {
+                const lost = Math.min(Math.floor(target.mana[c] || 0), op.amount);
+                if(lost <= 0) return;
+                target.mana[c] -= lost;
+                total += lost;
+                addManaForColor(caster, c, lost, { applyGainBonus: false });
+            });
+            out.push(total ? `-${total} qì` : 'Aucun qì à absorber');
+        } else if(op.op === 'gainCP'){
+            caster.combatPoints = (caster.combatPoints || 0) + op.amount;
+            out.push(`+${op.amount} point${op.amount > 1 ? 's' : ''} d'action`);
+        } else if(op.op === 'stealCP'){
+            const stolen = Math.min(Math.max(0, Math.floor(target.combatPoints || 0)), op.amount);
+            target.combatPoints = (target.combatPoints || 0) - stolen;
+            caster.combatPoints = (caster.combatPoints || 0) + stolen;
+            out.push(stolen ? `Vole ${stolen} point${stolen > 1 ? 's' : ''} d'action` : 'Aucun point à voler');
+        }
+    });
+    if(out.length) log(`${name} lance ${spell.name} : ${out.join(', ')}.`);
+    return out;
+}
+
+export function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
+    if(spell.effect === 'statBuff' && !isPlayerCaster){
+        const buff = { attack: spell.atkBuff || 0, defense: spell.defBuff || 0, turns: spell.duration || 1 };
+        addStatBuff(caster, buff);
+        showCombatAnimation({ icon: buff.attack > 0 ? 'sword' : 'shield', title: spell.name, heal: describeStatBuff(buff), source: caster.name, target: `→ ${caster.name}` }, false);
+        log(`${escapeHtml(caster.name)} lance ${spell.name} : ${describeStatBuff(buff)}.`);
+        return;
+    }
+    // Altérations lancées par l'ennemi contre le héros (Muet, Maudit, Pétrifié, Endormi, Épuisé, Corrompu, Scellé).
+    if(!isPlayerCaster && (spell.effect === 'alterEnemy' || spell.effect === 'preventItems')){
+        enemyInflictsAlteration(caster, target, spell);
+        return;
+    }
+    const opsText = !isPlayerCaster && spell.enemyOps ? runEnemyOps(caster, target, spell) : [];   // équivalents ennemis des sorts du héros (rage, gemmes, bouclier…)
+    const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
+    if(spell.dmg && confusedSelfHit(caster)){ target = caster; log(`${escapeHtml(caster.name)} est confus : ${spell.name} se retourne contre lui !`); }   // Confus : peut subir ses propres attaques
+    let enemyAnimShown = false;   // sort ennemi sans dégâts ni soin : une annonce générique est affichée en fin de fonction
+
+    if(spell.dmg){
+        enemyAnimShown = true;
+        let spellFlags = '';
+        const spellColors = spellColorsOf(spell);
+        const targetResistance = spellColors.length
+            ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-qì : résistance moyenne
+            : (target.resistances?.[spell.color] || 0);
+        let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        if(isPlayerCaster && target.prep?.weaknessRevealed){
+            dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
+        }
+        if(!isPlayerCaster && target.damageReduction > 0) {
+            dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
+        }
+        applyDamage(target, dmg, { sourceSpell: spell, caster });
+        if(lastSpellStrike) {
+            dmg = lastSpellStrike.damage;
+            spellFlags = `${lastSpellStrike.crit ? ' CRITIQUE !' : ''}`;
+        }
+        const spellStrike = lastSpellStrike && (lastSpellStrike.block !== 'none') ? lastSpellStrike : null;
+
+        if(isPlayerCaster) {
+            playSfx('spellHit', { isPlayer: true });
+            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, target: `→ ${target.name}` }, spellStrike, true, dmg);
+            else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, target: `→ ${target.name}` }, true);
+            log(`${spell.name} inflige ${dmg} dégâts.`);
+        } else {
+            playSfx('spellHit', { isPlayer: false });
+            if(spellStrike) showStrikeAnimation({ icon: 'fire', title: spell.name, source: caster.name, target: '→ Vous' }, spellStrike, false, dmg);
+            else showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts${spellFlags}`, source: caster.name, target: '→ Vous' }, false);
+            log(`${escapeHtml(caster.name)} lance ${spell.name} ! ${dmg} dégâts.`);
+        }
+    }
+
+    if(spell.poisonDmg){   // Poison du Lotus Noir : le sort empoisonne sa cible en plus des dégâts
+        const turns = Math.max(1, Math.floor(spell.poisonTurns || 1));
+        const poisonDmg = cappedEnemyHit(spell.poisonDmg, spellAmplifierOf(caster), target.maxHp, caster?.hitShareCap);   // talisman de l'ennemi (plafonné)
+        const poisoned = inflictAlteration(target, 'poisoned', turns, { poisonDamage: poisonDmg });
+        log(poisoned ? `${escapeHtml(target.name)} est empoisonné : ${poisonDmg} dégâts par tour pendant ${turns} tours.` : `${escapeHtml(target.name)} résiste au poison.`);
+    }
+
+    if(spell.effect === 'bonusTurn'){   // Tir Furtif : le lanceur rejoue, quel qu'il soit
+        addBonusTurn(caster, 1);
+        log(`${spell.name} : ${escapeHtml(caster.name)} gagne un tour bonus !`);
+    }
+
+    if(spell.heal){
+        enemyAnimShown = true;
+        const healAmount = spell.heal + intelligenceBonus;
+        const healResult = healEntity(caster, healAmount);   // Corrompu : le soin devient des dégâts
+        if(healResult.harmed === 0) flyHeal(isPlayerCaster, healAmount);
+        playSfx('heal', { isPlayer: isPlayerCaster });
+
+        if(isPlayerCaster) {
+            showCombatAnimation({ icon: 'leaf', title: spell.name, heal: `+${healAmount} HP`, target: '→ Vous' }, true);
+            log(`${spell.name} soigne ${healAmount} HP.`);
+        } else {
+            showCombatAnimation({ icon: 'leaf', title: spell.name, heal: `+${healAmount} HP`, source: caster.name }, false);
+            log(`${escapeHtml(caster.name)} utilise ${spell.name} et soigne ${healAmount} HP.`);
+        }
+    }
+
+    // Tout sort lancé par l'ennemi (tour bonus, défense, statut…) doit montrer son animation, même sans dégâts ni soin.
+    if(!isPlayerCaster && !enemyAnimShown){
+        const detail = spell.effect === 'bonusTurn' ? 'Rejoue !' : (opsText.join(' • ') || null);
+        showCombatAnimation({ icon: 'spark', title: spell.name, heal: detail, source: caster.name, target: `→ ${caster.name}` }, false);
+    }
+}
+
+// joueur
+export let player = {
+    name: "Hou Yi",
+    hp: 100,
+    maxHp: 100,
+    mana: { ...EMPTY_MANA_POOL },
+    maxMana: BASE_MANA_CAP,
+    manaCaps: { red:BASE_MANA_CAP, blue:BASE_MANA_CAP, green:BASE_MANA_CAP, yellow:BASE_MANA_CAP, purple:BASE_MANA_CAP },
+    attack: 15,
+    level: 1,
+    xp: 0,
+    xpToNextLevel: 100,
+    attributes: { strength:0, agility:0, intelligence:0, stamina:0, morale:0 },
+    spells: [],
+    activeSpells: [],  // sorts équipés (max 4)
+    archivedSpells: [], // ids des sorts rangés dans les archives (masqués de la liste des sorts disponibles)
+    equippedUltimate: null,  // id de l'ultime choisi (le seul utilisable en combat, via la jauge de rage)
+    potions: { small: 0, medium: 0, large: 0 },   // potions de soin à usage unique (potions.js)
+    skills: { progress: {}, learned: [], active: [] },   // compétences : PA par compétence, apprises, soutien activé (skills.js)
+    unlockedUltimates: [],   // ultimes de légende (Quatre Gardiens Célestes) gagnés par quête, toutes classes (ultimates.js)
+    availableSpells: [], // sorts débloqués
+    weapons: [],  // armes possédées
+    equippedWeapon: null,  // arme équipée
+    availableWeapons: [],  // armes débloquées
+    equipment: { rightHand: null, leftHand: null, item: null },  // système d'équipement multi-slot
+    stuffOwned: [],  // casques, colliers, bracelets et bagues possédés (stuff.js)
+    stuff: { head: null, neck: null, wrist: null, ring: null },  // stuff porté (ids)
+    combatPoints: 0,
+    bonusTurn: 0,
+    abilities: [],  // aptitudes acquises
+    class: null,  // classe du joueur (sorcerer, assassin, templar, barbarian)
+    statusEffects: {},  // effets de statut actifs (poison, stun, buffs, etc.)
+    defense: 0,  // défense du joueur
+    inventory: [],  // inventaire des objets possédés
+    activeInventoryIndex: null,  // index de l'objet actif n°1
+    activeInventoryIndex2: null,  // index de l'objet actif n°2 (optionnel, d'un autre type que le n°1)
+    sellTags: [],  // ids des objets dont l'excédent est à vendre au prochain marchand
+    tempAttack: 0,  // bonus d'attaque temporaire
+    tempDefense: 0,  // bonus de défense temporaire
+    hasRevive: false,  // possède un effet de résurrection
+    revivePercent: 0,  // pourcentage de HP à la résurrection
+    unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
+    gold: 0,  // pièces d'or accumulées
+    torch: false,  // torche achetée : éclaire les souterrains (world/underground.js)
+    mount: null,  // monture achetée ('horse') : déplacements plus rapides sur les cartes
+    defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
+    pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
+    worldMap: { currentZoneId: null, visitedZoneIds: [] }, // régions découvertes (carte du monde)
+    exploration: null // progression sur la carte d'exploration (voir exploration.js, arène comprise), créée au premier lancement
+};
+
+// Équipe automatiquement une arme de départ si le joueur n'en a encore aucune.
+// Appelé à la création du personnage (choix de classe) et comme garde-fou
+// pour les sauvegardes existantes créées avant l'introduction de cette règle.
+export function grantStartingWeapon(weaponId){
+    if(player.equippedWeapon) return null;
+    if(Array.isArray(player.weapons) && player.weapons.length > 0) return null;
+
+    const weapon = getWeaponById(weaponId) || allWeapons.find(w => w.minLevel <= player.level) || allWeapons[0];
+    if(!weapon) return null;
+
+    if(!player.weapons) player.weapons = [];
+    if(!player.weapons.some(w => w.id === weapon.id)) {
+        player.weapons.push(weapon);
+    }
+    player.equippedWeapon = weapon;
+    if(player.equipment) player.equipment.rightHand = weapon;
+    updateAvailableWeapons();
+    log(`Vous recevez votre arme de départ : ${weapon.name}.`);
+    return weapon;
+}
+
+// Un butin déjà possédé (même id dans le sac) est converti en or au prix de revente, sans message. Retourne vrai si converti.
+export function sellDuplicateItem(item){
+    if(!item || !Array.isArray(player.inventory) || !player.inventory.some(i => i?.id === item.id)) return false;
+    player.gold = (player.gold || 0) + sellPriceOf('item', item);
+    return true;
+}
+
+// Range dans le sac le butin d'un coffre d'exploration (tiré par chestLoot.js : rollChestLoot).
+// Retourne les libellés à afficher en texte (ex. « Bague d'Archer en Jade (rare) »).
+const RARITY_LABEL = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
+export function grantChestLoot({ loot = [] } = {}){
+    if(!Array.isArray(player.inventory)) player.inventory = [];
+    if(!Array.isArray(player.weapons)) player.weapons = [];
+    const labels = [];
+    loot.forEach(entry => {
+        const rarityIcon = getRarityIcon(entry.rarity);
+        const rarityText = RARITY_LABEL[entry.rarity] || entry.rarity;
+        if(entry.kind === 'weapon' && entry.weapon) {
+            if(player.weapons.some(w => w.id === entry.weapon.id)) return;
+            player.weapons.push(entry.weapon);
+            const lvl = entry.weapon.minLevel > player.level ? `, niv. ${entry.weapon.minLevel}` : '';
+            labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
+            log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
+        } else if(entry.kind === 'item' && entry.item) {
+            if(sellDuplicateItem(entry.item)) return;   // déjà possédé : converti en or, sans le dire
+            player.inventory.push({ ...entry.item, applied: false });
+            // Une relique n'a pas d'emplacement : on dit où elle va (bonus permanent, listée dans l'onglet Stuff).
+            labels.push(entry.item.type === 'artifact' ? `${entry.item.name} (relique permanente, ${rarityText}, onglet Stuff)` : `${entry.item.name} (${rarityText})`);
+            log(`${rarityIcon} Trouvé dans un coffre : ${entry.item.name} !`);
+            if(entry.item.type === 'artifact') {
+                applyArtifactEffects(player);
+                log(entry.item.description);
+            }
+        }
+    });
+    if(labels.length) {
+        normalizeActiveInventoryIndex();
+        updateAvailableWeapons();
+        updateInventoryTab();
+    }
+    return labels;
+}
+
+// Range un stuff (casque, collier, bracelet, bague) dans la collection du héros ; renvoie son libellé, ou null s'il l'avait déjà.
+export function grantStuffPiece(id, origin = 'Trouvé'){
+    const s = grantStuff(player, id);
+    if(!s) return null;
+    log(`${getRarityIcon(s.rarity)} ${origin} : ${s.name} (onglet Stuff) !`);
+    document.dispatchEvent(new Event('stuff-changed'));
+    return s.name;
+}
+
+// Récompense de quête : une relique permanente (items.js, `quest: true`), rangée dans le sac et portée si un emplacement est libre.
+export function grantQuestRelic(id, origin = 'Récompense de quête'){
+    const item = allItems.find(i => i.id === id && i.type === 'artifact');
+    if(!item) return null;
+    if(!Array.isArray(player.inventory)) player.inventory = [];
+    if(player.inventory.some(i => i.id === id)) return null;
+    player.inventory.push({ ...item, applied: false });
+    log(`${getRarityIcon(item.rarity)} ${origin} : ${item.name} (relique permanente, onglet Stuff) !`);
+    applyArtifactEffects(player);
+    log(item.description);
+    normalizeActiveInventoryIndex();
+    updateInventoryTab();
+    document.dispatchEvent(new Event('stuff-changed'));
+    return item.name;
+}
+
+// Récompense de quête : un ultime de légende, pour toutes les classes. Retourne le sort s'il vient d'être débloqué, sinon null (déjà acquis ou inconnu).
+export function grantUltimate(id, origin = 'Récompense de quête'){
+    if(!unlockUltimate(player, id)) return null;
+    const spell = getUltimateById(id);
+    log(`✦ ${origin} : ultime « ${spell.name} » débloqué (onglet Sorts, niveau ${spell.minLevel} requis) !`);
+    saveUpdate();
+    if(typeof document !== 'undefined' && document.getElementById('ultimate-spells-list')) updateUltimatePicker();
+    return spell;
+}
+
+// tour actuel
+export let currentTurn = 'player';
+export function setCurrentTurn(value){ currentTurn = value; }   // une liaison importée ne s'assigne pas : les modules extraits passent par ici
+
+// Compagnons actifs transmis par l'exploration (ids comme 'xiao_gui', 'zhi', 'dawa').
+export let activeCompanionIds = new Set();
+export function setActiveCompanions(ids) { activeCompanionIds = new Set(ids || []); }
+
+// Garde-fou : Xiao Gui ne joue qu'une seule fois par tour du joueur.
+export const turnFlags = { foxActed: false, companionsActed: false, pendingOutcome: null, foxPlaying: false };   // état du tour (renard, pouvoirs des compagnons) : objet partagé avec gameTurnFlow.js
+export const isFoxPlaying = () => turnFlags.foxPlaying;
+
+// état du combat (objet pour pouvoir modifier la propriété)
+export const gameState = { 
+    combatState: 'ready', // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
+    turnClass: null,      // classe choisie pour le tour en combat (null = classe du héros) ; jamais sauvegardée
+    forcedClass: null,    // classe imposée par un entraînement (enemy.training), sinon null
+    transeApplied: null,  // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
+    charge: newCharge()   // temps de chargement des classes et de l'ennemi (classCharge.js)
+};
+
+// ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
+// Le joueur choisit une classe par tour (gratuit, avant d'agir) : elle décide des sorts de classe proposés, de l'effet de la Xiūxiān
+// et de la possibilité de lancer l'ultime (sorcier uniquement). Voir transe.js.
+/** Une jauge de Xiūxiān par classe : la jauge affichée est celle de la classe du tour. */
+export function syncGauge(){
+    player.turnClassId = getTurnClass();   // les compétences de classe (skills.js) ne jouent que pour cette classe
+    switchGauge(player, getTurnClass());
+}
+
+export function setTurnClass(classId){
+    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(!usableClasses(player, enemy?.biome, gameState.forcedClass).includes(classId)) return false;   // classes de combat, hors biome bridé, ou classe imposée
+    if(!enemy?.isTutorialEnemy && !isClassReady(gameState.charge, classId)) return false;   // classe encore en chargement
+    gameState.turnClass = classId;
+    syncGauge();
+    applyTranseClassEffect();
+    return true;
+}
+
+// Récompense de quête : une nouvelle classe (classRoster.js). Elle rejoint les classes de combat s'il reste de la place (4 au plus).
+export function grantClassReward(classId, origin = 'Récompense de quête'){
+    const res = grantClass(player, classId);
+    if(!res.added) return null;
+    log(`✦ ${origin} : nouvelle classe « ${CLASS_SHORT[classId]} »${res.inLoadout ? ' (ajoutée à vos classes de combat)' : ' (vos 4 classes de combat sont pleines : échangez-les dans l\'onglet Compétences)'} !`);
+    saveUpdate();
+    return classId;
+}
+
+// Effet de Xiūxiān de la classe du tour, appliqué une seule fois par tour et par classe.
+export function applyTranseClassEffect(){
+    if(!isInTranse(player) || gameState.combatState !== 'active') return;
+    const cls = player.transeClass || getTurnClass();   // l'effet est celui de la classe dont c'est la Xiūxiān, quelle que soit la classe choisie ensuite
+    const effect = transeEffectFor(cls);
+    gameState.transeApplied = gameState.transeApplied || [];
+    if(!cls || !effect.name || gameState.transeApplied.includes(cls)) return;
+    gameState.transeApplied.push(cls);
+    log(`${effect.name} : ${effect.text}.`);
+    if(effect.strikePct && enemy.hp > 1){   // volée gratuite (jamais mortelle : le combat se finit par un vrai coup)
+        const volley = Math.min(enemy.hp - 1, Math.max(1, Math.round((player.equippedWeapon?.damage || player.attack || 10) * effect.strikePct / 100)));
+        applyDamage(enemy, volley, { damageSource: 'other' });
+        log(`Volée des Dix Soleils : ${volley} dégâts à ${enemy.name}.`);
+    }
+    if(effect.dotPct && enemy.hp > 1){   // vapeurs du fourneau
+        const vapor = Math.min(enemy.hp - 1, Math.max(1, Math.round(enemy.maxHp * effect.dotPct / 100)));
+        applyDamage(enemy, vapor, { damageSource: 'other' });
+    }
+    if(effect.actionPoints){ player.combatPoints = (player.combatPoints || 0) + effect.actionPoints; }
+    if(effect.attack || effect.defense){ addStatBuff(player, { attack: effect.attack || 0, defense: effect.defense || 0, turns: 1 }); }
+    if(effect.healPct){ const heal = Math.max(1, Math.round(player.maxHp * effect.healPct / 100)); healEntity(player, heal); flyHeal(true, heal); }
+    if(effect.mana){ Object.keys(player.mana).forEach(color => addManaForColor(player, color, effect.mana, { applyGainBonus: false })); }
+}
+
+/** Effet de la Xiūxiān en cours (celui de la classe qui l'a déclenchée), objet vide si aucune. */
+export function xiuEffect(){
+    return Math.floor(player.transe || 0) > 0 ? transeEffectFor(player.transeClass) : {};
+}
+
+// Déclenchement VOLONTAIRE de la Xiūxiān : jauge pleine, en combat, au tour du joueur (toucher la jauge). Gratuit : ne prend pas le tour.
+export function activateXiuxian(){
+    if(gameState.combatState !== 'active' || currentTurn !== 'player') return false;
+    if(isInTranse(player)){ log('La Xiūxiān est déjà en cours.'); return false; }
+    if(!isRageFull(player)){ log("La jauge de Xiūxiān n'est pas pleine !"); return false; }
+    if(!startTranse(player)) return false;
+    log(`✦ XIŪXIĀN du ${CLASS_SHORT[player.transeClass] || 'héros'} ! ${describeTranse(player.transeClass)}`);
+    gameState.transeApplied = [];
+    applyTranseClassEffect();
+    updateStats();
+    saveUpdate();
+    return true;
+}
+
+// Fin de combat : une Xiūxiān encore en cours s'éteint (la jauge est consommée) ; sinon la jauge est conservée telle quelle pour le prochain combat.
+export function endXiuxianAtCombatEnd(){
+    if(Math.floor(player.transe || 0) > 0) endTranse(player);   // consomme la jauge de la classe de la Xiūxiān
+    gameState.transeApplied = null;
+}
+
+// ── Potions (potions.js) : à usage unique, 1 / 2 / 3 PA en combat selon la taille ──
+export function drinkPotionAction(size){
+    const inCombat = gameState.combatState === 'active';
+    if(inCombat){
+        if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
+        if(rejectRushedAction()) return false;
+        if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
+    }
+    const heal = potionHeal(player, size);
+    const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions });
+    if(!res.ok){ log(res.message); return false; }
+    if(inCombat) actionGuard.markPlayerAction();
+    flyHeal(true, res.healed || heal);
+    log(res.message);
+    if(inCombat){
+        logActiveAction(`boit une ${POTIONS[size].name.toLowerCase()} (coût ${POTIONS[size].actionPoints} PA)`);
+        showCombatAnimation({ icon: 'potion', title: POTIONS[size].name, heal: `+${res.healed} PV`, target: '→ Vous' }, true);
+        updateStats();
+        saveUpdate();
+        finishPlayerTurn();
+    } else {
+        updateStats();
+        saveUpdate();
+        document.dispatchEvent(new Event('potions-changed'));
+    }
+    return true;
+}
+
+// Fin d'un tour du joueur : la liste des classes déjà appliquées repart à zéro.
+export function resetTranseTurn(){
+    gameState.transeApplied = [];
+}
+
+export const combatRewards = {
+    xpGained: 0,
+    xpApplied: false,
+    items: [],
+    skills: [],           // compétences apprises pendant ce combat (écran de résultat)
+    weapons: [],
+    gold: 0,
+    levelsGained: 0,      // niveaux gagnés en fin de combat (écran de résultat)
+    levelReached: 0
+};
+
+const PLAYER_DEATH_DELAY_MS = 900;
+const DEFEAT_REVIVE_PCT = 0.5;   // part des PV max rendue au héros qui reprend après une défaite
+const LEVEL_UP_MAX_HP_GAIN = 5;
+const LEVEL_UP_HEAL_GAIN = 20;
+let pendingPlayerDeathTimeout = null;
+
+function resetCombatRewards(){
+    combatRewards.xpGained = 0;
+    combatRewards.xpApplied = false;
+    combatRewards.items = [];
+    combatRewards.skills = [];
+    combatRewards.weapons = [];
+    combatRewards.gold = 0;
+    combatRewards.levelsGained = 0;
+    combatRewards.levelReached = 0;
+}
+
+export function queueCombatXP(xpAmount){
+    const safeXP = Math.max(0, Math.floor(xpAmount || 0));
+    if(safeXP <= 0) return 0;
+    combatRewards.xpGained += safeXP;
+    return safeXP;
+}
+
+// Récompenses d'un gain de niveau (hors XP) : points d'attribut, PV max et soin. Commun au combat et à l'exploration.
+function applyLevelUpRewards(levelUpResult){
+    let maxHpGained = 0;
+    let hpRecovered = 0;
+    if(levelUpResult?.leveledUp) {
+        const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
+        player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
+
+        maxHpGained = levelsGained * LEVEL_UP_MAX_HP_GAIN;
+        if(maxHpGained > 0) {
+            player.maxHp += maxHpGained;
+        }
+        // croissance innée (attaque après le niveau 18, PV après le niveau 20) : voir progression.js
+        const extras = applyGrowth(player);
+        applyArtifactEffects(player);   // un niveau de plus peut libérer un emplacement de relique
+        maxHpGained += extras.maxHp;
+        if(extras.attack > 0) log(`+${extras.attack} attaque (maîtrise du niveau ${player.level}).`);
+
+        const beforeHeal = player.hp;
+        const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
+        if(healAmount > 0 || maxHpGained > 0) {
+            // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
+            player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
+            hpRecovered = Math.max(0, player.hp - beforeHeal);
+        }
+        // le nouveau niveau déverrouille des pièces : l'onglet Stuff (rendu une seule fois) doit se rafraîchir
+        document.dispatchEvent(new Event('stuff-changed'));
+    }
+    return { maxHpGained, hpRecovered };
+}
+
+// XP gagnée hors combat (quêtes, exploration) : même traitement qu'un niveau gagné en combat — points d'attribut,
+// PV, sorts/armes débloqués, journal, sauvegarde. Renvoie { leveledUp, newLevel, levelsGained } ; l'appelant affiche la
+// notification et ouvre l'écran de choix (`showAttributeMenu`).
+export function grantExplorationXP(amount){
+    const res = addXP(player, Math.max(0, Math.floor(amount || 0)));
+    if(!res.leveledUp) return res;
+    const { maxHpGained, hpRecovered } = applyLevelUpRewards(res);
+    log(`Niveau ${player.level} atteint ! +${maxHpGained} HP max, +${hpRecovered} HP de recuperation.`);
+    if((res.levelsGained || 1) > 1) log(`Vous avez gagné ${res.levelsGained} niveaux d'un coup !`);
+    updateAvailableSpells();
+    updateAvailableWeapons();
+    updateInventoryTab();
+    updateLevelHud();
+    saveUpdate();
+    return res;
+}
+
+export function applyCombatXPAtEnd(){
+    if(combatRewards.xpApplied) {
+        return {
+            xpApplied: 0,
+            leveledUp: false,
+            levelsGained: 0,
+            maxHpGained: 0,
+            hpRecovered: 0
+        };
+    }
+
+    const pendingXP = Math.max(0, Math.floor(combatRewards.xpGained || 0));
+    combatRewards.xpApplied = true;
+
+    if(pendingXP <= 0) {
+        return {
+            xpApplied: 0,
+            leveledUp: false,
+            levelsGained: 0,
+            maxHpGained: 0,
+            hpRecovered: 0
+        };
+    }
+
+    const levelUpResult = addXP(player, pendingXP);
+    const { maxHpGained, hpRecovered } = applyLevelUpRewards(levelUpResult);
+    combatRewards.levelsGained = levelUpResult.leveledUp ? (levelUpResult.levelsGained || 1) : 0;
+    combatRewards.levelReached = player.level;
+
+    return {
+        xpApplied: pendingXP,
+        leveledUp: levelUpResult.leveledUp,
+        levelsGained: levelUpResult.levelsGained,
+        maxHpGained,
+        hpRecovered
+    };
+}
+
+function hideCombatResultScreen(){
+    const screen = document.getElementById('battle-result-screen');
+    if(screen){
+        screen.classList.remove('active');
+    }
+}
+
+function showCombatResultScreen(isVictory){
+    const screen = document.getElementById('battle-result-screen');
+    const title = document.getElementById('battle-result-title');
+    const subtitle = document.getElementById('battle-result-subtitle');
+    const summary = document.getElementById('battle-result-summary');
+    if(!screen || !title || !subtitle || !summary) return;
+
+    title.textContent = isVictory ? 'Victoire' : 'Défaite';
+    subtitle.textContent = isVictory ? 'Combat terminé avec succès.' : 'Vous avez été vaincu.';
+
+    const allLoot = [...combatRewards.weapons, ...combatRewards.items];
+    const lootLines = allLoot.length > 0
+        ? allLoot.map(name => `<li>${name}</li>`).join('')
+        : '<li class="battle-result-empty">Aucun butin</li>';
+
+    const gold = combatRewards.gold || 0;
+    const levelLine = combatRewards.levelsGained > 0
+        ? `<div class="battle-result-levelup">${svgIcon('star')} Niveau ${combatRewards.levelReached} atteint${combatRewards.levelsGained > 1 ? ` (+${combatRewards.levelsGained})` : ''} !</div>`
+        : '';
+
+    // Anti try-hard : après trois défaites d'affilée contre le même boss, un conseil pour progresser autrement.
+    const tip = !isVictory && enemy?.isBoss
+        ? pickBossTip(player.bossLossStreak, { playerLevel: player.level, bossLevel: enemy.level, gold: player.gold, unspentPoints: player.unspentLevelPoints })
+        : null;
+    // Trois sections nettement séparées (cadre, titre, icône) qui se partagent la hauteur de l'écran.
+    const section = (cls, icon, label, body) => `
+        <section class="battle-result-section battle-result-sec-${cls}">
+            <h3 class="battle-result-section-title">${svgIcon(icon)} <span>${label}</span></h3>
+            <div class="battle-result-section-body">${body}</div>
+        </section>`;
+    const lesson = nextLesson();
+    summary.innerHTML = `
+        ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
+        ${section('xp', 'star', 'Expérience', `<div class="battle-result-xp">+${combatRewards.xpGained} XP</div>${levelLine}`)}
+        ${section('gold', 'coin', 'Pièces', `<div class="battle-result-gold">${gold > 0 ? `+${gold} pièce${gold > 1 ? 's' : ''}` : 'Aucune pièce'}</div>`)}
+        ${section('items', 'bag', 'Objets', `<ul class="battle-result-loot">${lootLines}</ul>`)}
+        ${lesson ? section('zh', 'scroll', 'Un mot de chinois', lessonBodyHtml(lesson)) : ''}
+    `;
+    if(lesson) bindLessons(summary.querySelector('.battle-result-sec-zh'));
+
+    screen.classList.add('active');
+}
+
+// Boucles pixel art plein écran derrière le mot (tools/gen-combat-end.py, planches `combatend_<issue>-seq`) : un feu d'artifice pour la
+// victoire, un cœur qui ne bat presque plus pour la défaite. Sans la planche (hors ligne, pas encore chargée), le mot reste sur fond noir.
+const COMBAT_END_SEQUENCES = { victory: 'combatend_victory', defeat: 'combatend_defeat' };
+export function preloadCombatEndSequences(){
+    Object.values(COMBAT_END_SEQUENCES).forEach(id => loadSequence(id).catch(() => null));
+}
+function playCombatEndLoop(fade, isVictory, reduced){
+    loadSequence(COMBAT_END_SEQUENCES[isVictory ? 'victory' : 'defeat']).then(seq => {
+        if(!seq || !fade.isConnected) return;
+        const canvas = document.createElement('canvas');
+        canvas.className = 'combat-end-loop';
+        canvas.width = seq.size[0];
+        canvas.height = seq.size[1];
+        fade.prepend(canvas);
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        ctx.imageSmoothingEnabled = false;
+        const start = performance.now();
+        let shown = -1;
+        const draw = () => {
+            const fi = reduced ? 0 : Math.floor((performance.now() - start) / 1000 * seq.fps) % seq.frames;
+            if(fi !== shown){   // ne redessine qu'au changement d'image de la planche (batterie)
+                shown = fi;
+                const [sx, sy, sw, sh] = sequenceRect(seq, fi);
+                ctx.drawImage(seq.img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            }
+            if(!reduced && fade.isConnected) requestAnimationFrame(draw);
+        };
+        draw();
+    }).catch(() => {});
+}
+
+// Fin de combat : écran noir avec le mot « Victoire » / « Défaite » (la musique de l'issue démarre avec lui), qui s'efface ensuite
+// sur l'écran de résultat. Rappelle `reveal` quand l'écran est plein : c'est là que le résultat se met en place, sous le mot.
+export const COMBAT_END_BANNER_MS = 2600;
+function playCombatEndBanner(isVictory, reveal){
+    document.getElementById('combat-end-fade')?.remove();
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const total = reduced ? 400 : COMBAT_END_BANNER_MS;
+    const fade = document.createElement('div');
+    fade.id = 'combat-end-fade';
+    fade.className = `combat-end-fade ${isVictory ? 'victory' : 'defeat'}`;
+    fade.textContent = isVictory ? 'VICTOIRE' : 'DÉFAITE';
+    fade.style.pointerEvents = 'none';
+    fade.style.animationDuration = `${total}ms`;
+    document.body.appendChild(fade);
+    playCombatEndLoop(fade, isVictory, reduced);
+    setTimeout(reveal, total * 0.7);
+    setTimeout(() => fade.remove(), total);
+}
+
+// Points d'accroche de la phase d'exploration : onVictory est appelé dès la victoire (avant la
+// sauvegarde), onEnd quand l'écran de résultat s'affiche (victoire, défaite ou abandon).
+export const combatHooks = { onVictory: null, onEnd: null };
+// Menu des compagnons (branché par main.js sur l'exploration) : { getChoices(): { companions, activeId }, setActive(id) }.
+export const companionMenuHooks = { getChoices: null, setActive: null };
+
+function finalizeCombatEndUI(isVictory){
+    introToken++;
+    dismissCombatIntro();
+    // Ordre : 1. le mot Victoire / Défaite plein écran (et la musique de l'issue, qui boucle jusqu'au retour à l'exploration),
+    // 2. l'écran de résultat, 3. le bouton « Retour à l'exploration » (apparition retardée, style.css body.combat-ended).
+    document.body.dataset.combatEnd = isVictory ? 'victory' : 'defeat';
+    playCombatEndBanner(isVictory, () => {
+        if(gameState.combatState !== 'finished') return;   // un nouveau combat a démarré entre-temps
+        revealCombatEndUI(isVictory);
+    });
+}
+
+function revealCombatEndUI(isVictory){
+    showCombatResultScreen(isVictory);
+    // Fin de partie : « Retour à l'exploration » est la seule action possible (voir style.css, body.combat-ended).
+    document.body.classList.add('combat-ended');
+
+    const statsContainer = document.querySelector('.stats-container');
+    if(statsContainer) {
+        statsContainer.style.display = 'none';
+    }
+
+    const boardEl = document.getElementById('board');
+    if(boardEl) {
+        boardEl.style.display = 'none';
+    }
+
+    const spellsContainer = document.getElementById('spells-container');
+    if(spellsContainer) {
+        spellsContainer.style.display = 'none';
+    }
+
+    const abandonBtn = document.getElementById('abandon-combat-btn');
+    if(abandonBtn) {
+        abandonBtn.style.display = 'none';
+    }
+
+    const newCombatBtn = document.getElementById('new-combat-btn');
+    if(newCombatBtn) {
+        newCombatBtn.style.display = 'block';
+    }
+
+    const tabs = document.querySelector('.tabs');
+    if(tabs) {
+        tabs.style.display = 'flex';
+    }
+
+    if(isVictory) {
+        log(`Cliquez sur "Retour à l'exploration" pour continuer.`);
+    } else {
+        log("Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
+    }
+    combatHooks.onEnd?.(isVictory);
+}
+
+// Barre de PV d'un combattant : animée par un compteur (_animateHpBar), donc « vide » seulement une fois ce compteur terminé.
+function isFighterHpBarEmpty(isPlayer){
+    const prefix = isPlayer ? 'player' : 'enemy';
+    const bar = document.querySelector(`#${prefix}-stats .hp-bar-container progress`);
+    return isHpBarEmpty({
+        shownValue: bar ? Number(bar.value) : null,
+        animating: Boolean(_activeCounters[`${prefix}-hp-current`])
+    });
+}
+
+// Attend que la barre de PV du vaincu (l'adversaire en cas de victoire, le joueur en cas de défaite) soit réellement
+// arrivée à zéro à l'écran (transition terminée, filet de sécurité de 6 s), puis une courte pause avant l'écran de fin.
+// Un abandon (PV > 0) n'attend rien.
+function whenLoserHpBarEmpty(isVictory, callback){
+    const loser = isVictory ? enemy : player;
+    if(!(loser?.hp <= 0)){ callback(); return; }
+    updateStats();
+    waitUntil(() => isFighterHpBarEmpty(!isVictory), () => setTimeout(callback, HP_BAR_EMPTY_PAUSE_MS * animationFactor()));
+}
+
+export function showEndCombatAnimation(isVictory){
+    noteCasualOutcome(isVictory);   // mode Casual : série de défaites, équipement plus défensif si le héros perd trop
+    whenLoserHpBarEmpty(isVictory, () => {
+        if(gameState.combatState !== 'finished') return;   // un nouveau combat a démarré entre-temps
+        // Victoire comme défaite : le mot plein écran, puis l'écran de résultat, sans second écran « Cliquez pour continuer ».
+        finalizeCombatEndUI(isVictory);
+    });
+}
+
+// règles de combat
+export const combatCost = 5;             // points nécessaires pour une attaque normale
+export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
+
+// ennemi courant (combatPoints pour attaquer)
+export let enemy = { name:"Ennemi", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
+
+// si le joueur meurt, on restaure ses PV et réinitialise le combat ; `keepHp` : phase enchaînée d'un duel, les PV restent ceux du combat précédent
+export function restartCombat({ keepHp = true } = {}){
+    actionGuard.reset();
+    introToken++;
+    turnFlags.foxActed = false;
+    turnFlags.companionsActed = false;
+    turnFlags.pendingOutcome = null;
+    turnFlags.foxPlaying = false;
+    dismissCombatIntro();
+    if(pendingPlayerDeathTimeout) {
+        clearTimeout(pendingPlayerDeathTimeout);
+        pendingPlayerDeathTimeout = null;
+    }
+
+    // Les PV ne reviennent plus tout seuls : le héros entre dans le combat avec les PV qu'il avait en sortant du précédent (potions : potions.js).
+    // Un héros tombé au combat précédent est relevé à la moitié de ses PV max. `keepHp: false` : réinitialisation complète (tests, outils).
+    player.hp = !keepHp ? player.maxHp : (player.hp <= 0 ? Math.max(1, Math.ceil(player.maxHp * DEFEAT_REVIVE_PCT)) : Math.max(1, Math.min(player.hp, player.maxHp)));
+    player.combatPoints = 0;
+    player.bonusTurn = 0;
+    // La jauge de Xiūxiān est conservée d'un combat à l'autre ; seul son état actif (3 tours) ne l'est pas. Les points de Bataille la remontent au moins à leur niveau.
+    player.transe = 0; player.transeClass = null;
+    gameState.turnClass = null;   // la classe du tour revient à celle du héros
+    gameState.charge = newCharge();   // tout le monde est prêt au début du combat
+    gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
+    gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
+    if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
+    gameState.transeApplied = null;
+    gameState.doubleCastUsed = false;
+    syncGauge();   // une jauge par classe : on affiche celle de la classe du tour
+    player.rage = Math.max(Math.floor(player.rage || 0), startingRage(player));
+    resetUltimateMana(player);
+    enemy.hp = enemy.maxHp;
+    enemy.combatPoints = 0;
+    enemy.bonusTurn = 0;
+    // Réinitialiser le qì à 0
+    player.mana = { ...EMPTY_MANA_POOL };
+    enemy.mana = { ...EMPTY_MANA_POOL };
+    // Réinitialiser les bonus temporaires
+    if(player.tempAttack) {
+        player.attack -= player.tempAttack;
+        player.tempAttack = 0;
+    }
+    if(player.tempDefense) {
+        player.defense -= player.tempDefense;
+        player.tempDefense = 0;
+    }
+    const wornShield = player.equipment?.leftHand;
+    player.shieldAbsorbLeft = wornShield?.type === 'shield' ? (wornShield.absorbDamage || 0) : 0;
+    player.hasRevive = false;
+    player.revivePercent = 0;
+    player.itemBuffs = {};
+    player.regenEffect = null;
+    player.lifesteal = 0;
+    player.manaMultiplier = null;
+    player.damageReduction = 0;
+    player.tempCritChance = 0;
+    clearStatBuffs(player);
+    clearStatBuffs(enemy);
+    if(player.statusEffects){ clearEnvironmentStatuses(player); delete player.statusEffects.poisoned; delete player.statusEffects.poisonDamage; delete player.statusEffects.controlResist; }   // le poison et la résistance aux contrôles ne survivent pas au combat
+    // Réinitialiser le statut du jeu
+    setGameStarted(false);
+    // Appliquer les aptitudes de début de combat
+    applyStartingAbilities();
+    
+    log(keepHp ? `Le duel se poursuit sans répit : vous gardez vos ${player.hp}/${player.maxHp} PV.` : "Combat réinitialisé, vous êtes en pleine santé.");
+    updateStats();
+    saveUpdate();
+}
+
+// Gérer la mort du joueur
+export function handlePlayerDeath(){
+    if(gameState.combatState === 'finished') {
+        return;
+    }
+
+    // Vérifier si le joueur a un effet de résurrection
+    if(player.hasRevive && player.revivePercent > 0) {
+        const reviveHp = Math.floor(player.maxHp * player.revivePercent);
+        player.hp = reviveHp;
+        player.hasRevive = false;
+        player.revivePercent = 0;
+        log(`Vous êtes ressuscité avec ${reviveHp} HP !`);
+        updateStats();
+        saveUpdate();
+        return;
+    }
+    saveCombatRecord(finishCombatRecord('defeat'));   // mesure d'équilibrage : les défaites comptent autant que les victoires
+    endXiuxianAtCombatEnd();
+    
+    const xpResult = applyCombatXPAtEnd();
+    if(xpResult.xpApplied > 0) {
+        log(`${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
+        if(xpResult.leveledUp) {
+            log(`Niveau ${player.level} atteint en fin de combat.`);
+            if(xpResult.maxHpGained > 0) {
+                log(`+${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
+            }
+            if(xpResult.levelsGained > 1) {
+                log(`Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
+            }
+            updateAvailableSpells();
+            updateAvailableWeapons();
+            updateInventoryTab();
+            showAttributeMenu();
+        }
+    }
+    log("Vous êtes mort ! Le combat est terminé.");
+    if(enemy?.isBoss) player.bossLossStreak = recordBossLoss(player.bossLossStreak, enemy.mapEnemyId || enemy.name);
+    playSfx('defeat');
+    
+    // Marquer le combat comme terminé
+    gameState.combatState = 'finished';
+    updateStats();
+    saveUpdate();
+
+    // Laisse le coup fatal visible avant l'écran de défaite.
+    pendingPlayerDeathTimeout = setTimeout(() => {
+        pendingPlayerDeathTimeout = null;
+        showEndCombatAnimation(false);
+    }, PLAYER_DEATH_DELAY_MS);
+}
+
+const syncCombatRecordPause = () => { if(document.hidden || document.documentElement.classList.contains('focus-paused')) pauseCombatRecord(); else resumeCombatRecord(); };
+document.addEventListener('visibilitychange', syncCombatRecordPause);
+document.addEventListener('focuspausechange', syncCombatRecordPause);   // page masquée : le chrono du combat s'arrête
+
+// démarre un nouveau combat
+export function startNewCombat(selectedEnemy = null){
+    runCasualAutopilot();   // mode Casual : équipement choisi par le jeu avant le combat
+    playSfx('uiClick');
+    document.body.classList.remove('combat-ended');
+    delete document.body.dataset.combatEnd;
+    preloadCombatEndSequences();   // les boucles de fin de combat sont prêtes avant la fin du combat
+    gameState.combatState = 'active';
+    beginCombatRecord({ enemyLevel: selectedEnemy?.level || 0, playerLevel: player.level || 0, boss: Boolean(selectedEnemy?.isBoss), enemyMaxHp: selectedEnemy?.maxHp || 0 });
+    resetSpellCooldowns();
+    setBoardSize((selectedEnemy?.isBoss && !selectedEnemy.isTutorialEnemy) ? BOSS_BOARD_SIZE : BASE_BOARD_SIZE);   // plateau 10×10 contre un boss, 8×8 sinon (et pour le duel-tutoriel, dont le plateau figé est en 8×8)
+    window.dispatchEvent(new CustomEvent('houyi:combat-start', { detail: { boss: Boolean(selectedEnemy?.isBoss) } }));   // le jingle de boss a déjà joué avec l'annonce du combat
+    ensureCombatUsableActiveItem();
+    resetCombatRewards();
+    hideCombatResultScreen();
+    // Cacher le bouton "Nouveau Combat"
+    const newCombatBtn = document.getElementById('new-combat-btn');
+    if(newCombatBtn) {
+        newCombatBtn.style.display = 'none';
+    }
+    // Afficher le bouton "Abandonner"
+    const abandonBtn = document.getElementById('abandon-combat-btn');
+    if(abandonBtn) {
+        abandonBtn.style.display = 'inline-block';
+    }
+    // Cacher les onglets pendant le combat
+    const tabs = document.querySelector('.tabs');
+    if(tabs) {
+        tabs.style.display = 'none';
+    }
+    // Préparer le combat (les PV sont conservés)
+    restartCombat({ keepHp: true });   // PV conservés d'un combat à l'autre
+    newEnemy(selectedEnemy);
+}
+
+// Abandonner le combat en cours
+export function abandonCombat(){
+    if(gameState.combatState === 'active') saveCombatRecord(finishCombatRecord('abandon'));   // gardé à part (exclu des mesures)
+    else abandonCombatRecord();
+    if(gameState.combatState !== 'active') {
+        return;
+    }
+    
+    const xpResult = applyCombatXPAtEnd();
+    if(xpResult.xpApplied > 0) {
+        log(`${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
+        if(xpResult.leveledUp) {
+            log(`Niveau ${player.level} atteint en fin de combat.`);
+            if(xpResult.maxHpGained > 0) {
+                log(`+${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
+            }
+            if(xpResult.levelsGained > 1) {
+                log(`Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
+            }
+            updateAvailableSpells();
+            updateAvailableWeapons();
+            updateInventoryTab();
+            showAttributeMenu();
+        }
+    }
+    saveUpdate();
+
+    log("Vous avez abandonné le combat...");
+    playSfx('defeat');
+    
+    // Marquer le combat comme terminé
+    gameState.combatState = 'finished';
+    showEndCombatAnimation(false);
+}
+
+
+// bibliothèque des aptitudes
+export const allAbilities = [
+    {id:"fireAffinity", name:"Affinité de Feu", description:"Commence le combat avec 10 qì rouge", startMana:{red:10}},
+    {id:"iceAffinity", name:"Affinité de Glace", description:"Commence le combat avec 10 qì bleu", startMana:{blue:10}},
+    {id:"natureAffinity", name:"Affinité de Nature", description:"Commence le combat avec 10 qì vert", startMana:{green:10}},
+    {id:"stormAffinity", name:"Affinité de Foudre", description:"Commence le combat avec 10 qì jaune", startMana:{yellow:10}},
+    {id:"shadowAffinity", name:"Affinité d'Ombre", description:"Commence le combat avec 10 qì violet", startMana:{purple:10}},
+    {id:"elementalist", name:"Maître des Cinq Éléments", description:"Commence le combat avec 5 qì de chaque couleur", startMana:{red:5, blue:5, green:5, yellow:5, purple:5}},
+    {id:"fireMastery", name:"Maîtrise du Feu", description:"+2 qì rouge par match (5 au lieu de 3)"},
+    {id:"iceMastery", name:"Maîtrise de la Glace", description:"+2 qì bleu par match (5 au lieu de 3)"},
+    {id:"natureMastery", name:"Maîtrise de la Nature", description:"+2 qì vert par match (5 au lieu de 3)"},
+    {id:"stormMastery", name:"Maîtrise de la Foudre", description:"+2 qì jaune par match (5 au lieu de 3)"},
+    {id:"shadowMastery", name:"Maîtrise de l'Ombre", description:"+2 qì violet par match (5 au lieu de 3)"}
+];
+
+// bibliothèque des sorts (source: spells.json via spells.js)
+export const allSpells = spellsCatalog;
+
+// Fonction de chargement de la sauvegarde
+export function loadGameData() {
+    const savedPlayer = localStorage.getItem('player');
+    if (savedPlayer) {
+        try {
+            const loaded = JSON.parse(savedPlayer);
+            // Fusionner les données sauvegardées avec les valeurs par défaut
+            player.name = loaded.name ?? player.name;
+            player.hp = loaded.hp ?? player.hp;
+            player.maxHp = loaded.maxHp ?? player.maxHp;
+            player.mana = { ...player.mana, ...(loaded.mana || {}) };
+            player.maxMana = loaded.maxMana ?? player.maxMana;
+            player.attack = loaded.attack ?? player.attack;
+            player.level = loaded.level ?? player.level;
+            player.xp = loaded.xp ?? player.xp;
+            player.xpToNextLevel = loaded.xpToNextLevel ?? player.xpToNextLevel;
+            player.attributes = { ...player.attributes, ...(loaded.attributes || {}) };
+            player.spells = loaded.spells ?? player.spells;
+            player.activeSpells = loaded.activeSpells ?? player.activeSpells;
+            player.archivedSpells = Array.isArray(loaded.archivedSpells) ? loaded.archivedSpells.filter(id => typeof id === 'string') : [];
+            player.equippedUltimate = loaded.equippedUltimate ?? player.equippedUltimate;
+            player.unlockedUltimates = normalizeUnlockedUltimates(loaded.unlockedUltimates);
+            player.skills = loaded.skills;
+            normalizeSkills(player);
+            player.classes = loaded.classes;
+            normalizeRoster(player);
+            player.potions = loaded.potions;
+            normalizePotions(player);
+            // Une jauge de Xiūxiān par classe, conservée d'un combat à l'autre (transe.js). Ancienne sauvegarde : l'unique jauge revient à la classe du héros.
+            player.rages = (loaded.rages && typeof loaded.rages === 'object') ? loaded.rages : (loaded.rage ? { [loaded.class || 'assassin']: loaded.rage } : {});
+            player.gaugeClass = null;
+            switchGauge(player, loaded.class || 'assassin');
+            // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
+            (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
+            player.availableSpells = loaded.availableSpells ?? player.availableSpells;
+            // Armes : toujours les fiches du catalogue actuel (les anciens ids de sabres, haches… sont convertis en arcs ; les inconnues sont retirées).
+            const catalogWeapon = w => (w?.id ? getWeaponById(w.id) : null);
+            player.weapons = (loaded.weapons ?? []).map(catalogWeapon).filter((w, i, arr) => w && arr.findIndex(x => x?.id === w.id) === i);
+            player.equippedWeapon = catalogWeapon(loaded.equippedWeapon);
+            player.availableWeapons = loaded.availableWeapons ?? player.availableWeapons;
+            player.combatPoints = loaded.combatPoints ?? player.combatPoints;
+            player.bonusTurn = normalizeBonusTurnValue(loaded.bonusTurn ?? player.bonusTurn);
+            player.abilities = loaded.abilities ?? player.abilities;
+            player.class = loaded.class ?? player.class;
+            player.playStyle = null;   // le choix du style de jeu a été retiré : les anciennes sauvegardes repartent sans style
+            player.statusEffects = loaded.statusEffects ?? player.statusEffects;
+            player.defense = loaded.defense ?? player.defense;
+            player.inventory = loaded.inventory ?? player.inventory;
+            player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
+            player.equipment.rightHand = player.equippedWeapon;
+            player.stuffOwned = loaded.stuffOwned ?? [];
+            player.stuff = loaded.stuff ?? player.stuff;
+            migrateShadowCollar(player);   // avant normalizeStuff, qui oublie les ids inconnus
+            normalizeStuff(player);
+            if(player.equipment.leftHand && player.equipment.leftHand.type !== 'shield') player.equipment.leftHand = catalogWeapon(player.equipment.leftHand);
+            player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
+            player.activeInventoryIndex2 = loaded.activeInventoryIndex2 ?? null;
+            player.tempAttack = loaded.tempAttack ?? player.tempAttack;
+            player.tempDefense = loaded.tempDefense ?? player.tempDefense;
+            player.hasRevive = loaded.hasRevive ?? player.hasRevive;
+            player.revivePercent = loaded.revivePercent ?? player.revivePercent;
+            player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
+            player.gold = loaded.gold ?? player.gold;
+            normalizeXP(player);   // recale l'XP sur la courbe actuelle sans changer le niveau
+            player.growthLevel = Number.isInteger(loaded.growthLevel) ? loaded.growthLevel : undefined;
+            applyGrowth(player);   // rattrapage unique de la croissance innée (niveaux > 18)
+            player.mount = loaded.mount === 'horse' ? 'horse' : null;
+            player.torch = loaded.torch === true;
+            player.compass = loaded.compass === true;
+            player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
+            player.sellTags = Array.isArray(loaded.sellTags) ? loaded.sellTags.filter(t => typeof t === 'string') : [];
+            player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
+            player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)
+                ? loaded.defeatedBossTiers
+                    .map(tier => Math.max(5, Math.floor(Number(tier) || 0)))
+                    .filter((tier, idx, arr) => tier > 0 && arr.indexOf(tier) === idx)
+                    .sort((a, b) => a - b)
+                : [];
+            player.pendingBoss = loaded.pendingBoss && loaded.pendingBoss.enemy
+                ? loaded.pendingBoss
+                : null;
+            player.worldMap = {
+                currentZoneId: loaded.worldMap?.currentZoneId ?? null,
+                visitedZoneIds: Array.isArray(loaded.worldMap?.visitedZoneIds) ? loaded.worldMap.visitedZoneIds : []
+            };
+            player.exploration = loaded.exploration && typeof loaded.exploration === 'object'
+                ? loaded.exploration
+                : null;
+            clampManaToCaps(player);
+            console.log('Données du joueur chargées depuis le localStorage');
+            if (player.class) {
+                console.log(`Classe chargée: ${player.class}`);
+            }
+        } catch (e) {
+            console.error('Erreur lors du chargement de la sauvegarde:', e);
+        }
+    }
+    // Initialiser l'XP si nécessaire (pour les sauvegardes anciennes)
+    initializeXP(player);
+}
+
+export function normalizeActiveInventoryIndex() {
+    if(!Array.isArray(player.inventory) || player.inventory.length === 0) {
+        player.activeInventoryIndex = null;
+        player.activeInventoryIndex2 = null;
+        return;
+    }
+
+    if(!Number.isInteger(player.activeInventoryIndex) || player.activeInventoryIndex < 0 || player.activeInventoryIndex >= player.inventory.length) {
+        player.activeInventoryIndex = 0;
+    }
+    if(player.inventory[player.activeInventoryIndex]?.type === 'shield') {
+        const usable = player.inventory.findIndex(item => item?.type !== 'shield');
+        player.activeInventoryIndex = usable >= 0 ? usable : null;
+    }
+    // Objet n°2 : un objet d'usage du sac, différent du n°1 (sinon l'emplacement se vide)
+    const second = player.activeInventoryIndex2;
+    const item2 = Number.isInteger(second) ? player.inventory[second] : null;
+    if(!item2 || second === player.activeInventoryIndex || item2.type === 'shield' || item2.type === 'artifact' || item2.id === player.inventory[player.activeInventoryIndex]?.id) {
+        player.activeInventoryIndex2 = null;
+    }
+}
+
+export function getSecondActiveInventoryItem() {
+    normalizeActiveInventoryIndex();
+    return Number.isInteger(player.activeInventoryIndex2) ? player.inventory[player.activeInventoryIndex2] || null : null;
+}
+
+export function getActiveInventoryItem() {
+    normalizeActiveInventoryIndex();
+    if(player.activeInventoryIndex === null) return null;
+    return player.inventory[player.activeInventoryIndex] || null;
+}
+
+function ensureCombatUsableActiveItem() {
+    normalizeActiveInventoryIndex();
+    if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
+
+    const activeItem = getActiveInventoryItem();
+    if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
+
+    const consumableIndex = player.inventory.findIndex(item => (item?.type === 'consumable' || item?.type === 'reusable') && player.level >= (item.minLevel || 1));
+    if(consumableIndex >= 0) {
+        player.activeInventoryIndex = consumableIndex;
+        const combatItem = player.inventory[consumableIndex];
+        if(combatItem?.name) {
+            log(`Objet actif pour le combat : ${combatItem.name}.`);
+        }
+    }
+}
+
+// Chargement de la sauvegarde au démarrage
+loadGameData();
+// Appliquer les effets des artefacts
+normalizeRelics(player);   // sauvegarde ancienne : doublons et reliques au-delà des emplacements du niveau retirés
+applyArtifactEffects(player);
+repairMaxMana(player, BASE_MANA_CAP);   // la réserve de base se déduit des reliques portées, jamais d'une valeur sauvegardée dérivée
+normalizeActiveInventoryIndex();
+clampManaToCaps(player);
+
+// interface minimale
+
+
+
+// -------------------------------------
+// Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
+// ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
+export function isPlayerActionBlocked(){
+    return currentTurn !== 'player' || turnFlags.foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
+}
+
+// Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
+// armes, objets, sorts (colonne #player-spells grisée ; l'appui long / survol des infobulles reste possible) et abandon ; l'actionGuard refuse aussi
+// tout clic. Réactivés dès que le tour revient au joueur. Appelé à chaque updateStats().
+export function syncPlayerControlsLock(){
+    const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || turnFlags.foxPlaying);
+    actionGuard.setTurnLocked(locked);
+    if(typeof document === 'undefined') return locked;
+    const column = document.getElementById('player-spells');
+    if(column){
+        column.classList.toggle('turn-locked', locked);
+        column.setAttribute('aria-disabled', String(locked));
+        column.removeAttribute('inert');   // la colonne reste interactive : appui long / survol des sorts à tout moment
+    }
+    const abandonBtn = document.getElementById('abandon-combat-btn');
+    if(abandonBtn) abandonBtn.disabled = locked;
+    return locked;
+}
+
+// Renvoie true (et ignore silencieusement le clic) si l'action doit être refusée.
+export function rejectRushedAction(){
+    if(!isPlayerActionBlocked()) return false;
+    return true;
+}
+
+// -------------------------------------
+// Combat avec arme
+export function useWeapon(hand = 'right'){
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
+    if(rejectRushedAction()) return;
+    if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
+    const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
+    if(!weapon){ log("Aucune arme équipée !"); return; }
+    if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
+    if(player.combatPoints < weapon.actionPoints){ 
+        log(`Il faut ${weapon.actionPoints} points d'action pour utiliser ${weapon.name}.`); 
+        return; 
+    }
+    if(player.hp<=0){ handlePlayerDeath(); return; }
+    if(player.level < weapon.minLevel){ 
+        log(`Nécessite niveau ${weapon.minLevel} pour utiliser ${weapon.name}`); 
+        return; 
+    }
+    
+    actionGuard.markPlayerAction();
+    player.combatPoints -= weapon.actionPoints;
+    logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
+    strikeWithWeapon(weapon);
+    tutorialCallbacks.onWeaponUsed?.();
+    finishPlayerTurn();
+}
+
+// Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
+function strikeWithWeapon(weapon, { free = false } = {}){
+    let dmg = weapon.damage;
+    const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
+    if(biomeBonus > 0) {
+        dmg += biomeBonus;
+        log(`${weapon.name} est dans son biome (${BIOME_LABELS[weapon.biome]}) : +${biomeBonus} dégâts.`);
+    }
+
+    if((player.statusEffects?.flameblade || 0) > 0) {
+        const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
+        dmg += flameBonus;
+        delete player.statusEffects.flameblade;
+        log(`Lame de Feu Pourpre ajoute ${flameBonus} dégâts au coup d'arme.`);
+    }
+
+    // Attaque = chance de critique, défense de l'ennemi = chance de blocage (voir combatStats.js)
+    const selfHit = confusedSelfHit(player);   // Confus : le coup se retourne contre le héros
+    const strike = resolveStrike(dmg, player, selfHit ? player : enemy);
+    const isCrit = strike.crit;
+    const blockText = blockLabel(strike.block);
+    dmg = strike.damage;
+
+    if(selfHit) log(`Vous êtes confus : ${weapon.name} se retourne contre vous !`);
+    applyDamage(selfHit ? player : enemy, dmg, { damageSource: 'weapon' });
+    playSfx('weaponHit', { isPlayer: true, rarity: weapon.rarity });
+
+    // Vol de vie
+    if(player.lifesteal > 0) {
+        const heal = Math.floor(dmg * player.lifesteal);
+        if(healEntity(player, heal).harmed === 0){
+            flyHeal(true, heal);
+            log(`Vol de vie : +${heal} HP.`);
+        }
+    }
+
+    const icon = getWeaponIcon(weapon.type);
+
+    showStrikeAnimation({ icon, title: weapon.name, target: `→ ${enemy.name}` }, strike, true, dmg);
+    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${blockText ? ` L'ennemi ${blockText === 'BLOQUÉ !' ? 'bloque le coup' : 'pare le coup'}.` : ''}`);
+}
+
+
+export function castSpell(spellId){
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(rejectRushedAction()) return;
+    const spell=combatSpellList().find(s=>s.id===spellId);   // sorts de la classe choisie pour ce tour + commandes des compétences apprises
+    if(!spell){ log("Sort indisponible !"); return; }
+    if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
+    if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    
+    if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un sort."); return; }
+    if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
+    if(!canEntityCastSpell(player, spell)){
+        const missingColor = getMissingManaColor(player, spell);
+        log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
+        return;
+    }
+    actionGuard.markPlayerAction();
+    consumeSpellMana(player, spell);
+    if(xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour
+        gameState.doubleCastUsed = true;
+        addBonusTurn(player, 1);
+        log('Double Talisman : vous pourrez lancer un second sort ce tour.');
+    }
+    startSpellCooldown(spell);
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
+    
+    // Gérer les sorts avec effet spécial
+    if(spell.effect) {
+        logActiveAction(`lance le sort ${spell.name} (effet special)`);
+        // Import dynamique pour éviter les dépendances circulaires
+        import('./classSpellEffects.js').then(async module => {
+            const boardBefore = module.snapshotBoard();
+            if(await module.applyClassSpellEffect(spell)) {
+                saveUpdate();
+                tutorialCallbacks.onSpellCast?.();
+                // Plateau modifié : on attend la régénération, les combos qui suivent profitent au lanceur.
+                module.endPlayerSpellTurn(boardBefore);
+            } else {
+                saveUpdate();
+            }
+        });
+        return;
+    }
+    
+    // Sorts standards (dégâts ou soins)
+    logActiveAction(`lance le sort ${spell.name}`);
+    applyStandardSpellEffects(player, enemy, spell, true);
+    
+    updateStats();
+    saveUpdate();
+
+    // Notifier le tutoriel qu'un sort a été lancé
+    tutorialCallbacks.onSpellCast?.();
+
+    finishPlayerTurn();
+}
+
+// Lance un ultime : jauge de rage pleine + qì requis ; la jauge retombe à 0. La cinématique plein écran éventuelle
+// (voir `playUltimateCinematic`) se joue avant l'effet.
+export async function castUltimate(spellId){
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(rejectRushedAction()) return;
+    const spell = getUltimateById(spellId);
+    if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
+    if(player.level < spell.minLevel && player.cheatAllUltimates !== true){ log(`Nécessite niveau ${spell.minLevel}`); return; }
+    if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un ultime."); return; }
+    if(!classAllowsUltimate(getTurnClass())){ log("L'ultime n'est lançable qu'en choisissant la classe Mage antique (sorcier) pour ce tour."); return; }
+    if(!isInTranse(player)){ log("La Xiūxiān n'est pas déclenchée : la jauge doit d'abord se remplir !"); return; }
+    if(player.cheatMaxRage !== true && player.transeClass !== 'sorcerer'){ log("L'ultime demande la Xiūxiān du Mage : remplissez la jauge du Mage, puis déclenchez-la."); return; }
+    if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
+        const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
+        log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
+        return;
+    }
+    actionGuard.markPlayerAction();
+    if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
+    resetRage(player);
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
+    logActiveAction(`lance l'ultime ${spell.name}`);
+    updateStats();
+    await playUltimateCinematic(spell);
+    const module = await import('./classSpellEffects.js');
+    const boardBefore = module.snapshotBoard();
+    if(await module.applyClassSpellEffect(spell)) {
+        saveUpdate();
+        module.endPlayerSpellTurn(boardBefore);
+    } else {
+        saveUpdate();
+    }
+}
+
+// API de test: permet de simuler n'importe quel sort sans contraintes de niveau/mana.
+export async function castSpellForCheat(spellId, options = {}){
+    const consumeTurn = options.consumeTurn === true;
+    if(gameState.combatState !== 'active'){
+        log("Cheat: aucun combat en cours.");
+        return false;
+    }
+
+    let spell = player.activeSpells.find(s => s.id === spellId)
+        || player.availableSpells.find(s => s.id === spellId)
+        || spellsCatalog.find(s => s.id === spellId);
+
+    if(!spell){
+        try {
+            const classesModule = await import('./classes.js');
+            spell = classesModule.allClassSpells.find(s => s.id === spellId) || getUltimateById(spellId);
+        } catch {
+            spell = null;
+        }
+    }
+
+    if(!spell){
+        log("Cheat: sort introuvable.");
+        return false;
+    }
+
+    playSfx('spellCast', { isPlayer: true, spellId: spell.id });
+    logActiveAction(`simule le sort ${spell.name} (cheat)`);
+
+    if(spell.effect){
+        try {
+            const module = await import('./classSpellEffects.js');
+            const boardBefore = module.snapshotBoard();
+            const applied = await module.applyClassSpellEffect(spell);
+            if(!applied){
+                saveUpdate();
+                return false;
+            }
+            saveUpdate();
+            if(consumeTurn){
+                module.endPlayerSpellTurn(boardBefore);
+            } else {
+                updateStats();
+            }
+            return true;
+        } catch {
+            log("Cheat: impossible d'appliquer ce sort de classe.");
+            return false;
+        }
+    }
+
+    applyStandardSpellEffects(player, enemy, spell, true);
+    updateStats();
+    saveUpdate();
+    if(consumeTurn){
+        finishPlayerTurn();
+    }
+    return true;
+}
+
+export function forcePlayerTurnForCheat(){
+    if(currentTurn !== 'player') {
+        currentTurn = 'player';
+        updateStats();
+        saveUpdate();
+    }
+}
+
+
+// Menu secret : tant qu'actif, tout dégât infligé à l'ennemi le tue d'un coup.
+let cheatOneShot = false;
+export function setCheatOneShot(on){ cheatOneShot = !!on; }
+export function isCheatOneShot(){ return cheatOneShot; }
+// -------------------------------------
+// Applique les aptitudes de début de combat pour le joueur et l'ennemi
+export function applyStartingAbilities(){
+    // Réinitialiser le qì à 0
+    player.mana = { ...EMPTY_MANA_POOL };
+    enemy.mana = { ...EMPTY_MANA_POOL };
+
+    // Bonus de départ liés aux aptitudes (une couleur par aptitude).
+    Object.keys(player.mana).forEach(color => {
+        const initialBonus = getAttributeManaBonus(player, color, "initial") + skillBonus(player, 'startMana');   // + compétence « Qì de réserve »
+        if(initialBonus > 0) {
+            addManaForColor(player, color, initialBonus, { applyGainBonus: false });
+        }
+    });
+
+    Object.keys(enemy.mana).forEach(color => {
+        const initialBonus = getAttributeManaBonus(enemy, color, "initial");
+        if(initialBonus > 0) {
+            addManaForColor(enemy, color, initialBonus, { applyGainBonus: false });
+        }
+    });
+    
+    // Appliquer les aptitudes du joueur
+    if(player.abilities && player.abilities.length > 0){
+        player.abilities.forEach(abilityId => {
+            const ability = allAbilities.find(a => a.id === abilityId);
+            if(ability && ability.startMana){
+                Object.keys(ability.startMana).forEach(color => {
+                    addManaForColor(player, color, ability.startMana[color], { applyGainBonus: false });
+                });
+                log(`Aptitude: ${ability.name} activée`);
+            }
+        });
+    }
+    
+    // Appliquer les aptitudes de l'ennemi
+    if(enemy.abilities && enemy.abilities.length > 0){
+        enemy.abilities.forEach(abilityId => {
+            const ability = allAbilities.find(a => a.id === abilityId);
+            if(ability && ability.startMana){
+                Object.keys(ability.startMana).forEach(color => {
+                    addManaForColor(enemy, color, ability.startMana[color], { applyGainBonus: false });
+                });
+            }
+        });
+    }
+
+    clampManaToCaps(player);
+
+    // Appliquer les points d'action de départ (ex: Bottes de Célérité)
+    if(player.startActionPoints > 0) {
+        player.combatPoints = (player.combatPoints || 0) + player.startActionPoints;
+        log(`Sandales du Vent Léger : +${player.startActionPoints} point(s) d'action au début du combat.`);
+    }
+}
+
+// ennemis
+// Scène musicale du combat en cours (musique générée par music.js) : 'boss' contre un boss, sinon 'combat' ; null hors combat.
+export function getCombatMusicScene() {
+    if(gameState.combatState !== 'active') return null;
+    return enemy?.isBoss ? 'boss' : 'combat';
+}
+
+// Options de la scène musicale : thème propre à chaque boss (son nom), style de rythme variable selon l'ennemi ordinaire.
+let combatBiomeId = null;   // biome du combat en cours (musique propre aux Hautes-Eaux)
+export function getCombatMusicOptions() {
+    if(!enemy) return {};
+    return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name, biome: combatBiomeId };
+}
+
+// Fond de la page de combat : teinte et motif du biome (CSS `body[data-combat-biome]` de retro.css).
+export function setCombatBackdrop(biome){
+    if(typeof document === 'undefined') return;
+    combatBiomeId = biome || null;
+    if(biome && BIOME_LABELS[biome]) document.body.dataset.combatBiome = biome;
+    else delete document.body.dataset.combatBiome;
+    delete document.body.dataset.combatGround;   // eau / lave d'une embuscade : reposé par applyTerrainPrep
+}
+
+// Embuscade sous l'eau ou dans la lave : le fond du combat prend la couleur du milieu (CSS `body[data-combat-ground]` de retro.css).
+function setCombatGround(prep){
+    if(typeof document === 'undefined' || !document.body) return;
+    const ground = prep?.playerStatus === 'drowning' ? 'water' : prep?.playerStatus === 'ablaze' ? 'lava' : null;
+    if(ground) document.body.dataset.combatGround = ground;
+    else delete document.body.dataset.combatGround;
+}
+
+const ENEMY_HP_FLOOR_ABOVE_HERO = false;   // ancien plancher de PV (enemyGrowth.js), abandonné au profit du calibrage de durée
+
+function calibrateEnemyForCombat(target){
+    const template = enemyCatalogList().find(t => t.id === target.templateId);
+    const category = enemyCategory({ boss: Boolean(target.isBoss), easy: Boolean(target.isEasyChoice), hpMult: template?.statsModifiers?.hpMult ?? 1 });
+    const result = calibrateEnemy({ category, heroMaxHp: player.maxHp, heroLevel: player.level, enemyLevel: target.level || player.level, records: loadCombatRecords(), difficulty: getOption('aiDifficulty') || 'auto', adjust: target.isBoss ? BOSS_ADJUST[target.mapEnemyId] || null : null });
+    target.maxHp = result.hp;
+    target.hp = result.hp;
+    target.gearScale = result.gearScale;   // mode plus doux : bonus du stuff divisés comme l'attaque
+    target.modeDivisor = result.modeDivisor;
+    target.hitShareCap = result.hitShareCap;           // Expert : plafond d'un coup relevé
+    target.spellCostFactor = result.spellCostFactor;   // Expert : sorts moins chers en qì
+    if(isExpertMode(getOption('aiDifficulty'))){
+        // Rattrapage : face à un héros nettement plus fort en Att / Déf (critique / blocage), l'ennemi gagne des points (base de l'ennemi, avant levelEdge).
+        target.attack = (target.attack || 0) + expertCatchUpPoints(rawAttack(player), rawAttack(target));
+        target.defense = (target.defense || 0) + expertCatchUpPoints(rawDefense(player), rawDefense(target));
+    }
+    bakeEnemyDamage(target, result.damageMult);
+    target.balanceCategory = category;
+    target.behavior = createBehavior(target, template);   // comportement distinctif (Dragon de feu, Reine de glace, Chevalier noir)
+    target.bossScript = createBossScript(target, getOption('aiDifficulty') || 'auto', target.behavior?.id || null);   // boss semi-scripté : attaque dévastatrice annoncée
+    annotateCombatRecord({ category, difficulty: getOption('aiDifficulty') || 'auto', enemyId: target.mapEnemyId || target.templateId || null, damageMult: result.damageMult, measuredWeight: result.measuredWeight });
+}
+
+// Intègre le réglage de dégâts à l'ennemi : chiffres de l'arme (avec sa puissance `weaponPower`, autrefois ajoutée sans être affichée)
+// et dégâts par crâne, affichés sur sa fiche ; pour les sorts, un talisman visible et non récupérable les amplifie.
+export const SPELL_AMPLIFIER_NAME = 'Talisman de Résonance';
+/** Multiplicateur des sorts d'un ennemi (son talisman), 1 sinon. */
+export const spellAmplifierOf = entity => (entity && entity === enemy && entity.spellAmplifier?.mult > 0 ? entity.spellAmplifier.mult : 1);
+function bakeEnemyDamage(target, mult){
+    const m = Math.max(0.1, Number(mult) || 1);
+    target.bakedDamageMult = m;
+    target.damageScale = 1;   // plus de multiplicateur caché
+    if(target.weapon) {
+        target.weapon = { ...target.weapon, damage: cappedEnemyHit(target.weapon.damage + (target.weaponPower || 0), m, player.maxHp, target.hitShareCap) };   // jamais un coup fatal par le seul multiplicateur
+        target.weaponPower = 0;
+    }
+    // Sorts : leurs chiffres restent ceux du grimoire ; l'ennemi porte un objet magique (non récupérable) qui amplifie en continu
+    // tous ses sorts (dégâts directs, dégâts par case, poison). Il est affiché à côté de son arme (gameHud.js).
+    target.spellAmplifier = { name: SPELL_AMPLIFIER_NAME, mult: m };
+    target.skullMult = m;
+}
+
+export function newEnemy(selectedEnemy = null){
+    enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
+    // Copie propre des statuts (étourdi, affaibli, poison…) : les ennemis générés n'en ont pas, et les sorts écrivent dedans sans vérifier.
+    enemy.statusEffects = { ...(enemy.statusEffects || {}) };
+    // Mêmes limites que le joueur : au plus MAX_ACTIVE_SPELLS sorts et une arme par main (MAX_WEAPONS), quelle que soit l'origine de l'ennemi.
+    enemy.spells = (Array.isArray(enemy.spells) ? enemy.spells : []).slice(0, MAX_ACTIVE_SPELLS);
+    if(Array.isArray(enemy.weapon)) enemy.weapon = enemy.weapon.slice(0, MAX_WEAPONS)[0] || null;
+
+    // Un ennemi généré a plus de PV max que le héros n'en aurait au niveau supérieur au sien (hors ennemi facile et duel-tutoriel).
+    // Calibrage de la durée du combat (3 à 8 min selon la catégorie, combatBalance.js) ; remplace l'ancien plancher « plus de PV que le héros ».
+    if(!enemy.isTutorialEnemy && !enemy.arena && !enemy.duel) calibrateEnemyForCombat(enemy);
+    else if(!enemy.isTutorialEnemy && ENEMY_HP_FLOOR_ABOVE_HERO) raiseEnemyHpAboveHero(enemy, player);
+
+    // Avantage du plus haut niveau : bonus d'attaque et de défense (critiques et blocages), borné et annoncé plus bas, voir combatStats.js
+    enemy.levelEdge = Math.max(0, (enemy.level || 0) - (player.level || 0));
+    player.levelEdge = Math.max(0, (player.level || 0) - (enemy.level || 0));
+
+    // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
+    setAIDifficultyByLevel(enemy.level, player.level, enemy);
+    // Style de l'ennemi : celui du gabarit s'il en a un, sinon stable par espèce (le joueur peut le reconnaître d'un combat à l'autre)
+    if(!enemyPersonalities[enemy.personality]) enemy.personality = assignPersonality(enemy.templateId || enemy.name);
+    
+    // Afficher le niveau de l'ennemi dans les logs
+    if (enemy.level > player.level) {
+        log(`${enemy.name} (Niveau ${enemy.level}) apparaît ! Il est plus fort que vous !`);
+    } else {
+        log(`${enemy.name} (Niveau ${enemy.level}) apparaît !`);
+    }
+    log(`${enemy.name} a un tempérament ${enemyPersonalities[enemy.personality].name.toLowerCase()}.`);
+    // Avantage lié à l'écart de niveau : jamais caché, annoncé à celui qui le détient
+    const edgeNote = describeLevelEdge(enemy) ? `${enemy.name} : ${describeLevelEdge(enemy)}.` : (describeLevelEdge(player) ? `Vous : ${describeLevelEdge(player)}.` : '');
+    if(edgeNote) log(edgeNote);
+    // Réinitialiser le qì de l'ennemi à 0 puis appliquer ses aptitudes
+    enemy.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
+    applyStartingAbilities();
+    log(`Un nouvel ennemi: ${enemy.name}`);
+    if(enemy.weapon){
+        log(`L'ennemi est équipé de : ${enemy.weapon.name}`);
+    } else {
+        log(`L'ennemi n'a pas d'arme (utilise uniquement la magie)`);
+    }
+    if(enemy.inventoryItem){
+        log(`${enemy.name} porte : ${enemy.inventoryItem.name}`);
+    }
+    applyDuelRulesAtCombatStart();
+    const biomeKey = ruleForBiome(enemy.biome);
+    setBiomeRule(biomeKey, protectsFromBiome(player, biomeKey));
+    setCombatBackdrop(enemy.biome);
+    applyTerrainPrep();
+    if(enemy.spells.length > 0){
+        log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
+    }
+    updateEnemySpells();
+    // déterminer au hasard qui commence
+    decideFirstTurn();
+}
+
+// Préparation du terrain (terrain.js) : bonus d'embuscade, ennemi altéré, faiblesse repérée, plateau de départ.
+function applyTerrainPrep(){
+    const prep = enemy?.prep;
+    if(!prep) return;
+    if(prep.playerBonusPA) player.combatPoints += prep.playerBonusPA;
+    if(prep.enemyBonusPA) enemy.combatPoints += prep.enemyBonusPA;
+    if(prep.enemyStatus){
+        if(!enemy.statusEffects) enemy.statusEffects = {};
+        Object.assign(enemy.statusEffects, prep.enemyStatus);
+        if(prep.enemyStatus.poisoned) enemy.statusEffects.poisonDamage = Math.max(2, Math.ceil(enemy.maxHp / 20));
+    }
+    setCombatGround(prep);
+    if(prep.playerStatus){   // noyade / enflammé : tout le combat, sans remède ; le collier du biome en préserve en silence
+        const info = ENVIRONMENT_STATUSES[prep.playerStatus];
+        if(info && !protectsFromBiome(player, info.collar)){
+            if(!player.statusEffects) player.statusEffects = {};
+            player.statusEffects[prep.playerStatus] = environmentDamage(player.maxHp);
+        } else if(info){   // le collier du biome protège : annoncé dans le bandeau et le journal
+            prep.lines.push(`Votre ${collarForBiome(info.collar)?.name?.toLowerCase() || 'collier'} vous protège ${info.protect}.`);
+        }
+    }
+    prep.lines.forEach(line => log(line));
+    if(prep.boardBoost) pendingBoardBoost = { color: enemy.weakColor, count: prep.boardBoost.count };
+}
+
+// Tuiles de départ d'un belvédère : appliquées par main.js une fois le plateau généré.
+let pendingBoardBoost = null;
+export function consumeBoardBoost(){
+    const boost = pendingBoardBoost;
+    pendingBoardBoost = null;
+    if(boost?.color) boostBoardColor(boost.color, boost.count);
+}
+
+// Écran de début de combat (« Vous commencez ! », « Préparation du terrain »…), fusionné avec l'annonce de l'avantage du
+// terrain (embuscade, faiblesse repérée, piège, hautes herbes…) : un seul écran, plein cadre, sans bandeau séparé.
+// Il reste au moins 2 s (combatFlow.MIN_ANNOUNCE_MS) puis un clic / toucher / touche n'importe où le ferme ; ni le joueur
+// ni l'ennemi n'agit avant sa fin (currentTurn vaut 'intro', tous les boutons du joueur sont verrouillés).
+let combatIntro = null;
+function dismissCombatIntro(){
+    combatIntro?.cancel();
+    combatIntro = null;
+    document.getElementById('combat-intro')?.remove();
+}
+function showCombatIntro({ anim, banner, lines = [], startLine }, done){
+    dismissCombatIntro();
+    if(typeof document === 'undefined' || !document.body){ done(); return; }
+    const el = document.createElement('div');
+    el.id = 'combat-intro';
+    el.className = 'combat-intro';
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', 'Début du combat');
+    el.tabIndex = 0;
+    const head = banner
+        ? { icon: banner.icon, title: banner.title }
+        : { icon: anim.icon, title: anim.title };
+    el.innerHTML = `<div class="combat-intro-card">` +
+        `<div class="combat-intro-head"><span class="combat-intro-icon">${svgIcon(head.icon) || ''}</span>` +
+        `<span class="combat-intro-title">${String(head.title).toUpperCase()}</span></div>` +
+        (!banner && anim.source ? `<div class="combat-intro-source">${anim.source}</div>` : '') +
+        lines.map(l => `<div class="prep-banner-line">${l}</div>`).join('') +
+        `<div class="prep-banner-start">${startLine}</div>` +
+        `<div class="combat-intro-hint" aria-hidden="true">Touchez pour continuer</div></div>`;
+    document.body.appendChild(el);
+
+    const ann = createAnnouncement({
+        autoMs: announceDurationMs(lines.length, animationFactor()),
+        onDone: () => {
+            if(combatIntro === ann) combatIntro = null;
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 300);
+            done();
+        }
+    });
+    combatIntro = ann;
+    const hintTimer = setTimeout(() => el.classList.add('skippable'), 2000);
+    const trySkip = () => { if(ann.skip()) clearTimeout(hintTimer); };
+    el.addEventListener('click', trySkip);
+    el.addEventListener('keydown', event => {
+        if(event.key === 'Enter' || event.key === ' ' || event.key === 'Escape'){ event.preventDefault(); trySkip(); }
+    });
+}
+
+// détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
+export function decideFirstTurn(){
+    const prep = enemy?.prep;
+    const banner = prepBanner(prep, enemy?.name);
+    const strikes = openingStrikeCount(prep);   // seule l'embuscade offre un coup d'ouverture (plus la faiblesse repérée)
+    let starter, anim, extraLine = null;
+    if(prep?.playerFirst || prep?.enemyFirst){
+        starter = prep.playerFirst ? 'player' : 'enemy';
+        anim = { icon: 'bolt', title: 'Préparation du terrain', source: '', target: starter === 'player' ? '→ À vous de jouer !' : '→ Ennemi joue en premier' };
+        log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
+    } else {
+        const playerAgility = agilityScore(player);
+        const enemyAgility = agilityScore(enemy);
+        if(playerAgility > enemyAgility){
+            starter = 'player';
+            log(`Vous êtes plus agile ! Vous commencez en premier.`);
+            anim = { icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' };
+            extraLine = 'Plus agile : vous commencez.';
+        } else if(enemyAgility > playerAgility){
+            starter = 'enemy';
+            log(`${enemy.name} est plus agile ! Il commence en premier.`);
+            anim = { icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' };
+            extraLine = `${enemy.name} est plus agile : il commence.`;
+        } else {
+            // En cas d'égalité, le joueur commence
+            starter = 'player';
+            log(`Égalité d'agilité, vous commencez !`);
+            anim = { icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' };
+            extraLine = "Égalité d'agilité : vous commencez.";
+        }
+        log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
+    }
+
+    // Personne n'agit pendant l'écran de début : tour « intro », boutons du joueur verrouillés.
+    currentTurn = 'intro';
+    updateStats();
+    const token = ++introToken;
+    showCombatIntro({
+        anim,
+        banner,
+        lines: banner ? (extraLine ? [...banner.lines, extraLine] : banner.lines) : [],
+        startLine: anim.target
+    }, () => {
+        if(token !== introToken || gameState.combatState !== 'active') return;
+        currentTurn = starter;
+        updateStats();
+        if(starter === 'enemy'){
+            if(strikes) runOpeningStrikes(strikes, OPENING_LEAD_MS, () => enemyTurn());
+            else setTimeout(() => enemyTurn(), OPENING_LEAD_MS);
+        } else if(strikes){
+            runOpeningStrikes(strikes, OPENING_LEAD_MS, () => {});
+        }
+    });
+}
+let introToken = 0;
+
+// Coups gratuits et automatiques de l'arme courante au début du combat (le plateau reste bloqué le temps des animations).
+// Seule l'embuscade en offre un : l'annonce a déjà eu lieu dans l'écran de début de combat.
+const OPENING_LEAD_MS = 300;       // courte pause après la fin de l'écran de début
+const OPENING_STRIKE_MS = 1300;    // durée de l'animation du coup avant l'enchaînement
+function runOpeningStrikes(count, delayMs, done){
+    const weapon = player.equippedWeapon;
+    if(!weapon){ log("Aucune arme équipée : pas de coup d'ouverture."); setTimeout(done, delayMs); return; }
+    const wasPlayerTurn = currentTurn === 'player';
+    if(wasPlayerTurn){ currentTurn = 'enemy'; syncPlayerControlsLock(); }
+    const step = i => {
+        if(gameState.combatState !== 'active') return;
+        if(i >= count){
+            if(wasPlayerTurn) currentTurn = 'player';
+            updateStats();
+            done();
+            return;
+        }
+        log('Embuscade : attaque par derrière !');
+        strikeWithWeapon(weapon, { free: true });
+        updateStats();
+        setTimeout(() => step(i + 1), OPENING_STRIKE_MS * animationFactor());
+    };
+    setTimeout(() => step(0), delayMs);
+}
+
+
+// Exports pour les fonctions accessibles globalement
+window.equipSpell = equipSpell;
+window.unequipSpell = unequipSpell;
+window.archiveSpell = archiveSpell;
+setAlterationHooks({ damage: (t, d) => applyDamage(t, d), log });
+// Équipement : après un blocage ou une parade du héros, chance de récupérer du qì (gearEffects.js, `parryQi`).
+setStrikeHooks({ onBlock: (target) => {
+    if(target !== player) return;
+    const gain = parryQiGain(player);
+    if(gain.amount <= 0) return;
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    playSfx('parryQi');
+    addManaForColor(player, color, gain.amount, { applyGainBonus: false });
+    log(`Équipement : la parade vous rend ${gain.amount} qì ${color}.`);
+} });
+window.unarchiveSpell = unarchiveSpell;
+window.equipUltimate = equipUltimate;
+window.equipWeapon = equipWeapon;
+window.unequipWeapon = unequipWeapon;
+window.equipGear = equipGear;
+window.unequipGear = unequipGear;
+window.useInventoryItem = useInventoryItem;
+window.discardInventoryItem = discardInventoryItem;
+window.toggleSellSurplus = toggleSellSurplus;
+window.setActiveInventoryItem = setActiveInventoryItem;
+window.unsetSecondItem = unsetSecondItem;

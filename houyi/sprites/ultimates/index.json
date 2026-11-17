@@ -1,0 +1,506 @@
+{
+  "ultimateImperialDragon-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateImperialDragon-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateImperialDragon-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateImperialDragon-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateHeavenlyThunder-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandArrows-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSunPiercer-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateFiveElements-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateHeavenlyThunder-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandArrows-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateHeavenlyThunder-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandArrows-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSunPiercer-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandArrows-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateFiveElements-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateEternalBastion-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateHeavenlyThunder-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSunPiercer-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandRiders-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateEternalBastion-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateEternalBastion-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateEternalBastion-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandRiders-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandRiders-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateThousandRiders-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSkyWolf-1": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSkyWolf-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSkyWolf-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateFiveElements-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSunPiercer-2": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateFiveElements-3": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "ultimateSkyWolf-4": {
+    "frames": 13,
+    "fps": 6,
+    "size": [
+      144,
+      256
+    ]
+  },
+  "biome_rizieres-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_volcan-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_gobi-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_fleuve-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_bambous-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_tonnerre-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_fauves-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_mer-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_fusang-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_lune-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "ultimateFiveElements-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateHeavenlyThunder-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateThousandArrows-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateSunPiercer-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateImperialDragon-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateEternalBastion-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateThousandRiders-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateSkyWolf-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateVermilionBird-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateBlackTortoise-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateWhiteTiger-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "ultimateAzureDragon-seq": {
+    "frames": 192,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16
+  },
+  "combatend_victory-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "combatend_defeat-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_wandering_souls-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  },
+  "biome_winter_lantern_mountain-seq": {
+    "frames": 96,
+    "fps": 24,
+    "size": [
+      144,
+      256
+    ],
+    "cols": 16,
+    "loop": true
+  }
+}

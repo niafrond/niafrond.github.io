@@ -1,0 +1,439 @@
+// Jonctions gardées : certains passages entre deux cartes sont fermés tant qu'on n'a pas rapporté un objet particulier à un garde
+// (quête « objet » : coffre à trouver dans les terres d'une carte voisine, puis remise au garde) ou vaincu un gardien spécial.
+// Les verrous passent par `exit.requires` (quête terminée ou ennemi vaincu) : aucune mécanique nouvelle côté moteur.
+// Logique pure, sans DOM ; appliquée par `assembleWorld` après l'agrandissement des cartes (world/expand.js).
+
+import { isLowObstacle } from '../decor.js';
+import { toSet, toRects } from './expand.js';
+
+const key = (x, y) => `${x},${y}`;
+const inRects = (rects, x, y) => (rects || []).some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+
+// Grille w×h (1 = case couverte par l'un des rectangles) : un test de case devient une lecture au lieu d'un parcours de tous les rectangles.
+function rectGrid(screen, rects) {
+    const grid = new Uint8Array(screen.w * screen.h);
+    (rects || []).forEach(([rx, ry, rw, rh]) => {
+        for (let y = Math.max(0, ry); y < Math.min(screen.h, ry + rh); y++) for (let x = Math.max(0, rx); x < Math.min(screen.w, rx + rw); x++) grid[y * screen.w + x] = 1;
+    });
+    return grid;
+}
+
+export const JUNCTIONS = [
+    // ── Objet à rapporter à un garde (village → zone sauvage) ─────────────────────────────────────────────────
+    {
+        id: 'passerelle_hekou', type: 'item', region: 'fleuve', from: 'fleuve_village', to: 'fleuve_wild',
+        guard: {
+            id: 'sergeant_mo', name: 'Sergent Mo', title: 'Garde de la passerelle',
+            idle: [
+                'Halte ! La passerelle des méandres est fermée à qui n\'a pas de sceau de passage. Les ordres viennent de la préfecture.',
+                'Pas de sceau, pas de passage. Même pour un archer. Surtout pour un archer : on dit qu\'ils perdent leurs papiers.'
+            ],
+            after: ['La chaîne est levée pour vous. Mais ne dites pas à la préfecture que j\'ai laissé passer quelqu\'un sans rapport en triple exemplaire.']
+        },
+        item: { chest: 'rizieres_courier_satchel', screen: 'rizieres_wild', fragment: 'Cire impériale', label: 'Besace du courrier égaré', name: 'sceau de courrier impérial',
+            openText: 'Sous un roseau sec gît la besace d\'un courrier impérial, mort de soif avant d\'avoir atteint le fleuve. Son sceau de passage est encore dedans : vous le glissez dans votre manche.',
+            earlyText: 'Sous un roseau sec gît une besace de cuir, abandonnée depuis longtemps. Au fond, un petit objet gravé que vous glissez dans votre manche, sans trop savoir à quoi il peut servir.',
+            earlyDescription: 'Un petit objet gravé trouvé dans une besace abandonnée. Vous ignorez à quoi il sert.' },
+        quest: {
+            id: 'jq_passerelle_hekou', title: 'Le sceau de la passerelle',
+            objective: 'Retrouver le sceau d\'un courrier impérial (Digue et Marais Craquelés, dans les terres au sud-est)',
+            offer: ['Un sceau de courrier impérial, voilà ce qu\'il me faut. Un courrier en portait un : il a disparu dans les marais craquelés de la digue, du côté des Rizières. On a retrouvé son cheval, pas son sceau.', 'Rapportez-le-moi et je lève la chaîne.'],
+            hint: ['Le courrier a dû s\'écrouler dans les marais craquelés de la digue, du côté des Rizières, vers le sud-est. Cherchez une besace.'],
+            complete: ['Le sceau ! Intact, même la cire n\'a pas fondu. Vous venez d\'épargner trois mois de paperasse à la préfecture.', 'Passez, archer. La chaîne est levée, et je n\'ai rien vu.']
+        },
+        lockedMessage: 'Une chaîne ferme la passerelle des méandres : le Sergent Mo exige un sceau de courrier impérial.'
+    },
+    {
+        id: 'dernier_puits', type: 'item', region: 'gobi', from: 'gobi_village', to: 'gobi_wild',
+        guard: {
+            id: 'captain_yaer', name: 'Capitaine Yaer', title: 'Gardien du dernier puits',
+            idle: [
+                'Pas une goutte, pas un pas ! Personne ne s\'enfonce dans les dunes sans une gourde pleine. J\'en ai enterré trop, de ceux qui y croyaient.',
+                'Je ne suis pas méchant, archer, je suis arithméticien : une gourde pour la route, une gourde pour le retour.'
+            ],
+            after: ['Votre gourde est pleine, la mienne aussi. Les dunes vous attendent. Elles sont patientes, mais pas hospitalières.']
+        },
+        item: { chest: 'volcan_sealed_gourd', screen: 'volcan_wild', fragment: 'Cuir de gourde', label: 'Gourde de la source scellée', name: 'gourde de source scellée',
+            openText: 'Dans une niche de basalte, au bord d\'une source encore tiède, une gourde de cuir scellée à la cire. Son eau est fraîche comme au premier jour : elle servira de viatique.',
+            earlyText: 'Dans une niche de basalte, au bord d\'une source encore tiède, un objet de cuir scellé à la cire. Vous l\'emportez, à tout hasard.',
+            earlyDescription: 'Un objet de cuir scellé à la cire, trouvé près d\'une source. Vous ignorez à quoi il sert.' },
+        quest: {
+            id: 'jq_dernier_puits', title: 'Une gourde pour les dunes',
+            objective: 'Rapporter une gourde de source scellée (Gorges du Volcan, dans les terres au sud-est)',
+            offer: ['Les mineurs du volcan scellent des gourdes à la seule source encore fraîche, pour les voyageurs du désert. Rapportez-m\'en une et je vous ouvre la route des dunes.', 'Elles sont cachées au bord d\'une source, dans les gorges, du côté du sud-est. Une niche de basalte, m\'a-t-on dit.'],
+            hint: ['Cherchez la source des mineurs, dans les gorges du volcan, vers le sud-est. La gourde est dans une niche de basalte.'],
+            complete: ['Scellée, pleine, parfaite. Vous avez l\'œil, archer : le désert pardonne rarement aux distraits.', 'Allez. Et si vous croisez un mirage qui vous offre à boire, dites-lui que j\'ai déjà un puits.']
+        },
+        lockedMessage: 'Le Capitaine Yaer barre la piste des dunes : pas de gourde de source scellée, pas de passage.'
+    },
+    {
+        id: 'galeries_volcan', type: 'item', region: 'volcan', from: 'volcan_village', to: 'volcan_wild',
+        guard: {
+            id: 'foreman_han', name: 'Contremaître Han', title: 'Surveillant des galeries',
+            idle: [
+                'Les galeries sont interdites à qui n\'a pas de laissez-passer de basalte. Trois éboulements ce mois-ci : je ne laisse plus entrer personne au hasard.',
+                'Je sais, vous êtes archer, pas mineur. Mais la lave ne lit pas les titres.'
+            ],
+            after: ['Votre plaquette est en règle. Gardez-la sur vous : si on vous retrouve sans, on vous prendra pour un voleur de braise.']
+        },
+        item: { chest: 'rizieres_basalt_pass', screen: 'rizieres_wild', fragment: 'Éclat de basalte', label: 'Coffret de la digue', name: 'laissez-passer de basalte',
+            openText: 'Sous une dalle fendue de la digue, un coffret de pierre noire : à l\'intérieur, une plaquette de basalte gravée au sceau du forgeron-chef. Votre laissez-passer.',
+            earlyText: 'Sous une dalle fendue de la digue, un coffret de pierre noire : à l\'intérieur, une plaquette gravée d\'un sceau inconnu. Vous la gardez, par curiosité.',
+            earlyDescription: 'Une plaquette de pierre noire gravée d\'un sceau inconnu. Vous ignorez à quoi elle sert.' },
+        quest: {
+            id: 'jq_galeries_volcan', title: 'Le laissez-passer de basalte',
+            objective: 'Récupérer un laissez-passer de basalte (Digue et Marais Craquelés, dans les terres au sud-est)',
+            offer: ['Un laissez-passer de basalte, gravé au sceau du forgeron-chef : sans lui, je ne vous ouvre pas les galeries.', 'Les anciens en cachaient sous les dalles fendues de la digue des rizières, du côté du sud-est. Allez voir.'],
+            hint: ['Le coffret de pierre noire est enfoui sous une dalle fendue de la digue, vers le sud-est.'],
+            complete: ['La plaquette est authentique, je reconnais l\'entaille du forgeron. Vous êtes bien plus débrouillard que mes apprentis.', 'Les galeries sont à vous, archer. Évitez les murs qui chantent : ils vont s\'effondrer.']
+        },
+        lockedMessage: 'Le Contremaître Han interdit les galeries : il faut un laissez-passer de basalte.'
+    },
+    {
+        id: 'quai_de_jade', type: 'item', region: 'mer', from: 'mer_village', to: 'mer_wild',
+        guard: {
+            id: 'harbor_master_lu', name: 'Maître de port Lu', title: 'Gardien de la jetée',
+            idle: [
+                'La jetée est fermée à qui ne sait pas où est le nord. Les courants d\'ici dévorent les imprudents, et leurs bottes avec.',
+                'Une boussole de jade, voilà ce qui distingue un marin d\'un noyé. Trouvez-en une, et nous reparlerons.'
+            ],
+            after: ['Cette boussole pointe juste, et elle est jolie. La jetée est à vous. Si vous vous perdez, regardez l\'aiguille et priez.']
+        },
+        item: { chest: 'fauves_jade_compass', screen: 'fauves_wild', fragment: 'Aiguille de jade', label: 'Reliquaire du chasseur', name: 'boussole de jade',
+            openText: 'Sous un tas de pierres, un reliquaire de chasseur : une boussole de jade, dont l\'aiguille tremble comme un cœur d\'oiseau. Elle pointe vers la mer.',
+            earlyText: 'Sous un tas de pierres, un reliquaire de chasseur : un objet de jade dont l\'aiguille tremble comme un cœur d\'oiseau. Vous le prenez avec vous.',
+            earlyDescription: 'Un objet de jade dont l\'aiguille tremble, trouvé dans un reliquaire. Vous ignorez à quoi il sert.' },
+        quest: {
+            id: 'jq_quai_de_jade', title: 'La boussole de jade',
+            objective: 'Retrouver la boussole de jade d\'un chasseur (Hautes Herbes de Cendre, dans les terres au sud-est)',
+            offer: ['Un chasseur des plaines possédait une boussole de jade, un cadeau de marin. Il est mort sans héritier ; elle doit dormir dans un reliquaire, quelque part dans les hautes herbes de cendre, vers le sud-est.', 'Rapportez-la et la jetée est à vous.'],
+            hint: ['Le reliquaire est caché sous un tas de pierres, dans les hautes herbes de cendre, vers le sud-est.'],
+            complete: ['Elle tremble encore ! Le jade n\'oublie jamais où est la mer. Voilà un objet qui rend aux marins leur dignité.', 'La jetée est ouverte, archer. Dites bonjour aux vagues de ma part, elles sont susceptibles.']
+        },
+        lockedMessage: 'Maître Lu ferme la jetée : sans boussole de jade, personne ne s\'aventure sur les flots.'
+    },
+    // ── Gardien spécial à vaincre (zone sauvage → hameau) ─────────────────────────────────────────────────────────
+    {
+        id: 'hameau_bambous', type: 'kill', region: 'bambous', from: 'bambous_wild', to: 'bambous_hamlet',
+        enemy: { id: 'bambous_hamlet_guardian', name: 'Vieux bambou, gardien du hameau', templateId: 'shu_jing' },
+        lockedMessage: 'Un vieux bambou éveillé, gigantesque, barre de ses racines le sentier du hameau : il faut le vaincre pour passer.'
+    },
+    {
+        id: 'hameau_tonnerre', type: 'kill', region: 'tonnerre', from: 'tonnerre_wild', to: 'tonnerre_hamlet',
+        enemy: { id: 'tonnerre_hamlet_guardian', name: 'Cavalier de l\'orage égaré', templateId: 'lei_gong' },
+        lockedMessage: 'Un chevalier d\'orage, foudre au poing, garde le chemin du hameau : il faut le vaincre pour passer.'
+    },
+    {
+        id: 'hameau_fauves', type: 'kill', region: 'fauves', from: 'fauves_wild', to: 'fauves_hamlet',
+        enemy: { id: 'fauves_hamlet_guardian', name: 'Tigresse blanche des pâtures', templateId: 'tigre_embrase' },
+        lockedMessage: 'Une tigresse blanche garde les pâtures qui mènent au hameau : il faut la vaincre pour passer.'
+    },
+    {
+        id: 'hameau_fusang', type: 'kill', region: 'fusang', from: 'fusang_wild', to: 'fusang_hamlet',
+        enemy: { id: 'fusang_hamlet_guardian', name: 'Immortel égaré des branches', templateId: 'immortel_jade' },
+        lockedMessage: 'Un immortel égaré tient le sentier des branches vers le hameau : il faut le vaincre pour passer.'
+    }
+];
+
+function hashSeed(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+}
+
+// Occupation d'un écran (terrain bloquant, entités, sorties, cases d'arrivée). Instantané : à reconstruire après avoir posé un obstacle.
+export function occupancy(screen, screens) {
+    const taken = new Set([
+        ...screen.npcs, ...screen.chests, ...screen.enemies, ...(screen.waypoint ? [screen.waypoint] : []), ...(screen.spawn ? [screen.spawn] : []),
+        ...screen.exits
+    ].map(e => key(e.x, e.y)));
+    Object.values(screens).forEach(s => s.exits.forEach(e => { if (e.to === screen.id && e.arrive) taken.add(key(e.arrive.x, e.arrive.y)); }));
+    const { w, h } = screen;
+    const solid = rectGrid(screen, screen.obstacles), liquid = rectGrid(screen, screen.liquids);
+    const blocked = (x, y) => x < 0 || y < 0 || x >= w || y >= h || solid[y * w + x] === 1 || liquid[y * w + x] === 1;
+    // cases atteignables à pied depuis l'apparition (les entités sont posées seulement là où le héros peut aller)
+    const reach = new Uint8Array(w * h);
+    const queue = [screen.spawn];
+    reach[screen.spawn.y * w + screen.spawn.x] = 1;
+    for (let head = 0; head < queue.length; head++) {
+        const p = queue[head];
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+            const nx = p.x + dx, ny = p.y + dy;
+            if (!blocked(nx, ny) && !reach[ny * w + nx]) { reach[ny * w + nx] = 1; queue.push({ x: nx, y: ny }); }
+        });
+    }
+    const free = (x, y) => !blocked(x, y) && !taken.has(key(x, y)) && reach[y * w + x] === 1;
+    const openNeighbors = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => !blocked(x + dx, y + dy)).length;
+    return { taken, blocked, free, openNeighbors };
+}
+
+// Direction vers l'intérieur de la carte et direction le long du bord, pour un passage de bord.
+const inward = exit => (exit.edge === 'west' ? [1, 0] : exit.edge === 'east' ? [-1, 0] : exit.edge === 'north' ? [0, 1] : [0, -1]);
+const along = exit => (exit.edge === 'west' || exit.edge === 'east' ? [0, 1] : [1, 0]);
+
+
+// Case d'un passage de bord : `depth` pas vers l'intérieur depuis la porte, `lateral` cases le long du bord.
+const cellAt = (door, depth, lateral) => {
+    const [ix, iy] = inward(door), [ax, ay] = along(door);
+    return { x: door.x + ix * depth + ax * lateral, y: door.y + iy * depth + ay * lateral };
+};
+
+// Place le gardien « juste devant » le passage (2 cases à l'intérieur, au centre) si la case est libre, sinon à la meilleure case proche.
+function guardCellFor(screen, door, occ, fallbackDepths, fallbackLaterals) {
+    const c = cellAt(door, 2, 0);
+    if (occ.free(c.x, c.y)) return c;
+    return placeNearGate(screen, door, occ, fallbackDepths, fallbackLaterals);
+}
+
+/**
+ * Piliers de part et d'autre d'un gardien posé juste devant un passage fermé (2 cases à l'intérieur, au centre) : l'entrée forme un
+ * entonnoir de 3 cases dont le gardien occupe le milieu. Option `sealed` : la rangée entière est fermée (non utilisée, le gardien pouvant
+ * rester en vie quand la porte s'ouvre par pourparlers). Un pilier n'est posé que s'il ne coupe aucun chemin ni n'isole une entité.
+ * Les piliers sont des obstacles (`obstacles`) listés dans `screen.pillars` pour être dessinés comme tels.
+ */
+export function addPillarsAroundGuard(screen, door, guard, sealed = false) {
+    const c = cellAt(door, 2, 0);
+    if (guard.x !== c.x || guard.y !== c.y) return false;
+    const cells = (sealed ? [[2, -1], [2, 1], [2, -2], [2, 2], [1, -2], [1, 2]] : [[2, -2], [2, 2], [1, -2], [1, 2]]).map(([d, l]) => cellAt(door, d, l));
+    const entities = [...screen.npcs, ...screen.chests, ...screen.enemies, ...screen.exits, screen.spawn, screen.waypoint].filter(Boolean);
+    const alcove = [[0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]].map(([d, l]) => cellAt(door, d, l));
+    const clash = cells.some(p => entities.some(e => e.x === p.x && e.y === p.y))
+        || alcove.some(p => entities.some(e => e.x === p.x && e.y === p.y && !(screen.exits.includes(e))));
+    if (clash) return false;
+    screen.pillars = screen.pillars || [];
+    // un pilier ne doit jamais couper un chemin : on ne le pose que si tout ce qui était atteignable à pied le reste (le gardien ne bloque pas ce calcul)
+    const solid = new Set([...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => e !== guard), ...screen.exits, ...(screen.waypoint ? [screen.waypoint] : [])].map(e => key(e.x, e.y)));
+    const { w, h } = screen;
+    const rock = rectGrid(screen, screen.obstacles), water = rectGrid(screen, screen.liquids);
+    const reachCount = () => {
+        const seen = new Set([key(screen.spawn.x, screen.spawn.y)]), queue = [screen.spawn];
+        for (let head = 0; head < queue.length; head++) {
+            const p = queue[head];
+            [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+                const nx = p.x + dx, ny = p.y + dy;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h || seen.has(key(nx, ny)) || solid.has(key(nx, ny))) return;
+                if (rock[ny * w + nx] === 1 || water[ny * w + nx] === 1) return;
+                seen.add(key(nx, ny)); queue.push({ x: nx, y: ny });
+            });
+        }
+        return seen;
+    };
+    const targets = [...screen.npcs, ...screen.chests, ...screen.enemies.filter(e => e !== guard), ...screen.exits, ...(screen.waypoint ? [screen.waypoint] : [])];
+    const touched = seen => targets.filter(t => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(t.x + dx, t.y + dy)))).length;
+    cells.forEach(p => {
+        if (p.x < 0 || p.y < 0 || p.x >= screen.w || p.y >= screen.h) return;
+        if (rock[p.y * w + p.x] === 1) return;
+        const before = reachCount(), touchedBefore = touched(before);
+        screen.obstacles.push([p.x, p.y, 1, 1]);
+        rock[p.y * w + p.x] = 1;
+        // la case du pilier n'est plus atteignable (−1) ; au-delà, ou si une entité devient inaccessible, un chemin a été coupé : on retire le pilier
+        const after = reachCount();
+        if (after.size < before.size - 1 || touched(after) < touchedBefore) { screen.obstacles.pop(); rock[p.y * w + p.x] = 0; return; }
+        screen.pillars.push([p.x, p.y]);
+    });
+    return true;
+}
+
+/**
+ * Ferme la rangée du gardien : de part et d'autre de lui, des piliers (obstacles) prolongent la ligne d'un bord à l'autre de la carte, eau
+ * comprise (le Pas de Yu permet de marcher dessus), pour qu'on ne puisse pas contourner le boss et atteindre la porte sans l'avoir vaincu. Une case occupée par une
+ * entité n'est pas murée (aucune entité n'est déplacée). Retourne le nombre de piliers posés.
+ */
+export function sealLineAtGuard(screen, door, guard) {
+    const [ax, ay] = along(door), [ix, iy] = inward(door);
+    const depth = Math.abs(guard.x - door.x) * Math.abs(ix) + Math.abs(guard.y - door.y) * Math.abs(iy);
+    if (depth < 1) return 0;
+    const solid = new Set([...screen.npcs, ...screen.chests, ...screen.enemies, ...screen.exits, screen.spawn, screen.waypoint].filter(Boolean).map(e => key(e.x, e.y)));
+    screen.pillars = screen.pillars || [];
+    let placed = 0;
+    // La rangée entière est murée, d'un bord à l'autre de la carte : les couloirs de bordure sont dégagés plus tard et l'état du terrain
+    // au moment de la pose n'est pas définitif, on ne cherche donc pas à s'arrêter au premier obstacle.
+    for (let t = 1; t < Math.max(screen.w, screen.h); t++) for (const sign of [1, -1]) {
+        const x = guard.x + ax * sign * t, y = guard.y + ay * sign * t;
+        // l'eau n'est PAS épargnée : avec le Pas de Yu on la traverse à pied, un pilier y est posé aussi pour qu'on ne contourne pas le boss
+        if (x < 0 || y < 0 || x >= screen.w || y >= screen.h || solid.has(key(x, y))) continue;
+        if (inRects(screen.obstacles, x, y) && !isLowObstacle(screen, x, y)) {
+            // dans le couloir du passage (±1 case du gardien) le rocher devient un pilier visible, ailleurs il reste un rocher protégé du déblaiement
+            if (t <= 1) screen.pillars.push([x, y]); else (screen.sealed = screen.sealed || []).push([x, y]);
+            continue;
+        }
+        if (!inRects(screen.obstacles, x, y)) screen.obstacles.push([x, y, 1, 1]);
+        screen.pillars.push([x, y]);   // (un décor bas, franchissable, est lui aussi remplacé par un pilier)
+        placed++;
+    }
+    return placed;
+}
+
+/**
+ * Piliers (et rochers qui ferment la rangée) d'un boss qui garde un passage : posés par `addPillarsAroundGuard` et `sealLineAtGuard`,
+ * puis détachés du terrain et rangés dans `enemy.wall` : le moteur (`bossWallCells`, exploration.js) les fait exister tant que le boss
+ * est en jeu, ils disparaissent à sa défaite.
+ */
+export function wallGuard(screen, door, enemy) {
+    const owned = () => new Set([...(screen.pillars || []), ...(screen.sealed || [])].map(([px, py]) => key(px, py)));
+    const before = owned();
+    addPillarsAroundGuard(screen, door, enemy);
+    sealLineAtGuard(screen, door, enemy);
+    const cells = [...owned()].filter(k => !before.has(k));
+    if (!cells.length) return;
+    const gone = new Set(cells);
+    const obst = toSet(screen.obstacles);
+    cells.forEach(k => obst.delete(k));
+    screen.obstacles = toRects(obst);
+    screen.pillars = (screen.pillars || []).filter(([px, py]) => !gone.has(key(px, py)));
+    screen.sealed = (screen.sealed || []).filter(([px, py]) => !gone.has(key(px, py)));
+    enemy.wall = cells.map(k => k.split(',').map(Number));
+}
+
+// Première case libre près d'un passage : à côté de la bouche du passage (écart latéral ≥ 2), 1 à 3 pas à l'intérieur.
+function placeNearGate(screen, gate, occ, depths, laterals) {
+    const [ix, iy] = inward(gate), [ax, ay] = along(gate);
+    for (const d of depths) for (const l of laterals) {
+        const x = gate.x + ix * d + ax * l, y = gate.y + iy * d + ay * l;
+        if (occ.free(x, y) && occ.openNeighbors(x, y) >= 2) return { x, y };
+    }
+    return null;
+}
+
+// Case de coffre cachée : libre, ouverte, loin des sorties, de préférence au sud-est de la carte ; choix déterministe parmi les 6 plus reculées.
+// `accept` (coûteux : un parcours de la carte par appel) n'est évalué que dans l'ordre de préférence, jusqu'aux 6 premières cases retenues.
+export function placeInLand(screen, occ, seedText, accept = null) {
+    const exits = screen.exits.filter(e => !e.door);
+    const cells = [];
+    const pathGrid = rectGrid(screen, screen.paths);
+    for (let x = 1; x < screen.w - 1; x++) for (let y = 1; y < screen.h - 1; y++) {
+        if (!occ.free(x, y) || occ.openNeighbors(x, y) < 3 || pathGrid[y * screen.w + x] === 1) continue;
+        const dist = Math.min(...exits.map(e => Math.abs(e.x - x) + Math.abs(e.y - y)), 99);
+        if (dist < 4) continue;
+        cells.push({ x, y, dist });
+    }
+    cells.sort((a, b) => b.dist - a.dist || a.x - b.x || a.y - b.y);
+    const firstAccepted = pool => {
+        const top = [];
+        for (const c of pool) {
+            if (accept && !accept({ x: c.x, y: c.y })) continue;
+            top.push(c);
+            if (top.length === 6) break;
+        }
+        return top;
+    };
+    // les textes de quête parlent du « sud-est » : on cache les coffres dans ce quart de la carte quand c'est possible
+    const southEast = firstAccepted(cells.filter(c => c.x >= screen.w * 0.5 && c.y >= screen.h * 0.45));
+    const top = southEast.length ? southEast : firstAccepted(cells);
+    return top.length ? top[hashSeed(seedText) % top.length] : null;
+}
+
+/**
+ * Applique les jonctions gardées : ajoute gardes, coffres, ennemis et quêtes, et pose `requires` sur les sorties.
+ * @param screens écrans assemblés (modifiés) ; @param quests liste des quêtes (complétée) ;
+ * @param regionLevel niveau recommandé par région (REGION_LEVEL).
+ */
+export function applyJunctions(screens, quests, regionLevel = {}) {
+    JUNCTIONS.forEach(j => {
+        const from = screens[j.from], to = screens[j.to];
+        if (!from || !to) return;
+        const gate = from.exits.find(e => e.to === j.to && e.edge && e.span === 0);
+        if (!gate) throw new Error(`jonction ${j.id} : aucun passage de ${j.from} vers ${j.to}`);
+        const regionName = screens[j.region]?.name || j.region;
+        let requires;
+
+        if (j.type === 'item') {
+            const holder = screens[j.item.screen];
+            const chestPos = holder && placeInLand(holder, occupancy(holder, screens), j.item.chest);
+            const guardPos = guardCellFor(from, gate, occupancy(from, screens), [1, 2, 3], [2, -2, 3, -3, 4, -4]);
+            if (!chestPos || !guardPos) throw new Error(`jonction ${j.id} : pas de place pour ${!chestPos ? 'le coffre' : 'le garde'}`);
+            const R = Math.max(1, Math.round(regionLevel[j.region] || 1));
+            const questItem = { id: `qi_${j.item.chest}`, name: j.item.name, description: j.quest.objective, earlyDescription: j.item.earlyDescription, quest: j.quest.id };
+            holder.chests.push({ id: j.item.chest, label: j.item.label, openText: j.item.openText, earlyText: j.item.earlyText, gold: 15 * R, questItem, x: chestPos.x, y: chestPos.y });
+            const g = j.guard;
+            from.npcs.push({
+                id: g.id, name: g.name, title: g.title, idle: g.idle, x: guardPos.x, y: guardPos.y,
+                talk: [{ whenDone: j.quest.id, lines: g.after }]
+            });
+            addPillarsAroundGuard(from, gate, guardPos);
+            quests.push({
+                id: j.quest.id, title: j.quest.title, chapter: `✦ Quête secondaire — ${regionName}`,
+                giver: g.id, turnIn: g.id, requires: [], side: true,
+                objectives: [{ type: 'item', target: `qi_${j.item.chest}`, text: j.quest.objective }],
+                offer: j.quest.offer, hint: j.quest.hint, complete: j.quest.complete,
+                reward: { gold: Math.min(200, 40 + 8 * R), fragment: j.item.fragment, xp: 40 }
+            });
+            requires = j.quest.id;
+        } else {
+            const occ = occupancy(from, screens);
+            const pos = guardCellFor(from, gate, occ, [3, 4, 5, 6], [0, 1, -1, 2, -2]);
+            if (!pos) throw new Error(`jonction ${j.id} : pas de place pour le gardien`);
+            const guardEnemy = {
+                id: j.enemy.id, templateId: j.enemy.templateId, name: j.enemy.name, kind: 'sentinel', offset: 2, permanent: true, aggro: 2, x: pos.x, y: pos.y
+            };
+            from.enemies.push(guardEnemy);
+            wallGuard(from, gate, guardEnemy);
+            requires = j.enemy.id;
+        }
+        // le verrou couvre toutes les cases du passage ; le chemin de retour reste libre
+        from.exits.filter(e => e.to === j.to && e.edge).forEach(e => { e.requires = requires; e.lockedMessage = j.lockedMessage; });
+    });
+    guardLockedGates(screens);
+    return screens;
+}
+
+/**
+ * Cohérence « boss = porte » : quand un passage n'est ouvert que par la mort d'un ennemi de la même carte, cet ennemi se tient
+ * devant la porte, assez près (2 cases) et avec une vigilance d'au moins 2 pour couvrir les 3 cases du passage et leurs abords :
+ * impossible d'atteindre la porte sans l'affronter. Les ennemis qui barrent déjà la porte (≤ 2 cases) ne bougent pas.
+ */
+export function guardLockedGates(screens) {
+    Object.values(screens).forEach(screen => {
+        const doors = (screen.exits || []).filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
+        doors.forEach(door => {
+            const enemy = screen.enemies.find(en => en.id === door.requires && en.kind !== 'patrol');
+            if (!enemy || enemy.noDoorGuard) return;   // `noDoorGuard` : le boss se tient ailleurs, la porte est fermée par un mur (ex. sable du Gobi)
+            enemy.guardsDoor = true;
+            const [ix, iy] = inward(door);
+            const depth = Math.abs(enemy.x - door.x) * Math.abs(ix) + Math.abs(enemy.y - door.y) * Math.abs(iy);
+            const lateral = Math.abs(enemy.x - door.x) * Math.abs(iy) + Math.abs(enemy.y - door.y) * Math.abs(ix);
+            // on retire l'ennemi de la carte, puis on le pose juste devant le passage (2 cases, au centre) ou à la case libre la plus proche
+            const rest = { ...screen, enemies: screen.enemies.filter(en => en !== enemy) };
+            const occ = occupancy(rest, screens);
+            const here = cellAt(door, 2, 0);
+            if (!(enemy.x === here.x && enemy.y === here.y)) {
+                if (depth <= 2 && lateral <= 1 && !occ.free(here.x, here.y)) { /* déjà devant la porte */ }
+                else {
+                    const pos = guardCellFor(rest, door, occ, [2, 3, 1], [0, 1, -1, 2, -2]);
+                    if (pos) { enemy.x = pos.x; enemy.y = pos.y; }
+                }
+            }
+            wallGuard(screen, door, enemy);
+        });
+    });
+}
+
+/**
+ * Garde de la frontière : à chaque passage vers une région au niveau conseillé plus élevé (sanctuaire → village suivant), une sentinelle
+ * se poste devant le passage, du côté de l'approche, et met en garde (sans citer de niveau). Elle ne bloque pas la route (le niveau n'est qu'un
+ * avertissement) : elle est posée au centre, 4 cases à l'intérieur, avec des piliers de chaque côté. Si le boss du sanctuaire garde déjà la
+ * porte, la sentinelle se tient derrière lui (plus loin du passage).
+ */
+export function applyLevelGuards(screens, regionLevel = {}) {
+    Object.values(screens).forEach(from => {
+        if (from.interior || from.arena) return;
+        from.exits.filter(e => e.edge && e.span === 0 && !e.door).forEach(gate => {
+            const to = screens[gate.to];
+            const need = regionLevel[to?.region] || 1;
+            if (!to || to.region === from.region || need <= (regionLevel[from.region] || 1)) return;
+            const pos = placeNearGate(from, gate, occupancy(from, screens), [4, 5, 6, 3], [0, 1, -1, 2, -2]);
+            if (!pos) return;
+            const id = `level_guard_${from.id}`;
+            from.npcs.push({
+                id, name: 'Sentinelle de la brume', title: `Frontière : ${to.name}`,
+                idle: [
+                    `Ce passage mène à « ${to.name} ». Les créatures y sont redoutables : mieux vaut s'y aventurer aguerri.`,
+                    `Je ne retiens personne, voyageur. Mais sans entraînement, la brume vous le fera regretter. Si vous vous sentez prêt, la route est à vous.`
+                ],
+                x: pos.x, y: pos.y
+            });
+            addPillarsAroundGuard(from, gate, pos);
+        });
+    });
+    return screens;
+}

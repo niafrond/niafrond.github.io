@@ -1,0 +1,29 @@
+{
+  "key": "village-storm-b",
+  "version": "v001",
+  "date": "2026-10-30T14:29:16.068Z",
+  "seed": "2584535428",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Zi Zhu Diao\" (Purple Bamboo Tune), sizhu silk and bamboo ensemble with dizi, erhu and yangqin, Thunder Mountains, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 84,
+    "key_scale": "F# minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 84,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "F# minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Zi Zhu Diao\" (Purple Bamboo Tune), sizhu silk and bamboo ensemble with dizi, erhu and yangqin, Thunder Mountains, village theme, warm and slow, warm lively welcoming, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "key": "village-bamboo-b",
+  "version": "v001",
+  "date": "2026-10-30T14:07:00.810Z",
+  "seed": "3861619989",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Yang Chun Bai Xue (White Snow in Early Spring)\", bright dizi and guzheng with light plucked pipa, elegant refined spring melody, clear lively and graceful, bamboo grove village in the morning, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 92,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 92,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Yang Chun Bai Xue (White Snow in Early Spring)\", bright dizi and guzheng with light plucked pipa, elegant refined spring melody, clear lively and graceful, bamboo grove village in the morning, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

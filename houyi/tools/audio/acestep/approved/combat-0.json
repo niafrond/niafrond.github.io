@@ -1,0 +1,12 @@
+{
+  "key": "combat-0",
+  "version": "v022",
+  "date": "2026-11-08T23:57:49.675046Z",
+  "seed": null,
+  "source": "généré hors du dépôt (fichier fourni par l'utilisateur : A_Minor_Martial_Overture.mp3), prompt du fichier battle-1-prompt.md",
+  "request": {
+    "prompt": "voir tools/audio/acestep/battle-1-prompt.md",
+    "bpm": 160,
+    "key_scale": "A minor"
+  }
+}

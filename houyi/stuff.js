@@ -1,0 +1,338 @@
+// Stuff : casque, collier, bracelet et bague. Module pur (sans DOM).
+//
+// Un stuff se gagne (marchands, coffres, butin de victoire, quêtes) et se porte dans l'onglet « Stuff ». Porté, il donne :
+//  - des bonus d'Attaque (`atkBonus`, % de critique) et de Défense (`defBonus`, % de blocage), comme les armes (combatStats.js) ;
+//  - des PV max permanents (`maxHp`) tant qu'il est porté : le retirer les retire, les PV actuels suivent à la hausse seulement ;
+//  - une résistance au poison (`poisonResist`, % de dégâts de poison évités, 100 = immunité) ;
+//  - une protection de biome (`biomeProtect` : clé de règle de terrain.js), réservée aux colliers de quête, un par biome hostile :
+//    la lave ne brûle plus (Volcan), les bambous n'envahissent plus (Bambous), la glace ne gèle plus (Neige), la mer ne dérive plus (Mer).
+//
+// Le héros garde `stuffOwned` (ids possédés) et `stuff` ({ head, neck, wrist, ring } : id porté ou null).
+
+import { describeManaMax } from './manaGear.js';
+import { skillBonus } from './skills.js';
+import { describeEffects } from './gearEffects.js';   // cycle assumé (gearEffects importe stuff.js) : utilisé seulement à l'exécution   // cycle assumé : utilisé seulement à l'exécution
+
+const allColors = n => ({ red: n, blue: n, green: n, yellow: n, purple: n });
+
+export const STUFF_SLOTS = ['head', 'neck', 'wrist', 'ring'];
+export const STUFF_SLOT_LABELS = { head: 'Casque', neck: 'Collier', wrist: 'Bracelet', ring: 'Bague' };
+
+// Protections de biome : clé de règle (terrain.js BIOME_RULES) → libellé de l'effet.
+export const BIOME_PROTECTION_TEXT = {
+    volcano: 'les cases brûlantes ne vous blessent plus',
+    bamboo: 'les bambous n\'envahissent plus le plateau',
+    snow: 'la glace ne gèle plus les cases',
+    sea: 'la mer ne fait plus dériver les rangées'
+};
+export const BIOME_PROTECTION_LABEL = { volcano: 'Volcan', bamboo: 'Bambous', snow: 'Neige', sea: 'Mer' };
+
+// Armures antiques : { pièces (id, emplacement, nom, bonus), pouvoir de l'ensemble complet }. Pouvoirs : `turnHealPct` (% des PV max rendus à
+// chaque tour), `turnArrowsPct` (% des flèches nécessaires à l'arme active la plus chère, au moins 1, gagné à chaque tour), `reflectPct` (% des dégâts reçus renvoyés).
+export const ANTIQUE_ARMORS = {
+    lumiere: {
+        name: 'Armure antique du Prisme', power: { turnHealPct: 10 }, powerText: 'Soigne 10 % des PV max à chaque tour',
+        pieces: [
+            { id: 'prisme_heaume', slot: 'head', name: 'Heaume du Prisme', bonus: { defBonus: 1, maxHp: 40 }, description: 'Un heaume d\'avant les dynasties, serti d\'un prisme qui boit la lumière.' },
+            { id: 'prisme_gorgerin', slot: 'neck', name: 'Gorgerin du Prisme', bonus: { maxHp: 60 }, description: 'Un gorgerin de verre fumé : la lumière le traverse sans l\'user.' },
+            { id: 'prisme_brassard', slot: 'wrist', name: 'Brassard du Prisme', bonus: { atkBonus: 1 }, description: 'Un brassard dont les facettes renvoient chaque rayon vers sa cible.' },
+            { id: 'prisme_anneau', slot: 'ring', name: 'Anneau du Prisme', bonus: { atkBonus: 1, defBonus: 1 }, description: 'Un anneau où dort un éclat de lumière : il manque à l\'armure pour s\'éveiller.' }
+        ]
+    },
+    jarres: {
+        name: 'Armure antique des Jarres', power: { turnArrowsPct: 100 }, powerText: '100 % du coût en flèches de l\'arme à flèches active la plus coûteuse, une fois par tour',
+        pieces: [
+            { id: 'jarres_heaume', slot: 'head', name: 'Heaume des Jarres', bonus: { defBonus: 1, maxHp: 40 }, description: 'Un heaume de terre cuite vernie, large comme une jarre à grain.' },
+            { id: 'jarres_gorgerin', slot: 'neck', name: 'Gorgerin des Jarres', bonus: { maxHp: 60 }, description: 'Un gorgerin d\'argile cuite, gravé de jarres alignées.' },
+            { id: 'jarres_brassard', slot: 'wrist', name: 'Brassard des Jarres', bonus: { atkBonus: 1 }, description: 'Un brassard d\'archer ancien : la corde y claque comme sur un tambour.' },
+            { id: 'jarres_anneau', slot: 'ring', name: 'Anneau des Jarres', bonus: { atkBonus: 1, defBonus: 1 }, description: 'Un anneau d\'argile où dort le carquois sans fond de l\'armure.' }
+        ]
+    },
+    charrette: {
+        name: 'Armure antique de la Charrette', power: { reflectPct: 50 }, powerText: 'Renvoie 50 % des dégâts reçus',
+        pieces: [
+            { id: 'charrette_heaume', slot: 'head', name: 'Heaume de la Charrette', bonus: { defBonus: 1, maxHp: 40 }, description: 'Un heaume de bronze aux rivets en forme de moyeux.' },
+            { id: 'charrette_gorgerin', slot: 'neck', name: 'Gorgerin de la Charrette', bonus: { maxHp: 60 }, description: 'Un gorgerin de bronze aux roues rivetées.' },
+            { id: 'charrette_brassard', slot: 'wrist', name: 'Brassard de la Charrette', bonus: { atkBonus: 1 }, description: 'Un brassard à essieu : chaque coup reçu y fait tourner une roue.' },
+            { id: 'charrette_anneau', slot: 'ring', name: 'Anneau de la Charrette', bonus: { atkBonus: 1, defBonus: 1 }, description: 'Un anneau en forme de roue : celui qui l\'achève rend les coups.' }
+        ]
+    }
+};
+
+const piece = (id, slot, name, minLevel, rarity, description, bonus = {}) => ({ id, type: 'stuff', slot, name, minLevel, rarity, description, ...bonus });
+
+// Parures forgées : sept paliers (niveaux 36 à 70) de quatre pièces, vendues par les marchands uniquement (`shop: true`, jamais en butin :
+// le bon stuff s'achète, voir merchants.js). Elles respectent le budget de statBudget.js (Atk, Déf et qì au plus égaux à la meilleure pièce
+// de l'emplacement) : leur force vient des PV max (12 par niveau) et de résistances aux crânes, aux armes, aux sorts, plus bonus de sorts et
+// réduction des attaques signature (effets de gearEffects.js).
+export const FORGED_TIERS = [
+    { level: 36, rarity: 'rare', theme: 'du Tonnerre', tale: 'forgée un jour d\'orage' },
+    { level: 42, rarity: 'rare', theme: 'de la Lune Argentée', tale: 'baignée de lune' },
+    { level: 48, rarity: 'rare', theme: 'du Fusang', tale: 'taillée dans le bois de l\'Arbre-Soleil' },
+    { level: 54, rarity: 'legendary', theme: 'de Jade Impérial', tale: 'polie pour la cour du Ciel' },
+    { level: 60, rarity: 'legendary', theme: 'du Dragon Doré', tale: 'couverte d\'écailles d\'or' },
+    { level: 66, rarity: 'legendary', theme: 'de l\'Aube Céleste', tale: 'trempée dans la première lumière' },
+    { level: 70, rarity: 'legendary', theme: 'du Dixième Soleil', tale: 'qui garde la chaleur du soleil abattu' }
+];
+const SPELL_COLORS = ['red', 'blue', 'yellow', 'green', 'purple', 'red', 'blue'];
+function forgedStuff() {
+    return FORGED_TIERS.flatMap((t, i) => {
+        const hp = 12 * t.level, res = 8 + 3 * i, late = i >= 3;
+        const id = slot => `forge_${slot}_${t.level}`;
+        const text = what => `${what} ${t.tale}.`;
+        return [
+            piece(id('head'), 'head', `Heaume ${t.theme}`, t.level, t.rarity, text('Un heaume de maître'), { defBonus: 2, maxHp: hp, effects: { resist: { skull: res } }, shop: true }),
+            piece(id('neck'), 'neck', `Collier ${t.theme}`, t.level, t.rarity, text('Un collier de maître'), { maxHp: hp, ...(late ? { manaMax: allColors(1) } : {}), effects: { resist: { spell: res } }, shop: true }),
+            piece(id('wrist'), 'wrist', `Bracelet ${t.theme}`, t.level, t.rarity, text('Un bracelet de maître'), { atkBonus: 1, defBonus: 1, maxHp: hp, effects: { resist: { weapon: res }, signatureReduce: 5 + 3 * i }, shop: true }),
+            piece(id('ring'), 'ring', `Bague ${t.theme}`, t.level, t.rarity, text('Une bague de maître'), { atkBonus: 1, defBonus: 1, maxHp: hp, ...(late ? { manaMax: allColors(2) } : {}), effects: { spellBoost: { [SPELL_COLORS[i]]: 10 + 2 * i } }, shop: true })
+        ];
+    });
+}
+
+export const allStuff = [
+    // Casques
+    piece('casque_de_cuir', 'head', 'Casque de cuir bouilli', 1, 'common', 'Un bonnet de cuir durci à la cire : mieux que rien.', { defBonus: 1 }),
+    piece('casque_de_bronze', 'head', 'Casque de bronze des rizières', 6, 'uncommon', 'Un casque de bronze martelé, orné d\'un épi.', { defBonus: 1, maxHp: 10 }),
+    piece('casque_de_jade', 'head', 'Diadème de jade', 14, 'rare', 'Un diadème de jade pâle qui garde l\'esprit clair.', { defBonus: 1, maxHp: 20 }),
+    piece('casque_du_dragon', 'head', 'Heaume du dragon céleste', 28, 'legendary', 'Un heaume à cornes de dragon, chaud comme une braise.', { atkBonus: 1, defBonus: 2, maxHp: 40 }),
+    // Colliers
+    piece('collier_de_perles', 'neck', 'Collier de perles d\'eau douce', 3, 'common', 'Des perles de rivière enfilées sur un fil de soie.', { maxHp: 8 }),
+    piece('collier_antivenin', 'neck', 'Collier d\'antivenin', 8, 'uncommon', 'Une dent de mangouste montée sur cuivre : les venins s\'y brisent.', { poisonResist: 50 }),
+    piece('collier_du_tigre', 'neck', 'Collier du tigre blanc', 16, 'rare', 'Trois crocs de tigre blanc : l\'audace du chasseur.', { atkBonus: 1, maxHp: 15 }),
+    piece('collier_du_phenix', 'neck', 'Collier du phénix', 30, 'legendary', 'Une plume de phénix sertie d\'or : le poison s\'y consume.', { maxHp: 50, poisonResist: 100 }),
+    // Bracelets
+    piece('bracelet_de_cuivre', 'wrist', 'Bracelet de cuivre', 2, 'common', 'Un jonc de cuivre poli.', { atkBonus: 1 }),
+    piece('bracelet_de_tendon', 'wrist', 'Bracelet de tendon', 7, 'uncommon', 'Du tendon de buffle tressé : il raffermit le poignet.', { atkBonus: 1, defBonus: 1 }),
+    piece('bracelet_de_jade_vital', 'wrist', 'Bracelet de Jade Vital', 8, 'rare', 'Un jonc de jade vif, tiède comme une peau vivante : il fortifie le corps.', { maxHp: 40 }),
+    piece('bracelet_antidote', 'wrist', 'Bracelet d\'antidote', 12, 'rare', 'Des graines d\'angélique dans un bracelet de jade.', { defBonus: 1, poisonResist: 60 }),
+    piece('bracelet_de_foudre', 'wrist', 'Bracelet de foudre', 24, 'legendary', 'Un cercle de fer d\'orage qui crépite au moindre tir.', { atkBonus: 1, defBonus: 1 }),
+    // Bagues
+    piece('bague_de_bois', 'ring', 'Bague de bois de pêcher', 1, 'common', 'Une bague taillée dans un noyau de pêche, porte-bonheur.', { maxHp: 5 }),
+    piece('bague_de_cuivre', 'ring', 'Bague de cuivre rouge', 5, 'uncommon', 'Un anneau de cuivre rouge gravé d\'une flèche.', { atkBonus: 1, maxHp: 8 }),
+    piece('bague_de_sagesse', 'ring', 'Bague du lettré', 15, 'rare', 'Le sceau d\'un lettré : le calme avant le tir.', { defBonus: 1, maxHp: 25 }),
+    piece('bague_de_l_immortel', 'ring', 'Bague de l\'immortel', 32, 'legendary', 'Une bague d\'ambre où dort un souffle d\'immortel.', { atkBonus: 1, defBonus: 1, maxHp: 40, poisonResist: 30 }),
+    // Qì max (`manaMax`) : une couleur, deux couleurs, ou les cinq.
+    piece('bague_du_souffle_rouge', 'ring', 'Bague du souffle rouge', 4, 'uncommon', 'Un anneau de cinabre : le qì du feu s\'y accumule.', { manaMax: { red: 1 } }),
+    piece('collier_de_la_source', 'neck', 'Collier de la source', 9, 'uncommon', 'Une perle de jade bleu-vert, fraîche comme une source de montagne.', { manaMax: { blue: 1, green: 1 }, maxHp: 8 }),
+    piece('bague_de_l_orage_pourpre', 'ring', 'Bague de l\'orage pourpre', 13, 'rare', 'Une améthyste où gronde un orage lointain.', { manaMax: { yellow: 2, purple: 2 }, defBonus: 1 }),
+    piece('bracelet_des_cinq_souffles', 'wrist', 'Bracelet des cinq souffles', 18, 'rare', 'Cinq perles, une par élément, enfilées sur un fil de soie.', { manaMax: allColors(1), atkBonus: 1 }),
+    piece('casque_du_sage_celeste', 'head', 'Diadème du sage céleste', 26, 'legendary', 'Un diadème d\'argent que seuls portent les maîtres des cinq éléments.', { manaMax: allColors(1), maxHp: 20, defBonus: 1 }),
+    // Objets à compromis : un bonus fort dans une statistique contre un malus dans une autre (valeurs négatives permises, voir statBudget.js).
+    piece('bracelet_du_berserker', 'wrist', 'Bracelet du berserker', 20, 'rare', 'Un jonc de fer taché de rouille : il rend le bras féroce et la garde imprudente.', { atkBonus: 10, defBonus: -6 }),
+    piece('casque_du_bastion', 'head', 'Heaume du bastion', 22, 'rare', 'Un casque sans visière, si lourd qu\'il gêne le tir.', { defBonus: 12, atkBonus: -7 }),
+    piece('collier_de_l_ermite', 'neck', 'Collier de l\'ermite', 18, 'rare', 'Une perle de silence : le qì afflue, l\'élan se fait rare.', { manaMax: allColors(10), atkBonus: -6 }),
+    piece('bague_du_pacte_de_qi', 'ring', 'Bague du pacte de qì', 24, 'rare', 'Une bague gravée d\'un pacte : le souffle contre la garde.', { manaMax: allColors(10), defBonus: -6 }),
+    // Effets de combat (`effects`, gearEffects.js) : le joueur prépare son équipement selon l'adversaire.
+    piece('bracelet_garde_crane', 'wrist', 'Brassard du garde-crânes', 6, 'uncommon', 'Un brassard de cuir clouté qui encaisse les coups de masse.', { effects: { resist: { skull: 15 } } }),
+    piece('bague_de_braise', 'ring', 'Bague de braise vive', 7, 'uncommon', 'Un rubis sombre où rougeoie une braise : les sorts de feu y puisent.', { effects: { spellBoost: { red: 12 } } }),
+    piece('collier_des_fleches_detournees', 'neck', 'Collier des flèches détournées', 9, 'uncommon', 'Une plaque de jade poli : les traits glissent dessus.', { effects: { resist: { weapon: 15 } } }),
+    piece('bague_de_la_parade_fluide', 'ring', 'Bague de la parade fluide', 10, 'rare', 'Un anneau d\'argent : chaque parade rouvre une source de qì.', { defBonus: 1, effects: { parryQi: { chance: 35, amount: 2 } } }),
+    piece('collier_de_la_maree', 'neck', 'Collier de la marée', 11, 'rare', 'Une perle bleue où gronde la marée : les sorts d\'Eau déferlent plus fort.', { maxHp: 10, effects: { spellBoost: { blue: 15 } } }),
+    piece('casque_du_veilleur', 'head', 'Casque du veilleur', 12, 'rare', 'Un casque de bronze à visière : ni coup à la tête ni berceuse ne vous font tomber.', { defBonus: 1, effects: { controlResist: { stunned: 100, asleep: 50 } } }),
+    piece('bague_du_sceau_etanche', 'ring', 'Bague du sceau étanche', 13, 'rare', 'Un sceau de cire noire qui dévie les sortilèges.', { effects: { resist: { spell: 15 } } }),
+    piece('bracelet_de_l_inflexible', 'wrist', 'Bracelet de l\'inflexible', 14, 'rare', 'Un bracelet d\'acier trempé : les attaques annoncées des seigneurs y perdent de leur fureur.', { defBonus: 1, effects: { signatureReduce: 25 } }),
+    // Colliers de biome : uniquement en récompense de leur quête (world/collars.js), jamais en boutique ni en butin.
+    piece('collier_obsidienne', 'neck', 'Collier d\'obsidienne froide', 4, 'rare', 'Une obsidienne qui ne chauffe jamais : la lave vous est indifférente.', { biomeProtect: 'volcano', maxHp: 10, quest: true }),
+    piece('collier_jade_vert', 'neck', 'Collier de jade vert', 17, 'rare', 'Un jade vif comme une pousse : les bambous vous laissent passer.', { biomeProtect: 'bamboo', maxHp: 15, quest: true }),
+    piece('collier_braise_d_orage', 'neck', 'Collier de braise d\'orage', 22, 'rare', 'Une braise captive dans le cristal : le givre n\'y accroche pas.', { biomeProtect: 'snow', maxHp: 20, quest: true }),
+    // Armures antiques : trois armures de quatre pièces (ANTIQUE_ARMORS), gagnées en résolvant les énigmes à plateau (puzzle/levels.js).
+    // Chaque pièce est un stuff ordinaire ; portées toutes les quatre, elles déclenchent le pouvoir de l'armure (voir stuffTotals).
+    ...Object.entries(ANTIQUE_ARMORS).flatMap(([armor, a]) => a.pieces.map(p => piece(p.id, p.slot, p.name, 15, 'legendary', p.description, { ...p.bonus, quest: true, armor })))
+,
+    piece('collier_perle_des_marees', 'neck', 'Collier de perle des marées', 32, 'rare', 'Une perle noire qui calme les courants.', { biomeProtect: 'sea', maxHp: 25, quest: true }),
+    ...forgedStuff()
+];
+
+export const getStuffById = id => allStuff.find(s => s.id === id) || null;
+export const isStuff = obj => obj?.type === 'stuff';
+
+// Reliques permanentes du sac (type `artifact`) : sans emplacement, bonus appliqué au ramassage ; l'onglet Stuff les liste (stuffView.js).
+export const relicsOf = hero => (Array.isArray(hero?.inventory) ? hero.inventory : []).filter(it => it?.type === 'artifact');
+
+// Stuff en vente ou en butin : tout sauf les colliers de quête.
+export const lootableStuff = () => allStuff.filter(s => !s.quest && !s.shop);
+// Stuff vendu par les marchands : butin ordinaire et parures forgées (boutique seulement).
+export const shopStuff = () => allStuff.filter(s => !s.quest);
+
+// Collier de quête qui protège d'un biome donné.
+export const collarForBiome = biome => allStuff.find(s => s.biomeProtect === biome) || null;
+
+// Armures antiques complètes (`totals.armors`) en texte : « Armure antique du Prisme : soigne … ».
+export const powerLines = totals => (totals.armors || []).map(k => `${ANTIQUE_ARMORS[k].name} : ${ANTIQUE_ARMORS[k].powerText.toLowerCase()}`);
+
+export function describeStuff(stuff) {
+    if (!stuff) return '';
+    return [
+        stuff.atkBonus ? `Atk +${stuff.atkBonus}` : '',
+        stuff.defBonus ? `Déf +${stuff.defBonus}` : '',
+        stuff.maxHp ? `PV max +${stuff.maxHp}` : '',
+        describeManaMax(stuff),
+        stuff.poisonResist ? (stuff.poisonResist >= 100 ? 'Immunisé au poison' : `Poison −${stuff.poisonResist} %`) : '',
+        ...describeEffects(stuff),
+        stuff.armor ? `${ANTIQUE_ARMORS[stuff.armor].name} (4 pièces : ${ANTIQUE_ARMORS[stuff.armor].powerText.toLowerCase()})` : '',
+        stuff.biomeProtect ? `Protège : ${BIOME_PROTECTION_LABEL[stuff.biomeProtect]}` : '',
+        stuff.stealth ? 'Indétectable : évite les combats (sauf boss)' : ''
+    ].filter(Boolean).join(' • ');
+}
+
+// Prix de base d'un stuff (les marchands y appliquent PRICE_MULT, voir merchants.js).
+const STUFF_RARITY_PRICE = { common: 10, uncommon: 22, rare: 45, legendary: 100 };
+export const baseStuffPrice = stuff => Math.floor(stuff.minLevel * (STUFF_RARITY_PRICE[stuff.rarity] || 10));
+
+// ── État du héros ───────────────────────────────────────────────────────────
+
+export const emptyStuff = () => ({ head: null, neck: null, wrist: null, ring: null });
+
+// Garantit `hero.stuff` / `hero.stuffOwned` (anciennes sauvegardes) et écarte les ids inconnus.
+export function normalizeStuff(hero) {
+    if (!hero) return hero;
+    hero.stuffOwned = Array.isArray(hero.stuffOwned) ? [...new Set(hero.stuffOwned.filter(id => getStuffById(id)))] : [];
+    const worn = emptyStuff();
+    STUFF_SLOTS.forEach(slot => {
+        const id = hero.stuff?.[slot];
+        const s = id && getStuffById(id);
+        if (s && s.slot === slot && hero.stuffOwned.includes(id)) worn[slot] = id;
+    });
+    hero.stuff = worn;
+    return hero;
+}
+
+// Pièces portées (fiches du catalogue).
+export function wornStuff(hero) {
+    return STUFF_SLOTS.map(slot => getStuffById(hero?.stuff?.[slot])).filter(Boolean);
+}
+
+// Totaux des bonus portés : { atk, def, maxHp, poisonResist (0–100), biomes: Set }.
+export function stuffTotals(hero) {
+    const totals = { atk: 0, def: 0, maxHp: 0, poisonResist: 0, turnHealPct: 0, turnArrowsPct: 0, reflectPct: 0, stealth: false, armors: [], biomes: new Set() };
+    wornStuff(hero).forEach(s => {
+        totals.atk += s.atkBonus || 0;
+        totals.def += s.defBonus || 0;
+        totals.maxHp += s.maxHp || 0;
+        totals.poisonResist += s.poisonResist || 0;
+        if (s.biomeProtect) totals.biomes.add(s.biomeProtect);
+        if (s.stealth) totals.stealth = true;
+    });
+    totals.poisonResist = Math.min(100, totals.poisonResist);
+    // Armure antique complète (ses quatre pièces portées) : pouvoir de l'ensemble.
+    const worn = wornStuff(hero);
+    totals.armors = Object.keys(ANTIQUE_ARMORS).filter(k => worn.filter(s => s.armor === k).length >= ANTIQUE_ARMORS[k].pieces.length);
+    totals.armors.forEach(k => Object.entries(ANTIQUE_ARMORS[k].power).forEach(([f, v]) => { totals[f] += v; }));
+    totals.reflectPct = Math.min(100, totals.reflectPct);
+    return totals;
+}
+
+// Voile d'ombre (relique) : les ennemis (hors boss) ne détectent plus le héros et les hautes herbes n'attirent plus de combat.
+// Indétectable : relique « Cháng d'ombre de Fusang » portée (items.js SHADOW_RELIC_ID, avant-dernier biome) ; l'ancien collier est converti à la lecture de la sauvegarde.
+export const hasStealth = hero => stuffTotals(hero).stealth || (hero?.inventory || []).some(i => i.type === 'artifact' && i.applied && i.effect?.stealth);
+
+export const protectsFromBiome = (hero, biomeRuleKey) => stuffTotals(hero).biomes.has(biomeRuleKey);
+
+// Ajoute un stuff à la collection (une seule fois). Renvoie la fiche si c'est un nouvel objet, sinon null.
+export function grantStuff(hero, id) {
+    const s = getStuffById(id);
+    if (!s) return null;
+    normalizeStuff(hero);
+    if (hero.stuffOwned.includes(id)) return null;
+    hero.stuffOwned.push(id);
+    return s;
+}
+
+// Les PV max du stuff s'ajoutent à `maxHp` quand on le porte et s'en retirent quand on l'ôte.
+function shiftMaxHp(hero, delta) {
+    if (!delta) return;
+    hero.maxHp = Math.max(1, (hero.maxHp || 0) + delta);
+    hero.hp = delta > 0 ? Math.min(hero.maxHp, (hero.hp || 0) + delta) : Math.max(1, Math.min(hero.hp || 1, hero.maxHp));
+}
+
+/** Porte un stuff possédé (remplace la pièce du même emplacement). Renvoie { ok, message }. */
+export function equipStuff(hero, id) {
+    normalizeStuff(hero);
+    const s = getStuffById(id);
+    if (!s || !hero.stuffOwned.includes(id)) return { ok: false, message: 'Vous ne possédez pas cet objet.' };
+    if ((hero.level || 1) < s.minLevel) return { ok: false, message: `${s.name} nécessite le niveau ${s.minLevel}.` };
+    if (hero.stuff[s.slot] === id) return { ok: true, message: `${s.name} est déjà porté.` };
+    unequipStuff(hero, s.slot);
+    hero.stuff[s.slot] = id;
+    shiftMaxHp(hero, s.maxHp || 0);
+    return { ok: true, message: `${s.name} équipé.`, stuff: s };
+}
+
+/** Retire la pièce portée à un emplacement. */
+export function unequipStuff(hero, slot) {
+    normalizeStuff(hero);
+    const s = getStuffById(hero.stuff[slot]);
+    if (!s) return { ok: false, message: 'Rien à retirer.' };
+    hero.stuff[slot] = null;
+    shiftMaxHp(hero, -(s.maxHp || 0));
+    return { ok: true, message: `${s.name} retiré.`, stuff: s };
+}
+
+// ── Poison ──────────────────────────────────────────────────────────────────
+
+// Ennemis dont les coups peuvent empoisonner le héros.
+// Copies d'ennemis nommés (copyOf dans enemies.catalog.json) : elles gardent le venin de leur gabarit d'origine.
+export const VENOMOUS_TEMPLATES = ['jiaolong', 'crapaud_boue', 'wen_shen', 'lingzhi_maudit', 'huli_jing',
+    'sun_1', 'sun_3', 'sun_8', 'garde_maree', 'petit_gui', 'corbeau_demon', 'singe_demon', 'carpe_doree'];
+export const POISON_CHANCE = 0.35;
+export const POISON_TURNS = 3;
+
+export const isVenomous = templateId => VENOMOUS_TEMPLATES.includes(templateId);
+
+// Dégâts de poison par tour après résistance (0 si le stuff immunise).
+export function poisonDamagePerTurn(hero, base) {
+    const resist = Math.min(100, stuffTotals(hero).poisonResist + skillBonus(hero, 'poisonResist'));
+    return Math.max(0, Math.round(base * (1 - resist / 100)));
+}
+
+/**
+ * Empoisonne le héros (statusEffects.poisoned = tours, poisonDamage = dégâts/tour). Renvoie les dégâts/tour posés (0 = protégé).
+ */
+export function inflictPoison(hero, baseDamage, turns = POISON_TURNS) {
+    const dmg = poisonDamagePerTurn(hero, Math.max(1, Math.floor(baseDamage || 1)));
+    if (dmg <= 0) return 0;
+    hero.statusEffects = hero.statusEffects || {};
+    hero.statusEffects.poisoned = Math.max(hero.statusEffects.poisoned || 0, turns);
+    hero.statusEffects.poisonDamage = Math.max(hero.statusEffects.poisonDamage || 0, dmg);
+    return dmg;
+}
+
+// ── Butin ───────────────────────────────────────────────────────────────────
+
+const RARITY_RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+
+/**
+ * Tire (ou non) un stuff que le héros ne possède pas encore et peut porter ou presque (niveau + `levelBonus`).
+ * @param {object} owner  { level, stuffOwned }
+ * @param {{ chance: number, rarity: object, levelBonus?: number }} cfg  chance de butin, poids de rareté
+ * @returns {object|null} la fiche tirée
+ */
+export function rollStuffDrop(owner, { chance, rarity, levelBonus = 0 }, rng = Math.random) {
+    if (rng() >= chance) return null;
+    const owned = new Set(owner?.stuffOwned || []);
+    const maxLevel = Math.max(1, owner?.level || 1) + levelBonus;
+    const entries = Object.entries(rarity).filter(([, w]) => w > 0);
+    let r = rng() * entries.reduce((sum, [, w]) => sum + w, 0);
+    let wanted = entries[entries.length - 1][0];
+    for (const [key, w] of entries) if ((r -= w) < 0) { wanted = key; break; }
+    const pool = lootableStuff().filter(s => s.minLevel <= maxLevel && !owned.has(s.id));
+    // la rareté voulue, sinon d'un cran en dessous
+    for (let rank = RARITY_RANK[wanted]; rank >= 0; rank--) {
+        const same = pool.filter(s => RARITY_RANK[s.rarity] === rank);
+        if (same.length) return same[Math.floor(rng() * same.length)];
+    }
+    return null;
+}
+
+// Paliers de coffre (chestLoot.js) → butin de stuff.
+// Le bon stuff (rare, légendaire) s'achète chez les marchands (merchants.js) : le butin ne laisse que des pièces ordinaires, et un peu de rare
+// dans les coffres les mieux cachés.
+export const CHEST_STUFF_DROP = {
+    1: { chance: 0.04, rarity: { common: 80, uncommon: 20 } },
+    2: { chance: 0.07, rarity: { common: 55, uncommon: 45 } },
+    3: { chance: 0.12, rarity: { uncommon: 75, rare: 25 } },
+    4: { chance: 0.2, rarity: { uncommon: 45, rare: 55 }, levelBonus: 2 }
+};
+// Victoire ordinaire : 6 % de chance d'un stuff commun ou peu commun ; contre un ennemi de niveau supérieur, un stuff rare garanti.
+export const VICTORY_STUFF_DROP = { chance: 0.03, rarity: { common: 70, uncommon: 30 } };
+export const OVERLEVELED_STUFF_DROP = { chance: 1, rarity: { uncommon: 55, rare: 45 } };

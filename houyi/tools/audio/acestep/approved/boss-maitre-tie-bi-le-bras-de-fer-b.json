@@ -1,0 +1,29 @@
+{
+  "key": "boss-maitre-tie-bi-le-bras-de-fer-b",
+  "version": "v001",
+  "date": "2026-10-30T14:45:08.250Z",
+  "seed": "4205833515",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, master Tie Bi the iron arm, heavy hammering rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 118,
+    "key_scale": "G minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 118,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, dangerous boss battle, master Tie Bi the iron arm, heavy hammering rhythm, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

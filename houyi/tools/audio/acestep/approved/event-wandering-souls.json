@@ -1,0 +1,29 @@
+{
+  "key": "event-wandering-souls",
+  "version": "v001",
+  "date": "2026-10-30T11:13:47.120Z",
+  "seed": "2552183216",
+  "request": {
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Chinese ghost festival night, drifting mist and floating red paper lanterns, sparse guqin (ancient wisdom, restraint) with sparse bell-like plucks, soft soft xiao (solitude, destiny, twilight) and sustained sheng pads (celestial presence) pad, slow ritual temple bell, hollow wooden fish woodblock, eerie but gentle and respectful of the dead, not scary, not horror, haunting pentatonic melody, spacious with silence between phrases",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 62,
+    "key_scale": "E minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 62,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "E minor",
+    "timesignature": "4",
+    "prompt": "inspired by the warm lyrical melodic charm of Final Fantasy IX and the bright catchy compact sound of Pokemon Ruby Sapphire Emerald FireRed on Game Boy Advance, instrumental video game soundtrack, early 2000s Game Boy Advance JRPG style, sampled traditional Chinese instruments with chiptune accents, pentatonic melodic identity, square and pulse wave accents, triangle bass, compact arrangement with limited polyphony, one strong memorable lead melody, clear separation of parts, seamless loop, no vocals, no cinematic orchestral bombast, no EDM, no trap, no sub-bass, Chinese ghost festival night, drifting mist and floating red paper lanterns, sparse guqin (ancient wisdom, restraint) with sparse bell-like plucks, soft soft xiao (solitude, destiny, twilight) and sustained sheng pads (celestial presence) pad, slow ritual temple bell, hollow wooden fish woodblock, eerie but gentle and respectful of the dead, not scary, not horror, haunting pentatonic melody, spacious with silence between phrases",
+    "lyrics": "[Instrumental]"
+  }
+}

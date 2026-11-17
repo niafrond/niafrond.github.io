@@ -1,0 +1,29 @@
+{
+  "key": "boss-soleil-des-eaux-taries-b",
+  "version": "v001",
+  "date": "2026-10-30T14:36:11.241Z",
+  "seed": "2757686678",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, boss battle against the Sun of the Dried Waters, ten suns celestial motif slightly weakened, dry parched feel, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 136,
+    "key_scale": "G minor",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 136,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "G minor",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Ba Wang Xie Jia\" (The Overlord Removes His Armor), pipa, giant war drums, deep gongs and suona, boss battle against the Sun of the Dried Waters, ten suns celestial motif slightly weakened, dry parched feel, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

@@ -1,0 +1,59 @@
+// Ultimes de légende (Quatre Gardiens Célestes) : verrouillés au départ avec leur indice de quête, puis sélectionnables une fois débloqués,
+// quelle que soit la classe, et conservés après un rechargement (sauvegarde).
+import { test, expect } from '@playwright/test';
+
+const URL = '/houyi/';
+const loaded = page => page.waitForFunction(() => !document.getElementById('loading-screen')?.classList.contains('visible'), null, { timeout: 30_000 });
+
+// Lignes de la liste « Ultime » de l'onglet Sorts : nom, verrouillé ou non, texte, bouton « Choisir » présent
+const rows = page => page.evaluate(async () => {
+    const g = await import('./game.js');
+    g.updateSpellsTab();
+    return [...document.querySelectorAll('#ultimate-spells-list .spell-item')].map(r => ({
+        name: r.querySelector('.spell-name').textContent.trim(),
+        locked: r.classList.contains('locked-spell'),
+        text: r.querySelector('.spell-cost').textContent.trim(),
+        choose: /Choisir/.test(r.textContent)
+    }));
+});
+
+test.describe('houyi · ultimes de légende', () => {
+    test.setTimeout(60_000);
+
+    for (const index of [0]) {   // plus de choix de classe au départ : un seul parcours
+        test(`classe n°${index + 1} : rien d'affiché au départ, puis débloqués par quête, choisis et conservés après rechargement`, async ({ page }) => {
+            const errors = [];
+            page.on('pageerror', e => errors.push(e.message));
+            await page.goto(URL);
+            await loaded(page);
+            await page.waitForSelector('#explore-canvas', { state: 'visible' });
+
+            // Départ : niveau 1, aucun ultime de classe : la section est absente, sans aucun indice sur les ultimes de légende
+            expect(await rows(page)).toHaveLength(0);
+            expect(await page.locator('#ultimate-spells-list').innerText()).toBe('');
+
+            // La quête du Tigre Blanc rapporte son ultime (niveau 28 requis) : débloqué mais trop faible, puis sélectionnable au niveau 30
+            const tigerLine = r => r.name.includes('Chasse du Tigre Blanc');
+            await page.evaluate(async () => { (await import('./game.js')).grantUltimate('ultimateWhiteTiger'); });
+            expect((await rows(page)).find(tigerLine)).toMatchObject({ locked: true, text: 'Niveau 28 requis' });
+            await page.evaluate(async () => { const g = await import('./game.js'); g.player.level = 30; g.saveUpdate(); });
+            const unlocked = await rows(page);
+            expect(unlocked.find(tigerLine)).toMatchObject({ locked: false, choose: true });
+            expect(unlocked.filter(r => r.locked)).toHaveLength(0);
+
+            // Choix : l'ultime devient l'ultime équipé
+            await page.evaluate(() => window.equipUltimate('ultimateWhiteTiger'));
+            expect(await page.evaluate(async () => (await import('./game.js')).player.equippedUltimate)).toBe('ultimateWhiteTiger');
+
+            // Sauvegarde : rien n'est perdu au rechargement
+            expect(await page.evaluate(() => JSON.parse(localStorage.getItem('player')).unlockedUltimates)).toEqual(['ultimateWhiteTiger']);
+            await page.reload();
+            await loaded(page);
+            const after = await rows(page);
+            expect(after.find(tigerLine)).toMatchObject({ locked: false });
+            expect(after.filter(r => r.locked)).toHaveLength(0);
+            expect(await page.evaluate(async () => (await import('./game.js')).player.equippedUltimate)).toBe('ultimateWhiteTiger');
+            expect(errors).toEqual([]);
+        });
+    }
+});

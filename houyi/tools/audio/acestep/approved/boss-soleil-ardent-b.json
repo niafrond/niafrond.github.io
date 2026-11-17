@@ -1,0 +1,29 @@
+{
+  "key": "boss-soleil-ardent-b",
+  "version": "v001",
+  "date": "2026-10-30T14:35:53.145Z",
+  "seed": "3979168102",
+  "request": {
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle against the Ardent Sun, ten suns celestial motif full strength, first sun, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]",
+    "vocal_language": "unknown",
+    "audio_format": "mp3",
+    "audio_duration": 180,
+    "batch_size": 1,
+    "thinking": false,
+    "bpm": 138,
+    "key_scale": "D major",
+    "time_signature": "4",
+    "use_random_seed": true
+  },
+  "motifFile": null,
+  "metas": {
+    "bpm": 138,
+    "duration": 180,
+    "genres": "N/A",
+    "keyscale": "D major",
+    "timesignature": "4",
+    "prompt": "traditional Chinese instrumental inspired by the ancient piece \"Shi Mian Mai Fu\" final battle section, pipa virtuosity, war drums and cymbal crashes, boss battle against the Ardent Sun, ten suns celestial motif full strength, first sun, intense epic martial, building to a powerful climax, authentic traditional acoustic Chinese instruments, organic natural dynamics, instrumental, no vocals, no synthesizers, no electronic drums, no EDM, no pop, no western orchestral trailer music",
+    "lyrics": "[Instrumental]"
+  }
+}

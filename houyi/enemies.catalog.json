@@ -1,0 +1,4500 @@
+[
+  {
+    "id": "canglong",
+    "name": "Canglong de Givre",
+    "race": "Long",
+
+    "title": "Seigneur du Grand Froid",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.9, "atkMult": 1.5, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.35, "red": 0.05, "green": 0.12, "yellow": 0.12, "purple": 0.18 },
+    "dropProfile": { "goldMult": 3.5, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "chilong",
+    "name": "Chilong de Braise",
+    "race": "Long",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "title": "Gueule de Magma",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.55, "defMult": 1.25 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.08, "red": 0.33, "green": 0.08, "yellow": 0.2, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3.0, "dropChance": 0.75, "weaponChance": 0.35 }
+  },
+  {
+    "id": "jiangshi",
+    "name": "Jiangshi",
+    "race": "Cadavre sauteur",
+
+    "title": "Sauteur de Minuit",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.2, "atkMult": 1.4, "defMult": 1.0 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "green", "blue"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.15, "red": 0.1, "green": 0.2, "yellow": 0.1, "purple": 0.3 },
+    "dropProfile": { "goldMult": 2.0, "dropChance": 0.65, "weaponChance": 0.20 }
+  },
+  {
+    "id": "yinglong",
+    "name": "Yinglong",
+    "race": "Long",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "title": "Dragon Ailé de la Pluie",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.4, "defMult": 1.2 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.1, "green": 0.08, "yellow": 0.3, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3.2, "dropChance": 0.70, "weaponChance": 0.35 }
+  },
+  {
+    "id": "chiyou",
+    "name": "Chiyou",
+    "race": "Divinité guerrière",
+
+    "title": "Hache de la Lune Rouge",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.4, "defMult": 1.05 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "yellow", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.08, "red": 0.2, "green": 0.15, "yellow": 0.1, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.1, "dropChance": 0.55, "weaponChance": 0.50 }
+  },
+  {
+    "id": "suanni",
+    "name": "Suanni de Pierre",
+    "race": "Gardien",
+
+    "title": "Gardien du Temple",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.7, "atkMult": 1.15, "defMult": 1.5 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "yellow", "purple"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.12, "green": 0.3, "yellow": 0.15, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.5, "dropChance": 0.45, "weaponChance": 0.45 }
+  },
+  {
+    "id": "gui_esprit",
+    "name": "Gui",
+    "race": "Gui",
+
+    "title": "Errant du Crépuscule",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.3, "atkMult": 1.35, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "blue", "blue"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.1, "green": 0.1, "yellow": 0.1, "purple": 0.32 },
+    "dropProfile": { "goldMult": 1.8, "dropChance": 0.70, "weaponChance": 0.10 }
+  },
+  {
+    "id": "huli_jing",
+    "name": "Huli Jing",
+    "race": "Esprit-renard",
+
+    "title": "Chapardeur Rusé",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 0.9, "atkMult": 1.2, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "purple", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.08, "red": 0.08, "green": 0.12, "yellow": 0.2, "purple": 0.2 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.65, "weaponChance": 0.35 }
+  },
+   {
+    "id": "hundun",
+    "name": "Hundun du Gobi",
+    "race": "Esprit informe",
+
+    "title": "Titan du Gobi",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2.0, "atkMult": 1.25, "defMult": 1.5 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.05, "red": 0.18, "green": 0.25, "yellow": 0.35, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.4, "dropChance": 0.40, "weaponChance": 0.25 }
+  },
+  {
+    "id": "assassin_masque",
+    "name": "Assassin Masqué",
+    "race": "Humain",
+
+    "title": "Lame du Voile Noir",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.0, "atkMult": 1.5, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.12, "red": 0.1, "green": 0.2, "yellow": 0.08, "purple": 0.28 },
+    "dropProfile": { "goldMult": 1.4, "dropChance": 0.60, "weaponChance": 0.45 }
+  },
+  {
+    "id": "shu_jing",
+    "name": "Shu Jing",
+    "race": "Esprit",
+
+    "title": "Gardien des Vieux Pins",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.1, "defMult": 1.5 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.08, "green": 0.35, "yellow": 0.15, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "lettre_sorcier",
+    "name": "Lettré-Sorcier",
+    "race": "Humain",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "title": "Maître du Pinceau",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.0, "atkMult": 1.3, "defMult": 1.0 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "purple", "blue"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.25, "red": 0.05, "green": 0.08, "yellow": 0.1, "purple": 0.2 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.70, "weaponChance": 0.10 }
+  },
+  {
+    "id": "pixiu",
+    "name": "Pixiu",
+    "race": "Hybride",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "title": "Cœur de Fournaise",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.9, "atkMult": 1.45, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.05, "red": 0.4, "green": 0.05, "yellow": 0.18, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.5, "dropChance": 0.40, "weaponChance": 0.20 }
+  },
+  {
+    "id": "pretresse_lunaire",
+    "name": "Prêtresse Lunaire",
+    "race": "Esprit",
+
+    "title": "Servante de Chang'e",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.4, "atkMult": 1.15, "defMult": 1.3 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "blue", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.08, "green": 0.15, "yellow": 0.1, "purple": 0.25 },
+    "dropProfile": { "goldMult": 1.5, "dropChance": 0.65, "weaponChance": 0.20 }
+  },
+  {
+    "id": "soldat_terre_cuite",
+    "name": "Soldat de Terre Cuite",
+    "race": "Humain",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "title": "Champion en Armure de Fer",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.35, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "yellow", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.18, "green": 0.1, "yellow": 0.15, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.6, "dropChance": 0.65, "weaponChance": 0.55 }
+  },
+  {
+    "id": "wen_shen",
+    "name": "Wen Shen",
+    "race": "Esprit de l'épidémie",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "title": "Maître des Gourdes de Poison",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.2, "atkMult": 1.25, "defMult": 1.05 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "purple", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.12, "red": 0.1, "green": 0.3, "yellow": 0.08, "purple": 0.22 },
+    "dropProfile": { "goldMult": 1.0, "dropChance": 0.80, "weaponChance": 0.05 }
+  },
+  {
+    "id": "lei_gong",
+    "name": "Lei Gong",
+    "race": "Esprit",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "title": "Lance d'Éclair",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.25, "defMult": 1.35 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "blue", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.22, "red": 0.08, "green": 0.1, "yellow": 0.28, "purple": 0.1 },
+    "dropProfile": { "goldMult": 1.4, "dropChance": 0.60, "weaponChance": 0.50 }
+  },
+  {
+    "id": "lingzhi_maudit",
+    "name": "Lingzhi Maudit",
+    "race": "Esprit végétal",
+
+    "title": "Champignon aux Spores Rouges",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.2, "defMult": 1.25 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "purple", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.08, "red": 0.08, "green": 0.4, "yellow": 0.1, "purple": 0.2 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "crapaud_boue",
+    "name": "Crapaud de Boue",
+    "race": "Bête",
+
+    "title": "Chanteur des Marais",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.4, "atkMult": 1.15, "defMult": 1.15 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "blue", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.08, "green": 0.35, "yellow": 0.08, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "dame_des_neiges",
+    "name": "Dame des Neiges",
+    "race": "Esprit",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "title": "Éventail de Givre",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.2, "atkMult": 1.35, "defMult": 1.1 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.32, "red": 0.05, "green": 0.08, "yellow": 0.1, "purple": 0.18 },
+    "dropProfile": { "goldMult": 1.1, "dropChance": 0.65, "weaponChance": 0.10 }
+  },
+  {
+    "id": "gui_guerrier",
+    "name": "Gui Guerrier",
+    "race": "Gui",
+    "battleMusic": "wav/musicgen-03-mort-vivant-1773190645899.wav",
+    "title": "Sabre Rouillé",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.2, "atkMult": 1.4, "defMult": 1.0 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "red", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.12, "green": 0.15, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.7, "dropChance": 0.55, "weaponChance": 0.45 }
+  },
+  {
+    "id": "garde_solaire",
+    "name": "Garde Solaire",
+    "race": "Humain",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "title": "Flamme Sacrée",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.2, "defMult": 1.4 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.32, "green": 0.15, "yellow": 0.2, "purple": 0.1 },
+    "dropProfile": { "goldMult": 1.5, "dropChance": 0.65, "weaponChance": 0.40 }
+  },
+  {
+    "id": "jiaolong",
+    "name": "Jiaolong du Fleuve",
+    "race": "Long",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "title": "Terreur des Eaux Profondes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.4, "defMult": 1.25 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.35, "red": 0.05, "green": 0.2, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 2.8, "dropChance": 0.70, "weaponChance": 0.25 }
+  },
+  {
+    "id": "immortel_jade",
+    "name": "Immortel de Jade",
+    "race": "Esprit de pierre",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "title": "Oracle Scintillant",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.2, "atkMult": 1.25, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "purple", "blue"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.18, "red": 0.1, "green": 0.28, "yellow": 0.08, "purple": 0.22 },
+    "dropProfile": { "goldMult": 1.8, "dropChance": 0.70, "weaponChance": 0.15 }
+  },
+  {
+    "id": "shanxiao",
+    "name": "Shanxiao",
+    "race": "Esprit de montagne",
+
+    "title": "Démon des Cols",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.35, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "green", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.22, "green": 0.2, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.8, "dropChance": 0.50, "weaponChance": 0.55 }
+  },
+  {
+    "id": "tigre_embrase",
+    "name": "Tigre Embrasé",
+    "race": "Bête",
+
+    "title": "Rayures de Braise",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.45, "defMult": 1.15 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.22, "green": 0.2, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.8, "dropChance": 0.50, "weaponChance": 0.05 }
+  },
+  {
+    "id": "sanglier_flammes",
+    "name": "Sanglier de Flammes",
+    "race": "Bête",
+
+    "title": "Charge Ardente",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.4, "atkMult": 1.35, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.18, "green": 0.1, "yellow": 0.15, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.6, "dropChance": 0.65, "weaponChance": 0.05 }
+  },
+  {
+    "id": "loup_braise",
+    "name": "Loup de Braise",
+    "race": "Bête",
+
+    "title": "Croc Incandescent",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.0, "atkMult": 1.45, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "yellow", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.08, "red": 0.28, "green": 0.2, "yellow": 0.12, "purple": 0.1 },
+    "dropProfile": { "goldMult": 1.4, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "cao_jing",
+    "name": "Cao Jing",
+    "race": "Esprit végétal",
+
+    "title": "Petit Esprit des Herbes",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "hua_jing",
+    "name": "Hua Jing",
+    "race": "Esprit végétal",
+
+    "title": "Fée aux Pétales",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "huli_commun",
+    "name": "Huli",
+    "race": "Bête",
+
+    "title": "Renard des Digues",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "shuihou",
+    "name": "Shuihou",
+    "race": "Esprit aquatique",
+
+    "title": "Singe de la Vase",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "shui_gui",
+    "name": "Shui Gui",
+    "race": "Gui",
+
+    "title": "Noyé des Berges",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "qing_she",
+    "name": "Qing She",
+    "race": "Serpent",
+
+    "title": "Serpent Vert de Jade",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "jingwei",
+    "name": "Jingwei",
+    "race": "Oiseau",
+
+    "title": "Oiseau qui Comble la Mer",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "she_shen",
+    "name": "She Shen",
+    "race": "Esprit",
+
+    "title": "Gardien du Terroir",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "zu_xian",
+    "name": "Zu Xian",
+    "race": "Esprit",
+
+    "title": "Ancêtre Mécontent",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "du_she",
+    "name": "Du She",
+    "race": "Serpent",
+
+    "title": "Serpent à Venin",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "xuan_she",
+    "name": "Xuan She",
+    "race": "Serpent",
+
+    "title": "Serpent Noir Prodigieux",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "huo_shen",
+    "name": "Huo Shen",
+    "race": "Esprit de feu",
+
+    "title": "Esprit de la Flamme",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "huo_shou",
+    "name": "Huo Shou",
+    "race": "Bête",
+
+    "title": "Bête de Cendre",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "chi_niao",
+    "name": "Chi Niao",
+    "race": "Oiseau",
+
+    "title": "Oiseau Ardent",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "bi_fang",
+    "name": "Bi Fang",
+    "race": "Oiseau",
+
+    "title": "Oiseau à Une Patte",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "nuba",
+    "name": "Nüba",
+    "race": "Divinité",
+
+    "title": "Déesse de la Sécheresse",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "zhuque",
+    "name": "Zhuque",
+    "race": "Oiseau",
+
+    "title": "Oiseau Vermillon du Sud",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "zhulong_serpent",
+    "name": "Zhulong",
+    "race": "Dragon",
+
+    "title": "Serpent Rouge à Visage Humain",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "dijiang",
+    "name": "Dijiang",
+    "race": "Esprit informe",
+
+    "title": "Sac Rouge sans Visage",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "yazi",
+    "name": "Yazi",
+    "race": "Hybride",
+
+    "title": "Fauve à Tête de Dragon",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "mei",
+    "name": "Mei",
+    "race": "Esprit",
+
+    "title": "Esprit Trompeur",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "wangliang",
+    "name": "Wangliang",
+    "race": "Esprit",
+
+    "title": "Esprit des Lieux Sauvages",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "wangxiang",
+    "name": "Wangxiang",
+    "race": "Esprit",
+
+    "title": "Guetteur des Tombes",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "shi_jing",
+    "name": "Shi Ling",
+    "race": "Esprit de pierre",
+
+    "title": "Esprit de Pierre",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "houtu",
+    "name": "Houtu",
+    "race": "Divinité",
+
+    "title": "Souveraine de la Terre",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "feima",
+    "name": "Feima",
+    "race": "Bête",
+
+    "title": "Cheval Volant",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "bashe",
+    "name": "Bashé",
+    "race": "Serpent",
+
+    "title": "Avaleur d'Éléphants",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "tiangou_noir",
+    "name": "Tian Gou",
+    "race": "Bête",
+
+    "title": "Chien Céleste",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "fucanglong",
+    "name": "Fucanglong",
+    "race": "Dragon",
+
+    "title": "Dragon des Trésors Enfouis",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "dilong",
+    "name": "Dilong",
+    "race": "Dragon",
+
+    "title": "Dragon de la Terre",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "jing_jing",
+    "name": "Guqi Zhiling",
+    "race": "Esprit",
+
+    "title": "Esprit d'Objet Ancien",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "meng_shou",
+    "name": "Mengyan Yishou",
+    "race": "Bête",
+
+    "title": "Bête des Rêves",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "wu_shou",
+    "name": "Miwu Yishou",
+    "race": "Bête",
+
+    "title": "Bête de Brume",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "he_bo",
+    "name": "He Bo",
+    "race": "Divinité",
+
+    "title": "Seigneur du Fleuve Jaune",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "shui_shen",
+    "name": "Shui Shen",
+    "race": "Esprit aquatique",
+
+    "title": "Esprit des Eaux",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "jiao",
+    "name": "Jiao",
+    "race": "Dragon",
+
+    "title": "Dragon des Remous",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "bai_she",
+    "name": "Bai She",
+    "race": "Serpent",
+
+    "title": "Serpent Blanc",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "heishui_xuan_she",
+    "name": "Heishui Xuan She",
+    "race": "Serpent",
+
+    "title": "Serpent des Eaux Noires",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "heilong",
+    "name": "Heilong",
+    "race": "Dragon",
+
+    "title": "Dragon Noir des Profondeurs",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "bailong",
+    "name": "Bailong",
+    "race": "Dragon",
+
+    "title": "Dragon Blanc",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "ao",
+    "name": "Ao",
+    "race": "Tortue",
+
+    "title": "Tortue Porteuse de Montagne",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "gui_tortue",
+    "name": "Tortue Gui",
+    "race": "Tortue",
+
+    "title": "Tortue Spirituelle",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "linggui",
+    "name": "Linggui",
+    "race": "Tortue",
+
+    "title": "Tortue des Présages",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "xuan_gui",
+    "name": "Xuan Gui",
+    "race": "Tortue",
+
+    "title": "Grande Tortue Noire",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "bixi",
+    "name": "Bixi",
+    "race": "Dragon",
+
+    "title": "Dragon-Tortue Porte-Stèle",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "feiyu",
+    "name": "Feiyu",
+    "race": "Poisson",
+
+    "title": "Poisson à Contre-Courant",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "jiaoyu",
+    "name": "Jiaoyu",
+    "race": "Poisson",
+
+    "title": "Poisson-Dragon",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "yingyu",
+    "name": "Yingyu",
+    "race": "Poisson",
+
+    "title": "Poisson Ailé des Crues",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "mu_mei",
+    "name": "Mu Mei",
+    "race": "Esprit végétal",
+
+    "title": "Esprit du Bois",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "mu_gui",
+    "name": "Mu Gui",
+    "race": "Gui",
+
+    "title": "Fantôme des Arbres Morts",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "shan_gui",
+    "name": "Shan Gui",
+    "race": "Esprit",
+
+    "title": "Esprit Sauvage des Cols",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "lu_jing",
+    "name": "Ling Lu",
+    "race": "Esprit-animal",
+
+    "title": "Cerf Lumineux",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "hu_jing",
+    "name": "Ling Hu",
+    "race": "Esprit-animal",
+
+    "title": "Tigre Esprit",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "xiong_jing",
+    "name": "Ling Xiong",
+    "race": "Esprit-animal",
+
+    "title": "Ours Esprit",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "he_jing",
+    "name": "Ling He",
+    "race": "Esprit-animal",
+
+    "title": "Grue Esprit",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "lang_jing",
+    "name": "Ling Lang",
+    "race": "Esprit-animal",
+
+    "title": "Loup Esprit",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "she_jing",
+    "name": "Ling She",
+    "race": "Esprit-animal",
+
+    "title": "Serpent Esprit",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "shouling",
+    "name": "Shouling",
+    "race": "Esprit-animal",
+
+    "title": "Âme de la Bête",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "jing_shou",
+    "name": "Lingmu Yishou",
+    "race": "Esprit-animal",
+
+    "title": "Bête aux Yeux Lumineux",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "hanba",
+    "name": "Hanba",
+    "race": "Esprit",
+
+    "title": "Esprit de la Sécheresse",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "shan_shen",
+    "name": "Shan Shen",
+    "race": "Divinité",
+
+    "title": "Esprit de la Montagne",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "qilin",
+    "name": "Qilin",
+    "race": "Hybride",
+
+    "title": "Licorne de Vertu",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "feng_bo",
+    "name": "Feng Bo",
+    "race": "Divinité",
+
+    "title": "Vieux Maître du Vent",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "yu_shi",
+    "name": "Yu Shi",
+    "race": "Divinité",
+
+    "title": "Maître de la Pluie",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "dian_mu",
+    "name": "Dian Mu",
+    "race": "Divinité",
+
+    "title": "Dame des Éclairs",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "lei_shou",
+    "name": "Lei Shou",
+    "race": "Bête",
+
+    "title": "Bête du Tonnerre",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "feng_shou",
+    "name": "Feng Shou",
+    "race": "Bête",
+
+    "title": "Bête des Vents",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "yun_shou",
+    "name": "Yun Shou",
+    "race": "Bête",
+
+    "title": "Bête des Nuées",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "xue_niao",
+    "name": "Xueyu Niao",
+    "race": "Oiseau",
+
+    "title": "Oiseau des Neiges",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "feilong",
+    "name": "Feilong",
+    "race": "Dragon",
+
+    "title": "Dragon Volant",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "tengshe",
+    "name": "Tengshe",
+    "race": "Serpent",
+
+    "title": "Serpent Volant",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "baihu",
+    "name": "Baihu",
+    "race": "Bête",
+
+    "title": "Tigre Blanc de l'Ouest",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "qinglong",
+    "name": "Qinglong",
+    "race": "Dragon",
+
+    "title": "Dragon Azur de l'Est",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "qiongqi",
+    "name": "Qiongqi",
+    "race": "Bête",
+
+    "title": "Tigre Ailé Cruel",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "tianma",
+    "name": "Tianma",
+    "race": "Bête",
+
+    "title": "Cheval Céleste",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "chiwen",
+    "name": "Chiwen",
+    "race": "Hybride",
+
+    "title": "Dragon-Poisson des Toits",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "pulao",
+    "name": "Pulao",
+    "race": "Dragon",
+
+    "title": "Dragon des Cloches",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "bai_ze",
+    "name": "Bai Ze",
+    "race": "Bête",
+
+    "title": "Bête Blanche Omnisciente",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "bai_ze_savant",
+    "name": "Bai Ze",
+    "race": "Bête",
+
+    "title": "Bête du Savoir",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "zouyu",
+    "name": "Zouyu",
+    "race": "Bête",
+
+    "title": "Tigre de Bon Augure",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "xiezhi",
+    "name": "Xiezhi",
+    "race": "Bête",
+
+    "title": "Bête de Justice",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "bixie",
+    "name": "Bixie",
+    "race": "Hybride",
+
+    "title": "Lion Ailé Protecteur",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "tianlu",
+    "name": "Tianlu",
+    "race": "Hybride",
+
+    "title": "Gardien Cornu",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "tianlu_gardien",
+    "name": "Tianlu",
+    "race": "Hybride",
+
+    "title": "Gardien des Portes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "pixiu_tresor",
+    "name": "Pixiu",
+    "race": "Hybride",
+
+    "title": "Gardien des Richesses",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "bian",
+    "name": "Bi'an",
+    "race": "Bête",
+
+    "title": "Fauve des Prisons",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "fuxi_dragon",
+    "name": "Fuxi",
+    "race": "Dragon",
+
+    "title": "Fils du Dragon",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "chaofeng",
+    "name": "Chaofeng",
+    "race": "Hybride",
+
+    "title": "Sentinelle des Hauteurs",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "longma",
+    "name": "Longma",
+    "race": "Hybride",
+
+    "title": "Cheval-Dragon",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "taotie_bronze",
+    "name": "Taotie",
+    "race": "Masque",
+
+    "title": "Masque de Bronze",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "taotie_bete",
+    "name": "Tao Tie",
+    "race": "Bête",
+
+    "title": "Dévoreur sans Fin",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "jiuweihu",
+    "name": "Jiuweihu",
+    "race": "Esprit-animal",
+
+    "title": "Renard à Neuf Queues",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "xiangliu",
+    "name": "Xiangliu",
+    "race": "Serpent",
+
+    "title": "Serpent à Neuf Têtes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "nian",
+    "name": "Nian",
+    "race": "Bête",
+
+    "title": "Monstre de la Veille du Nouvel An",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "kuafu_geant",
+    "name": "Kuafu",
+    "race": "Géant",
+
+    "title": "Géant du Soleil",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "xingtian",
+    "name": "Xingtian",
+    "race": "Géant",
+
+    "title": "Géant sans Tête",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "hai_ruo",
+    "name": "Bei Hai Ruo",
+    "race": "Divinité",
+
+    "title": "Esprit de la Mer",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "hai_shen",
+    "name": "Hai Shen",
+    "race": "Divinité",
+
+    "title": "Dieu de la Mer",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "hai_gui",
+    "name": "Hai Gui",
+    "race": "Tortue",
+
+    "title": "Tortue des Récifs",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "hai_she",
+    "name": "Hai She",
+    "race": "Serpent",
+
+    "title": "Serpent des Tourbillons",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "ren_yu",
+    "name": "Ren Yu",
+    "race": "Hybride",
+
+    "title": "Sirène Chantante",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "kun",
+    "name": "Kun",
+    "race": "Poisson",
+
+    "title": "Poisson Colossal",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "xuanwu",
+    "name": "Xuanwu",
+    "race": "Tortue",
+
+    "title": "Tortue Noire du Nord",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "longwang",
+    "name": "Longwang",
+    "race": "Divinité",
+
+    "title": "Roi-Dragon des Mers",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "panlong",
+    "name": "Panlong",
+    "race": "Dragon",
+
+    "title": "Dragon Lové",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "shenlong",
+    "name": "Shenlong",
+    "race": "Dragon",
+
+    "title": "Dragon Divin",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "long",
+    "name": "Long",
+    "race": "Dragon",
+
+    "title": "Dragon Céleste",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "jinwu",
+    "name": "Jinwu",
+    "race": "Oiseau",
+
+    "title": "Oiseau d'Or du Soleil",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "sanzu_wu",
+    "name": "Sanzu Wu",
+    "race": "Oiseau",
+
+    "title": "Corbeau à Trois Pattes",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "fenghuang",
+    "name": "Fenghuang",
+    "race": "Oiseau",
+
+    "title": "Phénix Auspicieux",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "qingniao",
+    "name": "Qingniao",
+    "race": "Oiseau",
+
+    "title": "Oiseau Bleu Messager",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "ruiniao",
+    "name": "Xiangrui Zhi Niao",
+    "race": "Oiseau",
+
+    "title": "Oiseau de Bon Augure",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "peng",
+    "name": "Peng",
+    "race": "Oiseau",
+
+    "title": "Oiseau Gigantesque",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "ming_niao",
+    "name": "Youming Zhi Niao",
+    "race": "Oiseau",
+
+    "title": "Oiseau des Ténèbres",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1, "atkMult": 1.1, "defMult": 0.95 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.6, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "guai_niao",
+    "name": "Guai Niao",
+    "race": "Oiseau",
+
+    "title": "Oiseau Monstrueux",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "kuafu",
+    "name": "Kua Fu",
+    "race": "Géant",
+
+    "title": "Poursuivant du Soleil",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "shennong",
+    "name": "Shennong",
+    "race": "Divinité",
+
+    "title": "Souverain des Plantes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "huangdi",
+    "name": "Huangdi",
+    "race": "Divinité",
+
+    "title": "Empereur Jaune",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "zhulong_torche",
+    "name": "Zhulong",
+    "race": "Dragon",
+
+    "title": "Dragon-Torche",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "yingzhao_cheval",
+    "name": "Yingzhao",
+    "race": "Hybride",
+
+    "title": "Bête Sacrée des Monts",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "yutu",
+    "name": "Yutu",
+    "race": "Esprit-animal",
+
+    "title": "Lièvre de Jade",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "gui_po",
+    "name": "Gui Po",
+    "race": "Gui",
+
+    "title": "Vieille aux Cheveux Longs",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "nu_gui",
+    "name": "Nü Gui",
+    "race": "Gui",
+
+    "title": "Fantôme aux Cheveux Défaits",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "diaosi_gui",
+    "name": "Diao Si Gui",
+    "race": "Gui",
+
+    "title": "Pendu",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "yuan_gui",
+    "name": "Yuan Gui",
+    "race": "Gui",
+
+    "title": "Esprit Vengeur",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "heibai_wuchang",
+    "name": "Heibai Wuchang",
+    "race": "Esprit",
+
+    "title": "Messagers des Morts",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "nuwa",
+    "name": "Nüwa",
+    "race": "Divinité",
+
+    "title": "Mère des Hommes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "fuxi",
+    "name": "Fuxi",
+    "race": "Divinité",
+
+    "title": "Souverain des Trigrammes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 4, "dropChance": 0.80, "weaponChance": 0.40 }
+  },
+  {
+    "id": "yayu",
+    "name": "Yayu",
+    "race": "Hybride",
+
+    "title": "Bête au Destin Tragique",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "feiyi",
+    "name": "Feiyi",
+    "race": "Serpent",
+
+    "title": "Serpent à Deux Têtes",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.5, "atkMult": 1.3, "defMult": 1.2 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "yingzhao_ailee",
+    "name": "Yingzhao",
+    "race": "Hybride",
+
+    "title": "Bête Ailée",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.4, "defMult": 0.9 },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.60, "weaponChance": 0.05 }
+  },
+  {
+    "id": "tiangou_lune",
+    "name": "Tiangou",
+    "race": "Bête",
+
+    "title": "Chien Dévoreur de Lune",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "sun_1",
+    "name": "Soleil Ardent",
+    "race": "Soleil",
+    "title": "Le Plus Jeune des Dix",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "sun_2",
+    "name": "Soleil des Eaux Taries",
+    "race": "Soleil",
+    "title": "Buveur du Fleuve Jaune",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "sun_3",
+    "name": "Soleil de Cendres",
+    "race": "Soleil",
+    "title": "Silence des Bambous",
+    "copyOf": "lingzhi_maudit",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.2,
+      "defMult": 1.25
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "green",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.4,
+      "yellow": 0.1,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 0.3,
+      "dropChance": 0.45,
+      "weaponChance": 0.05
+    }
+  },
+  {
+    "id": "sun_4",
+    "name": "Soleil des Mirages",
+    "race": "Soleil",
+    "title": "Mille Reflets du Gobi",
+    "copyOf": "lettre_sorcier",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.3,
+      "defMult": 1.0
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "purple",
+        "blue"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.25,
+      "red": 0.05,
+      "green": 0.08,
+      "yellow": 0.1,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.2,
+      "dropChance": 0.7,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "sun_5",
+    "name": "Soleil des Orages",
+    "race": "Soleil",
+    "title": "Cage d'Éclairs",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "sun_6",
+    "name": "Soleil de Magma",
+    "race": "Soleil",
+    "title": "Cœur du Volcan",
+    "copyOf": "pixiu",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.45,
+      "defMult": 1.3
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.05,
+      "red": 0.4,
+      "green": 0.05,
+      "yellow": 0.18,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.4,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "sun_7",
+    "name": "Soleil des Bêtes Folles",
+    "race": "Soleil",
+    "title": "Fièvre de la Plaine",
+    "copyOf": "shanxiao",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "green",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.22,
+      "green": 0.2,
+      "yellow": 0.12,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 0.8,
+      "dropChance": 0.5,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "sun_8",
+    "name": "Soleil des Marées",
+    "race": "Soleil",
+    "title": "Seigneur des Vagues Chaudes",
+    "copyOf": "jiaolong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.4,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 2.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.25
+    }
+  },
+  {
+    "id": "sun_9",
+    "name": "Soleil Lâche",
+    "race": "Soleil",
+    "title": "Ombre du Fusang",
+    "copyOf": "chilong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.8,
+      "atkMult": 1.55,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.33,
+      "green": 0.08,
+      "yellow": 0.2,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 3.0,
+      "dropChance": 0.75,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "fengmeng_1",
+    "name": "Fengmeng, le Disciple",
+    "race": "Humain",
+    "title": "Élève Jaloux de Hou Yi",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "fengmeng_2",
+    "name": "Fengmeng, l'Archer Pressé",
+    "race": "Humain",
+    "title": "Rival de la Route du Volcan",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "fengmeng_3a",
+    "name": "Fengmeng, l'Archer Miroir",
+    "race": "Humain",
+    "title": "Voleur d'Élixir",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "fengmeng_3b",
+    "name": "Fengmeng, Rage et Désespoir",
+    "race": "Humain",
+    "title": "Disciple Brisé",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "maitresse_tong",
+    "name": "Maîtresse Tong",
+    "race": "Humain",
+    "title": "la Lame de Bronze",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "maitre_hong_gang",
+    "name": "Maître Hong Gang",
+    "race": "Humain",
+    "title": "le Gong de Cuivre",
+    "copyOf": "chiyou",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.4,
+      "defMult": 1.05
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.2,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.1,
+      "dropChance": 0.55,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "maitre_tie_bi",
+    "name": "Maître Tie Bi",
+    "race": "Humain",
+    "title": "le Bras de Fer",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "dame_yin_yue",
+    "name": "Dame Yin Yue",
+    "race": "Humain",
+    "title": "la Lune d'Argent",
+    "copyOf": "pretresse_lunaire",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.4,
+      "atkMult": 1.15,
+      "defMult": 1.3
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "blue",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.2,
+      "red": 0.08,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.25
+    },
+    "dropProfile": {
+      "goldMult": 1.5,
+      "dropChance": 0.65,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "seigneur_jin_long",
+    "name": "Seigneur Jin Long",
+    "race": "Humain",
+    "title": "le Dragon d'Or",
+    "copyOf": "garde_solaire",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.2,
+      "defMult": 1.4
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.32,
+      "green": 0.15,
+      "yellow": 0.2,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.5,
+      "dropChance": 0.65,
+      "weaponChance": 0.4
+    }
+  },
+  {
+    "id": "dame_bi_yu",
+    "name": "Dame Bi Yu",
+    "race": "Humain",
+    "title": "la Main de Jade",
+    "copyOf": "immortel_jade",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.25,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "green",
+        "purple",
+        "blue"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.18,
+      "red": 0.1,
+      "green": 0.28,
+      "yellow": 0.08,
+      "purple": 0.22
+    },
+    "dropProfile": {
+      "goldMult": 1.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.15
+    }
+  },
+  {
+    "id": "immortel_yun_zhong",
+    "name": "Immortel Yun Zhong",
+    "race": "Humain",
+    "title": "Celui-des-Nuées",
+    "copyOf": "dame_des_neiges",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.35,
+      "defMult": 1.1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "blue",
+        "purple"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.32,
+      "red": 0.05,
+      "green": 0.08,
+      "yellow": 0.1,
+      "purple": 0.18
+    },
+    "dropProfile": {
+      "goldMult": 1.1,
+      "dropChance": 0.65,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "grand_maitre_qian_jian",
+    "name": "Grand Maître Qian Jian",
+    "race": "Humain",
+    "title": "l'Archer aux Mille Flèches",
+    "copyOf": "assassin_masque",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.5,
+      "defMult": 0.95
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.12,
+      "red": 0.1,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.28
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "noye_garde",
+    "name": "Noyé-garde des roches",
+    "race": "Gui",
+    "title": "Veilleur de l'Eau Perdue",
+    "copyOf": "gui_guerrier",
+    "battleMusic": "wav/musicgen-03-mort-vivant-1773190645899.wav",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.4,
+      "defMult": 1.0
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "red",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.12,
+      "green": 0.15,
+      "yellow": 0.08,
+      "purple": 0.3
+    },
+    "dropProfile": {
+      "goldMult": 0.7,
+      "dropChance": 0.55,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "esprit_cloche",
+    "name": "Esprit de la cloche",
+    "race": "Esprit",
+    "title": "Écho Perdu",
+    "copyOf": "suanni",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.7,
+      "atkMult": 1.15,
+      "defMult": 1.5
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.12,
+      "green": 0.3,
+      "yellow": 0.15,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.45,
+      "weaponChance": 0.45
+    }
+  },
+  {
+    "id": "foudre_garde",
+    "name": "Foudre-garde du col",
+    "race": "Esprit",
+    "title": "Fils du Tonnerre",
+    "copyOf": "lei_gong",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.25,
+      "defMult": 1.35
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "blue",
+        "yellow"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.22,
+      "red": 0.08,
+      "green": 0.1,
+      "yellow": 0.28,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.6,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "forgeron_magma",
+    "name": "Forgeron de magma",
+    "race": "Humain",
+    "title": "Servant du Temple du Feu",
+    "copyOf": "pixiu",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.45,
+      "defMult": 1.3
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.05,
+      "red": 0.4,
+      "green": 0.05,
+      "yellow": 0.18,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.4,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "forgeron_lave",
+    "name": "Forgeron de lave",
+    "race": "Géant",
+    "title": "Gardien des Gorges",
+    "copyOf": "pixiu",
+    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.45,
+      "defMult": 1.3
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "red",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.05,
+      "red": 0.4,
+      "green": 0.05,
+      "yellow": 0.18,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 0.5,
+      "dropChance": 0.4,
+      "weaponChance": 0.2
+    }
+  },
+  {
+    "id": "garde_maree",
+    "name": "Garde-marée du Roi-Dragon",
+    "race": "Esprit aquatique",
+    "title": "Escadre de la Mer Orientale",
+    "copyOf": "jiaolong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.4,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 2.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.25
+    }
+  },
+  {
+    "id": "grue_lige",
+    "name": "Grue-lige du Fusang",
+    "race": "Oiseau",
+    "title": "Messagère des Branches Hautes",
+    "copyOf": "lettre_sorcier",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.0,
+      "atkMult": 1.3,
+      "defMult": 1.0
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "purple",
+        "blue"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.25,
+      "red": 0.05,
+      "green": 0.08,
+      "yellow": 0.1,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.2,
+      "dropChance": 0.7,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "brigand_sables",
+    "name": "Brigand des sables",
+    "race": "Humain",
+    "title": "Pillard des Caravanes",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "chef_de_dune",
+    "name": "Chef de dune",
+    "race": "Humain",
+    "title": "Bras-de-Sable",
+    "copyOf": "chiyou",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.4,
+      "defMult": 1.05
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.2,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.1,
+      "dropChance": 0.55,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "petit_gui",
+    "name": "Petit gui",
+    "race": "Gui",
+    "title": "Chapardeur des Flaques",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "corbeau_demon",
+    "name": "Corbeau-démon",
+    "race": "Oiseau",
+    "title": "Voleur des Rizières",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "singe_demon",
+    "name": "Singe-démon",
+    "race": "Bête",
+    "title": "Voleur de Pêches",
+    "copyOf": "huli_jing",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 0.9,
+      "atkMult": 1.2,
+      "defMult": 0.9
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "yellow",
+        "purple",
+        "green"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.08,
+      "red": 0.08,
+      "green": 0.12,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 1.3,
+      "dropChance": 0.65,
+      "weaponChance": 0.35
+    }
+  },
+  {
+    "id": "taureau_braise",
+    "name": "Taureau de braise",
+    "race": "Bête",
+    "title": "Corne Ardente",
+    "copyOf": "sanglier_flammes",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.4,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "red"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.05
+    }
+  },
+  {
+    "id": "crabe_soldat",
+    "name": "Crabe-soldat",
+    "race": "Bête",
+    "title": "Lame des Bancs de Sable",
+    "copyOf": "soldat_terre_cuite",
+    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.35,
+      "defMult": 1.2
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "blue": 0.1,
+      "red": 0.18,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.6,
+      "dropChance": 0.65,
+      "weaponChance": 0.55
+    }
+  },
+  {
+    "id": "carpe_doree",
+    "name": "Carpe dorée",
+    "race": "Poisson",
+    "title": "Gardienne du Gué",
+    "copyOf": "jiaolong",
+    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.6,
+      "atkMult": 1.4,
+      "defMult": 1.25
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.2,
+      "yellow": 0.08,
+      "purple": 0.12
+    },
+    "dropProfile": {
+      "goldMult": 2.8,
+      "dropChance": 0.7,
+      "weaponChance": 0.25
+    }
+  },
+  {
+    "id": "tortue_dragon",
+    "name": "Tortue-Dragon",
+    "race": "Tortue",
+    "title": "Dormeuse de l'Île",
+    "copyOf": "canglong",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.9,
+      "atkMult": 1.5,
+      "defMult": 1.4
+    },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "blue",
+        "purple"
+      ],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": {
+      "blue": 0.35,
+      "red": 0.05,
+      "green": 0.12,
+      "yellow": 0.12,
+      "purple": 0.18
+    },
+    "dropProfile": {
+      "goldMult": 3.5,
+      "dropChance": 0.75,
+      "weaponChance": 0.3
+    }
+  },
+  {
+    "id": "shuimu_denglong",
+    "name": "Méduse-lanterne",
+    "race": "Méduse",
+    "title": "Lanterne des Eaux Noires",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.3,
+      "atkMult": 1.3,
+      "defMult": 1.1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "yellow",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.05,
+      "blue": 0.3,
+      "green": 0.1,
+      "yellow": 0.15,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.55,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "baoyu_jian",
+    "name": "Poisson-épée de tempête",
+    "race": "Poisson",
+    "title": "Lame des Orages",
+    "playerClass": "assassin",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.2,
+      "atkMult": 1.7,
+      "defMult": 1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "red",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.08,
+      "blue": 0.3,
+      "green": 0.08,
+      "yellow": 0.12,
+      "purple": 0.1
+    },
+    "dropProfile": {
+      "goldMult": 1.5,
+      "dropChance": 0.55,
+      "weaponChance": 0.15
+    }
+  },
+  {
+    "id": "lu_ci_gui",
+    "name": "Cormoran-fantôme",
+    "race": "Esprit",
+    "title": "Noyé des Pontons",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 1.3,
+      "atkMult": 1.4,
+      "defMult": 1.1
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "purple",
+        "blue",
+        "purple"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.08,
+      "blue": 0.2,
+      "green": 0.08,
+      "yellow": 0.08,
+      "purple": 0.25
+    },
+    "dropProfile": {
+      "goldMult": 1.4,
+      "dropChance": 0.55,
+      "weaponChance": 0.1
+    }
+  },
+  {
+    "id": "hai_ma_xing",
+    "name": "Hippocampe-lancier",
+    "race": "Poisson",
+    "title": "Cavalier d'Écume",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": {
+      "hpMult": 1.5,
+      "atkMult": 1.4,
+      "defMult": 1.3
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "green",
+        "blue"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": {
+      "red": 0.08,
+      "blue": 0.3,
+      "green": 0.15,
+      "yellow": 0.1,
+      "purple": 0.08
+    },
+    "dropProfile": {
+      "goldMult": 1.8,
+      "dropChance": 0.6,
+      "weaponChance": 0.3
+    }
+  },
+  {
+    "id": "changxi",
+    "name": "Changxi",
+    "race": "Divinité",
+    "title": "Mère des douze lunes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": {
+      "hpMult": 3,
+      "atkMult": 1.2,
+      "defMult": 1.4
+    },
+    "levelBias": 0,
+    "spellProfile": {
+      "preferredColors": [
+        "blue",
+        "purple",
+        "yellow"
+      ],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": {
+      "red": 0.1,
+      "blue": 0.3,
+      "green": 0.1,
+      "yellow": 0.2,
+      "purple": 0.2
+    },
+    "dropProfile": {
+      "goldMult": 3,
+      "dropChance": 0.9,
+      "weaponChance": 0.5
+    }
+  },
+  {
+    "id": "jiuying",
+    "name": "Jiuying",
+    "race": "Monstre",
+
+    "title": "Monstre des Neuf Gueules",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.3, "blue": 0.08, "green": 0.08, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "fengxi",
+    "name": "Fengxi",
+    "race": "Bête",
+
+    "title": "Sanglier Monstrueux",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.08, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "dafeng",
+    "name": "Dafeng",
+    "race": "Oiseau",
+
+    "title": "Grand Vent",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.12, "green": 0.3, "yellow": 0.08, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "zaochi",
+    "name": "Zaochi",
+    "race": "Monstre",
+
+    "title": "Dents de Ciseau",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "red"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.12, "blue": 0.08, "green": 0.08, "yellow": 0.3, "purple": 0.08 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  },
+  {
+    "id": "xiushe",
+    "name": "Xiushé",
+    "race": "Serpent",
+
+    "title": "Long Serpent du Lac",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.8, "atkMult": 1.5, "defMult": 1.3 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": false,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "red": 0.08, "blue": 0.3, "green": 0.08, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3, "dropChance": 0.75, "weaponChance": 0.30 }
+  }
+]
