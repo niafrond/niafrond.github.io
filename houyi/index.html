@@ -291,8 +291,8 @@
         import('./game.js').then(module => {
             // Fond du biome uniquement sur la page de combat
             module.setCombatBackdrop(tabName === 'combat' && module.gameState.combatState === 'active' ? module.enemy?.biome : null);
-            // Empêcher l'accès aux onglets Armes et Sorts pendant le combat
-            if(module.gameState.combatState === 'active' && (tabName === 'weapons' || tabName === 'items' || tabName === 'spells' || tabName === 'stuff')) {
+            // Empêcher l'accès aux onglets Armes, Objets, Sorts, Stuff et Compétences pendant le combat (on les règle hors combat)
+            if(module.gameState.combatState === 'active' && (tabName === 'weapons' || tabName === 'items' || tabName === 'spells' || tabName === 'stuff' || tabName === 'skills')) {
                 module.log('Cet onglet est disponible après le combat.');
                 import('./a11y.js').then(a => a.notify('Cet onglet est disponible après le combat. Votre progression est conservée.'));
                 return;
