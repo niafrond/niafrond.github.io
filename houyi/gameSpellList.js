@@ -143,11 +143,12 @@ function renderClassPicker(container){
     const active = gameState.combatState === 'active';
     const mine = active && currentTurn === 'player';
     const current = getTurnClass();
-    picker.hidden = !active;
+    const loadout = normalizeRoster(player).loadout;
+    picker.hidden = !active || loadout.length <= 1;   // une seule classe : rien à choisir, pas de ligne
     picker.title = isInTranse(player) ? describeTranse(current) : 'Une classe par tour : ses sorts, son effet de Xiūxiān';
     const restricted = restrictedClasses(player, combatBiome());
     const forced = gameState.forcedClass;
-    picker.innerHTML = normalizeRoster(player).loadout.map(id => {
+    picker.innerHTML = loadout.map(id => {
         const reason = forced && id !== forced ? 'Entraînement : classe imposée' : (restricted[id] ? `Bridée ici : ${restricted[id]}` : playerClasses[id]?.name || id);
         const off = !mine || (forced && id !== forced) || restricted[id];
         return `<button type="button" class="class-pick${id === current ? ' on' : ''}${restricted[id] ? ' limited' : ''}" data-class="${id}" aria-pressed="${id === current}"${off ? ' disabled' : ''} title="${reason}">${CLASS_SHORT[id] || id}</button>`;
