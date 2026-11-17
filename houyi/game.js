@@ -68,7 +68,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass, deferAction, spendActionCharge, chargeFactor } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, deferAction, spendActionCharge, chargeFactor, decoupled } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -1000,10 +1000,10 @@ export function endXiuxianAtCombatEnd(){
 export function drinkPotionAction(size){
     const inCombat = gameState.combatState === 'active';
     if(inCombat){
-        if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
+        if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return false; }
         if(rejectRushedAction()) return false;
         if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return false; }
-        if(deferAction(() => drinkPotionAction(size), 'Potion')) return false;   // classe en chargement : file d'attente
+        if(deferAction(() => drinkPotionAction(size))) return false;   // classe en chargement : file d'attente
     }
     const heal = potionHeal(player, size);
     const res = drinkPotion(player, size, { inCombat, free: !!xiuEffect().freePotions });
@@ -1016,7 +1016,7 @@ export function drinkPotionAction(size){
         showCombatAnimation({ icon: 'potion', title: POTIONS[size].name, heal: `+${res.healed} PV`, target: '→ Vous' }, true);
         updateStats();
         saveUpdate();
-        finishPlayerTurn();
+        endAction();
     } else {
         updateStats();
         saveUpdate();
@@ -1734,14 +1734,27 @@ clampManaToCaps(player);
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
+    if(gameState.bypassCharge) return false;   // action de la file : déjà autorisée
+    // Actions indépendantes du plateau : disponibles à tout moment (même pendant le tour adverse ou la résolution du plateau), seul le délai anti-martelage compte.
+    if(decoupled()) return turnFlags.foxPlaying || actionGuard.cooldownActive();
     return currentTurn !== 'player' || turnFlags.foxPlaying || isBoardResolving() || actionGuard.blockReason() !== null;
+}
+
+/** Fin d'une action : si elle est indépendante du plateau elle ne prend pas le tour (le plateau continue), sinon (tutoriel, duel) elle le termine comme avant. */
+export function endAction(){
+    if(!decoupled()){ finishPlayerTurn(); return; }
+    updateStats();
+    saveUpdate();
+    if(gameState.combatState !== 'active') return;
+    if(enemy.hp <= 0){ handleEnemyDefeated(); return; }
+    if(player.hp <= 0) handlePlayerDeath();
 }
 
 // Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
 // armes, objets, sorts (colonne #player-spells grisée ; l'appui long / survol des infobulles reste possible) et abandon ; l'actionGuard refuse aussi
 // tout clic. Réactivés dès que le tour revient au joueur. Appelé à chaque updateStats().
 export function syncPlayerControlsLock(){
-    const locked = gameState.combatState === 'active' && (currentTurn !== 'player' || turnFlags.foxPlaying);
+    const locked = gameState.combatState === 'active' && !decoupled() && (currentTurn !== 'player' || turnFlags.foxPlaying);   // actions indépendantes du plateau : jamais verrouillées par le tour
     actionGuard.setTurnLocked(locked);
     if(typeof document === 'undefined') return locked;
     const column = document.getElementById('player-spells');
@@ -1765,10 +1778,10 @@ export function rejectRushedAction(){
 // Combat avec arme
 export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
+    if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(rejectRushedAction()) return;
     if(tutorialCallbacks.allowWeapon && !tutorialCallbacks.allowWeapon()) return;   // tutoriel : l'arme n'est acceptée qu'à l'étape prévue
-    if(deferAction(() => useWeapon(hand), 'Arme')) return;   // classe en chargement : l'action entre dans la file d'attente
+    if(deferAction(() => useWeapon(hand))) return;   // classe en chargement : l'action entre dans la file d'attente
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser une arme."); return; }
@@ -1788,7 +1801,7 @@ export function useWeapon(hand = 'right'){
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     strikeWithWeapon(weapon);
     tutorialCallbacks.onWeaponUsed?.();
-    finishPlayerTurn();
+    endAction();
 }
 
 // Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
@@ -1836,13 +1849,13 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell=combatSpellList().find(s=>s.id===spellId);   // sorts de la classe choisie pour ce tour + commandes des compétences apprises
     if(!spell){ log("Sort indisponible !"); return; }
     if(tutorialCallbacks.allowSpell && !tutorialCallbacks.allowSpell(spell)) return;
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
-    if(deferAction(() => castSpell(spellId), spell.name)) return;   // classe en chargement : l'action entre dans la file d'attente
+    if(deferAction(() => castSpell(spellId), { turnBound: !!spell.effect })) return;   // file d'attente commune ; un sort qui modifie le plateau attend son tour de plateau
     
     if(isMuted(player)){ log("Vous êtes muet : impossible de lancer un sort."); return; }
     if(spellCooldownLeft(spell.id) > 0){ log(`${spell.name} se recharge encore ${spellCooldownLeft(spell.id)} tour(s).`); return; }
@@ -1890,7 +1903,7 @@ export function castSpell(spellId){
     // Notifier le tutoriel qu'un sort a été lancé
     tutorialCallbacks.onSpellCast?.();
 
-    finishPlayerTurn();
+    endAction();
 }
 
 // Lance un ultime : jauge de rage pleine + qì requis ; la jauge retombe à 0. La cinématique plein écran éventuelle

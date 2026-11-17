@@ -33,7 +33,7 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, runQueuedPlayerAction } from './gameSpellList.js';
+import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, submitEnemyAction } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
 import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
@@ -254,6 +254,77 @@ export function applyDuelRulesAtCombatStart(){
     }
 }
 
+/**
+ * Effet d'une action de l'ennemi (sort ou arme), SANS fin de tour : appelé dans son tour (sort de plateau, duel) ou en plein tour de plateau par la file
+ * d'actions. Renvoie true si l'action est terminée, false si la suite dépend du plateau (sort de plateau).
+ */
+function performEnemyAction(decision){
+    if(decision.action === 'spell'){
+        const spell = decision.data.spell;
+        logActiveAction(`lance le sort ${spell.name}`);
+
+        if(!canEntityCastSpell(enemy, spell)) {
+            log(`${enemy.name} n'a plus assez de qì pour ${spell.name}.`);
+            return true;
+        }
+
+        consumeSpellMana(enemy, spell);
+        spendEnemyAction();   // il se recharge
+        playSfx('spellCast', { isPlayer: false, spellId: spell.id });
+        if(spell.boardSpell) {   // sort de plateau : lignes et colonnes tirées au hasard ; checkMatches rend la main une fois le plateau stabilisé
+            castEnemyBoardSpell(spell);
+            return false;   // sort de plateau : la suite est gérée par le plateau
+        }
+        applyStandardSpellEffects(enemy, player, spell, false);
+        
+        // Vérifier l'état après l'action
+        return true;
+        
+    } else if(decision.action === 'weapon'){
+        logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
+        spendEnemyAction();   // il se recharge
+        enemy.combatPoints -= enemy.weapon.actionPoints;
+        const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
+        // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
+        if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
+            const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
+            applyDamage(enemy, selfStrike.damage);
+            playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+            log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
+            return true;
+        }
+        const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
+        let dmg = strike.damage;
+        if(dmg > 0 && player.damageReduction > 0) {
+            dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
+        }
+        applyDamage(player, dmg);
+        if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
+            const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
+            log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
+        }
+        playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
+        const icon = getWeaponIcon(enemy.weapon.type);
+        showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
+        log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
+        
+        // Vérifier l'état après l'action
+        return true;
+    }
+    return true;
+}
+
+/** Action de l'ennemi partie de la file, en dehors de son tour de plateau : effet, puis vérification de l'état du combat. */
+function runEnemyActionOutOfTurn(decision){
+    if(gameState.combatState !== 'active') return;
+    performEnemyAction(decision);
+    updateStats();
+    saveUpdate();
+    if(gameState.combatState !== 'active') return;
+    if(player.hp <= 0){ handlePlayerDeath(); return; }
+    if(enemy.hp <= 0) handleEnemyDefeated();
+}
+
 export function enemyTurn(){
     if(gameState.combatState !== 'active'){
         return;
@@ -382,15 +453,25 @@ export function enemyTurn(){
     
     // Utiliser la nouvelle IA pour prendre une décision
     let decision = tutorialCallbacks.enemyDecision?.() || makeDecision();   // tutoriel scripté : action imposée à l'adversaire
-    // Temps de chargement : une action de l'ennemi (sort, arme) est exécutée tout de suite s'il est chargé et qu'aucune n'attend ; sinon elle entre dans
-    // sa file d'attente et l'ennemi joue sur le plateau en attendant (il lance l'action en attente dès qu'il est chargé).
-    if(!enemy.isTutorialEnemy){
-        if(gameState.enemyPending && enemyActionReady()){
-            decision = gameState.enemyPending;
+    // Temps de chargement : les actions de l'ennemi (sort, arme) passent par la même file que celles du joueur et partent dès qu'il est chargé, sans lien avec
+    // le plateau : à son tour de plateau l'ennemi joue donc toujours sur la grille. Seul un sort qui modifie la grille attend son tour (en attente, puis il le prend).
+    if(!enemy.isTutorialEnemy && !enemy.duel){
+        const spellOnBoard = decision.action === 'spell' && decision.data?.spell?.boardSpell;
+        if(spellOnBoard){
+            if(gameState.enemyPending && enemyActionReady()){
+                decision = gameState.enemyPending;
+                gameState.enemyPending = null;
+            } else if(!enemyActionReady() || gameState.enemyPending){
+                if(!gameState.enemyPending) gameState.enemyPending = decision;
+                decision = { ...decision, action: 'board', reason: `${decision.reason} ; il se recharge : il joue sur le plateau`, data: {} };
+            }
+        } else if(decision.action === 'spell' || decision.action === 'weapon'){
+            const chosen = decision;
+            submitEnemyAction(() => runEnemyActionOutOfTurn(chosen));
+            decision = { ...decision, action: 'board', reason: `${decision.reason} ; l'action part dès qu'il est chargé, il joue sur le plateau`, data: {} };
+        } else if(gameState.enemyPending && enemyActionReady()){
+            decision = gameState.enemyPending;   // sort de plateau en attente : il part à ce tour
             gameState.enemyPending = null;
-        } else if((decision.action === 'spell' || decision.action === 'weapon') && (!enemyActionReady() || gameState.enemyPending)){
-            if(!gameState.enemyPending) gameState.enemyPending = decision;
-            decision = { ...decision, action: 'board', reason: `${decision.reason} ; il se recharge : il joue sur le plateau`, data: {} };
         }
     }
     
@@ -406,61 +487,8 @@ export function enemyTurn(){
             return;
         }
 
-        // Exécuter l'action choisie par l'IA
-        if(decision.action === 'spell'){
-            const spell = decision.data.spell;
-            logActiveAction(`lance le sort ${spell.name}`);
-
-            if(!canEntityCastSpell(enemy, spell)) {
-                log(`${enemy.name} n'a plus assez de qì pour ${spell.name}.`);
-                finishEnemyTurn();
-                return;
-            }
-
-            consumeSpellMana(enemy, spell);
-            spendEnemyAction();   // il se recharge
-            playSfx('spellCast', { isPlayer: false, spellId: spell.id });
-            if(spell.boardSpell) {   // sort de plateau : lignes et colonnes tirées au hasard ; checkMatches rend la main une fois le plateau stabilisé
-                castEnemyBoardSpell(spell);
-                return;
-            }
-            applyStandardSpellEffects(enemy, player, spell, false);
-            
-            // Vérifier l'état après l'action
-            finishEnemyTurn();
-            
-        } else if(decision.action === 'weapon'){
-            logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
-            spendEnemyAction();   // il se recharge
-            enemy.combatPoints -= enemy.weapon.actionPoints;
-            const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
-            // Attaque de l'ennemi = chance de critique ; défense du joueur = chance de blocage
-            if(confusedSelfHit(enemy)) {   // Confus : l'ennemi se frappe lui-même
-                const selfStrike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, enemy, { weakened: weakenedAmount });
-                applyDamage(enemy, selfStrike.damage);
-                playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-                log(`${enemy.name} est confus et se frappe avec ${enemy.weapon.name} : ${selfStrike.damage} dégâts !`);
-                finishEnemyTurn();
-                return;
-            }
-            const strike = resolveStrike(enemy.weapon.damage + (enemy.weaponPower || 0), enemy, player, { weakened: weakenedAmount });
-            let dmg = strike.damage;
-            if(dmg > 0 && player.damageReduction > 0) {
-                dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
-            }
-            applyDamage(player, dmg);
-            if(dmg > 0 && isVenomous(enemy.templateId) && Math.random() < POISON_CHANCE){
-                const poison = inflictPoison(player, Math.max(1, Math.round((enemy.attack || 10) * 0.2)));
-                log(poison > 0 ? `${enemy.name} vous empoisonne : ${poison} dégâts par tour.` : `${enemy.name} tente de vous empoisonner, mais votre équipement vous protège.`);
-            }
-            playSfx('weaponHit', { isPlayer: false, rarity: enemy.weapon.rarity });
-            const icon = getWeaponIcon(enemy.weapon.type);
-            showStrikeAnimation({ icon, title: enemy.weapon.name, source: enemy.name, target: '→ Vous' }, strike, false, dmg);
-            log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.${strike.crit ? ' Coup critique !' : ''}${strike.unblockable ? ' Coup inblocable !' : ''}${strike.block === 'total' ? ' Vous bloquez entièrement le coup.' : strike.block === 'partial' ? ' Vous parez le coup.' : ''}`);
-            
-            // Vérifier l'état après l'action
-            finishEnemyTurn();
-            
+        if(decision.action === 'spell' || decision.action === 'weapon'){
+            if(performEnemyAction(decision)) finishEnemyTurn();
         } else {
             // L'ennemi joue sur le plateau
             logActiveAction(`joue sur le plateau${decision.isStupid ? ' (mouvement hasardeux)' : ''}`);
@@ -724,7 +752,6 @@ export function finishEnemyTurn(){
             setTimeout(() => { if(gameState.combatState === 'active' && player.hp > 0) enemyTurn(); }, 900);
             return;
         }
-        if(runQueuedPlayerAction()) return;   // une action en file, dont la classe est chargée, part maintenant et prend le tour
         tutorialCallbacks.onPlayerTurn?.('turn');   // tutoriel scripté : début du tour du joueur
     }
 }

@@ -59,7 +59,7 @@ describe('scénario du tutoriel : câblage', () => {
 
     test("l'arme n'est acceptée qu'à l'étape de l'arme, et l'étape de Fengmeng dit seulement « L'ennemi joue »", () => {
         expect(read('game.js')).toMatch(/tutorialCallbacks\.allowWeapon && !tutorialCallbacks\.allowWeapon\(\)/);
-        expect(read('game.js')).toMatch(/tutorialCallbacks\.onWeaponUsed\?\.\(\);\s+finishPlayerTurn\(\)/);
+        expect(read('game.js')).toMatch(/tutorialCallbacks\.onWeaponUsed\?\.\(\);\s+endAction\(\)/);
         expect((src.match(/title: \(\) => "L'ennemi joue( : votre barre de classe se recharge)?"/g) || [])).toHaveLength(5);   // le premier coup de Fengmeng annonce aussi le chargement
     });
 

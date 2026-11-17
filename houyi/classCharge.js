@@ -79,10 +79,14 @@ export function spendEnemy(charge, enemy, factor = 1) { charge.enemyReady = char
 export const newActionQueue = () => [];
 let _seq = 0;
 export function enqueueAction(queue, item) { const entry = { ...item, seq: ++_seq }; queue.push(entry); return entry; }
-/** Retire et renvoie la première action de `owner` dont la classe est prête (dans l'ordre d'arrivée), sinon null. */
-export function takeDueAction(queue, owner, isReady) {
-    const i = queue.findIndex(item => item.owner === owner && isReady(item));
-    return i === -1 ? null : queue.splice(i, 1)[0];
+/** Retire et renvoie la prochaine action à partir (file commune joueur / ennemi) : parmi celles qui peuvent partir (`canRun`), la plus anciennement prête (`dueAt`), puis l'ordre d'arrivée. */
+export function takeNextDue(queue, canRun) {
+    let best = -1;
+    queue.forEach((it, i) => {
+        if (!canRun(it)) return;
+        if (best === -1 || it.dueAt < queue[best].dueAt || (it.dueAt === queue[best].dueAt && it.seq < queue[best].seq)) best = i;
+    });
+    return best === -1 ? null : queue.splice(best, 1)[0];
 }
 export const hasQueuedAction = (queue, owner) => queue.some(item => item.owner === owner);
 
@@ -109,8 +113,8 @@ export function initCharge(charge, hero, classIds, enemy, factor = 1) {
  * Perles des actions à venir (ligne discrète en haut du combat) : une perle par action en attente, dans l'ordre où elles partiront
  * (temps de chargement restant de leur classe, puis ordre d'arrivée). 'hero' = action du joueur (verte), 'foe' = action ennemie (rouge).
  */
-export function upcomingBeads(charge, queue, enemyPending) {
-    const items = queue.map(it => ({ side: 'hero', wait: classRemainingMs(charge, it.classId), seq: it.seq }));
-    if (enemyPending) items.push({ side: 'foe', wait: enemyRemainingMs(charge), seq: Infinity });
-    return items.sort((a, b) => a.wait - b.wait || a.seq - b.seq).map(it => it.side);
+export function upcomingBeads(charge, queue, enemyTurnBound) {
+    const items = queue.map(it => ({ side: it.owner === 'enemy' ? 'foe' : 'hero', due: it.dueAt ?? 0, seq: it.seq }));
+    if (enemyTurnBound) items.push({ side: 'foe', due: charge.enemyReady, seq: Infinity });
+    return items.sort((a, b) => a.due - b.due || a.seq - b.seq).map(it => it.side);
 }

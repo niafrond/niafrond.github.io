@@ -2,6 +2,7 @@
 // Extrait de game.js.
 import { MAX_ACTIVE_SPELLS } from './constants.js';
 import { actionGuard } from './actionGuard.js';
+import { isBoardResolving } from './board.js';
 import { preloadUltimateCinematic } from './ultimateCinematics.js';
 import { getEquippedUltimate } from './ultimates.js';
 import { spellCooldownLeft } from './spellCooldown.js';
@@ -13,7 +14,7 @@ import { allSpells as spellsCatalog, getSpellsByLevel } from './spells.js';
 import { getClassSpells, playerClasses } from './classes.js';
 import { usableClasses, restrictedClasses, normalizeRoster, CLASS_SHORT } from './classRoster.js';
 import { actionSpells } from './skills.js';
-import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, takeDueAction, hasQueuedAction, upcomingBeads } from './classCharge.js';
+import { classProgress, classRemainingMs, classChargeInfo, isClassReady, chargeTick, spendClass, spendEnemy, isEnemyReady, chargeRunning, enqueueAction, hasQueuedAction, takeNextDue, upcomingBeads } from './classCharge.js';
 import { renderPotionButtons } from './potionsView.js';
 import { isInTranse, describeTranse, transeEffectFor, TRANSE_TURNS } from './transe.js';
 import { canEntityCastSpell, castSpell, enemy, gameState, currentTurn, markMultiManaSpell, player, setTurnClass, spellColorsOf, spellCostHtml, spellEffectIcon, log, updateStats } from './game.js';
@@ -124,34 +125,64 @@ export function getTurnClass(){
 export const usableNow = () => usableClasses(player, combatBiome(), gameState.forcedClass);
 
 // ── Temps de chargement des actions ─────────────────────────────────────────
-// Le plateau reste au tour par tour ; arme, sorts, compétences de classe, objets et potions exigent que la classe du tour soit chargée (classCharge.js).
+// Les actions (sort, compétence de classe, objet, arme) sont INDÉPENDANTES du plateau : elles ne prennent pas le tour, partent dès que leur classe
+// est chargée (file commune joueur / ennemi, ordre jamais détaillé), même en plein tour de plateau adverse ; seule la pause d'inactivité du plateau
+// (5 s sans combo) les retient. Exceptions liées au plateau : les sorts qui modifient la grille et les ultimes attendent leur tour de plateau.
 const TUTORIAL_CHARGE_FACTOR = 0.2;   // tutoriel : chargement 5 fois plus court (la notion est montrée sans bloquer le déroulé)
+const ACTION_GAP_MS = 900;            // durée pendant laquelle une action « est en cours » : la suivante de la file attend la fin de l'animation
 export const chargeFactor = () => (enemy?.isTutorialEnemy ? TUTORIAL_CHARGE_FACTOR : 1);
 export const chargeEnabled = () => gameState.combatState === 'active';
+/** Actions indépendantes du plateau ? Tout combat, sauf le duel-tutoriel (déroulé scripté) et les duels (tours imposés). */
+export const decoupled = () => chargeEnabled() && !enemy?.isTutorialEnemy && !enemy?.duel;
+
+const actionBusy = () => Date.now() < (gameState.actionBusyUntil || 0) || (typeof document !== 'undefined' && !!document.querySelector('.attack-overlay'));
+const markActionBusy = () => { gameState.actionBusyUntil = Date.now() + ACTION_GAP_MS; };
+const canRunNow = it => (it.owner === 'player' ? isClassReady(gameState.charge, it.classId) : isEnemyReady(gameState.charge))
+    && (!it.turnBound || (currentTurn === it.owner && !isBoardResolving()));   // sorts de plateau : seulement à leur tour, plateau au repos
+const readyAhead = () => gameState.actionQueue.some(canRunNow);
 
 /**
- * Une action est choisie (sort, compétence, objet, arme) : si la classe du tour est prête et qu'aucune action n'attend, elle part tout de suite
- * (renvoie false) ; sinon elle entre dans la file d'attente (renvoie true) et `retry` la rejouera au début d'un tour du joueur, dès que sa classe est
- * chargée. Le joueur n'en voit pas l'ordre. Le duel-tutoriel part toujours tout de suite (déroulé scripté).
+ * Une action du joueur est choisie : si sa classe est chargée et qu'aucune action prête n'attend ni n'est en cours, elle part tout de suite
+ * (renvoie false : l'appelant la joue) ; sinon elle entre dans la file (renvoie true) et `retry` la rejouera dès qu'elle pourra partir.
+ * Un doublon pour la même classe est ignoré. `turnBound` : action qui modifie le plateau (attend le tour du joueur).
  */
-export function deferAction(retry){
-    if(!chargeEnabled() || gameState.bypassCharge || enemy?.isTutorialEnemy) return false;
+export function deferAction(retry, opts = {}){
+    if(!decoupled() || gameState.bypassCharge) return false;
     const id = getTurnClass();
-    if(!id || (isClassReady(gameState.charge, id) && !hasQueuedAction(gameState.actionQueue, 'player'))) return false;
-    enqueueAction(gameState.actionQueue, { owner: 'player', classId: id, retry });
+    if(!id) return false;
+    const q = gameState.actionQueue;
+    if(isClassReady(gameState.charge, id) && !actionBusy() && !readyAhead() && (!opts.turnBound || (currentTurn === 'player' && !isBoardResolving()))){
+        markActionBusy();
+        return false;
+    }
+    if(!q.some(it => it.owner === 'player' && it.classId === id)) enqueueAction(q, { owner: 'player', classId: id, retry, turnBound: !!opts.turnBound, dueAt: gameState.charge.ready[id] ?? 0 });
     renderActionBeads();
-    updateStats();
     return true;
 }
-/** Début d'un tour du joueur : si une action en file a sa classe chargée, elle part maintenant (elle prend le tour). */
-export function runQueuedPlayerAction(){
-    if(!chargeEnabled()) return false;
-    const item = takeDueAction(gameState.actionQueue, 'player', it => isClassReady(gameState.charge, it.classId));
-    if(!item) return false;
-    gameState.turnClass = item.classId;
-    gameState.bypassCharge = true;
-    try { item.retry(); } finally { gameState.bypassCharge = false; }
+/** L'ennemi choisit un sort ou une arme (hors sort de plateau) : même file que le joueur. Renvoie true si l'action est partie ou en file. */
+export function submitEnemyAction(run){
+    if(!decoupled()) return false;
+    const q = gameState.actionQueue;
+    if(q.some(it => it.owner === 'enemy')) return true;   // une action ennemie attend déjà
+    const item = { owner: 'enemy', run, dueAt: gameState.charge.enemyReady };
+    if(isEnemyReady(gameState.charge) && !actionBusy() && !readyAhead()){ markActionBusy(); run(); return true; }
+    enqueueAction(q, item);
+    renderActionBeads();
     return true;
+}
+/** Fait partir la prochaine action de la file, si l'une peut partir (appelé en continu par le ticker de chargement). */
+export function pumpActions(){
+    if(!decoupled() || actionBusy()) return;
+    const item = takeNextDue(gameState.actionQueue, canRunNow);
+    if(!item) return;
+    markActionBusy();
+    if(item.owner === 'enemy'){ item.run(); }
+    else {
+        gameState.turnClass = item.classId;   // la classe qui avait été choisie
+        gameState.bypassCharge = true;
+        try { item.retry(); } finally { gameState.bypassCharge = false; }
+    }
+    renderActionBeads();
 }
 /** Une action vient d'être faite avec la classe du tour : elle se recharge. */
 export function spendActionCharge(){
@@ -173,7 +204,7 @@ export function renderActionBeads(){
     const on = chargeEnabled() && !enemy?.isTutorialEnemy;
     box.hidden = !on;
     if(!on){ box.innerHTML = ''; _beadKey = ''; return; }
-    const beads = upcomingBeads(gameState.charge, gameState.actionQueue, gameState.enemyPending).slice(0, 12);
+    const beads = upcomingBeads(gameState.charge, gameState.actionQueue, !!gameState.enemyPending).slice(0, 12);
     const key = beads.join('');
     if(key === _beadKey) return;   // rien n'a changé : pas de redessin
     _beadKey = key;
@@ -196,6 +227,7 @@ function chargeTicker(){
     if(typeof document !== 'undefined') document.body?.classList.toggle('charge-paused', !running);
     if(!running) return;
     chargeTick(gameState.charge, dt);
+    pumpActions();   // les actions en file partent dès que possible, sans lien avec le plateau
     const key = usableNow().map(id => isClassReady(gameState.charge, id) ? 1 : 0).join('') + (isEnemyReady(gameState.charge) ? 'e' : '');
     if(key !== _chargeKey){
         _chargeKey = key;

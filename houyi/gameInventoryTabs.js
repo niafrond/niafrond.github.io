@@ -1,7 +1,7 @@
 // Onglets Armes, Équipement et Inventaire : armes en main, boutons d'arme/objet, cartes, équiper / vendre / utiliser un objet.
 // Extrait de game.js.
 import { getWeaponById, BIOME_LABELS, describeStatBonuses } from "./weapons.js";
-import { deferAction, spendActionCharge } from "./gameSpellList.js";
+import { deferAction, spendActionCharge, decoupled } from "./gameSpellList.js";
 import { actionGuard } from "./actionGuard.js";
 import { compareAttrs, deltaBadgesHtml, equipDeltaGroupsHtml } from "./compareView.js";
 import { isSingleUse, reuseLabel } from "./itemReuse.js";
@@ -15,7 +15,7 @@ import { displayAttack, rawDefense, statModifier } from "./combatStats.js";
 import { showCombatAnimation } from "./gameStatsTab.js";
 import { bindTooltip, bindCardTips, showWeaponTooltip, showItemTooltip, hideSpellTooltip } from "./gameTooltips.js";
 import { escapeHtml, rowCardHtml, emptyRowHtml, badgeHtml, cardTipHtml, shortText, WEAPON_SORTS, sortChoice, bindSortSelect, sortedEntries } from "./gameCardUi.js";
-import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn } from "./game.js";
+import { getWeaponIcon, player, currentTurn, gameState, enemy, normalizeActiveInventoryIndex, getActiveInventoryItem, getSecondActiveInventoryItem, log, logActiveAction, saveUpdate, rejectRushedAction, useWeapon, finishPlayerTurn, endAction } from "./game.js";
 
 // -------------------------------------
 // Armes
@@ -473,7 +473,7 @@ function buildItemButton(item, index){
     const exhausted = item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
     const healUseless = isUselessHeal(item);
     const sealed = (player.statusEffects?.sealed || 0) > 0;   // Talisman de Scellement : cadenas, objet inutilisable
-    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
+    const canUse = gameState.combatState === 'active' && (currentTurn === 'player' || decoupled()) && player.combatPoints >= pa && !exhausted && !healUseless && !sealed;
 
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
@@ -555,7 +555,7 @@ function isUselessHeal(item){
 /** Un objet de l'inventaire est-il utilisable maintenant en combat ? { ok, reason } (menu « Objet »). */
 export function itemUsability(item){
     const pa = item.actionPoints || 2;
-    if(gameState.combatState !== 'active' || currentTurn !== 'player') return { ok: false, reason: "Ce n'est pas votre tour." };
+    if(gameState.combatState !== 'active' || (!decoupled() && currentTurn !== 'player')) return { ok: false, reason: "Ce n'est pas votre tour." };
     if(player.level < (item.minLevel || 1)) return { ok: false, reason: `Niveau ${item.minLevel} requis` };
     if((player.statusEffects?.sealed || 0) > 0) return { ok: false, reason: 'Scellé' };
     if(item.type === 'reusable' && !isSingleUse(item) && (item.chargesLeft ?? item.chargesPerCycle) <= 0) return { ok: false, reason: describeRecharge(item) };
@@ -566,10 +566,10 @@ export function itemUsability(item){
 
 export function useInventoryItem(itemId, index){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
+    if(!decoupled() && currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
     if(rejectRushedAction()) return;
     if((player.statusEffects?.sealed || 0) > 0){ log("Vous êtes scellé : impossible d'utiliser un objet."); return; }
-    if(deferAction(() => useInventoryItem(itemId, index), 'Objet')) return;   // classe en chargement : file d'attente
+    if(deferAction(() => useInventoryItem(itemId, index))) return;   // classe en chargement : file d'attente
 
     normalizeActiveInventoryIndex();
     const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
@@ -606,7 +606,7 @@ export function useInventoryItem(itemId, index){
         updateInventoryTab();
         updateItemButton();
         saveUpdate();
-        finishPlayerTurn();
+        endAction();
     } else {
         player.combatPoints += pa;
         log(`${result.message}`);

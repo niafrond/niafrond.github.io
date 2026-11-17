@@ -33,6 +33,8 @@ export function createActionGuard(now = () => Date.now()) {
         /** Le joueur vient d'utiliser une arme, un objet ou un sort. */
         markPlayerAction() { lastPlayerActionAt = now(); },
         isBoardBusy,
+        /** Une action du joueur date de moins de ACTION_COOLDOWN_MS (anti-martelage) : seul garde-fou gardé quand les actions sont indépendantes du plateau. */
+        cooldownActive() { return now() - lastPlayerActionAt < ACTION_COOLDOWN_MS; },
         /** Un combo vient d'être résolu sur le plateau (joueur ou ennemi). */
         markCombo() { lastComboAt = now(); },
         /** Heure du dernier combo (le chargement se met en pause si le plateau reste inactif : voir classCharge.js). */

@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeDueAction, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
+import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
@@ -60,22 +60,22 @@ describe('classCharge : temps de chargement des classes', () => {
         expect(ms).toBeLessThan(18000);
     });
 
-    test("file d'attente commune : les actions partent dans l'ordre d'arrivée dès que leur classe est prête, sans montrer l'ordre", () => {
+    test("file d'attente commune : la plus anciennement prête part d'abord, sans montrer l'ordre", () => {
         const q = newActionQueue(), c = newCharge(), h = hero();
         spendClass(c, h, 'assassin');
-        enqueueAction(q, { owner: 'player', classId: 'assassin', label: 'a' });
-        enqueueAction(q, { owner: 'player', classId: 'barbarian', label: 'b' });
-        enqueueAction(q, { owner: 'enemy', label: 'e' });
+        enqueueAction(q, { owner: 'player', classId: 'assassin', label: 'a', dueAt: c.ready.assassin });
+        enqueueAction(q, { owner: 'player', classId: 'barbarian', label: 'b', dueAt: 0 });
+        spendEnemy(c, { level: 5 });
+        enqueueAction(q, { owner: 'enemy', label: 'e', dueAt: c.enemyReady });
         expect(hasQueuedAction(q, 'player')).toBe(true);
         const ready = it => (it.classId ? isClassReady(c, it.classId) : isEnemyReady(c));
-        expect(takeDueAction(q, 'player', ready).label).toBe('b');   // l'assassin se recharge encore : la classe prête passe
-        expect(takeDueAction(q, 'player', ready)).toBeNull();
-        chargeTick(c, classChargeMs(h, 'assassin'));
-        expect(takeDueAction(q, 'player', ready).label).toBe('a');
-        expect(takeDueAction(q, 'enemy', ready).label).toBe('e');
+        expect(takeNextDue(q, ready).label).toBe('b');   // l'assassin et l'ennemi se rechargent encore : la classe prête passe
+        expect(takeNextDue(q, ready)).toBeNull();
+        chargeTick(c, 10 ** 6);                            // le temps passe : les deux sont prêts ; l'assassin l'était avant l'ennemi
+        expect(takeNextDue(q, ready).label).toBe(c.ready.assassin <= c.enemyReady ? 'a' : 'e');
+        expect(takeNextDue(q, ready)).not.toBeNull();
         expect(q).toHaveLength(0);
     });
-
     test('tempo : plateau inactif depuis 5 s, les chargements se mettent en pause ; un combo les relance', () => {
         expect(BOARD_IDLE_PAUSE_MS).toBe(5000);
         expect(chargeRunning(1000, 0)).toBe(true);
@@ -107,10 +107,11 @@ describe('classCharge : temps de chargement des classes', () => {
         spendClass(c, h, 'assassin');
         spendClass(c, h, 'barbarian');
         chargeTick(c, 1000);
-        enqueueAction(q, { owner: 'player', classId: 'barbarian' });   // se recharge plus longtemps que le Chasseur
-        enqueueAction(q, { owner: 'player', classId: 'assassin' });
+        enqueueAction(q, { owner: 'player', classId: 'barbarian', dueAt: c.ready.barbarian });   // se recharge plus longtemps que le Chasseur
+        enqueueAction(q, { owner: 'player', classId: 'assassin', dueAt: c.ready.assassin });
         spendEnemy(c, { level: 5 });
-        const beads = upcomingBeads(c, q, { action: 'spell' });
+        enqueueAction(q, { owner: 'enemy', dueAt: c.enemyReady });
+        const beads = upcomingBeads(c, q, false);
         expect(beads).toHaveLength(3);
         expect(beads.filter(b => b === 'foe')).toHaveLength(1);
         expect(beads.filter(b => b === 'hero')).toHaveLength(2);
