@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
+import { CHARGE_BASE, CHARGE_MIN, classChargeTime, enemyChargeTime, newCharge, classChargeMs, enemyChargeMs, chargeTick, isClassReady, classProgress, classRemainingMs, spendClass, spendEnemy, isEnemyReady, chargeRunning, chargeSpeed, BOARD_IDLE_PAUSE_MS, initCharge, startChargePctOf, newActionQueue, enqueueAction, takeNextDue, hasQueuedAction, upcomingBeads } from '../../classCharge.js';
 
 const hero = (extra = {}) => ({ attributes: {}, mana: {}, skills: {}, ...extra });
 
@@ -115,5 +115,24 @@ describe('classCharge : temps de chargement des classes', () => {
         expect(beads).toHaveLength(3);
         expect(beads.filter(b => b === 'foe')).toHaveLength(1);
         expect(beads.filter(b => b === 'hero')).toHaveLength(2);
+    });
+
+    test('les altérations ralentissent ou arrêtent le chargement (celui de l\'ennemi aussi)', () => {
+        expect(chargeSpeed({})).toBe(1);
+        expect(chargeSpeed({ statusEffects: { chilled: 2 } })).toBe(0.5);
+        expect(chargeSpeed({ statusEffects: { chilled: 2, exhausted: 1 } })).toBeCloseTo(0.35, 5);
+        expect(chargeSpeed({ statusEffects: { asleep: 1 } })).toBe(0);
+        expect(chargeSpeed({ statusEffects: { chilled: 0 } })).toBe(1);
+        const c = newCharge(), h = hero();
+        spendClass(c, h, 'assassin');
+        const total = classChargeMs(h, 'assassin');
+        chargeTick(c, total / 2, 0.5);                        // ralenti : la moitié du temps ne compte qu'à moitié
+        expect(classRemainingMs(c, 'assassin')).toBeCloseTo(total * 0.75, 0);
+        chargeTick(c, total, 0);                              // arrêté : rien n'avance
+        expect(classRemainingMs(c, 'assassin')).toBeCloseTo(total * 0.75, 0);
+        spendEnemy(c, { level: 5 });
+        const e0 = enemyChargeMs({ level: 5 });
+        chargeTick(c, e0 / 2, 1, 0.5);
+        expect(c.enemyReady - c.now).toBeCloseTo(e0 * 0.75, 0);
     });
 });

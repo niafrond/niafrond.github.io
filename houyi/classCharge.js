@@ -47,8 +47,25 @@ export function enemyChargeTime(enemy) {
 /** Nouveau combat : tout le monde est prêt. `now` est le temps de combat écoulé (ms) ; `ready` : date de « prêt » par classe. */
 export const newCharge = () => ({ now: 0, ready: {}, enemyReady: 0 });
 
-/** Fait avancer le temps de combat (le ticker de gameSpellList.js ne l'appelle qu'en combat, fenêtre visible). */
-export function chargeTick(charge, dtMs) { charge.now += Math.max(0, dtMs || 0); }
+/**
+ * Vitesse de chargement d'un combattant selon ses altérations (1 = normale, 0 = chargement à l'arrêt) : Ralenti et Pétrifié moitié moins vite, Épuisé
+ * et Maudit un peu moins vite, Étourdi et Endormi arrêtent le chargement. Les facteurs se multiplient.
+ */
+export const CHARGE_SLOW = { chilled: 0.5, petrified: 0.5, exhausted: 0.7, cursed: 0.8, stunned: 0, asleep: 0 };
+export function chargeSpeed(entity) {
+    const status = entity?.statusEffects || {};
+    return Object.entries(CHARGE_SLOW).reduce((f, [key, k]) => ((Number(status[key]) || 0) > 0 ? f * k : f), 1);
+}
+
+/** Fait avancer le temps de combat (le ticker de gameSpellList.js ne l'appelle qu'en combat, fenêtre visible). Un combattant ralenti voit ses dates de « prêt » reculer d'autant. */
+export function chargeTick(charge, dtMs, heroSpeed = 1, enemySpeed = 1) {
+    const dt = Math.max(0, dtMs || 0);
+    charge.now += dt;
+    const heroLoss = dt * (1 - Math.max(0, Math.min(1, heroSpeed)));
+    if (heroLoss > 0) Object.keys(charge.ready).forEach(id => { if (charge.ready[id] > charge.now - dt) charge.ready[id] += heroLoss; });
+    const foeLoss = dt * (1 - Math.max(0, Math.min(1, enemySpeed)));
+    if (foeLoss > 0 && charge.enemyReady > charge.now - dt) charge.enemyReady += foeLoss;
+}
 
 const readyAt = (charge, id) => charge.ready[id] ?? 0;
 const factorOf = factor => (Number.isFinite(factor) && factor > 0 ? factor : 1);

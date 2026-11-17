@@ -1060,7 +1060,7 @@ body.rt .rc.compare-picked, [data-cmp-kind].compare-picked { outline: 2px solid 
 .class-picker .class-pick { background: #1d2530; color: #eaf6f8; text-shadow: 0 1px 1px #000; border-color: #5b6a78; }
 /* Barre de chargement de la classe : se remplit jusqu'à ce qu'elle soit prête (classCharge.js). */
 .class-pick::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--charge, 100%); background: linear-gradient(90deg, #1f7f93, #3fc1d8); opacity: 1; transition: width 0.3s ease-out; z-index: 0; }
-.class-pick.charging-anim::before { animation: class-charge var(--dur, 1s) linear forwards; }
+.class-pick.charging-anim::before { animation: class-charge var(--dur, 1s) linear forwards; animation-play-state: var(--play, running); }
 @keyframes class-charge { from { width: var(--from, 0%); } to { width: var(--to, 100%); } }
 @media (prefers-reduced-motion: reduce) { .class-pick.charging-anim::before { animation: none; } }
 .class-pick > span { position: relative; z-index: 1; }

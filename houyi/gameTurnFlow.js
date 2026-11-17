@@ -33,7 +33,7 @@ import { log, logActiveAction, saveUpdate, updateEnemySpells, updateStats } from
 import { companionIconHtml, foxIconHtml, showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 import { finishCombatRecord, recordEnemyTurn, recordPlayerTurn, saveCombatRecord } from './combatBalance.js';
 import { showAttributeMenu } from './gameLevelUp.js';
-import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction } from './gameSpellList.js';
+import { updateAvailableSpells, enemyActionReady, spendEnemyAction, getTurnClass, chooseEnemyAction, runBoundaryAction, resumeAfterBoundary, withCaster } from './gameSpellList.js';
 import { CLASS_SHORT } from './classRoster.js';
 import { currentTurn, activeCompanionIds, addBonusTurn, addManaForColor, applyCombatXPAtEnd, applyDamage, applyStandardSpellEffects, canEntityCastSpell, combatHooks, combatRewards, consumeSpellMana, enemy, gameState, getWeaponIcon, grantStuffPiece, handlePlayerDeath, normalizeActiveInventoryIndex, sellDuplicateItem, normalizeBonusTurnValue, player, queueCombatXP, showEndCombatAnimation, turnFlags, setCurrentTurn, resetTranseTurn, applyTranseClassEffect, syncGauge, endXiuxianAtCombatEnd, xiuEffect } from './game.js';
 
@@ -107,6 +107,7 @@ export function finishPlayerTurn(){
     if(gameState.combatState !== 'active'){
         return;
     }
+    if(runBoundaryAction(() => finishPlayerTurn())) return;   // sort de plateau ou ultime en attente : il part juste avant le tour de plateau suivant
     recordPlayerTurn();
     (gameState.playedClasses ||= new Set()).add(getTurnClass());   // classes jouées ce combat : elles gagnent des PA de classe
     endOfPlayerTurnTranse();
@@ -463,21 +464,15 @@ export function enemyTurn(){
     if(!enemy.isTutorialEnemy && !enemy.duel){
         const spellOnBoard = decision.action === 'spell' && decision.data?.spell?.boardSpell;
         if(spellOnBoard){
-            if(gameState.enemyPending && enemyActionReady()){
-                decision = gameState.enemyPending;
-                gameState.enemyPending = null;
-            } else if(!enemyActionReady() || gameState.enemyPending){
-                if(!gameState.enemyPending) gameState.enemyPending = decision;
-                decision = { ...decision, action: 'board', reason: `${decision.reason} ; il se recharge : il joue sur le plateau`, data: {} };
-            }
+            // Sort de plateau : choisi et payé s'il est chargé, il part avec les autres actions de plateau, à la fin du tour de plateau en cours.
+            const chosen = decision;
+            if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => withCaster('enemy', async () => { playSfx('spellCast', { isPlayer: false, spellId: chosen.data.spell.id }); await castEnemyBoardSpell(chosen.data.spell); }), true);
+            decision = { ...decision, action: 'board', reason: `${decision.reason} ; son sort de plateau part à la fin du tour de plateau, il joue sur la grille`, data: {} };
         } else if(decision.action === 'spell' || decision.action === 'weapon'){
             // Il ne peut choisir son action que chargé (barre pleine) et s'il peut la payer ; elle part alors tout de suite ou depuis la file, et il joue sur le plateau.
             const chosen = decision;
             if(enemyActionReady() && payEnemyAction(chosen)) chooseEnemyAction(() => runEnemyActionOutOfTurn(chosen));
             decision = { ...decision, action: 'board', reason: `${decision.reason} ; son action part sans lien avec le plateau, il joue sur la grille`, data: {} };
-        } else if(gameState.enemyPending && enemyActionReady()){
-            decision = gameState.enemyPending;   // sort de plateau en attente : il part à ce tour
-            gameState.enemyPending = null;
         }
     }
     
@@ -536,7 +531,7 @@ async function castEnemyBoardSpell(spell){
     try { applied = await applyClassSpellEffect(spell); } catch(error) { console.error(error); }
     const changed = board.some((tile, i) => tile !== before[i]);
     if(applied === true && changed) checkMatches(true);
-    else if(!changed) finishEnemyTurn();
+    else if(!changed) resumeAfterBoundary() || (currentTurn === 'enemy' ? finishEnemyTurn() : finishPlayerTurn());   // poursuit la fin du tour de plateau en cours
 }
 
 export function finishEnemyTurn(){
@@ -561,6 +556,7 @@ export function finishEnemyTurn(){
             enemyTurn();
         }, 1000);
     } else {
+        if(runBoundaryAction(() => finishEnemyTurn())) return;   // sort de plateau ou ultime en attente : il part juste avant le tour de plateau suivant
         if((enemy.statusEffects?.confused || 0) > 0) {
             enemy.statusEffects.confused--;
             if(enemy.statusEffects.confused <= 0) {

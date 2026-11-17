@@ -300,7 +300,25 @@ export function setGameStarted(started){
     gameStarted = started;
 }
 
+// Capture de visée : pendant `captureBoardTarget`, un sort qui demande de viser une tuile (setBoardTargetingMode) n'est pas lancé ; sa configuration est gardée,
+// le joueur désigne une tuile, et seule la POSITION est mémorisée : le sort sera lancé plus tard (file d'actions, plateau au repos) sur cette position.
+let targetCapture = null;
+/** `trigger` lance le sort (qui demande une cible). Renvoie false si le sort ne demande aucune cible ; sinon attend le clic puis appelle `onPicked(index, config)`. */
+export function captureBoardTarget(trigger, onPicked){
+    targetCapture = { config: null };
+    let cfg = null;
+    try { trigger(); } finally { cfg = targetCapture.config; targetCapture = null; }
+    if(!cfg) return false;
+    const cancel = ev => { if(ev.key === 'Escape'){ document.removeEventListener('keydown', cancel); setBoardTargetingMode(null); } };   // Échap : annuler la visée (rien n'est payé)
+    document.addEventListener('keydown', cancel);
+    tileClickInterceptor = (index) => { document.removeEventListener('keydown', cancel); setBoardTargetingMode(null); onPicked(index, cfg); return true; };
+    tileHighlightPredicate = typeof cfg.highlightPredicate === 'function' ? cfg.highlightPredicate : (() => true);
+    refreshTargetingHighlights();
+    return true;
+}
+
 export function setBoardTargetingMode(config = null){
+    if(targetCapture && config){ targetCapture.config = config; return; }
     if(!config){
         tileClickInterceptor = null;
         tileHighlightPredicate = null;

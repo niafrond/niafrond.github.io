@@ -12,7 +12,7 @@ import { tutorialCallbacks } from "./tutorial.js";
 import { allWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 
-import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor } from "./board.js";
+import { setGameStarted, isBoardResolving, setBiomeRule, boostBoardColor, captureBoardTarget, board } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 
 import { protectsFromBiome, collarForBiome, stuffTotals, normalizeStuff, grantStuff, inflictPoison, wornStuff } from "./stuff.js";
@@ -68,7 +68,7 @@ import { showCombatAnimation, showStrikeAnimation } from './gameStatsTab.js';
 export * from './gameStatsTab.js';
 import { showAttributeMenu, updateLevelHud } from './gameLevelUp.js';
 export * from './gameLevelUp.js';
-import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled } from './gameSpellList.js';
+import { updateAvailableSpells, combatSpellList, getTurnClass, chooseAction, classCanAct, spendActionCharge, chargeFactor, decoupled, withCaster, resumeAfterBoundary } from './gameSpellList.js';
 import { applyDuelRulesAtCombatStart, enemyTurn, finishPlayerTurn, handleEnemyDefeated } from './gameTurnFlow.js';
 export * from './gameTurnFlow.js';
 export * from './gameSpellList.js';
@@ -916,7 +916,10 @@ export const gameState = {
     transeApplied: null,  // classes dont l'effet de Xiūxiān a déjà été appliqué ce tour
     charge: newCharge(),  // temps de chargement des classes et de l'ennemi (classCharge.js)
     actionQueue: newActionQueue(),   // actions (sort, compétence, objet, arme) en attente de chargement ; l'ordre n'est jamais montré
-    enemyPending: null    // sort de plateau de l'ennemi qui attend son tour de plateau
+    enemyPending: null,   // (ancien) sort de plateau de l'ennemi en attente
+    boundaryResume: null, // fin de tour à relancer si l'action de plateau en cours ne le fait pas
+    boundaryToken: 0,
+    casterOverride: null  // 'player' | 'enemy' : lanceur d'un sort de la file quand ce n'est pas le camp du tour de plateau en cours
 };
 
 // ── Classe du tour et Xiūxiān ───────────────────────────────────────────────
@@ -1871,6 +1874,43 @@ function strikeWithWeapon(weapon, { free = false } = {}){
 }
 
 
+// Sort à effet (classes) quand les actions sont indépendantes du plateau. Un sort qui ne touche pas la grille part comme les autres actions ; un sort qui la
+// modifie attend la fin du tour de plateau en cours (plateau au repos, juste avant le suivant) ; si le joueur doit désigner une tuile, c'est au choix et
+// SEULE la position est mémorisée : le sort est lancé plus tard sur cette position, même si la tuile n'y est plus.
+async function castEffectSpellDecoupled(spell){
+    const module = await import('./classSpellEffects.js');
+    const pay = () => { actionGuard.markPlayerAction(); consumeSpellMana(player, spell); startSpellCooldown(spell); };
+    const announce = () => { playSfx('spellCast', { isPlayer: true, spellId: spell.id }); logActiveAction(`lance le sort ${spell.name} (effet special)`); };
+    if(!module.isBoardSpell(spell)){
+        pay();
+        chooseAction(() => withCaster('player', async () => {
+            announce();
+            const ok = await module.applyClassSpellEffect(spell);
+            saveUpdate();
+            if(ok){ tutorialCallbacks.onSpellCast?.(); endAction(); }
+        }));
+        return;
+    }
+    const run = (index, config) => () => withCaster('player', async () => {
+        announce();
+        if(config){ await config.onTileClick(index, board[index]); return; }   // position mémorisée : le sort part sur elle, quelle que soit la tuile qui s'y trouve
+        const before = module.snapshotBoard();
+        const ok = await module.applyClassSpellEffect(spell);
+        saveUpdate();
+        if(ok) module.endPlayerSpellTurn(before); else resumeAfterBoundary();
+    });
+    if(module.TARGETED_EFFECTS.has(spell.effect)){
+        captureBoardTarget(() => module.applyClassSpellEffect(spell), (index, config) => {
+            if(gameState.combatState !== 'active' || isMuted(player) || !canEntityCastSpell(player, spell) || !classCanAct()) return;
+            pay();
+            chooseAction(run(index, config), { turnBound: true });
+        });
+        return;
+    }
+    pay();
+    chooseAction(run(null, null), { turnBound: true });
+}
+
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
@@ -1888,6 +1928,7 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de qì ${missingColor} !` : "Pas assez de qì !");
         return;
     }
+    if(decoupled() && spell.effect){ castEffectSpellDecoupled(spell); return; }   // sorts à effet : soutiens tout de suite, sorts de plateau en fin de tour de plateau
     actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);   // coût payé au choix
     if(!decoupled() && xiuEffect().doubleCast && !gameState.doubleCastUsed){   // Double Talisman : un second sort sans perdre le tour (tutoriel et duels ; sans objet quand les actions ne prennent pas le tour)
@@ -1933,7 +1974,7 @@ export function castSpell(spellId){
 // (voir `playUltimateCinematic`) se joue avant l'effet.
 export async function castUltimate(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(!decoupled() && currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     if(rejectRushedAction()) return;
     const spell = getUltimateById(spellId);
     if(!spell || getEquippedUltimate(player)?.id !== spell.id){ log("Ultime indisponible !"); return; }
@@ -1945,6 +1986,25 @@ export async function castUltimate(spellId){
     if(player.cheatFreeSpells !== true && !canCastUltimateMana(player, spell)){
         const missing = ultimateCostEntries(spell).find(([color, need]) => collectedUltimateMana(player, color) < need);
         log(missing ? `Pas assez de qì ${missing[0]} collecté !` : "Pas assez de qì !");
+        return;
+    }
+    if(decoupled()){
+        // Ultime : choisi et payé tout de suite ; il part à la fin du tour de plateau en cours, plateau au repos, juste avant le suivant.
+        if(!classCanAct()) return;
+        actionGuard.markPlayerAction();
+        if(player.cheatFreeSpells !== true) spendUltimateMana(player, spell);
+        resetRage(player);
+        chooseAction(() => withCaster('player', async () => {
+            playSfx('spellCast', { isPlayer: true, spellId: spell.id });
+            logActiveAction(`lance l'ultime ${spell.name}`);
+            updateStats();
+            await playUltimateCinematic(spell);
+            const module = await import('./classSpellEffects.js');
+            const boardBefore = module.snapshotBoard();
+            const ok = await module.applyClassSpellEffect(spell);
+            saveUpdate();
+            if(ok) module.endPlayerSpellTurn(boardBefore); else resumeAfterBoundary();
+        }), { turnBound: true });
         return;
     }
     actionGuard.markPlayerAction();
