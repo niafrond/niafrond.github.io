@@ -48,23 +48,26 @@ export function enemyChargeTime(enemy) {
 export const newCharge = () => ({ now: 0, ready: {}, enemyReady: 0 });
 
 /**
- * Vitesse de chargement d'un combattant selon ses altérations (1 = normale, 0 = chargement à l'arrêt) : Ralenti et Pétrifié moitié moins vite, Épuisé
- * et Maudit un peu moins vite, Étourdi et Endormi arrêtent le chargement. Les facteurs se multiplient.
+ * Vitesse de chargement d'un combattant selon ses altérations (1 = normale, 0 = à l'arrêt) : Ralenti et Pétrifié moitié moins vite, Épuisé et Maudit un peu
+ * moins vite, Étourdi et Endormi l'arrêtent ; les altérations POSITIVES l'accélèrent (Concentré ×1,25, Hâte ×1,5, Élan ×2). Les facteurs se multiplient.
  */
-export const CHARGE_SLOW = { chilled: 0.5, petrified: 0.5, exhausted: 0.7, cursed: 0.8, stunned: 0, asleep: 0 };
+export const CHARGE_MOD = { chilled: 0.5, petrified: 0.5, exhausted: 0.7, cursed: 0.8, stunned: 0, asleep: 0, focused: 1.25, haste: 1.5, surge: 2 };
+export const CHARGE_SLOW = CHARGE_MOD;   // ancien nom
 export function chargeSpeed(entity) {
     const status = entity?.statusEffects || {};
-    return Object.entries(CHARGE_SLOW).reduce((f, [key, k]) => ((Number(status[key]) || 0) > 0 ? f * k : f), 1);
+    return Math.min(3, Object.entries(CHARGE_MOD).reduce((f, [key, k]) => ((Number(status[key]) || 0) > 0 ? f * k : f), 1));
 }
 
 /** Fait avancer le temps de combat (le ticker de gameSpellList.js ne l'appelle qu'en combat, fenêtre visible). Un combattant ralenti voit ses dates de « prêt » reculer d'autant. */
 export function chargeTick(charge, dtMs, heroSpeed = 1, enemySpeed = 1) {
     const dt = Math.max(0, dtMs || 0);
+    const before = charge.now;
     charge.now += dt;
-    const heroLoss = dt * (1 - Math.max(0, Math.min(1, heroSpeed)));
-    if (heroLoss > 0) Object.keys(charge.ready).forEach(id => { if (charge.ready[id] > charge.now - dt) charge.ready[id] += heroLoss; });
-    const foeLoss = dt * (1 - Math.max(0, Math.min(1, enemySpeed)));
-    if (foeLoss > 0 && charge.enemyReady > charge.now - dt) charge.enemyReady += foeLoss;
+    const shift = speed => dt * (1 - Math.max(0, Math.min(3, speed)));   // > 0 : retard (ralenti), < 0 : avance (accéléré)
+    const heroShift = shift(heroSpeed);
+    if (heroShift !== 0) Object.keys(charge.ready).forEach(id => { if (charge.ready[id] > before) charge.ready[id] = Math.max(charge.now, charge.ready[id] + heroShift); });
+    const foeShift = shift(enemySpeed);
+    if (foeShift !== 0 && charge.enemyReady > before) charge.enemyReady = Math.max(charge.now, charge.enemyReady + foeShift);
 }
 
 const readyAt = (charge, id) => charge.ready[id] ?? 0;

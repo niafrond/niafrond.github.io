@@ -4,8 +4,8 @@ import { POTIONS, POTION_SIZES, potionHeal, potionPrice, buyPotion, drinkPotion,
 const hero = (extra = {}) => ({ hp: 20, maxHp: 100, gold: 1000, combatPoints: 3, ...extra });
 
 describe('potions de soin à usage unique', () => {
-    test('trois tailles : 25 %, 50 % et 75 % des PV max pour 1, 2 et 3 PA', () => {
-        expect(POTION_SIZES.map(s => [POTIONS[s].healPct, POTIONS[s].actionPoints])).toEqual([[25, 1], [50, 2], [75, 3]]);
+    test('trois tailles : 25 %, 50 % et 75 % des PV max, sans point d\'action (déjà payées en or)', () => {
+        expect(POTION_SIZES.map(s => [POTIONS[s].healPct, POTIONS[s].actionPoints])).toEqual([[25, 0], [50, 0], [75, 0]]);
         expect(POTION_SIZES.map(s => potionHeal(hero(), s))).toEqual([25, 50, 75]);
     });
     test('le prix monte avec la région et avec la taille', () => {
@@ -30,21 +30,13 @@ describe('potions de soin à usage unique', () => {
         expect(drinkPotion(h, 'small').ok).toBe(false);   // PV pleins : la potion n'est pas gaspillée
         expect(h.potions.small).toBe(1);
     });
-    test('en combat : coûte des points d\'action, refusée s\'il en manque', () => {
-        const h = hero({ combatPoints: 2 });
+    test("en combat : aucun point d'action (la potion a été payée en or), même sans PA", () => {
+        const h = hero({ combatPoints: 0 });
         normalizePotions(h); h.potions.large = 1; h.potions.medium = 1;
-        expect(drinkBlockReason(h, 'large', true)).toMatch(/3 points d'action/);
-        expect(drinkBlockReason(h, 'large', false)).toBeNull();   // hors combat : gratuit
+        expect(drinkBlockReason(h, 'large', true)).toBeNull();
+        expect(drinkBlockReason(h, 'large', false)).toBeNull();
         expect(drinkPotion(h, 'medium', { inCombat: true }).ok).toBe(true);
         expect(h.combatPoints).toBe(0);
         expect(h.hp).toBe(70);
-    });
-    test('le Souffle du Lotus d\'Or rend les potions gratuites en combat', () => {
-        const h = hero({ combatPoints: 0 });
-        normalizePotions(h); h.potions.large = 1;
-        expect(drinkBlockReason(h, 'large', true)).not.toBeNull();
-        expect(drinkBlockReason(h, 'large', true, true)).toBeNull();
-        expect(drinkPotion(h, 'large', { inCombat: true, free: true }).ok).toBe(true);
-        expect(h.combatPoints).toBe(0);
     });
 });

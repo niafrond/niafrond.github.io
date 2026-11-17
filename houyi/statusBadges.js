@@ -33,6 +33,9 @@ export function activeStatuses(entity) {
     if (n(entity?.regenEffect?.turnsLeft) > 0) add('regen', 'heart', 'Régénération', 'buff', `Rend ${n(entity.regenEffect.hp)} PV au début de chaque tour.`, n(entity.regenEffect.turnsLeft));
     if (n(entity?.manaMultiplier?.turnsLeft) > 0) add('manaMult', 'spark', 'Déferlement du Qi', 'buff', 'Le qì gagné est multiplié.', n(entity.manaMultiplier.turnsLeft));
 
+    if (n(se.haste) > 0) add('haste', 'bolt', 'Hâte', 'buff', 'Les actions se chargent 50 % plus vite.', n(se.haste));
+    if (n(se.focused) > 0) add('focused', 'brain', 'Concentré', 'buff', 'Les actions se chargent 25 % plus vite.', n(se.focused));
+    if (n(se.surge) > 0) add('surge', 'spark', 'Élan', 'buff', 'Les actions se chargent deux fois plus vite.', n(se.surge));
     if (n(se.poisoned) > 0) add('poisoned', 'poison', 'Poison', 'debuff', `Perd ${n(se.poisonDamage)} PV à chaque tour.`, n(se.poisoned));
     if (n(se.stunned) > 0) add('stunned', 'dizzy', 'Étourdi', 'debuff', 'Passe son prochain tour.', n(se.stunned));
     if (n(se.weakened) > 0) add('weakened', 'snow', 'Affaibli', 'debuff', `-${n(se.weakenedAmount)} attaque (chance de critique réduite).`, n(se.weakened));

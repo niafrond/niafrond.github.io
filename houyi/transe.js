@@ -19,8 +19,8 @@ export const TRANSE_EFFECTS = {
     barbarian: { name: 'Fureur du Tigre Blanc', physMult: 2, text: 'les dégâts de l\'arme et des crânes sont doublés' },
     // Commandant : rempart qui renvoie une partie des coups (équilibre attaque / défense).
     templar: { name: 'Muraille de Jade', defense: 25, reflectPct: 30, text: 'Défense +25 et 30 % des dégâts subis sont renvoyés' },
-    // Moine : soins renforcés (régénération, potions gratuites).
-    monk: { name: 'Souffle du Lotus d\'Or', healPct: 10, freePotions: true, text: 'soigne 10 % des PV max à chaque tour ; les potions ne coûtent aucun point d\'action' },
+    // Moine : soins renforcés (régénération).
+    monk: { name: 'Souffle du Lotus d\'Or', healPct: 10, text: 'soigne 10 % des PV max à chaque tour' },
     // Chamane : l'offrande aux ancêtres facilite l'apprentissage (PA doublés à la victoire) et protège.
     shaman: { name: 'Offrande aux Ancêtres', actionPoints: 1, defense: 10, paMult: 2, text: '+1 point d\'action et Défense +10 par tour ; les PA gagnés à la victoire sont doublés' }
 };

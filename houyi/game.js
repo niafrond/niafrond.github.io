@@ -1022,7 +1022,7 @@ export function drinkPotionAction(size){
             const healed = player.hp - before;
             flyHeal(true, healed);
             log(`${potion.name} : +${healed} PV.`);
-            logActiveAction(`boit une ${potion.name.toLowerCase()} (coût ${potion.actionPoints} PA)`);
+            logActiveAction(`boit une ${potion.name.toLowerCase()}`);
             showCombatAnimation({ icon: 'potion', title: potion.name, heal: `+${healed} PV`, target: '→ Vous' }, true);
             document.dispatchEvent(new Event('potions-changed'));
             endAction();
@@ -1037,7 +1037,7 @@ export function drinkPotionAction(size){
     flyHeal(true, res.healed || heal);
     log(res.message);
     if(inCombat){
-        logActiveAction(`boit une ${POTIONS[size].name.toLowerCase()} (coût ${POTIONS[size].actionPoints} PA)`);
+        logActiveAction(`boit une ${POTIONS[size].name.toLowerCase()}`);
         showCombatAnimation({ icon: 'potion', title: POTIONS[size].name, heal: `+${res.healed} PV`, target: '→ Vous' }, true);
         updateStats();
         saveUpdate();

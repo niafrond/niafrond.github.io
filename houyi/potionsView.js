@@ -42,7 +42,7 @@ export function renderPotionButtons() {
         const blocked = drinkBlockReason(player, size, true, free) || !classCanAct();
         return `<button type="button" class="enemy-spell-item potion-btn${blocked ? ' disabled' : ''}" data-potion="${size}"${blocked ? ' disabled' : ''} title="${escapeHtml(label(size))}">
             <div class="spell-name">${escapeHtml(p.name)} ×${potionCount(player, size)}</div>
-            <div class="spell-cost">${free ? '0 PA' : `${p.actionPoints} PA`} · ${p.healPct} % des PV</div></button>`;
+            <div class="spell-cost">${p.actionPoints > 0 && !free ? `${p.actionPoints} PA · ` : ''}${p.healPct} % des PV</div></button>`;
     }).join('');
     const itemTiles = items.map(({ item, index }) => {
         const use = itemUsability(item);

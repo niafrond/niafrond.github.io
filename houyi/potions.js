@@ -1,15 +1,15 @@
 // Potions de soin : à USAGE UNIQUE, achetées chez les marchands, en nombre illimité dans le sac. Les PV ne reviennent plus tout seuls
 // après un combat : les potions servent à les rendre. Module pur (sans DOM).
 //
-// Trois tailles : petite (25 % des PV max, 1 PA), moyenne (50 %, 2 PA), grande (75 %, 3 PA). En combat, boire coûte ces points d'action
-// (comme une arme) et prend le tour ; hors combat, c'est gratuit. Stock du héros : `hero.potions = { small, medium, large }`.
+// Trois tailles : petite (25 % des PV max), moyenne (50 %), grande (75 %). Une potion a déjà été payée en pièces d'or chez le marchand : en combat elle
+// ne coûte AUCUN point d'action (`actionPoints: 0`) ; seule la barre de la classe du tour doit être chargée (classCharge.js). Stock du héros : `hero.potions = { small, medium, large }`.
 
 export const POTION_SIZES = ['small', 'medium', 'large'];
 
 export const POTIONS = {
-    small: { id: 'small', name: 'Petite potion', healPct: 25, actionPoints: 1, basePrice: 30 },
-    medium: { id: 'medium', name: 'Potion moyenne', healPct: 50, actionPoints: 2, basePrice: 70 },
-    large: { id: 'large', name: 'Grande potion', healPct: 75, actionPoints: 3, basePrice: 140 }
+    small: { id: 'small', name: 'Petite potion', healPct: 25, actionPoints: 0, basePrice: 30 },
+    medium: { id: 'medium', name: 'Potion moyenne', healPct: 50, actionPoints: 0, basePrice: 70 },
+    large: { id: 'large', name: 'Grande potion', healPct: 75, actionPoints: 0, basePrice: 140 }
 };
 
 export function normalizePotions(hero) {
@@ -45,7 +45,7 @@ export function buyPotion(hero, size, regionLevel = 1) {
 }
 
 /**
- * Pourquoi on ne peut pas boire (null si on peut). `inCombat` : il faut aussi les points d'action (`hero.combatPoints`).
+ * Pourquoi on ne peut pas boire (null si on peut). `inCombat` : un éventuel coût en points d'action (0 aujourd'hui : la potion est déjà payée en or).
  */
 export function drinkBlockReason(hero, size, inCombat, free = false) {
     const potion = POTIONS[size];

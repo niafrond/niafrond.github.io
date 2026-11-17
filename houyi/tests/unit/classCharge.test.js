@@ -135,4 +135,17 @@ describe('classCharge : temps de chargement des classes', () => {
         chargeTick(c, e0 / 2, 1, 0.5);
         expect(c.enemyReady - c.now).toBeCloseTo(e0 * 0.75, 0);
     });
+
+    test("altérations positives : elles accélèrent le chargement (Concentré, Hâte, Élan) et se multiplient aux malus", () => {
+        expect(chargeSpeed({ statusEffects: { focused: 2 } })).toBe(1.25);
+        expect(chargeSpeed({ statusEffects: { haste: 3 } })).toBe(1.5);
+        expect(chargeSpeed({ statusEffects: { surge: 1 } })).toBe(2);
+        expect(chargeSpeed({ statusEffects: { haste: 3, chilled: 2 } })).toBeCloseTo(0.75, 5);   // le ralentissement annule une partie de la Hâte
+        expect(chargeSpeed({ statusEffects: { haste: 3, surge: 1, focused: 1 } })).toBe(3);      // plafonné à ×3
+        const c = newCharge(), h = hero();
+        spendClass(c, h, 'assassin');
+        const total = classChargeMs(h, 'assassin');
+        chargeTick(c, total / 2, 2);                            // Élan : la moitié du temps vaut le temps entier
+        expect(isClassReady(c, 'assassin')).toBe(true);
+    });
 });
