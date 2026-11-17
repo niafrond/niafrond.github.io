@@ -447,3 +447,5 @@ body.casual-mode .tab-btn[onclick*="'spells'"] { display: none; }
 .potion-row em { font-size: 0.85em; opacity: 0.85; }
 .potion-btn { width: 100%; text-align: left; cursor: pointer; }
 .potion-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ab-class { font-size: 0.7em; opacity: 0.8; margin-left: 4px; }

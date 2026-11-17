@@ -136,7 +136,7 @@ export function combatSpellList(){
             if(!list.some(s => s.id === sp.id) && !(player.archivedSpells || []).includes(sp.id)) list.push(sp);
         }
     }
-    return [...list, ...actionSpells(player)];
+    return [...list, ...actionSpells(player).filter(sp => !sp.class || sp.class === cls)];   // les commandes de classe n'existent que pour la classe du tour
 }
 
 

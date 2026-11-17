@@ -922,6 +922,7 @@ export const gameState = {
 // et de la possibilité de lancer l'ultime (sorcier uniquement). Voir transe.js.
 /** Une jauge de Xiūxiān par classe : la jauge affichée est celle de la classe du tour. */
 export function syncGauge(){
+    player.turnClassId = getTurnClass();   // les compétences de classe (skills.js) ne jouent que pour cette classe
     switchGauge(player, getTurnClass());
 }
 
@@ -1368,6 +1369,7 @@ export function restartCombat({ keepHp = true } = {}){
     player.transe = 0; player.transeClass = null;
     gameState.turnClass = null;   // la classe du tour revient à celle du héros
     gameState.charge = newCharge();   // tout le monde est prêt au début du combat
+    gameState.playedClasses = new Set();   // classes jouées ce combat (PA de classe)
     gameState.forcedClass = enemy?.training || null;   // entraînement : une seule classe, imposée par le maître
     if(gameState.forcedClass) log(`Entraînement : ce combat se mène uniquement en ${CLASS_SHORT[gameState.forcedClass] || gameState.forcedClass}.`);
     gameState.transeApplied = null;

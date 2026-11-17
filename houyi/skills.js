@@ -8,6 +8,8 @@
 //
 // État du héros : `hero.skills = { progress: { id: PA }, learned: [id], active: [id de soutien] }`.
 
+import { normalizeRoster } from './classRoster.js';
+
 const SUPPORT = 'support';
 const ACTION = 'action';
 
@@ -35,7 +37,37 @@ export const SKILLS = [
       spell: { cost: { blue: 15, green: 15 }, heal: 90, scales: 2 } }
 ];
 
-export const getSkill = id => SKILLS.find(s => s.id === id) || null;
+// ── Compétences de classe ──────────────────────────────────────────────────
+// Chaque classe a ses propres compétences, enseignées par l'équipement comme les autres (PA gagnés en jouant la classe) :
+// deux de soutien (activées avec des Fulu, effet seulement quand la classe est la classe du tour) et une action (commande de combat de la classe).
+// Hors de SKILLS : la table `skillsTaughtBy` des compétences communes reste inchangée. Invisibles tant que la classe n'est pas obtenue.
+export const CLASS_SKILLS = [
+    { id: 'cl_assassin_brume', classId: 'assassin', kind: SUPPORT, name: 'Pas de brume', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Rôdeur se recharge 10 % plus vite.' },
+    { id: 'cl_assassin_oeil', classId: 'assassin', kind: SUPPORT, name: 'Œil du chasseur', ap: 60, cost: 2, bonus: { attack: 6 }, description: 'Attaque +6 quand le Rôdeur joue.' },
+    { id: 'cl_assassin_aube', classId: 'assassin', kind: ACTION, name: 'Flèche de l\'aube', ap: 80, description: 'Une flèche lancée à la première lueur : dégâts directs.', spell: { cost: { yellow: 20 }, dmg: 70, scales: 1.5 } },
+    { id: 'cl_barbarian_loup', classId: 'barbarian', kind: SUPPORT, name: 'Peau de loup', ap: 50, cost: 2, bonus: { defense: 6 }, description: 'Défense +6 quand le Guerrier joue.' },
+    { id: 'cl_barbarian_sang', classId: 'barbarian', kind: SUPPORT, name: 'Sang chaud', ap: 70, cost: 2, bonus: { regenPct: 2 }, description: 'Le Guerrier récupère 2 % de ses PV max à chaque tour.' },
+    { id: 'cl_barbarian_hurle', classId: 'barbarian', kind: ACTION, name: 'Hurlement de la horde', ap: 90, description: 'Un cri qui ébranle l\'adversaire : dégâts directs.', spell: { cost: { red: 25 }, dmg: 75, scales: 2 } },
+    { id: 'cl_templar_formation', classId: 'templar', kind: SUPPORT, name: 'Formation serrée', ap: 60, cost: 3, bonus: { defense: 8 }, description: 'Défense +8 quand le Commandant joue.' },
+    { id: 'cl_templar_ordre', classId: 'templar', kind: SUPPORT, name: 'Ordre du jour', ap: 60, cost: 2, bonus: { chargePct: 8 }, description: 'Le Commandant se recharge 8 % plus vite.' },
+    { id: 'cl_templar_etendard', classId: 'templar', kind: ACTION, name: 'Coup d\'étendard', ap: 80, description: 'Un coup porté avec la hampe de l\'étendard.', spell: { cost: { red: 15, purple: 10 }, dmg: 70, scales: 1.5 } },
+    { id: 'cl_sorcerer_sceau', classId: 'sorcerer', kind: SUPPORT, name: 'Sceau d\'eau claire', ap: 50, cost: 2, bonus: { poisonResist: 50 }, description: 'Le Mage résiste à moitié au poison.' },
+    { id: 'cl_sorcerer_meditation', classId: 'sorcerer', kind: SUPPORT, name: 'Méditation', ap: 60, cost: 2, bonus: { startMana: 2 }, description: 'Le Mage commence le combat avec 2 qì de chaque couleur de plus.' },
+    { id: 'cl_sorcerer_foudre', classId: 'sorcerer', kind: ACTION, name: 'Foudre intérieure', ap: 90, description: 'Le qì se fait foudre : dégâts directs.', spell: { cost: { blue: 25 }, dmg: 75, scales: 2 } },
+    { id: 'cl_monk_souffle', classId: 'monk', kind: SUPPORT, name: 'Souffle calme', ap: 70, cost: 3, bonus: { regenPct: 3 }, description: 'Le Moine récupère 3 % de ses PV max à chaque tour.' },
+    { id: 'cl_monk_paume', classId: 'monk', kind: SUPPORT, name: 'Paume légère', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Moine se recharge 10 % plus vite.' },
+    { id: 'cl_monk_soin', classId: 'monk', kind: ACTION, name: 'Paume guérisseuse', ap: 70, description: 'Une paume posée sur la plaie : soin.', spell: { cost: { green: 15 }, heal: 45, scales: 1.5 } },
+    { id: 'cl_alchemist_antidote', classId: 'alchemist', kind: SUPPORT, name: 'Antidote universel', ap: 70, cost: 3, bonus: { poisonResist: 100 }, description: 'L\'Alchimiste est immunisé contre le poison.' },
+    { id: 'cl_alchemist_cinabre', classId: 'alchemist', kind: SUPPORT, name: 'Réserve de cinabre', ap: 60, cost: 3, bonus: { startMana: 3 }, description: 'L\'Alchimiste commence le combat avec 3 qì de chaque couleur de plus.' },
+    { id: 'cl_alchemist_fiole', classId: 'alchemist', kind: ACTION, name: 'Fiole explosive', ap: 80, description: 'Une fiole lancée qui explose : dégâts directs.', spell: { cost: { red: 10, blue: 10 }, dmg: 65, scales: 1.5 } },
+    { id: 'cl_shaman_lien', classId: 'shaman', kind: SUPPORT, name: 'Lien des esprits', ap: 60, cost: 2, bonus: { transePct: 30 }, description: 'La jauge de Xiūxiān du Chamane se remplit 30 % plus vite.' },
+    { id: 'cl_shaman_danse', classId: 'shaman', kind: SUPPORT, name: 'Danse rapide', ap: 50, cost: 2, bonus: { chargePct: 10 }, description: 'Le Chamane se recharge 10 % plus vite.' },
+    { id: 'cl_shaman_ancetres', classId: 'shaman', kind: ACTION, name: 'Appel des ancêtres', ap: 80, description: 'Les ancêtres referment les blessures : soin.', spell: { cost: { green: 10, purple: 10 }, heal: 50, scales: 1.5 } }
+];
+
+export const getSkill = id => SKILLS.find(s => s.id === id) || CLASS_SKILLS.find(s => s.id === id) || null;
+/** Compétences affichées au héros : les communes + celles des classes qu'il a obtenues (aucun spoil sur les autres). */
+export const skillsFor = hero => [...SKILLS, ...CLASS_SKILLS.filter(s => normalizeRoster(hero).owned.includes(s.classId))];
 export const isSupport = skill => skill?.kind === SUPPORT;
 export const isAction = skill => skill?.kind === ACTION;
 
@@ -47,17 +79,24 @@ const hashOf = str => {
     return h >>> 0;
 };
 
-/** Compétences enseignées par un objet (arme ou stuff) : 1 ; 2 pour une pièce rare ou légendaire. Stable pour un id donné. */
-export function skillsTaughtBy(item) {
+/**
+ * Compétences enseignées par un objet (arme ou stuff) : 1 ; 2 pour une pièce rare ou légendaire. Stable pour un id donné.
+ * `classIds` : classes dont l'objet enseigne aussi une compétence de classe (même règle, dans le catalogue de chaque classe).
+ */
+export function skillsTaughtBy(item, classIds = []) {
     if (!item?.id) return [];
     const count = item.rarity === 'rare' || item.rarity === 'legendary' ? 2 : 1;
-    const taught = [];
-    const seed = hashOf(item.id);
-    for (let i = 0; taught.length < count && i < SKILLS.length; i++) {
-        const skill = SKILLS[(seed + i * 5) % SKILLS.length];
-        if (!taught.includes(skill.id)) taught.push(skill.id);
-    }
-    return taught;
+    const pick = (list, key) => {
+        const taught = [];
+        const seed = hashOf(key);
+        for (let i = 0; taught.length < count && i < list.length; i++) {
+            const skill = list[(seed + i * 5) % list.length];
+            if (!taught.includes(skill.id)) taught.push(skill.id);
+        }
+        return taught;
+    };
+    const base = pick(SKILLS, item.id);
+    return [...base, ...classIds.flatMap(cls => pick(CLASS_SKILLS.filter(s => s.classId === cls), `${item.id}:${cls}`))];
 }
 
 /** Objets actuellement portés qui enseignent : arme en main + stuff. `stuffList` : fiches de stuff portées (stuff.js `wornStuff`). */
@@ -92,12 +131,12 @@ export const progressOf = (hero, id) => (isLearned(hero, id) ? getSkill(id).ap :
 export const apForVictory = enemyLevel => 6 + Math.floor(Math.max(1, enemyLevel || 1) / 2);
 
 /** Donne `amount` PA à chaque compétence enseignée par `items` et pas encore apprise. Renvoie { gained: [{ skill, ap }], learned: [skill] }. */
-export function awardAp(hero, items, amount) {
+export function awardAp(hero, items, amount, classIds = []) {
     const state = normalizeSkills(hero);
     const result = { gained: [], learned: [] };
     const ap = Math.max(0, Math.floor(amount || 0));
     if (ap <= 0) return result;
-    const ids = [...new Set(items.flatMap(skillsTaughtBy))];
+    const ids = [...new Set(items.flatMap(item => skillsTaughtBy(item, classIds)))];   // classIds : classes jouées pendant le combat
     ids.forEach(id => {
         if (state.learned.includes(id)) return;
         const skill = getSkill(id);
@@ -152,7 +191,12 @@ export function toggleSupport(hero, id) {
 /** Somme d'un bonus (`attack`, `defense`, `poisonResist`, `regenPct`, `transePct`, `startMana`) des compétences de soutien actives. */
 export function skillBonus(hero, key) {
     if (!hero?.skills?.active?.length) return 0;
-    return hero.skills.active.reduce((n, id) => n + (getSkill(id)?.bonus?.[key] || 0), 0);
+    // Une compétence de classe ne joue que quand cette classe est la classe du tour (`hero.turnClassId`, posé par game.js).
+    return hero.skills.active.reduce((n, id) => {
+        const skill = getSkill(id);
+        if (skill?.classId && skill.classId !== hero.turnClassId) return n;
+        return n + (skill?.bonus?.[key] || 0);
+    }, 0);
 }
 
 /** Commandes de combat : fiches de sort des compétences d'action apprises (même forme que les sorts du jeu). */
@@ -160,7 +204,7 @@ export function actionSpells(hero) {
     const state = normalizeSkills(hero);
     const level = Math.max(1, hero?.level || 1);
     return state.learned.map(getSkill).filter(isAction).map(skill => ({
-        id: `skill_${skill.id}`, skillId: skill.id, name: skill.name, skill: true,
+        id: `skill_${skill.id}`, skillId: skill.id, name: skill.name, skill: true, ...(skill.classId ? { class: skill.classId } : {}),
         minLevel: 1, cost: { ...skill.spell.cost }, description: skill.description,
         ...(skill.spell.dmg ? { dmg: Math.round(skill.spell.dmg + level * skill.spell.scales) } : {}),
         ...(skill.spell.heal ? { heal: Math.round(skill.spell.heal + level * skill.spell.scales) } : {})

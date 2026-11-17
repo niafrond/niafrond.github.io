@@ -1,7 +1,7 @@
 // Onglet « Compétences » : balisage (module pur, sans DOM ni accès au jeu : testable et prévisualisable hors du jeu).
 // Présentation inspirée des menus de capacités des jeux de rôle japonais : en-tête du héros avec son compteur de Fulu, grille à deux colonnes
 // (gemme pleine = activée, gemme creuse = apprise mais éteinte, gemme grise = pas encore apprise), coût en Fulu à droite, fiche d'information.
-import { SKILLS, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
+import { skillsFor, getSkill, isSupport, skillsTaughtBy, normalizeSkills, isLearned, progressOf, magikolithCapacity, usedMagikoliths } from './skills.js';
 import { TRANSE_TURNS, TRANSE_EFFECTS } from './transe.js';
 import { CLASS_IDS, CLASS_SHORT, MAX_USABLE_CLASSES, BIOME_CLASS_LIMITS, normalizeRoster } from './classRoster.js';
 
@@ -20,9 +20,10 @@ export function skillState(hero, skill, taughtNow) {
 const STATE_LABEL = { active: 'Activée', learned: 'Apprise', training: 'En apprentissage', locked: 'Pas encore enseignée' };
 
 /** Qui enseigne quoi : Map id de compétence → noms des objets portés qui l'enseignent. */
-export function taughtMap(gear) {
+export function taughtMap(gear, hero = null) {
     const map = new Map();
-    gear.forEach(item => skillsTaughtBy(item).forEach(id => map.set(id, [...(map.get(id) || []), item.name || item.id])));
+    const owned = hero ? normalizeRoster(hero).owned : [];   // classes obtenues : l'équipement enseigne aussi leurs compétences
+    gear.forEach(item => skillsTaughtBy(item, owned).forEach(id => map.set(id, [...(map.get(id) || []), item.name || item.id])));
     return map;
 }
 
@@ -33,7 +34,7 @@ function row(hero, skill, taught, selectedId) {
     const cost = isSupport(skill) ? skill.cost : '·';
     return `<button type="button" class="ab-row ab-${st}${skill.id === selectedId ? ' selected' : ''}" data-skill="${skill.id}" aria-pressed="${skill.id === selectedId}">
         <span class="ab-gem">${isSupport(skill) ? GEM : BOLT}</span>
-        <span class="ab-name">${esc(skill.name)}</span>
+        <span class="ab-name">${esc(skill.name)}${skill.classId ? ` <small class="ab-class">${esc(CLASS_SHORT[skill.classId])}</small>` : ''}</span>
         <span class="ab-cost" title="${isSupport(skill) ? 'Coût en Fulu' : 'Commande de combat'}">${cost}</span>
     </button>`;
 }
@@ -51,6 +52,7 @@ function infoPanel(hero, skill, taught, canToggle) {
     return `<div class="ab-info">
         <div class="ab-info-head"><strong>${esc(skill.name)}</strong><span class="ab-state ab-state-${st}">${STATE_LABEL[st]}</span></div>
         <p class="ab-desc">${esc(skill.description)}</p>
+        ${skill.classId ? `<div class="ab-line"><span>Classe</span><span>${esc(CLASS_SHORT[skill.classId])} (effet seulement quand elle joue)</span></div>` : ''}
         <div class="ab-line"><span>${isSupport(skill) ? 'Soutien' : 'Action'}</span><span>${isSupport(skill) ? `${skill.cost} Fulu` : 'commande de combat'}</span></div>
         <div class="ab-line"><span>PA</span><span class="ab-stars" aria-label="${pct} %">${star(0)}${star(1)}${star(2)} <em>${st === 'locked' ? skill.ap : `${Math.min(have, skill.ap)} / ${skill.ap}`}</em></span></div>
         <div class="ab-bar"><div class="ab-bar-fill" style="width:${pct}%"></div></div>
@@ -88,9 +90,9 @@ export function classesHtml(hero, canToggle = true) {
 export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
     normalizeSkills(hero);
     const used = usedMagikoliths(hero), cap = magikolithCapacity(hero);
-    const taught = taughtMap(gear);
+    const taught = taughtMap(gear, hero);
     const order = { active: 0, learned: 1, training: 2, locked: 3 };
-    const list = [...SKILLS].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
+    const list = [...skillsFor(hero)].sort((a, b) => order[skillState(hero, a, taught)] - order[skillState(hero, b, taught)]);
     const selected = getSkill(selectedId) || list[0];
     const learnedCount = hero.skills.learned.length;
     const ownedClasses = normalizeRoster(hero).owned;
@@ -107,7 +109,7 @@ export function skillsTabHtml(hero, gear, selectedId, canToggle = true) {
             <div class="ab-grid" role="list">${list.map(s => row(hero, s, taught, selected.id)).join('')}</div>
             ${infoPanel(hero, selected, taught, canToggle)}
         </div>
-        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} / ${SKILLS.length} apprises</p>
+        <p class="ab-legend"><span class="lg lg-active">${GEM}</span> activée <span class="lg lg-learned">${GEM}</span> apprise <span class="lg lg-training">${GEM}</span> en apprentissage <span class="lg lg-locked">${GEM}</span> à débloquer · ${learnedCount} / ${list.length} apprises</p>
         <details class="ab-xiu"><summary>Xiūxiān</summary>
             <p>Chaque classe a sa jauge, qui se remplit quand vous subissez des dégâts avec cette classe et se conserve d'un combat à l'autre. Pleine, touchez-la pour déclencher la Xiūxiān de cette classe (${TRANSE_TURNS} tours) : son effet s'applique, même si vous changez de classe ensuite.</p>
             <ul>${transe}</ul>${ownedClasses.includes('sorcerer') ? '<p>L\'ultime ne se lance que pendant la Xiūxiān du Mage, avec le Mage choisi pour le tour.</p>' : ''}</details>

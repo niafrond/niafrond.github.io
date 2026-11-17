@@ -109,6 +109,7 @@ export function finishPlayerTurn(){
         return;
     }
     recordPlayerTurn();
+    (gameState.playedClasses ||= new Set()).add(getTurnClass());   // classes jouées ce combat : elles gagnent des PA de classe
     endOfPlayerTurnTranse();
 
     // Vérifier si le joueur est mort
@@ -768,7 +769,7 @@ export function handleEnemyDefeated(){
 
     // PA : l'équipement porté enseigne des compétences (skills.js) ; chaque victoire les fait progresser.
     const apGain = apForVictory(enemy.level) * xiuPaMult;
-    const apResult = awardAp(player, teachers(player, wornStuff(player)), apGain);
+    const apResult = awardAp(player, teachers(player, wornStuff(player)), apGain, [...(gameState.playedClasses || [])].filter(Boolean));
     if(apResult.gained.length) log(`Vous gagnez ${apGain} PA : ${apResult.gained.map(g => g.skill.name).join(', ')}.`);
     apResult.learned.forEach(skill => { log(`✦ Compétence apprise : ${skill.name} !`); combatRewards.skills.push(skill.name); });
 
